@@ -47,15 +47,15 @@ void DataTablePlotExporterEditor::createUI(const RolloutInsertionParameters& rol
     layout->setColumnStretch(4,1);
     layout->setColumnMinimumWidth(2,10);
 
-    FloatParameterUI* plotWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(DataTablePlotExporter::plotWidth));
+    FloatParameterUI* plotWidthUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(DataTablePlotExporter::plotWidth));
     layout->addWidget(plotWidthUI->label(), 0, 0);
     layout->addLayout(plotWidthUI->createFieldLayout(), 0, 1);
 
-    FloatParameterUI* plotHeightUI = new FloatParameterUI(this, PROPERTY_FIELD(DataTablePlotExporter::plotHeight));
+    FloatParameterUI* plotHeightUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(DataTablePlotExporter::plotHeight));
     layout->addWidget(plotHeightUI->label(), 1, 0);
     layout->addLayout(plotHeightUI->createFieldLayout(), 1, 1);
 
-    IntegerParameterUI* dpiUI = new IntegerParameterUI(this, PROPERTY_FIELD(DataTablePlotExporter::plotDPI));
+    IntegerParameterUI* dpiUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(DataTablePlotExporter::plotDPI));
     layout->addWidget(dpiUI->label(), 0, 3);
     layout->addLayout(dpiUI->createFieldLayout(), 0, 4);
 }

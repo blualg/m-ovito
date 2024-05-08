@@ -62,7 +62,7 @@ public:
         spinner->setMinValue(_minValue);
         spinner->setMaxValue(_maxValue);
         layout->addWidget(spinner);
-        connect(spinner, &SpinnerWidget::spinnerValueChanged, [this,container]() {
+        connect(spinner, &SpinnerWidget::valueChanged, [this,container]() {
             Q_EMIT const_cast<NumericalItemDelegate*>(this)->commitData(container);
         });
         return container;

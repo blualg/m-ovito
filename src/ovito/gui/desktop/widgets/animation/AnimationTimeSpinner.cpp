@@ -37,7 +37,7 @@ using namespace std;
 AnimationTimeSpinner::AnimationTimeSpinner(MainWindow& mainWindow, QWidget* parent) : SpinnerWidget(parent), _mainWindow(mainWindow)
 {
     setUnit(mainWindow.unitsManager().integerIdentityUnit());
-    connect(this, &SpinnerWidget::spinnerValueChanged, this, &AnimationTimeSpinner::onSpinnerValueChanged);
+    connect(this, &SpinnerWidget::valueChanged, this, &AnimationTimeSpinner::onSpinnerValueChanged);
     connect(&mainWindow.datasetContainer(), &DataSetContainer::currentFrameChanged, this, &AnimationTimeSpinner::onCurrentFrameChanged);
     connect(&mainWindow.datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &AnimationTimeSpinner::onIntervalChanged);
 }
@@ -67,8 +67,11 @@ void AnimationTimeSpinner::onIntervalChanged(int firstFrame, int lastFrame)
 void AnimationTimeSpinner::onSpinnerValueChanged()
 {
     // Set a new animation time.
-    if(AnimationSettings* anim = _mainWindow.datasetContainer().activeAnimationSettings())
-        anim->setCurrentFrame(intValue());
+    if(AnimationSettings* anim = _mainWindow.datasetContainer().activeAnimationSettings()) {
+        _mainWindow.handleExceptions([&]() {
+            anim->setCurrentFrame(intValue());
+        });
+    }
 }
 
 }   // End of namespace

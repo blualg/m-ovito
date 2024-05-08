@@ -53,27 +53,27 @@ protected:
         layout->addLayout(sublayout);
 
         // Ease to parameter.
-        FloatParameterUI* easeInPUI = new FloatParameterUI(this, PROPERTY_FIELD(TCBAnimationKeyType::easeTo));
+        FloatParameterUI* easeInPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TCBAnimationKeyType::easeTo));
         sublayout->addWidget(easeInPUI->label(), 0, 0);
         sublayout->addLayout(easeInPUI->createFieldLayout(), 0, 1);
 
         // Ease from parameter.
-        FloatParameterUI* easeFromPUI = new FloatParameterUI(this, PROPERTY_FIELD(TCBAnimationKeyType::easeFrom));
+        FloatParameterUI* easeFromPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TCBAnimationKeyType::easeFrom));
         sublayout->addWidget(easeFromPUI->label(), 1, 0);
         sublayout->addLayout(easeFromPUI->createFieldLayout(), 1, 1);
 
         // Tension parameter.
-        FloatParameterUI* tensionPUI = new FloatParameterUI(this, PROPERTY_FIELD(TCBAnimationKeyType::tension));
+        FloatParameterUI* tensionPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TCBAnimationKeyType::tension));
         sublayout->addWidget(tensionPUI->label(), 2, 0);
         sublayout->addLayout(tensionPUI->createFieldLayout(), 2, 1);
 
         // Continuity parameter.
-        FloatParameterUI* continuityPUI = new FloatParameterUI(this, PROPERTY_FIELD(TCBAnimationKeyType::continuity));
+        FloatParameterUI* continuityPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TCBAnimationKeyType::continuity));
         sublayout->addWidget(continuityPUI->label(), 3, 0);
         sublayout->addLayout(continuityPUI->createFieldLayout(), 3, 1);
 
         // Continuity parameter.
-        FloatParameterUI* biasPUI = new FloatParameterUI(this, PROPERTY_FIELD(TCBAnimationKeyType::bias));
+        FloatParameterUI* biasPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TCBAnimationKeyType::bias));
         sublayout->addWidget(biasPUI->label(), 4, 0);
         sublayout->addLayout(biasPUI->createFieldLayout(), 4, 1);
     }

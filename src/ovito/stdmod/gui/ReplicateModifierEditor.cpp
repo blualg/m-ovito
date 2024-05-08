@@ -48,22 +48,22 @@ void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rollout
 #endif
     layout->setColumnStretch(1, 1);
 
-    IntegerParameterUI* numImagesXPUI = new IntegerParameterUI(this, PROPERTY_FIELD(ReplicateModifier::numImagesX));
+    IntegerParameterUI* numImagesXPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ReplicateModifier::numImagesX));
     layout->addWidget(numImagesXPUI->label(), 0, 0);
     layout->addLayout(numImagesXPUI->createFieldLayout(), 0, 1);
 
-    IntegerParameterUI* numImagesYPUI = new IntegerParameterUI(this, PROPERTY_FIELD(ReplicateModifier::numImagesY));
+    IntegerParameterUI* numImagesYPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ReplicateModifier::numImagesY));
     layout->addWidget(numImagesYPUI->label(), 1, 0);
     layout->addLayout(numImagesYPUI->createFieldLayout(), 1, 1);
 
-    IntegerParameterUI* numImagesZPUI = new IntegerParameterUI(this, PROPERTY_FIELD(ReplicateModifier::numImagesZ));
+    IntegerParameterUI* numImagesZPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ReplicateModifier::numImagesZ));
     layout->addWidget(numImagesZPUI->label(), 2, 0);
     layout->addLayout(numImagesZPUI->createFieldLayout(), 2, 1);
 
-    BooleanParameterUI* adjustBoxSizeUI = new BooleanParameterUI(this, PROPERTY_FIELD(ReplicateModifier::adjustBoxSize));
+    BooleanParameterUI* adjustBoxSizeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ReplicateModifier::adjustBoxSize));
     layout->addWidget(adjustBoxSizeUI->checkBox(), 3, 0, 1, 2);
 
-    BooleanParameterUI* uniqueIdentifiersUI = new BooleanParameterUI(this, PROPERTY_FIELD(ReplicateModifier::uniqueIdentifiers));
+    BooleanParameterUI* uniqueIdentifiersUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ReplicateModifier::uniqueIdentifiers));
     layout->addWidget(uniqueIdentifiersUI->checkBox(), 4, 0, 1, 2);
 
     // Create a second rollout.
@@ -74,7 +74,7 @@ void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rollout
     topLayout->setContentsMargins(4,4,4,4);
     topLayout->setSpacing(12);
 
-    ModifierDelegateFixedListParameterUI* delegatesPUI = new ModifierDelegateFixedListParameterUI(this, rolloutParams.after(rollout));
+    ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>(rolloutParams.after(rollout));
     topLayout->addWidget(delegatesPUI->listWidget(103));
 }
 

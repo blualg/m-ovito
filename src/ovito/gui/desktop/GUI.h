@@ -80,7 +80,7 @@ namespace Ovito
     class StringParameterUI;
     class SubObjectParameterUI;
     class VariantComboBoxParameterUI;
-    class Vector3ParameterUI;
+    class VectorParameterUI;
     class ViewportModeAction;
     class FileExporterSettingsDialog;
     class CoordinateDisplayWidget;

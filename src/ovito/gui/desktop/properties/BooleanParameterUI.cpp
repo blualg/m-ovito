@@ -97,7 +97,8 @@ void BooleanParameterUI::updateUI()
 ******************************************************************************/
 void BooleanParameterUI::setEnabled(bool enabled)
 {
-    if(enabled == isEnabled()) return;
+    if(enabled == isEnabled())
+        return;
     PropertyParameterUI::setEnabled(enabled);
     if(checkBox()) {
         if(isReferenceFieldUI())

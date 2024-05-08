@@ -55,17 +55,17 @@ void VoronoiAnalysisModifierEditor::createUI(const RolloutInsertionParameters& r
     int row = 0;
 
     // Face threshold.
-    FloatParameterUI* faceThresholdPUI = new FloatParameterUI(this, PROPERTY_FIELD(VoronoiAnalysisModifier::faceThreshold));
+    FloatParameterUI* faceThresholdPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::faceThreshold));
     gridlayout->addWidget(faceThresholdPUI->label(), row, 0);
     gridlayout->addLayout(faceThresholdPUI->createFieldLayout(), row++, 1);
 
     // Relative face threshold.
-    FloatParameterUI* relativeFaceThresholdPUI = new FloatParameterUI(this, PROPERTY_FIELD(VoronoiAnalysisModifier::relativeFaceThreshold));
+    FloatParameterUI* relativeFaceThresholdPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::relativeFaceThreshold));
     gridlayout->addWidget(relativeFaceThresholdPUI->label(), row, 0);
     gridlayout->addLayout(relativeFaceThresholdPUI->createFieldLayout(), row++, 1);
 
     // Compute indices.
-    BooleanGroupBoxParameterUI* computeIndicesPUI = new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(VoronoiAnalysisModifier::computeIndices));
+    BooleanGroupBoxParameterUI* computeIndicesPUI = createParamUI<BooleanGroupBoxParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::computeIndices));
     gridlayout->addWidget(computeIndicesPUI->groupBox(), row++, 0, 1, 2);
     sublayout = new QGridLayout(computeIndicesPUI->childContainer());
     sublayout->setContentsMargins(4,4,4,4);
@@ -73,31 +73,31 @@ void VoronoiAnalysisModifierEditor::createUI(const RolloutInsertionParameters& r
     sublayout->setColumnStretch(1, 1);
 
     // Edge threshold.
-    FloatParameterUI* edgeThresholdPUI = new FloatParameterUI(this, PROPERTY_FIELD(VoronoiAnalysisModifier::edgeThreshold));
+    FloatParameterUI* edgeThresholdPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::edgeThreshold));
     sublayout->addWidget(edgeThresholdPUI->label(), 0, 0);
     sublayout->addLayout(edgeThresholdPUI->createFieldLayout(), 0, 1);
 
     // Generate bonds.
-    BooleanParameterUI* computeBondsPUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoronoiAnalysisModifier::computeBonds));
+    BooleanParameterUI* computeBondsPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::computeBonds));
     gridlayout->addWidget(computeBondsPUI->checkBox(), row++, 0, 1, 2);
 
     // Generate polyhedral mesh.
-    BooleanParameterUI* computePolyhedraPUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoronoiAnalysisModifier::computePolyhedra));
+    BooleanParameterUI* computePolyhedraPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::computePolyhedra));
     gridlayout->addWidget(computePolyhedraPUI->checkBox(), row++, 0, 1, 2);
 
     // Atomic radii.
-    BooleanParameterUI* useRadiiPUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoronoiAnalysisModifier::useRadii));
+    BooleanParameterUI* useRadiiPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::useRadii));
     gridlayout->addWidget(useRadiiPUI->checkBox(), row++, 0, 1, 2);
 
     // Only selected particles.
-    BooleanParameterUI* onlySelectedPUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoronoiAnalysisModifier::onlySelected));
+    BooleanParameterUI* onlySelectedPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::onlySelected));
     gridlayout->addWidget(onlySelectedPUI->checkBox(), row++, 0, 1, 2);
 
     layout->addLayout(gridlayout);
 
     // Status label.
     layout->addSpacing(6);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 }
 
 }   // End of namespace

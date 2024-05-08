@@ -25,7 +25,6 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
-#include <ovito/gui/desktop/utilities/DeferredMethodInvocation.h>
 
 namespace Ovito {
 
@@ -46,26 +45,15 @@ protected:
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-    /// This method is called when a reference target changes.
-    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
-
 private Q_SLOTS:
 
-    /// Updates the combobox list showing the available data sources.
-    void updateSourcesList();
-
-    /// Updates the UI.
-    void updateEditorFields();
+    /// Updates the displayed list of available pipeline variables.
+    void updateVariablesList();
 
 private:
 
     QLabel* _attributeNamesList;
     AutocompleteTextEdit* _textEdit;
-    PopupUpdateComboBox* _pipelineComboBox;
-    DeferredMethodInvocation<TextLabelOverlayEditor, &TextLabelOverlayEditor::updateEditorFields> updateEditorFieldsLater;
-
-    /// The pipeline providing global attributes that can be reference in the text.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(Pipeline*, sourcePipeline, setSourcePipeline);
 };
 
 }   // End of namespace

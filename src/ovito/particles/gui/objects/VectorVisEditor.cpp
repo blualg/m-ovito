@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include <ovito/gui/desktop/properties/Vector3ParameterUI.h>
+#include <ovito/gui/desktop/properties/VectorParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerCheckBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
@@ -56,17 +56,17 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     int row = 0;
 
     // Scaling factor.
-    FloatParameterUI* scalingFactorUI = new FloatParameterUI(this, PROPERTY_FIELD(VectorVis::scalingFactor));
+    FloatParameterUI* scalingFactorUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VectorVis::scalingFactor));
     layout->addWidget(scalingFactorUI->label(), row, 0, 1, 2);
     layout->addLayout(scalingFactorUI->createFieldLayout(), row++, 2);
 
     // Arrow width factor.
-    FloatParameterUI* arrowWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(VectorVis::arrowWidth));
+    FloatParameterUI* arrowWidthUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VectorVis::arrowWidth));
     layout->addWidget(arrowWidthUI->label(), row, 0, 1, 2);
     layout->addLayout(arrowWidthUI->createFieldLayout(), row++, 2);
 
     // Arrow position.
-    VariantComboBoxParameterUI* arrowPositionUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(VectorVis::arrowPosition));
+    VariantComboBoxParameterUI* arrowPositionUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(VectorVis::arrowPosition));
     arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_base.png"), tr("Base"), QVariant::fromValue<int>(VectorVis::Base));
     arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_center.png"), tr("Center"), QVariant::fromValue<int>(VectorVis::Center));
     arrowPositionUI->comboBox()->addItem(QIcon(":/particles/icons/arrow_alignment_head.png"), tr("Head"), QVariant::fromValue<int>(VectorVis::Head));
@@ -74,28 +74,28 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     layout->addWidget(arrowPositionUI->comboBox(), row++, 2);
 
     // Reverse direction.
-    BooleanParameterUI* reverseArrowDirectionUI = new BooleanParameterUI(this, PROPERTY_FIELD(VectorVis::reverseArrowDirection));
+    BooleanParameterUI* reverseArrowDirectionUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VectorVis::reverseArrowDirection));
     layout->addWidget(reverseArrowDirectionUI->checkBox(), row++, 2);
 
     // Shading mode.
-    IntegerCheckBoxParameterUI* shadingModeUI = new IntegerCheckBoxParameterUI(this, PROPERTY_FIELD(VectorVis::shadingMode), CylinderPrimitive::NormalShading, CylinderPrimitive::FlatShading);
+    IntegerCheckBoxParameterUI* shadingModeUI = createParamUI<IntegerCheckBoxParameterUI>(PROPERTY_FIELD(VectorVis::shadingMode), CylinderPrimitive::NormalShading, CylinderPrimitive::FlatShading);
     shadingModeUI->checkBox()->setText(tr("Flat shading"));
     layout->addWidget(shadingModeUI->checkBox(), row++, 2);
 
     // Coloring mode.
     layout->addWidget(new QLabel(tr("Coloring:")), row++, 0, 1, 3);
-    _coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(VectorVis::coloringMode));
+    _coloringModeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(VectorVis::coloringMode));
     layout->addWidget(_coloringModeUI->addRadioButton(VectorVis::UniformColoring, tr("Uniform:")), row, 1);
 
     // Uniform color.
-    _arrowColorUI = new ColorParameterUI(this, PROPERTY_FIELD(VectorVis::arrowColor));
+    _arrowColorUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(VectorVis::arrowColor));
     layout->addWidget(_arrowColorUI->colorPicker(), row++, 2);
     layout->addWidget(_coloringModeUI->addRadioButton(VectorVis::PseudoColoring, tr("Color mapping")), row++, 1, 1, 2);
 
     layout->setRowMinimumHeight(row++, 6);
 
     // Transparency.
-    _transparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(VectorVis::transparencyController));
+    _transparencyUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VectorVis::transparencyController));
     layout->addWidget(_transparencyUI->label(), row, 0, 1, 2);
     layout->addLayout(_transparencyUI->createFieldLayout(), row++, 2);
 
@@ -103,9 +103,9 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 
     // Offset vector.
     layout->addWidget(new QLabel(tr("Offset (XYZ):")), row++, 0, 1, 3);
-    Vector3ParameterUI* offsetXUI = new Vector3ParameterUI(this, PROPERTY_FIELD(VectorVis::offset), 0);
-    Vector3ParameterUI* offsetYUI = new Vector3ParameterUI(this, PROPERTY_FIELD(VectorVis::offset), 1);
-    Vector3ParameterUI* offsetZUI = new Vector3ParameterUI(this, PROPERTY_FIELD(VectorVis::offset), 2);
+    VectorParameterUI* offsetXUI = createParamUI<VectorParameterUI>(PROPERTY_FIELD(VectorVis::offset), 0, 3);
+    VectorParameterUI* offsetYUI = createParamUI<VectorParameterUI>(PROPERTY_FIELD(VectorVis::offset), 1, 3);
+    VectorParameterUI* offsetZUI = createParamUI<VectorParameterUI>(PROPERTY_FIELD(VectorVis::offset), 2, 3);
     QHBoxLayout* sublayout = new QHBoxLayout();
     sublayout->setContentsMargins(0,0,0,0);
     sublayout->setSpacing(4);
@@ -115,7 +115,7 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     sublayout->addLayout(offsetZUI->createFieldLayout(), 1);
 
     // Open a sub-editor for the property color mapping.
-    _colorMappingParamUI = new SubObjectParameterUI(this, PROPERTY_FIELD(VectorVis::colorMapping), rolloutParams.after(rollout));
+    _colorMappingParamUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(VectorVis::colorMapping), rolloutParams.after(rollout));
 
     // Whenever the pipeline input of the vis element changes, update the list of available
     // properties in the color mapping editor.

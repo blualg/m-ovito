@@ -46,7 +46,7 @@ void ParticlesVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     layout->setColumnStretch(1, 1);
 
     // Shape.
-    VariantComboBoxParameterUI* particleShapeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ParticlesVis::particleShape));
+    VariantComboBoxParameterUI* particleShapeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(ParticlesVis::particleShape));
     particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_sphere.png"), tr("Sphere/Ellipsoid"), QVariant::fromValue((int)ParticlesVis::Sphere));
     particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_circle.png"), tr("Circle"), QVariant::fromValue((int)ParticlesVis::Circle));
     particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_cube.png"), tr("Cube/Box"), QVariant::fromValue((int)ParticlesVis::Box));
@@ -57,17 +57,17 @@ void ParticlesVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     layout->addWidget(particleShapeUI->comboBox(), 1, 1);
 
     // Default radius.
-    FloatParameterUI* defaultRadiusUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticlesVis::defaultParticleRadius));
+    FloatParameterUI* defaultRadiusUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticlesVis::defaultParticleRadius));
     layout->addWidget(defaultRadiusUI->label(), 2, 0);
     layout->addLayout(defaultRadiusUI->createFieldLayout(), 2, 1);
 
     // Radius scaling factor.
-    FloatParameterUI* radiusScalingUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticlesVis::radiusScaleFactor));
+    FloatParameterUI* radiusScalingUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticlesVis::radiusScaleFactor));
     layout->addWidget(radiusScalingUI->label(), 3, 0);
     layout->addLayout(radiusScalingUI->createFieldLayout(), 3, 1);
 
     // Rendering quality.
-    VariantComboBoxParameterUI* renderingQualityUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ParticlesVis::renderingQuality));
+    VariantComboBoxParameterUI* renderingQualityUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(ParticlesVis::renderingQuality));
     renderingQualityUI->comboBox()->addItem(tr("Low"), QVariant::fromValue((int)ParticlePrimitive::LowQuality));
     renderingQualityUI->comboBox()->addItem(tr("Medium"), QVariant::fromValue((int)ParticlePrimitive::MediumQuality));
     renderingQualityUI->comboBox()->addItem(tr("High"), QVariant::fromValue((int)ParticlePrimitive::HighQuality));

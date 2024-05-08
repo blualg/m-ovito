@@ -23,11 +23,11 @@
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/stdmod/modifiers/HistogramModifier.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
-#include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/OpenDataInspectorButton.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
@@ -54,11 +54,11 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(4);
 
-    PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
+    DataObjectReferenceParameterUI* pclassUI = createParamUI<DataObjectReferenceParameterUI>(PROPERTY_FIELD(GenericPropertyModifier::subject), PropertyContainer::OOClass());
     layout->addWidget(new QLabel(tr("Operate on:")));
     layout->addWidget(pclassUI->comboBox());
 
-    PropertyReferenceParameterUI* sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(HistogramModifier::sourceProperty));
+    PropertyReferenceParameterUI* sourcePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(HistogramModifier::sourceProperty));
     layout->addWidget(new QLabel(tr("Property:")));
     layout->addWidget(sourcePropertyUI->comboBox());
     connect(this, &PropertiesEditor::contentsChanged, this, [sourcePropertyUI](RefTarget* editObject) {
@@ -74,7 +74,7 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
     gridlayout->setColumnStretch(1, 1);
 
     // Number of bins parameter.
-    IntegerParameterUI* numBinsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(HistogramModifier::numberOfBins));
+    IntegerParameterUI* numBinsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(HistogramModifier::numberOfBins));
     gridlayout->addWidget(numBinsPUI->label(), 0, 0);
     gridlayout->addLayout(numBinsPUI->createFieldLayout(), 0, 1);
 
@@ -101,7 +101,7 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
     sublayout->setContentsMargins(4,4,4,4);
     layout->addWidget(inputBox);
 
-    BooleanParameterUI* onlySelectedUI = new BooleanParameterUI(this, PROPERTY_FIELD(HistogramModifier::onlySelectedElements));
+    BooleanParameterUI* onlySelectedUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(HistogramModifier::onlySelectedElements));
     sublayout->addWidget(onlySelectedUI->checkBox());
 
     // Create selection.
@@ -110,13 +110,13 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
     sublayout->setContentsMargins(4,4,4,4);
     layout->addWidget(selectionBox);
 
-    BooleanParameterUI* selectInRangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(HistogramModifier::selectInRange));
+    BooleanParameterUI* selectInRangeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(HistogramModifier::selectInRange));
     sublayout->addWidget(selectInRangeUI->checkBox());
 
     QHBoxLayout* hlayout = new QHBoxLayout();
     sublayout->addLayout(hlayout);
-    FloatParameterUI* selRangeStartPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::selectionRangeStart));
-    FloatParameterUI* selRangeEndPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::selectionRangeEnd));
+    FloatParameterUI* selRangeStartPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HistogramModifier::selectionRangeStart));
+    FloatParameterUI* selRangeEndPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HistogramModifier::selectionRangeEnd));
     hlayout->addWidget(new QLabel(tr("From:")));
     hlayout->addLayout(selRangeStartPUI->createFieldLayout());
     hlayout->addSpacing(12);
@@ -134,13 +134,13 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
     layout->addWidget(axesBox);
     // x-axis.
     {
-        BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(HistogramModifier::fixXAxisRange));
+        BooleanParameterUI* rangeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(HistogramModifier::fixXAxisRange));
         axesSublayout->addWidget(rangeUI->checkBox());
 
         QHBoxLayout* hlayout = new QHBoxLayout();
         axesSublayout->addLayout(hlayout);
-        FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::xAxisRangeStart));
-        FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::xAxisRangeEnd));
+        FloatParameterUI* startPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HistogramModifier::xAxisRangeStart));
+        FloatParameterUI* endPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HistogramModifier::xAxisRangeEnd));
         hlayout->addWidget(new QLabel(tr("From:")));
         hlayout->addLayout(startPUI->createFieldLayout());
         hlayout->addSpacing(12);
@@ -153,13 +153,13 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
     }
     // y-axis.
     {
-        BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(HistogramModifier::fixYAxisRange));
+        BooleanParameterUI* rangeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(HistogramModifier::fixYAxisRange));
         axesSublayout->addWidget(rangeUI->checkBox());
 
         QHBoxLayout* hlayout = new QHBoxLayout();
         axesSublayout->addLayout(hlayout);
-        FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::yAxisRangeStart));
-        FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(HistogramModifier::yAxisRangeEnd));
+        FloatParameterUI* startPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HistogramModifier::yAxisRangeStart));
+        FloatParameterUI* endPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(HistogramModifier::yAxisRangeEnd));
         hlayout->addWidget(new QLabel(tr("From:")));
         hlayout->addLayout(startPUI->createFieldLayout());
         hlayout->addSpacing(12);
@@ -173,7 +173,7 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
 
     // Status label.
     layout->addSpacing(6);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Update data plot whenever the modifier has calculated new results.
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &HistogramModifierEditor::plotHistogram);

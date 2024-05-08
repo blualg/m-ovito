@@ -45,19 +45,19 @@ void ExpressionSelectionModifierEditor::createUI(const RolloutInsertionParameter
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(0);
 
-    ModifierDelegateParameterUI* delegateUI = new ModifierDelegateParameterUI(this, ExpressionSelectionModifierDelegate::OOClass());
+    ModifierDelegateParameterUI* delegateUI = createParamUI<ModifierDelegateParameterUI>(ExpressionSelectionModifierDelegate::OOClass());
     layout->addWidget(new QLabel(tr("Operate on:")));
     layout->addWidget(delegateUI->comboBox());
 
     layout->addWidget(new QLabel(tr("Boolean expression:")));
-    StringParameterUI* expressionUI = new StringParameterUI(this, PROPERTY_FIELD(ExpressionSelectionModifier::expression));
+    StringParameterUI* expressionUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(ExpressionSelectionModifier::expression));
     expressionEdit = new AutocompleteTextEdit();
     expressionUI->setTextBox(expressionEdit);
     layout->addWidget(expressionUI->textBox());
 
     // Status label.
     layout->addSpacing(12);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:particles.modifiers.expression_select");
     QVBoxLayout* variablesLayout = new QVBoxLayout(variablesRollout);

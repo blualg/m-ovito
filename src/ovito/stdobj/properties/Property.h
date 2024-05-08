@@ -82,13 +82,11 @@ public:
     ~Property();
 #endif
 
-    /// \brief Gets the property's name.
-    /// \return The name of property.
-    const QString& name() const { return _name; }
+    /// \brief Gets the property's name, which is also the property object's unique identifier.
+    const QString& name() const { return identifier(); }
 
-    /// \brief Sets the property's name.
-    /// \param name The new name string.
-    void setName(const QString& name);
+    /// \brief Sets the property's name, which is also the property object's unique identifier.
+    void setName(const QString& name) { setIdentifier(name); }
 
     /// \brief Returns the kind of this property (standard or user-defined).
     int typeId() const { return _typeId; }
@@ -257,6 +255,9 @@ protected:
     /// Creates a copy of this object.
     virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
 
+    /// Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+
 private:
 
     /// Contains the list of defined "types" if this is a typed property.
@@ -267,9 +268,6 @@ private:
 
     /// The kind of this property (non-zero = predefined standard property; zero = a user-defined property).
     int _typeId = 0;
-
-    /// The human-readable name of the property (must be unique within a PropertyContainer).
-    QString _name;
 
     /// Pointer to the access guard object while the Python side accesses this property's memory buffer.
     std::weak_ptr<BufferPythonAccessGuard> _pythonAccessGuard;

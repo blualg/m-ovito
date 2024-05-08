@@ -51,22 +51,22 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     layout->setColumnMinimumWidth(0, 24);
 
     // Bond width.
-    FloatParameterUI* bondWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(BondsVis::bondWidth));
+    FloatParameterUI* bondWidthUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(BondsVis::bondWidth));
     layout->addWidget(bondWidthUI->label(), 0, 0, 1, 2);
     layout->addLayout(bondWidthUI->createFieldLayout(), 0, 2);
 
     // Shading mode.
-    IntegerCheckBoxParameterUI* shadingModeUI = new IntegerCheckBoxParameterUI(this, PROPERTY_FIELD(BondsVis::shadingMode), BondsVis::NormalShading, BondsVis::FlatShading);
+    IntegerCheckBoxParameterUI* shadingModeUI = createParamUI<IntegerCheckBoxParameterUI>(PROPERTY_FIELD(BondsVis::shadingMode), BondsVis::NormalShading, BondsVis::FlatShading);
     shadingModeUI->checkBox()->setText(tr("Flat shading"));
     layout->addWidget(shadingModeUI->checkBox(), 1, 2);
 
     // Coloring mode.
     layout->addWidget(new QLabel(tr("Coloring mode:")), 2, 0, 1, 3);
-    _coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(BondsVis::coloringMode));
+    _coloringModeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(BondsVis::coloringMode));
     layout->addWidget(_coloringModeUI->addRadioButton(BondsVis::UniformColoring, tr("Uniform:")), 3, 1);
 
     // Uniform color.
-    _bondColorUI = new ColorParameterUI(this, PROPERTY_FIELD(BondsVis::bondColor));
+    _bondColorUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(BondsVis::bondColor));
     layout->addWidget(_bondColorUI->colorPicker(), 3, 2);
 
     // By bond type coloring mode.

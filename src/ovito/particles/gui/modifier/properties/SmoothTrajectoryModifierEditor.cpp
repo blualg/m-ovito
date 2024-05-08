@@ -46,16 +46,16 @@ void SmoothTrajectoryModifierEditor::createUI(const RolloutInsertionParameters& 
     layout->setColumnStretch(1, 1);
 
     // Smoothing window size parameter.
-    IntegerParameterUI* smoothingWindowSizeUI = new IntegerParameterUI(this, PROPERTY_FIELD(SmoothTrajectoryModifier::smoothingWindowSize));
+    IntegerParameterUI* smoothingWindowSizeUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(SmoothTrajectoryModifier::smoothingWindowSize));
     layout->addWidget(smoothingWindowSizeUI->label(), 0, 0);
     layout->addLayout(smoothingWindowSizeUI->createFieldLayout(), 0, 1);
 
-    BooleanParameterUI* useMinimumImageConventionUI = new BooleanParameterUI(this, PROPERTY_FIELD(SmoothTrajectoryModifier::useMinimumImageConvention));
+    BooleanParameterUI* useMinimumImageConventionUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SmoothTrajectoryModifier::useMinimumImageConvention));
     layout->addWidget(useMinimumImageConventionUI->checkBox(), 1, 0, 1, 2);
 
     // Status label.
     layout->setRowMinimumHeight(2, 8);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget(), 3, 0, 1, 2);
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget(), 3, 0, 1, 2);
 }
 
 }   // End of namespace

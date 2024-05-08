@@ -260,10 +260,12 @@ void GridParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockI
 {
     // Clear existing voxel grid objects by resizing them to zero elements.
     // This is mainly done to hide the grids in those animation frames in which the VTM file contains no corresponding data blocks.
-    for(const DataObject* grid : request.state.getObjects(VoxelGrid::OOClass())) {
-        VoxelGrid* mutableGrid = static_object_cast<VoxelGrid>(request.state.mutableData()->makeMutable(grid));
-        mutableGrid->setElementCount(0);
-        mutableGrid->setShape({0,0,0});
+    for(const DataObject* obj : request.state.data()->objects()) {
+        if(const VoxelGrid* grid = dynamic_object_cast<VoxelGrid>(obj)) {
+            VoxelGrid* mutableGrid = request.state.makeMutable(grid);
+            mutableGrid->setElementCount(0);
+            mutableGrid->setShape({0,0,0});
+        }
     }
 }
 

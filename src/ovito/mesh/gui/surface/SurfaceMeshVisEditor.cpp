@@ -58,7 +58,7 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
     layout->addWidget(coloringGroupBox);
 
     // Coloring mode.
-    _coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::colorMappingMode));
+    _coloringModeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::colorMappingMode));
     sublayout->addWidget(_coloringModeUI->addRadioButton(SurfaceMeshVis::NoPseudoColoring, tr("Uniform color:")), 0, 0);
     QHBoxLayout* boxlayout = new QHBoxLayout();
     boxlayout->setContentsMargins(0,0,0,0);
@@ -67,10 +67,10 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
     boxlayout->addWidget(_coloringModeUI->addRadioButton(SurfaceMeshVis::FacePseudoColoring, tr("Faces")), 1);
     boxlayout->addWidget(_coloringModeUI->addRadioButton(SurfaceMeshVis::RegionPseudoColoring, tr("Regions")), 1);
 
-    _surfaceColorUI = new ColorParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::surfaceColor));
+    _surfaceColorUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::surfaceColor));
     sublayout->addWidget(_surfaceColorUI->colorPicker(), 0, 1);
 
-    FloatParameterUI* surfaceTransparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::surfaceTransparencyController));
+    FloatParameterUI* surfaceTransparencyUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::surfaceTransparencyController));
     sublayout->addWidget(new QLabel(tr("Transparency:")), 2, 0);
     sublayout->addLayout(surfaceTransparencyUI->createFieldLayout(), 2, 1);
 
@@ -82,19 +82,19 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
     sublayout->setColumnStretch(1, 1);
     layout->addWidget(renderingOptionsGroupBox);
 
-    BooleanParameterUI* smoothShadingUI = new BooleanParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::smoothShading));
+    BooleanParameterUI* smoothShadingUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::smoothShading));
     sublayout->addWidget(smoothShadingUI->checkBox(), 0, 0, 1, 2);
 
-    BooleanParameterUI* reverseOrientationUI = new BooleanParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::reverseOrientation));
+    BooleanParameterUI* reverseOrientationUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::reverseOrientation));
     sublayout->addWidget(reverseOrientationUI->checkBox(), 1, 0, 1, 2);
 
-    _clipAtDomainBoundariesUI = new BooleanParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::clipAtDomainBoundaries));
+    _clipAtDomainBoundariesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::clipAtDomainBoundaries));
     sublayout->addWidget(_clipAtDomainBoundariesUI->checkBox(), 2, 0, 1, 2);
 
-    BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::highlightEdges));
+    BooleanParameterUI* highlightEdgesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::highlightEdges));
     sublayout->addWidget(highlightEdgesUI->checkBox(), 3, 0, 1, 2);
 
-    _capGroupUI = new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::showCap));
+    _capGroupUI = createParamUI<BooleanGroupBoxParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::showCap));
     _capGroupUI->groupBox()->setTitle(tr("Cap polygons"));
     sublayout = new QGridLayout(_capGroupUI->childContainer());
     sublayout->setContentsMargins(4,4,4,4);
@@ -102,16 +102,16 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
     sublayout->setColumnStretch(1, 1);
     layout->addWidget(_capGroupUI->groupBox());
 
-    ColorParameterUI* capColorUI = new ColorParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::capColor));
+    ColorParameterUI* capColorUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::capColor));
     sublayout->addWidget(capColorUI->label(), 0, 0);
     sublayout->addWidget(capColorUI->colorPicker(), 0, 1);
 
-    FloatParameterUI* capTransparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::capTransparencyController));
+    FloatParameterUI* capTransparencyUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::capTransparencyController));
     sublayout->addWidget(new QLabel(tr("Transparency:")), 1, 0);
     sublayout->addLayout(capTransparencyUI->createFieldLayout(), 1, 1);
 
     // Open a sub-editor for the property color mapping.
-    _colorMappingParamUI = new SubObjectParameterUI(this, PROPERTY_FIELD(SurfaceMeshVis::surfaceColorMapping), rolloutParams.after(rollout));
+    _colorMappingParamUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(SurfaceMeshVis::surfaceColorMapping), rolloutParams.after(rollout));
 
     // Whenever the pipeline input of the vis element changes, update the list of available
     // properties in the color mapping editor.

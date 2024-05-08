@@ -55,7 +55,7 @@ void CentroSymmetryModifierEditor::createUI(const RolloutInsertionParameters& ro
     layout1->addLayout(layout2);
 
     // Num neighbors parameter.
-    IntegerParameterUI* numNeighborsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(CentroSymmetryModifier::numNeighbors));
+    IntegerParameterUI* numNeighborsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(CentroSymmetryModifier::numNeighbors));
     layout2->addWidget(numNeighborsPUI->label(), 0, 0);
     layout2->addLayout(numNeighborsPUI->createFieldLayout(), 0, 1);
 
@@ -70,7 +70,7 @@ void CentroSymmetryModifierEditor::createUI(const RolloutInsertionParameters& ro
     layout1->addLayout(layout3);
 
     // Method selector.
-    IntegerRadioButtonParameterUI* modeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(CentroSymmetryModifier::mode));
+    IntegerRadioButtonParameterUI* modeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(CentroSymmetryModifier::mode));
     QRadioButton* conventionalModeBtn = modeUI->addRadioButton(CentroSymmetryModifier::ConventionalMode, tr("Conventional CSP"));
     QRadioButton* matchingModeBtn = modeUI->addRadioButton(CentroSymmetryModifier::MatchingMode, tr("Minimum-weight matching CSP"));
     layout3->addWidget(new QLabel(tr("Algorithm:")), 0, 0, 1, 2);
@@ -78,7 +78,7 @@ void CentroSymmetryModifierEditor::createUI(const RolloutInsertionParameters& ro
     layout3->addWidget(matchingModeBtn, 2, 1);
 
     // Use only selected particles.
-    BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(CentroSymmetryModifier::onlySelectedParticles));
+    BooleanParameterUI* onlySelectedParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CentroSymmetryModifier::onlySelectedParticles));
     layout1->addSpacing(6);
     layout1->addWidget(onlySelectedParticlesUI->checkBox());
 
@@ -94,7 +94,7 @@ void CentroSymmetryModifierEditor::createUI(const RolloutInsertionParameters& ro
 
     // Status label.
     layout1->addSpacing(10);
-    layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout1->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 }
 
 /******************************************************************************

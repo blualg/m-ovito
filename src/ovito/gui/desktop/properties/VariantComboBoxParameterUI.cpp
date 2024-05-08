@@ -72,7 +72,9 @@ void VariantComboBoxParameterUI::updateUI()
             val = editObject()->getPropertyFieldValue(propertyField());
             OVITO_ASSERT(val.isValid());
         }
-        else return;
+        else {
+            return;
+        }
         comboBox()->setCurrentIndex(comboBox()->findData(val));
         if(comboBox()->isEditable())
             comboBox()->setEditText(val.toString());
@@ -84,9 +86,11 @@ void VariantComboBoxParameterUI::updateUI()
 ******************************************************************************/
 void VariantComboBoxParameterUI::setEnabled(bool enabled)
 {
-    if(enabled == isEnabled()) return;
+    if(enabled == isEnabled())
+        return;
     PropertyParameterUI::setEnabled(enabled);
-    if(comboBox()) comboBox()->setEnabled(editObject() != NULL && isEnabled());
+    if(comboBox())
+        comboBox()->setEnabled(editObject() != NULL && isEnabled());
 }
 
 /******************************************************************************

@@ -43,10 +43,11 @@ class DeferredMethodInvocation
 public:
 
     void operator()(ObjectClass* obj) {
+        OVITO_ASSERT(ExecutionContext::current().isValid());
         // Unless another call is already underway, post an event to the event queue
         // to invoke the user function.
         if(!_event) {
-            _event = new Event(this, obj);
+            _event = new Event(this, obj, ExecutionContext::current());
             if constexpr(!delay_msec) {
                 QCoreApplication::postEvent(obj, _event);
             }
@@ -68,15 +69,24 @@ private:
     // A custom event class that can be put into the application's event queue.
     // It calls the user function from its destructor after the event has been
     // fetched from the queue.
-    struct Event : public QEvent {
+    struct Event : public QEvent
+    {
         DeferredMethodInvocation* owner;
         ObjectClass* object;
-        Event(DeferredMethodInvocation* owner, ObjectClass* object) : QEvent(QEvent::None), owner(owner), object(object) {}
+        ExecutionContext context;
+        Event(DeferredMethodInvocation* owner, ObjectClass* object, ExecutionContext context) : QEvent(QEvent::None), owner(owner), object(object), context(std::move(context)) {}
         ~Event() {
+            OVITO_ASSERT(context.isValid());
             if(owner) {
                 OVITO_ASSERT(owner->_event == this);
                 owner->_event = nullptr;
-                (object->*method)();
+                ExecutionContext::Scope scope(std::move(context));
+                try {
+                    (object->*method)();
+                }
+                catch(const Exception& ex) {
+                    ExecutionContext::current().ui().reportError(ex);
+                }
             }
         }
     };

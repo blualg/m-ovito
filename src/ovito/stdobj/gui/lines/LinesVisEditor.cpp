@@ -54,41 +54,41 @@ void LinesVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 
     int row = 0;
     // Shading mode.
-    VariantComboBoxParameterUI* shadingModeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(LinesVis::shadingMode));
+    VariantComboBoxParameterUI* shadingModeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(LinesVis::shadingMode));
     shadingModeUI->comboBox()->addItem(tr("Normal"), QVariant::fromValue((int)CylinderPrimitive::NormalShading));
     shadingModeUI->comboBox()->addItem(tr("Flat"), QVariant::fromValue((int)CylinderPrimitive::FlatShading));
     layout->addWidget(new QLabel(tr("Shading:")), row, 0, 1, 2);
     layout->addWidget(shadingModeUI->comboBox(), row++, 2);
 
     // Line width.
-    FloatParameterUI* lineWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(LinesVis::lineWidth));
+    FloatParameterUI* lineWidthUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(LinesVis::lineWidth));
     layout->addWidget(lineWidthUI->label(), row, 0, 1, 2);
     layout->addLayout(lineWidthUI->createFieldLayout(), row++, 2);
 
     // Coloring mode.
     layout->addWidget(new QLabel(tr("Line coloring:")), row++, 0, 1, 3);
-    _coloringModeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(LinesVis::coloringMode));
+    _coloringModeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(LinesVis::coloringMode));
     layout->addWidget(_coloringModeUI->addRadioButton(LinesVis::UniformColoring, tr("Uniform:")), row++, 1);
     layout->addWidget(_coloringModeUI->addRadioButton(LinesVis::PseudoColoring, tr("Color mapping")), row++, 1, 1, 2);
 
     // Line uniform color.
-    _lineColorUI = new ColorParameterUI(this, PROPERTY_FIELD(LinesVis::lineColor));
+    _lineColorUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(LinesVis::lineColor));
     layout->addWidget(_lineColorUI->colorPicker(), row++, 2);
 
     // Line end caps
-    BooleanParameterUI* lineEndCapUI = new BooleanParameterUI(this, PROPERTY_FIELD(LinesVis::roundedCaps));
+    BooleanParameterUI* lineEndCapUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(LinesVis::roundedCaps));
     layout->addWidget(lineEndCapUI->checkBox(), row++, 0, 1, 3);
 
     // Wrapped line display.
-    BooleanParameterUI* wrappedLinesUI = new BooleanParameterUI(this, PROPERTY_FIELD(LinesVis::wrappedLines));
+    BooleanParameterUI* wrappedLinesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(LinesVis::wrappedLines));
     layout->addWidget(wrappedLinesUI->checkBox(), row++, 0, 1, 3);
 
     // Up to current time.
-    BooleanParameterUI* showUpToCurrentTimeUI = new BooleanParameterUI(this, PROPERTY_FIELD(LinesVis::showUpToCurrentTime));
+    BooleanParameterUI* showUpToCurrentTimeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(LinesVis::showUpToCurrentTime));
     layout->addWidget(showUpToCurrentTimeUI->checkBox(), row++, 0, 1, 3);
 
     // Open a sub-editor for the property color mapping.
-    _colorMappingParamUI = new SubObjectParameterUI(this, PROPERTY_FIELD(LinesVis::colorMapping), rolloutParams.after(rollout));
+    _colorMappingParamUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(LinesVis::colorMapping), rolloutParams.after(rollout));
 
     // Whenever the pipeline input of the vis element changes, update the list of available
     // properties in the color mapping editor.

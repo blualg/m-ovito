@@ -61,7 +61,7 @@ void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParam
         layout2->setContentsMargins(4,4,4,4);
         layout2->setSpacing(4);
 
-        BooleanRadioButtonParameterUI* onlySelectedParticlesUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::onlySelectedParticles));
+        BooleanRadioButtonParameterUI* onlySelectedParticlesUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(GenerateTrajectoryLinesModifier::onlySelectedParticles));
 
         QRadioButton* allParticlesButton = onlySelectedParticlesUI->buttonFalse();
         allParticlesButton->setText(tr("All particles"));
@@ -82,14 +82,14 @@ void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParam
         layout2->setSpacing(2);
         layout2->setColumnMinimumWidth(0, 30);
 
-        BooleanParameterUI* unwrapTrajectoriesUI = new BooleanParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::unwrapTrajectories));
+        BooleanParameterUI* unwrapTrajectoriesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(GenerateTrajectoryLinesModifier::unwrapTrajectories));
         layout2->addWidget(unwrapTrajectoriesUI->checkBox(), 0, 0, 1, 2);
 
-        BooleanParameterUI* transferParticlePropertiesUI = new BooleanParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::transferParticleProperties));
+        BooleanParameterUI* transferParticlePropertiesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(GenerateTrajectoryLinesModifier::transferParticleProperties));
         transferParticlePropertiesUI->checkBox()->setText(tr("Sample a particle property:"));
         layout2->addWidget(transferParticlePropertiesUI->checkBox(), 1, 0, 1, 2);
 
-        PropertyReferenceParameterUI* particlePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::particleProperty), &Particles::OOClass(), PropertyReferenceParameterUI::ShowNoComponents);
+        PropertyReferenceParameterUI* particlePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(GenerateTrajectoryLinesModifier::particleProperty), &Particles::OOClass(), PropertyReferenceParameterUI::ShowNoComponents);
         layout2->addWidget(particlePropertyUI->comboBox(), 2, 1);
         particlePropertyUI->setEnabled(false);
         connect(transferParticlePropertiesUI->checkBox(), &QCheckBox::toggled, particlePropertyUI, &PropertyReferenceParameterUI::setEnabled);
@@ -108,7 +108,7 @@ void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParam
         layout2c->setSpacing(2);
         layout2->addLayout(layout2c);
 
-        BooleanRadioButtonParameterUI* useCustomIntervalUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::useCustomInterval));
+        BooleanRadioButtonParameterUI* useCustomIntervalUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(GenerateTrajectoryLinesModifier::useCustomInterval));
 
         QRadioButton* animationIntervalButton = useCustomIntervalUI->buttonFalse();
         animationIntervalButton->setText(tr("Complete trajectory"));
@@ -118,11 +118,11 @@ void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParam
         customIntervalButton->setText(tr("Frame interval:"));
         layout2c->addWidget(customIntervalButton, 1, 0, 1, 5);
 
-        IntegerParameterUI* customRangeStartUI = new IntegerParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::customIntervalStart));
+        IntegerParameterUI* customRangeStartUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(GenerateTrajectoryLinesModifier::customIntervalStart));
         customRangeStartUI->setEnabled(false);
         layout2c->addLayout(customRangeStartUI->createFieldLayout(), 2, 1);
         layout2c->addWidget(new QLabel(tr("to")), 2, 2);
-        IntegerParameterUI* customRangeEndUI = new IntegerParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::customIntervalEnd));
+        IntegerParameterUI* customRangeEndUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(GenerateTrajectoryLinesModifier::customIntervalEnd));
         customRangeEndUI->setEnabled(false);
         layout2c->addLayout(customRangeEndUI->createFieldLayout(), 2, 3);
         layout2c->setColumnMinimumWidth(0, 30);
@@ -134,17 +134,17 @@ void GenerateTrajectoryLinesModifierEditor::createUI(const RolloutInsertionParam
         layout2a->setContentsMargins(0,6,0,0);
         layout2a->setSpacing(2);
         layout2->addLayout(layout2a);
-        IntegerParameterUI* everyNthFrameUI = new IntegerParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::everyNthFrame));
+        IntegerParameterUI* everyNthFrameUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(GenerateTrajectoryLinesModifier::everyNthFrame));
         layout2a->addWidget(everyNthFrameUI->label(), 0, 0);
         layout2a->addLayout(everyNthFrameUI->createFieldLayout(), 0, 1);
         layout2a->setColumnStretch(2, 1);
     }
 
     // Status label.
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Open a sub-editor for the trajectory vis element.
-    SubObjectParameterUI* trajectoryVisSubEditorUI = new SubObjectParameterUI(this, PROPERTY_FIELD(GenerateTrajectoryLinesModifier::trajectoryVis), rolloutParams.after(rollout));
+    SubObjectParameterUI* trajectoryVisSubEditorUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(GenerateTrajectoryLinesModifier::trajectoryVis), rolloutParams.after(rollout));
 
     // Whenever the pipeline output of the modifier changes, update visibility of the visual element for the trajectory lines.
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, [this, trajectoryVisSubEditorUI]() {

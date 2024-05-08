@@ -226,8 +226,10 @@ OvitoClassPtr OvitoClass::deserializeRTTI(LoadStream& stream)
 ******************************************************************************/
 QString OvitoClass::encodeAsString(OvitoClassPtr type)
 {
-    OVITO_CHECK_POINTER(type);
-    return type->plugin()->pluginId() + QStringLiteral("::") + type->name();
+    if(!type)
+        return QString();
+    else
+        return type->plugin()->pluginId() + QStringLiteral("::") + type->name();
 }
 
 /******************************************************************************
@@ -235,6 +237,9 @@ QString OvitoClass::encodeAsString(OvitoClassPtr type)
 ******************************************************************************/
 OvitoClassPtr OvitoClass::decodeFromString(const QString& str)
 {
+    if(str.isEmpty())
+        return nullptr;
+
     QStringList tokens = str.split(QStringLiteral("::"));
     if(tokens.size() != 2)
         throw Exception(OvitoObject::tr("Invalid type or encoding: %1").arg(str));

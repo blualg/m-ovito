@@ -47,7 +47,7 @@ void LAMMPSDataExporterEditor::createUI(const RolloutInsertionParameters& rollou
     layout->setSpacing(4);
 
     layout->addWidget(new QLabel(tr("LAMMPS atom style:")), 0, 0);
-    VariantComboBoxParameterUI* atomStyleUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::atomStyle));
+    VariantComboBoxParameterUI* atomStyleUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(LAMMPSDataExporter::atomStyle));
     for(int i = 1; i < LAMMPSDataImporter::AtomStyle_COUNT; i++) {
         LAMMPSDataImporter::LAMMPSAtomStyle atomStyle = static_cast<LAMMPSDataImporter::LAMMPSAtomStyle>(i);
         atomStyleUI->comboBox()->addItem(LAMMPSDataImporter::atomStyleName(atomStyle), QVariant::fromValue(i));
@@ -75,23 +75,23 @@ void LAMMPSDataExporterEditor::createUI(const RolloutInsertionParameters& rollou
     }
     layout->addLayout(sublayout, 1, 1);
 
-    IntegerParameterUI* precisionUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileExporter::floatOutputPrecision));
+    IntegerParameterUI* precisionUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(FileExporter::floatOutputPrecision));
     layout->addWidget(precisionUI->label(), 2, 0);
     layout->addLayout(precisionUI->createFieldLayout(), 2, 1);
 
-    BooleanParameterUI* omitMassesSectionUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::omitMassesSection));
+    BooleanParameterUI* omitMassesSectionUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(LAMMPSDataExporter::omitMassesSection));
     layout->addWidget(omitMassesSectionUI->checkBox(), 3, 0, 1, 2);
 
-    BooleanParameterUI* ignoreParticleIdentifiersUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::ignoreParticleIdentifiers));
+    BooleanParameterUI* ignoreParticleIdentifiersUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(LAMMPSDataExporter::ignoreParticleIdentifiers));
     layout->addWidget(ignoreParticleIdentifiersUI->checkBox(), 4, 0, 1, 2);
 
-    BooleanParameterUI* generateConsecutiveTypeIdsUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::generateConsecutiveTypeIds));
+    BooleanParameterUI* generateConsecutiveTypeIdsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(LAMMPSDataExporter::generateConsecutiveTypeIds));
     layout->addWidget(generateConsecutiveTypeIdsUI->checkBox(), 5, 0, 1, 2);
 
-    BooleanParameterUI* exportTypeNamesUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::exportTypeNames));
+    BooleanParameterUI* exportTypeNamesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(LAMMPSDataExporter::exportTypeNames));
     layout->addWidget(exportTypeNamesUI->checkBox(), 6, 0, 1, 2);
 
-    BooleanParameterUI* restrictedTriclinicUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDataExporter::restrictedTriclinic));
+    BooleanParameterUI* restrictedTriclinicUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(LAMMPSDataExporter::restrictedTriclinic));
     layout->addWidget(restrictedTriclinicUI->checkBox(), 7, 0, 1, 2);
 
     connect(this, &PropertiesEditor::contentsChanged, this, &LAMMPSDataExporterEditor::updateUI);

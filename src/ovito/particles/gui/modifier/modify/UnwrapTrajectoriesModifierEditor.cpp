@@ -44,7 +44,7 @@ void UnwrapTrajectoriesModifierEditor::createUI(const RolloutInsertionParameters
     layout->setSpacing(6);
 
     // Status label.
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
     layout->addSpacing(6);
 }
 

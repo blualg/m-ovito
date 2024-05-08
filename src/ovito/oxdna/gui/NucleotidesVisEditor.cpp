@@ -45,12 +45,12 @@ void NucleotidesVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
     layout->setColumnStretch(1, 1);
 
     // Particle radius.
-    FloatParameterUI* radiusUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticlesVis::defaultParticleRadius));
+    FloatParameterUI* radiusUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticlesVis::defaultParticleRadius));
     layout->addWidget(new QLabel(tr("Backbone centers radius:")), 0, 0);
     layout->addLayout(radiusUI->createFieldLayout(), 0, 1);
 
     // Cylinder radius.
-    FloatParameterUI* cylinderRadiusUI = new FloatParameterUI(this, PROPERTY_FIELD(NucleotidesVis::cylinderRadius));
+    FloatParameterUI* cylinderRadiusUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(NucleotidesVis::cylinderRadius));
     layout->addWidget(cylinderRadiusUI->label(), 1, 0);
     layout->addLayout(cylinderRadiusUI->createFieldLayout(), 1, 1);
 }

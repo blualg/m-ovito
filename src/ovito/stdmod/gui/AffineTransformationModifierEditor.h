@@ -33,8 +33,8 @@ namespace Ovito {
  */
 class AffineTransformationModifierEditor : public PropertiesEditor
 {
-    OVITO_CLASS(AffineTransformationModifierEditor)
     Q_OBJECT
+    OVITO_CLASS(AffineTransformationModifierEditor)
 
 public:
 
@@ -51,15 +51,6 @@ private Q_SLOTS:
     /// Is called when the spinner value has changed.
     void onSpinnerValueChanged();
 
-    /// Is called when the user begins dragging the spinner interactively.
-    void onSpinnerDragStart();
-
-    /// Is called when the user stops dragging the spinner interactively.
-    void onSpinnerDragStop();
-
-    /// Is called when the user aborts dragging the spinner interactively.
-    void onSpinnerDragAbort();
-
     /// This method updates the displayed matrix values.
     void updateUI();
 
@@ -71,11 +62,7 @@ private Q_SLOTS:
 
 private:
 
-    /// Takes the value entered by the user and stores it in transformation controller.
-    void updateParameterValue();
-
     SpinnerWidget* elementSpinners[3][4];
-    UndoableTransaction _undoTransaction;
 };
 
 }   // End of namespace

@@ -77,6 +77,14 @@ public:
 
 protected:
 
+    /// Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+
+    /// Loads the class' contents from the given stream.
+    virtual void loadFromStream(ObjectLoadStream& stream) override;
+
+private:
+
     /// Stores the unique numeric identifier of the type.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int, numericId, setNumericId);
 

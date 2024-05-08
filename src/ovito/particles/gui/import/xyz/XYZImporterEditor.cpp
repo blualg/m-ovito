@@ -154,15 +154,15 @@ void XYZImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
     layout->addWidget(optionsBox);
 
     // Multi-timestep file
-    _multitimestepUI = new BooleanParameterUI(this, PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
+    _multitimestepUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
     sublayout->addWidget(_multitimestepUI->checkBox());
 
     // Auto-rescale reduced coordinates.
-    BooleanParameterUI* rescaleReducedUI = new BooleanParameterUI(this, PROPERTY_FIELD(XYZImporter::autoRescaleCoordinates));
+    BooleanParameterUI* rescaleReducedUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(XYZImporter::autoRescaleCoordinates));
     sublayout->addWidget(rescaleReducedUI->checkBox());
 
     // Sort particles
-    BooleanParameterUI* sortParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::sortParticles));
+    BooleanParameterUI* sortParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::sortParticles));
     sublayout->addWidget(sortParticlesUI->checkBox());
 
     QGroupBox* columnMappingBox = new QGroupBox(tr("File columns"), rollout);

@@ -107,7 +107,7 @@ void LAMMPSDataImporterEditor::createUI(const RolloutInsertionParameters& rollou
     layout->addWidget(optionsBox);
 
     // Sort particles
-    BooleanParameterUI* sortParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::sortParticles));
+    BooleanParameterUI* sortParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::sortParticles));
     sublayout->addWidget(sortParticlesUI->checkBox());
 }
 

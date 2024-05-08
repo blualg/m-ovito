@@ -25,6 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/app/undo/UndoableOperation.h>
 
 namespace Ovito {
 
@@ -129,6 +130,12 @@ public:
     /// \sa unit()
     void setUnit(ParameterUnit* unit);
 
+    /// \brief Activates automatic undo handling for the spinner.
+    void enableAutomaticUndo(UserInterface& userInterface, const QString& undoOperationName) {
+        _userInterface = userInterface.shared_from_this();
+        _undoOperationName = undoOperationName;
+    }
+
     /// \brief Returns whether the user currently dragging the spinner and changing its value interactively.
     /// \return \c true if the spinner is currently being dragged.
     bool isDragging() const { return _upperBtnPressed && _lowerBtnPressed; }
@@ -142,16 +149,7 @@ public:
 Q_SIGNALS:
 
     /// \brief This signal is emitted by the spinner after its value has been changed by the user.
-    void spinnerValueChanged();
-
-    /// \brief This signal is emitted by the spinner when the user has started a drag operation.
-    void spinnerDragStart();
-
-    /// \brief This signal is emitted by the spinner when the user has finished the drag operation.
-    void spinnerDragStop();
-
-    /// \brief This signal is emitted by the spinner when the user has aborted the drag operation.
-    void spinnerDragAbort();
+    void valueChanged();
 
 public Q_SLOTS:
 
@@ -208,6 +206,15 @@ protected:
     /// Saves the last mouse position for dragging.
     int _lastMouseY;
 
+    /// Used to make parameter changes reversible while user is dragging the spinner.
+    UndoableTransaction _undoTransaction;
+
+    /// The abstract user interface that contains this spinner widget (typically a MainWindow).
+    std::shared_ptr<UserInterface> _userInterface;
+
+    /// If automatic undo handling is enabled, this string is used as the description of the undoable operation.
+    QString _undoOperationName;
+
 protected:
 
     virtual void paintEvent(QPaintEvent* event) override;
@@ -216,6 +223,18 @@ protected:
     virtual void mouseMoveEvent(QMouseEvent* event) override;
     virtual void changeEvent(QEvent* event) override;
     virtual void focusOutEvent(QFocusEvent* event) override;
+
+    /// Called after the spinner's value has been changed by the user.
+    void spinnerValueChanged();
+
+    /// Called when the user has started a drag operation.
+    void spinnerDragStart();
+
+    /// Called when the user has finished the drag operation.
+    void spinnerDragStop();
+
+    /// Called when the user has aborted the drag operation.
+    void spinnerDragAbort();
 };
 
 }   // End of namespace

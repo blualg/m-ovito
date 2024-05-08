@@ -57,12 +57,12 @@ void PolyhedralTemplateMatchingModifierEditor::createUI(const RolloutInsertionPa
     layout1->addWidget(paramsBox);
 
     // RMSD cutoff parameter.
-    FloatParameterUI* rmsdCutoffPUI = new FloatParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::rmsdCutoff));
+    FloatParameterUI* rmsdCutoffPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::rmsdCutoff));
     gridlayout->addWidget(rmsdCutoffPUI->label(), 0, 0);
     gridlayout->addLayout(rmsdCutoffPUI->createFieldLayout(), 0, 1);
 
     // Use only selected particles.
-    BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
+    BooleanParameterUI* onlySelectedParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
     gridlayout->addWidget(onlySelectedParticlesUI->checkBox(), 1, 0, 1, 2);
 
     QGroupBox* outputBox = new QGroupBox(tr("Output"), rollout);
@@ -73,31 +73,31 @@ void PolyhedralTemplateMatchingModifierEditor::createUI(const RolloutInsertionPa
     layout1->addWidget(outputBox);
 
     // Output controls.
-    BooleanParameterUI* outputRmsdUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputRmsd));
+    BooleanParameterUI* outputRmsdUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputRmsd));
     sublayout->addWidget(outputRmsdUI->checkBox(), 0, 0, 1, 2);
     outputRmsdUI->checkBox()->setText(tr("RMSD values"));
-    BooleanParameterUI* outputInteratomicDistanceUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputInteratomicDistance));
+    BooleanParameterUI* outputInteratomicDistanceUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputInteratomicDistance));
     sublayout->addWidget(outputInteratomicDistanceUI->checkBox(), 1, 0, 1, 2);
     outputInteratomicDistanceUI->checkBox()->setText(tr("Interatomic distances"));
 
-    BooleanParameterUI* outputOrderingTypesUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputOrderingTypes));
+    BooleanParameterUI* outputOrderingTypesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputOrderingTypes));
     sublayout->addWidget(outputOrderingTypesUI->checkBox(), 2, 0, 1, 2);
     outputOrderingTypesUI->checkBox()->setText(tr("Chemical ordering types"));
 
-    BooleanParameterUI* outputDeformationGradientUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputDeformationGradient));
+    BooleanParameterUI* outputDeformationGradientUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputDeformationGradient));
     sublayout->addWidget(outputDeformationGradientUI->checkBox(), 3, 0, 1, 2);
     outputDeformationGradientUI->checkBox()->setText(tr("Elastic deformation gradients"));
 
     // Lattice orientations
-    BooleanParameterUI* outputOrientationUI = new BooleanParameterUI(this, PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputOrientation));
+    BooleanParameterUI* outputOrientationUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(PolyhedralTemplateMatchingModifier::outputOrientation));
     sublayout->addWidget(outputOrientationUI->checkBox(), 4, 0, 1, 2);
     outputOrientationUI->checkBox()->setText(tr("Lattice orientations"));
 
     // Color by type
-    BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
+    BooleanParameterUI* colorByTypeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
     sublayout->addWidget(colorByTypeUI->checkBox(), 5, 0, 1, 2);
 
-    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
+    StructureListParameterUI* structureTypesPUI = createParamUI<StructureListParameterUI>(true);
     layout1->addSpacing(10);
     layout1->addWidget(structureTypesPUI->tableWidget());
     layout1->addWidget(structureTypesPUI->createNotesLabel());
@@ -120,7 +120,7 @@ void PolyhedralTemplateMatchingModifierEditor::createUI(const RolloutInsertionPa
 
     // Status label.
     layout1->addSpacing(10);
-    layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout1->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 }
 
 /******************************************************************************

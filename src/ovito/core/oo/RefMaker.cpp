@@ -62,7 +62,7 @@ QVariant RefMaker::getPropertyFieldValue(const PropertyFieldDescriptor* field) c
     OVITO_ASSERT_MSG(!field->isReferenceField(), "RefMaker::getPropertyFieldValue", "This function may be used only to access property fields and not reference fields.");
     OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::getPropertyFieldValue", "The property field has not been defined in this class or its base classes.");
     OVITO_ASSERT_MSG(field->_propertyStorageReadFunc != nullptr, "RefMaker::getPropertyFieldValue", "The property field is a runtime property field, which doesn't allow conversion to a QVariant value.");
-    return field->_propertyStorageReadFunc(const_cast<RefMaker*>(this));
+    return field->_propertyStorageReadFunc(const_cast<RefMaker*>(this), field);
 }
 
 /******************************************************************************
@@ -73,7 +73,7 @@ void RefMaker::setPropertyFieldValue(const PropertyFieldDescriptor* field, const
     OVITO_ASSERT_MSG(!field->isReferenceField(), "RefMaker::setPropertyFieldValue", "This function may be used only to access property fields and not reference fields.");
     OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::setPropertyFieldValue", "The property field has not been defined in this class or its base classes.");
     OVITO_ASSERT_MSG(field->_propertyStorageWriteFunc != nullptr, "RefMaker::getPropertyFieldValue", "The property field is a runtime property field, which doesn't allow assignment of a QVariant value.");
-    field->_propertyStorageWriteFunc(this, newValue);
+    field->_propertyStorageWriteFunc(this, field, newValue);
 }
 
 /******************************************************************************
@@ -86,7 +86,7 @@ void RefMaker::copyPropertyFieldValue(const PropertyFieldDescriptor* field, cons
     OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::copyPropertyFieldValue", "The property field has not been defined in this class or its base classes.");
     OVITO_ASSERT_MSG(other.getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::copyPropertyFieldValue", "The property field has not been defined in the source's class or its base classes.");
     OVITO_ASSERT(field->_propertyStorageCopyFunc != nullptr);
-    field->_propertyStorageCopyFunc(this, &other);
+    field->_propertyStorageCopyFunc(this, field, &other);
 }
 
 /******************************************************************************
@@ -98,7 +98,7 @@ RefTarget* RefMaker::getReferenceFieldTarget(const PropertyFieldDescriptor* fiel
     OVITO_ASSERT_MSG(field->isVector() == false, "RefMaker::getReferenceFieldTarget()", "This function may not be used to retrieve vector reference fields.");
     OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::getReferenceFieldTarget()", "The reference field has not been defined in this class or its base classes.");
     OVITO_ASSERT(field->_singleReferenceReadFunc != nullptr);
-    return field->_singleReferenceReadFunc(this);
+    return field->_singleReferenceReadFunc(this, field);
 }
 
 /******************************************************************************
@@ -110,7 +110,7 @@ void RefMaker::setReferenceFieldTarget(const PropertyFieldDescriptor* field, con
     OVITO_ASSERT_MSG(field->isVector() == false, "RefMaker::setReferenceFieldTarget()", "This function may not be used to set vector reference fields.");
     OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::setReferenceFieldTarget()", "The reference field has not been defined in this class or its base classes.");
     OVITO_ASSERT(field->_singleReferenceWriteFunc != nullptr);
-    field->_singleReferenceWriteFunc(this, target);
+    field->_singleReferenceWriteFunc(this, field, target);
 }
 
 /******************************************************************************
@@ -122,7 +122,7 @@ int RefMaker::getVectorReferenceFieldSize(const PropertyFieldDescriptor* field) 
     OVITO_ASSERT_MSG(field->isVector() == true, "RefMaker::getVectorReferenceFieldSize", "This function may not be used to retrieve single reference fields.");
     OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::getVectorReferenceFieldSize", "The reference field has not been defined in this class or its base classes.");
     OVITO_ASSERT(field->_vectorReferenceCountFunc != nullptr);
-    return field->_vectorReferenceCountFunc(this);
+    return field->_vectorReferenceCountFunc(this, field);
 }
 
 /******************************************************************************
@@ -134,7 +134,7 @@ RefTarget* RefMaker::getVectorReferenceFieldTarget(const PropertyFieldDescriptor
     OVITO_ASSERT_MSG(field->isVector() == true, "RefMaker::getVectorReferenceFieldTarget", "This function may not be used to retrieve single reference fields.");
     OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::getVectorReferenceFieldTarget", "The reference field has not been defined in this class or its base classes.");
     OVITO_ASSERT(field->_vectorReferenceGetFunc != nullptr);
-    return field->_vectorReferenceGetFunc(this, index);
+    return field->_vectorReferenceGetFunc(this, field, index);
 }
 
 /******************************************************************************
@@ -146,7 +146,7 @@ void RefMaker::setVectorReferenceFieldTarget(const PropertyFieldDescriptor* fiel
     OVITO_ASSERT_MSG(field->isVector() == true, "RefMaker::setVectorReferenceFieldTarget", "This function may not be used to retrieve single reference fields.");
     OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::setVectorReferenceFieldTarget", "The reference field has not been defined in this class or its base classes.");
     OVITO_ASSERT(field->_vectorReferenceSetFunc != nullptr);
-    field->_vectorReferenceSetFunc(this, index, target);
+    field->_vectorReferenceSetFunc(this, field, index, target);
 }
 
 /******************************************************************************
@@ -158,7 +158,7 @@ void RefMaker::removeVectorReferenceFieldTarget(const PropertyFieldDescriptor* f
     OVITO_ASSERT_MSG(field->isVector() == true, "RefMaker::removeVectorReferenceFieldTarget", "This function may not be used to retrieve single reference fields.");
     OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::removeVectorReferenceFieldTarget", "The reference field has not been defined in this class or its base classes.");
     OVITO_ASSERT(field->_vectorReferenceRemoveFunc != nullptr);
-    field->_vectorReferenceRemoveFunc(this, index);
+    field->_vectorReferenceRemoveFunc(this, field, index);
 }
 
 /******************************************************************************
@@ -219,10 +219,12 @@ bool RefMaker::referenceEvent(RefTarget* source, const ReferenceEvent& event)
         // message propagation enabled and some not.
         bool isSupressedField = false;
         for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
-            if(!field->isReferenceField()) continue;
-            if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES)) continue;
+            if(!field->isReferenceField())
+                continue;
+            if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES))
+                continue;
             if(!field->isVector()) {
-                if(field->_singleReferenceReadFunc(this) == source) {
+                if(getReferenceFieldTarget(field) == source) {
                     isSupressedField = true;
                     break;
                 }
@@ -239,9 +241,10 @@ bool RefMaker::referenceEvent(RefTarget* source, const ReferenceEvent& event)
         // Perform counter check and determine if message is comming from a reference field for which message propagation
         // is NOT explicitly disabled.
         for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
-            if(!field->isReferenceField()) continue;
+            if(!field->isReferenceField())
+                continue;
             if(!field->isVector()) {
-                if(field->_singleReferenceReadFunc(this) == source) {
+                if(getReferenceFieldTarget(field) == source) {
                     if(!field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES))
                         return true;
                 }
@@ -270,7 +273,7 @@ bool RefMaker::hasReferenceTo(const RefTarget* target) const
         if(!field->isReferenceField())
             continue;
         if(!field->isVector()) {
-            if(field->_singleReferenceReadFunc(this) == target)
+            if(getReferenceFieldTarget(field) == target)
                 return true;
         }
         else {
@@ -290,11 +293,13 @@ bool RefMaker::hasStrongReferenceTo(const RefTarget* target) const
     OVITO_ASSERT(target != nullptr);
 
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
-        if(!field->isReferenceField()) continue;
+        if(!field->isReferenceField())
+            continue;
         // Skip weak references for which event propagation is disabled.
-        if(field->isWeakReference() && field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES)) continue;
+        if(field->isWeakReference() && field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES))
+            continue;
         if(!field->isVector()) {
-            if(field->_singleReferenceReadFunc(this) == target)
+            if(getReferenceFieldTarget(field) == target)
                 return true;
         }
         else {
@@ -311,7 +316,8 @@ bool RefMaker::hasStrongReferenceTo(const RefTarget* target) const
 ******************************************************************************/
 void RefMaker::replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* newTarget)
 {
-    if(!oldTarget) return;
+    if(!oldTarget)
+        return;
     OVITO_CHECK_OBJECT_POINTER(oldTarget);
 
     // Iterate over all reference fields in the class hierarchy.
@@ -320,10 +326,12 @@ void RefMaker::replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* 
 #endif
     const OvitoClass& oldTargetClass = oldTarget->getOOClass();
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
-        if(!field->isReferenceField()) continue;
-        if(!oldTargetClass.isDerivedFrom(*field->targetClass())) continue;
+        if(!field->isReferenceField())
+            continue;
+        if(!oldTargetClass.isDerivedFrom(*field->targetClass()))
+            continue;
         if(!field->isVector()) {
-            if(field->_singleReferenceReadFunc(this) == oldTarget) {
+            if(getReferenceFieldTarget(field) == oldTarget) {
                 setReferenceFieldTarget(field, newTarget);
 #ifdef OVITO_DEBUG
                 hasBeenReplaced = true;
@@ -361,7 +369,7 @@ void RefMaker::clearReferencesTo(const RefTarget* target)
         if(!field->isReferenceField())
             continue;
         if(!field->isVector()) {
-            if(field->_singleReferenceReadFunc(this) == target)
+            if(getReferenceFieldTarget(field) == target)
                 setReferenceFieldTarget(field, nullptr);
         }
         else {
@@ -427,7 +435,7 @@ void RefMaker::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
                 stream.beginChunk(0x02);
                 try {
                     if(!field->isVector()) {
-                        stream.saveObject(field->_singleReferenceReadFunc(this), excludeRecomputableData || field->dontSaveRecomputableData());
+                        stream.saveObject(getReferenceFieldTarget(field), excludeRecomputableData || field->dontSaveRecomputableData());
                     }
                     else {
                         qint32 count = getVectorReferenceFieldSize(field);
@@ -451,9 +459,9 @@ void RefMaker::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
             // Write the primitive value stored in the property field to the stream.
             if(field->_propertyStorageSaveFunc != nullptr) {
                 stream.beginChunk(0x04);
-                field->_propertyStorageSaveFunc(this, stream);
+                field->_propertyStorageSaveFunc(this, field, stream);
 #if 0
-                qDebug() << "  Property field" << field->identifier() << " contains" << field->propertyStorageReadFunc(this);
+                qDebug() << "  Property field" << field->identifier() << " contains" << field->propertyStorageReadFunc(this, field);
 #endif
             }
             else {
@@ -503,15 +511,15 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
                         OORef<RefTarget> target = stream.loadObject<RefTarget>();
                         if(target && !target->getOOClass().isDerivedFrom(*fieldEntry.targetClass)) {
                             throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
-                                .arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name()).arg(fieldEntry.targetClass->name()).arg(target->getOOClass().name()));
+                                .arg(QString::fromUtf8(fieldEntry.identifier)).arg(fieldEntry.definingClass->name()).arg(fieldEntry.targetClass->name()).arg(target->getOOClass().name()));
                         }
 #if 0
                         qDebug() << "  Reference field" << fieldEntry.identifier << " contains" << target;
 #endif
                         if(!fieldEntry.field->isWeakReference())
-                            fieldEntry.field->_singleReferenceWriteFuncRef(this, std::move(target));
+                            fieldEntry.field->_singleReferenceWriteFuncRef(this, fieldEntry.field, std::move(target));
                         else
-                            fieldEntry.field->_singleReferenceWriteFunc(this, target.get());
+                            fieldEntry.field->_singleReferenceWriteFunc(this, fieldEntry.field, target.get());
                     }
                     else {
                         // Remove any prexisting targets from the reference field.
@@ -525,12 +533,12 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
                             OORef<RefTarget> target = stream.loadObject<RefTarget>();
                             if(target && !target->getOOClass().isDerivedFrom(*fieldEntry.targetClass)) {
                                 throw Exception(tr("Incompatible object stored in reference field %1 of class %2. Expected class %3 but found class %4 in file.")
-                                    .arg(QString(fieldEntry.identifier)).arg(fieldEntry.definingClass->name(), fieldEntry.targetClass->name(), target->getOOClass().name()));
+                                    .arg(QString::fromUtf8(fieldEntry.identifier)).arg(fieldEntry.definingClass->name(), fieldEntry.targetClass->name(), target->getOOClass().name()));
                             }
 #if 0
                             qDebug() << "  Vector reference field" << fieldEntry.identifier << " contains" << target;
 #endif
-                            fieldEntry.field->_vectorReferenceInsertFunc(this, i, std::move(target));
+                            fieldEntry.field->_vectorReferenceInsertFunc(this, fieldEntry.field, i, std::move(target));
                         }
                     }
                 }
@@ -566,7 +574,7 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
             if(chunkId == 0x04) {
                 if(!loadPropertyFieldFromStream(stream, fieldEntry)) {
                     if(fieldEntry.field && fieldEntry.field->_propertyStorageLoadFunc != nullptr) {
-                        fieldEntry.field->_propertyStorageLoadFunc(this, stream);
+                        fieldEntry.field->_propertyStorageLoadFunc(this, fieldEntry.field, stream);
                     }
                     else {
                         // The property field no longer exists.
@@ -608,7 +616,7 @@ void RefMaker::walkNode(QSet<RefTarget*>& nodes, const RefMaker* node)
     for(const PropertyFieldDescriptor* field : node->getOOMetaClass().propertyFields()) {
         if(!field->isReferenceField()) continue;
         if(!field->isVector()) {
-            RefTarget* target = field->_singleReferenceReadFunc(node);
+            RefTarget* target = node->getReferenceFieldTarget(field);
             if(target != nullptr && !nodes.contains(target)) {
                 nodes.insert(target);
                 walkNode(nodes, target);
@@ -645,7 +653,7 @@ void RefMaker::initializeParametersToUserDefaultsNonrecursive()
             else if(!field->isVector()) {
 #ifndef OVITO_DISABLE_QSETTINGS
                 // If it's a controller type, load default controller value.
-                if(Controller* ctrl = dynamic_object_cast<Controller>(field->_singleReferenceReadFunc(this))) {
+                if(Controller* ctrl = dynamic_object_cast<Controller>(getReferenceFieldTarget(field))) {
                     QSettings settings;
                     settings.beginGroup(getOOClass().plugin()->pluginId());
                     settings.beginGroup(getOOClass().name());
@@ -679,7 +687,7 @@ void RefMaker::initializeParametersToUserDefaultsRecursive()
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
         if(field->isReferenceField()) {
             if(!field->isVector()) {
-                if(RefTarget* target = field->_singleReferenceReadFunc(this))
+                if(RefTarget* target = getReferenceFieldTarget(field))
                     target->initializeParametersToUserDefaultsRecursive();
             }
             else {
@@ -705,7 +713,7 @@ void RefMaker::freezeInitialParameterValues(std::initializer_list<const Property
         OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::freezeInitialParameterValues", "The shadow property field has not been defined in this class or its base classes.");
         OVITO_ASSERT_MSG(field->_propertyStorageTakeSnapshotFunc != nullptr, "RefMaker::freezeInitialParameterValues", "The property field is not a shadow property field.");
 
-        field->_propertyStorageTakeSnapshotFunc(this);
+        field->_propertyStorageTakeSnapshotFunc(this, field);
     }
 }
 
@@ -720,7 +728,7 @@ void RefMaker::copyInitialParametersToObject(RefMaker* obj) const
 
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
         if(field->_propertyStorageRestoreSnapshotFunc)
-            field->_propertyStorageRestoreSnapshotFunc(this, obj);
+            field->_propertyStorageRestoreSnapshotFunc(this, field, obj);
     }
 }
 

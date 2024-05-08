@@ -43,7 +43,7 @@ void POSCARExporterEditor::createUI(const RolloutInsertionParameters& rolloutPar
     layout->setContentsMargins(6,6,6,6);
     layout->setSpacing(4);
 
-    BooleanParameterUI* reducedCoordsUI = new BooleanParameterUI(this, PROPERTY_FIELD(POSCARExporter::writeReducedCoordinates));
+    BooleanParameterUI* reducedCoordsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(POSCARExporter::writeReducedCoordinates));
     layout->addWidget(reducedCoordsUI->checkBox());
 }
 

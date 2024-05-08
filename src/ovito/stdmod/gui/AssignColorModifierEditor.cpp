@@ -47,17 +47,17 @@ void AssignColorModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout->setColumnStretch(1, 1);
 
     // Operate on.
-    ModifierDelegateParameterUI* delegateUI = new ModifierDelegateParameterUI(this, AssignColorModifierDelegate::OOClass());
+    ModifierDelegateParameterUI* delegateUI = createParamUI<ModifierDelegateParameterUI>(AssignColorModifierDelegate::OOClass());
     layout->addWidget(new QLabel(tr("Operate on:")), 0, 0);
     layout->addWidget(delegateUI->comboBox(), 0, 1);
 
     // Color parameter.
-    ColorParameterUI* constColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(AssignColorModifier::colorController));
+    ColorParameterUI* constColorPUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(AssignColorModifier::colorController));
     layout->addWidget(constColorPUI->label(), 1, 0);
     layout->addWidget(constColorPUI->colorPicker(), 1, 1);
 
     // Keep selection parameter.
-    BooleanParameterUI* keepSelectionPUI = new BooleanParameterUI(this, PROPERTY_FIELD(AssignColorModifier::keepSelection));
+    BooleanParameterUI* keepSelectionPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AssignColorModifier::keepSelection));
     layout->addWidget(keepSelectionPUI->checkBox(), 2, 0, 1, 2);
 }
 

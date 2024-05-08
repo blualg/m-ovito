@@ -38,19 +38,19 @@ class OVITO_CORE_EXPORT ViewportOverlay : public ActiveObject
 
 protected:
 
-    /// \brief Constructor.
+    /// Constructor.
     explicit ViewportOverlay(ObjectInitializationFlags flags);
 
 public:
 
-    /// \brief This virtual method gets called when the overlay is being newly attached to a viewport.
-    virtual void initializeOverlay(Viewport* viewport) {}
+    /// This virtual method gets called when the overlay is being newly attached to a viewport.
+    virtual void initializeOverlay(Viewport* viewport);
 
-    /// \brief This method asks the overlay to paint its contents over the rendered image.
+    /// This method asks the overlay to paint its contents over the rendered image.
     virtual void render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene) = 0;
 
-    /// \brief Moves the position of the layer in the viewport by the given amount,
-    ///        which is specified as a fraction of the viewport render size.
+    /// Moves the position of the layer in the viewport by the given amount,
+    /// which is specified as a fraction of the viewport render size.
     ///
     /// Layer implementations should override this method if they support positioning.
     /// The default method implementation does nothing.
@@ -60,7 +60,17 @@ public:
     void checkAlignmentParameterValue(int alignment) const;
 
     /// Informs the overlay that a new scene node has been inserted into the scene.
-    virtual void sceneNodeAdded(SceneNode* node) {}
+    virtual void sceneNodeAdded(SceneNode* node);
+
+protected:
+
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
+
+private:
+
+    /// The pipeline generating the data that is being used by the overlay (optional).
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Pipeline*, pipeline, setPipeline, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 };
 
 }   // End of namespace

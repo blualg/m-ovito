@@ -55,7 +55,7 @@ void AtomicStrainModifierEditor::createUI(const RolloutInsertionParameters& roll
     gridlayout->setColumnStretch(1, 1);
 
     // Cutoff parameter.
-    FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(AtomicStrainModifier::cutoff));
+    FloatParameterUI* cutoffRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::cutoff));
     gridlayout->addWidget(cutoffRadiusPUI->label(), 0, 0);
     gridlayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 0, 1);
 
@@ -68,30 +68,30 @@ void AtomicStrainModifierEditor::createUI(const RolloutInsertionParameters& roll
     sublayout->setContentsMargins(4,4,4,4);
     sublayout->setSpacing(4);
 
-    IntegerRadioButtonParameterUI* affineMappingUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::affineMapping));
+    IntegerRadioButtonParameterUI* affineMappingUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(ReferenceConfigurationModifier::affineMapping));
     sublayout->addWidget(affineMappingUI->addRadioButton(ReferenceConfigurationModifier::NO_MAPPING, tr("Off")), 0, 0);
     sublayout->addWidget(affineMappingUI->addRadioButton(ReferenceConfigurationModifier::TO_REFERENCE_CELL, tr("To reference")), 0, 1);
     sublayout->addWidget(affineMappingUI->addRadioButton(ReferenceConfigurationModifier::TO_CURRENT_CELL, tr("To current")), 1, 1);
 
-    BooleanParameterUI* useMinimumImageConventionUI = new BooleanParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::useMinimumImageConvention));
+    BooleanParameterUI* useMinimumImageConventionUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ReferenceConfigurationModifier::useMinimumImageConvention));
     layout->addWidget(useMinimumImageConventionUI->checkBox());
 
-    BooleanParameterUI* calculateDeformationGradientsUI = new BooleanParameterUI(this, PROPERTY_FIELD(AtomicStrainModifier::calculateDeformationGradients));
+    BooleanParameterUI* calculateDeformationGradientsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::calculateDeformationGradients));
     layout->addWidget(calculateDeformationGradientsUI->checkBox());
 
-    BooleanParameterUI* calculateStrainTensorsUI = new BooleanParameterUI(this, PROPERTY_FIELD(AtomicStrainModifier::calculateStrainTensors));
+    BooleanParameterUI* calculateStrainTensorsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::calculateStrainTensors));
     layout->addWidget(calculateStrainTensorsUI->checkBox());
 
-    BooleanParameterUI* calculateNonaffineSquaredDisplacementsUI = new BooleanParameterUI(this, PROPERTY_FIELD(AtomicStrainModifier::calculateNonaffineSquaredDisplacements));
+    BooleanParameterUI* calculateNonaffineSquaredDisplacementsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::calculateNonaffineSquaredDisplacements));
     layout->addWidget(calculateNonaffineSquaredDisplacementsUI->checkBox());
 
-    BooleanParameterUI* calculateRotationsUI = new BooleanParameterUI(this, PROPERTY_FIELD(AtomicStrainModifier::calculateRotations));
+    BooleanParameterUI* calculateRotationsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::calculateRotations));
     layout->addWidget(calculateRotationsUI->checkBox());
 
-    BooleanParameterUI* calculateStretchTensorsUI = new BooleanParameterUI(this, PROPERTY_FIELD(AtomicStrainModifier::calculateStretchTensors));
+    BooleanParameterUI* calculateStretchTensorsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::calculateStretchTensors));
     layout->addWidget(calculateStretchTensorsUI->checkBox());
 
-    BooleanParameterUI* selectInvalidParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(AtomicStrainModifier::selectInvalidParticles));
+    BooleanParameterUI* selectInvalidParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::selectInvalidParticles));
     layout->addWidget(selectInvalidParticlesUI->checkBox());
 
     QGroupBox* referenceFrameGroupBox = new QGroupBox(tr("Reference frame"));
@@ -104,11 +104,11 @@ void AtomicStrainModifierEditor::createUI(const RolloutInsertionParameters& roll
     sublayout->setColumnStretch(2, 95);
 
     // Add box for selection between absolute and relative reference frames.
-    BooleanRadioButtonParameterUI* useFrameOffsetUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::useReferenceFrameOffset));
+    BooleanRadioButtonParameterUI* useFrameOffsetUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(ReferenceConfigurationModifier::useReferenceFrameOffset));
     useFrameOffsetUI->buttonFalse()->setText(tr("Constant reference configuration"));
     sublayout->addWidget(useFrameOffsetUI->buttonFalse(), 0, 0, 1, 3);
 
-    IntegerParameterUI* frameNumberUI = new IntegerParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::referenceFrameNumber));
+    IntegerParameterUI* frameNumberUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ReferenceConfigurationModifier::referenceFrameNumber));
     frameNumberUI->label()->setText(tr("Frame number:"));
     sublayout->addWidget(frameNumberUI->label(), 1, 1, 1, 1);
     sublayout->addLayout(frameNumberUI->createFieldLayout(), 1, 2, 1, 1);
@@ -117,7 +117,7 @@ void AtomicStrainModifierEditor::createUI(const RolloutInsertionParameters& roll
 
     useFrameOffsetUI->buttonTrue()->setText(tr("Relative to current frame"));
     sublayout->addWidget(useFrameOffsetUI->buttonTrue(), 2, 0, 1, 3);
-    IntegerParameterUI* frameOffsetUI = new IntegerParameterUI(this, PROPERTY_FIELD(ReferenceConfigurationModifier::referenceFrameOffset));
+    IntegerParameterUI* frameOffsetUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ReferenceConfigurationModifier::referenceFrameOffset));
     frameOffsetUI->label()->setText(tr("Frame offset:"));
     sublayout->addWidget(frameOffsetUI->label(), 3, 1, 1, 1);
     sublayout->addLayout(frameOffsetUI->createFieldLayout(), 3, 2, 1, 1);
@@ -142,10 +142,10 @@ void AtomicStrainModifierEditor::createUI(const RolloutInsertionParameters& roll
 
     // Status label.
     layout->addSpacing(6);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Open a sub-editor for the reference object.
-    new SubObjectParameterUI(this, PROPERTY_FIELD(AtomicStrainModifier::referenceConfiguration), RolloutInsertionParameters().setTitle(tr("Reference: %1")));
+    createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::referenceConfiguration), RolloutInsertionParameters().setTitle(tr("Reference: %1")));
 
     connect(this, &PropertiesEditor::contentsChanged, this, &AtomicStrainModifierEditor::onContentsChanged);
 }

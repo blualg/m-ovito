@@ -46,15 +46,15 @@ void IdentifyDiamondModifierEditor::createUI(const RolloutInsertionParameters& r
     layout1->setSpacing(6);
 
     // Use only selected particles.
-    BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
+    BooleanParameterUI* onlySelectedParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
     layout1->addWidget(onlySelectedParticlesUI->checkBox());
 
     // Color by type
-    BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
+    BooleanParameterUI* colorByTypeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
     layout1->addWidget(colorByTypeUI->checkBox());
 
     // Status label.
-    layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout1->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this);
     layout1->addSpacing(10);

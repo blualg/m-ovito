@@ -44,11 +44,11 @@ void DeleteSelectedModifierEditor::createUI(const RolloutInsertionParameters& ro
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(8);
 
-    ModifierDelegateFixedListParameterUI* delegatesPUI = new ModifierDelegateFixedListParameterUI(this, rolloutParams.after(rollout));
+    ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>(rolloutParams.after(rollout));
     layout->addWidget(delegatesPUI->listWidget());
 
     // Status label.
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 }
 
 }   // End of namespace

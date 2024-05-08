@@ -58,12 +58,9 @@ void PropertiesPanel::setEditObject(RefTarget* newEditObject, OORef<PropertiesEd
             && editor()->editObject()->getOOClass() == newEditObject->getOOClass()
             && !newEditor) {
 
-            try {
+            editor()->handleExceptions([&]() {
                 editor()->setEditObject(newEditObject);
-            }
-            catch(const Exception& ex) {
-                mainWindow().reportError(ex, this);
-            }
+            });
             return;
         }
         else {
@@ -74,17 +71,15 @@ void PropertiesPanel::setEditObject(RefTarget* newEditObject, OORef<PropertiesEd
 
     if(newEditObject) {
         // Open new properties editor.
-        try {
+        if(!mainWindow().handleExceptions([&]() {
             _editor = newEditor ? std::move(newEditor) : PropertiesEditor::create(mainWindow(), newEditObject);
             if(editor()) {
                 if(!editor()->container())
                     editor()->initialize(this, RolloutInsertionParameters(), nullptr);
                 editor()->setEditObject(newEditObject);
             }
-        }
-        catch(const Exception& ex) {
+        })) {
             _editor.reset();
-            mainWindow().reportError(ex, this);
         }
     }
 }

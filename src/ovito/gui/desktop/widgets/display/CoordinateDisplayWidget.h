@@ -85,21 +85,10 @@ protected Q_SLOT:
     /// Is called when a spinner value has been changed by the user.
     void onSpinnerValueChanged();
 
-    /// Is called when the user has started a spinner drag operation.
-    void onSpinnerDragStart();
-
-    /// Is called when the user has finished the spinner drag operation.
-    void onSpinnerDragStop();
-
-    /// Is called when the user has aborted the spinner drag operation.
-    void onSpinnerDragAbort();
-
 private:
 
     MainWindow& _mainWindow;
     SpinnerWidget* _spinners[3];
-    QString _undoOperationName;
-    UndoableTransaction _undoTransaction;
 };
 
 }   // End of namespace

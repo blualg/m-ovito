@@ -56,7 +56,7 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
     layout->addWidget(structureBox);
     QVBoxLayout* sublayout1 = new QVBoxLayout(structureBox);
     sublayout1->setContentsMargins(4,4,4,4);
-    VariantComboBoxParameterUI* crystalStructureUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::inputCrystalStructure));
+    VariantComboBoxParameterUI* crystalStructureUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::inputCrystalStructure));
     crystalStructureUI->comboBox()->addItem(tr("Face-centered cubic (FCC)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_FCC));
     crystalStructureUI->comboBox()->addItem(tr("Hexagonal close-packed (HCP)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_HCP));
     crystalStructureUI->comboBox()->addItem(tr("Body-centered cubic (BCC)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_BCC));
@@ -71,11 +71,11 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
     sublayout->setSpacing(4);
     sublayout->setColumnStretch(1, 1);
 
-    IntegerParameterUI* maxTrialCircuitSizeUI = new IntegerParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::maxTrialCircuitSize));
+    IntegerParameterUI* maxTrialCircuitSizeUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::maxTrialCircuitSize));
     sublayout->addWidget(maxTrialCircuitSizeUI->label(), 0, 0);
     sublayout->addLayout(maxTrialCircuitSizeUI->createFieldLayout(), 0, 1);
 
-    IntegerParameterUI* circuitStretchabilityUI = new IntegerParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::circuitStretchability));
+    IntegerParameterUI* circuitStretchabilityUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::circuitStretchability));
     sublayout->addWidget(circuitStretchabilityUI->label(), 1, 0);
     sublayout->addLayout(circuitStretchabilityUI->createFieldLayout(), 1, 1);
 
@@ -87,29 +87,29 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
     sublayout->setColumnStretch(0, 1);
 
     // Color by type
-    BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
+    BooleanParameterUI* colorByTypeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
     sublayout->addWidget(colorByTypeUI->checkBox(), 0, 0);
 
-    BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
+    BooleanParameterUI* onlySelectedParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
     sublayout->addWidget(onlySelectedParticlesUI->checkBox(), 1, 0);
 
-    BooleanParameterUI* outputInterfaceMeshUI = new BooleanParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::outputInterfaceMesh));
+    BooleanParameterUI* outputInterfaceMeshUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::outputInterfaceMesh));
     sublayout->addWidget(outputInterfaceMeshUI->checkBox(), 2, 0);
 
-    BooleanParameterUI* onlyPerfectDislocationsUI = new BooleanParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::onlyPerfectDislocations));
+    BooleanParameterUI* onlyPerfectDislocationsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::onlyPerfectDislocations));
     sublayout->addWidget(onlyPerfectDislocationsUI->checkBox(), 3, 0);
 
     // Status label.
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Structure list.
-    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this);
+    StructureListParameterUI* structureTypesPUI = createParamUI<StructureListParameterUI>();
     layout->addSpacing(10);
     layout->addWidget(new QLabel(tr("Structure analysis results:")));
     layout->addWidget(structureTypesPUI->tableWidget());
 
     // Burgers vector list.
-    DislocationTypeListParameterUI* burgersFamilyListUI = new DislocationTypeListParameterUI(this);
+    DislocationTypeListParameterUI* burgersFamilyListUI = createParamUI<DislocationTypeListParameterUI>();
     layout->addSpacing(10);
     layout->addWidget(new QLabel(tr("Dislocation analysis results:")));
     layout->addWidget(burgersFamilyListUI->tableWidget());
@@ -124,25 +124,25 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
     layout = new QVBoxLayout(rollout);
     layout->setContentsMargins(4,4,4,4);
 
-    BooleanGroupBoxParameterUI* lineSmoothingEnabledUI = new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::lineSmoothingEnabled));
+    BooleanGroupBoxParameterUI* lineSmoothingEnabledUI = createParamUI<BooleanGroupBoxParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::lineSmoothingEnabled));
     lineSmoothingEnabledUI->groupBox()->setTitle(tr("Line smoothing"));
     sublayout = new QGridLayout(lineSmoothingEnabledUI->childContainer());
     sublayout->setContentsMargins(4,4,4,4);
     sublayout->setColumnStretch(1, 1);
     layout->addWidget(lineSmoothingEnabledUI->groupBox());
 
-    IntegerParameterUI* lineSmoothingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::lineSmoothingLevel));
+    IntegerParameterUI* lineSmoothingLevelUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::lineSmoothingLevel));
     sublayout->addWidget(lineSmoothingLevelUI->label(), 0, 0);
     sublayout->addLayout(lineSmoothingLevelUI->createFieldLayout(), 0, 1);
 
-    BooleanGroupBoxParameterUI* lineCoarseningEnabledUI = new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::lineCoarseningEnabled));
+    BooleanGroupBoxParameterUI* lineCoarseningEnabledUI = createParamUI<BooleanGroupBoxParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::lineCoarseningEnabled));
     lineCoarseningEnabledUI->groupBox()->setTitle(tr("Line coarsening"));
     sublayout = new QGridLayout(lineCoarseningEnabledUI->childContainer());
     sublayout->setContentsMargins(4,4,4,4);
     sublayout->setColumnStretch(1, 1);
     layout->addWidget(lineCoarseningEnabledUI->groupBox());
 
-    FloatParameterUI* linePointIntervalUI = new FloatParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::linePointInterval));
+    FloatParameterUI* linePointIntervalUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::linePointInterval));
     sublayout->addWidget(linePointIntervalUI->label(), 0, 0);
     sublayout->addLayout(linePointIntervalUI->createFieldLayout(), 0, 1);
 
@@ -154,7 +154,7 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
     gridlayout->setSpacing(6);
     gridlayout->setColumnStretch(1, 1);
 
-    IntegerParameterUI* defectMeshSmoothingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(DislocationAnalysisModifier::defectMeshSmoothingLevel));
+    IntegerParameterUI* defectMeshSmoothingLevelUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::defectMeshSmoothingLevel));
     gridlayout->addWidget(defectMeshSmoothingLevelUI->label(), 0, 0);
     gridlayout->addLayout(defectMeshSmoothingLevelUI->createFieldLayout(), 0, 1);
 }

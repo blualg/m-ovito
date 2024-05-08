@@ -284,7 +284,6 @@ bool RefTargetListParameterUI::referenceEvent(RefTarget* source, const Reference
         }
         else if(event.type() == ReferenceEvent::ReferenceRemoved) {
             const ReferenceFieldEvent& refevent = static_cast<const ReferenceFieldEvent&>(event);
-            OVITO_ASSERT(false);
             if(refevent.field() == referenceField()) {
                 int rowIndex = _targetToRow[refevent.index()];
                 if(refevent.oldTarget())

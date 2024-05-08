@@ -24,7 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include "ParameterUI.h"
+#include "PropertyParameterUI.h"
 
 namespace Ovito {
 
@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT FilenameParameterUI : public PropertyParameterUI
 public:
 
     /// Constructor.
-    FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QStringList& fileFilter, bool existingFile);
 
     /// Destructor.
     virtual ~FilenameParameterUI();
@@ -66,15 +66,21 @@ public:
 
     Q_PROPERTY(QPushButton selectorWidget READ selectorWidget)
 
-Q_SIGNALS:
+private Q_SLOTS:
 
-    /// This signal is emitted when the file selector should be shown to let the user select a new file.
-    void showSelectionDialog();
+    /// Is called when the user presses the button.
+    void onPickFilename();
 
 protected:
 
     /// The selector control.
     QPointer<QPushButton> _selectorButton;
+
+    /// List of file type filters.
+    QStringList _fileFilter;
+
+    /// Flag indicating whether the selected file must already exist.
+    bool _existingFile;
 };
 
 }   // End of namespace

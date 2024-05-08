@@ -25,7 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/ColorPickerWidget.h>
-#include "ParameterUI.h"
+#include "PropertyParameterUI.h"
 
 namespace Ovito {
 
@@ -35,6 +35,7 @@ namespace Ovito {
 class OVITO_GUI_EXPORT ColorParameterUI : public PropertyParameterUI
 {
     OVITO_CLASS(ColorParameterUI)
+    Q_OBJECT
 
 public:
 

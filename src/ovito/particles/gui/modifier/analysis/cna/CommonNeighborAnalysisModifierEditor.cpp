@@ -48,7 +48,7 @@ void CommonNeighborAnalysisModifierEditor::createUI(const RolloutInsertionParame
     layout1->setContentsMargins(4,4,4,4);
     layout1->setSpacing(6);
 
-    IntegerRadioButtonParameterUI* modeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(CommonNeighborAnalysisModifier::mode));
+    IntegerRadioButtonParameterUI* modeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(CommonNeighborAnalysisModifier::mode));
     QRadioButton* bondModeBtn = modeUI->addRadioButton(CommonNeighborAnalysisModifier::BondMode, tr("Bond-based CNA (without cutoff)"));
     QRadioButton* adaptiveModeBtn = modeUI->addRadioButton(CommonNeighborAnalysisModifier::AdaptiveCutoffMode, tr("Adaptive CNA (variable cutoff)"));
     QRadioButton* intervalModeBtn = modeUI->addRadioButton(CommonNeighborAnalysisModifier::IntervalCutoffMode, tr("Interval CNA (variable cutoff)"));
@@ -64,7 +64,7 @@ void CommonNeighborAnalysisModifierEditor::createUI(const RolloutInsertionParame
     gridlayout->setColumnMinimumWidth(0, 20);
 
     // Cutoff parameter.
-    FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(CommonNeighborAnalysisModifier::cutoff));
+    FloatParameterUI* cutoffRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(CommonNeighborAnalysisModifier::cutoff));
     gridlayout->addWidget(cutoffRadiusPUI->label(), 0, 1);
     gridlayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 0, 2);
 
@@ -78,18 +78,18 @@ void CommonNeighborAnalysisModifierEditor::createUI(const RolloutInsertionParame
     cutoffPresetsPUI->setEnabled(false);
 
     // Use only selected particles.
-    BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
+    BooleanParameterUI* onlySelectedParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
     layout1->addWidget(onlySelectedParticlesUI->checkBox());
 
     // Color by type
-    BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
+    BooleanParameterUI* colorByTypeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
     layout1->addWidget(colorByTypeUI->checkBox());
 
     // Status label.
     layout1->addSpacing(10);
-    layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout1->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
-    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
+    StructureListParameterUI* structureTypesPUI = createParamUI<StructureListParameterUI>(true);
     layout1->addSpacing(10);
     layout1->addWidget(new QLabel(tr("Structure types:")));
     layout1->addWidget(structureTypesPUI->tableWidget());

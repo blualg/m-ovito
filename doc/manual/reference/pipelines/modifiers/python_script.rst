@@ -115,8 +115,8 @@ Note that, in your Python program using the OVITO Python module, you need to imp
 extension module in order to insert it into a :py:class:`~ovito.pipeline.Pipeline`. The extension class will not appear as part of the :py:mod:`ovito.modifiers`
 module, which only contains OVITO's standard modifier classes.
 
-Making modifier functions locally available (deprecated method)
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Making modifier functions locally available (deprecated)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 Another option is to simply save the Python code containing your ``modify()`` function as a :file:`.py` source file in one of the following paths on your computer.
 OVITO Pro automatically scans these directories at program startup and displays all :file:`*.py` scripts it finds in the list of available modifiers:

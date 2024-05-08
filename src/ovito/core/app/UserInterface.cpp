@@ -50,11 +50,11 @@ void UserInterface::exitWithFatalError(const Exception& ex)
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
     // Avoid reentrance.
-    if(_exitingWithFatalError)
+    if(_exitingDueToFatalError)
         return;
 
     // Set flag.
-    _exitingWithFatalError = true;
+    _exitingDueToFatalError = true;
 
     // Display fatal error message to the user.
     reportError(ex, true);

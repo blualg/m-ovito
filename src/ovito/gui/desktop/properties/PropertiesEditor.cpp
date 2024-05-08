@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/data/DataVis.h>
+#include <ovito/core/viewport/overlays/ViewportOverlay.h>
 
 namespace Ovito {
 
@@ -185,6 +186,11 @@ bool PropertiesEditor::referenceEvent(RefTarget* source, const ReferenceEvent& e
     if(source == editObject()) {
         if(event.type() == ReferenceEvent::TargetChanged) {
             Q_EMIT contentsChanged(source);
+
+            // If it's a ViewportOverlay being edited and its selected pipeline has changed, emit a signal.
+            if(static_cast<const TargetChangedEvent&>(event).field() == PROPERTY_FIELD(ViewportOverlay::pipeline)) {
+                emitPipelineInputChangedSignal(this);
+            }
         }
         else if(event.type() == ReferenceEvent::PipelineCacheUpdated) {
             emitPipelineOutputChangedSignal(this);
@@ -210,8 +216,10 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor* field, R
         if(newTarget) {
             newTarget->editingStarted(mainWindow());
         }
-        emitPipelineInputChangedSignal(this);
-        emitPipelineOutputChangedSignal(this);
+        if(!isBeingDeleted()) {
+            emitPipelineInputChangedSignal(this);
+            emitPipelineOutputChangedSignal(this);
+        }
     }
     RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -235,7 +243,7 @@ PipelineFlowState PropertiesEditor::getPipelineInput() const
         return modNode->getCachedPipelineNodeInput(currentAnimationTime());
     }
 
-    // When editing a DataVis element, request pipeline state from the selected scene node.
+    // When editing a DataVis element, request pipeline state from the selected pipeline.
     if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
         if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet()) {
             if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(selection->firstNode())) {
@@ -243,6 +251,13 @@ PipelineFlowState PropertiesEditor::getPipelineInput() const
                 OVITO_ASSERT(pipeline->visElements().contains(vis));
                 return pipeline->getCachedPipelineOutput(currentAnimationTime());
             }
+        }
+    }
+
+    // When editing a ViewportOverlay, request state from the associated pipeline.
+    if(ViewportOverlay* overlay = dynamic_object_cast<ViewportOverlay>(editObject())) {
+        if(overlay->pipeline()) {
+            return overlay->pipeline()->getCachedPipelineOutput(currentAnimationTime());
         }
     }
 
@@ -275,6 +290,13 @@ std::vector<PipelineFlowState> PropertiesEditor::getPipelineInputs() const
     if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
         for(Pipeline* pipeline : vis->pipelines(true)) {
             inputStates.push_back(pipeline->getCachedPipelineOutput(currentAnimationTime()));
+        }
+    }
+
+    // When editing a ViewportOverlay, request state from the associated pipeline.
+    if(ViewportOverlay* overlay = dynamic_object_cast<ViewportOverlay>(editObject())) {
+        if(overlay->pipeline()) {
+            inputStates.push_back(overlay->pipeline()->getCachedPipelineOutput(currentAnimationTime()));
         }
     }
 

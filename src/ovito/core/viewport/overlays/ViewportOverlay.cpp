@@ -22,16 +22,56 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/viewport/overlays/ViewportOverlay.h>
+#include <ovito/core/dataset/scene/SelectionSet.h>
+#include <ovito/core/viewport/Viewport.h>
 
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ViewportOverlay);
+DEFINE_REFERENCE_FIELD(ViewportOverlay, pipeline);
+SET_PROPERTY_FIELD_LABEL(ViewportOverlay, pipeline, "Data source");
+SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(ViewportOverlay, pipeline, "sourceNode"); // For backward compatibility with OVITO 3.9.2
+//SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(ViewportOverlay, pipeline, "dataSource"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
 ViewportOverlay::ViewportOverlay(ObjectInitializationFlags flags) : ActiveObject(flags)
 {
+}
+
+/******************************************************************************
+* Is called when the overlay is being newly attached to a viewport.
+******************************************************************************/
+void ViewportOverlay::initializeOverlay(Viewport* viewport)
+{
+    // Automatically connect to the currently selected pipeline.
+    if(!pipeline() && viewport->scene())
+        setPipeline(dynamic_object_cast<Pipeline>(viewport->scene()->selection()->firstNode()));
+}
+
+/******************************************************************************
+* Is called when the overlay is being newly attached to a viewport.
+******************************************************************************/
+void ViewportOverlay::sceneNodeAdded(SceneNode* node)
+{
+    // Automatically connect to the new pipeline.
+    if(!pipeline())
+        setPipeline(dynamic_object_cast<Pipeline>(node));
+}
+
+/******************************************************************************
+* This method is called when a reference target changes.
+******************************************************************************/
+bool ViewportOverlay::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+    if(source == pipeline() && event.type() == ReferenceEvent::PipelineCacheUpdated) {
+        // Send a ReferenceEvent::PipelineInputChanged event to the PropertiesEditor,
+        // which should then emit a pipelineInputChanged signal to indicate that
+        // new pipeline output data is available.
+        notifyDependents(ReferenceEvent::PipelineInputChanged);
+    }
+    return ActiveObject::referenceEvent(source, event);
 }
 
 /******************************************************************************

@@ -23,7 +23,6 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/core/app/undo/UndoableOperation.h>
 #include "CoordinateDisplayWidget.h"
 
 namespace Ovito {
@@ -69,18 +68,9 @@ CoordinateDisplayWidget::CoordinateDisplayWidget(MainWindow& mainWindow, QWidget
     layout->addWidget(zedit, 1);
     layout->addWidget(_spinners[2]);
 
-    connect(_spinners[0], &SpinnerWidget::spinnerValueChanged, this, &CoordinateDisplayWidget::onSpinnerValueChanged);
-    connect(_spinners[1], &SpinnerWidget::spinnerValueChanged, this, &CoordinateDisplayWidget::onSpinnerValueChanged);
-    connect(_spinners[2], &SpinnerWidget::spinnerValueChanged, this, &CoordinateDisplayWidget::onSpinnerValueChanged);
-    connect(_spinners[0], &SpinnerWidget::spinnerDragStart, this, &CoordinateDisplayWidget::onSpinnerDragStart);
-    connect(_spinners[1], &SpinnerWidget::spinnerDragStart, this, &CoordinateDisplayWidget::onSpinnerDragStart);
-    connect(_spinners[2], &SpinnerWidget::spinnerDragStart, this, &CoordinateDisplayWidget::onSpinnerDragStart);
-    connect(_spinners[0], &SpinnerWidget::spinnerDragStop, this, &CoordinateDisplayWidget::onSpinnerDragStop);
-    connect(_spinners[1], &SpinnerWidget::spinnerDragStop, this, &CoordinateDisplayWidget::onSpinnerDragStop);
-    connect(_spinners[2], &SpinnerWidget::spinnerDragStop, this, &CoordinateDisplayWidget::onSpinnerDragStop);
-    connect(_spinners[0], &SpinnerWidget::spinnerDragAbort, this, &CoordinateDisplayWidget::onSpinnerDragAbort);
-    connect(_spinners[1], &SpinnerWidget::spinnerDragAbort, this, &CoordinateDisplayWidget::onSpinnerDragAbort);
-    connect(_spinners[2], &SpinnerWidget::spinnerDragAbort, this, &CoordinateDisplayWidget::onSpinnerDragAbort);
+    connect(_spinners[0], &SpinnerWidget::valueChanged, this, &CoordinateDisplayWidget::onSpinnerValueChanged);
+    connect(_spinners[1], &SpinnerWidget::valueChanged, this, &CoordinateDisplayWidget::onSpinnerValueChanged);
+    connect(_spinners[2], &SpinnerWidget::valueChanged, this, &CoordinateDisplayWidget::onSpinnerValueChanged);
 
     QToolButton* animateButton = new QToolButton(this);
     animateButton->setText(tr("A"));
@@ -99,7 +89,9 @@ CoordinateDisplayWidget::CoordinateDisplayWidget(MainWindow& mainWindow, QWidget
 void CoordinateDisplayWidget::activate(const QString& undoOperationName)
 {
     setEnabled(true);
-    _undoOperationName = undoOperationName;
+    _spinners[0]->enableAutomaticUndo(mainWindow(), undoOperationName);
+    _spinners[1]->enableAutomaticUndo(mainWindow(), undoOperationName);
+    _spinners[2]->enableAutomaticUndo(mainWindow(), undoOperationName);
     show();
 }
 
@@ -127,41 +119,8 @@ void CoordinateDisplayWidget::onSpinnerValueChanged()
     else if(sender() == _spinners[1]) component = 1;
     else if(sender() == _spinners[2]) component = 2;
     else return;
-    if(!_undoTransaction.operation()) {
-        _mainWindow.performTransaction(_undoOperationName, [&] {
-            Q_EMIT valueEntered(component, _spinners[component]->floatValue());
-        });
-    }
-    else {
-        _undoTransaction.revert();
-        _undoTransaction.userInterface().performActions(_undoTransaction, [&] {
-            Q_EMIT valueEntered(component, _spinners[component]->floatValue());
-        });
-    }
-}
 
-/******************************************************************************
-* Is called when the user has started a spinner drag operation.
-******************************************************************************/
-void CoordinateDisplayWidget::onSpinnerDragStart()
-{
-    _undoTransaction.begin(_mainWindow, _undoOperationName);
-}
-
-/******************************************************************************
-* Is called when the user has finished the spinner drag operation.
-******************************************************************************/
-void CoordinateDisplayWidget::onSpinnerDragStop()
-{
-    _undoTransaction.commit();
-}
-
-/******************************************************************************
-* Is called when the user has aborted the spinner drag operation.
-******************************************************************************/
-void CoordinateDisplayWidget::onSpinnerDragAbort()
-{
-    _undoTransaction.cancel();
+    Q_EMIT valueEntered(component, _spinners[component]->floatValue());
 }
 
 }   // End of namespace

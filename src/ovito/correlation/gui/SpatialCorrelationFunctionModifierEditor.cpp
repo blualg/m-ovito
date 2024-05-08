@@ -59,11 +59,11 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(4);
 
-    PropertyReferenceParameterUI* sourceProperty1UI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::sourceProperty1), &Particles::OOClass());
+    PropertyReferenceParameterUI* sourceProperty1UI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::sourceProperty1), &Particles::OOClass());
     layout->addWidget(new QLabel(tr("First property:"), rollout));
     layout->addWidget(sourceProperty1UI->comboBox());
 
-    PropertyReferenceParameterUI* sourceProperty2UI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::sourceProperty2), &Particles::OOClass());
+    PropertyReferenceParameterUI* sourceProperty2UI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::sourceProperty2), &Particles::OOClass());
     layout->addWidget(new QLabel(tr("Second property:"), rollout));
     layout->addWidget(sourceProperty2UI->comboBox());
 
@@ -72,19 +72,19 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
     gridlayout->setColumnStretch(1, 1);
 
     // FFT grid spacing parameter.
-    FloatParameterUI* fftGridSpacingRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::fftGridSpacing));
+    FloatParameterUI* fftGridSpacingRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::fftGridSpacing));
     gridlayout->addWidget(fftGridSpacingRadiusPUI->label(), 0, 0);
     gridlayout->addLayout(fftGridSpacingRadiusPUI->createFieldLayout(), 0, 1);
 
     layout->addLayout(gridlayout);
 
-    BooleanParameterUI* applyWindowUI = new BooleanParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::applyWindow));
+    BooleanParameterUI* applyWindowUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::applyWindow));
     layout->addWidget(applyWindowUI->checkBox());
 
 #if 0
     gridlayout = new QGridLayout();
     gridlayout->addWidget(new QLabel(tr("Average:"), rollout), 0, 0);
-    VariantComboBoxParameterUI* averagingDirectionPUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::averagingDirection));
+    VariantComboBoxParameterUI* averagingDirectionPUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::averagingDirection));
     averagingDirectionPUI->comboBox()->addItem("radial", QVariant::fromValue((int)SpatialCorrelationFunctionModifier::RADIAL));
     averagingDirectionPUI->comboBox()->addItem("cell vector 1", QVariant::fromValue((int)SpatialCorrelationFunctionModifier::CELL_VECTOR_1));
     averagingDirectionPUI->comboBox()->addItem("cell vector 2", QVariant::fromValue((int)SpatialCorrelationFunctionModifier::CELL_VECTOR_2));
@@ -96,20 +96,20 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
     QGroupBox* realSpaceGroupBox = new QGroupBox(tr("Real-space correlation function"));
     layout->addWidget(realSpaceGroupBox);
 
-    BooleanParameterUI* doComputeNeighCorrelationUI = new BooleanParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::doComputeNeighCorrelation));
+    BooleanParameterUI* doComputeNeighCorrelationUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::doComputeNeighCorrelation));
 
     QGridLayout* realSpaceGridLayout = new QGridLayout();
     realSpaceGridLayout->setContentsMargins(4,4,4,4);
     realSpaceGridLayout->setColumnStretch(1, 1);
 
     // Neighbor cutoff parameter.
-    FloatParameterUI *neighCutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::neighCutoff));
+    FloatParameterUI *neighCutoffRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::neighCutoff));
     neighCutoffRadiusPUI->setEnabled(false);
     realSpaceGridLayout->addWidget(neighCutoffRadiusPUI->label(), 1, 0);
     realSpaceGridLayout->addLayout(neighCutoffRadiusPUI->createFieldLayout(), 1, 1);
 
     // Number of bins parameter.
-    IntegerParameterUI* numberOfNeighBinsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::numberOfNeighBins));
+    IntegerParameterUI* numberOfNeighBinsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::numberOfNeighBins));
     numberOfNeighBinsPUI->setEnabled(false);
     realSpaceGridLayout->addWidget(numberOfNeighBinsPUI->label(), 2, 0);
     realSpaceGridLayout->addLayout(numberOfNeighBinsPUI->createFieldLayout(), 2, 1);
@@ -119,16 +119,16 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
 
     QGridLayout *normalizeRealSpaceLayout = new QGridLayout();
     normalizeRealSpaceLayout->addWidget(new QLabel(tr("Type of plot:"), rollout), 0, 0);
-    VariantComboBoxParameterUI* normalizeRealSpacePUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::normalizeRealSpace));
+    VariantComboBoxParameterUI* normalizeRealSpacePUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::normalizeRealSpace));
     normalizeRealSpacePUI->comboBox()->addItem("Value correlation", QVariant::fromValue((int)SpatialCorrelationFunctionModifier::VALUE_CORRELATION));
     normalizeRealSpacePUI->comboBox()->addItem("Difference correlation", QVariant::fromValue((int)SpatialCorrelationFunctionModifier::DIFFERENCE_CORRELATION));
     normalizeRealSpaceLayout->addWidget(normalizeRealSpacePUI->comboBox(), 0, 1);
 
-    BooleanParameterUI* normalizeRealSpaceByRDFUI = new BooleanParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::normalizeRealSpaceByRDF));
-    BooleanParameterUI* normalizeRealSpaceByCovarianceUI = new BooleanParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::normalizeRealSpaceByCovariance));
+    BooleanParameterUI* normalizeRealSpaceByRDFUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::normalizeRealSpaceByRDF));
+    BooleanParameterUI* normalizeRealSpaceByCovarianceUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::normalizeRealSpaceByCovariance));
 
     QGridLayout* typeOfRealSpacePlotLayout = new QGridLayout();
-    IntegerRadioButtonParameterUI *typeOfRealSpacePlotPUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::typeOfRealSpacePlot));
+    IntegerRadioButtonParameterUI *typeOfRealSpacePlotPUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::typeOfRealSpacePlot));
     typeOfRealSpacePlotLayout->addWidget(new QLabel(tr("Display as:")), 0, 0);
     typeOfRealSpacePlotLayout->addWidget(typeOfRealSpacePlotPUI->addRadioButton(0, tr("lin-lin")), 0, 1);
     typeOfRealSpacePlotLayout->addWidget(typeOfRealSpacePlotPUI->addRadioButton(1, tr("log-lin")), 0, 2);
@@ -151,13 +151,13 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
     layout->addWidget(axesBox);
     // x-axis.
     {
-        BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::fixRealSpaceXAxisRange));
+        BooleanParameterUI* rangeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::fixRealSpaceXAxisRange));
         axesSublayout->addWidget(rangeUI->checkBox());
 
         QHBoxLayout* hlayout = new QHBoxLayout();
         axesSublayout->addLayout(hlayout);
-        FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::realSpaceXAxisRangeStart));
-        FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::realSpaceXAxisRangeEnd));
+        FloatParameterUI* startPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::realSpaceXAxisRangeStart));
+        FloatParameterUI* endPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::realSpaceXAxisRangeEnd));
         hlayout->addWidget(new QLabel(tr("From:")));
         hlayout->addLayout(startPUI->createFieldLayout());
         hlayout->addSpacing(12);
@@ -170,13 +170,13 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
     }
     // y-axis.
     {
-        BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::fixRealSpaceYAxisRange));
+        BooleanParameterUI* rangeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::fixRealSpaceYAxisRange));
         axesSublayout->addWidget(rangeUI->checkBox());
 
         QHBoxLayout* hlayout = new QHBoxLayout();
         axesSublayout->addLayout(hlayout);
-        FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::realSpaceYAxisRangeStart));
-        FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::realSpaceYAxisRangeEnd));
+        FloatParameterUI* startPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::realSpaceYAxisRangeStart));
+        FloatParameterUI* endPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::realSpaceYAxisRangeEnd));
         hlayout->addWidget(new QLabel(tr("From:")));
         hlayout->addLayout(startPUI->createFieldLayout());
         hlayout->addSpacing(12);
@@ -201,10 +201,10 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
     QGroupBox* reciprocalSpaceGroupBox = new QGroupBox(tr("Reciprocal-space correlation function"));
     layout->addWidget(reciprocalSpaceGroupBox);
 
-    BooleanParameterUI* normalizeReciprocalSpaceUI = new BooleanParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::normalizeReciprocalSpace));
+    BooleanParameterUI* normalizeReciprocalSpaceUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::normalizeReciprocalSpace));
 
     QGridLayout* typeOfReciprocalSpacePlotLayout = new QGridLayout();
-    IntegerRadioButtonParameterUI *typeOfReciprocalSpacePlotPUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::typeOfReciprocalSpacePlot));
+    IntegerRadioButtonParameterUI *typeOfReciprocalSpacePlotPUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::typeOfReciprocalSpacePlot));
     typeOfReciprocalSpacePlotLayout->addWidget(new QLabel(tr("Display as:")), 0, 0);
     typeOfReciprocalSpacePlotLayout->addWidget(typeOfReciprocalSpacePlotPUI->addRadioButton(0, tr("lin-lin")), 0, 1);
     typeOfReciprocalSpacePlotLayout->addWidget(typeOfReciprocalSpacePlotPUI->addRadioButton(1, tr("log-lin")), 0, 2);
@@ -221,13 +221,13 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
     layout->addWidget(axesBox);
     // x-axis.
     {
-        BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::fixReciprocalSpaceXAxisRange));
+        BooleanParameterUI* rangeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::fixReciprocalSpaceXAxisRange));
         axesSublayout->addWidget(rangeUI->checkBox());
 
         QHBoxLayout* hlayout = new QHBoxLayout();
         axesSublayout->addLayout(hlayout);
-        FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::reciprocalSpaceXAxisRangeStart));
-        FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::reciprocalSpaceXAxisRangeEnd));
+        FloatParameterUI* startPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::reciprocalSpaceXAxisRangeStart));
+        FloatParameterUI* endPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::reciprocalSpaceXAxisRangeEnd));
         hlayout->addWidget(new QLabel(tr("From:")));
         hlayout->addLayout(startPUI->createFieldLayout());
         hlayout->addSpacing(12);
@@ -240,13 +240,13 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
     }
     // y-axis.
     {
-        BooleanParameterUI* rangeUI = new BooleanParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::fixReciprocalSpaceYAxisRange));
+        BooleanParameterUI* rangeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::fixReciprocalSpaceYAxisRange));
         axesSublayout->addWidget(rangeUI->checkBox());
 
         QHBoxLayout* hlayout = new QHBoxLayout();
         axesSublayout->addLayout(hlayout);
-        FloatParameterUI* startPUI = new FloatParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::reciprocalSpaceYAxisRangeStart));
-        FloatParameterUI* endPUI = new FloatParameterUI(this, PROPERTY_FIELD(SpatialCorrelationFunctionModifier::reciprocalSpaceYAxisRangeEnd));
+        FloatParameterUI* startPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::reciprocalSpaceYAxisRangeStart));
+        FloatParameterUI* endPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SpatialCorrelationFunctionModifier::reciprocalSpaceYAxisRangeEnd));
         hlayout->addWidget(new QLabel(tr("From:")));
         hlayout->addLayout(startPUI->createFieldLayout());
         hlayout->addSpacing(12);
@@ -266,7 +266,7 @@ void SpatialCorrelationFunctionModifierEditor::createUI(const RolloutInsertionPa
 
     // Status label.
     layout->addSpacing(6);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Update data plot whenever the modifier has calculated new results.
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &SpatialCorrelationFunctionModifierEditor::plotAllData);

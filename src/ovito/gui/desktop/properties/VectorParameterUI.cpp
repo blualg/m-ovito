@@ -21,23 +21,24 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/properties/Vector3ParameterUI.h>
+#include <ovito/gui/desktop/properties/VectorParameterUI.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(Vector3ParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(VectorParameterUI);
 
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-Vector3ParameterUI::Vector3ParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t vectorComponent)
-    : FloatParameterUI(parentEditor, propField), _component(vectorComponent)
+VectorParameterUI::VectorParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t vectorComponentIndex, size_t vectorComponentCount)
+    : FloatParameterUI(parentEditor, propField), _componentIndex(vectorComponentIndex), _componentCount(vectorComponentCount)
 {
-    OVITO_ASSERT_MSG(vectorComponent >= 0 && vectorComponent < 3, "Vector3ParameterUI constructor", "The vector component must be in the range 0-2.");
+    OVITO_ASSERT_MSG(vectorComponentCount >= 2 && vectorComponentCount <= 3, "VectorParameterUI constructor", "The vector component count must be in the range 3-4.");
+    OVITO_ASSERT_MSG(vectorComponentIndex >= 0 && vectorComponentIndex < vectorComponentCount, "VectorParameterUI constructor", "The vector component index is out of range.");
 
-    switch(_component) {
+    switch(vectorComponentIndex) {
         case 0: label()->setText(propField->displayName() + " (X):"); break;
         case 1: label()->setText(propField->displayName() + " (Y):"); break;
         case 2: label()->setText(propField->displayName() + " (Z):"); break;
@@ -48,28 +49,42 @@ Vector3ParameterUI::Vector3ParameterUI(PropertiesEditor* parentEditor, const Pro
 * Takes the value entered by the user and stores it in the parameter object
 * this parameter UI is bound to.
 ******************************************************************************/
-void Vector3ParameterUI::updatePropertyValue()
+void VectorParameterUI::updatePropertyValue()
 {
     if(editObject() && spinner()) {
         handleExceptions([&] {
-            if(isReferenceFieldUI()) {
+            if(isReferenceFieldUI() && _componentCount == 3) {
                 if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
                     Vector3 val = ctrl->getVector3Value(currentAnimationTime().value_or(AnimationTime(0)));
-                    val[_component] = spinner()->floatValue();
+                    val[_componentIndex] = spinner()->floatValue();
                     ctrl->setVector3Value(currentAnimationTime().value_or(AnimationTime(0)), val);
                 }
             }
             else if(isPropertyFieldUI()) {
                 QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
-                if(currentValue.canConvert<Vector3>()) {
-                    Vector3 val = currentValue.value<Vector3>();
-                    val[_component] = spinner()->floatValue();
-                    currentValue.setValue(val);
+                if(_componentCount == 3) {
+                    if(currentValue.canConvert<Vector3>()) {
+                        Vector3 val = currentValue.value<Vector3>();
+                        val[_componentIndex] = spinner()->floatValue();
+                        currentValue.setValue(val);
+                    }
+                    else if(currentValue.canConvert<Point3>()) {
+                        Point3 val = currentValue.value<Point3>();
+                        val[_componentIndex] = spinner()->floatValue();
+                        currentValue.setValue(val);
+                    }
                 }
-                else if(currentValue.canConvert<Point3>()) {
-                    Point3 val = currentValue.value<Point3>();
-                    val[_component] = spinner()->floatValue();
-                    currentValue.setValue(val);
+                else if(_componentCount == 2) {
+                    if(currentValue.canConvert<Vector2>()) {
+                        Vector2 val = currentValue.value<Vector2>();
+                        val[_componentIndex] = spinner()->floatValue();
+                        currentValue.setValue(val);
+                    }
+                    else if(currentValue.canConvert<Point2>()) {
+                        Point2 val = currentValue.value<Point2>();
+                        val[_componentIndex] = spinner()->floatValue();
+                        currentValue.setValue(val);
+                    }
                 }
                 editor()->changePropertyFieldValue(propertyField(), currentValue);
             }
@@ -82,26 +97,38 @@ void Vector3ParameterUI::updatePropertyValue()
 /******************************************************************************
 * This method updates the displayed value of the parameter UI.
 ******************************************************************************/
-void Vector3ParameterUI::updateUI()
+void VectorParameterUI::updateUI()
 {
     if(editObject() && spinner() && !spinner()->isDragging()) {
-        if(isReferenceFieldUI()) {
+        if(isReferenceFieldUI() && _componentCount == 3) {
             if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                spinner()->setFloatValue(ctrl->getVector3Value(currentAnimationTime().value_or(AnimationTime(0)))[_component]);
+                spinner()->setFloatValue(ctrl->getVector3Value(currentAnimationTime().value_or(AnimationTime(0)))[_componentIndex]);
             }
         }
         else {
             QVariant val;
             if(isPropertyFieldUI()) {
                 val = editObject()->getPropertyFieldValue(propertyField());
-                OVITO_ASSERT(val.isValid() && (val.canConvert<Vector3>() || val.canConvert<Point3>()));
+                OVITO_ASSERT(val.isValid());
             }
             else return;
 
-            if(val.canConvert<Vector3>())
-                spinner()->setFloatValue(val.value<Vector3>()[_component]);
-            else if(val.canConvert<Point3>())
-                spinner()->setFloatValue(val.value<Point3>()[_component]);
+            if(_componentCount == 3) {
+                if(val.canConvert<Vector3>())
+                    spinner()->setFloatValue(val.value<Vector3>()[_componentIndex]);
+                else if(val.canConvert<Point3>())
+                    spinner()->setFloatValue(val.value<Point3>()[_componentIndex]);
+                else
+                    OVITO_ASSERT(false);
+            }
+            else if(_componentCount == 2) {
+                if(val.canConvert<Vector2>())
+                    spinner()->setFloatValue(val.value<Vector2>()[_componentIndex]);
+                else if(val.canConvert<Point2>())
+                    spinner()->setFloatValue(val.value<Point2>()[_componentIndex]);
+                else
+                    OVITO_ASSERT(false);
+            }
         }
     }
 }

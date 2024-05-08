@@ -47,16 +47,16 @@ void SimulationCellVisEditor::createUI(const RolloutInsertionParameters& rollout
     layout->setColumnStretch(1, 1);
 
     // Render cell
-    BooleanParameterUI* renderCellUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCellVis::renderCellEnabled));
+    BooleanParameterUI* renderCellUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SimulationCellVis::renderCellEnabled));
     layout->addWidget(renderCellUI->checkBox(), 0, 0, 1, 2);
 
     // Line width
-    FloatParameterUI* lineWidthUI = new FloatParameterUI(this, PROPERTY_FIELD(SimulationCellVis::cellLineWidth));
+    FloatParameterUI* lineWidthUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SimulationCellVis::cellLineWidth));
     layout->addWidget(lineWidthUI->label(), 1, 0);
     layout->addLayout(lineWidthUI->createFieldLayout(), 1, 1);
 
     // Line color
-    ColorParameterUI* lineColorUI = new ColorParameterUI(this, PROPERTY_FIELD(SimulationCellVis::cellColor));
+    ColorParameterUI* lineColorUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(SimulationCellVis::cellColor));
     layout->addWidget(lineColorUI->label(), 2, 0);
     layout->addWidget(lineColorUI->colorPicker(), 2, 1);
 }

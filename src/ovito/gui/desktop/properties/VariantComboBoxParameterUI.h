@@ -24,7 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include "ParameterUI.h"
+#include "PropertyParameterUI.h"
 
 namespace Ovito {
 

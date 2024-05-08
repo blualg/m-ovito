@@ -57,7 +57,7 @@ public:
         Canceled       = (1<<1),
         IsAsynchronous = (1<<2), // The task is derived from AsynchronousTaskBase and runs in a worker thread.
         YieldUI        = (1<<3), // The task runs in the main thread should yield control to the event loop when its progress functions are called.
-        HighPriority   = (1<<4), // The task should be executed with higher priority, because it is responsible for GUI updates.
+        HighPriority   = (1<<4), // The task should be executed with higher priority, because it is responsible for real-time GUI updates.
     };
 
     /// Constructor.
@@ -86,10 +86,10 @@ public:
     /// Indicates whether this task's class is derived from the AsynchronousTaskBase class.
     bool isAsynchronousTask() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & IsAsynchronous); }
 
-    /// Indicates whether this task runs with high priority, because it is responsible for GUI updates.
+    /// Indicates whether this task runs with elevated priority, because it is responsible for real-time GUI updates.
     bool isHighPriorityTask() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & HighPriority); }
 
-    /// Makes this task run with high priority, because it is responsible for GUI updates.
+    /// Makes this task run with elevated priority, because it is responsible for real-time GUI updates.
     void setHighPriorityTask() { _state.fetch_or(HighPriority, std::memory_order_relaxed); }
 
     /// \brief Requests cancellation of the task.

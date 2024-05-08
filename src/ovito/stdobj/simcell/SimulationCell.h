@@ -37,8 +37,21 @@ namespace Ovito {
  */
 class OVITO_STDOBJ_EXPORT SimulationCell : public DataObject
 {
-    OVITO_CLASS(SimulationCell)
- 
+public:
+
+    /// Define a new data object metaclass.
+    class OVITO_STDOBJ_EXPORT OOMetaClass : public DataObject::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using DataObject::OOMetaClass::OOMetaClass;
+
+        /// Generates a human-readable string representation of the data object reference.
+        virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
+    };
+
+    OVITO_CLASS_META(SimulationCell, OOMetaClass);
+
 public:
 
     /// \brief Constructor. Creates an empty simulation cell.

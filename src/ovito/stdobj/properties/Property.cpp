@@ -48,10 +48,9 @@ Property::Property(ObjectInitializationFlags flags) : DataBuffer(flags)
 ******************************************************************************/
 Property::Property(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int typeId, QStringList componentNames) :
     DataBuffer(flags, init, elementCount, dataType, componentCount, std::move(componentNames)),
-    _name(name),
     _typeId(typeId)
 {
-    setIdentifier(name);
+    setName(name);
 }
 
 #ifdef OVITO_DEBUG
@@ -68,16 +67,12 @@ Property::~Property()
 ******************************************************************************/
 OORef<RefTarget> Property::clone(bool deepCopy, CloneHelper& cloneHelper) const
 {
-    OVITO_ASSERT(this->identifier() == this->name());
-
     // Let the base class create an instance of this class.
     OORef<Property> clone = static_object_cast<Property>(DataBuffer::clone(deepCopy, cloneHelper));
 
     // Copy internal data.
     prepareReadAccess();
     clone->_typeId = _typeId;
-    clone->_name = _name;
-    OVITO_ASSERT(clone->identifier() == clone->name());
     finishReadAccess();
 
 #ifdef OVITO_USE_SYCL
@@ -94,24 +89,24 @@ OORef<RefTarget> Property::clone(bool deepCopy, CloneHelper& cloneHelper) const
 }
 
 /******************************************************************************
-* Sets the property's name.
-******************************************************************************/
-void Property::setName(const QString& newName)
-{
-    if(newName == name())
-        return;
-
-    _name = newName;
-    setIdentifier(newName);
-    notifyTargetChanged(PROPERTY_FIELD(title));
-}
-
-/******************************************************************************
 * Returns the display title of this property object in the user interface.
 ******************************************************************************/
 QString Property::objectTitle() const
 {
     return title().isEmpty() ? name() : title();
+}
+
+/******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void Property::propertyChanged(const PropertyFieldDescriptor* field)
+{
+    DataBuffer::propertyChanged(field);
+
+    if(field == PROPERTY_FIELD(DataObject::identifier) && title().isEmpty()) {
+        // Since the idenfifier is the property's name, the property's title potentially changes too.
+        notifyDependents(ReferenceEvent::TitleChanged);
+    }
 }
 
 /******************************************************************************
@@ -141,7 +136,7 @@ void Property::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
     prepareReadAccess();
     try {
         stream.beginChunk(0x100);
-        stream << _name;
+        stream << name();
         stream << _typeId;
         stream.endChunk();
         finishReadAccess();
@@ -157,12 +152,13 @@ void Property::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
 ******************************************************************************/
 void Property::loadFromStream(ObjectLoadStream& stream)
 {
+    QString name;
     if(stream.formatVersion() >= 30007) {
         DataBuffer::loadFromStream(stream);
 
         // Current file format:
         stream.expectChunk(0x100);
-        stream >> _name;
+        stream >> name;
         stream >> _typeId;
         stream.closeChunk();
     }
@@ -173,13 +169,13 @@ void Property::loadFromStream(ObjectLoadStream& stream)
         // For backward compatibility with OVITO 3.3.5.
         stream.expectChunk(0x01);
         stream.expectChunk(0x02);
-        stream >> _name;
+        stream >> name;
         stream >> _typeId;
         DataBuffer::loadFromStream(stream);
         stream.closeChunk();
     }
 
-    setIdentifier(name());
+    setIdentifier(name);
 }
 
 /******************************************************************************
@@ -192,8 +188,10 @@ bool Property::equals(const Property& other) const
     other.prepareReadAccess();
 
     bool result = [&]() {
-        if(this->typeId() != other.typeId()) return false;
-        if(this->typeId() == GenericUserProperty && this->name() != other.name()) return false;
+        if(this->typeId() != other.typeId())
+            return false;
+        if(this->typeId() == GenericUserProperty && this->name() != other.name())
+            return false;
         return true;
     }();
 

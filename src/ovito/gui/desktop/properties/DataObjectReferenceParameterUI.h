@@ -23,28 +23,28 @@
 #pragma once
 
 
-#include <ovito/stdobj/gui/StdObjGui.h>
-#include <ovito/gui/desktop/properties/ParameterUI.h>
+#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/properties/PropertyParameterUI.h>
 
 namespace Ovito {
 
 /**
- * \brief UI component for selecting the PropertyContainer a Modifier should operate on.
+ * \brief UI component for selecting the data object from a data collection.
  */
-class OVITO_STDOBJGUI_EXPORT PropertyContainerParameterUI : public PropertyParameterUI
+class OVITO_GUI_EXPORT DataObjectReferenceParameterUI : public PropertyParameterUI
 {
-    OVITO_CLASS(PropertyContainerParameterUI)
+    OVITO_CLASS(DataObjectReferenceParameterUI)
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    explicit PropertyContainerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    explicit DataObjectReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const DataObject::OOMetaClass& dataObjectClass);
 
     /// Destructor.
-    virtual ~PropertyContainerParameterUI();
+    virtual ~DataObjectReferenceParameterUI();
 
-    /// This returns the combo box managed by this ParameterUI.
+    /// This returns the combobox widget managed by this ParameterUI.
     QComboBox* comboBox() const { return _comboBox; }
 
     /// Sets the enabled state of the UI.
@@ -57,6 +57,9 @@ public:
     /// parameter UI belongs to.
     virtual void resetUI() override;
 
+    /// Returns the type of data object that can be selected.
+    DataObjectClassPtr dataObjectClass() const { return &_dataObjectClass; }
+
     /// Sets the tooltip text for the combo box widget.
     void setToolTip(const QString& text) const {
         if(comboBox()) comboBox()->setToolTip(text);
@@ -67,10 +70,20 @@ public:
         if(comboBox()) comboBox()->setWhatsThis(text);
     }
 
-    /// Installs optional callback function that allows clients to filter the displayed container list.
-    void setContainerFilter(std::function<bool(const PropertyContainer*)> filter) {
-        _containerFilter = std::move(filter);
+    /// Installs an optional callback function for filtering the displayed object list.
+    template<typename F>
+    void setObjectFilter(F&& filter) {
+        _objectFilter = std::forward<F>(filter);
         updateUI();
+    }
+
+    /// Installs an optional callback function for filtering the displayed object list.
+    template<typename DataObjectClass, typename F>
+    void setObjectFilter(F&& filter) {
+        OVITO_ASSERT(_dataObjectClass.isDerivedFrom(DataObjectClass::OOClass()));
+        setObjectFilter([filter=std::forward<F>(filter)](const DataObject* obj) {
+            return std::invoke(filter, static_object_cast<DataObjectClass>(obj));
+        });
     }
 
 public:
@@ -85,11 +98,14 @@ public Q_SLOTS:
 
 protected:
 
-    /// The combo box of the UI component.
+    /// The combo-box widget.
     QPointer<QComboBox> _comboBox;
 
-    /// An optional callback function that allows clients to filter the displayed container list.
-    std::function<bool(const PropertyContainer*)> _containerFilter;
+    /// The type of data object that can be selected.
+    const DataObject::OOMetaClass& _dataObjectClass;
+
+    /// An optional callback function that allows clients to filter the displayed object list.
+    std::function<bool(const DataObject*)> _objectFilter;
 };
 
 }   // End of namespace

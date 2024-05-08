@@ -48,14 +48,14 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout1->setContentsMargins(4,4,4,4);
     layout1->setSpacing(6);
 
-    IntegerRadioButtonParameterUI* cutoffModePUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::cutoffMode));
+    IntegerRadioButtonParameterUI* cutoffModePUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(CreateBondsModifier::cutoffMode));
 
     // Uniform cutoff parameter.
     QGridLayout* gridlayout = new QGridLayout();
     gridlayout->setContentsMargins(0,0,0,0);
     gridlayout->setColumnStretch(1, 1);
     QRadioButton* uniformCutoffModeBtn = cutoffModePUI->addRadioButton(CreateBondsModifier::UniformCutoff, tr("Uniform cutoff distance:"));
-    FloatParameterUI* uniformCutoffPUI = new FloatParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::uniformCutoff));
+    FloatParameterUI* uniformCutoffPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(CreateBondsModifier::uniformCutoff));
     gridlayout->addWidget(uniformCutoffModeBtn, 0, 0);
     gridlayout->addLayout(uniformCutoffPUI->createFieldLayout(), 0, 1);
     uniformCutoffPUI->setEnabled(false);
@@ -67,7 +67,7 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout1->addWidget(typeRadiusModeBtn);
     QVBoxLayout* sublayout = new QVBoxLayout();
     sublayout->setContentsMargins(26,0,0,0);
-    BooleanParameterUI* skipHydrogenHydrogenBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::skipHydrogenHydrogenBonds));
+    BooleanParameterUI* skipHydrogenHydrogenBondsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CreateBondsModifier::skipHydrogenHydrogenBonds));
     sublayout->addWidget(skipHydrogenHydrogenBondsUI->checkBox());
     skipHydrogenHydrogenBondsUI->setEnabled(false);
     connect(typeRadiusModeBtn, &QRadioButton::toggled, skipHydrogenHydrogenBondsUI, &ParameterUI::setEnabled);
@@ -101,27 +101,27 @@ void CreateBondsModifierEditor::createUI(const RolloutInsertionParameters& rollo
     sublayout->addWidget(_pairCutoffTable);
     layout1->addLayout(sublayout);
 
-    BooleanParameterUI* onlyIntraMoleculeBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::onlyIntraMoleculeBonds));
+    BooleanParameterUI* onlyIntraMoleculeBondsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CreateBondsModifier::onlyIntraMoleculeBonds));
     layout1->addWidget(onlyIntraMoleculeBondsUI->checkBox());
 
     // Lower cutoff parameter.
     gridlayout = new QGridLayout();
     gridlayout->setContentsMargins(0,0,0,0);
     gridlayout->setColumnStretch(1, 1);
-    FloatParameterUI* minCutoffPUI = new FloatParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::minimumCutoff));
+    FloatParameterUI* minCutoffPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(CreateBondsModifier::minimumCutoff));
     gridlayout->addWidget(minCutoffPUI->label(), 0, 0);
     gridlayout->addLayout(minCutoffPUI->createFieldLayout(), 0, 1);
     layout1->addLayout(gridlayout);
 
     // Status label.
     layout1->addSpacing(10);
-    layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout1->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Open a sub-editor for the bonds vis element.
-    new SubObjectParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::bondsVis), rolloutParams.after(rollout));
+    createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(CreateBondsModifier::bondsVis), rolloutParams.after(rollout));
 
     // Open a sub-editor for the bond type.
-    new SubObjectParameterUI(this, PROPERTY_FIELD(CreateBondsModifier::bondType), rolloutParams.after(rollout).collapse().setTitle(tr("New bond type")));
+    createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(CreateBondsModifier::bondType), rolloutParams.after(rollout).collapse().setTitle(tr("New bond type")));
 
     // Update pair-wise cutoff table whenever a modifier has been loaded into the editor.
     connect(this, &CreateBondsModifierEditor::contentsReplaced, this, &CreateBondsModifierEditor::updatePairCutoffList);

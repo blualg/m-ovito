@@ -35,8 +35,7 @@ DEFINE_VECTOR_REFERENCE_FIELD(DataCollection, objects);
 SET_PROPERTY_FIELD_LABEL(DataCollection, objects, "Data objects");
 
 /******************************************************************************
-* Returns true if the given object is part of this collection.
-* The method ignores the revision number of the object.
+* Tests if the given object is part of this collection (only at the root-level).
 ******************************************************************************/
 bool DataCollection::contains(const DataObject* obj) const
 {
@@ -44,7 +43,8 @@ bool DataCollection::contains(const DataObject* obj) const
 }
 
 /******************************************************************************
-* Adds an additional data object to this state.
+* Adds an additional root-level data object to this collection.
+* The object must not already be part of the collection.
 ******************************************************************************/
 void DataCollection::addObject(const DataObject* obj)
 {
@@ -54,7 +54,8 @@ void DataCollection::addObject(const DataObject* obj)
 }
 
 /******************************************************************************
-* Inserts an additional data object into this state.
+* Inserts an additional root-level data object into this collection.
+* The object must not already be part of the collection.
 ******************************************************************************/
 void DataCollection::insertObject(qsizetype index, DataOORef<const DataObject> obj)
 {
@@ -69,7 +70,7 @@ void DataCollection::insertObject(qsizetype index, DataOORef<const DataObject> o
 }
 
 /******************************************************************************
-* Replaces a data object with a new one.
+* Removes a root-level data object from this collection.
 ******************************************************************************/
 void DataCollection::removeObjectByIndex(qsizetype index)
 {
@@ -78,7 +79,7 @@ void DataCollection::removeObjectByIndex(qsizetype index)
 }
 
 /******************************************************************************
-* Replaces a data object with a new one.
+* Replaces a root-level data object in this collection with a different one.
 ******************************************************************************/
 bool DataCollection::replaceObject(const DataObject* oldObj, const DataObject* newObj)
 {
@@ -87,7 +88,7 @@ bool DataCollection::replaceObject(const DataObject* oldObj, const DataObject* n
         OVITO_ASSERT_MSG(false, "DataCollection::replaceObject", "Old data object not found.");
         return false;
     }
-    if(newObj)
+    if(newObj && !contains(newObj))
         replaceReferencesTo(oldObj, newObj);
     else
         clearReferencesTo(oldObj);
@@ -95,8 +96,8 @@ bool DataCollection::replaceObject(const DataObject* oldObj, const DataObject* n
 }
 
 /******************************************************************************
-* Finds an object of the given type in the list of data objects stored in this
-* collection.
+* Finds the first root-level object of the given class type in this collection.
+* Return nullptr if not found.
 ******************************************************************************/
 const DataObject* DataCollection::getObject(const DataObject::OOMetaClass& objectClass) const
 {
@@ -105,20 +106,6 @@ const DataObject* DataCollection::getObject(const DataObject::OOMetaClass& objec
             return obj;
     }
     return nullptr;
-}
-
-/******************************************************************************
-* Finds all objects of the given type in the list of data objects stored in this
-* collection.
-******************************************************************************/
-std::vector<const DataObject*> DataCollection::getObjects(const DataObject::OOMetaClass& objectClass) const
-{
-    std::vector<const DataObject*> list;
-    for(const DataObject* obj : objects()) {
-        if(objectClass.isMember(obj))
-            list.push_back(obj);
-    }
-    return list;
 }
 
 /******************************************************************************
@@ -577,19 +564,6 @@ void DataCollection::adoptAttributesFrom(const DataCollection& other, const OOWe
             if(attribute->createdByNode() == createdByNode) {
                 addObject(attribute);
             }
-        }
-    }
-}
-
-/******************************************************************************
-* Copies all root-level data objects created by the given pipeline node over to this
-* data collection.
-******************************************************************************/
-void DataCollection::adoptDataObjectsFrom(const DataCollection& other, const OOWeakRef<const PipelineNode>& createdByNode)
-{
-    for(const DataObject* obj : other.objects()) {
-        if(obj->createdByNode() == createdByNode) {
-            addObject(obj);
         }
     }
 }

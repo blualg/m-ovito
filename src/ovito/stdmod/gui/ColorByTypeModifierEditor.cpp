@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
+#include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
 #include <ovito/stdmod/modifiers/ColorByTypeModifier.h>
 #include "ColorByTypeModifierEditor.h"
 
@@ -47,16 +47,15 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(2);
 
-    PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
+    DataObjectReferenceParameterUI* pclassUI = createParamUI<DataObjectReferenceParameterUI>(PROPERTY_FIELD(GenericPropertyModifier::subject), PropertyContainer::OOClass());
     layout->addWidget(new QLabel(tr("Operate on:")));
     layout->addWidget(pclassUI->comboBox());
-    pclassUI->setContainerFilter([](const PropertyContainer* container) {
-        return
-            container->getOOMetaClass().isValidStandardPropertyId(Property::GenericColorProperty)
+    pclassUI->setObjectFilter<PropertyContainer>([](const PropertyContainer* container) {
+        return container->getOOMetaClass().isValidStandardPropertyId(Property::GenericColorProperty)
             && std::any_of(container->properties().begin(), container->properties().end(), &isValidInputProperty);
     });
 
-    _sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ColorByTypeModifier::sourceProperty));
+    _sourcePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(ColorByTypeModifier::sourceProperty));
     layout->addSpacing(4);
     layout->addWidget(new QLabel(tr("Property:")));
     layout->addWidget(_sourcePropertyUI->comboBox());
@@ -67,11 +66,11 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout->addSpacing(4);
 
     // Only selected elements.
-    BooleanParameterUI* onlySelectedPUI = new BooleanParameterUI(this, PROPERTY_FIELD(ColorByTypeModifier::colorOnlySelected));
+    BooleanParameterUI* onlySelectedPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorByTypeModifier::colorOnlySelected));
     layout->addWidget(onlySelectedPUI->checkBox());
 
     // Clear selection
-    BooleanParameterUI* clearSelectionPUI = new BooleanParameterUI(this, PROPERTY_FIELD(ColorByTypeModifier::clearSelection));
+    BooleanParameterUI* clearSelectionPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorByTypeModifier::clearSelection));
     layout->addWidget(clearSelectionPUI->checkBox());
     connect(onlySelectedPUI->checkBox(), &QCheckBox::toggled, clearSelectionPUI, &BooleanParameterUI::setEnabled);
     clearSelectionPUI->setEnabled(false);
@@ -110,7 +109,7 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
 
     // Status label.
     layout->addSpacing(12);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 }
 
 /******************************************************************************

@@ -34,6 +34,7 @@ namespace Ovito {
 class OVITO_GUI_EXPORT FloatParameterUI : public NumericalParameterUI
 {
     OVITO_CLASS(FloatParameterUI)
+    Q_OBJECT
 
 public:
 

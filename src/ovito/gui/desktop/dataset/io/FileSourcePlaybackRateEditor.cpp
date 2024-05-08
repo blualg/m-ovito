@@ -55,17 +55,17 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
     layout->addLayout(sublayout);
 
     sublayout->addWidget(new QLabel(tr("Show")), 0, 0, Qt::AlignRight);
-    IntegerParameterUI* playbackSpeedNumeratorUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileSource::playbackSpeedNumerator));
+    IntegerParameterUI* playbackSpeedNumeratorUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(FileSource::playbackSpeedNumerator));
     playbackSpeedNumeratorUI->setEnabled(false);
     sublayout->addLayout(playbackSpeedNumeratorUI->createFieldLayout(), 0, 1);
     sublayout->addWidget(new QLabel(tr("trajectory frame(s)")), 0, 2);
     sublayout->addWidget(new QLabel(tr("per")), 1, 0, Qt::AlignRight);
-    IntegerParameterUI* playbackSpeedDenominatorUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileSource::playbackSpeedDenominator));
+    IntegerParameterUI* playbackSpeedDenominatorUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(FileSource::playbackSpeedDenominator));
     playbackSpeedDenominatorUI->setEnabled(false);
     sublayout->addLayout(playbackSpeedDenominatorUI->createFieldLayout(), 1, 1);
     sublayout->addWidget(new QLabel(tr("animation frame(s)")), 1, 2);
     sublayout->addWidget(new QLabel(tr("starting at animation frame")), 2, 0, Qt::AlignRight);
-    IntegerParameterUI* playbackStartUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileSource::playbackStartTime));
+    IntegerParameterUI* playbackStartUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(FileSource::playbackStartTime));
     playbackStartUI->setEnabled(false);
     sublayout->addLayout(playbackStartUI->createFieldLayout(), 2, 1);
 
@@ -107,7 +107,7 @@ void FileSourcePlaybackRateEditor::createUI(const RolloutInsertionParameters& ro
     sublayout->setColumnStretch(1, 1);
     layout->addLayout(sublayout);
 
-    _staticFrameNumberUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileSource::restrictToFrame));
+    _staticFrameNumberUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(FileSource::restrictToFrame));
     _staticFrameNumberUI->setEnabled(false);
     sublayout->addLayout(_staticFrameNumberUI->createFieldLayout(), 0, 0);
     _framesListBox = new QComboBox();

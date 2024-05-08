@@ -153,6 +153,14 @@ public:
     /// Returns the viewport that is currently selected.
     Viewport* activeViewport() const;
 
+    /// Creates a ParameterUI component and registers it with the editor instance.
+    /// The component will be freed when the editor is destroyed.
+    template<typename T, typename... Args>
+    T* createParamUI(Args&&... args) {
+        _parameterUIs.push_back(OORef<T>::create(this, std::forward<Args>(args)...));
+        return static_object_cast<T>(_parameterUIs.back().get());
+    }
+
     /// Executes a functor and catches any exceptions thrown during its execution.
     /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
     template<typename Function>
@@ -193,7 +201,7 @@ public:
         return true;
     }
 
-    /// Returns the pipeline that is currently selected.
+    /// Returns the pipeline that is currently selected in the scene.
     Pipeline* selectedPipeline() const {
         if(Scene* scene = mainWindow().datasetContainer().activeScene())
             return dynamic_object_cast<Pipeline>(scene->selection()->firstNode());
@@ -254,6 +262,9 @@ private:
 
     /// The object being edited in this editor.
     DECLARE_REFERENCE_FIELD(RefTarget*, editObject);
+
+    /// The list of ParameterUI components created by the editor.
+    std::vector<OORef<ParameterUI>> _parameterUIs;
 
     /// The list of rollout widgets that have been created by editor.
     /// The cleanup handler is used to delete them when the editor is being deleted.

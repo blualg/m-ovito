@@ -27,7 +27,7 @@
 namespace Ovito {
 
 // Explicit class template instantiations to be exported by the core module:
-template class DataObjectPathTemplate<DataObject*>; // a.k.a. DataObjectPath 
+template class DataObjectPathTemplate<DataObject*>; // a.k.a. DataObjectPath
 template class DataObjectPathTemplate<const DataObject*>; // a.k.a. ConstDataObjectPath
 template class DataObjectPathTemplate<ConstDataObjectRef>; // a.k.a. ConstDataObjectRefPath
 
@@ -63,7 +63,7 @@ QString DataObject::OOMetaClass::formatDataObjectPath(const ConstDataObjectPath&
 ******************************************************************************/
 bool DataObject::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-    if(event.type() == ReferenceEvent::TargetChanged && _visElements.contains(source) && !event.sender()->isBeingLoaded()) {
+    if(event.type() == ReferenceEvent::TargetChanged && visElements().contains(source) && !event.sender()->isBeingLoaded()) {
         // Inform dependents that this data object's visual element was modified.
         // This is a separate notification event, because regular change messages from the visual element are
         // not propagated by the data object.
@@ -83,7 +83,7 @@ void DataObject::saveToStream(ObjectSaveStream& stream, bool excludeRecomputable
 {
     RefTarget::saveToStream(stream, excludeRecomputableData);
     stream.beginChunk(0x02);
-    // Chunk is for future use...
+    // This chunk is reserved for future use.
     stream.endChunk();
 }
 
@@ -94,7 +94,7 @@ void DataObject::loadFromStream(ObjectLoadStream& stream)
 {
     RefTarget::loadFromStream(stream);
     stream.expectChunk(0x02);
-    // For future use...
+    // This chunk is reserved for future use.
     stream.closeChunk();
 }
 
@@ -256,7 +256,7 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
 
     const DataObject* self = dataPath.back();
     Q_DECL_UNUSED const OvitoClass& selfClass = self->getOOClass();
-    OVITO_ASSERT(selfClass == this->getOOClass()); 
+    OVITO_ASSERT(selfClass == this->getOOClass());
     OVITO_ASSERT(!self->isUndoRecording());
 
     // Visit all sub-objects recursively.

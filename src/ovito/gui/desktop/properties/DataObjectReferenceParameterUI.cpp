@@ -20,33 +20,33 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/stdobj/gui/StdObjGui.h>
+#include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
-#include <ovito/stdobj/properties/PropertyContainerClass.h>
-#include <ovito/stdobj/properties/PropertyContainer.h>
-#include "PropertyContainerParameterUI.h"
+#include <ovito/core/dataset/data/DataObjectReference.h>
+#include "DataObjectReferenceParameterUI.h"
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(PropertyContainerParameterUI);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(DataObjectReferenceParameterUI);
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyContainerParameterUI::PropertyContainerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
+DataObjectReferenceParameterUI::DataObjectReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const DataObject::OOMetaClass& dataObjectClass) :
     PropertyParameterUI(parentEditor, propField),
-    _comboBox(new QComboBox())
+    _comboBox(new QComboBox()),
+    _dataObjectClass(dataObjectClass)
 {
-    connect(comboBox(), &QComboBox::textActivated, this, &PropertyContainerParameterUI::updatePropertyValue);
+    connect(comboBox(), &QComboBox::textActivated, this, &DataObjectReferenceParameterUI::updatePropertyValue);
 
     // Update the list whenever the pipeline input changes.
-    connect(parentEditor, &PropertiesEditor::pipelineInputChanged, this, &PropertyContainerParameterUI::updateUI);
+    connect(parentEditor, &PropertiesEditor::pipelineInputChanged, this, &DataObjectReferenceParameterUI::updateUI);
 }
 
 /******************************************************************************
 * Destructor.
 ******************************************************************************/
-PropertyContainerParameterUI::~PropertyContainerParameterUI()
+DataObjectReferenceParameterUI::~DataObjectReferenceParameterUI()
 {
     delete comboBox();
 }
@@ -55,7 +55,7 @@ PropertyContainerParameterUI::~PropertyContainerParameterUI()
 * This method is called when a new editable object has been assigned to the properties owner this
 * parameter UI belongs to.
 ******************************************************************************/
-void PropertyContainerParameterUI::resetUI()
+void DataObjectReferenceParameterUI::resetUI()
 {
     PropertyParameterUI::resetUI();
 
@@ -67,74 +67,69 @@ void PropertyContainerParameterUI::resetUI()
 * This method is called when a new editable object has been assigned to the
 * properties owner this parameter UI belongs to.
 ******************************************************************************/
-void PropertyContainerParameterUI::updateUI()
+void DataObjectReferenceParameterUI::updateUI()
 {
     PropertyParameterUI::updateUI();
 
     if(comboBox() && editObject()) {
 
-        // Get the current property class.
+        // Get the current object reference.
         QVariant val = editObject()->getPropertyFieldValue(propertyField());
-        OVITO_ASSERT(val.isValid() && val.canConvert<PropertyContainerReference>());
-        PropertyContainerReference selectedPropertyContainer = val.value<PropertyContainerReference>();
+        OVITO_ASSERT(val.isValid() && val.canConvert<DataObjectReference>());
+        DataObjectReference selectedObjectReference = val.value<DataObjectReference>();
 
-        // Update list of property containers available in the pipeline.
+        // Update list of data objects available in the pipeline's output.
         comboBox()->clear();
         int selectedIndex = -1;
-        bool currentContainerFilteredOut = false;
+        bool currentObjectFilteredOut = false;
         for(const PipelineFlowState& state : editor()->getPipelineInputs()) {
-            std::vector<ConstDataObjectPath> containers = state.getObjectsRecursive(PropertyContainer::OOClass());
-            for(const ConstDataObjectPath& path : containers) {
-                const PropertyContainer* container = static_object_cast<PropertyContainer>(path.back());
+            std::vector<ConstDataObjectPath> dataObjectPaths = state.getObjectsRecursive(*dataObjectClass());
+            for(const ConstDataObjectPath& path : dataObjectPaths) {
+                const DataObject* dataObject = path.back();
 
-                PropertyContainerReference propRef(path);
+                DataObjectReference ref(path);
 
-                // The client can apply a custom filter function to the container list.
-                if(_containerFilter && !_containerFilter(container)) {
-                    if(selectedPropertyContainer == propRef)
-                        currentContainerFilteredOut = true;
+                // The client can apply a custom filter function to the object list.
+                if(_objectFilter && !_objectFilter(dataObject)) {
+                    if(selectedObjectReference == ref)
+                        currentObjectFilteredOut = true;
                     continue;
                 }
 
                 // Do not add the same container to the list more than once.
-                bool existsAlready = false;
-                for(int i = 0; i < comboBox()->count(); i++) {
-                    PropertyContainerReference containerRef = comboBox()->itemData(i).value<PropertyContainerReference>();
-                    if(containerRef == propRef) {
-                        existsAlready = true;
-                        break;
-                    }
-                }
-                if(existsAlready)
+                if(comboBox()->findData(QVariant::fromValue(ref)) != -1)
                     continue;
 
-                if(propRef == selectedPropertyContainer)
+                if(ref == selectedObjectReference)
                     selectedIndex = comboBox()->count();
 
-                comboBox()->addItem(propRef.dataTitle(), QVariant::fromValue(propRef));
+                comboBox()->addItem(ref.dataTitle(), QVariant::fromValue(ref));
             }
         }
 
         static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.png"));
         if(selectedIndex < 0) {
-            if(selectedPropertyContainer) {
-                // Add a place-holder item if the selected container does not exist anymore.
-                QString title = selectedPropertyContainer.dataTitle();
-                if(title.isEmpty() && selectedPropertyContainer.dataClass())
-                    title = selectedPropertyContainer.dataClass()->propertyClassDisplayName();
-                if(!currentContainerFilteredOut)
+            if(selectedObjectReference) {
+                // Add a place-holder item if the selected object does not exist anymore.
+                QString title = selectedObjectReference.dataTitle();
+                if(title.isEmpty() && selectedObjectReference.dataClass())
+                    title = selectedObjectReference.dataClass()->displayName();
+                if(!currentObjectFilteredOut)
                     title += tr(" (not available)");
-                comboBox()->addItem(title, QVariant::fromValue(selectedPropertyContainer));
+                comboBox()->addItem(title, QVariant::fromValue(selectedObjectReference));
                 QStandardItem* item = static_cast<QStandardItemModel*>(comboBox()->model())->item(comboBox()->count()-1);
                 item->setIcon(warningIcon);
             }
             else if(comboBox()->count() != 0) {
-                comboBox()->addItem(tr("<Please select a data object>"));
+                comboBox()->addItem(tr("‹Please select›"));
+                QStandardItem* item = static_cast<QStandardItemModel*>(comboBox()->model())->item(comboBox()->count()-1);
+                item->setIcon(warningIcon);
             }
             selectedIndex = comboBox()->count() - 1;
         }
+
         if(comboBox()->count() == 0) {
-            comboBox()->addItem(tr("<No available data objects>"));
+            comboBox()->addItem(tr("‹No available objects›"));
             QStandardItem* item = static_cast<QStandardItemModel*>(comboBox()->model())->item(0);
             item->setIcon(warningIcon);
             selectedIndex = 0;
@@ -151,19 +146,19 @@ void PropertyContainerParameterUI::updateUI()
 * Takes the value entered by the user and stores it in the property field
 * this property UI is bound to.
 ******************************************************************************/
-void PropertyContainerParameterUI::updatePropertyValue()
+void DataObjectReferenceParameterUI::updatePropertyValue()
 {
     if(comboBox() && editObject()) {
-        performTransaction(tr("Select input data object"), [this]() {
+        performTransaction(tr("Select data object"), [this]() {
 
-            PropertyContainerReference containerRef = comboBox()->currentData().value<PropertyContainerReference>();
+            DataObjectReference ref = comboBox()->currentData().value<DataObjectReference>();
 
             // Check if new value differs from old value.
             QVariant oldval = editObject()->getPropertyFieldValue(propertyField());
-            if(containerRef == oldval.value<PropertyContainerReference>())
+            if(ref == oldval.value<DataObjectReference>())
                 return;
 
-            editObject()->setPropertyFieldValue(propertyField(), QVariant::fromValue(containerRef));
+            editObject()->setPropertyFieldValue(propertyField(), QVariant::fromValue(ref));
 
             Q_EMIT valueEntered();
         });
@@ -173,9 +168,10 @@ void PropertyContainerParameterUI::updatePropertyValue()
 /******************************************************************************
 * Sets the enabled state of the UI.
 ******************************************************************************/
-void PropertyContainerParameterUI::setEnabled(bool enabled)
+void DataObjectReferenceParameterUI::setEnabled(bool enabled)
 {
-    if(enabled == isEnabled()) return;
+    if(enabled == isEnabled())
+        return;
     PropertyParameterUI::setEnabled(enabled);
     if(comboBox())
         comboBox()->setEnabled(editObject() && isEnabled());

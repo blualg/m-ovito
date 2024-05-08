@@ -79,7 +79,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         layout2c->setSpacing(2);
         layout2->addLayout(layout2c);
 
-        IntegerRadioButtonParameterUI* renderingRangeTypeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(RenderSettings::renderingRangeType));
+        IntegerRadioButtonParameterUI* renderingRangeTypeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(RenderSettings::renderingRangeType));
 
         QRadioButton* currentFrameButton = renderingRangeTypeUI->addRadioButton(RenderSettings::CURRENT_FRAME, tr("Single frame"));
         layout2c->addWidget(currentFrameButton, 0, 0, 1, 5);
@@ -90,11 +90,11 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         QRadioButton* customIntervalButton = renderingRangeTypeUI->addRadioButton(RenderSettings::CUSTOM_INTERVAL, tr("Range:"));
         layout2c->addWidget(customIntervalButton, 2, 0, 1, 5);
 
-        IntegerParameterUI* customRangeStartUI = new IntegerParameterUI(this, PROPERTY_FIELD(RenderSettings::customRangeStart));
+        IntegerParameterUI* customRangeStartUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(RenderSettings::customRangeStart));
         customRangeStartUI->setEnabled(false);
         layout2c->addLayout(customRangeStartUI->createFieldLayout(), 3, 1);
         layout2c->addWidget(new QLabel(tr("to")), 3, 2);
-        IntegerParameterUI* customRangeEndUI = new IntegerParameterUI(this, PROPERTY_FIELD(RenderSettings::customRangeEnd));
+        IntegerParameterUI* customRangeEndUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(RenderSettings::customRangeEnd));
         customRangeEndUI->setEnabled(false);
         layout2c->addLayout(customRangeEndUI->createFieldLayout(), 3, 3);
         layout2c->setColumnMinimumWidth(0, 30);
@@ -106,10 +106,10 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         layout2a->setContentsMargins(0,6,0,0);
         layout2a->setSpacing(2);
         layout2->addLayout(layout2a);
-        IntegerParameterUI* everyNthFrameUI = new IntegerParameterUI(this, PROPERTY_FIELD(RenderSettings::everyNthFrame));
+        IntegerParameterUI* everyNthFrameUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(RenderSettings::everyNthFrame));
         layout2a->addWidget(everyNthFrameUI->label(), 0, 0);
         layout2a->addLayout(everyNthFrameUI->createFieldLayout(), 0, 1);
-        IntegerParameterUI* fileNumberBaseUI = new IntegerParameterUI(this, PROPERTY_FIELD(RenderSettings::fileNumberBase));
+        IntegerParameterUI* fileNumberBaseUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(RenderSettings::fileNumberBase));
         layout2a->addWidget(fileNumberBaseUI->label(), 1, 0);
         layout2a->addLayout(fileNumberBaseUI->createFieldLayout(), 1, 1);
         layout2a->setColumnStretch(2, 1);
@@ -132,12 +132,12 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         layout2->setColumnStretch(1, 1);
 
         // Image width parameter.
-        IntegerParameterUI* imageWidthUI = new IntegerParameterUI(this, PROPERTY_FIELD(RenderSettings::outputImageWidth));
+        IntegerParameterUI* imageWidthUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(RenderSettings::outputImageWidth));
         layout2->addWidget(imageWidthUI->label(), 0, 0);
         layout2->addLayout(imageWidthUI->createFieldLayout(), 0, 1);
 
         // Image height parameter.
-        IntegerParameterUI* imageHeightUI = new IntegerParameterUI(this, PROPERTY_FIELD(RenderSettings::outputImageHeight));
+        IntegerParameterUI* imageHeightUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(RenderSettings::outputImageHeight));
         layout2->addWidget(imageHeightUI->label(), 1, 0);
         layout2->addLayout(imageHeightUI->createFieldLayout(), 1, 1);
 
@@ -159,7 +159,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         connect(_viewportPreviewModeBox, &QCheckBox::clicked, this, &RenderSettingsEditor::onViewportPreviewModeToggled);
         onActiveViewportChanged(mainWindow().datasetContainer().activeViewport());
 
-        renderAllViewportsUI = new BooleanParameterUI(this, PROPERTY_FIELD(RenderSettings::renderAllViewports));
+        renderAllViewportsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(RenderSettings::renderAllViewports));
         sublayout->addWidget(renderAllViewportsUI->checkBox());
 #ifndef OVITO_BUILD_PROFESSIONAL
         renderAllViewportsUI->setEnabled(false);
@@ -176,7 +176,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         layout2->setSpacing(2);
         layout2->setColumnStretch(0, 1);
 
-        BooleanParameterUI* saveFileUI = new BooleanParameterUI(this, PROPERTY_FIELD(RenderSettings::saveToFile));
+        BooleanParameterUI* saveFileUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(RenderSettings::saveToFile));
         layout2->addWidget(saveFileUI->checkBox(), 0, 0);
 
         QPushButton* chooseFilenameBtn = new QPushButton(tr("Choose..."), rollout);
@@ -184,11 +184,11 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         layout2->addWidget(chooseFilenameBtn, 0, 1);
 
         // Output filename parameter.
-        StringParameterUI* imageFilenameUI = new StringParameterUI(this, PROPERTY_FIELD(RenderSettings::imageFilename));
+        StringParameterUI* imageFilenameUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(RenderSettings::imageFilename));
         imageFilenameUI->setEnabled(false);
         layout2->addWidget(imageFilenameUI->textBox(), 1, 0, 1, 2);
 
-        //BooleanParameterUI* skipExistingImagesUI = new BooleanParameterUI(this, PROPERTY_FIELD(RenderSettings::skipExistingImages));
+        //BooleanParameterUI* skipExistingImagesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(RenderSettings::skipExistingImages));
         //layout2->addWidget(skipExistingImagesUI->checkBox(), 2, 0, 1, 2);
         //connect(saveFileUI->checkBox(), &QCheckBox::toggled, skipExistingImagesUI, &BooleanParameterUI::setEnabled);
     }
@@ -202,11 +202,11 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         layout2->setSpacing(2);
 
         // Background color parameter.
-        ColorParameterUI* backgroundColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(RenderSettings::backgroundColorController));
+        ColorParameterUI* backgroundColorPUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(RenderSettings::backgroundColorController));
         layout2->addWidget(backgroundColorPUI->colorPicker(), 0, 1, 1, 2);
 
         // Alpha channel.
-        BooleanRadioButtonParameterUI* generateAlphaUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(RenderSettings::generateAlphaChannel));
+        BooleanRadioButtonParameterUI* generateAlphaUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(RenderSettings::generateAlphaChannel));
         layout2->addWidget(generateAlphaUI->buttonFalse(), 0, 0, 1, 1);
         layout2->addWidget(generateAlphaUI->buttonTrue(), 1, 0, 1, 3);
         generateAlphaUI->buttonFalse()->setText(tr("Color:"));
@@ -249,7 +249,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 #endif
 
     // Open a sub-editor for the renderer.
-    new SubObjectParameterUI(this, PROPERTY_FIELD(RenderSettings::renderer), rolloutParams.after(rollout));
+    createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(RenderSettings::renderer), rolloutParams.after(rollout));
 }
 
 /******************************************************************************

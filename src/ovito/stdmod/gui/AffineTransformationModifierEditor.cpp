@@ -25,6 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/AffineTransformationParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
+#include <ovito/core/viewport/ViewportSuspender.h>
 #include <ovito/stdmod/modifiers/AffineTransformationModifier.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include "AffineTransformationModifierEditor.h"
@@ -46,7 +47,7 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
     topLayout->setContentsMargins(8,8,8,8);
     topLayout->setSpacing(4);
 
-    BooleanRadioButtonParameterUI* relativeModeUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(AffineTransformationModifier::relativeMode));
+    BooleanRadioButtonParameterUI* relativeModeUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(AffineTransformationModifier::relativeMode));
 
     relativeModeUI->buttonTrue()->setText(tr("Transformation matrix:"));
     topLayout->addWidget(relativeModeUI->buttonTrue());
@@ -96,10 +97,8 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
             layout->addWidget(lineEdit, gridRow, col*3 + 0);
             layout->addWidget(spinner, gridRow, col*3 + 1);
 
-            connect(spinner, &SpinnerWidget::spinnerValueChanged, this, &AffineTransformationModifierEditor::onSpinnerValueChanged);
-            connect(spinner, &SpinnerWidget::spinnerDragStart, this, &AffineTransformationModifierEditor::onSpinnerDragStart);
-            connect(spinner, &SpinnerWidget::spinnerDragStop, this, &AffineTransformationModifierEditor::onSpinnerDragStop);
-            connect(spinner, &SpinnerWidget::spinnerDragAbort, this, &AffineTransformationModifierEditor::onSpinnerDragAbort);
+            spinner->enableAutomaticUndo(mainWindow(), tr("Change parameter"));
+            connect(spinner, &SpinnerWidget::valueChanged, this, &AffineTransformationModifierEditor::onSpinnerValueChanged);
             connect(relativeModeUI->buttonTrue(), &QRadioButton::toggled, spinner, &SpinnerWidget::setEnabled);
             connect(relativeModeUI->buttonTrue(), &QRadioButton::toggled, lineEdit, &QLineEdit::setEnabled);
         }
@@ -112,7 +111,7 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
     hboxsublayout->addWidget(new QLabel(tr("Translation:")));
     layout->addLayout(hboxsublayout, 4, 0, 1, 8);
 
-    BooleanParameterUI* translationReducedCoordinatesUI = new BooleanParameterUI(this, PROPERTY_FIELD(AffineTransformationModifier::translationReducedCoordinates));
+    BooleanParameterUI* translationReducedCoordinatesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AffineTransformationModifier::translationReducedCoordinates));
     connect(relativeModeUI->buttonTrue(), &QRadioButton::toggled, translationReducedCoordinatesUI, &BooleanParameterUI::setEnabled);
     translationReducedCoordinatesUI->checkBox()->setText(tr("In reduced cell coordinates"));
     hboxsublayout->addWidget(translationReducedCoordinatesUI->checkBox(), 1, Qt::AlignRight | Qt::AlignVCenter);
@@ -136,7 +135,7 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
     for(size_t v = 0; v < 3; v++) {
         layout->addWidget(new QLabel(tr("Cell vector %1:").arg(v+1)), v*2, 0, 1, 8);
         for(size_t r = 0; r < 3; r++) {
-            destinationCellUI = new AffineTransformationParameterUI(this, PROPERTY_FIELD(AffineTransformationModifier::targetCell), r, v);
+            destinationCellUI = createParamUI<AffineTransformationParameterUI>(PROPERTY_FIELD(AffineTransformationModifier::targetCell), r, v);
             destinationCellUI->setEnabled(false);
             layout->addLayout(destinationCellUI->createFieldLayout(), v*2+1, r*2);
             connect(relativeModeUI->buttonFalse(), &QRadioButton::toggled, destinationCellUI, &AffineTransformationParameterUI::setEnabled);
@@ -145,7 +144,7 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
 
     layout->addWidget(new QLabel(tr("Cell origin:")), 6, 0, 1, 8);
     for(size_t r = 0; r < 3; r++) {
-        destinationCellUI = new AffineTransformationParameterUI(this, PROPERTY_FIELD(AffineTransformationModifier::targetCell), r, 3);
+        destinationCellUI = createParamUI<AffineTransformationParameterUI>(PROPERTY_FIELD(AffineTransformationModifier::targetCell), r, 3);
         destinationCellUI->setEnabled(false);
         layout->addLayout(destinationCellUI->createFieldLayout(), 7, r*2);
         connect(relativeModeUI->buttonFalse(), &QRadioButton::toggled, destinationCellUI, &AffineTransformationParameterUI::setEnabled);
@@ -162,10 +161,10 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
     topLayout->setContentsMargins(4,4,4,4);
     topLayout->setSpacing(12);
 
-    ModifierDelegateFixedListParameterUI* delegatesPUI = new ModifierDelegateFixedListParameterUI(this, rolloutParams.after(rollout));
+    ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>(rolloutParams.after(rollout));
     topLayout->addWidget(delegatesPUI->listWidget(141));
 
-    BooleanParameterUI* selectionUI = new BooleanParameterUI(this, PROPERTY_FIELD(AffineTransformationModifier::selectionOnly));
+    BooleanParameterUI* selectionUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AffineTransformationModifier::selectionOnly));
     topLayout->addWidget(selectionUI->checkBox());
 }
 
@@ -192,24 +191,8 @@ void AffineTransformationModifierEditor::updateUI()
 ******************************************************************************/
 void AffineTransformationModifierEditor::onSpinnerValueChanged()
 {
-    if(!_undoTransaction.operation()) {
-        performTransaction(tr("Change parameter"), [&] {
-            updateParameterValue();
-        });
-    }
-    else {
-        _undoTransaction.revert();
-        performActions(_undoTransaction, [&] {
-            updateParameterValue();
-        });
-    }
-}
+    // Take the value entered by the user and store it in transformation controller.
 
-/******************************************************************************
-* Takes the value entered by the user and stores it in transformation controller.
-******************************************************************************/
-void AffineTransformationModifierEditor::updateParameterValue()
-{
     AffineTransformationModifier* mod = dynamic_object_cast<AffineTransformationModifier>(editObject());
     if(!mod) return;
 
@@ -224,30 +207,6 @@ void AffineTransformationModifierEditor::updateParameterValue()
 
     tm(row, column) = spinner->floatValue();
     mod->setTransformationTM(tm);
-}
-
-/******************************************************************************
-* Is called when the user begins dragging the spinner interactively.
-******************************************************************************/
-void AffineTransformationModifierEditor::onSpinnerDragStart()
-{
-    _undoTransaction.begin(mainWindow(), tr("Change parameter"));
-}
-
-/******************************************************************************
-* Is called when the user stops dragging the spinner interactively.
-******************************************************************************/
-void AffineTransformationModifierEditor::onSpinnerDragStop()
-{
-    _undoTransaction.commit();
-}
-
-/******************************************************************************
-* Is called when the user aborts dragging the spinner interactively.
-******************************************************************************/
-void AffineTransformationModifierEditor::onSpinnerDragAbort()
-{
-    _undoTransaction.cancel();
 }
 
 /******************************************************************************
@@ -289,8 +248,10 @@ void AffineTransformationModifierEditor::onEnterRotation()
     AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(editObject());
     if(!mod) return;
 
-    _undoTransaction.begin(mainWindow(), tr("Set transformation matrix"));
-    if(!handleExceptions([&] {
+    UndoableTransaction transaction;
+    transaction.begin(mainWindow(), tr("Set transformation matrix"));
+
+    handleExceptions([&] {
         QDialog dlg(container()->window());
         dlg.setWindowTitle(tr("Enter rotation axis and angle"));
         QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
@@ -398,38 +359,39 @@ void AffineTransformationModifierEditor::onEnterRotation()
             centerSpinnerZ->setFloatValue(center.z());
         }
 
-        auto updateMatrix = [mod, angleSpinner, axisSpinnerX, axisSpinnerY, axisSpinnerZ, centerSpinnerX, centerSpinnerY, centerSpinnerZ, this]() {
+        auto updateMatrix = [&]() {
             Vector3 axis(axisSpinnerX->floatValue(), axisSpinnerY->floatValue(), axisSpinnerZ->floatValue());
             if(axis == Vector3::Zero()) axis = Vector3(0,0,1);
             Vector3 center(centerSpinnerX->floatValue(), centerSpinnerY->floatValue(), centerSpinnerZ->floatValue());
             Rotation rot(axis, angleSpinner->floatValue());
             AffineTransformation tm = AffineTransformation::translation(center) * AffineTransformation::rotation(rot) * AffineTransformation::translation(-center);
-            _undoTransaction.revert();
-            performActions(_undoTransaction, [&] {
+            ViewportSuspender noVPUpdate(mainWindow());
+            transaction.revert();
+            performActions(transaction, [&] {
                 mod->setTranslationReducedCoordinates(false);
                 mod->setTransformationTM(tm);
             });
         };
 
-        connect(angleSpinner, &SpinnerWidget::spinnerValueChanged, updateMatrix);
-        connect(axisSpinnerX, &SpinnerWidget::spinnerValueChanged, updateMatrix);
-        connect(axisSpinnerY, &SpinnerWidget::spinnerValueChanged, updateMatrix);
-        connect(axisSpinnerZ, &SpinnerWidget::spinnerValueChanged, updateMatrix);
-        connect(centerSpinnerX, &SpinnerWidget::spinnerValueChanged, updateMatrix);
-        connect(centerSpinnerY, &SpinnerWidget::spinnerValueChanged, updateMatrix);
-        connect(centerSpinnerZ, &SpinnerWidget::spinnerValueChanged, updateMatrix);
+        connect(angleSpinner, &SpinnerWidget::valueChanged, updateMatrix);
+        connect(axisSpinnerX, &SpinnerWidget::valueChanged, updateMatrix);
+        connect(axisSpinnerY, &SpinnerWidget::valueChanged, updateMatrix);
+        connect(axisSpinnerZ, &SpinnerWidget::valueChanged, updateMatrix);
+        connect(centerSpinnerX, &SpinnerWidget::valueChanged, updateMatrix);
+        connect(centerSpinnerY, &SpinnerWidget::valueChanged, updateMatrix);
+        connect(centerSpinnerZ, &SpinnerWidget::valueChanged, updateMatrix);
 
         QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
         connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
         connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
         mainLayout->addWidget(buttonBox);
         if(dlg.exec() == QDialog::Accepted) {
-            _undoTransaction.commit();
+            transaction.commit();
         }
         else {
-            _undoTransaction.cancel();
+            transaction.cancel();
         }
-    })) _undoTransaction.cancel();
+    });
 }
 
 }   // End of namespace

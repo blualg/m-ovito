@@ -95,7 +95,7 @@ void PropertyObjectEditor::createUI(const RolloutInsertionParameters& rolloutPar
     sublayout->setContentsMargins(0,0,0,0);
     layout->addWidget(subEditorContainer);
 
-    RefTargetListParameterUI* elementTypesListUI = new CustomRefTargetListParameterUI(this, PROPERTY_FIELD(Property::elementTypes), RolloutInsertionParameters().insertInto(subEditorContainer));
+    RefTargetListParameterUI* elementTypesListUI = createParamUI<CustomRefTargetListParameterUI>(PROPERTY_FIELD(Property::elementTypes), RolloutInsertionParameters().insertInto(subEditorContainer));
     QTableView* tableWidget = elementTypesListUI->tableWidget(250);
     layout->insertWidget(0, tableWidget);
     tableWidget->verticalHeader()->setDefaultSectionSize(tableWidget->verticalHeader()->minimumSectionSize());

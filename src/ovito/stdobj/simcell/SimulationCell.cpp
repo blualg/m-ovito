@@ -33,6 +33,7 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(SimulationCell);
 OVITO_CLASSINFO(SimulationCell, "ClassNameAlias", "SimulationCellObject");  // For backward compatibility with OVITO 3.9.2
+OVITO_CLASSINFO(SimulationCell, "DisplayName", "Simulation cell");
 DEFINE_PROPERTY_FIELD(SimulationCell, cellMatrix);
 DEFINE_PROPERTY_FIELD(SimulationCell, pbcX);
 DEFINE_PROPERTY_FIELD(SimulationCell, pbcY);

@@ -45,11 +45,11 @@ void LAMMPSDumpExporterEditor::createUI(const RolloutInsertionParameters& rollou
     layout->setSpacing(4);
     layout->setColumnStretch(2,1);
 
-    IntegerParameterUI* precisionUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileExporter::floatOutputPrecision));
+    IntegerParameterUI* precisionUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(FileExporter::floatOutputPrecision));
     layout->addWidget(precisionUI->label(), 0, 0);
     layout->addLayout(precisionUI->createFieldLayout(), 0, 1);
 
-    BooleanParameterUI* restrictedTriclinicUI = new BooleanParameterUI(this, PROPERTY_FIELD(LAMMPSDumpExporter::restrictedTriclinic));
+    BooleanParameterUI* restrictedTriclinicUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(LAMMPSDumpExporter::restrictedTriclinic));
     layout->addWidget(restrictedTriclinicUI->checkBox(), 1, 0);
 
     FileColumnParticleExporterEditor::createUI(rolloutParams.before(rollout));

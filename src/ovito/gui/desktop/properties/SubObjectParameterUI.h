@@ -24,7 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include "ParameterUI.h"
+#include "PropertyParameterUI.h"
 #include "PropertiesEditor.h"
 
 namespace Ovito {
@@ -36,6 +36,7 @@ namespace Ovito {
 class OVITO_GUI_EXPORT SubObjectParameterUI : public PropertyParameterUI
 {
     OVITO_CLASS(SubObjectParameterUI)
+    Q_OBJECT
 
 public:
 

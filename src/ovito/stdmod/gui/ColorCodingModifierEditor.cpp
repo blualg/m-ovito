@@ -24,7 +24,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/LoadImageFileDialog.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
-#include <ovito/gui/desktop/properties/Vector3ParameterUI.h>
+#include <ovito/gui/desktop/properties/VectorParameterUI.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/CustomParameterUI.h>
@@ -56,11 +56,11 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout1->setContentsMargins(4,4,4,4);
     layout1->setSpacing(2);
 
-    ModifierDelegateParameterUI* delegateUI = new ModifierDelegateParameterUI(this, ColorCodingModifierDelegate::OOClass());
+    ModifierDelegateParameterUI* delegateUI = createParamUI<ModifierDelegateParameterUI>(ColorCodingModifierDelegate::OOClass());
     layout1->addWidget(new QLabel(tr("Operate on:")));
     layout1->addWidget(delegateUI->comboBox());
 
-    _sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::sourceProperty));
+    _sourcePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(ColorCodingModifier::sourceProperty));
     layout1->addWidget(new QLabel(tr("Input property:")));
     layout1->addWidget(_sourcePropertyUI->comboBox());
     connect(this, &PropertiesEditor::contentsChanged, this, [this](RefTarget* editObject) {
@@ -105,7 +105,7 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout1->addLayout(layout2);
 
     // End value parameter.
-    _endValueUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::endValueController));
+    _endValueUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ColorCodingModifier::endValueController));
     layout2->addWidget(_endValueUI->label(), 0, 0);
     layout2->addLayout(_endValueUI->createFieldLayout(), 0, 1);
 
@@ -135,7 +135,7 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout2->addWidget(_colorLegendLabel, 1, 1);
 
     // Start value parameter.
-    _startValueUI = new FloatParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::startValueController));
+    _startValueUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ColorCodingModifier::startValueController));
     layout2->addWidget(_startValueUI->label(), 2, 0);
     layout2->addLayout(_startValueUI->createFieldLayout(), 2, 1);
 
@@ -149,7 +149,7 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout2->addWidget(exportBtn, 1, 0, Qt::AlignCenter);
 
     // Auto-adjust range.
-    BooleanParameterUI* autoAdjustRangePUI = new BooleanParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::autoAdjustRange));
+    BooleanParameterUI* autoAdjustRangePUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorCodingModifier::autoAdjustRange));
     layout2->addWidget(autoAdjustRangePUI->checkBox(), 3, 1);
 
     layout1->addSpacing(8);
@@ -168,11 +168,11 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout1->addSpacing(8);
 
     // Only selected particles/bonds.
-    BooleanParameterUI* onlySelectedPUI = new BooleanParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::colorOnlySelected));
+    BooleanParameterUI* onlySelectedPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorCodingModifier::colorOnlySelected));
     layout1->addWidget(onlySelectedPUI->checkBox());
 
     // Keep selection
-    BooleanParameterUI* keepSelectionPUI = new BooleanParameterUI(this, PROPERTY_FIELD(ColorCodingModifier::keepSelection));
+    BooleanParameterUI* keepSelectionPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorCodingModifier::keepSelection));
     layout1->addWidget(keepSelectionPUI->checkBox());
     connect(onlySelectedPUI->checkBox(), &QCheckBox::toggled, keepSelectionPUI, &BooleanParameterUI::setEnabled);
     keepSelectionPUI->setEnabled(false);

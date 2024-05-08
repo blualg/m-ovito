@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include <ovito/stdmod/modifiers/SelectTypeModifier.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
+#include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "SelectTypeModifierEditor.h"
 
@@ -44,14 +44,14 @@ void SelectTypeModifierEditor::createUI(const RolloutInsertionParameters& rollou
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(4);
 
-    PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
+    DataObjectReferenceParameterUI* pclassUI = createParamUI<DataObjectReferenceParameterUI>(PROPERTY_FIELD(GenericPropertyModifier::subject), PropertyContainer::OOClass());
     layout->addWidget(new QLabel(tr("Operate on:")));
     layout->addWidget(pclassUI->comboBox());
-    pclassUI->setContainerFilter([](const PropertyContainer* container) {
+    pclassUI->setObjectFilter<PropertyContainer>([](const PropertyContainer* container) {
         return std::any_of(container->properties().begin(), container->properties().end(), &isValidInputProperty);
     });
 
-    _sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(SelectTypeModifier::sourceProperty));
+    _sourcePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(SelectTypeModifier::sourceProperty));
     layout->addWidget(new QLabel(tr("Property:")));
     layout->addWidget(_sourcePropertyUI->comboBox());
 
@@ -100,7 +100,7 @@ void SelectTypeModifierEditor::createUI(const RolloutInsertionParameters& rollou
 
     // Status label.
     layout->addSpacing(12);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 }
 
 /******************************************************************************

@@ -110,7 +110,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
     everyNthFrameSpinner->setTextBox(everyNthFrameBox);
     everyNthFrameSpinner->setMinValue(1);
     contentLayout->addWidget(everyNthFrameSpinner, 1, 3);
-    connect(everyNthFrameSpinner, &SpinnerWidget::spinnerValueChanged, this, [this]() {
+    connect(everyNthFrameSpinner, &SpinnerWidget::valueChanged, this, [this]() {
         _mainWindow.performActions(*this, [&] {
             _animSettings->setPlaybackEveryNthFrame(everyNthFrameSpinner->intValue());
         });
@@ -140,7 +140,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
     animStartSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
     animStartSpinner->setTextBox(animStartBox);
     contentLayout->addWidget(animStartSpinner, 0, 2);
-    connect(animStartSpinner, &SpinnerWidget::spinnerValueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
+    connect(animStartSpinner, &SpinnerWidget::valueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
 
     contentLayout->addWidget(new QLabel(tr("End frame:"), this), 1, 0);
     QLineEdit* animEndBox = new QLineEdit(this);
@@ -149,7 +149,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
     animEndSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
     animEndSpinner->setTextBox(animEndBox);
     contentLayout->addWidget(animEndSpinner, 1, 2);
-    connect(animEndSpinner, &SpinnerWidget::spinnerValueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
+    connect(animEndSpinner, &SpinnerWidget::valueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
 
     connect(animIntervalBox, &QGroupBox::clicked, this, [this](bool checked) {
         _mainWindow.performActions(*this, [&] {

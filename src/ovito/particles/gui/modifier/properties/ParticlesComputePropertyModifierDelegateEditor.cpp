@@ -54,7 +54,7 @@ void ParticlesComputePropertyModifierDelegateEditor::createUI(const RolloutInser
     rangeGroupBoxLayout->setColumnStretch(1,1);
 
     // Cutoff parameter.
-    FloatParameterUI* cutoffRadiusUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate::cutoff));
+    FloatParameterUI* cutoffRadiusUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate::cutoff));
     rangeGroupBoxLayout->addWidget(cutoffRadiusUI->label(), 0, 0);
     rangeGroupBoxLayout->addLayout(cutoffRadiusUI->createFieldLayout(), 0, 1);
 
@@ -67,7 +67,7 @@ void ParticlesComputePropertyModifierDelegateEditor::createUI(const RolloutInser
     neighborExpressionsLayout->setColumnStretch(1, 1);
 
     // Show multiline fields.
-    BooleanParameterUI* multilineFieldsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate::useMultilineFields));
+    BooleanParameterUI* multilineFieldsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate::useMultilineFields));
     neighborExpressionsLayout->addWidget(multilineFieldsUI->checkBox(), 0, 1, Qt::AlignRight | Qt::AlignBottom);
 
     // Update input variables list if another modifier has been loaded into the editor.

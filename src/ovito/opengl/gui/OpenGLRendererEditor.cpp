@@ -53,7 +53,7 @@ void OpenGLRendererEditor::createUI(const RolloutInsertionParameters& rolloutPar
     gridLayout->setColumnStretch(1, 1);
 
     // Antialiasing level
-    IntegerParameterUI* antialiasingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(OpenGLRenderer::antialiasingLevel));
+    IntegerParameterUI* antialiasingLevelUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(OpenGLRenderer::antialiasingLevel));
     gridLayout->addWidget(antialiasingLevelUI->label(), 0, 0);
     gridLayout->addLayout(antialiasingLevelUI->createFieldLayout(), 0, 1);
 
@@ -62,7 +62,7 @@ void OpenGLRendererEditor::createUI(const RolloutInsertionParameters& rolloutPar
     QHBoxLayout* boxLayout = new QHBoxLayout(transparencyBox);
     boxLayout->setContentsMargins(4,4,4,4);
 
-    VariantComboBoxParameterUI* transparencyMethodUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(OpenGLRenderer::orderIndependentTransparency));
+    VariantComboBoxParameterUI* transparencyMethodUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(OpenGLRenderer::orderIndependentTransparency));
     transparencyMethodUI->comboBox()->addItem(tr("Back-to-Front Ordered (default)"), QVariant::fromValue(false));
     transparencyMethodUI->comboBox()->addItem(tr("Weighted Blended Order-Independent"), QVariant::fromValue(true));
     boxLayout->addWidget(transparencyMethodUI->comboBox());

@@ -123,7 +123,8 @@ void StringParameterUI::updateUI()
 ******************************************************************************/
 void StringParameterUI::setEnabled(bool enabled)
 {
-    if(enabled == isEnabled()) return;
+    if(enabled == isEnabled())
+        return;
     PropertyParameterUI::setEnabled(enabled);
     if(textBox())
         textBox()->setEnabled(editObject() && isEnabled());

@@ -49,7 +49,7 @@ void IMDImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
     layout->addWidget(optionsBox);
 
     // Sort particles
-    BooleanParameterUI* sortParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::sortParticles));
+    BooleanParameterUI* sortParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::sortParticles));
     sublayout->addWidget(sortParticlesUI->checkBox());
 }
 

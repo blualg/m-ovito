@@ -55,7 +55,7 @@ public:
     const QString& dataTitle() const { return _dataTitle; }
 
     /// Returns the UI title of the referenced data object if available. Otherwise returns the data collection path as a fallback string representation.
-    const QString& dataTitleOrString() const { return _dataTitle.isEmpty() ? _dataPath : _dataTitle; }
+    const QString& dataTitleOrPath() const { return _dataTitle.isEmpty() ? _dataPath : _dataTitle; }
 
     /// \brief Compares two references for equality.
     bool operator==(const DataObjectReference& other) const {

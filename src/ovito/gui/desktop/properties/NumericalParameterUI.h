@@ -25,8 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
-#include <ovito/core/app/undo/UndoableTransaction.h>
-#include "ParameterUI.h"
+#include "PropertyParameterUI.h"
 
 namespace Ovito {
 
@@ -37,6 +36,7 @@ namespace Ovito {
 class OVITO_GUI_EXPORT NumericalParameterUI : public PropertyParameterUI
 {
     OVITO_CLASS(NumericalParameterUI)
+    Q_OBJECT
 
 public:
 
@@ -59,7 +59,7 @@ public:
     QAbstractButton* animateButton() const { return _animateButton; }
 
     /// Creates a QLayout that contains the text box, the spinner widget, the animate button (if parameter is animatable).
-    QLayout* createFieldLayout() const;
+    QLayout* createFieldLayout();
 
     /// Returns the type of unit conversion service, which is used to format the parameter value as a text string.
     const QMetaObject* parameterUnitType() const { return _parameterUnitType; }
@@ -97,47 +97,30 @@ public Q_SLOTS:
     /// this property UI is bound to. This method must be implemented by derived classes.
     virtual void updatePropertyValue() = 0;
 
-protected Q_SLOTS:
-
-    /// Is called when the spinner value has changed.
-    void onSpinnerValueChanged();
-
-    /// Is called when the user begins dragging the spinner interactively.
-    void onSpinnerDragStart();
-
-    /// Is called when the user stops dragging the spinner interactively.
-    void onSpinnerDragStop();
-
-    /// Is called when the user aborts dragging the spinner interactively.
-    void onSpinnerDragAbort();
-
 protected:
 
-    /// the spinner control of the UI component.
+    /// The spinner UI component.
     QPointer<SpinnerWidget> _spinner;
 
-    /// The text box of the UI component.
+    /// The text box UI component.
     QPointer<QLineEdit> _textBox;
 
-    /// The label of the UI component.
+    /// The label UI component.
     QPointer<QLabel> _label;
 
     /// The button for editing animatable parameters.
     QPointer<QAbstractButton> _animateButton;
 
+    /// The widget layout managed by this component.
+    QPointer<QHBoxLayout> _layout;
+
     /// The type of unit conversion service, which is used to format the parameter value as a text string.
     const QMetaObject* _parameterUnitType;
-
-    /// Indicates that the user is currently dragging the spinner using the mouse.
-    bool _isDraggingSpinner = false;
 
 private:
 
     /// Creates the widgets for this property UI.
     void initUIControls(const QString& labelText);
-
-    /// To undo value changes during mouse dragging.
-    UndoableTransaction _undoTransaction;
 };
 
 }   // End of namespace

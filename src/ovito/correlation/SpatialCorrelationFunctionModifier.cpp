@@ -214,7 +214,12 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
     // In interactive mode, do not perform a real computation. Instead, reuse an old result from the cached state if available.
     if(request.interactiveMode()) {
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
-            state.adoptDataObjectsFrom(cachedState, request.modificationNode());
+            // Adopt all root-level data objects from the cached DataCollection which were created by us.
+            for(const DataObject* obj : cachedState.data()->objects()) {
+                if(obj->createdByNode().lock() == request.modificationNode()) {
+                    state.addObject(obj);
+                }
+            }
         }
         return std::move(state);
     }

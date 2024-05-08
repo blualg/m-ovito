@@ -60,23 +60,23 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
 
     int row = 0;
 
-    IntegerRadioButtonParameterUI* methodUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::method));
+    IntegerRadioButtonParameterUI* methodUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::method));
     QRadioButton* alphaShapeMethodBtn = methodUI->addRadioButton(ConstructSurfaceModifier::AlphaShape, tr("Alpha-shape method:"));
     sublayout->addWidget(alphaShapeMethodBtn, row++, 0, 1, 3);
 
-    FloatParameterUI* probeSphereRadiusUI = new FloatParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::probeSphereRadius));
+    FloatParameterUI* probeSphereRadiusUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::probeSphereRadius));
     probeSphereRadiusUI->setEnabled(false);
     sublayout->addWidget(probeSphereRadiusUI->label(), row, 1);
     sublayout->addLayout(probeSphereRadiusUI->createFieldLayout(), row++, 2);
     connect(alphaShapeMethodBtn, &QRadioButton::toggled, probeSphereRadiusUI, &FloatParameterUI::setEnabled);
 
-    IntegerParameterUI* smoothingLevelUI = new IntegerParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::smoothingLevel));
+    IntegerParameterUI* smoothingLevelUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::smoothingLevel));
     smoothingLevelUI->setEnabled(false);
     sublayout->addWidget(smoothingLevelUI->label(), row, 1);
     sublayout->addLayout(smoothingLevelUI->createFieldLayout(), row++, 2);
     connect(alphaShapeMethodBtn, &QRadioButton::toggled, smoothingLevelUI, &IntegerParameterUI::setEnabled);
 
-    BooleanParameterUI* selectSurfaceParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::selectSurfaceParticles));
+    BooleanParameterUI* selectSurfaceParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::selectSurfaceParticles));
     selectSurfaceParticlesUI->setEnabled(false);
     sublayout->addWidget(selectSurfaceParticlesUI->checkBox(), row++, 1, 1, 2);
     connect(alphaShapeMethodBtn, &QRadioButton::toggled, selectSurfaceParticlesUI, &BooleanParameterUI::setEnabled);
@@ -85,26 +85,26 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     sublayout->setRowMinimumHeight(row++, 10);
     sublayout->addWidget(gaussianDensityBtn, row++, 0, 1, 3);
 
-    IntegerParameterUI* gridResolutionUI = new IntegerParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::gridResolution));
+    IntegerParameterUI* gridResolutionUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::gridResolution));
     gridResolutionUI->setEnabled(false);
     sublayout->addWidget(gridResolutionUI->label(), row, 1);
     sublayout->addLayout(gridResolutionUI->createFieldLayout(), row++, 2);
     connect(gaussianDensityBtn, &QRadioButton::toggled, gridResolutionUI, &IntegerParameterUI::setEnabled);
 
-    FloatParameterUI* radiusFactorUI = new FloatParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::radiusFactor));
+    FloatParameterUI* radiusFactorUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::radiusFactor));
     radiusFactorUI->setEnabled(false);
     sublayout->addWidget(radiusFactorUI->label(), row, 1);
     sublayout->addLayout(radiusFactorUI->createFieldLayout(), row++, 2);
     connect(gaussianDensityBtn, &QRadioButton::toggled, radiusFactorUI, &FloatParameterUI::setEnabled);
 
-    FloatParameterUI* isoValueUI = new FloatParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::isoValue));
+    FloatParameterUI* isoValueUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::isoValue));
     isoValueUI->setEnabled(false);
     sublayout->addWidget(isoValueUI->label(), row, 1);
     sublayout->addLayout(isoValueUI->createFieldLayout(), row++, 2);
     connect(gaussianDensityBtn, &QRadioButton::toggled, isoValueUI, &FloatParameterUI::setEnabled);
 
     BooleanGroupBoxParameterUI* regionsSettingsUI =
-        new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::identifyRegions));
+        createParamUI<BooleanGroupBoxParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::identifyRegions));
 #ifdef OVITO_BUILD_PROFESSIONAL
     regionsSettingsUI->groupBox()->setTitle(tr("Identify volumetric regions"));
 #else
@@ -120,7 +120,7 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     row = 0;
 
     BooleanParameterUI* mapParticlesToRegionsUI =
-        new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::mapParticlesToRegions));
+        createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::mapParticlesToRegions));
     mapParticlesToRegionsUI->setEnabled(false);
     sublayout->addWidget(mapParticlesToRegionsUI->checkBox(), row++, 1, 1, 2);
 #ifdef OVITO_BUILD_PROFESSIONAL
@@ -150,22 +150,22 @@ void ConstructSurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     sublayout->setSpacing(6);
     sublayout->setColumnStretch(1, 1);
 
-    BooleanParameterUI* onlySelectedUI = new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::onlySelectedParticles));
+    BooleanParameterUI* onlySelectedUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::onlySelectedParticles));
     sublayout->addWidget(onlySelectedUI->checkBox(), row++, 0, 1, 2);
 
-    BooleanParameterUI* transferParticlePropertiesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::transferParticleProperties));
+    BooleanParameterUI* transferParticlePropertiesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::transferParticleProperties));
     sublayout->addWidget(transferParticlePropertiesUI->checkBox(), row++, 0, 1, 2);
 
-    BooleanParameterUI* computeSurfaceDistanceUI = new BooleanParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::computeSurfaceDistance));
+    BooleanParameterUI* computeSurfaceDistanceUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::computeSurfaceDistance));
     sublayout->addWidget(computeSurfaceDistanceUI->checkBox(), row++, 0, 1, 2);
 
     // Status label.
-    StatusWidget* statusWidget = (new ObjectStatusDisplay(this))->statusWidget();
+    StatusWidget* statusWidget = createParamUI<ObjectStatusDisplay>()->statusWidget();
     layout->addWidget(statusWidget);
     statusWidget->setMinimumHeight(56);
 
     // Open a sub-editor for the surface mesh vis element.
-    new SubObjectParameterUI(this, PROPERTY_FIELD(ConstructSurfaceModifier::surfaceMeshVis), rolloutParams.after(rollout).setTitle(tr("Surface display")));
+    createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(ConstructSurfaceModifier::surfaceMeshVis), rolloutParams.after(rollout).setTitle(tr("Surface display")));
 }
 
 }   // End of namespace

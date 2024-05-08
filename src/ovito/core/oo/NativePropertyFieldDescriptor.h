@@ -47,12 +47,10 @@ public:
     // property field. Do not use this class directly but use the
     // SET_PROPERTY_FIELD_UNITS macro instead.
     struct PropertyFieldUnitsSetter : public NumericalParameterDescriptor {
-        PropertyFieldUnitsSetter(NativePropertyFieldDescriptor* propfield, const QMetaObject* parameterUnitType, FloatType minValue = FLOATTYPE_MIN, FloatType maxValue = FLOATTYPE_MAX) {
-            OVITO_ASSERT(propfield->_parameterInfo == nullptr);
-            propfield->_parameterInfo = this;
-            this->unitType = parameterUnitType;
-            this->minValue = minValue;
-            this->maxValue = maxValue;
+        PropertyFieldUnitsSetter(NativePropertyFieldDescriptor* propfield, const QMetaObject* parameterUnitType, FloatType minValue = FLOATTYPE_MIN, FloatType maxValue = FLOATTYPE_MAX)
+            : NumericalParameterDescriptor({ parameterUnitType, minValue, maxValue })
+        {
+            propfield->setNumericalParameterInfo(this);
         }
     };
 
@@ -61,8 +59,7 @@ public:
     // SET_PROPERTY_FIELD_LABEL macro instead.
     struct PropertyFieldDisplayNameSetter {
         PropertyFieldDisplayNameSetter(NativePropertyFieldDescriptor* propfield, const QString& label) {
-            OVITO_ASSERT(propfield->_displayName.isEmpty());
-            propfield->_displayName = label;
+            propfield->setDisplayName(label);
         }
     };
 
@@ -99,14 +96,14 @@ public:
             &decltype(classname::_##name)::target_object_type::OOClass(), \
             #name, \
             static_cast<Ovito::PropertyFieldFlags>(classname::__##name##_flags), \
-            [](const Ovito::RefMaker* obj) -> Ovito::RefTarget* { \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*) -> Ovito::RefTarget* { \
                 return const_cast<classname::__##name##_target_object_type*>(static_cast<const classname*>(obj)->_##name.get()); \
             }, \
-            [](Ovito::RefMaker* obj, const Ovito::RefTarget* newTarget) { \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const Ovito::RefTarget* newTarget) { \
                 static_cast<classname*>(obj)->_##name.set(obj, PROPERTY_FIELD(classname::name), \
                     static_object_cast<classname::__##name##_target_object_type>(const_cast<Ovito::RefTarget*>(newTarget))); \
             }, \
-            [](Ovito::RefMaker* obj, Ovito::OORef<Ovito::RefTarget> newTarget) { \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::OORef<Ovito::RefTarget> newTarget) { \
                 static_cast<classname*>(obj)->_##name.set(obj, PROPERTY_FIELD(classname::name), \
                     static_object_cast<classname::__##name##_target_object_type>(std::move(newTarget))); \
             } \
@@ -118,20 +115,20 @@ public:
             &decltype(classname::_##name)::target_object_type::OOClass(), \
             #name, \
             static_cast<Ovito::PropertyFieldFlags>(classname::__##name##_flags), \
-            [](const Ovito::RefMaker* obj) -> int { \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*) -> int { \
                 return static_cast<const classname*>(obj)->_##name.size(); \
             }, \
-            [](const Ovito::RefMaker* obj, int index) -> Ovito::RefTarget* { \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, int index) -> Ovito::RefTarget* { \
                 return const_cast<classname::__##name##_target_object_type*>(static_cast<const classname*>(obj)->_##name.get(index)); \
             }, \
-            [](Ovito::RefMaker* obj, int index, const Ovito::RefTarget* newTarget) { \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, int index, const Ovito::RefTarget* newTarget) { \
                 static_cast<classname*>(obj)->_##name.set(obj, PROPERTY_FIELD(classname::name), index, \
                     static_object_cast<classname::__##name##_target_object_type>(const_cast<Ovito::RefTarget*>(newTarget))); \
             }, \
-            [](Ovito::RefMaker* obj, int index) { \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, int index) { \
                 static_cast<classname*>(obj)->_##name.remove(obj, PROPERTY_FIELD(classname::name), index); \
             }, \
-            [](Ovito::RefMaker* obj, int index, Ovito::OORef<Ovito::RefTarget> newTarget) { \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, int index, Ovito::OORef<Ovito::RefTarget> newTarget) { \
                 static_cast<classname*>(obj)->_##name.insert(obj, PROPERTY_FIELD(classname::name), index, \
                     static_object_cast<classname::__##name##_target_object_type>(std::move(newTarget))); \
             } \
@@ -261,20 +258,20 @@ public:
     Ovito::NativePropertyFieldDescriptor classname::fieldname##__propdescr_instance( \
             const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
             #fieldname, \
-            static_cast<Ovito::PropertyFieldFlags>((Ovito::PropertyFieldFlag)decltype(classname::_##fieldname)::property_field_flags), \
-            [](Ovito::RefMaker* obj, const Ovito::RefMaker* other) { \
+            static_cast<Ovito::PropertyFieldFlags>(static_cast<Ovito::PropertyFieldFlag>(decltype(classname::_##fieldname)::property_field_flags)), \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const Ovito::RefMaker* other) { \
                 static_cast<classname*>(obj)->_##fieldname.set(obj, PROPERTY_FIELD(classname::fieldname), static_cast<const classname*>(other)->_##fieldname.get()); \
             }, \
-            [](const Ovito::RefMaker* obj) -> QVariant { \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*) -> QVariant { \
                 return static_cast<const classname*>(obj)->_##fieldname.getQVariant(); \
             }, \
-            [](Ovito::RefMaker* obj, const QVariant& newValue) { \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const QVariant& newValue) { \
                 static_cast<classname*>(obj)->_##fieldname.setQVariant(obj, PROPERTY_FIELD(classname::fieldname), newValue); \
             }, \
-            [](const Ovito::RefMaker* obj, Ovito::SaveStream& stream) { \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::SaveStream& stream) { \
                 static_cast<const classname*>(obj)->_##fieldname.saveToStream(stream); \
             }, \
-            [](Ovito::RefMaker* obj, Ovito::LoadStream& stream) { \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::LoadStream& stream) { \
                 static_cast<classname*>(obj)->_##fieldname.loadFromStream(stream); \
             } \
         );
@@ -324,18 +321,18 @@ public:
     Ovito::NativePropertyFieldDescriptor classname::fieldname##__propdescr_instance( \
             const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
             #fieldname, \
-            static_cast<Ovito::PropertyFieldFlags>((Ovito::PropertyFieldFlag)decltype(classname::_##fieldname)::property_field_flags), \
-            [](Ovito::RefMaker* obj, const Ovito::RefMaker* other) { /* propertyStorageCopyFunc */ \
+            static_cast<Ovito::PropertyFieldFlags>(static_cast<Ovito::PropertyFieldFlag>(decltype(classname::_##fieldname)::property_field_flags)), \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const Ovito::RefMaker* other) { /* propertyStorageCopyFunc */ \
                 static_cast<classname*>(obj)->_##fieldname.set(obj, PROPERTY_FIELD(classname::fieldname), static_cast<const classname*>(other)->_##fieldname.get()); \
             }, \
-            [](const Ovito::RefMaker* obj) -> QVariant { /* propertyStorageReadFunc */ \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*) -> QVariant { /* propertyStorageReadFunc */ \
                 return static_cast<const classname*>(obj)->_##fieldname.getQVariant(); \
             }, \
-            [](Ovito::RefMaker* obj, const QVariant& newValue) { /* propertyStorageWriteFunc */ \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const QVariant& newValue) { /* propertyStorageWriteFunc */ \
                 static_cast<classname*>(obj)->_##fieldname.setQVariant(obj, PROPERTY_FIELD(classname::fieldname), newValue); \
             }, \
-            [](const Ovito::RefMaker* obj, Ovito::SaveStream& stream) {}, /* propertyStorageSaveFunc */ \
-            [](Ovito::RefMaker* obj, Ovito::LoadStream& stream) {} /* propertyStorageLoadFunc */ \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::SaveStream& stream) {}, /* propertyStorageSaveFunc */ \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::LoadStream& stream) {} /* propertyStorageLoadFunc */ \
         );
 
 /// Adds a property field to a class definition which is not serializble .
@@ -364,15 +361,15 @@ public:
             const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
             #fieldname, \
             Ovito::PROPERTY_FIELD_NO_FLAGS, \
-            [](Ovito::RefMaker* obj, const Ovito::RefMaker* other) {}, /* propertyStorageCopyFunc */ \
-            [](const Ovito::RefMaker* obj) -> QVariant { /* propertyStorageReadFunc */ \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const Ovito::RefMaker* other) {}, /* propertyStorageCopyFunc */ \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*) -> QVariant { /* propertyStorageReadFunc */ \
                 return QVariant::fromValue(static_cast<const classname*>(obj)->fieldname()); \
             }, \
-            [](Ovito::RefMaker* obj, const QVariant& newValue) { /* propertyStorageWriteFunc */ \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const QVariant& newValue) { /* propertyStorageWriteFunc */ \
                 static_cast<classname*>(obj)->setterName(newValue.value<classname::_##fieldname##__prop_type>()); \
             }, \
-            [](const Ovito::RefMaker* obj, Ovito::SaveStream& stream) {}, /* propertyStorageSaveFunc */ \
-            [](Ovito::RefMaker* obj, Ovito::LoadStream& stream) {} /* propertyStorageLoadFunc */ \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::SaveStream& stream) {}, /* propertyStorageSaveFunc */ \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::LoadStream& stream) {} /* propertyStorageLoadFunc */ \
         );
 
 /***************** Shadow property fields *******************/
@@ -398,22 +395,22 @@ public:
             const_cast<classname::OOMetaClass*>(&classname::OOClass()), \
             #fieldname "__shadow", \
             static_cast<Ovito::PropertyFieldFlags>(decltype(classname::_##fieldname##__shadow)::property_field_flags), \
-            [](Ovito::RefMaker* obj, const Ovito::RefMaker* other) { \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const Ovito::RefMaker* other) { \
                 if(static_cast<const classname*>(other)->_##fieldname##__shadow.hasSnapshot()) \
                     static_cast<classname*>(obj)->_##fieldname##__shadow.takeSnapshot(static_cast<const classname*>(other)->_##fieldname##__shadow.get()); \
             }, \
             nullptr, \
             nullptr, \
-            [](const Ovito::RefMaker* obj, Ovito::SaveStream& stream) { \
+            [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::SaveStream& stream) { \
                 static_cast<const classname*>(obj)->_##fieldname##__shadow.saveToStream(stream); \
             }, \
-            [](Ovito::RefMaker* obj, Ovito::LoadStream& stream) { \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::LoadStream& stream) { \
                 static_cast<classname*>(obj)->_##fieldname##__shadow.loadFromStream(stream); \
             }, \
-            [](Ovito::RefMaker* obj) { \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*) { \
                 static_cast<classname*>(obj)->_##fieldname##__shadow.takeSnapshot(static_cast<const classname*>(obj)->_##fieldname.get()); \
             }, \
-            [](const Ovito::RefMaker* source, Ovito::RefMaker* target) { \
+            [](const Ovito::RefMaker* source, const Ovito::PropertyFieldDescriptor*, Ovito::RefMaker* target) { \
                 if(static_cast<const classname*>(source)->_##fieldname##__shadow.hasSnapshot()) \
                     static_cast<classname*>(target)->_##fieldname.set(target, PROPERTY_FIELD(classname::fieldname), static_cast<const classname*>(source)->_##fieldname##__shadow.get()); \
             } \

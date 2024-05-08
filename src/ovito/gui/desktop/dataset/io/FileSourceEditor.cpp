@@ -69,7 +69,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     toolbar->addAction(QIcon::fromTheme("file_import_object_reload"), tr("Reload file"), this, SLOT(onReloadFrame()));
     toolbar->addAction(QIcon::fromTheme("file_import_object_refresh_animation"), tr("Update trajectory frames"), this, SLOT(onReloadAnimation()));
     QAction* preloadTrajAction = toolbar->addAction(QIcon::fromTheme("file_cache_pipeline_output"), tr("Load entire trajectory into memory"));
-    (void)new BooleanActionParameterUI(this, PROPERTY_FIELD(FileSource::pipelineTrajectoryCachingEnabled), preloadTrajAction);
+    createParamUI<BooleanActionParameterUI>(PROPERTY_FIELD(FileSource::pipelineTrajectoryCachingEnabled), preloadTrajAction);
 
     QGroupBox* sourceBox = new QGroupBox(tr("Data source"), rollout);
     layout->addWidget(sourceBox);
@@ -106,7 +106,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     gridlayout2->addWidget(label, 0, 0);
     gridlayout2->addWidget(_wildcardPatternTextbox, 0, 1);
 
-    BooleanParameterUI* autoGenerateFilePatternUI = new BooleanParameterUI(this, PROPERTY_FIELD(FileSource::autoGenerateFilePattern));
+    BooleanParameterUI* autoGenerateFilePatternUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(FileSource::autoGenerateFilePattern));
     autoGenerateFilePatternUI->checkBox()->setText(tr("auto-generate"));
     gridlayout2->addWidget(autoGenerateFilePatternUI->checkBox(), 1, 0);
     maxLabelWidth = std::max(autoGenerateFilePatternUI->checkBox()->sizeHint().width(), maxLabelWidth);
@@ -174,7 +174,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     sublayout->addWidget(_statusLabel);
 
     // Show settings editor of importer class.
-    new SubObjectParameterUI(this, PROPERTY_FIELD(FileSource::importer), rolloutParams.after(rollout));
+    createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(FileSource::importer), rolloutParams.after(rollout));
 
     // Whenever a new FileSource gets loaded into the editor:
     connect(this, &PropertiesEditor::contentsReplaced, this, [this](RefTarget* editObject) mutable {

@@ -59,38 +59,41 @@ public:
     ~PipelineFlowState();
 #endif
 
-    /// \brief Discards all contents of this state object and resets it to an empty state.
+    /// Discards all content and resets the state to an empty state.
     void reset() {
         _data.reset();
         _stateValidity.setEmpty();
         _status = {};
     }
 
-    /// \brief Returns whether this flow state has a data collection or not.
+    /// Indicates whether this state has a data collection or not.
     explicit operator bool() const { return (bool)_data; }
 
-    /// \brief Move assignment operator.
+    /// Move assignment operator.
     PipelineFlowState& operator=(PipelineFlowState&& other) noexcept = default;
 
-    /// \brief Copy assignment operator.
+    /// Copy assignment operator.
     PipelineFlowState& operator=(const PipelineFlowState& other) noexcept = default;
 
-    /// \brief Adds an additional data object to this state.
+    /// Adds an additional root-level data object to this state.
+    /// The object must not already be part of the state.
     void addObject(const DataObject* obj) {
         mutableData()->addObject(obj);
     }
 
-    /// \brief Removes a data object from this state.
+    /// Removes a root-level data object from this state.
+    /// The object must exist in the state.
     void removeObject(const DataObject* obj) {
         mutableData()->removeObject(obj);
     }
 
-    /// \brief Removes a data object from this state.
+    /// Removes a root-level data object from this state.
     void removeObjectByIndex(int index) {
         mutableData()->removeObjectByIndex(index);
     }
 
-    /// \brief Replaces a data object with a new one.
+    /// Replaces a root-level data object in this state with a different one.
+    /// If the new object is a nullptr, the old object is simply removed from the state.
     bool replaceObject(const DataObject* oldObj, const DataObject* newObj) {
         if(newObj != oldObj)
             return mutableData()->replaceObject(oldObj, newObj);
@@ -141,32 +144,32 @@ public:
         return _data.makeMutableInplace();
     }
 
+    /// Associates this pipeline state with a new data collection.
     void setData(const DataCollection* data) { _data = data; }
+
+    /// Associates this pipeline state with a new data collection.
     void setData(DataOORef<const DataCollection> data) { _data = std::move(data); }
 
     /// Moves the payload data our of this PipelineFlowState.
     DataOORef<const DataCollection> takeData() { return std::move(_data); }
 
-    /// \brief Finds an object of the given type in the list of data objects stored in this flow state.
+    /// Finds the first root-level object of the given class type in this pipeline state.
+    /// Return nullptr if not found.
     const DataObject* getObject(const DataObject::OOMetaClass& objectClass) const {
         return data() ? data()->getObject(objectClass) : nullptr;
     }
 
-    /// \brief Finds all objects of the given type in the list of data objects stored in this flow state.
-    std::vector<const DataObject*> getObjects(const DataObject::OOMetaClass& objectClass) const {
-        return data() ? data()->getObjects(objectClass) : std::vector<const DataObject*>{};
-    }
-
-    /// \brief Finds an object of the given type in the list of data objects stored in this flow state.
+    /// Finds the first root-level object of the given class type in this pipeline state.
+    /// Return nullptr if not found.
     template<class DataObjectClass>
     const DataObjectClass* getObject() const {
         return data() ? data()->getObject<DataObjectClass>() : nullptr;
     }
 
-    /// \brief Determines if an object of the given type is in this flow state.
+    /// Determines whether at least one root-level object of the given class type exists in this pipeline state.
     template<class DataObjectClass>
     bool containsObject() const {
-        return data() ? data()->containsObject<DataObjectClass>() : nullptr;
+        return getObject<DataObjectClass>();
     }
 
     /// Throws an exception if the input does not contain a data object of the given type.
@@ -416,12 +419,6 @@ public:
     template<class DataObjectType>
     void addObjectWithUniqueId(const DataObjectType* obj) {
         return mutableData()->addObjectWithUniqueId<DataObjectType>(obj);
-    }
-
-    /// Copies all root-level data objects created by the given pipeline node over to this pipeline state.
-    void adoptDataObjectsFrom(const PipelineFlowState& other, const OOWeakRef<const PipelineNode>& createdByNode) {
-        if(other.data())
-            mutableData()->adoptDataObjectsFrom(*other.data(), createdByNode);
     }
 
     /// Builds a list of the global attributes stored in this pipeline state.

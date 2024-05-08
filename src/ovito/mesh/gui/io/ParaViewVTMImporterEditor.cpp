@@ -44,7 +44,7 @@ void ParaViewVTMImporterEditor::createUI(const RolloutInsertionParameters& rollo
     layout->setSpacing(4);
 
     // Unite meshes.
-    BooleanParameterUI* uniteMeshesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParaViewVTMImporter::uniteMeshes));
+    BooleanParameterUI* uniteMeshesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParaViewVTMImporter::uniteMeshes));
     layout->addWidget(uniteMeshesUI->checkBox());
 }
 

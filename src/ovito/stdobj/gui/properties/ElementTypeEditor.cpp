@@ -53,7 +53,7 @@ void ElementTypeEditor::createUI(const RolloutInsertionParameters& rolloutParams
     layout1->addWidget(nameBox);
 
     // Name.
-    _namePUI = new StringParameterUI(this, PROPERTY_FIELD(ElementType::name));
+    _namePUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(ElementType::name));
     gridLayout->addWidget(new QLabel(tr("Name:")), 0, 0);
     gridLayout->addWidget(_namePUI->textBox(), 0, 1);
 
@@ -69,7 +69,7 @@ void ElementTypeEditor::createUI(const RolloutInsertionParameters& rolloutParams
     layout1->addWidget(appearanceBox);
 
     // Display color parameter.
-    ColorParameterUI* colorPUI = new ColorParameterUI(this, PROPERTY_FIELD(ElementType::color));
+    ColorParameterUI* colorPUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(ElementType::color));
     gridLayout->addWidget(colorPUI->label(), 0, 0);
     gridLayout->addWidget(colorPUI->colorPicker(), 0, 1);
 

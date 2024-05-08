@@ -31,6 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(ElementType);
+OVITO_CLASSINFO(ElementType, "DisplayName", "Element type");
 DEFINE_PROPERTY_FIELD(ElementType, numericId);
 DEFINE_PROPERTY_FIELD(ElementType, name);
 DEFINE_PROPERTY_FIELD(ElementType, color);
@@ -53,6 +54,7 @@ ElementType::ElementType(ObjectInitializationFlags flags) : DataObject(flags),
     _color(1,1,1),
     _enabled(true)
 {
+    setIdentifier(QString::number(numericId()));
 }
 
 /******************************************************************************
@@ -71,6 +73,30 @@ void ElementType::initializeType(const PropertyReference& property, bool loadUse
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::color)});
     if(loadUserDefaults)
         setColor(getDefaultColor(property, nameOrNumericId(), numericId(), true));
+}
+
+/******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void ElementType::propertyChanged(const PropertyFieldDescriptor* field)
+{
+    DataObject::propertyChanged(field);
+
+    if(field == PROPERTY_FIELD(numericId)) {
+        // Always keep the data object identifier in sync with the numeric ID.
+        setIdentifier(QString::number(numericId()));
+    }
+}
+
+/******************************************************************************
+* Loads the class' contents from the given stream.
+******************************************************************************/
+void ElementType::loadFromStream(ObjectLoadStream& stream)
+{
+    DataObject::loadFromStream(stream);
+
+    // Always keep the data object identifier in sync with the numeric ID.
+    setIdentifier(QString::number(numericId()));
 }
 
 /******************************************************************************

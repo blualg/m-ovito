@@ -50,24 +50,24 @@ void ChillPlusModifierEditor::createUI(const RolloutInsertionParameters& rollout
     QGridLayout* gridlayout = new QGridLayout();
 
     // Cutoff
-    FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(ChillPlusModifier::cutoff));
+    FloatParameterUI* cutoffRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ChillPlusModifier::cutoff));
     gridlayout->addWidget(cutoffRadiusPUI->label(), 0, 0);
     gridlayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 0, 1);
     layout1->addLayout(gridlayout);
 
     // Use only selected particles.
-    BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
+    BooleanParameterUI* onlySelectedParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
     layout1->addWidget(onlySelectedParticlesUI->checkBox());
 
     // Color by type
-    BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
+    BooleanParameterUI* colorByTypeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
     layout1->addWidget(colorByTypeUI->checkBox());
 
     // Status label.
     layout1->addSpacing(10);
-    layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout1->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
-    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
+    StructureListParameterUI* structureTypesPUI = createParamUI<StructureListParameterUI>(true);
     layout1->addSpacing(10);
     layout1->addWidget(new QLabel(tr("Structure types:")));
     layout1->addWidget(structureTypesPUI->tableWidget());

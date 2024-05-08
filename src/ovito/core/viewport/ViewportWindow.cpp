@@ -147,9 +147,6 @@ void ViewportWindow::handleUpdateRequest()
     // Temporarily suspend viewport updates to avoid recursive updates.
     ViewportSuspender suspendUpdates(userInterface());
 
-    // Inform the UI that rendering of an interactive viewport is in progress.
-    userInterface().interactiveViewportRenderingStarted();
-
     // Keep this window alive while rendering is in progress.
     OORef<ViewportWindow> self = this;
 
@@ -266,9 +263,6 @@ void ViewportWindow::handleUpdateRequest()
         // Adopt newly generated frame graph.
         setFrameGraph(std::move(frameGraph));
     });
-
-    // Inform the user interface that rendering of an interactive viewport has finished.
-    userInterface().interactiveViewportRenderingFinished();
 
     // After the frame graph has been updated, rerender the on-screen display.
     if(success && viewport())

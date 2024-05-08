@@ -45,10 +45,10 @@ void LoadTrajectoryModifierEditor::createUI(const RolloutInsertionParameters& ro
     layout->setSpacing(4);
 
     // Status label.
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Open a sub-editor for the source object.
-    new SubObjectParameterUI(this, PROPERTY_FIELD(LoadTrajectoryModifier::trajectorySource), RolloutInsertionParameters().setTitle(tr("Trajectory Source: %1")));
+    createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(LoadTrajectoryModifier::trajectorySource), RolloutInsertionParameters().setTitle(tr("Trajectory Source: %1")));
 }
 
 }   // End of namespace

@@ -73,7 +73,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     });
 
     // Type name.
-    StringParameterUI* namePUI = new StringParameterUI(this, PROPERTY_FIELD(ParticleType::name));
+    StringParameterUI* namePUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(ParticleType::name));
     gridLayout->addWidget(new QLabel(tr("Name:")), 1, 0);
     gridLayout->addWidget(namePUI->textBox(), 1, 1);
 
@@ -94,19 +94,19 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     layout1->addWidget(appearanceBox);
 
     // Display color parameter.
-    ColorParameterUI* colorPUI = new ColorParameterUI(this, PROPERTY_FIELD(ParticleType::color));
+    ColorParameterUI* colorPUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(ParticleType::color));
     gridLayout->addWidget(colorPUI->label(), 0, 0);
     gridLayout->addWidget(colorPUI->colorPicker(), 0, 1);
 
     // Display radius parameter.
-    FloatParameterUI* displayRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticleType::radius));
+    FloatParameterUI* displayRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticleType::radius));
     gridLayout->addWidget(displayRadiusPUI->label(), 1, 0);
     gridLayout->addLayout(displayRadiusPUI->createFieldLayout(), 1, 1);
     displayRadiusPUI->spinner()->setStandardValue(0.0);
     displayRadiusPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
 
     // Shape type.
-    VariantComboBoxParameterUI* particleShapeUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ParticleType::shape));
+    VariantComboBoxParameterUI* particleShapeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(ParticleType::shape));
     particleShapeUI->comboBox()->addItem(tr("‹unspecified›"), QVariant::fromValue((int)ParticlesVis::Default));
     particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_sphere.png"), tr("Sphere/Ellipsoid"), QVariant::fromValue((int)ParticlesVis::Sphere));
     particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_circle.png"), tr("Circle"), QVariant::fromValue((int)ParticlesVis::Circle));
@@ -151,11 +151,11 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     QPushButton* loadShapeBtn = new QPushButton(tr("Load geometry file..."));
     loadShapeBtn->setToolTip(tr("Loads a mesh file to be used as shape for this particle type."));
     gridLayout->addWidget(loadShapeBtn, 0, 0, 1, 2);
-    BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleType::highlightShapeEdges));
+    BooleanParameterUI* highlightEdgesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleType::highlightShapeEdges));
     gridLayout->addWidget(highlightEdgesUI->checkBox(), 1, 0, 1, 2);
-    BooleanParameterUI* shapeBackfaceCullingUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleType::shapeBackfaceCullingEnabled));
+    BooleanParameterUI* shapeBackfaceCullingUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleType::shapeBackfaceCullingEnabled));
     gridLayout->addWidget(shapeBackfaceCullingUI->checkBox(), 2, 0, 1, 2);
-    BooleanParameterUI* shapeUseMeshColorUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleType::shapeUseMeshColor));
+    BooleanParameterUI* shapeUseMeshColorUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleType::shapeUseMeshColor));
     gridLayout->addWidget(shapeUseMeshColorUI->checkBox(), 3, 0, 1, 2);
 
     // Show/hide controls for user-defined shapes depending on the selected shape type.
@@ -225,7 +225,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     layout1->addWidget(physicalBox);
 
     // Mass parameter.
-    FloatParameterUI* massPUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticleType::mass));
+    FloatParameterUI* massPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticleType::mass));
     gridLayout->addWidget(massPUI->label(), 0, 0);
     gridLayout->addLayout(massPUI->createFieldLayout(), 0, 1);
     // Reset mass paramter - can't use createPresetsMenuButton because we only
@@ -255,7 +255,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     massPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
 
     // VDW radius parameter.
-    FloatParameterUI* vdwRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(ParticleType::vdwRadius));
+    FloatParameterUI* vdwRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticleType::vdwRadius));
     gridLayout->addWidget(vdwRadiusPUI->label(), 1, 0);
     gridLayout->addLayout(vdwRadiusPUI->createFieldLayout(), 1, 1);
     vdwRadiusPUI->spinner()->setStandardValue(0.0);

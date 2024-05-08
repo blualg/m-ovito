@@ -22,6 +22,8 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/FilenameParameterUI.h>
+#include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
+#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 
 namespace Ovito {
 
@@ -30,12 +32,12 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(FilenameParameterUI);
 /******************************************************************************
 * Constructor for a PropertyField property.
 ******************************************************************************/
-FilenameParameterUI::FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-    PropertyParameterUI(parentEditor, propField)
+FilenameParameterUI::FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QStringList& fileFilter, bool existingFile) :
+    PropertyParameterUI(parentEditor, propField), _fileFilter(fileFilter), _existingFile(existingFile)
 {
     // Create UI widget.
     _selectorButton = new QPushButton(QStringLiteral(" "));
-    connect(_selectorButton.data(), &QPushButton::clicked, this, &FilenameParameterUI::showSelectionDialog);
+    connect(_selectorButton.data(), &QPushButton::clicked, this, &FilenameParameterUI::onPickFilename);
 }
 
 /******************************************************************************
@@ -90,10 +92,34 @@ void FilenameParameterUI::updateUI()
 ******************************************************************************/
 void FilenameParameterUI::setEnabled(bool enabled)
 {
-    if(enabled == isEnabled()) return;
+    if(enabled == isEnabled())
+        return;
     PropertyParameterUI::setEnabled(enabled);
     if(selectorWidget())
         selectorWidget()->setEnabled(editObject() && isEnabled());
+}
+
+/******************************************************************************
+* Is called when the user presses the button.
+******************************************************************************/
+void FilenameParameterUI::onPickFilename()
+{
+    performTransaction(tr("Pick file"), [&]() {
+        HistoryFileDialog fileDialog(QStringLiteral("filename_parameter"), editor()->container(), tr("Pick file"));
+        fileDialog.setNameFilters(_fileFilter);
+        fileDialog.setFileMode(_existingFile ? QFileDialog::ExistingFile : QFileDialog::AnyFile);
+        fileDialog.setAcceptMode(_existingFile ? QFileDialog::AcceptOpen : QFileDialog::AcceptSave);
+        if(fileDialog.exec()) {
+            QStringList selectedFiles = fileDialog.selectedFiles();
+            if(!selectedFiles.empty()) {
+                ProgressDialog progressDialog(mainWindow(), editor()->container());
+                if(isPropertyFieldUI()) {
+                    editor()->changePropertyFieldValue(propertyField(), selectedFiles.join(QDir::listSeparator()));
+                }
+                Q_EMIT valueEntered();
+            }
+        }
+    });
 }
 
 }   // End of namespace

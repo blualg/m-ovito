@@ -61,7 +61,9 @@ enum PropertyFieldFlag
     /// Automatically create a UI to reset this property field to its default.
     PROPERTY_FIELD_RESETTABLE                   = (1<<13),
     /// Never save the target(s) of the reference field to a state file.
-    PROPERTY_FIELD_DONT_SAVE_TARGET             = (1<<14)
+    PROPERTY_FIELD_DONT_SAVE_TARGET             = (1<<14),
+    /// Prevents the property field from being registered with the class it is defined for.
+    PROPERTY_FIELD_DONT_REGISTER_IN_CLASS       = (1<<15),
 };
 Q_DECLARE_FLAGS(PropertyFieldFlags, PropertyFieldFlag);
 

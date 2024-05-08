@@ -87,7 +87,7 @@ public:
     virtual void exitWithFatalError(const Exception& ex);
 
     /// Indicates that exitWithFatalError() has been called and the application is shutting down.
-    bool exitingWithFatalError() const { return _exitingWithFatalError; }
+    bool exitingDueToFatalError() const { return _exitingDueToFatalError; }
 
     /// Aborts all running tasks and closes the user interface as soon as possible (without asking user to save changes).
     void shutdown();
@@ -154,15 +154,6 @@ public:
     /// This function does not lead to an immediate repainting of the viewports; instead it schedules a
     /// refresh request, which will be processed at some later time when execution returns to the Qt event loop.
     void updateViewports();
-
-    /// Returns whether any of the visible interactive viewports is currently being rendered.
-    bool isRenderingInteractiveViewports() const { return _interactiveViewportRenderingCount != 0; }
-
-    /// Informs the user interface that rendering of an interactive viewport has started.
-    void interactiveViewportRenderingStarted() { _interactiveViewportRenderingCount++; }
-
-    /// Informs the user interface that rendering of an interactive viewport has finished.
-    void interactiveViewportRenderingFinished() { OVITO_ASSERT(_interactiveViewportRenderingCount > 0); _interactiveViewportRenderingCount--; }
 
     /// Zooms all visible viewports to the extents of the scene when all scene pipelines have been fully evaluated and the extents are known.
     void zoomToSceneExtentsWhenReady();
@@ -246,11 +237,8 @@ protected:
     /// Counts the number of times preliminary viewport updates have been suspended.
     int _preliminaryViewportUpdatesSuspendCount = 0;
 
-    /// This counter tracks whether rendering of interactive viewports is currently in progress.
-    int _interactiveViewportRenderingCount = 0;
-
     /// Indicates that exitWithFatalError() has been called and the application is shutting down.
-    bool _exitingWithFatalError = false;
+    bool _exitingDueToFatalError = false;
 
     /// This keeps the UI object itself alive until shutdown() is called.
     OORef<UserInterface> _selfGuard;

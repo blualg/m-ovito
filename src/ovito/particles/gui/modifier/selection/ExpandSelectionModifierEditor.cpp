@@ -50,13 +50,13 @@ void ExpandSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
     label->setWordWrap(true);
     layout->addWidget(label);
 
-    IntegerRadioButtonParameterUI* modePUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(ExpandSelectionModifier::mode));
+    IntegerRadioButtonParameterUI* modePUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(ExpandSelectionModifier::mode));
     QRadioButton* cutoffModeBtn = modePUI->addRadioButton(ExpandSelectionModifier::CutoffRange, tr("... within the range:"));
     layout->addSpacing(10);
     layout->addWidget(cutoffModeBtn);
 
     // Cutoff parameter.
-    FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(ExpandSelectionModifier::cutoffRange));
+    FloatParameterUI* cutoffRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ExpandSelectionModifier::cutoffRange));
     QHBoxLayout* sublayout = new QHBoxLayout();
     sublayout->setContentsMargins(0,0,0,0);
     sublayout->addSpacing(20);
@@ -71,7 +71,7 @@ void ExpandSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
     layout->addWidget(nearestNeighborsModeBtn);
 
     // Number of nearest neighbors.
-    IntegerParameterUI* numNearestNeighborsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(ExpandSelectionModifier::numNearestNeighbors));
+    IntegerParameterUI* numNearestNeighborsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ExpandSelectionModifier::numNearestNeighbors));
     sublayout = new QHBoxLayout();
     sublayout->setContentsMargins(0,0,0,0);
     sublayout->addSpacing(20);
@@ -86,7 +86,7 @@ void ExpandSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
     layout->addWidget(bondModeBtn);
 
     layout->addSpacing(10);
-    IntegerParameterUI* numIterationsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(ExpandSelectionModifier::numberOfIterations));
+    IntegerParameterUI* numIterationsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ExpandSelectionModifier::numberOfIterations));
     sublayout = new QHBoxLayout();
     sublayout->setContentsMargins(0,0,0,0);
     sublayout->addWidget(numIterationsPUI->label());
@@ -95,7 +95,7 @@ void ExpandSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 
     // Status label.
     layout->addSpacing(10);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 }
 
 }   // End of namespace

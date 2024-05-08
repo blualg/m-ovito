@@ -35,6 +35,7 @@ namespace Ovito {
 class OVITO_GUI_EXPORT RefTargetListParameterUI : public ParameterUI
 {
     OVITO_CLASS(RefTargetListParameterUI)
+    Q_OBJECT
 
 public:
 

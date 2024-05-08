@@ -50,7 +50,7 @@ void GaussianCubeImporterEditor::createUI(const RolloutInsertionParameters& roll
     layout->addWidget(gridOptionsBox);
 
     // Grid type
-    IntegerRadioButtonParameterUI* gridTypeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(GaussianCubeImporter::gridType));
+    IntegerRadioButtonParameterUI* gridTypeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(GaussianCubeImporter::gridType));
     sublayout->addWidget(gridTypeUI->addRadioButton(VoxelGrid::GridType::PointData, tr("Point-based grid")));
     sublayout->addWidget(gridTypeUI->addRadioButton(VoxelGrid::GridType::CellData, tr("Cell-based grid")));
 
@@ -60,7 +60,7 @@ void GaussianCubeImporterEditor::createUI(const RolloutInsertionParameters& roll
     layout->addWidget(atomicOptionsBox);
 
     // Generate bonds
-    BooleanParameterUI* generateBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::generateBonds));
+    BooleanParameterUI* generateBondsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::generateBonds));
     sublayout->addWidget(generateBondsUI->checkBox());
 }
 

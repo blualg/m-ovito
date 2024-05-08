@@ -46,9 +46,6 @@ public:
     /// Constructor.
     explicit VoroTopModifier(ObjectInitializationFlags flags);
 
-    /// Loads a new filter definition into the modifier.
-    void loadFilterDefinition(const QString& filepath);
-
     /// Returns the VoroTop filter definition cached from the last analysis run.
     const std::shared_ptr<Filter>& filter() const { return _filter; }
 
@@ -64,6 +61,9 @@ protected:
     }
 
 private:
+
+    /// Loads a new filter definition into the modifier.
+    void loadFilterDefinition(const QString& filepath);
 
     /// Compute engine that performs the actual analysis in a background thread.
     class VoroTopAnalysisAlgorithm : public StructureIdentificationModifier::Algorithm

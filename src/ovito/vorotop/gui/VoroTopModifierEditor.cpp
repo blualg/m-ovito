@@ -25,8 +25,6 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/FilenameParameterUI.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
-#include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
-#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include "VoroTopModifierEditor.h"
 
 namespace Ovito::VoroTop {
@@ -55,9 +53,9 @@ void VoroTopModifierEditor::createUI(const RolloutInsertionParameters& rolloutPa
 
     // Filter filename.
     gridlayout->addWidget(new QLabel(tr("Filter:")), row++, 0, 1, 2);
-    FilenameParameterUI* fileFileUI = new FilenameParameterUI(this, PROPERTY_FIELD(VoroTopModifier::filterFile));
+    QStringList fileFilter = { tr("VoroTop filter definition file (*)") };
+    FilenameParameterUI* fileFileUI = createParamUI<FilenameParameterUI>(PROPERTY_FIELD(VoroTopModifier::filterFile), fileFilter, true);
     gridlayout->addWidget(fileFileUI->selectorWidget(), row++, 0, 1, 2);
-    connect(fileFileUI, &FilenameParameterUI::showSelectionDialog, this, &VoroTopModifierEditor::onLoadFilter);
 
     QLabel* label = new QLabel(tr("Filter definition files available from the <a href=\"https://www.vorotop.org/download.html\">VoroTop website</a>."));
     label->setWordWrap(true);
@@ -65,20 +63,20 @@ void VoroTopModifierEditor::createUI(const RolloutInsertionParameters& rolloutPa
     gridlayout->addWidget(label, row++, 0, 1, 2);
 
     // Atomic radii.
-    BooleanParameterUI* useRadiiPUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoroTopModifier::useRadii));
+    BooleanParameterUI* useRadiiPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoroTopModifier::useRadii));
     gridlayout->addWidget(useRadiiPUI->checkBox(), row++, 0, 1, 2);
 
     // Only selected particles.
-    BooleanParameterUI* onlySelectedPUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
+    BooleanParameterUI* onlySelectedPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
     gridlayout->addWidget(onlySelectedPUI->checkBox(), row++, 0, 1, 2);
 
     layout->addLayout(gridlayout);
 
     // Status label.
     layout->addSpacing(6);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
-    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, false);
+    StructureListParameterUI* structureTypesPUI = createParamUI<StructureListParameterUI>(false);
     layout->addSpacing(10);
     layout->addWidget(new QLabel(tr("Structure types:")));
     layout->addWidget(structureTypesPUI->tableWidget());
@@ -86,30 +84,5 @@ void VoroTopModifierEditor::createUI(const RolloutInsertionParameters& rolloutPa
     label->setWordWrap(true);
     layout->addWidget(label);
 }
-
-/******************************************************************************
-* Is called when the user presses the 'Load filter' button.
-******************************************************************************/
-void VoroTopModifierEditor::onLoadFilter()
-{
-    VoroTopModifier* mod = static_object_cast<VoroTopModifier>(editObject());
-    if(!mod) return;
-
-    performTransaction(tr("Load VoroTop filter"), [this, mod]() {
-
-        HistoryFileDialog fileDialog(QStringLiteral("vorotop_filter"), container(), tr("Pick VoroTop filter file"),
-            QString(), tr("VoroTop filter definition file (*)"));
-        fileDialog.setFileMode(QFileDialog::ExistingFile);
-
-        if(fileDialog.exec()) {
-            QStringList selectedFiles = fileDialog.selectedFiles();
-            if(!selectedFiles.empty()) {
-                ProgressDialog progressDialog(mainWindow(), container(), tr("Loading filter"));
-                mod->loadFilterDefinition(selectedFiles.front());
-            }
-        }
-    });
-}
-
 
 }   // End of namespace

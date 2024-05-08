@@ -515,11 +515,11 @@ void MainWindow::exitWithFatalError(const Exception& ex)
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
     // Avoid reentrance.
-    if(_exitingWithFatalError)
+    if(_exitingDueToFatalError)
         return;
 
     // Set flag.
-    _exitingWithFatalError = true;
+    _exitingDueToFatalError = true;
 
     // Disable all further viewport updates, because they may have beeen the reason for this fatal error.
     suspendViewportUpdates();
@@ -768,6 +768,9 @@ void MainWindow::reportError(const Exception& exception, QWidget* window)
 ******************************************************************************/
 void MainWindow::showErrorMessages()
 {
+    // Kepp window alive while showing error messages.
+    auto selfGuard = shared_from_this();
+
     while(!_errorList.empty()) {
         // Show next exception from queue.
         reportError(_errorList.front(), this);

@@ -54,7 +54,7 @@ void ElasticStrainModifierEditor::createUI(const RolloutInsertionParameters& rol
     sublayout1->setContentsMargins(4,4,4,4);
     sublayout1->setSpacing(4);
     sublayout1->setColumnStretch(1,1);
-    VariantComboBoxParameterUI* crystalStructureUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(ElasticStrainModifier::inputCrystalStructure));
+    VariantComboBoxParameterUI* crystalStructureUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(ElasticStrainModifier::inputCrystalStructure));
     crystalStructureUI->comboBox()->addItem(tr("Face-centered cubic (FCC)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_FCC));
     crystalStructureUI->comboBox()->addItem(tr("Hexagonal close-packed (HCP)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_HCP));
     crystalStructureUI->comboBox()->addItem(tr("Body-centered cubic (BCC)"), QVariant::fromValue((int)StructureAnalysis::LATTICE_BCC));
@@ -62,11 +62,11 @@ void ElasticStrainModifierEditor::createUI(const RolloutInsertionParameters& rol
     crystalStructureUI->comboBox()->addItem(tr("Diamond hexagonal / Wurtzite"), QVariant::fromValue((int)StructureAnalysis::LATTICE_HEX_DIAMOND));
     sublayout1->addWidget(crystalStructureUI->comboBox(), 0, 0, 1, 2);
 
-    FloatParameterUI* latticeConstantUI = new FloatParameterUI(this, PROPERTY_FIELD(ElasticStrainModifier::latticeConstant));
+    FloatParameterUI* latticeConstantUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ElasticStrainModifier::latticeConstant));
     sublayout1->addWidget(latticeConstantUI->label(), 1, 0);
     sublayout1->addLayout(latticeConstantUI->createFieldLayout(), 1, 1);
 
-    _caRatioUI = new FloatParameterUI(this, PROPERTY_FIELD(ElasticStrainModifier::axialRatio));
+    _caRatioUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ElasticStrainModifier::axialRatio));
     sublayout1->addWidget(_caRatioUI->label(), 2, 0);
     sublayout1->addLayout(_caRatioUI->createFieldLayout(), 2, 1);
 
@@ -78,10 +78,10 @@ void ElasticStrainModifierEditor::createUI(const RolloutInsertionParameters& rol
     sublayout2->setColumnStretch(1, 1);
     sublayout2->setColumnMinimumWidth(0, 12);
 
-    BooleanParameterUI* outputStrainTensorsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ElasticStrainModifier::calculateStrainTensors));
+    BooleanParameterUI* outputStrainTensorsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ElasticStrainModifier::calculateStrainTensors));
     sublayout2->addWidget(outputStrainTensorsUI->checkBox(), 0, 0, 1, 2);
 
-    BooleanRadioButtonParameterUI* pushStrainTensorsForwardUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(ElasticStrainModifier::pushStrainTensorsForward));
+    BooleanRadioButtonParameterUI* pushStrainTensorsForwardUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(ElasticStrainModifier::pushStrainTensorsForward));
     pushStrainTensorsForwardUI->buttonTrue()->setText(tr("in spatial frame"));
     pushStrainTensorsForwardUI->buttonFalse()->setText(tr("in lattice frame"));
     sublayout2->addWidget(pushStrainTensorsForwardUI->buttonTrue(), 1, 1);
@@ -90,14 +90,14 @@ void ElasticStrainModifierEditor::createUI(const RolloutInsertionParameters& rol
     pushStrainTensorsForwardUI->setEnabled(false);
     connect(outputStrainTensorsUI->checkBox(), &QCheckBox::toggled, pushStrainTensorsForwardUI, &BooleanRadioButtonParameterUI::setEnabled);
 
-    BooleanParameterUI* outputDeformationGradientsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ElasticStrainModifier::calculateDeformationGradients));
+    BooleanParameterUI* outputDeformationGradientsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ElasticStrainModifier::calculateDeformationGradients));
     sublayout2->addWidget(outputDeformationGradientsUI->checkBox(), 3, 0, 1, 2);
 
     // Status label.
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Structure list.
-    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this);
+    StructureListParameterUI* structureTypesPUI = createParamUI<StructureListParameterUI>();
     layout->addSpacing(10);
     layout->addWidget(structureTypesPUI->tableWidget());
 

@@ -28,58 +28,62 @@
 
 namespace Ovito {
 
-/******************************************************************************
-* Allows the user to pick a font.
-******************************************************************************/
-class OVITO_GUI_EXPORT FontParameterUI : public PropertyParameterUI
+/**
+ * \brief UI component that lets the user select a pipeline from the current scene.
+ */
+class OVITO_GUI_EXPORT PipelineSelectionParameterUI : public PropertyParameterUI
 {
-    OVITO_CLASS(FontParameterUI)
+    OVITO_CLASS(PipelineSelectionParameterUI)
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    FontParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    PipelineSelectionParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
-    virtual ~FontParameterUI();
+    virtual ~PipelineSelectionParameterUI();
 
-    /// This returns the font picker widget managed by this parameter UI.
-    QPushButton* fontPicker() const { return _fontPicker; }
+    /// This returns the combo box managed by this ParameterUI.
+    QComboBox* comboBox() const { return _comboBox; }
 
-    /// This returns a label for the widget managed by this FontParameterUI.
-    /// The text of the label widget is taken from the description text stored along
-    /// with the property field.
-    QLabel* label() const { return _label; }
+    /// Sets the enabled state of the UI.
+    virtual void setEnabled(bool enabled) override;
+
+    /// This method updates the displayed value of the parameter UI.
+    virtual void updateUI() override;
 
     /// This method is called when a new editable object has been assigned to the properties owner this
     /// parameter UI belongs to.
     virtual void resetUI() override;
 
-    /// This method updates the displayed value of the property UI.
-    virtual void updateUI() override;
-
-    /// Sets the enabled state of the UI.
-    virtual void setEnabled(bool enabled) override;
-
-    /// Sets the What's This helper text for the label and the color picker.
-    void setWhatsThis(const QString& text) const {
-        if(label()) label()->setWhatsThis(text);
-        if(fontPicker()) fontPicker()->setWhatsThis(text);
+    /// Sets the tooltip text for the combo box widget.
+    void setToolTip(const QString& text) const {
+        if(comboBox()) comboBox()->setToolTip(text);
     }
+
+    /// Sets the What's This helper text for the combo box.
+    void setWhatsThis(const QString& text) const {
+        if(comboBox()) comboBox()->setWhatsThis(text);
+    }
+
+public:
+
+    Q_PROPERTY(QComboBox comboBox READ comboBox)
 
 public Q_SLOTS:
 
-    /// Is called when the user has pressed the font picker button.
-    void onButtonClicked();
+    /// Takes the value entered by the user and stores it in the property field
+    /// this property UI is bound to.
+    void updatePropertyValue();
 
 protected:
 
-    /// The font picker widget of the UI component.
-    QPointer<QPushButton> _fontPicker;
+    /// This method is called when a reference target changes.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-    /// The label of the UI component.
-    QPointer<QLabel> _label;
+    /// The combo box of the UI component.
+    QPointer<QComboBox> _comboBox;
 };
 
 }   // End of namespace

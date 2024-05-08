@@ -111,7 +111,7 @@ void MicrostructurePhaseEditor::createUI(const RolloutInsertionParameters& rollo
     };
 
     layout1->addWidget(new QLabel(tr("Burgers vector families:")));
-    familiesListUI = new CustomRefTargetListParameterUI(this, PROPERTY_FIELD(MicrostructurePhase::burgersVectorFamilies));
+    familiesListUI = createParamUI<CustomRefTargetListParameterUI>(PROPERTY_FIELD(MicrostructurePhase::burgersVectorFamilies));
     layout1->addWidget(familiesListUI->tableWidget(200));
     familiesListUI->tableWidget()->setAutoScroll(false);
     connect(familiesListUI->tableWidget(), &QTableWidget::doubleClicked, this, &MicrostructurePhaseEditor::onDoubleClickBurgersFamily);

@@ -169,7 +169,7 @@ void OpenGLViewportWindow::paint()
 std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPointF& pos)
 {
     // Cannot perform picking while viewport is not visible or when updates are disabled.
-    if(isVisible() && !userInterface().exitingWithFatalError() && !userInterface().areViewportUpdatesSuspended() && widget()->isValid() && widget()->defaultFramebufferObject() != 0) {
+    if(isVisible() && !userInterface().exitingDueToFatalError() && !userInterface().areViewportUpdatesSuspended() && widget()->isValid() && widget()->defaultFramebufferObject() != 0) {
 
         // Is the picking buffer still valid? If not, we need to render a new frame.
         if(!_objectPickingMap->isValid() && frameGraph()) {

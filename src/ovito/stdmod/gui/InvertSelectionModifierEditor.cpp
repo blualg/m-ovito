@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdmod/gui/StdModGui.h>
-#include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
+#include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
 #include "InvertSelectionModifierEditor.h"
 
 namespace Ovito {
@@ -40,12 +40,12 @@ void InvertSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
     layout->setContentsMargins(8,8,8,8);
     layout->setSpacing(4);
 
-    PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
+    DataObjectReferenceParameterUI* pclassUI = createParamUI<DataObjectReferenceParameterUI>(PROPERTY_FIELD(GenericPropertyModifier::subject), PropertyContainer::OOClass());
     layout->addWidget(new QLabel(tr("Operate on:")));
     layout->addWidget(pclassUI->comboBox());
 
     // List only property container that support element selection.
-    pclassUI->setContainerFilter([](const PropertyContainer* container) {
+    pclassUI->setObjectFilter<PropertyContainer>([](const PropertyContainer* container) {
         return container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty);
     });
 }

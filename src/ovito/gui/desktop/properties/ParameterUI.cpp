@@ -23,188 +23,25 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/ParameterUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
-#include <ovito/core/dataset/animation/controller/Controller.h>
-#include <ovito/core/dataset/animation/controller/KeyframeController.h>
-#include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/app/PluginManager.h>
-#include <ovito/gui/desktop/dialogs/AnimationKeyEditorDialog.h>
 
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ParameterUI);
-IMPLEMENT_ABSTRACT_OVITO_CLASS(PropertyParameterUI);
 DEFINE_REFERENCE_FIELD(ParameterUI, editObject);
-DEFINE_REFERENCE_FIELD(PropertyParameterUI, parameterObject);
-
-///////////////////////////////////// ParameterUI /////////////////////////////////////////
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
 ParameterUI::ParameterUI(PropertiesEditor* editor) : _editor(editor)
 {
+    OVITO_ASSERT(editor);
+
     if(editor->editObject())
         setEditObject(editor->editObject());
 
     // Connect to the contentsReplaced() signal of the editor to synchronize the
     // parameter UI's edit object with the editor's edit object.
     connect(editor, &PropertiesEditor::contentsReplaced, this, &ParameterUI::setEditObject);
-}
-
-///////////////////////////////////// PropertyParameterUI /////////////////////////////////////////
-
-/******************************************************************************
-* Constructor for a PropertyField or ReferenceField property.
-******************************************************************************/
-PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const PropertyFieldDescriptor* propField) :
-    ParameterUI(parent), _propField(propField)
-{
-    // If requested, save parameter value to application's settings store each time the user changes it.
-    if(propField->flags().testFlag(PROPERTY_FIELD_MEMORIZE))
-        connect(this, &PropertyParameterUI::valueEntered, this, &PropertyParameterUI::memorizeDefaultParameterValue);
-}
-
-/******************************************************************************
-* This method is called when a reference target changes.
-******************************************************************************/
-bool PropertyParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent& event)
-{
-    if(isReferenceFieldUI()) {
-        if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged) {
-            if(propertyField() == static_cast<const ReferenceFieldEvent&>(event).field()) {
-                // The parameter value object stored in the reference field of the edited object
-                // has been replaced by another one, so update our own reference to the parameter value object.
-                if(editObject()->getReferenceFieldTarget(propertyField()) != parameterObject())
-                    resetUI();
-            }
-        }
-        else if(source == parameterObject() && event.type() == ReferenceEvent::TargetChanged) {
-            // The parameter value object has changed -> update value shown in UI.
-            updateUI();
-        }
-    }
-    else if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
-        // The edited object has changed -> update value shown in UI.
-        updateUI();
-    }
-    return ParameterUI::referenceEvent(source, event);
-}
-
-/******************************************************************************
-* This method is called when parameter object has been assigned to the reference field of the editable object
-* this parameter UI is bound to. It is also called when the editable object itself has
-* been replaced in the editor.
-******************************************************************************/
-void PropertyParameterUI::resetUI()
-{
-    if(editObject() && isReferenceFieldUI()) {
-        OVITO_CHECK_OBJECT_POINTER(editObject());
-        OVITO_ASSERT(editObject() == nullptr || editObject()->getOOClass().isDerivedFrom(*propertyField()->definingClass()));
-
-        // Bind this parameter UI to the parameter object of the new edited object.
-        setParameterObject(editObject()->getReferenceFieldTarget(propertyField()));
-    }
-    else {
-        setParameterObject(nullptr);
-    }
-
-    ParameterUI::resetUI();
-}
-
-/******************************************************************************
-* This slot is called when the user has changed the value of the parameter.
-* It stores the new value in the application's settings store so that it can be used
-* as the default initialization value next time when a new object of the same class is created.
-******************************************************************************/
-void PropertyParameterUI::memorizeDefaultParameterValue()
-{
-    if(!editObject())
-        return;
-
-    if(isPropertyFieldUI()) {
-        propertyField()->memorizeDefaultValue(editObject());
-    }
-    else if(isReferenceFieldUI() && !propertyField()->isVector()) {
-        if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-            if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
-                QSettings settings;
-                settings.beginGroup(editObject()->getOOClass().plugin()->pluginId());
-                settings.beginGroup(editObject()->getOOClass().name());
-                if(ctrl->controllerType() == Controller::ControllerTypeFloat) {
-                    settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getFloatValue(anim->currentTime())));
-                }
-                else if(ctrl->controllerType() == Controller::ControllerTypeInt) {
-                    settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getIntValue(anim->currentTime())));
-                }
-                else if(ctrl->controllerType() == Controller::ControllerTypeVector3) {
-                    settings.setValue(propertyField()->identifier(), QVariant::fromValue(ctrl->getVector3Value(anim->currentTime())));
-                }
-            }
-        }
-    }
-}
-
-/******************************************************************************
-* Opens the animation key editor if the parameter managed by this UI class
-* is animatable.
-******************************************************************************/
-void PropertyParameterUI::openAnimationKeyEditor()
-{
-    OVITO_ASSERT(editor() != nullptr);
-
-    KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(parameterObject());
-    if(!ctrl) return;
-
-    AnimationKeyEditorDialog dlg(ctrl, propertyField(), editor()->container(), editor()->mainWindow());
-    dlg.exec();
-}
-
-/******************************************************************************
- * Returns a menu tool button associated to this PropertyParameterUI
- * creates a new button if one doesn't exist yet.
- ******************************************************************************/
-MenuToolButton* PropertyParameterUI::createMenuToolButton(QWidget* parent)
-{
-    if(!_menuToolButton) {
-        _menuToolButton = new MenuToolButton(parent);
-        _menuToolButton->setToolTip(tr("Presets"));
-    }
-    return _menuToolButton;
-}
-
-/******************************************************************************
- * Create a new action in the menuToolButton with the given text and icon
- * Creates a new MenuToolButton if one doesn't exist yet.
- ******************************************************************************/
-QAction* PropertyParameterUI::createAction(const QString& text, const QIcon& icon)
-{
-    return createMenuToolButton()->createAction(icon, text);
-}
-
-/******************************************************************************
- * Create a new action in the menuToolButton with the given text and icon
- * Creates a new MenuToolButton if one doesn't exist yet.
- ******************************************************************************/
-QAction* PropertyParameterUI::createResetAction()
-{
-    OVITO_ASSERT(propertyField());
-
-    QAction* resetAction = createMenuToolButton()->createAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset to default"));
-    resetAction->setStatusTip(tr("Reset %1 to its default value").arg(propertyField()->displayName()));
-    connect(resetAction, &QAction::triggered, this, [this]() {
-        if(!editObject()) {
-            return;
-        }
-        // Create new instance of the same class as the edited object. Filled with its default parameters.
-        OORef<RefTarget> tempInstance = static_object_cast<RefTarget>(editObject()->getOOClass().createInstance());
-        // update tempInstance with defaults from the current object instance
-        editObject()->copyInitialParametersToObject(tempInstance);
-        // updated the editObject with defaults from tempInstance
-        performTransaction(tr("Reset %1 to its default value").arg(propertyField()->displayName()),
-                           [&]() { editObject()->copyPropertyFieldValue(propertyField(), *tempInstance); });
-        memorizeDefaultParameterValue();
-    });
-    return resetAction;
 }
 
 }   // End of namespace

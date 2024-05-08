@@ -48,18 +48,18 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     layout->setSpacing(4);
     layout->setColumnStretch(1, 1);
 
-    FloatParameterUI* transparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(VoxelGridVis::transparencyController));
+    FloatParameterUI* transparencyUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VoxelGridVis::transparencyController));
     layout->addWidget(transparencyUI->label(), 1, 0);
     layout->addLayout(transparencyUI->createFieldLayout(), 1, 1);
 
-    BooleanParameterUI* highlightLinesUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoxelGridVis::highlightGridLines));
+    BooleanParameterUI* highlightLinesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoxelGridVis::highlightGridLines));
     layout->addWidget(highlightLinesUI->checkBox(), 2, 0, 1, 2);
 
-    BooleanParameterUI* interpolateColorsUI = new BooleanParameterUI(this, PROPERTY_FIELD(VoxelGridVis::interpolateColors));
+    BooleanParameterUI* interpolateColorsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoxelGridVis::interpolateColors));
     layout->addWidget(interpolateColorsUI->checkBox(), 3, 0, 1, 2);
 
     // Open a sub-editor for the property color mapping.
-    SubObjectParameterUI* colorMappingParamUI = new SubObjectParameterUI(this, PROPERTY_FIELD(VoxelGridVis::colorMapping), rolloutParams.after(rollout));
+    SubObjectParameterUI* colorMappingParamUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(VoxelGridVis::colorMapping), rolloutParams.after(rollout));
 
     // Whenever the pipeline input of the vis element changes, update the list of available
     // properties in the color mapping editor.

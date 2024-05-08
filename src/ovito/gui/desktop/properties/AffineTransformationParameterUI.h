@@ -35,6 +35,7 @@ namespace Ovito {
 class OVITO_GUI_EXPORT AffineTransformationParameterUI : public FloatParameterUI
 {
     OVITO_CLASS(AffineTransformationParameterUI)
+    Q_OBJECT
 
 public:
 

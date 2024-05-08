@@ -44,12 +44,6 @@ public:
     /// Constructor.
     explicit TextLabelOverlay(ObjectInitializationFlags flags);
 
-    /// Is called when the overlay is being newly attached to a viewport.
-    virtual void initializeOverlay(Viewport* viewport) override;
-
-    /// Informs the overlay that a new scene node has been inserted into the scene.
-    virtual void sceneNodeAdded(SceneNode* node) override;
-
     /// Lets the overlay paint its contents into the framebuffer.
     virtual void render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene) override;
 
@@ -100,9 +94,6 @@ private:
 
     /// Controls the outlining of the font.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
-
-    /// The pipeline providing global attributes that can be referenced in the text.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Pipeline*, pipeline, setPipeline, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// Controls the formatting of floating-point variable values referenced in the text string.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, valueFormatString, setValueFormatString);

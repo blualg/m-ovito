@@ -26,7 +26,6 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/app/undo/UndoableTransaction.h>
-#include <ovito/gui/desktop/widgets/general/MenuToolButton.h>
 #include "PropertiesEditor.h"
 
 namespace Ovito {
@@ -42,30 +41,22 @@ class OVITO_GUI_EXPORT ParameterUI : public QObject, public RefMaker
 
 public:
 
-    /// \brief Constructor.
-    /// \param editor The editor in which this parameter UI is used.
+    /// Constructor.
     explicit ParameterUI(PropertiesEditor* editor);
 
-    /// \brief Returns a pointer to the properties editor this parameter UI belongs to.
-    /// \return The editor in which this parameter UI is used or nullptr if the parameter UI is used outside of a PropertiesEditor.
+    /// Returns the properties editor hosting this component.
     PropertiesEditor* editor() const { return _editor; }
 
-    /// \brief Returns the main window that is hosting this parameter UI.
+    /// Returns the main window that is hosting this parameter UI.
     MainWindow& mainWindow() const { return editor()->mainWindow(); }
 
-    /// \brief Returns the current animation time.
+    /// Returns the current animation time.
     std::optional<AnimationTime> currentAnimationTime() const { return editor()->currentAnimationTime(); }
 
-    /// \brief Returns the enabled state of the UI.
-    /// \return \c true if this parameter's value can be changed by the user;
-    ///         \c false otherwise.
-    /// \sa setEnabled()
+    /// Returns the enabled state of the component.
     bool isEnabled() const { return _enabled; }
 
-    /// \brief Returns the disabled state of the UI. This is just the inverse of the enabled state.
-    /// \return \c false if this parameter's value can be changed by the user;
-    ///         \c true otherwise.
-    /// \sa isEnabled()
+    /// Returns the disabled state of the component. This is simply the inverse of the enabled state.
     bool isDisabled() const { return !isEnabled(); }
 
     /// Executes a functor and catches any exceptions thrown during its execution.
@@ -111,8 +102,6 @@ public Q_SLOTS:
     /// The parameter UI should react to this change appropriately and
     /// show the properties value for the new edit object in the UI. The default implementation
     /// of this method just calls updateUI() to reflect the change.
-    ///
-    /// \sa setEditObject()
     virtual void resetUI() { updateUI(); }
 
     /// \brief This method updates the displayed value of the parameter UI.
@@ -121,18 +110,12 @@ public Q_SLOTS:
     virtual void updateUI() {}
 
     /// \brief Sets the enabled state of the UI.
-    /// \param enabled Controls whether may change the parameter's value or not.
-    /// \sa isEnabled()
     virtual void setEnabled(bool enabled) { _enabled = enabled; }
 
     /// \brief Sets the enabled state of the UI. This is just the reverse of setEnabled().
-    /// \param disabled Controls whether may change the parameter's value or not.
-    /// \sa setEnabled()
-    /// \sa isDisabled()
     void setDisabled(bool disabled) { setEnabled(!disabled); }
 
     /// \brief Sets the object whose property is being displayed in this parameter UI.
-    /// \sa editObject()
     virtual void setEditObject(RefTarget* newObject) {
         _editObject.set(this, PROPERTY_FIELD(editObject), newObject);
         resetUI();
@@ -140,104 +123,14 @@ public Q_SLOTS:
 
 private:
 
-    /// The object whose parameter is being edited.
+    /// The object whose parameters are being edited.
     DECLARE_REFERENCE_FIELD(RefTarget*, editObject);
 
-    /// The editor in which this parameter UI is used.
+    /// The editor hosting this parameter UI.
     PropertiesEditor* _editor;
 
-    /// Indicates whether this UI parameter widget is currently enabled.
+    /// Indicates whether this UI component is currently enabled or disabled.
     bool _enabled = true;
-};
-
-/**
- * \brief Base class for UI components that allow the user to edit a property of
- *        an object that is stored in a reference field, a property field, or a Qt property.
- */
-class OVITO_GUI_EXPORT PropertyParameterUI : public ParameterUI
-{
-    OVITO_CLASS(PropertyParameterUI)
-    Q_OBJECT
-
-public:
-
-    /// \brief Constructor for a PropertyField or ReferenceField.
-    /// \param parent The editor in which this parameter UI is used. This becomes the parent of this object.
-    /// \param propField The property or reference field.
-    PropertyParameterUI(PropertiesEditor* parent, const PropertyFieldDescriptor* propField);
-
-    /// \brief Returns the property or reference field being edited.
-    /// \return A pointer to the descriptor of the PropertyField or ReferenceField being edited or
-    ///         \c NULL if this PropertyUI is bound to a normal Qt property.
-    /// \sa propertyName()
-    const PropertyFieldDescriptor* propertyField() const { return _propField; }
-
-    /// \brief Indicates whether this parameter UI is representing a sub-object property (e.g. an animation controller).
-    bool isReferenceFieldUI() const { return _propField && _propField->isReferenceField(); }
-
-    /// \brief Indicates whether this parameter UI is representing a PropertyField based property.
-    bool isPropertyFieldUI() const { return _propField && !_propField->isReferenceField(); }
-
-    /// \brief This method is called when parameter object has been assigned to the reference field of the editable object
-    /// this parameter UI is bound to.
-    ///
-    /// It is also called when the editable object itself has
-    /// been replaced in the editor. The parameter UI should react to this change appropriately and
-    /// show the property value for the new edit object in the UI. New implementations of this
-    /// method must call the base implementation before any other action is taken.
-    virtual void resetUI() override;
-
-    /// \brief Returns the menu tool button associated to this PropertyParameterUI
-    [[nodiscard]] MenuToolButton* menuToolButton() const { return _menuToolButton; }
-
-    /// \brief Returns the menu tool button associated to this PropertyParameterUI.
-    /// Creates a new MenuToolButton if one doesn't exist yet.
-    /// \param parent parent widget for the MenuToolButton
-    /// \return pointer to the MenuToolButton
-    [[nodiscard]] MenuToolButton* createMenuToolButton(QWidget* parent = nullptr);
-
-    /// \brief Create a new action in the menuToolButton with the given text and icon
-    /// Creates a new MenuToolButton if one doesn't exist yet.
-    /// \return pointer to the new action
-    [[nodiscard]] QAction* createAction(const QString& text, const QIcon& icon);
-
-    /// \brief Creates a new action in the menuToolButton that can be used to reset the parameter
-    /// managed by this PropertyParameterUI to its default value
-    /// Creates a new MenuToolButton if one doesn't exist yet.
-    /// \return pointer to the reset action
-    QAction* createResetAction();
-
-public:
-
-    Q_PROPERTY(Ovito::RefTarget* parameterObject READ parameterObject)
-
-protected Q_SLOTS:
-
-    /// This slot is called when the user has changed the value of the parameter.
-    /// It stores the new value in the application's settings store so that it can be used
-    /// as the default initialization value next time when a new object of the same class is created.
-    void memorizeDefaultParameterValue();
-
-    /// Opens the animation key editor if the parameter managed by this UI class is animatable.
-    void openAnimationKeyEditor();
-
-protected:
-
-    /// This method is called when a reference target changes.
-    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
-
-private:
-
-    /// The controller or sub-object whose value is being edited.
-    /// This may be \c NULL either when there is no editable object selected in the parent editor
-    /// or if the editable object's reference field is currently empty.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(RefTarget*, parameterObject, setParameterObject);
-
-    /// The property or reference field being edited or NULL if bound to a Qt property.
-    const PropertyFieldDescriptor* _propField = nullptr;
-
-    /// The MenuToolButton associated to this PropertyParameterUI.
-    QPointer<MenuToolButton> _menuToolButton = nullptr;
 };
 
 }   // End of namespace

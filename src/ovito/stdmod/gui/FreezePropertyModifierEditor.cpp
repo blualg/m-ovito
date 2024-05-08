@@ -23,10 +23,10 @@
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/stdmod/modifiers/FreezePropertyModifier.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
-#include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
+#include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
 #include "FreezePropertyModifierEditor.h"
 
 namespace Ovito {
@@ -46,23 +46,23 @@ void FreezePropertyModifierEditor::createUI(const RolloutInsertionParameters& ro
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(2);
 
-    PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
+    DataObjectReferenceParameterUI* pclassUI = createParamUI<DataObjectReferenceParameterUI>(PROPERTY_FIELD(GenericPropertyModifier::subject), PropertyContainer::OOClass());
     layout->addWidget(new QLabel(tr("Operate on:")));
     layout->addWidget(pclassUI->comboBox());
     layout->addSpacing(8);
 
     // Do not list data tables as available inputs.
-    pclassUI->setContainerFilter([](const PropertyContainer* container) {
+    pclassUI->setObjectFilter<PropertyContainer>([](const PropertyContainer* container) {
         return DataTable::OOClass().isMember(container) == false;
     });
 
-    PropertyReferenceParameterUI* sourcePropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::sourceProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, true);
+    PropertyReferenceParameterUI* sourcePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(FreezePropertyModifier::sourceProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, true);
     layout->addWidget(new QLabel(tr("Property to freeze:"), rollout));
     layout->addWidget(sourcePropertyUI->comboBox());
     connect(sourcePropertyUI, &PropertyReferenceParameterUI::valueEntered, this, &FreezePropertyModifierEditor::onSourcePropertyChanged);
     layout->addSpacing(8);
 
-    PropertyReferenceParameterUI* destPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::destinationProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
+    PropertyReferenceParameterUI* destPropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(FreezePropertyModifier::destinationProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
     layout->addWidget(new QLabel(tr("Output property:"), rollout));
     layout->addWidget(destPropertyUI->comboBox());
     layout->addSpacing(8);
@@ -81,7 +81,7 @@ void FreezePropertyModifierEditor::createUI(const RolloutInsertionParameters& ro
     gridlayout->setContentsMargins(0,0,0,0);
     gridlayout->setColumnStretch(1, 1);
 
-    IntegerParameterUI* freezeTimePUI = new IntegerParameterUI(this, PROPERTY_FIELD(FreezePropertyModifier::freezeTime));
+    IntegerParameterUI* freezeTimePUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(FreezePropertyModifier::freezeTime));
     gridlayout->addWidget(freezeTimePUI->label(), 0, 0);
     gridlayout->addLayout(freezeTimePUI->createFieldLayout(), 0, 1);
     layout->addLayout(gridlayout);
@@ -89,7 +89,7 @@ void FreezePropertyModifierEditor::createUI(const RolloutInsertionParameters& ro
 
     // Status label.
     layout->addSpacing(12);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 }
 
 /******************************************************************************

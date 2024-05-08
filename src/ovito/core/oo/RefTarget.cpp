@@ -199,7 +199,7 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
             if(!field->isVector()) {
                 OVITO_ASSERT(field->_singleReferenceReadFunc != nullptr);
                 OVITO_ASSERT(field->_singleReferenceWriteFuncRef != nullptr);
-                const RefTarget* originalTarget = field->_singleReferenceReadFunc(this);
+                const RefTarget* originalTarget = getReferenceFieldTarget(field);
                 // Clone reference target.
                 OORef<RefTarget> clonedReference;
                 if(field->flags().testFlag(PROPERTY_FIELD_NEVER_CLONE_TARGET))
@@ -211,7 +211,7 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
                 else
                     clonedReference = cloneHelper.copyReference(originalTarget, deepCopy);
                 // Store in reference field of destination object.
-                field->_singleReferenceWriteFuncRef(clone, std::move(clonedReference));
+                field->_singleReferenceWriteFuncRef(clone, field, std::move(clonedReference));
             }
             else {
                 // Remove any preexisting references from the field of the cloned object.
@@ -232,7 +232,7 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
                     else
                         clonedReference = cloneHelper.copyReference(originalTarget, deepCopy);
                     // Store in reference field of destination object.
-                    field->_vectorReferenceInsertFunc(clone, i, std::move(clonedReference));
+                    field->_vectorReferenceInsertFunc(clone, field, i, std::move(clonedReference));
                 }
             }
         }

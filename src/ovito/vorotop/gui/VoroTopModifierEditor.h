@@ -46,11 +46,6 @@ protected:
 
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-
-private Q_SLOTS:
-
-    /// Is called when the user presses the 'Load filter' button.
-    void onLoadFilter();
 };
 
 }   // End of namespace

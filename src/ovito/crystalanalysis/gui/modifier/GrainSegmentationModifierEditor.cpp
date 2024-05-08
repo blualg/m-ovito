@@ -59,7 +59,7 @@ void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters&
     sublayout2->setSpacing(4);
     sublayout2->setColumnStretch(1, 1);
 
-    IntegerRadioButtonParameterUI* algorithmTypeUI = new IntegerRadioButtonParameterUI(this, PROPERTY_FIELD(GrainSegmentationModifier::mergeAlgorithm));
+    IntegerRadioButtonParameterUI* algorithmTypeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(GrainSegmentationModifier::mergeAlgorithm));
     QGridLayout* sublayout3 = new QGridLayout();
     sublayout3->setContentsMargins(0,0,0,0);
     sublayout3->setSpacing(4);
@@ -71,12 +71,12 @@ void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters&
     sublayout3->addWidget(algorithmTypeUI->addRadioButton(GrainSegmentationModifier::MinimumSpanningTree, tr("Minimum Spanning Tree")), 2, 1);
     sublayout2->addLayout(sublayout3, 0, 0, 1, 2);
 
-    FloatParameterUI* mergingThresholdUI = new FloatParameterUI(this, PROPERTY_FIELD(GrainSegmentationModifier::mergingThreshold));
+    FloatParameterUI* mergingThresholdUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(GrainSegmentationModifier::mergingThreshold));
     sublayout2->addWidget(mergingThresholdUI->label(), 1, 0);
     sublayout2->addLayout(mergingThresholdUI->createFieldLayout(), 1, 1);
     connect(automaticModeButton, &QAbstractButton::toggled, mergingThresholdUI, &ParameterUI::setDisabled);
 
-    IntegerParameterUI* minGrainAtomCountUI = new IntegerParameterUI(this, PROPERTY_FIELD(GrainSegmentationModifier::minGrainAtomCount));
+    IntegerParameterUI* minGrainAtomCountUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(GrainSegmentationModifier::minGrainAtomCount));
     sublayout2->addWidget(minGrainAtomCountUI->label(), 2, 0);
     sublayout2->addLayout(minGrainAtomCountUI->createFieldLayout(), 2, 1);
 
@@ -88,23 +88,23 @@ void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters&
     sublayout2->setColumnStretch(1, 1);
 
     // Orphan atom adoption
-    BooleanParameterUI* orphanAdoptionUI = new BooleanParameterUI(this, PROPERTY_FIELD(GrainSegmentationModifier::orphanAdoption));
+    BooleanParameterUI* orphanAdoptionUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(GrainSegmentationModifier::orphanAdoption));
     sublayout2->addWidget(orphanAdoptionUI->checkBox(), 0, 0, 1, 2);
 
     // Stacking fault handling
-    BooleanParameterUI* handleCoherentInterfacesUI = new BooleanParameterUI(this, PROPERTY_FIELD(GrainSegmentationModifier::handleCoherentInterfaces));
+    BooleanParameterUI* handleCoherentInterfacesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(GrainSegmentationModifier::handleCoherentInterfaces));
     sublayout2->addWidget(handleCoherentInterfacesUI->checkBox(), 1, 0, 1, 2);
 
     // Grain coloring
-    BooleanParameterUI* colorParticlesByGrainUI = new BooleanParameterUI(this, PROPERTY_FIELD(GrainSegmentationModifier::colorParticlesByGrain));
+    BooleanParameterUI* colorParticlesByGrainUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(GrainSegmentationModifier::colorParticlesByGrain));
     sublayout2->addWidget(colorParticlesByGrainUI->checkBox(), 2, 0, 1, 2);
 
     // Output bonds
-    BooleanParameterUI* outputBondsUI = new BooleanParameterUI(this, PROPERTY_FIELD(GrainSegmentationModifier::outputBonds));
+    BooleanParameterUI* outputBondsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(GrainSegmentationModifier::outputBonds));
     sublayout2->addWidget(outputBondsUI->checkBox(), 3, 0, 1, 2);
 
     // Status label.
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     QPushButton* btn = new QPushButton(tr("Show list of grains"));
     connect(btn, &QPushButton::clicked, this, [this]() {

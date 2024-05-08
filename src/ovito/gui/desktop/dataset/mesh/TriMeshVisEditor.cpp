@@ -46,15 +46,15 @@ void TriMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     layout->setSpacing(4);
     layout->setColumnStretch(1, 1);
 
-    ColorParameterUI* colorUI = new ColorParameterUI(this, PROPERTY_FIELD(TriangleMeshVis::color));
+    ColorParameterUI* colorUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(TriangleMeshVis::color));
     layout->addWidget(colorUI->label(), 0, 0);
     layout->addWidget(colorUI->colorPicker(), 0, 1);
 
-    FloatParameterUI* transparencyUI = new FloatParameterUI(this, PROPERTY_FIELD(TriangleMeshVis::transparencyController));
+    FloatParameterUI* transparencyUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TriangleMeshVis::transparencyController));
     layout->addWidget(transparencyUI->label(), 1, 0);
     layout->addLayout(transparencyUI->createFieldLayout(), 1, 1);
 
-    BooleanParameterUI* highlightEdgesUI = new BooleanParameterUI(this, PROPERTY_FIELD(TriangleMeshVis::highlightEdges));
+    BooleanParameterUI* highlightEdgesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TriangleMeshVis::highlightEdges));
     layout->addWidget(highlightEdgesUI->checkBox(), 2, 0, 1, 2);
 }
 

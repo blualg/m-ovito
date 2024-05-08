@@ -44,7 +44,7 @@ void CAImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     layout->setSpacing(4);
 
     // Multi-timestep file
-    _multitimestepUI = new BooleanParameterUI(this, PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
+    _multitimestepUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
     layout->addWidget(_multitimestepUI->checkBox());
 }
 

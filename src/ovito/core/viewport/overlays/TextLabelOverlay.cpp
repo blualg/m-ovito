@@ -21,10 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/utilities/concurrent/SharedFuture.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/app/Application.h>
@@ -43,7 +41,6 @@ DEFINE_PROPERTY_FIELD(TextLabelOverlay, offsetY);
 DEFINE_PROPERTY_FIELD(TextLabelOverlay, textColor);
 DEFINE_PROPERTY_FIELD(TextLabelOverlay, outlineColor);
 DEFINE_PROPERTY_FIELD(TextLabelOverlay, outlineEnabled);
-DEFINE_REFERENCE_FIELD(TextLabelOverlay, pipeline);
 DEFINE_PROPERTY_FIELD(TextLabelOverlay, valueFormatString);
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, alignment, "Position");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, font, "Font");
@@ -53,12 +50,10 @@ SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, offsetY, "Offset Y");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, textColor, "Text color");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, outlineColor, "Outline color");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, outlineEnabled, "Enable outline");
-SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, pipeline, "Attributes source");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, valueFormatString, "Number format");
 SET_PROPERTY_FIELD_UNITS(TextLabelOverlay, offsetX, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS(TextLabelOverlay, offsetY, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(TextLabelOverlay, fontSize, FloatParameterUnit, 0);
-SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(TextLabelOverlay, pipeline, "sourceNode"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Constructor.
@@ -74,26 +69,6 @@ TextLabelOverlay::TextLabelOverlay(ObjectInitializationFlags flags) : ViewportOv
         _outlineEnabled(false),
         _valueFormatString("%.6g")
 {
-}
-
-/******************************************************************************
-* Is called when the overlay is being newly attached to a viewport.
-******************************************************************************/
-void TextLabelOverlay::initializeOverlay(Viewport* viewport)
-{
-    // Automatically connect to the currently selected pipeline.
-    if(!pipeline() && viewport->scene())
-        setPipeline(dynamic_object_cast<Pipeline>(viewport->scene()->selection()->firstNode()));
-}
-
-/******************************************************************************
-* Is called when the overlay is being newly attached to a viewport.
-******************************************************************************/
-void TextLabelOverlay::sceneNodeAdded(SceneNode* node)
-{
-    // Automatically connect to the new pipeline.
-    if(!pipeline())
-        setPipeline(dynamic_object_cast<Pipeline>(node));
 }
 
 /******************************************************************************

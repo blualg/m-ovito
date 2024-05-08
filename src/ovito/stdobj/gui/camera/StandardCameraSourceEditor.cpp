@@ -51,12 +51,12 @@ void StandardCameraSourceEditor::createUI(const RolloutInsertionParameters& roll
     layout->addLayout(sublayout);
 
     // Camera projection parameter.
-    BooleanRadioButtonParameterUI* isPerspectivePUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(StandardCameraSource::isPerspective));
+    BooleanRadioButtonParameterUI* isPerspectivePUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(StandardCameraSource::isPerspective));
     isPerspectivePUI->buttonTrue()->setText(tr("Perspective camera:"));
     sublayout->addWidget(isPerspectivePUI->buttonTrue(), 0, 0, 1, 3);
 
     // FOV parameter.
-    FloatParameterUI* fovPUI = new FloatParameterUI(this, PROPERTY_FIELD(StandardCameraSource::fovController));
+    FloatParameterUI* fovPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(StandardCameraSource::fovController));
     sublayout->addWidget(fovPUI->label(), 1, 1);
     sublayout->addLayout(fovPUI->createFieldLayout(), 1, 2);
 
@@ -64,7 +64,7 @@ void StandardCameraSourceEditor::createUI(const RolloutInsertionParameters& roll
     sublayout->addWidget(isPerspectivePUI->buttonFalse(), 2, 0, 1, 3);
 
     // Zoom parameter.
-    FloatParameterUI* zoomPUI = new FloatParameterUI(this, PROPERTY_FIELD(StandardCameraSource::zoomController));
+    FloatParameterUI* zoomPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(StandardCameraSource::zoomController));
     sublayout->addWidget(zoomPUI->label(), 3, 1);
     sublayout->addLayout(zoomPUI->createFieldLayout(), 3, 2);
 
@@ -75,7 +75,7 @@ void StandardCameraSourceEditor::createUI(const RolloutInsertionParameters& roll
 
     // Camera type.
     layout->addSpacing(10);
-    VariantComboBoxParameterUI* typePUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(StandardCameraSource::isTargetCamera));
+    VariantComboBoxParameterUI* typePUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(StandardCameraSource::isTargetCamera));
     typePUI->comboBox()->addItem(tr("Free camera"), QVariant::fromValue(false));
     typePUI->comboBox()->addItem(tr("Target camera"), QVariant::fromValue(true));
     layout->addWidget(new QLabel(tr("Camera type:")));

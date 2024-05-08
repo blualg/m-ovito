@@ -37,7 +37,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
-#include <ovito/gui/desktop/properties/Vector3ParameterUI.h>
+#include <ovito/gui/desktop/properties/VectorParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
@@ -66,7 +66,7 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
     QHBoxLayout* sublayout = new QHBoxLayout();
     sublayout->setContentsMargins(0,0,0,0);
 
-    _reducedCoordinatesPUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(SliceModifier::reducedCoordinates));
+    _reducedCoordinatesPUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(SliceModifier::reducedCoordinates));
     _reducedCoordinatesPUI->buttonFalse()->setText(tr("Cartesian coordinates"));
     _reducedCoordinatesPUI->buttonTrue()->setText(tr("Miller indices"));
     sublayout->addWidget(_reducedCoordinatesPUI->buttonFalse(), 1);
@@ -84,13 +84,13 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
     gridlayout->setColumnStretch(1, 1);
 
     // Distance parameter.
-    _distancePUI = new FloatParameterUI(this, PROPERTY_FIELD(SliceModifier::distanceController));
+    _distancePUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SliceModifier::distanceController));
     gridlayout->addWidget(_distancePUI->label(), 2, 0);
     gridlayout->addLayout(_distancePUI->createFieldLayout(), 2, 1);
 
     // Normal parameter.
     for(int i = 0; i < 3; i++) {
-        _normalPUI[i] = new Vector3ParameterUI(this, PROPERTY_FIELD(SliceModifier::normalController), i);
+        _normalPUI[i] = createParamUI<VectorParameterUI>(PROPERTY_FIELD(SliceModifier::normalController), i, 3);
         _normalPUI[i]->label()->setTextFormat(Qt::RichText);
         _normalPUI[i]->label()->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
         connect(_normalPUI[i]->label(), &QLabel::linkActivated, this, &SliceModifierEditor::onAlignNormalWithAxis);
@@ -101,7 +101,7 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
     updateCoordinateLabels();
 
     // Slice width parameter.
-    FloatParameterUI* widthPUI = new FloatParameterUI(this, PROPERTY_FIELD(SliceModifier::widthController));
+    FloatParameterUI* widthPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SliceModifier::widthController));
     gridlayout->addWidget(widthPUI->label(), 6, 0);
     gridlayout->addLayout(widthPUI->createFieldLayout(), 6, 1);
 
@@ -109,19 +109,19 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
     layout->addSpacing(8);
 
     // Invert parameter.
-    BooleanParameterUI* invertPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SliceModifier::inverse));
+    BooleanParameterUI* invertPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SliceModifier::inverse));
     layout->addWidget(invertPUI->checkBox());
 
     // Create selection parameter.
-    BooleanParameterUI* createSelectionPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SliceModifier::createSelection));
+    BooleanParameterUI* createSelectionPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SliceModifier::createSelection));
     layout->addWidget(createSelectionPUI->checkBox());
 
     // Apply to selection only parameter.
-    BooleanParameterUI* applyToSelectionPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SliceModifier::applyToSelection));
+    BooleanParameterUI* applyToSelectionPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SliceModifier::applyToSelection));
     layout->addWidget(applyToSelectionPUI->checkBox());
 
     // Visualize plane.
-    BooleanParameterUI* visualizePlanePUI = new BooleanParameterUI(this, PROPERTY_FIELD(SliceModifier::enablePlaneVisualization));
+    BooleanParameterUI* visualizePlanePUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SliceModifier::enablePlaneVisualization));
     layout->addWidget(visualizePlanePUI->checkBox());
 
     layout->addSpacing(8);
@@ -147,7 +147,7 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 
     // Status label.
     layout->addSpacing(12);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Create a second rollout.
     rollout = createRollout(tr("Operate on"), rolloutParams.after(rollout), "manual:particles.modifiers.slice");
@@ -157,7 +157,7 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(4);
 
-    ModifierDelegateFixedListParameterUI* delegatesPUI = new ModifierDelegateFixedListParameterUI(this, rolloutParams.after(rollout));
+    ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>(rolloutParams.after(rollout));
     layout->addWidget(delegatesPUI->listWidget());
 }
 

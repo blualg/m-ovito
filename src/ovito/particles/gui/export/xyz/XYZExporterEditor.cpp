@@ -48,12 +48,12 @@ void XYZExporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
     layout->setColumnMinimumWidth(2,10);
     layout->addWidget(new QLabel(tr("XYZ format style:")), 0, 0);
 
-    VariantComboBoxParameterUI* subFormatUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(XYZExporter::subFormat));
+    VariantComboBoxParameterUI* subFormatUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(XYZExporter::subFormat));
     subFormatUI->comboBox()->addItem("Extended (default)", QVariant::fromValue((int)XYZExporter::ExtendedFormat));
     subFormatUI->comboBox()->addItem("Parcas", QVariant::fromValue((int)XYZExporter::ParcasFormat));
     layout->addWidget(subFormatUI->comboBox(), 0, 1);
 
-    IntegerParameterUI* precisionUI = new IntegerParameterUI(this, PROPERTY_FIELD(FileExporter::floatOutputPrecision));
+    IntegerParameterUI* precisionUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(FileExporter::floatOutputPrecision));
     layout->addWidget(precisionUI->label(), 0, 3);
     layout->addLayout(precisionUI->createFieldLayout(), 0, 4);
 

@@ -46,10 +46,10 @@ void CombineDatasetsModifierEditor::createUI(const RolloutInsertionParameters& r
 
     // Status label.
     layout->addSpacing(6);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Open a sub-editor for the source object.
-    new SubObjectParameterUI(this, PROPERTY_FIELD(CombineDatasetsModifier::secondaryDataSource), RolloutInsertionParameters().setTitle(tr("Secondary Source: %1")));
+    createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(CombineDatasetsModifier::secondaryDataSource), RolloutInsertionParameters().setTitle(tr("Secondary Source: %1")));
 }
 
 }   // End of namespace

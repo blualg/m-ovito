@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include <ovito/grid/objects/VoxelGrid.h>
+#include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanGroupBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
@@ -64,14 +64,11 @@ void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     layout2->setColumnStretch(1, 1);
     layout1->addLayout(layout2);
 
-    PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::subject));
-    pclassUI->setContainerFilter([](const PropertyContainer* container) {
-        return VoxelGrid::OOClass().isMember(container);
-    });
+    DataObjectReferenceParameterUI* pclassUI = createParamUI<DataObjectReferenceParameterUI>(PROPERTY_FIELD(CreateIsosurfaceModifier::subject), VoxelGrid::OOClass());
     layout2->addWidget(new QLabel(tr("Operate on:")), row, 0);
     layout2->addWidget(pclassUI->comboBox(), row++, 1);
 
-    PropertyReferenceParameterUI* fieldQuantityUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::sourceProperty));
+    PropertyReferenceParameterUI* fieldQuantityUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(CreateIsosurfaceModifier::sourceProperty));
     layout2->addWidget(new QLabel(tr("Field quantity:")), row, 0);
     layout2->addWidget(fieldQuantityUI->comboBox(), row++, 1);
     connect(this, &PropertiesEditor::contentsChanged, this, [fieldQuantityUI](RefTarget* editObject) {
@@ -83,21 +80,21 @@ void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     });
 
     // Isolevel parameter.
-    FloatParameterUI* isolevelPUI = new FloatParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::isolevelController));
+    FloatParameterUI* isolevelPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(CreateIsosurfaceModifier::isolevelController));
     layout2->addWidget(isolevelPUI->label(), row, 0);
     layout2->addLayout(isolevelPUI->createFieldLayout(), row++, 1);
 
     // Smoothing level parameter.
-    IntegerParameterUI* smoothingLevelPUI = new IntegerParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::smoothingLevel));
+    IntegerParameterUI* smoothingLevelPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(CreateIsosurfaceModifier::smoothingLevel));
     layout2->addWidget(smoothingLevelPUI->label(), row, 0);
     layout2->addLayout(smoothingLevelPUI->createFieldLayout(), row++, 1);
 
     // Transfer field values.
-    BooleanParameterUI* transferFieldValuesUI = new BooleanParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::transferFieldValues));
+    BooleanParameterUI* transferFieldValuesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CreateIsosurfaceModifier::transferFieldValues));
     layout2->addWidget(transferFieldValuesUI->checkBox(), row++, 1, 1, 1);
 
     BooleanGroupBoxParameterUI* regionsSettingsUI =
-        new BooleanGroupBoxParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::identifyRegions));
+        createParamUI<BooleanGroupBoxParameterUI>(PROPERTY_FIELD(CreateIsosurfaceModifier::identifyRegions));
 #ifdef OVITO_BUILD_PROFESSIONAL
     regionsSettingsUI->groupBox()->setTitle(tr("Identify volumetric regions"));
 #else
@@ -148,10 +145,10 @@ void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
 
     // Status label.
     layout1->addSpacing(8);
-    layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout1->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Open a sub-editor for the mesh vis element.
-    new SubObjectParameterUI(this, PROPERTY_FIELD(CreateIsosurfaceModifier::surfaceMeshVis), rolloutParams.after(rollout));
+    createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(CreateIsosurfaceModifier::surfaceMeshVis), rolloutParams.after(rollout));
 
     // Update data plot whenever the modifier has calculated new results.
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &CreateIsosurfaceModifierEditor::plotHistogram);

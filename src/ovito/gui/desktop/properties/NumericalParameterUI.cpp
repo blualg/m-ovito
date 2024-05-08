@@ -23,8 +23,6 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/NumericalParameterUI.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
-#include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 
@@ -33,7 +31,7 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(NumericalParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField or ReferenceField property.
+* Constructor.
 ******************************************************************************/
 NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QMetaObject* defaultParameterUnitType) :
     PropertyParameterUI(parentEditor, propField), _parameterUnitType(defaultParameterUnitType)
@@ -46,7 +44,7 @@ NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const
 }
 
 /******************************************************************************
-* Creates the widgets for this property UI.
+* Creates the widgets for this parameter UI.
 ******************************************************************************/
 void NumericalParameterUI::initUIControls(const QString& labelText)
 {
@@ -54,17 +52,15 @@ void NumericalParameterUI::initUIControls(const QString& labelText)
     _label = new QLabel(labelText);
     _textBox = new QLineEdit();
     _spinner = new SpinnerWidget();
-    connect(spinner(), &SpinnerWidget::spinnerValueChanged, this, &NumericalParameterUI::onSpinnerValueChanged);
-    connect(spinner(), &SpinnerWidget::spinnerDragStart, this, &NumericalParameterUI::onSpinnerDragStart);
-    connect(spinner(), &SpinnerWidget::spinnerDragStop, this, &NumericalParameterUI::onSpinnerDragStop);
-    connect(spinner(), &SpinnerWidget::spinnerDragAbort, this, &NumericalParameterUI::onSpinnerDragAbort);
+    connect(spinner(), &SpinnerWidget::valueChanged, this, &NumericalParameterUI::updatePropertyValue);
     spinner()->setTextBox(_textBox);
+    spinner()->enableAutomaticUndo(mainWindow(), tr("Change parameter"));
     if(propertyField()->numericalParameterInfo() != nullptr) {
         spinner()->setMinValue(propertyField()->numericalParameterInfo()->minValue);
         spinner()->setMaxValue(propertyField()->numericalParameterInfo()->maxValue);
     }
 
-    // create the reset button -> will be added to the layout in createFieldLayout()
+    // Create the reset button -> will be added to the layout in createFieldLayout()
     if(propertyField()->flags().testFlag(PROPERTY_FIELD_RESETTABLE)) {
         createResetAction();
     }
@@ -92,6 +88,7 @@ NumericalParameterUI::~NumericalParameterUI()
     delete spinner();
     delete textBox();
     delete animateButton();
+    delete _layout.data();
 }
 
 /******************************************************************************
@@ -130,7 +127,8 @@ void NumericalParameterUI::resetUI()
 ******************************************************************************/
 void NumericalParameterUI::setEnabled(bool enabled)
 {
-    if(enabled == isEnabled()) return;
+    if(enabled == isEnabled())
+        return;
     PropertyParameterUI::setEnabled(enabled);
     if(spinner()) {
         if(isReferenceFieldUI()) {
@@ -145,70 +143,24 @@ void NumericalParameterUI::setEnabled(bool enabled)
 }
 
 /******************************************************************************
-* Is called when the spinner value has changed.
-******************************************************************************/
-void NumericalParameterUI::onSpinnerValueChanged()
-{
-    if(!_isDraggingSpinner) {
-        performTransaction(tr("Change parameter value"), [&]() {
-            updatePropertyValue();
-        });
-    }
-    else {
-        _undoTransaction.revert();
-        performActions(_undoTransaction, [&] {
-            updatePropertyValue();
-        });
-    }
-}
-
-/******************************************************************************
-* Is called when the user begins dragging the spinner interactively.
-******************************************************************************/
-void NumericalParameterUI::onSpinnerDragStart()
-{
-    OVITO_ASSERT(!_isDraggingSpinner);
-    _undoTransaction.begin(mainWindow(), tr("Change parameter"));
-    _isDraggingSpinner = true;
-}
-
-/******************************************************************************
-* Is called when the user stops dragging the spinner interactively.
-******************************************************************************/
-void NumericalParameterUI::onSpinnerDragStop()
-{
-    OVITO_ASSERT(_isDraggingSpinner);
-    _undoTransaction.commit();
-    _isDraggingSpinner = false;
-}
-
-/******************************************************************************
-* Is called when the user aborts dragging the spinner interactively.
-******************************************************************************/
-void NumericalParameterUI::onSpinnerDragAbort()
-{
-    OVITO_ASSERT(_isDraggingSpinner);
-    _undoTransaction.cancel();
-    _isDraggingSpinner = false;
-}
-
-/******************************************************************************
 * Creates a QLayout that contains the text box and the spinner widget.
 ******************************************************************************/
-QLayout* NumericalParameterUI::createFieldLayout() const
+QLayout* NumericalParameterUI::createFieldLayout()
 {
-    QHBoxLayout* layout = new QHBoxLayout();
-    layout->setContentsMargins(0,0,0,0);
-    layout->setSpacing(0);
-    layout->addWidget(textBox());
-    layout->addWidget(spinner());
-    // Show menu button, if any actions are defined
-    if(menuToolButton()) {
-        layout->addWidget(menuToolButton());
+    if(!_layout.data()) {
+        _layout = new QHBoxLayout();
+        _layout->setContentsMargins(0,0,0,0);
+        _layout->setSpacing(0);
+        _layout->addWidget(textBox());
+        _layout->addWidget(spinner());
+        // Show menu button, if any actions are defined
+        if(menuToolButton()) {
+            _layout->addWidget(menuToolButton());
+        }
+        if(animateButton())
+            _layout->addWidget(animateButton());
     }
-    if(animateButton())
-        layout->addWidget(animateButton());
-    return layout;
+    return _layout.data();
 }
 
 }  // namespace Ovito

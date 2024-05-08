@@ -89,11 +89,11 @@ void LAMMPSTextDumpImporterEditor::createUI(const RolloutInsertionParameters& ro
     layout->addWidget(optionsBox);
 
     // Multi-timestep file
-    _multitimestepUI = new BooleanParameterUI(this, PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
+    _multitimestepUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
     sublayout->addWidget(_multitimestepUI->checkBox());
 
     // Sort particles
-    BooleanParameterUI* sortParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::sortParticles));
+    BooleanParameterUI* sortParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::sortParticles));
     sublayout->addWidget(sortParticlesUI->checkBox());
 
     QGroupBox* columnMappingBox = new QGroupBox(tr("File columns"), rollout);
@@ -101,7 +101,7 @@ void LAMMPSTextDumpImporterEditor::createUI(const RolloutInsertionParameters& ro
     sublayout->setContentsMargins(4,4,4,4);
     layout->addWidget(columnMappingBox);
 
-    BooleanRadioButtonParameterUI* useCustomMappingUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(LAMMPSTextDumpImporter::useCustomColumnMapping));
+    BooleanRadioButtonParameterUI* useCustomMappingUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(LAMMPSTextDumpImporter::useCustomColumnMapping));
     useCustomMappingUI->buttonFalse()->setText(tr("Automatic mapping"));
     sublayout->addWidget(useCustomMappingUI->buttonFalse());
     useCustomMappingUI->buttonTrue()->setText(tr("User-defined mapping to particle properties"));

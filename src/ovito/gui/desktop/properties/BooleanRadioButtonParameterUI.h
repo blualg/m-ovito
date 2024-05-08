@@ -24,7 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include "ParameterUI.h"
+#include "PropertyParameterUI.h"
 
 namespace Ovito {
 
@@ -35,6 +35,7 @@ namespace Ovito {
 class OVITO_GUI_EXPORT BooleanRadioButtonParameterUI : public PropertyParameterUI
 {
     OVITO_CLASS(BooleanRadioButtonParameterUI)
+    Q_OBJECT
 
 public:
 

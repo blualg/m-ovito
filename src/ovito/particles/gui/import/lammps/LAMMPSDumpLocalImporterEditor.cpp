@@ -157,7 +157,7 @@ void LAMMPSDumpLocalImporterEditor::createUI(const RolloutInsertionParameters& r
     layout->addWidget(optionsBox);
 
     // Multi-timestep file
-    _multitimestepUI = new BooleanParameterUI(this, PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
+    _multitimestepUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
     sublayout->addWidget(_multitimestepUI->checkBox());
 
     QGroupBox* columnMappingBox = new QGroupBox(tr("File columns"), rollout);

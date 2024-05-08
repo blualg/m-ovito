@@ -22,7 +22,6 @@
 
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/stdmod/modifiers/ManualSelectionModifier.h>
-#include <ovito/stdobj/gui/widgets/PropertyContainerParameterUI.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -30,6 +29,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
+#include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
@@ -215,11 +215,11 @@ void ManualSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
     sublayout->setSpacing(6);
     layout->addWidget(operateOnGroup);
 
-    PropertyContainerParameterUI* pclassUI = new PropertyContainerParameterUI(this, PROPERTY_FIELD(GenericPropertyModifier::subject));
+    DataObjectReferenceParameterUI* pclassUI = createParamUI<DataObjectReferenceParameterUI>(PROPERTY_FIELD(GenericPropertyModifier::subject), PropertyContainer::OOClass());
     sublayout->addWidget(pclassUI->comboBox());
 
     // List only property containers that support element selection.
-    pclassUI->setContainerFilter([](const PropertyContainer* container) {
+    pclassUI->setObjectFilter<PropertyContainer>([](const PropertyContainer* container) {
         return container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)
             && container->getOOMetaClass().supportsViewportPicking();
     });
@@ -268,7 +268,7 @@ void ManualSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 
     // Status label.
     layout->addSpacing(12);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 }
 
 /******************************************************************************

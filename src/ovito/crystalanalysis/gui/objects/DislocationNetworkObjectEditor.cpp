@@ -88,7 +88,7 @@ void DislocationNetworkObjectEditor::createUI(const RolloutInsertionParameters& 
     layout->addWidget(subEditorContainer);
 
     layout->insertWidget(0, new QLabel(tr("Structure types:")));
-    typesListUI = new CustomRefTargetListParameterUI(this, PROPERTY_FIELD(DislocationNetworkObject::crystalStructures), RolloutInsertionParameters().insertInto(subEditorContainer));
+    typesListUI = createParamUI<CustomRefTargetListParameterUI>(PROPERTY_FIELD(DislocationNetworkObject::crystalStructures), RolloutInsertionParameters().insertInto(subEditorContainer));
     layout->insertWidget(1, typesListUI->tableWidget(200));
     typesListUI->tableWidget()->setAutoScroll(false);
     connect(typesListUI->tableWidget(), &QTableWidget::doubleClicked, this, &DislocationNetworkObjectEditor::onDoubleClickPattern);

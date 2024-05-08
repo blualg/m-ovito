@@ -46,18 +46,18 @@ void AcklandJonesModifierEditor::createUI(const RolloutInsertionParameters& roll
     layout1->setSpacing(4);
 
     // Use only selected particles.
-    BooleanParameterUI* onlySelectedParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
+    BooleanParameterUI* onlySelectedParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
     layout1->addWidget(onlySelectedParticlesUI->checkBox());
 
     // Color by type
-    BooleanParameterUI* colorByTypeUI = new BooleanParameterUI(this, PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
+    BooleanParameterUI* colorByTypeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
     layout1->addWidget(colorByTypeUI->checkBox());
 
     // Status label.
     layout1->addSpacing(10);
-    layout1->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout1->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
-    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this, true);
+    StructureListParameterUI* structureTypesPUI = createParamUI<StructureListParameterUI>(true);
     layout1->addSpacing(10);
     layout1->addWidget(new QLabel(tr("Structure types:")));
     layout1->addWidget(structureTypesPUI->tableWidget());

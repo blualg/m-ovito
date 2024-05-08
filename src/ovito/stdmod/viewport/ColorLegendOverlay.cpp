@@ -244,7 +244,7 @@ QVariant ColorLegendOverlay::getPipelineEditorShortInfo(Scene* scene) const
         return colorMapping()->sourceProperty().nameWithComponent();
     }
     else if(sourceProperty()) {
-        return sourceProperty().dataTitleOrString();
+        return sourceProperty().dataTitleOrPath();
     }
     return {};
 }
@@ -291,21 +291,21 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
         // Verify that the typed property, which has been selected as the source of the color legend, is available.
         if(!typedProperty) {
             // Set warning status to be displayed in the GUI.
-            setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not available in the pipeline output.").arg(sourceProperty().dataTitleOrString())));
+            setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not available in the pipeline output.").arg(sourceProperty().dataTitleOrPath())));
 
             // Escalate to an error state if in console mode.
             if(!Application::guiMode())
-                throw Exception(tr("The property '%1' set as source of the color legend is not present in the data pipeline output.").arg(sourceProperty().dataTitleOrString()));
+                throw Exception(tr("The property '%1' set as source of the color legend is not present in the data pipeline output.").arg(sourceProperty().dataTitleOrPath()));
             else
                 return;
         }
         else if(!typedProperty->isTypedProperty()) {
             // Set warning status to be displayed in the GUI.
-            setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not a typed property.").arg(sourceProperty().dataTitleOrString())));
+            setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not a typed property.").arg(sourceProperty().dataTitleOrPath())));
 
             // Escalate to an error state if in console mode.
             if(!Application::guiMode())
-                throw Exception(tr("The property '%1' set as source of the color legend is not a typed property, i.e., it has no ElementType(s) attached.").arg(sourceProperty().dataTitleOrString()));
+                throw Exception(tr("The property '%1' set as source of the color legend is not a typed property, i.e., it has no ElementType(s) attached.").arg(sourceProperty().dataTitleOrPath()));
             else
                 return;
         }

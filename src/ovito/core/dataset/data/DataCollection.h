@@ -42,44 +42,46 @@ class OVITO_CORE_EXPORT DataCollection : public DataObject
 
 public:
 
-    /// \brief Constructor.
+    /// Constructor.
     explicit DataCollection(ObjectInitializationFlags flags) : DataObject(flags) {}
 
-    /// \brief Discards all contents of this data collection.
-    void clear() {
-        _objects.clear(this, PROPERTY_FIELD(objects));
-    }
+    /// Discards all content of this data collection.
+    void clear() { _objects.clear(this, PROPERTY_FIELD(objects)); }
 
-    /// \brief Returns true if the given object is part of this collection.
-    /// \note The method ignores the revision number of the object.
+    /// Tests if the given object is part of this collection (only at the root-level).
     bool contains(const DataObject* obj) const;
 
-    /// \brief Adds an additional data object to this state.
+    /// Adds an additional root-level data object to this collection.
+    /// The object must not already be part of the collection.
     void addObject(const DataObject* obj);
 
-    /// \brief Inserts an additional data object into this state.
+    /// Inserts an additional root-level data object into this collection.
+    /// The object must not already be part of the collection.
     void insertObject(qsizetype index, DataOORef<const DataObject> obj);
 
-    /// \brief Replaces a data object with a new one.
-    bool replaceObject(const DataObject* oldObj, const DataObject* newObj);
-
-    /// \brief Removes a data object from this state.
+    /// Removes a root-level data object from this collection. The object must exist in the collection.
     void removeObject(const DataObject* obj) { replaceObject(obj, nullptr); }
 
-    /// \brief Removes a data object from this state.
+    /// Removes a root-level data object from this collection.
     void removeObjectByIndex(qsizetype index);
 
-    /// \brief Finds an object of the given type in the list of data objects stored in this collection.
+    /// Replaces a root-level data object in this collection with a different one.
+    /// If the new object is a nullptr, the old object is simply removed from the collection.
+    bool replaceObject(const DataObject* oldObj, const DataObject* newObj);
+
+    /// Finds the first root-level object of the given class type in this collection.
+    /// Return nullptr if not found.
     const DataObject* getObject(const DataObject::OOMetaClass& objectClass) const;
 
-    /// \brief Finds an object of the given type in the list of data objects stored in this collection.
+    /// Finds the first root-level object of the given class type in this collection.
+    /// Return nullptr if not found.
     template<class DataObjectClass>
     const DataObjectClass* getObject() const {
         return static_object_cast<DataObjectClass>(getObject(DataObjectClass::OOClass()));
     }
 
-    /// Finds an object of the given type in the list of data objects stored in this collection.
-    /// If it exists, makes the data object mutable.
+    /// Finds the first root-level object of the given type in this collection.
+    /// If it exists, makes the data object mutable; otherwise, returns nullptr.
     template<class DataObjectClass>
     DataObjectClass* getMutableObject() {
         if(const DataObjectClass* obj = getObject<DataObjectClass>())
@@ -87,10 +89,7 @@ public:
         return nullptr;
     }
 
-    /// \brief Finds all objects of the given type in the list of data objects stored in this collection.
-    std::vector<const DataObject*> getObjects(const DataObject::OOMetaClass& objectClass) const;
-
-    /// \brief Determines if an object of the given type is in this collection.
+    /// Determines whether at least one root-level object of the given class type exists in this collection.
     template<class DataObjectClass>
     bool containsObject() const {
         return getObject(DataObjectClass::OOClass()) != nullptr;
@@ -227,6 +226,13 @@ public:
     /// Finds an object of the given type and under the hierarchy path in this collection.
     /// Duplicates it, and all its parent objects, if needed so that it can be safely modified without unwanted side effects.
     DataObjectPath getMutableObject(const DataObject::OOMetaClass& objectClass, const QString& pathString);
+
+    /// Finds an object of the given type and under the hierarchy path in this collection.
+    /// Duplicates it, and all its parent objects, if needed so that it can be safely modified without unwanted side effects.
+    DataObjectPath getMutableObject(const DataObjectReference& dataRef) {
+        OVITO_ASSERT(dataRef);
+        return getMutableObject(*dataRef.dataClass(), dataRef.dataPath());
+    }
 
     /// Finds an object of the given type and under the hierarchy path in this collection.
     /// Duplicates it, and all its parent objects, if needed so that it can be safely modified without unwanted side effects.
@@ -370,9 +376,6 @@ public:
         }
     }
 
-    /// Copies all root-level data objects created by the given pipeline node over to this data collection.
-    void adoptDataObjectsFrom(const DataCollection& other, const OOWeakRef<const PipelineNode>& createdByNode);
-
     /// Builds a list of the global attributes stored in this pipeline state.
     QVariantMap buildAttributesMap() const;
 
@@ -422,7 +425,7 @@ private:
 
 private:
 
-    /// Stores the list of data objects.
+    /// The list of root-level data objects in the collection.
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const DataObject>, objects, setObjects);
 };
 

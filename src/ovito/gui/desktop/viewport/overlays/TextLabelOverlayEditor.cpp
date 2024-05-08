@@ -26,12 +26,11 @@
 #include <ovito/gui/desktop/properties/FontParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
-#include <ovito/gui/desktop/properties/CustomParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/PipelineSelectionParameterUI.h>
 #include <ovito/gui/desktop/viewport/overlays/MoveOverlayInputMode.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
 #include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
-#include <ovito/gui/desktop/widgets/general/PopupUpdateComboBox.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/core/viewport/overlays/TextLabelOverlay.h>
@@ -43,7 +42,6 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(TextLabelOverlayEditor);
-DEFINE_REFERENCE_FIELD(TextLabelOverlayEditor, sourcePipeline);
 SET_OVITO_OBJECT_EDITOR(TextLabelOverlay, TextLabelOverlayEditor);
 
 /******************************************************************************
@@ -61,7 +59,7 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 
     // Label text.
     parentLayout->addWidget(new QLabel(tr("Text:")));
-    StringParameterUI* labelTextPUI = new StringParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::labelText));
+    StringParameterUI* labelTextPUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(TextLabelOverlay::labelText));
     _textEdit = new AutocompleteTextEdit();
     labelTextPUI->setTextBox(_textEdit);
     parentLayout->addWidget(labelTextPUI->textBox());
@@ -75,7 +73,7 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
     positionLayout->setHorizontalSpacing(4);
     parentLayout->addWidget(positionBox);
 
-    VariantComboBoxParameterUI* alignmentPUI = new VariantComboBoxParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::alignment));
+    VariantComboBoxParameterUI* alignmentPUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(TextLabelOverlay::alignment));
     positionLayout->addWidget(new QLabel(tr("Alignment:")), 0, 0);
     positionLayout->addWidget(alignmentPUI->comboBox(), 0, 1, 1, 2);
     alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_top_left"), tr("Top left"), QVariant::fromValue((int)(Qt::AlignTop | Qt::AlignLeft)));
@@ -87,10 +85,10 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
     alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_bottom_left"), tr("Bottom left"), QVariant::fromValue((int)(Qt::AlignBottom | Qt::AlignLeft)));
     alignmentPUI->comboBox()->addItem(QIcon::fromTheme("overlay_alignment_left"), tr("Left"), QVariant::fromValue((int)(Qt::AlignVCenter | Qt::AlignLeft)));
 
-    FloatParameterUI* offsetXPUI = new FloatParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::offsetX));
+    FloatParameterUI* offsetXPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TextLabelOverlay::offsetX));
     positionLayout->addWidget(new QLabel(tr("XY offset:")), 1, 0);
     positionLayout->addLayout(offsetXPUI->createFieldLayout(), 1, 1);
-    FloatParameterUI* offsetYPUI = new FloatParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::offsetY));
+    FloatParameterUI* offsetYPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TextLabelOverlay::offsetY));
     positionLayout->addLayout(offsetYPUI->createFieldLayout(), 1, 2);
 
     OORef<MoveOverlayInputMode> moveOverlayMode = OORef<MoveOverlayInputMode>::create(this);
@@ -109,23 +107,23 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
     parentLayout->addWidget(styleBox);
 
     int row = 0;
-    FloatParameterUI* fontSizePUI = new FloatParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::fontSize));
+    FloatParameterUI* fontSizePUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(TextLabelOverlay::fontSize));
     styleLayout->addWidget(new QLabel(tr("Font size:")), row, 0);
     styleLayout->addLayout(fontSizePUI->createFieldLayout(), row++, 1);
 
     // Text color.
-    ColorParameterUI* textColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::textColor));
+    ColorParameterUI* textColorPUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(TextLabelOverlay::textColor));
     styleLayout->addWidget(new QLabel(tr("Color:")), row, 0);
     styleLayout->addWidget(textColorPUI->colorPicker(), row++, 1);
 
-    BooleanParameterUI* outlineEnabledPUI = new BooleanParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::outlineEnabled));
+    BooleanParameterUI* outlineEnabledPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(TextLabelOverlay::outlineEnabled));
     styleLayout->addWidget(outlineEnabledPUI->checkBox(), row, 0);
     outlineEnabledPUI->checkBox()->setText(tr("Outline:"));
 
-    ColorParameterUI* outlineColorPUI = new ColorParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::outlineColor));
+    ColorParameterUI* outlineColorPUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(TextLabelOverlay::outlineColor));
     styleLayout->addWidget(outlineColorPUI->colorPicker(), row++, 1);
 
-    FontParameterUI* labelFontPUI = new FontParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::font));
+    FontParameterUI* labelFontPUI = createParamUI<FontParameterUI>(PROPERTY_FIELD(TextLabelOverlay::font));
     styleLayout->addWidget(labelFontPUI->label(), row, 0);
     styleLayout->addWidget(labelFontPUI->fontPicker(), row++, 1);
 
@@ -135,32 +133,11 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
     variablesLayout->setSpacing(4);
     variablesLayout->setColumnStretch(1, 1);
 
-    _pipelineComboBox = new PopupUpdateComboBox();
-    connect(_pipelineComboBox, &PopupUpdateComboBox::dropDownActivated, this, &TextLabelOverlayEditor::updateSourcesList);
-
-    CustomParameterUI* sourcePUI = new CustomParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::pipeline), _pipelineComboBox,
-            // updateWidgetFunction:
-            [this](const QVariant& value) {
-                _pipelineComboBox->clear();
-                if(Pipeline* pipeline = value.value<Pipeline*>()) {
-                    _pipelineComboBox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
-                }
-                else {
-                    _pipelineComboBox->addItem(tr("‹none›"));
-                }
-                _pipelineComboBox->setCurrentIndex(0);
-            },
-            // updatePropertyFunction:
-            [this]() {
-                return _pipelineComboBox->currentData();
-            },
-            // resetUIFunction:
-            {});
-    connect(_pipelineComboBox, qOverload<int>(&QComboBox::activated), sourcePUI, &CustomParameterUI::updatePropertyValue);
+    PipelineSelectionParameterUI* pipelineUI = createParamUI<PipelineSelectionParameterUI>(PROPERTY_FIELD(ViewportOverlay::pipeline));
     variablesLayout->addWidget(new QLabel(tr("Source pipeline:")), 0, 0, 1, 2);
-    variablesLayout->addWidget(sourcePUI->widget(), 1, 0, 1, 2);
+    variablesLayout->addWidget(pipelineUI->comboBox(), 1, 0, 1, 2);
 
-    StringParameterUI* valueFormatStringPUI = new StringParameterUI(this, PROPERTY_FIELD(TextLabelOverlay::valueFormatString));
+    StringParameterUI* valueFormatStringPUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(TextLabelOverlay::valueFormatString));
     variablesLayout->addWidget(new QLabel(tr("Value format string:")), 2, 0);
     variablesLayout->addWidget(valueFormatStringPUI->textBox(), 2, 1);
 
@@ -169,70 +146,25 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
     _attributeNamesList->setTextInteractionFlags(Qt::TextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
     variablesLayout->addWidget(_attributeNamesList, 3, 0, 1, 2);
 
-    // Update input variables list if another overlay is loaded into the editor.
-    connect(this, &TextLabelOverlayEditor::contentsReplaced, this, &TextLabelOverlayEditor::updateEditorFields);
-}
-
-/******************************************************************************
-* This method is called when a reference target changes.
-******************************************************************************/
-bool TextLabelOverlayEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
-{
-    if(source == editObject() && event.type() == ReferenceEvent::TargetChanged && static_cast<const TargetChangedEvent&>(event).field() == PROPERTY_FIELD(TextLabelOverlay::pipeline)) {
-        updateEditorFields();
-    }
-    else if(source == sourcePipeline() && (event.type() == ReferenceEvent::InteractiveStateAvailable || event.type() == ReferenceEvent::TargetChanged)) {
-        updateEditorFieldsLater(this);
-    }
-    else if(source == sourcePipeline() && event.type() == ReferenceEvent::TitleChanged) {
-        updateSourcesList();
-    }
-    return PropertiesEditor::referenceEvent(source, event);
-}
-
-/******************************************************************************
-* Updates the combobox list showing the available data sources.
-******************************************************************************/
-void TextLabelOverlayEditor::updateSourcesList()
-{
-    _pipelineComboBox->clear();
-    if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
-        // Enumerate all pipelines in the scene.
-        visitScenePipelines([&](Pipeline* pipeline) {
-            _pipelineComboBox->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
-            return true;
-        });
-        _pipelineComboBox->setCurrentIndex(_pipelineComboBox->findData(QVariant::fromValue(overlay->pipeline())));
-    }
-    if(_pipelineComboBox->count() == 0)
-        _pipelineComboBox->addItem(tr("‹none›"));
+    // Whenever the pipeline input changes, update the list of available input variables.
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, &TextLabelOverlayEditor::updateVariablesList);
 }
 
 /******************************************************************************
 * Updates the UI.
 ******************************************************************************/
-void TextLabelOverlayEditor::updateEditorFields()
+void TextLabelOverlayEditor::updateVariablesList()
 {
     QString str;
     QStringList variableNames;
-    Pipeline* pipeline = nullptr;
-    if(TextLabelOverlay* overlay = static_object_cast<TextLabelOverlay>(editObject())) {
-        if((pipeline = overlay->pipeline())) {
-            handleExceptions([&] {
-                const PipelineFlowState& flowState = pipeline->getCachedPipelineOutput(currentAnimationTime());
-                if(flowState.data()) {
-                    str.append(tr("<p>Dynamic attributes that can be referenced in the label text:</b><ul>"));
-                    for(const QString& attrName : flowState.buildAttributesMap().keys()) {
-                        str.append(QStringLiteral("<li>[%1]</li>").arg(attrName.toHtmlEscaped()));
-                        variableNames.push_back(QStringLiteral("[") + attrName + QStringLiteral("]"));
-                    }
-                    str.append(QStringLiteral("</ul></p><p></p>"));
-                }
-            });
+    if(const PipelineFlowState& flowState = getPipelineInput()) {
+        str.append(tr("<p>Dynamic attributes that can be referenced in the label text:</b><ul>"));
+        for(const QString& attrName : flowState.buildAttributesMap().keys()) {
+            str.append(QStringLiteral("<li>[%1]</li>").arg(attrName.toHtmlEscaped()));
+            variableNames.push_back(QStringLiteral("[") + attrName + QStringLiteral("]"));
         }
+        str.append(QStringLiteral("</ul></p><p></p>"));
     }
-    setSourcePipeline(pipeline);
-
     _attributeNamesList->setText(str);
     _attributeNamesList->updateGeometry();
     _textEdit->setWordList(variableNames);

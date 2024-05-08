@@ -107,7 +107,7 @@ void AMBERNetCDFImporterEditor::createUI(const RolloutInsertionParameters& rollo
     layout->addWidget(optionsBox);
 
     // Sort particles
-    BooleanParameterUI* sortParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::sortParticles));
+    BooleanParameterUI* sortParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::sortParticles));
     sublayout->addWidget(sortParticlesUI->checkBox());
 
     QGroupBox* columnMappingBox = new QGroupBox(tr("File columns"), rollout);
@@ -115,7 +115,7 @@ void AMBERNetCDFImporterEditor::createUI(const RolloutInsertionParameters& rollo
     sublayout->setContentsMargins(4,4,4,4);
     layout->addWidget(columnMappingBox);
 
-    BooleanRadioButtonParameterUI* useCustomMappingUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(AMBERNetCDFImporter::useCustomColumnMapping));
+    BooleanRadioButtonParameterUI* useCustomMappingUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(AMBERNetCDFImporter::useCustomColumnMapping));
     useCustomMappingUI->buttonFalse()->setText(tr("Automatic mapping"));
     sublayout->addWidget(useCustomMappingUI->buttonFalse());
     useCustomMappingUI->buttonTrue()->setText(tr("User-defined mapping to particle properties"));

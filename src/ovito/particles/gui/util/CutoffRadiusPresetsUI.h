@@ -24,7 +24,7 @@
 
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/gui/desktop/properties/ParameterUI.h>
+#include <ovito/gui/desktop/properties/PropertyParameterUI.h>
 
 namespace Ovito {
 

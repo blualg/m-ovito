@@ -77,9 +77,6 @@ void VoroTopModifier::loadFilterDefinition(const QString& filepath)
         stype->initializeType(ParticlePropertyReference(Particles::StructureTypeProperty));
         addStructureType(std::move(stype));
     }
-
-    // Filter file was successfully loaded. Accept it as the new filter.
-    setFilterFile(filepath);
 }
 
 /******************************************************************************
@@ -541,8 +538,11 @@ void VoroTopModifier::propertyChanged(const PropertyFieldDescriptor* field)
     StructureIdentificationModifier::propertyChanged(field);
 
     // Throw away loaded filter definition whenever a new filter file has been selected.
-    if(field == PROPERTY_FIELD(VoroTopModifier::filterFile))
+    if(field == PROPERTY_FIELD(VoroTopModifier::filterFile)) {
+        if(!isBeingDeleted() && !isUndoingOrRedoing())
+            loadFilterDefinition(filterFile());
         _filter.reset();
+    }
 }
 
 }   // End of namespace

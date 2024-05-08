@@ -49,7 +49,7 @@ void XTCImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
     layout->addWidget(optionsBox);
 
     // Center simulation cell.
-    BooleanParameterUI* recenterCellUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::recenterCell));
+    BooleanParameterUI* recenterCellUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::recenterCell));
     sublayout->addWidget(recenterCellUI->checkBox());
 }
 

@@ -53,7 +53,7 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
         layout2->setContentsMargins(4,4,4,4);
         layout2->setSpacing(2);
 
-        BooleanRadioButtonParameterUI* is2dPUI = new BooleanRadioButtonParameterUI(this, PROPERTY_FIELD(SimulationCell::is2D));
+        BooleanRadioButtonParameterUI* is2dPUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(SimulationCell::is2D));
         is2dPUI->buttonTrue()->setText("2D");
         is2dPUI->buttonFalse()->setText("3D");
         layout2->addWidget(is2dPUI->buttonTrue(), 0, 0);
@@ -68,15 +68,15 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
         layout2->setContentsMargins(4,4,4,4);
         layout2->setSpacing(2);
 
-        BooleanParameterUI* pbcxPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCell::pbcX));
+        BooleanParameterUI* pbcxPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SimulationCell::pbcX));
         pbcxPUI->checkBox()->setText("X");
         layout2->addWidget(pbcxPUI->checkBox(), 0, 0);
 
-        BooleanParameterUI* pbcyPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCell::pbcY));
+        BooleanParameterUI* pbcyPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SimulationCell::pbcY));
         pbcyPUI->checkBox()->setText("Y");
         layout2->addWidget(pbcyPUI->checkBox(), 0, 1);
 
-        _pbczPUI = new BooleanParameterUI(this, PROPERTY_FIELD(SimulationCell::pbcZ));
+        _pbczPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(SimulationCell::pbcZ));
         _pbczPUI->checkBox()->setText("Z");
         layout2->addWidget(_pbczPUI->checkBox(), 0, 2);
     }

@@ -59,7 +59,7 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     sublayout->setSpacing(6);
     mainLayout->addWidget(operateOnGroup);
 
-    ModifierDelegateParameterUI* delegateUI = new ModifierDelegateParameterUI(this, ComputePropertyModifierDelegate::OOClass());
+    ModifierDelegateParameterUI* delegateUI = createParamUI<ModifierDelegateParameterUI>(ComputePropertyModifierDelegate::OOClass());
     sublayout->addWidget(delegateUI->comboBox());
 
     QGroupBox* propertiesGroupBox = new QGroupBox(tr("Output property"), rollout);
@@ -69,7 +69,7 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     propertiesLayout->setSpacing(4);
 
     // Output property
-    PropertyReferenceParameterUI* outputPropertyUI = new PropertyReferenceParameterUI(this, PROPERTY_FIELD(ComputePropertyModifier::outputProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
+    PropertyReferenceParameterUI* outputPropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::outputProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
     propertiesLayout->addWidget(outputPropertyUI->comboBox());
     connect(this, &PropertiesEditor::contentsChanged, this, [outputPropertyUI](RefTarget* editObject) {
         ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject);
@@ -85,7 +85,7 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     });
 
     // Create the check box for the selection flag.
-    BooleanParameterUI* selectionFlagUI = new BooleanParameterUI(this, PROPERTY_FIELD(ComputePropertyModifier::onlySelectedElements));
+    BooleanParameterUI* selectionFlagUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::onlySelectedElements));
     propertiesLayout->addWidget(selectionFlagUI->checkBox());
 
     expressionsGroupBox = new QGroupBox(tr("Expression"));
@@ -97,11 +97,11 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     expressionsLayout->setColumnStretch(1,1);
 
     // Show multiline fields.
-    BooleanParameterUI* multilineFieldsUI = new BooleanParameterUI(this, PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields));
+    BooleanParameterUI* multilineFieldsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields));
     expressionsLayout->addWidget(multilineFieldsUI->checkBox(), 0, 1, Qt::AlignRight | Qt::AlignBottom);
 
     // Status label.
-    mainLayout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    mainLayout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // List of available input variables.
     QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:particles.modifiers.compute_property");
@@ -117,7 +117,7 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     connect(this, &ComputePropertyModifierEditor::contentsReplaced, this, &ComputePropertyModifierEditor::updateVariablesList);
 
     // Show settings editor of modifier delegate.
-    new SubObjectParameterUI(this, PROPERTY_FIELD(DelegatingModifier::delegate), rolloutParams.before(variablesRollout));
+    createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(DelegatingModifier::delegate), rolloutParams.before(variablesRollout));
 }
 
 /******************************************************************************

@@ -54,22 +54,22 @@ void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParamete
     gridlayout->setColumnStretch(1, 1);
 
     // Cutoff parameter.
-    FloatParameterUI* cutoffRadiusPUI = new FloatParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::cutoff));
+    FloatParameterUI* cutoffRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::cutoff));
     gridlayout->addWidget(cutoffRadiusPUI->label(), 0, 0);
     gridlayout->addLayout(cutoffRadiusPUI->createFieldLayout(), 0, 1);
 
     // Number of bins parameter.
-    IntegerParameterUI* numBinsPUI = new IntegerParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::numberOfBins));
+    IntegerParameterUI* numBinsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::numberOfBins));
     gridlayout->addWidget(numBinsPUI->label(), 1, 0);
     gridlayout->addLayout(numBinsPUI->createFieldLayout(), 1, 1);
     layout->addLayout(gridlayout);
 
     // Partial RDFs option.
-    BooleanParameterUI* partialRdfPUI = new BooleanParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::computePartialRDF));
+    BooleanParameterUI* partialRdfPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::computePartialRDF));
     layout->addWidget(partialRdfPUI->checkBox());
 
     // Only selected particles.
-    BooleanParameterUI* onlySelectedPUI = new BooleanParameterUI(this, PROPERTY_FIELD(CoordinationAnalysisModifier::onlySelected));
+    BooleanParameterUI* onlySelectedPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::onlySelected));
     layout->addWidget(onlySelectedPUI->checkBox());
 
     _rdfPlot = new DataTablePlotWidget();
@@ -85,7 +85,7 @@ void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParamete
 
     // Status label.
     layout->addSpacing(6);
-    layout->addWidget((new ObjectStatusDisplay(this))->statusWidget());
+    layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // Update data plot whenever the modifier has calculated new results.
     connect(this, &PropertiesEditor::pipelineOutputChanged, this, &CoordinationAnalysisModifierEditor::plotRDF);

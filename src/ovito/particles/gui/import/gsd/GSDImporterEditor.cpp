@@ -51,7 +51,7 @@ void GSDImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
 	layout->addWidget(optionsBox);
 
 	// Rounding resolution
-	IntegerParameterUI* resolutionUI = new IntegerParameterUI(this, PROPERTY_FIELD(GSDImporter::roundingResolution));
+	IntegerParameterUI* resolutionUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(GSDImporter::roundingResolution));
 	sublayout->addWidget(resolutionUI->label(), 1, 0);
 	sublayout->addLayout(resolutionUI->createFieldLayout(), 1, 1);
 }

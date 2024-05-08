@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
+#include <ovito/core/viewport/ViewportSuspender.h>
 #include "SpinnerWidget.h"
 
 namespace Ovito {
@@ -157,7 +158,7 @@ void SpinnerWidget::setFloatValue(FloatType newVal, bool emitChangeSignal)
 #ifdef OVITO_DEBUG
             QPointer<SpinnerWidget> self(this);
 #endif
-            Q_EMIT spinnerValueChanged();
+            spinnerValueChanged();
 #ifdef OVITO_DEBUG
             OVITO_ASSERT(!self.isNull());
 #endif
@@ -186,7 +187,7 @@ void SpinnerWidget::setIntValue(int newValInt, bool emitChangeSignal)
 #ifdef OVITO_DEBUG
             QPointer<SpinnerWidget> self(this);
 #endif
-            Q_EMIT spinnerValueChanged();
+            spinnerValueChanged();
 #ifdef OVITO_DEBUG
             OVITO_ASSERT(!self.isNull());
 #endif
@@ -288,7 +289,7 @@ void SpinnerWidget::mousePressEvent(QMouseEvent* event)
 #ifdef OVITO_DEBUG
             QPointer<SpinnerWidget> self(this);
 #endif
-            Q_EMIT spinnerDragAbort();
+            spinnerDragAbort();
 #ifdef OVITO_DEBUG
             OVITO_ASSERT(!self.isNull());
 #endif
@@ -313,7 +314,7 @@ void SpinnerWidget::mouseReleaseEvent(QMouseEvent* event)
 #ifdef OVITO_DEBUG
             QPointer<SpinnerWidget> self(this);
 #endif
-            Q_EMIT spinnerDragStop();
+            spinnerDragStop();
 #ifdef OVITO_DEBUG
             OVITO_ASSERT(!self.isNull());
 #endif
@@ -358,7 +359,7 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
                 _lowerBtnPressed = true;
                 _lastMouseY = _startMouseY = mapToGlobal(event->pos()).y();
                 update();
-                Q_EMIT spinnerDragStart();
+                spinnerDragStart();
             }
         }
         else if(!_upperBtnPressed && _lowerBtnPressed) {
@@ -366,7 +367,7 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
                 _upperBtnPressed = true;
                 _lastMouseY = _startMouseY = mapToGlobal(event->pos()).y();
                 update();
-                Q_EMIT spinnerDragStart();
+                spinnerDragStart();
             }
         }
         else {
@@ -419,7 +420,7 @@ void SpinnerWidget::focusOutEvent(QFocusEvent* event)
 #ifdef OVITO_DEBUG
         QPointer<SpinnerWidget> self(this);
 #endif
-        Q_EMIT spinnerDragAbort();
+        spinnerDragAbort();
 #ifdef OVITO_DEBUG
         OVITO_ASSERT(!self.isNull());
 #endif
@@ -429,6 +430,66 @@ void SpinnerWidget::focusOutEvent(QFocusEvent* event)
     releaseMouse();
 
     QWidget::focusOutEvent(event);
+}
+
+/******************************************************************************
+* Called after the spinner's value has been changed by the user.
+******************************************************************************/
+void SpinnerWidget::spinnerValueChanged()
+{
+    if(_userInterface) {
+        ViewportSuspender noVPUpdate(*_userInterface);
+
+        // Create an undoable transaction to record the change or
+        // use the existing transaction if the user is dragging the spinner.
+        std::optional<UndoableTransaction> transaction;
+        if(_undoTransaction.operation()) {
+            auto val = _value;
+            _undoTransaction.revert(); // Note: This may revert the spinner's value to an old value.
+            _value = val;
+        }
+        else
+            transaction.emplace(*_userInterface, _undoOperationName);
+
+        // Perform the parameter change (including exception handling).
+        bool success = _userInterface->performActions(transaction ? *transaction : _undoTransaction, [&]() {
+            Q_EMIT valueChanged();
+        });
+
+        // Commit the transaction.
+        if(success && transaction)
+            transaction->commit();
+    }
+    else {
+        Q_EMIT valueChanged();
+    }
+}
+
+/******************************************************************************
+* Called when the user has started a drag operation.
+******************************************************************************/
+void SpinnerWidget::spinnerDragStart()
+{
+    if(_userInterface)
+        _undoTransaction.begin(*_userInterface, _undoOperationName);
+}
+
+/******************************************************************************
+* Called when the user has finished the drag operation.
+******************************************************************************/
+void SpinnerWidget::spinnerDragStop()
+{
+    if(_undoTransaction.operation())
+        _undoTransaction.commit();
+}
+
+/******************************************************************************
+* Called when the user has aborted the drag operation.
+******************************************************************************/
+void SpinnerWidget::spinnerDragAbort()
+{
+    if(_undoTransaction.operation())
+        _undoTransaction.cancel();
 }
 
 }   // End of namespace

@@ -154,11 +154,11 @@ void LAMMPSBinaryDumpImporterEditor::createUI(const RolloutInsertionParameters& 
     layout->addWidget(optionsBox);
 
     // Multi-timestep file
-    _multitimestepUI = new BooleanParameterUI(this, PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
+    _multitimestepUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(FileSourceImporter::isMultiTimestepFile));
     sublayout->addWidget(_multitimestepUI->checkBox());
 
     // Sort particles
-    BooleanParameterUI* sortParticlesUI = new BooleanParameterUI(this, PROPERTY_FIELD(ParticleImporter::sortParticles));
+    BooleanParameterUI* sortParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::sortParticles));
     sublayout->addWidget(sortParticlesUI->checkBox());
 
     QGroupBox* columnMappingBox = new QGroupBox(tr("File columns"), rollout);

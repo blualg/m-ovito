@@ -35,6 +35,7 @@ namespace Ovito {
 class OVITO_GUI_EXPORT ModifierDelegateVariableListParameterUI : public ParameterUI
 {
     OVITO_CLASS(ModifierDelegateVariableListParameterUI)
+    Q_OBJECT
 
 public:
 
