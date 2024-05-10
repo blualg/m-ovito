@@ -37,6 +37,8 @@ PropertyReference::PropertyReference(PropertyContainerClassPtr pclass, int typeI
     _name(pclass->standardPropertyName(typeId)),
     _vectorComponentIndex(vectorComponentIndex)
 {
+    OVITO_ASSERT(pclass);
+    OVITO_ASSERT(!_name.isEmpty());
 }
 
 /******************************************************************************
@@ -48,7 +50,7 @@ PropertyReference::PropertyReference(PropertyContainerClassPtr pclass, const QSt
     _vectorComponentIndex(vectorComponentIndex)
 {
     OVITO_ASSERT(pclass);
-    OVITO_ASSERT(!_name.isEmpty());
+    OVITO_ASSERT(!name.isEmpty());
 }
 
 /******************************************************************************
@@ -60,7 +62,7 @@ PropertyReference::PropertyReference(PropertyContainerClassPtr pclass, const QSt
     _vectorComponentName(vectorComponentName)
 {
     OVITO_ASSERT(pclass);
-    OVITO_ASSERT(!_name.isEmpty());
+    OVITO_ASSERT(!name.isEmpty());
 }
 
 /******************************************************************************
@@ -72,6 +74,7 @@ PropertyReference::PropertyReference(PropertyContainerClassPtr pclass, const Pro
     _name(property->name()),
     _vectorComponentIndex(vectorComponentIndex)
 {
+    OVITO_ASSERT(pclass);
     if(!isStandardProperty() && vectorComponentIndex >= 0 && vectorComponentIndex < property->componentNames().size())
         _vectorComponentName = property->componentNames()[vectorComponentIndex];
 }

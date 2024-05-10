@@ -51,7 +51,7 @@ public:
     /// Use the OVITO_CLASSINFO macro to add a metadata item to a class.
     /// Use the OvitoClass::classMetadata() method to look up a metadata item.
     struct MetadataItem {
-        MetadataItem(const char* k, const char* v, MetadataItem** head) : key(k), value(v), next(std::exchange(*head, this)) {}
+        MetadataItem(const char* k, const char* v, const OvitoClass& cls) : key(k), value(v), next(std::exchange(const_cast<OvitoClass&>(cls)._metadataHead, this)) {}
         const char* key;
         const char* value;
         MetadataItem* next;
@@ -60,7 +60,7 @@ public:
 public:
 
     /// \brief Constructor.
-    explicit OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, OORef<OvitoObject> (*createInstanceFunc)(ObjectInitializationFlags), MetadataItem** metadataHead = nullptr);
+    explicit OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, OORef<OvitoObject> (*createInstanceFunc)(ObjectInitializationFlags), const std::type_info* typeInfo = nullptr);
 
     /// \brief Destructor.
     virtual ~OvitoClass() = default;
@@ -165,6 +165,9 @@ public:
     /// Changes the human-readable name of this plugin class.
     void setDisplayName(const QString& name) { _displayName = name; }
 
+    /// Returns the class' C++ std::type_info object if it's a native class.
+    const std::type_info* typeInfo() const { return _typeInfo; }
+
 protected:
 
     /// \brief Is called by the system on program startup.
@@ -198,8 +201,11 @@ protected:
     /// The name of the C++ class if it's a native class.
     std::string _pureClassName;
 
-    /// Head of linked is of metadata items attached to this class.
-    MetadataItem** _metadataHead;
+    /// Head of a linked list of metadata items attached to this class.
+    MetadataItem* _metadataHead = nullptr;
+
+    /// The std::type_info object of the C++ class if it's a native class.
+    const std::type_info* _typeInfo = nullptr;
 
     /// All native C++ meta-classes are collected in one linked list.
     OvitoClass* _nextNativeMetaclass;
@@ -230,10 +236,9 @@ inline const typename T::OOMetaClass* static_class_cast(const OvitoClass* clazz)
 public: \
     using ovito_parent_class = baseclassname; \
     using ovito_class = classname; \
-    static const OOMetaClass& OOClass() { return __OOClass_instance; } \
+    static inline const OOMetaClass& OOClass() { return __OOClass_instance; } \
     virtual const Ovito::OvitoClass& getOOClass() const override { return OOClass(); } \
     const OOMetaClass& getOOMetaClass() const { return static_cast<const OOMetaClass&>(getOOClass()); } \
-    static Ovito::OvitoClass::MetadataItem* __OOClass_metadata_head; \
 private: \
     static const OOMetaClass __OOClass_instance;
 
@@ -254,8 +259,7 @@ private: \
         &classname::ovito_parent_class::OOClass(), \
         OVITO_PLUGIN_NAME, \
         [](ObjectInitializationFlags flags) -> OORef<OvitoObject> { return static_object_cast<OvitoObject>(OORef<classname>::createInstanceInternal(flags)); }, \
-        &classname::__OOClass_metadata_head}; \
-    Ovito::OvitoClass::MetadataItem* classname::__OOClass_metadata_head = nullptr;
+        &typeid(classname)};
 
 /// This macro must be included in the .cpp file for any abstract OvitoObject-derived class that cannot be instantiated at runtime.
 #define IMPLEMENT_ABSTRACT_OVITO_CLASS(classname) \
@@ -264,15 +268,14 @@ private: \
         &classname::ovito_parent_class::OOClass(), \
         OVITO_PLUGIN_NAME, \
         nullptr, \
-        &classname::__OOClass_metadata_head}; \
-    Ovito::OvitoClass::MetadataItem* classname::__OOClass_metadata_head = nullptr;
+        &typeid(classname)};
 
 #define OVITO_CLASSINFO_JOIN_IMPL(A, B) A ## B
 #define OVITO_CLASSINFO_JOIN(A, B) OVITO_CLASSINFO_JOIN_IMPL(A, B)
 
 /// Adds a static key-value pair to a class' metadata table, similar to Qt's Q_CLASSINFO macro.
 #define OVITO_CLASSINFO(classname, key, value_str) \
-    Q_DECL_UNUSED static const Ovito::OvitoClass::MetadataItem OVITO_CLASSINFO_JOIN(__metadata_, __LINE__){key, value_str, &classname::__OOClass_metadata_head};
+    Q_DECL_UNUSED static const Ovito::OvitoClass::MetadataItem OVITO_CLASSINFO_JOIN(__metadata_, __LINE__){key, value_str, classname::OOClass()};
 
 }   // End of namespace
 

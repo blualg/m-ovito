@@ -37,17 +37,17 @@ OvitoClass* OvitoClass::_firstNativeMetaClass{};
 /******************************************************************************
 * Constructor used for non-templated classes.
 ******************************************************************************/
-OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, OORef<OvitoObject>(*createInstanceFunc)(ObjectInitializationFlags), MetadataItem** metadataHead) :
+OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char* pluginId, OORef<OvitoObject>(*createInstanceFunc)(ObjectInitializationFlags), const std::type_info* typeInfo) :
     _createInstanceFunc(createInstanceFunc),
     _name(name),
     _superClass(superClass),
     _pluginId(pluginId),
-    _metadataHead(metadataHead)
+    _typeInfo(typeInfo)
 {
     OVITO_ASSERT(superClass != nullptr || name == QStringLiteral("OvitoObject"));
     OVITO_ASSERT(pluginId != nullptr);
 
-    // If it is a native C++ class, insert it into the linked list.
+    // Insert class into the linked list.
     _nextNativeMetaclass = _firstNativeMetaClass;
     _firstNativeMetaClass = this;
 }
@@ -81,12 +81,10 @@ bool OvitoClass::isKnownUnderName(const QString& name) const
         return true;
 
     // Consider name aliases assigned to the Qt object class.
-    if(_metadataHead) {
-        for(const MetadataItem* item = *_metadataHead; item != nullptr; item = item->next) {
-            if(qstrcmp(item->key, "ClassNameAlias") == 0) {
-                if(name == QString::fromUtf8(item->value))
-                    return true;
-            }
+    for(const MetadataItem* item = _metadataHead; item != nullptr; item = item->next) {
+        if(qstrcmp(item->key, "ClassNameAlias") == 0) {
+            if(name == QString::fromUtf8(item->value))
+                return true;
         }
     }
 
@@ -106,11 +104,9 @@ bool OvitoClass::isMember(const OvitoObject* obj) const
 ******************************************************************************/
 QString OvitoClass::classMetadata(const char* metadataKey) const
 {
-    if(_metadataHead) {
-        for(const MetadataItem* item = *_metadataHead; item != nullptr; item = item->next) {
-            if(qstrcmp(item->key, metadataKey) == 0)
-                return QString::fromUtf8(item->value);
-        }
+    for(const MetadataItem* item = _metadataHead; item != nullptr; item = item->next) {
+        if(qstrcmp(item->key, metadataKey) == 0)
+            return QString::fromUtf8(item->value);
     }
     return QString();
 }

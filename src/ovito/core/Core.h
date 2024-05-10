@@ -58,6 +58,7 @@
 #include <queue>
 #include <span>
 #include <version>
+#include <typeinfo>
 
 /******************************************************************************
 * Qt framework classes.

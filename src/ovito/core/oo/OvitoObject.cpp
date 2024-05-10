@@ -28,7 +28,7 @@
 namespace Ovito {
 
 // The class descriptor instance for the OvitoObject class.
-const OvitoClass OvitoObject::__OOClass_instance{QStringLiteral("OvitoObject"), nullptr, OVITO_PLUGIN_NAME, nullptr, &__OOClass_metadata_head};
+const OvitoClass OvitoObject::__OOClass_instance{QStringLiteral("OvitoObject"), nullptr, OVITO_PLUGIN_NAME, nullptr};
 
 #ifdef OVITO_DEBUG
 /******************************************************************************
