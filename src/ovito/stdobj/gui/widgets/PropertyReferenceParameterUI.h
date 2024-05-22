@@ -90,9 +90,11 @@ public:
     /// Sets the concrete container from which properties can be selected.
     void setContainer(const PropertyContainer* container);
 
-    /// Installs optional callback function that allows clients to filter the displayed property list.
-    void setPropertyFilter(std::function<bool(const Property*)> filter) {
-        _propertyFilter = std::move(filter);
+    /// Installs optional callback function that allows clients to filter the displayed list of properties.
+    template<typename F>
+    void setPropertyFilter(F&& filter) {
+        _propertyFilter = std::forward<F>(filter);
+        updateUI();
     }
 
     /// Activates the display of a null entry in the property list, which can be selected by the user.
@@ -137,11 +139,11 @@ protected:
     /// Data object reference to the container from which properties can be selected.
     PropertyContainerReference _containerRef;
 
-    /// The container from which properties can be selected.
+    /// The current container instance from which properties can be selected.
     DataOORef<const PropertyContainer> _container;
 
-    /// An optional callback function that allows clients to filter the displayed property list.
-    std::function<bool(const Property*)> _propertyFilter;
+    /// An optional callback function that allows clients to filter the displayed list of properties.
+    std::function<bool(const PropertyContainer* container, const Property*)> _propertyFilter;
 
     /// The UI item text representing the null property in the list.
     QString _nullPropertyItem;

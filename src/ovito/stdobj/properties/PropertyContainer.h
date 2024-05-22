@@ -29,7 +29,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "Property.h"
 #include "PropertyContainerClass.h"
-#include "PropertyReference.h"
 
 namespace Ovito {
 

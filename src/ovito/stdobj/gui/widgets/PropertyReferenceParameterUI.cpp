@@ -202,7 +202,7 @@ void PropertyReferenceParameterUI::addItemsToComboBox(const PropertyContainer* c
     for(const Property* property : container->properties()) {
 
         // The client can apply a filter to the displayed property list.
-        if(_propertyFilter && !_propertyFilter(property))
+        if(_propertyFilter && !_propertyFilter(container, property))
             continue;
 
         // Properties with a non-numeric data type cannot be used as source properties.

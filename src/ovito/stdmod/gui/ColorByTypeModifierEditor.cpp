@@ -61,7 +61,7 @@ void ColorByTypeModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout->addWidget(_sourcePropertyUI->comboBox());
 
     // Show only typed properties that have some element types attached to them.
-    _sourcePropertyUI->setPropertyFilter(&isValidInputProperty);
+    _sourcePropertyUI->setPropertyFilter(std::bind(&isValidInputProperty, std::placeholders::_2));
 
     layout->addSpacing(4);
 
