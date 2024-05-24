@@ -399,10 +399,8 @@ Future<PipelineFlowState> VectorsAffineTransformationModifierDelegate::apply(
                 Property* outputPositionProperty = outputVectors->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
 
                 // Check if there is a selection property present.
-                const Property* inputSelectionProperty = nullptr;
-                if(selectionOnly && inputVectors->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
-                    inputSelectionProperty = inputVectors->getProperty(Property::GenericSelectionProperty);
-                }
+                const Property* inputSelectionProperty =
+                    (selectionOnly) ? inputVectors->expectProperty(Vectors::SelectionProperty) : nullptr;
 
                 // Let the modifier class do the actual coordinate transformation work.
                 AffineTransformationModifier::transformCoordinates(tm, selectionOnly, inputPositionProperty, outputPositionProperty,
