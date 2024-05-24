@@ -28,6 +28,7 @@ rendering the graphical representation do.
   :ref:`Voxel grid <scene_objects.voxel_grid>`                       A structured 2d or 3d grid made of uniform voxel elements
   :ref:`Lines <scene_objects.lines>`                                 Trajectory lines created by the :ref:`particles.modifiers.generate_trajectory_lines` modifier or the :py:attr:`DataCollection.lines.create() <ovito.data.DataCollection.lines>` method
   :ref:`Dislocations <scene_objects.dislocations>`                   Line crystal defects extracted by the :ref:`particles.modifiers.dislocation_analysis` modifier
+  :ref:`Vectors <scene_objects.vectors>`                             Vectors object created by the :py:attr:`DataCollection.vectors.create() <ovito.data.DataCollection.vectors>` method
   ================================================================== ==================================================================
 
 

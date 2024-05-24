@@ -31,7 +31,7 @@
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(VectorsInspectionApplet);
-OVITO_CLASSINFO(VectorsInspectionApplet, "DisplayName", "VectorsInspectionApplet");
+OVITO_CLASSINFO(VectorsInspectionApplet, "DisplayName", "Vectors");
 
 /******************************************************************************
  * Lets the applet create the UI widget that is to be placed into the data

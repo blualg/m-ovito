@@ -8,8 +8,8 @@ Lines
   :align: right
 
 A lines :ref:`data object <scene_objects>` stores one or more lines to be added to the data collection.
-It can be created using the the :ref:`particles.modifiers.generate_trajectory_lines` modifier,
-by sampling the current positions of the particles over time. Alternatively, users can create lines programatically
+It can be created using the :ref:`particles.modifiers.generate_trajectory_lines` modifier,
+by sampling the current positions of the particles over time. Alternatively, users can create lines programmatically
 using the Python :py:attr:`DataCollection.DataCollection.lines.create() <ovito.data.DataCollection.lines>` method.
 
 The visual appearance of the lines in rendered images is controlled by the associated
