@@ -51,7 +51,8 @@ public:
     const QString& pythonName() const { return _pythonName; }
 
     /// Creates a new property storage for one of the registered standard properties.
-    virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const { return {}; }
+    virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type,
+                                                       const ConstDataObjectPath& containerPath) const;
 
     /// Creates a new property object for a standard property of this container class.
     PropertyPtr createStandardProperty(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath = ConstDataObjectPath{}) const;
@@ -74,9 +75,8 @@ public:
     }
 
     /// Determines which elements are located within the given viewport fence region (=2D polygon).
-    virtual ConstPropertyPtr viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, Pipeline* pipeline, const Matrix4& projectionTM) const {
-        return {}; // Return empty set to indicate missing fence selection support.
-    }
+    virtual ConstPropertyPtr viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath, Pipeline* pipeline,
+                                                    const Matrix4& projectionTM) const;
 
     /// This method is called by InputColumnMapping::validate() to let the container class perform custom checks
     /// on the mapping of the file data columns to internal properties.

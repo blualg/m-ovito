@@ -108,4 +108,18 @@ Color PropertyContainerClass::getElementTypeDefaultColor(const OwnerPropertyRef&
     return defaultTypeColors[std::abs(numericTypeId) % std::size(defaultTypeColors)];
 }
 
+/// Creates a new property storage for one of the registered standard properties.
+PropertyPtr PropertyContainerClass::createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type,
+                                                                   const ConstDataObjectPath& containerPath) const
+{
+    return {};
+}
+
+/// Determines which elements are located within the given viewport fence region (=2D polygon).
+ConstPropertyPtr PropertyContainerClass::viewportFenceSelection(const QVector<Point2>& fence, const ConstDataObjectPath& objectPath,
+                                                                Pipeline* pipeline, const Matrix4& projectionTM) const
+{
+    return {};  // Return empty set to indicate missing fence selection support.
+}
+
 }   // End of namespace
