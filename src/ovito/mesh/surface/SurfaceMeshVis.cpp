@@ -114,24 +114,6 @@ void SurfaceMeshVis::loadFromStreamComplete(ObjectLoadStream& stream)
 }
 
 /******************************************************************************
-* Is called when the value of a property of this object has changed.
-******************************************************************************/
-void SurfaceMeshVis::propertyChanged(const PropertyFieldDescriptor* field)
-{
-    // Whenever the pseudo-coloring mode is changed, update the source property reference.
-    if(field == PROPERTY_FIELD(colorMappingMode) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing() && surfaceColorMapping()) {
-        const PropertyContainerClass* newContainerClass = nullptr;
-        if(colorMappingMode() == VertexPseudoColoring) newContainerClass = &SurfaceMeshVertices::OOClass();
-        else if(colorMappingMode() == FacePseudoColoring) newContainerClass = &SurfaceMeshFaces::OOClass();
-        else if(colorMappingMode() == RegionPseudoColoring) newContainerClass = &SurfaceMeshRegions::OOClass();
-        if(newContainerClass)
-            surfaceColorMapping()->setSourceProperty(surfaceColorMapping()->sourceProperty().convertToContainerClass(newContainerClass));
-    }
-
-    DataVis::propertyChanged(field);
-}
-
-/******************************************************************************
 * Computes the bounding box of the displayed data.
 ******************************************************************************/
 Box3 SurfaceMeshVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
@@ -180,7 +162,7 @@ PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const Pip
         bool,                   // reverseOrientation
         bool,                   // smoothShading
         ColorMappingMode,       // colorMappingMode
-        PropertyReference,      // surfaceColorMapping()->sourceProperty()
+        PropertyReference,     // surfaceColorMapping()->sourceProperty()
         bool                    // clipAtDomainBoundaries
     >;
 
@@ -510,9 +492,9 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::determineFaceColors()
             }
         }
     }
-    else if(_colorMappingMode == FacePseudoColoring && _pseudoColorPropertyRef && inputMesh()->faces()) {
+    else if(_colorMappingMode == FacePseudoColoring && _pseudoColorProperty && inputMesh()->faces()) {
         QString errorDescr;
-        auto [pseudoColorProperty, pseudoColorPropertyComponent] = _pseudoColorPropertyRef.findInContainerWithComponent(inputMesh()->faces(), errorDescr);
+        auto [pseudoColorProperty, pseudoColorPropertyComponent] = _pseudoColorProperty.findInContainerWithComponent(inputMesh()->faces(), errorDescr);
         if(pseudoColorProperty) {
             outputMesh()->setHasFacePseudoColors(true);
             RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
@@ -525,9 +507,9 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::determineFaceColors()
             _status = PipelineStatus(PipelineStatus::Error, std::move(errorDescr));
         }
     }
-    else if(_colorMappingMode == RegionPseudoColoring && _pseudoColorPropertyRef && inputMesh()->regions()) {
+    else if(_colorMappingMode == RegionPseudoColoring && _pseudoColorProperty && inputMesh()->regions()) {
         QString errorDescr;
-        auto [pseudoColorProperty, pseudoColorPropertyComponent] = _pseudoColorPropertyRef.findInContainerWithComponent(inputMesh()->regions(), errorDescr);
+        auto [pseudoColorProperty, pseudoColorPropertyComponent] = _pseudoColorProperty.findInContainerWithComponent(inputMesh()->regions(), errorDescr);
         if(pseudoColorProperty) {
             if(BufferReadAccess<int32_t> regionProperty = inputMesh()->faces()->getProperty(SurfaceMeshFaces::RegionProperty)) {
                 outputMesh()->setHasFacePseudoColors(true);
@@ -584,9 +566,9 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::determineVertexColors()
             boost::copy(colorProperty, outputMesh()->vertexColors().begin());
         }
     }
-    else if(_colorMappingMode == VertexPseudoColoring && _pseudoColorPropertyRef) {
+    else if(_colorMappingMode == VertexPseudoColoring && _pseudoColorProperty) {
         QString errorDescr;
-        auto [pseudoColorProperty, pseudoColorPropertyComponent] = _pseudoColorPropertyRef.findInContainerWithComponent(inputMesh()->vertices(), errorDescr);
+        auto [pseudoColorProperty, pseudoColorPropertyComponent] = _pseudoColorProperty.findInContainerWithComponent(inputMesh()->vertices(), errorDescr);
         if(pseudoColorProperty) {
             OVITO_ASSERT(pseudoColorProperty->size() == outputMesh()->vertexCount());
             outputMesh()->setHasVertexPseudoColors(true);

@@ -32,6 +32,7 @@ OVITO_STANDARD_PLUGIN(StdObj
         lines/Lines.cpp
         lines/LinesVis.cpp
         properties/Property.cpp
+        properties/OwnerPropertyRef.cpp
         properties/PropertyReference.cpp
         properties/PropertyContainerClass.cpp
         properties/PropertyContainer.cpp

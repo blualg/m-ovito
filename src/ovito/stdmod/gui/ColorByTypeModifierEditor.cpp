@@ -163,15 +163,14 @@ void ColorByTypeModifierEditor::ViewModel::refresh()
     _elementTypes.clear();
 
     ColorByTypeModifier* mod = static_object_cast<ColorByTypeModifier>(editor()->editObject());
-    if(mod && mod->subject() && !mod->sourceProperty().isNull() && mod->sourceProperty().containerClass() == mod->subject().dataClass()) {
-
+    if(mod && mod->subject() && mod->sourceProperty()) {
         // Populate types list based on the selected input property.
         for(const PipelineFlowState& inputState : editor()->getPipelineInputs()) {
             if(const PropertyContainer* container = inputState.getLeafObject(mod->subject())) {
                 if(const Property* inputProperty = mod->sourceProperty().findInContainer(container)) {
                     for(const ElementType* type : inputProperty->elementTypes()) {
-                        if(!type) continue;
-                        _elementTypes.push_back(type);
+                        if(type)
+                            _elementTypes.push_back(type);
                     }
                 }
             }

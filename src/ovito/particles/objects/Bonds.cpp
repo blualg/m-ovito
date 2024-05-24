@@ -347,10 +347,6 @@ void Bonds::OOMetaClass::initialize()
 {
     PropertyContainerClass::initialize();
 
-    // Enable automatic conversion of a BondPropertyReference to a generic PropertyReference and vice versa.
-    QMetaType::registerConverter<BondPropertyReference, PropertyReference>();
-    QMetaType::registerConverter<PropertyReference, BondPropertyReference>();
-
     setPropertyClassDisplayName(tr("Bonds"));
     setElementDescriptionName(QStringLiteral("bonds"));
     setPythonName(QStringLiteral("bonds"));
@@ -375,7 +371,7 @@ void Bonds::OOMetaClass::initialize()
 /******************************************************************************
 * Returns the default color for a numeric type ID.
 ******************************************************************************/
-Color Bonds::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
+Color Bonds::OOMetaClass::getElementTypeDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
 {
     if(property.typeId() == Bonds::TypeProperty) {
 

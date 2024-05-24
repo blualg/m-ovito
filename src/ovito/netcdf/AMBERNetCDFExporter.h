@@ -98,10 +98,10 @@ private:
 
     /// Describes a data array to be written.
     struct NCOutputColumn {
-        NCOutputColumn(const ParticlePropertyReference& p, int dt, size_t cc, int ncv) :
+        NCOutputColumn(const PropertyReference& p, int dt, size_t cc, int ncv) :
             property(p), dataType(dt), componentCount(cc), ncvar(ncv) {}
 
-        ParticlePropertyReference property;
+        PropertyReference property;
         int dataType;
         size_t componentCount; // Number of values per particle.
         int ncvar;

@@ -25,7 +25,6 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/stdobj/properties/PropertyReference.h>
 
 namespace Ovito {
 
@@ -103,11 +102,4 @@ private:
     DECLARE_REFERENCE_FIELD_FLAGS(const Property*, y, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
-/**
- * Encapsulates a reference to a data table property.
- */
-using DataTablePropertyReference = TypedPropertyReference<DataTable>;
-
 }   // End of namespace
-
-Q_DECLARE_METATYPE(Ovito::DataTablePropertyReference);

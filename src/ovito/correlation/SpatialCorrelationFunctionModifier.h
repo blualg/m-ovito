@@ -260,9 +260,9 @@ private:
 private:
 
     /// The particle property that serves as the first data source for the correlation function.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePropertyReference, sourceProperty1, setSourceProperty1);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty1, setSourceProperty1);
     /// The particle property that serves as the second data source for the correlation function.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePropertyReference, sourceProperty2, setSourceProperty2);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty2, setSourceProperty2);
     /// Controls the cutoff radius for the FFT grid.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, fftGridSpacing, setFFTGridSpacing);
     /// Controls if a windowing function should be applied in non-periodic directions.

@@ -69,11 +69,11 @@ void FreezePropertyModifier::initializeModifier(const ModifierInitializationRequ
     GenericPropertyModifier::initializeModifier(request);
 
     // Use the first available particle property from the input state as data source when the modifier is newly created.
-    if(sourceProperty().isNull() && subject() && ExecutionContext::isInteractive()) {
+    if(!sourceProperty() && subject() && ExecutionContext::isInteractive()) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             for(const Property* property : container->properties()) {
-                setSourceProperty(PropertyReference(subject().dataClass(), property));
+                setSourceProperty(property);
                 setDestinationProperty(sourceProperty());
                 break;
             }
@@ -86,12 +86,7 @@ void FreezePropertyModifier::initializeModifier(const ModifierInitializationRequ
 ******************************************************************************/
 void FreezePropertyModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    // Whenever the selected property class of this modifier changes, update the property references accordingly.
-    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing()) {
-        setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
-        setDestinationProperty(destinationProperty().convertToContainerClass(subject().dataClass()));
-    }
-    else if(field == PROPERTY_FIELD(FreezePropertyModifier::sourceProperty) && !isBeingLoaded()) {
+    if(field == PROPERTY_FIELD(FreezePropertyModifier::sourceProperty) && !isBeingLoaded()) {
         // Changes of some the modifier's parameters affect the result of FreezePropertyModifier::getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
@@ -126,7 +121,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const Modifie
 
             // Extract the property to freeze.
             if(FreezePropertyModificationNode* modNode = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {
-                if(modNode->modifier() == this && !sourceProperty().isNull() && subject()) {
+                if(modNode->modifier() == this && sourceProperty() && subject()) {
 
                     const PropertyContainer* container = frozenState.expectLeafObject(subject());
                     if(const Property* property = sourceProperty().findInContainer(container)) {
@@ -160,11 +155,11 @@ PipelineFlowState FreezePropertyModifier::transferFrozenProperty(FreezePropertyM
     if(!subject())
         throw Exception(tr("No property type selected."));
 
-    if(sourceProperty().isNull()) {
+    if(!sourceProperty()) {
         state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("No source property selected.")));
         return state;
     }
-    if(destinationProperty().isNull())
+    if(!destinationProperty())
         throw Exception(tr("No output property selected."));
 
     // Retrieve the property values stored in the ModificationNode.
@@ -177,8 +172,9 @@ PipelineFlowState FreezePropertyModifier::transferFrozenProperty(FreezePropertyM
 
     // Get the property that will be overwritten by the stored one.
     Property* outputProperty;
-    if(destinationProperty().isStandardProperty()) {
-        outputProperty = container->createProperty(DataBuffer::Initialized, destinationProperty().typeId());
+    int destTypeId = destinationProperty().standardTypeId(&container->getOOMetaClass());
+    if(destTypeId != 0) {
+        outputProperty = container->createProperty(DataBuffer::Initialized, destTypeId);
         if(outputProperty->dataType() != modNode->property()->dataType()
             || outputProperty->componentCount() != modNode->property()->componentCount()
             || outputProperty->stride() != modNode->property()->stride())

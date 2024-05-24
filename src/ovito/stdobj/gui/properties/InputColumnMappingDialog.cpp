@@ -162,12 +162,10 @@ void InputColumnMappingDialog::setMapping(const InputColumnMapping& mapping)
         QComboBox* nameItem = new QComboBox();
         nameItem->setEditable(true);
         nameItem->setDuplicatesEnabled(false);
-        QMapIterator<QString, int> propIter(_containerClass->standardPropertyIds());
-        while(propIter.hasNext()) {
-            propIter.next();
-            nameItem->addItem(propIter.key(), propIter.value());
+        for(const auto& item : _containerClass->standardPropertyIds()) {
+            nameItem->addItem(item.first, item.second);
         }
-        nameItem->setCurrentText(mapping[i].property.name());
+        nameItem->setCurrentText(mapping[i].property.name().toString());
         nameItem->setEnabled(mapping[i].isMapped());
         _tableWidget->setCellWidget(i, PROPERTY_COLUMN, nameItem);
         _propertyBoxes.push_back(nameItem);
@@ -177,7 +175,7 @@ void InputColumnMappingDialog::setMapping(const InputColumnMapping& mapping)
         _vectorComponentBoxes.push_back(vectorComponentItem);
         updateVectorComponentList(i);
         if(vectorComponentItem->count() != 0)
-            vectorComponentItem->setCurrentIndex(std::max(0, mapping[i].property.vectorComponentIndex()));
+            vectorComponentItem->setCurrentIndex(std::max(0, mapping[i].property.componentIndex(_containerClass)));
 
         connect(fileColumnItem, &QCheckBox::clicked, nameItem, &QComboBox::setEnabled);
         _vectorCmpntSignalMapper->setMapping(fileColumnItem, i);
@@ -210,7 +208,7 @@ void InputColumnMappingDialog::updateVectorComponentList(int columnIndex)
     QComboBox* vecBox = _vectorComponentBoxes[columnIndex];
 
     QString propertyName = _propertyBoxes[columnIndex]->currentText();
-    int standardProperty = _containerClass->standardPropertyIds().value(propertyName);
+    int standardProperty = _containerClass->standardPropertyTypeId(propertyName);
     if(!propertyName.isEmpty() && standardProperty != Property::GenericUserProperty) {
         int oldIndex = vecBox->currentIndex();
         _vectorComponentBoxes[columnIndex]->clear();
@@ -237,13 +235,13 @@ InputColumnMapping InputColumnMappingDialog::mapping() const
         mapping[index].columnName = _fileColumnBoxes[index]->text();
         if(_fileColumnBoxes[index]->isChecked()) {
             QString propertyName = _propertyBoxes[index]->currentText().trimmed();
-            int typeId = _containerClass->standardPropertyIds().value(propertyName);
+            int typeId = _containerClass->standardPropertyTypeId(propertyName);
             if(typeId != Property::GenericUserProperty) {
                 int vectorCompnt = std::max(0, _vectorComponentBoxes[index]->currentIndex());
                 mapping[index].mapToStandardProperty(_containerClass, typeId, vectorCompnt);
             }
             else if(!propertyName.isEmpty()) {
-                mapping[index].mapToUserProperty(_containerClass, propertyName, _propertyDataTypes[index]);
+                mapping[index].mapToUserProperty(propertyName, _propertyDataTypes[index]);
             }
         }
     }
@@ -345,11 +343,11 @@ void InputColumnMappingDialog::onLoadPreset()
 
         for(int index = 0; index < (int)mapping.size() && index < _tableWidget->rowCount(); index++) {
             _fileColumnBoxes[index]->setChecked(mapping[index].isMapped());
-            _propertyBoxes[index]->setCurrentText(mapping[index].property.name());
+            _propertyBoxes[index]->setCurrentText(mapping[index].property.name().toString());
             _propertyBoxes[index]->setEnabled(mapping[index].isMapped());
             updateVectorComponentList(index);
             if(_vectorComponentBoxes[index]->count() != 0)
-                _vectorComponentBoxes[index]->setCurrentIndex(std::max(0, mapping[index].property.vectorComponentIndex()));
+                _vectorComponentBoxes[index]->setCurrentIndex(std::max(0, mapping[index].property.componentIndex(_containerClass)));
         }
         for(int index = mapping.size(); index < _tableWidget->rowCount(); index++) {
             _fileColumnBoxes[index]->setChecked(false);

@@ -113,7 +113,7 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
     Modifier::initializeModifier(request);
 
     // Use the first available voxel grid from the input state as data source when the modifier is newly created.
-    if(sourceProperty().isNull() && subject().dataPath().isEmpty() && ExecutionContext::isInteractive()) {
+    if(!sourceProperty() && subject().dataPath().isEmpty() && ExecutionContext::isInteractive()) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const VoxelGrid* grid = input.getObject<VoxelGrid>()) {
             setSubject(PropertyContainerReference(&grid->getOOMetaClass(), grid->identifier()));
@@ -121,11 +121,11 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
     }
 
     // Use the first available property from the input grid as data source when the modifier is newly created.
-    if(sourceProperty().isNull() && subject() && ExecutionContext::isInteractive()) {
+    if(!sourceProperty() && subject() && ExecutionContext::isInteractive()) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const VoxelGrid* grid = dynamic_object_cast<VoxelGrid>(input.getLeafObject(subject()))) {
             for(const Property* property : grid->properties()) {
-                setSourceProperty(VoxelPropertyReference(property, (property->componentCount() > 1) ? 0 : -1));
+                setSourceProperty(PropertyReference(property, (property->componentCount() > 1) ? 0 : -1));
                 break;
             }
         }
@@ -158,13 +158,8 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
         throw Exception(tr("No input voxel grid set."));
     if(subject().dataClass() != &VoxelGrid::OOClass())
         throw Exception(tr("Selected modifier input is not a voxel data grid."));
-    if(sourceProperty().isNull())
+    if(!sourceProperty())
         throw Exception(tr("Please select an input field quantity for the isosurface calculation."));
-
-    // Check if the source property is the right kind of property.
-    if(sourceProperty().containerClass() != subject().dataClass())
-        throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
-            .arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
     // In interactive mode, fetch and return outdated results from the pipeline cache if available.
     if(request.interactiveMode()) {

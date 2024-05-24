@@ -123,7 +123,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
         // Loads the default parameter value.
         [](ParticleType* ptype) { ptype->setColor(ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), true)); },
         // Saves the current parameter value as new default preset.
-        [](const ParticleType* ptype) { ElementType::setDefaultColor(ParticlePropertyReference(Particles::TypeProperty), ptype->nameOrNumericId(), ptype->color()); },
+        [](const ParticleType* ptype) { ElementType::setDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), ptype->nameOrNumericId(), ptype->color()); },
         // Determines if the current parameter value differs from the saved default value or not.
         [](const ParticleType* ptype) { return (ptype->color() == ElementType::getDefaultColor(ptype->ownerProperty(), ptype->nameOrNumericId(), ptype->numericId(), true)); }
     );

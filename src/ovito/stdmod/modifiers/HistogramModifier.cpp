@@ -91,16 +91,14 @@ void HistogramModifier::initializeModifier(const ModifierInitializationRequest& 
     GenericPropertyModifier::initializeModifier(request);
 
     // Use the first available property from the input state as data source when the modifier is newly created.
-    if(sourceProperty().isNull() && subject() && ExecutionContext::isInteractive()) {
+    if(!sourceProperty() && subject() && ExecutionContext::isInteractive()) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             PropertyReference bestProperty;
             for(const Property* property : container->properties()) {
-                bestProperty = PropertyReference(subject().dataClass(), property, (property->componentCount() > 1) ? 0 : -1);
+                bestProperty = PropertyReference(property, (property->componentCount() > 1) ? 0 : -1);
             }
-            if(!bestProperty.isNull()) {
-                setSourceProperty(bestProperty);
-            }
+            setSourceProperty(bestProperty);
         }
     }
 }
@@ -110,11 +108,7 @@ void HistogramModifier::initializeModifier(const ModifierInitializationRequest& 
 ******************************************************************************/
 void HistogramModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing()) {
-        // Whenever the selected property class of this modifier changes, update the source property reference accordingly.
-        setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
-    }
-    else if(field == PROPERTY_FIELD(HistogramModifier::sourceProperty) && !isBeingLoaded()) {
+    if(field == PROPERTY_FIELD(HistogramModifier::sourceProperty) && !isBeingLoaded()) {
         // Changes of some the modifier's parameters affect the result of HistogramModifier::getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
@@ -129,13 +123,8 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
 {
     if(!subject())
         throw Exception(tr("No data element type set."));
-    if(sourceProperty().isNull())
+    if(!sourceProperty())
         throw Exception(tr("No input property selected."));
-
-    // Check if the source property is the right kind of property.
-    if(sourceProperty().containerClass() != subject().dataClass())
-        throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
-            .arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
     // Look up the property container object.
     ConstDataObjectPath containerPath = state.expectObject(subject());

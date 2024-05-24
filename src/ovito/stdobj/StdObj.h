@@ -37,8 +37,8 @@ namespace Ovito
     using PropertyContainerClassPtr = const PropertyContainerClass*;
     using PropertyPtr = DataOORef<Property>;
     using ConstPropertyPtr = DataOORef<const Property>;
+    class OwnerPropertyRef;
     class PropertyReference;
-    template<class PropertyContainerType> class TypedPropertyReference;
     class ElementType;
     class InputColumnMapping;
     template<class PropertyContainerType> class TypedInputColumnMapping;

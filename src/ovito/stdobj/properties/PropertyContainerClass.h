@@ -57,7 +57,7 @@ public:
     PropertyPtr createStandardProperty(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath = ConstDataObjectPath{}) const;
 
     /// Creates a new property object for a user-defined property.
-    PropertyPtr createUserProperty(DataBuffer::BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type = 0, QStringList componentNames = QStringList()) const;
+    PropertyPtr createUserProperty(DataBuffer::BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int type = 0, QStringList componentNames = QStringList()) const;
 
     /// Indicates whether this kind of property container supports picking of individual elements in the viewports.
     virtual bool supportsViewportPicking() const { return false; }
@@ -83,7 +83,7 @@ public:
     virtual void validateInputColumnMapping(const InputColumnMapping& mapping) const {}
 
     /// Returns a default color for an ElementType given its numeric type ID.
-    virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const;
+    virtual Color getElementTypeDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const;
 
     /// Determines whether a standard property ID is defined for this property class.
     bool isValidStandardPropertyId(int id) const {
@@ -93,9 +93,14 @@ public:
     /// Returns the standard property type ID from a property name.
     int standardPropertyTypeId(const QString& name) const {
         if(auto item = _standardPropertyIds.find(name); item != _standardPropertyIds.end())
-            return item.value();
+            return item->second;
         else
             return 0;
+    }
+
+    /// Returns the standard property type ID from a property name.
+    int standardPropertyTypeId(const QStringView name) const {
+        return standardPropertyTypeId(name.toString());
     }
 
     /// Returns the name of a standard property type.
@@ -129,7 +134,7 @@ public:
     }
 
     /// Returns the mapping from standard property names to standard property type IDs.
-    const QMap<QString, int>& standardPropertyIds() const {
+    const std::map<QString, int>& standardPropertyIds() const {
         return _standardPropertyIds;
     }
 
@@ -176,7 +181,7 @@ private:
     QString _pythonName;
 
     /// Mapping from standard property names to standard property type IDs.
-    QMap<QString, int> _standardPropertyIds;
+    std::map<QString, int> _standardPropertyIds;
 
     /// Mapping from standard property type ID to standard property names.
     boost::container::flat_map<int, QString> _standardPropertyNames;

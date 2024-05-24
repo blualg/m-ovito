@@ -98,7 +98,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
 
     /// The particle property to be transferred onto the trajectory lines.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePropertyReference, particleProperty, setParticleProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, particleProperty, setParticleProperty);
 
     /// The vis element for rendering the trajectory lines.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<LinesVis>, trajectoryVis, setTrajectoryVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);

@@ -29,8 +29,6 @@
 
 namespace Ovito {
 
-using ParticlesOutputColumnMapping = TypedOutputColumnMapping<Particles>;
-
 /**
  * \brief Abstract base class for export services that can export an arbitrary list of particle properties.
  */
@@ -44,21 +42,19 @@ public:
     explicit FileColumnParticleExporter(ObjectInitializationFlags flags);
 
     /// \brief Returns the mapping of particle properties to output file columns.
-    const ParticlesOutputColumnMapping& columnMapping() const { return _columnMapping; }
+    const OutputColumnMapping& columnMapping() const { return _columnMapping; }
 
     /// \brief Sets the mapping of particle properties to output file columns.
-    void setColumnMapping(const ParticlesOutputColumnMapping& mapping) { _columnMapping = mapping; }
+    void setColumnMapping(const OutputColumnMapping& mapping) { _columnMapping = mapping; }
 
 public:
 
-    Q_PROPERTY(Ovito::ParticlesOutputColumnMapping columnMapping READ columnMapping WRITE setColumnMapping)
+    Q_PROPERTY(Ovito::OutputColumnMapping columnMapping READ columnMapping WRITE setColumnMapping)
 
 private:
 
     /// The mapping of particle properties to output file columns.
-    ParticlesOutputColumnMapping _columnMapping;
+    OutputColumnMapping _columnMapping;
 };
 
 }   // End of namespace
-
-Q_DECLARE_METATYPE(Ovito::ParticlesOutputColumnMapping);

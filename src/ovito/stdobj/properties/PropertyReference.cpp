@@ -29,132 +29,41 @@
 namespace Ovito {
 
 /******************************************************************************
-* Constructs a reference to a standard property.
+* Constructs a reference to a standard property of a given container type.
 ******************************************************************************/
-PropertyReference::PropertyReference(PropertyContainerClassPtr pclass, int typeId, int vectorComponentIndex) :
-    _containerClass(pclass),
-    _typeId(typeId),
-    _name(pclass->standardPropertyName(typeId)),
-    _vectorComponentIndex(vectorComponentIndex)
+PropertyReference::PropertyReference(PropertyContainerClassPtr pclass, int typeId, int vectorComponent) :
+    _nameWithComponent(pclass->standardPropertyName(typeId))
 {
-    OVITO_ASSERT(pclass);
-    OVITO_ASSERT(!_name.isEmpty());
-}
-
-/******************************************************************************
-* Constructs a reference to a user-defined property.
-******************************************************************************/
-PropertyReference::PropertyReference(PropertyContainerClassPtr pclass, const QString& name, int vectorComponentIndex) :
-    _containerClass(pclass),
-    _name(name),
-    _vectorComponentIndex(vectorComponentIndex)
-{
-    OVITO_ASSERT(pclass);
-    OVITO_ASSERT(!name.isEmpty());
-}
-
-/******************************************************************************
-* Constructs a reference to a named vector component of a user-defined property.
-******************************************************************************/
-PropertyReference::PropertyReference(PropertyContainerClassPtr pclass, const QString& name, const QString& vectorComponentName) :
-    _containerClass(pclass),
-    _name(name),
-    _vectorComponentName(vectorComponentName)
-{
-    OVITO_ASSERT(pclass);
-    OVITO_ASSERT(!name.isEmpty());
-}
-
-/******************************************************************************
-* Constructs a reference based on an existing Property.
-******************************************************************************/
-PropertyReference::PropertyReference(PropertyContainerClassPtr pclass, const Property* property, int vectorComponentIndex) :
-    _containerClass(pclass),
-    _typeId(property->typeId()),
-    _name(property->name()),
-    _vectorComponentIndex(vectorComponentIndex)
-{
-    OVITO_ASSERT(pclass);
-    if(!isStandardProperty() && vectorComponentIndex >= 0 && vectorComponentIndex < property->componentNames().size())
-        _vectorComponentName = property->componentNames()[vectorComponentIndex];
-}
-
-/******************************************************************************
-* Returns the display name of the referenced property including the
-* optional vector component.
-******************************************************************************/
-QString PropertyReference::nameWithComponent() const
-{
-    if(isStandardProperty()) {
-        if(vectorComponentIndex() < 0 || containerClass()->standardPropertyComponentCount(typeId()) <= 1) {
-            return name();
-        }
-        else {
-            const QStringList& names = containerClass()->standardPropertyComponentNames(typeId());
-            if(vectorComponentIndex() < names.size())
-                return QStringLiteral("%1.%2").arg(name()).arg(names[vectorComponentIndex()]);
-        }
+    OVITO_ASSERT(typeId != Property::GenericUserProperty);
+    if(vectorComponent >= 0 && pclass->standardPropertyComponentCount(typeId) > 1) {
+        OVITO_ASSERT(vectorComponent < pclass->standardPropertyComponentCount(typeId));
+        _nameWithComponent += QChar('.');
+        _nameWithComponent += pclass->standardPropertyComponentNames(typeId)[vectorComponent];
     }
-    if(!vectorComponentName().isEmpty())
-        return QStringLiteral("%1.%2").arg(name()).arg(vectorComponentName());
-    else if(vectorComponentIndex() < 0)
-        return name();
+}
+
+/******************************************************************************
+* Returns the vector component name (if specified).
+******************************************************************************/
+QStringView PropertyReference::componentName() const
+{
+    auto dotIndex = _nameWithComponent.indexOf(QChar('.'));
+    if(dotIndex != -1)
+        return QStringView(_nameWithComponent).mid(dotIndex + 1);
     else
-        return QStringLiteral("%1.%2").arg(name()).arg(vectorComponentIndex() + 1);
+        return QStringView();
 }
 
 /******************************************************************************
-* Strict ordering function.
+* Returns the base property name (without the vector component).
 ******************************************************************************/
-bool PropertyReference::operator<(const PropertyReference& other) const
+QStringView PropertyReference::name() const
 {
-    if(containerClass() == other.containerClass())
-        return nameWithComponent() < other.nameWithComponent();
+    auto dotIndex = _nameWithComponent.indexOf(QChar('.'));
+    if(dotIndex != -1)
+        return QStringView(_nameWithComponent).left(dotIndex);
     else
-        return containerClass() < other.containerClass();
-}
-
-/******************************************************************************
-* Returns a new property reference that uses the same name as the current one,
-* but with a different property container class.
-******************************************************************************/
-PropertyReference PropertyReference::convertToContainerClass(PropertyContainerClassPtr containerClass) const
-{
-    if(containerClass) {
-        PropertyReference newref = *this;
-        if(containerClass != this->containerClass()) {
-            newref._containerClass = containerClass;
-
-            // Split string into property name and vector component name.
-            QStringList parts = this->name().split(QChar('.'));
-            if((parts.length() == 1 || parts.length() == 2) && !parts[0].isEmpty()) {
-                // Determine property type.
-                QString name = parts[0];
-                newref._typeId = containerClass->standardPropertyIds().value(name, 0);
-                if(newref.isStandardProperty())
-                    newref._name = name;
-
-                // Determine vector component.
-                if(parts.length() == 2 && newref._vectorComponentIndex == -1) {
-                    // First try to convert component to integer.
-                    bool ok;
-                    newref._vectorComponentIndex = parts[1].toInt(&ok) - 1;
-                    if(!ok) {
-                        if(newref.typeId() != 0) {
-                            // Perhaps the standard property's component name was used instead of an integer.
-                            const QString componentName = parts[1].toUpper();
-                            QStringList standardNames = containerClass->standardPropertyComponentNames(newref.typeId());
-                            newref._vectorComponentIndex = standardNames.indexOf(componentName);
-                        }
-                    }
-                }
-            }
-        }
-        return newref;
-    }
-    else {
-        return {};
-    }
+        return QStringView(_nameWithComponent);
 }
 
 /******************************************************************************
@@ -162,12 +71,8 @@ PropertyReference PropertyReference::convertToContainerClass(PropertyContainerCl
 ******************************************************************************/
 SaveStream& operator<<(SaveStream& stream, const PropertyReference& r)
 {
-    stream.beginChunk(0x03);
-    stream << static_cast<const OvitoClassPtr&>(r.containerClass());
-    stream << r.typeId();
-    stream << r.name();
-    stream << r.vectorComponentIndex();
-    stream << r.vectorComponentName();
+    stream.beginChunk(0x04);
+    stream << r.nameWithComponent();
     stream.endChunk();
     return stream;
 }
@@ -177,23 +82,38 @@ SaveStream& operator<<(SaveStream& stream, const PropertyReference& r)
 ******************************************************************************/
 LoadStream& operator>>(LoadStream& stream, PropertyReference& r)
 {
-    int version = stream.expectChunkRange(0x02, 1);
-    OvitoClassPtr clazz;
-    stream >> clazz;
-    r._containerClass = static_cast<PropertyContainerClassPtr>(clazz);
-    stream >> r._typeId;
-    stream >> r._name;
-    stream >> r._vectorComponentIndex;
-    if(version >= 1)
-        stream >> r._vectorComponentName;
-    if(!r._containerClass)
-        r = PropertyReference();
+    int version = stream.expectChunkRange(0x02, 2);
+    if(version >= 2) {
+        stream >> r._nameWithComponent;
+    }
     else {
-        // For backward compatibility with older OVITO versions:
-        // If the reference is to a standard property type that has been deprecated,
-        // we should turn the reference into a user-property reference.
-        if(r._typeId != 0 && !r._containerClass->isValidStandardPropertyId(r._typeId))
-            r._typeId = 0;
+        OvitoClassPtr clazz;
+        stream >> clazz;
+        PropertyContainerClassPtr containerClass = static_cast<PropertyContainerClassPtr>(clazz);
+        int typeId;
+        stream >> typeId;
+        QString name;
+        stream >> name;
+        int vectorComponentIndex;
+        stream >> vectorComponentIndex;
+        QString vectorComponentName;
+        if(version >= 1)
+            stream >> vectorComponentName;
+        if(containerClass && vectorComponentName.isEmpty() && vectorComponentIndex >= 0 && typeId != 0) {
+            if(containerClass->isValidStandardPropertyId(typeId)) {
+                const QStringList& cmpntNames = containerClass->standardPropertyComponentNames(typeId);
+                if(vectorComponentIndex < cmpntNames.size()) {
+                    vectorComponentName = cmpntNames[vectorComponentIndex];
+                    vectorComponentIndex = -1;
+                }
+            }
+        }
+        if(!vectorComponentName.isEmpty())
+            r._nameWithComponent = name + QChar('.') + vectorComponentName;
+        else if(vectorComponentIndex >= 0)
+            r._nameWithComponent = name + QChar('.') + QString::number(vectorComponentIndex + 1);
+        else
+            r._nameWithComponent = name;
     }
     stream.closeChunk();
     return stream;
@@ -204,20 +124,50 @@ LoadStream& operator>>(LoadStream& stream, PropertyReference& r)
 ******************************************************************************/
 QDebug operator<<(QDebug debug, const PropertyReference& r)
 {
-    if(!r.isNull()) {
-        debug.nospace() << "PropertyReference("
-            << r.containerClass()->name()
-            << ", "
-            << r.name()
-            << ", "
-            << r.vectorComponentIndex()
-            << ", "
-            << r.vectorComponentName() << ")";
+    if(r)
+        debug.nospace() << "PropertyReference(" << r.nameWithComponent() << ")";
+    else
+        debug << "PropertyReference(<null>)";
+    return debug;
+}
+
+/******************************************************************************
+* If the referenced property is a standard property from the given container type, returns its numeric ID.
+******************************************************************************/
+int PropertyReference::standardTypeId(PropertyContainerClassPtr pclass) const
+{
+    OVITO_ASSERT(pclass);
+    return pclass->standardPropertyTypeId(name());
+}
+
+/******************************************************************************
+* Determines whether this reference is a reference to a particular standard property of the given container type.
+******************************************************************************/
+bool PropertyReference::isStandardProperty(PropertyContainerClassPtr pclass, int typeId) const
+{
+    OVITO_ASSERT(pclass);
+    OVITO_ASSERT(typeId != 0);
+    return name() == pclass->standardPropertyName(typeId);
+}
+
+/******************************************************************************
+* Determines the numeric vector component index.
+******************************************************************************/
+int PropertyReference::componentIndex(PropertyContainerClassPtr pclass) const
+{
+    OVITO_ASSERT(pclass);
+
+    QStringView componentName = this->componentName();
+    if(componentName.isEmpty())
+        return -1;
+
+    int typeId = pclass->standardPropertyTypeId(name());
+    if(typeId != 0) {
+        return pclass->standardPropertyComponentNames(typeId).indexOf(componentName);
     }
     else {
-        debug << "PropertyReference(<null>)";
+        return componentName.toInt() - 1;
     }
-    return debug;
 }
 
 /******************************************************************************
@@ -225,16 +175,11 @@ QDebug operator<<(QDebug debug, const PropertyReference& r)
 ******************************************************************************/
 const Property* PropertyReference::findInContainer(const PropertyContainer* container) const
 {
-    if(isNull())
-        return nullptr;
-
-    OVITO_ASSERT(container != nullptr);
-    OVITO_ASSERT(containerClass()->isMember(container));
-
-    if(isStandardProperty())
-        return container->getProperty(typeId());
+    auto n = name();
+    if(!n.isEmpty())
+        return container->getProperty(n);
     else
-        return container->getProperty(name());
+        return nullptr;
 }
 
 /******************************************************************************
@@ -242,60 +187,9 @@ const Property* PropertyReference::findInContainer(const PropertyContainer* cont
 * resolves the referenced vector component (if any). If resolution fails,
 * an error message is returned in the errorDescription parameter.
 ******************************************************************************/
-std::pair<const Property*, int> PropertyReference::findInContainerWithComponent(const PropertyContainer* container, QString& errorDescription) const
+std::pair<const Property*, int> PropertyReference::findInContainerWithComponent(const PropertyContainer* container, QString& errorDescription, bool requireComponent) const
 {
-    const Property* property = findInContainer(container);
-
-    if(!property) {
-        errorDescription = Property::tr("The property with the name '%1' does not exist or was not computed by the pipeline.").arg(name());
-        return {nullptr, -1};
-    }
-
-    int resolvedVectorComponent = 0;
-    if(!vectorComponentName().isEmpty()) {
-        // Try to resolve named vector component into a numeric component index.
-        if(!property->componentNames().empty()) {
-            resolvedVectorComponent = property->componentNames().indexOf(vectorComponentName());
-            if(resolvedVectorComponent < 0) {
-                errorDescription = Property::tr("The selected vector property component '%1' is invalid. Property '%2' has the following named components: %3")
-                    .arg(vectorComponentName())
-                    .arg(property->name())
-                    .arg(property->componentNames().join(QStringLiteral(", ")));
-                return {nullptr, -1};
-            }
-        }
-        else {
-            bool ok;
-            resolvedVectorComponent = vectorComponentName().toInt(&ok) - 1;
-            if(ok) {
-                if(resolvedVectorComponent < 0 || resolvedVectorComponent >= property->componentCount()) {
-                    errorDescription = Property::tr("The selected vector property component '%1' is out of range. Property '%2' has %3 component(s).")
-                        .arg(vectorComponentName())
-                        .arg(property->name())
-                        .arg(property->componentCount());
-                    return {nullptr, -1};
-                }
-            }
-            else {
-                errorDescription = Property::tr("The selected vector property component '%1' cannot be resolved, because property '%2' does not have named components.")
-                    .arg(vectorComponentName())
-                    .arg(property->name());
-                return {nullptr, -1};
-            }
-        }
-    }
-    else {
-        resolvedVectorComponent = vectorComponentIndex();
-    }
-
-    if(resolvedVectorComponent >= (int)property->componentCount()) {
-        errorDescription = Property::tr("The selected vector property component is out of range. The property '%1' has only %2 values per data element.")
-                                        .arg(property->name())
-                                        .arg(resolvedVectorComponent);
-        return {nullptr, -1};
-    }
-
-    return { property, std::max(0, resolvedVectorComponent) };
+    return container->findPropertyWithComponent(nameWithComponent(), errorDescription, requireComponent);
 }
 
 }   // End of namespace

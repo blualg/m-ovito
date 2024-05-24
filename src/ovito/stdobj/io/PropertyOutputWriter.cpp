@@ -85,79 +85,28 @@ PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, c
 {
     // Gather the source properties.
     for(int i = 0; i < (int)mapping.size(); i++) {
-        const PropertyReference& pref = mapping[i];
-        const Property* property = pref.findInContainer(sourceContainer);
-        int resolvedVectorComponent = 0;
-        if(property == nullptr && pref.typeId() != Property::GenericIdentifierProperty) {
-            QStringList propertyList;
-            for(const Property* p : sourceContainer->properties())
-                propertyList.push_back(p->name());
-            throw Exception(tr("Invalid output file column %1 specification: "
-                               "Property '%2' does not exist or has not been computed by the pipeline. "
-                               "The following properties are found in the %3 container: %4")
-                    .arg(i+1)
-                    .arg(pref.name())
-                    .arg(sourceContainer->getOOMetaClass().propertyClassDisplayName())
-                    .arg(propertyList.join(QStringLiteral(", "))));
+        QString errorDescription;
+        auto [property, vectorComponent] = mapping[i].findInContainerWithComponent(sourceContainer, errorDescription, false);
+        if(property == nullptr && mapping[i].name() != sourceContainer->getOOMetaClass().standardPropertyName(Property::GenericIdentifierProperty)) {
+            throw Exception(tr("Invalid output file column %1 specification: %2").arg(errorDescription));
         }
-        if(property) {
-            resolvedVectorComponent = pref.vectorComponentIndex();
-            if(resolvedVectorComponent < 0) {
-                if(!pref.vectorComponentName().isEmpty()) {
-                    // Try to resolve named vector component to a component index.
-                    if(!property->componentNames().empty()) {
-                        resolvedVectorComponent = property->componentNames().indexOf(pref.vectorComponentName());
-                        if(resolvedVectorComponent < 0)
-                            throw Exception(tr("The property vector component '%1' specified for output file column %2 is invalid. Property '%3' has the following named components: %4")
-                                .arg(pref.vectorComponentName())
-                                .arg(i+1)
-                                .arg(property->name())
-                                .arg(property->componentNames().join(QStringLiteral(", "))));
-                    }
-                    else {
-                        bool ok;
-                        resolvedVectorComponent = pref.vectorComponentName().toInt(&ok) - 1;
-                        if(ok) {
-                            if(resolvedVectorComponent < 0 || resolvedVectorComponent >= property->componentCount())
-                                throw Exception(tr("The property vector component '%1' specified for output file column %2 is out of range. Property '%3' has %4 component(s).")
-                                    .arg(pref.vectorComponentName())
-                                    .arg(i+1)
-                                    .arg(property->name())
-                                    .arg(property->componentCount()));
-                        }
-                        else {
-                            throw Exception(tr("The property vector component '%1' specified for output file column %2 cannot be resolved because property '%3' does not have named components.")
-                                .arg(pref.vectorComponentName())
-                                .arg(i+1)
-                                .arg(property->name()));
-                        }
-                    }
+        if(vectorComponent < 0) {
+            // If the user did not specify a specific component for a vector property, generate multiple columns to export all property components.
+            if(property && property->componentCount() > 1) {
+                for(int component = 0; component < property->componentCount(); component++) {
+                    _properties.push_back(property);
+                    _vectorComponents.push_back(component);
+                    _accessors.emplace_back(property);
                 }
-
-                if(resolvedVectorComponent < 0) {
-                    // If the user did not specify a specific component for a vector property, generate multiple columns to export all property components.
-                    if(property->componentCount() > 1) {
-                        for(int component = 0; component < property->componentCount(); component++) {
-                            _properties.push_back(property);
-                            _vectorComponents.push_back(component);
-                            _accessors.emplace_back(property);
-                        }
-                        continue;
-                    }
-                    else {
-                        resolvedVectorComponent = 0;
-                    }
-                }
+                continue;
             }
-
-            // Error if user specified a vector component that is out of range.
-            if((int)property->componentCount() <= resolvedVectorComponent)
-                throw Exception(tr("The output vector component selected for column %1 is out of range. The property '%2' has only %3 component(s).").arg(i+1).arg(property->name()).arg(property->componentCount()));
+            else {
+                vectorComponent = 0;
+            }
         }
-
-        // Build internal list of property objects for fast look up during writing.
+        // Build internal list of property objects for fast look-up during writing.
         _properties.push_back(property);
-        _vectorComponents.push_back(resolvedVectorComponent);
+        _vectorComponents.push_back(vectorComponent);
         _accessors.emplace_back(property);
     }
     _cachedTypeNames.resize(_properties.size());

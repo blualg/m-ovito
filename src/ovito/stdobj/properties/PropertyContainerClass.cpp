@@ -23,7 +23,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include "Property.h"
-#include "PropertyReference.h"
+#include "OwnerPropertyRef.h"
 #include "PropertyContainerClass.h"
 #include "PropertyContainer.h"
 
@@ -59,7 +59,7 @@ void PropertyContainerClass::registerStandardProperty(int typeId, QString name, 
 #ifdef OVITO_DEBUG
         Property::throwIfInvalidPropertyName(name);
 #endif
-        _standardPropertyIds.insert(name, typeId);
+        _standardPropertyIds.emplace(name, typeId);
     }
     _standardPropertyNames.emplace(typeId, std::move(name));
     _standardPropertyTitles.emplace(typeId, std::move(title));
@@ -83,7 +83,7 @@ PropertyPtr PropertyContainerClass::createStandardProperty(DataBuffer::BufferIni
 /******************************************************************************
 * Creates a new property object for a user-defined property.
 ******************************************************************************/
-PropertyPtr PropertyContainerClass::createUserProperty(DataBuffer::BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int type, QStringList componentNames) const
+PropertyPtr PropertyContainerClass::createUserProperty(DataBuffer::BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int type, QStringList componentNames) const
 {
     return PropertyPtr::create(init, elementCount, dataType, componentCount, name, type, std::move(componentNames));
 }
@@ -91,7 +91,7 @@ PropertyPtr PropertyContainerClass::createUserProperty(DataBuffer::BufferInitial
 /******************************************************************************
 * Returns the default color for a numeric type ID.
 ******************************************************************************/
-Color PropertyContainerClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
+Color PropertyContainerClass::getElementTypeDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
 {
     // Palette of standard colors initially assigned to new element types:
     static const Color defaultTypeColors[] = {

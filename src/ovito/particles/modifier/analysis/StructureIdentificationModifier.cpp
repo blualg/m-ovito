@@ -65,7 +65,7 @@ ElementType* StructureIdentificationModifier::createStructureType(int id, Partic
     DataOORef<ElementType> stype = DataOORef<ElementType>::create();
     stype->setNumericId(id);
     stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
-    stype->initializeType(ParticlePropertyReference(Particles::StructureTypeProperty));
+    stype->initializeType(OwnerPropertyRef(&Particles::OOClass(), Particles::StructureTypeProperty));
     addStructureType(stype);
     return stype;
 }

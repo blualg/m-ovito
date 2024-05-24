@@ -127,20 +127,20 @@ void FileColumnParticleExporterEditor::updateParticlePropertiesList()
             const Particles* particles = state.expectObject<Particles>();
             for(const Property* property : particles->properties()) {
                 if(property->componentCount() == 1) {
-                    insertPropertyItem(ParticlePropertyReference(property), property->name(), exporter->columnMapping());
+                    insertPropertyItem(property, property->name(), exporter->columnMapping());
                     if(property->typeId() == Particles::IdentifierProperty)
                         hasParticleIdentifiers = true;
                 }
                 else {
                     for(int vectorComponent = 0; vectorComponent < (int)property->componentCount(); vectorComponent++) {
                         QString propertyName = property->nameWithComponent(vectorComponent);
-                        ParticlePropertyReference propRef(property, vectorComponent);
+                        PropertyReference propRef(property, vectorComponent);
                         insertPropertyItem(propRef, propertyName, exporter->columnMapping());
                     }
                 }
             }
             if(!hasParticleIdentifiers)
-                insertPropertyItem(Particles::IdentifierProperty, tr("Particle index"), exporter->columnMapping());
+                insertPropertyItem(PropertyReference(&Particles::OOClass(), Particles::IdentifierProperty), tr("Particle index"), exporter->columnMapping());
         }
         catch(const Exception& ex) {
             // Ignore errors, but display a message in the UI widget to inform user.
@@ -155,12 +155,12 @@ void FileColumnParticleExporterEditor::updateParticlePropertiesList()
 /******************************************************************************
 * Populates the column mapping list box with an entry.
 ******************************************************************************/
-void FileColumnParticleExporterEditor::insertPropertyItem(ParticlePropertyReference propRef, const QString& displayName, const ParticlesOutputColumnMapping& columnMapping)
+void FileColumnParticleExporterEditor::insertPropertyItem(const PropertyReference& propRef, const QString& displayName, const OutputColumnMapping& columnMapping)
 {
     QListWidgetItem* item = new QListWidgetItem(displayName);
     item->setFlags(Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren));
     item->setCheckState(Qt::Unchecked);
-    item->setData(Qt::UserRole, QVariant::fromValue(static_cast<PropertyReference&>(propRef)));
+    item->setData(Qt::UserRole, QVariant::fromValue(propRef));
     int sortKey = columnMapping.size();
 
     for(int c = 0; c < (int)columnMapping.size(); c++) {
@@ -191,7 +191,7 @@ void FileColumnParticleExporterEditor::insertPropertyItem(ParticlePropertyRefere
 ******************************************************************************/
 void FileColumnParticleExporterEditor::saveChanges(FileColumnParticleExporter* exporter)
 {
-    ParticlesOutputColumnMapping newMapping;
+    OutputColumnMapping newMapping;
     for(int index = 0; index < _columnMappingWidget->count(); index++) {
         if(_columnMappingWidget->item(index)->checkState() == Qt::Checked) {
             newMapping.push_back(_columnMappingWidget->item(index)->data(Qt::UserRole).value<PropertyReference>());

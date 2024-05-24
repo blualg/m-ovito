@@ -22,7 +22,7 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/Property.h>
-#include <ovito/stdobj/properties/PropertyReference.h>
+#include <ovito/stdobj/properties/OwnerPropertyRef.h>
 #include <ovito/stdobj/properties/PropertyContainerClass.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
@@ -60,9 +60,9 @@ ElementType::ElementType(ObjectInitializationFlags flags) : DataObject(flags),
 /******************************************************************************
 * Initializes the element type to default parameter values.
 ******************************************************************************/
-void ElementType::initializeType(const PropertyReference& property, bool loadUserDefaults)
+void ElementType::initializeType(const OwnerPropertyRef& property, bool loadUserDefaults)
 {
-    OVITO_ASSERT(!property.isNull());
+    OVITO_ASSERT(property);
 
     // Remember the kind of typed property this type belongs to.
     _ownerProperty.set(this, PROPERTY_FIELD(ownerProperty), property);
@@ -103,9 +103,9 @@ void ElementType::loadFromStream(ObjectLoadStream& stream)
 * Returns the QSettings path for storing or accessing the user-defined
 * default values of some ElementType parameter.
 ******************************************************************************/
-QString ElementType::getElementSettingsKey(const PropertyReference& property, const QString& parameterName, const QString& elementTypeName)
+QString ElementType::getElementSettingsKey(const OwnerPropertyRef& property, const QString& parameterName, const QString& elementTypeName)
 {
-    OVITO_ASSERT(!property.isNull());
+    OVITO_ASSERT(property);
     OVITO_ASSERT(!parameterName.isEmpty());
 
     return QStringLiteral("defaults/%1/%2/%3/%4").arg(
@@ -118,13 +118,12 @@ QString ElementType::getElementSettingsKey(const PropertyReference& property, co
 /******************************************************************************
 * Returns the default color for a element type name.
 ******************************************************************************/
-Color ElementType::getDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults)
+Color ElementType::getDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults)
 {
     OVITO_ASSERT(!typeName.isEmpty());
 
-    if(property.isNull()) {
+    if(!property)
         return PropertyContainer::OOClass().getElementTypeDefaultColor(property, typeName, numericTypeId, loadUserDefaults);
-    }
 
     // Interactive execution context means that we are supposed to load the user-defined
     // settings from the settings store.
@@ -167,7 +166,7 @@ Color ElementType::getDefaultColor(const PropertyReference& property, const QStr
 /******************************************************************************
 * Changes the default color for an element type name.
 ******************************************************************************/
-void ElementType::setDefaultColor(const PropertyReference& property, const QString& typeName, const Color& color)
+void ElementType::setDefaultColor(const OwnerPropertyRef& property, const QString& typeName, const Color& color)
 {
 #ifndef OVITO_DISABLE_QSETTINGS
     QSettings settings;

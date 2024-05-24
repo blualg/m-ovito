@@ -59,33 +59,6 @@ public:
     void fromByteArray(const QByteArray& array);
 };
 
-template<class PropertyContainerType>
-class TypedOutputColumnMapping : public std::vector<TypedPropertyReference<PropertyContainerType>>
-{
-public:
-
-    /// Inherit constructors from std::vector.
-    using std::vector<TypedPropertyReference<PropertyContainerType>>::vector;
-
-    /// Transparent conversion to an untyped OutputColumnMapping.
-    operator OutputColumnMapping&() { return *reinterpret_cast<OutputColumnMapping*>(this); }
-
-    /// Transparent conversion to an untyped OutputColumnMapping.
-    operator const OutputColumnMapping&() const { return *reinterpret_cast<const OutputColumnMapping*>(this); }
-
-    /// \brief Saves the mapping to the given stream.
-    void saveToStream(SaveStream& stream) const { static_cast<const OutputColumnMapping&>(*this).saveToStream(stream); }
-
-    /// \brief Loads the mapping from the given stream.
-    void loadFromStream(LoadStream& stream) { static_cast<OutputColumnMapping&>(*this).loadFromStream(stream); }
-
-    /// \brief Converts the mapping data into a byte array.
-    QByteArray toByteArray() const { return static_cast<const OutputColumnMapping&>(*this).toByteArray(); }
-
-    /// \brief Loads the mapping from a byte array.
-    void fromByteArray(const QByteArray& array) { static_cast<OutputColumnMapping&>(*this).fromByteArray(array); }
-};
-
 /**
  * \brief Writes the data columns to the output file as specified by an OutputColumnMapping.
  */
@@ -135,10 +108,15 @@ public:
     PropertyReference propertyRef(size_t columnIndex) const {
         OVITO_ASSERT(columnIndex < _properties.size());
         OVITO_ASSERT(columnIndex < _vectorComponents.size());
-        if(_properties[columnIndex])
-            return PropertyReference(&_sourceContainer->getOOMetaClass(), _properties[columnIndex], _vectorComponents[columnIndex]);
+        return PropertyReference(columnName(columnIndex));
+    }
+
+    /// Returns the numeric standard type ID of the property that will be written to the i-th file column.
+    int propertyTypeId(size_t columnIndex) const {
+        if(const Property* prop = property(columnIndex))
+            return prop->typeId();
         else
-            return PropertyReference(&_sourceContainer->getOOMetaClass(), Property::GenericIdentifierProperty, 0);
+            return Property::GenericIdentifierProperty;
     }
 
     // Determines whether the i-th column contains a vector property component.
@@ -153,7 +131,7 @@ public:
         if(const Property* prop = property(columnIndex))
             return prop->nameWithComponent(vectorComponent(columnIndex));
         else
-            return propertyRef(columnIndex).name();
+            return _sourceContainer->getOOMetaClass().standardPropertyName(Property::GenericIdentifierProperty);
     }
 
 private:

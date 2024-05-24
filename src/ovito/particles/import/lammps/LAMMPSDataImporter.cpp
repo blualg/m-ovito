@@ -368,7 +368,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             ParticleInputColumnMapping columnMapping = createVelocitiesColumnMapping(_atomStyleHints.atomStyle, _atomStyleHints.atomSubStyles);
 
             // Do not parse the atom ID in the first column.
-            OVITO_ASSERT(!columnMapping.empty() && columnMapping[0].property.typeId() == Particles::IdentifierProperty);
+            OVITO_ASSERT(!columnMapping.empty() && columnMapping[0].property.isStandardProperty(&Particles::OOClass(), Particles::IdentifierProperty));
             columnMapping[0].unmap();
 
             // Access the atomic IDs.

@@ -24,7 +24,6 @@
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/stdobj/properties/PropertyReference.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/simcell/SimulationCellVis.h>
 #include "StandardFrameLoader.h"

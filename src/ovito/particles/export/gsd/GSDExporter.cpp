@@ -256,7 +256,7 @@ void GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle angular momenta. Note: The GSDImporter currently stores these values in the user-defined particle property "angmom".
-    if(const Property* angularMomentumProperty = particles->getProperty("angmom")) {
+    if(const Property* angularMomentumProperty = particles->getProperty(QStringLiteral("angmom"))) {
         if(angularMomentumProperty->dataType() == Property::FloatDefault && angularMomentumProperty->componentCount() == 4) {
             BufferReadAccess<Quaternion> angularMomentumPropertyAccess(angularMomentumProperty);
             // Apply particle index mapping and data type conversion:
@@ -270,7 +270,7 @@ void GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     }
 
     // Output particle body property. Note: The GSDImporter currently stores the values in the user-defined particle property "body".
-    if(const Property* bodyProperty = particles->getProperty("body")) {
+    if(const Property* bodyProperty = particles->getProperty(QStringLiteral("body"))) {
         if(bodyProperty->dataType() == Property::Int32 && bodyProperty->componentCount() == 1) {
             BufferReadAccess<int32_t> bodyPropertyAccess(bodyProperty);
             // Apply particle index mapping:

@@ -48,7 +48,8 @@ void SelectTypeModifierEditor::createUI(const RolloutInsertionParameters& rollou
     layout->addWidget(new QLabel(tr("Operate on:")));
     layout->addWidget(pclassUI->comboBox());
     pclassUI->setObjectFilter<PropertyContainer>([](const PropertyContainer* container) {
-        return std::any_of(container->properties().begin(), container->properties().end(), &isValidInputProperty);
+        return container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty) &&
+            std::any_of(container->properties().begin(), container->properties().end(), &isValidInputProperty);
     });
 
     _sourcePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(SelectTypeModifier::sourceProperty));
@@ -187,7 +188,7 @@ void SelectTypeModifierEditor::ViewModel::refresh()
     _elementTypes.clear();
 
     SelectTypeModifier* mod = static_object_cast<SelectTypeModifier>(editor()->editObject());
-    if(mod && mod->subject() && !mod->sourceProperty().isNull() && mod->sourceProperty().containerClass() == mod->subject().dataClass()) {
+    if(mod && mod->subject() && mod->sourceProperty()) {
 
         // Populate types list based on the selected input property.
         for(const PipelineFlowState& inputState : editor()->getPipelineInputs()) {

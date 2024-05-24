@@ -94,11 +94,10 @@ void IMDImporter::FrameLoader::loadFile()
                 else if(token == "Epot") columnMapping.mapColumnToStandardProperty(columnIndex, Particles::PotentialEnergyProperty);
                 else {
                     bool isStandardProperty = false;
-                    const auto& standardPropertyList = Particles::OOClass().standardPropertyIds();
                     QRegularExpression specialCharacters(QStringLiteral("[^A-Za-z\\d_]"));
-                    for(int id : standardPropertyList) {
+                    for(const auto& [propertyName, id] : Particles::OOClass().standardPropertyIds()) {
                         for(size_t component = 0; component < Particles::OOClass().standardPropertyComponentCount(id); component++) {
-                            QString columnName = Particles::OOClass().standardPropertyName(id);
+                            QString columnName = propertyName;
                             columnName.remove(specialCharacters);
                             const QStringList& componentNames = Particles::OOClass().standardPropertyComponentNames(id);
                             if(!componentNames.empty()) {

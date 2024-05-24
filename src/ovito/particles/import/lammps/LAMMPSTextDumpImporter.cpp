@@ -355,7 +355,7 @@ void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QS
         // the type of particle coordinates. Reduced coordinates are found in columns
         // "xs, ys, zs" or "xsu, ysu, zsu".
         for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
-            if(columnMapping[i].property.typeId() == Particles::PositionProperty) {
+            if(columnMapping[i].property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty)) {
                 reducedCoordinates = (
                         fileColumnNames[i] == "xs" || fileColumnNames[i] == "xsu" ||
                         fileColumnNames[i] == "ys" || fileColumnNames[i] == "ysu" ||
@@ -400,7 +400,7 @@ void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QS
         // If a "diameter" column was loaded and stored in the "Radius" particle property,
         // we need to divide values by two.
         for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
-            if(columnMapping[i].property.typeId() == Particles::RadiusProperty && fileColumnNames[i] == "diameter") {
+            if(columnMapping[i].property.isStandardProperty(&Particles::OOClass(), Particles::RadiusProperty) && fileColumnNames[i] == "diameter") {
                 if(Property* radii = particles()->getMutableProperty(Particles::RadiusProperty)) {
 #ifdef OVITO_USE_SYCL
                     SyclBufferAccess<GraphicsFloatType, access_mode::read_write>{radii}.for_each([](GraphicsFloatType& r) {
@@ -417,7 +417,7 @@ void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QS
 
         // Same for the "c_diameter[1..3]" columns or "shapex/shapey/shapez" columns being mapped to the "Aspherical Shape" property.
         for(int i = 0; i < (int)columnMapping.size() && i < fileColumnNames.size(); i++) {
-            if(columnMapping[i].property.typeId() == Particles::AsphericalShapeProperty &&
+            if(columnMapping[i].property.isStandardProperty(&Particles::OOClass(), Particles::AsphericalShapeProperty) &&
                 (fileColumnNames[i] == "c_diameter[1]" || fileColumnNames[i] == "c_diameter[2]" || fileColumnNames[i] == "c_diameter[3]" ||
                     fileColumnNames[i] == "shapex" || fileColumnNames[i] == "shapey" || fileColumnNames[i] == "shapez")) {
                 if(Property* shapeProperty = particles()->getMutableProperty(Particles::AsphericalShapeProperty)) {
@@ -438,9 +438,9 @@ void LAMMPSTextDumpImporter::FrameLoader::postprocessParticleProperties(const QS
 
     // Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property (but Position.X/Y are present).
     if(std::none_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
-        return column.property.typeId() == Particles::PositionProperty && column.property.vectorComponentIndex() == 2;
+        return column.property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty) && column.property.componentIndex(&Particles::OOClass()) == 2;
     }) && std::any_of(columnMapping.begin(), columnMapping.end(), [](const InputColumnInfo& column) {
-        return column.property.typeId() == Particles::PositionProperty && column.property.vectorComponentIndex() != 2;
+        return column.property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty) && column.property.componentIndex(&Particles::OOClass()) != 2;
     })) {
         simulationCell()->setIs2D(true);
     }
@@ -527,11 +527,11 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
             bool isStandardProperty = false;
             const static QRegularExpression invalidCharacters(QStringLiteral("[^A-Za-z\\d_]"));
             for(auto entry = Particles::OOClass().standardPropertyIds().cbegin(), end = Particles::OOClass().standardPropertyIds().cend(); entry != end; ++entry) {
-                const auto componentCount = Particles::OOClass().standardPropertyComponentCount(entry.value());
+                const auto componentCount = Particles::OOClass().standardPropertyComponentCount(entry->second);
                 for(size_t component = 0; component < componentCount; component++) {
-                    QString propertyName = entry.key();
+                    QString propertyName = entry->first;
                     propertyName.remove(invalidCharacters); // LAMMPS dump file format does not support column names containing spaces.
-                    const QStringList& componentNames = Particles::OOClass().standardPropertyComponentNames(entry.value());
+                    const QStringList& componentNames = Particles::OOClass().standardPropertyComponentNames(entry->second);
                     QString propertyName2;
                     if(!componentNames.empty()) {
                         OVITO_ASSERT(!componentNames[component].contains(invalidCharacters));
@@ -540,7 +540,7 @@ ParticleInputColumnMapping LAMMPSTextDumpImporter::generateAutomaticColumnMappin
                         propertyName += componentNames[component];
                     }
                     if(propertyName.compare(name, Qt::CaseInsensitive) == 0 || propertyName2.compare(name, Qt::CaseInsensitive) == 0) {
-                        columnMapping.mapColumnToStandardProperty(i, (Particles::Type)entry.value(), component);
+                        columnMapping.mapColumnToStandardProperty(i, (Particles::Type)entry->second, component);
                         isStandardProperty = true;
                         break;
                     }

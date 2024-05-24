@@ -41,29 +41,27 @@ public:
     PropertySelectionComboBox(PropertyContainerClassPtr containerClass = nullptr, QWidget* parent = nullptr) : QComboBox(parent), _containerClass(containerClass) {}
 
     /// \brief Adds a property to the end of the list.
-    /// \param property The property to add.
     void addItem(const PropertyReference& property, const QString& label = QString(), bool isChildItem = false) {
-        OVITO_ASSERT(property.isNull() || containerClass() == property.containerClass());
         OVITO_ASSERT(!isChildItem || !isEditable());
-        QComboBox::addItem((isChildItem ? QStringLiteral("  ") : QString()) + (label.isEmpty() ? property.name() : label), QVariant::fromValue(property));
+        QComboBox::addItem((isChildItem ? QStringLiteral("  ") : QString()) + (label.isEmpty() ? property.name().toString() : label), QVariant::fromValue(property));
     }
 
     /// \brief Adds a property to the end of the list.
     /// \param property The property to add.
     void addItem(const Property* property, int vectorComponent = -1, bool isChildItem = false) {
         OVITO_ASSERT(property != nullptr);
-        OVITO_ASSERT(containerClass() != nullptr);
         OVITO_ASSERT(!isChildItem || !isEditable());
-        QString label = (isChildItem ? QStringLiteral("  ") : QString()) + property->nameWithComponent(vectorComponent);
-        if(QComboBox::findText(label) == -1 && (!isChildItem || QComboBox::findText(property->nameWithComponent(vectorComponent)) == -1)) {
-            QComboBox::addItem(label, QVariant::fromValue(PropertyReference(containerClass(), property, vectorComponent)));
+        PropertyReference ref(property, vectorComponent);
+        QString label = (isChildItem ? QStringLiteral("  ") : QString()) + ref.nameWithComponent();
+        if(QComboBox::findText(label) == -1 && (!isChildItem || QComboBox::findText(ref.nameWithComponent()) == -1)) {
+            QComboBox::addItem(label, QVariant::fromValue(ref));
         }
     }
 
     /// \brief Adds multiple properties to the combo box.
     /// \param list The list of properties to add.
     void addItems(const QVector<Property*>& list) {
-        for(Property* p : list)
+        for(const Property* p : list)
             addItem(p);
     }
 
@@ -79,11 +77,7 @@ public:
 
     /// \brief Returns the list index of the given property, or -1 if not found.
     int propertyIndex(const PropertyReference& property) const {
-        for(int index = 0; index < count(); index++) {
-            if(property == itemData(index).value<PropertyReference>())
-                return index;
-        }
-        return -1;
+        return findData(QVariant::fromValue(property));
     }
 
     /// \brief Returns the property at the given index.

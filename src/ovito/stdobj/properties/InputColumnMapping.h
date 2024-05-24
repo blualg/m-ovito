@@ -45,29 +45,23 @@ public:
     InputColumnInfo() = default;
 
     /// \brief Constructor mapping the column to a standard property.
-    InputColumnInfo(PropertyContainerClassPtr pclass, int typeId, int vectorComponent = 0) {
+    InputColumnInfo(PropertyContainerClassPtr pclass, int typeId, int vectorComponent = -1) {
         mapToStandardProperty(pclass, typeId, vectorComponent);
     }
 
     /// \brief Constructor mapping the column to a user-defined property.
-    InputColumnInfo(PropertyContainerClassPtr pclass, const QString& propertyName, int dataType, int vectorComponent = 0) {
-        mapToUserProperty(pclass, propertyName, dataType, vectorComponent);
+    InputColumnInfo(const QString& propertyName, int dataType, int vectorComponent = -1) {
+        mapToUserProperty(propertyName, dataType, vectorComponent);
     }
 
     /// \brief Maps this column to a user-defined property.
-    /// \param propertyName The name of target property.
-    /// \param dataType The data type of the property to create.
-    /// \param vectorComponent The component index if the target property is a vector property.
-    void mapToUserProperty(PropertyContainerClassPtr pclass, const QString& propertyName, int dataType, int vectorComponent = 0) {
-        OVITO_ASSERT(pclass);
-        this->property = PropertyReference(pclass, propertyName, vectorComponent);
+    void mapToUserProperty(const QString& propertyName, int dataType, int vectorComponent = -1) {
+        this->property = PropertyReference(vectorComponent < 0 ? propertyName : QStringLiteral("%1.%2").arg(propertyName).arg(vectorComponent + 1));
         this->dataType = dataType;
     }
 
     /// \brief Maps this column to a standard property.
-    /// \param typeId Specifies the standard property type.
-    /// \param vectorComponent The component index if the target property is a vector property.
-    void mapToStandardProperty(PropertyContainerClassPtr pclass, int typeId, int vectorComponent = 0) {
+    void mapToStandardProperty(PropertyContainerClassPtr pclass, int typeId, int vectorComponent = -1) {
         OVITO_ASSERT(pclass);
         OVITO_ASSERT(typeId != Property::GenericUserProperty);
         this->property = PropertyReference(pclass, typeId, vectorComponent);
@@ -75,7 +69,7 @@ public:
     }
 
     /// \brief Returns true if the file column is mapped to a target property; false otherwise (file column will be ignored during import).
-    bool isMapped() const { return dataType != QMetaType::Void; }
+    bool isMapped() const { return dataType != QMetaType::Void && property; }
 
     /// \brief Removes the mapping of this file column to a target property.
     void unmap() {
@@ -146,14 +140,14 @@ public:
     /// \param column The file column index.
     /// \param typeId Specifies the standard property.
     /// \param vectorComponent The component index if the target property is a vector property.
-    bool mapColumnToStandardProperty(int column, int typeId, int vectorComponent = 0);
+    bool mapColumnToStandardProperty(int column, int typeId, int vectorComponent = -1);
 
     /// \brief Maps this column to a user-defined property unless there is already another column mapped to the same property.
     /// \param column The file column index.
     /// \param propertyName The name of target particle property.
     /// \param dataType The data type of the property to create.
     /// \param vectorComponent The component index if the target property is a vector property.
-    bool mapColumnToUserProperty(int column, const QString& propertyName, int dataType, int vectorComponent = 0);
+    bool mapColumnToUserProperty(int column, const QString& propertyName, int dataType, int vectorComponent = -1);
 
     /// \brief Compares two mapping for equality.
     bool operator==(const InputColumnMapping& other) const {

@@ -43,7 +43,7 @@ void XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     size_t atomsCount = particles->elementCount();
     textStream() << atomsCount << '\n';
 
-    const ParticlesOutputColumnMapping& mapping = columnMapping();
+    const OutputColumnMapping& mapping = columnMapping();
     if(mapping.empty())
         throw Exception(tr("No particle properties have been selected for export to the XYZ file. Cannot write file with zero columns."));
     PropertyOutputWriter columnWriter(mapping, particles, PropertyOutputWriter::WriteNamesUnderscore);
@@ -82,12 +82,10 @@ void XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         QString propertiesStr;
         int i = 0;
         while(i < (int)columnWriter.columnCount()) {
-            const ParticlePropertyReference& pref = columnWriter.propertyRef(i);
-
             // Convert from OVITO property type and name to extended XYZ property name
             // Naming conventions followed are those of the QUIP code
             QString columnName;
-            switch(pref.typeId()) {
+            switch(columnWriter.propertyTypeId(i)) {
             case Particles::TypeProperty: columnName = QStringLiteral("species"); break;
             case Particles::PositionProperty: columnName = QStringLiteral("pos"); break;
             case Particles::SelectionProperty: columnName = QStringLiteral("selection"); break;
@@ -125,20 +123,15 @@ void XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             case Particles::MoleculeProperty: columnName = QStringLiteral("molecule"); break;
             case Particles::MoleculeTypeProperty: columnName = QStringLiteral("molecule_type"); break;
             default:
-                columnName = pref.name();
+                columnName = columnWriter.propertyRef(i).name().toString();
                 columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_]")));
             }
-
-            // Find matching property
-            const Property* property = pref.findInContainer(particles);
-            if(property == nullptr && pref.typeId() != Particles::IdentifierProperty)
-                throw Exception(tr("Particle property '%1' cannot be exported because it does not exist.").arg(pref.name()));
+            const Property* property = columnWriter.property(i);
 
             // Count the number of consecutive columns with the same property.
             int nCols = 1;
             while(++i < (int)columnWriter.columnCount()) {
-                const ParticlePropertyReference& nextpref = columnWriter.propertyRef(i);
-                if(pref.name() != nextpref.name() || pref.typeId() != nextpref.typeId())
+                if(property != columnWriter.property(i))
                     break;
                 nCols++;
             }
@@ -148,14 +141,14 @@ void XYZExporter::exportData(const PipelineFlowState& state, int frameNumber, co
             QString dataTypeStr;
             if(dataType == Property::Float32 || dataType == Property::Float64)
                 dataTypeStr = QStringLiteral("R");
-            else if(pref.typeId() == Particles::TypeProperty)
+            else if(property && property->typeId() == Particles::TypeProperty)
                 dataTypeStr = QStringLiteral("S");
             else if(dataType == Property::Int8 || dataType == Property::Int32 || dataType == Property::Int64)
                 dataTypeStr = QStringLiteral("I");
             else if(dataType == qMetaTypeId<bool>())
                 dataTypeStr = QStringLiteral("L");
             else
-                throw Exception(tr("Unexpected data type '%1' for property '%2'.").arg(property ? property->dataTypeName() : "unknown").arg(pref.name()));
+                throw Exception(tr("Unexpected data type '%1' for property '%2'.").arg(property ? property->dataTypeName() : "unknown").arg(property->name()));
 
             if(!propertiesStr.isEmpty())
                 propertiesStr += QStringLiteral(":");

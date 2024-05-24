@@ -69,7 +69,7 @@ ComputePropertyModifier::ComputePropertyModifier(ObjectInitializationFlags flags
 
         // Set default output property.
         if(delegate())
-            setOutputProperty(PropertyReference(delegate()->inputContainerClass(), QStringLiteral("My property")));
+            setOutputProperty(QStringLiteral("My property"));
     }
 }
 
@@ -96,21 +96,14 @@ void ComputePropertyModifier::setPropertyComponentCount(int newComponentCount)
 ******************************************************************************/
 void ComputePropertyModifier::adjustPropertyComponentCount()
 {
-    if(delegate() && outputProperty().isStandardProperty())
-        setPropertyComponentCount(delegate()->inputContainerClass()->standardPropertyComponentCount(outputProperty().typeId()));
-    else
-        setPropertyComponentCount(1);
-}
-
-/******************************************************************************
-* Returns the vector component names of the selected output property.
-******************************************************************************/
-QStringList ComputePropertyModifier::propertyComponentNames() const
-{
-    if(!outputProperty().isNull() && outputProperty().isStandardProperty()) {
-        return outputProperty().containerClass()->standardPropertyComponentNames(outputProperty().typeId());
+    if(delegate()) {
+        int typeId = outputProperty().standardTypeId(delegate()->inputContainerClass());
+        if(typeId != 0) {
+            setPropertyComponentCount(delegate()->inputContainerClass()->standardPropertyComponentCount(typeId));
+            return;
+        }
     }
-    return {};
+    setPropertyComponentCount(1);
 }
 
 /******************************************************************************
@@ -119,7 +112,6 @@ QStringList ComputePropertyModifier::propertyComponentNames() const
 void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
-        setOutputProperty(outputProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
         if(delegate())
             delegate()->setComponentCount(expressions().size());
     }
@@ -196,9 +188,6 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
     const ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(request.modifier());
     ComputePropertyModificationNode* modNode = static_object_cast<ComputePropertyModificationNode>(request.modificationNode());
 
-    if(modifier->outputProperty().containerClass() != inputContainerClass())
-        throw Exception(tr("Property %1 to be computed is not a %2 property.").arg(modifier->outputProperty().name()).arg(inputContainerClass()->elementDescriptionName()));
-
     // Look up the property container which we will operate on. Make sure we can safely modify it.
     DataObjectPath containerPath = state.expectMutableObject(inputContainerRef());
     PropertyContainer* container = static_object_cast<PropertyContainer>(containerPath.back());
@@ -240,10 +229,11 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
     }
     else {
         // Allocate new data array.
-        if(modifier->outputProperty().isStandardProperty()) {
-            outputProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, modifier->outputProperty().typeId(), containerPath);
+        int typeId = modifier->outputProperty().standardTypeId(&container->getOOMetaClass());
+        if(typeId != 0) {
+            outputProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, typeId, containerPath);
         }
-        else if(!modifier->outputProperty().name().isEmpty() && modifier->propertyComponentCount() > 0) {
+        else if(modifier->outputProperty() && modifier->propertyComponentCount() > 0) {
             outputProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, modifier->outputProperty().name(), Property::FloatDefault, modifier->propertyComponentCount());
         }
         else {

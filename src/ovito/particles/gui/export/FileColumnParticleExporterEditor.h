@@ -63,7 +63,7 @@ private Q_SLOTS:
 private:
 
     /// Populates the column mapping list box with an entry.
-    void insertPropertyItem(ParticlePropertyReference propRef, const QString& displayName, const ParticlesOutputColumnMapping& columnMapping);
+    void insertPropertyItem(const PropertyReference& propRef, const QString& displayName, const OutputColumnMapping& columnMapping);
 
     /// This writes the settings made in the UI back to the exporter.
     void saveChanges(FileColumnParticleExporter* particleExporter);

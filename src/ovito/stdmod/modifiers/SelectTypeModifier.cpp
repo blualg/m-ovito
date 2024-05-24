@@ -60,7 +60,7 @@ void SelectTypeModifier::initializeModifier(const ModifierInitializationRequest&
 {
     GenericPropertyModifier::initializeModifier(request);
 
-    if(sourceProperty().isNull() && subject()) {
+    if(!sourceProperty() && subject()) {
 
         // When the modifier is first inserted, automatically select the most recently added
         // typed property (in GUI mode) or the canonical type property (in script mode).
@@ -70,12 +70,11 @@ void SelectTypeModifier::initializeModifier(const ModifierInitializationRequest&
             for(const Property* property : container->properties()) {
                 if(property->isTypedProperty()) {
                     if(ExecutionContext::isInteractive() || property->typeId() == Property::GenericTypeProperty) {
-                        bestProperty = PropertyReference(subject().dataClass(), property);
+                        bestProperty = property;
                     }
                 }
             }
-            if(!bestProperty.isNull())
-                setSourceProperty(bestProperty);
+            setSourceProperty(bestProperty);
         }
     }
 }
@@ -85,11 +84,7 @@ void SelectTypeModifier::initializeModifier(const ModifierInitializationRequest&
 ******************************************************************************/
 void SelectTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing()) {
-        // Whenever the selected property class of this modifier is changed, update the source property reference accordingly.
-        setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
-    }
-    else if((field == PROPERTY_FIELD(SelectTypeModifier::sourceProperty) || field == PROPERTY_FIELD(SelectTypeModifier::selectedTypeIDs)) && !isBeingLoaded()) {
+    if((field == PROPERTY_FIELD(SelectTypeModifier::sourceProperty) || field == PROPERTY_FIELD(SelectTypeModifier::selectedTypeIDs)) && !isBeingLoaded()) {
         // Changes of some the modifier's parameters affect the result of SelectTypeModifier::getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
@@ -104,13 +99,8 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
 {
     if(!subject())
         throw Exception(tr("No input element type selected."));
-    if(sourceProperty().isNull())
+    if(!sourceProperty())
         throw Exception(tr("No input property selected."));
-
-    // Check if the source property is the right kind of property.
-    if(sourceProperty().containerClass() != subject().dataClass())
-        throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
-            .arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
     PropertyContainer* container = state.expectMutableLeafObject(subject());
     container->verifyIntegrity();
@@ -232,7 +222,7 @@ QVariant SelectTypeModifier::getPipelineEditorShortInfo(Scene* scene, Modificati
     OVITO_ASSERT(scene);
 
     QString shortInfo;
-    if(node && subject() && !sourceProperty().isNull() && sourceProperty().containerClass() == subject().dataClass()) {
+    if(node && subject() && sourceProperty()) {
         const PipelineFlowState& state = node->getCachedPipelineNodeInput(scene->animationSettings()->currentTime());
         if(const PropertyContainer* container = state.getLeafObject(subject())) {
             if(const Property* inputProperty = sourceProperty().findInContainer(container)) {

@@ -23,7 +23,7 @@
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/stdobj/properties/ElementType.h>
 #include <ovito/stdobj/properties/Property.h>
-#include <ovito/stdobj/properties/PropertyReference.h>
+#include <ovito/stdobj/properties/OwnerPropertyRef.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
@@ -100,7 +100,7 @@ void ElementTypeEditor::referenceReplaced(const PropertyFieldDescriptor* field, 
             lineEdit->setPlaceholderText(etype ? QStringLiteral("<%1>").arg(ElementType::generateDefaultTypeName(etype->numericId())) : QString());
 
         // Enable/disable the button.
-        _setAsDefaultBtn->setEnabled(etype != nullptr && !etype->ownerProperty().isNull());
+        _setAsDefaultBtn->setEnabled(etype != nullptr && etype->ownerProperty());
     }
 }
 

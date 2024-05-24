@@ -55,7 +55,7 @@ CalculateDisplacementsModifier::CalculateDisplacementsModifier(ObjectInitializat
 
         // In GUI mode, visualize the displacement magnitude by default.
         if(ExecutionContext::isInteractive())
-            vectorVis()->colorMapping()->setSourceProperty(ParticlePropertyReference(Particles::DisplacementMagnitudeProperty));
+            vectorVis()->colorMapping()->setSourceProperty(Particles::OOClass().standardPropertyName(Particles::DisplacementMagnitudeProperty));
     }
 }
 

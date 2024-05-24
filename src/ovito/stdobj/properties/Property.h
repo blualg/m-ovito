@@ -71,10 +71,10 @@ public:
     explicit Property(ObjectInitializationFlags flags);
 
     /// \brief Constructor creating a new property array.
-    Property(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int typeId = 0, QStringList componentNames = QStringList());
+    Property(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int typeId = 0, QStringList componentNames = QStringList());
 
     /// \brief Constructor creating a new property array.
-    Property(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount, const QString& name, int typeId = 0, QStringList componentNames = QStringList()) :
+    Property(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int typeId = 0, QStringList componentNames = QStringList()) :
         Property(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, name, typeId, std::move(componentNames)) {}
 
 #ifdef OVITO_DEBUG
@@ -87,6 +87,9 @@ public:
 
     /// \brief Sets the property's name, which is also the property object's unique identifier.
     void setName(const QString& name) { setIdentifier(name); }
+
+    /// \brief Sets the property's name, which is also the property object's unique identifier.
+    void setName(const QStringView name) { setIdentifier(name.toString()); }
 
     /// \brief Returns the kind of this property (standard or user-defined).
     int typeId() const { return _typeId; }
@@ -234,7 +237,7 @@ public:
 
     /// Throws an exception with an informative text if the given name is not a valid name for an OVITO property.
     /// For example, to be valid, the name must not contains any dots.
-    static void throwIfInvalidPropertyName(const QString& name);
+    static void throwIfInvalidPropertyName(const QStringView name);
 
     /// Performs name mangeling if necessary to turn the given name into a valid property name.
     static QString makePropertyNameValid(const QString& name);

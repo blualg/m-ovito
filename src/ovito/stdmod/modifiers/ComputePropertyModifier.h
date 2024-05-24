@@ -134,11 +134,8 @@ public:
     /// Sets the number of expressions based on the selected output property.
     void adjustPropertyComponentCount();
 
-    /// Returns the vector component names of the selected output property.
-    QStringList propertyComponentNames() const;
-
     /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return outputProperty().name(); }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return outputProperty().nameWithComponent(); }
 
     /// Indicates that a preliminary viewport update will be performed immediately after this modifier
 	/// has computed new results.

@@ -177,17 +177,17 @@ void SpatialCorrelationFunctionModifier::initializeModifier(const ModifierInitia
     Modifier::initializeModifier(request);
 
     // Use the first available particle property from the input state as data source when the modifier is newly created.
-    if((sourceProperty1().isNull() || sourceProperty2().isNull()) && ExecutionContext::isInteractive()) {
+    if((!sourceProperty1() || !sourceProperty2()) && ExecutionContext::isInteractive()) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const Particles* container = input.getObject<Particles>()) {
-            ParticlePropertyReference bestProperty;
+            PropertyReference bestProperty;
             for(const Property* property : container->properties()) {
-                bestProperty = ParticlePropertyReference(property, (property->componentCount() > 1) ? 0 : -1);
+                bestProperty = PropertyReference(property, (property->componentCount() > 1) ? 0 : -1);
             }
-            if(!bestProperty.isNull()) {
-                if(sourceProperty1().isNull())
+            if(bestProperty) {
+                if(!sourceProperty1())
                     setSourceProperty1(bestProperty);
-                if(sourceProperty2().isNull())
+                if(!sourceProperty2())
                     setSourceProperty2(bestProperty);
             }
         }
@@ -225,9 +225,9 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
     }
 
     // Get the source data.
-    if(sourceProperty1().isNull())
+    if(!sourceProperty1())
         throw Exception(tr("Please select a first input particle property."));
-    if(sourceProperty2().isNull())
+    if(!sourceProperty2())
         throw Exception(tr("please select a second input particle property."));
 
     // Get the current positions.

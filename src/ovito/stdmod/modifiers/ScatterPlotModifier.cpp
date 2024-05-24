@@ -94,17 +94,17 @@ void ScatterPlotModifier::initializeModifier(const ModifierInitializationRequest
     GenericPropertyModifier::initializeModifier(request);
 
     // Use the first available property from the input state as data source when the modifier is newly created.
-    if((xAxisProperty().isNull() || yAxisProperty().isNull()) && subject() && ExecutionContext::isInteractive()) {
+    if((!xAxisProperty() || !yAxisProperty()) && subject() && ExecutionContext::isInteractive()) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             PropertyReference bestProperty;
             for(const Property* property : container->properties()) {
-                bestProperty = PropertyReference(subject().dataClass(), property, (property->componentCount() > 1) ? 0 : -1);
+                bestProperty = PropertyReference(property, (property->componentCount() > 1) ? 0 : -1);
             }
-            if(xAxisProperty().isNull() && !bestProperty.isNull()) {
+            if(!xAxisProperty() && bestProperty) {
                 setXAxisProperty(bestProperty);
             }
-            if(yAxisProperty().isNull() && !bestProperty.isNull()) {
+            if(!yAxisProperty() && bestProperty) {
                 setYAxisProperty(bestProperty);
             }
         }
@@ -116,12 +116,7 @@ void ScatterPlotModifier::initializeModifier(const ModifierInitializationRequest
 ******************************************************************************/
 void ScatterPlotModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing()) {
-        // Whenever the selected property class of this modifier is changed, update the source property references.
-        setXAxisProperty(xAxisProperty().convertToContainerClass(subject().dataClass()));
-        setYAxisProperty(yAxisProperty().convertToContainerClass(subject().dataClass()));
-    }
-    else if((field == PROPERTY_FIELD(ScatterPlotModifier::xAxisProperty) || field == PROPERTY_FIELD(ScatterPlotModifier::yAxisProperty)) && !isBeingLoaded()) {
+    if((field == PROPERTY_FIELD(ScatterPlotModifier::xAxisProperty) || field == PROPERTY_FIELD(ScatterPlotModifier::yAxisProperty)) && !isBeingLoaded()) {
         // Changes of some the modifier's parameters affect the result of ScatterPlotModifier::getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
     }
@@ -157,20 +152,10 @@ Future<PipelineFlowState> ScatterPlotModifier::evaluateModifier(const ModifierEv
 {
     if(!subject())
         throw Exception(tr("No data element type set."));
-    if(xAxisProperty().isNull())
+    if(!xAxisProperty())
         throw Exception(tr("No input property for x-axis selected."));
-    if(yAxisProperty().isNull())
+    if(!yAxisProperty())
         throw Exception(tr("No input property for y-axis selected."));
-
-    // Check if the source property is the right kind of property.
-    if(xAxisProperty().containerClass() != subject().dataClass())
-        throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
-            .arg(subject().dataClass()->pythonName()).arg(xAxisProperty().containerClass()->propertyClassDisplayName()));
-
-    // Check if the source property is the right kind of property.
-    if(yAxisProperty().containerClass() != subject().dataClass())
-        throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
-            .arg(subject().dataClass()->pythonName()).arg(yAxisProperty().containerClass()->propertyClassDisplayName()));
 
     // Look up the property container object.
     ConstDataObjectPath containerPath = state.expectObject(subject());

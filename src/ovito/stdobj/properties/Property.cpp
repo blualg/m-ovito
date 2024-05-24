@@ -46,11 +46,11 @@ Property::Property(ObjectInitializationFlags flags) : DataBuffer(flags)
 /******************************************************************************
 * Constructor allocating a property array with given size and data layout.
 ******************************************************************************/
-Property::Property(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QString& name, int typeId, QStringList componentNames) :
+Property::Property(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int typeId, QStringList componentNames) :
     DataBuffer(flags, init, elementCount, dataType, componentCount, std::move(componentNames)),
     _typeId(typeId)
 {
-    setName(name);
+    setName(name.toString());
 }
 
 #ifdef OVITO_DEBUG
@@ -402,7 +402,7 @@ const ElementType* Property::addNumericType(const PropertyContainerClass& contai
     // Second initialization phase for element types, which takes into account the assigned ID and name and the property type.
     elementType->setNumericId(id);
     elementType->setName(name);
-    elementType->initializeType(PropertyReference(&containerClass, this));
+    elementType->initializeType(OwnerPropertyRef(&containerClass, this));
 
     // Log in type name assigned by the caller as default value for the element type.
     // This is needed for the Python code generator to detect manual changes subsequently made by the user.
@@ -434,7 +434,7 @@ QString Property::nameWithComponent(int vectorComponent) const
 * Throws an exception with an informative text if the given name is not a
 * valid name for an OVITO property.
 ******************************************************************************/
-void Property::throwIfInvalidPropertyName(const QString& name)
+void Property::throwIfInvalidPropertyName(const QStringView name)
 {
     if(name.isEmpty())
         throw Exception(tr("Invalid empty property name. OVITO property names must have at least length 1."));
