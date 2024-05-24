@@ -41,11 +41,12 @@ void Vectors::OOMetaClass::initialize()
     const QStringList emptyList;
     const QStringList xyzList = QStringList() << "X" << "Y" << "Z";
     const QStringList rgbList = QStringList() << "R" << "G" << "B";
-    registerStandardProperty(PositionProperty, tr("Position"), Property::FloatDefault, xyzList);
     registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList);
-    registerStandardProperty(TransparencyProperty, tr("Transparency"), Property::FloatGraphics, emptyList);
     registerStandardProperty(DirectionProperty, tr("Direction"), Property::FloatDefault, xyzList);
     registerStandardProperty(DirectionMagnitudeProperty, tr("Direction Magnitude"), Property::FloatDefault, emptyList);
+    registerStandardProperty(PositionProperty, tr("Position"), Property::FloatDefault, xyzList);
+    registerStandardProperty(SelectionProperty, tr("Selection"), Property::IntSelection, emptyList);
+    registerStandardProperty(TransparencyProperty, tr("Transparency"), Property::FloatGraphics, emptyList);
 }
 
 /******************************************************************************
@@ -58,19 +59,10 @@ PropertyPtr Vectors::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buf
     size_t componentCount;
 
     switch(type) {
-        case PositionProperty:
-            dataType = Property::FloatDefault;
-            componentCount = 3;
-            OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
-            break;
         case ColorProperty:
             dataType = Property::FloatGraphics;
             componentCount = 3;
             OVITO_ASSERT(componentCount * sizeof(GraphicsFloatType) == sizeof(ColorG));
-            break;
-        case TransparencyProperty:
-            dataType = Property::FloatGraphics;
-            componentCount = 1;
             break;
         case DirectionProperty:
             dataType = Property::FloatDefault;
@@ -79,6 +71,19 @@ PropertyPtr Vectors::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buf
             break;
         case DirectionMagnitudeProperty:
             dataType = Property::FloatDefault;
+            componentCount = 1;
+            break;
+        case PositionProperty:
+            dataType = Property::FloatDefault;
+            componentCount = 3;
+            OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
+            break;
+        case SelectionProperty:
+            dataType = Property::IntSelection;
+            componentCount = 1;
+            break;
+        case TransparencyProperty:
+            dataType = Property::FloatGraphics;
             componentCount = 1;
             break;
         default:

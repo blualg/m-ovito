@@ -60,6 +60,7 @@ public:
         TransparencyProperty,
         DirectionProperty,
         DirectionMagnitudeProperty,
+        SelectionProperty = Property::GenericSelectionProperty,
     };
 
     /// \brief Constructor.
