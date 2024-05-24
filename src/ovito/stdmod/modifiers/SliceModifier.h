@@ -74,6 +74,37 @@ public:
 };
 
 /**
+ * \brief Slice function that operates on vectors.
+ */
+class OVITO_STDMOD_EXPORT VectorsSliceModifierDelegate : public SliceModifierDelegate
+{
+    /// Give the modifier delegate its own metaclass.
+    class VectorsSliceModifierDelegateClass : public SliceModifierDelegate::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using SliceModifierDelegate::OOMetaClass::OOMetaClass;
+
+        /// Asks the metaclass which data objects in the given input data collection the modifier delegate can operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("vectors"); }
+    };
+
+    OVITO_CLASS_META(VectorsSliceModifierDelegate, VectorsSliceModifierDelegateClass)
+
+public:
+    /// Constructor.
+    explicit VectorsSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
+
+    /// Applies this modifier delegate to the data.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state,
+                                            const PipelineFlowState& originalState,
+                                            const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+};
+
+/**
  * \brief The slice modifier performs a cut through a dataset.
  */
 class OVITO_STDMOD_EXPORT SliceModifier : public MultiDelegatingModifier
@@ -151,8 +182,12 @@ public:
         ui.updateViewports();
     }
 
-protected:
+    // Slice the coordinates / particle positions to the [output] maskProperty
+    // Can be reused to slice particles or vectors
+    static size_t sliceCoordinatesToMask(Plane3 plane, FloatType sliceWidth, bool invert, const Property* positionProperty,
+                                         Property* maskProperty, const Property* selectionProperty);
 
+protected:
     /// This method is called by the system when the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 

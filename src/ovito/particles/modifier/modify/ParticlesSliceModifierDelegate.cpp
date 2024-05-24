@@ -63,128 +63,15 @@ Future<PipelineFlowState> ParticlesSliceModifierDelegate::apply(const ModifierEv
     sliceWidth /= 2;
 
     // The actual work can be performed in a separate thread.
-    return asyncLaunch([
-            state = std::move(state),
-            plane,
-            sliceWidth,
-            invert = modifier->inverse(),
-            createSelection = modifier->createSelection(),
-            posProperty,
-            selProperty,
-            inputParticles]() mutable
-    {
-        // Number of marked/selected particles.
-        size_t numMarked = 0;
-
+    return asyncLaunch([state = std::move(state), plane, sliceWidth, invert = modifier->inverse(),
+                        createSelection = modifier->createSelection(), posProperty, selProperty, inputParticles]() mutable {
         // Create mask array to be computed.
         PropertyPtr mask = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, inputParticles->elementCount(), Particles::SelectionProperty);
         OVITO_ASSERT(posProperty->size() == mask->size());
         OVITO_ASSERT(!selProperty || selProperty->size() == mask->size());
 
-#ifdef OVITO_USE_SYCL
-        if(mask->size() != 0) {
-            // This is a single-element counter variable that will be incremented by the kernel for each marked element.
-            sycl::buffer<size_t> numMarkedBuf(&numMarked, 1);
-
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
-                // Access the input coordinates.
-                SyclBufferAccess<Point3, access_mode::read> posAcc(posProperty, cgh);
-                // Access the input selection flags.
-                SyclBufferAccess<SelectionIntType, access_mode::read> selAcc(selProperty, cgh);
-                // Access output flags array.
-                SyclBufferAccess<SelectionIntType, access_mode::write> maskAcc(mask, cgh, DataBuffer::Uninitialized);
-#ifdef OVITO_USE_SYCL_ACPP
-                auto reduction = sycl::reduction(sycl::accessor{numMarkedBuf, cgh, sycl::no_init}, size_t{0}, sycl::plus<size_t>());
-#else
-                auto reduction = sycl::reduction(numMarkedBuf, cgh, size_t{0}, sycl::plus<size_t>(), sycl::property::reduction::initialize_to_identity{});
-#endif
-                if(sliceWidth <= 0) {
-                    OVITO_SYCL_PARALLEL_FOR(cgh, SliceModifier_particles_kernel1)(sycl::range(mask->size()), reduction, [=](size_t i, auto& red) {
-                        if(!selAcc || selAcc[i]) {
-                            if(plane.pointDistance(posAcc[i]) > 0) {
-                                maskAcc[i] = 1;
-                                red += (size_t)1;
-                            }
-                            else maskAcc[i] = 0;
-                        }
-                        else maskAcc[i] = 0;
-                    });
-                }
-                else {
-                    OVITO_SYCL_PARALLEL_FOR(cgh, SliceModifier_particles_kernel2)(sycl::range(mask->size()), reduction, [=](size_t i, auto& red) {
-                        if(!selAcc || selAcc[i]) {
-                            if(invert == (plane.classifyPoint(posAcc[i], sliceWidth) == 0)) {
-                                maskAcc[i] = 1;
-                                red += (size_t)1;
-                            }
-                            else maskAcc[i] = 0;
-                        }
-                        else maskAcc[i] = 0;
-                    });
-                }
-            });
-        }
-#else
-        BufferWriteAccess<SelectionIntType, access_mode::discard_write> maskAcc(mask);
-        BufferReadAccess<Point3> posAcc = posProperty;
-        BufferReadAccess<SelectionIntType> selAcc = selProperty;
-
-        auto m = maskAcc.begin();
-        if(sliceWidth <= 0) {
-            if(selAcc) {
-                const auto* s = selAcc.cbegin();
-                for(const Point3& p : posAcc) {
-                    this_task::throwIfCanceled();
-                    if(*s++ && plane.pointDistance(p) > 0) {
-                        *m = 1;
-                        numMarked++;
-                    }
-                    else *m = 0;
-                    ++m;
-                }
-            }
-            else {
-                for(const Point3& p : posAcc) {
-                    this_task::throwIfCanceled();
-                    if(plane.pointDistance(p) > 0) {
-                        *m = 1;
-                        numMarked++;
-                    }
-                    else *m = 0;
-                    ++m;
-                }
-            }
-        }
-        else {
-            if(selAcc) {
-                const auto* s = selAcc.cbegin();
-                for(const Point3& p : posAcc) {
-                    this_task::throwIfCanceled();
-                    if(*s++ && invert == (plane.classifyPoint(p, sliceWidth) == 0)) {
-                        *m = 1;
-                        numMarked++;
-                    }
-                    else *m = 0;
-                    ++m;
-                }
-            }
-            else {
-                for(const Point3& p : posAcc) {
-                    this_task::throwIfCanceled();
-                    if(invert == (plane.classifyPoint(p, sliceWidth) == 0)) {
-                        *m = 1;
-                        numMarked++;
-                    }
-                    else *m = 0;
-                    ++m;
-                }
-            }
-        }
-        OVITO_ASSERT(m == maskAcc.end());
-        posAcc.reset();
-        selAcc.reset();
-        maskAcc.reset();
-#endif
+        // Number of marked/selected particles.
+        size_t numMarked = SliceModifier::sliceCoordinatesToMask(plane, sliceWidth, invert, posProperty, mask, selProperty);
 
         QString statusMessage = tr("%1 input particles").arg(inputParticles->elementCount());
 

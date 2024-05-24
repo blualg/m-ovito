@@ -36,6 +36,7 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/lines/Lines.h>
+#include <ovito/stdobj/vectors/Vectors.h>
 #include "SliceModifier.h"
 
 namespace Ovito {
@@ -69,6 +70,9 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SliceModifier, widthController, WorldParame
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LinesSliceModifierDelegate);
 OVITO_CLASSINFO(LinesSliceModifierDelegate, "DisplayName", "Lines");
+
+IMPLEMENT_CREATABLE_OVITO_CLASS(VectorsSliceModifierDelegate);
+OVITO_CLASSINFO(VectorsSliceModifierDelegate, "DisplayName", "Vectors");
 
 /******************************************************************************
  * Asks the metaclass which data objects in the given input data collection the
@@ -118,6 +122,199 @@ Future<PipelineFlowState> LinesSliceModifierDelegate::apply(const ModifierEvalua
     }
 
     return state;
+}
+
+/******************************************************************************
+ * Asks the metaclass which data objects in the given input data collection the
+ * modifier delegate can operate on.
+ ******************************************************************************/
+QVector<DataObjectReference> VectorsSliceModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all vectors objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Vectors::OOClass())) {
+        objects.push_back(path);
+    }
+
+    return objects;
+}
+
+/******************************************************************************
+ * Performs the slicing of the vectors.
+ ******************************************************************************/
+Future<PipelineFlowState> VectorsSliceModifierDelegate::apply(
+    const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState,
+    const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+{
+    SliceModifier* modifier = static_object_cast<SliceModifier>(request.modifier());
+    bool applyToSelection = modifier->applyToSelection();
+
+    // Obtain modifier parameter values.
+    Plane3 plane;
+    FloatType sliceWidth;
+    std::tie(plane, sliceWidth) = modifier->slicingPlane(request.time(), state.mutableStateValidity(), state);
+    sliceWidth /= 2;
+
+    return asyncLaunch([state = std::move(state), plane, sliceWidth, invert = modifier->inverse(),
+                        createSelection = modifier->createSelection(), applyToSelection]() mutable {
+        // Loop over all vectors objects in the data collection
+        for(const DataObject* obj : state.data()->objects()) {
+            // Slice the vectors.
+            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(obj)) {
+                inputVectors->verifyIntegrity();
+
+                // Create mask array to be computed.
+                PropertyPtr maskProperty = Vectors::OOClass().createStandardProperty(
+                    DataBuffer::Uninitialized, inputVectors->elementCount(), Property::GenericSelectionProperty);
+
+                // Get the input basis points.
+                ConstPropertyPtr positionProperty = inputVectors->expectProperty(Vectors::PositionProperty);
+
+                // Check if there is a selection property present.
+                const Property* selectionProperty = (applyToSelection) ? inputVectors->expectProperty(Vectors::SelectionProperty) : nullptr;
+
+                // Number of marked/selected particles.
+                size_t numMarked =
+                    SliceModifier::sliceCoordinatesToMask(plane, sliceWidth, invert, positionProperty, maskProperty, selectionProperty);
+
+                // Make sure we can safely modify the vectors object.
+                Vectors* outputVectors = state.makeMutable(inputVectors);
+                if(createSelection == false) {
+                    outputVectors->deleteElements(std::move(maskProperty), numMarked);
+                }
+                else {
+                    outputVectors->createProperty(std::move(maskProperty));
+                }
+                outputVectors->verifyIntegrity();
+            }
+        }
+        return std::move(state);
+    });
+}
+
+size_t SliceModifier::sliceCoordinatesToMask(Plane3 plane, FloatType sliceWidth, bool invert, const Property* positionProperty,
+                                             Property* maskProperty, const Property* selectionProperty)
+{
+    // Number of marked/selected particles.
+    size_t numMarked = 0;
+
+#ifdef OVITO_USE_SYCL
+    if(maskProperty->size() != 0) {
+        // This is a single-element counter variable that will be incremented by the kernel for each marked element.
+        sycl::buffer<size_t> numMarkedBuf(&numMarked, 1);
+
+        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            // Access the input coordinates.
+            SyclBufferAccess<Point3, access_mode::read> posAcc(positionProperty, cgh);
+            // Access the input selection flags.
+            SyclBufferAccess<SelectionIntType, access_mode::read> selAcc(selectionProperty, cgh);
+            // Access output flags array.
+            SyclBufferAccess<SelectionIntType, access_mode::write> maskAcc(maskProperty, cgh, DataBuffer::Uninitialized);
+#ifdef OVITO_USE_SYCL_ACPP
+            auto reduction = sycl::reduction(sycl::accessor{numMarkedBuf, cgh, sycl::no_init}, size_t{0}, sycl::plus<size_t>());
+#else
+            auto reduction =
+                sycl::reduction(numMarkedBuf, cgh, size_t{0}, sycl::plus<size_t>(), sycl::property::reduction::initialize_to_identity{});
+#endif
+            if(sliceWidth <= 0) {
+                OVITO_SYCL_PARALLEL_FOR(cgh, SliceModifier_particles_kernel1)
+                (sycl::range(maskProperty->size()), reduction, [=](size_t i, auto& red) {
+                    if(!selAcc || selAcc[i]) {
+                        if(plane.pointDistance(posAcc[i]) > 0) {
+                            maskAcc[i] = 1;
+                            red += (size_t)1;
+                        }
+                        else
+                            maskAcc[i] = 0;
+                    }
+                    else
+                        maskAcc[i] = 0;
+                });
+            }
+            else {
+                OVITO_SYCL_PARALLEL_FOR(cgh, SliceModifier_particles_kernel2)
+                (sycl::range(mask->size()), reduction, [=](size_t i, auto& red) {
+                    if(!selAcc || selAcc[i]) {
+                        if(invert == (plane.classifyPoint(posAcc[i], sliceWidth) == 0)) {
+                            maskAcc[i] = 1;
+                            red += (size_t)1;
+                        }
+                        else
+                            maskAcc[i] = 0;
+                    }
+                    else
+                        maskAcc[i] = 0;
+                });
+            }
+        });
+    }
+#else
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> maskAccess(maskProperty);
+    BufferReadAccess<Point3> positionAccess(positionProperty);
+    BufferReadAccess<SelectionIntType> selectionAccess(selectionProperty);
+
+    auto maskIter = maskAccess.begin();
+    if(sliceWidth <= 0) {
+        if(selectionAccess) {
+            const auto* selIter = selectionAccess.cbegin();
+            for(const Point3& p : positionAccess) {
+                this_task::throwIfCanceled();
+                if(*selIter++ && plane.pointDistance(p) > 0) {
+                    *maskIter = 1;
+                    numMarked++;
+                }
+                else
+                    *maskIter = 0;
+                ++maskIter;
+            }
+        }
+        else {
+            for(const Point3& p : positionAccess) {
+                this_task::throwIfCanceled();
+                if(plane.pointDistance(p) > 0) {
+                    *maskIter = 1;
+                    numMarked++;
+                }
+                else
+                    *maskIter = 0;
+                ++maskIter;
+            }
+        }
+    }
+    else {
+        if(selectionAccess) {
+            const auto* selIter = selectionAccess.cbegin();
+            for(const Point3& p : positionAccess) {
+                this_task::throwIfCanceled();
+                if(*selIter++ && invert == (plane.classifyPoint(p, sliceWidth) == 0)) {
+                    *maskIter = 1;
+                    numMarked++;
+                }
+                else
+                    *maskIter = 0;
+                ++maskIter;
+            }
+        }
+        else {
+            for(const Point3& p : positionAccess) {
+                this_task::throwIfCanceled();
+                if(invert == (plane.classifyPoint(p, sliceWidth) == 0)) {
+                    *maskIter = 1;
+                    numMarked++;
+                }
+                else
+                    *maskIter = 0;
+                ++maskIter;
+            }
+        }
+    }
+    OVITO_ASSERT(maskIter == maskAccess.end());
+    positionAccess.reset();
+    selectionAccess.reset();
+    maskAccess.reset();
+#endif
+
+    return numMarked;
 }
 
 /******************************************************************************
