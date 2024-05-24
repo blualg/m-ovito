@@ -45,6 +45,8 @@ OVITO_STANDARD_PLUGIN(StdObj
         simcell/PeriodicDomainObject.cpp
         table/DataTable.cpp
         util/ElementSelectionSet.cpp
+        vectors/Vectors.cpp
+        vectors/VectorVis.cpp
     LIB_DEPENDENCIES
         muParser
     PRECOMPILED_HEADERS

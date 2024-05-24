@@ -20,16 +20,14 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/Particles.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
+#include <ovito/stdobj/properties/PropertyContainer.h>
 #include "VectorVis.h"
-#include "ParticlesVis.h"
 
 namespace Ovito {
 
@@ -112,14 +110,18 @@ Box3 VectorVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPa
     if(!container)
         return {};
 
-    auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState, ExecutionContext::current().ui().datasetContainer().visCache()->acquireResourceFrame());
-    OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
-    OVITO_ASSERT(!basePositions || basePositions->dataType() == Property::FloatDefault);
-    OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::FloatDefault));
-    if(vectorProperty && ((vectorProperty->dataType() != Property::Float32 && vectorProperty->dataType() != Property::Float64) || vectorProperty->componentCount() != 3))
-        vectorProperty = nullptr;
+    VectorData vectorData = container->getVectorVisData(
+        path, flowState, ExecutionContext::current().ui().datasetContainer().visCache()->acquireResourceFrame());
+    OVITO_ASSERT(!vectorData.basePositions || vectorData.basePositions->size() == container->elementCount());
+    OVITO_ASSERT(!vectorData.basePositions || vectorData.basePositions->dataType() == Property::FloatDefault);
+    OVITO_ASSERT(!vectorData.basePositions ||
+                 (vectorData.basePositions->componentCount() == 3 && vectorData.basePositions->dataType() == DataBuffer::FloatDefault));
+    if(vectorData.vectorProperty &&
+       ((vectorData.vectorProperty->dataType() != Property::Float32 && vectorData.vectorProperty->dataType() != Property::Float64) ||
+        vectorData.vectorProperty->componentCount() != 3))
+        vectorData.vectorProperty = nullptr;
 
-    return arrowBoundingBox(vectorProperty, basePositions);
+    return arrowBoundingBox(vectorData.vectorProperty, vectorData.basePositions);
 }
 
 /******************************************************************************
@@ -187,26 +189,31 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
     PipelineStatus status;
 
     // Get input data.
-    const PropertyContainer* container = path.lastAs<PropertyContainer>(1);
-    if(!container)
-        return {};
-    container->verifyIntegrity();
-    auto [basePositions, vectorProperty] = container->getVectorVisData(path, flowState, frameGraph.visCache());
-    OVITO_ASSERT(!basePositions || basePositions->size() == container->elementCount());
-    OVITO_ASSERT(!basePositions || basePositions->dataType() == DataBuffer::FloatDefault);
-    OVITO_ASSERT(!basePositions || (basePositions->componentCount() == 3 && basePositions->dataType() == DataBuffer::FloatDefault));
-    if(vectorProperty && ((vectorProperty->dataType() != Property::Float32 && vectorProperty->dataType() != Property::Float64) || vectorProperty->componentCount() != 3))
-        vectorProperty.reset();
-
-    const Property* vectorColorProperty = nullptr;
-    const Property* vectorTransparencyProperty = nullptr;
-    if(const Particles* particles = dynamic_object_cast<Particles>(container)) {
-        vectorColorProperty = particles->getProperty(Particles::VectorColorProperty);
-        vectorTransparencyProperty = particles->getProperty(Particles::VectorTransparencyProperty);
+    DataOORef<const PropertyContainer> container = nullptr;
+    // Check last element in path:
+    if(path.size() >= 1) {
+        container = dynamic_object_cast<const PropertyContainer>(std::move(path[path.size() - 1]));
     }
+    // If last element is not the container - check second to last element:
+    if(!container && path.size() >= 2) {
+        container = dynamic_object_cast<const PropertyContainer>(std::move(path[path.size() - 2]));
+    }
+    if(!container) {
+        return {};
+    }
+    container->verifyIntegrity();
+    VectorData vectorData = container->getVectorVisData(path, flowState, frameGraph.visCache());
+    OVITO_ASSERT(!vectorData.basePositions || vectorData.basePositions->size() == container->elementCount());
+    OVITO_ASSERT(!vectorData.basePositions || vectorData.basePositions->dataType() == DataBuffer::FloatDefault);
+    OVITO_ASSERT(!vectorData.basePositions ||
+                 (vectorData.basePositions->componentCount() == 3 && vectorData.basePositions->dataType() == DataBuffer::FloatDefault));
+    if(vectorData.vectorProperty &&
+       ((vectorData.vectorProperty->dataType() != Property::Float32 && vectorData.vectorProperty->dataType() != Property::Float64) ||
+        vectorData.vectorProperty->componentCount() != 3))
+        vectorData.vectorProperty.reset();
 
     // Make sure we don't exceed our internal limits.
-    if(vectorProperty && vectorProperty->size() > (size_t)std::numeric_limits<int>::max()) {
+    if(vectorData.vectorProperty && vectorData.vectorProperty->size() > (size_t)std::numeric_limits<int>::max()) {
         throw Exception(tr("This version of OVITO cannot render more than %1 vector arrows.").arg(std::numeric_limits<int>::max()));
     }
 
@@ -214,7 +221,7 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
     const Property* pseudoColorProperty = nullptr;
     int pseudoColorPropertyComponent = 0;
     PseudoColorMapping pseudoColorMapping;
-    if(coloringMode() == PseudoColoring && colorMapping() && colorMapping()->sourceProperty() && !vectorColorProperty) {
+    if(coloringMode() == PseudoColoring && colorMapping() && colorMapping()->sourceProperty() && !vectorData.vectorColorProperty) {
         QString errorDescription;
         std::tie(pseudoColorProperty, pseudoColorPropertyComponent) = colorMapping()->sourceProperty().findInContainerWithComponent(container, errorDescription);
         if(!pseudoColorProperty) {
@@ -250,30 +257,21 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
         transparency = transparencyController()->getFloatValue(frameGraph.time(), iv);
 
     // Lookup the rendering primitive in the vis cache.
-    auto& [arrows, pickInfo] = frameGraph.visCache().lookup<std::pair<CylinderPrimitive, OORef<VectorPickInfo>>>(CacheKey(
-            vectorProperty,
-            basePositions,
-            shadingMode(),
-            scalingFactor(),
-            arrowWidth(),
-            arrowColor(),
-            transparency,
-            reverseArrowDirection(),
-            arrowPosition(),
-            vectorColorProperty,
-            vectorTransparencyProperty,
-            pseudoColorProperty,
-            pseudoColorPropertyComponent,
-            pseudoColorMapping));
+    auto& [arrows, pickInfo] = frameGraph.visCache().lookup<std::pair<CylinderPrimitive, OORef<VectorPickInfo>>>(
+        CacheKey(vectorData.vectorProperty, vectorData.basePositions, shadingMode(), scalingFactor(), arrowWidth(), arrowColor(),
+                 transparency, reverseArrowDirection(), arrowPosition(), vectorData.vectorColorProperty,
+                 vectorData.vectorTransparencyProperty, pseudoColorProperty, pseudoColorPropertyComponent, pseudoColorMapping));
 
     // Check if we already have a valid rendering primitive that is up to date.
     if(!arrows.basePositions()) {
 
         // Determine number of non-zero vectors.
         int vectorCount = 0;
-        BufferReadAccess<Vector_3<float>> vectorData32(vectorProperty->dataType() == DataBuffer::Float32 ? vectorProperty : nullptr);
-        BufferReadAccess<Vector_3<double>> vectorData64(vectorProperty->dataType() == DataBuffer::Float64 ? vectorProperty : nullptr);
-        if(basePositions) {
+        BufferReadAccess<Vector_3<float>> vectorData32(
+            vectorData.vectorProperty->dataType() == DataBuffer::Float32 ? vectorData.vectorProperty : nullptr);
+        BufferReadAccess<Vector_3<double>> vectorData64(
+            vectorData.vectorProperty->dataType() == DataBuffer::Float64 ? vectorData.vectorProperty : nullptr);
+        if(vectorData.basePositions) {
             if(vectorData32) {
                 for(const auto& v : vectorData32) {
                     if(v != Vector_3<float>::Zero())
@@ -291,17 +289,19 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
         // Allocate data buffers.
         BufferFactory<Point3G> arrowBasePositions(vectorCount);
         BufferFactory<Point3G> arrowHeadPositions(vectorCount);
-        BufferFactory<ColorG> arrowColors = (vectorColorProperty || pseudoColorProperty) ? BufferFactory<ColorG>(vectorCount) : BufferFactory<ColorG>{};
-        BufferFactory<GraphicsFloatType> arrowTransparencies = vectorTransparencyProperty ? BufferFactory<GraphicsFloatType>(vectorCount) : BufferFactory<GraphicsFloatType>{};
+        BufferFactory<ColorG> arrowColors =
+            (vectorData.vectorColorProperty || pseudoColorProperty) ? BufferFactory<ColorG>(vectorCount) : BufferFactory<ColorG>{};
+        BufferFactory<GraphicsFloatType> arrowTransparencies =
+            vectorData.vectorTransparencyProperty ? BufferFactory<GraphicsFloatType>(vectorCount) : BufferFactory<GraphicsFloatType>{};
 
         // Fill data buffers.
         if(vectorCount) {
             FloatType scalingFac = scalingFactor();
             if(reverseArrowDirection())
                 scalingFac = -scalingFac;
-            BufferReadAccess<Point3> basePositionData(basePositions);
-            BufferReadAccess<ColorG> vectorColorData(vectorColorProperty);
-            BufferReadAccess<GraphicsFloatType> vectorTransparencyData(vectorTransparencyProperty);
+            BufferReadAccess<Point3> basePositionData(vectorData.basePositions);
+            BufferReadAccess<ColorG> vectorColorData(vectorData.vectorColorProperty);
+            BufferReadAccess<GraphicsFloatType> vectorTransparencyData(vectorData.vectorTransparencyProperty);
             RawBufferReadAccess vectorPseudoColorData(pseudoColorProperty);
             size_t outIndex = 0;
             const auto arrowPosition = this->arrowPosition();
@@ -316,12 +316,11 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
                         base -= v * GraphicsFloatType(0.5);
                     arrowBasePositions[outIndex] = base;
                     arrowHeadPositions[outIndex] = base + v;
-                    if(vectorColorProperty)
+                    if(vectorData.vectorColorProperty)
                         arrowColors[outIndex] = vectorColorData[inIndex];
                     else if(pseudoColorProperty)
                         arrowColors[outIndex] = pseudoColorMapping.valueToColor(vectorPseudoColorData.get<GraphicsFloatType>(inIndex, pseudoColorPropertyComponent));
-                    if(vectorTransparencyProperty)
-                        arrowTransparencies[outIndex] = vectorTransparencyData[inIndex];
+                    if(vectorData.vectorTransparencyProperty) arrowTransparencies[outIndex] = vectorTransparencyData[inIndex];
                     outIndex++;
                 }
             }

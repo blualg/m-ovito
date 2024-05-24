@@ -74,8 +74,9 @@ public:
         setIdentifier(OOClass().pythonName());
     }
 
-    /// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
-    virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, const RendererResourceCache::ResourceFrame& visCache) const override;
+    /// Returns the data for visualizing a vector property from this container using a VectorVis element.
+    virtual VectorVis::VectorData getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
+                                                   const RendererResourceCache::ResourceFrame& visCache) const override;
 
     /// Override method to prevent a direct deletion of elements from this container as it would leave the SurfaceMesh in an inconsistent state.
     virtual size_t deleteElements(ConstDataBufferPtr selection, size_t selectionCount = std::numeric_limits<size_t>::max()) override {

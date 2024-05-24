@@ -575,10 +575,10 @@ ConstPropertyPtr Bonds::OOMetaClass::viewportFenceSelection(const QVector<Point2
 }
 
 /******************************************************************************
-* Returns the base point and vector information for visualizing a vector
-* property from this container using a VectorVis element.
-******************************************************************************/
-std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> Bonds::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, const RendererResourceCache::ResourceFrame& visCache) const
+ * Returns the data for visualizing a vector property from this container using a VectorVis element.
+ ******************************************************************************/
+VectorVis::VectorData Bonds::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
+                                              const RendererResourceCache::ResourceFrame& visCache) const
 {
     OVITO_ASSERT(path.lastAs<Bonds>(1) == this);
     verifyIntegrity();
@@ -623,7 +623,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> Bonds::getVectorVisData(const
                 }
                 basePositions = centers.take();
             }
-            return { basePositions, path.lastAs<DataBuffer>() };
+            return {basePositions, path.lastAs<DataBuffer>(), nullptr, nullptr};
         }
     }
     return {};

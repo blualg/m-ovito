@@ -50,7 +50,8 @@ namespace Ovito
     class DataTable;
     class PropertyColorMapping;
     class StandardFrameLoader;
-
+    class Vectors;
+    class VectorVis;
     class BufferPythonAccessGuard; // Note: This class is defined in another plugin module (StdObjPython).
 }
 

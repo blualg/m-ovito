@@ -133,10 +133,10 @@ SurfaceMeshVertices::SurfaceMeshVertices(ObjectInitializationFlags flags) : Prop
 }
 
 /******************************************************************************
-* Returns the base point and vector information for visualizing a vector
-* property from this container using a VectorVis element.
-******************************************************************************/
-std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshVertices::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, const RendererResourceCache::ResourceFrame& visCache) const
+ * Returns the data for visualizing a vector property from this container using a VectorVis element.
+ ******************************************************************************/
+VectorVis::VectorData SurfaceMeshVertices::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
+                                                            const RendererResourceCache::ResourceFrame& visCache) const
 {
     OVITO_ASSERT(path.lastAs<SurfaceMeshVertices>(1) == this);
     if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
@@ -164,7 +164,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshVertices::getVecto
             }
         }
 
-        return { getProperty(PositionProperty), std::move(vectorProperty) };
+        return {getProperty(PositionProperty), std::move(vectorProperty), nullptr, nullptr};
     }
     return {};
 }

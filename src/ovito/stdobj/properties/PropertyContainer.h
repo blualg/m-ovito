@@ -29,6 +29,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include "Property.h"
 #include "PropertyContainerClass.h"
+#include <ovito/stdobj/vectors/VectorVis.h>
 
 namespace Ovito {
 
@@ -234,8 +235,15 @@ public:
     /// If this is not the case, the method throws an exception.
     void verifyIntegrity() const;
 
-    /// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
-    virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, const RendererResourceCache::ResourceFrame& visCache) const { return {}; }
+    /// Returns the data for visualizing a vector property from this container using a VectorVis element.
+    virtual VectorVis::VectorData getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
+                                                   const RendererResourceCache::ResourceFrame& visCache) const
+    {
+        return {};
+    }
+
+    /// Tells a VectorVis element whether per-vector color and transparancy properties are available.
+    virtual std::array<bool, 2> hasVectorVisColorsAndTransparencies() const { return {false, false}; }
 
     /// Generates the info string to be displayed in the OVITO status bar for an element from this container.
     virtual QString elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path = {}) const;

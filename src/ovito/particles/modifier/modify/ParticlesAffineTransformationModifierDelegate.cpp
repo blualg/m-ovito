@@ -22,7 +22,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
-#include <ovito/particles/objects/VectorVis.h>
+#include <ovito/stdobj/vectors/VectorVis.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/SyclBufferAccess.h>

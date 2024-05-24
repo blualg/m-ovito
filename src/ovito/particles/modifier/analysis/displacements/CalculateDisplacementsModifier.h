@@ -24,7 +24,7 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/VectorVis.h>
+#include <ovito/stdobj/vectors/VectorVis.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/modifier/analysis/ReferenceConfigurationModifier.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>

@@ -144,8 +144,9 @@ public:
     /// Returns a property array with the input bond widths.
     ConstPropertyPtr inputBondWidths() const;
 
-    /// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
-    virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, const RendererResourceCache::ResourceFrame& visCache) const override;
+    /// Returns the data for visualizing a vector property from this container using a VectorVis element.
+    virtual VectorVis::VectorData getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
+                                                   const RendererResourceCache::ResourceFrame& visCache) const override;
 };
 
 /**

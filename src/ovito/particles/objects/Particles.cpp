@@ -30,7 +30,7 @@
 #include "Particles.h"
 #include "ParticlesVis.h"
 #include "BondsVis.h"
-#include "VectorVis.h"
+#include <ovito/stdobj/vectors/VectorVis.h>
 #include "ParticleBondMap.h"
 
 namespace Ovito {

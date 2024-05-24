@@ -182,9 +182,18 @@ public:
     /// Returns a vector with the input bond colors.
     ConstPropertyPtr inputBondColors(bool ignoreExistingColorProperty = false) const;
 
-    /// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
-    virtual std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, const RendererResourceCache::ResourceFrame& visCache) const override {
-        return { getProperty(PositionProperty), path.lastAs<DataBuffer>() };
+    /// Returns the data for visualizing a vector property from this container using a VectorVis element.
+    virtual VectorVis::VectorData getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
+                                                   const RendererResourceCache::ResourceFrame& visCache) const override
+    {
+        return {getProperty(PositionProperty), path.lastAs<DataBuffer>(), getProperty(VectorColorProperty),
+                getProperty(VectorTransparencyProperty)};
+    }
+
+    /// Tells a VectorVis element whether per-vector color and transparancy properties are available.
+    virtual std::array<bool, 2> hasVectorVisColorsAndTransparencies() const override
+    {
+        return {getProperty(VectorColorProperty) != nullptr, getProperty(VectorTransparencyProperty) != nullptr};
     }
 
     /// Wraps the coordinates of particles at the periodic boundaries of the simulation cell.

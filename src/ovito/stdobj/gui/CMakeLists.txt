@@ -36,6 +36,7 @@ OVITO_STANDARD_PLUGIN(StdObjGui
         simcell/SimulationCellEditor.cpp
         simcell/SimulationCellVisEditor.cpp
         table/DataTableInspectionApplet.cpp
+        vectors/VectorsInspectionApplet.cpp
         widgets/PropertyReferenceParameterUI.cpp
         widgets/PropertySelectionComboBox.cpp
         widgets/DataTablePlotWidget.cpp

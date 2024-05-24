@@ -22,9 +22,6 @@
 
 #pragma once
 
-
-#include <ovito/particles/Particles.h>
-#include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyColorMapping.h>
 #include <ovito/core/dataset/data/DataVis.h>
@@ -38,21 +35,22 @@ namespace Ovito {
 /**
  * \brief Visualizes vector properties using arrow glyphs.
  */
-class OVITO_PARTICLES_EXPORT VectorVis : public DataVis
+class OVITO_STDOBJ_EXPORT VectorVis : public DataVis
 {
     OVITO_CLASS(VectorVis)
 
 public:
-
     /// The shading modes supported by the vector vis element.
-    enum ShadingMode {
+    enum ShadingMode
+    {
         NormalShading = CylinderPrimitive::ShadingMode::NormalShading,
         FlatShading = CylinderPrimitive::ShadingMode::FlatShading
     };
     Q_ENUM(ShadingMode);
 
     /// The position mode for the arrows.
-    enum ArrowPosition {
+    enum ArrowPosition
+    {
         Base,
         Center,
         Head
@@ -60,22 +58,32 @@ public:
     Q_ENUM(ArrowPosition);
 
     /// The coloring modes supported by the vis element.
-    enum ColoringMode {
+    enum ColoringMode
+    {
         UniformColoring,
         PseudoColoring,
     };
     Q_ENUM(ColoringMode);
 
-public:
+    /// Struct holding the per vector data required by the vis element.
+    struct VectorData {
+        ConstDataBufferPtr basePositions = nullptr;
+        ConstDataBufferPtr vectorProperty = nullptr;
+        ConstDataBufferPtr vectorColorProperty = nullptr;
+        ConstDataBufferPtr vectorTransparencyProperty = nullptr;
+    };
 
+public:
     /// Constructor.
     explicit VectorVis(ObjectInitializationFlags flags);
 
     /// Lets the visualization element render the data object.
-    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
+    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph,
+                                  const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the object.
-    virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
+    virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline,
+                                      const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
     /// Returns the transparency parameter.
     FloatType transparency() const { return transparencyController()->getFloatValue(AnimationTime(0)); }
@@ -84,11 +92,9 @@ public:
     void setTransparency(FloatType t) { transparencyController()->setFloatValue(AnimationTime(0), t); }
 
 public:
-
     Q_PROPERTY(Ovito::VectorVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
 
 protected:
-
     /// Computes the bounding box of the arrows.
     Box3 arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuffer* basePositions) const;
 
@@ -96,7 +102,6 @@ protected:
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 protected:
-
     /// Reverses of the arrow pointing direction.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reverseArrowDirection, setReverseArrowDirection);
     DECLARE_SHADOW_PROPERTY_FIELD(reverseArrowDirection);
@@ -138,15 +143,16 @@ protected:
  * \brief This information record is attached to the arrows by the VectorVis when rendering
  * them in the viewports. It facilitates the picking of arrows with the mouse.
  */
-class OVITO_PARTICLES_EXPORT VectorPickInfo : public ObjectPickInfo
+class OVITO_STDOBJ_EXPORT VectorPickInfo : public ObjectPickInfo
 {
     OVITO_CLASS(VectorPickInfo)
 
 public:
-
     /// Constructor.
-    explicit VectorPickInfo(VectorVis* visElement, const ConstDataObjectPath& dataPath) :
-        _visElement(visElement), _dataPath(dataPath.begin(), dataPath.end()) {}
+    explicit VectorPickInfo(VectorVis* visElement, const ConstDataObjectPath& dataPath)
+        : _visElement(visElement), _dataPath(dataPath.begin(), dataPath.end())
+    {
+    }
 
     /// Returns the data collection path to the vector property.
     const ConstDataObjectRefPath& dataPath() const { return _dataPath; }
@@ -159,7 +165,6 @@ public:
     size_t elementIndexFromSubObjectID(quint32 subobjID) const;
 
 private:
-
     /// The vis element that rendered the arrows.
     OORef<VectorVis> _visElement;
 
@@ -167,4 +172,4 @@ private:
     ConstDataObjectRefPath _dataPath;
 };
 
-}   // End of namespace
+}  // namespace Ovito

@@ -137,10 +137,10 @@ QString SurfaceMeshFaces::OOMetaClass::formatDataObjectPath(const ConstDataObjec
 }
 
 /******************************************************************************
-* Returns the base point and vector information for visualizing a vector
-* property from this container using a VectorVis element.
-******************************************************************************/
-std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state, const RendererResourceCache::ResourceFrame& visCache) const
+ * Returns the data for visualizing a vector property from this container using a VectorVis element.
+ ******************************************************************************/
+VectorVis::VectorData SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
+                                                         const RendererResourceCache::ResourceFrame& visCache) const
 {
     OVITO_ASSERT(path.lastAs<SurfaceMeshFaces>(1) == this);
     if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
@@ -195,7 +195,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> SurfaceMeshFaces::getVectorVi
             if(filteredVectors)
                 vectorProperty = filteredVectors.take();
         }
-        return { basePositions, vectorProperty };
+        return {basePositions, vectorProperty, nullptr, nullptr};
     }
     return {};
 }

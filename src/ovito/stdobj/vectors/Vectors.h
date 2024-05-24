@@ -24,14 +24,13 @@
 
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/core/utilities/linalg/LinAlg.h>
 
 namespace Ovito {
 
 /**
- * \brief Stores a set of (poly)lines.
+ * \brief Stores a set of vectors for visualization.
  */
-class OVITO_STDOBJ_EXPORT Lines : public PropertyContainer
+class OVITO_STDOBJ_EXPORT Vectors : public PropertyContainer
 {
 public:
     /// Define a new property metaclass for this property container type.
@@ -50,42 +49,36 @@ public:
         virtual void initialize() override;
     };
 
-    OVITO_CLASS_META(Lines, OOMetaClass);
+    OVITO_CLASS_META(Vectors, OOMetaClass);
 
 public:
     /// \brief The list of standard properties.
     enum Type
     {
-        ColorProperty = Property::GenericColorProperty,
         PositionProperty = Property::FirstSpecificProperty,
-        SampleTimeProperty, // Is used by the GenerateTrajectoryLinesModifier
-        SectionProperty
+        ColorProperty = Property::GenericColorProperty,
+        TransparencyProperty,
+        DirectionProperty,
+        DirectionMagnitudeProperty,
     };
 
     /// \brief Constructor.
-    explicit Lines(ObjectInitializationFlags flags);
+    explicit Vectors(ObjectInitializationFlags flags);
 
-    /// Returns the data for visualizing a vector property from this container using a VectorVis element.
-    VectorVis::VectorData getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
-                                           const RendererResourceCache::ResourceFrame& visCache) const override;
-
-private:
-
-    /// Tests whether the given spatial point is culled by the cutting planes set for this object.
-    bool isPointCulled(const Point3& p) const {
-        for(const Plane3& plane : cuttingPlanes()) {
-            if(plane.classifyPoint(p) > 0) {
-                return true;
-            }
-        }
-        return false;
+    /// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
+    virtual VectorVis::VectorData getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
+                                                   const RendererResourceCache::ResourceFrame& visCache) const override
+    {
+        return {getProperty(PositionProperty), getProperty(DirectionProperty), getProperty(ColorProperty),
+                getProperty(TransparencyProperty)};
     }
 
-    /// The planar cuts to be applied to geometry after its has been transformed into a non-periodic representation.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QVector<Plane3>, cuttingPlanes, setCuttingPlanes);
+    virtual std::array<bool, 2> hasVectorVisColorsAndTransparencies() const override
+    {
+        return {getProperty(ColorProperty) != nullptr, getProperty(TransparencyProperty) != nullptr};
+    }
 
-    /// The cached bounding box of the vertex coordinates.
-    Box3 _boundingBox;
+private:
 };
 
 }  // namespace Ovito

@@ -134,11 +134,10 @@ Lines::Lines(ObjectInitializationFlags flags) : PropertyContainer(flags)
 }
 
 /******************************************************************************
- * Returns the base point and vector information for visualizing a vector
- * property from this container using a VectorVis element.
+ * Returns the data for visualizing a vector property from this container using a VectorVis element.
  ******************************************************************************/
-std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> Lines::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
-                                                                           const RendererResourceCache::ResourceFrame& visCache) const
+VectorVis::VectorData Lines::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
+                                              const RendererResourceCache::ResourceFrame& visCache) const
 {
     // Get lines object
     if(const Lines* lines = path.lastAs<Lines>(1)) {
@@ -196,7 +195,7 @@ std::tuple<ConstDataBufferPtr, ConstDataBufferPtr> Lines::getVectorVisData(const
                             filteredVectors = vecOutAcc.take();
                         }
                     }
-                    return { filteredPositions, filteredVectors };
+                    return {filteredPositions, filteredVectors, nullptr, nullptr};
                 }
             }
         }

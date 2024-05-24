@@ -34,7 +34,6 @@ SET(SourceFiles
     objects/Angles.cpp
     objects/Dihedrals.cpp
     objects/Impropers.cpp
-    objects/VectorVis.cpp
     modifier/coloring/AmbientOcclusionModifier.cpp
     modifier/modify/WrapPeriodicImagesModifier.cpp
     modifier/modify/UnwrapTrajectoriesModifier.cpp

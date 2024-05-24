@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/particles/objects/VectorVis.h>
+#include <ovito/stdobj/vectors/VectorVis.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
@@ -132,15 +132,22 @@ void VectorVisEditor::updateColoringOptions()
 {
     // Retrieve the PropertyContainer containing the vector property this vis element is associated with.
     ConstDataObjectRefPath path = getVisDataObjectPath();
-    DataOORef<const PropertyContainer> container = path.size() >= 2 ? dynamic_object_cast<const PropertyContainer>(std::move(path[path.size() - 2])) : nullptr;
+
+    // Get input data.
+    DataOORef<const PropertyContainer> container = nullptr;
+    // Check last element in path:
+    if(path.size() >= 1) {
+        container = dynamic_object_cast<const PropertyContainer>(std::move(path[path.size() - 1]));
+    }
+    // If last element is not the container - check second to last element:
+    if(!container && path.size() >= 2) {
+        container = dynamic_object_cast<const PropertyContainer>(std::move(path[path.size() - 2]));
+    }
 
     // Do the vector arrows, which are associated with the particles, have explicit RGB colors assigned ("Vector Color" property exists)?
     // Do the vector arrows, which are associated with the particles, have explicit transparency values assigned ("Vector Transparency" property exists)?
-    bool hasExplicitColors = false, hasExplicitTransparencies = false;
-    if(const Particles* particles = dynamic_object_cast<Particles>(container.get())) {
-        hasExplicitColors = particles->getProperty(Particles::VectorColorProperty) != nullptr;
-        hasExplicitTransparencies = particles->getProperty(Particles::VectorTransparencyProperty) != nullptr;
-    }
+    auto [hasExplicitColors, hasExplicitTransparencies] =
+        container ? container->hasVectorVisColorsAndTransparencies() : std::array<bool, 2>{{false, false}};
 
     VectorVis::ColoringMode coloringMode = editObject() ? static_object_cast<VectorVis>(editObject())->coloringMode() : VectorVis::UniformColoring;
     if(container && coloringMode == VectorVis::PseudoColoring && !hasExplicitColors) {
