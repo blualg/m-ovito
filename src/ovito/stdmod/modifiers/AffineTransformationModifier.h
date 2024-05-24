@@ -103,6 +103,37 @@ public:
 };
 
 /**
+ * \brief Delegate for the AffineTransformationModifier that operates on vectors.
+ **/
+class OVITO_STDMOD_EXPORT VectorsAffineTransformationModifierDelegate : public AffineTransformationModifierDelegate
+{
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public AffineTransformationModifierDelegate::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using AffineTransformationModifierDelegate::OOMetaClass::OOMetaClass;
+
+        /// Asks the metaclass which data objects in the given input data collection the modifier delegate can operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("vectors"); }
+    };
+
+    OVITO_CLASS_META(VectorsAffineTransformationModifierDelegate, OOMetaClass)
+
+public:
+    /// Constructor.
+    using AffineTransformationModifierDelegate::AffineTransformationModifierDelegate;
+
+    /// Applies this modifier delegate to the data.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state,
+                                            const PipelineFlowState& originalState,
+                                            const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+};
+
+/**
  * \brief This modifier applies an arbitrary affine transformation to the
  *        particles, the simulation box and other entities.
  *

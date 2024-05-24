@@ -22,6 +22,7 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/lines/Lines.h>
+#include <ovito/stdobj/vectors/Vectors.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/simcell/PeriodicDomainObject.h>
 #include <ovito/stdobj/properties/Property.h>
@@ -50,6 +51,8 @@ SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, translationReducedCoordin
 IMPLEMENT_ABSTRACT_OVITO_CLASS(AffineTransformationModifierDelegate);
 IMPLEMENT_CREATABLE_OVITO_CLASS(LinesAffineTransformationModifierDelegate);
 OVITO_CLASSINFO(LinesAffineTransformationModifierDelegate, "DisplayName", "Lines");
+IMPLEMENT_CREATABLE_OVITO_CLASS(VectorsAffineTransformationModifierDelegate);
+OVITO_CLASSINFO(VectorsAffineTransformationModifierDelegate, "DisplayName", "Vectors");
 IMPLEMENT_CREATABLE_OVITO_CLASS(SimulationCellAffineTransformationModifierDelegate);
 OVITO_CLASSINFO(SimulationCellAffineTransformationModifierDelegate, "DisplayName", "Simulation cell");
 
@@ -345,6 +348,77 @@ Future<PipelineFlowState> LinesAffineTransformationModifierDelegate::apply(const
                 // Note: "Selection" property is currently not supported by Lines objects.
                 OVITO_ASSERT(Lines::OOClass().isValidStandardPropertyId(Property::GenericSelectionProperty) == false);
                 AffineTransformationModifier::transformCoordinates(tm, selectionOnly, inputPositionProperty, outputPositionProperty, nullptr);
+            }
+        }
+
+        return std::move(state);
+    });
+}
+
+/******************************************************************************
+ * Asks the metaclass which data objects in the given input data collection the
+ * modifier delegate can operate on.
+ ******************************************************************************/
+QVector<DataObjectReference> VectorsAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjects(
+    const DataCollection& input) const
+{
+    // Gather list of all vectors objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Vectors::OOClass())) {
+        objects.push_back(path);
+    }
+
+    return objects;
+}
+
+/******************************************************************************
+ * Applies the modifier operation to the data in a pipeline flow state.
+ ******************************************************************************/
+Future<PipelineFlowState> VectorsAffineTransformationModifierDelegate::apply(
+    const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState,
+    const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+{
+    AffineTransformationModifier* modifier = static_object_cast<AffineTransformationModifier>(request.modifier());
+
+    // The actual work can be performed in a separate thread.
+    return asyncLaunch([state = std::move(state), tm = modifier->effectiveAffineTransformation(originalState),
+                        selectionOnly = modifier->selectionOnly()]() mutable {
+        // Loop over all vectors objects in the data collection
+        for(const DataObject* obj : state.data()->objects()) {
+            // Transform the vectors.
+            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(obj)) {
+                // Make sure we can safely modify the vectors object.
+                Vectors* outputVectors = state.makeMutable(inputVectors);
+
+                // Transform the basis points
+
+                // Get the input basis points (as strong reference to force creation of a mutable clone below).
+                ConstPropertyPtr inputPositionProperty = inputVectors->expectProperty(Vectors::PositionProperty);
+
+                // Create an uninitialized copy of the position property.
+                Property* outputPositionProperty = outputVectors->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
+
+                // Check if there is a selection property present.
+                const Property* inputSelectionProperty = nullptr;
+                if(selectionOnly && inputVectors->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
+                    inputSelectionProperty = inputVectors->getProperty(Property::GenericSelectionProperty);
+                }
+
+                // Let the modifier class do the actual coordinate transformation work.
+                AffineTransformationModifier::transformCoordinates(tm, selectionOnly, inputPositionProperty, outputPositionProperty,
+                                                                   inputSelectionProperty);
+
+                // Transform the directions
+
+                // Get the input line coordinates (as strong reference to force creation of a mutable clone below).
+                ConstPropertyPtr inputDirectionProperty = inputVectors->expectProperty(Vectors::DirectionProperty);
+
+                // Create an uninitialized copy of the position property.
+                Property* outputDirectionProperty = outputVectors->makePropertyMutable(inputDirectionProperty, DataBuffer::Uninitialized);
+
+                // Let the modifier class do the actual coordinate transformation work.
+                AffineTransformationModifier::transformVectors(tm, selectionOnly, inputDirectionProperty, outputDirectionProperty,
+                                                               inputSelectionProperty);
             }
         }
 
