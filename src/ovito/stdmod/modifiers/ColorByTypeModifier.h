@@ -55,11 +55,6 @@ public:
     /// Implementation of the color-by-type algorithm.
     static void colorByType(const Property* typeProperty, PropertyContainer* container, const ConstDataObjectPath& containerPath = {}, const Property* selection = nullptr);
 
-protected:
-
-    /// Is called when the value of a property of this object has changed.
-    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
-
 private:
 
     /// The input type property that is used as data source for the selection.

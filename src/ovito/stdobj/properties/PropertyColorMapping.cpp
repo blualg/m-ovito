@@ -94,7 +94,7 @@ std::optional<std::pair<FloatType, FloatType>> PropertyColorMapping::determineVa
     FloatType maxValue = std::numeric_limits<FloatType>::lowest();
 
     // Iterate over the property array to find the lowest/highest value.
-    // Nans and infs are ignored.
+    // NaNs and INFs are ignored.
     pseudoColorProperty->forEach(pseudoColorPropertyComponent, [&](size_t i, auto v) {
         if(std::isfinite(static_cast<FloatType>(v)) && (v > maxValue)) maxValue = v;
         if(std::isfinite(static_cast<FloatType>(v)) && (v < minValue)) minValue = v;

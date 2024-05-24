@@ -139,7 +139,7 @@ Future<PipelineFlowState> GrainSegmentationModifier::evaluateModifier(const Modi
         const Property* orientationProperty = particles->getProperty(Particles::OrientationProperty);
         if(!orientationProperty)
             throw Exception(tr("Grain segmentation requires lattice orientation information. Please activate the 'Lattice orientations' option of the PTM modifier."));
-        const Property* correspondenceProperty = particles->expectProperty("Correspondences", Property::Int64);
+        const Property* correspondenceProperty = particles->expectProperty(QStringLiteral("Correspondences"), Property::Int64);
 
         const SimulationCell* simCell = state.expectObject<SimulationCell>();
         if(simCell->is2D())

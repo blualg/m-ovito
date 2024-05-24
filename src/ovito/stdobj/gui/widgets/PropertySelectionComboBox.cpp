@@ -38,16 +38,7 @@ PropertyReference PropertySelectionComboBox::currentProperty() const
         return itemData(index).value<PropertyReference>();
     }
     else {
-        QString name = currentText().simplified();
-        if(!name.isEmpty() && containerClass()) {
-            if(int standardTypeId = containerClass()->standardPropertyTypeId(name))
-                return PropertyReference(containerClass(), standardTypeId);
-            else
-                return PropertyReference(containerClass(), name);
-        }
-        else {
-            return PropertyReference();
-        }
+        return currentText().simplified();
     }
 }
 
@@ -56,17 +47,17 @@ PropertyReference PropertySelectionComboBox::currentProperty() const
 ******************************************************************************/
 void PropertySelectionComboBox::setCurrentProperty(const PropertyReference& property)
 {
-    for(int index = 0; index < count(); index++) {
-        if(property == itemData(index).value<PropertyReference>()) {
-            setCurrentIndex(index);
-            return;
-        }
-    }
-    if(isEditable() && !property.isNull()) {
-        setCurrentText(property.name());
+    int index = findData(QVariant::fromValue(property));
+    if(index >= 0) {
+        setCurrentIndex(index);
     }
     else {
-        setCurrentIndex(-1);
+        if(isEditable() && property) {
+            setCurrentText(property.nameWithComponent());
+        }
+        else {
+            setCurrentIndex(-1);
+        }
     }
 }
 
@@ -78,7 +69,7 @@ void PropertySelectionComboBox::focusOutEvent(QFocusEvent* event)
     if(isEditable()) {
         int index = findText(currentText());
         if(index == -1 && currentText().isEmpty() == false) {
-            addItem(PropertyReference(containerClass(), currentText()));
+            addItem(PropertyReference(currentText()));
             index = count() - 1;
         }
         setCurrentIndex(index);

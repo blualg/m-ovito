@@ -113,7 +113,7 @@ void LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
     }
     textStream() << "ITEM: ATOMS";
 
-    const ParticlesOutputColumnMapping& mapping = columnMapping();
+    const OutputColumnMapping& mapping = columnMapping();
     if(mapping.empty())
         throw Exception(tr("No particle properties have been selected for export to the LAMMPS dump file. Cannot write dump file with zero columns."));
 
@@ -122,32 +122,31 @@ void LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
 
     // Write column names.
     for(size_t i = 0; i < columnWriter.columnCount(); i++) {
-        const PropertyReference& pref = columnWriter.propertyRef(i);
         QString columnName;
-        switch(pref.typeId()) {
+        switch(columnWriter.propertyTypeId(i)) {
         case Particles::PositionProperty:
-            if(pref.vectorComponentIndex() == 0) columnName = QStringLiteral("x");
-            else if(pref.vectorComponentIndex() == 1) columnName = QStringLiteral("y");
-            else if(pref.vectorComponentIndex() == 2) columnName = QStringLiteral("z");
-            else columnName = pref.nameWithComponent();
+            if(columnWriter.vectorComponent(i) == 0) columnName = QStringLiteral("x");
+            else if(columnWriter.vectorComponent(i) == 1) columnName = QStringLiteral("y");
+            else if(columnWriter.vectorComponent(i) == 2) columnName = QStringLiteral("z");
+            else columnName = columnWriter.columnName(i);
             break;
         case Particles::VelocityProperty:
-            if(pref.vectorComponentIndex() == 0) columnName = QStringLiteral("vx");
-            else if(pref.vectorComponentIndex() == 1) columnName = QStringLiteral("vy");
-            else if(pref.vectorComponentIndex() == 2) columnName = QStringLiteral("vz");
-            else columnName = pref.nameWithComponent();
+            if(columnWriter.vectorComponent(i) == 0) columnName = QStringLiteral("vx");
+            else if(columnWriter.vectorComponent(i) == 1) columnName = QStringLiteral("vy");
+            else if(columnWriter.vectorComponent(i) == 2) columnName = QStringLiteral("vz");
+            else columnName = columnWriter.columnName(i);
             break;
         case Particles::ForceProperty:
-            if(pref.vectorComponentIndex() == 0) columnName = QStringLiteral("fx");
-            else if(pref.vectorComponentIndex() == 1) columnName = QStringLiteral("fy");
-            else if(pref.vectorComponentIndex() == 2) columnName = QStringLiteral("fz");
-            else columnName = pref.nameWithComponent();
+            if(columnWriter.vectorComponent(i) == 0) columnName = QStringLiteral("fx");
+            else if(columnWriter.vectorComponent(i) == 1) columnName = QStringLiteral("fy");
+            else if(columnWriter.vectorComponent(i) == 2) columnName = QStringLiteral("fz");
+            else columnName = columnWriter.columnName(i);
             break;
         case Particles::PeriodicImageProperty:
-            if(pref.vectorComponentIndex() == 0) columnName = QStringLiteral("ix");
-            else if(pref.vectorComponentIndex() == 1) columnName = QStringLiteral("iy");
-            else if(pref.vectorComponentIndex() == 2) columnName = QStringLiteral("iz");
-            else columnName = pref.nameWithComponent();
+            if(columnWriter.vectorComponent(i) == 0) columnName = QStringLiteral("ix");
+            else if(columnWriter.vectorComponent(i) == 1) columnName = QStringLiteral("iy");
+            else if(columnWriter.vectorComponent(i) == 2) columnName = QStringLiteral("iz");
+            else columnName = columnWriter.columnName(i);
             break;
         case Particles::IdentifierProperty: columnName = QStringLiteral("id"); break;
         case Particles::TypeProperty: columnName = QStringLiteral("type"); break;
@@ -159,17 +158,17 @@ void LAMMPSDumpExporter::exportData(const PipelineFlowState& state, int frameNum
         case Particles::PotentialEnergyProperty: columnName = QStringLiteral("c_epot"); break;
         case Particles::KineticEnergyProperty: columnName = QStringLiteral("c_kpot"); break;
         case Particles::OrientationProperty:
-            if(pref.vectorComponentIndex() == 0) columnName = QStringLiteral("quati");
-            else if(pref.vectorComponentIndex() == 1) columnName = QStringLiteral("quatj");
-            else if(pref.vectorComponentIndex() == 2) columnName = QStringLiteral("quatk");
-            else if(pref.vectorComponentIndex() == 3) columnName = QStringLiteral("quatw");
-            else columnName = pref.nameWithComponent();
+            if(columnWriter.vectorComponent(i) == 0) columnName = QStringLiteral("quati");
+            else if(columnWriter.vectorComponent(i) == 1) columnName = QStringLiteral("quatj");
+            else if(columnWriter.vectorComponent(i) == 2) columnName = QStringLiteral("quatk");
+            else if(columnWriter.vectorComponent(i) == 3) columnName = QStringLiteral("quatw");
+            else columnName = columnWriter.columnName(i);
             break;
         case Particles::AsphericalShapeProperty:
-            if(pref.vectorComponentIndex() == 0) columnName = QStringLiteral("c_shape[1]");
-            else if(pref.vectorComponentIndex() == 1) columnName = QStringLiteral("c_shape[2]");
-            else if(pref.vectorComponentIndex() == 2) columnName = QStringLiteral("c_shape[3]");
-            else columnName = pref.nameWithComponent();
+            if(columnWriter.vectorComponent(i) == 0) columnName = QStringLiteral("c_shape[1]");
+            else if(columnWriter.vectorComponent(i) == 1) columnName = QStringLiteral("c_shape[2]");
+            else if(columnWriter.vectorComponent(i) == 2) columnName = QStringLiteral("c_shape[3]");
+            else columnName = columnWriter.columnName(i);
             break;
         default:
             columnName = columnWriter.columnName(i);

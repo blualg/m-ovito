@@ -148,7 +148,7 @@ void PropertyReferenceParameterUI::updateUI()
             int selIndex = _comboBox->propertyIndex(pref);
             static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.png"));
             if(selIndex < 0) {
-                if(!pref.isNull() && pref.containerClass() == containerClass()) {
+                if(pref) {
                     // Add a place-holder item if the selected property does not exist anymore.
                     _comboBox->addItem(pref, tr("%1 (not available)").arg(pref.name()));
                     QStandardItem* item = static_cast<QStandardItemModel*>(_comboBox->model())->item(_comboBox->count()-1);
@@ -168,9 +168,9 @@ void PropertyReferenceParameterUI::updateUI()
             _comboBox->setCurrentIndex(selIndex);
         }
         else {
-            if(_comboBox->count() == 0) {
-                for(int typeId : containerClass()->standardPropertyIds())
-                    _comboBox->addItem(PropertyReference(containerClass(), typeId));
+            if(_comboBox->count() == 0 && containerClass()) {
+                for(const auto& [propertyName, typeId] : containerClass()->standardPropertyIds())
+                    _comboBox->addItem(PropertyReference(propertyName));
             }
             _comboBox->setCurrentProperty(pref);
         }
@@ -197,7 +197,7 @@ void PropertyReferenceParameterUI::addItemsToComboBox(const PipelineFlowState& s
 void PropertyReferenceParameterUI::addItemsToComboBox(const PropertyContainer* container)
 {
     if(!_nullPropertyItem.isEmpty())
-        _comboBox->addItem(PropertyReference{}, _nullPropertyItem);
+        _comboBox->addItem(PropertyReference(), _nullPropertyItem);
 
     for(const Property* property : container->properties()) {
 
@@ -228,10 +228,11 @@ void PropertyReferenceParameterUI::addItemsToComboBox(const PropertyContainer* c
 ******************************************************************************/
 void PropertyReferenceParameterUI::setEnabled(bool enabled)
 {
-    if(enabled == isEnabled()) return;
+    if(enabled == isEnabled())
+        return;
     PropertyParameterUI::setEnabled(enabled);
     if(comboBox())
-        comboBox()->setEnabled(editObject() != NULL && isEnabled());
+        comboBox()->setEnabled(editObject() != nullptr && isEnabled());
 }
 
 /******************************************************************************

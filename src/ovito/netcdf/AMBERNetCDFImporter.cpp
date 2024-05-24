@@ -507,7 +507,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 
         Property* property = nullptr;
         QString columnName = column.columnName;
-        QString propertyName = column.property.name();
+        auto propertyName = column.property.name();
         int dataType = column.dataType;
         if(dataType == QMetaType::Void)
             continue;
@@ -527,7 +527,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
             continue;
 
         // Create property to load this information into.
-        Particles::Type propertyType = (Particles::Type)column.property.typeId();
+        Particles::Type propertyType = (Particles::Type)column.property.standardTypeId(&Particles::OOClass());
         if(propertyType != Particles::UserProperty) {
             // Create standard property.
             property = particles()->createProperty(DataBuffer::Initialized, propertyType);
@@ -700,7 +700,7 @@ InputColumnInfo AMBERNetCDFImporter::mapVariableToColumn(const QString& name, in
         }
     }
 
-    column.mapToUserProperty(&Particles::OOClass(), Property::makePropertyNameValid(name), dataType);
+    column.mapToUserProperty(Property::makePropertyNameValid(name), dataType);
     return column;
 }
 

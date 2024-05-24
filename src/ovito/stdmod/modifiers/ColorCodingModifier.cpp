@@ -141,32 +141,19 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
     DelegatingModifier::initializeModifier(request);
 
     // When the modifier is inserted, automatically select the most recently added property from the input.
-    if(sourceProperty().isNull() && delegate() && ExecutionContext::isInteractive()) {
+    if(!sourceProperty() && delegate() && ExecutionContext::isInteractive()) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const PropertyContainer* container = input.getLeafObject(delegate()->inputContainerRef())) {
             PropertyReference bestProperty;
             for(const Property* property : container->properties()) {
-                bestProperty = PropertyReference(delegate()->inputContainerClass(), property, (property->componentCount() > 1) ? 0 : -1);
+                bestProperty = PropertyReference(property, (property->componentCount() > 1) ? 0 : -1);
             }
-            if(!bestProperty.isNull())
-                setSourceProperty(bestProperty);
+            setSourceProperty(bestProperty);
         }
 
         // Automatically adjust value range to input.
         adjustRange(request.time());
     }
-}
-
-/******************************************************************************
-* Is called when the value of a reference field of this RefMaker changes.
-******************************************************************************/
-void ColorCodingModifier::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
-{
-    // Whenever the delegate of this modifier is being replaced, update the source property reference.
-    if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing()) {
-        setSourceProperty(sourceProperty().convertToContainerClass(delegate() ? delegate()->inputContainerClass() : nullptr));
-    }
-    DelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -197,19 +184,12 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
 
     // Get the source property.
     const PropertyReference& sourceProperty = modifier->sourceProperty();
-    if(sourceProperty.isNull())
+    if(!sourceProperty)
         throw Exception(tr("No source property was set as input for color coding."));
 
     // Look up the selected property container. Make sure we can safely modify it.
     DataObjectPath containerPath = state.expectMutableObject(inputContainerRef());
     PropertyContainer* container = static_object_cast<PropertyContainer>(containerPath.back());
-
-    // Check if the source property is the right kind of property.
-    if(sourceProperty.containerClass() != &container->getOOMetaClass()) {
-        throw Exception(tr("Color coding modifier was set to operate on '%1', but the selected input is a '%2' property.")
-                            .arg(getOOMetaClass().pythonDataName())
-                            .arg(sourceProperty.containerClass()->propertyClassDisplayName()));
-    }
 
     // Make sure input data structure is ok.
     container->verifyIntegrity();

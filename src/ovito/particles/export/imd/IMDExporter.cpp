@@ -45,32 +45,35 @@ void IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     const AffineTransformation& simCell = simulationCell->cellMatrix();
     size_t atomsCount = particles->elementCount();
 
-    ParticlesOutputColumnMapping colMapping;
-    ParticlesOutputColumnMapping filteredMapping;
+    OutputColumnMapping colMapping;
+    OutputColumnMapping filteredMapping;
     bool exportIdentifiers = false;
     const Property* posProperty = nullptr;
     const Property* typeProperty = nullptr;
     const Property* identifierProperty = nullptr;
     const Property* velocityProperty = nullptr;
     const Property* massProperty = nullptr;
-    for(const ParticlePropertyReference& pref : columnMapping()) {
-        if(pref.typeId() == Particles::PositionProperty) {
+    for(const PropertyReference& pref : columnMapping()) {
+        switch(Particles::OOClass().standardPropertyTypeId(pref.name())) {
+        case Particles::PositionProperty:
             posProperty = particles->expectProperty(Particles::PositionProperty);
-        }
-        else if(pref.typeId() == Particles::TypeProperty) {
+            break;
+        case Particles::TypeProperty:
             typeProperty = particles->expectProperty(Particles::TypeProperty);
-        }
-        else if(pref.typeId() == Particles::IdentifierProperty) {
+            break;
+        case Particles::IdentifierProperty:
             identifierProperty = particles->getProperty(Particles::IdentifierProperty);
             exportIdentifiers = true;
-        }
-        else if(pref.typeId() == Particles::VelocityProperty) {
+            break;
+        case Particles::VelocityProperty:
             velocityProperty = particles->expectProperty(Particles::VelocityProperty);
-        }
-        else if(pref.typeId() == Particles::MassProperty) {
+            break;
+        case Particles::MassProperty:
             massProperty = particles->expectProperty(Particles::MassProperty);
+            break;
+        default:
+            filteredMapping.push_back(pref);
         }
-        else filteredMapping.push_back(pref);
     }
 
     QVector<QString> columnNames;
@@ -83,7 +86,7 @@ void IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         }
         else {
             textStream() << "1 ";
-            colMapping.emplace_back(Particles::IdentifierProperty);
+            colMapping.emplace_back(Particles::OOClass().standardPropertyName(Particles::IdentifierProperty));
             columnNames.push_back("number");
         }
     }

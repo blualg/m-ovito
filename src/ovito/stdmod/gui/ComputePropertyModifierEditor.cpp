@@ -196,9 +196,8 @@ void ComputePropertyModifierEditor::updateExpressionFields()
     }
 
     QStringList standardPropertyComponentNames;
-    if(!mod->outputProperty().isNull() && mod->outputProperty().isStandardProperty()) {
-        standardPropertyComponentNames = mod->outputProperty().containerClass()->standardPropertyComponentNames(mod->outputProperty().typeId());
-    }
+    if(int typeId = mod->outputProperty().standardTypeId(mod->delegate()->inputContainerClass()))
+        standardPropertyComponentNames = mod->delegate()->inputContainerClass()->standardPropertyComponentNames(typeId);
 
     for(int i = 0; i < expr.size(); i++) {
         expressionLineEdits[i]->setText(expr[i]);

@@ -123,7 +123,7 @@ class TrajectoryGenerator : public AsynchronousTask<DataOORef<const Lines>>
 public:
 
     /// Constructor.
-    TrajectoryGenerator(bool transferParticleProperties, bool onlySelectedParticles, bool unwrapTrajectories, const ParticlePropertyReference& particleProperty, OORef<LinesVis> trajectoryVis, ModificationNode* modNode) :
+    TrajectoryGenerator(bool transferParticleProperties, bool onlySelectedParticles, bool unwrapTrajectories, const PropertyReference& particleProperty, OORef<LinesVis> trajectoryVis, ModificationNode* modNode) :
         _transferParticleProperties(transferParticleProperties),
         _onlySelectedParticles(onlySelectedParticles),
         _unwrapTrajectories(unwrapTrajectories),
@@ -169,7 +169,7 @@ public:
         // Get the particle property to be sampled.
         RawBufferReadAccess particleSamplingProperty;
         if(_transferParticleProperties) {
-            if(_particleProperty.isNull())
+            if(!_particleProperty)
                 throw Exception(GenerateTrajectoryLinesModifier::tr("Please select a particle property to be sampled."));
             particleSamplingProperty = _particleProperty.findInContainer(particles);
             if(!particleSamplingProperty)
@@ -292,7 +292,7 @@ public:
         }
 
         // Create the trajectory line property receiving the sampled particle property values.
-        if(_transferParticleProperties && _particleProperty && _particleProperty.typeId() != Particles::PositionProperty) {
+        if(_transferParticleProperties && _particleProperty && !_particleProperty.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty)) {
             if(const Property* inputProperty = _particleProperty.findInContainer(_firstState.expectObject<Particles>())) {
                 OVITO_ASSERT(_samplingPropertyData.size() == inputProperty->stride() * trajectoryLines->elementCount());
                 if(_samplingPropertyData.size() != inputProperty->stride() * trajectoryLines->elementCount())
@@ -384,7 +384,7 @@ private:
     const bool _transferParticleProperties;
     const bool _onlySelectedParticles;
     const bool _unwrapTrajectories;
-    const ParticlePropertyReference _particleProperty;
+    const PropertyReference _particleProperty;
     OORef<LinesVis> _trajectoryVis;
     OOWeakRef<const RefTarget> _modNode;
     PipelineFlowState _firstState;

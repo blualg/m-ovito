@@ -26,7 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/BondType.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
-#include <ovito/stdobj/properties/PropertyReference.h>
+#include <ovito/stdobj/properties/OwnerPropertyRef.h>
 #include <ovito/stdobj/properties/InputColumnMapping.h>
 
 namespace Ovito {
@@ -103,7 +103,7 @@ class OVITO_PARTICLES_EXPORT Bonds : public PropertyContainer
         virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
 
         /// Returns a default color for an ElementType given its numeric type ID.
-        virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const override;
+        virtual Color getElementTypeDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const override;
 
     protected:
 
@@ -150,16 +150,10 @@ public:
 };
 
 /**
- * Encapsulates a reference to a bond property.
- */
-using BondPropertyReference = TypedPropertyReference<Bonds>;
-
-/**
  * Encapsulates a mapping of input file columns to bond properties.
  */
 using BondInputColumnMapping = TypedInputColumnMapping<Bonds>;
 
 }   // End of namespace
 
-Q_DECLARE_METATYPE(Ovito::BondPropertyReference);
 Q_DECLARE_METATYPE(Ovito::BondInputColumnMapping);

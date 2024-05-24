@@ -158,7 +158,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                                     DataOORef<ElementType> elementType =
                                         static_object_cast<ElementType>(elementTypeClass->createInstance());
                                     elementType->setNumericId(t);
-                                    elementType->initializeType(PropertyReference(&Particles::OOClass(), property),
+                                    elementType->initializeType(OwnerPropertyRef(&Particles::OOClass(), property),
                                                                 ExecutionContext::isInteractive());
                                     if(elementTypeClass == &ParticleType::OOClass()) {
                                         // Load mesh-based shape of the particle type as specified in the VTM container file.

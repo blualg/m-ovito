@@ -272,7 +272,7 @@ void XSFImporter::FrameLoader::loadFile()
                     if(type->name().isEmpty() && typeId >= 0 && typeId < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES) {
                         ElementType* mutableType = typeProperty->makeMutable(type);
                         mutableType->setName(ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(typeId)));
-                        mutableType->initializeType(ParticlePropertyReference(typeProperty));
+                        mutableType->initializeType(OwnerPropertyRef(&Particles::OOClass(), typeProperty));
                     }
                 }
             }
@@ -354,8 +354,8 @@ void XSFImporter::FrameLoader::loadFile()
 
             // Automatically select the property for pseudo-coloring of the grid and adjust the value range.
             // But only if this is the first time the file reader is loading the file.
-            if(newVoxelGridVis && newVoxelGridVis->colorMapping()->sourceProperty().isNull() && fieldQuantity.size() != 0) {
-                newVoxelGridVis->colorMapping()->setSourceProperty(VoxelPropertyReference(name));
+            if(newVoxelGridVis && !newVoxelGridVis->colorMapping()->sourceProperty() && fieldQuantity.size() != 0) {
+                newVoxelGridVis->colorMapping()->setSourceProperty(name);
                 auto [min, max] = std::minmax_element(fieldQuantity.cbegin(), fieldQuantity.cend());
                 newVoxelGridVis->colorMapping()->setStartValue(*min);
                 newVoxelGridVis->colorMapping()->setEndValue(*max);

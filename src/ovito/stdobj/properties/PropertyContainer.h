@@ -91,7 +91,7 @@ public:
     }
 
     /// Looks up the user-defined property with the given name.
-    const Property* getProperty(const QString& name) const {
+    const Property* getProperty(const QStringView name) const {
         OVITO_ASSERT(!name.isEmpty());
         for(const Property* property : properties()) {
             // Note: Prior to OVITO 3.7, we required the type id of candidate properties to be 0 here,
@@ -138,7 +138,7 @@ public:
     }
 
     /// Looks up a user-defined property with the given name and makes it mutable if necessary.
-    Property* getMutableProperty(const QString& name, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
+    Property* getMutableProperty(const QStringView name, DataBuffer::BufferInitialization cloneMode = DataBuffer::Initialized) {
         if(const Property* p = getProperty(name))
             return makePropertyMutable(p, cloneMode);
         else
@@ -151,7 +151,12 @@ public:
 
     /// Returns the property with the given name and data layout.
     /// If the container does not contain a property with the given name and data type, then an exception is thrown.
-    const Property* expectProperty(const QString& propertyName, int dataType, size_t componentCount = 1) const;
+    const Property* expectProperty(const QStringView propertyName, int dataType, size_t componentCount = 1) const;
+
+    /// Looks up the named property in the container and resolves the specified
+    /// vector component (if any). If lookup fails, an error message is returned
+    /// in the errorDescription parameter.
+    std::pair<const Property*, int> findPropertyWithComponent(const QStringView nameWithComponent, QString& errorDescription, bool requireComponent = true) const;
 
     /// Returns the given standard property after making sure it can be safely modified.
     /// If it does not exist, an exception is thrown.
@@ -191,11 +196,11 @@ public:
 
     /// Creates a user-defined property and adds it to the container.
     /// In case the property already exists, it is made sure that it's safe to modify it.
-    Property* createProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = {});
+    Property* createProperty(DataBuffer::BufferInitialization init, const QStringView name, int dataType, size_t componentCount = 1, QStringList componentNames = {});
 
     /// Creates a user-defined property and adds it to the container.
     /// In case the property already exists, it is made sure that it's safe to modify it.
-    Property* createProperty(const QString& name, int dataType, size_t componentCount = 1, QStringList componentNames = {}) {
+    Property* createProperty(const QStringView name, int dataType, size_t componentCount = 1, QStringList componentNames = {}) {
         return createProperty(DataBuffer::BufferInitialization::Uninitialized, name, dataType, componentCount, std::move(componentNames));
     }
 

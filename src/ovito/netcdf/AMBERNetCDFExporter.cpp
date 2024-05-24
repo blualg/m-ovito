@@ -196,22 +196,22 @@ void AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
         for(auto c = columnMapping().begin(); c != columnMapping().end(); ++c) {
 
             // Skip the particle position property. It has already been emitted above.
-            if(c->typeId() == Particles::PositionProperty)
+            if(c->isStandardProperty(&Particles::OOClass(), Particles::PositionProperty))
                 continue;
 
             // We can export a particle property only as a whole to a NetCDF file, not individual components.
             // Skip this column if we have already emitted an entry for the same particle property before.
-            if(std::find_if(columnMapping().begin(), c, [c](const ParticlePropertyReference& pr) { return pr.name() == c->name(); }) != c)
+            if(std::find_if(columnMapping().begin(), c, [&](const PropertyReference& pr) { return pr.name() == c->name(); }) != c)
                 continue;
 
             const Property* prop = c->findInContainer(particles);
             if(!prop) {
                 // Skip the identifier property if it doesn't exist.
-                if(c->typeId() == Particles::IdentifierProperty)
+                if(c->isStandardProperty(&Particles::OOClass(), Particles::IdentifierProperty))
                     continue;
                 throw Exception(tr("Invalid list of particle properties to be exported. The property '%1' does not exist.").arg(c->name()));
             }
-            if((int)prop->componentCount() <= std::max(0, c->vectorComponentIndex()))
+            if((int)prop->componentCount() <= std::max(0, c->componentIndex(&Particles::OOClass())))
                 throw Exception(tr("The output vector component selected for column %1 is out of range. The particle property '%2' has only %3 component(s).").arg(c - columnMapping().begin() + 1).arg(c->name()).arg(prop->componentCount()));
 
             // For certain standard properties we need to use NetCDF variables according to the AMBER convention.
@@ -251,7 +251,7 @@ void AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNu
             // For scalar OVITO properties, we define a NetCDF variable with 2 dimensions.
             // For vector OVITO properties, we define a NetCDF variable with 3 dimensions.
             int ncvar;
-            NCERR(nc_def_var(_ncid, mangledName ? mangledName : qPrintable(c->name()), ncDataType, (prop->componentCount() > 1) ? 3 : 2, dims, &ncvar));
+            NCERR(nc_def_var(_ncid, mangledName ? mangledName : qPrintable(c->name().toString()), ncDataType, (prop->componentCount() > 1) ? 3 : 2, dims, &ncvar));
             _columns.emplace_back(*c, prop->dataType(), prop->componentCount(), ncvar);
         }
 

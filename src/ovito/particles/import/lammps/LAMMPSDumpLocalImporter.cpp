@@ -373,11 +373,11 @@ Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const 
                             bool isStandardProperty = false;
                             const static QRegularExpression invalidCharacters(QStringLiteral("[^A-Za-z\\d_]"));
                             for(auto entry = Bonds::OOClass().standardPropertyIds().cbegin(), end = Bonds::OOClass().standardPropertyIds().cend(); entry != end; ++entry) {
-                                const auto componentCount = Bonds::OOClass().standardPropertyComponentCount(entry.value());
+                                const auto componentCount = Bonds::OOClass().standardPropertyComponentCount(entry->second);
                                 for(size_t component = 0; component < componentCount; component++) {
-                                    QString propertyName = entry.key();
+                                    QString propertyName = entry->first;
                                     propertyName.remove(invalidCharacters); // LAMMPS dump file format does not support column names containing spaces.
-                                    const QStringList& componentNames = Bonds::OOClass().standardPropertyComponentNames(entry.value());
+                                    const QStringList& componentNames = Bonds::OOClass().standardPropertyComponentNames(entry->second);
                                     QString propertyName2;
                                     if(!componentNames.empty()) {
                                         OVITO_ASSERT(!componentNames[component].contains(invalidCharacters));
@@ -386,7 +386,7 @@ Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const 
                                         propertyName += componentNames[component];
                                     }
                                     if(propertyName.compare(name, Qt::CaseInsensitive) == 0 || propertyName2.compare(name, Qt::CaseInsensitive) == 0) {
-                                        detectedColumnMapping.mapColumnToStandardProperty(i, (Bonds::Type)entry.value(), component);
+                                        detectedColumnMapping.mapColumnToStandardProperty(i, (Bonds::Type)entry->second, component);
                                         isStandardProperty = true;
                                         break;
                                     }

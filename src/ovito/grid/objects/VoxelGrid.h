@@ -134,16 +134,10 @@ private:
 };
 
 /**
- * Encapsulates a reference to a voxel grid property.
- */
-using VoxelPropertyReference = TypedPropertyReference<VoxelGrid>;
-
-/**
  * Encapsulates a mapping of input file columns to voxel grid properties.
  */
 using VoxelInputColumnMapping = TypedInputColumnMapping<VoxelGrid>;
 
 }   // End of namespace
 
-Q_DECLARE_METATYPE(Ovito::VoxelPropertyReference);
 Q_DECLARE_METATYPE(Ovito::VoxelInputColumnMapping);

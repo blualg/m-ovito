@@ -254,7 +254,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
                             if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(vis->getReferenceFieldTarget(field))) {
                                 if(mapping->sourceProperty()) {
                                     // Prepend property color mappings to the front of the list.
-                                    _sourcesComboBox->insertItem(0, tr("%1: %2").arg(vis->objectTitle()).arg(mapping->sourceProperty().nameWithComponent()), QVariant::fromValue(mapping));
+                                    _sourcesComboBox->insertItem(0, QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(mapping->sourceProperty().nameWithComponent()), QVariant::fromValue(mapping));
                                 }
                             }
                             break;

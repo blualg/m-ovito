@@ -116,7 +116,7 @@ public:
     };
 
     OVITO_CLASS_META(ColorCodingModifier, ColorCodingModifierClass)
-    
+
 public:
 
     /// Constructor.
@@ -163,9 +163,6 @@ protected:
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
-
-    /// Is called when the value of a reference field of this RefMaker changes.
-    virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;

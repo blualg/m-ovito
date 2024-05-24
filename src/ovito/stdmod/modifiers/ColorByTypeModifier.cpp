@@ -66,7 +66,7 @@ void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest
 {
     GenericPropertyModifier::initializeModifier(request);
 
-    if(sourceProperty().isNull() && subject()) {
+    if(!sourceProperty() && subject()) {
 
         // When the modifier is first inserted, automatically select the most recently added
         // typed property (in GUI mode) or the canonical type property (in script mode).
@@ -76,26 +76,13 @@ void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest
             for(const Property* property : container->properties()) {
                 if(property->isTypedProperty()) {
                     if(ExecutionContext::isInteractive() || property->typeId() == Property::GenericTypeProperty) {
-                        bestProperty = PropertyReference(subject().dataClass(), property);
+                        bestProperty = property;
                     }
                 }
             }
-            if(!bestProperty.isNull())
-                setSourceProperty(bestProperty);
+            setSourceProperty(bestProperty);
         }
     }
-}
-
-/******************************************************************************
-* Is called when the value of a property of this object has changed.
-******************************************************************************/
-void ColorByTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
-{
-    // Whenever the selected property class of this modifier is changed, update the source property reference accordingly.
-    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing()) {
-        setSourceProperty(sourceProperty().convertToContainerClass(subject().dataClass()));
-    }
-    GenericPropertyModifier::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -110,11 +97,6 @@ Future<PipelineFlowState> ColorByTypeModifier::evaluateModifier(const ModifierEv
         throw Exception(tr("No input element type selected."));
     if(!sourceProperty())
         throw Exception(tr("No input property selected."));
-
-    // Check if the source property is the right kind of property.
-    if(sourceProperty().containerClass() != subject().dataClass())
-        throw Exception(tr("Modifier was set to operate on '%1', but the selected input is a '%2' property.")
-            .arg(subject().dataClass()->pythonName()).arg(sourceProperty().containerClass()->propertyClassDisplayName()));
 
     DataObjectPath objectPath = state.expectMutableObject(subject());
     PropertyContainer* container = static_object_cast<PropertyContainer>(objectPath.back());

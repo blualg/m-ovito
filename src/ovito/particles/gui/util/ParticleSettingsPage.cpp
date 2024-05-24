@@ -118,13 +118,13 @@ void ParticleSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
         typeNames << ParticleType::getPredefinedParticleTypeName((ParticleType::PredefinedParticleType)i);
 
     QSettings settings;
-    settings.beginGroup(ElementType::getElementSettingsKey(ParticlePropertyReference(Particles::TypeProperty), QStringLiteral("color"), {}));
+    settings.beginGroup(ElementType::getElementSettingsKey(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), QStringLiteral("color"), {}));
     typeNames.append(settings.childKeys());
     settings.endGroup();
-    settings.beginGroup(ElementType::getElementSettingsKey(ParticlePropertyReference(Particles::TypeProperty), QStringLiteral("radius"), {}));
+    settings.beginGroup(ElementType::getElementSettingsKey(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), QStringLiteral("radius"), {}));
     typeNames.append(settings.childKeys());
     settings.endGroup();
-    settings.beginGroup(ElementType::getElementSettingsKey(ParticlePropertyReference(Particles::TypeProperty), QStringLiteral("vdw_radius"), {}));
+    settings.beginGroup(ElementType::getElementSettingsKey(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), QStringLiteral("vdw_radius"), {}));
     typeNames.append(settings.childKeys());
     settings.endGroup();
 
@@ -141,7 +141,7 @@ void ParticleSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     for(const QString& tname : typeNames) {
         QTreeWidgetItem* childItem = new QTreeWidgetItem();
         childItem->setText(0, tname);
-        Color color = ElementType::getDefaultColor(ParticlePropertyReference(Particles::TypeProperty), tname, 0, true);
+        Color color = ElementType::getDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), tname, 0, true);
         FloatType displayRadius = ParticleType::getDefaultParticleRadius(Particles::TypeProperty, tname, 0, true, ParticleType::DisplayRadius);
         FloatType vdwRadius = ParticleType::getDefaultParticleRadius(Particles::TypeProperty, tname, 0, true, ParticleType::VanDerWaalsRadius);
         childItem->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
@@ -162,7 +162,7 @@ void ParticleSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     for(const QString& tname : structureNames) {
         QTreeWidgetItem* childItem = new QTreeWidgetItem();
         childItem->setText(0, tname);
-        Color color = ElementType::getDefaultColor(ParticlePropertyReference(Particles::StructureTypeProperty), tname, 0, true);
+        Color color = ElementType::getDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::StructureTypeProperty), tname, 0, true);
         childItem->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
         childItem->setFlags(Qt::ItemFlags(Qt::ItemIsSelectable | Qt::ItemIsEditable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren));
         _structureTypesItem->addChild(childItem);
@@ -206,15 +206,15 @@ void ParticleSettingsPage::saveValues(QTabWidget* tabWidget)
 {
     // Remove outdated settings branch from old OVITO versions.
     QSettings settings;
-    settings.beginGroup(ElementType::getElementSettingsKey(ParticlePropertyReference(Particles::TypeProperty), QStringLiteral("color"), {}));
+    settings.beginGroup(ElementType::getElementSettingsKey(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), QStringLiteral("color"), {}));
     settings.remove({});
     OVITO_ASSERT(settings.childKeys().empty());
     settings.endGroup();
-    settings.beginGroup(ElementType::getElementSettingsKey(ParticlePropertyReference(Particles::TypeProperty), QStringLiteral("radius"), {}));
+    settings.beginGroup(ElementType::getElementSettingsKey(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), QStringLiteral("radius"), {}));
     settings.remove({});
     OVITO_ASSERT(settings.childKeys().empty());
     settings.endGroup();
-    settings.beginGroup(ElementType::getElementSettingsKey(ParticlePropertyReference(Particles::TypeProperty), QStringLiteral("vdw_radius"), {}));
+    settings.beginGroup(ElementType::getElementSettingsKey(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), QStringLiteral("vdw_radius"), {}));
     settings.remove({});
     OVITO_ASSERT(settings.childKeys().empty());
     settings.endGroup();
@@ -237,7 +237,7 @@ void ParticleSettingsPage::saveValues(QTabWidget* tabWidget)
         QColor color = item->data(1, Qt::DisplayRole).value<QColor>();
         FloatType displayRadius = item->data(2, Qt::DisplayRole).value<FloatType>();
         FloatType vdwRadius = item->data(3, Qt::DisplayRole).value<FloatType>();
-        ElementType::setDefaultColor(ParticlePropertyReference(Particles::TypeProperty), typeName, color);
+        ElementType::setDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), typeName, color);
         ParticleType::setDefaultParticleRadius(Particles::TypeProperty, typeName, displayRadius, ParticleType::DisplayRadius);
         ParticleType::setDefaultParticleRadius(Particles::TypeProperty, typeName, vdwRadius, ParticleType::VanDerWaalsRadius);
     }
@@ -246,7 +246,7 @@ void ParticleSettingsPage::saveValues(QTabWidget* tabWidget)
         QTreeWidgetItem* item = _structureTypesItem->child(i);
         const QString& typeName = item->text(0);
         QColor color = item->data(1, Qt::DisplayRole).value<QColor>();
-        ElementType::setDefaultColor(ParticlePropertyReference(Particles::StructureTypeProperty), typeName, color);
+        ElementType::setDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::StructureTypeProperty), typeName, color);
     }
 }
 
@@ -257,7 +257,7 @@ void ParticleSettingsPage::restoreBuiltinParticlePresets()
 {
     for(int i = 0; i < ParticleType::PredefinedParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; i++) {
         QTreeWidgetItem* item = _particleTypesItem->child(i);
-        Color color = ElementType::getDefaultColor(ParticlePropertyReference(Particles::TypeProperty), item->text(0), 0, false);
+        Color color = ElementType::getDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), item->text(0), 0, false);
         FloatType displayRadius = ParticleType::getDefaultParticleRadius(Particles::TypeProperty, item->text(0), 0, false, ParticleType::DisplayRadius);
         FloatType vdwRadius = ParticleType::getDefaultParticleRadius(Particles::TypeProperty, item->text(0), 0, false, ParticleType::VanDerWaalsRadius);
         item->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
@@ -270,7 +270,7 @@ void ParticleSettingsPage::restoreBuiltinParticlePresets()
 
     for(int i = 0; i < ParticleType::PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; i++) {
         QTreeWidgetItem* item = _structureTypesItem->child(i);
-        Color color = ElementType::getDefaultColor(ParticlePropertyReference(Particles::StructureTypeProperty), item->text(0), 0, false);
+        Color color = ElementType::getDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::StructureTypeProperty), item->text(0), 0, false);
         item->setData(1, Qt::DisplayRole, QVariant::fromValue((QColor)color));
     }
 }

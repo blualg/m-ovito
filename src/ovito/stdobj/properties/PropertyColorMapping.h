@@ -36,7 +36,7 @@ namespace Ovito {
 class OVITO_STDOBJ_EXPORT PropertyColorMapping : public RefTarget
 {
     OVITO_CLASS(PropertyColorMapping)
- 
+
 public:
 
     /// Constructor.
@@ -64,7 +64,7 @@ private:
     /// This upper bound of the input value internal.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, endValue, setEndValue);
 
-    /// The input property that is used as data source for the coloring.
+    /// The input property (including an optional vector component) that is used as data source for the coloring.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
 };
 

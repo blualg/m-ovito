@@ -81,7 +81,7 @@ PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(ObjectIni
         for(int id = 0; id < PTMAlgorithm::NUM_ORDERING_TYPES; id++) {
             OORef<ParticleType> otype = OORef<ParticleType>::create(flags);
             otype->setNumericId(id);
-            otype->initializeType(ParticlePropertyReference(QStringLiteral("Ordering Type")));
+            otype->initializeType(OwnerPropertyRef(&Particles::OOClass(), QStringLiteral("Ordering Type")));
             otype->setColor({0.75f, 0.75f, 0.75f});
             _orderingTypes.push_back(this, PROPERTY_FIELD(orderingTypes), std::move(otype));
         }

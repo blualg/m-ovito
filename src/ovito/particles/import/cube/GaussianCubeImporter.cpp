@@ -256,8 +256,8 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 
     // Automatically select the property for pseudo-coloring of the grid and adjust the value range.
     // But only if this is the first time the file reader is loading the file.
-    if(newVoxelGridVis && newVoxelGridVis->colorMapping()->sourceProperty().isNull() && fieldQuantity.size() != 0) {
-        newVoxelGridVis->colorMapping()->setSourceProperty(VoxelPropertyReference(property, nfields != 1 ? 0 : -1));
+    if(newVoxelGridVis && !newVoxelGridVis->colorMapping()->sourceProperty() && fieldQuantity.size() != 0) {
+        newVoxelGridVis->colorMapping()->setSourceProperty(property->name() + (nfields != 1 ? QStringLiteral(".1") : QString()));
         auto range = fieldQuantity.componentRange(0);
         auto [min, max] = std::minmax_element(std::begin(range), std::end(range));
         newVoxelGridVis->colorMapping()->setStartValue(*min);

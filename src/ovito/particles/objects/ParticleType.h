@@ -89,7 +89,7 @@ public:
     explicit ParticleType(ObjectInitializationFlags flags);
 
     /// Initializes the element type's attributes to standard values.
-    virtual void initializeType(const PropertyReference& property, bool loadUserDefaults = ExecutionContext::isInteractive()) override;
+    virtual void initializeType(const OwnerPropertyRef& property, bool loadUserDefaults = ExecutionContext::isInteractive()) override;
 
     using ElementType::initializeType;
 

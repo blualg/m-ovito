@@ -81,7 +81,7 @@ const Property* PropertyContainer::expectProperty(int typeId) const
 /******************************************************************************
 * Returns the property with the given name and data layout.
 ******************************************************************************/
-const Property* PropertyContainer::expectProperty(const QString& propertyName, int dataType, size_t componentCount) const
+const Property* PropertyContainer::expectProperty(const QStringView propertyName, int dataType, size_t componentCount) const
 {
     const Property* property = getProperty(propertyName);
     if(!property)
@@ -93,6 +93,88 @@ const Property* PropertyContainer::expectProperty(const QString& propertyName, i
     if(property->size() != elementCount())
         throw Exception(tr("Property array '%1' has wrong length. It does not match the number of elements in the parent container.").arg(property->name()));
     return property;
+}
+
+/******************************************************************************
+* Looks up the named property in the container and resolves the specified
+* vector component (if any). If lookup fails, an error message is returned
+* in the errorDescription parameter.
+******************************************************************************/
+std::pair<const Property*, int> PropertyContainer::findPropertyWithComponent(const QStringView nameWithComponent, QString& errorDescription, bool requireComponent) const
+{
+    // Split property name into base name and vector component.
+    QList<QStringView> parts = nameWithComponent.split(QChar('.'));
+    if(parts.length() > 2) {
+        errorDescription = tr("The property name '%1' contains too many dots.").arg(nameWithComponent);
+        return { nullptr, -1 };
+    }
+    else if(parts.length() == 0 || parts[0].isEmpty()) {
+        errorDescription = tr("Invalid property name. String is empty.");
+        return { nullptr, -1 };
+    }
+
+    // Look up the property by name.
+    const QStringView& name = parts[0];
+    const Property* property = getProperty(name);
+    if(!property) {
+
+        // Property not found.
+        // As a fallback, look for a property that includes the vector component suffix in its name.
+        // Such technically illegal property names may be produced by the SpatialBinningModifier for example.
+        property = getProperty(nameWithComponent);
+        if(property && property->componentCount() == 1) {
+            return { property, requireComponent ? 0 : -1 };
+        }
+
+        errorDescription = tr("The property with the name '%1' does not exist or was not computed by the pipeline.").arg(name);
+        return { nullptr, -1 };
+    }
+
+    int resolvedVectorComponent = -1;
+    if(parts.size() == 2 && !parts[1].isEmpty()) {
+        const QStringView& vectorComponentName = parts[1];
+        if(!property->componentNames().empty()) {
+            resolvedVectorComponent = property->componentNames().indexOf(vectorComponentName);
+            if(resolvedVectorComponent < 0) {
+                errorDescription = tr("The selected vector property component '%1' is invalid. Property '%2' has the following named components: %3")
+                    .arg(vectorComponentName)
+                    .arg(property->name())
+                    .arg(property->componentNames().join(QStringLiteral(", ")));
+                return { nullptr, -1 };
+            }
+        }
+        else {
+            bool ok;
+            resolvedVectorComponent = vectorComponentName.toInt(&ok) - 1;
+            if(ok) {
+                if(resolvedVectorComponent < 0 || resolvedVectorComponent >= property->componentCount()) {
+                    errorDescription = tr("The selected vector property component '%1' is out of range. Property '%2' has %3 component(s).")
+                        .arg(vectorComponentName)
+                        .arg(property->name())
+                        .arg(property->componentCount());
+                    return { nullptr, -1 };
+                }
+            }
+            else {
+                errorDescription = Property::tr("The selected vector property component '%1' cannot be resolved, because property '%2' does not have named components.")
+                    .arg(vectorComponentName)
+                    .arg(property->name());
+                return { nullptr, -1 };
+            }
+        }
+    }
+
+    if(resolvedVectorComponent >= (int)property->componentCount()) {
+        errorDescription = tr("The selected vector property component is out of range. The property '%1' has only %2 values per data element.")
+                                        .arg(property->name())
+                                        .arg(resolvedVectorComponent);
+        return { nullptr, -1 };
+    }
+
+    if(requireComponent && resolvedVectorComponent < 0)
+        resolvedVectorComponent = 0;
+
+    return { property, resolvedVectorComponent };
 }
 
 /******************************************************************************
@@ -294,7 +376,7 @@ Property* PropertyContainer::createProperty(DataBuffer::BufferInitialization ini
 * Creates a user-defined property and adds it to the container.
 * In case the property already exists, it is made sure that it's safe to modify it.
 ******************************************************************************/
-Property* PropertyContainer::createProperty(DataBuffer::BufferInitialization init, const QString& name, int dataType, size_t componentCount, QStringList componentNames)
+Property* PropertyContainer::createProperty(DataBuffer::BufferInitialization init, const QStringView name, int dataType, size_t componentCount, QStringList componentNames)
 {
     OVITO_ASSERT(isSafeToModify());
 
@@ -600,11 +682,11 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
     if(stream.formatVersion() < 30007) {
         for(const Property* property : properties()) {
             for(const ElementType* type : property->elementTypes()) {
-                if(type->ownerProperty().isNull()) {
-                    const_cast<ElementType*>(type)->_ownerProperty.set(const_cast<ElementType*>(type), PROPERTY_FIELD(ElementType::ownerProperty), PropertyReference(&OOClass(), property));
+                if(!type->ownerProperty()) {
+                    const_cast<ElementType*>(type)->_ownerProperty.set(const_cast<ElementType*>(type), PROPERTY_FIELD(ElementType::ownerProperty), OwnerPropertyRef(&OOClass(), property));
                 }
                 if(ElementType* proxyType = dynamic_object_cast<ElementType>(type->editableProxy())) {
-                    if(proxyType->ownerProperty().isNull())
+                    if(!proxyType->ownerProperty())
                         proxyType->_ownerProperty.set(proxyType, PROPERTY_FIELD(ElementType::ownerProperty), type->ownerProperty());
                 }
             }

@@ -882,10 +882,6 @@ void Particles::OOMetaClass::initialize()
 {
     PropertyContainerClass::initialize();
 
-    // Enable automatic conversion of a ParticlePropertyReference to a generic PropertyReference and vice versa.
-    QMetaType::registerConverter<ParticlePropertyReference, PropertyReference>();
-    QMetaType::registerConverter<PropertyReference, ParticlePropertyReference>();
-
     setPropertyClassDisplayName(tr("Particles"));
     setElementDescriptionName(QStringLiteral("particles"));
     setPythonName(QStringLiteral("particles"));
@@ -948,7 +944,7 @@ void Particles::OOMetaClass::initialize()
 /******************************************************************************
 * Returns the default color for a numeric type ID.
 ******************************************************************************/
-Color Particles::OOMetaClass::getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
+Color Particles::OOMetaClass::getElementTypeDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
 {
     if(property.typeId() == Particles::TypeProperty) {
         for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; predefType++) {

@@ -74,7 +74,7 @@ ParticleType::ParticleType(ObjectInitializationFlags flags) : ElementType(flags)
 /******************************************************************************
 * Initializes the particle type's attributes to standard values.
 ******************************************************************************/
-void ParticleType::initializeType(const PropertyReference& property, bool loadUserDefaults)
+void ParticleType::initializeType(const OwnerPropertyRef& property, bool loadUserDefaults)
 {
     ElementType::initializeType(property, loadUserDefaults);
 
@@ -354,7 +354,7 @@ FloatType ParticleType::getDefaultParticleRadius(Particles::Type typeClass, cons
 #ifndef OVITO_DISABLE_QSETTINGS
         // Use the type's name, property type and container class to look up the
         // default radius saved by the user.
-        const QString& settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass),
+        const QString& settingsKey = ElementType::getElementSettingsKey(OwnerPropertyRef(&Particles::OOClass(), typeClass),
             (radiusVariant == DisplayRadius) ? QStringLiteral("radius") : QStringLiteral("vdw_radius"), particleTypeName);
         QVariant v = QSettings().value(settingsKey);
         if(v.isValid() && v.canConvert<FloatType>())
@@ -399,7 +399,7 @@ void ParticleType::setDefaultParticleRadius(Particles::Type typeClass, const QSt
 
 #ifndef OVITO_DISABLE_QSETTINGS
     QSettings settings;
-    const QString& settingsKey = ElementType::getElementSettingsKey(ParticlePropertyReference(typeClass),
+    const QString& settingsKey = ElementType::getElementSettingsKey(OwnerPropertyRef(&Particles::OOClass(), typeClass),
         (radiusVariant == DisplayRadius) ? QStringLiteral("radius") : QStringLiteral("vdw_radius"), particleTypeName);
 
     if(std::abs(getDefaultParticleRadius(typeClass, particleTypeName, 0, false, radiusVariant) - radius) > 1e-6)

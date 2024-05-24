@@ -147,9 +147,8 @@ void ParticlesComputePropertyModifierDelegateEditor::updateExpressionFields()
 
     QStringList standardPropertyComponentNames;
     if(ComputePropertyModifier* modifier = dynamic_object_cast<ComputePropertyModifier>(delegate->modifier())) {
-        if(!modifier->outputProperty().isNull() && modifier->outputProperty().isStandardProperty()) {
-            standardPropertyComponentNames = modifier->outputProperty().containerClass()->standardPropertyComponentNames(modifier->outputProperty().typeId());
-        }
+        if(int typeId = modifier->outputProperty().standardTypeId(modifier->delegate()->inputContainerClass()))
+            standardPropertyComponentNames = modifier->delegate()->inputContainerClass()->standardPropertyComponentNames(typeId);
     }
 
     for(int i = 0; i < neighExpr.size(); i++) {

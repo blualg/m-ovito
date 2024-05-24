@@ -67,7 +67,7 @@ class OVITO_PARTICLES_EXPORT Particles : public PropertyContainer
         virtual QString formatDataObjectPath(const ConstDataObjectPath& path) const override { return this->displayName(); }
 
         /// Returns a default color for an ElementType given its numeric type ID.
-        virtual Color getElementTypeDefaultColor(const PropertyReference& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const override;
+        virtual Color getElementTypeDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const override;
 
     protected:
 
@@ -218,16 +218,10 @@ private:
 };
 
 /**
- * Encapsulates a reference to a particle property.
- */
-using ParticlePropertyReference = TypedPropertyReference<Particles>;
-
-/**
  * Encapsulates a mapping of input file columns to particle properties.
  */
 using ParticleInputColumnMapping = TypedInputColumnMapping<Particles>;
 
 }   // End of namespace
 
-Q_DECLARE_METATYPE(Ovito::ParticlePropertyReference);
 Q_DECLARE_METATYPE(Ovito::ParticleInputColumnMapping);

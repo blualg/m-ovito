@@ -25,7 +25,7 @@
 
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/core/dataset/pipeline/DelegatingModifier.h>
-#include <ovito/stdobj/properties/PropertyReference.h>
+#include <ovito/stdobj/properties/OwnerPropertyRef.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
 
