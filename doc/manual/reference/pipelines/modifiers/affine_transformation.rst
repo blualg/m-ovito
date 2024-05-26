@@ -25,8 +25,8 @@ Translation in reduced coordinates
 """"""""""""""""""""""""""""""""""
 
 The option :guilabel:`In reduced cell coordinates` changes the affine transformation method
-such that the translation vector :math:`\mathbf{t}` is specified in reduced cell coordinates instead of Cartesian coordinates, i.e. 
-in terms of the three vectors that span the simulation cell (after they have been transformed by the 
+such that the translation vector :math:`\mathbf{t}` is specified in reduced cell coordinates instead of Cartesian coordinates, i.e.
+in terms of the three vectors that span the simulation cell (after they have been transformed by the
 linear matrix :math:`\mathbf{M}`).
 
 In other words, activating this option changes the affine transformation equation to :math:`\mathbf{x}' =  \mathbf{M} \cdot (\mathbf{x} + \mathbf{H} \cdot \mathbf{t})`
@@ -35,8 +35,8 @@ with :math:`\mathbf{H}` being the 3x3 cell matrix formed by the three edge vecto
 Transform to target cell
 """"""""""""""""""""""""
 
-The :guilabel:`Transform to target cell` option lets the modifier dynamically compute the affine transformation 
-based the original shape of the simulation cell and a specified target cell shape. The automatically determined transformation 
+The :guilabel:`Transform to target cell` option lets the modifier dynamically compute the affine transformation
+based the original shape of the simulation cell and a specified target cell shape. The automatically determined transformation
 maps the existing simulation cell exactly onto the given target cell shape. All contents of the simulation cell (e.g. particles, surface meshes, etc.) will be mapped into the new
 cell shape accordingly, unless you turn off their transformation (see next section).
 
@@ -60,6 +60,7 @@ You can select the types of data elements that should get transformed by the mod
   :ref:`Surfaces <scene_objects.surface_mesh>`                    Applies the affine transformation to the vertices of :ref:`surface meshes <scene_objects.surface_mesh>` and :ref:`triangle meshes <scene_objects.triangle_mesh>`.
   :ref:`Voxel grids <scene_objects.voxel_grid>`                   Applies the affine transformation to the domain shape of a :ref:`voxel grid <scene_objects.voxel_grid>`.
   :ref:`Lines <scene_objects.lines>`                              Applies the affine transformation to all :ref:`lines <scene_objects.lines>`.
+  :ref:`Vectors <scene_objects.vectors>`                          Applies the affine transformation to all :ref:`vector objects <scene_objects.vectors>`.
   :ref:`Dislocations <scene_objects.dislocations>`                Applies the affine transformation to a set of :ref:`dislocation lines <scene_objects.dislocations>`.
   =============================================================== =================================================================================
 
@@ -67,5 +68,5 @@ The option :guilabel:`Transform selected elements only` restricts the applicatio
 the currently selected particles.
 
 .. seealso::
-  
+
   :py:class:`ovito.modifiers.AffineTransformationModifier` (Python API)

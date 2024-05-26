@@ -268,7 +268,6 @@ template<class T, class U> DataOORef<T> dynamic_pointer_cast(DataOORef<U>&& p) n
 {
     DataOORef<T> result;
     result._ref = dynamic_pointer_cast<T>(std::move(p._ref));
-    OVITO_ASSERT(!p._ref || result._ref);
     return result;
 }
 

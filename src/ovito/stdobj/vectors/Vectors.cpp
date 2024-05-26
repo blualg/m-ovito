@@ -36,6 +36,7 @@ void Vectors::OOMetaClass::initialize()
     PropertyContainerClass::initialize();
 
     setPropertyClassDisplayName(tr("Vectors"));
+    setElementDescriptionName(QStringLiteral("vectors"));
     setPythonName(QStringLiteral("vectors"));
 
     const QStringList emptyList;
@@ -133,7 +134,7 @@ PropertyPtr Vectors::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buf
  ******************************************************************************/
 Vectors::Vectors(ObjectInitializationFlags flags) : PropertyContainer(flags)
 {
-    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) || !flags.testFlag(ObjectInitializationFlag::DontCreateVisElement)) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) && !flags.testFlag(ObjectInitializationFlag::DontCreateVisElement)) {
         // Create and attach a default visualization element for rendering the vectors.
         setVisElement(OORef<VectorVis>::create(flags));
     }

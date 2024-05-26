@@ -55,12 +55,12 @@ public:
     /// \brief The list of standard properties.
     enum Type
     {
-        PositionProperty = Property::FirstSpecificProperty,
         ColorProperty = Property::GenericColorProperty,
+        SelectionProperty = Property::GenericSelectionProperty,
+        PositionProperty = Property::FirstSpecificProperty,
         TransparencyProperty,
         DirectionProperty,
         DirectionMagnitudeProperty,
-        SelectionProperty = Property::GenericSelectionProperty,
     };
 
     /// \brief Constructor.

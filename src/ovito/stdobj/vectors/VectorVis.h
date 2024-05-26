@@ -65,12 +65,12 @@ public:
     };
     Q_ENUM(ColoringMode);
 
-    /// Struct holding the per vector data required by the vis element.
+    /// Struct holding the per-vector data provided by the PropertyContainer or Vectors object the VectorVis is attached to.
     struct VectorData {
-        ConstDataBufferPtr basePositions = nullptr;
-        ConstDataBufferPtr vectorProperty = nullptr;
-        ConstDataBufferPtr vectorColorProperty = nullptr;
-        ConstDataBufferPtr vectorTransparencyProperty = nullptr;
+        ConstDataBufferPtr positions;
+        ConstDataBufferPtr directions;
+        ConstDataBufferPtr colors;
+        ConstDataBufferPtr transparencies;
     };
 
 public:
