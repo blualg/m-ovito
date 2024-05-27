@@ -189,18 +189,14 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
     PipelineStatus status;
 
     // Get input data.
-    DataOORef<const PropertyContainer> container = nullptr;
+    DataOORef<const PropertyContainer> container;
     // Check last element in path:
-    if(path.size() >= 1) {
-        container = dynamic_object_cast<PropertyContainer>(path.back());
-    }
+    container = path.lastAs<PropertyContainer>();
     // If last element is not the container - check second to last element:
-    if(!container && path.size() >= 2) {
-        container = dynamic_object_cast<PropertyContainer>(path[path.size() - 2]);
-    }
-    if(!container) {
-        return {};
-    }
+    if(!container) container = path.lastAs<const PropertyContainer>(2);
+    // Nothing to do
+    if(!container) return {};
+
     container->verifyIntegrity();
     VectorData vectorData = container->getVectorVisData(path, flowState, frameGraph.visCache());
     OVITO_ASSERT(!vectorData.positions || vectorData.positions->size() == container->elementCount());

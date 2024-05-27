@@ -60,7 +60,6 @@ public:
         PositionProperty = Property::FirstSpecificProperty,
         TransparencyProperty,
         DirectionProperty,
-        DirectionMagnitudeProperty,
     };
 
     /// \brief Constructor.

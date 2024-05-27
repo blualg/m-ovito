@@ -23,6 +23,7 @@
 #include <ovito/stdmod/StdMod.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/stdobj/lines/Lines.h>
+#include <ovito/stdobj/vectors/Vectors.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
@@ -52,6 +53,9 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(ReplicateModifierDelegate);
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LinesReplicateModifierDelegate);
 OVITO_CLASSINFO(LinesReplicateModifierDelegate, "DisplayName", "Lines");
+
+IMPLEMENT_CREATABLE_OVITO_CLASS(VectorsReplicateModifierDelegate);
+OVITO_CLASSINFO(VectorsReplicateModifierDelegate, "DisplayName", "Vectors");
 
 /******************************************************************************
  * Indicates which data objects in the given input data collection the modifier
@@ -142,6 +146,88 @@ Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEv
             }
         }
 
+        return std::move(state);
+    });
+}
+
+/******************************************************************************
+ * Indicates which data objects in the given input data collection the modifier
+ * delegate is able to operate on.
+ ******************************************************************************/
+QVector<DataObjectReference> VectorsReplicateModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all vectors objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Vectors::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
+}
+
+/******************************************************************************
+ * Applies this modifier delegate to the data.
+ ******************************************************************************/
+Future<PipelineFlowState> VectorsReplicateModifierDelegate::apply(
+    const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState,
+    const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
+{
+    ReplicateModifier* modifier = static_object_cast<ReplicateModifier>(request.modifier());
+
+    // Get range of new images
+    const Box3I& newImages = modifier->replicaRange();
+
+    // The actual work can be performed in a separate thread.
+    return asyncLaunch([state = std::move(state), newImages]() mutable {
+        size_t numCopies = (newImages.sizeX() + 1) * (newImages.sizeY() + 1) * (newImages.sizeZ() + 1);
+
+        // Get the simulation cell
+        const SimulationCell* cell = state.expectObject<SimulationCell>();
+        const AffineTransformation& cellMatrix = cell->matrix();
+
+        // Loop over all lines objects in the data collection
+        for(const DataObject* obj : state.data()->objects()) {
+            // Replicate the Lines.
+            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(obj)) {
+                // Skip if there's nothing to do
+                if(numCopies <= 1 || !inputVectors || inputVectors->elementCount() == 0) {
+                    continue;
+                }
+
+                // Extend vectors property arrays.
+                size_t oldVectorsCount = inputVectors->elementCount();
+                size_t newVectorsCount = oldVectorsCount * numCopies;
+
+                // Ensure that the lines can be modified.
+                Vectors* outputVectors = state.makeMutable(inputVectors);
+                outputVectors->replicate(numCopies);
+
+                // Replicate lines (vertex) property values.
+                for(Property* property : outputVectors->makePropertiesMutable()) {
+                    OVITO_ASSERT(property->size() == newVectorsCount);
+
+                    // Shift vertex positions by the periodicity vector.
+                    if(property->typeId() == Vectors::PositionProperty) {
+                        BufferWriteAccess<Point3, access_mode::read_write> positionArray(property);
+                        Point3* p = positionArray.begin();
+                        for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
+                            for(int imageY = newImages.minc.y(); imageY <= newImages.maxc.y(); imageY++) {
+                                for(int imageZ = newImages.minc.z(); imageZ <= newImages.maxc.z(); imageZ++) {
+                                    if(imageX != 0 || imageY != 0 || imageZ != 0) {
+                                        const Vector3 imageDelta = cellMatrix * Vector3(imageX, imageY, imageZ);
+                                        for(size_t i = 0; i < oldVectorsCount; i++) {
+                                            *p++ += imageDelta;
+                                        }
+                                    }
+                                    else {
+                                        p += oldVectorsCount;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return std::move(state);
     });
 }

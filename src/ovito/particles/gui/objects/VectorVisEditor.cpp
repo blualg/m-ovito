@@ -134,15 +134,11 @@ void VectorVisEditor::updateColoringOptions()
     ConstDataObjectRefPath path = getVisDataObjectPath();
 
     // Get input data.
-    DataOORef<const PropertyContainer> container = nullptr;
+    DataOORef<const PropertyContainer> container;
     // Check last element in path:
-    if(path.size() >= 1) {
-        container = dynamic_object_cast<const PropertyContainer>(std::move(path[path.size() - 1]));
-    }
+    container = path.lastAs<PropertyContainer>();
     // If last element is not the container - check second to last element:
-    if(!container && path.size() >= 2) {
-        container = dynamic_object_cast<const PropertyContainer>(std::move(path[path.size() - 2]));
-    }
+    if(!container) container = path.lastAs<const PropertyContainer>(2);
 
     // Do the vector arrows, which are associated with the particles, have explicit RGB colors assigned ("Vector Color" property exists)?
     // Do the vector arrows, which are associated with the particles, have explicit transparency values assigned ("Vector Transparency" property exists)?

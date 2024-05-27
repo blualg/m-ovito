@@ -72,6 +72,37 @@ public:
 };
 
 /**
+ * \brief Delegate for the ReplicateModifier that operates on vectors.
+ */
+class OVITO_STDMOD_EXPORT VectorsReplicateModifierDelegate : public ReplicateModifierDelegate
+{
+    /// Give the modifier delegate its own metaclass.
+    class OOMetaClass : public ReplicateModifierDelegate::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using ReplicateModifierDelegate::OOMetaClass::OOMetaClass;
+
+        /// Indicates which data objects in the given input data collection the modifier delegate is able to operate on.
+        virtual QVector<DataObjectReference> getApplicableObjects(const DataCollection& input) const override;
+
+        /// The name by which Python scripts can refer to this modifier delegate.
+        virtual QString pythonDataName() const override { return QStringLiteral("vectors"); }
+    };
+
+    OVITO_CLASS_META(VectorsReplicateModifierDelegate, OOMetaClass)
+
+public:
+    /// Constructor.
+    explicit VectorsReplicateModifierDelegate(ObjectInitializationFlags flags) : ReplicateModifierDelegate(flags) {}
+
+    /// Applies this modifier delegate to the data.
+    virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state,
+                                            const PipelineFlowState& originalState,
+                                            const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
+};
+
+/**
  * \brief This modifier duplicates data elements (e.g. particles) multiple times and shifts them by
  *        the simulation cell vectors to visualize periodic images.
  */
