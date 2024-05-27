@@ -44,7 +44,6 @@ void Vectors::OOMetaClass::initialize()
     const QStringList rgbList = QStringList() << "R" << "G" << "B";
     registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList);
     registerStandardProperty(DirectionProperty, tr("Direction"), Property::FloatDefault, xyzList);
-    registerStandardProperty(DirectionMagnitudeProperty, tr("Direction Magnitude"), Property::FloatDefault, emptyList);
     registerStandardProperty(PositionProperty, tr("Position"), Property::FloatDefault, xyzList);
     registerStandardProperty(SelectionProperty, tr("Selection"), Property::IntSelection, emptyList);
     registerStandardProperty(TransparencyProperty, tr("Transparency"), Property::FloatGraphics, emptyList);
@@ -69,10 +68,6 @@ PropertyPtr Vectors::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buf
             dataType = Property::FloatDefault;
             componentCount = 3;
             OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Vector3));
-            break;
-        case DirectionMagnitudeProperty:
-            dataType = Property::FloatDefault;
-            componentCount = 1;
             break;
         case PositionProperty:
             dataType = Property::FloatDefault;

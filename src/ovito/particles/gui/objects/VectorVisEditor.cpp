@@ -134,10 +134,10 @@ void VectorVisEditor::updateColoringOptions()
     ConstDataObjectRefPath path = getVisDataObjectPath();
 
     // Get input data.
-    DataOORef<const PropertyContainer> container = nullptr;
+    DataOORef<const PropertyContainer> container;
     // Check last element in path:
     if(path.size() >= 1) {
-        container = dynamic_object_cast<const PropertyContainer>(std::move(path[path.size() - 1]));
+        container = dynamic_object_cast<const PropertyContainer>(std::move(path.last()));
     }
     // If last element is not the container - check second to last element:
     if(!container && path.size() >= 2) {

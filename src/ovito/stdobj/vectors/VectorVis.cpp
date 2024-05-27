@@ -189,7 +189,7 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
     PipelineStatus status;
 
     // Get input data.
-    DataOORef<const PropertyContainer> container = nullptr;
+    DataOORef<const PropertyContainer> container;
     // Check last element in path:
     if(path.size() >= 1) {
         container = dynamic_object_cast<PropertyContainer>(path.back());
