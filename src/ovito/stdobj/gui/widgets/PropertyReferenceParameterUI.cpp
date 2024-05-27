@@ -159,7 +159,7 @@ void PropertyReferenceParameterUI::updateUI()
             if(selIndex < 0) {
                 if(pref) {
                     // Add a place-holder item if the selected property does not exist anymore.
-                    _comboBox->addItem(pref, tr("%1 (not available)").arg(pref.name()));
+                    _comboBox->addItem(pref, tr("%1 (not available)").arg(pref.nameWithComponent()));
                     QStandardItem* item = static_cast<QStandardItemModel*>(_comboBox->model())->item(_comboBox->count()-1);
                     item->setIcon(warningIcon);
                 }
