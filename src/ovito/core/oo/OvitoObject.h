@@ -322,8 +322,30 @@ inline Pointer<T> dynamic_object_cast(const Pointer<U>& obj) noexcept {
 ///
 /// \relates OORef, DataOORef
 template<class T, class U, template<typename> class Pointer>
+inline Pointer<const T> dynamic_object_cast(const Pointer<const U>& obj) noexcept {
+    return dynamic_pointer_cast<const T, const U>(obj);
+}
+
+/// \brief Dynamic cast operator for fancy pointers to OVITO objects.
+///
+/// Returns a fancy pointer to the input object, cast to type \c T if the object is of type \c T
+/// (or a subclass); otherwise returns \c nullptr.
+///
+/// \relates OORef, DataOORef
+template<class T, class U, template<typename> class Pointer>
 inline Pointer<T> dynamic_object_cast(Pointer<U>&& obj) noexcept {
     return dynamic_pointer_cast<T, U>(std::move(obj));
+}
+
+/// \brief Dynamic cast operator for fancy pointers to OVITO objects.
+///
+/// Returns a fancy pointer to the input object, cast to type \c T if the object is of type \c T
+/// (or a subclass); otherwise returns \c nullptr.
+///
+/// \relates OORef, DataOORef
+template<class T, class U, template<typename> class Pointer>
+inline Pointer<const T> dynamic_object_cast(Pointer<const U>&& obj) noexcept {
+    return dynamic_pointer_cast<const T, const U>(std::move(obj));
 }
 
 /// \brief Static cast operator for fancy pointers to OVITO objects.
@@ -346,10 +368,36 @@ inline Pointer<T> static_object_cast(const Pointer<U>& obj) noexcept {
 ///
 /// \relates OORef, DataOORef
 template<class T, class U, template<typename> class Pointer>
+inline Pointer<const T> static_object_cast(const Pointer<const U>& obj) noexcept {
+    OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
+        qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
+    return static_pointer_cast<const T, const U>(obj);
+}
+
+/// \brief Static cast operator for fancy pointers to OVITO objects.
+///
+/// Returns the given object cast to type \c T.
+/// Performs a runtime check of the object type in debug build.
+///
+/// \relates OORef, DataOORef
+template<class T, class U, template<typename> class Pointer>
 inline Pointer<T> static_object_cast(Pointer<U>&& obj) noexcept {
     OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
         qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
     return static_pointer_cast<T, U>(std::move(obj));
+}
+
+/// \brief Static cast operator for fancy pointers to OVITO objects.
+///
+/// Returns the given object cast to type \c T.
+/// Performs a runtime check of the object type in debug build.
+///
+/// \relates OORef, DataOORef
+template<class T, class U, template<typename> class Pointer>
+inline Pointer<const T> static_object_cast(Pointer<const U>&& obj) noexcept {
+    OVITO_ASSERT_MSG(!obj || obj->getOOClass().isDerivedFrom(T::OOClass()), "static_object_cast",
+        qPrintable(QStringLiteral("Runtime type check failed. The source object %1 is not an instance of the target class %2.").arg(obj->getOOClass().name()).arg(T::OOClass().name())));
+    return static_pointer_cast<const T, const U>(std::move(obj));
 }
 
 }   // End of namespace

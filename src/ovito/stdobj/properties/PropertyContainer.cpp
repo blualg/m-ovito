@@ -109,7 +109,7 @@ std::pair<const Property*, int> PropertyContainer::findPropertyWithComponent(con
         return { nullptr, -1 };
     }
     else if(parts.length() == 0 || parts[0].isEmpty()) {
-        errorDescription = tr("Invalid property name. String is empty.");
+        errorDescription = tr("Property name is empty.");
         return { nullptr, -1 };
     }
 
@@ -126,7 +126,7 @@ std::pair<const Property*, int> PropertyContainer::findPropertyWithComponent(con
             return { property, requireComponent ? 0 : -1 };
         }
 
-        errorDescription = tr("The property with the name '%1' does not exist or was not computed by the pipeline.").arg(name);
+        errorDescription = tr("The %1 property with the name '%2' does not exist or has not been computed by the pipeline.").arg(getOOMetaClass().elementDescriptionName()).arg(name);
         return { nullptr, -1 };
     }
 
