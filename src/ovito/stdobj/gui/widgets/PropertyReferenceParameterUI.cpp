@@ -126,6 +126,15 @@ void PropertyReferenceParameterUI::updateUI()
 {
     PropertyParameterUI::updateUI();
 
+    if(containerField() && editObject()) {
+        QVariant val = editObject()->getPropertyFieldValue(containerField());
+        OVITO_ASSERT(val.isValid() && val.canConvert<DataObjectReference>());
+        DataObjectReference objectReference = val.value<DataObjectReference>();
+        if(objectReference && objectReference.dataClass()->isDerivedFrom(PropertyContainer::OOClass()) == false)
+            objectReference = {};
+        setContainerRef(objectReference);
+    }
+
     if(comboBox() && editObject() && (containerRef() || container())) {
         PropertyReference pref = getPropertyReference();
 
@@ -155,12 +164,12 @@ void PropertyReferenceParameterUI::updateUI()
                     item->setIcon(warningIcon);
                 }
                 else if(_comboBox->count() != 0) {
-                    _comboBox->addItem({}, tr("<Please select a property>"));
+                    _comboBox->addItem({}, tr("‹Please select›"));
                 }
                 selIndex = _comboBox->count() - 1;
             }
             if(_comboBox->count() == 0) {
-                _comboBox->addItem(PropertyReference(), tr("<No available properties>"));
+                _comboBox->addItem(PropertyReference(), tr("‹No available properties›"));
                 QStandardItem* item = static_cast<QStandardItemModel*>(_comboBox->model())->item(0);
                 item->setIcon(warningIcon);
                 selIndex = 0;

@@ -90,6 +90,17 @@ public:
     /// Sets the concrete container from which properties can be selected.
     void setContainer(const PropertyContainer* container);
 
+    /// Specifies the dynamic property field that selects the container from which properties can be selected.
+    void setContainerField(const PropertyFieldDescriptor* field) {
+        if(_containerField != field) {
+            _containerField = field;
+            updateUI();
+        }
+    }
+
+    /// Returns the dynamic property field that selects the container from which properties can be selected.
+    const PropertyFieldDescriptor* containerField() const { return _containerField; }
+
     /// Installs optional callback function that allows clients to filter the displayed list of properties.
     template<typename F>
     void setPropertyFilter(F&& filter) {
@@ -141,6 +152,9 @@ protected:
 
     /// The current container instance from which properties can be selected.
     DataOORef<const PropertyContainer> _container;
+
+    /// The dynamic property field that selects the container from which properties can be selected.
+    const PropertyFieldDescriptor* _containerField = nullptr;
 
     /// An optional callback function that allows clients to filter the displayed list of properties.
     std::function<bool(const PropertyContainer* container, const Property*)> _propertyFilter;

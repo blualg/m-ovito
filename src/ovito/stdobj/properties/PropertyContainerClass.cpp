@@ -40,6 +40,9 @@ void PropertyContainerClass::initialize()
         // Enable automatic conversion of a PropertyContainerReference to a generic DataObjectReference and vice versa.
         QMetaType::registerConverter<PropertyContainerReference, DataObjectReference>();
         QMetaType::registerConverter<DataObjectReference, PropertyContainerReference>();
+        // Enable automatic conversion of a PropertyReference to a QString and vice versa.
+        QMetaType::registerConverter<PropertyReference, QString>([](const PropertyReference& ref) { return ref.nameWithComponent(); });
+        QMetaType::registerConverter<QString, PropertyReference>();
     }
 }
 
