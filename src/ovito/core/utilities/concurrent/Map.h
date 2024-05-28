@@ -45,17 +45,10 @@ auto map_sequential(InputRange&& inputRange, Executor&& executor, Function&& f)
             return std::invoke(f, iterValue);
         },
         // Iteration complete function:
-#ifndef Q_CC_MSVC
         [](typename InputRange::const_reference iterValue, auto&& iterResult, std::vector<result_value_type>& outputList) {
             // Append the result of the future to our output list.
             outputList.push_back(std::forward<decltype(iterResult)>(iterResult));
         },
-#else // Workaround for MSVC "fatal error C1001: Internal compiler error." :
-        [](typename InputRange::const_reference iterValue, result_value_type iterResult, std::vector<result_value_type>& outputList) {
-            // Append the result of the future to our output list.
-            outputList.push_back(std::move(iterResult));
-        },
-#endif
         std::vector<result_value_type>{});
 }
 
