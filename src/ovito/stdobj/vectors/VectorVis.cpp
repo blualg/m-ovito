@@ -193,7 +193,7 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
     // Check last element in path:
     container = path.lastAs<PropertyContainer>();
     // If last element is not the container - check second to last element:
-    if(!container) container = path.lastAs<const PropertyContainer>(2);
+    if(!container) container = path.lastAs<const PropertyContainer>(1);
     // Nothing to do
     if(!container) return {};
 
