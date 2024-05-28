@@ -141,9 +141,9 @@ const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass
         }
         else {
             if(pathString.isEmpty())
-                throw Exception(tr("No '%1' data object in data collection.").arg(objectClass.displayName()));
+                throw Exception(tr("No '%1' object in data collection.").arg(objectClass.displayName()));
             else
-                throw Exception(tr("No '%1' data object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
+                throw Exception(tr("No '%1' object named '%2' in data collection.").arg(objectClass.displayName()).arg(pathString));
         }
     }
     return obj;

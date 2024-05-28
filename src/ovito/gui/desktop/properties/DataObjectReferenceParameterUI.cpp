@@ -150,6 +150,7 @@ void DataObjectReferenceParameterUI::updatePropertyValue()
 {
     if(comboBox() && editObject()) {
         performTransaction(tr("Select data object"), [this]() {
+            OOWeakRef<DataObjectReferenceParameterUI> self(this);
 
             DataObjectReference ref = comboBox()->currentData().value<DataObjectReference>();
 
@@ -160,7 +161,8 @@ void DataObjectReferenceParameterUI::updatePropertyValue()
 
             editObject()->setPropertyFieldValue(propertyField(), QVariant::fromValue(ref));
 
-            Q_EMIT valueEntered();
+            if(self.lock())
+                Q_EMIT valueEntered();
         });
     }
 }

@@ -252,6 +252,7 @@ void PropertyReferenceParameterUI::updatePropertyValue()
 {
     if(comboBox() && editObject() && comboBox()->currentText().isEmpty() == false) {
         performTransaction(tr("Change parameter"), [this]() {
+            OOWeakRef<PropertyReferenceParameterUI> self(this);
             PropertyReference pref = _comboBox->currentProperty();
             if(isPropertyFieldUI()) {
 
@@ -264,7 +265,8 @@ void PropertyReferenceParameterUI::updatePropertyValue()
             }
             else return;
 
-            Q_EMIT valueEntered();
+            if(self.lock())
+               Q_EMIT valueEntered();
         });
     }
 }
