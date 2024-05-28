@@ -185,7 +185,7 @@ public:
     // Slice the coordinates / particle positions to the [output] maskProperty
     // Can be reused to slice particles or vectors
     static size_t sliceCoordinatesToMask(Plane3 plane, FloatType sliceWidth, bool invert, const Property* positionProperty,
-                                         Property* maskProperty, const Property* selectionProperty);
+                                         DataBuffer* maskBuffer, const Property* selectionProperty);
 
 protected:
     /// This method is called by the system when the modifier has been inserted into a data pipeline.

@@ -164,23 +164,19 @@ Future<PipelineFlowState> VectorsSliceModifierDelegate::apply(
                 inputVectors->verifyIntegrity();
 
                 // Create mask array to be computed.
-                PropertyPtr maskProperty = Vectors::OOClass().createStandardProperty(
-                    DataBuffer::Uninitialized, inputVectors->elementCount(), Property::GenericSelectionProperty);
+                DataOORef<DataBuffer> maskBuffer = DataOORef<DataBuffer>::create(
+                    ObjectInitializationFlag::NoFlags, DataBuffer::Uninitialized, inputVectors->elementCount(), DataBuffer::IntSelection);
 
                 // Get the input basis points.
                 ConstPropertyPtr positionProperty = inputVectors->expectProperty(Vectors::PositionProperty);
 
                 // Number of marked/selected particles.
-                size_t numMarked =
-                    SliceModifier::sliceCoordinatesToMask(plane, sliceWidth, invert, positionProperty, maskProperty, nullptr);
+                size_t numMarked = SliceModifier::sliceCoordinatesToMask(plane, sliceWidth, invert, positionProperty, maskBuffer, nullptr);
 
                 // Make sure we can safely modify the vectors object.
                 Vectors* outputVectors = state.makeMutable(inputVectors);
                 if(createSelection == false) {
-                    outputVectors->deleteElements(std::move(maskProperty), numMarked);
-                }
-                else {
-                    outputVectors->createProperty(std::move(maskProperty));
+                    outputVectors->deleteElements(std::move(maskBuffer), numMarked);
                 }
                 outputVectors->verifyIntegrity();
             }
@@ -190,7 +186,7 @@ Future<PipelineFlowState> VectorsSliceModifierDelegate::apply(
 }
 
 size_t SliceModifier::sliceCoordinatesToMask(Plane3 plane, FloatType sliceWidth, bool invert, const Property* positionProperty,
-                                             Property* maskProperty, const Property* selectionProperty)
+                                             DataBuffer* maskBuffer, const Property* selectionProperty)
 {
     // Number of marked/selected particles.
     size_t numMarked = 0;
@@ -246,7 +242,7 @@ size_t SliceModifier::sliceCoordinatesToMask(Plane3 plane, FloatType sliceWidth,
         });
     }
 #else
-    BufferWriteAccess<SelectionIntType, access_mode::discard_write> maskAccess(maskProperty);
+    BufferWriteAccess<SelectionIntType, access_mode::discard_write> maskAccess(maskBuffer);
     BufferReadAccess<Point3> positionAccess(positionProperty);
     BufferReadAccess<SelectionIntType> selectionAccess(selectionProperty);
 
