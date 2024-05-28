@@ -28,6 +28,7 @@
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include "VectorVis.h"
+#include "Vectors.h"
 
 namespace Ovito {
 
@@ -363,7 +364,17 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
 size_t VectorPickInfo::elementIndexFromSubObjectID(quint32 subobjID) const
 {
     size_t elementIndex = std::numeric_limits<size_t>::max();
-    if(const Property* vectorProperty = dataPath().lastAs<Property>()) {
+
+    const Property* vectorProperty = nullptr;
+    // Check if last element in path is a vectors container
+    if(const Vectors* container = dataPath().lastAs<Vectors>())
+        // extract direction property from vectors container
+        vectorProperty = container->getProperty(Vectors::Type::DirectionProperty);
+    else
+        // Otherwise grab property from path
+        vectorProperty = dataPath().lastAs<Property>();
+
+    if(vectorProperty) {
         vectorProperty->forTypes<DataBuffer::Float32, DataBuffer::Float64>([&](auto _) {
             using T = decltype(_);
             size_t i = 0;
@@ -390,8 +401,14 @@ QString VectorPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
 {
     size_t elementIndex = elementIndexFromSubObjectID(subobjectId);
     if(elementIndex != std::numeric_limits<size_t>::max()) {
-        if(const PropertyContainer* container = dataPath().lastAs<PropertyContainer>(1))
+        // Check last element in path:
+        const PropertyContainer* container = dataPath().lastAs<PropertyContainer>(0);
+        // If last element is not the container - check second to last element:
+        if(!container) container = dataPath().lastAs<PropertyContainer>(1);
+
+        if(container) {
             return container->elementInfoString(elementIndex, dataPath());
+        }
     }
     return {};
 }
