@@ -45,7 +45,6 @@ void Vectors::OOMetaClass::initialize()
     registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList);
     registerStandardProperty(DirectionProperty, tr("Direction"), Property::FloatDefault, xyzList);
     registerStandardProperty(PositionProperty, tr("Position"), Property::FloatDefault, xyzList);
-    registerStandardProperty(SelectionProperty, tr("Selection"), Property::IntSelection, emptyList);
     registerStandardProperty(TransparencyProperty, tr("Transparency"), Property::FloatGraphics, emptyList);
 }
 
@@ -73,10 +72,6 @@ PropertyPtr Vectors::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buf
             dataType = Property::FloatDefault;
             componentCount = 3;
             OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
-            break;
-        case SelectionProperty:
-            dataType = Property::IntSelection;
-            componentCount = 1;
             break;
         case TransparencyProperty:
             dataType = Property::FloatGraphics;

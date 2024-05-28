@@ -398,13 +398,9 @@ Future<PipelineFlowState> VectorsAffineTransformationModifierDelegate::apply(
                 // Create an uninitialized copy of the position property.
                 Property* outputPositionProperty = outputVectors->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
 
-                // Check if there is a selection property present.
-                const Property* inputSelectionProperty =
-                    (selectionOnly) ? inputVectors->expectProperty(Vectors::SelectionProperty) : nullptr;
-
                 // Let the modifier class do the actual coordinate transformation work.
                 AffineTransformationModifier::transformCoordinates(tm, selectionOnly, inputPositionProperty, outputPositionProperty,
-                                                                   inputSelectionProperty);
+                                                                   nullptr);
 
                 // Transform the directions
 
@@ -415,8 +411,7 @@ Future<PipelineFlowState> VectorsAffineTransformationModifierDelegate::apply(
                 Property* outputDirectionProperty = outputVectors->makePropertyMutable(inputDirectionProperty, DataBuffer::Uninitialized);
 
                 // Let the modifier class do the actual coordinate transformation work.
-                AffineTransformationModifier::transformVectors(tm, selectionOnly, inputDirectionProperty, outputDirectionProperty,
-                                                               inputSelectionProperty);
+                AffineTransformationModifier::transformVectors(tm, selectionOnly, inputDirectionProperty, outputDirectionProperty, nullptr);
             }
         }
 
