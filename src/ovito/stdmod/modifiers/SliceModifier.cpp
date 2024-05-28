@@ -170,12 +170,9 @@ Future<PipelineFlowState> VectorsSliceModifierDelegate::apply(
                 // Get the input basis points.
                 ConstPropertyPtr positionProperty = inputVectors->expectProperty(Vectors::PositionProperty);
 
-                // Check if there is a selection property present.
-                const Property* selectionProperty = (applyToSelection) ? inputVectors->expectProperty(Vectors::SelectionProperty) : nullptr;
-
                 // Number of marked/selected particles.
                 size_t numMarked =
-                    SliceModifier::sliceCoordinatesToMask(plane, sliceWidth, invert, positionProperty, maskProperty, selectionProperty);
+                    SliceModifier::sliceCoordinatesToMask(plane, sliceWidth, invert, positionProperty, maskProperty, nullptr);
 
                 // Make sure we can safely modify the vectors object.
                 Vectors* outputVectors = state.makeMutable(inputVectors);
