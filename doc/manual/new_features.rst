@@ -17,6 +17,7 @@ Version 3.11.0 (xx-xxx-2024)
 - |ovito-python| Deprecated :py:meth:`!generate` method of the :py:class:`~ovito.modifiers.GenerateTrajectoryLinesModifier`
 - |ovito-python| Added the :py:attr:`HistogramModifier.select_elements <ovito.modifiers.HistogramModifier.select_elements>` option
 - |ovito-python| Initialize global Qt application object only on demand to avoid conflicts with other Python packages that use the Qt framework
+- Add support for :ref:`Vectors <scene_objects.vectors>`, :py:class:`ovito.data.Vectors` in GUI and Python
 
 .. sidebar::
 
