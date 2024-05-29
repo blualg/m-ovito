@@ -153,7 +153,7 @@ public:
         else {
             maxWidth = std::max(maxWidth, uniformWidth());
         }
-        return bb.padBox(maxWidth / (shape() == CylinderShape ? FloatType(2) : FloatType(4)) * std::sqrt(FloatType(3)));
+        return bb.padBox(maxWidth / FloatType(2) * (shape() == CylinderShape ? FloatType(1) : FloatType(2.5)));
     }
 
 private:
