@@ -78,15 +78,15 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
     IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         # Turn off certain Microsoft compiler warnings.
         TARGET_COMPILE_OPTIONS(${target_name}
-            PRIVATE "/wd4267" # Suppress warning on conversion from size_t to int, possible loss of data.
-            PRIVATE "/bigobj" # Compiling template code leads to large object files.
+            PUBLIC "/wd4267" # Suppress warning on conversion from size_t to int, possible loss of data.
+            PUBLIC "/bigobj" # Compiling template code leads to large object files.
         )
 
         # Do not warn about use of unsafe CRT Library functions.
-        TARGET_COMPILE_DEFINITIONS(${target_name} PRIVATE "_CRT_SECURE_NO_WARNINGS=")
+        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "_CRT_SECURE_NO_WARNINGS=")
         # Workaround for deprecation warnings in Visual Studio 2022 due to Qt's QVarLength Array:
         # "warning C4996: 'stdext::checked_array_iterator<Ovito::TimeInterval *>': warning STL4043: stdext::checked_array_iterator, stdext::unchecked_array_iterator, and related factory functions are non-Standard extensions and will be removed in the future. std::span (since C++20) and gsl::span can be used instead."
-        TARGET_COMPILE_DEFINITIONS(${target_name} PRIVATE "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING=")
+        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING=")
 
         IF(OVITO_BUILD_CONDA)
             # Silence deprecation warnings in conda-forge's 'qt-main' package (qpdfwriter.h and qpagedpaintdevice.h).

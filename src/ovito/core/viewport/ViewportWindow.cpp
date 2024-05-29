@@ -509,7 +509,7 @@ void ViewportWindow::renderOrientationIndicator(FrameGraph& frameGraph, const QS
         }
 
         // Compute the projected position of the label in NDC space.
-        Point3G p = Point3G::Origin() + orientation.column(axis).resized(1.23);
+        Point3G p = Point3G::Origin() + orientation.column(axis).resized(1.23f);
         Point3G ndcPoint = projectionMatrix * p;
 
         // Convert position to window space.

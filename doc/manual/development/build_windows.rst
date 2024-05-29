@@ -9,9 +9,9 @@ build OVITO on the Windows platform.
 
 You are going to need at least the following prerequisites:
 
-* Microsoft Visual Studio 2019 or newer (64-bit command line tools for C++ development)
+* Microsoft Visual Studio 2022 or newer (64-bit command line tools for C++ development)
 * Qt 6.x (install the `msvc2019 64-bit` component)
-* CMake (v3.12 or newer)
+* CMake (v3.19 or newer)
 * git
 * `zlib <http://www.zlib.net/>`_
 * `Boost <https://www.boost.org>`_ (header-only component)
