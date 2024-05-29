@@ -43,7 +43,9 @@ ModalPropertiesEditorDialog::ModalPropertiesEditorDialog(RefTarget* object, OORe
     PropertiesPanel* propertiesPanel = new PropertiesPanel(mainWindow, this);
     propertiesPanel->setVisible(false);
     _editor->initialize(propertiesPanel, RolloutInsertionParameters().insertInto(this), nullptr);
-    _editor->setEditObject(object);
+    _editor->handleExceptions([&]() {
+        _editor->setEditObject(object);
+    });
     layout->addWidget(propertiesPanel, 1);
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
