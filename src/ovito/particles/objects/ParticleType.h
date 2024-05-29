@@ -230,7 +230,8 @@ private:
     };
 
     /// Contains default names, colors, and radii for some predefined particle types.
-    static const std::array<PredefinedChemicalType, NUMBER_OF_PREDEFINED_PARTICLE_TYPES> _predefinedParticleTypes;
+    /// +1 from duplication of Zn
+    static const std::array<PredefinedChemicalType, NUMBER_OF_PREDEFINED_PARTICLE_TYPES + 1> _predefinedParticleTypes;
 
     /// Contains default names, colors, and radii for the predefined structure types.
     static const std::array<PredefinedStructuralType, NUMBER_OF_PREDEFINED_STRUCTURE_TYPES> _predefinedStructureTypes;
