@@ -234,16 +234,6 @@ TARGET_COMPILE_DEFINITIONS(Core PUBLIC "$<$<CONFIG:Debug>:OVITO_DEBUG>")
 # Define QT_NO_DEBUG_OUTPUT in release builds.
 TARGET_COMPILE_DEFINITIONS(Core PUBLIC "$<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT=1>")
 
-# Turn off Clang compiler warnings regarding undefined instantiation of static variable of class templates.
-IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    TARGET_COMPILE_OPTIONS(Core PUBLIC "-Wno-undefined-var-template")
-ENDIF()
-
-IF(MSVC AND OVITO_BUILD_CONDA)
-    # Silence deprecation warnings in conda-forge's 'qt-main' package (qpdfwriter.h and qpagedpaintdevice.h).
-    TARGET_COMPILE_OPTIONS(Core PUBLIC "/wd4996")
-ENDIF()
-
 # Enable SYCL in source code.
 IF(OVITO_USE_SYCL STREQUAL AdaptiveCpp)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_USE_SYCL)
