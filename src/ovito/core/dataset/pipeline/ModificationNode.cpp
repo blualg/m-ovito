@@ -169,13 +169,17 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
         return false;
     }
     else if(event.type() == ReferenceEvent::InteractiveStateAvailable && source == input()) {
-
         // Also discard cached output state.
         pipelineCache().invalidateInteractiveState();
 
         // Inform modifier that the input state has changed.
         if(modifier())
             modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
+    }
+    else if(event.type() == ReferenceEvent::PipelineCacheUpdated && source == input()) {
+        // Inform modifier that the cached input state has been updated.
+        // This is mainly needed to update PropertiesEditor widgets that depend on the input state.
+        notifyDependents(ReferenceEvent::PipelineInputChanged);
     }
     return PipelineNode::referenceEvent(source, event);
 }

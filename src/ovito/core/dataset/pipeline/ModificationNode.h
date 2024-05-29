@@ -85,10 +85,12 @@ public:
     /// Returns the cached output of this data pipeline stage at the given time if available.
     /// This method will never throw an exception and doesn't require a valid execution context.
     virtual PipelineFlowState getCachedPipelineNodeOutput(AnimationTime time, bool interactiveMode = true) const override {
-        if(modifierAndGroupEnabled())
-            return PipelineNode::getCachedPipelineNodeOutput(time, interactiveMode);
-        else
-            return getCachedPipelineNodeInput(time, interactiveMode);
+        if(modifierAndGroupEnabled()) {
+            if(PipelineFlowState state = PipelineNode::getCachedPipelineNodeOutput(time, interactiveMode))
+                return state;
+        }
+        // Pass through results from upstream pipeline if this modifier is disabled or has not computed any results yet.
+        return getCachedPipelineNodeInput(time, interactiveMode);
     }
 
     /// \brief Returns the cached input of this modification node at the given time if available.

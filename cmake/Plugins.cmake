@@ -75,7 +75,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
         SET_TARGET_PROPERTIES(${target_name} PROPERTIES UNITY_BUILD ON)
     ENDIF()
 
-    IF(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         # Turn off certain Microsoft compiler warnings.
         TARGET_COMPILE_OPTIONS(${target_name}
             PRIVATE "/wd4267" # Suppress warning on conversion from size_t to int, possible loss of data.

@@ -282,21 +282,24 @@ std::vector<PipelineFlowState> PropertiesEditor::getPipelineInputs() const
     // When editing a modifier, get the pipeline state from the modifier applications.
     if(Modifier* modifier = dynamic_object_cast<Modifier>(editObject())) {
         for(ModificationNode* node : modifier->nodes()) {
-            inputStates.push_back(node->getCachedPipelineNodeInput(currentAnimationTime()));
+            if(PipelineFlowState state = node->getCachedPipelineNodeInput(currentAnimationTime()))
+                inputStates.push_back(std::move(state));
         }
     }
 
     // When editing a DataVis element, get the pipeline state from the scene nodes.
     if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
         for(Pipeline* pipeline : vis->pipelines(true)) {
-            inputStates.push_back(pipeline->getCachedPipelineOutput(currentAnimationTime()));
+            if(PipelineFlowState state = pipeline->getCachedPipelineOutput(currentAnimationTime()))
+                inputStates.push_back(std::move(state));
         }
     }
 
     // When editing a ViewportOverlay, request state from the associated pipeline.
     if(ViewportOverlay* overlay = dynamic_object_cast<ViewportOverlay>(editObject())) {
         if(overlay->pipeline()) {
-            inputStates.push_back(overlay->pipeline()->getCachedPipelineOutput(currentAnimationTime()));
+            if(PipelineFlowState state = overlay->pipeline()->getCachedPipelineOutput(currentAnimationTime()))
+                inputStates.push_back(std::move(state));
         }
     }
 

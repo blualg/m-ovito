@@ -461,7 +461,7 @@ void ViewportWindow::renderOrientationIndicator(FrameGraph& frameGraph, const QS
     viewportScalingTM(1,1) = tripodPixelSize / windowSize.height();
     viewportScalingTM(0,3) = -1.0 + viewportScalingTM(0,0);
     viewportScalingTM(1,3) = -1.0 + viewportScalingTM(1,1);
-    Matrix4G projectionMatrix = viewportScalingTM * Matrix4G::ortho(-1.4, 1.4, -1.4, 1.4, -2.0, 2.0);
+    Matrix4G projectionMatrix = viewportScalingTM * Matrix4G::ortho(-1.4f, 1.4f, -1.4f, 1.4f, -2.0f, 2.0f);
 
     static const ColorA axisColors[3] = { ColorA(1.0, 0.0, 0.0), ColorA(0.0, 1.0, 0.0), ColorA(0.4, 0.4, 1.0) };
     static const QString labelTexts[3] = { QStringLiteral("x"), QStringLiteral("y"), QStringLiteral("z") };
