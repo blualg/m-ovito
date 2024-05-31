@@ -59,7 +59,7 @@ public:
 
     /// Callback function, which is invoked whenever the state of the parent task changes.
     bool taskStateChangedCallback(int state, MutexLock& lock) noexcept {
-        if(state & Canceled)
+        if((state & Canceled) && !isFinished())
             this->cancelLocked(lock);
         // When the parent task finishes, we should detach our callback function immediately,
         // because a task object may not have callbacks registered at the end of its lifetime.
