@@ -523,7 +523,6 @@ DataVis* Pipeline::getReplacementVisElement(DataVis* vis) const
 {
     OVITO_ASSERT(replacementVisElements().size() == replacedVisElements().size());
     OVITO_ASSERT(std::find(replacedVisElements().begin(), replacedVisElements().end(), nullptr) == replacedVisElements().end());
-    OVITO_ASSERT(vis);
     int index = replacedVisElements().indexOf(vis);
     if(index >= 0)
         return replacementVisElements()[index];
@@ -538,8 +537,12 @@ DataVis* Pipeline::getReplacementVisElement(DataVis* vis) const
 DataVis* Pipeline::makeVisElementIndependent(DataVis* visElement)
 {
     OVITO_ASSERT(visElement != nullptr);
-    OVITO_ASSERT(!replacedVisElements().contains(visElement));
     OVITO_ASSERT(replacedVisElements().size() == replacementVisElements().size());
+
+    // Check if the visual element is already replaced.
+    int index = replacedVisElements().indexOf(visElement);
+    if(index >= 0)
+        return replacementVisElements()[index];
 
     // Clone the visual element.
     OORef<DataVis> clonedVisElement = CloneHelper::cloneSingleObject(visElement, true);
@@ -551,7 +554,7 @@ DataVis* Pipeline::makeVisElementIndependent(DataVis* visElement)
     // Put the copy into our mapping table, which will subsequently be applied
     // after every pipeline evaluation to replace the upstream visual element
     // with our local copy.
-    int index = replacementVisElements().indexOf(visElement);
+    index = replacementVisElements().indexOf(visElement);
     if(index == -1) {
         _replacedVisElements.push_back(this, PROPERTY_FIELD(replacedVisElements), visElement);
         _replacementVisElements.push_back(this, PROPERTY_FIELD(replacementVisElements), std::move(clonedVisElement));
