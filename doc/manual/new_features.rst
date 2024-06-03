@@ -13,12 +13,20 @@ Changelog
 Version 3.11.0 (xx-xxx-2024)
 ----------------------------
 
-- The :ref:`particles.modifiers.generate_trajectory_lines` modifier now works automatically without the need to start the generation process manually
+- The :ref:`particles.modifiers.generate_trajectory_lines` modifier now works automatically without the need to start the trajectory generation manually
+- |ovito-python| New property :py:attr:`ovito.pipeline.Pipeline.frames`
+- |ovito-python| New parameter trait types :py:attr:`ovito.traits.DataObjectReference` and :py:attr:`ovito.traits.PropertyReference`
+- |ovito-python| New class :py:class:`ovito.data.DataObject.Ref` and methods :py:meth:`ovito.data.DataCollection.get` and :py:meth:`ovito.data.PropertyContainer.get`
 - |ovito-python| Deprecated :py:meth:`!generate` method of the :py:class:`~ovito.modifiers.GenerateTrajectoryLinesModifier`
 - |ovito-python| Added the :py:attr:`HistogramModifier.select_elements <ovito.modifiers.HistogramModifier.select_elements>` option
-- |ovito-python| Initialize global Qt application object only on demand to avoid conflicts with other Python packages that use the Qt framework
+- |ovito-python| Initialize global Qt application object on demand only to avoid conflicts with other Python packages that also use the Qt framework
+- |ovito-python| Added support for Python multiprocessing module
+- |ovito-python| Added support for Python copy module
+- |ovito-pro| Extended the Python code generator to support multiple pipeline, including branched pipeline structures and shared modifiers
+- |ovito-pro| Fixed error that occurs if the Render LAMMPS Regions modifier is inserted more than once into the same pipeline
 - Add support for :ref:`Vectors <scene_objects.vectors>`, :py:class:`ovito.data.Vectors` in GUI and Python
-- Add support for updated Zn mass: old mass (pre 2001) 65.409, update mass 65.38 (https://www.ciaaw.org/zinc.htm). Old mass is still supported for legacy reasons
+- Add support for updated Zn mass: old mass (pre 2007) 65.409, update mass 65.38 (https://www.ciaaw.org/zinc.htm). Old mass is still supported for legacy reasons
+- OVITO Basic now includes demo versions of high-quality rendering backends OSPRay, Tachyon, and VisRTX
 
 .. sidebar::
 
