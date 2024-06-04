@@ -36,11 +36,11 @@ class OVITO_CORE_EXPORT DependentsList
 {
 private:
 
-    using size_type = QVarLengthArray<RefMaker*, 2>::size_type;
+    using size_type = QVarLengthArray<OOWeakRef<RefMaker>, 2>::size_type;
 
     /// The list of RefMakers that currently hold a reference to this target.
     /// If a RefMaker has multiple references to this target, it will appear only once in this list.
-	QVarLengthArray<RefMaker*, 2> _entries;
+	QVarLengthArray<OOWeakRef<RefMaker>, 2> _entries;
 
     /// Keeps track of the number of nested calls to visit().
     int _reentranceCounter = 0;
@@ -67,16 +67,12 @@ public:
         // may grow (but not shrink) during the iteration process.
         bool containsEmptySlots = false;
         for(size_type i = 0; i < _entries.size(); i++) {
-            if(RefMaker* d = _entries[i]) {
-                // Keep object alive during the visitation process when calling the callback function.
-                // Creating a strong object reference is only possible if the dependent is already fully
-                // constructed and not about to be deleted (otherwise std::shared_ptr throws an exception).
-                OORef<RefMaker> ref(!d->isBeingConstructed() && !d->isBeingDeleted() ? d : nullptr);
+            if(OORef<RefMaker> d = _entries[i].lock()) {
                 lock.unlock();
                 fn(d);
                 // Release the dependent. This might delete the dependent and can cause further actions to take place.
                 // That's why we have to do it before re-acquiring the lock.
-                ref.reset();
+                d.reset();
                 lock.lock();
             }
             else {
@@ -89,7 +85,7 @@ public:
         // Compact the list if necessary.
         // But only do it if we are not currently visiting the list recursively or concurrently.
         if(--_reentranceCounter == 0 && containsEmptySlots) {
-            _entries.removeAll(nullptr);
+            _entries.erase(std::remove_if(_entries.begin(), _entries.end(), std::mem_fn(&OOWeakRef<RefMaker>::expired)), _entries.end());
         }
 
 #ifdef OVITO_DEBUG
@@ -103,18 +99,21 @@ public:
     /// Adds a RefMaker to the list unless it is already in the list.
     void insert(RefMaker* dependent) noexcept {
         OVITO_ASSERT(dependent != nullptr);
-        RefMaker** free_slot = nullptr;
+        OVITO_ASSERT(!dependent->isBeingConstructed());
+        OVITO_ASSERT(!dependent->isBeingDeleted());
+        OOWeakRef<RefMaker> dependentWeakRef = dependent;
+        OOWeakRef<RefMaker>* free_slot = nullptr;
         std::lock_guard<std::mutex> lock(mutex());
         for(auto& entry : _entries) {
-            if(entry == dependent)
+            if(entry == dependentWeakRef)
                 return;
-            else if(entry == nullptr && free_slot == nullptr)
+            else if(entry.expired() && free_slot == nullptr)
                 free_slot = &entry;
         }
-        if(free_slot == nullptr)
-            _entries.push_back(dependent);
+        if(!free_slot)
+            _entries.push_back(std::move(dependentWeakRef));
         else
-            *free_slot = dependent;
+            *free_slot = std::move(dependentWeakRef);
         OVITO_ASSERT(_entries.size() <= 255);
     }
 
@@ -122,17 +121,23 @@ public:
     void remove(RefMaker* dependent) noexcept {
         OVITO_ASSERT(dependent != nullptr);
         std::lock_guard<std::mutex> lock(mutex());
-        auto idx = _entries.indexOf(dependent);
-        OVITO_ASSERT(idx >= 0);
-        _entries.replace(idx, nullptr);
-        OVITO_ASSERT(!_entries.contains(dependent));
+        for(auto& entry : _entries) {
+            OORef<RefMaker> d = entry.lock();
+            if(d.get() == dependent) {
+                entry.reset(); // Just null out the entry. Vector will be compacted later in visit().
+                return;
+            }
+        }
+        // Note: We don't require the dependent to be still in the list,
+        // because the stored weak pointer to it may have already been reset if the dependent
+        // is being deleted.
     }
 
-    /// Checks if the list currently contains no RefMakers.
-    inline bool empty() const {
+    /// Checks whether the list currently doesn't contain any RefMakers.
+    inline bool empty() const noexcept {
         std::lock_guard<std::mutex> lock(mutex());
-        for(RefMaker* entry : _entries) {
-            if(entry != nullptr)
+        for(const auto& entry : _entries) {
+            if(!entry.expired())
                 return false;
         }
         return true;

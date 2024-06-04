@@ -39,11 +39,6 @@ class CreateIsosurfaceModifierEditor : public PropertiesEditor
     OVITO_CLASS(CreateIsosurfaceModifierEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

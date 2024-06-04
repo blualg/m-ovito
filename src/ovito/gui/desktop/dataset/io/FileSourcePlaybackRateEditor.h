@@ -36,11 +36,6 @@ class FileSourcePlaybackRateEditor : public PropertiesEditor
     OVITO_CLASS(FileSourcePlaybackRateEditor)
     Q_OBJECT
 
-public:
-
-    /// Default constructor.
-    explicit FileSourcePlaybackRateEditor() {}
-
 protected:
 
     /// Creates the user interface controls for the editor.

@@ -34,8 +34,10 @@ OVITO_CLASSINFO(TriangleMesh, "ClassNameAlias", "TriMeshObject");  // For backwa
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-TriangleMesh::TriangleMesh(ObjectInitializationFlags flags) : DataObject(flags)
+void TriangleMesh::initializeObject(ObjectInitializationFlags flags)
 {
+    DataObject::initializeObject(flags);
+
     if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
         setVisElement(OORef<TriangleMeshVis>::create(flags));
     }

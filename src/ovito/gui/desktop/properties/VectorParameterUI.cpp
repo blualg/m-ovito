@@ -30,13 +30,17 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(VectorParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField property.
+* Constructor.
 ******************************************************************************/
-VectorParameterUI::VectorParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t vectorComponentIndex, size_t vectorComponentCount)
-    : FloatParameterUI(parentEditor, propField), _componentIndex(vectorComponentIndex), _componentCount(vectorComponentCount)
+void VectorParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t vectorComponentIndex, size_t vectorComponentCount)
 {
     OVITO_ASSERT_MSG(vectorComponentCount >= 2 && vectorComponentCount <= 3, "VectorParameterUI constructor", "The vector component count must be in the range 3-4.");
     OVITO_ASSERT_MSG(vectorComponentIndex >= 0 && vectorComponentIndex < vectorComponentCount, "VectorParameterUI constructor", "The vector component index is out of range.");
+
+    FloatParameterUI::initializeObject(parentEditor, propField);
+
+    _componentIndex = vectorComponentIndex;
+    _componentCount = vectorComponentCount;
 
     switch(vectorComponentIndex) {
         case 0: label()->setText(propField->displayName() + " (X):"); break;

@@ -48,10 +48,15 @@ DEFINE_REFERENCE_FIELD(DataSetContainer, activeAnimationSettings);
 /******************************************************************************
 * Initializes the dataset manager.
 ******************************************************************************/
-DataSetContainer::DataSetContainer(TaskManager& taskManager, UserInterface& userInterface) : _taskManager(taskManager), _userInterface(userInterface)
+void DataSetContainer::initializeObject(TaskManager& taskManager, UserInterface& userInterface)
 {
+    RefMaker::initializeObject();
+
+    _taskManager = &taskManager;
+    _userInterface = &userInterface;
 }
 
+#ifdef OVITO_DEBUG
 /******************************************************************************
 * Destructor.
 ******************************************************************************/
@@ -64,6 +69,7 @@ DataSetContainer::~DataSetContainer()
     OVITO_ASSERT(activeAnimationSettings() == nullptr);
     OVITO_ASSERT(activeSelectionSet() == nullptr);
 }
+#endif
 
 /******************************************************************************
 * Is called when a RefTarget referenced by this object generated an event.

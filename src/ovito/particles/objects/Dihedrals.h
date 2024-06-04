@@ -65,7 +65,7 @@ public:
     };
 
     /// Constructor.
-    explicit Dihedrals(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Convinience method that returns the dihedral topology property.
     const Property* getTopology() const { return getProperty(TopologyProperty); }

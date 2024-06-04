@@ -43,7 +43,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationAnalysisModifier : public Structur
 public:
 
     /// Constructor.
-    explicit DislocationAnalysisModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Returns the crystal structure with the given ID, or null if no such structure exists.
     MicrostructurePhase* structureTypeById(int id) const {
@@ -58,34 +58,34 @@ protected:
 private:
 
     /// The type of crystal to be analyzed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(StructureAnalysis::LatticeStructureType, inputCrystalStructure, setInputCrystalStructure, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(StructureAnalysis::LatticeStructureType{StructureAnalysis::LATTICE_FCC}, inputCrystalStructure, setInputCrystalStructure, PROPERTY_FIELD_MEMORIZE);
 
     /// The maximum length of trial circuits.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, maxTrialCircuitSize, setMaxTrialCircuitSize);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{14}, maxTrialCircuitSize, setMaxTrialCircuitSize);
 
     /// The maximum elongation of Burgers circuits while they are being advanced.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, circuitStretchability, setCircuitStretchability);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{9}, circuitStretchability, setCircuitStretchability);
 
     /// Controls the output of the interface mesh.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, outputInterfaceMesh, setOutputInterfaceMesh);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, outputInterfaceMesh, setOutputInterfaceMesh);
 
     /// Restricts the identification to perfect lattice dislocations.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlyPerfectDislocations, setOnlyPerfectDislocations);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, onlyPerfectDislocations, setOnlyPerfectDislocations);
 
     /// The number of iterations of the mesh smoothing algorithm.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, defectMeshSmoothingLevel, setDefectMeshSmoothingLevel);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{8}, defectMeshSmoothingLevel, setDefectMeshSmoothingLevel);
 
     /// Stores whether smoothing is enabled.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, lineSmoothingEnabled, setLineSmoothingEnabled);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, lineSmoothingEnabled, setLineSmoothingEnabled);
 
     /// Controls the degree of smoothing applied to the dislocation lines.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, lineSmoothingLevel, setLineSmoothingLevel);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{1}, lineSmoothingLevel, setLineSmoothingLevel);
 
     /// Stores whether coarsening is enabled.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, lineCoarseningEnabled, setLineCoarseningEnabled);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, lineCoarseningEnabled, setLineCoarseningEnabled);
 
     /// Controls the coarsening of dislocation lines.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, linePointInterval, setLinePointInterval);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{2.5}, linePointInterval, setLinePointInterval);
 
     /// The visualization element for rendering the defect mesh.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, defectMeshVis, setDefectMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);

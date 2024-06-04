@@ -60,12 +60,13 @@ PropertyPtr DataTable::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DataTable::DataTable(ObjectInitializationFlags flags, PlotMode plotMode, const QString& title, ConstPropertyPtr y, ConstPropertyPtr x) : PropertyContainer(flags, title),
-    _intervalStart(0),
-    _intervalEnd(0),
-    _plotMode(plotMode)
+void DataTable::initializeObject(ObjectInitializationFlags flags, PlotMode plotMode, const QString& title, ConstPropertyPtr y, ConstPropertyPtr x)
 {
     OVITO_ASSERT(!x || !y || x->size() == y->size());
+
+    PropertyContainer::initializeObject(flags, title);
+
+    setPlotMode(plotMode);
     setX(std::move(x));
     setY(std::move(y));
 }

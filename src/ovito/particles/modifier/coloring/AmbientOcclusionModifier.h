@@ -51,9 +51,6 @@ public:
 
     enum { MAX_AO_RENDER_BUFFER_RESOLUTION = 4 };
 
-    /// Constructor.
-    explicit AmbientOcclusionModifier(ObjectInitializationFlags flags);
-
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
@@ -75,13 +72,13 @@ public:
 private:
 
     /// This controls the intensity of the shading effect.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, intensity, setIntensity);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0.7}, intensity, setIntensity);
 
     /// Controls the quality of the lighting computation.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, samplingCount, setSamplingCount);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{40}, samplingCount, setSamplingCount);
 
     /// Controls the resolution of the offscreen rendering buffer.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, bufferResolution, setBufferResolution);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{3}, bufferResolution, setBufferResolution);
 };
 
 }   // End of namespace

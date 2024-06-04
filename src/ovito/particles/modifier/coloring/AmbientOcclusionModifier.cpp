@@ -51,16 +51,6 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(AmbientOcclusionModifier, samplingCount, Inte
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(AmbientOcclusionModifier, bufferResolution, IntegerParameterUnit, 1, AmbientOcclusionModifier::MAX_AO_RENDER_BUFFER_RESOLUTION);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-AmbientOcclusionModifier::AmbientOcclusionModifier(ObjectInitializationFlags flags) : Modifier(flags),
-    _intensity(0.7),
-    _samplingCount(40),
-    _bufferResolution(3)
-{
-}
-
-/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool AmbientOcclusionModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const

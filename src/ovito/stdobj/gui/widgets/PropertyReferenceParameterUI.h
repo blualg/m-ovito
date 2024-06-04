@@ -50,7 +50,7 @@ public:
     Q_ENUM(PropertyComponentsMode);
 
     /// Constructor.
-    explicit PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
 
     /// Destructor.
     virtual ~PropertyReferenceParameterUI();

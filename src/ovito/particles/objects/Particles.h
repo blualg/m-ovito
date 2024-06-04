@@ -131,7 +131,7 @@ public:
     };
 
     /// Constructor.
-    explicit Particles(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Deletes those data elements having a non-zero value in the given selection array.
     /// Returns the number of deleted elements. The original order of the remaining elements is preserved.

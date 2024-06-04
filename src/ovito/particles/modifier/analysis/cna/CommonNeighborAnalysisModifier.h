@@ -109,7 +109,7 @@ public:
 public:
 
     /// Constructor.
-    explicit CommonNeighborAnalysisModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Find all atoms that are nearest neighbors of the given pair of atoms.
     static int findCommonNeighbors(const NeighborBondArray& neighborArray, int neighborIndex, unsigned int& commonNeighbors);
@@ -236,10 +236,10 @@ private:
     };
 
     /// The cutoff radius used for the conventional CNA.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.2}, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls how the CNA is performed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CNAMode, mode, setMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CNAMode{AdaptiveCutoffMode}, mode, setMode, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

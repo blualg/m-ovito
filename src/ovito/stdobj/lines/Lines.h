@@ -62,8 +62,8 @@ public:
         SectionProperty
     };
 
-    /// \brief Constructor.
-    explicit Lines(ObjectInitializationFlags flags);
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Returns the data for visualizing a vector property from this container using a VectorVis element.
     VectorVis::VectorData getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
@@ -82,7 +82,7 @@ private:
     }
 
     /// The planar cuts to be applied to geometry after its has been transformed into a non-periodic representation.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QVector<Plane3>, cuttingPlanes, setCuttingPlanes);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QVector<Plane3>{}, cuttingPlanes, setCuttingPlanes);
 
     /// The cached bounding box of the vertex coordinates.
     Box3 _boundingBox;

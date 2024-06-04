@@ -84,8 +84,8 @@ public:
 
 public:
 
-    /// \brief Constructs a new viewport.
-    explicit Viewport(ObjectInitializationFlags flags);
+    /// \brief Constructor.
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// \brief Destructor.
     ~Viewport();
@@ -233,32 +233,32 @@ protected:
 private:
 
     /// The type of the viewport (top, left, perspective, etc.)
-    DECLARE_PROPERTY_FIELD_FLAGS(ViewType, viewType, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_PROPERTY_FIELD_FLAGS(ViewType{VIEW_NONE}, viewType, PROPERTY_FIELD_NO_UNDO);
 
     /// The orientation of the grid.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineTransformation, gridMatrix, setGridMatrix, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineTransformation{AffineTransformation::Identity()}, gridMatrix, setGridMatrix, PROPERTY_FIELD_NO_UNDO);
 
     /// The zoom or field of view.
-    DECLARE_PROPERTY_FIELD_FLAGS(FloatType, fieldOfView, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_PROPERTY_FIELD_FLAGS(FloatType{100}, fieldOfView, PROPERTY_FIELD_NO_UNDO);
 
     /// The orientation of the camera.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineTransformation, cameraTransformation, setCameraTransformation, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineTransformation{AffineTransformation::Identity()}, cameraTransformation, setCameraTransformation, PROPERTY_FIELD_NO_UNDO);
 
     /// Selectes the upward pointing direction of the virtual camera.
     /// If nonzero, this viewport parameter overrides the global user settings.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Vector3, cameraUpDirection, setCameraUpDirection, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Vector3{Vector3::Zero()}, cameraUpDirection, setCameraUpDirection, PROPERTY_FIELD_NO_UNDO);
 
     /// Indicates whether the rendering frame is shown.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, renderPreviewMode, setRenderPreviewMode, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, renderPreviewMode, setRenderPreviewMode, PROPERTY_FIELD_NO_UNDO);
 
     /// Indicates whether the grid is shown.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, isGridVisible, setGridVisible, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, isGridVisible, setGridVisible, PROPERTY_FIELD_NO_UNDO);
 
     /// The scene node (camera) that has been selected as the view node.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Pipeline>, viewNode, setViewNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// The title of the viewport.
-    DECLARE_PROPERTY_FIELD_FLAGS(QString, viewportTitle, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_PROPERTY_FIELD_FLAGS(QString{}, viewportTitle, PROPERTY_FIELD_NO_UNDO);
 
     /// The list of layers which are painted above the 3d scene.
     DECLARE_VECTOR_REFERENCE_FIELD(OORef<ViewportOverlay>, overlays);

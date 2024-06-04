@@ -35,11 +35,6 @@ class POSCARExporterEditor : public PropertiesEditor
 {
     OVITO_CLASS(POSCARExporterEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

@@ -38,9 +38,6 @@ class ParticleSettingsPage : public ApplicationSettingsDialogPage
 
 public:
 
-    /// Constructor.
-    using ApplicationSettingsDialogPage::ApplicationSettingsDialogPage;
-
     /// \brief Creates the widget.
     virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
 

@@ -55,7 +55,7 @@ class OVITO_PARTICLES_EXPORT VoronoiAnalysisModifier : public Modifier
 public:
 
     /// Constructor.
-    explicit VoronoiAnalysisModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
@@ -169,28 +169,28 @@ private:
     };
 
     /// Controls whether the modifier takes into account only selected particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelected, setOnlySelected);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, onlySelected, setOnlySelected);
 
     /// Controls whether the modifier takes into account particle radii.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useRadii, setUseRadii);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useRadii, setUseRadii);
 
     /// Controls whether the modifier computes Voronoi indices.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computeIndices, setComputeIndices);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, computeIndices, setComputeIndices);
 
     /// The minimum length for an edge to be counted.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, edgeThreshold, setEdgeThreshold);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, edgeThreshold, setEdgeThreshold);
 
     /// The minimum area for a face to be counted.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, faceThreshold, setFaceThreshold);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, faceThreshold, setFaceThreshold);
 
     /// The minimum area for a face to be counted relative to the total polyhedron surface.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, relativeFaceThreshold, setRelativeFaceThreshold);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, relativeFaceThreshold, setRelativeFaceThreshold);
 
     /// Controls whether the modifier outputs nearest neighbor bonds.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computeBonds, setComputeBonds);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, computeBonds, setComputeBonds);
 
     /// Controls whether the modifier outputs Voronoi polyhedra.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computePolyhedra, setComputePolyhedra);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, computePolyhedra, setComputePolyhedra);
 
     /// The vis element for rendering the bonds.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondsVis>, bondsVis, setBondsVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);

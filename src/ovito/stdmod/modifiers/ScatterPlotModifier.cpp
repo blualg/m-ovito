@@ -65,22 +65,12 @@ SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, xAxisProperty, "X-axis property");
 SET_PROPERTY_FIELD_LABEL(ScatterPlotModifier, yAxisProperty, "Y-axis property");
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-ScatterPlotModifier::ScatterPlotModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags),
-    _selectXAxisInRange(false),
-    _selectionXAxisRangeStart(0),
-    _selectionXAxisRangeEnd(1),
-    _selectYAxisInRange(false),
-    _selectionYAxisRangeStart(0),
-    _selectionYAxisRangeEnd(1),
-    _fixXAxisRange(false),
-    _xAxisRangeStart(0),
-    _xAxisRangeEnd(0),
-    _fixYAxisRange(false),
-    _yAxisRangeStart(0),
-    _yAxisRangeEnd(0)
+void ScatterPlotModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    GenericPropertyModifier::initializeObject(flags);
+
     // Operate on particle properties by default.
     setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }

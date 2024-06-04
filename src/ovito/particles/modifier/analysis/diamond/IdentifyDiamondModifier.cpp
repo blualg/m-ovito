@@ -36,10 +36,12 @@ OVITO_CLASSINFO(IdentifyDiamondModifier, "Description", "Identify particles arra
 OVITO_CLASSINFO(IdentifyDiamondModifier, "ModifierCategory", "Structure identification");
 
 /******************************************************************************
- * Constructs the modifier object.
+ * Constructor.
  ******************************************************************************/
-IdentifyDiamondModifier::IdentifyDiamondModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags)
+void IdentifyDiamondModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    StructureIdentificationModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the structure types.
         createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);

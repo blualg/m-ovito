@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT VectorParameterUI : public FloatParameterUI
 public:
 
     /// Constructor.
-    VectorParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t vectorComponentIndex, size_t vectorComponentCount);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t vectorComponentIndex, size_t vectorComponentCount);
 
     /// This method updates the displayed value of the parameter UI.
     virtual void updateUI() override;

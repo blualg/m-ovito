@@ -41,7 +41,7 @@ class AngleInspectionApplet : public PropertyInspectionApplet
 public:
 
     /// Constructor.
-    explicit AngleInspectionApplet() : PropertyInspectionApplet(Angles::OOClass()) {}
+    void initializeObject() { PropertyInspectionApplet::initializeObject(Angles::OOClass()); }
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 15; }

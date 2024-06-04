@@ -51,16 +51,13 @@ class OVITO_STDOBJ_EXPORT GenericPropertyModifier : public Modifier
 
 protected:
 
-    /// Constructor.
-    using Modifier::Modifier;
-
     /// Sets the subject property container.
     void setDefaultSubject(const QString& pluginId, const QString& containerClassName);
 
 private:
 
     /// The property container the modifier will operate on.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyContainerReference, subject, setSubject);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyContainerReference{}, subject, setSubject);
 };
 
 }   // End of namespace

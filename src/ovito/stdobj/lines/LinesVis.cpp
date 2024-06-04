@@ -124,16 +124,10 @@ QString LinesPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
 /******************************************************************************
  * Constructor.
  ******************************************************************************/
-LinesVis::LinesVis(ObjectInitializationFlags flags)
-    : DataVis(flags),
-      _lineWidth(0.2),
-      _lineColor(0.6, 0.6, 0.6),
-      _roundedCaps(false),
-      _shadingMode(FlatShading),
-      _showUpToCurrentTime(false),
-      _wrappedLines(false),
-      _coloringMode(UniformColoring)
+void LinesVis::initializeObject(ObjectInitializationFlags flags)
 {
+    DataVis::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create a color mapping object for pseudo-color visualization of a local line property.
         setColorMapping(OORef<PropertyColorMapping>::create(flags));

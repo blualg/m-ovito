@@ -40,9 +40,6 @@ class ManualSelectionModifierEditor : public PropertiesEditor
 
 public:
 
-    /// Default constructor
-    using PropertiesEditor::PropertiesEditor;
-
     /// This is called when the user has selected an element in the viewports.
     void onElementPicked(const ViewportWindow::PickResult& pickResult, size_t elementIndex, const ConstDataObjectPath& pickedObjectPath);
 

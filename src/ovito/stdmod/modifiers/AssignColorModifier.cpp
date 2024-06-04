@@ -44,12 +44,15 @@ SET_PROPERTY_FIELD_LABEL(AssignColorModifier, colorController, "Color");
 SET_PROPERTY_FIELD_LABEL(AssignColorModifier, keepSelection, "Keep selection");
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-AssignColorModifier::AssignColorModifier(ObjectInitializationFlags flags) : DelegatingModifier(flags),
-    // In the graphical environment, we clear the selection by default to make the assigned colors visible.
-    _keepSelection(ExecutionContext::isScripting())
+void AssignColorModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    DelegatingModifier::initializeObject(flags);
+
+    // In the graphical environment, we clear the selection by default to make the assigned colors visible.
+    setKeepSelection(ExecutionContext::isScripting());
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setColorController(ControllerManager::createColorController());
         colorController()->setColorValue(AnimationTime(0), Color(0.3f, 0.3f, 1.0f));

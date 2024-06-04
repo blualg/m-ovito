@@ -61,21 +61,6 @@ SET_PROPERTY_FIELD_LABEL(ClusterAnalysisModifier, colorParticlesByCluster, "Colo
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ClusterAnalysisModifier, cutoff, WorldParameterUnit, 0);
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-ClusterAnalysisModifier::ClusterAnalysisModifier(ObjectInitializationFlags flags) : Modifier(flags),
-    _cutoff(3.2),
-    _onlySelectedParticles(false),
-    _sortBySize(false),
-    _neighborMode(CutoffRange),
-    _unwrapParticleCoordinates(false),
-    _computeCentersOfMass(false),
-    _computeRadiusOfGyration(false),
-    _colorParticlesByCluster(false)
-{
-}
-
-/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool ClusterAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const

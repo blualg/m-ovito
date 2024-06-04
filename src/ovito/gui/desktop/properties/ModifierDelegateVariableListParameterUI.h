@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT ModifierDelegateVariableListParameterUI : public Paramete
 public:
 
     /// Constructor.
-    ModifierDelegateVariableListParameterUI(PropertiesEditor* parentEditor, const OvitoClass& delegateType);
+    void initializeObject(PropertiesEditor* parentEditor, const OvitoClass& delegateType);
 
     /// Destructor.
     virtual ~ModifierDelegateVariableListParameterUI();
@@ -87,7 +87,7 @@ protected:
 private:
 
     /// The type of modifier delegates, which the user can choose from.
-    const OvitoClass& _delegateType;
+    OvitoClassPtr _delegateType;
 
     /// The container widget managed by this parameter UI.
     QPointer<QWidget> _containerWidget;

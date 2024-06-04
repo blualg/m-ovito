@@ -35,11 +35,6 @@ class DataTablePlotExporterEditor : public PropertiesEditor
 {
     OVITO_CLASS(DataTablePlotExporterEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

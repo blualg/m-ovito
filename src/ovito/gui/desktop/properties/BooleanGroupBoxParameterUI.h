@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT BooleanGroupBoxParameterUI : public PropertyParameterUI
 public:
 
     /// Constructor.
-    BooleanGroupBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor, which releases all GUI widgets.
     virtual ~BooleanGroupBoxParameterUI();

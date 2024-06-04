@@ -49,11 +49,6 @@ class OVITO_PARTICLES_EXPORT POSCARExporter : public ParticleExporter
 
     OVITO_CLASS_META(POSCARExporter, OOMetaClass)
 
-public:
-
-    /// Constructor.
-    explicit POSCARExporter(ObjectInitializationFlags flags) : ParticleExporter(flags), _writeReducedCoordinates(false) {}
-
 protected:
 
     /// \brief Writes the particles of one animation frame to the current output file.
@@ -62,7 +57,7 @@ protected:
 private:
 
     /// Controls whether atomic coordinates are written in reduced form to the POSCAR file.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, writeReducedCoordinates, setWriteReducedCoordinates, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, writeReducedCoordinates, setWriteReducedCoordinates, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

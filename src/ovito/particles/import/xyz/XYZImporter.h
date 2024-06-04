@@ -57,9 +57,6 @@ class OVITO_PARTICLES_EXPORT XYZImporter : public ParticleImporter
 
 public:
 
-    /// Constructor a new instance of this class.
-    explicit XYZImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _autoRescaleCoordinates(false) {}
-
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }
 
@@ -135,10 +132,10 @@ protected:
 private:
 
     /// The user-defined mapping of input file columns to OVITO's particle properties.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleInputColumnMapping, columnMapping, setColumnMapping);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleInputColumnMapping{}, columnMapping, setColumnMapping);
 
     /// Controls the automatic detection of reduced atom coordinates in the input file.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoRescaleCoordinates, setAutoRescaleCoordinates);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, autoRescaleCoordinates, setAutoRescaleCoordinates);
 };
 
 }   // End of namespace

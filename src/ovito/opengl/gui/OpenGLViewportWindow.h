@@ -43,9 +43,6 @@ class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLViewportWindow : public WidgetViewpor
 
 public:
 
-    /// Constructor.
-    using WidgetViewportWindow::WidgetViewportWindow;
-
     /// Determines the object that is located under the given mouse cursor position.
     virtual std::optional<PickResult> pick(const QPointF& pos) override;
 

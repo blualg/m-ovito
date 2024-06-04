@@ -47,10 +47,10 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(VoxelGridPickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VoxelGridVis::VoxelGridVis(ObjectInitializationFlags flags) : DataVis(flags),
-    _highlightGridLines(true),
-    _interpolateColors(false)
+void VoxelGridVis::initializeObject(ObjectInitializationFlags flags)
 {
+    DataVis::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create animation controller for the transparency parameter.
         setTransparencyController(ControllerManager::createFloatController());

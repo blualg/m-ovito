@@ -33,10 +33,12 @@ OVITO_CLASSINFO(ClearSelectionModifier, "Description", "Reset the selection stat
 OVITO_CLASSINFO(ClearSelectionModifier, "ModifierCategory", "Selection");
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-ClearSelectionModifier::ClearSelectionModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags)
+void ClearSelectionModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    GenericPropertyModifier::initializeObject(flags);
+
     // Operate on particles by default.
     setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }

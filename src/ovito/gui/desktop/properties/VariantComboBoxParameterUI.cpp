@@ -29,11 +29,13 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(VariantComboBoxParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField property.
+* Constructor.
 ******************************************************************************/
-VariantComboBoxParameterUI::VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-    PropertyParameterUI(parentEditor, propField), _comboBox(new QComboBox())
+void VariantComboBoxParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
+    _comboBox = new QComboBox();
     connect(comboBox(), qOverload<int>(&QComboBox::activated), this, &VariantComboBoxParameterUI::updatePropertyValue);
 }
 

@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT DataObjectReferenceParameterUI : public PropertyParameter
 public:
 
     /// Constructor.
-    explicit DataObjectReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const DataObject::OOMetaClass& dataObjectClass);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const DataObject::OOMetaClass& dataObjectClass);
 
     /// Destructor.
     virtual ~DataObjectReferenceParameterUI();
@@ -58,7 +58,7 @@ public:
     virtual void resetUI() override;
 
     /// Returns the type of data object that can be selected.
-    DataObjectClassPtr dataObjectClass() const { return &_dataObjectClass; }
+    DataObjectClassPtr dataObjectClass() const { return _dataObjectClass; }
 
     /// Sets the tooltip text for the combo box widget.
     void setToolTip(const QString& text) const {
@@ -80,7 +80,7 @@ public:
     /// Installs an optional callback function for filtering the displayed object list.
     template<typename DataObjectClass, typename F>
     void setObjectFilter(F&& filter) {
-        OVITO_ASSERT(_dataObjectClass.isDerivedFrom(DataObjectClass::OOClass()));
+        OVITO_ASSERT(_dataObjectClass->isDerivedFrom(DataObjectClass::OOClass()));
         setObjectFilter([filter=std::forward<F>(filter)](const DataObject* obj) {
             return std::invoke(filter, static_object_cast<DataObjectClass>(obj));
         });
@@ -102,7 +102,7 @@ protected:
     QPointer<QComboBox> _comboBox;
 
     /// The type of data object that can be selected.
-    const DataObject::OOMetaClass& _dataObjectClass;
+    DataObjectClassPtr _dataObjectClass;
 
     /// An optional callback function that allows clients to filter the displayed object list.
     std::function<bool(const DataObject*)> _objectFilter;

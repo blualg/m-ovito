@@ -54,7 +54,7 @@ public:
 public:
 
     /// Constructor.
-    explicit IdentifyDiamondModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
 protected:
 

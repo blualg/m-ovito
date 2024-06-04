@@ -49,11 +49,6 @@ class OVITO_PARTICLES_EXPORT IMDExporter : public FileColumnParticleExporter
 
     OVITO_CLASS_META(IMDExporter, OOMetaClass)
 
-public:
-
-    /// Constructor.
-    using FileColumnParticleExporter::FileColumnParticleExporter;
-
 protected:
 
     /// \brief Writes the particles of one animation frame to the current output file.

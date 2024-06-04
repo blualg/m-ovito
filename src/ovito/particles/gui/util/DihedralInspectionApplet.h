@@ -41,7 +41,7 @@ class DihedralInspectionApplet : public PropertyInspectionApplet
 public:
 
     /// Constructor.
-    explicit DihedralInspectionApplet() : PropertyInspectionApplet(Dihedrals::OOClass()) {}
+    void initializeObject() { PropertyInspectionApplet::initializeObject(Dihedrals::OOClass()); }
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 16; }

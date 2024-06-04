@@ -35,11 +35,6 @@ class DeleteSelectedModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(DeleteSelectedModifierEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

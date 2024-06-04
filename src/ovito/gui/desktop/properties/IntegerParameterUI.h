@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT IntegerParameterUI : public NumericalParameterUI
 public:
 
     /// Constructor.
-    IntegerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Gets the minimum value to be entered.
     /// This value is in native controller units.

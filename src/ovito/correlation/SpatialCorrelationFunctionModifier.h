@@ -71,9 +71,6 @@ public:
     };
     Q_ENUM(NormalizationType);
 
-    /// Constructor.
-    explicit SpatialCorrelationFunctionModifier(ObjectInitializationFlags flags);
-
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
@@ -260,57 +257,57 @@ private:
 private:
 
     /// The particle property that serves as the first data source for the correlation function.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty1, setSourceProperty1);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, sourceProperty1, setSourceProperty1);
     /// The particle property that serves as the second data source for the correlation function.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty2, setSourceProperty2);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, sourceProperty2, setSourceProperty2);
     /// Controls the cutoff radius for the FFT grid.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, fftGridSpacing, setFFTGridSpacing);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{3.0}, fftGridSpacing, setFFTGridSpacing);
     /// Controls if a windowing function should be applied in non-periodic directions.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, applyWindow, setApplyWindow, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, applyWindow, setApplyWindow, PROPERTY_FIELD_MEMORIZE);
     /// Controls whether the real-space correlation should be computed by direct summation.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, doComputeNeighCorrelation, setComputeNeighCorrelation, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, doComputeNeighCorrelation, setComputeNeighCorrelation, PROPERTY_FIELD_MEMORIZE);
     /// Controls the cutoff radius for the neighbor lists.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, neighCutoff, setNeighCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{5.0}, neighCutoff, setNeighCutoff, PROPERTY_FIELD_MEMORIZE);
     /// Controls the number of bins for the neighbor part of the real-space correlation function.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, numberOfNeighBins, setNumberOfNeighBins, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{50}, numberOfNeighBins, setNumberOfNeighBins, PROPERTY_FIELD_MEMORIZE);
     /// Controls the averaging direction.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AveragingDirectionType, averagingDirection, setAveragingDirection, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AveragingDirectionType{RADIAL}, averagingDirection, setAveragingDirection, PROPERTY_FIELD_MEMORIZE);
     /// Controls the normalization of the real-space correlation function.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(NormalizationType, normalizeRealSpace, setNormalizeRealSpace, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(NormalizationType{VALUE_CORRELATION}, normalizeRealSpace, setNormalizeRealSpace, PROPERTY_FIELD_MEMORIZE);
     /// Controls the normalization by rdf of the real-space correlation function.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, normalizeRealSpaceByRDF, setNormalizeRealSpaceByRDF, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, normalizeRealSpaceByRDF, setNormalizeRealSpaceByRDF, PROPERTY_FIELD_MEMORIZE);
     /// Controls the normalization by covariance of the real-space correlation function.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, normalizeRealSpaceByCovariance, setNormalizeRealSpaceByCovariance, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, normalizeRealSpaceByCovariance, setNormalizeRealSpaceByCovariance, PROPERTY_FIELD_MEMORIZE);
     /// Type of real-space plot (lin-lin, log-lin or log-log)
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, typeOfRealSpacePlot, setTypeOfRealSpacePlot);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, typeOfRealSpacePlot, setTypeOfRealSpacePlot);
     /// Controls the whether the range of the x-axis of the plot should be fixed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixRealSpaceXAxisRange, setFixRealSpaceXAxisRange);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, fixRealSpaceXAxisRange, setFixRealSpaceXAxisRange);
     /// Controls the start value of the x-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, realSpaceXAxisRangeStart, setRealSpaceXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, realSpaceXAxisRangeStart, setRealSpaceXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
     /// Controls the end value of the x-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, realSpaceXAxisRangeEnd, setRealSpaceXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1}, realSpaceXAxisRangeEnd, setRealSpaceXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
     /// Controls the whether the range of the y-axis of the plot should be fixed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixRealSpaceYAxisRange, setFixRealSpaceYAxisRange);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, fixRealSpaceYAxisRange, setFixRealSpaceYAxisRange);
     /// Controls the start value of the y-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, realSpaceYAxisRangeStart, setRealSpaceYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, realSpaceYAxisRangeStart, setRealSpaceYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
     /// Controls the end value of the y-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, realSpaceYAxisRangeEnd, setRealSpaceYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1}, realSpaceYAxisRangeEnd, setRealSpaceYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
     /// Controls the normalization of the reciprocal-space correlation function.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, normalizeReciprocalSpace, setNormalizeReciprocalSpace, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, normalizeReciprocalSpace, setNormalizeReciprocalSpace, PROPERTY_FIELD_MEMORIZE);
     /// Type of reciprocal-space plot (lin-lin, log-lin or log-log)
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, typeOfReciprocalSpacePlot, setTypeOfReciprocalSpacePlot);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, typeOfReciprocalSpacePlot, setTypeOfReciprocalSpacePlot);
     /// Controls the whether the range of the x-axis of the plot should be fixed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixReciprocalSpaceXAxisRange, setFixReciprocalSpaceXAxisRange);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, fixReciprocalSpaceXAxisRange, setFixReciprocalSpaceXAxisRange);
     /// Controls the start value of the x-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, reciprocalSpaceXAxisRangeStart, setReciprocalSpaceXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, reciprocalSpaceXAxisRangeStart, setReciprocalSpaceXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
     /// Controls the end value of the x-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, reciprocalSpaceXAxisRangeEnd, setReciprocalSpaceXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1}, reciprocalSpaceXAxisRangeEnd, setReciprocalSpaceXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
     /// Controls the whether the range of the y-axis of the plot should be fixed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixReciprocalSpaceYAxisRange, setFixReciprocalSpaceYAxisRange);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, fixReciprocalSpaceYAxisRange, setFixReciprocalSpaceYAxisRange);
     /// Controls the start value of the y-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, reciprocalSpaceYAxisRangeStart, setReciprocalSpaceYAxisRangeStart);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, reciprocalSpaceYAxisRangeStart, setReciprocalSpaceYAxisRangeStart);
     /// Controls the end value of the y-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, reciprocalSpaceYAxisRangeEnd, setReciprocalSpaceYAxisRangeEnd);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{1}, reciprocalSpaceYAxisRangeEnd, setReciprocalSpaceYAxisRangeEnd);
 };
 
 }   // End of namespace

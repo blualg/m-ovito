@@ -53,15 +53,6 @@ QVector<DataObjectReference> ParticlesComputePropertyModifierDelegate::OOMetaCla
 }
 
 /******************************************************************************
-* Constructs a new instance of this class.
-******************************************************************************/
-ParticlesComputePropertyModifierDelegate::ParticlesComputePropertyModifierDelegate(ObjectInitializationFlags flags) : ComputePropertyModifierDelegate(flags),
-    _cutoff(3),
-    _useMultilineFields(false)
-{
-}
-
-/******************************************************************************
 * Sets the number of vector components of the property to compute.
 ******************************************************************************/
 void ParticlesComputePropertyModifierDelegate::setComponentCount(int componentCount)

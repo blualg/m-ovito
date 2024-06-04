@@ -62,11 +62,6 @@ public:
     /// Returns the global editor registry, which allows looking up the editor class for a RefTarget class.
     static Registry& registry();
 
-protected:
-
-    /// Constructor.
-    PropertiesEditor() = default;
-
 public:
 
     /// \brief Creates a PropertiesEditor for an editable object.

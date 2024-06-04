@@ -48,12 +48,12 @@ SET_PROPERTY_FIELD_LABEL(ColorByTypeModifier, colorOnlySelected, "Color only sel
 SET_PROPERTY_FIELD_LABEL(ColorByTypeModifier, clearSelection, "Clear selection");
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-ColorByTypeModifier::ColorByTypeModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags),
-    _colorOnlySelected(false),
-    _clearSelection(true)
+void ColorByTypeModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    GenericPropertyModifier::initializeObject(flags);
+
     // Operate on particles by default.
     setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }

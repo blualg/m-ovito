@@ -28,13 +28,17 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(AffineTransformationParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField property.
+* Constructor.
 ******************************************************************************/
-AffineTransformationParameterUI::AffineTransformationParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t _row, size_t _column)
-    : FloatParameterUI(parentEditor, propField), row(_row), column(_column)
+void AffineTransformationParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, size_t row, size_t column)
 {
     OVITO_ASSERT_MSG(row >= 0 && row < 3, "AffineTransformationParameterUI constructor", "The row must be in the range 0-2.");
     OVITO_ASSERT_MSG(column >= 0 && column < 4, "AffineTransformationParameterUI constructor", "The column must be in the range 0-3.");
+
+    FloatParameterUI::initializeObject(parentEditor, propField);
+
+    _row = row;
+    _column = column;
 }
 
 /******************************************************************************
@@ -49,7 +53,7 @@ void AffineTransformationParameterUI::updatePropertyValue()
                 QVariant currentValue = editObject()->getPropertyFieldValue(propertyField());
                 if(currentValue.canConvert<AffineTransformation>()) {
                     AffineTransformation val = currentValue.value<AffineTransformation>();
-                    val(row, column) = spinner()->floatValue();
+                    val(_row, _column) = spinner()->floatValue();
                     currentValue.setValue(val);
                 }
                 editor()->changePropertyFieldValue(propertyField(), currentValue);
@@ -73,7 +77,7 @@ void AffineTransformationParameterUI::updateUI()
         else return;
 
         if(val.canConvert<AffineTransformation>())
-            spinner()->setFloatValue(val.value<AffineTransformation>()(row, column));
+            spinner()->setFloatValue(val.value<AffineTransformation>()(_row, _column));
     }
 }
 

@@ -42,8 +42,8 @@ class OVITO_GRID_EXPORT VoxelGridVis : public DataVis
 
 public:
 
-    /// \brief Constructor.
-    explicit VoxelGridVis(ObjectInitializationFlags flags);
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Lets the visualization element render the data object.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
@@ -68,10 +68,10 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
 
     /// Controls whether the grid lines should be highlighted.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightGridLines, setHighlightGridLines);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, highlightGridLines, setHighlightGridLines);
 
     /// Controls whether the voxel face colors should be interpolated.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, interpolateColors, setInterpolateColors);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, interpolateColors, setInterpolateColors);
 
     /// Transfer function for pseudo-color visualization of a grid property.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
@@ -88,8 +88,13 @@ class OVITO_GRID_EXPORT VoxelGridPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    VoxelGridPickInfo(const VoxelGridVis* visElement, const VoxelGrid* voxelGrid, std::array<int, 3> numCells, size_t trianglesPerCell) :
-        _visElement(visElement), _voxelGrid(voxelGrid), _numCells(numCells), _trianglesPerCell(trianglesPerCell) {}
+    void initializeObject(const VoxelGridVis* visElement, const VoxelGrid* voxelGrid, std::array<int, 3> numCells, size_t trianglesPerCell) {
+        ObjectPickInfo::initializeObject();
+        _visElement = visElement;
+        _voxelGrid = voxelGrid;
+        _numCells = numCells;
+        _trianglesPerCell = trianglesPerCell;
+    }
 
     /// Returns the data object.
     const DataOORef<const VoxelGrid>& voxelGrid() const { return _voxelGrid; }

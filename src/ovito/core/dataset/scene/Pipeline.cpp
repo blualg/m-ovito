@@ -53,16 +53,6 @@ SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(Pipeline, head, "dataProvider"); // For back
 SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(Pipeline, source, "pipelineSource"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-Pipeline::Pipeline(ObjectInitializationFlags flags) : SceneNode(flags),
-    _pipelineCache(this),
-    _pipelineTrajectoryCachingEnabled(false),
-    _preliminaryUpdatesEnabled(true)
-{
-}
-
-/******************************************************************************
 * Destructor.
 ******************************************************************************/
 Pipeline::~Pipeline() // NOLINT

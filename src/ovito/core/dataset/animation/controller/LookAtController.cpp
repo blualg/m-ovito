@@ -38,8 +38,10 @@ SET_PROPERTY_FIELD_UNITS(LookAtController, rollController, AngleParameterUnit);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-LookAtController::LookAtController(ObjectInitializationFlags flags) : Controller(flags)
+void LookAtController::initializeObject(ObjectInitializationFlags flags)
 {
+    Controller::initializeObject(flags);
+
     if(!flags.testFlag(DontInitializeObject)) {
         // Create sub-controller.
         setRollController(ControllerManager::createFloatController());

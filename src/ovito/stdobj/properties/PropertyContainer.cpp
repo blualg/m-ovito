@@ -40,12 +40,14 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PropertyContainer, title, ReferenceEvent::TitleC
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyContainer::PropertyContainer(ObjectInitializationFlags flags, const QString& title) : DataObject(flags),
-    _elementCount(0),
-    _title(title)
+void PropertyContainer::initializeObject(ObjectInitializationFlags flags, const QString& title)
 {
-    if(!title.isEmpty())
+    DataObject::initializeObject(flags);
+
+    if(!title.isEmpty()) {
+        setTitle(title);
         freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(PropertyContainer::title)});
+    }
 }
 
 /******************************************************************************

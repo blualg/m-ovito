@@ -36,11 +36,6 @@ class ChillPlusModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(ChillPlusModifierEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

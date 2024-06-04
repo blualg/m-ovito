@@ -41,20 +41,21 @@ public: \
     using BaseKeyClass::value_type; \
     using BaseKeyClass::nullvalue_type; \
 \
-    explicit classname(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const value_type& value = nullvalue_type{}) \
-        : BaseKeyClass(flags, time, value), _easeTo(0), _easeFrom(0), _tension(0), _continuity(0), _bias(0) {} \
+    void initializeObject(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const value_type& value = nullvalue_type{}) { \
+        BaseKeyClass::initializeObject(flags, time, value); \
+    } \
 \
 public: \
 \
-    DECLARE_PROPERTY_FIELD(FloatType, easeTo); \
+    DECLARE_PROPERTY_FIELD(FloatType{0}, easeTo); \
 \
-    DECLARE_PROPERTY_FIELD(FloatType, easeFrom); \
+    DECLARE_PROPERTY_FIELD(FloatType{0}, easeFrom); \
 \
-    DECLARE_PROPERTY_FIELD(FloatType, tension); \
+    DECLARE_PROPERTY_FIELD(FloatType{0}, tension); \
 \
-    DECLARE_PROPERTY_FIELD(FloatType, continuity); \
+    DECLARE_PROPERTY_FIELD(FloatType{0}, continuity); \
 \
-    DECLARE_PROPERTY_FIELD(FloatType, bias); \
+    DECLARE_PROPERTY_FIELD(FloatType{0}, bias); \
 };
 
 /**
@@ -96,10 +97,6 @@ template<class KeyType, Controller::ControllerType ctrlType>
 class TCBControllerBase : public KeyframeControllerTemplate<KeyType, TCBKeyInterpolator<KeyType>, ctrlType>
 {
 public:
-
-    /// Constructor.
-    explicit TCBControllerBase(ObjectInitializationFlags flags)
-        : KeyframeControllerTemplate<KeyType, TCBKeyInterpolator<KeyType>, ctrlType>(flags) {}
 };
 
 /**
@@ -111,10 +108,6 @@ class OVITO_CORE_EXPORT TCBPositionController
     OVITO_CLASS(TCBPositionController)
 
 public:
-
-    /// Constructor.
-    explicit TCBPositionController(ObjectInitializationFlags flags)
-        : TCBControllerBase<PositionTCBAnimationKey, Controller::ControllerTypePosition>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
     virtual void getPositionValue(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {

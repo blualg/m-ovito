@@ -32,16 +32,19 @@ DEFINE_RUNTIME_PROPERTY_FIELD(DislocationNetworkObject, storage);
 DEFINE_VECTOR_REFERENCE_FIELD(DislocationNetworkObject, crystalStructures);
 SET_PROPERTY_FIELD_LABEL(DislocationNetworkObject, crystalStructures, "Crystal structures");
 
-/// Holds a shared, empty instance of the DislocationNetwork class,
-/// which is used in places where a default storage is needed.
-/// This singleton instance is never modified.
-static const std::shared_ptr<DislocationNetwork> defaultStorage = std::make_shared<DislocationNetwork>(std::make_shared<ClusterGraph>());
-
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DislocationNetworkObject::DislocationNetworkObject(ObjectInitializationFlags flags) : PeriodicDomainObject(flags), _storage(defaultStorage)
+void DislocationNetworkObject::initializeObject(ObjectInitializationFlags flags)
 {
+    PeriodicDomainObject::initializeObject(flags);
+
+    // A shared, empty instance of the DislocationNetwork class,
+    // which is used in places where a default storage is needed.
+    // This singleton instance is never modified.
+    static const std::shared_ptr<DislocationNetwork> defaultStorage = std::make_shared<DislocationNetwork>(std::make_shared<ClusterGraph>());
+    setStorage(defaultStorage);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         if(!flags.testFlag(ObjectInitializationFlag::DontCreateVisElement)) {
             // Attach a visualization element for rendering the dislocation lines.

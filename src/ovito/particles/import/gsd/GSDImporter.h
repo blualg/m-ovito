@@ -61,7 +61,8 @@ class OVITO_PARTICLES_EXPORT GSDImporter : public ParticleImporter
 public:
 
     /// Constructor.
-    explicit GSDImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _roundingResolution(4) {
+    void initializeObject(ObjectInitializationFlags flags) {
+        ParticleImporter::initializeObject(flags);
         setMultiTimestepFile(true);
     }
 
@@ -96,7 +97,7 @@ private:
     mutable QReadWriteLock _cacheSynchronization;
 
     /// Controls the tessellation resolution for rounded corners and edges.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, roundingResolution, setRoundingResolution, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{4}, roundingResolution, setRoundingResolution, PROPERTY_FIELD_MEMORIZE);
 
 private:
 

@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT BooleanRadioButtonParameterUI : public PropertyParameterU
 public:
 
     /// Constructor.
-    BooleanRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
     virtual ~BooleanRadioButtonParameterUI();

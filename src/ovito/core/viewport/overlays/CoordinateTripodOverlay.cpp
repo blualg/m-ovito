@@ -77,24 +77,6 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinateTripodOverlay, lineWidth, FloatPa
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinateTripodOverlay, fontSize, FloatParameterUnit, 0);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-CoordinateTripodOverlay::CoordinateTripodOverlay(ObjectInitializationFlags flags) : ViewportOverlay(flags),
-        _alignment(Qt::AlignLeft | Qt::AlignBottom),
-        _tripodSize(0.075), _lineWidth(0.06), _offsetX(0), _offsetY(0),
-        _fontSize(0.4),
-        _axis1Enabled(true), _axis2Enabled(true), _axis3Enabled(true), _axis4Enabled(false),
-        _axis1Label("x"), _axis2Label("y"), _axis3Label("z"), _axis4Label("w"),
-        _axis1Dir(1,0,0), _axis2Dir(0,1,0), _axis3Dir(0,0,1), _axis4Dir(sqrt(0.5),sqrt(0.5),0),
-        _axis1Color(1,0,0), _axis2Color(0,0.8,0), _axis3Color(0.2,0.2,1), _axis4Color(1,0,1),
-        _tripodStyle(FlatArrows),
-        _outlineColor(1,1,1),
-        _outlineEnabled(false),
-        _perspectiveDistortion(false)
-{
-}
-
-/******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
 void CoordinateTripodOverlay::propertyChanged(const PropertyFieldDescriptor* field)

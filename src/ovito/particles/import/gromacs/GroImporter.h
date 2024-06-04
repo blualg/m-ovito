@@ -59,7 +59,8 @@ class OVITO_PARTICLES_EXPORT GroImporter : public ParticleImporter
 public:
 
     /// Constructor.
-    explicit GroImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    void initializeObject(ObjectInitializationFlags flags) {
+        ParticleImporter::initializeObject(flags);
         setRecenterCell(true);
     }
 

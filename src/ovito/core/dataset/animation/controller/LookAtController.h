@@ -47,7 +47,7 @@ class OVITO_CORE_EXPORT LookAtController : public Controller
 public:
 
     /// \brief Constructor.
-    explicit LookAtController(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeRotation; }

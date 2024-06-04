@@ -54,11 +54,6 @@ class ParticlesColorCodingModifierDelegate : public ColorCodingModifierDelegate
     };
 
     OVITO_CLASS_META(ParticlesColorCodingModifierDelegate, OOMetaClass)
-
-public:
-
-    /// Constructor.
-    using ColorCodingModifierDelegate::ColorCodingModifierDelegate;
 };
 
 /**
@@ -85,11 +80,6 @@ class ParticleVectorsColorCodingModifierDelegate : public ColorCodingModifierDel
     };
 
     OVITO_CLASS_META(ParticleVectorsColorCodingModifierDelegate, OOMetaClass)
-
-public:
-
-    /// Constructor.
-    using ColorCodingModifierDelegate::ColorCodingModifierDelegate;
 
 protected:
 
@@ -121,11 +111,6 @@ class BondsColorCodingModifierDelegate : public ColorCodingModifierDelegate
     };
 
     OVITO_CLASS_META(BondsColorCodingModifierDelegate, OOMetaClass)
-
-public:
-
-    /// Constructor.
-    using ColorCodingModifierDelegate::ColorCodingModifierDelegate;
 };
 
 }   // End of namespace

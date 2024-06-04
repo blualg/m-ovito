@@ -43,16 +43,18 @@ class OVITO_CORE_EXPORT DataSetContainer final : public QObject, public RefMaker
 public:
 
     /// Constructor.
-    explicit DataSetContainer(TaskManager& taskManager, UserInterface& userInterface);
+    void initializeObject(TaskManager& taskManager, UserInterface& userInterface);
 
+#ifdef OVITO_DEBUG
     /// Destructor.
     ~DataSetContainer();
+#endif
 
     /// Returns the manager of asynchronous tasks associated with this container.
-    TaskManager& taskManager() { return _taskManager; }
+    TaskManager& taskManager() { return *_taskManager; }
 
     /// Returns the abstract user interface this container is part of.
-    UserInterface& userInterface() { return _userInterface; }
+    UserInterface& userInterface() { return *_userInterface; }
 
     /// Returns the current time of the active animation settings object.
     AnimationTime currentAnimationTime() const { return activeAnimationSettings() ? activeAnimationSettings()->currentTime() : AnimationTime(0); }
@@ -180,10 +182,10 @@ private:
     DECLARE_REFERENCE_FIELD(AnimationSettings*, activeAnimationSettings);
 
     /// The manager of asynchronous tasks associated with this container.
-    TaskManager& _taskManager;
+    TaskManager* _taskManager;
 
     /// The abstract user interface this container is part of.
-    UserInterface& _userInterface;
+    UserInterface* _userInterface;
 
     /// Helper object responsible for playing back the frames of the animation in the interactive viewports.
     OORef<SceneAnimationPlayback> _animationPlayback;

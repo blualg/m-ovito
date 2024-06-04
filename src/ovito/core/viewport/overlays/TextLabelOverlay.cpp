@@ -56,22 +56,6 @@ SET_PROPERTY_FIELD_UNITS(TextLabelOverlay, offsetY, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(TextLabelOverlay, fontSize, FloatParameterUnit, 0);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-TextLabelOverlay::TextLabelOverlay(ObjectInitializationFlags flags) : ViewportOverlay(flags),
-        _alignment(Qt::AlignLeft | Qt::AlignTop),
-        _offsetX(0),
-        _offsetY(0),
-        _fontSize(0.02),
-        _labelText(tr("Text label")),
-        _textColor(0,0,0.5),
-        _outlineColor(1,1,1),
-        _outlineEnabled(false),
-        _valueFormatString("%.6g")
-{
-}
-
-/******************************************************************************
 * Is called when the value of a property of this object has changed.
 ******************************************************************************/
 void TextLabelOverlay::propertyChanged(const PropertyFieldDescriptor* field)

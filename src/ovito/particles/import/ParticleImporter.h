@@ -39,10 +39,6 @@ class OVITO_PARTICLES_EXPORT ParticleImporter : public FileSourceImporter
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    explicit ParticleImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags),
-        _sortParticles(false), _generateBonds(false), _recenterCell(false) {}
-
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const { return false; }
 
@@ -188,13 +184,13 @@ protected:
 private:
 
     /// Controls sorting of the input particle with respect to IDs.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, sortParticles, setSortParticles);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, sortParticles, setSortParticles);
 
     /// Controls the generation of atomic ad-hoc bonds during data import.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, generateBonds, setGenerateBonds);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, generateBonds, setGenerateBonds);
 
     /// Controls the dynamic recentering of simulation cell to the coordinate origin.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, recenterCell, setRecenterCell);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, recenterCell, setRecenterCell);
 };
 
 }   // End of namespace

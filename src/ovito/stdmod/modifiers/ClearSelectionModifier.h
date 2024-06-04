@@ -38,7 +38,7 @@ class OVITO_STDMOD_EXPORT ClearSelectionModifier : public GenericPropertyModifie
 public:
 
     /// Constructor.
-    explicit ClearSelectionModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;

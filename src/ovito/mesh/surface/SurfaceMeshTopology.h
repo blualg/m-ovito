@@ -66,9 +66,6 @@ public:
 
 public:
 
-    /// Constructor creating an empty SurfaceMeshTopology object.
-    explicit SurfaceMeshTopology(ObjectInitializationFlags flags) : DataObject(flags) {}
-
     /// Removes all faces, edges and vertices from this mesh.
     void clear();
 

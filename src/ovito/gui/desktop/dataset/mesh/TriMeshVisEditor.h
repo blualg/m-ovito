@@ -35,11 +35,6 @@ class TriMeshVisEditor : public PropertiesEditor
 {
     OVITO_CLASS(TriMeshVisEditor)
 
-public:
-
-    /// Constructor.
-    explicit TriMeshVisEditor() {}
-
 protected:
 
     /// Creates the user interface controls for the editor.

@@ -35,10 +35,12 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(StructureListParameterUI);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-StructureListParameterUI::StructureListParameterUI(PropertiesEditor* parentEditor, bool showCheckBoxes)
-    : RefTargetListParameterUI(parentEditor, PROPERTY_FIELD(StructureIdentificationModifier::structureTypes)),
-      _showCheckBoxes(showCheckBoxes)
+void StructureListParameterUI::initializeObject(PropertiesEditor* parentEditor, bool showCheckBoxes)
 {
+    RefTargetListParameterUI::initializeObject(parentEditor, PROPERTY_FIELD(StructureIdentificationModifier::structureTypes));
+
+     _showCheckBoxes = showCheckBoxes;
+
 #ifdef Q_OS_MACOS
     int tableWidgetHeight = 240;
 #else

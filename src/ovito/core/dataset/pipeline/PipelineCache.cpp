@@ -35,8 +35,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PipelineCache::PipelineCache(RefTarget* owner, bool enableCaching)
-    : _ownerObject(owner), _isEnabled(enableCaching)
+PipelineCache::PipelineCache(RefTarget* owner) : _ownerObject(owner)
 {
 }
 

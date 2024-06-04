@@ -55,10 +55,6 @@ class OVITO_CORE_EXPORT LinearFloatController
 
 public:
 
-    /// Constructor.
-    explicit LinearFloatController(ObjectInitializationFlags flags)
-        : KeyframeControllerTemplate<FloatAnimationKey, LinearKeyInterpolator<FloatAnimationKey>, Controller::ControllerTypeFloat>(flags) {}
-
     /// \brief Gets the controller's value at a certain animation time.
     virtual FloatType getFloatValue(AnimationTime time, TimeInterval& validityInterval) override {
         FloatType val;
@@ -83,10 +79,6 @@ class OVITO_CORE_EXPORT LinearIntegerController
     OVITO_CLASS(LinearIntegerController)
 
 public:
-
-    /// Constructor.
-    LinearIntegerController(ObjectInitializationFlags flags)
-        : KeyframeControllerTemplate<IntegerAnimationKey, LinearKeyInterpolator<IntegerAnimationKey>, Controller::ControllerTypeInt>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
     virtual int getIntValue(AnimationTime time, TimeInterval& validityInterval) override {
@@ -113,10 +105,6 @@ class OVITO_CORE_EXPORT LinearVectorController
 
 public:
 
-    /// Constructor.
-    explicit LinearVectorController(ObjectInitializationFlags flags)
-        : KeyframeControllerTemplate<Vector3AnimationKey, LinearKeyInterpolator<Vector3AnimationKey>, Controller::ControllerTypeVector3>(flags) {}
-
     /// \brief Gets the controller's value at a certain animation time.
     virtual void getVector3Value(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {
         getInterpolatedValue(time, value, validityInterval);
@@ -139,10 +127,6 @@ class OVITO_CORE_EXPORT LinearPositionController
     OVITO_CLASS(LinearPositionController)
 
 public:
-
-    /// Constructor.
-    LinearPositionController(ObjectInitializationFlags flags)
-        : KeyframeControllerTemplate<PositionAnimationKey, LinearKeyInterpolator<PositionAnimationKey>, Controller::ControllerTypePosition>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
     virtual void getPositionValue(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {
@@ -170,10 +154,6 @@ class OVITO_CORE_EXPORT LinearRotationController
 
 public:
 
-    /// Constructor.
-    explicit LinearRotationController(ObjectInitializationFlags flags)
-        : KeyframeControllerTemplate<RotationAnimationKey, LinearKeyInterpolator<RotationAnimationKey>, Controller::ControllerTypeRotation>(flags) {}
-
     /// \brief Gets the controller's value at a certain animation time.
     virtual void getRotationValue(AnimationTime time, Rotation& value, TimeInterval& validityInterval) override {
         getInterpolatedValue(time, value, validityInterval);
@@ -199,10 +179,6 @@ class OVITO_CORE_EXPORT LinearScalingController
     OVITO_CLASS(LinearScalingController)
 
 public:
-
-    /// Constructor.
-    explicit LinearScalingController(ObjectInitializationFlags flags)
-        : KeyframeControllerTemplate<ScalingAnimationKey, LinearKeyInterpolator<ScalingAnimationKey>, Controller::ControllerTypeScaling>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
     virtual void getScalingValue(AnimationTime time, Scaling& value, TimeInterval& validityInterval) override {

@@ -54,7 +54,7 @@ class OVITO_PARTICLES_EXPORT GenerateTrajectoryLinesModifier : public Modifier
 public:
 
     /// Constructor.
-    explicit GenerateTrajectoryLinesModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -77,28 +77,28 @@ protected:
 private:
 
     /// Controls which particles trajectories are created for.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedParticles, setOnlySelectedParticles);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, onlySelectedParticles, setOnlySelectedParticles);
 
     /// Controls whether the created trajectories span the entire animation interval or a sub-interval.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useCustomInterval, setUseCustomInterval);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useCustomInterval, setUseCustomInterval);
 
     /// The start of the custom frame interval.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, customIntervalStart, setCustomIntervalStart);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, customIntervalStart, setCustomIntervalStart);
 
     /// The end of the custom frame interval.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, customIntervalEnd, setCustomIntervalEnd);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, customIntervalEnd, setCustomIntervalEnd);
 
     /// The sampling frequency for creating trajectories.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, everyNthFrame, setEveryNthFrame);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{1}, everyNthFrame, setEveryNthFrame);
 
     /// Controls whether trajectories are unwrapped when crossing periodic boundaries.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, unwrapTrajectories, setUnwrapTrajectories);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, unwrapTrajectories, setUnwrapTrajectories);
 
     /// Controls whether a particle property is sampled and transferred to the output trajectory lines.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, transferParticleProperties, setTransferParticleProperties);
 
     /// The particle property to be transferred onto the trajectory lines.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, particleProperty, setParticleProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, particleProperty, setParticleProperty);
 
     /// The vis element for rendering the trajectory lines.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<LinesVis>, trajectoryVis, setTrajectoryVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);

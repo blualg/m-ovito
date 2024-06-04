@@ -42,10 +42,12 @@ DEFINE_REFERENCE_FIELD(ManualSelectionModificationNode, selectionSet);
 SET_PROPERTY_FIELD_LABEL(ManualSelectionModificationNode, selectionSet, "Element selection set");
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-ManualSelectionModifier::ManualSelectionModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags)
+void ManualSelectionModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    GenericPropertyModifier::initializeObject(flags);
+
     // Operate on particles by default.
     setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }

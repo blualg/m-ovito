@@ -40,9 +40,10 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(NucleotidesVis, cylinderRadius, WorldParame
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-NucleotidesVis::NucleotidesVis(ObjectInitializationFlags flags) : ParticlesVis(flags),
-    _cylinderRadius(0.05)
+void NucleotidesVis::initializeObject(ObjectInitializationFlags flags)
 {
+    ParticlesVis::initializeObject(flags);
+
     setDefaultParticleRadius(0.1);
 }
 

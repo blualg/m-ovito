@@ -88,9 +88,6 @@ public:
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    explicit LAMMPSDataImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _atomStyle(AtomStyle_Unknown) {}
-
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
         activateCLocale();
@@ -146,10 +143,10 @@ private:
     static void detectAtomStyle(const char* firstLine, const QByteArray& keywordLine, LAMMPSAtomStyleHints& atomStyleHints);
 
     /// The LAMMPS atom style used by the data format.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(LAMMPSAtomStyle, atomStyle, setAtomStyle);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(LAMMPSAtomStyle{AtomStyle_Unknown}, atomStyle, setAtomStyle);
 
     /// The list of sub-styles if the hybrid atom style is used.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(std::vector<LAMMPSAtomStyle>, atomSubStyles, setAtomSubStyles);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(std::vector<LAMMPSAtomStyle>{}, atomSubStyles, setAtomSubStyles);
 };
 
 }   // End of namespace

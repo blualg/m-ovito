@@ -43,8 +43,9 @@ public: \
     using BaseKeyClass::nullvalue_type; \
     using BaseKeyClass::tangent_type; \
 \
-    explicit classname(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const value_type& value = nullvalue_type{}) \
-        : BaseKeyClass(flags, time, value), _inTangent(nullvalue_type{}), _outTangent(nullvalue_type{}) {} \
+    void initializeObject(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const value_type& value = nullvalue_type{}) { \
+        BaseKeyClass::initializeObject(flags, time, value); \
+    } \
 \
     value_type inPoint() const { return this->value() + inTangent(); } \
 \
@@ -52,9 +53,9 @@ public: \
 \
 public: \
 \
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(tangent_type, inTangent, setInTangent); \
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(tangent_type{nullvalue_type{}}, inTangent, setInTangent); \
 \
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(tangent_type, outTangent, setOutTangent); \
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(tangent_type{nullvalue_type{}}, outTangent, setOutTangent); \
 };
 
 /**
@@ -88,12 +89,6 @@ struct SplineKeyInterpolator {
 template<class KeyType, Controller::ControllerType ctrlType>
 class SplineControllerBase : public KeyframeControllerTemplate<KeyType, SplineKeyInterpolator<KeyType>, ctrlType>
 {
-public:
-
-    /// Constructor.
-    explicit SplineControllerBase(ObjectInitializationFlags flags) :
-        KeyframeControllerTemplate<KeyType, SplineKeyInterpolator<KeyType>, ctrlType>(flags) {}
-
 protected:
 
     /// This updates the keys after their times or values have changed.
@@ -136,10 +131,6 @@ class OVITO_CORE_EXPORT SplinePositionController
     OVITO_CLASS(SplinePositionController)
 
 public:
-
-    /// Constructor.
-    explicit SplinePositionController(ObjectInitializationFlags flags) :
-        SplineControllerBase<PositionSplineAnimationKey, Controller::ControllerTypePosition>(flags) {}
 
     /// \brief Gets the controller's value at a certain animation time.
     virtual void getPositionValue(AnimationTime time, Vector3& value, TimeInterval& validityInterval) override {

@@ -29,14 +29,19 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(CustomParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField property.
+* Constructor.
 ******************************************************************************/
-CustomParameterUI::CustomParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, QWidget* widget,
+void CustomParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, QWidget* widget,
         const std::function<void(const QVariant&)>& updateWidgetFunction,
         const std::function<QVariant()>& updatePropertyFunction,
-        const std::function<void(RefTarget*)>& resetUIFunction) :
-    PropertyParameterUI(parentEditor, propField), _widget(widget), _updateWidgetFunction(updateWidgetFunction), _updatePropertyFunction(updatePropertyFunction), _resetUIFunction(resetUIFunction)
+        const std::function<void(RefTarget*)>& resetUIFunction)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
+    _widget = widget;
+    _updateWidgetFunction = updateWidgetFunction;
+    _updatePropertyFunction = updatePropertyFunction;
+    _resetUIFunction = resetUIFunction;
 }
 
 /******************************************************************************

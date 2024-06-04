@@ -44,9 +44,6 @@ public:
 	};
 	Q_ENUM(SplitDirection);
 
-	/// Constructor.
-	explicit ViewportLayoutCell(ObjectInitializationFlags flags);
-
 	/// Inserts a sub-cell into this cell's list of children.
 	void addChild(OORef<ViewportLayoutCell> child, FloatType weight = 1.0);
 
@@ -94,10 +91,10 @@ private:
 	DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(OORef<ViewportLayoutCell>, children, setChildren);
 
 	/// Split direction if this cell has children.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(SplitDirection, splitDirection, setSplitDirection);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(SplitDirection{SplitDirection::None}, splitDirection, setSplitDirection);
 
 	/// Relative widths of the child cells.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(std::vector<FloatType>, childWeights, setChildWeights);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(std::vector<FloatType>{}, childWeights, setChildWeights);
 };
 
 }	// End of namespace

@@ -30,11 +30,12 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(StringParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField property.
+* Constructor.
 ******************************************************************************/
-StringParameterUI::StringParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-    PropertyParameterUI(parentEditor, propField), _textBox(nullptr)
+void StringParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
     // Create UI widget.
     _textBox = new QLineEdit();
     connect(static_cast<QLineEdit*>(_textBox.data()), &QLineEdit::editingFinished, this, &StringParameterUI::updatePropertyValue);

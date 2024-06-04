@@ -57,21 +57,6 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticleType, radius, WorldParameterUnit, 0
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticleType, vdwRadius, WorldParameterUnit, 0);
 
 /******************************************************************************
-* Constructs a new particle type.
-******************************************************************************/
-ParticleType::ParticleType(ObjectInitializationFlags flags) : ElementType(flags),
-    _radius(0),
-    _radiusIsPrescribed(false),
-    _vdwRadius(0),
-    _shape(ParticlesVis::ParticleShape::Default),
-    _highlightShapeEdges(false),
-    _shapeBackfaceCullingEnabled(true),
-    _shapeUseMeshColor(false),
-    _mass(0)
-{
-}
-
-/******************************************************************************
 * Initializes the particle type's attributes to standard values.
 ******************************************************************************/
 void ParticleType::initializeType(const OwnerPropertyRef& property, bool loadUserDefaults)

@@ -56,9 +56,6 @@ public:
 
 public:
 
-    /// Constructor.
-    explicit ParticlesVis(ObjectInitializationFlags flags);
-
     /// Renders the visual element.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
@@ -120,16 +117,16 @@ private:
 private:
 
     /// Controls the default display radius of particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, defaultParticleRadius, setDefaultParticleRadius, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1.2}, defaultParticleRadius, setDefaultParticleRadius, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the global scaling factor, which is applied to all rendered particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radiusScaleFactor, setRadiusScaleFactor);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{1.0}, radiusScaleFactor, setRadiusScaleFactor);
 
     /// Controls the rendering quality mode for particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePrimitive::RenderingQuality, renderingQuality, setRenderingQuality);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePrimitive::RenderingQuality{ParticlePrimitive::AutoQuality}, renderingQuality, setRenderingQuality);
 
     /// Controls the display shape of particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleShape, particleShape, setParticleShape);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleShape{Sphere}, particleShape, setParticleShape);
 };
 
 /**
@@ -143,8 +140,12 @@ class OVITO_PARTICLES_EXPORT ParticlePickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    explicit ParticlePickInfo(ParticlesVis* visElement, DataOORef<const Particles> particles, ConstDataBufferPtr subobjectToParticleMapping = {}) :
-        _visElement(visElement), _particles(std::move(particles)), _subobjectToParticleMapping(std::move(subobjectToParticleMapping)) {}
+    void initializeObject(ParticlesVis* visElement, DataOORef<const Particles> particles, ConstDataBufferPtr subobjectToParticleMapping = {}) {
+        ObjectPickInfo::initializeObject();
+        _visElement = visElement;
+        _particles = std::move(particles);
+        _subobjectToParticleMapping = std::move(subobjectToParticleMapping);
+    }
 
     /// Returns the particles object.
     const DataOORef<const Particles>& particles() const { OVITO_ASSERT(_particles); return _particles; }

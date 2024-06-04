@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT FontParameterUI : public PropertyParameterUI
 public:
 
     /// Constructor.
-    FontParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
     virtual ~FontParameterUI();

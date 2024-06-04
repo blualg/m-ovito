@@ -39,9 +39,6 @@ class OVITO_PARTICLES_EXPORT BondType : public ElementType
 
 public:
 
-    /// Constructor.
-    explicit BondType(ObjectInitializationFlags flags);
-
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
     virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
 
@@ -59,7 +56,7 @@ public:
 private:
 
     /// Stores the radius of the bond type.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, radius, setRadius);
 };
 
 }   // End of namespace

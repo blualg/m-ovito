@@ -32,11 +32,13 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(DataObjectReferenceParameterUI);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DataObjectReferenceParameterUI::DataObjectReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const DataObject::OOMetaClass& dataObjectClass) :
-    PropertyParameterUI(parentEditor, propField),
-    _comboBox(new QComboBox()),
-    _dataObjectClass(dataObjectClass)
+void DataObjectReferenceParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const DataObject::OOMetaClass& dataObjectClass)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
+    _comboBox = new QComboBox();
+    _dataObjectClass = &dataObjectClass;
+
     connect(comboBox(), &QComboBox::textActivated, this, &DataObjectReferenceParameterUI::updatePropertyValue);
 
     // Update the list whenever the pipeline input changes.

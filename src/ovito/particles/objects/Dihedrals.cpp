@@ -32,8 +32,10 @@ OVITO_CLASSINFO(Dihedrals, "ClassNameAlias", "DihedralsObject");  // For backwar
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Dihedrals::Dihedrals(ObjectInitializationFlags flags) : PropertyContainer(flags)
+void Dihedrals::initializeObject(ObjectInitializationFlags flags)
 {
+    PropertyContainer::initializeObject(flags);
+
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
 }

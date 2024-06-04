@@ -241,17 +241,17 @@ public:
 
 
 /// Adds a property field to a class definition.
-/// The first parameter specifies the data type of the property field.
+/// The first parameter specifies the initial value of the property field and, implicitly, also its data type.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
-#define DECLARE_PROPERTY_FIELD_FLAGS(type, fieldname, flags) \
+#define DECLARE_PROPERTY_FIELD_FLAGS(init_value, fieldname, flags) \
     private: \
         static Ovito::NativePropertyFieldDescriptor fieldname##__propdescr_instance; \
     public: \
         static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(fieldname) { \
             return &fieldname##__propdescr_instance; \
         } \
-        Ovito::PropertyField<type, flags> _##fieldname; \
-        inline std::add_const_t<type>& fieldname() const { return _##fieldname; } \
+        Ovito::PropertyField<std::remove_reference_t<decltype(init_value)>, flags> _##fieldname{init_value}; \
+        inline std::add_const_t<std::remove_reference_t<decltype(init_value)>>& fieldname() const noexcept { return _##fieldname; } \
     private:
 
 #define DEFINE_PROPERTY_FIELD(classname, fieldname) \
@@ -277,44 +277,44 @@ public:
         );
 
 /// Adds a property field to a class definition.
-/// The first parameter specifies the data type of the property field.
+/// The first parameter specifies the initial value of the property field and, implicitly, also its data type.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
-#define DECLARE_PROPERTY_FIELD(type, fieldname) \
-    DECLARE_PROPERTY_FIELD_FLAGS(type, fieldname, Ovito::PROPERTY_FIELD_NO_FLAGS)
+#define DECLARE_PROPERTY_FIELD(init_value, fieldname) \
+    DECLARE_PROPERTY_FIELD_FLAGS(init_value, fieldname, Ovito::PROPERTY_FIELD_NO_FLAGS)
 
 /// Adds a settable property field to a class definition.
-/// The first parameter specifies the data type of the property field.
+/// The first parameter specifies the initial value of the property field and, implicitly, also its data type.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this property field.
-#define DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(type, fieldname, setterName, flags) \
+#define DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(init_value, fieldname, setterName, flags) \
     public: \
-        void setterName(std::add_const_t<type>& value) { _##fieldname.set(this, PROPERTY_FIELD(fieldname), value); } \
-        DECLARE_PROPERTY_FIELD_FLAGS(type, fieldname, flags)
+        void setterName(std::add_const_t<std::remove_reference_t<decltype(init_value)>>& value) { _##fieldname.set(this, PROPERTY_FIELD(fieldname), value); } \
+        DECLARE_PROPERTY_FIELD_FLAGS(init_value, fieldname, flags)
 
 /// Adds a settable property field to a class definition.
-/// The first parameter specifies the data type of the property field.
+/// The first parameter specifies the initial value of the property field and, implicitly, also its data type.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this property field.
-#define DECLARE_MODIFIABLE_PROPERTY_FIELD(type, fieldname, setterName) \
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(type, fieldname, setterName, Ovito::PROPERTY_FIELD_NO_FLAGS)
+#define DECLARE_MODIFIABLE_PROPERTY_FIELD(init_value, fieldname, setterName) \
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(init_value, fieldname, setterName, Ovito::PROPERTY_FIELD_NO_FLAGS)
 
 /***************** Runtime property fields *******************/
 
 /// Adds a property field to a class definition which is not serializable.
-/// The first parameter specifies the data type of the property field.
+/// The first parameter specifies the initial value of the property field and, implicitly, also its data type.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this property field.
-#define DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(type, fieldname, setterName, flags) \
+#define DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(init_value, fieldname, setterName, flags) \
     private: \
         static Ovito::NativePropertyFieldDescriptor fieldname##__propdescr_instance; \
     public: \
         static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(fieldname) { \
             return &fieldname##__propdescr_instance; \
         } \
-        Ovito::RuntimePropertyField<type, flags> _##fieldname; \
-        std::add_const_t<type>& fieldname() const { return _##fieldname; } \
-        void setterName(std::add_const_t<type>& value) { _##fieldname.set(this, PROPERTY_FIELD(fieldname), value); } \
-        void setterName(type&& value) { _##fieldname.set(this, PROPERTY_FIELD(fieldname), std::move(value)); } \
+        Ovito::RuntimePropertyField<std::remove_reference_t<decltype(init_value)>, flags> _##fieldname{init_value}; \
+        std::add_const_t<std::remove_reference_t<decltype(init_value)>>& fieldname() const { return _##fieldname; } \
+        void setterName(std::add_const_t<std::remove_reference_t<decltype(init_value)>>& value) { _##fieldname.set(this, PROPERTY_FIELD(fieldname), value); } \
+        void setterName(std::remove_reference_t<decltype(init_value)>&& value) { _##fieldname.set(this, PROPERTY_FIELD(fieldname), std::move(value)); } \
     private:
 
 #define DEFINE_RUNTIME_PROPERTY_FIELD(classname, fieldname) \
@@ -336,16 +336,16 @@ public:
         );
 
 /// Adds a property field to a class definition which is not serializble .
-/// The first parameter specifies the data type of the property field.
+/// The first parameter specifies the initial value of the property field and, implicitly, also its data type.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this property field.
-#define DECLARE_RUNTIME_PROPERTY_FIELD(type, fieldname, setterName) \
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(type, fieldname, setterName, Ovito::PROPERTY_FIELD_NO_FLAGS)
+#define DECLARE_RUNTIME_PROPERTY_FIELD(init_value, fieldname, setterName) \
+    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(init_value, fieldname, setterName, Ovito::PROPERTY_FIELD_NO_FLAGS)
 
 /***************** Virtual property fields *******************/
 
 /// Adds a property field to a class definition which is defined purely by a getter and a setter method, i.e,
-/// no member variable is crrated to store the property value.
+/// no member variable is created to store the property value.
 #define DECLARE_VIRTUAL_PROPERTY_FIELD(type, fieldname) \
     private: \
         static Ovito::NativePropertyFieldDescriptor fieldname##__propdescr_instance; \

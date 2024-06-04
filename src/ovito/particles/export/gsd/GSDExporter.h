@@ -55,7 +55,7 @@ class OVITO_PARTICLES_EXPORT GSDExporter : public ParticleExporter
 public:
 
     /// Constructor (needed because GSDFile is forward-declared).
-    explicit GSDExporter(ObjectInitializationFlags flags);
+    GSDExporter();
 
     /// Destructor (needed because GSDFile is forward-declared).
     ~GSDExporter();

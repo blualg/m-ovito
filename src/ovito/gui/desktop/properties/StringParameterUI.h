@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT StringParameterUI : public PropertyParameterUI
 public:
 
     /// Constructor.
-    StringParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
     virtual ~StringParameterUI();

@@ -60,9 +60,6 @@ public:
     };
     Q_ENUM(NeighborMode);
 
-    /// Constructor.
-    explicit ClusterAnalysisModifier(ObjectInitializationFlags flags);
-
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
@@ -202,28 +199,28 @@ private:
     };
 
     /// The neighbor mode.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(NeighborMode, neighborMode, setNeighborMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(NeighborMode{CutoffRange}, neighborMode, setNeighborMode, PROPERTY_FIELD_MEMORIZE);
 
     /// The cutoff radius for the distance-based neighbor criterion.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.2}, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether analysis should take into account only selected particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedParticles, setOnlySelectedParticles);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, onlySelectedParticles, setOnlySelectedParticles);
 
     /// Controls the sorting of cluster IDs by cluster size.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, sortBySize, setSortBySize, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, sortBySize, setSortBySize, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the unwrapping of the particle coordinates that make up a cluster.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, unwrapParticleCoordinates, setUnwrapParticleCoordinates, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, unwrapParticleCoordinates, setUnwrapParticleCoordinates, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the computation of cluster centers of mass.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, computeCentersOfMass, setComputeCentersOfMass, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, computeCentersOfMass, setComputeCentersOfMass, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the computation of cluster radius of gyration.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, computeRadiusOfGyration, setComputeRadiusOfGyration, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, computeRadiusOfGyration, setComputeRadiusOfGyration, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the coloring of particles by cluster ID.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, colorParticlesByCluster, setColorParticlesByCluster, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, colorParticlesByCluster, setColorParticlesByCluster, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

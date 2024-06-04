@@ -65,8 +65,8 @@ public:
         PositionProperty = Property::FirstSpecificProperty
     };
 
-    /// \brief Constructor.
-    explicit SurfaceMeshVertices(ObjectInitializationFlags flags);
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Returns the data for visualizing a vector property from this container using a VectorVis element.
     virtual VectorVis::VectorData getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,

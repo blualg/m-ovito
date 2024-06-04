@@ -42,23 +42,15 @@ SET_PROPERTY_FIELD_LABEL(DataSet, globalObjects, "Global objects");
 SET_PROPERTY_FIELD_LABEL(DataSet, filePath, "File path");
 
 /******************************************************************************
-* Constructor.
+* Constructor
 ******************************************************************************/
-DataSet::DataSet(ObjectInitializationFlags flags) : RefTarget(flags)
+void DataSet::initializeObject(ObjectInitializationFlags flags)
 {
-}
+    RefTarget::initializeObject(flags);
 
-/******************************************************************************
-* Is called by OORef<T>::create() right after the object's constructor is finished.
-* This is the second stage of the object's two-phase construction process.
-******************************************************************************/
-void DataSet::completeObjectConstruction(ObjectInitializationFlags initFlags)
-{
-    RefTarget::completeObjectConstruction(initFlags);
-
-    if(!initFlags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setViewportConfig(createDefaultViewportConfiguration());
-        setRenderSettings(OORef<RenderSettings>::create(initFlags));
+        setRenderSettings(OORef<RenderSettings>::create(flags));
     }
 }
 

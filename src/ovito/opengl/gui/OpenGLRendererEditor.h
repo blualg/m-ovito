@@ -36,11 +36,6 @@ class OpenGLRendererEditor : public PropertiesEditor
 {
     OVITO_CLASS(OpenGLRendererEditor)
 
-public:
-
-    /// Constructor.
-    explicit OpenGLRendererEditor() {}
-
 protected:
 
     /// Creates the user interface controls for the editor.

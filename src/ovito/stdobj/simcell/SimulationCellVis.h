@@ -37,9 +37,6 @@ class OVITO_STDOBJ_EXPORT SimulationCellVis : public DataVis
 
 public:
 
-    /// Constructor.
-    explicit SimulationCellVis(ObjectInitializationFlags flags);
-
     /// Lets the visualization element render the data object.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
@@ -60,14 +57,14 @@ protected:
 protected:
 
     /// Controls the line width used to render the simulation cell.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, cellLineWidth, setCellLineWidth);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, cellLineWidth, setCellLineWidth);
     DECLARE_SHADOW_PROPERTY_FIELD(cellLineWidth);
 
     /// Controls whether the simulation cell is visible.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, renderCellEnabled, setRenderCellEnabled);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, renderCellEnabled, setRenderCellEnabled);
 
     /// Controls the rendering color of the simulation cell.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, cellColor, setCellColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0,0,0}), cellColor, setCellColor, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

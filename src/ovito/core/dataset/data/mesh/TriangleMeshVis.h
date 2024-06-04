@@ -36,11 +36,11 @@ namespace Ovito {
 class OVITO_CORE_EXPORT TriangleMeshVis : public DataVis
 {
     OVITO_CLASS(TriangleMeshVis)
- 
+
 public:
 
     /// Constructor.
-    explicit TriangleMeshVis(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Lets the vis element produce a visual representation of a data object.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
@@ -57,16 +57,16 @@ public:
 private:
 
     /// Controls the display color of the mesh.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, color, setColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0.85, 0.85, 1}), color, setColor, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the transparency of the mesh.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
 
     /// Controls whether the polygonal edges of the mesh should be highlighted.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightEdges, setHighlightEdges);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, highlightEdges, setHighlightEdges);
 
     /// Controls whether triangles facing away from the viewer are not rendered.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, backfaceCulling, setBackfaceCulling);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, backfaceCulling, setBackfaceCulling);
 };
 
 }   // End of namespace

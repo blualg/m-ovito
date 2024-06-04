@@ -40,7 +40,7 @@ class GlobalAttributesInspectionApplet : public DataInspectionApplet
 public:
 
     /// Constructor.
-    explicit GlobalAttributesInspectionApplet() : DataInspectionApplet(AttributeDataObject::OOClass()) {}
+    void initializeObject() { DataInspectionApplet::initializeObject(AttributeDataObject::OOClass()); }
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 100; }

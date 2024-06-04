@@ -44,10 +44,12 @@ SET_PROPERTY_FIELD_LABEL(CombineDatasetsModifier, secondaryDataSource, "Secondar
 IMPLEMENT_ABSTRACT_OVITO_CLASS(CombineDatasetsModifierDelegate);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-CombineDatasetsModifier::CombineDatasetsModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags)
+void CombineDatasetsModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    MultiDelegatingModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Generate the list of delegate objects.
         createModifierDelegates(CombineDatasetsModifierDelegate::OOClass());

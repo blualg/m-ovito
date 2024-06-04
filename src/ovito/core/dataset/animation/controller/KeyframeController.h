@@ -40,9 +40,6 @@ class OVITO_CORE_EXPORT KeyframeController : public Controller
 
 public:
 
-    /// Constructor.
-    using Controller::Controller;
-
     /// \brief Returns whether the value of this controller is changing over time.
     virtual bool isAnimated() const override { return keys().size() >= 2; }
 
@@ -97,9 +94,6 @@ public:
 
     /// The type used to construct default key values.
     typedef typename KeyType::nullvalue_type nullvalue_type;
-
-    /// Constructor.
-    using KeyframeController::KeyframeController;
 
     /// Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ctrlType; }

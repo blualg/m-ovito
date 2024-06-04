@@ -65,9 +65,6 @@ public:
 
 public:
 
-    /// Constructor.
-    explicit ExpandSelectionModifier(ObjectInitializationFlags flags);
-
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
@@ -195,16 +192,16 @@ private:
 private:
 
     /// The expansion mode.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ExpansionMode, mode, setMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ExpansionMode{CutoffRange}, mode, setMode, PROPERTY_FIELD_MEMORIZE);
 
     /// The selection cutoff range.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoffRange, setCutoffRange, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.2}, cutoffRange, setCutoffRange, PROPERTY_FIELD_MEMORIZE);
 
     /// The number of nearest neighbors to select.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, numNearestNeighbors, setNumNearestNeighbors, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{1}, numNearestNeighbors, setNumNearestNeighbors, PROPERTY_FIELD_MEMORIZE);
 
     /// The number of expansion steps to perform.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, numberOfIterations, setNumberOfIterations);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{1}, numberOfIterations, setNumberOfIterations);
 };
 
 }   // End of namespace

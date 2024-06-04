@@ -56,7 +56,8 @@ class OVITO_PARTICLES_EXPORT DLPOLYImporter : public ParticleImporter
 public:
 
     /// Constructor.
-    explicit DLPOLYImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    void initializeObject(ObjectInitializationFlags flags) {
+        ParticleImporter::initializeObject(flags);
         setMultiTimestepFile(true);
     }
 

@@ -30,11 +30,11 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ModifierDelegateFixedListParameterUI);
 
 /******************************************************************************
-* The constructor.
+* Constructor.
 ******************************************************************************/
-ModifierDelegateFixedListParameterUI::ModifierDelegateFixedListParameterUI(PropertiesEditor* parentEditor, const RolloutInsertionParameters& rolloutParams, OvitoClassPtr defaultEditorClass)
-    : RefTargetListParameterUI(parentEditor, PROPERTY_FIELD(MultiDelegatingModifier::delegates), rolloutParams, defaultEditorClass)
+void ModifierDelegateFixedListParameterUI::initializeObject(PropertiesEditor* parentEditor, const RolloutInsertionParameters& rolloutParams, OvitoClassPtr defaultEditorClass)
 {
+    RefTargetListParameterUI::initializeObject(parentEditor, PROPERTY_FIELD(MultiDelegatingModifier::delegates), rolloutParams, defaultEditorClass);
 }
 
 /******************************************************************************

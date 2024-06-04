@@ -170,8 +170,8 @@ class OVITO_CORE_EXPORT TriangleMesh : public DataObject
 
 public:
 
-    /// Constructor that creates an object with an empty triangle mesh.
-    explicit TriangleMesh(ObjectInitializationFlags flags);
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// \brief Returns the title of this object.
     virtual QString objectTitle() const override { return tr("Triangle mesh"); }

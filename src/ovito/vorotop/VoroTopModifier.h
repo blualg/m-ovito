@@ -43,9 +43,6 @@ class OVITO_VOROTOP_EXPORT VoroTopModifier : public StructureIdentificationModif
 
 public:
 
-    /// Constructor.
-    explicit VoroTopModifier(ObjectInitializationFlags flags);
-
     /// Returns the VoroTop filter definition cached from the last analysis run.
     const std::shared_ptr<Filter>& filter() const { return _filter; }
 
@@ -104,10 +101,10 @@ private:
 private:
 
     /// Controls whether the weighted Voronoi tessellation is computed, which takes into account particle radii.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useRadii, setUseRadii);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useRadii, setUseRadii);
 
     /// The external file path of the loaded filter file.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, filterFile, setFilterFile);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, filterFile, setFilterFile);
 
     /// The VoroTop filter definition cached from the last analysis run.
     std::shared_ptr<Filter> _filter;

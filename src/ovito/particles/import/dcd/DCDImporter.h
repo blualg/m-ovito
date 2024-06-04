@@ -57,7 +57,8 @@ class OVITO_PARTICLES_EXPORT DCDImporter : public ParticleImporter
 public:
 
     /// Constructor.
-    explicit DCDImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    void initializeObject(ObjectInitializationFlags flags) {
+        ParticleImporter::initializeObject(flags);
         setMultiTimestepFile(true);
         setRecenterCell(true);
     }

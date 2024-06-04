@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT FilenameParameterUI : public PropertyParameterUI
 public:
 
     /// Constructor.
-    FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QStringList& fileFilter, bool existingFile);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QStringList& fileFilter, bool existingFile);
 
     /// Destructor.
     virtual ~FilenameParameterUI();

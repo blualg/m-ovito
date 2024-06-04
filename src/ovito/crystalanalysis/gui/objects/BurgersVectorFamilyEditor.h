@@ -35,11 +35,6 @@ class BurgersVectorFamilyEditor : public PropertiesEditor
 {
     OVITO_CLASS(BurgersVectorFamilyEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

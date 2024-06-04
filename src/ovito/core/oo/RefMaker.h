@@ -62,9 +62,6 @@ protected:
                 PROPERTY_FIELD_NO_CHANGE_MESSAGE |
                 PROPERTY_FIELD_NO_SUB_ANIM;
 
-    /// \brief Constructor.
-    RefMaker() = default;
-
     /////////////////////////////// Reference field events ///////////////////////////////////
 
     /// \brief Is called when a RefTarget referenced by this object generated an event.
@@ -337,7 +334,7 @@ public:
     /// The undo record class specified as a template parameter is instantiated only if the undo stack is recording.
     template<class UndoableOperationClass, class... Args>
     void pushIfUndoRecording(Args&&... args) {
-        if(!isBeingConstructed() && isUndoRecording())
+        if(!isBeingInitializedOrDeleted() && isUndoRecording())
             CompoundOperation::current()->addOperation(std::make_unique<UndoableOperationClass>(std::forward<Args>(args)...));
     }
 

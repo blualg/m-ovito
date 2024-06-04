@@ -34,9 +34,12 @@ DEFINE_REFERENCE_FIELD(PipelineListItem, object);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PipelineListItem::PipelineListItem(RefTarget* object, PipelineItemType itemType, PipelineListItem* parent) :
-    _parent(parent), _itemType(itemType)
+void PipelineListItem::initializeObject(RefTarget* object, PipelineItemType itemType, PipelineListItem* parent)
 {
+    RefMaker::initializeObject();
+
+    _parent = parent;
+    _itemType = itemType;
     _object.set(this, PROPERTY_FIELD(object), object);
 
     switch(_itemType) {

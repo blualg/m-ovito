@@ -37,8 +37,10 @@ OVITO_CLASSINFO(TargetVis, "DisplayName", "Target icon");
 /******************************************************************************
 * Constructs a target object.
 ******************************************************************************/
-TargetObject::TargetObject(ObjectInitializationFlags flags) : DataObject(flags)
+void TargetObject::initializeObject(ObjectInitializationFlags flags)
 {
+    DataObject::initializeObject(flags);
+
     if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
         setVisElement(OORef<TargetVis>::create(flags));
     }

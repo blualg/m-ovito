@@ -54,7 +54,7 @@ public:
 public:
 
     /// Constructor.
-    explicit OpenGLRenderer(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
 	/// Creates a new renderer-specific rendering job for offscreen rendering.
 	virtual OORef<RenderingJob> createOffscreenRenderingJob() override;
@@ -86,10 +86,10 @@ public:
 private:
 
     /// Controls the number of sub-pixels to render.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, antialiasingLevel, setAntialiasingLevel, PROPERTY_FIELD_RESETTABLE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{3}, antialiasingLevel, setAntialiasingLevel, PROPERTY_FIELD_RESETTABLE);
 
     /// Activates the order-independent rendering method for semi-transparent objects (implemented by the OpenGL renderer).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, orderIndependentTransparency, setOrderIndependentTransparency, PROPERTY_FIELD_RESETTABLE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, orderIndependentTransparency, setOrderIndependentTransparency, PROPERTY_FIELD_RESETTABLE);
 
     /// The vendor of the OpenGL implementation in use.
     static QByteArray _openGLVendor;

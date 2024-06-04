@@ -75,18 +75,6 @@ static int countNumberOfFiles(const QVector<FileSourceImporter::Frame>& frames)
 }
 
 /******************************************************************************
-* Constructs the object.
-******************************************************************************/
-FileSource::FileSource(ObjectInitializationFlags flags) : BasePipelineSource(flags),
-    _playbackSpeedNumerator(1),
-    _playbackSpeedDenominator(1),
-    _playbackStartTime(0),
-    _autoGenerateFilePattern(true),
-    _restrictToFrame(-1)
-{
-}
-
-/******************************************************************************
 * Sets the source location for importing data.
 ******************************************************************************/
 void FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection)
@@ -435,7 +423,7 @@ SharedFuture<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvalu
 
             // Set up the load request to be submitted to the FileSourceImporter.
             FileSourceImporter::LoadOperationRequest loadRequest;
-            loadRequest.pipelineNode = std::static_pointer_cast<PipelineNode>(shared_from_this());
+            loadRequest.pipelineNode = this;
             loadRequest.fileHandle = fileHandle;
             loadRequest.frame = frameInfo;
             loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);

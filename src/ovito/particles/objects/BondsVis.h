@@ -58,9 +58,6 @@ public:
     };
     Q_ENUM(ColoringMode);
 
-    /// Constructor.
-    explicit BondsVis(ObjectInitializationFlags flags);
-
     /// Renders the visual element.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
@@ -85,16 +82,16 @@ protected:
 protected:
 
     /// Display width of bonds.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, bondWidth, setBondWidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.4}, bondWidth, setBondWidth, PROPERTY_FIELD_MEMORIZE);
 
     /// Uniform display color of the bonds.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, bondColor, setBondColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0.6, 0.6, 0.6}), bondColor, setBondColor, PROPERTY_FIELD_MEMORIZE);
 
     /// Shading mode for bond rendering.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ShadingMode{NormalShading}, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
 
     /// Determines how the bonds are colored.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ColoringMode, coloringMode, setColoringMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(BondsVis::ColoringMode{ParticleBasedColoring}, coloringMode, setColoringMode, PROPERTY_FIELD_MEMORIZE);
 };
 
 /**
@@ -108,7 +105,11 @@ class OVITO_PARTICLES_EXPORT BondPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    explicit BondPickInfo(DataOORef<const Particles> particles, DataOORef<const SimulationCell> simulationCell) : _particles(std::move(particles)), _simulationCell(std::move(simulationCell)) {}
+    void initializeObject(DataOORef<const Particles> particles, DataOORef<const SimulationCell> simulationCell) {
+        ObjectPickInfo::initializeObject();
+        _particles = std::move(particles);
+        _simulationCell = std::move(simulationCell);
+    }
 
     /// Returns the particles object.
     const DataOORef<const Particles>& particles() const { OVITO_ASSERT(_particles); return _particles; }

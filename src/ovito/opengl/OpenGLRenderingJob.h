@@ -81,7 +81,7 @@ class OVITO_OPENGLRENDERER_EXPORT OpenGLRenderingJob : public RenderingJob, publ
 public:
 
     /// Constructor.
-    explicit OpenGLRenderingJob(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency);
+    void initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency);
 
     /// Called when this object is being destroyed.
     virtual void aboutToBeDeleted() override;

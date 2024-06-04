@@ -52,9 +52,6 @@ class VoxelGridReplicateModifierDelegate : public ReplicateModifierDelegate
 
 public:
 
-    /// Constructor.
-    using ReplicateModifierDelegate::ReplicateModifierDelegate;
-
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };

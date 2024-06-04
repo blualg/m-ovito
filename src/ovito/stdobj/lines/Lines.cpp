@@ -123,8 +123,10 @@ PropertyPtr Lines::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buffe
 /******************************************************************************
  * Constructor.
  ******************************************************************************/
-Lines::Lines(ObjectInitializationFlags flags) : PropertyContainer(flags)
+void Lines::initializeObject(ObjectInitializationFlags flags)
 {
+    PropertyContainer::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         if(!flags.testFlag(ObjectInitializationFlag::DontCreateVisElement)) {
             // Create and attach a default visualization element for rendering the lines.

@@ -55,11 +55,9 @@ public:
 public:
 
     /// \brief Constructor. Creates an empty simulation cell.
-    explicit SimulationCell(ObjectInitializationFlags flags) : DataObject(flags),
-        _cellMatrix(AffineTransformation::Zero()),
-        _reciprocalSimulationCell(AffineTransformation::Zero()),
-        _pbcX(false), _pbcY(false), _pbcZ(false), _is2D(false)
-    {
+    void initializeObject(ObjectInitializationFlags flags) {
+        DataObject::initializeObject(flags);
+
         if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement)))
             setVisElement(OORef<SimulationCellVis>::create(flags));
     }
@@ -69,22 +67,24 @@ public:
     /// \param a2 The second edge vector.
     /// \param a3 The third edge vector.
     /// \param origin The origin position.
-    SimulationCell(ObjectInitializationFlags flags, const Vector3& a1, const Vector3& a2, const Vector3& a3,
-            const Point3& origin = Point3::Origin(), bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
-        DataObject(flags),
-        _cellMatrix(a1, a2, a3, origin - Point3::Origin()),
-        _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D)
+    void initializeObject(ObjectInitializationFlags flags, const Vector3& a1, const Vector3& a2, const Vector3& a3,
+            const Point3& origin = Point3::Origin(), bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false)
     {
-        if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement)))
-            setVisElement(OORef<SimulationCellVis>::create(flags));
+        initializeObject(flags, AffineTransformation(a1, a2, a3, origin - Point3::Origin()), pbcX, pbcY, pbcZ, is2D);
     }
 
     /// \brief Constructs a cell from a matrix that specifies its shape and position in space.
     /// \param cellMatrix The matrix
-    SimulationCell(ObjectInitializationFlags flags, const AffineTransformation& cellMatrix, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
-        DataObject(flags),
-        _cellMatrix(cellMatrix), _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D)
+    void initializeObject(ObjectInitializationFlags flags, const AffineTransformation& cellMatrix, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false)
     {
+        DataObject::initializeObject(flags);
+
+        setCellMatrix(cellMatrix);
+        setPbcX(pbcX);
+        setPbcY(pbcY);
+        setPbcZ(pbcZ);
+        setIs2D(is2D);
+
         if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement)))
             setVisElement(OORef<SimulationCellVis>::create(flags));
     }
@@ -94,14 +94,10 @@ public:
     /// \param pbcX Specifies whether periodic boundary conditions are enabled in the X direction.
     /// \param pbcY Specifies whether periodic boundary conditions are enabled in the Y direction.
     /// \param pbcZ Specifies whether periodic boundary conditions are enabled in the Z direction.
-    SimulationCell(ObjectInitializationFlags flags, const Box3& box, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false) :
-        DataObject(flags),
-        _cellMatrix(box.sizeX(), 0, 0, box.minc.x(), 0, box.sizeY(), 0, box.minc.y(), 0, 0, box.sizeZ(), box.minc.z()),
-        _pbcX(pbcX), _pbcY(pbcY), _pbcZ(pbcZ), _is2D(is2D)
+    void initializeObject(ObjectInitializationFlags flags, const Box3& box, bool pbcX = false, bool pbcY = false, bool pbcZ = false, bool is2D = false)
     {
         OVITO_ASSERT_MSG(box.sizeX() >= 0 && box.sizeY() >= 0 && box.sizeZ() >= 0, "SimulationCell constructor", "The simulation box must have a non-negative volume.");
-        if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement)))
-            setVisElement(OORef<SimulationCellVis>::create(flags));
+        initializeObject(flags, AffineTransformation(box.sizeX(), 0, 0, box.minc.x(), 0, box.sizeY(), 0, box.minc.y(), 0, 0, box.sizeZ(), box.minc.z()), pbcX, pbcY, pbcZ, is2D);
     }
 
     /// Returns inverse of the simulation cell matrix.
@@ -303,25 +299,25 @@ private:
     void computeInverseMatrix() const;
 
     /// Stores the three cell vectors and the position of the cell origin.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation, cellMatrix, setCellMatrix);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation{AffineTransformation::Zero()}, cellMatrix, setCellMatrix);
 
     /// The inverse of the cell matrix, which is kept in sync with the cell matrix at all times.
-    mutable AffineTransformation _reciprocalSimulationCell;
+    mutable AffineTransformation _reciprocalSimulationCell{AffineTransformation::Zero()};
     /// Indicates whether the reciprocal matrix is in sync with the cell's matrix.
     mutable bool _isReciprocalMatrixValid = false;
 
     /// Specifies periodic boundary condition in the X direction.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcX, setPbcX);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, pbcX, setPbcX);
     DECLARE_SHADOW_PROPERTY_FIELD(pbcX);
     /// Specifies periodic boundary condition in the Y direction.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcY, setPbcY);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, pbcY, setPbcY);
     DECLARE_SHADOW_PROPERTY_FIELD(pbcY);
     /// Specifies periodic boundary condition in the Z direction.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, pbcZ, setPbcZ);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, pbcZ, setPbcZ);
     DECLARE_SHADOW_PROPERTY_FIELD(pbcZ);
 
     /// Stores the dimensionality of the system.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, is2D, setIs2D);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, is2D, setIs2D);
     DECLARE_SHADOW_PROPERTY_FIELD(is2D);
 };
 

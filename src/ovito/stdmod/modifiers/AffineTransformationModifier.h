@@ -34,11 +34,6 @@ namespace Ovito {
 class OVITO_STDMOD_EXPORT AffineTransformationModifierDelegate : public ModifierDelegate
 {
     OVITO_CLASS(AffineTransformationModifierDelegate)
-
-protected:
-
-    /// Abstract class constructor.
-    using ModifierDelegate::ModifierDelegate;
 };
 
 /**
@@ -64,9 +59,6 @@ class OVITO_STDMOD_EXPORT SimulationCellAffineTransformationModifierDelegate : p
     OVITO_CLASS_META(SimulationCellAffineTransformationModifierDelegate, OOMetaClass)
 
 public:
-
-    /// Constructor.
-    using AffineTransformationModifierDelegate::AffineTransformationModifierDelegate;
 
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
@@ -95,9 +87,6 @@ class OVITO_STDMOD_EXPORT LinesAffineTransformationModifierDelegate : public Aff
 
 public:
 
-    /// Constructor.
-    using AffineTransformationModifierDelegate::AffineTransformationModifierDelegate;
-
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
@@ -124,8 +113,6 @@ class OVITO_STDMOD_EXPORT VectorsAffineTransformationModifierDelegate : public A
     OVITO_CLASS_META(VectorsAffineTransformationModifierDelegate, OOMetaClass)
 
 public:
-    /// Constructor.
-    using AffineTransformationModifierDelegate::AffineTransformationModifierDelegate;
 
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state,
@@ -160,7 +147,7 @@ public:
 public:
 
     /// Constructor.
-    explicit AffineTransformationModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -198,20 +185,20 @@ public:
 protected:
 
     /// This property fields stores the transformation matrix (used in 'relative' mode).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation, transformationTM, setTransformationTM);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation{AffineTransformation::Identity()}, transformationTM, setTransformationTM);
 
     /// This property fields stores the simulation cell geometry (used in 'absolute' mode).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation, targetCell, setTargetCell);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation{AffineTransformation::Zero()}, targetCell, setTargetCell);
 
     /// This controls whether the transformation is applied only to the selected particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectionOnly, setSelectionOnly);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, selectionOnly, setSelectionOnly);
 
     /// This controls whether a relative transformation is applied to the simulation box or
     /// the absolute cell geometry has been specified.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, relativeMode, setRelativeMode);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, relativeMode, setRelativeMode);
 
     /// Controls whether the translation vector is specified in reduced cell coordinated.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, translationReducedCoordinates, setTranslationReducedCoordinates);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, translationReducedCoordinates, setTranslationReducedCoordinates);
 };
 
 }   // End of namespace

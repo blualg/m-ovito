@@ -54,11 +54,7 @@ public:
 public:
 
     /// Constructor.
-    explicit RenderSettings(ObjectInitializationFlags flags);
-
-    /// Is called by OORef<T>::create() right after the object's constructor is finished.
-    /// This is the second stage of the object's two-phase construction process.
-    void completeObjectConstruction(ObjectInitializationFlags initFlags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Returns the aspect ratio (height/width) of the rendered image.
     FloatType outputImageAspectRatio() const { return (FloatType)outputImageHeight() / (FloatType)outputImageWidth(); }
@@ -92,7 +88,7 @@ public:
 private:
 
     /// Contains the output filename and format of the image to be rendered.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ImageInfo, imageInfo, setImageInfo);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(ImageInfo{}, imageInfo, setImageInfo);
 
     /// The filename of the output image.
     DECLARE_VIRTUAL_PROPERTY_FIELD(QString, imageFilename);
@@ -104,52 +100,52 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Controller>, backgroundColorController, setBackgroundColorController, PROPERTY_FIELD_MEMORIZE);
 
     /// The width of the output image in pixels.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, outputImageWidth, setOutputImageWidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{640}, outputImageWidth, setOutputImageWidth, PROPERTY_FIELD_MEMORIZE);
 
     /// The height of the output image in pixels.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, outputImageHeight, setOutputImageHeight, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{480}, outputImageHeight, setOutputImageHeight, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether the alpha channel will be included in the output image.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, generateAlphaChannel, setGenerateAlphaChannel, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, generateAlphaChannel, setGenerateAlphaChannel, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether the rendered image is saved to the output file.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, saveToFile, setSaveToFile);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, saveToFile, setSaveToFile);
 
     /// Controls whether already rendered frames are skipped.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, skipExistingImages, setSkipExistingImages);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, skipExistingImages, setSkipExistingImages);
 
     /// Specifies which part of the animation should be rendered.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(RenderingRangeType, renderingRangeType, setRenderingRangeType);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(RenderingRangeType{CURRENT_FRAME}, renderingRangeType, setRenderingRangeType);
 
     /// The first frame to render when rendering range is set to CUSTOM_INTERVAL.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, customRangeStart, setCustomRangeStart);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, customRangeStart, setCustomRangeStart);
 
     /// The last frame to render when rendering range is set to CUSTOM_INTERVAL.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, customRangeEnd, setCustomRangeEnd);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{100}, customRangeEnd, setCustomRangeEnd);
 
     /// The frame to render when rendering range is set to CUSTOM_FRAME.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, customFrame, setCustomFrame);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, customFrame, setCustomFrame);
 
     /// Specifies the number of frames to skip when rendering an animation.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, everyNthFrame, setEveryNthFrame);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{1}, everyNthFrame, setEveryNthFrame);
 
     /// Specifies the base number for filename generation when rendering an animation.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, fileNumberBase, setFileNumberBase);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, fileNumberBase, setFileNumberBase);
 
     /// The frames per second for encoding videos.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, framesPerSecond, setFramesPerSecond);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, framesPerSecond, setFramesPerSecond);
 
     /// Controls whether all viewports of the current viewport layout are rendered (or just the active viewport).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, renderAllViewports, setRenderAllViewports);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, renderAllViewports, setRenderAllViewports);
 
     /// Controls the visibility of separators between viewports when rendering an entire viewport layout.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, layoutSeperatorsEnabled, setLayoutSeperatorsEnabled, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, layoutSeperatorsEnabled, setLayoutSeperatorsEnabled, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the width (in pixels) of the separators between viewports when rendering an entire viewport layout.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, layoutSeperatorWidth, setLayoutSeperatorWidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{2}, layoutSeperatorWidth, setLayoutSeperatorWidth, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the color of the separator lines between viewports when rendering an entire viewport layout.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, layoutSeperatorColor, setLayoutSeperatorColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0.5, 0.5, 0.5}), layoutSeperatorColor, setLayoutSeperatorColor, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether errors that occur within a data pipeline lead to an abortion of the rendering process.
     bool _stopOnPipelineError = false;

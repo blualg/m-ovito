@@ -52,8 +52,8 @@ class OVITO_CORE_EXPORT AttributeFileExporter : public FileExporter
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    explicit AttributeFileExporter(ObjectInitializationFlags flags);
+    /// \brief Constructor.
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
     virtual bool supportsMultiFrameFiles() const override { return true; }
@@ -87,7 +87,7 @@ private:
     std::unique_ptr<CompressedTextWriter> _outputStream;
 
     /// The list of global attributes to export.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QStringList, attributesToExport, setAttributesToExport);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QStringList{}, attributesToExport, setAttributesToExport);
 };
 
 }   // End of namespace

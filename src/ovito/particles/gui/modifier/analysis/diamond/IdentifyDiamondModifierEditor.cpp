@@ -56,7 +56,7 @@ void IdentifyDiamondModifierEditor::createUI(const RolloutInsertionParameters& r
     // Status label.
     layout1->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
-    StructureListParameterUI* structureTypesPUI = new StructureListParameterUI(this);
+    StructureListParameterUI* structureTypesPUI = createParamUI<StructureListParameterUI>(this);
     layout1->addSpacing(10);
     layout1->addWidget(new QLabel(tr("Structure types:")));
     layout1->addWidget(structureTypesPUI->tableWidget());

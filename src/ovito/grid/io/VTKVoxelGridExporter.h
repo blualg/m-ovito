@@ -53,9 +53,6 @@ class OVITO_GRID_EXPORT VTKVoxelGridExporter : public FileExporter
 
 public:
 
-    /// Constructor.
-    explicit VTKVoxelGridExporter(ObjectInitializationFlags flags) : FileExporter(flags) {}
-
     /// \brief Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
         return { &VoxelGrid::OOClass() };

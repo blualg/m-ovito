@@ -56,7 +56,8 @@ class OVITO_PARTICLES_EXPORT mmCIFImporter : public ParticleImporter
 public:
 
     /// Constructor.
-    explicit mmCIFImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    void initializeObject(ObjectInitializationFlags flags) {
+        ParticleImporter::initializeObject(flags);
         setGenerateBonds(true);
     }
 

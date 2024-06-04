@@ -37,11 +37,6 @@ class ComputePropertyModifierEditor : public PropertiesEditor
 	OVITO_CLASS(ComputePropertyModifierEditor)
 	Q_OBJECT
 
-public:
-
-	/// Constructor.
-	using PropertiesEditor::PropertiesEditor;
-
 protected:
 
 	/// Creates the user interface controls for the editor.

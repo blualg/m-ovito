@@ -38,15 +38,6 @@ DEFINE_PROPERTY_FIELD(PipelineNode, pipelineTrajectoryCachingEnabled);
 SET_PROPERTY_FIELD_LABEL(PipelineNode, pipelineTrajectoryCachingEnabled, "Precompute all trajectory frames");
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-PipelineNode::PipelineNode(ObjectInitializationFlags flags, bool enableCaching) : ActiveObject(flags),
-    _pipelineCache(this, enableCaching),
-    _pipelineTrajectoryCachingEnabled(false)
-{
-}
-
-/******************************************************************************
 * Is called when the value of a non-animatable property field of this RefMaker has changed.
 ******************************************************************************/
 void PipelineNode::propertyChanged(const PropertyFieldDescriptor* field)

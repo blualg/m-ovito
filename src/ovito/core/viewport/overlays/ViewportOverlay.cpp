@@ -34,13 +34,6 @@ SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(ViewportOverlay, pipeline, "sourceNode"); //
 //SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(ViewportOverlay, pipeline, "dataSource"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-ViewportOverlay::ViewportOverlay(ObjectInitializationFlags flags) : ActiveObject(flags)
-{
-}
-
-/******************************************************************************
 * Is called when the overlay is being newly attached to a viewport.
 ******************************************************************************/
 void ViewportOverlay::initializeOverlay(Viewport* viewport)

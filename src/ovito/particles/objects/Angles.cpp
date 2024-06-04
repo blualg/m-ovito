@@ -32,8 +32,10 @@ OVITO_CLASSINFO(Angles, "ClassNameAlias", "AnglesObject");  // For backward comp
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Angles::Angles(ObjectInitializationFlags flags) : PropertyContainer(flags)
+void Angles::initializeObject(ObjectInitializationFlags flags)
 {
+    PropertyContainer::initializeObject(flags);
+
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
 }

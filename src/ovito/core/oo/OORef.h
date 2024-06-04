@@ -174,14 +174,17 @@ public:
         // Instantiate the object on the heap.
         // We are using our custom allocator here, which ensures that OvitoObject::deleteObjectInternal() is called
         // just before object destruction.
-        std::shared_ptr<OType> obj = std::allocate_shared<OType>(OOAllocator<OType>{}, flags, std::forward<Args>(args)...);
+        std::shared_ptr<OType> obj = std::allocate_shared<OType>(OOAllocator<OType>{});
+
+        // Second-phase construction function.
+        obj->initializeObject(flags, std::forward<Args>(args)...);
 
         // Initialize the object's parameters to their user-defined default values (only when the creation happens in the interactive UI).
         if(ExecutionContext::isInteractive())
             obj->initializeParametersToUserDefaultsNonrecursive();
 
-        // Clear the BeingConstructed flag after the object's constructor has run.
-        obj->completeObjectConstruction(flags);
+        // Clear the BeingInitialized flag.
+        obj->completeObjectInitialization();
 
         // Finally, move the shared_ptr into an OORef.
         return OORef<OType>(std::move(obj));
@@ -207,10 +210,13 @@ public:
             // Instantiate the object on the heap.
             // We are using our custom allocator here, which ensures that OvitoObject::deleteObjectInternal() is called
             // just before object destruction.
-            auto obj = std::allocate_shared<OType>(OOAllocator<OType>{}, std::forward<Args>(args)...);
+            auto obj = std::allocate_shared<OType>(OOAllocator<OType>{});
 
-            // Clear the BeingConstructed flag after the object's constructor has run.
-            obj->completeObjectConstruction(ObjectInitializationFlag::NoFlags);
+            // Second-phase construction function.
+            obj->initializeObject(std::forward<Args>(args)...);
+
+            // Clear the BeingInitialized flag.
+            obj->completeObjectInitialization();
 
             // Finally, move the shared_ptr into an OORef.
             return OORef<OType>(std::move(obj));
@@ -230,34 +236,52 @@ public:
  * A weak reference to an OvitoObject.
 */
 template<class T>
-class OOWeakRef : public std::weak_ptr<T>
+class OOWeakRef : public std::weak_ptr<OvitoObject>
 {
 public:
 
     /// Inherit all constructors from base class.
-    using std::weak_ptr<T>::weak_ptr;
+    constexpr OOWeakRef() noexcept = default;
+
+    /// Copy construction from another weak reference that is implicitly convertible.
+    template<typename U, class = std::enable_if_t<std::is_convertible_v<const U*, const T*>>>
+    OOWeakRef(const OOWeakRef<U>& p) noexcept : std::weak_ptr<OvitoObject>{p} {}
+
+    /// Move construction from another weak reference that is implicitly convertible.
+    template<typename U, class = std::enable_if_t<std::is_convertible_v<const U*, const T*>>>
+    OOWeakRef(OOWeakRef<U>&& p) noexcept : std::weak_ptr<OvitoObject>{std::move(p)} {}
+
+    /// Construction from a strong reference that is implicitly convertible.
+    template<typename U, class = std::enable_if_t<std::is_convertible_v<const U*, const T*>>>
+    OOWeakRef(const OORef<U>& p) noexcept : std::weak_ptr<OvitoObject>{p} {}
 
     /// Construction from raw pointer to an OvitoObject (may be null).
-    template<typename U>
-    OOWeakRef(const U* p) noexcept : std::weak_ptr<T>{OORef<T>(p)} {}
+    template<typename U, class = std::enable_if_t<std::is_convertible_v<const U*, const T*>>>
+    OOWeakRef(const U* p) noexcept : std::weak_ptr<OvitoObject>{p ? const_cast<U*>(p)->weak_from_this() : std::weak_ptr<OvitoObject>{}} {
+        OVITO_ASSERT(!p || !p->isBeingConstructed());
+    }
+
+    /// Converts the weak pointer to a strong pointer.
+    OORef<T> lock() const noexcept {
+        return static_object_cast<T>(std::weak_ptr<OvitoObject>::lock());
+    }
 
     /// Equal comparison operator (with another weak ref).
-    template<class U>
+    template<class U, class = std::enable_if_t<std::is_convertible_v<const U*, const T*> || std::is_convertible_v<const T*, const U*>>>
     inline bool operator==(const OOWeakRef<U>& rhs) const noexcept {
         return !this->owner_before(rhs) && !rhs.owner_before(*this); // In C++26: implement this using owner_equal()
     }
 
-    /// Equal comparison operator (with a regular object pointer).
-    template<class U>
+    /// Equal comparison operator (with a raw object pointer).
+    template<class U, class = std::enable_if_t<std::is_convertible_v<const U*, const T*> || std::is_convertible_v<const T*, const U*>>>
     inline bool operator==(U* rhs) const noexcept {
-        const OORef<U> ref(rhs);
-        return !this->owner_before(ref) && !ref.owner_before(*this); // In C++26: implement this using owner_equal()
+        return *this == OOWeakRef<U>(rhs);
     }
 
     /// Returns true of this weak reference has been initialized with an explicit null object pointer.
     /// Note: This is different from the case where the referenced object has expired.
     bool empty() const {
-        return !this->owner_before(std::weak_ptr<T>{}) && !std::weak_ptr<T>{}.owner_before(*this);
+        return !this->owner_before(std::weak_ptr<OvitoObject>{}) && !std::weak_ptr<OvitoObject>{}.owner_before(*this);
     }
 };
 

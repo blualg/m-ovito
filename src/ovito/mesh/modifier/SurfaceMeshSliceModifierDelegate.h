@@ -57,9 +57,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshSliceModifierDelegate : public SliceModifi
 
 public:
 
-    /// Constructor.
-    using SliceModifierDelegate::SliceModifierDelegate;
-
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };

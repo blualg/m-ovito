@@ -37,11 +37,6 @@ class LAMMPSTextDumpImporterEditor : public FileImporterEditor
     OVITO_CLASS(LAMMPSTextDumpImporterEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor.
-    using FileImporterEditor::FileImporterEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT IntegerCheckBoxParameterUI : public PropertyParameterUI
 public:
 
     /// Constructor.
-    IntegerCheckBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, int uncheckedValue, int checkedValue);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, int uncheckedValue, int checkedValue);
 
     /// Destructor.
     virtual ~IntegerCheckBoxParameterUI();

@@ -54,7 +54,7 @@ public:
 public:
 
     /// Constructor.
-    explicit AcklandJonesModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
 protected:
 

@@ -59,8 +59,9 @@ class OVITO_MESH_EXPORT ParaViewPVDImporter : public FileSourceImporter
 
 public:
 
-    /// \brief Constructor.
-    explicit ParaViewPVDImporter(ObjectInitializationFlags flags) : FileSourceImporter(flags) {
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags) {
+        FileSourceImporter::initializeObject(flags);
         setMultiTimestepFile(true);
     }
 

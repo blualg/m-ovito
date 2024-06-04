@@ -63,21 +63,12 @@ SET_PROPERTY_FIELD_LABEL(HistogramModifier, onlySelectedElements, "Use only sele
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HistogramModifier, numberOfBins, IntegerParameterUnit, 1, 100000);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-HistogramModifier::HistogramModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags),
-    _numberOfBins(200),
-    _selectInRange(false),
-    _selectionRangeStart(0),
-    _selectionRangeEnd(1),
-    _fixXAxisRange(false),
-    _xAxisRangeStart(0),
-    _xAxisRangeEnd(0),
-    _fixYAxisRange(false),
-    _yAxisRangeStart(0),
-    _yAxisRangeEnd(0),
-    _onlySelectedElements(false)
+void HistogramModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    GenericPropertyModifier::initializeObject(flags);
+
     // Operate on particle properties by default.
     setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }

@@ -35,11 +35,6 @@ class ExpandSelectionModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(ExpandSelectionModifierEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

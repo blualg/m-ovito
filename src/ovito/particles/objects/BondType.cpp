@@ -34,13 +34,6 @@ SET_PROPERTY_FIELD_LABEL(BondType, radius, "Radius");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondType, radius, WorldParameterUnit, 0);
 
 /******************************************************************************
-* Constructs a new BondType.
-******************************************************************************/
-BondType::BondType(ObjectInitializationFlags flags) : ElementType(flags), _radius(0.0)
-{
-}
-
-/******************************************************************************
 * Creates an editable proxy object for this DataObject and synchronizes its parameters.
 ******************************************************************************/
 void BondType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const

@@ -75,8 +75,8 @@ public:
         ColorProperty = Property::GenericColorProperty
     };
 
-    /// \brief Constructor.
-    explicit VoxelGrid(ObjectInitializationFlags flags, const QString& title = QString());
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags, const QString& title = QString());
 
     /// Returns the spatial domain this voxel grid is embedded in after making sure it
     /// can safely be modified.
@@ -122,11 +122,11 @@ protected:
 private:
 
     /// The shape of the grid (i.e. number of voxels in each dimension).
-    DECLARE_RUNTIME_PROPERTY_FIELD(GridDimensions, shape, setShape);
+    DECLARE_RUNTIME_PROPERTY_FIELD((GridDimensions{{0,0,0}}), shape, setShape);
 
     /// Determines whether the stored field values are volume- or vertex-based, i.e.,
     /// whether values are associated with the voxel cells or with the corner points of the grid cells.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(GridType, gridType, setGridType);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(GridType{CellData}, gridType, setGridType);
     DECLARE_SHADOW_PROPERTY_FIELD(gridType);
 
     /// The domain the object is embedded in.

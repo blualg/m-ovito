@@ -52,11 +52,6 @@ class SurfaceMeshRegionsExpressionSelectionModifierDelegate : public ExpressionS
     };
 
     OVITO_CLASS_META(SurfaceMeshRegionsExpressionSelectionModifierDelegate, OOMetaClass)
-
-public:
-
-    /// Constructor.
-    explicit SurfaceMeshRegionsExpressionSelectionModifierDelegate(ObjectInitializationFlags flags) : ExpressionSelectionModifierDelegate(flags) {}
 };
 
 }   // End of namespace

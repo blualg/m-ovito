@@ -31,8 +31,10 @@ DEFINE_REFERENCE_FIELD(ObjectStatusDisplay, activeObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ObjectStatusDisplay::ObjectStatusDisplay(PropertiesEditor* parentEditor) : ParameterUI(parentEditor)
+void ObjectStatusDisplay::initializeObject(PropertiesEditor* parentEditor)
 {
+    ParameterUI::initializeObject(parentEditor);
+
     _widget = new StatusWidget();
 }
 

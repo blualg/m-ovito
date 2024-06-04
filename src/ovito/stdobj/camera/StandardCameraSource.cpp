@@ -52,9 +52,12 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(StandardCameraSource, zoomController, World
 /******************************************************************************
 * Constructs a camera object.
 ******************************************************************************/
-StandardCameraSource::StandardCameraSource(ObjectInitializationFlags flags) : AbstractCameraSource(flags, false),
-    _isPerspective(true)
+void StandardCameraSource::initializeObject(ObjectInitializationFlags flags)
 {
+    AbstractCameraSource::initializeObject(flags);
+
+    pipelineCache().setEnabled(false);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setFovController(ControllerManager::createFloatController());
         fovController()->setFloatValue(AnimationTime(0), FLOATTYPE_PI/4);
@@ -206,7 +209,8 @@ void StandardCameraSource::setIsTargetCamera(bool enable)
             if(SceneNode* parentNode = pipeline->parentNode()) {
                 DataOORef<DataCollection> dataCollection = DataOORef<DataCollection>::create();
                 dataCollection->addObject(DataOORef<TargetObject>::create());
-                OORef<StaticSource> targetSource = OORef<StaticSource>::create(dataCollection);
+                OORef<StaticSource> targetSource = OORef<StaticSource>::create();
+                targetSource->setDataCollection(std::move(dataCollection));
                 OORef<Pipeline> targetNode = OORef<Pipeline>::create();
                 targetNode->setHead(targetSource);
                 targetNode->setSceneNodeName(tr("%1.target").arg(pipeline->sceneNodeName()));

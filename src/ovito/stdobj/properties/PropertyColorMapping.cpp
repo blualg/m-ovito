@@ -43,10 +43,10 @@ SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, sourceProperty, "Source property"
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyColorMapping::PropertyColorMapping(ObjectInitializationFlags flags) : RefTarget(flags),
-    _startValue(0.0),
-    _endValue(0.0)
+void PropertyColorMapping::initializeObject(ObjectInitializationFlags flags)
 {
+    RefTarget::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         if(ExecutionContext::isInteractive()) {
 #ifndef OVITO_DISABLE_QSETTINGS

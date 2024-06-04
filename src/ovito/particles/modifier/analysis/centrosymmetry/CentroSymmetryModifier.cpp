@@ -47,16 +47,6 @@ SET_PROPERTY_FIELD_LABEL(CentroSymmetryModifier, onlySelectedParticles, "Use onl
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(CentroSymmetryModifier, numNeighbors, IntegerParameterUnit, 2, CentroSymmetryModifier::MAX_CSP_NEIGHBORS);
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-CentroSymmetryModifier::CentroSymmetryModifier(ObjectInitializationFlags flags) : Modifier(flags),
-    _numNeighbors(12),
-    _mode(ConventionalMode),
-    _onlySelectedParticles(false)
-{
-}
-
-/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool CentroSymmetryModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const

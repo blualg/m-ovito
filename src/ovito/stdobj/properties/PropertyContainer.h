@@ -43,7 +43,7 @@ class OVITO_STDOBJ_EXPORT PropertyContainer : public DataObject
 public:
 
     /// Constructor.
-    explicit PropertyContainer(ObjectInitializationFlags flags, const QString& title = {});
+    void initializeObject(ObjectInitializationFlags flags, const QString& title = {});
 
     /// Returns the display title of this object.
     virtual QString objectTitle() const override;
@@ -368,10 +368,10 @@ private:
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const Property>, properties, setProperties);
 
     /// Keeps track of the number of data elements this property container contains.
-    DECLARE_PROPERTY_FIELD(size_t, elementCount);
+    DECLARE_PROPERTY_FIELD(size_t{0}, elementCount);
 
     /// The assigned title of the data object, which is displayed in the user interface.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, title, setTitle);
     DECLARE_SHADOW_PROPERTY_FIELD(title);
 };
 

@@ -32,14 +32,17 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(IntegerCheckBoxParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField property.
+* Constructor.
 ******************************************************************************/
-IntegerCheckBoxParameterUI::IntegerCheckBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, int uncheckedValue, int checkedValue) :
-    PropertyParameterUI(parentEditor, propField),
-    _uncheckedValue(uncheckedValue),
-    _checkedValue(checkedValue)
+void IntegerCheckBoxParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, int uncheckedValue, int checkedValue)
 {
     OVITO_ASSERT(uncheckedValue != checkedValue);
+
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
+    _uncheckedValue = uncheckedValue;
+    _checkedValue = checkedValue;
+
     // Create UI widget.
     _checkBox = new QCheckBox(propField->displayName());
     connect(_checkBox.data(), &QCheckBox::clicked, this, &IntegerCheckBoxParameterUI::updatePropertyValue);

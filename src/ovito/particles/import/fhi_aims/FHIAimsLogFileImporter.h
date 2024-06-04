@@ -56,7 +56,8 @@ class OVITO_PARTICLES_EXPORT FHIAimsLogFileImporter : public ParticleImporter
 public:
 
     /// Constructor.
-    explicit FHIAimsLogFileImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    void initializeObject(ObjectInitializationFlags flags) {
+        ParticleImporter::initializeObject(flags);
         setMultiTimestepFile(true);
     }
 

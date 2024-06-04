@@ -47,9 +47,6 @@ public:
         NEXT_AVAILABLE_EVENT_ID
     };
 
-    /// \brief Constructs a modifier group object.
-    explicit ModifierGroup(ObjectInitializationFlags flags) : ActiveObject(flags), _isCollapsed(false) {}
-
     /// \brief Returns the list of pipeline nodes that are part of this group.
     QVector<ModificationNode*> nodes() const;
 
@@ -77,7 +74,7 @@ private:
 private:
 
     /// Indicates whether this group is currently collapsed in the pipeline editor.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, isCollapsed, setCollapsed, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, isCollapsed, setCollapsed, PROPERTY_FIELD_NO_UNDO);
 };
 
 }   // End of namespace

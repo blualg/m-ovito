@@ -47,17 +47,6 @@ SET_PROPERTY_FIELD_LABEL(BondsVis, coloringMode, "Coloring mode");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-BondsVis::BondsVis(ObjectInitializationFlags flags) : DataVis(flags),
-    _bondWidth(0.4),
-    _bondColor(0.6, 0.6, 0.6),
-    _shadingMode(NormalShading),
-    _coloringMode(ParticleBasedColoring)
-{
-}
-
-/******************************************************************************
 * Computes the bounding box of the visual element.
 ******************************************************************************/
 Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)

@@ -35,11 +35,6 @@ class IdentifyDiamondModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(IdentifyDiamondModifierEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

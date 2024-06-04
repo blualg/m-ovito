@@ -36,11 +36,6 @@ class WignerSeitzAnalysisModifierEditor : public PropertiesEditor
     OVITO_CLASS(WignerSeitzAnalysisModifierEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 private Q_SLOTS:
 
     /// Is called when the object being edited changes.

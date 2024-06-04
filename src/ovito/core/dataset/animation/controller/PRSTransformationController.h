@@ -45,7 +45,7 @@ class OVITO_CORE_EXPORT PRSTransformationController : public Controller
 public:
 
     /// Constructor.
-    explicit PRSTransformationController(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeTransformation; }

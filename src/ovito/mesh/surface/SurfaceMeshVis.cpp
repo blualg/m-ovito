@@ -78,17 +78,10 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(SurfaceMeshPickInfo);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SurfaceMeshVis::SurfaceMeshVis(ObjectInitializationFlags flags) : DataVis(flags),
-    _surfaceColor(1, 1, 1),
-    _capColor(0.8, 0.8, 1.0),
-    _showCap(true),
-    _smoothShading(true),
-    _reverseOrientation(false),
-    _highlightEdges(false),
-    _surfaceIsClosed(true),
-    _colorMappingMode(NoPseudoColoring),
-    _clipAtDomainBoundaries(false)
+void SurfaceMeshVis::initializeObject(ObjectInitializationFlags flags)
 {
+    DataVis::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create animation controllers for the transparency parameters.
         setSurfaceTransparencyController(ControllerManager::createFloatController());

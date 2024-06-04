@@ -41,11 +41,6 @@ class SpatialCorrelationFunctionModifierEditor : public PropertiesEditor
     OVITO_CLASS(SpatialCorrelationFunctionModifierEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

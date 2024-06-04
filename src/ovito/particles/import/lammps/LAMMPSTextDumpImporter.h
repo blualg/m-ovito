@@ -59,9 +59,6 @@ protected:
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    explicit LAMMPSTextDumpImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _useCustomColumnMapping(false) {}
-
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }
 
@@ -143,10 +140,10 @@ private:
 
     /// Controls whether the mapping between input file columns and particle
     /// properties is done automatically or by the user.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useCustomColumnMapping, setUseCustomColumnMapping);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useCustomColumnMapping, setUseCustomColumnMapping);
 
     /// The user-defined mapping of input file columns to OVITO's particle properties.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleInputColumnMapping, customColumnMapping, setCustomColumnMapping);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleInputColumnMapping{}, customColumnMapping, setCustomColumnMapping);
 };
 
 }   // End of namespace

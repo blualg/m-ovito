@@ -39,7 +39,10 @@ class OVITO_CORE_EXPORT AnimationKey : public RefTarget
 public:
 
     /// Constructor.
-    explicit AnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0)) : RefTarget(flags), _time(time) {}
+    void initializeObject(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0)) {
+        RefTarget::initializeObject(flags);
+        setTime(time);
+    }
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const = 0;
@@ -55,7 +58,7 @@ protected:
 private:
 
     /// The animation time at which the key is positioned.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(AnimationTime, time, setTime);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(AnimationTime{0}, time, setTime);
 };
 
 /**
@@ -77,7 +80,10 @@ public:
     using tangent_type = FloatType;
 
     /// Constructor.
-    explicit FloatAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), FloatType value = 0) : AnimationKey(flags, time), _value(value) {}
+    void initializeObject(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), FloatType value = 0) {
+        AnimationKey::initializeObject(flags, time);
+        _value.mutableValue() = value;
+    }
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const override {
@@ -94,7 +100,7 @@ public:
 private:
 
     /// Stores the value of the key.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(value_type, value, setValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(value_type{}, value, setValue);
 };
 
 /**
@@ -116,7 +122,10 @@ public:
     using tangent_type = int;
 
     /// Constructor.
-    explicit IntegerAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), int value = 0) : AnimationKey(flags, time), _value(value) {}
+    void initializeObject(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), int value = 0) {
+        AnimationKey::initializeObject(flags, time);
+        _value.mutableValue() = value;
+    }
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const override {
@@ -133,7 +142,7 @@ public:
 private:
 
     /// Stores the value of the key.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(value_type, value, setValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(value_type{}, value, setValue);
 };
 
 /**
@@ -155,7 +164,10 @@ public:
     using tangent_type = Vector3;
 
     /// Constructor.
-    explicit Vector3AnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) : AnimationKey(flags, time), _value(value) {}
+    void initializeObject(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) {
+        AnimationKey::initializeObject(flags, time);
+        _value.mutableValue() = value;
+    }
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const override {
@@ -172,7 +184,7 @@ public:
 private:
 
     /// Stores the value of the key.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(value_type, value, setValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(value_type{}, value, setValue);
 };
 
 /**
@@ -194,7 +206,10 @@ public:
     using tangent_type = Vector3;
 
     /// Constructor.
-    explicit PositionAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) : AnimationKey(flags, time), _value(value) {}
+    void initializeObject(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Vector3& value = Vector3::Zero()) {
+        AnimationKey::initializeObject(flags, time);
+        _value.mutableValue() = value;
+    }
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const override {
@@ -211,7 +226,7 @@ public:
 private:
 
     /// Stores the value of the key.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(value_type, value, setValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(value_type{}, value, setValue);
 };
 
 /**
@@ -233,7 +248,10 @@ public:
     using tangent_type = Rotation;
 
     /// Constructor.
-    explicit RotationAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Rotation& value = Rotation::Identity()) : AnimationKey(flags, time), _value(value) {}
+    void initializeObject(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Rotation& value = Rotation::Identity()) {
+        AnimationKey::initializeObject(flags, time);
+        _value.mutableValue() = value;
+    }
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const override {
@@ -250,7 +268,7 @@ public:
 private:
 
     /// Stores the value of the key.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(value_type, value, setValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(value_type{}, value, setValue);
 };
 
 /**
@@ -272,7 +290,10 @@ public:
     using tangent_type = Scaling;
 
     /// Constructor.
-    explicit ScalingAnimationKey(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Scaling& value = Scaling::Identity()) : AnimationKey(flags, time), _value(value) {}
+    void initializeObject(ObjectInitializationFlags flags, AnimationTime time = AnimationTime(0), const Scaling& value = Scaling::Identity()) {
+        AnimationKey::initializeObject(flags, time);
+        _value.mutableValue() = value;
+    }
 
     /// Returns the value of this animation key as a QVariant.
     virtual QVariant valueQVariant() const override {
@@ -289,7 +310,7 @@ public:
 private:
 
     /// Stores the value of the key.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(value_type, value, setValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(value_type{}, value, setValue);
 };
 
 /**

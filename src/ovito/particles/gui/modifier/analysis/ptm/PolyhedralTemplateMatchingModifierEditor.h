@@ -39,11 +39,6 @@ class PolyhedralTemplateMatchingModifierEditor : public PropertiesEditor
     OVITO_CLASS(PolyhedralTemplateMatchingModifierEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected Q_SLOTS:
 
     /// Replots the histogram computed by the modifier.

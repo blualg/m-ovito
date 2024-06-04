@@ -40,10 +40,10 @@ class OVITO_CORE_EXPORT SceneAnimationPlayback : public QObject, public RefMaker
 public:
 
     /// Constructor.
-    explicit SceneAnimationPlayback(UserInterface& userInterface);
+    void initializeObject(UserInterface& userInterface);
 
     /// Returns the abstract user interface in which this object operates.
-    UserInterface& userInterface() const { return _userInterface; }
+    UserInterface& userInterface() const { return *_userInterface; }
 
     /// Returns whether the animation is currently being played back in the viewports.
     bool isPlaybackActive() const { return _activePlaybackRate != 0; }
@@ -83,7 +83,7 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD(Scene*, scene, setScene);
 
     /// The abstract user interface in which this object operates.
-    UserInterface& _userInterface;
+    UserInterface* _userInterface;
 
     /// Indicates that the animation is currently being played back in the interactive viewports.
     FloatType _activePlaybackRate = 0;

@@ -39,9 +39,11 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(PeriodicDomainObject, title, ReferenceEvent::Tit
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PeriodicDomainObject::PeriodicDomainObject(ObjectInitializationFlags flags, const QString& title) : DataObject(flags),
-    _title(title)
+void PeriodicDomainObject::initializeObject(ObjectInitializationFlags flags, const QString& title)
 {
+    DataObject::initializeObject(flags);
+
+    setTitle(title);
 }
 
 /******************************************************************************

@@ -49,8 +49,8 @@ public:
 
 public:
 
-    /// \brief Creates an empty scene.
-    explicit Scene(ObjectInitializationFlags flags, AnimationSettings* animationSettings = nullptr);
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags, AnimationSettings* animationSettings = nullptr);
 
     /// \brief Searches the scene for a node with the given name.
     /// \param nodeName The name to look for.
@@ -91,10 +91,10 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SelectionSet>, selection, setSelection, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// Controls around which point the viewport camera should orbit.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(OrbitCenterMode, orbitCenterMode, setOrbitCenterMode, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(OrbitCenterMode{ORBIT_SELECTION_CENTER}, orbitCenterMode, setOrbitCenterMode, PROPERTY_FIELD_NO_UNDO);
 
     /// Position of the orbiting center picked by the user.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Point3, userOrbitCenter, setUserOrbitCenter, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Point3{Point3::Origin()}, userOrbitCenter, setUserOrbitCenter, PROPERTY_FIELD_NO_UNDO);
 };
 
 }   // End of namespace

@@ -41,15 +41,6 @@ SET_PROPERTY_FIELD_LABEL(WignerSeitzAnalysisModifier, perTypeOccupancy, "Compute
 SET_PROPERTY_FIELD_LABEL(WignerSeitzAnalysisModifier, outputCurrentConfig, "Output current configuration");
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-WignerSeitzAnalysisModifier::WignerSeitzAnalysisModifier(ObjectInitializationFlags flags) : ReferenceConfigurationModifier(flags),
-    _perTypeOccupancy(false),
-    _outputCurrentConfig(false)
-{
-}
-
-/******************************************************************************
 * Adopts existing computation results for an interactive pipeline evaluation.
 ******************************************************************************/
 Future<PipelineFlowState> WignerSeitzAnalysisModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState&& output, const PipelineFlowState& cachedState)

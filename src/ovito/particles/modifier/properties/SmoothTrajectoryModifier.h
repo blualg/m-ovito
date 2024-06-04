@@ -51,9 +51,6 @@ class OVITO_PARTICLES_EXPORT SmoothTrajectoryModifier : public Modifier
 
 public:
 
-    /// Constructor.
-    explicit SmoothTrajectoryModifier(ObjectInitializationFlags flags);
-
     /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
     virtual void inputCachingHints(ModifierEvaluationRequest& request) override;
 
@@ -80,10 +77,10 @@ private:
     void averageState(PipelineFlowState& state1, const std::vector<PipelineFlowState>& otherStates, const ModifierEvaluationRequest& request);
 
     /// Controls whether the minimum image convention is used during displacement calculation.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useMinimumImageConvention, setUseMinimumImageConvention);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, useMinimumImageConvention, setUseMinimumImageConvention);
 
     /// The number of animation frames to include in the averaging procedure.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, smoothingWindowSize, setSmoothingWindowSize);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{1}, smoothingWindowSize, setSmoothingWindowSize);
 };
 
 /**
@@ -93,11 +90,6 @@ private:
 class OVITO_PARTICLES_EXPORT InterpolateTrajectoryModifierApplication : public ModificationNode
 {
     OVITO_CLASS(InterpolateTrajectoryModifierApplication)
-
-public:
-
-    /// Constructor.
-    using ModificationNode::ModificationNode;
 };
 
 }   // End of namespace

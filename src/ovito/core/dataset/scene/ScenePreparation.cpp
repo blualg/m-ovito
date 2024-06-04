@@ -39,8 +39,13 @@ DEFINE_REFERENCE_FIELD(ScenePreparation, selectionSet);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ScenePreparation::ScenePreparation(UserInterface& userInterface, Scene* scene, bool autoRestart) : _userInterface(userInterface), _autoRestart(autoRestart)
+void ScenePreparation::initializeObject(UserInterface& userInterface, Scene* scene, bool autoRestart)
 {
+    RefMaker::initializeObject();
+
+    _userInterface = &userInterface;
+    _autoRestart = autoRestart;
+
     // Activate the initial scene provided to the constructor.
     setScene(scene);
 
@@ -50,11 +55,11 @@ ScenePreparation::ScenePreparation(UserInterface& userInterface, Scene* scene, b
 }
 
 /******************************************************************************
-* This method gets called by OORef<T>::create() right after the object's constructor is finished.
+* This method gets called by OORef<T>::create() right after the object is fully initialized.
 ******************************************************************************/
-void ScenePreparation::completeObjectConstruction(ObjectInitializationFlags initFlags)
+void ScenePreparation::completeObjectInitialization()
 {
-    RefMaker::completeObjectConstruction(initFlags);
+    RefMaker::completeObjectInitialization();
 
     // This facility requires a Qt event loop.
     Application::instance()->createQtApplication(false);
@@ -290,7 +295,7 @@ void ScenePreparation::restartPreparation(bool restartImmediately)
     // Note: Not resetting pipelineEvaluationFuture here, because we want to keep the in-flight evaluation request going until a new request has been made.
     _currentPipeline.reset();
     _completedScene = nullptr;
-    if(scene() && autoRestart() && !isBeingConstructed() && !isBeingDeleted()) {
+    if(scene() && autoRestart() && !isBeingInitializedOrDeleted()) {
         if(_pipelineEvaluationFuture.isValid() && _currentTime != scene()->animationSettings()->currentTime()) {
             // Force an immediate restart if the animation time has changed.
             restartImmediately = true;

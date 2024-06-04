@@ -47,9 +47,6 @@ public:
 
 public:
 
-    /// Constructor.
-    explicit CoordinateTripodOverlay(ObjectInitializationFlags flags);
-
     /// Lets the overlay paint its contents into the framebuffer.
     virtual void render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene) override;
 
@@ -78,85 +75,85 @@ private:
     void paintSolidJoint(QPainter& painter, QPointF origin, const AffineTransformation& viewTM, FloatType lineWidth);
 
     /// The corner of the viewport where the tripod is shown in.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{Qt::AlignLeft | Qt::AlignBottom}, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the size of the tripod.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, tripodSize, setTripodSize, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.075}, tripodSize, setTripodSize, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the line width.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.06}, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the horizontal offset of tripod position.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, offsetX, setOffsetX, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, offsetX, setOffsetX, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the vertical offset of tripod position.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, offsetY, setOffsetY, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, offsetY, setOffsetY, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the label font.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QFont, font, setFont, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QFont{}, font, setFont, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the label font size.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, fontSize, setFontSize, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.4}, fontSize, setFontSize, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the display of the first axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, axis1Enabled, setAxis1Enabled);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, axis1Enabled, setAxis1Enabled);
 
     /// Controls the display of the second axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, axis2Enabled, setAxis2Enabled);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, axis2Enabled, setAxis2Enabled);
 
     /// Controls the display of the third axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, axis3Enabled, setAxis3Enabled);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, axis3Enabled, setAxis3Enabled);
 
     /// Controls the display of the fourth axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, axis4Enabled, setAxis4Enabled);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, axis4Enabled, setAxis4Enabled);
 
     /// The label of the first axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, axis1Label, setAxis1Label);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{"x"}, axis1Label, setAxis1Label);
 
     /// The label of the second axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, axis2Label, setAxis2Label);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{"y"}, axis2Label, setAxis2Label);
 
     /// The label of the third axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, axis3Label, setAxis3Label);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{"z"}, axis3Label, setAxis3Label);
 
     /// The label of the fourth axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, axis4Label, setAxis4Label);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{"w"}, axis4Label, setAxis4Label);
 
     /// The direction of the first axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, axis1Dir, setAxis1Dir);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD((Vector3{1,0,0}), axis1Dir, setAxis1Dir);
 
     /// The direction of the second axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, axis2Dir, setAxis2Dir);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD((Vector3{0,1,0}), axis2Dir, setAxis2Dir);
 
     /// The direction of the third axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, axis3Dir, setAxis3Dir);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD((Vector3{0,0,1}), axis3Dir, setAxis3Dir);
 
     /// The direction of the fourth axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, axis4Dir, setAxis4Dir);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD((Vector3{sqrt(0.5),sqrt(0.5),0}), axis4Dir, setAxis4Dir);
 
     /// The display color of the first axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, axis1Color, setAxis1Color, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{1,0,0}), axis1Color, setAxis1Color, PROPERTY_FIELD_MEMORIZE);
 
     /// The display color of the second axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, axis2Color, setAxis2Color, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0,0.8,0}), axis2Color, setAxis2Color, PROPERTY_FIELD_MEMORIZE);
 
     /// The display color of the third axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, axis3Color, setAxis3Color, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0.2,0.2,1}), axis3Color, setAxis3Color, PROPERTY_FIELD_MEMORIZE);
 
     /// The display color of the fourth axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, axis4Color, setAxis4Color, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{1,0,1}), axis4Color, setAxis4Color, PROPERTY_FIELD_MEMORIZE);
 
     /// The rendering style of the tripod.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(TripodStyle, tripodStyle, setTripodStyle, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(TripodStyle{FlatArrows}, tripodStyle, setTripodStyle, PROPERTY_FIELD_MEMORIZE);
 
     /// The outline color.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, outlineColor, setOutlineColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{1,1,1}), outlineColor, setOutlineColor, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the outlining of the text and axis arrows.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
 
     /// Switches on perspective distortion of the tripod (if placed in a perspective viewport).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, perspectiveDistortion, setPerspectiveDistortion, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, perspectiveDistortion, setPerspectiveDistortion, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

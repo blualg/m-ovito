@@ -65,9 +65,6 @@ class OVITO_CORE_EXPORT FileExporter : public RefTarget
 
 public:
 
-    /// Constructor.
-    explicit FileExporter(ObjectInitializationFlags flags);
-
     /// \brief Selects the default scene node to be exported by this exporter.
     virtual void selectDefaultExportableData(DataSet* dataset, Scene* scene);
 
@@ -120,28 +117,28 @@ protected:
 private:
 
     /// The output file path.
-    DECLARE_PROPERTY_FIELD(QString, outputFilename);
+    DECLARE_PROPERTY_FIELD(QString{}, outputFilename);
 
     /// Controls whether only the current animation frame or an entire animation interval should be exported.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, exportAnimation, setExportAnimation);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, exportAnimation, setExportAnimation);
 
     /// Indicates that the exporter should produce a separate file for each timestep.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useWildcardFilename, setUseWildcardFilename);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useWildcardFilename, setUseWildcardFilename);
 
     /// The wildcard name that is used to generate the output filenames.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, wildcardFilename, setWildcardFilename);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, wildcardFilename, setWildcardFilename);
 
     /// The first animation frame that should be exported.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, startFrame, setStartFrame);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, startFrame, setStartFrame);
 
     /// The last animation frame that should be exported.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, endFrame, setEndFrame);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{-1}, endFrame, setEndFrame);
 
     /// Controls the interval between exported frames.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, everyNthFrame, setEveryNthFrame);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{1}, everyNthFrame, setEveryNthFrame);
 
     /// Controls the desired precision with which floating-point numbers are written if the format is text-based.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, floatOutputPrecision, setFloatOutputPrecision);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{10}, floatOutputPrecision, setFloatOutputPrecision);
 
     /// The dataset to be exported.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<DataSet>, datasetToExport, setDatasetToExport, PROPERTY_FIELD_NO_SUB_ANIM);
@@ -153,7 +150,7 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, sceneNodeToExport, setSceneNodeToExport, PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// The specific data object from the pipeline output to be exported.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(DataObjectReference, dataObjectToExport, setDataObjectToExport);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(DataObjectReference{}, dataObjectToExport, setDataObjectToExport);
 };
 
 }   // End of namespace

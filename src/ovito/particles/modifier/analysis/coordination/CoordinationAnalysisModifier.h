@@ -50,9 +50,6 @@ class OVITO_PARTICLES_EXPORT CoordinationAnalysisModifier : public Modifier
 
 public:
 
-    /// Constructor.
-    explicit CoordinationAnalysisModifier(ObjectInitializationFlags flags);
-
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
@@ -66,16 +63,16 @@ public:
 private:
 
     /// Controls the cutoff radius for the neighbor lists.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.2}, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the number of RDF histogram bins.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, numberOfBins, setNumberOfBins, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{200}, numberOfBins, setNumberOfBins, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the computation of partials RDFs.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, computePartialRDF, setComputePartialRDF, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, computePartialRDF, setComputePartialRDF, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether the modifier acts only on currently selected particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelected, setOnlySelected);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, onlySelected, setOnlySelected);
 };
 
 }   // End of namespace

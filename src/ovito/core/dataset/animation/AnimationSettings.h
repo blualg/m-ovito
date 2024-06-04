@@ -52,9 +52,6 @@ class OVITO_CORE_EXPORT AnimationSettings : public RefTarget
 
 public:
 
-    /// \brief Constructor that initializes the object with default values.
-    explicit AnimationSettings(ObjectInitializationFlags flags);
-
     /// \brief Returns the time that corresponds to the current frame at which the time slider is positioned.
     AnimationTime currentTime() const { return AnimationTime::fromFrame(currentFrame()); }
 
@@ -116,32 +113,32 @@ protected:
 private:
 
     /// The current animation time.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, currentFrame, setCurrentFrame, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, currentFrame, setCurrentFrame, PROPERTY_FIELD_NO_UNDO);
 
     /// The start of the animation interval.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, firstFrame, setFirstFrame);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, firstFrame, setFirstFrame);
 
     /// The end of the animation interval.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, lastFrame, setLastFrame);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, lastFrame, setLastFrame);
 
     /// The playback speed of the animation.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, framesPerSecond, setFramesPerSecond, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{10}, framesPerSecond, setFramesPerSecond, PROPERTY_FIELD_MEMORIZE);
 
     /// The playback speed factor that is used for animation playback in the viewport.
     /// A value greater than 1 means that the animation is played at a speed higher
     /// than realtime.
     /// A value smaller than -1 that the animation is played at a speed lower than realtime.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, playbackSpeed, setPlaybackSpeed, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{1}, playbackSpeed, setPlaybackSpeed, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether the animation is played back in a loop in the interactive viewports.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, loopPlayback, setLoopPlayback, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, loopPlayback, setLoopPlayback, PROPERTY_FIELD_MEMORIZE);
 
     /// Specifies the number of frames to skip when playing back the animation in the interactive viewports.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, playbackEveryNthFrame, setPlaybackEveryNthFrame);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{1}, playbackEveryNthFrame, setPlaybackEveryNthFrame);
 
     /// Controls whether the animation interval is automatically adjusted to accommodate all loaded
     /// trajectories in the scene.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoAdjustInterval, setAutoAdjustInterval);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, autoAdjustInterval, setAutoAdjustInterval);
 
     /// List of names assigned to animation frames.
     QMap<int,QString> _namedFrames;

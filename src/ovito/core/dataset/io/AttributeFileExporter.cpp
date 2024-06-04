@@ -37,8 +37,10 @@ DEFINE_PROPERTY_FIELD(AttributeFileExporter, attributesToExport);
 /******************************************************************************
 * Constructor
 *****************************************************************************/
-AttributeFileExporter::AttributeFileExporter(ObjectInitializationFlags flags) : FileExporter(flags)
+void AttributeFileExporter::initializeObject(ObjectInitializationFlags flags)
 {
+    FileExporter::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) && ExecutionContext::isInteractive()) {
         // This exporter is typically used to export attributes as functions of time.
         if(ExecutionContext::current().isValid()) {

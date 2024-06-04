@@ -64,7 +64,7 @@ public:
 public:
 
     /// Constructor.
-    explicit ConstructSurfaceModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
@@ -269,40 +269,40 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 
     /// Surface construction method to use.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(SurfaceMethod, method, setMethod, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(SurfaceMethod{AlphaShape}, method, setMethod, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the radius of the probe sphere (alpha-shape method).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, probeSphereRadius, setProbeSphereRadius, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{4}, probeSphereRadius, setProbeSphereRadius, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the amount of smoothing (alpha-shape method).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, smoothingLevel, setSmoothingLevel, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{8}, smoothingLevel, setSmoothingLevel, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether only selected particles should be taken into account.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedParticles, setOnlySelectedParticles);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, onlySelectedParticles, setOnlySelectedParticles);
 
     /// Controls whether the modifier should select surface particles (alpha-shape method).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectSurfaceParticles, setSelectSurfaceParticles);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, selectSurfaceParticles, setSelectSurfaceParticles);
 
     /// Controls whether the algorithm should identify disconnected spatial regions.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, identifyRegions, setIdentifyRegions);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, identifyRegions, setIdentifyRegions);
 
     /// Controls whether property values should be copied over from the input particles to the generated surface vertices (alpha-shape method / density field method).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, transferParticleProperties, setTransferParticleProperties);
 
     /// Controls the number of grid cells along the largest cell dimension (density field method).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, gridResolution, setGridResolution, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{50}, gridResolution, setGridResolution, PROPERTY_FIELD_MEMORIZE);
 
     /// The scaling factor applied to atomic radii (density field method).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, radiusFactor, setRadiusFactor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1}, radiusFactor, setRadiusFactor, PROPERTY_FIELD_MEMORIZE);
 
     /// The threshold value for constructing the isosurface of the density field (density field method).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, isoValue, setIsoValue, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.6}, isoValue, setIsoValue, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether the algorithm should compute the shortest distance of each particle from the constructed surface.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, computeSurfaceDistance, setComputeSurfaceDistance);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, computeSurfaceDistance, setComputeSurfaceDistance);
 
     /// Controls whether the algorithm assigns each particle to one of the identified spatial regions.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, mapParticlesToRegions, setMapParticlesToRegions);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, mapParticlesToRegions, setMapParticlesToRegions);
 };
 
 }   // End of namespace

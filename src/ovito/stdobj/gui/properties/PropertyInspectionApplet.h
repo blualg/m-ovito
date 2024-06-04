@@ -42,9 +42,6 @@ class OVITO_STDOBJGUI_EXPORT PropertyInspectionApplet : public DataInspectionApp
 
 public:
 
-    /// Constructor.
-    explicit PropertyInspectionApplet(const PropertyContainerClass& containerClass) : DataInspectionApplet(containerClass), _containerClass(containerClass) {}
-
     /// Returns the data display widget.
     QTableView* tableView() const { return _tableView; }
 
@@ -212,9 +209,6 @@ private:
     };
 
 private:
-
-    /// The type of container objects displayed by this applet.
-    const PropertyContainerClass& _containerClass;
 
     /// The property data display widget.
     QTableView* _tableView = nullptr;

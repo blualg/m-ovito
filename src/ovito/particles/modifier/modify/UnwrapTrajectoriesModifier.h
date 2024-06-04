@@ -52,9 +52,6 @@ class OVITO_PARTICLES_EXPORT UnwrapTrajectoriesModifier : public Modifier
 
 public:
 
-    /// Constructor.
-    using Modifier::Modifier;
-
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
@@ -78,9 +75,6 @@ public:
 
     /// Data structure holding the precomputed information that is needed to undo flipping of sheared simulation cells in LAMMPS.
     using UnflipData = std::vector<std::pair<AnimationTime, std::array<int,3>>>;
-
-    /// Constructor.
-    using ModificationNode::ModificationNode;
 
     /// Indicates the animation time up to which trajectories have already been unwrapped.
     AnimationTime unwrappedUpToTime() const { return _unwrappedUpToTime; }

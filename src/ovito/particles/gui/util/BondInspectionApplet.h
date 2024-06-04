@@ -46,7 +46,7 @@ class BondInspectionApplet : public PropertyInspectionApplet
 public:
 
     /// Constructor.
-    explicit BondInspectionApplet() : PropertyInspectionApplet(Bonds::OOClass()) {}
+    void initializeObject() { PropertyInspectionApplet::initializeObject(Bonds::OOClass()); }
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 10; }
@@ -72,7 +72,10 @@ private:
     public:
 
         /// Constructor.
-        PickingMode(BondInspectionApplet* applet) : _applet(applet) {}
+        void initializeObject(BondInspectionApplet* applet) {
+            ViewportInputMode::initializeObject();
+            _applet = applet;
+        }
 
         /// Handles the mouse up events for a viewport.
         virtual void mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event) override;

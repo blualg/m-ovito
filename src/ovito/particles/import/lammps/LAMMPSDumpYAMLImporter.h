@@ -54,9 +54,6 @@ class OVITO_PARTICLES_EXPORT LAMMPSDumpYAMLImporter : public LAMMPSTextDumpImpor
 
 public:
 
-    /// Constructor.
-    using LAMMPSTextDumpImporter::LAMMPSTextDumpImporter;
-
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
         activateCLocale();

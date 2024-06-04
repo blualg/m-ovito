@@ -34,9 +34,10 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(OffscreenOpenGLRenderingJob);
 /******************************************************************************
 * Constructor creating a new QOffscreenSurface.
 ******************************************************************************/
-OffscreenOpenGLRenderingJob::OffscreenOpenGLRenderingJob(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency)
-    : OpenGLRenderingJob(flags, std::move(visCache), multisamplingLevel, orderIndependentTransparency)
+void OffscreenOpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency)
 {
+    OpenGLRenderingJob::initializeObject(flags, std::move(visCache), multisamplingLevel, orderIndependentTransparency);
+
     // Create the offscreen surface.
     // This must happen in the main thread.
     createOffscreenSurface();

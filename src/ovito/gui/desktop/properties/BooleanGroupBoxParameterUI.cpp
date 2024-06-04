@@ -31,11 +31,12 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(BooleanGroupBoxParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField property.
+* Constructor.
 ******************************************************************************/
-BooleanGroupBoxParameterUI::BooleanGroupBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-    PropertyParameterUI(parentEditor, propField)
+void BooleanGroupBoxParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
     // Create UI widget.
     _groupBox = new QGroupBox(propField->displayName());
     _groupBox->setCheckable(true);

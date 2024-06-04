@@ -38,9 +38,6 @@ class OVITO_GUI_EXPORT WidgetViewportWindow : public BaseViewportWindow
 
 public:
 
-    /// Constructor.
-    using BaseViewportWindow::BaseViewportWindow;
-
     /// Associates this window with a viewport and creates the UI widget.
     void initializeWindow(Viewport* vp, UserInterface& userInterface, QWidget* parent);
 

@@ -38,7 +38,7 @@ class OVITO_OXDNA_EXPORT NucleotidesVis : public ParticlesVis
 public:
 
     /// Constructor.
-    explicit NucleotidesVis(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Renders the visual element.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
@@ -61,7 +61,7 @@ public:
 private:
 
     /// Controls the displa radius of cylinder elements.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cylinderRadius, setCylinderRadius, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.05}, cylinderRadius, setCylinderRadius, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

@@ -95,37 +95,6 @@ SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, reciprocalSpaceYAxi
 SET_PROPERTY_FIELD_LABEL(SpatialCorrelationFunctionModifier, reciprocalSpaceYAxisRangeEnd, "Y-range end");
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-SpatialCorrelationFunctionModifier::SpatialCorrelationFunctionModifier(ObjectInitializationFlags flags) : Modifier(flags),
-    _averagingDirection(RADIAL),
-    _fftGridSpacing(3.0),
-    _applyWindow(true),
-    _doComputeNeighCorrelation(false),
-    _neighCutoff(5.0),
-    _numberOfNeighBins(50),
-    _normalizeRealSpace(VALUE_CORRELATION),
-    _normalizeRealSpaceByRDF(false),
-    _normalizeRealSpaceByCovariance(false),
-    _typeOfRealSpacePlot(0),
-    _normalizeReciprocalSpace(false),
-    _typeOfReciprocalSpacePlot(0),
-    _fixRealSpaceXAxisRange(false),
-    _realSpaceXAxisRangeStart(0.0),
-    _realSpaceXAxisRangeEnd(1.0),
-    _fixRealSpaceYAxisRange(false),
-    _realSpaceYAxisRangeStart(0.0),
-    _realSpaceYAxisRangeEnd(1.0),
-    _fixReciprocalSpaceXAxisRange(false),
-    _reciprocalSpaceXAxisRangeStart(0.0),
-    _reciprocalSpaceXAxisRangeEnd(1.0),
-    _fixReciprocalSpaceYAxisRange(false),
-    _reciprocalSpaceYAxisRangeStart(0.0),
-    _reciprocalSpaceYAxisRangeEnd(1.0)
-{
-}
-
-/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool SpatialCorrelationFunctionModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const

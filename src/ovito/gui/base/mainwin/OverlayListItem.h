@@ -49,7 +49,7 @@ public:
 public:
 
     /// Constructor.
-    explicit OverlayListItem(ViewportOverlay* overlay, OverlayItemType itemType);
+    void initializeObject(ViewportOverlay* overlay, OverlayItemType itemType);
 
     /// Returns the status of the object represented by the list item.
     const PipelineStatus& status() const;

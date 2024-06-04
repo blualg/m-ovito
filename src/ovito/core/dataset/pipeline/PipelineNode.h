@@ -39,9 +39,6 @@ class OVITO_CORE_EXPORT PipelineNode : public ActiveObject
 
 public:
 
-    /// Constructor.
-    explicit PipelineNode(ObjectInitializationFlags flags, bool enableCaching = true);
-
     /// Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
     virtual void preEvaluationCheck(const PipelineEvaluationRequest& request) const {}
 
@@ -124,10 +121,10 @@ protected:
 private:
 
     /// Activates the precomputation of the pipeline results for all animation frames.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pipelineTrajectoryCachingEnabled, setPipelineTrajectoryCachingEnabled, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, pipelineTrajectoryCachingEnabled, setPipelineTrajectoryCachingEnabled, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
     /// Cache for the data output of this pipeline stage.
-    PipelineCache _pipelineCache;
+    PipelineCache _pipelineCache{this};
 
     friend class PipelineCache;
 };

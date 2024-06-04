@@ -57,7 +57,8 @@ class OVITO_NETCDFPLUGIN_EXPORT AMBERNetCDFImporter : public ParticleImporter
 public:
 
     /// Constructor.
-    explicit AMBERNetCDFImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _useCustomColumnMapping(false) {
+    void initializeObject(ObjectInitializationFlags flags) {
+        ParticleImporter::initializeObject(flags);
         setMultiTimestepFile(true);
     }
 
@@ -162,10 +163,10 @@ private:
 
     /// Controls whether the mapping between input file columns and particle
     /// properties is done automatically or by the user.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useCustomColumnMapping, setUseCustomColumnMapping);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useCustomColumnMapping, setUseCustomColumnMapping);
 
     /// The user-defined mapping of input file columns to OVITO's particle properties.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleInputColumnMapping, customColumnMapping, setCustomColumnMapping);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleInputColumnMapping{}, customColumnMapping, setCustomColumnMapping);
 };
 
 }   // End of namespace

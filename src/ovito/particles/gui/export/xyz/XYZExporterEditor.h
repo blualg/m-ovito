@@ -35,11 +35,6 @@ class XYZExporterEditor : public FileColumnParticleExporterEditor
 {
     OVITO_CLASS(XYZExporterEditor)
 
-public:
-
-    /// Constructor.
-    using FileColumnParticleExporterEditor::FileColumnParticleExporterEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

@@ -50,12 +50,12 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLRenderingJob);
 /******************************************************************************
  * Constructor.
  ******************************************************************************/
-OpenGLRenderingJob::OpenGLRenderingJob(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache,
-                                       int multisamplingLevel, bool orderIndependentTransparency)
-    : RenderingJob(flags, std::move(visCache)),
-      _multisamplingLevel(multisamplingLevel),
-      _orderIndependentTransparency(orderIndependentTransparency)
+void OpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency)
 {
+    RenderingJob::initializeObject(flags, std::move(visCache));
+
+    _multisamplingLevel = multisamplingLevel;
+    _orderIndependentTransparency = orderIndependentTransparency;
 }
 
 /******************************************************************************
@@ -506,7 +506,7 @@ QOpenGLShaderProgram* OpenGLRenderingJob::loadShaderProgram(const QString& id, c
 
     // Each OpenGL shader is only created once per OpenGL context group.
     std::unique_ptr<QOpenGLShaderProgram> program(contextGroup->findChild<QOpenGLShaderProgram*>(mangledId));
-    if(program) 
+    if(program)
         return program.release();
 
     // The program's source code hasn't been compiled so far. Do it now and cache the shader program.

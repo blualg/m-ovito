@@ -44,7 +44,7 @@ class OVITO_GUI_EXPORT PropertyParameterUI : public ParameterUI
 public:
 
     /// Constructor.
-    PropertyParameterUI(PropertiesEditor* parent, const PropertyFieldDescriptor* propField);
+    void initializeObject(PropertiesEditor* parent, const PropertyFieldDescriptor* propField);
 
     /// Returns the property or reference field being edited.
     const PropertyFieldDescriptor* propertyField() const { return _propField; }

@@ -40,7 +40,7 @@ class OVITO_STDOBJ_EXPORT PropertyColorMapping : public RefTarget
 public:
 
     /// Constructor.
-    explicit PropertyColorMapping(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Creates a PseudoColorMapping that can be used for rendering of graphics primitives.
     PseudoColorMapping pseudoColorMapping() const;
@@ -59,13 +59,13 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<ColorCodingGradient>, colorGradient, setColorGradient);
 
     /// This lower bound of the input value internal.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, startValue, setStartValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, startValue, setStartValue);
 
     /// This upper bound of the input value internal.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, endValue, setEndValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, endValue, setEndValue);
 
     /// The input property (including an optional vector component) that is used as data source for the coloring.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, sourceProperty, setSourceProperty);
 };
 
 }   // End of namespace

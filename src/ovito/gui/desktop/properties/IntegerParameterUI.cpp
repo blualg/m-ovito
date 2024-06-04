@@ -31,11 +31,11 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(IntegerParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField property.
+* Constructor.
 ******************************************************************************/
-IntegerParameterUI::IntegerParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-        NumericalParameterUI(parentEditor, propField, &IntegerParameterUnit::staticMetaObject)
+void IntegerParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 {
+    NumericalParameterUI::initializeObject(parentEditor, propField, &IntegerParameterUnit::staticMetaObject);
 }
 
 /******************************************************************************

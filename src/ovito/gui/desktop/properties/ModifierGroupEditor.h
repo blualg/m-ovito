@@ -35,11 +35,6 @@ class ModifierGroupEditor : public PropertiesEditor
 {
     OVITO_CLASS(ModifierGroupEditor)
 
-public:
-
-    /// Constructor.
-    explicit ModifierGroupEditor() = default;
-
 protected:
 
     /// Creates the user interface controls for the editor.

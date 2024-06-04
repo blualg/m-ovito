@@ -51,8 +51,8 @@ public:
     /// Special value used to indicate an invalid list index.
     constexpr static size_type InvalidIndex = SurfaceMeshTopology::InvalidIndex;
 
-    /// Constructor creating an empty SurfaceMesh object.
-    explicit SurfaceMesh(ObjectInitializationFlags flags, const QString& title = QString());
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags, const QString& title = QString());
 
     /// Makes sure that the data structures of the surface mesh are valid and all vertex and face properties
     /// are consistent with the topology of the mesh. If this is not the case, the method throws an exception.
@@ -109,7 +109,7 @@ private:
 
     /// If the mesh has zero faces and is embedded in a fully periodic domain,
     /// this indicates the volumetric region that fills the entire space.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(SurfaceMesh::region_index, spaceFillingRegion, setSpaceFillingRegion);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(SurfaceMesh::region_index{SurfaceMesh::InvalidIndex}, spaceFillingRegion, setSpaceFillingRegion);
 };
 
 }   // End of namespace

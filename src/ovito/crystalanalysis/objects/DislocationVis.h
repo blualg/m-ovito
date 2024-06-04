@@ -44,8 +44,12 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    explicit DislocationPickInfo(DislocationVis* visElement, const DislocationNetworkObject* dislocationObj, std::vector<int>&& subobjToSegmentMap) :
-        _visElement(visElement), _dislocationObj(dislocationObj), _subobjToSegmentMap(std::move(subobjToSegmentMap)) {}
+    void initializeObject(DislocationVis* visElement, const DislocationNetworkObject* dislocationObj, std::vector<int>&& subobjToSegmentMap) {
+        ObjectPickInfo::initializeObject();
+        _visElement = visElement;
+        _dislocationObj = dislocationObj;
+        _subobjToSegmentMap = std::move(subobjToSegmentMap);
+    }
 
     /// The data object containing the dislocations.
     const DislocationNetworkObject* dislocationObj() const { return _dislocationObj; }
@@ -95,9 +99,6 @@ public:
 
 public:
 
-    /// Constructor.
-    explicit DislocationVis(ObjectInitializationFlags flags);
-
     /// Transforms the DislocationNetwork into a renderable set of lines.
     Future<std::shared_ptr<RenderableDislocationLines>> transformDislocations(const DislocationNetworkObject* dislocations);
 
@@ -125,28 +126,28 @@ protected:
 protected:
 
     /// The rendering width for dislocation lines.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1.0}, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);
 
     /// The shading mode for dislocation lines.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CylinderPrimitive::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CylinderPrimitive::ShadingMode{CylinderPrimitive::NormalShading}, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
 
     /// The rendering width for Burgers vectors.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, burgersVectorWidth, setBurgersVectorWidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.6}, burgersVectorWidth, setBurgersVectorWidth, PROPERTY_FIELD_MEMORIZE);
 
     /// The scaling factor Burgers vectors.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, burgersVectorScaling, setBurgersVectorScaling, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.0}, burgersVectorScaling, setBurgersVectorScaling, PROPERTY_FIELD_MEMORIZE);
 
     /// Display color for Burgers vectors.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, burgersVectorColor, setBurgersVectorColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0.7, 0.7, 0.7}), burgersVectorColor, setBurgersVectorColor, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the display of Burgers vectors.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, showBurgersVectors, setShowBurgersVectors);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, showBurgersVectors, setShowBurgersVectors);
 
     /// Controls the display of the line directions.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, showLineDirections, setShowLineDirections);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, showLineDirections, setShowLineDirections);
 
     /// Controls how the display color of dislocation lines is chosen.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(LineColoringMode, lineColoringMode, setLineColoringMode);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(LineColoringMode{ColorByDislocationType}, lineColoringMode, setLineColoringMode);
 };
 
 }   // End of namespace

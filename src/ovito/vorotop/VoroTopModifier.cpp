@@ -46,14 +46,6 @@ SET_PROPERTY_FIELD_LABEL(VoroTopModifier, useRadii, "Use particle radii");
 SET_PROPERTY_FIELD_LABEL(VoroTopModifier, filterFile, "Filter file");
 
 /******************************************************************************
- * Constructs the modifier object.
- ******************************************************************************/
-VoroTopModifier::VoroTopModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags),
-       _useRadii(false)
-{
-}
-
-/******************************************************************************
  * Loads a new filter definition into the modifier.
  ******************************************************************************/
 void VoroTopModifier::loadFilterDefinition(const QString& filepath)

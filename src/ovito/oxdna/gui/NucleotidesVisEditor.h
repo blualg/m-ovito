@@ -35,11 +35,6 @@ class NucleotidesVisEditor : public PropertiesEditor
 {
     OVITO_CLASS(NucleotidesVisEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

@@ -55,21 +55,6 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DislocationVis, burgersVectorWidth, WorldPa
 IMPLEMENT_ABSTRACT_OVITO_CLASS(DislocationPickInfo);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-DislocationVis::DislocationVis(ObjectInitializationFlags flags) : DataVis(flags),
-    _lineWidth(1.0),
-    _shadingMode(CylinderPrimitive::NormalShading),
-    _burgersVectorWidth(0.6),
-    _burgersVectorScaling(3.0),
-    _burgersVectorColor(0.7, 0.7, 0.7),
-    _showBurgersVectors(false),
-    _showLineDirections(false),
-    _lineColoringMode(ColorByDislocationType)
-{
-}
-
-/******************************************************************************
 * Transforms the DislocationNetwork into a renderable set of lines.
 ******************************************************************************/
 Future<std::shared_ptr<RenderableDislocationLines>> DislocationVis::transformDislocations(const DislocationNetworkObject* dislocationsObj)

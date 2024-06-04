@@ -54,14 +54,9 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshVerticesAssignColorModifierDelegate : publ
 
     OVITO_CLASS_META(SurfaceMeshVerticesAssignColorModifierDelegate, OOMetaClass)
 
-public:
-
-    /// Constructor.
-    explicit SurfaceMeshVerticesAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
-
 protected:
 
-    /// \brief returns the ID of the standard property that will receive the computed colors.
+    /// Returns the ID of the standard property that will receive the computed colors.
     virtual int outputColorPropertyId() const override { return SurfaceMeshVertices::ColorProperty; }
 };
 
@@ -90,14 +85,9 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshFacesAssignColorModifierDelegate : public 
 
     OVITO_CLASS_META(SurfaceMeshFacesAssignColorModifierDelegate, OOMetaClass)
 
-public:
-
-    /// Constructor.
-    explicit SurfaceMeshFacesAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
-
 protected:
 
-    /// \brief returns the ID of the standard property that will receive the computed colors.
+    /// Returns the ID of the standard property that will receive the computed colors.
     virtual int outputColorPropertyId() const override { return SurfaceMeshFaces::ColorProperty; }
 };
 
@@ -126,14 +116,9 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshRegionsAssignColorModifierDelegate : publi
 
     OVITO_CLASS_META(SurfaceMeshRegionsAssignColorModifierDelegate, OOMetaClass)
 
-public:
-
-    /// Constructor.
-    explicit SurfaceMeshRegionsAssignColorModifierDelegate(ObjectInitializationFlags flags) : AssignColorModifierDelegate(flags) {}
-
 protected:
 
-    /// \brief returns the ID of the standard property that will receive the computed colors.
+    /// Returns the ID of the standard property that will receive the computed colors.
     virtual int outputColorPropertyId() const override { return SurfaceMeshRegions::ColorProperty; }
 };
 }   // End of namespace

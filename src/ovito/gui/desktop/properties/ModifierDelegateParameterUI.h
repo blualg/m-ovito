@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT ModifierDelegateParameterUI : public ParameterUI
 public:
 
     /// Constructor.
-    ModifierDelegateParameterUI(PropertiesEditor* parentEditor, const OvitoClass& delegateType);
+    void initializeObject(PropertiesEditor* parentEditor, const OvitoClass& delegateType);
 
     /// Destructor.
     virtual ~ModifierDelegateParameterUI();
@@ -89,7 +89,7 @@ protected:
     QPointer<QComboBox> _comboBox;
 
     /// The type of modifier delegates, which the user can choose from.
-    const OvitoClass& _delegateType;
+    OvitoClassPtr _delegateType;
 };
 
 }   // End of namespace

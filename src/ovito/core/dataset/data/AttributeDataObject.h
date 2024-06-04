@@ -39,10 +39,13 @@ class OVITO_CORE_EXPORT AttributeDataObject : public DataObject
 public:
 
     /// Constructor.
-    explicit AttributeDataObject(ObjectInitializationFlags flags) : DataObject(flags) {}
+    void initializeObject(ObjectInitializationFlags flags) { DataObject::initializeObject(flags); }
 
     /// Constructor.
-    explicit AttributeDataObject(ObjectInitializationFlags flags, QVariant value) : DataObject(flags), _value(std::move(value)) {}
+    void initializeObject(ObjectInitializationFlags flags, QVariant&& value) {
+        DataObject::initializeObject(flags);
+        _value.mutableValue() = std::move(value);
+    }
 
     /// Returns the display title of this object.
     virtual QString objectTitle() const override {
@@ -62,7 +65,7 @@ protected:
 private:
 
     /// The stored attribute value.
-    DECLARE_RUNTIME_PROPERTY_FIELD(QVariant, value, setValue);
+    DECLARE_RUNTIME_PROPERTY_FIELD(QVariant{}, value, setValue);
 };
 
 }   // End of namespace

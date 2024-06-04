@@ -56,9 +56,6 @@ class OVITO_PARTICLES_EXPORT GaussianCubeImporter : public ParticleImporter
 
 public:
 
-    /// Constructor.
-    explicit GaussianCubeImporter(ObjectInitializationFlags flags) : ParticleImporter(flags), _gridType(VoxelGrid::GridType::PointData) {}
-
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
         activateCLocale();
@@ -97,7 +94,7 @@ private:
 private:
 
     /// Controls whether the grid's sampling points are point-based or cell-based.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(VoxelGrid::GridType, gridType, setGridType);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(VoxelGrid::GridType{VoxelGrid::GridType::PointData}, gridType, setGridType);
 };
 
 }   // End of namespace

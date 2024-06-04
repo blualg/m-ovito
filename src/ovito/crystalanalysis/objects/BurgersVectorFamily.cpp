@@ -33,11 +33,13 @@ DEFINE_SHADOW_PROPERTY_FIELD(BurgersVectorFamily, burgersVector);
 SET_PROPERTY_FIELD_LABEL(BurgersVectorFamily, burgersVector, "Burgers vector");
 
 /******************************************************************************
-* Constructs a new BurgersVectorFamily.
+* Constructor.
 ******************************************************************************/
-BurgersVectorFamily::BurgersVectorFamily(ObjectInitializationFlags flags, int id, const QString& name, const Vector3& burgersVector, const Color& color)
-    : ElementType(flags), _burgersVector(burgersVector)
+void BurgersVectorFamily::initializeObject(ObjectInitializationFlags flags, int id, const QString& name, const Vector3& burgersVector, const Color& color)
 {
+    ElementType::initializeObject(flags);
+
+    setBurgersVector(burgersVector);
     setNumericId(id);
     setName(name);
     setColor(color);

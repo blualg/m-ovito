@@ -50,8 +50,10 @@ SET_PROPERTY_FIELD_LABEL(Particles, impropers, "Impropers");
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Particles::Particles(ObjectInitializationFlags flags) : PropertyContainer(flags)
+void Particles::initializeObject(ObjectInitializationFlags flags)
 {
+    PropertyContainer::initializeObject(flags);
+
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
 

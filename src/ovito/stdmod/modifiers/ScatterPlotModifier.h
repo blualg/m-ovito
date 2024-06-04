@@ -40,7 +40,7 @@ class OVITO_STDMOD_EXPORT ScatterPlotModifier : public GenericPropertyModifier
 public:
 
     /// Constructor.
-    explicit ScatterPlotModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -68,46 +68,46 @@ protected:
 private:
 
     /// The property that is used as source for the x-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, xAxisProperty, setXAxisProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, xAxisProperty, setXAxisProperty);
 
     /// The property that is used as source for the y-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, yAxisProperty, setYAxisProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, yAxisProperty, setYAxisProperty);
 
     /// Controls the whether elements within the specified range should be selected (x-axis).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectXAxisInRange, setSelectXAxisInRange);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, selectXAxisInRange, setSelectXAxisInRange);
 
     /// Controls the start value of the selection interval (x-axis).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionXAxisRangeStart, setSelectionXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, selectionXAxisRangeStart, setSelectionXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the end value of the selection interval (x-axis).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionXAxisRangeEnd, setSelectionXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1}, selectionXAxisRangeEnd, setSelectionXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the whether elements within the specified range should be selected (y-axis).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectYAxisInRange, setSelectYAxisInRange);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, selectYAxisInRange, setSelectYAxisInRange);
 
     /// Controls the start value of the selection interval (y-axis).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionYAxisRangeStart, setSelectionYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, selectionYAxisRangeStart, setSelectionYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the end value of the selection interval (y-axis).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionYAxisRangeEnd, setSelectionYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1}, selectionYAxisRangeEnd, setSelectionYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the whether the range of the x-axis of the scatter plot should be fixed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixXAxisRange, setFixXAxisRange);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, fixXAxisRange, setFixXAxisRange);
 
     /// Controls the start value of the x-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, xAxisRangeStart, setXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, xAxisRangeStart, setXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the end value of the x-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, xAxisRangeEnd, setXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, xAxisRangeEnd, setXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the whether the range of the y-axis of the scatter plot should be fixed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixYAxisRange, setFixYAxisRange);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, fixYAxisRange, setFixYAxisRange);
 
     /// Controls the start value of the y-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeStart, setYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, yAxisRangeStart, setYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the end value of the y-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeEnd, setYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, yAxisRangeEnd, setYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

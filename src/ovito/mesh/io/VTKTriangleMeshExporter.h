@@ -54,9 +54,6 @@ class OVITO_MESH_EXPORT VTKTriangleMeshExporter : public FileExporter
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    explicit VTKTriangleMeshExporter(ObjectInitializationFlags flags) : FileExporter(flags), _exportCapPolygons(true) {}
-
     /// \brief Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
         return { &SurfaceMesh::OOClass() };
@@ -88,7 +85,7 @@ private:
     std::unique_ptr<CompressedTextWriter> _outputStream;
 
     /// Controls whether the cap polygons of a closed surface mesh should be exported.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, exportCapPolygons, setExportCapPolygons);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, exportCapPolygons, setExportCapPolygons);
 };
 
 }   // End of namespace

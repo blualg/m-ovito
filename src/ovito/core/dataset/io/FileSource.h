@@ -42,9 +42,6 @@ class OVITO_CORE_EXPORT FileSource : public BasePipelineSource
 
 public:
 
-	/// Constructor.
-	explicit FileSource(ObjectInitializationFlags flags);
-
 	/// \brief Sets the source location(s) for importing data.
 	/// \param sourceUrls The new source location(s).
 	/// \param importer The importer object that will parse the input file.
@@ -142,22 +139,22 @@ private:
 	DECLARE_REFERENCE_FIELD_FLAGS(OORef<FileSourceImporter>, importer, PROPERTY_FIELD_ALWAYS_DEEP_COPY | PROPERTY_FIELD_NO_UNDO);
 
 	/// The list of source files (may include wild-card patterns).
-	DECLARE_PROPERTY_FIELD_FLAGS(std::vector<QUrl>, sourceUrls, PROPERTY_FIELD_NO_UNDO);
+	DECLARE_PROPERTY_FIELD_FLAGS(std::vector<QUrl>{}, sourceUrls, PROPERTY_FIELD_NO_UNDO);
 
 	/// Controls the mapping of input file frames to animation frames (i.e. the numerator of the playback rate for the file sequence).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, playbackSpeedNumerator, setPlaybackSpeedNumerator);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(int{1}, playbackSpeedNumerator, setPlaybackSpeedNumerator);
 
 	/// Controls the mapping of input file frames to animation frames (i.e. the denominator of the playback rate for the file sequence).
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, playbackSpeedDenominator, setPlaybackSpeedDenominator);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(int{1}, playbackSpeedDenominator, setPlaybackSpeedDenominator);
 
 	/// Specifies the starting animation frame to which the first frame of the file sequence is mapped.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, playbackStartTime, setPlaybackStartTime);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, playbackStartTime, setPlaybackStartTime);
 
 	/// Controls the automatic generation of a file name pattern in the GUI.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, autoGenerateFilePattern, setAutoGenerateFilePattern, PROPERTY_FIELD_MEMORIZE);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, autoGenerateFilePattern, setAutoGenerateFilePattern, PROPERTY_FIELD_MEMORIZE);
 
 	/// Restricts the timeline to a single static frame of the loaded trajectory.
-	DECLARE_MODIFIABLE_PROPERTY_FIELD(int, restrictToFrame, setRestrictToFrame);
+	DECLARE_MODIFIABLE_PROPERTY_FIELD(int{-1}, restrictToFrame, setRestrictToFrame);
 
 	/// The list of trajectory frames.
 	QVector<FileSourceImporter::Frame> _frames;

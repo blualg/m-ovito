@@ -56,9 +56,6 @@ class OVITO_PARTICLES_EXPORT ReaxFFBondImporter : public ParticleImporter
 
 public:
 
-    /// Constructor.
-    using ParticleImporter::ParticleImporter;
-
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }
 

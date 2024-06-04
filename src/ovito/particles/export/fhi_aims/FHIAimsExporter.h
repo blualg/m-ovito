@@ -49,11 +49,6 @@ class OVITO_PARTICLES_EXPORT FHIAimsExporter : public ParticleExporter
 
     OVITO_CLASS_META(FHIAimsExporter, OOMetaClass)
 
-public:
-
-    /// Constructor.
-    using ParticleExporter::ParticleExporter;
-
 protected:
 
     /// \brief Writes the particles of one animation frame to the current output file.

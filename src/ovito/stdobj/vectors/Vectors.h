@@ -61,8 +61,8 @@ public:
         DirectionProperty,
     };
 
-    /// \brief Constructor.
-    explicit Vectors(ObjectInitializationFlags flags);
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Returns the base point and vector information for visualizing a vector property from this container using a VectorVis element.
     virtual VectorVis::VectorData getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
@@ -76,8 +76,6 @@ public:
     {
         return {getProperty(ColorProperty) != nullptr, getProperty(TransparencyProperty) != nullptr};
     }
-
-private:
 };
 
 }  // namespace Ovito

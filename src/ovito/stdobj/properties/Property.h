@@ -68,14 +68,15 @@ public:
 public:
 
     /// \brief Creates an empty property array.
-    explicit Property(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// \brief Constructor creating a new property array.
-    Property(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int typeId = 0, QStringList componentNames = QStringList());
+    void initializeObject(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int typeId = 0, QStringList componentNames = QStringList());
 
     /// \brief Constructor creating a new property array.
-    Property(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int typeId = 0, QStringList componentNames = QStringList()) :
-        Property(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, name, typeId, std::move(componentNames)) {}
+    void initializeObject(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int typeId = 0, QStringList componentNames = QStringList()) {
+        initializeObject(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, name, typeId, std::move(componentNames));
+    }
 
 #ifdef OVITO_DEBUG
     /// \brief Destructor.
@@ -267,7 +268,7 @@ private:
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const ElementType>, elementTypes, setElementTypes);
 
     /// The user-interface title of this property.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, title, setTitle);
 
     /// The kind of this property (non-zero = predefined standard property; zero = a user-defined property).
     int _typeId = 0;

@@ -39,9 +39,6 @@ class OVITO_STDOBJGUI_EXPORT PropertyColorMappingEditor : public PropertiesEdito
 
 public:
 
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
     /// Sets the property container containing the input properties the user can choose from.
     void setPropertyContainer(const PropertyContainer* container) {
         _sourcePropertyUI->setContainer(container);

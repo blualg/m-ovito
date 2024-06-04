@@ -58,7 +58,7 @@ class OVITO_GRID_EXPORT VoxelGridSliceModifierDelegate : public SliceModifierDel
 public:
 
     /// Constructor.
-    explicit VoxelGridSliceModifierDelegate(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

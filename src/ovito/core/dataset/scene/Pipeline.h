@@ -42,9 +42,6 @@ class OVITO_CORE_EXPORT Pipeline : public SceneNode
 
 public:
 
-    /// Constructor.
-    explicit Pipeline(ObjectInitializationFlags flags);
-
     /// Destructor.
     virtual ~Pipeline();
 
@@ -156,16 +153,16 @@ private:
     DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, replacementVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// Activates the precomputation of the pipeline results for all animation frames.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, pipelineTrajectoryCachingEnabled, setPipelineTrajectoryCachingEnabled, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, pipelineTrajectoryCachingEnabled, setPipelineTrajectoryCachingEnabled, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
     /// Weak reference to the pipeline's source node.
     DECLARE_REFERENCE_FIELD_FLAGS(PipelineNode*, source, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// Enables or disables InteractiveStateAvailable signals from the pipeline in order to refresh the viewports each time partial computation results become available.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, preliminaryUpdatesEnabled, setPreliminaryUpdatesEnabled, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, preliminaryUpdatesEnabled, setPreliminaryUpdatesEnabled, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
     /// The cached output of the data pipeline (without the effect of visualization elements).
-    PipelineCache _pipelineCache;
+    PipelineCache _pipelineCache{this};
 
     friend class PipelineCache;
 };

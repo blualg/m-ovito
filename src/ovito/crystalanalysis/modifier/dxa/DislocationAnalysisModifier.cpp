@@ -66,20 +66,12 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DislocationAnalysisModifier, lineSmoothingL
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DislocationAnalysisModifier, linePointInterval, FloatParameterUnit, 0);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-DislocationAnalysisModifier::DislocationAnalysisModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags),
-    _inputCrystalStructure(StructureAnalysis::LATTICE_FCC),
-    _maxTrialCircuitSize(14),
-    _circuitStretchability(9),
-    _outputInterfaceMesh(false),
-    _onlyPerfectDislocations(false),
-    _defectMeshSmoothingLevel(8),
-    _lineSmoothingEnabled(true),
-    _lineCoarseningEnabled(true),
-    _lineSmoothingLevel(1),
-    _linePointInterval(2.5)
+void DislocationAnalysisModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    StructureIdentificationModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the vis elements.
         setDislocationVis(OORef<DislocationVis>::create(flags));

@@ -34,13 +34,6 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(RefTarget);
 
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-RefTarget::RefTarget(ObjectInitializationFlags flags)
-{
-}
-
 #ifdef OVITO_DEBUG
 /******************************************************************************
 * Destructor.
@@ -110,14 +103,14 @@ void RefTarget::requestObjectDeletion()
 {
     OVITO_CHECK_OBJECT_POINTER(this);
     OVITO_ASSERT_MSG(ExecutionContext::isMainThread(), "RefTarget::requestObjectDeletion()", "This function may only be called from the main thread.");
-    OVITO_ASSERT(!isBeingConstructed());
+    OVITO_ASSERT(!isBeingInitialized());
     OVITO_ASSERT(!isBeingDeleted());
 
     // This will remove all references other RefMakers have to this target object.
     notifyDependents(ReferenceEvent::TargetDeleted);
 
     // At this point, the object might have been deleted from memory if its
-    // reference counter has reached zero. If undo recording was enabled, however,
+    // reference count has reached zero. If undo recording was enabled, however,
     // the undo record still holds a reference to this object to keep it alive.
 }
 
@@ -129,7 +122,7 @@ void RefTarget::notifyDependentsImpl(const ReferenceEvent& event) noexcept
     OVITO_CHECK_OBJECT_POINTER(this);
 
     // Suppress notification events during object construction and destruction.
-    if(isBeingConstructed() || isBeingDeleted())
+    if(isBeingInitializedOrDeleted())
         return;
 
     // Prevent this object from being deleted while sending the notification event.
@@ -165,7 +158,7 @@ bool RefTarget::isReferencedBy(const RefMaker* obj, bool onlyStrongReferences) c
 {
     if(this == obj)
         return true;
-    if(isBeingConstructed())
+    if(isBeingInitialized())
         return false;
     CheckIsReferencedByEvent event(const_cast<RefTarget*>(this), obj, onlyStrongReferences);
     const_cast<RefTarget*>(this)->notifyDependentsImpl(event);

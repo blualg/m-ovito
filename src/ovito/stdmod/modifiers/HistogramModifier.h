@@ -40,7 +40,7 @@ class OVITO_STDMOD_EXPORT HistogramModifier : public GenericPropertyModifier
 public:
 
     /// Constructor.
-    explicit HistogramModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -71,40 +71,40 @@ protected:
 private:
 
     /// The property that serves as data source of the histogram.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, sourceProperty, setSourceProperty);
 
     /// Controls the number of histogram bins.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, numberOfBins, setNumberOfBins, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{200}, numberOfBins, setNumberOfBins, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the whether elements within the specified range should be selected.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectInRange, setSelectInRange);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, selectInRange, setSelectInRange);
 
     /// Controls the start value of the selection interval.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionRangeStart, setSelectionRangeStart, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, selectionRangeStart, setSelectionRangeStart, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the end value of the selection interval.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, selectionRangeEnd, setSelectionRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1}, selectionRangeEnd, setSelectionRangeEnd, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the whether the range of the x-axis of the histogram should be fixed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixXAxisRange, setFixXAxisRange);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, fixXAxisRange, setFixXAxisRange);
 
     /// Controls the start value of the x-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, xAxisRangeStart, setXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, xAxisRangeStart, setXAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the end value of the x-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, xAxisRangeEnd, setXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, xAxisRangeEnd, setXAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the whether the range of the y-axis of the histogram should be fixed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, fixYAxisRange, setFixYAxisRange);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, fixYAxisRange, setFixYAxisRange);
 
     /// Controls the start value of the y-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeStart, setYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, yAxisRangeStart, setYAxisRangeStart, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the end value of the y-axis.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, yAxisRangeEnd, setYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, yAxisRangeEnd, setYAxisRangeEnd, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether the modifier should take into account only selected elements.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedElements, setOnlySelectedElements);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, onlySelectedElements, setOnlySelectedElements);
 };
 
 }   // End of namespace

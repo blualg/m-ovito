@@ -56,7 +56,8 @@ class OVITO_PARTICLES_EXPORT XSFImporter : public ParticleImporter
 public:
 
     /// Constructor.
-    explicit XSFImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    void initializeObject(ObjectInitializationFlags flags) {
+        ParticleImporter::initializeObject(flags);
         setMultiTimestepFile(true);
     }
 

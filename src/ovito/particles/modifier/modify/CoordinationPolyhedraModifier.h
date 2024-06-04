@@ -54,7 +54,7 @@ class OVITO_PARTICLES_EXPORT CoordinationPolyhedraModifier : public Modifier
 public:
 
     /// Constructor.
-    explicit CoordinationPolyhedraModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
@@ -69,7 +69,7 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 
     /// Controls whether property values should be copied over from the input particles to the generated mesh vertices and mesh regions.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, transferParticleProperties, setTransferParticleProperties);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, transferParticleProperties, setTransferParticleProperties);
 };
 
 }   // End of namespace

@@ -32,11 +32,12 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(IntegerRadioButtonParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField property.
+* Constructor.
 ******************************************************************************/
-IntegerRadioButtonParameterUI::IntegerRadioButtonParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-    PropertyParameterUI(parentEditor, propField)
+void IntegerRadioButtonParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
     _buttonGroup = new QButtonGroup(this);
     connect(_buttonGroup.data(), &QButtonGroup::idClicked, this, &IntegerRadioButtonParameterUI::updatePropertyValue);
 }

@@ -57,7 +57,8 @@ class OVITO_PARTICLES_EXPORT XTCImporter : public ParticleImporter
 public:
 
     /// Constructor.
-    explicit XTCImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    void initializeObject(ObjectInitializationFlags flags) {
+        ParticleImporter::initializeObject(flags);
         setMultiTimestepFile(true);
         setRecenterCell(true);
     }

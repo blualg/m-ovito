@@ -65,15 +65,10 @@ SET_MODIFICATION_NODE_TYPE(GenerateTrajectoryLinesModifier, GenerateTrajectoryLi
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-GenerateTrajectoryLinesModifier::GenerateTrajectoryLinesModifier(ObjectInitializationFlags flags) : Modifier(flags),
-    _onlySelectedParticles(true),
-    _useCustomInterval(false),
-    _customIntervalStart(0),
-    _customIntervalEnd(0),
-    _everyNthFrame(1),
-    _unwrapTrajectories(true),
-    _transferParticleProperties(false)
+void GenerateTrajectoryLinesModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    Modifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the vis element for rendering the trajectories created by the modifier.
         setTrajectoryVis(OORef<LinesVis>::create(flags));

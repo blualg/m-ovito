@@ -57,9 +57,6 @@ class OVITO_PARTICLES_EXPORT ParticlesComputePropertyModifierDelegate : public C
 
 public:
 
-    /// Constructor.
-    explicit ParticlesComputePropertyModifierDelegate(ObjectInitializationFlags flags);
-
     /// \brief Sets the math expression that is used to compute the neighbor-terms of the property function.
     /// \param index The property component for which the expression should be set.
     /// \param expression The math formula.
@@ -94,13 +91,13 @@ protected:
 private:
 
     /// The math expressions for calculating the neighbor-terms of the property function.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QStringList, neighborExpressions, setNeighborExpressions);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QStringList{}, neighborExpressions, setNeighborExpressions);
 
     /// Controls the cutoff radius for the neighbor lists.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3}, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether multi-line input fields are shown in the UI for the expressions.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useMultilineFields, setUseMultilineFields);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useMultilineFields, setUseMultilineFields);
 };
 
 }   // End of namespace

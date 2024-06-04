@@ -40,7 +40,7 @@ class OVITO_STDMOD_EXPORT ColorByTypeModifier : public GenericPropertyModifier
 public:
 
     /// Constructor.
-    explicit ColorByTypeModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -58,13 +58,13 @@ public:
 private:
 
     /// The input type property that is used as data source for the selection.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, sourceProperty, setSourceProperty);
 
     /// Controls whether the modifier assigns a color only to selected elements.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, colorOnlySelected, setColorOnlySelected);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, colorOnlySelected, setColorOnlySelected);
 
     /// Controls whether the input selection is preserved or not. If true, the current selection is cleared by the modifier to reveal the assigned colors in the interactive viewports of OVITO.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, clearSelection, setClearSelection);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, clearSelection, setClearSelection);
 };
 
 }   // End of namespace

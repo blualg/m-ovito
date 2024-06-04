@@ -85,11 +85,6 @@ protected:
 class PositionTCBAnimationKeyEditor : public TCBAnimationKeyEditor<PositionTCBAnimationKey>
 {
     OVITO_CLASS(PositionTCBAnimationKeyEditor)
-
-public:
-
-    /// Constructor.
-    explicit PositionTCBAnimationKeyEditor() {}
 };
 
 }   // End of namespace

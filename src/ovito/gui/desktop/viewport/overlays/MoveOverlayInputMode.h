@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT MoveOverlayInputMode : public ViewportInputMode
 public:
 
     /// Constructor.
-    MoveOverlayInputMode(PropertiesEditor* editor);
+    void initializeObject(PropertiesEditor* editor);
 
     /// Called when the viewport input handler becomes the current one.
     virtual void activated(bool temporary) override;
@@ -74,10 +74,10 @@ private:
     QPointF _currentPoint;
 
     /// The cursor shown when the overlay can be moved.
-    QCursor _moveCursor;
+    QCursor _moveCursor = QCursor(QPixmap(QStringLiteral(":/guibase/cursor/editing/cursor_mode_move.png")));
 
     /// The cursor shown when in the wrong viewport.
-    QCursor _forbiddenCursor;
+    QCursor _forbiddenCursor = Qt::ForbiddenCursor;
 
     /// To undo changes while dragging the mouse.
     UndoableTransaction _undoTransaction;

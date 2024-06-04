@@ -58,9 +58,6 @@ public:
 
 protected:
 
-    /// Abstract class constructor.
-    using ModifierDelegate::ModifierDelegate;
-
     /// returns the ID of the standard property that will receive the assigned colors.
     virtual int outputColorPropertyId() const = 0;
 };
@@ -89,7 +86,7 @@ public:
 public:
 
     /// Constructor.
-    explicit AssignColorModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
     /// been changed and before the entire pipeline is recomputed.
@@ -116,7 +113,7 @@ private:
 
     /// Controls whether the input selection is preserved.
     /// If false, the selection is cleared by the modifier.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, keepSelection, setKeepSelection);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, keepSelection, setKeepSelection);
 };
 
 }   // End of namespace

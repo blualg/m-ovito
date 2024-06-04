@@ -45,9 +45,6 @@ class OVITO_CORE_EXPORT Modifier : public RefTarget
 
 public:
 
-    /// Constructor.
-    explicit Modifier(ObjectInitializationFlags flags);
-
     /// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) {}
 
@@ -130,10 +127,10 @@ protected:
 private:
 
     /// Flag that indicates whether the modifier is enabled.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isEnabled, setEnabled);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, isEnabled, setEnabled);
 
     /// The user-defined title of this modifier.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, title, setTitle);
 
     friend ModificationNode;
 };

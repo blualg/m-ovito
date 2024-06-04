@@ -56,9 +56,6 @@ class OVITO_PARTICLES_EXPORT LAMMPSDumpLocalImporter : public ParticleImporter
 
 public:
 
-    /// Constructor.
-    using ParticleImporter::ParticleImporter;
-
     /// Indicates whether this file importer type loads particle trajectories.
     virtual bool isTrajectoryFormat() const override { return true; }
 
@@ -118,7 +115,7 @@ private:
 private:
 
     /// The user-defined mapping of input file columns to OVITO's bond properties.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(BondInputColumnMapping, columnMapping, setColumnMapping);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(BondInputColumnMapping{}, columnMapping, setColumnMapping);
 };
 
 }   // End of namespace

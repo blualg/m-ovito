@@ -35,11 +35,6 @@ class LoadTrajectoryModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(LoadTrajectoryModifierEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

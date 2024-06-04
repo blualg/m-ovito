@@ -40,20 +40,6 @@ namespace Ovito {
 
 /**
  * \brief Universal base class for most objects in OVITO.
- *
- * The OvitoObject class offers a reference counting mechanism to manage the
- * the lifetime of object instances. User code should make use of the OORef
- * smart-pointer class, which automatically increments and decrements the reference counter
- * of an OvitoObject when it holds a pointer to it.
- *
- * When the reference counter of an OvitoObject reaches zero, the virtual aboutToBeDeleted()
- * function is called to notify the object that is about to be deleted from memory.
- * After this function returns, the object instance destroys itself.
- *
- * The OvitoObject class provides serialization and deserialization functions, which allow
- * the object to be saved to disk and restored at a later time. Subclasses that want
- * to support serialization of their data should override the virtual functions
- * saveToStream() and loadFromStream().
  */
 class OVITO_CORE_EXPORT OvitoObject : public std::enable_shared_from_this<OvitoObject>
 {
@@ -72,8 +58,9 @@ public:
     {
         NoFlags               = 0,        //< No flags set.
         BeingConstructed      = (1 << 0), //< Indicates that this object's constructor is executing.
-        BeingDeleted          = (1 << 1), //< Indicates that this object is in the process of being deleted.
-        BeingLoaded           = (1 << 2), //< Indicates that this object is in the process of being restored from an ObjectLoadStream.
+        BeingInitialized      = (1 << 1), //< Indicates that this object is being initialized (initializeObject() hasn't finished yet).
+        BeingDeleted          = (1 << 2), //< Indicates that this object is in the process of being deleted.
+        BeingLoaded           = (1 << 3), //< Indicates that this object is in the process of being restored from an ObjectLoadStream.
     };
     Q_DECLARE_FLAGS(ObjectFlags, ObjectFlag);
 
@@ -86,18 +73,18 @@ public:
     /// Mimic Qt's string localization function tr() for string literals.
     static inline QString tr(const char* sourceText) { return QString::fromUtf8(sourceText); }
 
-    /// Default constructor initializing the object's reference count to zero.
-    OvitoObject() = default;
-
 #ifdef OVITO_DEBUG
     /// Note: No need to make the base class destructor virtual, because we use std::shared_ptr to manage an object's lifetime.
     /// std::shared_ptr will call the right destructor of a derived class automatically.
     ~OvitoObject();
 #endif
 
-    /// Indicates whether this object is currently being constructed,
-    /// which means its constructor is running and the object is not yet in a fully initialized state.
+    /// Indicates whether this object is currently being constructed, i.e., the constructor is still executing.
     inline bool isBeingConstructed() const { return _flags.testFlag(BeingConstructed); }
+
+    /// Indicates whether this object is currently being constructed and initialized,
+    /// which means the object is not yet in a fully initialized state (initializeObject() has not finished yet).
+    inline bool isBeingInitialized() const { return _flags.testFlag(BeingInitialized); }
 
     /// Indicates whether this object is currently being loaded from an ObjectLoadStream,
     /// which means it is not yet in a fully initialized state.
@@ -106,6 +93,9 @@ public:
     /// Returns true if this object is about to be deleted, i.e., if the reference count has reached zero
     /// and aboutToBeDeleted() is being invoked.
     inline bool isBeingDeleted() const { return _flags.testFlag(BeingDeleted); }
+
+    /// Indicates whether this object is currently being initialized or destroyed.
+    inline bool isBeingInitializedOrDeleted() const { return _flags.testAnyFlags(ObjectFlags(BeingInitialized | BeingDeleted)); }
 
 #ifdef OVITO_DEBUG
     /// \brief Returns whether this object has not been deleted yet.
@@ -160,10 +150,20 @@ public:
 
 protected:
 
-    /// This method gets called by OORef<T>::create() right after the object's constructor is finished.
-    /// It clears the BeingConstructed flag of the object and performs any initialization work that may
-    /// raise an exception.
-    inline void completeObjectConstruction(ObjectInitializationFlags initFlags) { _flags.setFlag(BeingConstructed, false); }
+    /// This method gets called by OORef<T>::create() right after the object has been constructed by std::make_shared<>.
+    /// Subclasses can override this method to perform initialization work that may raise an exception or which needs to create
+    /// OORef references to the object itself (which isn't possible in the class constructor).
+    inline void initializeObject() {
+        OVITO_ASSERT(isBeingConstructed());
+        _flags.setFlag(BeingConstructed, false);
+    }
+
+    /// Clears the BeingInitialized flag of the object. This method gets called by OORef<T>::create() after the object has been fully initialized.
+    inline void completeObjectInitialization() {
+        OVITO_ASSERT(!isBeingConstructed());
+        OVITO_ASSERT(isBeingInitialized());
+        _flags.setFlag(BeingInitialized, false);
+    }
 
     /// \brief Saves the internal data of this object to an output stream.
     /// \param stream The destination data stream.
@@ -225,7 +225,7 @@ private:
     QString pluginId() const { return QString::fromLatin1(getOOClass().pluginId()); }
 
     /// Bit-wise flags.
-    ObjectFlags _flags = BeingConstructed;
+    ObjectFlags _flags = ObjectFlags(BeingConstructed | BeingInitialized);
 
 #ifdef OVITO_DEBUG
     /// This field is initialized with a special value by the class constructor to indicate that

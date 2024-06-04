@@ -51,7 +51,7 @@ class OVITO_PARTICLES_EXPORT LoadTrajectoryModifier : public Modifier
 public:
 
     /// Constructor.
-    explicit LoadTrajectoryModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;

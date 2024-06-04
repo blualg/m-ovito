@@ -54,9 +54,6 @@ class OVITO_PARTICLES_EXPORT CastepCellImporter : public ParticleImporter
 
 public:
 
-    /// Constructor.
-    using ParticleImporter::ParticleImporter;
-
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
         activateCLocale();

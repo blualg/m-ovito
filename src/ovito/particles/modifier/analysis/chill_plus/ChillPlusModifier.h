@@ -55,7 +55,7 @@ public:
     Q_ENUM(StructureType);
 
     /// Constructor.
-    explicit ChillPlusModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
 protected:
 
@@ -91,7 +91,7 @@ protected:
         const FloatType _cutoff;
     };
 
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.5}, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

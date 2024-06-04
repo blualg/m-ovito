@@ -43,11 +43,12 @@ SET_PROPERTY_FIELD_LABEL(SurfaceMesh, regions, "Regions");
 constexpr SurfaceMesh::size_type SurfaceMesh::InvalidIndex;
 
 /******************************************************************************
-* Constructs an empty surface mesh object.
+* Constructor.
 ******************************************************************************/
-SurfaceMesh::SurfaceMesh(ObjectInitializationFlags flags, const QString& title) : PeriodicDomainObject(flags, title),
-    _spaceFillingRegion(SurfaceMesh::InvalidIndex)
+void SurfaceMesh::initializeObject(ObjectInitializationFlags flags, const QString& title)
 {
+    PeriodicDomainObject::initializeObject(flags, title);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         if(!flags.testFlag(ObjectInitializationFlag::DontCreateVisElement)) {
             // Attach a visualization element for rendering the surface mesh.

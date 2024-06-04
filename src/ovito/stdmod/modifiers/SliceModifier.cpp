@@ -311,15 +311,12 @@ size_t SliceModifier::sliceCoordinatesToMask(Plane3 plane, FloatType sliceWidth,
 }
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-SliceModifier::SliceModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags),
-    _createSelection(false),
-    _inverse(false),
-    _applyToSelection(false),
-    _enablePlaneVisualization(false),
-    _reducedCoordinates(false)
+void SliceModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    MultiDelegatingModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setNormalController(ControllerManager::createVector3Controller());
         setDistanceController(ControllerManager::createFloatController());

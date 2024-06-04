@@ -89,9 +89,10 @@ PropertyPtr VoxelGrid::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VoxelGrid::VoxelGrid(ObjectInitializationFlags flags, const QString& title) : PropertyContainer(flags, title),
-    _gridType(CellData)
+void VoxelGrid::initializeObject(ObjectInitializationFlags flags, const QString& title)
 {
+    PropertyContainer::initializeObject(flags, title);
+
     // Create and attach a default visualization element for rendering the grid.
     if(!flags.testAnyFlags(ObjectInitializationFlags(DontInitializeObject) | ObjectInitializationFlags(DontCreateVisElement))) {
         setVisElement(OORef<VoxelGridVis>::create(flags));

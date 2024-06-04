@@ -58,19 +58,6 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(FileExporter, floatOutputPrecision, IntegerPa
 SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(FileExporter, sceneNodeToExport, "nodeToExport"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-FileExporter::FileExporter(ObjectInitializationFlags flags) : RefTarget(flags),
-    _exportAnimation(false),
-    _useWildcardFilename(false),
-    _startFrame(0),
-    _endFrame(-1),
-    _everyNthFrame(1),
-    _floatOutputPrecision(10)
-{
-}
-
-/******************************************************************************
 * Sets the name of the output file that should be written by this exporter.
 ******************************************************************************/
 void FileExporter::setOutputFilename(const QString& filename)

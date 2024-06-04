@@ -32,9 +32,12 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLRenderingFrameBuffer);
 /******************************************************************************
 * Constructor that allocates an offscreen OpenGL framebuffer.
 ******************************************************************************/
-OpenGLRenderingFrameBuffer::OpenGLRenderingFrameBuffer(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, std::shared_ptr<FrameBuffer> outputFrameBuffer)
-    : AbstractRenderingFrameBuffer(flags, viewportRect, std::move(outputFrameBuffer)), _renderingJob(std::move(renderingJob))
+void OpenGLRenderingFrameBuffer::initializeObject(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, std::shared_ptr<FrameBuffer> outputFrameBuffer)
 {
+    AbstractRenderingFrameBuffer::initializeObject(flags, viewportRect, std::move(outputFrameBuffer));
+
+    _renderingJob = std::move(renderingJob);
+
     // Creating an OpenGL framebuffer requires an active OpenGL context.
     OVITO_ASSERT(QOpenGLContext::currentContext());
 
@@ -58,12 +61,14 @@ OpenGLRenderingFrameBuffer::OpenGLRenderingFrameBuffer(ObjectInitializationFlags
 /******************************************************************************
 * Constructor that uses an existing OpenGL framebuffer.
 ******************************************************************************/
-OpenGLRenderingFrameBuffer::OpenGLRenderingFrameBuffer(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, GLuint framebufferObjectId) :
-    AbstractRenderingFrameBuffer(flags, viewportRect, {}),
-    _renderingJob(std::move(renderingJob)),
-    _framebufferObjectId(framebufferObjectId),
-    _framebufferSize(viewportRect.size())
+void OpenGLRenderingFrameBuffer::initializeObject(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, GLuint framebufferObjectId)
 {
+    AbstractRenderingFrameBuffer::initializeObject(flags, viewportRect, {});
+
+    _renderingJob = std::move(renderingJob);
+    _framebufferObjectId = framebufferObjectId;
+    _framebufferSize = viewportRect.size();
+
     OVITO_ASSERT(_renderingJob->multisamplingLevel() == 1);
 }
 

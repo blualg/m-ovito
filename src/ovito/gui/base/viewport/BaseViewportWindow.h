@@ -38,9 +38,6 @@ class OVITO_GUIBASE_EXPORT BaseViewportWindow : public ViewportWindow
 
 public:
 
-    /// Constructor.
-    using ViewportWindow::ViewportWindow;
-
     /// Returns the input manager handling mouse events of the viewport (if any).
     ViewportInputManager* inputManager() const;
 

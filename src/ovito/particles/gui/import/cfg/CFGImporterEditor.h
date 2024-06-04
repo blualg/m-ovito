@@ -35,11 +35,6 @@ class CFGImporterEditor : public FileImporterEditor
 {
     OVITO_CLASS(CFGImporterEditor)
 
-public:
-
-    /// Constructor.
-    using FileImporterEditor::FileImporterEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

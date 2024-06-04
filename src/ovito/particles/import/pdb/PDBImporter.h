@@ -56,7 +56,8 @@ class OVITO_PARTICLES_EXPORT PDBImporter : public ParticleImporter
 public:
 
     /// Constructor.
-    explicit PDBImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    void initializeObject(ObjectInitializationFlags flags) {
+        ParticleImporter::initializeObject(flags);
         setGenerateBonds(true);
     }
 

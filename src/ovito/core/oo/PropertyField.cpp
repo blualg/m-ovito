@@ -55,9 +55,8 @@ void PropertyFieldBase::generateTargetChangedEvent(RefMaker* owner, const Proper
             qPrintable(QString("Flag PROPERTY_FIELD_NO_CHANGE_MESSAGE has not been set for property field '%1' of class '%2' even though '%2' is not derived from RefTarget.")
                     .arg(descriptor->identifier()).arg(descriptor->definingClass()->name())));
 
-    // Suppress all change messages while the owner object is being constructed.
-    // It cannot have any dependents yet.
-    if(owner->isBeingConstructed())
+    // Suppress all change messages while the owner object is being initialized or destroyed.
+    if(owner->isBeingInitializedOrDeleted())
         return;
 
     if(descriptor->definingClass()->isDerivedFrom(DataObject::OOClass())) {
@@ -113,9 +112,6 @@ RefMaker* PropertyFieldBase::PropertyFieldOperation::owner() const
 ******************************************************************************/
 template<typename T> SingleReferenceFieldBase<T>::~SingleReferenceFieldBase()
 {
-    if(_target)
-        qDebug() << "Reference field value:" << get();
-    OVITO_ASSERT_MSG(!_target, "~ReferenceField()", "Owner object of reference field has not been deleted correctly. The reference field was not empty when the class destructor was called.");
 }
 #endif
 
@@ -168,7 +164,7 @@ template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, cons
         }
     };
 
-    if(descriptor->automaticUndo() && !owner->isBeingConstructed() && CompoundOperation::isUndoRecording()) {
+    if(descriptor->automaticUndo() && !owner->isBeingInitializedOrDeleted() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), *this, descriptor);
         op->redo();
         CompoundOperation::current()->addOperation(std::move(op));
@@ -236,7 +232,6 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
 ******************************************************************************/
 template<typename T> VectorReferenceFieldBase<T>::~VectorReferenceFieldBase()
 {
-    OVITO_ASSERT_MSG(_targets.empty(), "~VectorReferenceField()", "Owner object of vector reference field has not been deleted correctly. The vector reference field was not empty when the class destructor was called.");
 }
 #endif
 
@@ -294,7 +289,7 @@ template<typename T> void VectorReferenceFieldBase<T>::set(RefMaker* owner, cons
         }
     };
 
-    if(descriptor->automaticUndo() && !owner->isBeingConstructed() && CompoundOperation::isUndoRecording()) {
+    if(descriptor->automaticUndo() && !owner->isBeingInitializedOrDeleted() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), i, *this, descriptor);
         op->redo();
         CompoundOperation::current()->addOperation(std::move(op));
@@ -360,7 +355,7 @@ template<typename T> auto VectorReferenceFieldBase<T>::insert(RefMaker* owner, c
         }
     };
 
-    if(descriptor->automaticUndo() && !owner->isBeingConstructed() && CompoundOperation::isUndoRecording()) {
+    if(descriptor->automaticUndo() && !owner->isBeingInitializedOrDeleted() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<InsertReferenceOperation>(owner, std::move(newTarget), i, *this, descriptor);
         op->redo();
         int index = op->insertionIndex();
@@ -424,7 +419,7 @@ template<typename T> T VectorReferenceFieldBase<T>::remove(RefMaker* owner, cons
         }
     };
 
-    if(descriptor->automaticUndo() && !owner->isBeingConstructed() && CompoundOperation::isUndoRecording()) {
+    if(descriptor->automaticUndo() && !owner->isBeingInitializedOrDeleted() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<RemoveReferenceOperation>(owner, i, *this, descriptor);
         op->redo();
         pointer removedReference = op->storedTarget();

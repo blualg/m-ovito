@@ -47,17 +47,6 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticlesVis, defaultParticleRadius, WorldP
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticlesVis, radiusScaleFactor, PercentParameterUnit, 0);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-ParticlesVis::ParticlesVis(ObjectInitializationFlags flags) : DataVis(flags),
-    _defaultParticleRadius(1.2),
-    _radiusScaleFactor(1.0),
-    _renderingQuality(ParticlePrimitive::AutoQuality),
-    _particleShape(Sphere)
-{
-}
-
-/******************************************************************************
 * Computes the bounding box of the visual element.
 ******************************************************************************/
 Box3 ParticlesVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)

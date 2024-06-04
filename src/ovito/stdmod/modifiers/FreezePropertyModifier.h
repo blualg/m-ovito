@@ -43,7 +43,7 @@ class OVITO_STDMOD_EXPORT FreezePropertyModifier : public GenericPropertyModifie
 public:
 
     /// Constructor.
-    explicit FreezePropertyModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -68,13 +68,13 @@ protected:
 private:
 
     /// The particle property that is preserved by this modifier.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, sourceProperty, setSourceProperty);
 
     /// The particle property to which the stored values should be written
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, destinationProperty, setDestinationProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, destinationProperty, setDestinationProperty);
 
     /// Animation frame at which the frozen property is taken.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, freezeTime, setFreezeTime);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, freezeTime, setFreezeTime);
 };
 
 /**
@@ -85,9 +85,6 @@ class OVITO_STDMOD_EXPORT FreezePropertyModificationNode : public ModificationNo
     OVITO_CLASS(FreezePropertyModificationNode)
 
 public:
-
-    /// Constructor.
-    explicit FreezePropertyModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
 
     /// Makes a copy of the given source property and, optionally, of the provided
     /// element identifier list, which will allow to restore the saved property

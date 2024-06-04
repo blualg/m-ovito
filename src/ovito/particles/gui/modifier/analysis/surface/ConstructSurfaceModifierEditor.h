@@ -35,11 +35,6 @@ class ConstructSurfaceModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(ConstructSurfaceModifierEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

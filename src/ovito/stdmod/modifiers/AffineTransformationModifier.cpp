@@ -57,15 +57,12 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(SimulationCellAffineTransformationModifierDelega
 OVITO_CLASSINFO(SimulationCellAffineTransformationModifierDelegate, "DisplayName", "Simulation cell");
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-AffineTransformationModifier::AffineTransformationModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags),
-    _selectionOnly(false),
-    _transformationTM(AffineTransformation::Identity()),
-    _targetCell(AffineTransformation::Zero()),
-    _relativeMode(true),
-    _translationReducedCoordinates(false)
+void AffineTransformationModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    MultiDelegatingModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Generate the list of delegate objects.
         createModifierDelegates(AffineTransformationModifierDelegate::OOClass());

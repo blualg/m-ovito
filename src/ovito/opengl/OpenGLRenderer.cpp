@@ -117,10 +117,10 @@ void OpenGLRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, Us
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OpenGLRenderer::OpenGLRenderer(ObjectInitializationFlags flags) : SceneRenderer(flags),
-    _antialiasingLevel(3),
-    _orderIndependentTransparency(false)
+void OpenGLRenderer::initializeObject(ObjectInitializationFlags flags)
 {
+    SceneRenderer::initializeObject(flags);
+
     registerQtResources();
 
     if(ExecutionContext::isInteractive()) {

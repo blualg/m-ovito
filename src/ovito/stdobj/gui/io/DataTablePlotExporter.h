@@ -52,9 +52,6 @@ class OVITO_STDOBJGUI_EXPORT DataTablePlotExporter : public FileExporter
 
 public:
 
-    /// Constructor.
-    explicit DataTablePlotExporter(ObjectInitializationFlags flags);
-
     /// Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
         return { &DataTable::OOClass() };
@@ -80,13 +77,13 @@ private:
     QFile _outputFile;
 
     /// The width of the plot in millimeters.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, plotWidth, setPlotWidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{150}, plotWidth, setPlotWidth, PROPERTY_FIELD_MEMORIZE);
 
     /// The height of the plot in millimeters.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, plotHeight, setPlotHeight, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{100}, plotHeight, setPlotHeight, PROPERTY_FIELD_MEMORIZE);
 
     /// The resolution of the plot in DPI.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, plotDPI, setPlotDPI, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{200}, plotDPI, setPlotDPI, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

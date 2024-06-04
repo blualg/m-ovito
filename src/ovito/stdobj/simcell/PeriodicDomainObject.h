@@ -58,8 +58,8 @@ public:
 
 protected:
 
-    /// \brief Constructor.
-    explicit PeriodicDomainObject(ObjectInitializationFlags flags, const QString& title = {});
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags, const QString& title = {});
 
 private:
 
@@ -67,10 +67,10 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const SimulationCell>, domain, setDomain, PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// The planar cuts to be applied to geometry after its has been transformed into a non-periodic representation.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QVector<Plane3>, cuttingPlanes, setCuttingPlanes);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QVector<Plane3>{}, cuttingPlanes, setCuttingPlanes);
 
     /// The assigned title of the data object, which is displayed in the user interface.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, title, setTitle);
 };
 
 }   // End of namespace

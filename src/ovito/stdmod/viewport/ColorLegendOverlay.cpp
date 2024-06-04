@@ -94,33 +94,6 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ColorLegendOverlay, relLabelFontSize, Perce
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ColorLegendOverlay, tickSpacing, FloatParameterUnit, 0);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-ColorLegendOverlay::ColorLegendOverlay(ObjectInitializationFlags flags)
-    : ViewportOverlay(flags),
-      _alignment(Qt::AlignHCenter | Qt::AlignBottom),
-      _orientation(Qt::Horizontal),
-      _legendSize(0.3),
-      _offsetX(0),
-      _offsetY(0),
-      _fontSize(0.1),
-      _relLabelFontSize(0.6),
-      _valueFormatString("%g"),
-      _aspectRatio(8.0),
-      _textColor(0, 0, 0),
-      _outlineColor(1, 1, 1),
-      _outlineEnabled(false),
-      _borderEnabled(false),
-      _borderColor(0, 0, 0),
-      _ticksEnabled(false),
-      _tickSpacing(0),
-      _titleRotationEnabled(false),
-      _backgroundEnabled(false),
-      _backgroundColor(1,1,1)
-{
-}
-
-/******************************************************************************
 * Is called when the overlay is being newly attached to a viewport.
 ******************************************************************************/
 void ColorLegendOverlay::initializeOverlay(Viewport* viewport)

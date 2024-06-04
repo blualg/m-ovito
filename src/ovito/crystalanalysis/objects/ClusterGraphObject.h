@@ -38,9 +38,6 @@ class OVITO_CRYSTALANALYSIS_EXPORT ClusterGraphObject : public DataObject
 
 public:
 
-    /// Constructor.
-    using DataObject::DataObject;
-
     /// Returns the list of nodes in the cluster graph.
     const std::vector<Cluster*>& clusters() const { return storage()->clusters(); }
 
@@ -50,7 +47,7 @@ public:
 private:
 
     /// The internal data.
-    DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<ClusterGraph>, storage, setStorage);
+    DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<ClusterGraph>{}, storage, setStorage);
 };
 
 }   // End of namespace

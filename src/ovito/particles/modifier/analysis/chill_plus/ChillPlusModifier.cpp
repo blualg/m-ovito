@@ -40,11 +40,12 @@ SET_PROPERTY_FIELD_LABEL(ChillPlusModifier, cutoff, "Cutoff radius");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ChillPlusModifier, cutoff, WorldParameterUnit, 0);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-ChillPlusModifier::ChillPlusModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags),
-    _cutoff(3.5)
+void ChillPlusModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    StructureIdentificationModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the structure types.
         createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);

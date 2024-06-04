@@ -39,11 +39,6 @@ class OVITO_CORE_EXPORT ColorCodingGradient : public RefTarget
 {
     OVITO_CLASS(ColorCodingGradient)
 
-protected:
-
-    /// Constructor.
-    using RefTarget::RefTarget;
-
 public:
 
     /// \brief Converts a scalar value to a color value.
@@ -74,9 +69,6 @@ class OVITO_CORE_EXPORT ColorCodingHSVGradient : public ColorCodingGradient
 
 public:
 
-    /// Constructor.
-    explicit ColorCodingHSVGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
-
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
@@ -103,9 +95,6 @@ class OVITO_CORE_EXPORT ColorCodingGrayscaleGradient : public ColorCodingGradien
 
 public:
 
-    /// Constructor.
-    explicit ColorCodingGrayscaleGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
-
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
@@ -131,9 +120,6 @@ class OVITO_CORE_EXPORT ColorCodingHotGradient : public ColorCodingGradient
     OVITO_CLASS(ColorCodingHotGradient)
 
 public:
-
-    /// Constructor.
-    explicit ColorCodingHotGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
@@ -162,9 +148,6 @@ class OVITO_CORE_EXPORT ColorCodingJetGradient : public ColorCodingGradient
     OVITO_CLASS(ColorCodingJetGradient)
 
 public:
-
-    /// Constructor.
-    explicit ColorCodingJetGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
@@ -200,9 +183,6 @@ class OVITO_CORE_EXPORT ColorCodingBlueWhiteRedGradient : public ColorCodingGrad
 
 public:
 
-    /// Constructor.
-    explicit ColorCodingBlueWhiteRedGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
-
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
@@ -235,9 +215,6 @@ class OVITO_CORE_EXPORT ColorCodingViridisGradient : public ColorCodingGradient
 
 public:
 
-    /// Constructor.
-    explicit ColorCodingViridisGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
-
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
@@ -266,9 +243,6 @@ class OVITO_CORE_EXPORT ColorCodingMagmaGradient : public ColorCodingGradient
     OVITO_CLASS(ColorCodingMagmaGradient)
 
 public:
-
-    /// Constructor.
-    explicit ColorCodingMagmaGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
@@ -299,9 +273,6 @@ class OVITO_CORE_EXPORT ColorCodingTableGradient : public ColorCodingGradient
 
 public:
 
-    /// Constructor.
-    explicit ColorCodingTableGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
-
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
@@ -317,7 +288,7 @@ public:
 private:
 
     /// The user-defined color table.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(std::vector<Color>, table, setTable);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(std::vector<Color>{}, table, setTable);
 };
 
 /**
@@ -328,9 +299,6 @@ class OVITO_CORE_EXPORT ColorCodingImageGradient : public ColorCodingGradient
     OVITO_CLASS(ColorCodingImageGradient)
 
 public:
-
-    /// Constructor.
-    explicit ColorCodingImageGradient(ObjectInitializationFlags flags) : ColorCodingGradient(flags) {}
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
@@ -350,10 +318,10 @@ public:
 private:
 
     /// The user-defined color map image.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QImage, image, setImage);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QImage{}, image, setImage);
 
     /// The original filesystem path to the user-defined color map image.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, imagePath, setImagePath);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, imagePath, setImagePath);
 };
 
 }   // End of namespace

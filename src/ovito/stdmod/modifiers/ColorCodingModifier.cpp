@@ -76,11 +76,10 @@ SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property")
 /******************************************************************************
 * Constructs the modifier object.
 ******************************************************************************/
-ColorCodingModifier::ColorCodingModifier(ObjectInitializationFlags flags) : DelegatingModifier(flags),
-    _colorOnlySelected(false),
-    _keepSelection(true),
-    _autoAdjustRange(false)
+void ColorCodingModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    DelegatingModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setColorGradient(OORef<ColorCodingHSVGradient>::create());
         setStartValueController(ControllerManager::createFloatController());

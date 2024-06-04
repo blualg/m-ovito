@@ -41,10 +41,12 @@ SET_PROPERTY_FIELD_UNITS(PRSTransformationController, rotationController, AngleP
 SET_PROPERTY_FIELD_UNITS(PRSTransformationController, scalingController, PercentParameterUnit);
 
 /******************************************************************************
-* Default constructor.
+* Constructor.
 ******************************************************************************/
-PRSTransformationController::PRSTransformationController(ObjectInitializationFlags flags) : Controller(flags)
+void PRSTransformationController::initializeObject(ObjectInitializationFlags flags)
 {
+    Controller::initializeObject(flags);
+
     if(!flags.testFlag(DontInitializeObject)) {
         // Create sub-controllers.
         setPositionController(ControllerManager::createPositionController());

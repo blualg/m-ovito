@@ -33,14 +33,6 @@ DEFINE_REFERENCE_FIELD(StaticSource, dataCollection);
 SET_PROPERTY_FIELD_LABEL(StaticSource, dataCollection, "Data");
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-StaticSource::StaticSource(ObjectInitializationFlags flags, DataCollection* data) : PipelineNode(flags, false)
-{
-    setDataCollection(data);
-}
-
-/******************************************************************************
 * Asks the object for the result of the data pipeline.
 ******************************************************************************/
 SharedFuture<PipelineFlowState> StaticSource::evaluateInternal(const PipelineEvaluationRequest& request)

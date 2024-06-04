@@ -74,8 +74,9 @@ public:
     };
 
 public:
+
     /// Constructor.
-    explicit VectorVis(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Lets the visualization element render the data object.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph,
@@ -92,9 +93,11 @@ public:
     void setTransparency(FloatType t) { transparencyController()->setFloatValue(AnimationTime(0), t); }
 
 public:
+
     Q_PROPERTY(Ovito::VectorVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
 
 protected:
+
     /// Computes the bounding box of the arrows.
     Box3 arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuffer* basePositions) const;
 
@@ -102,38 +105,39 @@ protected:
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
 protected:
+
     /// Reverses of the arrow pointing direction.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reverseArrowDirection, setReverseArrowDirection);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, reverseArrowDirection, setReverseArrowDirection);
     DECLARE_SHADOW_PROPERTY_FIELD(reverseArrowDirection);
 
     /// Controls how the arrows are positioned relative to the base points.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ArrowPosition, arrowPosition, setArrowPosition, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ArrowPosition{Base}, arrowPosition, setArrowPosition, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(arrowPosition);
 
     /// The uniform display color of the arrows.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, arrowColor, setArrowColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{1,1,0}), arrowColor, setArrowColor, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(arrowColor);
 
     /// The width of the arrows in world units.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, arrowWidth, setArrowWidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.5}, arrowWidth, setArrowWidth, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(arrowWidth);
 
     /// The scaling factor applied to the vectors.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, scalingFactor, setScalingFactor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1}, scalingFactor, setScalingFactor, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(scalingFactor);
 
     /// The shading mode for arrows.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(VectorVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(VectorVis::ShadingMode{FlatShading}, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(shadingMode);
 
     /// The transparency value of the arrows.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
 
     /// Displacement offset to be applied to all arrows.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, offset, setOffset);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3{Vector3::Zero()}, offset, setOffset);
 
     /// Determines how the arrows are colored.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(VectorVis::ColoringMode, coloringMode, setColoringMode);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(VectorVis::ColoringMode{UniformColoring}, coloringMode, setColoringMode);
 
     /// Transfer function for pseudo-color visualization of an auxiliary property.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
@@ -149,9 +153,10 @@ class OVITO_STDOBJ_EXPORT VectorPickInfo : public ObjectPickInfo
 
 public:
     /// Constructor.
-    explicit VectorPickInfo(VectorVis* visElement, const ConstDataObjectPath& dataPath)
-        : _visElement(visElement), _dataPath(dataPath.begin(), dataPath.end())
-    {
+    void initializeObject(VectorVis* visElement, const ConstDataObjectPath& dataPath) {
+        ObjectPickInfo::initializeObject();
+        _visElement = visElement;
+        _dataPath = ConstDataObjectRefPath(dataPath.begin(), dataPath.end());
     }
 
     /// Returns the data collection path to the vector property.

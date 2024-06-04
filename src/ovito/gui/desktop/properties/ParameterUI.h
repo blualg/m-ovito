@@ -42,7 +42,7 @@ class OVITO_GUI_EXPORT ParameterUI : public QObject, public RefMaker
 public:
 
     /// Constructor.
-    explicit ParameterUI(PropertiesEditor* editor);
+    void initializeObject(PropertiesEditor* editor);
 
     /// Returns the properties editor hosting this component.
     PropertiesEditor* editor() const { return _editor; }

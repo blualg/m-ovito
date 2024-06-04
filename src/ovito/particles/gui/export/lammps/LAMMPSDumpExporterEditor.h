@@ -36,11 +36,6 @@ class LAMMPSDumpExporterEditor : public FileColumnParticleExporterEditor
     OVITO_CLASS(LAMMPSDumpExporterEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor.
-    using FileColumnParticleExporterEditor::FileColumnParticleExporterEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

@@ -52,7 +52,7 @@ class OVITO_GRID_EXPORT CreateIsosurfaceModifier : public Modifier
 public:
 
     /// Constructor.
-    explicit CreateIsosurfaceModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -95,27 +95,25 @@ protected:
 private:
 
     /// Specifies the voxel grid this modifier should operate on.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyContainerReference, subject, setSubject);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyContainerReference{}, subject, setSubject);
 
     /// The voxel property that serves as input.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, sourceProperty, setSourceProperty);
 
     /// This controller stores the level at which to create the isosurface.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Controller>, isolevelController, setIsolevelController, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether auxiliary field values should be copied over from the grid to the generated isosurface vertices.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, transferFieldValues, setTransferFieldValues, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, transferFieldValues, setTransferFieldValues, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether the algorithm should identify disconnected spatial regions.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, identifyRegions, setIdentifyRegions);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, identifyRegions, setIdentifyRegions);
 
     // Controls the amount of smoothing.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, smoothingLevel, setSmoothingLevel, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{0}, smoothingLevel, setSmoothingLevel, PROPERTY_FIELD_MEMORIZE);
 
     /// The vis element for rendering the surface.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis,
-                                             PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE |
-                                                 PROPERTY_FIELD_OPEN_SUBEDITOR);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SurfaceMeshVis>, surfaceMeshVis, setSurfaceMeshVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 };
 
 }  // namespace Ovito

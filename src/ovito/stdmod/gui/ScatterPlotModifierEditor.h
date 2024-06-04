@@ -39,11 +39,6 @@ class ScatterPlotModifierEditor : public PropertiesEditor
     OVITO_CLASS(ScatterPlotModifierEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

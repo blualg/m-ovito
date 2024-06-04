@@ -33,9 +33,12 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(NumericalParameterUI);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-NumericalParameterUI::NumericalParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QMetaObject* defaultParameterUnitType) :
-    PropertyParameterUI(parentEditor, propField), _parameterUnitType(defaultParameterUnitType)
+void NumericalParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QMetaObject* defaultParameterUnitType)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
+    _parameterUnitType = defaultParameterUnitType;
+
     // Look up the ParameterUnit type for this parameter.
     if(propField->numericalParameterInfo() && propField->numericalParameterInfo()->unitType)
         _parameterUnitType = propField->numericalParameterInfo()->unitType;

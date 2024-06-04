@@ -40,7 +40,7 @@ class OVITO_STDOBJ_EXPORT TargetObject : public DataObject
 public:
 
     /// Constructor.
-    explicit TargetObject(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 };
 
 /**
@@ -49,11 +49,8 @@ public:
 class OVITO_STDOBJ_EXPORT TargetVis : public DataVis
 {
     OVITO_CLASS(TargetVis)
- 
-public:
 
-    /// Constructor.
-    using DataVis::DataVis;
+public:
 
     /// Renders the given data object.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;

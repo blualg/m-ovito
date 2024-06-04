@@ -122,8 +122,10 @@ PropertyPtr Vectors::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buf
 /******************************************************************************
  * Constructor.
  ******************************************************************************/
-Vectors::Vectors(ObjectInitializationFlags flags) : PropertyContainer(flags)
+void Vectors::initializeObject(ObjectInitializationFlags flags)
 {
+    PropertyContainer::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) && !flags.testFlag(ObjectInitializationFlag::DontCreateVisElement)) {
         // Create and attach a default visualization element for rendering the vectors.
         setVisElement(OORef<VectorVis>::create(flags));

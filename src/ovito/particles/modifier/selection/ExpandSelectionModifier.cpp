@@ -51,17 +51,6 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(ExpandSelectionModifier, numNearestNeighbors,
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ExpandSelectionModifier, numberOfIterations, IntegerParameterUnit, 1);
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-ExpandSelectionModifier::ExpandSelectionModifier(ObjectInitializationFlags flags) : Modifier(flags),
-    _mode(CutoffRange),
-    _cutoffRange(3.2),
-    _numNearestNeighbors(1),
-    _numberOfIterations(1)
-{
-}
-
-/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool ExpandSelectionModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const

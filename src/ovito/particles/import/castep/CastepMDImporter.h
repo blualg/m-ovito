@@ -55,7 +55,8 @@ class OVITO_PARTICLES_EXPORT CastepMDImporter : public ParticleImporter
 public:
 
     /// Constructor.
-    explicit CastepMDImporter(ObjectInitializationFlags flags) : ParticleImporter(flags) {
+    void initializeObject(ObjectInitializationFlags flags) {
+        ParticleImporter::initializeObject(flags);
         setMultiTimestepFile(true);
     }
 

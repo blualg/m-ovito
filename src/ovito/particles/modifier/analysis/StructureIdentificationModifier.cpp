@@ -41,15 +41,6 @@ SET_PROPERTY_FIELD_LABEL(StructureIdentificationModifier, onlySelectedParticles,
 SET_PROPERTY_FIELD_LABEL(StructureIdentificationModifier, colorByType, "Color particles by type");
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-StructureIdentificationModifier::StructureIdentificationModifier(ObjectInitializationFlags flags) : Modifier(flags),
-    _onlySelectedParticles(false),
-    _colorByType(true)
-{
-}
-
-/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool StructureIdentificationModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const

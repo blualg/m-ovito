@@ -40,7 +40,7 @@ class VoxelGridInspectionApplet : public PropertyInspectionApplet
 public:
 
     /// Constructor.
-    explicit VoxelGridInspectionApplet() : PropertyInspectionApplet(VoxelGrid::OOClass()) {}
+    void initializeObject() { PropertyInspectionApplet::initializeObject(VoxelGrid::OOClass()); }
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 210; }

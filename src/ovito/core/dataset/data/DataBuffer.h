@@ -153,15 +153,16 @@ public:
 
 public:
 
-    /// \brief Creates an empty buffer.
-    explicit DataBuffer(ObjectInitializationFlags flags) : DataObject(flags) {}
+    /// \brief Null constructor
+    void initializeObject(ObjectInitializationFlags flags) { DataObject::initializeObject(flags); }
 
     /// \brief Constructor that creates and initializes a new buffer array.
-    explicit DataBuffer(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList());
+    void initializeObject(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList());
 
     /// \brief Constructor that creates a new buffer array.
-    explicit DataBuffer(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) :
-        DataBuffer(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, std::move(componentNames)) {}
+    void initializeObject(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) {
+        initializeObject(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, std::move(componentNames));
+    }
 
     /// \brief Returns the number of elements stored in the buffer array.
     size_t size() const { return _numElements; }

@@ -46,16 +46,6 @@ SET_PROPERTY_FIELD_LABEL(SimulationCellVis, cellColor, "Line color");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(SimulationCellVis, cellLineWidth, WorldParameterUnit, 0);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-SimulationCellVis::SimulationCellVis(ObjectInitializationFlags flags) : DataVis(flags),
-    _renderCellEnabled(true),
-    _cellLineWidth(0.0),
-    _cellColor(0, 0, 0)
-{
-}
-
-/******************************************************************************
 * Computes the bounding box of the object.
 ******************************************************************************/
 Box3 SimulationCellVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)

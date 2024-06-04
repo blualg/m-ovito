@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT BooleanParameterUI : public PropertyParameterUI
 public:
 
     /// Constructor.
-    BooleanParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
     virtual ~BooleanParameterUI();

@@ -42,7 +42,10 @@ class SurfaceMeshVertexInspectionApplet : public PropertyInspectionApplet
 public:
 
     /// Constructor.
-    explicit SurfaceMeshVertexInspectionApplet(SurfaceMeshInspectionApplet* parentApplet) : PropertyInspectionApplet(SurfaceMeshVertices::OOClass()), _parentApplet(parentApplet) {}
+    void initializeObject(SurfaceMeshInspectionApplet* parentApplet) {
+        PropertyInspectionApplet::initializeObject(SurfaceMeshVertices::OOClass());
+        _parentApplet = parentApplet;
+    }
 
     /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
     virtual QWidget* createWidget() override;
@@ -67,7 +70,10 @@ class SurfaceMeshFaceInspectionApplet : public PropertyInspectionApplet
 public:
 
     /// Constructor.
-    explicit SurfaceMeshFaceInspectionApplet(SurfaceMeshInspectionApplet* parentApplet) : PropertyInspectionApplet(SurfaceMeshFaces::OOClass()), _parentApplet(parentApplet) {}
+    void initializeObject(SurfaceMeshInspectionApplet* parentApplet) {
+        PropertyInspectionApplet::initializeObject(SurfaceMeshFaces::OOClass());
+        _parentApplet = parentApplet;
+    }
 
     /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
     virtual QWidget* createWidget() override;
@@ -92,7 +98,10 @@ class SurfaceMeshRegionInspectionApplet : public PropertyInspectionApplet
 public:
 
     /// Constructor.
-    explicit SurfaceMeshRegionInspectionApplet(SurfaceMeshInspectionApplet* parentApplet) : PropertyInspectionApplet(SurfaceMeshRegions::OOClass()), _parentApplet(parentApplet) {}
+    void initializeObject(SurfaceMeshInspectionApplet* parentApplet) {
+        PropertyInspectionApplet::initializeObject(SurfaceMeshRegions::OOClass());
+        _parentApplet = parentApplet;
+    }
 
     /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
     virtual QWidget* createWidget() override;
@@ -117,7 +126,9 @@ class SurfaceMeshInspectionApplet : public DataInspectionApplet
 public:
 
     /// Constructor.
-    explicit SurfaceMeshInspectionApplet() : DataInspectionApplet(SurfaceMesh::OOClass()) {}
+    void initializeObject() {
+        DataInspectionApplet::initializeObject(SurfaceMesh::OOClass());
+    }
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 220; }

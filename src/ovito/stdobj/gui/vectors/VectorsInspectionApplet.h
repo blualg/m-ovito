@@ -36,7 +36,7 @@ class OVITO_STDOBJGUI_EXPORT VectorsInspectionApplet : public PropertyInspection
 
 public:
     /// Constructor.
-    explicit VectorsInspectionApplet() : PropertyInspectionApplet(Vectors::OOClass()) {}
+    void initializeObject() { PropertyInspectionApplet::initializeObject(Vectors::OOClass()); }
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 300; }

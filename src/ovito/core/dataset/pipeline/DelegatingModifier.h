@@ -75,9 +75,6 @@ public:
 
 public:
 
-    /// Constructor.
-    explicit ModifierDelegate(ObjectInitializationFlags flags, const DataObjectReference& inputDataObj = DataObjectReference()) : RefTarget(flags), _isEnabled(true), _inputDataObject(inputDataObj) {}
-
     /// This function is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateDelegate(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const {}
 
@@ -90,10 +87,10 @@ public:
 private:
 
     /// Indicates whether this delegate is active or not.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isEnabled, setEnabled);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, isEnabled, setEnabled);
 
     /// Optionally specifies a particular input data object this delegate should operate on.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(DataObjectReference, inputDataObject, setInputDataObject);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(DataObjectReference{}, inputDataObject, setInputDataObject);
 };
 
 /**

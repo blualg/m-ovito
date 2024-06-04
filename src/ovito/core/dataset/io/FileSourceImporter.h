@@ -208,9 +208,6 @@ public:
         NEXT_AVAILABLE_EVENT_ID
     };
 
-    /// Constructor.
-    explicit FileSourceImporter(ObjectInitializationFlags flags) : FileImporter(flags), _isMultiTimestepFile(false) {}
-
     ///////////////////////////// from FileImporter /////////////////////////////
 
     /// \brief Asks the importer if the option to replace the currently selected object
@@ -312,7 +309,7 @@ private:
     /// Note: Suppressing change messages for this field, because it may be set to true during
     /// a file import operation and we don't want to trigger a reload of the file.
     /// Instead, a MultiTimestepFileChanged notification event is generated whenever this field changes.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, isMultiTimestepFile, setMultiTimestepFile, PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, isMultiTimestepFile, setMultiTimestepFile, PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 };
 
 /// \brief Writes an animation frame information record to a binary output stream.

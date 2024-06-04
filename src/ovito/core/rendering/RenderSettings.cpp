@@ -89,42 +89,17 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, layoutSeperatorWidth, Integ
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-RenderSettings::RenderSettings(ObjectInitializationFlags flags) : RefTarget(flags),
-    _outputImageWidth(640),
-    _outputImageHeight(480),
-    _generateAlphaChannel(false),
-    _saveToFile(false),
-    _skipExistingImages(false),
-    _renderingRangeType(CURRENT_FRAME),
-    _customRangeStart(0),
-    _customRangeEnd(100),
-    _customFrame(0),
-    _everyNthFrame(1),
-    _fileNumberBase(0),
-    _framesPerSecond(0),
-    _renderAllViewports(false),
-    _layoutSeperatorsEnabled(false),
-    _layoutSeperatorWidth(2),
-    _layoutSeperatorColor(0.5, 0.5, 0.5)
+void RenderSettings::initializeObject(ObjectInitializationFlags flags)
 {
+    RefTarget::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Set default background color.
         setBackgroundColorController(ControllerManager::createColorController());
         setBackgroundColor(Color(1,1,1));
-    }
-}
 
-/******************************************************************************
-* Is called by OORef<T>::create() right after the object's constructor is finished.
-* This is the second stage of the object's two-phase construction process.
-******************************************************************************/
-void RenderSettings::completeObjectConstruction(ObjectInitializationFlags initFlags)
-{
-    RefTarget::completeObjectConstruction(initFlags);
-
-    // Create an instance of the default renderer class.
-    // Use the OpenGL renderer as the default implementation.
-    if(!initFlags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
+        // Create an instance of the default renderer class.
+        // Use the OpenGL renderer as the default implementation.
         if(OvitoClassPtr rendererClass = PluginManager::instance().findClass("OpenGLRenderer", "OpenGLRenderer")) {
             setRenderer(static_object_cast<SceneRenderer>(rendererClass->createInstance()));
         }

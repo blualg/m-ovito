@@ -54,7 +54,7 @@ class OVITO_STDOBJ_EXPORT StandardCameraObject : public AbstractCameraObject
 public:
 
     /// Constructor.
-    explicit StandardCameraObject(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// With a target camera, indicates the distance between the camera and its target.
     static FloatType getTargetDistance(AnimationTime time, const Pipeline* pipeline);
@@ -79,13 +79,13 @@ public:
 private:
 
     /// Determines if this camera uses a perspective projection.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isPerspective, setIsPerspective);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, isPerspective, setIsPerspective);
 
     /// Field of view of the camera if it uses a perspective projection.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, fov, setFov);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{FLOATTYPE_PI/4}, fov, setFov);
 
     /// Field of view of the camera if it uses an orthogonal projection.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, zoom, setZoom);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{200}, zoom, setZoom);
 };
 
 /**
@@ -96,9 +96,6 @@ class OVITO_STDOBJ_EXPORT CameraVis : public DataVis
     OVITO_CLASS(CameraVis)
 
 public:
-
-    /// Constructor.
-    using DataVis::DataVis;
 
     /// Lets the vis element render a camera object.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;

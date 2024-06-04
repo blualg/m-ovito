@@ -43,11 +43,6 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifierDelegate : public ModifierDeleg
 {
     OVITO_CLASS(ComputePropertyModifierDelegate)
 
-protected:
-
-    /// Constructor.
-    using ModifierDelegate::ModifierDelegate;
-
 public:
 
     /// Returns the type of input property container that this delegate can process.
@@ -100,7 +95,7 @@ class OVITO_STDMOD_EXPORT ComputePropertyModifier : public DelegatingModifier
 public:
 
     /// Constructor.
-    explicit ComputePropertyModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Returns the current delegate of this ComputePropertyModifier.
     ComputePropertyModifierDelegate* delegate() const { return static_object_cast<ComputePropertyModifierDelegate>(DelegatingModifier::delegate()); }
@@ -155,16 +150,16 @@ protected:
 private:
 
     /// The math expressions for calculating the property values. One for every vector component.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QStringList, expressions, setExpressions);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QStringList{"0"}, expressions, setExpressions);
 
     /// Specifies the output property that will receive the computed per-particles values.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, outputProperty, setOutputProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, outputProperty, setOutputProperty);
 
     /// Controls whether the math expression is evaluated and output only for selected elements.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedElements, setOnlySelectedElements);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, onlySelectedElements, setOnlySelectedElements);
 
     /// Controls whether multi-line input fields are shown in the UI for the expressions.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useMultilineFields, setUseMultilineFields);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useMultilineFields, setUseMultilineFields);
 };
 
 /**
@@ -174,24 +169,19 @@ class OVITO_STDMOD_EXPORT ComputePropertyModificationNode : public ModificationN
 {
     OVITO_CLASS(ComputePropertyModificationNode)
 
-public:
-
-    /// Constructor.
-    using ModificationNode::ModificationNode;
-
 private:
 
     /// The cached visualization elements that are attached to the output property.
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, cachedVisElements, setCachedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// The list of input variables during the last evaluation.
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QStringList, inputVariableNames, setInputVariableNames, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
+    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QStringList{}, inputVariableNames, setInputVariableNames, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
 
     /// The list of input variables for the expressions managed by the delegate during the last evaluation.
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QStringList, delegateInputVariableNames, setDelegateInputVariableNames, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
+    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QStringList{}, delegateInputVariableNames, setDelegateInputVariableNames, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
 
     /// Human-readable text listing the input variables during the last evaluation.
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QString, inputVariableTable, setInputVariableTable, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
+    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QString{}, inputVariableTable, setInputVariableTable, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
 };
 
 }   // End of namespace

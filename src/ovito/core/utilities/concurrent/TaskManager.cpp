@@ -151,8 +151,7 @@ void TaskManager::submitWork(const OvitoObject* contextObject, fu2::unique_funct
 {
     // Note: contextObject may be null for work not associated with any particular object.
 
-    OVITO_ASSERT(!contextObject || !contextObject->isBeingConstructed()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed yet.
-    OVITO_ASSERT(!contextObject || !contextObject->isBeingDeleted()); // Note: Cannot create a OOWeakRef<> while the object is being destructed.
+    OVITO_ASSERT(!contextObject || !contextObject->isBeingInitializedOrDeleted()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed.
 
     // Place work item into the queue.
     size_t numPendingWork;

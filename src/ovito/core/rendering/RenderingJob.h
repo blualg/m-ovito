@@ -50,7 +50,11 @@ class OVITO_CORE_EXPORT AbstractRenderingFrameBuffer : public RefTarget
 public:
 
     /// Constructor.
-    explicit AbstractRenderingFrameBuffer(ObjectInitializationFlags flags, const QRect& outputViewportRect, std::shared_ptr<FrameBuffer> outputFrameBuffer) : RefTarget(flags), _outputViewportRect(outputViewportRect), _outputFrameBuffer(std::move(outputFrameBuffer)) {}
+    void initializeObject(ObjectInitializationFlags flags, const QRect& outputViewportRect, std::shared_ptr<FrameBuffer> outputFrameBuffer) {
+		RefTarget::initializeObject(flags);
+		_outputViewportRect = outputViewportRect;
+		_outputFrameBuffer = std::move(outputFrameBuffer);
+	}
 
 	/// Returns the target area in the output FrameBuffer.
 	const QRect& outputViewportRect() const { return _outputViewportRect; }
@@ -64,10 +68,10 @@ public:
 private:
 
 	/// The target area in the output FrameBuffer.
-	const QRect _outputViewportRect;
+	QRect _outputViewportRect;
 
 	/// The output FrameBuffer where the rendered pixels will be copied to (may be null).
-	const std::shared_ptr<FrameBuffer> _outputFrameBuffer;
+	std::shared_ptr<FrameBuffer> _outputFrameBuffer;
 };
 
 /**
@@ -80,7 +84,10 @@ class OVITO_CORE_EXPORT RenderingJob : public RefTarget
 public:
 
     /// Constructor.
-    explicit RenderingJob(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache = std::make_shared<RendererResourceCache>()) : RefTarget(flags), _visCache(std::move(visCache)) {}
+    void initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache = std::make_shared<RendererResourceCache>()) {
+		RefTarget::initializeObject(flags);
+		_visCache = std::move(visCache);
+	}
 
     /// Returns the cache managing rendering resources.
     const std::shared_ptr<RendererResourceCache>& visCache() const { return _visCache; }
@@ -113,7 +120,7 @@ protected:
 private:
 
     /// The cache managing rendering resources.
-    const std::shared_ptr<RendererResourceCache> _visCache;
+    std::shared_ptr<RendererResourceCache> _visCache;
 };
 
 }	// End of namespace

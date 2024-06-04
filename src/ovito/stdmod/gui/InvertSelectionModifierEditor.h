@@ -36,11 +36,6 @@ class InvertSelectionModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(InvertSelectionModifierEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

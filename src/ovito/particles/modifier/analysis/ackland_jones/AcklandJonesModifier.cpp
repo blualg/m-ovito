@@ -38,8 +38,10 @@ OVITO_CLASSINFO(AcklandJonesModifier, "ModifierCategory", "Structure identificat
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AcklandJonesModifier::AcklandJonesModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags)
+void AcklandJonesModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    StructureIdentificationModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the structure types.
         createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);

@@ -39,8 +39,12 @@ DEFINE_REFERENCE_FIELD(SceneAnimationPlayback, scene);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SceneAnimationPlayback::SceneAnimationPlayback(UserInterface& userInterface) : _userInterface(userInterface)
+void SceneAnimationPlayback::initializeObject(UserInterface& userInterface)
 {
+    RefMaker::initializeObject();
+
+    _userInterface = &userInterface;
+
     // This facility requires a Qt event loop.
     Application::instance()->createQtApplication(false);
 }

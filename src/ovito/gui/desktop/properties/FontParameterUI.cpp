@@ -31,11 +31,12 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(FontParameterUI);
 
 /******************************************************************************
-* The constructor.
+* Constructor.
 ******************************************************************************/
-FontParameterUI::FontParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
-    : PropertyParameterUI(parentEditor, propField)
+void FontParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
     _label = new QLabel(propField->displayName() + ":");
     _fontPicker = new QPushButton();
     connect(_fontPicker.data(), &QPushButton::clicked, this, &FontParameterUI::onButtonClicked);

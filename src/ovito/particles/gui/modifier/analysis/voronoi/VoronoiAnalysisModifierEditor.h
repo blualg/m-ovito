@@ -35,11 +35,6 @@ class VoronoiAnalysisModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(VoronoiAnalysisModifierEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

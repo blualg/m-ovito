@@ -55,7 +55,7 @@ public:
     Q_ENUM(ColorMappingMode);
 
     /// Constructor.
-    explicit SurfaceMeshVis(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Transforms the SurfaceMesh into a renderable triangle mesh.
     Future<std::shared_ptr<RenderableSurfaceMesh>> transformSurfaceMesh(const SurfaceMesh* surfaceMesh);
@@ -194,27 +194,27 @@ protected:
 private:
 
     /// Controls the display color of the surface mesh.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, surfaceColor, setSurfaceColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{1,1,1}), surfaceColor, setSurfaceColor, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(surfaceColor);
 
     /// Controls the display color of the cap mesh.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, capColor, setCapColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0.8, 0.8, 1.0}), capColor, setCapColor, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(capColor);
 
     /// Controls whether the cap mesh is rendered.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, showCap, setShowCap, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, showCap, setShowCap, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(showCap);
 
     /// Controls whether the surface mesh is rendered using smooth shading.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, smoothShading, setSmoothShading);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, smoothShading, setSmoothShading);
     DECLARE_SHADOW_PROPERTY_FIELD(smoothShading);
 
     /// Controls whether the mesh' orientation is flipped.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reverseOrientation, setReverseOrientation);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, reverseOrientation, setReverseOrientation);
     DECLARE_SHADOW_PROPERTY_FIELD(reverseOrientation);
 
     /// Controls whether the polygonal edges of the mesh should be highlighted.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, highlightEdges, setHighlightEdges);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, highlightEdges, setHighlightEdges);
     DECLARE_SHADOW_PROPERTY_FIELD(highlightEdges);
 
     /// Controls the transparency of the surface mesh.
@@ -225,16 +225,16 @@ private:
 
     /// Internal field indicating whether the surface meshes rendered by this viz element are closed or not.
     /// Depending on this setting, the UI will show the cap polygon option to the user.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, surfaceIsClosed, setSurfaceIsClosed);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, surfaceIsClosed, setSurfaceIsClosed);
 
     /// Transfer function for pseudo-color visualization of a surface property.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, surfaceColorMapping, setSurfaceColorMapping);
 
     /// Controls which part of a surface mesh is used for pseudo-color mapping.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ColorMappingMode, colorMappingMode, setColorMappingMode);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(ColorMappingMode{NoPseudoColoring}, colorMappingMode, setColorMappingMode);
 
     /// Controls whether the mesh gets clipped at non-periodic cell boundaries.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, clipAtDomainBoundaries, setClipAtDomainBoundaries);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, clipAtDomainBoundaries, setClipAtDomainBoundaries);
     DECLARE_SHADOW_PROPERTY_FIELD(clipAtDomainBoundaries);
 };
 
@@ -249,8 +249,12 @@ class OVITO_MESH_EXPORT SurfaceMeshPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    explicit SurfaceMeshPickInfo(const SurfaceMeshVis* visElement, const SurfaceMesh* surfaceMesh, std::shared_ptr<RenderableSurfaceMesh> renderableMesh) :
-        _visElement(visElement), _surfaceMesh(surfaceMesh), _renderableMesh(std::move(renderableMesh)) {}
+    void initializeObject(const SurfaceMeshVis* visElement, const SurfaceMesh* surfaceMesh, std::shared_ptr<RenderableSurfaceMesh> renderableMesh) {
+        ObjectPickInfo::initializeObject();
+        _visElement = visElement;
+        _surfaceMesh = surfaceMesh;
+        _renderableMesh = std::move(renderableMesh);
+    }
 
     /// The data object containing the surface mesh.
     const OORef<SurfaceMesh>& surfaceMesh() const { return _surfaceMesh; }

@@ -64,17 +64,12 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateBondsModifier, minimumCutoff, WorldPa
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateBondsModifier, vdwPrefactor, PercentParameterUnit, 0);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-CreateBondsModifier::CreateBondsModifier(ObjectInitializationFlags flags) : Modifier(flags),
-    _cutoffMode(UniformCutoff),
-    _uniformCutoff(3.2),
-    _onlyIntraMoleculeBonds(false),
-    _minimumCutoff(0),
-    _autoDisableBondDisplay(true),
-    _skipHydrogenHydrogenBonds(true),
-    _vdwPrefactor(0.6) // Value 0.6 has been adopted from VMD source code.
+void CreateBondsModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    Modifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the bond type that will be assigned to the newly created bonds.
         setBondType(OORef<BondType>::create(flags));

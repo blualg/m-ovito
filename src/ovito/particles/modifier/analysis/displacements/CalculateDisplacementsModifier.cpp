@@ -35,10 +35,12 @@ OVITO_CLASSINFO(CalculateDisplacementsModifier, "ModifierCategory", "Analysis");
 DEFINE_REFERENCE_FIELD(CalculateDisplacementsModifier, vectorVis);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-CalculateDisplacementsModifier::CalculateDisplacementsModifier(ObjectInitializationFlags flags) : ReferenceConfigurationModifier(flags)
+void CalculateDisplacementsModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    ReferenceConfigurationModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create vis element for vectors.
         setVectorVis(OORef<VectorVis>::create(flags));

@@ -39,17 +39,19 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(Property, title, ReferenceEvent::TitleChanged);
 /******************************************************************************
 * Constructor creating an empty property array.
 ******************************************************************************/
-Property::Property(ObjectInitializationFlags flags) : DataBuffer(flags)
+void Property::initializeObject(ObjectInitializationFlags flags)
 {
+    DataBuffer::initializeObject(flags);
 }
 
 /******************************************************************************
 * Constructor allocating a property array with given size and data layout.
 ******************************************************************************/
-Property::Property(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int typeId, QStringList componentNames) :
-    DataBuffer(flags, init, elementCount, dataType, componentCount, std::move(componentNames)),
-    _typeId(typeId)
+void Property::initializeObject(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int typeId, QStringList componentNames)
 {
+    DataBuffer::initializeObject(flags, init, elementCount, dataType, componentCount, std::move(componentNames));
+
+    _typeId = typeId;
     setName(name.toString());
 }
 

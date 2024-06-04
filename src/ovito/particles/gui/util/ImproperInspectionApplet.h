@@ -41,7 +41,7 @@ class ImproperInspectionApplet : public PropertyInspectionApplet
 public:
 
     /// Constructor.
-    explicit ImproperInspectionApplet() : PropertyInspectionApplet(Impropers::OOClass()) {}
+    void initializeObject() { PropertyInspectionApplet::initializeObject(Impropers::OOClass()); }
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 17; }

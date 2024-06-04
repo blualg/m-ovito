@@ -52,9 +52,6 @@ class OVITO_NETCDFPLUGIN_EXPORT AMBERNetCDFExporter : public FileColumnParticleE
 
 public:
 
-    /// Constructor.
-    using FileColumnParticleExporter::FileColumnParticleExporter;
-
     /// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
     virtual bool supportsMultiFrameFiles() const override { return true; }
 

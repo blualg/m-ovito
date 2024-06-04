@@ -32,8 +32,10 @@ OVITO_CLASSINFO(Impropers, "ClassNameAlias", "ImpropersObject");  // For backwar
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Impropers::Impropers(ObjectInitializationFlags flags) : PropertyContainer(flags)
+void Impropers::initializeObject(ObjectInitializationFlags flags)
 {
+    PropertyContainer::initializeObject(flags);
+
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
 }

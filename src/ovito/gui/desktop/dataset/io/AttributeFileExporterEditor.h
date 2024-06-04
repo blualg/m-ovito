@@ -36,11 +36,6 @@ class AttributeFileExporterEditor : public PropertiesEditor
     OVITO_CLASS(AttributeFileExporterEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor.
-    explicit AttributeFileExporterEditor() {}
-
 protected:
 
     /// Creates the user interface controls for the editor.

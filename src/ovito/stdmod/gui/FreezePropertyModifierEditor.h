@@ -36,11 +36,6 @@ class FreezePropertyModifierEditor : public PropertiesEditor
     OVITO_CLASS(FreezePropertyModifierEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

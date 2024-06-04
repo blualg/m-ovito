@@ -34,10 +34,12 @@ OVITO_CLASSINFO(InvertSelectionModifier, "Description", "Invert the current sele
 OVITO_CLASSINFO(InvertSelectionModifier, "ModifierCategory", "Selection");
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-InvertSelectionModifier::InvertSelectionModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags)
+void InvertSelectionModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    GenericPropertyModifier::initializeObject(flags);
+
     // Operate on particles by default.
     setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }

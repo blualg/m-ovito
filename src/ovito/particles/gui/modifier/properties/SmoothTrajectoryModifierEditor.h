@@ -35,11 +35,6 @@ class SmoothTrajectoryModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(SmoothTrajectoryModifierEditor)
 
-public:
-
-    /// Constructor
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

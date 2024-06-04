@@ -40,7 +40,7 @@ class OVITO_STDOBJ_EXPORT StandardCameraSource : public AbstractCameraSource
 public:
 
     /// Constructor.
-    explicit StandardCameraSource(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Returns whether this camera is a target camera directed at a target object.
     virtual bool isTargetCamera() const override;
@@ -80,7 +80,7 @@ protected:
 private:
 
     /// Determines if this camera uses a perspective projection.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isPerspective, setIsPerspective);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, isPerspective, setIsPerspective);
 
     /// This controller stores the field of view of the camera if it uses a perspective projection.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, fovController, setFovController);

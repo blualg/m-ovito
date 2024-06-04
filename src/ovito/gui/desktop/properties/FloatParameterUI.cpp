@@ -31,11 +31,11 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(FloatParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField or ReferenceField property.
+* Constructor.
 ******************************************************************************/
-FloatParameterUI::FloatParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-    NumericalParameterUI(parentEditor, propField, &FloatParameterUnit::staticMetaObject)
+void FloatParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 {
+    NumericalParameterUI::initializeObject(parentEditor, propField, &FloatParameterUnit::staticMetaObject);
 }
 
 /******************************************************************************

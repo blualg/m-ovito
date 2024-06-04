@@ -46,10 +46,12 @@ SET_PROPERTY_FIELD_LABEL(ExpressionSelectionModifier, expression, "Boolean expre
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ExpressionSelectionModifierDelegate);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-ExpressionSelectionModifier::ExpressionSelectionModifier(ObjectInitializationFlags flags) : DelegatingModifier(flags)
+void ExpressionSelectionModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    DelegatingModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Let this modifier operate on particles by default.
         createDefaultModifierDelegate(ExpressionSelectionModifierDelegate::OOClass(), QStringLiteral("ParticlesExpressionSelectionModifierDelegate"));

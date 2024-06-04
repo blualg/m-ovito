@@ -36,11 +36,6 @@ class OVITO_CORE_EXPORT ViewportOverlay : public ActiveObject
 {
     OVITO_CLASS(ViewportOverlay)
 
-protected:
-
-    /// Constructor.
-    explicit ViewportOverlay(ObjectInitializationFlags flags);
-
 public:
 
     /// This virtual method gets called when the overlay is being newly attached to a viewport.

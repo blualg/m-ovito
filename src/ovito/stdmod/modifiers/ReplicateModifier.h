@@ -34,11 +34,6 @@ namespace Ovito {
 class OVITO_STDMOD_EXPORT ReplicateModifierDelegate : public ModifierDelegate
 {
     OVITO_CLASS(ReplicateModifierDelegate)
-
-protected:
-
-    /// Abstract class constructor.
-    using ModifierDelegate::ModifierDelegate;
 };
 
 /**
@@ -63,9 +58,6 @@ class OVITO_STDMOD_EXPORT LinesReplicateModifierDelegate : public ReplicateModif
     OVITO_CLASS_META(LinesReplicateModifierDelegate, OOMetaClass)
 
 public:
-
-    /// Constructor.
-    explicit LinesReplicateModifierDelegate(ObjectInitializationFlags flags) : ReplicateModifierDelegate(flags) {}
 
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
@@ -93,8 +85,6 @@ class OVITO_STDMOD_EXPORT VectorsReplicateModifierDelegate : public ReplicateMod
     OVITO_CLASS_META(VectorsReplicateModifierDelegate, OOMetaClass)
 
 public:
-    /// Constructor.
-    explicit VectorsReplicateModifierDelegate(ObjectInitializationFlags flags) : ReplicateModifierDelegate(flags) {}
 
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state,
@@ -130,7 +120,7 @@ public:
 public:
 
     /// Constructor.
-    explicit ReplicateModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
@@ -153,17 +143,17 @@ protected:
 private:
 
     /// Controls the number of periodic images generated in the X direction.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, numImagesX, setNumImagesX);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{1}, numImagesX, setNumImagesX);
     /// Controls the number of periodic images generated in the Y direction.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, numImagesY, setNumImagesY);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{1}, numImagesY, setNumImagesY);
     /// Controls the number of periodic images generated in the Z direction.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, numImagesZ, setNumImagesZ);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{1}, numImagesZ, setNumImagesZ);
 
     /// Controls whether the size of the simulation box is adjusted to the extended system.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, adjustBoxSize, setAdjustBoxSize);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, adjustBoxSize, setAdjustBoxSize);
 
     /// Controls whether the modifier assigns unique identifiers to particle copies.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, uniqueIdentifiers, setUniqueIdentifiers);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, uniqueIdentifiers, setUniqueIdentifiers);
 };
 
 }   // End of namespace

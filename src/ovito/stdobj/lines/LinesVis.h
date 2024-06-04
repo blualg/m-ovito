@@ -39,28 +39,20 @@ class OVITO_STDOBJ_EXPORT LinesPickInfo : public ObjectPickInfo
     OVITO_CLASS(LinesPickInfo)
 
 public:
-    /// Constructor.
-    // LinesPickInfo(LinesVis* visElement, const Lines* linesObj, std::vector<int>&& subobjToSegmentMap)
-    //     : _visElement(visElement), _linesObj(linesObj), _subobjToSegmentMap(std::move(subobjToSegmentMap))
-    // {
-    // }
 
     /// Constructor.
-    explicit LinesPickInfo(const Lines* linesObj, std::vector<int>&& subobjToSegmentMap)
-        : _linesObj(linesObj), _subobjToSegmentMap(std::move(subobjToSegmentMap))
-    {
+    void initializeObject(const Lines* linesObj, std::vector<int>&& subobjToSegmentMap) {
+        ObjectPickInfo::initializeObject();
+        _linesObj = linesObj;
+        _subobjToSegmentMap = std::move(subobjToSegmentMap);
     }
 
     /// The data object containing the lines.
     const Lines* linesObj() const { return _linesObj; }
 
-    /// Returns the vis element that rendered the lines.
-    // const LinesVis* visElement() const { return _visElement; }
-
     /// \brief Given an sub-object ID returned by the Viewport::pick() method, looks up the
     /// corresponding lines segment.
-    int segmentIndexFromSubObjectID(quint32 subobjID) const
-    {
+    int segmentIndexFromSubObjectID(quint32 subobjID) const {
         if(subobjID < _subobjToSegmentMap.size())
             return _subobjToSegmentMap[subobjID];
         else
@@ -72,10 +64,7 @@ public:
 
 private:
     /// The data object containing the dislocations.
-    OORef<Lines> _linesObj = nullptr;
-
-    /// The vis element that rendered the dislocations.
-    // OORef<LinesVis> _visElement;
+    OORef<Lines> _linesObj;
 
     // This array is used to map sub-object picking IDs back to line segments.
     std::vector<int> _subobjToSegmentMap;
@@ -106,7 +95,7 @@ public:
     Q_ENUM(ColoringMode);
 
     /// Constructor.
-    explicit LinesVis(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Renders the associated data object.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
@@ -131,25 +120,25 @@ private:
                           const std::function<void(const Point3&)>& segmentCallback);
 
     /// Controls the display width of the lines.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.2}, lineWidth, setLineWidth, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the color of the lines.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, lineColor, setLineColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0.6, 0.6, 0.6}), lineColor, setLineColor, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the whether the lines are rendered only up to the current animation time.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, showUpToCurrentTime, setShowUpToCurrentTime);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, showUpToCurrentTime, setShowUpToCurrentTime);
 
     /// Controls the whether the displayed lines are wrapped at periodic boundaries of the simulation cell.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, wrappedLines, setWrappedLines, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, wrappedLines, setWrappedLines, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the whether the displayed lines are wrapped at periodic boundaries of the simulation cell.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, roundedCaps, setRoundedCaps, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, roundedCaps, setRoundedCaps, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the shading mode for lines.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(LinesVis::ShadingMode, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(LinesVis::ShadingMode{FlatShading}, shadingMode, setShadingMode, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls how the lines are being colored.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(LinesVis::ColoringMode, coloringMode, setColoringMode);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(LinesVis::ColoringMode{UniformColoring}, coloringMode, setColoringMode);
 
     /// Transfer function for pseudo-color visualization of a trajectory line property.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);

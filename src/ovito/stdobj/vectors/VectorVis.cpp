@@ -69,16 +69,10 @@ SET_PROPERTY_FIELD_UNITS(VectorVis, offset, WorldParameterUnit);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-VectorVis::VectorVis(ObjectInitializationFlags flags) : DataVis(flags),
-    _reverseArrowDirection(false),
-    _arrowPosition(Base),
-    _arrowColor(1, 1, 0),
-    _arrowWidth(0.5),
-    _scalingFactor(1),
-    _shadingMode(FlatShading),
-    _offset(Vector3::Zero()),
-    _coloringMode(UniformColoring)
+void VectorVis::initializeObject(ObjectInitializationFlags flags)
 {
+    DataVis::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create animation controller for the transparency parameter.
         setTransparencyController(ControllerManager::createFloatController());

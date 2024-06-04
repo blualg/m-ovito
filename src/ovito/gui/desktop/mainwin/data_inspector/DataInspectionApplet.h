@@ -48,7 +48,7 @@ public:
 
     /// Determines the list of data objects that are displayed by the applet.
     virtual std::vector<ConstDataObjectPath> getDataObjectPaths() {
-        return currentState().getObjectsRecursive(_dataObjectClass);
+        return currentState().getObjectsRecursive(*_dataObjectClass);
     }
 
     /// Returns the main window this applet is embedded in.
@@ -90,7 +90,10 @@ public:
 protected:
 
     /// Constructor.
-    explicit DataInspectionApplet(const DataObject::OOMetaClass& dataObjectClass) : _dataObjectClass(dataObjectClass) {}
+    void initializeObject(const DataObject::OOMetaClass& dataObjectClass) {
+        OvitoObject::initializeObject();
+        _dataObjectClass = &dataObjectClass;
+    }
 
     /// Updates the list of data objects displayed in the inspector.
     void updateDataObjectList();
@@ -106,7 +109,7 @@ Q_SIGNALS:
 private:
 
     /// The type of data objects displayed by this applet.
-    const DataObject::OOMetaClass& _dataObjectClass;
+    const DataObject::OOMetaClass* _dataObjectClass = nullptr;
 
     /// The panel hosting this applet.
     DataInspectorPanel* _inspectorPanel = nullptr;

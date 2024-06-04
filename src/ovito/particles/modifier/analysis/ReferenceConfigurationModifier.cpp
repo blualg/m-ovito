@@ -49,18 +49,6 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ReferenceConfigurationModifier, referenceFr
 IMPLEMENT_CREATABLE_OVITO_CLASS(ReferenceConfigurationModifierApplication);
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-ReferenceConfigurationModifier::ReferenceConfigurationModifier(ObjectInitializationFlags flags) : Modifier(flags),
-    _affineMapping(NO_MAPPING),
-    _useReferenceFrameOffset(false),
-    _referenceFrameNumber(0),
-    _referenceFrameOffset(-1),
-    _useMinimumImageConvention(true)
-{
-}
-
-/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool ReferenceConfigurationModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const

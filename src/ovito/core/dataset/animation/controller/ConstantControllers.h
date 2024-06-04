@@ -37,9 +37,6 @@ class OVITO_CORE_EXPORT ConstFloatController : public Controller
 
 public:
 
-    /// Constructor.
-    explicit ConstFloatController(ObjectInitializationFlags flags) : Controller(flags), _value(0) {}
-
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeFloat; }
 
@@ -58,7 +55,7 @@ public:
 private:
 
     /// Stores the constant value of the controller.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, value, setValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, value, setValue);
 };
 
 /**
@@ -69,9 +66,6 @@ class OVITO_CORE_EXPORT ConstIntegerController : public Controller
     OVITO_CLASS(ConstIntegerController)
 
 public:
-
-    /// Constructor.
-    explicit ConstIntegerController(ObjectInitializationFlags flags) : Controller(flags), _value(0) {}
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeInt; }
@@ -91,7 +85,7 @@ public:
 private:
 
     /// Stores the constant value of the controller.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, value, setValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, value, setValue);
 };
 
 /**
@@ -102,9 +96,6 @@ class OVITO_CORE_EXPORT ConstVectorController : public Controller
     OVITO_CLASS(ConstVectorController)
 
 public:
-
-    /// Constructor.
-    explicit ConstVectorController(ObjectInitializationFlags flags) : Controller(flags), _value(Vector3::Zero()) {}
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeVector3; }
@@ -124,7 +115,7 @@ public:
 private:
 
     /// Stores the constant value of the controller.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, value, setValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3{Vector3::Zero()}, value, setValue);
 };
 
 /**
@@ -135,9 +126,6 @@ class OVITO_CORE_EXPORT ConstPositionController : public Controller
     OVITO_CLASS(ConstPositionController)
 
 public:
-
-    /// Constructor.
-    explicit ConstPositionController(ObjectInitializationFlags flags) : Controller(flags), _value(Vector3::Zero()) {}
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypePosition; }
@@ -159,7 +147,7 @@ public:
 private:
 
     /// Stores the constant value of the controller.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3, value, setValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(Vector3{Vector3::Zero()}, value, setValue);
 };
 
 /**
@@ -170,9 +158,6 @@ class OVITO_CORE_EXPORT ConstRotationController : public Controller
     OVITO_CLASS(ConstRotationController)
 
 public:
-
-    /// Constructor.
-    explicit ConstRotationController(ObjectInitializationFlags flags) : Controller(flags), _value(Rotation::Identity()) {}
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeRotation; }
@@ -194,7 +179,7 @@ public:
 private:
 
     /// Stores the constant value of the controller.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(Rotation, value, setValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(Rotation{Rotation::Identity()}, value, setValue);
 };
 
 /**
@@ -205,9 +190,6 @@ class OVITO_CORE_EXPORT ConstScalingController : public Controller
     OVITO_CLASS(ConstScalingController)
 
 public:
-
-    /// Constructor.
-    explicit ConstScalingController(ObjectInitializationFlags flags) : Controller(flags), _value(Scaling::Identity()) {}
 
     /// \brief Returns the value type of the controller.
     virtual ControllerType controllerType() const override { return ControllerTypeScaling; }
@@ -229,7 +211,7 @@ public:
 private:
 
     /// Stores the constant value of the controller.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(Scaling, value, setValue);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(Scaling{Scaling::Identity()}, value, setValue);
 };
 
 }   // End of namespace

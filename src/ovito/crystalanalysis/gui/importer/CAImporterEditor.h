@@ -35,11 +35,6 @@ class CAImporterEditor : public PropertiesEditor
 {
     OVITO_CLASS(CAImporterEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

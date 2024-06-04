@@ -41,10 +41,10 @@ class OVITO_OPENGLRENDERER_EXPORT OpenGLRenderingFrameBuffer : public AbstractRe
 public:
 
     /// Constructor that allocates an offscreen OpenGL framebuffer.
-    explicit OpenGLRenderingFrameBuffer(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, std::shared_ptr<FrameBuffer> outputFrameBuffer);
+    void initializeObject(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, std::shared_ptr<FrameBuffer> outputFrameBuffer);
 
     /// Constructor that uses an existing OpenGL framebuffer.
-    explicit OpenGLRenderingFrameBuffer(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, GLuint framebufferObjectId);
+    void initializeObject(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, GLuint framebufferObjectId);
 
     /// Called when this frame buffer is being destroyed.
     virtual void aboutToBeDeleted() override;
@@ -75,7 +75,7 @@ private:
 
     /// The rendering job this frame buffer belongs to.
     /// This reference keeps alive the job while the OpenGL framebuffer exists.
-    const OORef<OpenGLRenderingJob> _renderingJob;
+    OORef<OpenGLRenderingJob> _renderingJob;
 
     /// The offscreen OpenGL framebuffer.
     std::optional<QOpenGLFramebufferObject> _framebufferObject;

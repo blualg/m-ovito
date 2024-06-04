@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT ObjectStatusDisplay : public ParameterUI
 public:
 
     /// Constructor.
-    explicit ObjectStatusDisplay(PropertiesEditor* parentEditor);
+    void initializeObject(PropertiesEditor* parentEditor);
 
     /// Destructor.
     virtual ~ObjectStatusDisplay();

@@ -59,11 +59,7 @@ class OVITO_CORE_EXPORT DataSet final : public RefTarget
 public:
 
     /// Constructor.
-    explicit DataSet(ObjectInitializationFlags flags);
-
-    /// Is called by OORef<T>::create() right after the object's constructor is finished.
-    /// This is the second stage of the object's two-phase construction process.
-    void completeObjectConstruction(ObjectInitializationFlags initFlags);
+    void initializeObject(ObjectInitializationFlags flags);
 
 #ifdef OVITO_DEBUG
     /// Destructor.
@@ -147,7 +143,7 @@ private:
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, globalObjects, setGlobalObjects, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_ALWAYS_DEEP_COPY);
 
     /// The file path this DataSet has been saved to on disk.
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QString, filePath, setFilePath, PROPERTY_FIELD_NO_UNDO);
+    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(QString{}, filePath, setFilePath, PROPERTY_FIELD_NO_UNDO);
 };
 
 }   // End of namespace

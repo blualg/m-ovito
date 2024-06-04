@@ -43,9 +43,6 @@ class OVITO_STDMOD_EXPORT ColorCodingModifierDelegate : public ModifierDelegate
 
 public:
 
-    /// Abstract class constructor.
-    using ModifierDelegate::ModifierDelegate;
-
     /// Returns the type of input property container that this delegate can process.
     PropertyContainerClassPtr inputContainerClass() const {
         return static_class_cast<PropertyContainer>(&getOOMetaClass().getApplicableObjectClass());
@@ -89,11 +86,6 @@ class LinesColorCodingModifierDelegate : public ColorCodingModifierDelegate
     };
 
     OVITO_CLASS_META(LinesColorCodingModifierDelegate, OOMetaClass)
-
-public:
-
-    /// Constructor.
-    using ColorCodingModifierDelegate::ColorCodingModifierDelegate;
 };
 
 /**
@@ -120,7 +112,7 @@ public:
 public:
 
     /// Constructor.
-    explicit ColorCodingModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
     /// been changed and before the entire pipeline is recomputed.
@@ -182,16 +174,16 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<ColorCodingGradient>, colorGradient, setColorGradient);
 
     /// The input property that is used as data source for the coloring.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, sourceProperty, setSourceProperty);
 
     /// Controls whether the modifier assigns a color only to selected elements.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, colorOnlySelected, setColorOnlySelected);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, colorOnlySelected, setColorOnlySelected);
 
     /// Controls whether the input selection is preserved. If false, the selection is cleared by the modifier.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, keepSelection, setKeepSelection);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, keepSelection, setKeepSelection);
 
     /// Controls whether the value range of the color map is automatically adjusted to the range of input values.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, autoAdjustRange, setAutoAdjustRange);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, autoAdjustRange, setAutoAdjustRange);
 
     friend class ColorCodingModifierDelegate;
 };

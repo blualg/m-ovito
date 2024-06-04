@@ -40,10 +40,12 @@ OVITO_CLASSINFO(VoxelGridSliceModifierDelegate, "DisplayName", "Voxel grids");
 DEFINE_REFERENCE_FIELD(VoxelGridSliceModifierDelegate, surfaceMeshVis);
 
 /******************************************************************************
-* Constructs the object.
+* Constructor.
 ******************************************************************************/
-VoxelGridSliceModifierDelegate::VoxelGridSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags)
+void VoxelGridSliceModifierDelegate::initializeObject(ObjectInitializationFlags flags)
 {
+    SliceModifierDelegate::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the vis element for rendering the mesh.
         setSurfaceMeshVis(OORef<SurfaceMeshVis>::create(flags));

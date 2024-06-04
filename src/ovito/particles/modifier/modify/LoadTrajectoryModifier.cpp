@@ -40,10 +40,12 @@ DEFINE_REFERENCE_FIELD(LoadTrajectoryModifier, trajectorySource);
 SET_PROPERTY_FIELD_LABEL(LoadTrajectoryModifier, trajectorySource, "Trajectory source");
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-LoadTrajectoryModifier::LoadTrajectoryModifier(ObjectInitializationFlags flags) : Modifier(flags)
+void LoadTrajectoryModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    Modifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the file source object, which will be responsible for loading
         // and caching the trajectory data.

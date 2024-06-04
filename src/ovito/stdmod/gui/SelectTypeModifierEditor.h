@@ -36,11 +36,6 @@ class SelectTypeModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(SelectTypeModifierEditor)
 
-public:
-
-    /// Constructor
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

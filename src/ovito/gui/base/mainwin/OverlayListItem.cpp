@@ -32,9 +32,11 @@ DEFINE_REFERENCE_FIELD(OverlayListItem, overlay);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-OverlayListItem::OverlayListItem(ViewportOverlay* overlay, OverlayItemType itemType) :
-    _itemType(itemType)
+void OverlayListItem::initializeObject(ViewportOverlay* overlay, OverlayItemType itemType)
 {
+    RefMaker::initializeObject();
+
+    _itemType = itemType;
     _overlay.set(this, PROPERTY_FIELD(overlay), overlay);
 }
 

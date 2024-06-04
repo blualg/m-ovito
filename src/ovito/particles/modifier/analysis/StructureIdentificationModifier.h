@@ -106,9 +106,6 @@ public:
 
 public:
 
-    /// Constructor.
-    explicit StructureIdentificationModifier(ObjectInitializationFlags flags);
-
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
@@ -164,10 +161,10 @@ private:
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(OORef<ElementType>, structureTypes, setStructureTypes);
 
     /// Controls whether analysis should take into account only selected particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedParticles, setOnlySelectedParticles);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, onlySelectedParticles, setOnlySelectedParticles);
 
     /// Controls whether the modifier colors particles based on their type.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, colorByType, setColorByType);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, colorByType, setColorByType);
 };
 
 }   // End of namespace

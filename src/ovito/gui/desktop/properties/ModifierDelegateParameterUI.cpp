@@ -34,11 +34,13 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(ModifierDelegateParameterUI);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ModifierDelegateParameterUI::ModifierDelegateParameterUI(PropertiesEditor* parentEditor, const OvitoClass& delegateType) :
-    ParameterUI(parentEditor),
-    _comboBox(new QComboBox()),
-    _delegateType(delegateType)
+void ModifierDelegateParameterUI::initializeObject(PropertiesEditor* parentEditor, const OvitoClass& delegateType)
 {
+    ParameterUI::initializeObject(parentEditor);
+
+    _delegateType = &delegateType;
+    _comboBox = new QComboBox();
+
     connect(comboBox(), &QComboBox::textActivated, this, &ModifierDelegateParameterUI::updatePropertyValue);
 
     // Update the list whenever the pipeline input changes.
@@ -87,7 +89,7 @@ void ModifierDelegateParameterUI::updateUI()
     ParameterUI::updateUI();
 
     if(DelegatingModifier* modifier = dynamic_object_cast<DelegatingModifier>(editObject())) {
-        populateComboBox(comboBox(), editor(), modifier, modifier->delegate(), modifier->delegate() ? modifier->delegate()->inputDataObject() : DataObjectReference(), _delegateType);
+        populateComboBox(comboBox(), editor(), modifier, modifier->delegate(), modifier->delegate() ? modifier->delegate()->inputDataObject() : DataObjectReference(), *_delegateType);
     }
 }
 

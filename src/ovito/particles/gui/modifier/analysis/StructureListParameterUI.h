@@ -40,7 +40,7 @@ class OVITO_PARTICLESGUI_EXPORT StructureListParameterUI : public RefTargetListP
 public:
 
     /// Constructor.
-    StructureListParameterUI(PropertiesEditor* parentEditor, bool showCheckBoxes = false);
+    void initializeObject(PropertiesEditor* parentEditor, bool showCheckBoxes = false);
 
     /// This method is called when a new editable object has been activated.
     virtual void resetUI() override;

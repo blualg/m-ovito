@@ -37,9 +37,6 @@ class OVITO_GUI_EXPORT FileImporterEditor : public PropertiesEditor
 
 public:
 
-    /// Constructor.
-    FileImporterEditor() {}
-
     /// This is called by the system when the user has selected a new file to import.
     virtual void inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) {}
 };

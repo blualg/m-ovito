@@ -49,16 +49,12 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ElasticStrainModifier, latticeConstant, Wor
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ElasticStrainModifier, axialRatio, FloatParameterUnit, 0);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-ElasticStrainModifier::ElasticStrainModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags),
-    _inputCrystalStructure(StructureAnalysis::LATTICE_FCC),
-    _calculateDeformationGradients(false),
-    _calculateStrainTensors(true),
-    _latticeConstant(1),
-    _axialRatio(sqrt(8.0/3.0)),
-    _pushStrainTensorsForward(true)
+void ElasticStrainModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    StructureIdentificationModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the structure types.
         ParticleType::PredefinedStructureType predefTypes[] = {

@@ -130,7 +130,7 @@ public:
     };
 
     /// Constructor.
-    explicit Bonds(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Convinience method that returns the bond topology property.
     const Property* getTopology() const { return getProperty(TopologyProperty); }

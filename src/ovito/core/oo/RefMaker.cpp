@@ -48,9 +48,6 @@ void RefMaker::aboutToBeDeleted()
     // Make sure undo recording is not active while deleting a RefTarget.
     OVITO_ASSERT_MSG(!RefTarget::OOClass().isMember(this) || isUndoRecording() == false, "RefMaker::aboutToBeDeleted()", "Cannot delete object from memory while undo recording is active.");
 
-    // Clear all references this object has to other objects.
-    clearAllReferences();
-
     OvitoObject::aboutToBeDeleted();
 }
 

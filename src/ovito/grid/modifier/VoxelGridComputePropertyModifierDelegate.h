@@ -53,11 +53,6 @@ class OVITO_GRID_EXPORT VoxelGridComputePropertyModifierDelegate : public Comput
     };
 
     OVITO_CLASS_META(VoxelGridComputePropertyModifierDelegate, OOMetaClass)
-
-public:
-
-    /// Constructor.
-    using ComputePropertyModifierDelegate::ComputePropertyModifierDelegate;
 };
 
 }   // End of namespace

@@ -56,13 +56,12 @@ SET_MODIFICATION_NODE_TYPE(ComputePropertyModifier, ComputePropertyModificationN
 OVITO_CLASSINFO(ComputePropertyModificationNode, "ClassNameAlias", "ComputePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
-* Constructs a new instance of this class.
+* Constructor.
 ******************************************************************************/
-ComputePropertyModifier::ComputePropertyModifier(ObjectInitializationFlags flags) : DelegatingModifier(flags),
-    _expressions(QStringList("0")),
-    _onlySelectedElements(false),
-    _useMultilineFields(false)
+void ComputePropertyModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    DelegatingModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Let this modifier act on particles by default.
         createDefaultModifierDelegate(ComputePropertyModifierDelegate::OOClass(), QStringLiteral("ParticlesComputePropertyModifierDelegate"));

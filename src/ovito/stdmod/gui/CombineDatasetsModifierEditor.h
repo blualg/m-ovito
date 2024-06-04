@@ -35,11 +35,6 @@ class CombineDatasetsModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(CombineDatasetsModifierEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

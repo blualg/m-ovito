@@ -41,7 +41,7 @@ class OVITO_OPENGLRENDERER_EXPORT OffscreenOpenGLRenderingJob : public OpenGLRen
 public:
 
     /// Constructor creating a new QOffscreenSurface.
-    explicit OffscreenOpenGLRenderingJob(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency);
+    void initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency);
 
     /// Called when this renderer is being destroyed.
     virtual void aboutToBeDeleted() override;

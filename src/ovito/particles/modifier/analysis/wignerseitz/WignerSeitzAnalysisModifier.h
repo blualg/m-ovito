@@ -37,11 +37,6 @@ class OVITO_PARTICLES_EXPORT WignerSeitzAnalysisModifier : public ReferenceConfi
 {
     OVITO_CLASS(WignerSeitzAnalysisModifier)
 
-public:
-
-    /// Constructor.
-    explicit WignerSeitzAnalysisModifier(ObjectInitializationFlags flags);
-
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
@@ -134,10 +129,10 @@ private:
     };
 
     /// Enables per-type occupancy numbers.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, perTypeOccupancy, setPerTypeOccupancy, PROPERTY_FIELD_MEMORIZE)
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, perTypeOccupancy, setPerTypeOccupancy, PROPERTY_FIELD_MEMORIZE)
 
     /// Enables output of displaced atomic configuration instead of reference configuration.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outputCurrentConfig, setOutputCurrentConfig, PROPERTY_FIELD_MEMORIZE)
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, outputCurrentConfig, setOutputCurrentConfig, PROPERTY_FIELD_MEMORIZE)
 };
 
 }   // End of namespace

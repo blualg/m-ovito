@@ -59,7 +59,7 @@ public:
 public:
 
     /// Constructor.
-    explicit PipelineListItem(RefTarget* object, PipelineItemType itemType, PipelineListItem* parent = nullptr);
+    void initializeObject(RefTarget* object, PipelineItemType itemType, PipelineListItem* parent = nullptr);
 
     /// Returns true if this is a sub-object entry.
     bool isSubObject() const { return _parent != nullptr; }

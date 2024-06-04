@@ -147,8 +147,10 @@ protected:
 
 public:
 
-    /// Constructor.
-    explicit RefTarget(ObjectInitializationFlags flags);
+    /// Initialization function.
+    inline void initializeObject(ObjectInitializationFlags flags) {
+        RefMaker::initializeObject();
+    }
 
 #ifdef OVITO_DEBUG
     /// Destructor.

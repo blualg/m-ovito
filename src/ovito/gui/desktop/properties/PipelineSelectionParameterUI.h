@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT PipelineSelectionParameterUI : public PropertyParameterUI
 public:
 
     /// Constructor.
-    PipelineSelectionParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
     virtual ~PipelineSelectionParameterUI();

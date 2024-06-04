@@ -42,9 +42,6 @@ class OVITO_CORE_EXPORT DataCollection : public DataObject
 
 public:
 
-    /// Constructor.
-    explicit DataCollection(ObjectInitializationFlags flags) : DataObject(flags) {}
-
     /// Discards all content of this data collection.
     void clear() { _objects.clear(this, PROPERTY_FIELD(objects)); }
 

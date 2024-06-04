@@ -40,7 +40,7 @@ class OVITO_STDMOD_EXPORT ManualSelectionModifier : public GenericPropertyModifi
 public:
 
     /// Constructor.
-    explicit ManualSelectionModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -82,11 +82,6 @@ protected:
 class OVITO_STDMOD_EXPORT ManualSelectionModificationNode : public ModificationNode
 {
     OVITO_CLASS(ManualSelectionModificationNode)
-
-public:
-
-    /// Constructor.
-    explicit ManualSelectionModificationNode(ObjectInitializationFlags flags) : ModificationNode(flags) {}
 
 private:
 

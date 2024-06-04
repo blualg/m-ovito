@@ -41,7 +41,7 @@ class OVITO_PARTICLES_EXPORT CalculateDisplacementsModifier : public ReferenceCo
 public:
 
     /// Constructor.
-    explicit CalculateDisplacementsModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
 protected:
 

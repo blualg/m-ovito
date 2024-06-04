@@ -66,9 +66,6 @@ class OVITO_STDMOD_EXPORT LinesSliceModifierDelegate : public SliceModifierDeleg
 
 public:
 
-    /// Constructor.
-    explicit LinesSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
-
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
@@ -95,8 +92,6 @@ class OVITO_STDMOD_EXPORT VectorsSliceModifierDelegate : public SliceModifierDel
     OVITO_CLASS_META(VectorsSliceModifierDelegate, VectorsSliceModifierDelegateClass)
 
 public:
-    /// Constructor.
-    explicit VectorsSliceModifierDelegate(ObjectInitializationFlags flags) : SliceModifierDelegate(flags) {}
 
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state,
@@ -126,7 +121,7 @@ class OVITO_STDMOD_EXPORT SliceModifier : public MultiDelegatingModifier
 public:
 
     /// Constructor.
-    explicit SliceModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
@@ -212,19 +207,19 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, widthController, setWidthController);
 
     /// Controls whether the data elements should only be selected instead of being deleted.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, createSelection, setCreateSelection);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, createSelection, setCreateSelection);
 
     /// Controls whether the plane's orientation should be reversed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, inverse, setInverse);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, inverse, setInverse);
 
     /// Controls whether the modifier should only be applied to the currently selected data elements.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, applyToSelection, setApplyToSelection);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, applyToSelection, setApplyToSelection);
 
     /// Enables the visualization of the cutting plane.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, enablePlaneVisualization, setEnablePlaneVisualization);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, enablePlaneVisualization, setEnablePlaneVisualization);
 
     /// Controls whether the plane is specified in reduced cell coordinates (Miller indices).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, reducedCoordinates, setReducedCoordinates);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, reducedCoordinates, setReducedCoordinates);
 
     /// The vis element for plane.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<TriangleMeshVis>, planeVis, setPlaneVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);

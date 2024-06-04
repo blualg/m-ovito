@@ -65,7 +65,7 @@ public:
     };
 
     /// Constructor.
-    explicit Angles(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Convinience method that returns the angle topology property.
     const Property* getTopology() const { return getProperty(TopologyProperty); }

@@ -77,13 +77,15 @@ static void fillSyclBufferZero(sycl::buffer<DataBuffer::Byte>& dst, size_t nbyte
 /******************************************************************************
 * Constructor allocating a buffer array with given size and data layout.
 ******************************************************************************/
-DataBuffer::DataBuffer(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, QStringList componentNames) :
-    DataObject(flags),
-    _dataType(dataType),
-    _dataTypeSize(QMetaType(dataType).sizeOf()),
-    _componentCount(componentCount),
-    _componentNames(std::move(componentNames))
+void DataBuffer::initializeObject(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, QStringList componentNames)
 {
+    DataObject::initializeObject(flags);
+
+    _dataType = dataType;
+    _dataTypeSize = QMetaType(dataType).sizeOf();
+    _componentCount = componentCount;
+    _componentNames = std::move(componentNames);
+
     _stride = _dataTypeSize * _componentCount;
     OVITO_ASSERT(dataType == Int8 || dataType == Int32 || dataType == Int64 || dataType == Float32 || dataType == Float64);
     OVITO_ASSERT(_dataTypeSize > 0);

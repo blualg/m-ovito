@@ -70,13 +70,14 @@ public:
         IsExteriorProperty,
     };
 
-    /// \brief Constructor.
-    explicit SurfaceMeshRegions(ObjectInitializationFlags flags) : PropertyContainer(flags) {
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags) {
+        PropertyContainer::initializeObject(flags);
         // Assign the default data object identifier.
         setIdentifier(OOClass().pythonName());
     }
 
-     /// Override method to prevent a direct deletion of elements from this container as it would leave the SurfaceMesh in an inconsistent state.
+    /// Override method to prevent a direct deletion of elements from this container as it would leave the SurfaceMesh in an inconsistent state.
     virtual size_t deleteElements(ConstDataBufferPtr selection, size_t selectionCount = std::numeric_limits<size_t>::max()) override {
        OVITO_ASSERT(false);
         throw Exception(tr("Deleting regions from a SurfaceMesh is not supported via this method. Call SurfaceMesh.delete_regions() on the parent object instead."));

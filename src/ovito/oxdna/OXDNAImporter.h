@@ -59,9 +59,6 @@ class OVITO_OXDNA_EXPORT OXDNAImporter : public ParticleImporter
 
 public:
 
-    /// Constructor.
-    using ParticleImporter::ParticleImporter;
-
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
         activateCLocale();
@@ -115,7 +112,7 @@ private:
     /// The configuration file is the primary file passed to the file importer by the system.
     /// This extra field stores the URL of the oxDNA topology file belonging to the configuration file
     /// if explicitly specified by the user.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QUrl, topologyFileUrl, setTopologyFileUrl);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QUrl{}, topologyFileUrl, setTopologyFileUrl);
 };
 
 }   // End of namespace

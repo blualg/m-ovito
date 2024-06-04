@@ -39,11 +39,6 @@ class FileColumnParticleExporterEditor : public PropertiesEditor
     OVITO_CLASS(FileColumnParticleExporterEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

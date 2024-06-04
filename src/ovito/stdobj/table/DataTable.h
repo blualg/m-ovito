@@ -64,7 +64,7 @@ public:
     Q_ENUM(PlotMode);
 
     /// Constructor.
-    explicit DataTable(ObjectInitializationFlags flags, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
+    void initializeObject(ObjectInitializationFlags flags, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
 
     /// Assigns a property array as x-coordinates of the data points (for the purpose of plotting).
     void setX(const Property* property);
@@ -80,19 +80,19 @@ public:
 private:
 
     /// The lower bound of the x-interval of the histogram if data points have no explicit x-coordinates.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, intervalStart, setIntervalStart);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, intervalStart, setIntervalStart);
 
     /// The upper bound of the x-interval of the histogram if data points have no explicit x-coordinates.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, intervalEnd, setIntervalEnd);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, intervalEnd, setIntervalEnd);
 
     /// The label of the x-axis (optional).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, axisLabelX, setAxisLabelX);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, axisLabelX, setAxisLabelX);
 
     /// The label of the y-axis (optional).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, axisLabelY, setAxisLabelY);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, axisLabelY, setAxisLabelY);
 
     /// The plotting mode for this data table.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PlotMode, plotMode, setPlotMode);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PlotMode{Line}, plotMode, setPlotMode);
     DECLARE_SHADOW_PROPERTY_FIELD(plotMode);
 
     /// Property containing the X coordinates of data points for plotting.

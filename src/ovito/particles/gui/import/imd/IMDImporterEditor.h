@@ -35,11 +35,6 @@ class IMDImporterEditor : public FileImporterEditor
 {
     OVITO_CLASS(IMDImporterEditor)
 
-public:
-
-    /// Constructor.
-    using FileImporterEditor::FileImporterEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

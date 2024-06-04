@@ -35,11 +35,6 @@ class CommonNeighborAnalysisModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(CommonNeighborAnalysisModifierEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

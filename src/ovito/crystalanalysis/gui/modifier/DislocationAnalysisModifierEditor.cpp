@@ -162,9 +162,10 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DislocationTypeListParameterUI::DislocationTypeListParameterUI(PropertiesEditor* parent)
-    : RefTargetListParameterUI(parent, PROPERTY_FIELD(MicrostructurePhase::burgersVectorFamilies))
+void DislocationTypeListParameterUI::initializeObject(PropertiesEditor* parent)
 {
+    RefTargetListParameterUI::initializeObject(parent, PROPERTY_FIELD(MicrostructurePhase::burgersVectorFamilies));
+
     connect(tableWidget(220), &QTableWidget::doubleClicked, this, &DislocationTypeListParameterUI::onDoubleClickDislocationType);
     tableWidget()->setAutoScroll(false);
 }

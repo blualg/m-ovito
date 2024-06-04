@@ -52,20 +52,6 @@ SET_PROPERTY_FIELD_LABEL(AtomicStrainModifier, calculateRotations, "Output rotat
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AtomicStrainModifier, cutoff, WorldParameterUnit, 0);
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-AtomicStrainModifier::AtomicStrainModifier(ObjectInitializationFlags flags) : ReferenceConfigurationModifier(flags),
-    _cutoff(3),
-    _calculateDeformationGradients(false),
-    _calculateStrainTensors(false),
-    _calculateNonaffineSquaredDisplacements(false),
-    _calculateStretchTensors(false),
-    _calculateRotations(false),
-    _selectInvalidParticles(true)
-{
-}
-
-/******************************************************************************
 * Adopts existing computation results for an interactive pipeline evaluation.
 ******************************************************************************/
 Future<PipelineFlowState> AtomicStrainModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState&& output, const PipelineFlowState& cachedState)

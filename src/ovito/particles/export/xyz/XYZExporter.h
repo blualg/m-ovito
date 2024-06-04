@@ -60,9 +60,6 @@ public:
 
 public:
 
-    /// Constructor.
-    explicit XYZExporter(ObjectInitializationFlags flags) : FileColumnParticleExporter(flags), _subFormat(ExtendedFormat) {}
-
     /// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
     virtual bool supportsMultiFrameFiles() const override { return true; }
 
@@ -74,7 +71,7 @@ protected:
 private:
 
     /// Selects the kind of XYZ file to write.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(XYZSubFormat, subFormat, setSubFormat, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(XYZSubFormat{ExtendedFormat}, subFormat, setSubFormat, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

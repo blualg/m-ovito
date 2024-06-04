@@ -32,9 +32,10 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(PipelineSelectionParameterUI);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PipelineSelectionParameterUI::PipelineSelectionParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-    PropertyParameterUI(parentEditor, propField)
+void PipelineSelectionParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
     OVITO_ASSERT(isReferenceFieldUI() && !propertyField()->isVector());
 
     PopupUpdateComboBox* comboBox = new PopupUpdateComboBox();

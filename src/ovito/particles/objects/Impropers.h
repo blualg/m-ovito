@@ -65,7 +65,7 @@ public:
     };
 
     /// Constructor.
-    explicit Impropers(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Convinience method that returns the improper topology property.
     const Property* getTopology() const { return getProperty(TopologyProperty); }

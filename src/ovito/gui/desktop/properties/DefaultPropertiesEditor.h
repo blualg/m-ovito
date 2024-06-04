@@ -35,11 +35,6 @@ class OVITO_GUI_EXPORT DefaultPropertiesEditor : public PropertiesEditor
 {
     OVITO_CLASS(DefaultPropertiesEditor)
 
-public:
-
-    /// Constructor.
-    explicit DefaultPropertiesEditor() = default;
-
 protected:
 
     /// Creates the user interface controls for the editor.

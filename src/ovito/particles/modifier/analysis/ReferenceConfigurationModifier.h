@@ -61,9 +61,6 @@ public:
 
 public:
 
-    /// Constructor.
-    explicit ReferenceConfigurationModifier(ObjectInitializationFlags flags);
-
     /// Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
     virtual void preEvaluationCheck(const PipelineEvaluationRequest& request) const override;
 
@@ -172,19 +169,19 @@ protected:
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<PipelineNode>, referenceConfiguration, setReferenceConfiguration, PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// Controls the whether the homogeneous deformation of the simulation cell is eliminated from the calculated displacement vectors.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineMappingType, affineMapping, setAffineMapping, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineMappingType{NO_MAPPING}, affineMapping, setAffineMapping, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the whether the minimum image convention is used when calculating displacements.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useMinimumImageConvention, setUseMinimumImageConvention);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, useMinimumImageConvention, setUseMinimumImageConvention);
 
     /// Specify reference frame relative to current frame.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, useReferenceFrameOffset, setUseReferenceFrameOffset);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useReferenceFrameOffset, setUseReferenceFrameOffset);
 
     /// Absolute frame number from reference file to use when calculating displacement vectors.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, referenceFrameNumber, setReferenceFrameNumber);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, referenceFrameNumber, setReferenceFrameNumber);
 
     /// Relative frame offset for reference coordinates.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, referenceFrameOffset, setReferenceFrameOffset, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{-1}, referenceFrameOffset, setReferenceFrameOffset, PROPERTY_FIELD_MEMORIZE);
 };
 
 /**

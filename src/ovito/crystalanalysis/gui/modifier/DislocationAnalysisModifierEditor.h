@@ -42,7 +42,7 @@ class DislocationTypeListParameterUI : public RefTargetListParameterUI
 public:
 
     /// Constructor.
-    explicit DislocationTypeListParameterUI(PropertiesEditor* parent);
+    void initializeObject(PropertiesEditor* parent);
 
     /// This method is called when a new editable object has been activated.
     virtual void resetUI() override {
@@ -103,11 +103,6 @@ private:
 class DislocationAnalysisModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(DislocationAnalysisModifierEditor)
-
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
 
 protected:
 

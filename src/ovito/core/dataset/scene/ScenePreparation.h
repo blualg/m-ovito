@@ -44,13 +44,13 @@ class OVITO_CORE_EXPORT ScenePreparation : public QObject, public RefMaker
 public:
 
     /// Constructor.
-    explicit ScenePreparation(UserInterface& userInterface, Scene* scene = nullptr, bool autoRestart = true);
+    void initializeObject(UserInterface& userInterface, Scene* scene = nullptr, bool autoRestart = true);
 
-    /// This method gets called by OORef<T>::create() right after the object's constructor is finished.
-    void completeObjectConstruction(ObjectInitializationFlags initFlags);
+    /// This method gets called by OORef<T>::create() right after the object has been fully initialized.
+    void completeObjectInitialization();
 
     /// Returns the abstract user interface in which this object operates.
-    UserInterface& userInterface() const { return _userInterface; }
+    UserInterface& userInterface() const { return *_userInterface; }
 
     /// Returns a future that gets fulfilled once the scene is ready.
     SharedFuture<void> future();
@@ -116,7 +116,7 @@ private:
     DECLARE_REFERENCE_FIELD(SelectionSet*, selectionSet);
 
     /// The abstract user interface in which this object operates.
-    UserInterface& _userInterface;
+    UserInterface* _userInterface;
 
     /// The animation frame at which the scene was made ready. This is used to detect time changes.
     int _completedFrame;

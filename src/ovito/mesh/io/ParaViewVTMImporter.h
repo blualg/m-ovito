@@ -99,9 +99,6 @@ class OVITO_MESH_EXPORT ParaViewVTMImporter : public FileSourceImporter
 
 public:
 
-    /// Constructor.
-    using FileSourceImporter::FileSourceImporter;
-
     /// Loads the data for the given frame from the external file.
     virtual Future<PipelineFlowState> loadFrame(const LoadOperationRequest& request) override;
 
@@ -118,7 +115,7 @@ private:
 private:
 
     /// Controls whether all surface meshes are merged into a single mesh during import.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, uniteMeshes, setUniteMeshes, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, uniteMeshes, setUniteMeshes, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

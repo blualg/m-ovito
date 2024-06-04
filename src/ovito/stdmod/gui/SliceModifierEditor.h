@@ -41,11 +41,6 @@ class SliceModifierEditor : public PropertiesEditor
     OVITO_CLASS(SliceModifierEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.
@@ -88,7 +83,10 @@ class PickPlanePointsInputMode : public ViewportInputMode, public ViewportGizmo
 public:
 
     /// Constructor.
-    explicit PickPlanePointsInputMode(SliceModifierEditor* editor) : _editor(editor) {}
+    void initializeObject(SliceModifierEditor* editor) {
+        ViewportInputMode::initializeObject();
+        _editor = editor;
+    }
 
     /// Handles the mouse events for a Viewport.
     virtual void mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
@@ -122,7 +120,7 @@ private:
     bool _hasPreliminaryPoint = false;
 
     /// The properties editor of the SliceModifier.
-    SliceModifierEditor* _editor;
+    SliceModifierEditor* _editor = nullptr;
 };
 
 }   // End of namespace

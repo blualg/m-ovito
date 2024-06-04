@@ -40,13 +40,6 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(ActiveObject, isEnabled, ReferenceEvent::TargetE
 SET_PROPERTY_FIELD_CHANGE_EVENT(ActiveObject, title, ReferenceEvent::TitleChanged);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-ActiveObject::ActiveObject(ObjectInitializationFlags flags) : RefTarget(flags), _isEnabled(true)
-{
-}
-
-/******************************************************************************
 * Is called when the value of a non-animatable property field of this RefMaker has changed.
 ******************************************************************************/
 void ActiveObject::propertyChanged(const PropertyFieldDescriptor* field)

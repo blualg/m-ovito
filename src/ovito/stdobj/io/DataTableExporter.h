@@ -53,9 +53,6 @@ class OVITO_STDOBJ_EXPORT DataTableExporter : public FileExporter
 
 public:
 
-    /// \brief Constructs a new instance of this class.
-    explicit DataTableExporter(ObjectInitializationFlags flags) : FileExporter(flags) {}
-
     /// \brief Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
         return { &DataTable::OOClass() };

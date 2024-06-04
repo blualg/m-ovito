@@ -32,9 +32,12 @@ DEFINE_REFERENCE_FIELD(ParameterUI, editObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ParameterUI::ParameterUI(PropertiesEditor* editor) : _editor(editor)
+void ParameterUI::initializeObject(PropertiesEditor* editor)
 {
+    RefMaker::initializeObject();
+
     OVITO_ASSERT(editor);
+    _editor = editor;
 
     if(editor->editObject())
         setEditObject(editor->editObject());

@@ -47,13 +47,12 @@ SET_PROPERTY_FIELD_LABEL(ElementType, enabled, "Enabled");
 SET_PROPERTY_FIELD_LABEL(ElementType, ownerProperty, "Property");
 
 /******************************************************************************
-* Constructs a new ElementType.
+* Constructor.
 ******************************************************************************/
-ElementType::ElementType(ObjectInitializationFlags flags) : DataObject(flags),
-    _numericId(0),
-    _color(1,1,1),
-    _enabled(true)
+void ElementType::initializeObject(ObjectInitializationFlags flags)
 {
+    DataObject::initializeObject(flags);
+
     setIdentifier(QString::number(numericId()));
 }
 

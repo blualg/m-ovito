@@ -39,7 +39,7 @@ class OVITO_GUI_EXPORT VariantComboBoxParameterUI : public PropertyParameterUI
 public:
 
     /// Constructor.
-    VariantComboBoxParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
     virtual ~VariantComboBoxParameterUI();

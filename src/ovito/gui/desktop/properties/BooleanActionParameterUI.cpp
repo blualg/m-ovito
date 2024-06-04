@@ -29,11 +29,14 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(BooleanActionParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField property.
+* Constructor.
 ******************************************************************************/
-BooleanActionParameterUI::BooleanActionParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, QAction* action) :
-    PropertyParameterUI(parentEditor, propField), _action(action)
+void BooleanActionParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, QAction* action)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
+    _action = action;
+
     OVITO_ASSERT(isPropertyFieldUI());
     OVITO_ASSERT(action != nullptr);
     action->setCheckable(true);

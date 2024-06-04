@@ -49,8 +49,9 @@ void MicrostructurePhaseEditor::createUI(const RolloutInsertionParameters& rollo
     // give the items a color.
     class CustomRefTargetListParameterUI : public RefTargetListParameterUI {
     public:
-        CustomRefTargetListParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField)
-            : RefTargetListParameterUI(parentEditor, refField, RolloutInsertionParameters(), nullptr) {}
+        void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField) {
+            RefTargetListParameterUI::initializeObject(parentEditor, refField, RolloutInsertionParameters(), nullptr);
+        }
     protected:
 
         virtual QVariant getItemData(RefTarget* target, const QModelIndex& index, int role) override {

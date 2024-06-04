@@ -60,9 +60,6 @@ public:
 
 protected:
 
-    /// Abstract class constructor.
-    using ModifierDelegate::ModifierDelegate;
-
     /// Creates and initializes the expression evaluator object.
     virtual std::unique_ptr<PropertyExpressionEvaluator> initializeExpressionEvaluator(const QStringList& expressions, const PipelineFlowState& inputState, const ConstDataObjectPath& containerPath, int animationFrame);
 
@@ -92,7 +89,7 @@ class OVITO_STDMOD_EXPORT ExpressionSelectionModifier : public DelegatingModifie
 public:
 
     /// Constructor.
-    explicit ExpressionSelectionModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
     /// been changed and before the entire pipeline is recomputed.
@@ -124,7 +121,7 @@ protected:
 private:
 
     /// The user expression for selecting elements.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, expression, setExpression);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, expression, setExpression);
 
     /// The list of input variables during the last evaluation.
     QStringList _variableNames;

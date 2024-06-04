@@ -40,16 +40,6 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DataTablePlotExporter, plotHeight, FloatPar
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DataTablePlotExporter, plotDPI, IntegerParameterUnit, 1);
 
 /******************************************************************************
-* Constructs a new instance of the class.
-******************************************************************************/
-DataTablePlotExporter::DataTablePlotExporter(ObjectInitializationFlags flags) : FileExporter(flags),
-    _plotWidth(150),
-    _plotHeight(100),
-    _plotDPI(200)
-{
-}
-
-/******************************************************************************
  * This is called once for every output file to be written.
  *****************************************************************************/
 void DataTablePlotExporter::openOutputFile(const QString& filePath, int numberOfFrames)

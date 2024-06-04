@@ -61,7 +61,7 @@ public:
     Q_ENUM(MergeAlgorithm);
 
     /// Constructor.
-    explicit GrainSegmentationModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
@@ -92,28 +92,28 @@ protected:
 private:
 
     /// The merging algorithm to use.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(MergeAlgorithm, mergeAlgorithm, setMergeAlgorithm);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(MergeAlgorithm{GraphClusteringAutomatic}, mergeAlgorithm, setMergeAlgorithm);
 
     /// Controls whether to handle coherent crystal interfaces.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, handleCoherentInterfaces, setHandleCoherentInterfaces);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, handleCoherentInterfaces, setHandleCoherentInterfaces);
 
     /// Controls the amount of noise allowed inside a grain.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, mergingThreshold, setMergingThreshold);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0.0}, mergingThreshold, setMergingThreshold);
 
     /// The minimum number of crystalline atoms per grain.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(int, minGrainAtomCount, setMinGrainAtomCount);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(int{100}, minGrainAtomCount, setMinGrainAtomCount);
 
     /// Controls whether to adopt orphan atoms
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, orphanAdoption, setOrphanAdoption, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, orphanAdoption, setOrphanAdoption, PROPERTY_FIELD_MEMORIZE);
 
     /// The visual element for rendering the bonds created by the modifier.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondsVis>, bondsVis, setBondsVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the output of bonds by the modifier.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, outputBonds, setOutputBonds);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, outputBonds, setOutputBonds);
 
     /// Controls the coloring of particles by the modifier.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, colorParticlesByGrain, setColorParticlesByGrain, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, colorParticlesByGrain, setColorParticlesByGrain, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

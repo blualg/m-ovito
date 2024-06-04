@@ -36,7 +36,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(GSDExporter);
 /******************************************************************************
  * Constructor (needed because GSDFile is forward-declared in the .h file).
  *****************************************************************************/
-GSDExporter::GSDExporter(ObjectInitializationFlags flags) : ParticleExporter(flags)
+GSDExporter::GSDExporter()
 {
 }
 

@@ -54,11 +54,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshVerticesColorCodingModifierDelegate : publ
 
     OVITO_CLASS_META(SurfaceMeshVerticesColorCodingModifierDelegate, OOMetaClass)
 
-public:
-
-    /// Constructor.
-    explicit SurfaceMeshVerticesColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
-
 protected:
 
     /// \brief returns the ID of the standard property that will receive the computed colors.
@@ -90,11 +85,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshFacesColorCodingModifierDelegate : public 
 
     OVITO_CLASS_META(SurfaceMeshFacesColorCodingModifierDelegate, OOMetaClass)
 
-public:
-
-    /// Constructor.
-    explicit SurfaceMeshFacesColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
-
 protected:
 
     /// \brief returns the ID of the standard property that will receive the computed colors.
@@ -125,11 +115,6 @@ class OVITO_MESHMOD_EXPORT SurfaceMeshRegionsColorCodingModifierDelegate : publi
     };
 
     OVITO_CLASS_META(SurfaceMeshRegionsColorCodingModifierDelegate, OOMetaClass)
-
-public:
-
-    /// Constructor.
-    explicit SurfaceMeshRegionsColorCodingModifierDelegate(ObjectInitializationFlags flags) : ColorCodingModifierDelegate(flags) {}
 
 protected:
 

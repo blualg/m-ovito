@@ -29,11 +29,13 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(SubObjectParameterUI);
 
 /******************************************************************************
-* The constructor.
+* Constructor.
 ******************************************************************************/
-SubObjectParameterUI::SubObjectParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams)
-    : PropertyParameterUI(parentEditor, refField), _rolloutParams(rolloutParams)
+void SubObjectParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams)
 {
+    PropertyParameterUI::initializeObject(parentEditor, refField);
+
+    _rolloutParams = rolloutParams;
 }
 
 /******************************************************************************

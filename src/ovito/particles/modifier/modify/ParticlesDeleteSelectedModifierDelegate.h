@@ -52,9 +52,6 @@ class ParticlesDeleteSelectedModifierDelegate : public DeleteSelectedModifierDel
 
 public:
 
-    /// Constructor.
-    using DeleteSelectedModifierDelegate::DeleteSelectedModifierDelegate;
-
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
@@ -82,9 +79,6 @@ class BondsDeleteSelectedModifierDelegate : public DeleteSelectedModifierDelegat
     OVITO_CLASS_META(BondsDeleteSelectedModifierDelegate, OOMetaClass)
 
 public:
-
-    /// Constructor.
-    using DeleteSelectedModifierDelegate::DeleteSelectedModifierDelegate;
 
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;

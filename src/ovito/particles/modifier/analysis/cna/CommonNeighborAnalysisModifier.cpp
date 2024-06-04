@@ -50,12 +50,12 @@ SET_PROPERTY_FIELD_LABEL(CommonNeighborAnalysisModifier, mode, "Mode");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CommonNeighborAnalysisModifier, cutoff, WorldParameterUnit, 0);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-CommonNeighborAnalysisModifier::CommonNeighborAnalysisModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags),
-    _cutoff(3.2),
-    _mode(AdaptiveCutoffMode)
+void CommonNeighborAnalysisModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    StructureIdentificationModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the structure types.
         createStructureType(OTHER, ParticleType::PredefinedStructureType::OTHER);

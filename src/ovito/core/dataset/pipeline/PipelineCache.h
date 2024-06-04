@@ -40,7 +40,7 @@ class OVITO_CORE_EXPORT PipelineCache final
 public:
 
     /// Constructor.
-    PipelineCache(RefTarget* owner, bool enableCaching = true);
+    PipelineCache(RefTarget* owner);
 
     /// Destructor.
     ~PipelineCache();

@@ -50,20 +50,6 @@ class OVITO_PARTICLES_EXPORT LAMMPSDataExporter : public ParticleExporter
 
     OVITO_CLASS_META(LAMMPSDataExporter, OOMetaClass)
 
-public:
-
-    /// Constructor.
-    explicit LAMMPSDataExporter(ObjectInitializationFlags flags)
-        : ParticleExporter(flags),
-          _atomStyle(LAMMPSDataImporter::AtomStyle_Atomic),
-          _omitMassesSection(false),
-          _ignoreParticleIdentifiers(false),
-          _exportTypeNames(false),
-          _generateConsecutiveTypeIds(false),
-          _restrictedTriclinic(true)
-    {
-    }
-
 protected:
 
     /// Writes the particles of one animation frame to the current output file.
@@ -72,27 +58,27 @@ protected:
 private:
 
     /// Selects the kind of LAMMPS data file to write.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(LAMMPSDataImporter::LAMMPSAtomStyle, atomStyle, setAtomStyle, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(LAMMPSDataImporter::LAMMPSAtomStyle{LAMMPSDataImporter::AtomStyle_Atomic}, atomStyle, setAtomStyle, PROPERTY_FIELD_MEMORIZE);
 
     /// The list of sub-styles if the hybrid atom style is used.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(std::vector<LAMMPSDataImporter::LAMMPSAtomStyle>, atomSubStyles, setAtomSubStyles);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(std::vector<LAMMPSDataImporter::LAMMPSAtomStyle>{}, atomSubStyles, setAtomSubStyles);
 
     /// Flag that allows the user to suppress the "Masses" file section.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, omitMassesSection, setOmitMassesSection);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, omitMassesSection, setOmitMassesSection);
 
     /// Flag that allows the user to suppress export of existing particle identifiers.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, ignoreParticleIdentifiers, setIgnoreParticleIdentifiers);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, ignoreParticleIdentifiers, setIgnoreParticleIdentifiers);
 
     /// Exports the type names of particles, bonds, angles, etc.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, exportTypeNames, setExportTypeNames);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, exportTypeNames, setExportTypeNames);
 
     /// Controls whether new consecutive IDs are assigned to particle/bond/... types during export.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, generateConsecutiveTypeIds, setGenerateConsecutiveTypeIds);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, generateConsecutiveTypeIds, setGenerateConsecutiveTypeIds);
 
     /// Controls the triclinic data file format.
     /// If true, the triclinic box is restricted (old lammps format).
     /// If false, the new triclinic box format is used.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, restrictedTriclinic, setRestrictedTriclinic, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, restrictedTriclinic, setRestrictedTriclinic, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

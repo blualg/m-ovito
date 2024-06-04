@@ -62,9 +62,6 @@ public:
         NEXT_AVAILABLE_EVENT_ID
     };
 
-    /// Constructor.
-    using RefTarget::RefTarget;
-
     /// \brief Asks the object for its validity interval at the given time.
     /// \param time The animation time at which the validity interval should be computed.
     /// \return The maximum time interval that contains \a time and during which the object is valid.
@@ -193,12 +190,6 @@ public:
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
     virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const;
 
-    /// Sets the PipelineNode that created this data object.
-    template<typename T>
-    void setCreatedByNode(const T* node) {
-        setCreatedByNode(node ? std::static_pointer_cast<const RefTarget>(node->shared_from_this()) : OOWeakRef<const RefTarget>{});
-    }
-
 #ifdef OVITO_DEBUG
     /// Enables or disables reference tracking for this DataObject for debugging purposes.
     void setReferenceTrackingEnabled(bool enabled) const { _referenceTrackingEnabled.store(enabled, std::memory_order_seq_cst); }
@@ -250,14 +241,14 @@ private:
 private:
 
     /// The unique identifier of the data object by which it can be referred to from Python, for example.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, identifier, setIdentifier);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, identifier, setIdentifier);
 
     /// The attached visual elements that are responsible for rendering this object's data.
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, visElements, setVisElements, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_MEMORIZE);
 
     /// The PipelineNode that created this data object (may be null).
     /// Note: Weak reference is to a generic RefTarget, because the PipelineNode class will be defined later in the code.
-    DECLARE_RUNTIME_PROPERTY_FIELD(OOWeakRef<const RefTarget>, createdByNode, setCreatedByNode);
+    DECLARE_RUNTIME_PROPERTY_FIELD(OOWeakRef<const RefTarget>{}, createdByNode, setCreatedByNode);
 
     /// The attached editable proxy object.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, editableProxy, setEditableProxy, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);

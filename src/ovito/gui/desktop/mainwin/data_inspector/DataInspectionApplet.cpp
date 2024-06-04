@@ -62,7 +62,7 @@ const PipelineFlowState& DataInspectionApplet::currentState() const
 ******************************************************************************/
 bool DataInspectionApplet::appliesTo(const DataCollection& data)
 {
-    return data.containsObjectRecursive(_dataObjectClass);
+    return data.containsObjectRecursive(*_dataObjectClass);
 }
 
 /******************************************************************************

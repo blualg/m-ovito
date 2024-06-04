@@ -41,9 +41,6 @@ class OVITO_CORE_EXPORT TextLabelOverlay : public ViewportOverlay
 
 public:
 
-    /// Constructor.
-    explicit TextLabelOverlay(ObjectInitializationFlags flags);
-
     /// Lets the overlay paint its contents into the framebuffer.
     virtual void render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene) override;
 
@@ -69,34 +66,34 @@ private:
     void renderImplementation(FrameGraph& frameGraph, const QRect& targetRect, const PipelineFlowState& flowState);
 
     /// The corner of the viewport where the label is shown in.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{Qt::AlignLeft | Qt::AlignTop}, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the horizontal offset of label position.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, offsetX, setOffsetX, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, offsetX, setOffsetX, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the vertical offset of label position.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, offsetY, setOffsetY, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0}, offsetY, setOffsetY, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the label font.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QFont, font, setFont, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(QFont{}, font, setFont, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the label font size.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, fontSize, setFontSize, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.02}, fontSize, setFontSize, PROPERTY_FIELD_MEMORIZE);
 
     /// The label's text.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, labelText, setLabelText);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{tr("Text label")}, labelText, setLabelText);
 
     /// The display color of the label.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, textColor, setTextColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0,0,0.5}), textColor, setTextColor, PROPERTY_FIELD_MEMORIZE);
 
     /// The text outline color.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Color, outlineColor, setOutlineColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{1,1,1}), outlineColor, setOutlineColor, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the outlining of the font.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the formatting of floating-point variable values referenced in the text string.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, valueFormatString, setValueFormatString);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{"%.6g"}, valueFormatString, setValueFormatString);
 };
 
 }   // End of namespace

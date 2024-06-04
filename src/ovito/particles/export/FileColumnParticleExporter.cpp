@@ -31,8 +31,10 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(FileColumnParticleExporter);
 /******************************************************************************
 * Constructor.
 *****************************************************************************/
-FileColumnParticleExporter::FileColumnParticleExporter(ObjectInitializationFlags flags) : ParticleExporter(flags)
+void FileColumnParticleExporter::initializeObject(ObjectInitializationFlags flags)
 {
+    ParticleExporter::initializeObject(flags);
+
 #ifndef OVITO_DISABLE_QSETTINGS
     if(ExecutionContext::isInteractive()) {
         // Restore last output column mapping.

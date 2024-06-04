@@ -35,11 +35,6 @@ class AmbientOcclusionModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(AmbientOcclusionModifierEditor)
 
-public:
-
-    /// Default constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

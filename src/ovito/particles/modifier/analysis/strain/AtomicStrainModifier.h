@@ -37,11 +37,6 @@ class OVITO_PARTICLES_EXPORT AtomicStrainModifier : public ReferenceConfiguratio
 {
     OVITO_CLASS(AtomicStrainModifier)
 
-public:
-
-    /// Constructor.
-    explicit AtomicStrainModifier(ObjectInitializationFlags flags);
-
 protected:
 
     /// Creates a computation engine that will compute the modifier's results.
@@ -133,25 +128,25 @@ private:
     };
 
     /// Controls the cutoff radius for the neighbor lists.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.0}, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the whether atomic deformation gradient tensors should be computed and stored.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, calculateDeformationGradients, setCalculateDeformationGradients);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, calculateDeformationGradients, setCalculateDeformationGradients);
 
     /// Controls the whether atomic strain tensors should be computed and stored.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, calculateStrainTensors, setCalculateStrainTensors);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, calculateStrainTensors, setCalculateStrainTensors);
 
     /// Controls the whether non-affine displacements should be computed and stored.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, calculateNonaffineSquaredDisplacements, setCalculateNonaffineSquaredDisplacements);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, calculateNonaffineSquaredDisplacements, setCalculateNonaffineSquaredDisplacements);
 
     /// Controls the whether local rotations should be computed and stored.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, calculateRotations, setCalculateRotations);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, calculateRotations, setCalculateRotations);
 
     /// Controls the whether atomic stretch tensors should be computed and stored.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, calculateStretchTensors, setCalculateStretchTensors);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, calculateStretchTensors, setCalculateStretchTensors);
 
     /// Controls the whether particles, for which the strain tensor could not be computed, are selected.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, selectInvalidParticles, setSelectInvalidParticles);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, selectInvalidParticles, setSelectInvalidParticles);
 };
 
 }   // End of namespace

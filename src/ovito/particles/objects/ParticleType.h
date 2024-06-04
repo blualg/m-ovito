@@ -85,9 +85,6 @@ public:
 
 public:
 
-    /// Constructor.
-    explicit ParticleType(ObjectInitializationFlags flags);
-
     /// Initializes the element type's attributes to standard values.
     virtual void initializeType(const OwnerPropertyRef& property, bool loadUserDefaults = ExecutionContext::isInteractive()) override;
 
@@ -176,40 +173,40 @@ protected:
 private:
 
     /// The radius used for rendering particles of this type.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, radius, setRadius);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, radius, setRadius);
     DECLARE_SHADOW_PROPERTY_FIELD(radius);
 
     /// Indicates that the type's radius was read from loaded input file and the value should be considered immutable.
     /// If this flag is set by the file reader, the user is no longer allowed to modify the radius value in the GUI.
     /// Currently, this flag is only set by the GSDImporter for types with shape type "Sphere", whose
     /// radius may vary with simulation time.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, radiusIsPrescribed, setRadiusIsPrescribed);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, radiusIsPrescribed, setRadiusIsPrescribed);
 
     /// The van der Waals radius of this particle type, which is used for generating bonds between particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, vdwRadius, setVdwRadius);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, vdwRadius, setVdwRadius);
     DECLARE_SHADOW_PROPERTY_FIELD(vdwRadius);
 
     /// The visualization shape for particles of this type.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlesVis::ParticleShape, shape, setShape);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlesVis::ParticleShape{ParticlesVis::ParticleShape::Default}, shape, setShape);
     DECLARE_SHADOW_PROPERTY_FIELD(shape);
 
     /// An optional user-defined shape used for rendering particles of this type.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const TriangleMesh>, shapeMesh, setShapeMesh, PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// Activates the highlighting of the polygonal edges of the user-defined shape assigned to this particle type.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, highlightShapeEdges, setHighlightShapeEdges, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, highlightShapeEdges, setHighlightShapeEdges, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(highlightShapeEdges);
 
     /// Activates the culling of back-facing faces of the user-defined shape assigned to this particle type.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, shapeBackfaceCullingEnabled, setShapeBackfaceCullingEnabled, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, shapeBackfaceCullingEnabled, setShapeBackfaceCullingEnabled, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(shapeBackfaceCullingEnabled);
 
     /// Use the mesh colors intead of particle colors when rendering the user-defined shape.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, shapeUseMeshColor, setShapeUseMeshColor);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, shapeUseMeshColor, setShapeUseMeshColor);
     DECLARE_SHADOW_PROPERTY_FIELD(shapeUseMeshColor);
 
     /// The mass of this particle type (maybe zero if not set).
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, mass, setMass);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, mass, setMass);
     DECLARE_SHADOW_PROPERTY_FIELD(mass);
 
 private:

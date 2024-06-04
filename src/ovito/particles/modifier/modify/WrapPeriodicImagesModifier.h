@@ -50,9 +50,6 @@ class OVITO_PARTICLES_EXPORT WrapPeriodicImagesModifier : public Modifier
 
 public:
 
-    /// Constructor.
-    using Modifier::Modifier;
-
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
 };

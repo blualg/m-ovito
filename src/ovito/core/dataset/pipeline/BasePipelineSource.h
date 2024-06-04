@@ -36,9 +36,6 @@ class OVITO_CORE_EXPORT BasePipelineSource : public PipelineNode
 
 public:
 
-    /// \brief Constructor.
-    explicit BasePipelineSource(ObjectInitializationFlags flags);
-
     /// Returns the list of data objects that are managed by this data source.
     /// The returned data objects will be displayed as sub-objects of the data source in the pipeline editor.
     virtual const DataCollection* getSourceDataCollection() const override { return dataCollection(); }
@@ -68,12 +65,12 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const DataCollection>, dataCollection, setDataCollection, PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// The trajectory frame number that is currently stored in the source's data collection.
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(int, dataCollectionFrame, setDataCollectionFrame, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(int{-1}, dataCollectionFrame, setDataCollectionFrame, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
     /// Indicates that the user has made manual changes to the data objects in the source's data collection
     /// or to the visual elements. If this flag is set, we'll ask the user if these changes should be preserved when
     /// importing a whole new file or model into the source.
-    DECLARE_PROPERTY_FIELD_FLAGS(bool, userHasChangedDataCollection, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_PROPERTY_FIELD_FLAGS(bool{false}, userHasChangedDataCollection, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
     /// Flag indicating that a call to DataObject::updateEditableProxies() is currently in progress
     /// and that change signals received from the master data collection should be ignored.

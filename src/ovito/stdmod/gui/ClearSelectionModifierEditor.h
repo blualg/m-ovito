@@ -36,11 +36,6 @@ class ClearSelectionModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(ClearSelectionModifierEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

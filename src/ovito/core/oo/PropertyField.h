@@ -117,7 +117,7 @@ public:
         // Handle automatic undo recording of the value change (if enabled for this property field).
         if constexpr(!(flags & PROPERTY_FIELD_NO_UNDO)) {
             OVITO_ASSERT(descriptor->automaticUndo());
-            if(!owner->isBeingConstructed() && CompoundOperation::isUndoRecording())
+            if(!owner->isBeingInitializedOrDeleted() && CompoundOperation::isUndoRecording())
                 CompoundOperation::current()->addOperation(std::make_unique<PropertyChangeOperation>(owner, *this, descriptor));
         }
 

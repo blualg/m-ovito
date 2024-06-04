@@ -30,11 +30,15 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(FilenameParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField property.
+* Constructor.
 ******************************************************************************/
-FilenameParameterUI::FilenameParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QStringList& fileFilter, bool existingFile) :
-    PropertyParameterUI(parentEditor, propField), _fileFilter(fileFilter), _existingFile(existingFile)
+void FilenameParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QStringList& fileFilter, bool existingFile)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
+    _fileFilter = fileFilter;
+    _existingFile = existingFile;
+
     // Create UI widget.
     _selectorButton = new QPushButton(QStringLiteral(" "));
     connect(_selectorButton.data(), &QPushButton::clicked, this, &FilenameParameterUI::onPickFilename);

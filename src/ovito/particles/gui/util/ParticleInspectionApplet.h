@@ -45,7 +45,7 @@ class ParticleInspectionApplet : public PropertyInspectionApplet
 public:
 
     /// Constructor.
-    explicit ParticleInspectionApplet() : PropertyInspectionApplet(Particles::OOClass()) {}
+    void initializeObject() { PropertyInspectionApplet::initializeObject(Particles::OOClass()); }
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 0; }
@@ -88,7 +88,10 @@ private:
     public:
 
         /// Constructor.
-        PickingMode(ParticleInspectionApplet* applet) : _applet(applet) {}
+        void initializeObject(ParticleInspectionApplet* applet) {
+            ViewportInputMode::initializeObject();
+            _applet = applet;
+        }
 
         /// Handles the mouse up events for a viewport.
         virtual void mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event) override;

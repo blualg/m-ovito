@@ -82,7 +82,7 @@ public:
 public:
 
     /// Constructor.
-    explicit CreateBondsModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// This method is called by the system when the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -128,26 +128,26 @@ protected:
 private:
 
     /// The mode of determing the bond cutoff.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CutoffMode, cutoffMode, setCutoffMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CutoffMode{UniformCutoff}, cutoffMode, setCutoffMode, PROPERTY_FIELD_MEMORIZE);
 
     /// The uniform cutoff distance for bond generation.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, uniformCutoff, setUniformCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3.2}, uniformCutoff, setUniformCutoff, PROPERTY_FIELD_MEMORIZE);
 
     /// The minimum bond length.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, minimumCutoff, setMinimumCutoff);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, minimumCutoff, setMinimumCutoff);
 
     /// The prefactor to be used for computing the cutoff distance from the Van der Waals radii.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType, vdwPrefactor, setVdwPrefactor);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0.6}, vdwPrefactor, setVdwPrefactor); // Note: Value 0.6 has been adopted from VMD source code.
 
     /// The cutoff radii for pairs of particle types.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PairwiseCutoffsList, pairwiseCutoffs, setPairwiseCutoffs);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PairwiseCutoffsList{}, pairwiseCutoffs, setPairwiseCutoffs);
 
     /// If true, bonds will only be created between atoms from the same molecule.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, onlyIntraMoleculeBonds, setOnlyIntraMoleculeBonds, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, onlyIntraMoleculeBonds, setOnlyIntraMoleculeBonds, PROPERTY_FIELD_MEMORIZE);
 
     /// If true, no bonds will be created between two particles of type "H".
     /// This option is only applied in mode TypeRadiusCutoff,
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, skipHydrogenHydrogenBonds, setSkipHydrogenHydrogenBonds);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{TARGET_ABI_USES_IOS_VALUES}, skipHydrogenHydrogenBonds, setSkipHydrogenHydrogenBonds);
 
     /// The bond type object that will be assigned to the newly created bonds.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondType>, bondType, setBondType, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
@@ -156,7 +156,7 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondsVis>, bondsVis, setBondsVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
 
     /// Controls whether the modifier should automatically turn off the display in case the number of bonds is unusually large.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, autoDisableBondDisplay, setAutoDisableBondDisplay, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, autoDisableBondDisplay, setAutoDisableBondDisplay, PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO);
 };
 
 }   // End of namespace

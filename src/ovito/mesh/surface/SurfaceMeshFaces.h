@@ -68,8 +68,9 @@ public:
         CrystallographicNormalProperty,
     };
 
-    /// \brief Constructor.
-    explicit SurfaceMeshFaces(ObjectInitializationFlags flags) : PropertyContainer(flags) {
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags) {
+        PropertyContainer::initializeObject(flags);
         // Assign the default data object identifier.
         setIdentifier(OOClass().pythonName());
     }

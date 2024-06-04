@@ -55,16 +55,12 @@ SET_PROPERTY_FIELD_LABEL(PolyhedralTemplateMatchingModifier, orderingTypes, "Ord
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(PolyhedralTemplateMatchingModifier, rmsdCutoff, FloatParameterUnit, 0);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-PolyhedralTemplateMatchingModifier::PolyhedralTemplateMatchingModifier(ObjectInitializationFlags flags) : StructureIdentificationModifier(flags),
-        _rmsdCutoff(0.1),
-        _outputRmsd(false),
-        _outputInteratomicDistance(false),
-        _outputOrientation(false),
-        _outputDeformationGradient(false),
-        _outputOrderingTypes(false)
+void PolyhedralTemplateMatchingModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    StructureIdentificationModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Define the structure types.
         createStructureType(PTMAlgorithm::OTHER, ParticleType::PredefinedStructureType::OTHER);

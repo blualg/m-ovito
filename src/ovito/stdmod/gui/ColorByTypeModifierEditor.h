@@ -36,11 +36,6 @@ class ColorByTypeModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(ColorByTypeModifierEditor)
 
-public:
-
-    /// Constructor
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

@@ -39,15 +39,6 @@ SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, crystalSymmetryClass, "Symmetry cl
 SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, burgersVectorFamilies, "Burgers vector families");
 
 /******************************************************************************
-* Constructs the MicrostructurePhase object.
-******************************************************************************/
-MicrostructurePhase::MicrostructurePhase(ObjectInitializationFlags flags) : ElementType(flags),
-    _dimensionality(Dimensionality::None),
-    _crystalSymmetryClass(CrystalSymmetryClass::NoSymmetry)
-{
-}
-
-/******************************************************************************
 * Returns the display color to be used for a given Burgers vector.
 ******************************************************************************/
 Color MicrostructurePhase::getBurgersVectorColor(const QString& latticeName, const Vector3& b)

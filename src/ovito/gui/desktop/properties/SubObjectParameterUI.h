@@ -41,7 +41,7 @@ class OVITO_GUI_EXPORT SubObjectParameterUI : public PropertyParameterUI
 public:
 
     /// Constructor.
-    SubObjectParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters());
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters());
 
     /// Destructor.
     virtual ~SubObjectParameterUI() {}

@@ -51,9 +51,6 @@ class OVITO_PARTICLES_EXPORT LAMMPSDumpExporter : public FileColumnParticleExpor
 
 public:
 
-    /// Constructor.
-    explicit LAMMPSDumpExporter(ObjectInitializationFlags flags) : FileColumnParticleExporter(flags), _restrictedTriclinic(true) {}
-
     /// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
     virtual bool supportsMultiFrameFiles() const override { return true; }
 
@@ -67,7 +64,7 @@ private:
     /// Controls the triclinic data file format.
     /// If true, the triclinic box is restricted (old lammps format).
     /// If false, the new triclinic box format is used.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, restrictedTriclinic, setRestrictedTriclinic, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, restrictedTriclinic, setRestrictedTriclinic, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

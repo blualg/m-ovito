@@ -143,9 +143,10 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(CutoffRadiusPresetsUI);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-CutoffRadiusPresetsUI::CutoffRadiusPresetsUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-    PropertyParameterUI(parentEditor, propField)
+void CutoffRadiusPresetsUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
     _comboBox = new QComboBox();
 
     QMap<ChemicalElement::CrystalStructure,QPair<QString,double> > HandledTypes;

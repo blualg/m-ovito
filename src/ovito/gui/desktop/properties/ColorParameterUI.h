@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT ColorParameterUI : public PropertyParameterUI
 public:
 
     /// Constructor.
-    ColorParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
     virtual ~ColorParameterUI();

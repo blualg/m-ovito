@@ -40,11 +40,6 @@ class GrainSegmentationModifierEditor : public PropertiesEditor
     OVITO_CLASS(GrainSegmentationModifierEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected Q_SLOTS:
 
     /// Replots the merge sequence computed by the modifier.

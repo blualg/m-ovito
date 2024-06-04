@@ -47,15 +47,6 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(SmoothTrajectoryModifier, smoothingWindowSize
 IMPLEMENT_CREATABLE_OVITO_CLASS(InterpolateTrajectoryModifierApplication);
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-SmoothTrajectoryModifier::SmoothTrajectoryModifier(ObjectInitializationFlags flags) : Modifier(flags),
-    _useMinimumImageConvention(true),
-    _smoothingWindowSize(1)
-{
-}
-
-/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool SmoothTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const

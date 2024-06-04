@@ -41,7 +41,7 @@ class OVITO_GUI_EXPORT NumericalParameterUI : public PropertyParameterUI
 public:
 
     /// Constructor.
-    NumericalParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QMetaObject* defaultParameterUnitType);
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QMetaObject* defaultParameterUnitType);
 
     /// Destructor.
     virtual ~NumericalParameterUI();

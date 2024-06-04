@@ -54,11 +54,6 @@ class OVITO_PARTICLES_EXPORT BondsComputePropertyModifierDelegate : public Compu
 
     OVITO_CLASS_META(BondsComputePropertyModifierDelegate, OOMetaClass)
 
-public:
-
-    /// Constructor.
-    using ComputePropertyModifierDelegate::ComputePropertyModifierDelegate;
-
 protected:
 
     /// Launches the actual computations.

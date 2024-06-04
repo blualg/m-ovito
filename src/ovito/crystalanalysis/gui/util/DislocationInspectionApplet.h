@@ -44,7 +44,7 @@ class DislocationInspectionApplet : public DataInspectionApplet
 public:
 
     /// Constructor.
-    explicit DislocationInspectionApplet() : DataInspectionApplet(DislocationNetworkObject::OOClass()) {}
+    void initializeObject() { DataInspectionApplet::initializeObject(DislocationNetworkObject::OOClass()); }
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 50; }
@@ -127,7 +127,10 @@ private:
     public:
 
         /// Constructor.
-        PickingMode(DislocationInspectionApplet* applet) : _applet(applet) {}
+        void initializeObject(DislocationInspectionApplet* applet) {
+            ViewportInputMode::initializeObject();
+            _applet = applet;
+        }
 
         /// This is called by the system after the input handler has become the active handler.
         virtual void activated(bool temporaryActivation) override {

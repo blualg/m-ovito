@@ -57,17 +57,6 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinationAnalysisModifier, cutoff, World
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinationAnalysisModifier, numberOfBins, IntegerParameterUnit, 4);
 
 /******************************************************************************
-* Constructs the modifier object.
-******************************************************************************/
-CoordinationAnalysisModifier::CoordinationAnalysisModifier(ObjectInitializationFlags flags) : Modifier(flags),
-    _cutoff(3.2),
-    _numberOfBins(200),
-    _computePartialRDF(false),
-    _onlySelected(false)
-{
-}
-
-/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool CoordinationAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const

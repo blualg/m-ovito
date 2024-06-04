@@ -233,15 +233,12 @@ Future<PipelineFlowState> VectorsReplicateModifierDelegate::apply(
 }
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-ReplicateModifier::ReplicateModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags),
-    _numImagesX(1),
-    _numImagesY(1),
-    _numImagesZ(1),
-    _adjustBoxSize(true),
-    _uniqueIdentifiers(true)
+void ReplicateModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    MultiDelegatingModifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Generate the list of delegate objects.
         createModifierDelegates(ReplicateModifierDelegate::OOClass());

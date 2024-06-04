@@ -121,8 +121,10 @@ QString SurfaceMeshVertices::OOMetaClass::formatDataObjectPath(const ConstDataOb
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SurfaceMeshVertices::SurfaceMeshVertices(ObjectInitializationFlags flags) : PropertyContainer(flags)
+void SurfaceMeshVertices::initializeObject(ObjectInitializationFlags flags)
 {
+    PropertyContainer::initializeObject(flags);
+
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
 

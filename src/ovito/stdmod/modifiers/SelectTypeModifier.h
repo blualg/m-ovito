@@ -39,7 +39,7 @@ class OVITO_STDMOD_EXPORT SelectTypeModifier : public GenericPropertyModifier
 public:
 
     /// Constructor.
-    explicit SelectTypeModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -62,13 +62,13 @@ protected:
 private:
 
     /// The input type property that is used as data source for the selection.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference, sourceProperty, setSourceProperty);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, sourceProperty, setSourceProperty);
 
     /// The numeric IDs of the types to select.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<int32_t>, selectedTypeIDs, setSelectedTypeIDs);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<int32_t>{}, selectedTypeIDs, setSelectedTypeIDs);
 
     /// The names of the types to select.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<QString>, selectedTypeNames, setSelectedTypeNames);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<QString>{}, selectedTypeNames, setSelectedTypeNames);
 };
 
 }   // End of namespace

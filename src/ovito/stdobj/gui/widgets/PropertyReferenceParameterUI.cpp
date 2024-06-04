@@ -32,12 +32,14 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(PropertyReferenceParameterUI);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyReferenceParameterUI::PropertyReferenceParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, PropertyContainerClassPtr containerClass, PropertyComponentsMode componentsMode, bool inputProperty) :
-    PropertyParameterUI(parentEditor, propField),
-    _comboBox(new PropertySelectionComboBox(containerClass)),
-    _componentsMode(componentsMode),
-    _isInputProperty(inputProperty)
+void PropertyReferenceParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, PropertyContainerClassPtr containerClass, PropertyComponentsMode componentsMode, bool inputProperty)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
+    _comboBox = new PropertySelectionComboBox(containerClass);
+    _componentsMode = componentsMode;
+    _isInputProperty = inputProperty;
+
     connect(comboBox(), &QComboBox::textActivated, this, &PropertyReferenceParameterUI::updatePropertyValue);
 
     if(!inputProperty)

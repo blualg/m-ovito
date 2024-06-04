@@ -49,7 +49,10 @@ class PickElementMode : public ViewportInputMode
 public:
 
     /// Constructor.
-    PickElementMode(ManualSelectionModifierEditor* editor) : _editor(editor) {}
+    void initializeObject(ManualSelectionModifierEditor* editor) {
+        ViewportInputMode::initializeObject();
+        _editor = editor;
+    }
 
     /// Handles the mouse up events for a Viewport.
     virtual void mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event) override {
@@ -107,7 +110,10 @@ class FenceSelectionMode : public ViewportInputMode, public ViewportGizmo
 public:
 
     /// Constructor.
-    FenceSelectionMode(ManualSelectionModifierEditor* editor) : _editor(editor) {}
+    void initializeObject(ManualSelectionModifierEditor* editor) {
+        ViewportInputMode::initializeObject();
+        _editor = editor;
+    }
 
     /// Destructor.
     virtual ~FenceSelectionMode() {
@@ -192,7 +198,7 @@ protected:
 
 private:
 
-    ManualSelectionModifierEditor* _editor;
+    ManualSelectionModifierEditor* _editor = nullptr;
     QVector<Point2> _fence;
     Viewport* _activeViewport = nullptr;
 };

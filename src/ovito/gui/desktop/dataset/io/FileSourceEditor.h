@@ -39,11 +39,6 @@ class FileSourceEditor : public PropertiesEditor
     OVITO_CLASS(FileSourceEditor)
     Q_OBJECT
 
-public:
-
-    /// Default constructor.
-    explicit FileSourceEditor() {}
-
 protected:
 
     /// Creates the user interface controls for the editor.

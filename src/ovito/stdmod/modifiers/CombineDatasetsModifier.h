@@ -38,9 +38,6 @@ class OVITO_STDMOD_EXPORT CombineDatasetsModifierDelegate : public ModifierDeleg
 
 protected:
 
-    /// Abstract class constructor.
-    using ModifierDelegate::ModifierDelegate;
-
     /// Helper method that merges the set of element types defined for a property.
     void mergeElementTypes(Property* property1, const Property* property2, CloneHelper& cloneHelper);
 };
@@ -67,7 +64,7 @@ class OVITO_STDMOD_EXPORT CombineDatasetsModifier : public MultiDelegatingModifi
 public:
 
     /// Constructor.
-    explicit CombineDatasetsModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Modifies the input data.
     virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;

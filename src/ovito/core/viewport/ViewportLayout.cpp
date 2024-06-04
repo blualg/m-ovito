@@ -34,14 +34,6 @@ DEFINE_PROPERTY_FIELD(ViewportLayoutCell, splitDirection);
 DEFINE_PROPERTY_FIELD(ViewportLayoutCell, childWeights);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-ViewportLayoutCell::ViewportLayoutCell(ObjectInitializationFlags flags) : RefTarget(flags),
-    _splitDirection(SplitDirection::None)
-{
-}
-
-/******************************************************************************
 * Inserts a sub-cell into this cell's list of children.
 ******************************************************************************/
 void ViewportLayoutCell::addChild(OORef<ViewportLayoutCell> child, FloatType weight)

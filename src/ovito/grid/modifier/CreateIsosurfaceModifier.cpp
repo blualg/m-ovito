@@ -54,11 +54,12 @@ SET_PROPERTY_FIELD_LABEL(CreateIsosurfaceModifier, smoothingLevel, "Smoothing le
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CreateIsosurfaceModifier, smoothingLevel, IntegerParameterUnit, 0);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-CreateIsosurfaceModifier::CreateIsosurfaceModifier(ObjectInitializationFlags flags)
-    : Modifier(flags), _smoothingLevel(0), _transferFieldValues(false)
+void CreateIsosurfaceModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    Modifier::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setIsolevelController(ControllerManager::createFloatController());
 

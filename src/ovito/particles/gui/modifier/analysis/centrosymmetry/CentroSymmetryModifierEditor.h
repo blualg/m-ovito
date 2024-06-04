@@ -37,11 +37,6 @@ class CentroSymmetryModifierEditor : public PropertiesEditor
     OVITO_CLASS(CentroSymmetryModifierEditor)
     Q_OBJECT
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected Q_SLOTS:
 
     /// Replots the histogram computed by the modifier.

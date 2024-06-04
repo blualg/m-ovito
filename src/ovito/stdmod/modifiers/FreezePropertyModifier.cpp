@@ -51,11 +51,12 @@ DEFINE_VECTOR_REFERENCE_FIELD(FreezePropertyModificationNode, cachedVisElements)
 SET_MODIFICATION_NODE_TYPE(FreezePropertyModifier, FreezePropertyModificationNode);
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
-FreezePropertyModifier::FreezePropertyModifier(ObjectInitializationFlags flags) : GenericPropertyModifier(flags),
-    _freezeTime(0)
+void FreezePropertyModifier::initializeObject(ObjectInitializationFlags flags)
 {
+    GenericPropertyModifier::initializeObject(flags);
+
     // Operate on particles by default.
     setDefaultSubject(QStringLiteral("Particles"), QStringLiteral("Particles"));
 }

@@ -82,9 +82,6 @@ public:
 
 public:
 
-    /// Constructor.
-    using RefMaker::RefMaker;
-
     /// Associates this window with a viewport.
     void setViewport(Viewport* vp, UserInterface& userInterface);
 

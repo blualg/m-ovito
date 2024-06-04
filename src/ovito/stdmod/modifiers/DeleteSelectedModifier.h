@@ -34,11 +34,6 @@ namespace Ovito {
 class OVITO_STDMOD_EXPORT DeleteSelectedModifierDelegate : public ModifierDelegate
 {
     OVITO_CLASS(DeleteSelectedModifierDelegate)
-
-protected:
-
-    /// Abstract class constructor.
-    using ModifierDelegate::ModifierDelegate;
 };
 
 /**
@@ -63,7 +58,9 @@ class OVITO_STDMOD_EXPORT DeleteSelectedModifier : public MultiDelegatingModifie
 public:
 
     /// Constructor.
-    explicit DeleteSelectedModifier(ObjectInitializationFlags flags) : MultiDelegatingModifier(flags) {
+    void initializeObject(ObjectInitializationFlags flags) {
+        MultiDelegatingModifier::initializeObject(flags);
+
         if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
             // Generate the list of delegate objects.
             createModifierDelegates(DeleteSelectedModifierDelegate::OOClass());

@@ -41,7 +41,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationNetworkObject : public PeriodicDom
 public:
 
     /// Constructor.
-    explicit DislocationNetworkObject(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Returns the data encapsulated by this object after making sure it is not shared with other owners.
     const std::shared_ptr<DislocationNetwork>& modifiableStorage();
@@ -83,7 +83,7 @@ public:
 private:
 
     /// The internal data.
-    DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<DislocationNetwork>, storage, setStorage);
+    DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<DislocationNetwork>{}, storage, setStorage);
 
     /// List of crystal structures.
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const MicrostructurePhase>, crystalStructures, setCrystalStructures);

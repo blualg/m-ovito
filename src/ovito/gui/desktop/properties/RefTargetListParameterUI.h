@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT RefTargetListParameterUI : public ParameterUI
 public:
 
     /// Constructor.
-    RefTargetListParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField,
+    void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField,
             const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters(), OvitoClassPtr defaultEditorClass = nullptr);
 
     /// Destructor.

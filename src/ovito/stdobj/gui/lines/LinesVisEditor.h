@@ -34,11 +34,6 @@ class OVITO_STDOBJGUI_EXPORT LinesVisEditor : public PropertiesEditor
 {
     OVITO_CLASS(LinesVisEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

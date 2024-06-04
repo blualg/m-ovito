@@ -40,21 +40,6 @@ DEFINE_PROPERTY_FIELD(AnimationSettings, autoAdjustInterval);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AnimationSettings, playbackEveryNthFrame, IntegerParameterUnit, 1);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-AnimationSettings::AnimationSettings(ObjectInitializationFlags flags) : RefTarget(flags),
-        _framesPerSecond(10),
-        _playbackSpeed(1),
-        _firstFrame(0),
-        _lastFrame(0),
-        _currentFrame(0),
-        _loopPlayback(true),
-        _playbackEveryNthFrame(1),
-        _autoAdjustInterval(true)
-{
-}
-
-/******************************************************************************
 * Is called when the value of a non-animatable property field of this RefMaker has changed.
 ******************************************************************************/
 void AnimationSettings::propertyChanged(const PropertyFieldDescriptor* field)

@@ -29,13 +29,18 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(RefTargetListParameterUI);
 DEFINE_VECTOR_REFERENCE_FIELD(RefTargetListParameterUI, targets);
 
 /******************************************************************************
-* The constructor.
+* Constructor.
 ******************************************************************************/
-RefTargetListParameterUI::RefTargetListParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams, OvitoClassPtr defaultEditorClass)
-    : ParameterUI(parentEditor), _refField(refField), _rolloutParams(rolloutParams), _defaultEditorClass(defaultEditorClass)
+void RefTargetListParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams, OvitoClassPtr defaultEditorClass)
 {
     OVITO_ASSERT(refField);
     OVITO_ASSERT_MSG(refField->isVector(), "RefTargetListParameterUI constructor", "The reference field bound to this parameter UI must be a vector reference field.");
+
+    ParameterUI::initializeObject(parentEditor);
+
+    _refField = refField;
+    _rolloutParams = rolloutParams;
+    _defaultEditorClass = defaultEditorClass;
 
     _model = new ListViewModel(this);
 

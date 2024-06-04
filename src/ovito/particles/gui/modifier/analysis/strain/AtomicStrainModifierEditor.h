@@ -35,11 +35,6 @@ class AtomicStrainModifierEditor : public PropertiesEditor
 {
     OVITO_CLASS(AtomicStrainModifierEditor)
 
-public:
-
-    /// Constructor.
-    using PropertiesEditor::PropertiesEditor;
-
 private Q_SLOTS:
 
     /// Is called when the object being edited changes.

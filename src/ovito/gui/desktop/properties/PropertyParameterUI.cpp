@@ -37,9 +37,12 @@ DEFINE_REFERENCE_FIELD(PropertyParameterUI, parameterObject);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PropertyParameterUI::PropertyParameterUI(PropertiesEditor* parent, const PropertyFieldDescriptor* propField) :
-    ParameterUI(parent), _propField(propField)
+void PropertyParameterUI::initializeObject(PropertiesEditor* parent, const PropertyFieldDescriptor* propField)
 {
+    ParameterUI::initializeObject(parent);
+
+    _propField = propField;
+
     // If requested, save parameter value to application's settings store each time the user changes it.
     if(propField->flags().testFlag(PROPERTY_FIELD_MEMORIZE))
         connect(this, &PropertyParameterUI::valueEntered, this, &PropertyParameterUI::memorizeDefaultParameterValue);

@@ -61,15 +61,10 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(Viewport, viewportTitle, ReferenceEvent::TitleCh
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Viewport::Viewport(ObjectInitializationFlags flags) : RefTarget(flags),
-        _viewType(VIEW_NONE),
-        _fieldOfView(100),
-        _renderPreviewMode(false),
-        _cameraTransformation(AffineTransformation::Identity()),
-        _cameraUpDirection(Vector3::Zero()),
-        _gridMatrix(AffineTransformation::Identity()),
-        _isGridVisible(false)
+void Viewport::initializeObject(ObjectInitializationFlags flags)
 {
+    RefTarget::initializeObject(flags);
+
     // Get notified when the global viewport settings change.
     _viewportSettingsChangedConnection = QObject::connect(&ViewportSettings::getSettings(), &ViewportSettings::settingsChanged, [this](ViewportSettings* newSettings) { viewportSettingsChanged(newSettings); });
 

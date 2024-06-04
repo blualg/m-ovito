@@ -32,11 +32,12 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(BooleanParameterUI);
 
 /******************************************************************************
-* Constructor for a PropertyField property.
+* Constructor.
 ******************************************************************************/
-BooleanParameterUI::BooleanParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField) :
-    PropertyParameterUI(parentEditor, propField)
+void BooleanParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 {
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
     // Create UI widget.
     _checkBox = new QCheckBox(propField->displayName());
     connect(_checkBox.data(), &QCheckBox::clicked, this, &BooleanParameterUI::updatePropertyValue);

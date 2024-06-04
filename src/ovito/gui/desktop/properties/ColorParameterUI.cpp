@@ -32,12 +32,13 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ColorParameterUI);
 
 /******************************************************************************
-* The constructor.
+* Constructor.
 ******************************************************************************/
-ColorParameterUI::ColorParameterUI(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
-    : PropertyParameterUI(parentEditor, propField)
+void ColorParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField)
 {
-    _label = new QLabel(propField->displayName() + ":");
+    PropertyParameterUI::initializeObject(parentEditor, propField);
+
+    _label = new QLabel(propField->displayName() + QStringLiteral(":"));
     _colorPicker = new ColorPickerWidget();
     _colorPicker->setObjectName("colorButton");
     connect(_colorPicker.data(), &ColorPickerWidget::colorChanged, this, &ColorParameterUI::onColorPickerChanged);

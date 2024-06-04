@@ -55,20 +55,20 @@ SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(SceneNode, sceneNodeName, "nodeName"); // Fo
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SceneNode::SceneNode(ObjectInitializationFlags flags) : RefTarget(flags),
-    _worldTransform(AffineTransformation::Identity()),
-    _worldTransformValidity(TimeInterval::empty()),
-    _boundingBoxValidity(TimeInterval::empty()),
-    _displayColor(0,0,0)
+void SceneNode::initializeObject(ObjectInitializationFlags flags)
 {
-    if(!flags.testFlag(DontInitializeObject)) {
-        // Create a transformation controller for the node.
-        setTransformationController(ControllerManager::createTransformationController());
+    RefTarget::initializeObject(flags);
 
+    if(!flags.testFlag(DontInitializeObject)) {
         // Assign random color to scene node.
         if(ExecutionContext::isInteractive()) {
             static std::default_random_engine rng;
             setDisplayColor(Color::fromHSV(std::uniform_real_distribution<FloatType>()(rng), 1, 1));
+        }
+
+        if(!isRootNode()) {
+            // Create a transformation controller for the node (the root doesn't need one).
+            setTransformationController(ControllerManager::createTransformationController());
         }
     }
 }

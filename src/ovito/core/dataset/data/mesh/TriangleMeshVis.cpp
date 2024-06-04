@@ -46,11 +46,10 @@ SET_PROPERTY_FIELD_UNITS_AND_RANGE(TriangleMeshVis, transparencyController, Perc
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-TriangleMeshVis::TriangleMeshVis(ObjectInitializationFlags flags) : DataVis(flags),
-    _color(0.85, 0.85, 1),
-    _highlightEdges(false),
-    _backfaceCulling(false)
+void TriangleMeshVis::initializeObject(ObjectInitializationFlags flags)
 {
+    DataVis::initializeObject(flags);
+
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setTransparencyController(ControllerManager::createFloatController());
     }

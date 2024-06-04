@@ -35,11 +35,6 @@ class PDBImporterEditor : public FileImporterEditor
 {
     OVITO_CLASS(PDBImporterEditor)
 
-public:
-
-    /// Constructor.
-    using FileImporterEditor::FileImporterEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

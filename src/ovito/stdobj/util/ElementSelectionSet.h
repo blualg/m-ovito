@@ -54,9 +54,6 @@ public:
 
 public:
 
-    /// Constructor.
-    explicit ElementSelectionSet(ObjectInitializationFlags flags) : RefTarget(flags), _useIdentifiers(true) {}
-
     /// Returns the stored selection set.
     const ConstPropertyPtr& selection() const { return _selection; }
 
@@ -107,7 +104,7 @@ private:
     QSet<qlonglong> _selectedIdentifiers; // Note: using qlonglong instead of IdentifierIntType for file format backward compatibility with OVITO 3.8
 
     /// Controls whether the object should store the identifiers of selected elements (when available).
-    DECLARE_PROPERTY_FIELD(bool, useIdentifiers);
+    DECLARE_PROPERTY_FIELD(bool{true}, useIdentifiers);
 
     friend class ReplaceSelectionOperation;
 };

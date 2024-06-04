@@ -55,11 +55,6 @@ class ParticlesAssignColorModifierDelegate : public AssignColorModifierDelegate
 
     OVITO_CLASS_META(ParticlesAssignColorModifierDelegate, ParticlesAssignColorModifierDelegateClass)
 
-public:
-
-    /// Constructor.
-    using AssignColorModifierDelegate::AssignColorModifierDelegate;
-
 protected:
 
     /// \brief returns the ID of the standard property that will receive the assigned colors.
@@ -91,11 +86,6 @@ class ParticleVectorsAssignColorModifierDelegate : public AssignColorModifierDel
 
     OVITO_CLASS_META(ParticleVectorsAssignColorModifierDelegate, OOMetaClass)
 
-public:
-
-    /// Constructor.
-    using AssignColorModifierDelegate::AssignColorModifierDelegate;
-
 protected:
 
     /// \brief returns the ID of the standard property that will receive the assigned colors.
@@ -126,11 +116,6 @@ class BondsAssignColorModifierDelegate : public AssignColorModifierDelegate
     };
 
     OVITO_CLASS_META(BondsAssignColorModifierDelegate, BondsAssignColorModifierDelegateClass)
-
-public:
-
-    /// Constructor.
-    using AssignColorModifierDelegate::AssignColorModifierDelegate;
 
 protected:
 

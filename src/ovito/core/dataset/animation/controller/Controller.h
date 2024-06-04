@@ -59,11 +59,6 @@ public:
     };
     Q_ENUM(ControllerType);
 
-protected:
-
-    /// Constructor.
-    using RefTarget::RefTarget;
-
 public:
 
     /// \brief Returns the value type of the controller.

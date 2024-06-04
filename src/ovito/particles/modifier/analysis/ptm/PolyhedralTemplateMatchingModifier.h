@@ -42,7 +42,7 @@ class OVITO_PARTICLES_EXPORT PolyhedralTemplateMatchingModifier : public Structu
 public:
 
     /// Constructor.
-    explicit PolyhedralTemplateMatchingModifier(ObjectInitializationFlags flags);
+    void initializeObject(ObjectInitializationFlags flags);
 
     /// Indicates whether the modifier wants to keep its partial compute results after one of its parameters has been changed.
     virtual bool shouldKeepPartialResultsAfterChange(const PropertyFieldEvent& event) override {
@@ -119,22 +119,22 @@ private:
 private:
 
     /// The RMSD cutoff.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType, rmsdCutoff, setRmsdCutoff, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{0.1}, rmsdCutoff, setRmsdCutoff, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the output of the per-particle RMSD values.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, outputRmsd, setOutputRmsd);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, outputRmsd, setOutputRmsd);
 
     /// Controls the output of local interatomic distances.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outputInteratomicDistance, setOutputInteratomicDistance, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, outputInteratomicDistance, setOutputInteratomicDistance, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the output of local orientations.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outputOrientation, setOutputOrientation, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, outputOrientation, setOutputOrientation, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the output of elastic deformation gradients.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, outputDeformationGradient, setOutputDeformationGradient);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, outputDeformationGradient, setOutputDeformationGradient);
 
     /// Controls the output of alloy ordering types.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool, outputOrderingTypes, setOutputOrderingTypes, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, outputOrderingTypes, setOutputOrderingTypes, PROPERTY_FIELD_MEMORIZE);
 
     /// Contains the list of ordering types recognized by this analysis modifier.
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(OORef<ElementType>, orderingTypes, setOrderingTypes);

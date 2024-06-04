@@ -35,11 +35,6 @@ class POSCARImporterEditor : public FileImporterEditor
 {
     OVITO_CLASS(POSCARImporterEditor)
 
-public:
-
-    /// Constructor.
-    using FileImporterEditor::FileImporterEditor;
-
 protected:
 
     /// Creates the user interface controls for the editor.

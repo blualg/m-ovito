@@ -48,9 +48,6 @@ public:
         NEXT_AVAILABLE_EVENT_ID
     };
 
-    /// Constructor.
-    explicit ActiveObject(ObjectInitializationFlags flags);
-
     /// Returns the title of this object.
     virtual QString objectTitle() const override {
         if(title().isEmpty())
@@ -88,15 +85,15 @@ protected:
 private:
 
     /// Controls whether the object is currently enabled.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, isEnabled, setEnabled);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, isEnabled, setEnabled);
     DECLARE_SHADOW_PROPERTY_FIELD(isEnabled);
 
     /// The user-defined title of this object.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString, title, setTitle);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, title, setTitle);
     DECLARE_SHADOW_PROPERTY_FIELD(title);
 
     /// The current status of this object.
-    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(PipelineStatus, status, setStatus, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
+    DECLARE_RUNTIME_PROPERTY_FIELD_FLAGS(PipelineStatus{}, status, setStatus, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
     /// Indicates how many running tasks are currently associated with this object.
     int _numberOfActiveTasks = 0;

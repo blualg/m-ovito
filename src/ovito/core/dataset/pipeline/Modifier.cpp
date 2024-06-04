@@ -38,14 +38,6 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(Modifier, isEnabled, ReferenceEvent::TargetEnabl
 SET_PROPERTY_FIELD_CHANGE_EVENT(Modifier, title, ReferenceEvent::TitleChanged);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-Modifier::Modifier(ObjectInitializationFlags flags) : RefTarget(flags),
-    _isEnabled(true)
-{
-}
-
-/******************************************************************************
 * Creates a new modification node for inserting this modifier into a pipeline.
 ******************************************************************************/
 OORef<ModificationNode> Modifier::createModificationNode()

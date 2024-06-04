@@ -41,8 +41,10 @@ OVITO_CLASSINFO(Bonds, "ClassNameAlias", "BondsObject");  // For backward compat
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-Bonds::Bonds(ObjectInitializationFlags flags) : PropertyContainer(flags)
+void Bonds::initializeObject(ObjectInitializationFlags flags)
 {
+    PropertyContainer::initializeObject(flags);
+
     // Assign the default data object identifier.
     setIdentifier(OOClass().pythonName());
 

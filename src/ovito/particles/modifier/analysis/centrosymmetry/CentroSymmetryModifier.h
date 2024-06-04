@@ -60,9 +60,6 @@ public:
 
 public:
 
-    /// Constructor.
-    explicit CentroSymmetryModifier(ObjectInitializationFlags flags);
-
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
@@ -81,13 +78,13 @@ protected:
 private:
 
     /// Specifies the number of nearest neighbors to take into account when computing the CSP.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int, numNeighbors, setNumNeighbors, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{12}, numNeighbors, setNumNeighbors, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls how the CSP is performed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CSPMode, mode, setMode, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(CSPMode{ConventionalMode}, mode, setMode, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether analysis should take into account only selected particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool, onlySelectedParticles, setOnlySelectedParticles);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, onlySelectedParticles, setOnlySelectedParticles);
 };
 
 }   // End of namespace
