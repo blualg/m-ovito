@@ -15,7 +15,7 @@ Version 3.11.0 (xx-xxx-2024)
 
 - The :ref:`particles.modifiers.generate_trajectory_lines` modifier now works automatically without the need to start the trajectory generation manually
 - |ovito-python| New property :py:attr:`ovito.pipeline.Pipeline.frames`
-- |ovito-python| New parameter trait types :py:attr:`ovito.traits.DataObjectReference` and :py:attr:`ovito.traits.PropertyReference`
+- |ovito-python| New parameter trait types :py:class:`ovito.traits.DataObjectReference` and :py:class:`ovito.traits.PropertyReference`
 - |ovito-python| New class :py:class:`ovito.data.DataObject.Ref` and methods :py:meth:`ovito.data.DataCollection.get` and :py:meth:`ovito.data.PropertyContainer.get`
 - |ovito-python| Deprecated :py:meth:`!generate` method of the :py:class:`~ovito.modifiers.GenerateTrajectoryLinesModifier`
 - |ovito-python| Added the :py:attr:`HistogramModifier.select_elements <ovito.modifiers.HistogramModifier.select_elements>` option
