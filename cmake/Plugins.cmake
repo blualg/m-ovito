@@ -64,14 +64,14 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
         "$<BUILD_INTERFACE:${OVITO_SOURCE_BASE_DIR}/src>")
 
     # Speed up compilation by using precompiled headers.
-    IF(OVITO_USE_PRECOMPILED_HEADERS AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
+    IF(OVITO_USE_PRECOMPILED_HEADERS)
         FOREACH(precompiled_header ${precompiled_headers})
             TARGET_PRECOMPILE_HEADERS(${target_name} PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/${precompiled_header}>")
         ENDFOREACH()
     ENDIF()
 
     # Speed up compilation by using unity build.
-    IF(OVITO_USE_UNITY_BUILD AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.16)
+    IF(OVITO_USE_UNITY_BUILD)
         SET_TARGET_PROPERTIES(${target_name} PROPERTIES UNITY_BUILD ON)
     ENDIF()
 
@@ -83,10 +83,10 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
         )
 
         # Do not warn about use of unsafe CRT Library functions.
-        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "_CRT_SECURE_NO_WARNINGS=")
+        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "_CRT_SECURE_NO_WARNINGS=1")
         # Workaround for deprecation warnings in Visual Studio 2022 due to Qt's QVarLength Array:
         # "warning C4996: 'stdext::checked_array_iterator<Ovito::TimeInterval *>': warning STL4043: stdext::checked_array_iterator, stdext::unchecked_array_iterator, and related factory functions are non-Standard extensions and will be removed in the future. std::span (since C++20) and gsl::span can be used instead."
-        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING=")
+        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING=1")
 
         IF(OVITO_BUILD_CONDA)
             # Silence deprecation warnings in conda-forge's 'qt-main' package (qpdfwriter.h and qpagedpaintdevice.h).

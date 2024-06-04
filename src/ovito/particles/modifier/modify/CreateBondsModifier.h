@@ -147,7 +147,7 @@ private:
 
     /// If true, no bonds will be created between two particles of type "H".
     /// This option is only applied in mode TypeRadiusCutoff,
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{TARGET_ABI_USES_IOS_VALUES}, skipHydrogenHydrogenBonds, setSkipHydrogenHydrogenBonds);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, skipHydrogenHydrogenBonds, setSkipHydrogenHydrogenBonds);
 
     /// The bond type object that will be assigned to the newly created bonds.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<BondType>, bondType, setBondType, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_OPEN_SUBEDITOR);
