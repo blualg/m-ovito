@@ -251,7 +251,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
                 if(vis->isEnabled()) {
                     for(const PropertyFieldDescriptor* field : vis->getOOMetaClass().propertyFields()) {
                         if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(PropertyColorMapping::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM) && !field->isVector()) {
-                            if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(vis->getReferenceFieldTarget(field))) {
+                            if(OORef<PropertyColorMapping> mapping = static_object_cast<PropertyColorMapping>(vis->getReferenceFieldTarget(field))) {
                                 if(mapping->sourceProperty()) {
                                     // Prepend property color mappings to the front of the list.
                                     _sourcesComboBox->insertItem(0, QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(mapping->sourceProperty().nameWithComponent()), QVariant::fromValue(mapping));
@@ -267,7 +267,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
             PipelineNode* node = pipeline->head();
             while(node) {
                 if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(node)) {
-                    if(ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(modNode->modifier())) {
+                    if(OORef<ColorCodingModifier> mod = dynamic_object_cast<ColorCodingModifier>(modNode->modifier())) {
                         // Prepend color coding modifiers to the front of the list.
                         _sourcesComboBox->insertItem(0, tr("Color coding: %1").arg(mod->sourceProperty().nameWithComponent()), QVariant::fromValue(mod));
                     }
@@ -300,7 +300,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
 
         // Select the item in the list that corresponds to the current parameter value.
         if(overlay->modifier()) {
-            int index = _sourcesComboBox->findData(QVariant::fromValue(overlay->modifier()));
+            int index = _sourcesComboBox->findData(QVariant::fromValue<OORef<ColorCodingModifier>>(overlay->modifier()));
             if(index >= 0)
                 _sourcesComboBox->setCurrentIndex(index);
             else {
@@ -313,7 +313,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
             _tickEnabledPUI->setEnabled(true);
         }
         else if(overlay->colorMapping()) {
-            int index = _sourcesComboBox->findData(QVariant::fromValue(overlay->colorMapping()));
+            int index = _sourcesComboBox->findData(QVariant::fromValue<OORef<PropertyColorMapping>>(overlay->colorMapping()));
             if(index >= 0)
                 _sourcesComboBox->setCurrentIndex(index);
             else {
@@ -352,13 +352,13 @@ void ColorLegendOverlayEditor::colorSourceSelected()
         performTransaction(tr("Select color source"), [&]() {
             QVariant selectedData = static_cast<QComboBox*>(sender())->currentData();
 
-            if(selectedData.canConvert<ColorCodingModifier*>()) {
-                overlay->setModifier(selectedData.value<ColorCodingModifier*>());
+            if(selectedData.canConvert<OORef<ColorCodingModifier>>()) {
+                overlay->setModifier(selectedData.value<OORef<ColorCodingModifier>>());
                 overlay->setColorMapping(nullptr);
                 overlay->setSourceProperty({});
             }
-            else if(selectedData.canConvert<PropertyColorMapping*>()) {
-                overlay->setColorMapping(selectedData.value<PropertyColorMapping*>());
+            else if(selectedData.canConvert<OORef<PropertyColorMapping>>()) {
+                overlay->setColorMapping(selectedData.value<OORef<PropertyColorMapping>>());
                 overlay->setModifier(nullptr);
                 overlay->setSourceProperty({});
             }
