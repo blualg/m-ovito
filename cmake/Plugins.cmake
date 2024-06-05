@@ -20,6 +20,81 @@
 #
 #######################################################################################
 
+# This macro adds standard compile and link options to a OVITO CMake target.
+MACRO(OVITO_ADD_STANDARD_COMPILE_OPTIONS target_name)
+
+    # Speed up compilation by using unity build.
+    IF(OVITO_USE_UNITY_BUILD)
+        SET_TARGET_PROPERTIES(${target_name} PROPERTIES UNITY_BUILD ON)
+    ENDIF()
+
+    IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        # Turn off certain Microsoft compiler warnings.
+        TARGET_COMPILE_OPTIONS(${target_name}
+            PUBLIC "/wd4267" # Suppress warning on conversion from size_t to int, possible loss of data.
+            PUBLIC "/wd4244" # Suppress warning on conversion from size_t to int, possible loss of data.
+            PUBLIC "/wd4018" # Suppress warning on signed/unsigned mismatch.
+            PUBLIC "/wd4996" # Do not warn when using deprecated functions.
+            PUBLIC "/bigobj" # Compiling template code leads to large object files.
+        )
+
+        # Do not warn about use of unsafe CRT Library functions.
+        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "_CRT_SECURE_NO_WARNINGS=1")
+        # Workaround for deprecation warnings in Visual Studio 2022 due to Qt's QVarLength Array:
+        # "warning C4996: 'stdext::checked_array_iterator<Ovito::TimeInterval *>': warning STL4043: stdext::checked_array_iterator, stdext::unchecked_array_iterator, and related factory functions are non-Standard extensions and will be removed in the future. std::span (since C++20) and gsl::span can be used instead."
+        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING=1")
+
+        IF(OVITO_BUILD_CONDA)
+            # Silence deprecation warnings in conda-forge's 'qt-main' package (qpdfwriter.h and qpagedpaintdevice.h).
+            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "/wd4996")
+        ENDIF()
+
+        # Activate newer lambda function processor of MSVC (needed for correct copy-of-this captures).
+        # (https://docs.microsoft.com/en-us/cpp/build/reference/zc-lambda?view=msvc-170)
+        #IF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.29)
+        #   TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "/Zc:lambda")
+        #ELSEIF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.23)
+        #   TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "/experimental:newLambdaProcessor")
+        #ENDIF()
+    ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        # Turn off Clang compiler warnings regarding undefined instantiation of static variable of class templates.
+        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-undefined-var-template")
+        # We are using MPL compile-time string literals in our code. Disable the resulting compiler warning ("warning: multi-character character constant [-Wmultichar]").
+        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-multichar")
+    ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+        # Silence Intel DPC++ compiler warning: "explicit comparison with NaN in fast floating point mode" on every use of std::isnan()
+        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-tautological-constant-compare")
+        # Silence Intel DPC++ compiler warning: "field XXX will be initialized after field YYY"
+        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-reorder-ctor")
+        # Silence Intel DPC++ compiler warning: "destructor called on non-final XXX that has virtual functions but non-virtual destructor"
+        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-delete-non-abstract-non-virtual-dtor")
+        # Silence Intel DPC++ compiler warning: "known but unsupported action 'shared' for '#pragma section' - ignored"
+        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-ignored-pragmas")
+        # Silence Intel DPC++ compiler warning: "warning: 'QImage::setPixelColor' redeclared inline; 'dllimport' attribute ignored"
+        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-ignored-attributes")
+        # Silence Intel DPC++ compiler remark: "Note that use of '-g' without any optimization-level option will turn off most compiler optimizations similar to use of '-O0'"
+        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Rno-debug-disables-optimization")
+    ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        # We are using MPL compile-time string literals in our code. Disable the resulting compiler warning ("warning: multi-character character constant [-Wmultichar]").
+        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-multichar")
+        IF(CYGWIN)
+            # Linking fails without -O3
+            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-O3")
+        ENDIF()
+    ENDIF()
+
+    # Enable build with AddressSanitizer support if requested.
+    IF(OVITO_USE_ADDRESS_SANITIZER)
+        IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "/fsanitize=address")
+        ELSE()
+            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-fsanitize=address")
+            TARGET_LINK_OPTIONS(${target_name} PUBLIC "-fsanitize=address")
+        ENDIF()
+    ENDIF()
+
+ENDMACRO()
+
 # This macro creates an OVITO plugin module.
 MACRO(OVITO_STANDARD_PLUGIN target_name)
 
@@ -70,62 +145,8 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
         ENDFOREACH()
     ENDIF()
 
-    # Speed up compilation by using unity build.
-    IF(OVITO_USE_UNITY_BUILD)
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES UNITY_BUILD ON)
-    ENDIF()
-
-    IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        # Turn off certain Microsoft compiler warnings.
-        TARGET_COMPILE_OPTIONS(${target_name}
-            PUBLIC "/wd4267" # Suppress warning on conversion from size_t to int, possible loss of data.
-            PUBLIC "/bigobj" # Compiling template code leads to large object files.
-        )
-
-        # Do not warn about use of unsafe CRT Library functions.
-        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "_CRT_SECURE_NO_WARNINGS=1")
-        # Workaround for deprecation warnings in Visual Studio 2022 due to Qt's QVarLength Array:
-        # "warning C4996: 'stdext::checked_array_iterator<Ovito::TimeInterval *>': warning STL4043: stdext::checked_array_iterator, stdext::unchecked_array_iterator, and related factory functions are non-Standard extensions and will be removed in the future. std::span (since C++20) and gsl::span can be used instead."
-        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING=1")
-
-        IF(OVITO_BUILD_CONDA)
-            # Silence deprecation warnings in conda-forge's 'qt-main' package (qpdfwriter.h and qpagedpaintdevice.h).
-            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "/wd4996")
-        ENDIF()
-
-        # Activate newer lambda function processor of MSVC (needed for correct copy-of-this captures).
-        # (https://docs.microsoft.com/en-us/cpp/build/reference/zc-lambda?view=msvc-170)
-        #IF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.29)
-        #   TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "/Zc:lambda")
-        #ELSEIF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.23)
-        #   TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "/experimental:newLambdaProcessor")
-        #ENDIF()
-    ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        # Turn off Clang compiler warnings regarding undefined instantiation of static variable of class templates.
-        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-undefined-var-template")
-        # We are using MPL compile-time string literals in our code. Disable the resulting compiler warning ("warning: multi-character character constant [-Wmultichar]").
-        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-multichar")
-    ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
-        # Silence Intel DPC++ compiler warning: "explicit comparison with NaN in fast floating point mode" on every use of std::isnan()
-        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-tautological-constant-compare")
-        # Silence Intel DPC++ compiler warning: "field XXX will be initialized after field YYY"
-        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-reorder-ctor")
-        # Silence Intel DPC++ compiler warning: "destructor called on non-final XXX that has virtual functions but non-virtual destructor"
-        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-delete-non-abstract-non-virtual-dtor")
-        # Silence Intel DPC++ compiler warning: "known but unsupported action 'shared' for '#pragma section' - ignored"
-        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-ignored-pragmas")
-        # Silence Intel DPC++ compiler warning: "warning: 'QImage::setPixelColor' redeclared inline; 'dllimport' attribute ignored"
-        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-ignored-attributes")
-        # Silence Intel DPC++ compiler remark: "Note that use of '-g' without any optimization-level option will turn off most compiler optimizations similar to use of '-O0'"
-        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Rno-debug-disables-optimization")
-    ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        # We are using MPL compile-time string literals in our code. Disable the resulting compiler warning ("warning: multi-character character constant [-Wmultichar]").
-        TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-Wno-multichar")
-        IF(CYGWIN)
-            # Linking fails without -O3
-            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-O3")
-        ENDIF()
-    ENDIF()
+    # Add standard compile and link options to the CMake target.
+    OVITO_ADD_STANDARD_COMPILE_OPTIONS(${target_name})
 
     # Make the name of current plugin available to the source code.
     TARGET_COMPILE_DEFINITIONS(${target_name} PRIVATE "OVITO_PLUGIN_NAME=\"${target_name}\"")

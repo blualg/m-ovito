@@ -32,6 +32,9 @@ ADD_LIBRARY(MinimumWeightMatchingCentrosymmetry
     mwm_csp.cpp
 )
 
+# Add standard compile and link options to the CMake target.
+OVITO_ADD_STANDARD_COMPILE_OPTIONS(MinimumWeightMatchingCentrosymmetry)
+
 # Simply export all symbols defined by the library, because the code doesn't explicitly export certain API symbols.
 SET_TARGET_PROPERTIES(MinimumWeightMatchingCentrosymmetry PROPERTIES CXX_VISIBILITY_PRESET "default")
 

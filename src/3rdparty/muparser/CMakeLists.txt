@@ -44,7 +44,10 @@ TARGET_INCLUDE_DIRECTORIES(muParser PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
 FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 TARGET_LINK_LIBRARIES(muParser PUBLIC Qt6::Core)
 
-IF(MSVC)
+# Add standard compile and link options to the CMake target.
+OVITO_ADD_STANDARD_COMPILE_OPTIONS(muParser)
+
+IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # Do not warn about missing dll-interface of members of an exported class.
     TARGET_COMPILE_OPTIONS(muParser PRIVATE "/wd4251")
     # Do not warn about missing dll-interface of base class of an exported class.

@@ -55,6 +55,9 @@ TARGET_LINK_LIBRARIES(Ovito PRIVATE
 # Support SYCL.
 OVITO_ADD_SYCL_TO_TARGET(Ovito)
 
+# Add standard compile and link options to the CMake target.
+OVITO_ADD_STANDARD_COMPILE_OPTIONS(Ovito)
+
 # Put the executable into the right directory.
 IF(APPLE AND NOT OVITO_BUILD_CONDA)
     SET_TARGET_PROPERTIES(Ovito PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${Ovito_BINARY_DIR}")

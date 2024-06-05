@@ -149,12 +149,8 @@ IF(BUILD_SHARED_LIBS)
     TARGET_COMPILE_DEFINITIONS(Qwt PUBLIC QWT_DLL)
 ENDIF()
 
-IF(MSVC)
-    # Do not warn when using deprecated functions.
-    TARGET_COMPILE_OPTIONS(Qwt PRIVATE "/wd4996")
-    # Suppress warning on conversion from size_t to int, possible loss of data.
-    TARGET_COMPILE_OPTIONS(Qwt PRIVATE "/wd4267")
-ENDIF()
+# Add standard compile and link options to the CMake target.
+OVITO_ADD_STANDARD_COMPILE_OPTIONS(Qwt)
 
 # Make header files of this library available to dependent targets.
 TARGET_INCLUDE_DIRECTORIES(Qwt INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/..")

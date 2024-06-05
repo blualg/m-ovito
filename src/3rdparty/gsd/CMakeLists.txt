@@ -40,11 +40,12 @@ SET_TARGET_PROPERTIES(gsd PROPERTIES UNITY_BUILD OFF)
 # Make header files of this library available to dependent targets.
 TARGET_INCLUDE_DIRECTORIES(gsd INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
-IF(MSVC)
-    # Do not warn about use of unsafe CRT Library functions.
-    TARGET_COMPILE_DEFINITIONS(gsd PRIVATE "_CRT_SECURE_NO_WARNINGS=")
+# Add standard compile and link options to the CMake target.
+OVITO_ADD_STANDARD_COMPILE_OPTIONS(gsd)
+
+IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # Suppress warning on conversion from size_t to int, possible loss of data.
-    TARGET_COMPILE_OPTIONS(gsd PRIVATE "/wd4267" "/wd4244")
+    TARGET_COMPILE_OPTIONS(gsd PRIVATE "/wd4244")
     # Suppress warning on signed/unsigned mismatch.
     TARGET_COMPILE_OPTIONS(gsd PRIVATE "/wd4018")
 ENDIF()

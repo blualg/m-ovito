@@ -133,20 +133,6 @@ IF(WIN32 AND OVITO_USE_SYCL)
     SET(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)
 ENDIF()
 
-# Enable build with AddressSanitizer support if requested.
-IF(OVITO_USE_ADDRESS_SANITIZER)
-    IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
-    ELSE()
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
-        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
-        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
-        SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
-        SET(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS} -fsanitize=address")
-    ENDIF()
-ENDIF()
-
 # Set the name of the macOS application bundle to generate.
 SET(MACOSX_BUNDLE_NAME "Ovito")
 SET(MACOSX_BUNDLE_BUNDLE_NAME "${MACOSX_BUNDLE_NAME}")

@@ -41,18 +41,16 @@ SET_TARGET_PROPERTIES(xdrfile PROPERTIES UNITY_BUILD OFF)
 # Make header files of this library available to dependent targets.
 TARGET_INCLUDE_DIRECTORIES(xdrfile INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/..")
 
-IF(MSVC)
-    # Do not warn about use of unsafe CRT Library functions.
-    TARGET_COMPILE_DEFINITIONS(xdrfile PRIVATE "_CRT_SECURE_NO_WARNINGS=")
-    # Suppress warning on conversion from size_t to int, possible loss of data.
-    TARGET_COMPILE_OPTIONS(xdrfile PRIVATE "/wd4267" "/wd4244")
-    # Suppress warning on signed/unsigned mismatch.
-    TARGET_COMPILE_OPTIONS(xdrfile PRIVATE "/wd4018")
-ENDIF()
+# Add standard compile and link options to the CMake target.
+OVITO_ADD_STANDARD_COMPILE_OPTIONS(xdrfile)
 
 IF(CMAKE_C_COMPILER_ID STREQUAL "IntelLLVM")
     # Silence Intel DPC++ compiler warning: "variable XXX set but not used"
     TARGET_COMPILE_OPTIONS(xdrfile PRIVATE "-Wno-unused-but-set-variable")
+ENDIF()
+IF(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    # Silence compiler warning: "warning: 'sprintf' is deprecated: This function is provided for compatibility reasons only."
+    TARGET_COMPILE_OPTIONS(xdrfile PRIVATE "-Wno-deprecated-declarations")
 ENDIF()
 
 IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYPI)

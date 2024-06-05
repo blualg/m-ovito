@@ -35,6 +35,9 @@ ADD_LIBRARY(kissfft
 # Give our library file a new name to not confuse it with any system versions of the library.
 SET_TARGET_PROPERTIES(kissfft PROPERTIES OUTPUT_NAME "ovito_kissfft")
 
+# Add standard compile and link options to the CMake target.
+OVITO_ADD_STANDARD_COMPILE_OPTIONS(kissfft)
+
 # Use double precision for FFT calculation.
 TARGET_COMPILE_DEFINITIONS(kissfft PUBLIC "kiss_fft_scalar=double")
 

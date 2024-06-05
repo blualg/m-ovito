@@ -64,6 +64,9 @@ IF(TARGET netcdf OR TARGET netCDF::netcdf)
     # Inform source code that the NetCDF library is available.
     TARGET_COMPILE_DEFINITIONS(NetCDFIntegration PUBLIC OVITO_NETCDF_SUPPORT)
 
+    # Add standard compile and link options to the CMake target.
+    OVITO_ADD_STANDARD_COMPILE_OPTIONS(NetCDFIntegration)
+
     # Support SYCL.
     OVITO_ADD_SYCL_TO_TARGET(NetCDFIntegration)
 

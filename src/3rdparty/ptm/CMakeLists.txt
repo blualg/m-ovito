@@ -69,10 +69,8 @@ IF(EMSCRIPTEN)
     TARGET_LINK_LIBRARIES(PolyhedralTemplateMatching PRIVATE Qt::Platform)
 ENDIF()
 
-IF(MSVC)
-    # Suppress warning on conversion from size_t to int, possible loss of data.
-    TARGET_COMPILE_OPTIONS(PolyhedralTemplateMatching PRIVATE "/wd4267" "/wd4244")
-ENDIF()
+# Add standard compile and link options to the CMake target.
+OVITO_ADD_STANDARD_COMPILE_OPTIONS(PolyhedralTemplateMatching)
 
 IF(NOT BUILD_SHARED_LIBS AND OVITO_BUILD_PYPI)
     # Since we will link this library into the dynamically loaded Python extension module, we need to use the fPIC flag.

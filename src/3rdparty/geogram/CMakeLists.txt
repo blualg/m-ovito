@@ -39,20 +39,19 @@ IF(NOT WIN32 AND NOT APPLE AND NOT EMSCRIPTEN)
     TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "GEO_USE_DUMMY_ATOMICS=1")
 ENDIF()
 
-IF(MSVC)
-    # Do not warn about use of unsafe CRT Library functions.
-    TARGET_COMPILE_DEFINITIONS(geogram PRIVATE "_CRT_SECURE_NO_WARNINGS=")
+# Add standard compile and link options to the CMake target.
+OVITO_ADD_STANDARD_COMPILE_OPTIONS(geogram)
+
+IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # Do not warn about missing dll-interface of members of an exported class.
     TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4251")
     # Do not warn about missing dll-interface of base class of an exported class.
     TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4275")
     # Suppress warning on conversion from size_t to int, possible loss of data.
-    TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4267" "/wd4244" "/wd4334")
+    TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4244" "/wd4334")
     # Do not warn on use of deprecated std::allocator members.
     TARGET_COMPILE_DEFINITIONS(geogram PUBLIC "_SILENCE_CXX17_OLD_ALLOCATOR_MEMBERS_DEPRECATION_WARNING=")
-ENDIF()
-
-IF(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
+ELSEIF(CMAKE_CXX_COMPILER_ID STREQUAL "IntelLLVM")
     # Silence Intel DPC++ compiler warning: "unused function"
     TARGET_COMPILE_OPTIONS(geogram PRIVATE "-Wno-unused-function")
     # Silence Intel DPC++ compiler warning: "function declared 'noreturn' should not return"
