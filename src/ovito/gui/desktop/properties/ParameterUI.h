@@ -44,6 +44,9 @@ public:
     /// Constructor.
     void initializeObject(PropertiesEditor* editor);
 
+    /// This method gets called by OORef<T>::create() right after the object has been fully initialized.
+    void completeObjectInitialization();
+
     /// Returns the properties editor hosting this component.
     PropertiesEditor* editor() const { return _editor; }
 

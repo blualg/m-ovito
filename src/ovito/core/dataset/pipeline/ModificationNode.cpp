@@ -103,6 +103,10 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
                 else
                     setStatus(PipelineStatus(tr("Modifier group is currently turned off.")));
             }
+            else {
+                // Clear the message 'Modifier is currently turned off.'.
+                setStatus(PipelineStatus());
+            }
 
             // Manually generate target changed event when modifier group is being enabled/disabled.
             // That's because events from the group are not automatically propagated.

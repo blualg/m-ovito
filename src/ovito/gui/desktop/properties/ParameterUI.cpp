@@ -39,12 +39,20 @@ void ParameterUI::initializeObject(PropertiesEditor* editor)
     OVITO_ASSERT(editor);
     _editor = editor;
 
-    if(editor->editObject())
-        setEditObject(editor->editObject());
-
     // Connect to the contentsReplaced() signal of the editor to synchronize the
     // parameter UI's edit object with the editor's edit object.
     connect(editor, &PropertiesEditor::contentsReplaced, this, &ParameterUI::setEditObject);
+}
+
+/******************************************************************************
+* This method gets called by OORef<T>::create() right after the object is fully initialized.
+******************************************************************************/
+void ParameterUI::completeObjectInitialization()
+{
+    RefMaker::completeObjectInitialization();
+
+    if(!editObject() && editor()->editObject())
+        setEditObject(editor()->editObject());
 }
 
 }   // End of namespace
