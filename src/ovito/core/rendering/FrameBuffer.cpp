@@ -143,9 +143,16 @@ void FrameBuffer::clear(const ColorA& color, const QRect& rect, bool delayed)
 void FrameBuffer::commitChanges()
 {
     if(!_delayedClearRect.isNull()) {
-        QRect rect = std::exchange(_delayedClearRect, QRect());
-        clear(_delayedClearColor, rect);
-        OVITO_ASSERT(_delayedClearRect.isNull());
+        QRect clearRect = std::exchange(_delayedClearRect, QRect());
+        if(clearRect == _image.rect()) {
+            _image.fill(_delayedClearColor);
+        }
+        else {
+            QPainter painter(&_image);
+            painter.setCompositionMode(QPainter::CompositionMode_Source);
+            painter.fillRect(clearRect, _delayedClearColor);
+        }
+        _delayedUpdateRect |= clearRect;
     }
 }
 

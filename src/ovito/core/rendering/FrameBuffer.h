@@ -170,7 +170,8 @@ public:
     /// Fires the contentChanged() signal.
     void update(const QRect& changedRegion) {
         commitChanges();
-        Q_EMIT contentChanged(changedRegion);
+        Q_EMIT contentChanged(changedRegion | _delayedUpdateRect);
+        _delayedUpdateRect = {};
     }
 
     /// Removes unnecessary pixels along the outer edges of the image.
@@ -211,6 +212,9 @@ private:
 
     /// Uniform color for delayed buffer clearing.
     ColorA _delayedClearColor;
+
+    /// Saved rect to be updated at some later time.
+    QRect _delayedUpdateRect;
 };
 
 }   // End of namespace

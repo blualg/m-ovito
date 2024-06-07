@@ -105,7 +105,6 @@ public:
 #ifdef OVITO_DEBUG
     /// Destructor.
     ~RendererResourceCache() {
-        OVITO_ASSERT(!_owningThread || QThread::currentThread() == _owningThread);
         // The cache should be completely empty at the time it is destroyed.
         OVITO_ASSERT(_activeResourceFrames.empty());
         OVITO_ASSERT(empty());
@@ -156,12 +155,6 @@ public:
 
     /// Opens a new frame with the resource manager.
     ResourceFrame acquireResourceFrame() {
-#ifdef OVITO_DEBUG
-        if(!_owningThread)
-            _owningThread = QThread::currentThread();
-        OVITO_ASSERT(QThread::currentThread() == _owningThread);
-#endif
-
         // On the first frame, the cache should be empty.
         OVITO_ASSERT(!_activeResourceFrames.empty() || _entries.empty());
 
@@ -171,8 +164,9 @@ public:
 
         // Add it to the list of active frames.
         _nextResourceFrame++;
+#ifdef OVITO_DEBUG
         _activeResourceFrames.push_back(_nextResourceFrame);
-
+#endif
         return ResourceFrame(shared_from_this(), _nextResourceFrame);
     }
 
@@ -180,9 +174,9 @@ private:
 
     /// Informs the resource manager that the resources associated with the given frame can be released.
     void releaseResourceFrame(ResourceFrameHandle frame) {
-        OVITO_ASSERT(QThread::currentThread() == _owningThread);
         OVITO_ASSERT(frame > 0);
 
+#ifdef OVITO_DEBUG
         // Remove frame from the list of active frames.
         // There is no need to maintain the original list order.
         // We can move the last item into the erased list position.
@@ -190,6 +184,7 @@ private:
         OVITO_ASSERT(iter != _activeResourceFrames.end());
         *iter = _activeResourceFrames.back();
         _activeResourceFrames.pop_back();
+#endif
 
         // Release the resources associated with the frame unless they are shared with another frame that is still in flight.
         auto end = _entries.end();
@@ -238,16 +233,12 @@ private:
     /// lookup() returns references to elements stored in the cache, which must remain valid even when new objects are added.
     std::deque<CacheEntry> _entries;
 
-    /// List of frames that are currently being rendered (by the CPU and/or the GPU).
-    std::vector<ResourceFrameHandle> _activeResourceFrames;
-
     /// Counter that keeps track of how many resource frames have been acquired in total.
     ResourceFrameHandle _nextResourceFrame = 0;
 
 #ifdef OVITO_DEBUG
-    /// Keep track of the thread that owns the resource cache.
-    /// Resource caches are not thread-safe and may only be used from a single thread.
-    QThread* _owningThread = nullptr;
+    /// List of frames that are currently being rendered (by the CPU and/or the GPU).
+    std::vector<ResourceFrameHandle> _activeResourceFrames;
 #endif
 };
 

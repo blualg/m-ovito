@@ -173,7 +173,7 @@ public:
 	const RendererResourceCache::ResourceFrame& visCache() const { OVITO_ASSERT(_visCache); return _visCache; }
 
 	/// Releases the data cache of the frame graph after use.
-	RendererResourceCache::ResourceFrame takeVisCache() { return std::move(_visCache); }
+	RendererResourceCache::ResourceFrame takeCacheFrame() { return std::move(_visCache); }
 
 	/// Returns the animation time being rendered.
 	AnimationTime time() const { return _time; }

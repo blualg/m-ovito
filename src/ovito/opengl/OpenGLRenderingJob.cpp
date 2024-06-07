@@ -175,7 +175,7 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     }
 #endif
 
-    // Open a new cache frame for the OpenGL resource managament.
+    // Open a new cache frame for the OpenGL resource management.
     _currentResourceFrame = visCache()->acquireResourceFrame();
 
     // Get the OpenGL version.

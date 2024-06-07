@@ -364,7 +364,7 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
             this_task::throwIfCanceled();
 
             // Get the cache frame back from the frame graph to keep resources alive until we start the next frame.
-            vpData.inactiveCacheFrame = frameGraph->takeVisCache();
+            vpData.inactiveCacheFrame = frameGraph->takeCacheFrame();
 
             // Before rendering the next frame, wait for the previous one to complete.
             finishRenderingAndSaveToFile(&vpData == &viewportRenderingData.front() && frameIndex != 0);

@@ -115,7 +115,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             this_task::setProgressText(tr("Ambient occlusion"));
 
             // Move this object into a function scope variable to make sure it gets destroyed in the current thread.
-            // That's because the QOpenGLContext and other resources managed by the rendering job is tied to a specific thread.
+            // That's because the QOpenGLContext and other resources managed by the rendering job are tied to a specific thread.
             auto renderingJob = std::move(renderingJobTemp);
 
             // Get particle radii.
@@ -143,7 +143,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
 
             // Create a frame graph.
             std::shared_ptr<FrameGraph> frameGraph = std::make_shared<FrameGraph>(
-                std::make_shared<RendererResourceCache>()->acquireResourceFrame(),
+                renderingJob->visCache()->acquireResourceFrame(),
                 AnimationTime(0), ViewProjectionParameters{}, frameBufferRect.size(), false, false, false,
                 renderingJob->preferredImageFormat(), 1.0);
             frameGraph->setClearColor(ColorA(0,0,0,0));
