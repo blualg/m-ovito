@@ -20,7 +20,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>

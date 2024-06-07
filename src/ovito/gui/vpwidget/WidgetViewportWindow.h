@@ -23,15 +23,17 @@
 #pragma once
 
 
-#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/GUIBase.h>
 #include <ovito/gui/base/viewport/BaseViewportWindow.h>
+
+#include <QWidget>
 
 namespace Ovito {
 
 /**
  * \brief Generic base class for viewport windows that implements mouse input handling.
  */
-class OVITO_GUI_EXPORT WidgetViewportWindow : public BaseViewportWindow
+class OVITO_VIEWPORTWIDGET_EXPORT WidgetViewportWindow : public BaseViewportWindow
 {
     Q_OBJECT
 	OVITO_CLASS(WidgetViewportWindow)

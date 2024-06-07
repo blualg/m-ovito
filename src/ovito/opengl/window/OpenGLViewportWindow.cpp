@@ -20,7 +20,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>

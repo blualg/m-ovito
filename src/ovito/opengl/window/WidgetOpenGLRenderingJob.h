@@ -33,7 +33,7 @@ namespace Ovito {
 /**
  * \brief A rendering job that uses OpenGL to render into an QOpenGLWidget.
  */
-class OVITO_OPENGLRENDERERGUI_EXPORT WidgetOpenGLRenderingJob : public OpenGLRenderingJob
+class OVITO_OPENGLRENDERERWINDOW_EXPORT WidgetOpenGLRenderingJob : public OpenGLRenderingJob
 {
     OVITO_CLASS(WidgetOpenGLRenderingJob)
 

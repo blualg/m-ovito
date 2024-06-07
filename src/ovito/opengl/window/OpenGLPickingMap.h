@@ -23,7 +23,7 @@
 #pragma once
 
 
-#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 
 namespace Ovito {
@@ -31,7 +31,7 @@ namespace Ovito {
 /**
  * \brief Stores the result of an object picking render pass.
  */
-class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLPickingMap : public ObjectPickingIdentifierMap
+class OVITO_OPENGLRENDERERWINDOW_EXPORT OpenGLPickingMap : public ObjectPickingIdentifierMap
 {
 public:
 

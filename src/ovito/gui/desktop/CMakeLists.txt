@@ -125,7 +125,6 @@ OVITO_STANDARD_PLUGIN(Gui
         properties/DataObjectReferenceParameterUI.cpp
         rendering/RenderSettingsEditor.cpp
         viewport/ViewportMenu.cpp
-        viewport/WidgetViewportWindow.cpp
         viewport/input/XFormModes.cpp
         viewport/overlays/CoordinateTripodOverlayEditor.cpp
         viewport/overlays/TextLabelOverlayEditor.cpp
@@ -136,6 +135,7 @@ OVITO_STANDARD_PLUGIN(Gui
         resources/gui.qrc
     PLUGIN_DEPENDENCIES
         GuiBase
+        ViewportWidget
     LIB_DEPENDENCIES
         Qt6::Widgets
         Qt6::Network

@@ -23,8 +23,8 @@
 #pragma once
 
 
-#include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
+#include <ovito/gui/base/GUIBase.h>
+#include <ovito/gui/vpwidget/WidgetViewportWindow.h>
 #include <ovito/opengl/OpenGLRenderer.h>
 #include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
 #include "OpenGLPickingMap.h"
@@ -36,7 +36,7 @@ namespace Ovito {
 /**
  * \brief The viewport window implementation of the OpenGL renderer.
  */
-class OVITO_OPENGLRENDERERGUI_EXPORT OpenGLViewportWindow : public WidgetViewportWindow
+class OVITO_OPENGLRENDERERWINDOW_EXPORT OpenGLViewportWindow : public WidgetViewportWindow
 {
     Q_OBJECT
     OVITO_CLASS(OpenGLViewportWindow)

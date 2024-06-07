@@ -20,7 +20,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/base/GUIBase.h>
 #include <ovito/opengl/OpenGLRenderer.h>
 #include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
 #include "OpenGLPickingMap.h"

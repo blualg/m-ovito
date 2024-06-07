@@ -20,11 +20,18 @@
 #
 #######################################################################################
 
-ADD_SUBDIRECTORY(base)
-ADD_SUBDIRECTORY(vpwidget)
-IF(OVITO_BUILD_APP)
-    ADD_SUBDIRECTORY(desktop)
-ENDIF()
+# Find the required Qt modules.
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS OpenGLWidgets REQUIRED)
 
-# Propagate list of plugins to parent scope.
-SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)
+# Define the interactive viewport widget component of the OpenGLRenderer plugin.
+OVITO_STANDARD_PLUGIN(OpenGLRendererWindow
+    SOURCES
+        OpenGLViewportWindow.cpp
+        WidgetOpenGLRenderingJob.cpp
+        OpenGLPickingMap.cpp
+    PLUGIN_DEPENDENCIES
+        OpenGLRenderer
+        ViewportWidget
+    LIB_DEPENDENCIES
+        Qt6::OpenGLWidgets
+)

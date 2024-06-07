@@ -23,7 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/viewport/ViewportMenu.h>
-#include <ovito/gui/desktop/viewport/WidgetViewportWindow.h>
+#include <ovito/gui/vpwidget/WidgetViewportWindow.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
@@ -91,7 +91,7 @@ OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, M
 #endif
 
     // Select the viewport window implementation to use.
-    OvitoClassPtr windowClass = PluginManager::instance().findClass("OpenGLRendererGui", "OpenGLViewportWindow");
+    OvitoClassPtr windowClass = PluginManager::instance().findClass("OpenGLRendererWindow", "OpenGLViewportWindow");
 #ifdef OVITO_BUILD_PROFESSIONAL
     if(selectedGraphicsApi.compare("anari", Qt::CaseInsensitive) == 0) {
         windowClass = PluginManager::instance().findClass("AnariRendererGui", "AnariViewportWindow");

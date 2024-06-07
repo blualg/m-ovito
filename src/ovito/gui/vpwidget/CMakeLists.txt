@@ -20,11 +20,17 @@
 #
 #######################################################################################
 
-ADD_SUBDIRECTORY(base)
-ADD_SUBDIRECTORY(vpwidget)
-IF(OVITO_BUILD_APP)
-    ADD_SUBDIRECTORY(desktop)
-ENDIF()
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Widgets REQUIRED)
+
+# Define plugin module.
+OVITO_STANDARD_PLUGIN(ViewportWidget
+    SOURCES
+        WidgetViewportWindow.cpp
+    PLUGIN_DEPENDENCIES
+        GuiBase
+    LIB_DEPENDENCIES
+        Qt6::Widgets
+)
 
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

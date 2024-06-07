@@ -20,19 +20,11 @@
 #
 #######################################################################################
 
-# Find the required Qt modules.
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS OpenGLWidgets REQUIRED)
-
 # Define the GUI component of the OpenGLRenderer plugin.
 OVITO_STANDARD_PLUGIN(OpenGLRendererGui
     SOURCES
-        OpenGLViewportWindow.cpp
-        WidgetOpenGLRenderingJob.cpp
-        OpenGLPickingMap.cpp
         OpenGLRendererEditor.cpp
     PLUGIN_DEPENDENCIES
         OpenGLRenderer
-    LIB_DEPENDENCIES
-        Qt6::OpenGLWidgets
     GUI_PLUGIN
 )

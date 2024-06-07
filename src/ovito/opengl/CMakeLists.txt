@@ -66,8 +66,13 @@ IF(NOT OVITO_BUILD_CONDA)
 
 ENDIF()
 
+# Build module that containing the interactive viewport widget.
+ADD_SUBDIRECTORY(window)
+
 # Build corresponding GUI plugin.
-ADD_SUBDIRECTORY(gui)
+IF(OVITO_BUILD_APP)
+    ADD_SUBDIRECTORY(gui)
+ENDIF()
 
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)
