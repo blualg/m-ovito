@@ -34,7 +34,7 @@
 namespace Ovito {
 
 /**
- * \brief The viewport window implementation of the OpenGL renderer.
+ * \brief The interactive viewport window implementation of the OpenGL renderer.
  */
 class OVITO_OPENGLRENDERERWINDOW_EXPORT OpenGLViewportWindow : public WidgetViewportWindow
 {
@@ -55,7 +55,7 @@ protected:
     virtual QWidget* createWidget(QWidget* parent) override;
 
     /// Creates the rendering job that renders the contents of the viewport window.
-    OORef<RenderingJob> createRenderingJob() override;
+    virtual OORef<RenderingJob> createRenderingJob() override;
 
     /// This is called after the frame graph has been updated to render the viewport contents on screen.
     virtual void rerender() override;
