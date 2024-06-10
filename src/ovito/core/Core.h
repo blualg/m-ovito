@@ -103,6 +103,7 @@
 #include <QVariant>
 #include <QMap>
 #include <QProcess>
+#include <QCryptographicHash>
 #ifndef OVITO_DISABLE_THREADING
     #include <QThreadPool>
     #include <QWaitCondition>
