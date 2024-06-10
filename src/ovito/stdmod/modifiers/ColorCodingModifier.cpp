@@ -31,6 +31,7 @@
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/app/PluginManager.h>
 #include "ColorCodingModifier.h"
+#include <chrono>
 
 namespace Ovito {
 
@@ -245,8 +246,16 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
             endValue = std::numeric_limits<FloatType>::lowest();
 
             // Iterate over the property array to find the lowest/highest value.
+#if defined(_MSC_VER) && !defined(__clang__)
+            // Workaround for msvc where std::tie does not update / replace startValue and endValue.
+            // Assigning the return value (a temporary std::pair) to the tuple of references created by std::tie does not work
+            // because we're trying to bind temporary values to non-temporary references (startValue and endValue).
+            std::pair<FloatType, FloatType> minMax = property->minMax(vectorComponent, selection);
+            startValue = minMax.first;
+            endValue = minMax.second;
+#else
             std::tie(startValue, endValue) = property->minMax(vectorComponent, selection);
-
+#endif
             // If the range is valid. It may be not if the property is empty or no elements are selected.
             if(startValue != std::numeric_limits<FloatType>::max()) {
                 state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), startValue, request.modificationNode());
