@@ -84,7 +84,7 @@ public:
     /// Constructor.
     void initializeObject(ObjectInitializationFlags flags);
 
-    /// This method is called by the system when the modifier has been inserted into a data pipeline.
+    /// Gets called by the system when the modifier is being inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
     /// Modifies the input data.

@@ -70,7 +70,7 @@ public:
     /// Returns the status of the object represented by the list item.
     const PipelineStatus& status() const;
 
-    /// Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+    /// Returns a short piece of information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
     QVariant shortInfo(Pipeline* selectedPipeline) const;
 
     /// Returns whether an active computation is in progress for this object.

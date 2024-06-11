@@ -103,7 +103,7 @@ ModificationNode* Modifier::someNode() const
 }
 
 /******************************************************************************
-* Returns the current status of the modifier's pipeline node(s).
+* Returns the current combined status of the pipeline nodes that share this modifier.
 ******************************************************************************/
 PipelineStatus Modifier::globalStatus() const
 {

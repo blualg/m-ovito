@@ -139,7 +139,7 @@ public:
         return static_object_cast<ColorCodingModifierDelegate>(DelegatingModifier::delegate());
     }
 
-    /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+    /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return sourceProperty().nameWithComponent(); }
 
     /// Sets the start and end value to the minimum and maximum value of the selected input property.

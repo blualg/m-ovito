@@ -162,7 +162,7 @@ public:
     /// Moves the plane along its current normal vector to position in the center of the simulation cell.
     void centerPlaneInSimulationCell(ModificationNode* node, AnimationTime time);
 
-    /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+    /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override;
 
     /// Called when the object is opened in a new parameter editor in the UI.
@@ -183,7 +183,7 @@ public:
                                          DataBuffer* maskBuffer, const Property* selectionProperty);
 
 protected:
-    /// This method is called by the system when the modifier has been inserted into a data pipeline.
+    /// Gets called by the system when the modifier is being inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 
     /// Is called when a RefTarget referenced by this object generated an event.

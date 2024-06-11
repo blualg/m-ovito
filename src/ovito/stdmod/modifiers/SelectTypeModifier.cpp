@@ -215,7 +215,7 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
 }
 
 /******************************************************************************
-* Returns a short piece information (typically a string or color) to be
+* Returns a short piece of information (typically a string or color) to be
 * displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
 QVariant SelectTypeModifier::getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const

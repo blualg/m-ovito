@@ -91,7 +91,7 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
 {
     if(event.type() == ReferenceEvent::TargetEnabledOrDisabled) {
         if(source == modifier() || source == modifierGroup()) {
-            // If modifier provides animation frames, the animation interval might change when the
+            // If the modifier provides animation frames, the animation interval might change when the
             // modifier gets enabled/disabled.
             if(!isBeingLoaded())
                 notifyDependents(ReferenceEvent::AnimationFramesChanged);
@@ -494,7 +494,7 @@ QMap<int, QString> ModificationNode::animationFrameLabels() const
 }
 
 /******************************************************************************
- * Returns a short piece information (typically a string or color) to be
+ * Returns a short piece of information (typically a string or color) to be
  * displayed next to the object's title in the pipeline editor.
  ******************************************************************************/
 QVariant ModificationNode::getPipelineEditorShortInfo(Scene* scene) const

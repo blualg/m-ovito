@@ -94,7 +94,7 @@ void ActiveObject::registerActiveFuture(const FutureBase& future)
 }
 
 /******************************************************************************
-* Returns a short piece information (typically a string or color) to be
+* Returns a short piece of information (typically a string or color) to be
 * displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
 QVariant ActiveObject::getPipelineEditorShortInfo(Scene* scene) const

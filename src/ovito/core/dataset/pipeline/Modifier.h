@@ -45,49 +45,49 @@ class OVITO_CORE_EXPORT Modifier : public RefTarget
 
 public:
 
-    /// \brief This method is called by the system when the modifier has been inserted into a data pipeline.
+    /// Gets called by the system when the modifier is being inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) {}
 
-    /// \brief Throws an exception if the pipeline stage cannot be evaluated at this time. This is called by the system to catch user mistakes that would lead to infinite recursion.
+    /// Throws an exception if the pipeline stage cannot be evaluated at this time.
+    /// This is called by the system to catch user mistakes that would lead to infinite recursion.
     virtual void preEvaluationCheck(const PipelineEvaluationRequest& request) const {}
 
-    /// \brief Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
+    /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
     virtual void inputCachingHints(ModifierEvaluationRequest& request) {}
 
-    /// \brief This method is called by the ModificationNode to let the modifier adjust the time interval
+    /// This method is called by the ModificationNode to let the modifier adjust the time interval
     /// of a TargetChanged event received from the upstream pipeline before it is propagated to the
     /// downstream pipeline.
     virtual void restrictInputValidityInterval(TimeInterval& iv) const {}
 
-    /// \brief Indicates whether the interactive viewports should be updated after the modifier has computed
-    ///        its results and before the entire pipeline is complete.
+    /// Indicates whether the interactive viewports should be updated after the modifier has computed
+    /// its results and before the entire pipeline is complete.
     virtual bool shouldRefreshViewportsAfterEvaluation() { return false; }
 
-    /// \brief Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
-    ///        been changed and before the entire pipeline is recomputed.
+    /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
+    /// been changed and before the entire pipeline is recomputed.
     virtual bool shouldRefreshViewportsAfterChange() { return false; }
 
-    /// \brief Indicates whether the modifier wants to keep its partial compute results after one of its parameters has been changed.
+    /// Indicates whether the modifier wants to keep its partial compute results after one of its parameters has been changed.
     virtual bool shouldKeepPartialResultsAfterChange(const PropertyFieldEvent& event) { return false; }
 
-    /// \brief Lets the modifier render itself in an interactive viewport.
+    /// Lets the modifier render itself in an interactive viewport.
     virtual void renderModifierVisual(ModificationNode* modNode, Pipeline* pipeline, FrameGraph& frameGraph) {}
 
-    /// \brief Returns the list of pipeline nodes that reference this modifier.
-    /// \return The list of ModificationNode objects, each describing a particular use of this Modifier in a pipeline.
+    /// Returns the list of pipeline nodes that share this modifier.
     ///
     /// The same modifier can be applied in several data pipelines.
     /// Each application of the modifier instance is represented by an instance of the ModificationNode class.
     /// This method can be used to determine all such nodes associated with this Modifier instance.
     QVector<ModificationNode*> nodes() const;
 
-    /// \brief Returns one of the pipelines nodes referencing this modifier in a pipeline.
+    /// Returns one of the pipelines nodes sharing this modifier.
     ModificationNode* someNode() const;
 
-    /// \brief Creates a new modification node for inserting this modifier into a pipeline.
+    /// Creates a new modification node for inserting this modifier into a pipeline.
     OORef<ModificationNode> createModificationNode();
 
-    /// \brief Returns the title of this modifier object.
+    /// Returns the UI title of this modifier.
     virtual QString objectTitle() const override {
         if(title().isEmpty())
             return RefTarget::objectTitle();
@@ -95,25 +95,25 @@ public:
             return title();
     }
 
-    /// \brief Changes the title of this modifier.
+    /// Changes the title of this modifier.
     void setObjectTitle(const QString& title) { setTitle(title); }
 
-    /// \brief Returns the current status of the modifier's applications.
+    /// Returns the current combined status of the pipeline nodes that share this modifier.
     PipelineStatus globalStatus() const;
 
-    /// \brief Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+    /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const { return {}; }
 
-    /// \brief Returns the number of animation frames this modifier provides.
+    /// Returns the number of animation frames this modifier provides.
     virtual int numberOfOutputFrames(ModificationNode* node) const;
 
-    /// \brief Given an animation time, computes the source frame to show.
+    /// Given an animation time, computes the source frame to show.
     virtual int animationTimeToSourceFrame(AnimationTime time, int inputFrame) const { return inputFrame; }
 
-    /// \brief Given a source frame index, returns the animation time at which it is shown.
+    /// Given a source frame index, returns the animation time at which it is shown.
     virtual AnimationTime sourceFrameToAnimationTime(int frame, AnimationTime inputTime) const { return inputTime; }
 
-    /// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
+    /// Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
     virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const { return inputLabels; }
 
 protected:
@@ -126,15 +126,13 @@ protected:
 
 private:
 
-    /// Flag that indicates whether the modifier is enabled.
+    /// Dndicates whether the modifier is currently enabled. A disabled modifier will be skipped during pipeline evaluation.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, isEnabled, setEnabled);
 
-    /// The user-defined title of this modifier.
+    /// A user-defined title of this modifier, which overrides the default title provided by the modifier class.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, title, setTitle);
 
     friend ModificationNode;
 };
 
 }   // End of namespace
-
-Q_DECLARE_METATYPE(Ovito::Modifier*);

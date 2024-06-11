@@ -110,7 +110,7 @@ public:
         }
     }
 
-    /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+    /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return expression(); }
 
 protected:

@@ -72,7 +72,7 @@ public:
         if(isolevelController()) isolevelController()->setFloatValue(AnimationTime(0), value);
     }
 
-    /// Returns a short piece information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor
+    /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor
     /// list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override
     {

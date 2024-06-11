@@ -64,7 +64,7 @@ public:
     /// Returns true if at least one computation task associated with this object is currently active.
     bool isObjectActive() const { return _numberOfActiveTasks != 0; }
 
-    /// Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+    /// Returns a short piece of information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene) const;
 
 protected:

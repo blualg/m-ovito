@@ -60,7 +60,7 @@ public:
     /// Returns the type of this list item.
     OverlayItemType itemType() const { return _itemType; }
 
-    /// Returns a short piece information (typically a string) to be displayed next to the object's title in the UI.
+    /// Returns a short piece of information (typically a string) to be displayed next to the object's title in the UI.
     QVariant shortInfo(Viewport* selectedViewport) const;
 
 Q_SIGNALS:

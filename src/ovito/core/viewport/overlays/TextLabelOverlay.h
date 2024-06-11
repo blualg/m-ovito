@@ -52,7 +52,7 @@ public:
         setOffsetY(roundPercent(offsetY() + delta.y()));
     }
 
-    /// Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+    /// Returns a short piece of information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene) const override;
 
 protected:
