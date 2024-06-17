@@ -187,12 +187,12 @@ public:
 
     /// Creates a promise together with a new task.
     template<typename task_type = Task>
-    static Promise create() {
+    [[nodiscard]] static Promise create() {
         return Promise(std::make_shared<detail::TaskWithStorage<R, task_type>>(Task::NoState, std::nullopt));
     }
 
     /// Returns a Future that is associated with the same shared state as this promise.
-    future_type future() {
+    [[nodiscard]] future_type future() {
 #ifdef OVITO_DEBUG
         OVITO_ASSERT_MSG(!_futureCreated, "Promise::future()", "Only a single Future may be created from a Promise.");
         _futureCreated = true;
@@ -201,7 +201,7 @@ public:
     }
 
     /// Returns a SharedFuture that is associated with the same shared state as this promise.
-    shared_future_type sharedFuture() {
+    [[nodiscard]] shared_future_type sharedFuture() {
         return shared_future_type(TaskPtr(task()));
     }
 
@@ -214,13 +214,13 @@ public:
 protected:
 
     /// Create a promise that is ready and provides immediate default-constructed results.
-    static Promise createImmediateEmpty() {
+    [[nodiscard]] static Promise createImmediateEmpty() {
         return Promise(std::make_shared<detail::TaskWithStorage<R>>(Task::Finished));
     }
 
     /// Create a promise that is ready and provides an immediate result.
     template<typename R2>
-    static Promise createImmediate(R2&& value) {
+    [[nodiscard]] static Promise createImmediate(R2&& value) {
         return Promise(std::make_shared<detail::TaskWithStorage<R>>(
             Task::Finished,
             std::forward<R2>(value)));
@@ -228,35 +228,35 @@ protected:
 
     /// Create a promise that is ready and provides an immediate result.
     template<typename... Args>
-    static Promise createImmediateEmplace(Args&&... args) {
+    [[nodiscard]] static Promise createImmediateEmplace(Args&&... args) {
         return Promise(std::make_shared<detail::TaskWithStorage<R>>(
             Task::Finished,
             std::forward<Args>(args)...));
     }
 
     /// Creates a promise that is in the 'exception' state.
-    static Promise createFailed(const Exception& ex) {
+    [[nodiscard]] static Promise createFailed(const Exception& ex) {
         Promise promise(std::make_shared<Task>(Task::Finished));
         promise.task()->_exceptionStore = std::make_exception_ptr(ex);
         return promise;
     }
 
     /// Creates a promise that is in the 'exception' state.
-    static Promise createFailed(Exception&& ex) {
+    [[nodiscard]] static Promise createFailed(Exception&& ex) {
         Promise promise(std::make_shared<Task>(Task::Finished));
         promise.task()->_exceptionStore = std::make_exception_ptr(std::move(ex));
         return promise;
     }
 
     /// Creates a promise that is in the 'exception' state.
-    static Promise createFailed(std::exception_ptr ex_ptr) {
+   [[nodiscard]]  static Promise createFailed(std::exception_ptr ex_ptr) {
         Promise promise(std::make_shared<Task>(Task::Finished));
         promise.task()->_exceptionStore = std::move(ex_ptr);
         return promise;
     }
 
     /// Creates a promise without results that is in the canceled state.
-    static Promise createCanceled() {
+    [[nodiscard]] static Promise createCanceled() {
         return Promise(std::make_shared<Task>(Task::State(Task::Canceled | Task::Finished)));
     }
 

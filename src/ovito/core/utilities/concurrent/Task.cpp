@@ -73,27 +73,27 @@ void Task::setFinished() noexcept
 ******************************************************************************/
 void Task::finishLocked(MutexLock& lock) noexcept
 {
-    OVITO_ASSERT(!isFinished());
-
     // Put this task into the 'finished' state.
-    _state.fetch_or(Finished, std::memory_order_relaxed);
+    auto state = _state.fetch_or(Finished, std::memory_order_relaxed);
 
     // Make sure that the result has been set (if not in canceled or error state).
     OVITO_ASSERT_MSG(_exceptionStore || isCanceled() || _hasResultsStored.load() || !_resultsStorage,
         "Task::finishLocked()",
         "Result has not been set for the task. Please check program code setting the task to finished.");
 
-    // Inform the registered callbacks.
-    callCallbacks(Finished, lock);
+    if(!(state & Finished)) {
+        // Inform the registered callbacks.
+        callCallbacks(Finished, lock);
 
-    // Note: Move the functions into a new local list first so that we can unlock the mutex.
-    decltype(_continuations) continuations = std::move(_continuations);
-    OVITO_ASSERT(_continuations.empty());
-    lock.unlock();
+        // Note: Move the functions into a new local list first so that we can unlock the mutex.
+        decltype(_continuations) continuations = std::move(_continuations);
+        OVITO_ASSERT(_continuations.empty());
+        lock.unlock();
 
-    // Run all continuation functions.
-    for(auto& cont : continuations)
-        std::move(cont)();
+        // Run all continuation functions.
+        for(auto& cont : continuations)
+            std::move(cont)();
+    }
 }
 
 /******************************************************************************
@@ -101,9 +101,16 @@ void Task::finishLocked(MutexLock& lock) noexcept
 ******************************************************************************/
 void Task::cancel() noexcept
 {
-    MutexLock lock(*this);
-    if(!isFinished())
+    if(!isFinished()) {
+        MutexLock lock(*this);
         cancelLocked(lock);
+
+        // If this is a synchronous task, finish it right away.
+        // If it is an asynchronous task, it will be finished automatically once the task worker function returns.
+        if(!isAsynchronousTask()) {
+            finishLocked(lock);
+        }
+    }
 }
 
 /******************************************************************************
@@ -113,10 +120,8 @@ void Task::cancelAndFinish() noexcept
 {
     if(!isFinished()) {
         MutexLock lock(*this);
-        if(!isFinished()) {
-            cancelLocked(lock);
-            finishLocked(lock);
-        }
+        cancelLocked(lock);
+        finishLocked(lock);
     }
 }
 
@@ -126,7 +131,8 @@ void Task::cancelAndFinish() noexcept
 void Task::cancelLocked(MutexLock& lock) noexcept
 {
     // Make sure the task isn't already finished.
-    OVITO_ASSERT(!isFinished());
+    if(isFinished())
+        return;
 
     // Set the canceled flag.
     auto state = _state.fetch_or(Canceled, std::memory_order_relaxed);

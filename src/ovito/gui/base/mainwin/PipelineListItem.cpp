@@ -152,6 +152,19 @@ void PipelineListItem::updateTitle()
 const PipelineStatus& PipelineListItem::status() const
 {
     if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
+        if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(activeObject)) {
+            if(!modNode->modifierAndGroupEnabled()) {
+                // Override modifier's status if it is currently disabled.
+                if(!modNode->modifierGroup() || modNode->modifierGroup()->isEnabled()) {
+                    static const PipelineStatus disabledModifierStatus(tr("Modifier is currently turned off."));
+                    return disabledModifierStatus;
+                }
+                else {
+                    static const PipelineStatus disabledGroupStatus(tr("Modifier group is currently turned off."));
+                    return disabledGroupStatus;
+                }
+            }
+        }
         return activeObject->status();
     }
     else {
@@ -161,7 +174,7 @@ const PipelineStatus& PipelineListItem::status() const
 }
 
 /******************************************************************************
-* Returns a short piece information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
+* Returns a short piece of information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
 QVariant PipelineListItem::shortInfo(Pipeline* selectedPipeline) const
 {

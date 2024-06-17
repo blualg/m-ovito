@@ -115,7 +115,7 @@ protected:
 private:
 
     /// The operation that processes all trajectory frames in the background to detect periodic crossings of particles.
-    SharedFuture<void> _unwrapOperation;
+    WeakSharedFuture<void> _unwrapOperation;
 
     /// The animation time up to which trajectories have already been unwrapped so far.
     AnimationTime _unwrappedUpToTime = AnimationTime::negativeInfinity();

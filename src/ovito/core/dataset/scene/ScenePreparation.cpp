@@ -159,7 +159,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
             return false;
         }
         else if(!_pipelineEvaluationFuture.isCanceled()) {
-            try { _pipelineEvaluationFuture.result(); }
+            try { _pipelineEvaluationFuture.waitForFinished(); }
             catch(const Exception& ex) {
                 qWarning() << "ScenePreparation::makeReady(): Pipeline evaluation raised an exception.";
                 ex.logError();

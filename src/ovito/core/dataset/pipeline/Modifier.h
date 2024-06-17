@@ -69,7 +69,12 @@ public:
     virtual bool shouldRefreshViewportsAfterChange() { return false; }
 
     /// Indicates whether the modifier wants to keep its partial compute results after one of its parameters has been changed.
-    virtual bool shouldKeepPartialResultsAfterChange(const PropertyFieldEvent& event) { return false; }
+    virtual bool shouldKeepPartialResultsAfterChange(const PropertyFieldEvent& event) {
+        // Avoid a full recomputation if the modifier gets enabled/disabled.
+        if(event.field() == PROPERTY_FIELD(isEnabled))
+            return true;
+        return false;
+    }
 
     /// Lets the modifier render itself in an interactive viewport.
     virtual void renderModifierVisual(ModificationNode* modNode, Pipeline* pipeline, FrameGraph& frameGraph) {}

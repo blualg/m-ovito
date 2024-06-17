@@ -117,17 +117,18 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
 {
     OVITO_ASSERT(request.modificationNode() == this);
 
-    if(_unwrapOperation.isValid() == false || _unwrapOperation.isCanceled()) {
+    SharedFuture unwrapOperation = _unwrapOperation.lock();
+    if(unwrapOperation.isValid() == false || unwrapOperation.isCanceled()) {
 
         // Determine the range of animation frames to be processed.
         int startFrame = 0;
-        if(unwrappedUpToTime() != AnimationTime::negativeInfinity())
-            startFrame = animationTimeToSourceFrame(unwrappedUpToTime());
-        int endFrame = std::max(numberOfSourceFrames(), startFrame);
+        int endFrame = numberOfSourceFrames();
+        if(endFrame <= 1 || (unwrappedUpToTime() != AnimationTime::negativeInfinity() && animationTimeToSourceFrame(unwrappedUpToTime()) >= endFrame - 1))
+            return Future<void>::createImmediateEmpty();
         auto inputFrameRange = boost::irange(startFrame, endFrame);
 
         // Iterate over all frames of the input range in sequential order.
-        _unwrapOperation = for_each_sequential(
+        unwrapOperation = for_each_sequential(
             std::move(inputFrameRange),
             ObjectExecutor(this, true), // Require deferred execution of each frame
             // Requests the next frame from the upstream pipeline.
@@ -139,9 +140,12 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
             WorkingData{this});
 
         // Display progress in the UI.
-        _unwrapOperation.task()->setProgressText(tr("Unwrapping particle trajectories"));
+        unwrapOperation.task()->setProgressText(tr("Unwrapping particle trajectories"));
+
+        // Keep a weak reference to the task.
+        _unwrapOperation = unwrapOperation;
     }
-    return _unwrapOperation;
+    return unwrapOperation;
 }
 
 /******************************************************************************
@@ -162,9 +166,11 @@ void UnwrapTrajectoriesModificationNode::invalidateUnwrapData()
 void UnwrapTrajectoriesModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
-        // Throw away precomputed information when the modifier or the upstream pipeline change.
-        // This also discards the stored information in case the modifier is turned off by the user.
-        invalidateUnwrapData();
+        if(static_cast<const TargetChangedEvent&>(event).field() != PROPERTY_FIELD(Modifier::isEnabled) || event.sender() != modifier()) {
+            // Throw away precomputed information when the modifier or the upstream pipeline change.
+            // This also discards the stored information in case the modifier is turned off by the user.
+            invalidateUnwrapData();
+        }
     }
     ModificationNode::notifyDependentsImpl(event);
 }
@@ -290,6 +296,9 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
 ******************************************************************************/
 void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, const PipelineFlowState& state)
 {
+    if(!_modNode->_unwrapOperation.lock().isValid())
+        return;
+
     AnimationTime time = _modNode->sourceFrameToAnimationTime(frame);
 
     // Get simulation cell geometry and boundary conditions.

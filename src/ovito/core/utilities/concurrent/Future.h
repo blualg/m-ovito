@@ -173,44 +173,44 @@ public:
     Future& operator=(const Future& other) = delete;
 
     /// Creates a future that is in the 'canceled' state.
-    static Future createCanceled() {
+    [[nodiscard]] static Future createCanceled() {
         return promise_type::createCanceled();
     }
 
     /// Create a future that is in the 'fulfilled' state and holds an immediate default-constructed result.
-    static Future createImmediateEmpty() {
+    [[nodiscard]] static Future createImmediateEmpty() {
         return promise_type::createImmediateEmpty();
     }
 
     /// Create a future that is in the 'fulfilled' state and holds an immediate result.
     template<typename V>
-    static Future createImmediate(V&& result) {
+    [[nodiscard]] static Future createImmediate(V&& result) {
         return promise_type::createImmediate(std::forward<V>(result));
     }
 
     /// Create a future that is in the 'fulfilled' state and holds an immediate result.
     template<typename... Args>
-    static Future createImmediateEmplace(Args&&... args) {
+    [[nodiscard]] static Future createImmediateEmplace(Args&&... args) {
         return promise_type::createImmediateEmplace(std::forward<Args>(args)...);
     }
 
     /// Creates a future that is in the 'exception' state.
-    static Future createFailed(const Exception& ex) {
+    [[nodiscard]] static Future createFailed(const Exception& ex) {
         return promise_type::createFailed(ex);
     }
 
     /// Creates a future that is in the 'exception' state.
-    static Future createFailed(Exception&& ex) {
+    [[nodiscard]] static Future createFailed(Exception&& ex) {
         return promise_type::createFailed(std::move(ex));
     }
 
     /// Creates a future that is in the 'exception' state.
-    static Future createFailed(std::exception_ptr ex_ptr) {
+    [[nodiscard]] static Future createFailed(std::exception_ptr ex_ptr) {
         return promise_type::createFailed(std::move(ex_ptr));
     }
 
     /// Create a new Future that is associated with the given task object.
-    static Future createFromTask(TaskPtr task) {
+    [[nodiscard]] static Future createFromTask(TaskPtr task) {
         OVITO_ASSERT(task);
         OVITO_ASSERT(task->_resultsStorage != nullptr || (std::is_void_v<R>));
         return Future(std::move(task));
@@ -219,7 +219,7 @@ public:
     /// Returns the results computed by the associated Promise.
     /// The function blocks until the result become available.
     template<typename R2 = R>
-    std::enable_if_t<!std::is_void_v<R2>, R> result() {
+    [[nodiscard]]  std::enable_if_t<!std::is_void_v<R2>, R> result() {
         OVITO_ASSERT_MSG(isValid(), "Future::results()", "Future must be valid.");
         waitForFinished();
         OVITO_ASSERT_MSG(isFinished(), "Future::results()", "Future must be in fulfilled state.");
@@ -230,12 +230,12 @@ public:
     /// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
     /// The provided continuation function must accept the results of this future or the future itself as an input parameter.
     template<typename Executor, typename Function>
-    detail::continuation_future_type<Function, Future>
+    [[nodiscard]] detail::continuation_future_type<Function, Future>
     then(Executor&& executor, Function&& f);
 
     /// Overload of the function above using the default inline executor.
     template<typename Function>
-    decltype(auto) then(Function&& f) { return then(InlineExecutor{}, std::forward<Function>(f)); }
+    [[nodiscard]] decltype(auto) then(Function&& f) { return then(InlineExecutor{}, std::forward<Function>(f)); }
 
     /// Applies a post-processing function to the future's results, which must returns the same type of value
     /// as the original future. The post-processing function is executed once the future is fulfilled.

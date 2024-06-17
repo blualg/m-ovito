@@ -157,7 +157,7 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
         // Propagate change event to upstream pipeline.
         // Note that this will invoke ModificationNode::notifyDependentsImpl(), which
         // takes care of invalidating the pipeline cache.
-        notifyTargetChangedOutsideInterval(validityInterval);
+        notifyDependentsImpl(TargetChangedEvent(event.sender(), static_cast<const TargetChangedEvent&>(event).field(), validityInterval));
 
         if(source == modifier()) {
             // Let the modifier decide whether partial compute results should be kept (depending on which modifier parameter has changed).
@@ -205,8 +205,10 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
                 newMod->notifyDependents(ReferenceEvent::PipelineInputChanged);
             }
 
-            // This implicitly resets the node's pipeline caches.
-            notifyDependents(ReferenceEvent::TargetEnabledOrDisabled);
+            // Reset the node's pipeline caches.
+            pipelineCache().invalidate();
+            partialResultsCache().reset();
+            setStatus(PipelineStatus());
 
             // The animation length might have changed when the modifier has changed.
             notifyDependents(ReferenceEvent::AnimationFramesChanged);
@@ -214,8 +216,10 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
     }
     else if(field == PROPERTY_FIELD(input)) {
         if(!isBeingLoaded() && !isBeingDeleted()) {
-            // This implicitly resets the node's pipeline caches.
-            notifyDependents(ReferenceEvent::TargetEnabledOrDisabled);
+            // Reset the node's pipeline caches.
+            pipelineCache().invalidate();
+            partialResultsCache().reset();
+            setStatus(PipelineStatus());
             // Update the status of the Modifier when ModificationNode is inserted/removed into pipeline.
             if(modifier())
                 modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
@@ -228,7 +232,7 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
         if(oldTarget) static_object_cast<ModifierGroup>(oldTarget)->unregisterNode(this);
         if(newTarget) static_object_cast<ModifierGroup>(newTarget)->registerNode(this);
 
-        if(!isBeingLoaded() && modifier()) {
+        if(!isBeingLoaded() && !isBeingDeleted() && modifier()) {
             // Whenever the modification node is moved in or out of a modifier group,
             // its effective enabled/disabled status may change. Emulate a corresponding notification event in this case.
             ModifierGroup* oldGroup = static_object_cast<ModifierGroup>(oldTarget);
@@ -248,18 +252,15 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
 void ModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
-        // Invalidate cached results when this modification node or its associated modifier change.
-        pipelineCache().invalidate(static_cast<const TargetChangedEvent&>(event).unchangedInterval());
+        if(static_cast<const TargetChangedEvent&>(event).field() != PROPERTY_FIELD(Modifier::isEnabled) || event.sender() != modifier()) {
+            // Invalidate cached results when this modification node or its associated modifier change.
+            pipelineCache().invalidate(static_cast<const TargetChangedEvent&>(event).unchangedInterval());
+        }
     }
     else if(event.type() == ReferenceEvent::ObjectStatusChanged) {
         // Notify the modifier group to update its combined status.
         if(modifierGroup())
             modifierGroup()->modificationNodeStatusChanged();
-    }
-    else if(event.type() == ReferenceEvent::TargetEnabledOrDisabled) {
-        // Reset caches when the modifier or the modifier group is enabled/disabled or if the modifier gets replaced.
-        pipelineCache().reset();
-        partialResultsCache().reset();
     }
     PipelineNode::notifyDependentsImpl(event);
 }
@@ -269,7 +270,7 @@ void ModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcep
  ******************************************************************************/
 PipelineEvaluationResult ModificationNode::evaluateInput(const PipelineEvaluationRequest& request) const
 {
-    // Without a data source, this ModificationNode doesn't produce any data.
+    // Without a data source, this ModificationNode cannot provide any data.
     if(!input())
         return PipelineFlowState();
 
@@ -285,7 +286,7 @@ Future<std::vector<PipelineFlowState>> ModificationNode::evaluateInputMultiple(c
     // This function should only be used to request final pipeline results, not preliminary results.
     OVITO_ASSERT(request.interactiveMode() == false);
 
-    // Without a data source, this ModificationNode doesn't produce any data.
+    // Without a data source, this ModificationNode cannot provide any data.
     if(!input())
         return std::vector<PipelineFlowState>(times.size(), PipelineFlowState());
 

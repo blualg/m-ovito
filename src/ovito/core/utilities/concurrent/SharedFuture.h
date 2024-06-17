@@ -70,7 +70,7 @@ public:
     SharedFuture(R2&& val) : FutureBase(std::move(promise_type::createImmediate(std::forward<R2>(val))._task)) {}
 
     /// Create a new SharedFuture that is associated with the given task object.
-    static SharedFuture createFromTask(TaskPtr task) {
+    [[nodiscard]] static SharedFuture createFromTask(TaskPtr task) {
         OVITO_ASSERT(task);
         OVITO_ASSERT(task->_resultsStorage != nullptr || (std::is_void_v<R>));
         return SharedFuture(std::move(task));
@@ -85,7 +85,7 @@ public:
     /// Returns a const reference to the results computed by the associated Promise.
     /// The function blocks until the result become available.
     template<typename R2 = R>
-    std::enable_if_t<!std::is_void_v<R2>, std::add_lvalue_reference_t<std::add_const_t<R>>> result() const& {
+    [[nodiscard]] std::enable_if_t<!std::is_void_v<R2>, std::add_lvalue_reference_t<std::add_const_t<R>>> result() const& {
         OVITO_ASSERT_MSG(isValid(), "SharedFuture::results()", "Future must be valid.");
         waitForFinished();
         OVITO_ASSERT_MSG(isFinished(), "SharedFuture::results()", "Future must be in fulfilled state.");
@@ -96,19 +96,19 @@ public:
     /// Returns a copy to the results computed by the associated Promise.
     /// The function blocks until the result become available.
     template<typename R2 = R>
-    std::enable_if_t<!std::is_void_v<R2>, R> result() && {
+    [[nodiscard]] std::enable_if_t<!std::is_void_v<R2>, R> result() && {
         return result();
     }
 
     /// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
     /// The provided continuation function must accept the results of this future as an input parameter.
     template<typename Executor, typename Function>
-    detail::continuation_future_type<Function, SharedFuture>
+    [[nodiscard]] detail::continuation_future_type<Function, SharedFuture>
     then(Executor&& executor, Function&& f);
 
     /// Overload of the function above using the default inline executor.
     template<typename Function>
-    decltype(auto) then(Function&& f) { return then(InlineExecutor{}, std::forward<Function>(f)); }
+    [[nodiscard]] decltype(auto) then(Function&& f) { return then(InlineExecutor{}, std::forward<Function>(f)); }
 
     /// Applies a post-processing function to the future's results, which must returns the same type of value
     /// as the original future. The post-processing function is executed once the future is fulfilled.

@@ -29,7 +29,7 @@
 namespace Ovito {
 
 template<typename InputRange, class Executor, typename Function>
-auto map_sequential(InputRange&& inputRange, Executor&& executor, Function&& f)
+[[nodiscard]] auto map_sequential(InputRange&& inputRange, Executor&& executor, Function&& f)
 {
     // The type of future returned by the user function.
     using output_future_type = std::invoke_result_t<Function, typename InputRange::const_reference>; // C++20: Use std::indirect_result_t instead.
