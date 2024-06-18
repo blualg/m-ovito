@@ -70,7 +70,7 @@ public:
 
     /// Indicates whether the modifier wants to keep its partial compute results after one of its parameters has been changed.
     virtual bool shouldKeepPartialResultsAfterChange(const PropertyFieldEvent& event) {
-        // Avoid a full recomputation if the modifier gets enabled/disabled.
+        // Avoid a full recomputation if the modifier gets enabled/disabled or if just its title is changed.
         if(event.field() == PROPERTY_FIELD(isEnabled))
             return true;
         return false;

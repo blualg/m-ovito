@@ -111,14 +111,14 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
             // Manually generate target changed event when modifier group is being enabled/disabled.
             // That's because events from the group are not automatically propagated.
             if(source == modifierGroup())
-                notifyTargetChanged();
+                notifyDependentsImpl(TargetChangedEvent(modifierGroup(), PROPERTY_FIELD(ActiveObject::isEnabled)));
 
             // Propagate enabled/disabled notification events from the modifier or the modifier group.
             // This implicitly resets the node's pipeline caches.
             return true;
         }
         else if(source == input()) {
-            // Inform modifier that the input state has changed if the immediately following input stage was disabled.
+            // Inform modifier that the input state has changed if the immediately preceding input stage was disabled.
             // This is necessary, because we don't receive an InteractiveStateAvailable signal in this case.
             if(modifier())
                 modifier()->notifyDependents(ReferenceEvent::PipelineInputChanged);
@@ -141,11 +141,12 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
         return true;
     }
     else if(event.type() == ReferenceEvent::TargetChanged && (source == input() || source == modifier())) {
+        const TargetChangedEvent& changeEvent = static_cast<const TargetChangedEvent&>(event);
 
         // Invalidate cached results when the modifier or the upstream pipeline change.
-        TimeInterval validityInterval = static_cast<const TargetChangedEvent&>(event).unchangedInterval();
+        TimeInterval validityInterval = changeEvent.unchangedInterval();
 
-        if(source == input()) {
+        if(source == input() && changeEvent.field() != PROPERTY_FIELD(Modifier::title)) {
             // Partial modifier results become invalid when the upstream pipeline changes.
             partialResultsCache().reset();
 
@@ -154,14 +155,13 @@ bool ModificationNode::referenceEvent(RefTarget* source, const ReferenceEvent& e
                 modifier()->restrictInputValidityInterval(validityInterval);
         }
 
-        // Propagate change event to upstream pipeline.
-        // Note that this will invoke ModificationNode::notifyDependentsImpl(), which
-        // takes care of invalidating the pipeline cache.
-        notifyDependentsImpl(TargetChangedEvent(event.sender(), static_cast<const TargetChangedEvent&>(event).field(), validityInterval));
+        // Propagate the change event to the upstream pipeline.
+        // ModificationNode::notifyDependentsImpl() also takes care of invalidating this node's output cache.
+        notifyDependentsImpl(TargetChangedEvent(event.sender(), changeEvent.field(), validityInterval));
 
-        if(source == modifier()) {
+        if(source == modifier() && changeEvent.field() != PROPERTY_FIELD(Modifier::title)) {
             // Let the modifier decide whether partial compute results should be kept (depending on which modifier parameter has changed).
-            if(!modifier()->shouldKeepPartialResultsAfterChange(static_cast<const TargetChangedEvent&>(event)))
+            if(!modifier()->shouldKeepPartialResultsAfterChange(changeEvent))
                 partialResultsCache().reset();
 
             // Refresh interactive viewports if requested by the modifier.
@@ -252,9 +252,15 @@ void ModificationNode::referenceReplaced(const PropertyFieldDescriptor* field, R
 void ModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
-        if(static_cast<const TargetChangedEvent&>(event).field() != PROPERTY_FIELD(Modifier::isEnabled) || event.sender() != modifier()) {
-            // Invalidate cached results when this modification node or its associated modifier change.
-            pipelineCache().invalidate(static_cast<const TargetChangedEvent&>(event).unchangedInterval());
+        const TargetChangedEvent& changeEvent = static_cast<const TargetChangedEvent&>(event);
+        // Invalidate cached results when this modification node or its associated modifier change.
+        // There are a few exceptions to this rule: The cache is not invalidated when the modifier or the group it is in get disabled/enabled or renamed.
+        if(changeEvent.field() != PROPERTY_FIELD(Modifier::isEnabled) || event.sender() != modifier()) {
+            if(!modifierGroup() || changeEvent.field() != PROPERTY_FIELD(ActiveObject::isEnabled) || event.sender() != modifierGroup()) {
+                if(changeEvent.field() != PROPERTY_FIELD(Modifier::title) && changeEvent.field() != PROPERTY_FIELD(ModificationNode::modifierGroup)) {
+                    pipelineCache().invalidate(static_cast<const TargetChangedEvent&>(event).unchangedInterval());
+                }
+            }
         }
     }
     else if(event.type() == ReferenceEvent::ObjectStatusChanged) {
