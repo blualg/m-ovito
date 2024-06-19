@@ -124,7 +124,6 @@ public:
                         std::invoke(std::forward<Function>(f), std::forward<FutureType>(future));
                 }
 
-                OVITO_ASSERT(!this->isFinished());
                 this->setFinished();
             }
             catch(...) {

@@ -232,7 +232,8 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
 
     // Set the input file location(s) and importer.
     bool keepExistingDataCollection = true;
-    fileSource->setSource(std::move(sourceUrls), this, autodetectFileSequences && (sourceUrls.size() == 1 && sourceUrlsAndImporters.empty()), keepExistingDataCollection);
+    auto urlCount = sourceUrls.size();
+    fileSource->setSource(std::move(sourceUrls), this, autodetectFileSequences && (urlCount == 1 && sourceUrlsAndImporters.empty()), keepExistingDataCollection);
 
     if(importMode != ReplaceSelected && importMode != DontAddToScene) {
         // Adjust viewports to completely show the newly imported object.

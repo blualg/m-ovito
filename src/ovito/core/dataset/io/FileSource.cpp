@@ -357,6 +357,10 @@ void FileSource::preevaluateInternal(const PipelineEvaluationRequest& request, P
             if(frame < frameCount - 1)
                 validityInterval.intersect(TimeInterval(AnimationTime::negativeInfinity(), std::max(sourceFrameToAnimationTime(frame + 1) - 1, sourceFrameToAnimationTime(frame))));
         }
+        else if(frameCount == 0) {
+            // We haven't loaded the frames list yet. In this case, we need to be conservative, because the validity interval of the frame is likely going to change.
+            validityInterval.intersect(sourceFrameToAnimationTime(frame));
+        }
     }
     OVITO_ASSERT(validityInterval.contains(request.time()));
 }
