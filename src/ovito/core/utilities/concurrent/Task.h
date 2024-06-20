@@ -124,10 +124,9 @@ public:
         MutexLock lock(*this);
 
         // Check if task is already canceled or finished.
-        if(_state.load() & (Canceled | Finished))
-            return;
-
-        exceptionLocked(std::current_exception());
+        if(!(_state.load() & (Canceled | Finished))) {
+            exceptionLocked(std::current_exception());
+        }
         finishLocked(lock);
     }
 

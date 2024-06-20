@@ -431,7 +431,8 @@ SharedFuture<PipelineFlowState> ModificationNode::evaluateInternal(const Pipelin
             if(!interactiveMode)
                 setStatus(ex);
 
-            ex.prependToMessage(tr("Modifier '%1' reported: ").arg(modifier()->objectTitle()));
+            if(modifier())
+                ex.prependToMessage(tr("Modifier '%1' reported: ").arg(modifier()->objectTitle()));
 
             // Fall back to the results produced by the upstream pipeline.
             // Note: This should never throw an exception, because the input pipeline results have already been accessed successfully.

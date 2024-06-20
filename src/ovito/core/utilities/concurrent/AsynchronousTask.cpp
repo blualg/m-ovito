@@ -119,6 +119,7 @@ void AsynchronousTaskBase::run()
         setFinished();
     }
     catch(...) {
+        OVITO_ASSERT(!isFinished());
         captureExceptionAndFinish();
     }
     _thisTask.reset(); // No need to keep the task object alive any longer.
