@@ -109,9 +109,15 @@ void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
     // Threshold for filtering out elements at the surface.
     double alpha = 5.0 * maximumNeighborDistance;
 
-    // Create the 'good' region.
-    mutableRegions()->setElementCount(1);
-    OVITO_ASSERT(regionCount() == 1);
+    if(!crystalClusters) {
+        // Create the 'good' region (region 0).
+        mutableRegions()->setElementCount(1);
+        OVITO_ASSERT(regionCount() == 1);
+    }
+    else {
+        // Create as many mesh regions as there are grain segmentation atom clusters.
+        mutableRegions()->setElementCount(*std::max_element(crystalClusters.cbegin(), crystalClusters.cend()) + 1);
+    }
 
     // Construct a one-sided surface mesh.
     ManifoldConstructionHelper manifoldConstructor(tessellation(), *this, alpha, false, structureAnalysis().positions());
