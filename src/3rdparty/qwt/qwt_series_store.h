@@ -70,10 +70,10 @@ public:
       \brief Constructor
       The store contains no series
     */
-    explicit QwtSeriesStore<T>();
+    explicit QwtSeriesStore();
 
     //! Destructor
-    ~QwtSeriesStore<T>();
+    ~QwtSeriesStore();
 
     /*!
       Assign a series of samples
