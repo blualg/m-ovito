@@ -146,7 +146,7 @@ ENDMACRO()
 
 # Helper function that recursively gathers a list of libraries and other targets that the given
 # target depends on directly and indirectly.
-FUNCTION(get_all_target_dependencies OUTPUT_LIST TARGET)
+FUNCTION(OVITO_GET_ALL_TARGET_DEPENDENCIES OUTPUT_LIST TARGET)
 
     # This special handling was adopted from __qt_internal_walk_libs() to avoid an error produced by older CMake versions:
     IF(${TARGET} STREQUAL "Qt6::EntryPoint")
@@ -175,7 +175,7 @@ FUNCTION(get_all_target_dependencies OUTPUT_LIST TARGET)
         IF(NOT LIB IN_LIST ${OUTPUT_LIST})
             LIST(APPEND ${OUTPUT_LIST} ${LIB})
             IF(TARGET ${LIB})
-                get_all_target_dependencies(${OUTPUT_LIST} ${LIB})
+                OVITO_GET_ALL_TARGET_DEPENDENCIES(${OUTPUT_LIST} ${LIB})
             ENDIF()
         ENDIF()
     ENDFOREACH()
@@ -183,15 +183,15 @@ FUNCTION(get_all_target_dependencies OUTPUT_LIST TARGET)
 ENDFUNCTION()
 
 # This function deploys the required Qt libraries with the program package.
-FUNCTION(deploy_qt_framework_files)
+FUNCTION(OVITO_DEPLOY_QT_FRAMEWORK_FILES)
 
     # Gather all indirect dependencies of the main executable including all plugins.
     IF(OVITO_BUILD_APP)
-        get_all_target_dependencies(ovito_dependency_libraries Ovito)
+        OVITO_GET_ALL_TARGET_DEPENDENCIES(ovito_dependency_libraries Ovito)
     ENDIF()
     # When building just the Python bindings, get the dependencies from this target.
     IF(TARGET ovito_bindings)
-        get_all_target_dependencies(ovito_dependency_libraries ovito_bindings)
+        OVITO_GET_ALL_TARGET_DEPENDENCIES(ovito_dependency_libraries ovito_bindings)
     ENDIF()
 
     # Filter dependency list to find all Qt framework modules (targets starting with Qt6::).
@@ -303,7 +303,11 @@ FUNCTION(deploy_qt_framework_files)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qgif${_qt_dll_suffix}.dll" DESTINATION "plugins/imageformats/")
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/qsvg${_qt_dll_suffix}.dll" DESTINATION "plugins/imageformats/")
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/iconengines/qsvgicon${_qt_dll_suffix}.dll" DESTINATION "plugins/iconengines/")
-        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qwindowsvistastyle${_qt_dll_suffix}.dll" DESTINATION "plugins/styles/")
+        IF(Qt6Core_VERSION VERSION_LESS "6.7")
+            OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qwindowsvistastyle${_qt_dll_suffix}.dll" DESTINATION "plugins/styles/")
+        ELSE()
+            OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/styles/qmodernwindowsstyle${_qt_dll_suffix}.dll" DESTINATION "plugins/styles/")
+        ENDIF()
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qcertonlybackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qopensslbackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/qschannelbackend${_qt_dll_suffix}.dll" DESTINATION "plugins/tls/")

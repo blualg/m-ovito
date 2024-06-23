@@ -1189,13 +1189,13 @@ DataBuffer::Checksum DataBuffer::checksum() const
     #if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         hash.addData(QByteArrayView(readAccessor.get_pointer(), this->size() * this->stride()));
     #else
-        hash.addData(readAccessor.get_pointer(), this->size() * this->stride());
+        hash.addData(reintepret_cast<const char*>(readAccessor.get_pointer()), this->size() * this->stride());
     #endif
 #else
     #if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         hash.addData(QByteArrayView(this->cdata(), this->size() * this->stride()));
     #else
-        hash.addData(this->cdata(), this->size() * this->stride());
+        hash.addData(reintepret_cast<const char*>(this->cdata()), this->size() * this->stride());
     #endif
 #endif
         OVITO_ASSERT(hash.result().size() == sizeof(Checksum));
