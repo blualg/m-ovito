@@ -80,7 +80,11 @@ private:
 
 		/// Registers a range of indexed rendering primitives.
 		void addIndexedRange(const ConstDataBufferPtr& buffer, quint32 baseIndex) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
 			_indexedRanges.emplace_back(buffer, baseIndex);
+#else
+			_indexedRanges.push_back(std::make_pair(buffer, baseIndex));
+#endif
 		}
 
 		/// If the global object ID is within the range of this picking group, resolve it to the local object ID.
