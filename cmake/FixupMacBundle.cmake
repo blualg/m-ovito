@@ -132,12 +132,16 @@ INSTALL(CODE "
     FILE(GLOB PYSIDE_SOLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/PySide*/*.so\")
     FILE(GLOB SHIBOKEN_DYNLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/shiboken*/*.dylib\")
     FILE(GLOB SHIBOKEN_SOLIBS \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/Python.framework/Versions/*.*/lib/python*/site-packages/shiboken*/*.so\")
+    MESSAGE(\"PYSIDE_DYNLIBS: \${PYSIDE_DYNLIBS}\")
+    MESSAGE(\"PYSIDE_SOLIBS: \${PYSIDE_SOLIBS}\")
+    MESSAGE(\"SHIBOKEN_DYNLIBS: \${SHIBOKEN_DYNLIBS}\")
+    MESSAGE(\"SHIBOKEN_SOLIBS: \${SHIBOKEN_SOLIBS}\")
     FOREACH(lib \${PYSIDE_DYNLIBS} \${PYSIDE_SOLIBS} \${SHIBOKEN_DYNLIBS} \${SHIBOKEN_SOLIBS})
         GET_FILENAME_COMPONENT(lib_filename \"\${lib}\" NAME)
         LIST(APPEND IGNORE_ITEM_LIST \"\${lib_filename}\")
     ENDFOREACH()
 
-    MESSAGE(\"Bundle libs: \${BUNDLE_LIBS}\")
+    MESSAGE(\"---- Bundle libs: \${BUNDLE_LIBS}\")
     SET(BU_CHMOD_BUNDLE_ITEMS ON)   # Make copies of system libraries writable before install_name_tool tries to change them.
     INCLUDE(BundleUtilities)
     FIXUP_BUNDLE(\"\${APPS}\" \"\${BUNDLE_LIBS}\" \"\${DIRS}\" IGNORE_ITEM \${IGNORE_ITEM_LIST})
@@ -145,9 +149,9 @@ INSTALL(CODE "
     # Update the rpath information to the PySide/Shiboken libraries, such that they will be found an runtime.
     SET(QT_LIB_INSTALL_PATH \"${_qt_source_dir}/lib\")
     FOREACH(lib \${PYSIDE_DYNLIBS} \${PYSIDE_SOLIBS} \${SHIBOKEN_DYNLIBS} \${SHIBOKEN_SOLIBS})
-        MESSAGE(\"Adding rpath to \${lib}\")
+        MESSAGE(\"-- Adding rpath to \${lib}\")
         EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@executable_path/../Frameworks/\" \"\${lib}\" COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDOUT)
-        MESSAGE(\"Removing '\${QT_LIB_INSTALL_PATH}' from rpaths of \${lib}\")
+        MESSAGE(\"-- Removing '\${QT_LIB_INSTALL_PATH}' from rpaths of \${lib}\")
         EXECUTE_PROCESS(COMMAND install_name_tool -delete_rpath \"\${QT_LIB_INSTALL_PATH}\" \"\${lib}\" COMMAND_ECHO STDOUT)
     ENDFOREACH()
 
@@ -158,11 +162,11 @@ IF(OVITO_BUILD_PLUGIN_OSPRAY)
     # are found in the Frameworks/ directory at runtime.
     INSTALL(CODE "
         SET(lib \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/librkcommon.dylib\")
-        MESSAGE(\"Adding rpath to \${lib}\")
+        MESSAGE(\"-- Adding rpath to \${lib}\")
         EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@loader_path/\" \"\${lib}\" COMMAND_ERROR_IS_FATAL ANY)
 
         SET(lib \"\${CMAKE_INSTALL_PREFIX}/${MACOSX_BUNDLE_NAME}.app/Contents/Frameworks/libispcrt.dylib\")
-        MESSAGE(\"Adding rpath to \${lib}\")
+        MESSAGE(\"-- Adding rpath to \${lib}\")
         EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@loader_path/\" \"\${lib}\" COMMAND_ERROR_IS_FATAL ANY)
     ")
 ENDIF()
