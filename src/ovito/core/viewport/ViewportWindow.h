@@ -230,7 +230,7 @@ protected:
     /// Creates the rendering job that renders the contents of the viewport window.
     virtual OORef<RenderingJob> createRenderingJob() = 0;
 
-    /// This is called after the frame graph has been updated to render the viewport contents on screen.
+    /// Newly renders the window contents after the frame graph has been regenerated.
     virtual void rerender() = 0;
 
     /// Is called when a RefTarget referenced by this object generated an event.
@@ -274,7 +274,7 @@ private:
     int _renderDebugCounter = 0;
 #endif
 
-    /// The rendering job that renders the display of the viewport window.
+    /// The rendering job that renders the contents of the viewport window.
     OORef<RenderingJob> _renderingJob;
 
     /// Object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
@@ -300,7 +300,7 @@ private:
     /// The current frame graph displayed in the viewport window.
     std::shared_ptr<FrameGraph> _frameGraph;
 
-    /// Describes the current 3D projection used to render the contents of the viewport window.
+    /// The current 3D projection for rendering the contents of the viewport window.
     ViewProjectionParameters _projParams;
 };
 

@@ -57,7 +57,7 @@ protected:
     /// Creates the rendering job that renders the contents of the viewport window.
     virtual OORef<RenderingJob> createRenderingJob() override;
 
-    /// This is called after the frame graph has been updated to render the viewport contents on screen.
+    /// Newly renders the window contents after the frame graph has been regenerated.
     virtual void rerender() override;
 
     /// Returns the QOpenGLWidget that is associated with this viewport window.
@@ -69,7 +69,7 @@ protected:
 private:
 
     /// The abstract frame buffer for on-screen rendering into the QOpenGLWidget.
-    OORef<AbstractRenderingFrameBuffer> _widgetFrameBuffer;
+    OORef<AbstractRenderingFrameBuffer> _visualFrameBuffer;
 
     /// The abstract frame buffer for off-screen rendering into the object picking buffer.
     OORef<AbstractRenderingFrameBuffer> _pickingFrameBuffer;

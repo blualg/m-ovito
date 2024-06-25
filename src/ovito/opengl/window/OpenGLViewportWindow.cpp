@@ -95,7 +95,7 @@ OORef<RenderingJob> OpenGLViewportWindow::createRenderingJob()
 void OpenGLViewportWindow::releaseResources()
 {
     // Release any OpenGL resources associated with the window's framebuffers.
-    _widgetFrameBuffer.reset();
+    _visualFrameBuffer.reset();
     _pickingFrameBuffer.reset();
 
     // Release picking data.
@@ -106,7 +106,7 @@ void OpenGLViewportWindow::releaseResources()
 }
 
 /******************************************************************************
-* This is called after the frame graph has been updated to render the viewport contents on screen.
+* Newly renders the window contents after the frame graph has been regenerated.
 ******************************************************************************/
 void OpenGLViewportWindow::rerender()
 {
@@ -133,11 +133,11 @@ void OpenGLViewportWindow::paint()
     try {
         // Recreate/resize abstract frame buffer for rendering into the widget if necessary.
         const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
-        if(!_widgetFrameBuffer || _widgetFrameBuffer->outputViewportRect() != viewportRect)
-            _widgetFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(static_object_cast<OpenGLRenderingJob>(renderingJob()), viewportRect, widget()->defaultFramebufferObject());
+        if(!_visualFrameBuffer || _visualFrameBuffer->outputViewportRect() != viewportRect)
+            _visualFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(static_object_cast<OpenGLRenderingJob>(renderingJob()), viewportRect, widget()->defaultFramebufferObject());
 
         // Render the viewport contents. This requires an active GL context.
-        auto future = renderingJob()->renderFrame(frameGraph(), _widgetFrameBuffer);
+        auto future = renderingJob()->renderFrame(frameGraph(), _visualFrameBuffer);
         OVITO_ASSERT(future.isValid() && future.isFinished() && !future.isCanceled());
 
         // Emit signal to inform listeners (e.g. SceneAnimationPlayback) that a full frame has been rendered.

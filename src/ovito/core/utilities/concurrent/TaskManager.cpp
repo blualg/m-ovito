@@ -93,7 +93,7 @@ void TaskManager::requestShutdown()
     _isShuttingDown = true;
     lock.unlock();
 
-    // Wait for all remaining tasks to finish and proceed with shutdown process as soon as control has returned to main event loop.
+    // Wait for all remaining tasks to finish and proceed with shutdown as soon as control has returned to main event loop.
     if(QCoreApplication::instance() && QThread::currentThread()->loopLevel() != 0)
         Q_EMIT pendingWorkArrived();
     else
@@ -110,7 +110,7 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
     OVITO_ASSERT(!_localEventLoop);
     OVITO_ASSERT(!_isWaitingForTask);
 
-    // Work item queue must already be empty by now.
+    // Work item queue must be empty by now.
     OVITO_ASSERT(_pendingWork.empty());
 
     lock.unlock();
