@@ -185,9 +185,6 @@ void ParcasFileImporter::FrameLoader::loadFile()
         stream.read(field_unit, 4);
         field_name[4] = '\0';
         field_unit[4] = '\0';
-#if 0
-        qDebug() << "Field-" << (i+1) << " name: " << field_name << " unit: " << field_unit;
-#endif
 
         Particles::Type propertyType = Particles::UserProperty;
         QString propertyName = QString(field_name).trimmed();

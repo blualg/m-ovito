@@ -281,10 +281,6 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             if(!replacingProperty) {
                 outputProperty->setVisElements(property->visElements());
             }
-
-            if(property->typeId() == Particles::PositionProperty) {
-                qDebug() << "Creating new output position property at frame" << trajState.getAttributeValue("SourceFrame");
-            }
         }
 
         // Transfer simulation cell geometry.
