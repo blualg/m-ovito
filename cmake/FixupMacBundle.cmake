@@ -141,18 +141,19 @@ INSTALL(CODE "
         LIST(APPEND IGNORE_ITEM_LIST \"\${lib_filename}\")
     ENDFOREACH()
 
-    MESSAGE(\"---- Bundle libs: \${BUNDLE_LIBS}\")
+    MESSAGE(\"---- Bundle libs for fixup_bundle: \${BUNDLE_LIBS}\")
     SET(BU_CHMOD_BUNDLE_ITEMS ON)   # Make copies of system libraries writable before install_name_tool tries to change them.
     INCLUDE(BundleUtilities)
     FIXUP_BUNDLE(\"\${APPS}\" \"\${BUNDLE_LIBS}\" \"\${DIRS}\" IGNORE_ITEM \${IGNORE_ITEM_LIST})
 
-    # Update the rpath information to the PySide/Shiboken libraries, such that they will be found an runtime.
+    # Extend rpath information of the PySide/Shiboken libraries, such that they will be found an runtime.
     SET(QT_LIB_INSTALL_PATH \"${_qt_source_dir}/lib\")
     FOREACH(lib \${PYSIDE_DYNLIBS} \${PYSIDE_SOLIBS} \${SHIBOKEN_DYNLIBS} \${SHIBOKEN_SOLIBS})
-        MESSAGE(\"-- Adding rpath to \${lib}\")
-        EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@executable_path/../Frameworks/\" \"\${lib}\" COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDOUT)
         MESSAGE(\"-- Removing '\${QT_LIB_INSTALL_PATH}' from rpaths of \${lib}\")
+        EXECUTE_PROCESS(COMMAND install_name_tool -delete_rpath \"@loader_path/\" \"\${lib}\" COMMAND_ECHO STDOUT)
         EXECUTE_PROCESS(COMMAND install_name_tool -delete_rpath \"\${QT_LIB_INSTALL_PATH}\" \"\${lib}\" COMMAND_ECHO STDOUT)
+        MESSAGE(\"-- Adding rpath to \${lib}\")
+        EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@executable_path/../Frameworks/\" -add_rpath \"@loader_path/\" \"\${lib}\" COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDOUT)
     ENDFOREACH()
 
 ")
