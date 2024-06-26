@@ -55,8 +55,8 @@ Future<PipelineFlowState> SurfaceMeshRegionsDeleteSelectedModifierDelegate::appl
         size_t numRegions = 0;
         size_t numDeleted = 0;
 
-        for(const DataObject* obj : state.data()->objects()) {
-            if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
+            if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(state.data()->objects()[i])) {
                 // Make sure the input mesh data structure is valid.
                 existingSurface->verifyMeshIntegrity();
 

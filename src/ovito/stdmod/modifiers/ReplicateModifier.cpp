@@ -91,9 +91,9 @@ Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEv
         const AffineTransformation& cellMatrix = cell->matrix();
 
         // Loop over all lines objects in the data collection
-        for(const DataObject* obj : state.data()->objects()) {
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
             // Replicate the Lines.
-            if(const Lines* inputLines = dynamic_object_cast<Lines>(obj)) {
+            if(const Lines* inputLines = dynamic_object_cast<Lines>(state.data()->objects()[i])) {
 
                 // Skip if there's nothing to do
                 if(numCopies <= 1 || !inputLines || inputLines->elementCount() == 0)
@@ -185,9 +185,9 @@ Future<PipelineFlowState> VectorsReplicateModifierDelegate::apply(
         const AffineTransformation& cellMatrix = cell->matrix();
 
         // Loop over all lines objects in the data collection
-        for(const DataObject* obj : state.data()->objects()) {
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
             // Replicate the Lines.
-            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(obj)) {
+            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(state.data()->objects()[i])) {
                 // Skip if there's nothing to do
                 if(numCopies <= 1 || !inputVectors || inputVectors->elementCount() == 0) {
                     continue;

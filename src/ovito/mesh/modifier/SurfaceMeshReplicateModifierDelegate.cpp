@@ -45,8 +45,8 @@ Future<PipelineFlowState> SurfaceMeshReplicateModifierDelegate::apply(const Modi
         int nPBC[3] = { newImages.sizeX() + 1, newImages.sizeY() + 1, newImages.sizeZ() + 1};
         size_t numCopies = (size_t)nPBC[0] * (size_t)nPBC[1] * (size_t)nPBC[2];
 
-        for(const DataObject* obj : state.data()->objects()) {
-            if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
+            if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(state.data()->objects()[i])) {
                 // For replication, a domain is always required.
                 if(!existingSurface->domain())
                     continue;

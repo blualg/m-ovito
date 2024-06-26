@@ -58,8 +58,8 @@ Future<PipelineFlowState> DislocationAffineTransformationModifierDelegate::apply
             state = std::move(state),
             tm = modifier->effectiveAffineTransformation(originalState)]() mutable {
 
-        for(const DataObject* obj : state.data()->objects()) {
-            if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(obj)) {
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
+            if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(state.data()->objects()[i])) {
                 DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
 
                 // Apply transformation to the vertices of the dislocation lines.

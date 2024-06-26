@@ -158,9 +158,9 @@ Future<PipelineFlowState> VectorsSliceModifierDelegate::apply(
     return asyncLaunch([state = std::move(state), plane, sliceWidth, invert = modifier->inverse(),
                         createSelection = modifier->createSelection(), applyToSelection]() mutable {
         // Loop over all vectors objects in the data collection
-        for(const DataObject* obj : state.data()->objects()) {
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
             // Slice the vectors.
-            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(obj)) {
+            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(state.data()->objects()[i])) {
                 inputVectors->verifyIntegrity();
 
                 // Create mask array to be computed.

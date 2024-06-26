@@ -219,8 +219,11 @@ public:
     }
 
     template<class T2, class U> friend DataOORef<T2> static_pointer_cast(DataOORef<U>&& p) noexcept;
+    template<class T2, class U> friend DataOORef<T2> static_pointer_cast(const DataOORef<U>& p) noexcept;
     template<class T2, class U> friend DataOORef<T2> const_pointer_cast(DataOORef<U>&& p) noexcept;
+    template<class T2, class U> friend DataOORef<T2> const_pointer_cast(const DataOORef<U>& p) noexcept;
     template<class T2, class U> friend DataOORef<T2> dynamic_pointer_cast(DataOORef<U>&& p) noexcept;
+    template<class T2, class U> friend DataOORef<T2> dynamic_pointer_cast(const DataOORef<U>& p) noexcept;
 };
 
 template<class T> T* get_pointer(const DataOORef<T>& p) noexcept

@@ -204,6 +204,9 @@ void ViewportWindow::handleUpdateRequest()
         // Render the 3d scene objects.
         frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::SceneLayer);
         frameGraph->renderSceneNode(viewport()->scene(), viewport());
+        this_task::throwIfCanceled();
+        if(this_task::isCanceled() || !viewport())
+            return;
 
         // Render construction grid.
         if(viewport()->isGridVisible())
@@ -218,6 +221,8 @@ void ViewportWindow::handleUpdateRequest()
         // Render viewport gizmos.
         for(ViewportGizmo* gizmo : viewportGizmos()) {
             gizmo->renderOverlay(viewport(), this, *frameGraph, dataset);
+            if(this_task::isCanceled() || !viewport())
+                return;
         }
 
         frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::OverLayer);
@@ -234,6 +239,8 @@ void ViewportWindow::handleUpdateRequest()
                 }
             }
         }
+        if(this_task::isCanceled() || !viewport())
+            return;
 
         // Render UI elements on top (e.g. viewport caption).
         if(isPreviewMode) {

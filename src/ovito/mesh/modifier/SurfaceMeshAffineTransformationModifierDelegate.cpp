@@ -44,9 +44,9 @@ Future<PipelineFlowState> SurfaceMeshAffineTransformationModifierDelegate::apply
             tm = modifier->effectiveAffineTransformation(originalState),
             selectionOnly = modifier->selectionOnly()]() mutable {
 
-        for(const DataObject* obj : state.data()->objects()) {
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
             // Process SurfaceMesh objects.
-            if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(obj)) {
+            if(const SurfaceMesh* existingSurface = dynamic_object_cast<SurfaceMesh>(state.data()->objects()[i])) {
 
                 // Make sure the input mesh data structure is valid.
                 existingSurface->verifyMeshIntegrity();
@@ -76,7 +76,7 @@ Future<PipelineFlowState> SurfaceMeshAffineTransformationModifierDelegate::apply
                 this_task::throwIfCanceled();
             }
             // Process TriangleMesh objects.
-            else if(const TriangleMesh* existingMeshObj = dynamic_object_cast<TriangleMesh>(obj)) {
+            else if(const TriangleMesh* existingMeshObj = dynamic_object_cast<TriangleMesh>(state.data()->objects()[i])) {
 
                 // Create a copy of the TriangleMesh.
                 TriangleMesh* newMeshObj = state.makeMutable(existingMeshObj);

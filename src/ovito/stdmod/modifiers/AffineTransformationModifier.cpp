@@ -288,8 +288,8 @@ Future<PipelineFlowState> SimulationCellAffineTransformationModifierDelegate::ap
 
     if(!modifier->selectionOnly()) {
         // Transform the domains of PeriodicDomainDataObjects.
-        for(const DataObject* obj : state.data()->objects()) {
-            if(const PeriodicDomainObject* existingObject = dynamic_object_cast<PeriodicDomainObject>(obj)) {
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
+            if(const PeriodicDomainObject* existingObject = dynamic_object_cast<PeriodicDomainObject>(state.data()->objects()[i])) {
                 if(existingObject->domain()) {
                     PeriodicDomainObject* newObject = state.makeMutable(existingObject);
                     newObject->mutableDomain()->setCellMatrix(modifier->effectiveAffineTransformation(originalState) * existingObject->domain()->cellMatrix());
@@ -329,9 +329,9 @@ Future<PipelineFlowState> LinesAffineTransformationModifierDelegate::apply(const
             selectionOnly = modifier->selectionOnly()]() mutable {
 
         // Loop over all lines objects in the data collection
-        for(const DataObject* obj : state.data()->objects()) {
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
             // Transform the line vertices.
-            if(const Lines* inputLines = dynamic_object_cast<Lines>(obj)) {
+            if(const Lines* inputLines = dynamic_object_cast<Lines>(state.data()->objects()[i])) {
                 // Get the input line coordinates (as strong reference to force creation of a mutable clone below).
                 ConstPropertyPtr inputPositionProperty = inputLines->expectProperty(Lines::PositionProperty);
 
@@ -381,16 +381,16 @@ Future<PipelineFlowState> VectorsAffineTransformationModifierDelegate::apply(
     return asyncLaunch([state = std::move(state), tm = modifier->effectiveAffineTransformation(originalState),
                         selectionOnly = modifier->selectionOnly()]() mutable {
         // Loop over all vectors objects in the data collection
-        for(const DataObject* obj : state.data()->objects()) {
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
             // Transform the vectors.
-            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(obj)) {
+            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(state.data()->objects()[i])) {
                 // Make sure we can safely modify the vectors object.
                 Vectors* outputVectors = state.makeMutable(inputVectors);
 
                 // Transform the basis points
 
                 // Get the input basis points (as strong reference to force creation of a mutable clone below).
-                ConstPropertyPtr inputPositionProperty = inputVectors->expectProperty(Vectors::PositionProperty);
+                ConstPropertyPtr inputPositionProperty = outputVectors->expectProperty(Vectors::PositionProperty);
 
                 // Create an uninitialized copy of the position property.
                 Property* outputPositionProperty = outputVectors->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
@@ -402,7 +402,7 @@ Future<PipelineFlowState> VectorsAffineTransformationModifierDelegate::apply(
                 // Transform the directions
 
                 // Get the input line coordinates (as strong reference to force creation of a mutable clone below).
-                ConstPropertyPtr inputDirectionProperty = inputVectors->expectProperty(Vectors::DirectionProperty);
+                ConstPropertyPtr inputDirectionProperty = outputVectors->expectProperty(Vectors::DirectionProperty);
 
                 // Create an uninitialized copy of the position property.
                 Property* outputDirectionProperty = outputVectors->makePropertyMutable(inputDirectionProperty, DataBuffer::Uninitialized);

@@ -106,7 +106,7 @@ private:
     void processWorkWhileWaiting(Task* waitingTask, detail::TaskDependency& awaitedTask, bool returnEarlyIfCanceled);
 
     /// Stops executing pending work items and makes processWorkWhileWaiting() return.
-    void quitWorkProcessingLoop(bool& quitFlag);
+    void quitWorkProcessingLoop(bool& quitFlag, std::optional<QEventLoop>& eventLoop);
 
     /// Waits for all work queues to become empty.
     void shutdownImplementation(std::unique_lock<std::mutex>& lock);
@@ -157,6 +157,9 @@ private:
 
     /// Indicates that the work processing loop should be interrupted.
     bool _interruptProcessingLoop = false;
+
+    /// Indicates that this task manager has completed its shutdown procedure.
+    bool _shutdownCompleted = false;
 
     /// Manages thread-safe concurrent access to the work queue and task list.
     std::mutex _mutex;

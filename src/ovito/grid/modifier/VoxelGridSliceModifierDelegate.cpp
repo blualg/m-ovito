@@ -78,8 +78,8 @@ Future<PipelineFlowState> VoxelGridSliceModifierDelegate::apply(const ModifierEv
             createdByNode = request.modificationNodeWeak(),
             surfaceMeshVis = OORef<SurfaceMeshVis>(surfaceMeshVis())]() mutable {
 
-        for(const DataObject* obj : state.data()->objects()) {
-            if(const VoxelGrid* voxelGrid = dynamic_object_cast<VoxelGrid>(obj)) {
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
+            if(const VoxelGrid* voxelGrid = dynamic_object_cast<VoxelGrid>(state.data()->objects()[i])) {
                 // Verify consistency of input property container.
                 voxelGrid->verifyIntegrity();
 

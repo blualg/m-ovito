@@ -55,8 +55,8 @@ Future<PipelineFlowState> VoxelGridReplicateModifierDelegate::apply(const Modifi
     // The actual work can be performed in a separate thread.
     return asyncLaunch([state = std::move(state), newImagesIn]() mutable {
 
-        for(const DataObject* obj : state.data()->objects()) {
-            if(const VoxelGrid* existingVoxelGrid = dynamic_object_cast<VoxelGrid>(obj)) {
+       for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
+            if(const VoxelGrid* existingVoxelGrid = dynamic_object_cast<VoxelGrid>(state.data()->objects()[i])) {
 
                 if(!existingVoxelGrid->domain())
                     continue;
