@@ -42,22 +42,17 @@ public:
     /// Returns the thread pool this task has been submitted to for execution (if any).
     QThreadPool* threadPool() const { return _threadPool; }
 
-    /// This virtual function is responsible for computing the results of the task.
+    /// Performs the work of the task.
     virtual void perform() = 0;
 
-    /// Schedules the asynchronous task. This call function is used by the launchTask() helper.
+    /// Schedules the asynchronous task for execution in a thread pool.
+    /// This function is called by the launchTask() helper.
     void operator()();
 
 private:
 
-    /// Implementation of QRunnable.
+    /// Implementation of QRunnable interface.
     virtual void run() final override;
-
-    /// Submits the task for execution to a thread pool.
-    void runInThreadPool();
-
-    /// Runs the task's work function immediately in the current thread.
-    void runInThisThread();
 
     /// A shared pointer to the task itself, which is used to keep the C++ object alive
     /// while the task is transferred to and executed in a thread pool.

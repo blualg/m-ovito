@@ -109,7 +109,7 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
     OVITO_ASSERT(ExecutionContext::isMainThread());
     OVITO_ASSERT(isShuttingDown());
     OVITO_ASSERT(!_localEventLoop);
-    OVITO_ASSERT(!_isWaitingForTask);
+    OVITO_ASSERT(!_waitingForTask);
 
     // Work item queue must be empty by now.
     OVITO_ASSERT(_pendingWork.empty());
@@ -222,7 +222,7 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
         lock.lock();
     }
 
-    if(isShuttingDown() && !_isWaitingForTask && !_shutdownCompleted) {
+    if(isShuttingDown() && !_waitingForTask && !_shutdownCompleted) {
         // If shutdown has been requested before, and we now have left all nested loops,
         // wait for all remaining tasks (in other threads) to finish.
         shutdownImplementation(lock);
@@ -238,9 +238,8 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
     // This method must only be used in the main thread.
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
-    TaskPtr awaitedTaskPtr(awaitedTask.get());
     std::unique_lock<std::mutex> lock(_mutex);
-    bool wasWaitingForTask = std::exchange(_isWaitingForTask, true);
+    TaskPtr wasWaitingForTask = std::exchange(_waitingForTask, awaitedTask.get());
     bool quitFlag = false;
 
     std::optional<QEventLoop> eventLoop;
@@ -248,7 +247,7 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
 
     lock.unlock();
     // Register a callback function with the awaited task, which terminates the processing loop when the task gets canceled or finishes.
-    detail::FunctionTaskCallback awaitedTaskCallback(awaitedTask.get().get(), [&](int state) {
+    detail::FunctionTaskCallback awaitedTaskCallback(_waitingForTask.get(), [&](int state) {
         if(state & (returnEarlyIfCanceled ? (Task::Finished | Task::Canceled) : Task::Finished)) {
             quitWorkProcessingLoop(quitFlag, eventLoop);
         }
@@ -260,7 +259,10 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
         if(state & (Task::Canceled | Task::Finished)) {
             // When the parent task gets canceled, discard the task dependency which keeps the awaited task running.
             awaitedTask.reset();
-            quitWorkProcessingLoop(quitFlag, eventLoop);
+            // Stop waiting - but only if we shouldn't wait for the task to completely finish.
+            if(returnEarlyIfCanceled) {
+                quitWorkProcessingLoop(quitFlag, eventLoop);
+            }
         }
         return true;
     });
@@ -269,7 +271,7 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
     for(;;) {
 
         // Time to quit the loop because an interrupt was requested?
-        if(quitFlag || _interruptProcessingLoop)
+        if(quitFlag)
             break;
 
         // Create a local event loop if a Qt application has been set up.
@@ -281,17 +283,15 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
         // Is the Qt main event loop running? If yes, start a local Qt event loop, which processes both Qt events and pending work items.
         // Otherwise, in a non-GUI environment, enter into our own processing loop, which only processes pending work items of this task manager.
         if(eventLoop) {
-            // Temporarily switch back to a null context while in the event loop.
-            ExecutionContext::Scope execScope(ExecutionContext{});
-            // Also switch back to the null task.
-            Task::Scope taskScope(nullptr);
-            // Also suspend undo recording while in the event loop.
-            UndoSuspender noUndo;
-
             // First, process remaining items in the work queue until the queue is drained.
             executePendingWorkLocked(lock);
-            if(quitFlag || _interruptProcessingLoop)
+            if(quitFlag)
                 break;
+
+            // Temporarily switch back to a default context while in the Qt event loop.
+            ExecutionContext::Scope execScope(ExecutionContext{});
+            Task::Scope taskScope(nullptr);
+            UndoSuspender noUndo;
 
             // Enter the local Qt event loop.
             lock.unlock();
@@ -309,37 +309,38 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
         else {
             // Block until new work arrives in the queue or quitWorkProcessingLoop() is called.
             _pendingWorkCondition.wait(lock, [&]{
-                return !_pendingWork.empty() || quitFlag || _interruptProcessingLoop;
+                return !_pendingWork.empty() || quitFlag;
             });
 
             // Time to quit the loop because we are done?
-            if(quitFlag || _interruptProcessingLoop)
+            if(quitFlag)
                 break;
 
             // Process newly arrived items in the work queue until the queue is drained.
             executePendingWorkLocked(lock);
         }
     }
+    // Make sure the awaited task really has finished running by now if the caller requested that.
+    OVITO_ASSERT(returnEarlyIfCanceled || _waitingForTask->isFinished());
 
     // Detach callbacks from the two task objects.
     waitingTaskCallback.unregisterCallback();
     awaitedTaskCallback.unregisterCallback();
     _localEventLoop = previousEventLoop;
-    _interruptProcessingLoop = false;
-    _isWaitingForTask = wasWaitingForTask;
+    _waitingForTask.swap(wasWaitingForTask);
+
+    // Make sure the awaited task really has finished or was canceled by now.
+    OVITO_ASSERT(wasWaitingForTask->isCanceled() || wasWaitingForTask->isFinished());
 
     // If shutdown has been requested before, and we now have left all nested loops,
-    // wait for all ramining tasks to finish and proceed with shutdown process as soon as control has returned to main event loop.
-    if(isShuttingDown() && !_isWaitingForTask) {
+    // wait for all ramining tasks to finish and proceed with shutdown process as soon
+    // as control has returned to main event loop.
+    if(isShuttingDown() && !_waitingForTask) {
         if(QCoreApplication::instance() && QThread::currentThread()->loopLevel() != 0)
             Q_EMIT pendingWorkArrived();
         else
             executePendingWorkLocked(lock);
     }
-
-    // Cancel the awaited task (unless it has already finished successfully).
-    lock.unlock();
-    awaitedTaskPtr->cancel();
 }
 
 /******************************************************************************
@@ -348,13 +349,13 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
 void TaskManager::quitWorkProcessingLoop(bool& quitFlag, std::optional<QEventLoop>& eventLoop)
 {
     std::lock_guard<std::mutex> lock(_mutex);
-    if(_isWaitingForTask) {
+    if(_waitingForTask) {
         quitFlag = true;
         if(eventLoop) {
             eventLoop->quit();
         }
         else {
-            _pendingWorkCondition.notify_all();
+            _pendingWorkCondition.notify_one();
         }
     }
 }
@@ -364,15 +365,10 @@ void TaskManager::quitWorkProcessingLoop(bool& quitFlag, std::optional<QEventLoo
 ******************************************************************************/
 bool TaskManager::requestInterruption()
 {
-    std::lock_guard<std::mutex> lock(_mutex);
-    if(_isWaitingForTask) {
-        _interruptProcessingLoop = true;
-        if(_localEventLoop) {
-            _localEventLoop->quit();
-        }
-        else {
-            _pendingWorkCondition.notify_all();
-        }
+    std::unique_lock<std::mutex> lock(_mutex);
+    if(TaskPtr task = _waitingForTask) {
+        lock.unlock();
+        task->cancel(); // Note: cancel() triggers the registered callback function in processWorkWhileWaiting(), which needs to acquire our mutex.
         return true;
     }
     return false;

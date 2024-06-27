@@ -388,14 +388,15 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
     awaitedTaskLock.unlock();
 
     // Is the waiting task running in a thread pool?
-    if(waitingTask->isAsynchronousTask() && static_cast<AsynchronousTaskBase*>(waitingTask)->threadPool()) {
+    if(waitingTask->isAsynchronousTask()) {
         // Are we really in a worker thread?
         OVITO_ASSERT(!ExecutionContext::isMainThread());
+        OVITO_ASSERT(static_cast<AsynchronousTaskBase*>(waitingTask)->threadPool());
 
         // Work-stealing mechanism to avoid deadlock when running out of threads in this thread pool.
         AsynchronousTaskBase* asyncTask = awaitedTask->isAsynchronousTask() ? static_cast<AsynchronousTaskBase*>(awaitedTask.get().get()) : nullptr;
         if(asyncTask && asyncTask->threadPool() == static_cast<AsynchronousTaskBase*>(waitingTask)->threadPool() && asyncTask->threadPool()->tryTake(asyncTask)) {
-            // The task was taken from the pool. Run it right away in the current thread.
+            // The task was taken from the current pool. Run it right away in the current thread.
 
             // Attach a temporary callback to the waiting task.
             detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
@@ -412,19 +413,24 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
             waitingTaskCallback.unregisterCallback();
         }
         else {
-            // The task is already running in a thread pool. Wait for it to finish or get canceled.
-            QWaitCondition wc;
-            QMutex waitMutex;
-            std::atomic_bool alreadyDone{false};
+            // The task is already executing or scheduled to run in a different thread pool. Wait for it to finish or get canceled.
+            std::condition_variable cv;
+            std::mutex waitMutex;
+            bool done = false;
 
             // Attach a temporary callback to the waiting task, which sets the wait condition in case the waiting task gets canceled.
             detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
                 if(state & (Task::Canceled | Task::Finished)) {
                     // When the parent task gets canceled, discard the task dependency which keeps the awaited task running.
                     awaitedTask.reset();
-                    QMutexLocker locker(&waitMutex);
-                    alreadyDone.store(true);
-                    wc.wakeAll();
+                    // Wake up the waiting thread - but only if we shouldn't wait for the task to completely finish.
+                    if(returnEarlyIfCanceled) {
+                        {
+                            std::lock_guard lock(waitMutex);
+                            done = true;
+                        }
+                        cv.notify_one();
+                    }
                 }
                 return true;
             });
@@ -432,20 +438,19 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
             // Attach a temporary callback function to the awaited task, which sets the wait condition when the task finishes or gets canceled.
             detail::FunctionTaskCallback awaitedTaskCallback(awaitedTaskPtr.get(), [&](int state) {
                 if(state & (returnEarlyIfCanceled ? (Task::Finished | Task::Canceled) : Task::Finished)) {
-                    QMutexLocker locker(&waitMutex);
-                    alreadyDone.store(true);
-                    wc.wakeAll();
+                    {
+                        std::lock_guard lock(waitMutex);
+                        done = true;
+                    }
+                    cv.notify_one();
                 }
                 return true;
             });
 
-            waitMutex.lock();
-            // Last minute check if the awaited task has already completed:
-            if(!alreadyDone.load()) {
-                // Wait now until one of the tasks are done.
-                wc.wait(&waitMutex);
+            {
+                std::unique_lock lock(waitMutex);
+                cv.wait(lock, [&]{ return done; });
             }
-            waitMutex.unlock();
 
             waitingTaskCallback.unregisterCallback();
             awaitedTaskCallback.unregisterCallback();

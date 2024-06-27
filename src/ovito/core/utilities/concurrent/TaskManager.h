@@ -152,11 +152,8 @@ private:
     /// Used to signal the arrival of new work items in the queue.
     std::condition_variable _pendingWorkCondition;
 
-    /// Indicates that we are currently waiting for a task to finish in processWorkWhileWaiting().
-    bool _isWaitingForTask = false;
-
-    /// Indicates that the work processing loop should be interrupted.
-    bool _interruptProcessingLoop = false;
+    /// Indicates that we are currently waiting for some task to finish in processWorkWhileWaiting().
+    TaskPtr _waitingForTask;
 
     /// Indicates that this task manager has completed its shutdown procedure.
     bool _shutdownCompleted = false;

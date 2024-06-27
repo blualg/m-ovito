@@ -48,23 +48,10 @@ AsynchronousTaskBase::~AsynchronousTaskBase()
 }
 
 /******************************************************************************
-* Schedules the asynchronous task. This call function is used by the launchTask() helper.
+* Schedules the asynchronous task for execution in a thread pool.
+* This function is called by the launchTask() helper.
 ******************************************************************************/
 void AsynchronousTaskBase::operator()()
-{
-#ifndef OVITO_DISABLE_THREADING
-    // Submit the task for execution in a worker thread.
-    this->runInThreadPool();
-#else
-    // If multi-threading is not available, run the task immediately.
-    this->runInThisThread();
-#endif
-}
-
-/******************************************************************************
-* Submits the task for execution to a thread pool.
-******************************************************************************/
-void AsynchronousTaskBase::runInThreadPool()
 {
     OVITO_ASSERT(!this->_thisTask);
     OVITO_ASSERT(!this->_threadPool);
@@ -81,22 +68,6 @@ void AsynchronousTaskBase::runInThreadPool()
 
     // Submit to thread pool.
     _threadPool->start(this);
-}
-
-/******************************************************************************
-* Runs the task's work function immediately in the current thread.
-******************************************************************************/
-void AsynchronousTaskBase::runInThisThread()
-{
-    OVITO_ASSERT(!this->_thisTask);
-    OVITO_ASSERT(!this->_threadPool);
-
-    // Inherit execution context from parent task.
-    _executionContext = ExecutionContext::current();
-    OVITO_ASSERT(_executionContext.isValid());
-
-    // Execute it now.
-    this->run();
 }
 
 /******************************************************************************

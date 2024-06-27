@@ -41,9 +41,7 @@ template<typename Function>
     public:
         /// The type of future associated with this task type. This typedef is used by the launchTask() function.
         using future_type = Future<R>;
-        /// Constructor.
-        PackagedTask(Function&& f) : _func(std::forward<Function>(f)) {}
-        /// Worker thread entry point.
+        explicit PackagedTask(Function&& f) : _func(std::forward<Function>(f)) {}
         virtual void perform() override {
             if constexpr(!std::is_void_v<R>)
                 this->setResult(std::invoke(std::move(_func)));
@@ -56,57 +54,22 @@ template<typename Function>
     return launchTask(std::make_shared<PackagedTask>(std::forward<Function>(f)));
 }
 
-/// Executes the given function in a worker thread and waits for the result.
-/// This function blocks and should be used whenever the lambda function captures some
-/// local variables by reference.
+/// Executes the given worker function in a worker thread and waits for the result.
+/// This function blocks until the worker function has finished executing (even if the waiting task gets canceled).
+/// Thus, it's safe to use if the worker function is a lambda capturing some local variables by reference.
 template<typename Function>
-inline auto asyncLaunchAndJoin(Function&& f) {
-    auto future = asyncLaunch(std::forward<Function>(f));
-    future.waitForFinished(false); // This waits until the task has finished executing (does not return early when canceled but not finished).
-    if constexpr(!std::is_void_v<std::invoke_result_t<Function>>)
-        return std::move(future).result();
-}
-
-/// Schedules the given function for execution with the given executor.
-template<typename Executor, typename Function>
-[[nodiscard]] inline auto executorLaunch(Executor&& executor, Function&& f)
+inline auto asyncLaunchAndJoin(Function&& f)
 {
-    using R = std::invoke_result_t<Function>;
-    class PackagedTask : public detail::TaskWithStorage<R>
-    {
-    public:
-        /// The type of future associated with this task type. This typedef is used by the launchTask() function.
-        using future_type = Future<R>;
-        /// Constructor.
-        PackagedTask(Function&& f) : detail::TaskWithStorage<R>(Task::NoState), _func(std::forward<Function>(f)) {}
-        /// Start routine invoked by launchTask().
-        void operator()(Executor&& executor) {
-            // Let the executor invoke our run() method. Use a promise to properly finish the task
-            // in case the executor does never call run().
-            std::forward<Executor>(executor).execute([promise = Promise<R>(this->shared_from_this())]() noexcept {
-                static_cast<PackagedTask*>(promise.task().get())->run();
-            });
-        }
-        /// Execution routine.
-        void run() noexcept {
-            try {
-                if(!this->isCanceled()) {
-                    Task::Scope taskScope(this);
-                    if constexpr(!std::is_void_v<R>)
-                        this->setResult(std::invoke(std::move(_func)));
-                    else
-                        std::invoke(std::move(_func));
-                }
-                this->setFinished();
-            }
-            catch(...) {
-                this->captureExceptionAndFinish();
-            }
-        }
-    private:
-        std::decay_t<Function> _func;
-    };
-    return launchTask(std::make_shared<PackagedTask>(std::forward<Function>(f)), std::forward<Executor>(executor));
+    // Launch the function in a worker thread.
+    auto future = asyncLaunch(std::forward<Function>(f));
+
+    // Waits until the task has finished executing (but do not return early when canceled but not yet finished).
+    future.waitForFinished(false);
+
+    // Return the result of the function to the caller, if any.
+    if constexpr(!std::is_void_v<std::invoke_result_t<Function>>) {
+        return std::move(future).result();
+    }
 }
 
 }   // End of namespace
