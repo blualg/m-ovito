@@ -186,6 +186,12 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisM
     if(grainProperty && (grainProperty->dataType() != DataBuffer::Int64 || grainProperty->componentCount() != 1))
         grainProperty = nullptr;
 
+    // Create the output dislocation network object.
+    DataOORef<DislocationNetwork> dislocations = DataOORef<DislocationNetwork>::create(ObjectInitializationFlag::DontCreateVisElement);
+    dislocations->setCreatedByNode(request.modificationNode());
+    dislocations->setDomain(simCell);
+    dislocations->setVisElement(dislocationVis());
+
     // Create an empty surface mesh object.
     DataOORef<SurfaceMesh> defectMesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Defect mesh"));
     defectMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-defect-mesh")));
@@ -212,11 +218,11 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisM
             std::move(preferredCrystalOrientations),
             onlyPerfectDislocations(),
             defectMeshSmoothingLevel(),
+            std::move(dislocations),
             std::move(defectMesh),
             std::move(interfaceMesh),
             lineSmoothingEnabled() ? lineSmoothingLevel() : 0,
-            lineCoarseningEnabled() ? linePointInterval() : 0,
-            dislocationVis());
+            lineCoarseningEnabled() ? linePointInterval() : 0);
 }
 
 }   // End of namespace

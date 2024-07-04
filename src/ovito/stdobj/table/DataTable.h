@@ -77,6 +77,11 @@ public:
     /// from the x-axis interval set for this data table.
     ConstPropertyPtr getXValues() const;
 
+    /// Indicates whether this data object wants to be shown in the pipeline editor under the data source section.
+    virtual PipelineEditorObjectListMode pipelineEditorObjectListMode() const override {
+        return PipelineEditorObjectListMode::Show; // Note: Not showing typed properties in the pipeline editor that belong to this DataTable.
+    }
+
 private:
 
     /// The lower bound of the x-interval of the histogram if data points have no explicit x-coordinates.

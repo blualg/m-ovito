@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
@@ -38,8 +38,8 @@ OVITO_CLASSINFO(DislocationReplicateModifierDelegate, "DisplayName", "Dislocatio
 ******************************************************************************/
 QVector<DataObjectReference> DislocationReplicateModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<DislocationNetworkObject>())
-        return { DataObjectReference(&DislocationNetworkObject::OOClass()) };
+    if(input.containsObject<DislocationNetwork>())
+        return { DataObjectReference(&DislocationNetwork::OOClass()) };
     return {};
 }
 
@@ -59,7 +59,7 @@ Future<PipelineFlowState> DislocationReplicateModifierDelegate::apply(const Modi
         size_t numCopies = (size_t)nPBC[0] * (size_t)nPBC[1] * (size_t)nPBC[2];
 
         for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            if(const DislocationNetworkObject* existingDislocations = dynamic_object_cast<DislocationNetworkObject>(state.data()->objects()[i])) {
+            if(const DislocationNetwork* existingDislocations = dynamic_object_cast<DislocationNetwork>(state.data()->objects()[i])) {
 
                 // For periodic replication, a domain is needed.
                 if(!existingDislocations->domain())
@@ -71,20 +71,19 @@ Future<PipelineFlowState> DislocationReplicateModifierDelegate::apply(const Modi
                     continue;
 
                 // Create the output copy of the input dislocation object.
-                DislocationNetworkObject* newDislocations = state.makeMutable(existingDislocations);
-                std::shared_ptr<DislocationNetwork> dislocations = newDislocations->modifiableStorage();
+                DislocationNetwork* newDislocations = state.makeMutable(existingDislocations);
 
                 // Shift existing vertices so that they form the first image at grid position (0,0,0).
                 const Vector3 imageDelta = simCell * Vector3(newImages.minc.x(), newImages.minc.y(), newImages.minc.z());
                 if(!imageDelta.isZero()) {
-                    for(DislocationSegment* segment : dislocations->segments()) {
+                    for(DislocationSegment* segment : newDislocations->segments()) {
                         for(Point3& p : segment->line)
                             p += imageDelta;
                     }
                 }
 
                 // Replicate lines.
-                size_t oldSegmentCount = dislocations->segments().size();
+                size_t oldSegmentCount = newDislocations->segments().size();
                 for(int imageX = 0; imageX < nPBC[0]; imageX++) {
                     for(int imageY = 0; imageY < nPBC[1]; imageY++) {
                         for(int imageZ = 0; imageZ < nPBC[2]; imageZ++) {
@@ -92,8 +91,8 @@ Future<PipelineFlowState> DislocationReplicateModifierDelegate::apply(const Modi
                             // Shift vertex positions by the periodicity vector.
                             const Vector3 imageDelta = simCell * Vector3(imageX, imageY, imageZ);
                             for(size_t i = 0; i < oldSegmentCount; i++) {
-                                DislocationSegment* oldSegment = dislocations->segments()[i];
-                                DislocationSegment* newSegment = dislocations->createSegment(oldSegment->burgersVector);
+                                DislocationSegment* oldSegment = newDislocations->segments()[i];
+                                DislocationSegment* newSegment = newDislocations->createSegment(oldSegment->burgersVector);
                                 newSegment->line = oldSegment->line;
                                 newSegment->coreSize = oldSegment->coreSize;
                                 for(Point3& p : newSegment->line)
@@ -103,7 +102,7 @@ Future<PipelineFlowState> DislocationReplicateModifierDelegate::apply(const Modi
                         }
                     }
                 }
-                OVITO_ASSERT(dislocations->segments().size() == oldSegmentCount * numCopies);
+                OVITO_ASSERT(newDislocations->segments().size() == oldSegmentCount * numCopies);
 
                 // Extend the periodic domain the dislocation network is embedded in.
                 simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);

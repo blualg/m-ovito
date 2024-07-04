@@ -24,7 +24,7 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/crystalanalysis/objects/RenderableDislocationLines.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -44,7 +44,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT DislocationPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    void initializeObject(DislocationVis* visElement, const DislocationNetworkObject* dislocationObj, std::vector<int>&& subobjToSegmentMap) {
+    void initializeObject(DislocationVis* visElement, const DislocationNetwork* dislocationObj, std::vector<int>&& subobjToSegmentMap) {
         ObjectPickInfo::initializeObject();
         _visElement = visElement;
         _dislocationObj = dislocationObj;
@@ -52,7 +52,7 @@ public:
     }
 
     /// The data object containing the dislocations.
-    const DislocationNetworkObject* dislocationObj() const { return _dislocationObj; }
+    const DislocationNetwork* dislocationObj() const { return _dislocationObj; }
 
     /// Returns the vis element that rendered the dislocations.
     DislocationVis* visElement() const { return _visElement; }
@@ -72,7 +72,7 @@ public:
 private:
 
     /// The data object containing the dislocations.
-    OORef<DislocationNetworkObject> _dislocationObj;
+    DataOORef<const DislocationNetwork> _dislocationObj;
 
     /// The vis element that rendered the dislocations.
     OORef<DislocationVis> _visElement;
@@ -100,7 +100,7 @@ public:
 public:
 
     /// Transforms the DislocationNetwork into a renderable set of lines.
-    Future<std::shared_ptr<RenderableDislocationLines>> transformDislocations(const DislocationNetworkObject* dislocations);
+    Future<std::shared_ptr<RenderableDislocationLines>> transformDislocations(const DislocationNetwork* dislocations);
 
     /// Lets the vis element render a data object.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;

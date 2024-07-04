@@ -37,8 +37,6 @@ namespace Ovito
     class MicrostructurePhase;
     class BurgersVectorFamily;
     class DislocationVis;
-    class DislocationNetworkObject;
-    class ClusterGraphObject;
     class ClusterGraph;
     class DislocationNetwork;
     struct DislocationNode;

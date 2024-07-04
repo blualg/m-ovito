@@ -326,15 +326,19 @@ void PipelineListModel::refreshList()
 ******************************************************************************/
 void PipelineListModel::createListItemsForSubobjects(const DataObject* dataObj, PipelineListItem* parentItem)
 {
-    if(dataObj->showInPipelineEditor() && dataObj->editableProxy()) {
+    DataObject::PipelineEditorObjectListMode mode = dataObj->pipelineEditorObjectListMode();
+
+    if(dataObj->editableProxy() && (mode == DataObject::PipelineEditorObjectListMode::Show || mode == DataObject::PipelineEditorObjectListMode::ShowIncludingSubObjects)) {
         parentItem = appendListItem(dataObj->editableProxy(), PipelineListItem::DataObject, parentItem);
     }
 
-    // Recursively visit the sub-objects of the data object.
-    dataObj->visitSubObjects([&](const DataObject* subObject) {
-        createListItemsForSubobjects(subObject, parentItem);
-        return false;
-    });
+    if(mode == DataObject::PipelineEditorObjectListMode::ShowIncludingSubObjects || mode == DataObject::PipelineEditorObjectListMode::Hide) {
+        // Recursively visit the sub-objects of the data object.
+        dataObj->visitSubObjects([&](const DataObject* subObject) {
+            createListItemsForSubobjects(subObject, parentItem);
+            return false;
+        });
+    }
 }
 
 /******************************************************************************

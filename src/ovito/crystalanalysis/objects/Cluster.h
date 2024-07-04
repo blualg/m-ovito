@@ -150,7 +150,6 @@ struct OVITO_CRYSTALANALYSIS_EXPORT Cluster
     ClusterTransition* predecessor;
 
     union {
-
         /// This is a work variable used only during a recursive shortest path search in the
         /// cluster graph. It keeps track of the distance of this cluster from the
         /// start node of the path search.

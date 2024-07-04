@@ -24,8 +24,8 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/core/utilities/MemoryPool.h>
-#include <ovito/crystalanalysis/data/DislocationNetwork.h>
 #include "InterfaceMesh.h"
 
 namespace Ovito {
@@ -38,10 +38,10 @@ class DislocationTracer
 public:
 
     /// Constructor.
-    DislocationTracer(InterfaceMesh& mesh, std::shared_ptr<ClusterGraph> clusterGraph, int maxTrialCircuitSize, int maxCircuitElongation) :
+    DislocationTracer(InterfaceMesh& mesh, int maxTrialCircuitSize, int maxCircuitElongation, DislocationNetwork* network) :
         _mesh(mesh),
-        _clusterGraph(clusterGraph),
-        _network(std::make_shared<DislocationNetwork>(clusterGraph)),
+        _clusterGraph(network->clusterGraph()),
+        _network(network),
         _unusedCircuit(nullptr),
         _rng(1),
         _maxBurgersCircuitSize(maxTrialCircuitSize),
@@ -55,10 +55,10 @@ public:
     InterfaceMesh& mesh() { return _mesh; }
 
     /// Returns a reference to the cluster graph.
-    const std::shared_ptr<ClusterGraph>& clusterGraph() { return _clusterGraph; }
+    const ClusterGraph* clusterGraph() { return _clusterGraph; }
 
     /// Returns the extracted network of dislocation segments.
-    const std::shared_ptr<DislocationNetwork>& network() { return _network; }
+    DislocationNetwork* network() { return _network; }
 
     /// Returns the simulation cell.
     const SimulationCell* cell() const { return mesh().domain(); }
@@ -117,10 +117,10 @@ private:
     InterfaceMesh& _mesh;
 
     /// The extracted network of dislocation segments.
-    std::shared_ptr<DislocationNetwork> _network;
+    DislocationNetwork* _network;
 
     /// The cluster graph.
-    const std::shared_ptr<ClusterGraph> _clusterGraph;
+    const ClusterGraph* _clusterGraph;
 
     /// The maximum length (number of edges) for Burgers circuits during the first tracing phase.
     int _maxBurgersCircuitSize;
@@ -128,14 +128,14 @@ private:
     /// The maximum length (number of edges) for Burgers circuits during the second tracing phase.
     int _maxExtendedBurgersCircuitSize;
 
-    // Used to allocate memory for BurgersCircuit instances.
+    /// Used to allocate memory for BurgersCircuit instances.
     MemoryPool<BurgersCircuit> _circuitPool;
 
     /// List of nodes that do not form a junction.
     std::vector<DislocationNode*> _danglingNodes;
 
     /// Stores a pointer to the last allocated circuit which has been discarded.
-    /// It can be re-used on the next allocation request.
+    /// It can be re-used to serve the next allocation request.
     BurgersCircuit* _unusedCircuit;
 
     /// Used to generate random numbers;

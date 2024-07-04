@@ -274,9 +274,10 @@ public:
         return (k < 0) ? k+n : k;
     }
 
-    /// Returns whether this data object wants to be shown in the pipeline editor
-    /// under the data source section.
-    virtual bool showInPipelineEditor() const override { return true; }
+    /// Indicates whether this data object wants to be shown in the pipeline editor under the data source section.
+    virtual PipelineEditorObjectListMode pipelineEditorObjectListMode() const override {
+        return PipelineEditorObjectListMode::ShowIncludingSubObjects;
+    }
 
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
     virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;

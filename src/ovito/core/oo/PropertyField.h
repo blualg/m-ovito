@@ -368,7 +368,7 @@ public:
 
     /// Returns the target object currently being referenced by the reference field.
     inline raw_pointer get() const noexcept {
-        return static_object_cast<target_object_type>(base_class::to_address(base_class::get()));
+        return static_object_cast<target_object_type>(base_class::get());
     }
 };
 

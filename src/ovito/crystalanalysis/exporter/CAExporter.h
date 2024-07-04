@@ -24,7 +24,7 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/core/dataset/io/FileExporter.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 
@@ -65,7 +65,7 @@ public:
 
     /// \brief Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
-        return { &DislocationNetworkObject::OOClass() };
+        return { &DislocationNetwork::OOClass() };
     }
 
 protected:

@@ -24,7 +24,7 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/data/ClusterVector.h>
+#include <ovito/crystalanalysis/objects/ClusterVector.h>
 
 namespace Ovito {
 
@@ -55,14 +55,14 @@ public:
     };
 
     /// Constructor.
-    RenderableDislocationLines(std::vector<Segment> lineSegments, std::shared_ptr<ClusterGraph> clusterGraph) :
+    RenderableDislocationLines(std::vector<Segment> lineSegments, DataOORef<const ClusterGraph> clusterGraph) :
         _lineSegments(std::move(lineSegments)), _clusterGraph(std::move(clusterGraph)) {}
 
     /// Returns the list of clipped and wrapped line segments.
     const std::vector<Segment>& lineSegments() const { return _lineSegments; }
 
     /// Returns the cluster graph.
-    const std::shared_ptr<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
+    const DataOORef<const ClusterGraph>& clusterGraph() const { return _clusterGraph; }
 
 private:
 
@@ -70,7 +70,7 @@ private:
     std::vector<Segment> _lineSegments;
 
     /// The associated cluster graph.
-    std::shared_ptr<ClusterGraph> _clusterGraph;
+    DataOORef<const ClusterGraph> _clusterGraph;
 };
 
 }   // End of namespace

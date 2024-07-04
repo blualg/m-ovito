@@ -21,20 +21,20 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/gui/desktop/properties/RefTargetListParameterUI.h>
-#include "DislocationNetworkObjectEditor.h"
+#include "DislocationNetworkEditor.h"
 #include "MicrostructurePhaseEditor.h"
 
 namespace Ovito {
 
-IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationNetworkObjectEditor);
-SET_OVITO_OBJECT_EDITOR(DislocationNetworkObject, DislocationNetworkObjectEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(DislocationNetworkEditor);
+SET_OVITO_OBJECT_EDITOR(DislocationNetwork, DislocationNetworkEditor);
 
 /******************************************************************************
 * Sets up the UI widgets of the editor.
 ******************************************************************************/
-void DislocationNetworkObjectEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+void DislocationNetworkEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
     QWidget* rollout = createRollout(tr("Dislocations"), rolloutParams);
@@ -89,17 +89,17 @@ void DislocationNetworkObjectEditor::createUI(const RolloutInsertionParameters& 
     layout->addWidget(subEditorContainer);
 
     layout->insertWidget(0, new QLabel(tr("Structure types:")));
-    typesListUI = createParamUI<CustomRefTargetListParameterUI>(PROPERTY_FIELD(DislocationNetworkObject::crystalStructures), RolloutInsertionParameters().insertInto(subEditorContainer));
+    typesListUI = createParamUI<CustomRefTargetListParameterUI>(PROPERTY_FIELD(DislocationNetwork::crystalStructures), RolloutInsertionParameters().insertInto(subEditorContainer));
     layout->insertWidget(1, typesListUI->tableWidget(200));
     typesListUI->tableWidget()->setAutoScroll(false);
-    connect(typesListUI->tableWidget(), &QTableWidget::doubleClicked, this, &DislocationNetworkObjectEditor::onDoubleClickPattern);
+    connect(typesListUI->tableWidget(), &QTableWidget::doubleClicked, this, &DislocationNetworkEditor::onDoubleClickPattern);
 }
 
 /******************************************************************************
 * Is called when the user has double-clicked on one of the entries in the
 * list widget.
 ******************************************************************************/
-void DislocationNetworkObjectEditor::onDoubleClickPattern(const QModelIndex& index)
+void DislocationNetworkEditor::onDoubleClickPattern(const QModelIndex& index)
 {
     // Let the user select a color for the structure.
     ElementType* pattern = static_object_cast<ElementType>(typesListUI->selectedObject());

@@ -7,13 +7,15 @@ Changelog
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.11.0>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.11.0>`__
 
 ----------------------------
 Version 3.11.0 (xx-xxx-2024)
 ----------------------------
 
 - The :ref:`particles.modifiers.generate_trajectory_lines` modifier now works automatically without the need to start the trajectory generation manually
+- Modifiers now keep their results in memory when temporarily turned off by the user
+- |ovito-python| Added the :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_pos`, :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_dir`, and :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_up` fields to the :py:class:`ViewportOverlayInterface.Canvas <ovito.vis.ViewportOverlayInterface.Canvas>` class
 - |ovito-python| New property :py:attr:`ovito.pipeline.Pipeline.frames`
 - |ovito-python| New parameter trait types :py:class:`ovito.traits.DataObjectReference` and :py:class:`ovito.traits.PropertyReference`
 - |ovito-python| New class :py:class:`ovito.data.DataObject.Ref` and methods :py:meth:`ovito.data.DataCollection.get` and :py:meth:`ovito.data.PropertyContainer.get`
@@ -22,15 +24,18 @@ Version 3.11.0 (xx-xxx-2024)
 - |ovito-python| Initialize global Qt application object on demand only to avoid conflicts with other Python packages that also use the Qt framework
 - |ovito-python| Added support for Python multiprocessing module
 - |ovito-python| Added support for Python copy module
+- |ovito-python| Added support for NumPy 2.x
 - |ovito-pro| Extended the Python code generator to support multiple pipeline, including branched pipeline structures and shared modifiers
 - |ovito-pro| Fixed error that occurs if the Render LAMMPS Regions modifier is inserted more than once into the same pipeline
 - Add support for :ref:`Vectors <scene_objects.vectors>`, :py:class:`ovito.data.Vectors` in GUI and Python
 - Add support for updated Zn mass: old mass (pre 2007) 65.409, update mass 65.38 (https://www.ciaaw.org/zinc.htm). Old mass is still supported for legacy reasons
+- Affine Transformation modifier: A rotational transformation now acts on the Burgers vectors of a dislocation network
 - OVITO Basic now includes demo versions of high-quality rendering backends OSPRay, Tachyon, and VisRTX
+- Updated third-party components: OpenSSL, Qt/PySide6, Python
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.10.6>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.10.6>`__
 
 ----------------------------
 Version 3.10.6 (03-May-2024)
@@ -43,7 +48,7 @@ Version 3.10.6 (03-May-2024)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.10.5>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.10.5>`__
 
 ----------------------------
 Version 3.10.5 (17-Apr-2024)
@@ -59,7 +64,7 @@ Version 3.10.5 (17-Apr-2024)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.10.4>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.10.4>`__
 
 ----------------------------
 Version 3.10.4 (13-Mar-2024)
@@ -77,7 +82,7 @@ Version 3.10.4 (13-Mar-2024)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.10.3>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.10.3>`__
 
 ----------------------------
 Version 3.10.3 (19-Feb-2024)
@@ -92,7 +97,7 @@ Version 3.10.3 (19-Feb-2024)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.10.2>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.10.2>`__
 
 ----------------------------
 Version 3.10.2 (02-Feb-2024)
@@ -108,7 +113,7 @@ Version 3.10.2 (02-Feb-2024)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.10.1>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.10.1>`__
 
 ----------------------------
 Version 3.10.1 (09-Jan-2024)
@@ -122,7 +127,7 @@ Version 3.10.1 (09-Jan-2024)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.10.0>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.10.0>`__
 
 ----------------------------
 Version 3.10.0 (28-Dec-2023)
@@ -216,7 +221,7 @@ and generating the necessary job scripts for you.
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.9.4>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.9.4>`__
 
 ---------------------------
 Version 3.9.4 (04-Nov-2023)
@@ -226,7 +231,7 @@ Version 3.9.4 (04-Nov-2023)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.9.3>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.9.3>`__
 
 ---------------------------
 Version 3.9.3 (01-Nov-2023)
@@ -243,7 +248,7 @@ Version 3.9.3 (01-Nov-2023)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.9.2>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.9.2>`__
 
 ---------------------------
 Version 3.9.2 (31-Aug-2023)
@@ -260,7 +265,7 @@ Version 3.9.2 (31-Aug-2023)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.9.1>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.9.1>`__
 
 ---------------------------
 Version 3.9.1 (06-Aug-2023)
@@ -274,7 +279,7 @@ Version 3.9.1 (06-Aug-2023)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.9.0>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.9.0>`__
 
 ---------------------------
 Version 3.9.0 (02-Aug-2023)
@@ -349,7 +354,7 @@ OVITO Pro and the OVITO Python module can additionally read :ref:`ASE trajectory
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.8.5>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.8.5>`__
 
 ---------------------------
 Version 3.8.5 (19-Jun-2023)
@@ -365,7 +370,7 @@ Version 3.8.5 (19-Jun-2023)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.8.4>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.8.4>`__
 
 ---------------------------
 Version 3.8.4 (03-May-2023)
@@ -378,7 +383,7 @@ Version 3.8.4 (03-May-2023)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.8.3>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.8.3>`__
 
 ---------------------------
 Version 3.8.3 (16-Apr-2023)
@@ -391,7 +396,7 @@ Version 3.8.3 (16-Apr-2023)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.8.2>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.8.2>`__
 
 ---------------------------
 Version 3.8.2 (04-Apr-2023)
@@ -404,7 +409,7 @@ Version 3.8.2 (04-Apr-2023)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.8.1>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.8.1>`__
 
 ---------------------------
 Version 3.8.1 (27-Mar-2023)
@@ -436,7 +441,7 @@ for vectorized computation of neighbor lists for many or all particles at once.
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.8.0>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.8.0>`__
 
 ---------------------------
 Version 3.8.0 (03-Mar-2023)
@@ -565,7 +570,7 @@ when particles get removed from the simulation over time.
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.12>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.12>`__
 
 ----------------------------
 Version 3.7.12 (16-Dec-2022)
@@ -580,7 +585,7 @@ Version 3.7.12 (16-Dec-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.11>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.11>`__
 
 ----------------------------
 Version 3.7.11 (29-Oct-2022)
@@ -594,7 +599,7 @@ Version 3.7.11 (29-Oct-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.10>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.10>`__
 
 ----------------------------
 Version 3.7.10 (09-Oct-2022)
@@ -612,7 +617,7 @@ Version 3.7.10 (09-Oct-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.9>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.9>`__
 
 ---------------------------
 Version 3.7.9 (12-Sep-2022)
@@ -634,7 +639,7 @@ Version 3.7.9 (12-Sep-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.8>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.8>`__
 
 ---------------------------
 Version 3.7.8 (29-Jul-2022)
@@ -648,7 +653,7 @@ Version 3.7.8 (29-Jul-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.7>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.7>`__
 
 ---------------------------
 Version 3.7.7 (06-Jul-2022)
@@ -658,7 +663,7 @@ Version 3.7.7 (06-Jul-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.6>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.6>`__
 
 ---------------------------
 Version 3.7.6 (23-Jun-2022)
@@ -675,7 +680,7 @@ Version 3.7.6 (23-Jun-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.5>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.5>`__
 
 ---------------------------
 Version 3.7.5 (28-May-2022)
@@ -694,7 +699,7 @@ Version 3.7.5 (28-May-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.4>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.4>`__
 
 ---------------------------
 Version 3.7.4 (18-Apr-2022)
@@ -709,7 +714,7 @@ Version 3.7.4 (18-Apr-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.3>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.3>`__
 
 -----------------------------
 Version 3.7.3 (29-Mar-2022)
@@ -729,7 +734,7 @@ Version 3.7.3 (29-Mar-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.2>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.2>`__
 
 ---------------------------
 Version 3.7.2 (03-Mar-2022)
@@ -742,7 +747,7 @@ Version 3.7.2 (03-Mar-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.1>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.1>`__
 
 ---------------------------
 Version 3.7.1 (26-Feb-2022)
@@ -755,7 +760,7 @@ Version 3.7.1 (26-Feb-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.7.0>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.7.0>`__
 
 ---------------------------
 Version 3.7.0 (15-Feb-2022)
@@ -782,7 +787,7 @@ Version 3.7.0 (15-Feb-2022)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.6.0>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.6.0>`__
 
 ---------------------------
 Version 3.6.0 (19-Nov-2021)
@@ -814,7 +819,7 @@ Version 3.6.0 (19-Nov-2021)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.5.4>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.5.4>`__
 
 ---------------------------
 Version 3.5.4 (31-Jul-2021)
@@ -826,7 +831,7 @@ Version 3.5.4 (31-Jul-2021)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.5.3>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.5.3>`__
 
 ---------------------------
 Version 3.5.3 (30-Jun-2021)
@@ -841,7 +846,7 @@ Version 3.5.3 (30-Jun-2021)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.5.2>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.5.2>`__
 
 ---------------------------
 Version 3.5.2 (26-May-2021)
@@ -854,7 +859,7 @@ Version 3.5.2 (26-May-2021)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.5.1>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.5.1>`__
 
 ---------------------------
 Version 3.5.1 (18-May-2021)
@@ -869,7 +874,7 @@ Version 3.5.1 (18-May-2021)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.5.0>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.5.0>`__
 
 ---------------------------
 Version 3.5.0 (02-May-2021)
@@ -912,7 +917,7 @@ Version 3.5.0 (02-May-2021)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.4.4>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.4.4>`__
 
 ---------------------------
 Version 3.4.4 (12-Mar-2021)
@@ -926,7 +931,7 @@ Version 3.4.4 (12-Mar-2021)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.4.3>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.4.3>`__
 
 ---------------------------
 Version 3.4.3 (25-Feb-2021)
@@ -940,7 +945,7 @@ Version 3.4.3 (25-Feb-2021)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.4.2>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.4.2>`__
 
 ---------------------------
 Version 3.4.2 (15-Feb-2021)
@@ -952,7 +957,7 @@ Version 3.4.2 (15-Feb-2021)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.4.1>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.4.1>`__
 
 ---------------------------
 Version 3.4.1 (03-Feb-2021)
@@ -963,7 +968,7 @@ Version 3.4.1 (03-Feb-2021)
 
 .. sidebar::
 
-  * `Download <https://www.ovito.org/download_history/#3.4.0>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.4.0>`__
 
 ---------------------------
 Version 3.4.0 (28-Jan-2021)

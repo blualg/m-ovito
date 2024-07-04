@@ -58,8 +58,12 @@ void bitmapSort(iterator begin, iterator end, int max)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-StructureAnalysis::StructureAnalysis(ConstPropertyPtr positions, const SimulationCell* simCell,
-        LatticeStructureType inputCrystalType, ConstPropertyPtr particleSelection,
+StructureAnalysis::StructureAnalysis(
+        ConstPropertyPtr positions,
+        const SimulationCell* simCell,
+        LatticeStructureType inputCrystalType,
+        ConstPropertyPtr particleSelection,
+        ClusterGraph* clusterGraph,
         PropertyPtr outputStructures, std::vector<Matrix3> preferredCrystalOrientations,
         bool identifyPlanarDefects) :
     _positions(positions),
@@ -71,7 +75,7 @@ StructureAnalysis::StructureAnalysis(ConstPropertyPtr positions, const Simulatio
     _atomClusters(Particles::OOClass().createStandardProperty(DataBuffer::Initialized, positions->size(), Particles::ClusterProperty)),
     _atomClustersArray(_atomClusters),
     _atomSymmetryPermutations(positions->size()),
-    _clusterGraph(std::make_shared<ClusterGraph>()),
+    _clusterGraph(clusterGraph),
     _preferredCrystalOrientations(std::move(preferredCrystalOrientations)),
     _identifyPlanarDefects(identifyPlanarDefects)
 {

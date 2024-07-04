@@ -24,8 +24,8 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
+#include <ovito/crystalanalysis/objects/ClusterVector.h>
 #include <ovito/core/utilities/MemoryPool.h>
-#include <ovito/crystalanalysis/data/ClusterVector.h>
 #include "StructureAnalysis.h"
 
 namespace Ovito {
@@ -52,7 +52,7 @@ public:
     const StructureAnalysis& structureAnalysis() const { return _structureAnalysis; }
 
     /// Returns a reference to the cluster graph.
-    const std::shared_ptr<ClusterGraph>& clusterGraph() { return structureAnalysis().clusterGraph(); }
+    ClusterGraph* clusterGraph() { return structureAnalysis().clusterGraph(); }
 
     /// Finds an atom-to-atom path from atom 1 to atom 2 that lies entirely in the good crystal region.
     /// If a path could be found, returns the corresponding ideal vector connecting the two

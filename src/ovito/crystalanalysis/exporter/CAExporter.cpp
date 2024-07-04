@@ -21,8 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
-#include <ovito/crystalanalysis/objects/ClusterGraphObject.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
+#include <ovito/crystalanalysis/objects/ClusterGraph.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/core/utilities/io/CompressedTextWriter.h>
 #include <ovito/core/utilities/concurrent/Promise.h>
@@ -73,12 +73,12 @@ void CAExporter::exportFrame(int frameNumber, const QString& filePath)
     const SimulationCell* simulationCell = state.expectObject<SimulationCell>();
 
     // Get dislocation lines.
-    const DislocationNetworkObject* dislocationObj = state.getObject<DislocationNetworkObject>();
+    const DislocationNetwork* dislocations = state.getObject<DislocationNetwork>();
 
     // Get defect surface mesh.
     const SurfaceMesh* defectMesh = meshExportEnabled() ? state.getObject<SurfaceMesh>() : nullptr;
 
-    if(!dislocationObj && !defectMesh)
+    if(!dislocations && !defectMesh)
         throw Exception(tr("Dataset to be exported contains no dislocation lines nor a surface mesh. Cannot write CA file."));
 
     // Write file header.
@@ -86,8 +86,8 @@ void CAExporter::exportFrame(int frameNumber, const QString& filePath)
     textStream() << "CA_LIB_VERSION 0.0.0\n";
 
     std::vector<const MicrostructurePhase*> crystalStructures;
-    if(dislocationObj) {
-        for(const MicrostructurePhase* phase : dislocationObj->crystalStructures()) {
+    if(dislocations) {
+        for(const MicrostructurePhase* phase : dislocations->crystalStructures()) {
             if(phase->numericId() != 0)
                 crystalStructures.push_back(phase);
         }
@@ -128,11 +128,6 @@ void CAExporter::exportFrame(int frameNumber, const QString& filePath)
 
     // Select the dislocation network to be exported.
     // Optionally, convert the selected Microstructure object to a DislocationNetwork object for export.
-    std::shared_ptr<DislocationNetwork> dislocations;
-    if(dislocationObj) {
-        dislocations = dislocationObj->storage();
-    }
-    // Get cluster graph.
     const auto clusterGraph = dislocations->clusterGraph();
 
     // Write list of clusters.

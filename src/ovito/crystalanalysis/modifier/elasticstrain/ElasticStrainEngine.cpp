@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/ClusterGraphObject.h>
+#include <ovito/crystalanalysis/objects/ClusterGraph.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -69,7 +69,7 @@ void ElasticStrainEngine::identifyStructures(const Particles* particles, const S
     this_task::setProgressText(ElasticStrainModifier::tr("Calculating elastic strain tensors"));
 
     const Property* positions = particles->expectProperty(Particles::PositionProperty);
-    _structureAnalysis.emplace(positions, simulationCell, (StructureAnalysis::LatticeStructureType)_inputCrystalStructure, selection, structures(), std::move(_preferredCrystalOrientations));
+    _structureAnalysis.emplace(positions, simulationCell, (StructureAnalysis::LatticeStructureType)_inputCrystalStructure, selection, clusterGraph(), structures(), std::move(_preferredCrystalOrientations));
     setAtomClusters(_structureAnalysis->atomClusters());
 
     this_task::beginProgressSubStepsWithWeights({ 35, 6, 1, 1, 20 });
@@ -192,8 +192,7 @@ std::vector<int64_t> ElasticStrainEngine::computeStructureStatistics(const Prope
     std::vector<int64_t> typeCounts = StructureIdentificationModifier::Algorithm::computeStructureStatistics(structures, state, createdByNode, modifierParameters);
 
     // Output cluster graph.
-    ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(createdByNode);
-    clusterGraphObj->setStorage(clusterGraph());
+    state.addObject(clusterGraph());
 
     // Output particle properties.
     Particles* particles = state.expectMutableObject<Particles>();
