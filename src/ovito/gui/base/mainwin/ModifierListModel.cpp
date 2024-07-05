@@ -196,7 +196,7 @@ QT_WARNING_POP
         _categoryFont.setPixelSize(_categoryFont.pixelSize() * 4 / 5);
 #endif
     _getMoreExtensionsFont = QGuiApplication::font();
-    _getMoreExtensionsFont.setItalic(true);
+    //_getMoreExtensionsFont.setItalic(true);
 
     // Generate list items.
     updateModelLists();
@@ -214,6 +214,7 @@ void ModifierListModel::updateColorPalette(const QPalette& palette)
     _categoryBackgroundBrush = darkTheme ? palette.window() : QBrush{Qt::lightGray, Qt::Dense4Pattern};
 #endif
     _categoryForegroundBrush = QBrush(darkTheme ? QColor(Qt::blue).lighter() : QColor(Qt::blue));
+    _getMoreExtensionsForegroundBrush = QBrush(darkTheme ? Qt::green : Qt::darkGreen);
 }
 
 /******************************************************************************
@@ -305,8 +306,10 @@ QVariant ModifierListModel::data(const QModelIndex& index, int role) const
             return _categoryFont;
     }
     else if(role == Qt::ForegroundRole) {
+        if(index.row() == getMoreExtensionsItemIndex())
+            return _getMoreExtensionsForegroundBrush;
         // Is it a category header?
-        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
+        else if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
             return _categoryForegroundBrush;
     }
     else if(role == Qt::BackgroundRole) {

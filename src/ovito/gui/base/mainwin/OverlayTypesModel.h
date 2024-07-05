@@ -88,6 +88,9 @@ public:
 
 private Q_SLOTS:
 
+    /// Updates the color brushes of the model.
+    void updateColorPalette(const QPalette& palette);
+
     /// Signal handler that inserts the selected viewport layer into the active viewport.
     void insertViewportLayer();
 
@@ -107,6 +110,9 @@ private:
 
     /// The font used for "Get more layers..." item.
     QFont _getMoreExtensionsFont;
+
+    /// Color used for the "Get more layers..." item.
+    QBrush _getMoreExtensionsForegroundBrush;
 
     /// The list index where the "Get more layers..." item is located.
     int _getMoreExtensionsItemIndex = -1;

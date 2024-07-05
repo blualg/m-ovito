@@ -158,14 +158,17 @@ private:
     /// The abstract user interface.
     UserInterface& _userInterface;
 
-    /// The model representing the current data pipeline.
+    /// Model representing the current data pipeline.
     PipelineListModel* _pipelineListModel;
 
-    /// The font used for category header items.
+    /// Font used for category header items.
     QFont _categoryFont;
 
-    /// The font used for "Get more modifiers..." item.
+    /// Font used for "Get more modifiers..." item.
     QFont _getMoreExtensionsFont;
+
+    /// Color used for the "Get more modifiers..." item.
+    QBrush _getMoreExtensionsForegroundBrush;
 
     /// Colors used for category header items.
     QBrush _categoryBackgroundBrush;

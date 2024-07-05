@@ -138,7 +138,22 @@ OverlayTypesModel::OverlayTypesModel(QObject* parent, UserInterface& userInterfa
 
     // Define fonts, colors, etc.
     _getMoreExtensionsFont = QGuiApplication::font();
-    _getMoreExtensionsFont.setItalic(true);
+
+    // Initialize UI colors.
+    updateColorPalette(QGuiApplication::palette());
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+    connect(qGuiApp, &QGuiApplication::paletteChanged, this, &OverlayTypesModel::updateColorPalette);
+QT_WARNING_POP
+}
+
+/******************************************************************************
+* Updates the color brushes of the model.
+******************************************************************************/
+void OverlayTypesModel::updateColorPalette(const QPalette& palette)
+{
+    bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+    _getMoreExtensionsForegroundBrush = QBrush(darkTheme ? Qt::green : Qt::darkGreen);
 }
 
 /******************************************************************************
@@ -185,6 +200,10 @@ QVariant OverlayTypesModel::data(const QModelIndex& index, int role) const
     else if(role == Qt::FontRole) {
         if(index.row() == getMoreExtensionsItemIndex())
             return _getMoreExtensionsFont;
+    }
+    else if(role == Qt::ForegroundRole) {
+        if(index.row() == getMoreExtensionsItemIndex())
+            return _getMoreExtensionsForegroundBrush;
     }
     return {};
 }
