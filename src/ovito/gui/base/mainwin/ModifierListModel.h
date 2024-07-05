@@ -101,6 +101,9 @@ public:
     /// Returns the category index for the modifier templates.
     int modifierTemplatesCategory() const { return (int)_actionsPerCategory.size() - 1; }
 
+    /// Returns the list index where the "Get more modifiers..." item is located.
+    int getMoreExtensionsItemIndex() const { return _getMoreExtensionsItemIndex; }
+
     /// Returns whether sorting of available modifiers into categories is enabled.
     bool useCategories() const { return _useCategories; }
 
@@ -161,12 +164,18 @@ private:
     /// The font used for category header items.
     QFont _categoryFont;
 
+    /// The font used for "Get more modifiers..." item.
+    QFont _getMoreExtensionsFont;
+
     /// Colors used for category header items.
     QBrush _categoryBackgroundBrush;
     QBrush _categoryForegroundBrush;
 
     /// Controls the sorting of available modifiers into categories.
     bool _useCategories = useCategoriesGlobal();
+
+    /// The list index where the "Get more modifiers..." item is located.
+    int _getMoreExtensionsItemIndex = -1;
 
     /// Global list of all ModifierListModel instances that currently exist.
     static QVector<ModifierListModel*> _allModels;

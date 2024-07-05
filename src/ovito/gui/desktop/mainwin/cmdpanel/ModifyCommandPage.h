@@ -64,6 +64,9 @@ public:
 
 protected Q_SLOTS:
 
+    /// Is called when the user has selected a modifier from drop-down list of available modifiers.
+    void onInsertNewModifier(int index);
+
     /// Is called when a new modification list item has been selected, or if the currently
     /// selected item has changed.
     void onSelectedItemChanged();

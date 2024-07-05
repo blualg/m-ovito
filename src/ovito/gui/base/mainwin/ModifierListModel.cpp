@@ -186,7 +186,7 @@ QT_WARNING_POP
     connect(ModifierTemplates::get(), &QAbstractItemModel::modelReset, this, &ModifierListModel::refreshModifierTemplates);
     connect(ModifierTemplates::get(), &QAbstractItemModel::dataChanged, this, &ModifierListModel::refreshModifierTemplates);
 
-    // Define font, colors, etc.
+    // Define fonts, colors, etc.
     _categoryFont = QGuiApplication::font();
     _categoryFont.setBold(true);
 #ifndef Q_OS_WIN
@@ -195,6 +195,8 @@ QT_WARNING_POP
     else
         _categoryFont.setPixelSize(_categoryFont.pixelSize() * 4 / 5);
 #endif
+    _getMoreExtensionsFont = QGuiApplication::font();
+    _getMoreExtensionsFont.setItalic(true);
 
     // Generate list items.
     updateModelLists();
@@ -244,6 +246,7 @@ void ModifierListModel::updateModelLists()
     _modelStrings.push_back(tr("Add modification..."));
     _modelActions.clear();
     _modelActions.push_back(nullptr);
+    _getMoreExtensionsItemIndex = -1;
     if(_useCategories) {
         int categoryIndex = 0;
         for(const auto& categoryActions : _actionsPerCategory) {
@@ -253,6 +256,11 @@ void ModifierListModel::updateModelLists()
                 for(ModifierAction* action : categoryActions) {
                     _modelActions.push_back(action);
                     _modelStrings.push_back(action->text());
+                }
+                if(_categoryNames[categoryIndex] == tr("Python modifiers")) {
+                    _getMoreExtensionsItemIndex = _modelStrings.size();
+                    _modelActions.push_back(nullptr);
+                    _modelStrings.push_back(tr("Get more modifiers..."));
                 }
             }
             categoryIndex++;
@@ -264,6 +272,12 @@ void ModifierListModel::updateModelLists()
         for(ModifierAction* action : _actions)
             _modelStrings.push_back(action->text());
     }
+    if(_getMoreExtensionsItemIndex == -1) {
+        _getMoreExtensionsItemIndex = _modelStrings.size();
+        _modelActions.push_back(nullptr);
+        _modelStrings.push_back(tr("Get more modifiers..."));
+    }
+
     endResetModel();
 }
 
@@ -278,29 +292,31 @@ QVariant ModifierListModel::data(const QModelIndex& index, int role) const
     }
     else if(role == Qt::UserRole) {
         // Is it a category header?
-        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
+        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
             return true;
         else
             return false;
     }
     else if(role == Qt::FontRole) {
+        if(index.row() == getMoreExtensionsItemIndex())
+            return _getMoreExtensionsFont;
         // Is it a category header?
-        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
+        else if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
             return _categoryFont;
     }
     else if(role == Qt::ForegroundRole) {
         // Is it a category header?
-        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
+        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
             return _categoryForegroundBrush;
     }
     else if(role == Qt::BackgroundRole) {
         // Is it a category header?
-        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
+        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
             return _categoryBackgroundBrush;
     }
     else if(role == Qt::TextAlignmentRole) {
         // Is it a category header?
-        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr)
+        if(index.row() > 0 && index.row() < _modelActions.size() && _modelActions[index.row()] == nullptr && index.row() != getMoreExtensionsItemIndex())
             return Qt::AlignCenter;
     }
     return {};
@@ -314,6 +330,8 @@ Qt::ItemFlags ModifierListModel::flags(const QModelIndex& index) const
     if(index.row() > 0 && index.row() < _modelActions.size()) {
         if(_modelActions[index.row()])
             return _modelActions[index.row()]->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
+        else if(index.row() == _getMoreExtensionsItemIndex)
+            return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
         else
             return Qt::ItemIsEnabled;
     }

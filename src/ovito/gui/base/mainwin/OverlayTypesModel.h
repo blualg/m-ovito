@@ -83,6 +83,9 @@ public:
     /// Returns the action that belongs to the given model index.
     OverlayAction* actionFromIndex(const QModelIndex& index) const { return actionFromIndex(index.row()); }
 
+    /// Returns the list index where the "Get more layers..." item is located.
+    int getMoreExtensionsItemIndex() const { return _getMoreExtensionsItemIndex; }
+
 private Q_SLOTS:
 
     /// Signal handler that inserts the selected viewport layer into the active viewport.
@@ -101,6 +104,12 @@ private:
 
     /// The list of directories searched for user-defined viewport layer scripts.
     QVector<QDir> _layerScriptDirectories;
+
+    /// The font used for "Get more layers..." item.
+    QFont _getMoreExtensionsFont;
+
+    /// The list index where the "Get more layers..." item is located.
+    int _getMoreExtensionsItemIndex = -1;
 };
 
 }   // End of namespace

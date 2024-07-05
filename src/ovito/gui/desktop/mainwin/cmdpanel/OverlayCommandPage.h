@@ -56,6 +56,9 @@ public:
 
 protected Q_SLOTS:
 
+    /// Is called when the user has selected an overlay type from drop-down list of available overlays.
+    void onInsertNewOverlay(int index);
+
     /// This is called when another viewport became active.
     void onActiveViewportChanged(Viewport* activeViewport);
 
