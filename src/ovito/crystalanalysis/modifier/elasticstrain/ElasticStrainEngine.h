@@ -75,19 +75,19 @@ private:
     std::vector<Matrix3> _preferredCrystalOrientations;
     std::optional<StructureAnalysis> _structureAnalysis;
 
-    /// This stores the cached atom-to-cluster assignments computed by the modifier.
+    /// Atom-to-cluster assignments computed by the modifier.
     PropertyPtr _atomClusters;
 
-    /// This stores the cached cluster graph computed by the modifier.
-    DataOORef<ClusterGraph> _clusterGraph;
+    /// Cluster graph computed by the modifier.
+    DataOORef<ClusterGraph> _clusterGraph = DataOORef<ClusterGraph>::create();
 
-    /// This stores the cached results of the modifier.
+    /// Results of the modifier.
     const PropertyPtr _volumetricStrains;
 
-    /// This stores the cached results of the modifier.
+    /// Results of the modifier.
     const PropertyPtr _strainTensors;
 
-    /// This stores the cached results of the modifier.
+    /// Results of the modifier.
     const PropertyPtr _deformationGradients;
 };
 

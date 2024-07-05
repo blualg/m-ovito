@@ -34,10 +34,15 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 ElasticStrainEngine::ElasticStrainEngine(
-        PropertyPtr structures, size_t particleCount,
-        int inputCrystalStructure, std::vector<Matrix3> preferredCrystalOrientations,
-        bool calculateDeformationGradients, bool calculateStrainTensors,
-        FloatType latticeConstant, FloatType caRatio, bool pushStrainTensorsForward) :
+        PropertyPtr structures,
+        size_t particleCount,
+        int inputCrystalStructure,
+        std::vector<Matrix3> preferredCrystalOrientations,
+        bool calculateDeformationGradients,
+        bool calculateStrainTensors,
+        FloatType latticeConstant,
+        FloatType caRatio,
+        bool pushStrainTensorsForward) :
     StructureIdentificationModifier::Algorithm(std::move(structures)),
     _inputCrystalStructure(inputCrystalStructure),
     _latticeConstant(latticeConstant),
