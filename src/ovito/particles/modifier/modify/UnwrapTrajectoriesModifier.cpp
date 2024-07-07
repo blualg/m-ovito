@@ -166,9 +166,9 @@ void UnwrapTrajectoriesModificationNode::invalidateUnwrapData()
 void UnwrapTrajectoriesModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
+        // Do not discard stored information if the modifier is turned off and on again by the user.
         if(static_cast<const TargetChangedEvent&>(event).field() != PROPERTY_FIELD(Modifier::isEnabled) || event.sender() != modifier()) {
             // Throw away precomputed information when the modifier or the upstream pipeline change.
-            // This also discards the stored information in case the modifier is turned off by the user.
             invalidateUnwrapData();
         }
     }

@@ -260,8 +260,10 @@ bool Application::initialize(int& argc, char** argv)
     QMetaType::registerConverter<Vector3, QVector3D>(&Vector3::operator QVector3D);
     QMetaType::registerConverter<QVector3D, Vector3>();
     QMetaType::registerConverter<Color, Vector3>();
+    QMetaType::registerConverter<Color, QString>(&Color::toString);
     QMetaType::registerConverter<Vector3, Color>();
     QMetaType::registerConverter<QVector3D, Color>();
+    QMetaType::registerConverter<Vector3, QString>(&Vector3::toString);
     QMetaType::registerConverter<Color, QVector3D>(&Color::operator QVector3D);
     QMetaType::registerConverter<AffineTransformation, QMatrix4x4>();
     QMetaType::registerConverter<QMatrix4x4, AffineTransformation>();

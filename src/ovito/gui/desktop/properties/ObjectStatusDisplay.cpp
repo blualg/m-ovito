@@ -34,7 +34,6 @@ DEFINE_REFERENCE_FIELD(ObjectStatusDisplay, activeObject);
 void ObjectStatusDisplay::initializeObject(PropertiesEditor* parentEditor)
 {
     ParameterUI::initializeObject(parentEditor);
-
     _widget = new StatusWidget();
 }
 
@@ -75,6 +74,8 @@ void ObjectStatusDisplay::resetUI()
         }
     }
     _activeObject.set(this, PROPERTY_FIELD(activeObject), activeObject);
+    _updateTimer.stop();
+    _isUpToDate = true;
 
     if(statusWidget()) {
         if(activeObject) {
@@ -106,10 +107,33 @@ void ObjectStatusDisplay::setEnabled(bool enabled)
 bool ObjectStatusDisplay::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(source == activeObject() && event.type() == ReferenceEvent::ObjectStatusChanged) {
-        if(statusWidget())
-            statusWidget()->setStatus(activeObject()->status());
+        if(!_updateTimer.isActive()) {
+            if(statusWidget())
+                statusWidget()->setStatus(activeObject()->status());
+            _isUpToDate = true;
+            _updateTimer.start(100, Qt::CoarseTimer, this);
+        }
+        else {
+            _isUpToDate = false;
+        }
     }
     return ParameterUI::referenceEvent(source, event);
+}
+
+/******************************************************************************
+* Handles timer events for this object.
+******************************************************************************/
+void ObjectStatusDisplay::timerEvent(QTimerEvent* event)
+{
+    if(event->timerId() == _updateTimer.timerId()) {
+        OVITO_ASSERT(_updateTimer.isActive());
+        if(_isUpToDate)
+            _updateTimer.stop();
+        else if(statusWidget())
+            statusWidget()->setStatus(activeObject() ? activeObject()->status() : PipelineStatus());
+        _isUpToDate = true;
+    }
+    ParameterUI::timerEvent(event);
 }
 
 }   // End of namespace

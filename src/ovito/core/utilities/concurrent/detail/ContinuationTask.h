@@ -118,10 +118,20 @@ public:
                 }
                 else {
                     // Function returns void.
-                    if constexpr(!std::is_invocable_v<Function, FutureType>)
-                        std::invoke(std::forward<Function>(f));
-                    else
+                    if constexpr(!std::is_invocable_v<Function, FutureType>) {
+                        if constexpr(!std::is_void_v<typename FutureType::result_type>) {
+                            if constexpr(is_shared_future_v<FutureType>)
+                                std::invoke(std::forward<Function>(f), future.task()->template getResult<typename FutureType::result_type>());
+                            else
+                                std::invoke(std::forward<Function>(f), future.task()->template takeResult<typename FutureType::result_type>());
+                        }
+                        else {
+                            std::invoke(std::forward<Function>(f));
+                        }
+                    }
+                    else {
                         std::invoke(std::forward<Function>(f), std::forward<FutureType>(future));
+                    }
                 }
 
                 this->setFinished();

@@ -22,11 +22,11 @@ Version 3.11.0 (xx-xxx-2024)
 - |ovito-python| Deprecated :py:meth:`!generate` method of the :py:class:`~ovito.modifiers.GenerateTrajectoryLinesModifier`
 - |ovito-python| Added the :py:attr:`HistogramModifier.select_elements <ovito.modifiers.HistogramModifier.select_elements>` option
 - |ovito-python| Initialize global Qt application object on demand only to avoid conflicts with other Python packages that also use the Qt framework
-- |ovito-python| Added support for Python multiprocessing module
-- |ovito-python| Added support for Python copy module
+- |ovito-python| Added support for Python's :py:mod:`!copy` module
 - |ovito-python| Added support for NumPy 2.x
 - |ovito-pro| Extended the Python code generator to support multiple pipeline, including branched pipeline structures and shared modifiers
 - |ovito-pro| Fixed error that occurs if the Render LAMMPS Regions modifier is inserted more than once into the same pipeline
+- |ovito-pro| :ref:`particles.modifiers.time_averaging` modifier: Added time-averaging of the simulation cell shape and new option to overwrite original values with average
 - Add support for :ref:`Vectors <scene_objects.vectors>`, :py:class:`ovito.data.Vectors` in GUI and Python
 - Add support for updated Zn mass: old mass (pre 2007) 65.409, update mass 65.38 (https://www.ciaaw.org/zinc.htm). Old mass is still supported for legacy reasons
 - Affine Transformation modifier: A rotational transformation now acts on the Burgers vectors of a dislocation network

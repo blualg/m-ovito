@@ -41,7 +41,7 @@ public:
 
 private Q_SLOTS:
 
-    /// \brief Updates the displayed information in the indicator widget.
+    /// Updates the displayed information in the indicator widget.
     void updateIndicator();
 
 private:
