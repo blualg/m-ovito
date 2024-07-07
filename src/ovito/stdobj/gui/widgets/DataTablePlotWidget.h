@@ -67,15 +67,15 @@ public:
         _mouseNavigationEnabled = on;
     }
 
-    void setAxisAutoScale(int axisId, bool on = true) {
-        if(axisValid(axisId)) {
+    void setAxisAutoScale(QwtAxisId axisId, bool on = true) {
+        if(isAxisValid(axisId)) {
             _axisAutoscaleEnabled[axisId] = on;
             QwtPlot::setAxisAutoScale(axisId, on);
         }
     }
 
-    void setAxisScale(int axisId, double min, double max, double stepSize = 0) {
-        if(axisValid(axisId)) {
+    void setAxisScale(QwtAxisId axisId, double min, double max, double stepSize = 0) {
+        if(isAxisValid(axisId)) {
             _axisAutoscaleEnabled[axisId] = false;
             QwtPlot::setAxisScale(axisId, min, max, stepSize);
         }

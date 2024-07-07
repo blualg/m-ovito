@@ -31,7 +31,8 @@ Version 3.11.0 (xx-xxx-2024)
 - Add support for updated Zn mass: old mass (pre 2007) 65.409, update mass 65.38 (https://www.ciaaw.org/zinc.htm). Old mass is still supported for legacy reasons
 - Affine Transformation modifier: A rotational transformation now acts on the Burgers vectors of a dislocation network
 - OVITO Basic now includes demo versions of high-quality rendering backends OSPRay, Tachyon, and VisRTX
-- Updated third-party components: OpenSSL, Qt/PySide6, Python
+- Updated third-party components: OpenSSL, Qt/PySide6, Python, Qwt
+- Fixed regression due to Qt 6.7: Missing colors in plot legends
 
 .. sidebar::
 

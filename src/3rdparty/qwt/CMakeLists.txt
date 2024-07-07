@@ -76,7 +76,6 @@ SET(QWT_SOURCE_FILES
     qwt_plot.cpp
     qwt_plot_renderer.cpp
     qwt_plot_abstract_canvas.cpp
-    qwt_plot_xml.cpp
     qwt_plot_axis.cpp
     qwt_plot_curve.cpp
     qwt_plot_dict.cpp
