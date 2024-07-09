@@ -33,6 +33,7 @@ Version 3.11.0 (xx-xxx-2024)
 - OVITO Basic now includes demo versions of high-quality rendering backends OSPRay, Tachyon, and VisRTX
 - Updated third-party components: OpenSSL, Qt/PySide6, Python, Qwt
 - Fixed regression due to Qt 6.7: Missing colors in plot legends
+- :ref:`particles.modifiers.unwrap_trajectories` modifier: Performance optimizations
 
 .. sidebar::
 

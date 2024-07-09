@@ -70,20 +70,28 @@ public:
 
     /// Data structure holding the precomputed information that is needed to unwrap the particle trajectories.
     /// For each crossing of a particle through a periodic cell boundary, the map contains one entry specifying
-    /// the particle's unique ID, the time of the crossing, the spatial dimension and the direction (positive or negative).
-    using UnwrapData = std::unordered_multimap<qlonglong, std::tuple<AnimationTime, qint8, qint16>>; // Note: using qlonglong instead of IdentifierIntType here fore backward file compatibility with OVITO 3.8
+    /// the time of the crossing, the particle's unique ID, the spatial dimension and the direction (positive or negative).
+    struct UnwrapRecord {
+        qlonglong id; // Note: using qlonglong instead of IdentifierIntType here fore backward file compatibility with OVITO 3.8
+        AnimationTime time;
+        qint8 dimension;
+        qint16 direction;
+    };
 
     /// Data structure holding the precomputed information that is needed to undo flipping of sheared simulation cells in LAMMPS.
-    using UnflipData = std::vector<std::pair<AnimationTime, std::array<int,3>>>;
+    struct UnflipRecord {
+        AnimationTime time;
+        std::array<int, 3> flipState;
+    };
 
     /// Indicates the animation time up to which trajectories have already been unwrapped.
     AnimationTime unwrappedUpToTime() const { return _unwrappedUpToTime; }
 
     /// Returns the list of particle crossings through periodic cell boundaries.
-    const UnwrapData& unwrapRecords() const { return _unwrapRecords; }
+    const std::vector<UnwrapRecord>& unwrapRecords() const { return _unwrapRecords; }
 
     /// Returns the list of detected cell flips.
-    const UnflipData& unflipRecords() const { return _unflipRecords; }
+    const std::vector<UnflipRecord>& unflipRecords() const { return _unflipRecords; }
 
     /// Processes all frames of the input trajectory to detect periodic crossings of the particles.
     SharedFuture<void> detectPeriodicCrossings(const ModifierEvaluationRequest& request);
@@ -121,17 +129,17 @@ private:
     AnimationTime _unwrappedUpToTime = AnimationTime::negativeInfinity();
 
     /// The list of particle crossings through periodic cell boundaries.
-    UnwrapData _unwrapRecords;
+    std::vector<UnwrapRecord> _unwrapRecords;
 
     /// The list of detected cell flips.
-    UnflipData _unflipRecords;
+    std::vector<UnflipRecord> _unflipRecords;
 
     /// Working state used during processing of the input trajectory.
     struct WorkingData {
         UnwrapTrajectoriesModificationNode* _modNode;
-        std::unordered_map<qlonglong,Point3> _previousPositions;
+        std::unordered_map<qlonglong, Point3> _previousPositions;
         DataOORef<const SimulationCell> _previousCell;
-        std::array<int,3> _currentFlipState{{0,0,0}};
+        std::array<int, 3> _currentFlipState{{0,0,0}};
 
         /// Calculates the information that is needed to unwrap particle coordinates.
         void operator()(int frame, const PipelineFlowState& state);
