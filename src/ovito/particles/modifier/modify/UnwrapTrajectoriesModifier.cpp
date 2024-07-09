@@ -158,6 +158,8 @@ void UnwrapTrajectoriesModificationNode::invalidateUnwrapData()
     _unwrappedUpToTime = AnimationTime::negativeInfinity();
     _unwrapRecords.clear();
     _unflipRecords.clear();
+    _mostRecentPbcShifts.clear();
+    _mostRecentIdMap.clear();
     _unwrapOperation.reset();
 }
 
@@ -243,7 +245,7 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
     BufferWriteAccess<Point3, access_mode::read_write> posProperty = outputParticles->expectMutableProperty(Particles::PositionProperty);
 
     // The accumulated PBC shift vector for each particle.
-    std::vector<Vector3I> pbcShifts(particleCount, Vector3I::Zero());
+    std::vector<Vector3I> pbcShifts;
 
     // Get particle identifiers.
     bool allUnwrapped = true;
@@ -256,27 +258,62 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
         for(auto id : identifierProperty)
             idMap.emplace(id, index++);
 
+        // Preparation step, which might reuse the most recent PBC shift vectors.
+        auto startAt = unwrapRecords().cbegin();
+        pbcShifts.resize(particleCount, Vector3I::Zero());
+        if(!_mostRecentPbcShifts.empty() && _mostRecentTime <= time) {
+            // Determine how many records we can skip in the time-sorted list, i.e., which records are already accounted for in the most recent shift vectors.
+            startAt = std::upper_bound(unwrapRecords().cbegin(), unwrapRecords().cend(), _mostRecentTime, [](const AnimationTime& a, const UnwrapRecord& b) { return a < b.time; });
+            OVITO_ASSERT(startAt == unwrapRecords().cend() || startAt->time > _mostRecentTime);
+            // Remap most recent shift vectors to current particle ordering.
+            for(const auto& [id, index] : _mostRecentIdMap) {
+                OVITO_ASSERT(index >= 0 && index < _mostRecentPbcShifts.size());
+                if(auto iter = idMap.find(id); iter != idMap.end()) {
+                    pbcShifts[iter->second] = _mostRecentPbcShifts[index];
+                }
+            }
+            allUnwrapped = false;
+        }
+
         // Accumulate the shifts by stepping through the unwrap records up to the current time.
-        for(const UnwrapRecord& record : unwrapRecords()) {
-            if(record.time > time)
+        for(auto record = startAt; record != unwrapRecords().cend(); ++record) {
+            if(record->time > time)
                 break;
-            if(auto iter = idMap.find(record.id); iter != idMap.end()) {
-                pbcShifts[iter->second][record.dimension] += record.direction;
+            if(auto iter = idMap.find(record->id); iter != idMap.end()) {
+                pbcShifts[iter->second][record->dimension] += record->direction;
                 allUnwrapped = false;
             }
         }
+
+        _mostRecentIdMap = std::move(idMap);
     }
     else {
+        // Preparation step, which might reuse the most recent PBC shift vectors.
+        auto startAt = unwrapRecords().cbegin();
+        if(_mostRecentPbcShifts.empty() || _mostRecentTime > time) {
+            pbcShifts.resize(particleCount, Vector3I::Zero());
+        }
+        else {
+            // Determine how many records we can skip in the time-sorted list, i.e., which records are already accounted for in the most recent shift vectors.
+            startAt = std::upper_bound(unwrapRecords().cbegin(), unwrapRecords().cend(), _mostRecentTime, [](const AnimationTime& a, const UnwrapRecord& b) { return a < b.time; });
+            OVITO_ASSERT(startAt == unwrapRecords().cend() || startAt->time > _mostRecentTime);
+            pbcShifts = std::move(_mostRecentPbcShifts);
+            pbcShifts.resize(particleCount, Vector3I::Zero());
+            allUnwrapped = false;
+        }
+
         // Accumulate the shifts by stepping through the unwrap records up to the current time.
-        for(const UnwrapRecord& record : unwrapRecords()) {
-            if(record.time > time)
+        for(auto record = startAt; record != unwrapRecords().cend(); ++record) {
+            if(record->time > time)
                 break;
-            if(record.id < particleCount) {
-                OVITO_ASSERT(record.id >= 0);
-                pbcShifts[record.id][record.dimension] += record.direction;
+            if(record->id < particleCount) {
+                OVITO_ASSERT(record->id >= 0);
+                pbcShifts[record->id][record->dimension] += record->direction;
                 allUnwrapped = false;
             }
         }
+
+        _mostRecentIdMap.clear();
     }
 
     if(!allUnwrapped) {
@@ -303,6 +340,9 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
             }
         }
     }
+
+    _mostRecentTime = time;
+    _mostRecentPbcShifts = std::move(pbcShifts);
 }
 
 /******************************************************************************
@@ -466,7 +506,7 @@ void UnwrapTrajectoriesModificationNode::loadFromStreamComplete(ObjectLoadStream
         if(!pipelines.empty()) {
             if(Scene* scene = (*pipelines.begin())->scene()) {
                 if(scene->animationSettings()) {
-                    int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
+                    int ticksPerFrame = std::lround(4800.0f / scene->animationSettings()->framesPerSecond());
                     _unwrappedUpToTime = AnimationTime::fromFrame(_unwrappedUpToTime.ticks() / ticksPerFrame);
                     for(auto& record : _unwrapRecords) {
                         record.time = AnimationTime::fromFrame(record.time.ticks() / ticksPerFrame);

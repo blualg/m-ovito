@@ -134,6 +134,12 @@ private:
     /// The list of detected cell flips.
     std::vector<UnflipRecord> _unflipRecords;
 
+    /// These fields store the most recently computed shift vectors from a preceding trajectory frame,
+    /// which can be used to speed up subsequent frames if access to the trajectory is sequential.
+    AnimationTime _mostRecentTime; ///< Animation trajectory time up to which shifts have been accounted for so far.
+    std::vector<Vector3I> _mostRecentPbcShifts;
+    std::unordered_map<IdentifierIntType, size_t> _mostRecentIdMap;
+
     /// Working state used during processing of the input trajectory.
     struct WorkingData {
         UnwrapTrajectoriesModificationNode* _modNode;
