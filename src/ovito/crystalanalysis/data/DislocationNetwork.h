@@ -238,6 +238,18 @@ struct DislocationSegment
 
         return line.back();
     };
+
+    /// Get the fully replaced dislocation ID (following successive replacements)
+    [[nodiscard]] int replacedId() const
+    {
+        DislocationSegment* currentSegment = replacedWith;
+        int currentId = id;
+        while(currentSegment) {
+            currentId = currentSegment->id;
+            currentSegment = currentSegment->replacedWith;
+        };
+        return currentId;
+    }
 };
 
 /// Returns true if this node is the forward node of its segment, that is,

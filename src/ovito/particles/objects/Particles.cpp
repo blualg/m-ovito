@@ -697,6 +697,10 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
         dataType = Property::Int32;
         componentCount = 1;
         break;
+    case DislocationProperty:
+        dataType = Property::Int32;
+        componentCount = 1;
+        break;
     case IdentifierProperty:
     case ClusterProperty:
     case MoleculeProperty:
@@ -913,6 +917,7 @@ void Particles::OOMetaClass::initialize()
     registerStandardProperty(StressTensorProperty, tr("Stress Tensor"), Property::FloatDefault, symmetricTensorList);
     registerStandardProperty(StrainTensorProperty, tr("Strain Tensor"), Property::FloatDefault, symmetricTensorList);
     registerStandardProperty(DeformationGradientProperty, tr("Deformation Gradient"), Property::FloatDefault, tensorList);
+    registerStandardProperty(DislocationProperty, tr("Dislocation"), Property::Int32, emptyList);
     registerStandardProperty(OrientationProperty, tr("Orientation"), Property::FloatGraphics, quaternionList);
     registerStandardProperty(ForceProperty, tr("Force"), Property::FloatDefault, xyzList);
     registerStandardProperty(MassProperty, tr("Mass"), Property::FloatDefault, emptyList);

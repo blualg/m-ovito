@@ -174,6 +174,9 @@ public:
         return { (*this)[0][row], (*this)[1][row], (*this)[2][row] };
     }
 
+    // Get (a copy) of the matrix diagonal
+    [[nodiscard]] Q_DECL_CONSTEXPR Vector_3<T> diagonal() const { return {(*this)[0][0], (*this)[1][1], (*this)[2][2]}; }
+
     /// Returns a pointer to the 9 elements of the matrix (stored in column-major order).
     Q_DECL_CONSTEXPR const element_type* elements() const {
         OVITO_STATIC_ASSERT(sizeof(*this) == sizeof(element_type)*9);

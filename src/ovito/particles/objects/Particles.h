@@ -80,8 +80,9 @@ class OVITO_PARTICLES_EXPORT Particles : public PropertyContainer
 public:
 
     /// \brief The list of standard particle properties.
-    enum Type {
-        UserProperty = Property::GenericUserProperty, //< This is reserved for user-defined properties.
+    enum Type
+    {
+        UserProperty = Property::GenericUserProperty,  //< This is reserved for user-defined properties.
         SelectionProperty = Property::GenericSelectionProperty,
         ColorProperty = Property::GenericColorProperty,
         TypeProperty = Property::GenericTypeProperty,
@@ -100,6 +101,7 @@ public:
         StressTensorProperty,
         StrainTensorProperty,
         DeformationGradientProperty,
+        DislocationProperty,
         OrientationProperty,
         ForceProperty,
         MassProperty,

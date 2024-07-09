@@ -72,6 +72,9 @@ private:
     /// Restricts the identification to perfect lattice dislocations.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, onlyPerfectDislocations, setOnlyPerfectDislocations);
 
+    /// Mark atoms belonging to the dislocation core.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, markCoreAtoms, setMarkCoreAtoms);
+
     /// The number of iterations of the mesh smoothing algorithm.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{8}, defectMeshSmoothingLevel, setDefectMeshSmoothingLevel);
 

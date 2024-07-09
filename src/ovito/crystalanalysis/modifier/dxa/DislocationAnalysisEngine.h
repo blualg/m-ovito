@@ -42,13 +42,11 @@ class DislocationAnalysisEngine : public StructureIdentificationModifier::Algori
 public:
 
     /// Constructor.
-    DislocationAnalysisEngine(PropertyPtr structures, size_t particleCount, int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
-            ConstPropertyPtr particleSelection,
-            ConstPropertyPtr crystalClusters,
-            std::vector<Matrix3> preferredCrystalOrientations,
-            bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh,
-            int lineSmoothingLevel, FloatType linePointInterval,
-            OORef<DislocationVis> dislocationVis);
+    DislocationAnalysisEngine(PropertyPtr structures, size_t particleCount, int inputCrystalStructure, int maxTrialCircuitSize,
+                              int maxCircuitElongation, ConstPropertyPtr particleSelection, ConstPropertyPtr crystalClusters,
+                              std::vector<Matrix3> preferredCrystalOrientations, bool onlyPerfectDislocations, bool markCoreAtoms,
+                              int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh,
+                              int lineSmoothingLevel, FloatType linePointInterval, OORef<DislocationVis> dislocationVis);
 
     /// Performs the atomic structure classification.
     virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
@@ -93,6 +91,7 @@ private:
 
     int _inputCrystalStructure;
     bool _onlyPerfectDislocations;
+    bool _markCoreAtoms;
     int _defectMeshSmoothingLevel;
     int _lineSmoothingLevel;
     int _maxTrialCircuitSize;
@@ -115,6 +114,9 @@ private:
 
     /// This stores the cached atom-to-cluster assignments computed by the modifier.
     PropertyPtr _atomClusters;
+
+    /// This stores the cached atom-to-dislocation assignments computed by the modifier.
+    PropertyPtr _atomDislocations;
 
     /// This stores the cached cluster graph computed by the modifier.
     std::shared_ptr<ClusterGraph> _clusterGraph;

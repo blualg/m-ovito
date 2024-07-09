@@ -38,14 +38,16 @@ class DislocationTracer
 public:
 
     /// Constructor.
-    DislocationTracer(InterfaceMesh& mesh, std::shared_ptr<ClusterGraph> clusterGraph, int maxTrialCircuitSize, int maxCircuitElongation) :
-        _mesh(mesh),
-        _clusterGraph(clusterGraph),
-        _network(std::make_shared<DislocationNetwork>(clusterGraph)),
-        _unusedCircuit(nullptr),
-        _rng(1),
-        _maxBurgersCircuitSize(maxTrialCircuitSize),
-        _maxExtendedBurgersCircuitSize(maxTrialCircuitSize + maxCircuitElongation)
+    DislocationTracer(InterfaceMesh& mesh, std::shared_ptr<ClusterGraph> clusterGraph, int maxTrialCircuitSize, int maxCircuitElongation,
+                      bool markCoreAtoms)
+        : _mesh(mesh),
+          _clusterGraph(clusterGraph),
+          _network(std::make_shared<DislocationNetwork>(clusterGraph)),
+          _unusedCircuit(nullptr),
+          _rng(1),
+          _maxBurgersCircuitSize(maxTrialCircuitSize),
+          _maxExtendedBurgersCircuitSize(maxTrialCircuitSize + maxCircuitElongation),
+          _markCoreAtoms(markCoreAtoms)
     {}
 
     /// Returns the interface mesh that separates the crystal defects from the perfect regions.
@@ -140,6 +142,15 @@ private:
 
     /// Used to generate random numbers;
     std::mt19937 _rng;
+
+    /// Spatial query class used to find tetrahedrons based on their position
+    std::optional<DelaunayTessellationSpatialQuery> _spatialQuery = std::nullopt;
+
+    /// Cache used to store tetrahedron indices output from the spatial query class
+    std::vector<std::span<const size_t>> _ranges;
+
+    /// Store dislocation core atoms
+    bool _markCoreAtoms;
 };
 
 }   // End of namespace

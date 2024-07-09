@@ -47,6 +47,8 @@ public:
     struct CellInfo {
         bool isGhost;   // Indicates whether this is a ghost tetrahedron.
         int userField;  // An additional field that can be used by client code.
+        std::pair<void*, Point3> dislocCoreInfo =
+            std::make_pair(nullptr, Point3::Origin());  // Associate each cell to a burgers circuit and line segement
         qint64 index;   // An index assigned to the cell.
     };
 
@@ -142,6 +144,13 @@ public:
         return _cellInfo[cell].userField;
     }
 
+    /// Set dislocation core info
+    void setDislocCoreInfo(CellHandle cell, void* v1, Point3 v2) { _cellInfo[cell].dislocCoreInfo = std::make_pair(v1, v2); }
+    void setDislocCoreInfo(CellHandle cell, const std::pair<void*, Point3>& info) { _cellInfo[cell].dislocCoreInfo = info; }
+
+    /// Get dislocation core info
+    const std::pair<void*, Point3>& getDislocCoreInfo(CellHandle cell) const { return _cellInfo[cell].dislocCoreInfo; }
+
     /// Returns whether the given tessellation cell connects four physical vertices.
     /// Returns false if one of the four vertices is the infinite vertex.
     bool isFiniteCell(CellHandle cell) const {
@@ -215,6 +224,9 @@ public:
         return -1;
     }
 
+    /// Get the underlying points used in the tessellation (includes ghost points)
+    const std::vector<Point3>& points() const { return _pointData; }
+
     /// Returns the cell vertex for the given triangle vertex of the given cell facet.
     static inline int cellFacetVertexIndex(int cellFacetIndex, int facetVertexIndex) {
         static const int tab_vertex_triple_index[4][3] = {
@@ -264,6 +276,42 @@ private:
 
     /// The simulation cell geometry.
     const SimulationCell* _simCell = nullptr;
+};
+
+class OVITO_DELAUNAY_EXPORT DelaunayTessellationSpatialQuery
+{
+public:
+    DelaunayTessellationSpatialQuery(const DelaunayTessellation& tessellation, FloatType binSize);
+
+    [[nodiscard]] size_t hashPoint(const Point3& p) const noexcept;
+
+    [[nodiscard]] const std::array<size_t, 3>& binCounts() const noexcept { return _binCounts; }
+
+    void getSurroundingCells(size_t hash, std::vector<std::span<const size_t>>& outRanges) const;
+
+private:
+    [[nodiscard]] std::span<const size_t> getRange(size_t hash) const;
+    [[nodiscard]] std::span<const size_t> getRange(size_t i, size_t j, size_t k) const;
+
+    [[nodiscard]] size_t hashCell(size_t i, size_t j, size_t k) const noexcept;
+    [[nodiscard]] std::array<int, 3> reverseCellHash(size_t hash) const noexcept;
+
+    const DelaunayTessellation& _tessellation;
+
+    // Bin size set by the user
+    const FloatType _binSize;
+
+    //
+    std::array<size_t, 3> _binCounts;
+
+    //
+    AffineTransformation _binCell;
+
+    //
+    std::vector<size_t> _cellCounts;
+
+    //
+    std::vector<size_t> _cellIndices;
 };
 
 }   // End of namespace

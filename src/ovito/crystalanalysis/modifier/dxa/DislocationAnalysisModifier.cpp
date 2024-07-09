@@ -41,6 +41,7 @@ DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, maxTrialCircuitSize);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, circuitStretchability);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, outputInterfaceMesh);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, onlyPerfectDislocations);
+DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, markCoreAtoms);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, defectMeshSmoothingLevel);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, lineSmoothingEnabled);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, lineSmoothingLevel);
@@ -54,6 +55,7 @@ SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, maxTrialCircuitSize, "Tria
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, circuitStretchability, "Circuit stretchability");
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, outputInterfaceMesh, "Output interface mesh");
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, onlyPerfectDislocations, "Generate perfect dislocations");
+SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, markCoreAtoms, "Output dislocation core atoms");
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, defectMeshSmoothingLevel, "Surface smoothing level");
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, lineSmoothingEnabled, "Line smoothing");
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, lineSmoothingLevel, "Smoothing level");
@@ -203,20 +205,11 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisM
         interfaceMesh->setVisElement(interfaceMeshVis());
     }
 
-    return std::make_shared<DislocationAnalysisEngine>(std::move(structures), particles->elementCount(),
-            inputCrystalStructure(),
-            maxTrialCircuitSize(),
-            circuitStretchability(),
-            selectionProperty,
-            grainProperty,
-            std::move(preferredCrystalOrientations),
-            onlyPerfectDislocations(),
-            defectMeshSmoothingLevel(),
-            std::move(defectMesh),
-            std::move(interfaceMesh),
-            lineSmoothingEnabled() ? lineSmoothingLevel() : 0,
-            lineCoarseningEnabled() ? linePointInterval() : 0,
-            dislocationVis());
+    return std::make_shared<DislocationAnalysisEngine>(
+        std::move(structures), particles->elementCount(), inputCrystalStructure(), maxTrialCircuitSize(), circuitStretchability(),
+        selectionProperty, grainProperty, std::move(preferredCrystalOrientations), onlyPerfectDislocations(), markCoreAtoms(),
+        defectMeshSmoothingLevel(), std::move(defectMesh), std::move(interfaceMesh), lineSmoothingEnabled() ? lineSmoothingLevel() : 0,
+        lineCoarseningEnabled() ? linePointInterval() : 0, dislocationVis());
 }
 
 }   // End of namespace

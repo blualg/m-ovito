@@ -87,17 +87,21 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
     sublayout->setColumnStretch(0, 1);
 
     // Color by type
+    int row = 0;
     BooleanParameterUI* colorByTypeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::colorByType));
-    sublayout->addWidget(colorByTypeUI->checkBox(), 0, 0);
+    sublayout->addWidget(colorByTypeUI->checkBox(), row++, 0);
 
     BooleanParameterUI* onlySelectedParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
-    sublayout->addWidget(onlySelectedParticlesUI->checkBox(), 1, 0);
+    sublayout->addWidget(onlySelectedParticlesUI->checkBox(), row++, 0);
 
     BooleanParameterUI* outputInterfaceMeshUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::outputInterfaceMesh));
-    sublayout->addWidget(outputInterfaceMeshUI->checkBox(), 2, 0);
+    sublayout->addWidget(outputInterfaceMeshUI->checkBox(), row++, 0);
+
+    BooleanParameterUI* markCoreAtomsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::markCoreAtoms));
+    sublayout->addWidget(markCoreAtomsUI->checkBox(), row++, 0);
 
     BooleanParameterUI* onlyPerfectDislocationsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::onlyPerfectDislocations));
-    sublayout->addWidget(onlyPerfectDislocationsUI->checkBox(), 3, 0);
+    sublayout->addWidget(onlyPerfectDislocationsUI->checkBox(), row++, 0);
 
     // Status label.
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());

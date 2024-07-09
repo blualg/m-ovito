@@ -24,6 +24,8 @@
 #include <ovito/core/utilities/concurrent/Task.h>
 #include "DislocationTracer.h"
 #include "InterfaceMesh.h"
+#include <ovito/core/utilities/concurrent/ParallelFor.h>
+#include "TriangleTest.h"
 
 namespace Ovito {
 
@@ -175,6 +177,67 @@ void DislocationTracer::finishDislocationSegments(int crystalStructure)
 
         segment->flipOrientation();
     }
+
+#if 0
+    const DelaunayTessellation& tessellation = mesh().tessellation();
+    const FloatType alpha = 3.5 * mesh().elasticMapping().structureAnalysis().maximumNeighborDistance();
+    DelaunayTessellationSpatialQuery query(tessellation, alpha / 2);
+
+    Point3 pt = {0, 0, 0};
+    size_t hash = query.hashPoint(pt);
+
+    size_t count = 0;
+    std::vector<std::span<const size_t>> ranges;
+    query.getSurroundingCells(hash, ranges);
+    for(const auto& range : ranges) {
+        for(const auto& item : range) {
+            count++;
+        }
+    }
+
+    std::cout << count << "/" << tessellation.numberOfTetrahedra() << " = " << (double)count / (double)tessellation.numberOfTetrahedra()
+              << "\n";
+#endif
+
+#if 0
+    {
+        const DelaunayTessellation& tessellation = mesh().tessellation();
+        const InterfaceMesh& m = mesh();
+
+        std::ofstream stream("tets.data", std::ios_base::trunc);
+
+        stream << tessellation.points().size() << "\n";
+        for(const auto& point : tessellation.points()) {
+            stream << point.x() << " " << point.y() << " " << point.z() << "\n";
+        }
+        size_t count = 0;
+        for(size_t cell = 0; cell < tessellation.numberOfTetrahedra(); ++cell) {
+            const auto& dislocInfo = tessellation.getDislocCoreInfo(cell);
+            DislocationSegment* segment = static_cast<DislocationSegment*>(dislocInfo.first);
+            if(segment &&
+               std::any_of(std::execution::par_unseq, segment->line.cbegin(), segment->line.cend(),
+                           [&dislocInfo, &m](const Point3& p) { return m.wrapVector(p - dislocInfo.second).squaredLength() < 1e-6; })) {
+                // if(segment && std::find(segment->line.begin(), segment->line.end(), dislocInfo.second) != segment->line.end()) {
+                // if(segment) {
+                count++;
+            }
+        }
+        stream << count << "\n";
+        for(size_t cell = 0; cell < tessellation.numberOfTetrahedra(); ++cell) {
+            const auto& dislocInfo = tessellation.getDislocCoreInfo(cell);
+            DislocationSegment* segment = static_cast<DislocationSegment*>(dislocInfo.first);
+            if(segment &&
+               std::any_of(std::execution::par_unseq, segment->line.cbegin(), segment->line.cend(),
+                           [&dislocInfo, &m](const Point3& p) { return m.wrapVector(p - dislocInfo.second).squaredLength() < 1e-6; })) {
+                // if(segment && std::find(segment->line.begin(), segment->line.end(), dislocInfo.second) != segment->line.end()) {
+                // if(segment) {
+                stream << tessellation.cellVertex(cell, 0) << " " << tessellation.cellVertex(cell, 1) << " "
+                       << tessellation.cellVertex(cell, 2) << " " << tessellation.cellVertex(cell, 3) << " " << segment->id << "\n";
+            }
+        }
+        stream.close();
+    }
+#endif
 }
 
 /**
@@ -921,13 +984,147 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
         segment.line.push_front(newPoint);
         segment.coreSize.push_front(coreSize);
     }
+
+#if 0
+    {
+        constexpr static FloatType epsilon = 1e-6;
+        FloatType alpha = 3.5 * mesh().elasticMapping().structureAnalysis().maximumNeighborDistance();
+        DelaunayTessellation& tessellation = mesh().tessellation();
+
+        std::array<Point3, 4> tetrahedron;
+        std::array<Point3, 3> triangle;
+        for(size_t cell = 0; cell < tessellation.numberOfTetrahedra(); ++cell) {
+            if(tessellation.isGhostCell(cell) || !tessellation.isFiniteCell(cell)) {
+                continue;
+            }
+            if(tessellation.getUserField(cell) != -1 || tessellation.getDislocCoreInfo(cell).first) {
+                continue;
+            }
+            bool isFilledTetrehedron = false;
+            if(auto alphaTestResult = tessellation.alphaTest(cell, alpha)) {
+                isFilledTetrehedron = *alphaTestResult;
+            }
+            if(!isFilledTetrehedron) {
+                continue;
+            }
+
+            for(size_t t = 0; t < tetrahedron.size(); ++t) {
+                tetrahedron[t] = tessellation.vertexPosition(tessellation.cellVertex(cell, t));
+                tetrahedron[t] - Point3::Origin();
+            }
+            InterfaceMesh::Edge* edge = node.circuit->firstEdge;
+            bool intersection = false;
+            do {
+                triangle[0] = newPoint + mesh().wrapVector(edge->vertex1()->pos() - newPoint);
+                triangle[1] = newPoint + mesh().wrapVector(edge->vertex2()->pos() - newPoint);
+                triangle[2] = newPoint;
+
+                intersection = TetrahedronTriangleIntersection::test(tetrahedron, triangle);
+                if(intersection) {
+                    break;
+                }
+                edge = edge->nextCircuitEdge;
+            } while(edge != node.circuit->firstEdge);
+            // If the tetrahedron is intersected -> store segment and point
+            if(intersection) {
+                tessellation.setDislocCoreInfo(cell, node.circuit->dislocationNode->segment, newPoint);
+                continue;
+            }
+        }
+    }
+#else
+    if(_markCoreAtoms) {
+        constexpr static FloatType epsilon = 1e-6;
+        FloatType alpha = 3.5 * mesh().elasticMapping().structureAnalysis().maximumNeighborDistance();
+        DelaunayTessellation& tessellation = mesh().tessellation();
+
+        if(!_spatialQuery) {
+            _spatialQuery.emplace(tessellation, alpha / 2);
+        }
+
+        std::array<Point3, 4> tetrahedron;
+        std::array<Point3, 3> triangle;
+
+        InterfaceMesh::Edge* edge = node.circuit->firstEdge;
+        do {
+            triangle[0] = newPoint + mesh().wrapVector(edge->vertex1()->pos() - newPoint);
+            triangle[1] = newPoint + mesh().wrapVector(edge->vertex2()->pos() - newPoint);
+            triangle[2] = newPoint;
+
+            Point3 comTriangle = triangle[0] + (triangle[1] - Point3::Origin()) + (triangle[2] - Point3::Origin());
+            comTriangle /= (FloatType)triangle.size();
+
+            _spatialQuery->getSurroundingCells(_spatialQuery->hashPoint(comTriangle), _ranges);
+
+#if 1
+            for(const std::span<const size_t> cellRange : _ranges) {
+                for(size_t cell : cellRange) {
+                    if(tessellation.getDislocCoreInfo(cell).first) {
+                        continue;
+                    }
+
+                    for(size_t t = 0; t < tetrahedron.size(); ++t) {
+                        tetrahedron[t] =
+                            newPoint + mesh().wrapVector(tessellation.vertexPosition(tessellation.cellVertex(cell, t)) - newPoint);
+                    }
+
+                    if(TetrahedronTriangleIntersection::test(tetrahedron, triangle)) {
+                        tessellation.setDislocCoreInfo(cell, node.circuit->dislocationNode->segment, newPoint);
+                    }
+                }
+            }
+#else
+            parallelFor(27, 1, [&](size_t rangesIdx) {
+                if(rangesIdx >= _ranges.size()) {
+                    return;
+                }
+                OVITO_ASSERT(rangesIdx < _ranges.size());
+                std::array<Point3, 4> tetrahedron;
+                for(size_t cell : _ranges[rangesIdx]) {
+                    if(tessellation.getDislocCoreInfo(cell).first) {
+                        continue;
+                    }
+
+                    for(size_t t = 0; t < tetrahedron.size(); ++t) {
+                        tetrahedron[t] =
+                            newPoint + mesh().wrapVector(tessellation.vertexPosition(tessellation.cellVertex(cell, t)) - newPoint);
+                    }
+
+                    if(TetrahedronTriangleIntersection::test(tetrahedron, triangle)) {
+                        tessellation.setDislocCoreInfo(cell, node.circuit->dislocationNode->segment, newPoint);
+                    }
+                }
+            });
+#endif
+            edge = edge->nextCircuitEdge;
+        } while(edge != node.circuit->firstEdge);
+    }
+#endif
+
+#if 0
+    {
+        std::ofstream stream("slices.data", std::ios_base::app);
+        InterfaceMesh::Edge* edge = node.circuit->firstEdge;
+        do {
+            Point3 p1 = newPoint + mesh().wrapVector(edge->vertex1()->pos() - newPoint);
+            stream << p1.x() << " " << p1.y() << " " << p1.z() << " ";
+            Point3 p2 = newPoint + mesh().wrapVector(edge->vertex2()->pos() - newPoint);
+            stream << p2.x() << " " << p2.y() << " " << p2.z() << " ";
+            stream << newPoint.x() << " " << newPoint.y() << " " << newPoint.z() << "\n";
+            edge = edge->nextCircuitEdge;
+        } while(edge != node.circuit->firstEdge);
+        stream.close();
+    }
+#endif
     node.circuit->numPreliminaryPoints++;
 }
 
 /******************************************************************************
-* Determines whether two Burgers circuits intersect.
-******************************************************************************/
-void DislocationTracer::circuitCircuitIntersection(InterfaceMesh::Edge* circuitAEdge1, InterfaceMesh::Edge* circuitAEdge2, InterfaceMesh::Edge* circuitBEdge1, InterfaceMesh::Edge* circuitBEdge2, int& goingOutside, int& goingInside)
+ * Determines whether two Burgers circuits intersect.
+ ******************************************************************************/
+void DislocationTracer::circuitCircuitIntersection(InterfaceMesh::Edge* circuitAEdge1, InterfaceMesh::Edge* circuitAEdge2,
+                                                   InterfaceMesh::Edge* circuitBEdge1, InterfaceMesh::Edge* circuitBEdge2,
+                                                   int& goingOutside, int& goingInside)
 {
     OVITO_ASSERT(circuitAEdge2->vertex1() == circuitBEdge2->vertex1());
     OVITO_ASSERT(circuitAEdge1->vertex2() == circuitBEdge2->vertex1());
@@ -976,8 +1173,8 @@ void DislocationTracer::circuitCircuitIntersection(InterfaceMesh::Edge* circuitA
 }
 
 /******************************************************************************
-* Look for dislocation segments whose circuits touch each other.
-******************************************************************************/
+ * Look for dislocation segments whose circuits touch each other.
+ ******************************************************************************/
 size_t DislocationTracer::joinSegments(int maxCircuitLength)
 {
     // First iteration over all dangling circuits.
@@ -1000,12 +1197,11 @@ size_t DislocationTracer::joinSegments(int maxCircuitLength)
                 createSecondarySegment(edge, circuit, maxCircuitLength);
 
                 // Skip edges to the end of the unvisited interval.
-                while(edge->oppositeEdge()->circuit == nullptr && edge != circuit->firstEdge)
-                    edge = edge->nextCircuitEdge;
+                while(edge->oppositeEdge()->circuit == nullptr && edge != circuit->firstEdge) edge = edge->nextCircuitEdge;
             }
-            else edge = edge->nextCircuitEdge;
-        }
-        while(edge != circuit->firstEdge);
+            else
+                edge = edge->nextCircuitEdge;
+        } while(edge != circuit->firstEdge);
     }
 
     // Second pass over all dangling nodes.
@@ -1036,8 +1232,7 @@ size_t DislocationTracer::joinSegments(int maxCircuitLength)
                 }
             }
             edge = edge->nextCircuitEdge;
-        }
-        while(edge != circuit->firstEdge);
+        } while(edge != circuit->firstEdge);
     }
 
     // Count number of created dislocation junctions.
@@ -1109,8 +1304,7 @@ size_t DislocationTracer::joinSegments(int maxCircuitLength)
                 }
                 armNode->circuit->numPreliminaryPoints = 0;
                 armNode = armNode->junctionRing;
-            }
-            while(armNode != node);
+            } while(armNode != node);
             numJunctions++;
         }
         else {
@@ -1185,8 +1379,7 @@ size_t DislocationTracer::joinSegments(int maxCircuitLength)
                         segment1->coreSize.insert(segment1->coreSize.end(), segment2->coreSize.rbegin() + 1, segment2->coreSize.rend());
                     }
                     if(shiftVector != Vector3::Zero()) {
-                        for(auto p = segment1->line.end() - segment2->line.size() + 1; p != segment1->line.end(); ++p)
-                            *p -= shiftVector;
+                        for(auto p = segment1->line.end() - segment2->line.size() + 1; p != segment1->line.end(); ++p) *p -= shiftVector;
                     }
                 }
                 farEnd2->segment = segment1;
@@ -1201,15 +1394,16 @@ size_t DislocationTracer::joinSegments(int maxCircuitLength)
     }
 
     // Clean up list of dangling nodes. Remove joined nodes.
-    _danglingNodes.erase(std::remove_if(_danglingNodes.begin(), _danglingNodes.end(),
-            [](DislocationNode* node) { return !node->isDangling(); }), _danglingNodes.end());
+    _danglingNodes.erase(
+        std::remove_if(_danglingNodes.begin(), _danglingNodes.end(), [](DislocationNode* node) { return !node->isDangling(); }),
+        _danglingNodes.end());
 
     return numJunctions;
 }
 
 /******************************************************************************
-* Creates a new dislocation segment at an incomplete junction.
-******************************************************************************/
+ * Creates a new dislocation segment at an incomplete junction.
+ ******************************************************************************/
 void DislocationTracer::createSecondarySegment(InterfaceMesh::Edge* firstEdge, BurgersCircuit* outerCircuit, int maxCircuitLength)
 {
     OVITO_ASSERT(firstEdge->circuit == outerCircuit);
@@ -1246,24 +1440,17 @@ void DislocationTracer::createSecondarySegment(InterfaceMesh::Edge* firstEdge, B
         edgeSum += edge->physicalVector;
         burgersVector += frankRotation * edge->clusterVector;
         if(!baseCluster) baseCluster = edge->clusterTransition->cluster1;
-        if(!edge->clusterTransition->isSelfTransition())
-            frankRotation = frankRotation * edge->clusterTransition->reverse->tm;
-        if(edge == circuitStart)
-            break;
+        if(!edge->clusterTransition->isSelfTransition()) frankRotation = frankRotation * edge->clusterTransition->reverse->tm;
+        if(edge == circuitStart) break;
         circuitEnd = edge;
         edgeCount++;
 
-        if(edgeCount > maxCircuitLength)
-            break;
+        if(edgeCount > maxCircuitLength) break;
     }
 
     // Create secondary segment only for dislocations (b != 0) and small enough dislocation cores.
-    if(numCircuits == 1
-            || edgeCount > maxCircuitLength
-            || burgersVector.isZero(CA_LATTICE_VECTOR_EPSILON)
-            || edgeSum.isZero(CA_ATOM_VECTOR_EPSILON) == false
-            || !frankRotation.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON)) {
-
+    if(numCircuits == 1 || edgeCount > maxCircuitLength || burgersVector.isZero(CA_LATTICE_VECTOR_EPSILON) ||
+       edgeSum.isZero(CA_ATOM_VECTOR_EPSILON) == false || !frankRotation.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON)) {
         // Discard unused circuit.
         edge = circuitStart;
         for(;;) {
@@ -1287,8 +1474,7 @@ void DislocationTracer::createSecondarySegment(InterfaceMesh::Edge* firstEdge, B
         OVITO_ASSERT(edge->circuit == nullptr);
         edge->circuit = forwardCircuit;
         edge = edge->nextCircuitEdge;
-    }
-    while(edge != circuitStart);
+    } while(edge != circuitStart);
     OVITO_ASSERT(forwardCircuit->countEdges() == forwardCircuit->edgeCount);
 
     // Do all the rest.

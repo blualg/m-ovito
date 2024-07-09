@@ -40,28 +40,27 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DislocationAnalysisEngine::DislocationAnalysisEngine(
-        PropertyPtr structures, size_t particleCount,
-        int inputCrystalStructure, int maxTrialCircuitSize, int maxCircuitElongation,
-        ConstPropertyPtr particleSelection,
-        ConstPropertyPtr crystalClusters,
-        std::vector<Matrix3> preferredCrystalOrientations,
-        bool onlyPerfectDislocations, int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh,
-        int lineSmoothingLevel, FloatType linePointInterval,
-        OORef<DislocationVis> dislocationVis) :
-    StructureIdentificationModifier::Algorithm(std::move(structures)),
-    _inputCrystalStructure(inputCrystalStructure),
-    _crystalClusters(crystalClusters),
-    _preferredCrystalOrientations(std::move(preferredCrystalOrientations)),
-    _onlyPerfectDislocations(onlyPerfectDislocations),
-    _defectMeshSmoothingLevel(defectMeshSmoothingLevel),
-    _maxTrialCircuitSize(maxTrialCircuitSize),
-    _maxCircuitElongation(maxCircuitElongation),
-    _lineSmoothingLevel(lineSmoothingLevel),
-    _linePointInterval(linePointInterval),
-    _defectMesh(std::move(defectMesh)),
-    _outputInterfaceMesh(std::move(outputInterfaceMesh)),
-    _dislocationVis(std::move(dislocationVis))
+DislocationAnalysisEngine::DislocationAnalysisEngine(PropertyPtr structures, size_t particleCount, int inputCrystalStructure,
+                                                     int maxTrialCircuitSize, int maxCircuitElongation, ConstPropertyPtr particleSelection,
+                                                     ConstPropertyPtr crystalClusters, std::vector<Matrix3> preferredCrystalOrientations,
+                                                     bool onlyPerfectDislocations, bool markCoreAtoms, int defectMeshSmoothingLevel,
+                                                     DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh,
+                                                     int lineSmoothingLevel, FloatType linePointInterval,
+                                                     OORef<DislocationVis> dislocationVis)
+    : StructureIdentificationModifier::Algorithm(std::move(structures)),
+      _inputCrystalStructure(inputCrystalStructure),
+      _crystalClusters(crystalClusters),
+      _preferredCrystalOrientations(std::move(preferredCrystalOrientations)),
+      _onlyPerfectDislocations(onlyPerfectDislocations),
+      _markCoreAtoms(markCoreAtoms),
+      _defectMeshSmoothingLevel(defectMeshSmoothingLevel),
+      _maxTrialCircuitSize(maxTrialCircuitSize),
+      _maxCircuitElongation(maxCircuitElongation),
+      _lineSmoothingLevel(lineSmoothingLevel),
+      _linePointInterval(linePointInterval),
+      _defectMesh(std::move(defectMesh)),
+      _outputInterfaceMesh(std::move(outputInterfaceMesh)),
+      _dislocationVis(std::move(dislocationVis))
 {
 }
 
@@ -70,6 +69,8 @@ DislocationAnalysisEngine::DislocationAnalysisEngine(
 ******************************************************************************/
 void DislocationAnalysisEngine::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
 {
+    auto start = std::chrono::high_resolution_clock::now();
+
     if(!simulationCell || simulationCell->is2D())
         throw Exception(DislocationAnalysisModifier::tr("The DXA requires a 3d simulation cell."));
 
@@ -81,7 +82,8 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     _tessellation.emplace();
     _elasticMapping.emplace(*_structureAnalysis, *_tessellation);
     _interfaceMesh.emplace(*_elasticMapping);
-    _dislocationTracer.emplace(*_interfaceMesh, _structureAnalysis->clusterGraph(), _maxTrialCircuitSize, _maxCircuitElongation);
+    _dislocationTracer.emplace(*_interfaceMesh, _structureAnalysis->clusterGraph(), _maxTrialCircuitSize, _maxCircuitElongation,
+                               _markCoreAtoms);
     setAtomClusters(_structureAnalysis->atomClusters());
     setDislocationNetwork(_dislocationTracer->network());
     setClusterGraph(_dislocationTracer->clusterGraph());
@@ -165,6 +167,27 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     _dislocationTracer->finishDislocationSegments(_inputCrystalStructure);
     this_task::throwIfCanceled();
 
+    if(_markCoreAtoms) {
+        // Create the output dislocation ID atom property and assign determined values
+        _atomDislocations = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(),
+                                                                        Particles::DislocationProperty);
+        _atomDislocations->fill(-1);
+        const BufferWriteAccess<int32_t, access_mode::write> dislocationsBuffer(_atomDislocations);
+        for(DelaunayTessellation::CellHandle cell = 0; cell < _tessellation->numberOfTetrahedra(); ++cell) {
+            const auto& dislocInfo = _tessellation->getDislocCoreInfo(cell);
+            DislocationSegment* segment = static_cast<DislocationSegment*>(dislocInfo.first);
+            if(segment && std::any_of(std::execution::par_unseq, segment->line.cbegin(), segment->line.cend(), [&](const Point3& p) {
+                   return _interfaceMesh->wrapVector(p - dislocInfo.second).squaredLength() < FLOATTYPE_EPSILON;
+               })) {
+                // if(segment) {
+                for(size_t lv = 0; lv < 4; ++lv) {
+                    size_t index = _tessellation->vertexIndex(_tessellation->cellVertex(cell, lv));
+                    OVITO_ASSERT(index < dislocationsBuffer.size());
+                    dislocationsBuffer[index] = segment->replacedId();
+                }
+            }
+        }
+    }
 #if 0
 
     auto isWrappedFacet = [this](const InterfaceMesh::Face* f) -> bool {
@@ -286,6 +309,10 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     _interfaceMesh.reset();
     _dislocationTracer.reset();
     _crystalClusters.reset();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Execution time: " << ms << " ms" << std::endl;
 }
 
 /******************************************************************************
@@ -322,6 +349,11 @@ std::vector<int64_t> DislocationAnalysisEngine::computeStructureStatistics(const
     if(atomClusters()) {
         Particles* particles = state.expectMutableObject<Particles>();
         particles->createProperty(atomClusters());
+    }
+
+    if(_markCoreAtoms) {
+        Particles* particles = state.expectMutableObject<Particles>();
+        particles->createProperty(_atomDislocations);
     }
 
     state.addAttribute(QStringLiteral("DislocationAnalysis.counts.OTHER"), QVariant::fromValue(typeCounts.at(StructureAnalysis::LATTICE_OTHER)), createdByNode);

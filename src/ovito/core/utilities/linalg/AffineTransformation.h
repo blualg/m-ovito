@@ -563,6 +563,15 @@ public:
                 m(row, col) = static_cast<float>((*this)(row, col));
         return m;
     }
+
+    /// Get the 3x3 matrix of cell vectors
+    Q_DECL_CONSTEXPR Matrix_3<T> getMatrix() const { return {column(0), column(1), column(2)}; }
+    Q_DECL_CONSTEXPR void setMatrix(Matrix_3<T> mat)
+    {
+        column(0) = mat.column(0);
+        column(1) = mat.column(1);
+        column(2) = mat.column(2);
+    }
 };
 
 /// Computes the product of a 3x4 matrix and a Vector3 (which is automatically extended to a 4-vector with the last element being 0).
