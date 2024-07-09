@@ -126,11 +126,12 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
         if(endFrame <= 1 || (unwrappedUpToTime() != AnimationTime::negativeInfinity() && animationTimeToSourceFrame(unwrappedUpToTime()) >= endFrame - 1))
             return Future<void>::createImmediateEmpty();
         auto inputFrameRange = boost::irange(startFrame, endFrame);
+        request.modificationNode()->setStatus(tr("Processing %1 trajectory frames...").arg(boost::size(inputFrameRange)));
 
         // Iterate over all frames of the input range in sequential order.
         unwrapOperation = for_each_sequential(
             std::move(inputFrameRange),
-            ObjectExecutor(this, true), // Require deferred execution of each frame
+            ObjectExecutor(this, true), // Require deferred execution
             // Requests the next frame from the upstream pipeline.
             [request = request](int frame) mutable -> SharedFuture<PipelineFlowState> {
                 request.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
@@ -141,6 +142,11 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
 
         // Display progress in the UI.
         unwrapOperation.task()->setProgressText(tr("Unwrapping particle trajectories"));
+
+        unwrapOperation.finally([request]() noexcept {
+            qInfo() << "Unflip records:" << static_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())->unflipRecords().size();
+            qInfo() << "unwrapRecords:" << static_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())->unwrapRecords().size();
+        });
 
         // Keep a weak reference to the task.
         _unwrapOperation = unwrapOperation;
@@ -380,7 +386,6 @@ void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, cons
     }
 
     _modNode->_unwrappedUpToTime = time;
-    _modNode->setStatus(tr("Processed input trajectory frame %1 of %2.").arg(frame).arg(_modNode->numberOfSourceFrames()));
 }
 
 /******************************************************************************

@@ -583,135 +583,187 @@ void PipelineListModel::iconAnimationFrameChanged()
 ******************************************************************************/
 QVariant PipelineListModel::data(const QModelIndex& index, int role) const
 {
-    OVITO_ASSERT(index.row() >= 0 && index.row() < _items.size());
+    QModelRoleData roleData(role);
+    multiData(index, roleData);
+    return roleData.data();
+}
 
+/******************************************************************************
+* Fills the roleDataSpan with the requested data for the given index.
+******************************************************************************/
+void PipelineListModel::multiData(const QModelIndex& index, QModelRoleDataSpan roleDataSpan) const
+{
+    OVITO_ASSERT(index.row() >= 0 && index.row() < _items.size());
     PipelineListItem* item = this->item(index.row());
 
-    if(role == Qt::DisplayRole || role == TitleRole) {
-        // Indent modifiers that are part of a group.
-        if(item->itemType() == PipelineListItem::Modifier) {
-            if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(item->object())) {
-                if(modNode->modifierGroup())
+    for(QModelRoleData& roleData : roleDataSpan) {
+        int role = roleData.role();
+        if(role == Qt::DisplayRole || role == TitleRole) {
+            // Indent modifiers that are part of a group.
+            if(item->itemType() == PipelineListItem::Modifier) {
+                if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(item->object())) {
+                    if(modNode->modifierGroup()) {
 #ifndef Q_OS_WIN
-                    return QStringLiteral(" ") + item->title();
+                        roleData.setData(QStringLiteral(" ") + item->title());
 #else
-                    return QStringLiteral("   ") + item->title();
+                        roleData.setData(QStringLiteral("   ") + item->title());
 #endif
+                        continue;
+                    }
+                }
+            }
+            roleData.setData(item->title());
+            continue;
+        }
+        else if(role == Qt::EditRole) {
+            roleData.setData(item->title());
+            continue;
+        }
+        else if(role == ItemTypeRole) {
+            roleData.setData(item->itemType());
+            continue;
+        }
+        else if(role == IsCollapsedRole) {
+            if(item->itemType() == PipelineListItem::ModifierGroup) {
+                roleData.setData(static_object_cast<ModifierGroup>(item->object())->isCollapsed());
+                continue;
             }
         }
-        return item->title();
-    }
-    else if(role == Qt::EditRole) {
-        return item->title();
-    }
-    else if(role == ItemTypeRole) {
-        return item->itemType();
-    }
-    else if(role == IsCollapsedRole) {
-        if(item->itemType() == PipelineListItem::ModifierGroup)
-            return static_object_cast<ModifierGroup>(item->object())->isCollapsed();
-    }
-    else if(role == StatusInfoRole) {
-        if(Pipeline* pipeline = selectedPipeline()) {
-            QVariant v;
-            if(_userInterface.handleExceptions([&] {
-                v = item->shortInfo(pipeline);
-            })) return v;
-        }
-    }
-    else if(role == Qt::DecorationRole) {
-        // This role is only used by the QWidgets GUI.
-        if(item->itemType() == PipelineListItem::ModifierGroup) {
-            if(!static_object_cast<ModifierGroup>(item->object())->isCollapsed())
-                return _modifierGroupExpanded;
-        }
-        if(item->isObjectActive()) {
-            const_cast<QMovie&>(_statusPendingIcon).start();
-            return QVariant::fromValue(_statusPendingIcon.currentPixmap());
-        }
-        if(item->itemType() == PipelineListItem::ModifierGroup) {
-            if(item->status().type() == PipelineStatus::Success)
-                return _modifierGroupCollapsed;
-        }
-        if(item->isObjectItem()) {
-            switch(item->status().type()) {
-            case PipelineStatus::Warning: return QVariant::fromValue(_statusWarningIcon);
-            case PipelineStatus::Error: return QVariant::fromValue(_statusErrorIcon);
-            default: return QVariant::fromValue(_statusNoneIcon);
+        else if(role == StatusInfoRole) {
+            if(dynamic_object_cast<ActiveObject>(item->object())) {
+                if(Pipeline* pipeline = selectedPipeline()) {
+                    if(_userInterface.handleExceptions([&] {
+                        roleData.setData(item->shortInfo(pipeline));
+                    })) continue;
+                }
             }
         }
-    }
-    else if(role == PipelineListModel::DecorationRole) {
-        // This role is only used by the QML GUI.
-        if(item->itemType() == PipelineListItem::ModifierGroup) {
-            if(!static_object_cast<ModifierGroup>(item->object())->isCollapsed())
-                return QStringLiteral("modify_modifier_group_expanded");
-        }
-        if(item->itemType() == PipelineListItem::ModifierGroup) {
-            if(item->status().type() == PipelineStatus::Success)
-                return QStringLiteral("modify_modifier_group_collapsed");
-        }
-        if(item->isObjectItem()) {
-            switch(item->status().type()) {
-            case PipelineStatus::Warning: return QStringLiteral("qrc:/guibase/mainwin/status/status_warning.png");
-            case PipelineStatus::Error: return QStringLiteral("qrc:/guibase/mainwin/status/status_error.png");
-            default: return QStringLiteral("qrc:/guibase/mainwin/status/status_none.png");
+        else if(role == Qt::DecorationRole) {
+            // This role is only used by the QWidgets GUI.
+            if(item->itemType() == PipelineListItem::ModifierGroup) {
+                if(!static_object_cast<ModifierGroup>(item->object())->isCollapsed()) {
+                    roleData.setData(_modifierGroupExpanded);
+                    continue;
+                }
+            }
+            if(item->isObjectActive()) {
+                _statusPendingIcon.start();
+                roleData.setData(_statusPendingIcon.currentPixmap());
+                continue;
+            }
+            if(item->itemType() == PipelineListItem::ModifierGroup) {
+                if(item->status().type() == PipelineStatus::Success) {
+                    roleData.setData(_modifierGroupCollapsed);
+                    continue;
+                }
+            }
+            if(item->isObjectItem()) {
+                switch(item->status().type()) {
+                case PipelineStatus::Warning: roleData.setData(_statusWarningIcon);
+                case PipelineStatus::Error: roleData.setData(_statusErrorIcon);
+                default: roleData.setData(_statusNoneIcon);
+                }
+                continue;
             }
         }
-        return QString();
-    }
-    else if(role == Qt::ToolTipRole || role == PipelineListModel::ToolTipRole) {
-        return QVariant::fromValue(item->status().text());
-    }
-    else if(role == Qt::CheckStateRole) {
-        if(ModificationNode* node = dynamic_object_cast<ModificationNode>(item->object()))
-            return (node->modifier() && node->modifier()->isEnabled()) ? Qt::Checked : Qt::Unchecked;
-        else if(ActiveObject* object = dynamic_object_cast<ActiveObject>(item->object())) {
-            if(item->itemType() != PipelineListItem::DataSource)
-                return object->isEnabled() ? Qt::Checked : Qt::Unchecked;
+        else if(role == PipelineListModel::DecorationRole) {
+            // This role is only used by the QML GUI.
+            if(item->itemType() == PipelineListItem::ModifierGroup) {
+                if(!static_object_cast<ModifierGroup>(item->object())->isCollapsed()) {
+                    roleData.setData(QStringLiteral("modify_modifier_group_expanded"));
+                    continue;
+                }
+            }
+            if(item->itemType() == PipelineListItem::ModifierGroup) {
+                if(item->status().type() == PipelineStatus::Success) {
+                    roleData.setData(QStringLiteral("modify_modifier_group_collapsed"));
+                    continue;
+                }
+            }
+            if(item->isObjectItem()) {
+                switch(item->status().type()) {
+                case PipelineStatus::Warning: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_warning.png"));
+                case PipelineStatus::Error: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_error.png"));
+                default: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_none.png"));
+                }
+                continue;
+            }
         }
-        else if(item->itemType() == PipelineListItem::DeletedVisualElement) {
-            return Qt::Unchecked; // This is to prevent the checkbox element from temporarily disappearing while the list of visual elements is being regenerated.
+        else if(role == Qt::ToolTipRole || role == PipelineListModel::ToolTipRole) {
+            roleData.setData(item->status().text());
+            continue;
         }
-    }
-    else if(role == CheckedRole) {
-        if(ModificationNode* node = dynamic_object_cast<ModificationNode>(item->object()))
-            return node->modifier() && node->modifier()->isEnabled();
-        else if(ActiveObject* object = dynamic_object_cast<ActiveObject>(item->object())) {
-            if(item->itemType() != PipelineListItem::DataSource)
-                return object->isEnabled();
+        else if(role == Qt::CheckStateRole) {
+            if(ModificationNode* node = dynamic_object_cast<ModificationNode>(item->object())) {
+                roleData.setData((node->modifier() && node->modifier()->isEnabled()) ? Qt::Checked : Qt::Unchecked);
+                continue;
+            }
+            else if(ActiveObject* object = dynamic_object_cast<ActiveObject>(item->object())) {
+                if(item->itemType() != PipelineListItem::DataSource) {
+                    roleData.setData(object->isEnabled() ? Qt::Checked : Qt::Unchecked);
+                    continue;
+                }
+            }
+            else if(item->itemType() == PipelineListItem::DeletedVisualElement) {
+                roleData.setData(Qt::Unchecked); // This is to prevent the checkbox element from temporarily disappearing while the list of visual elements is being regenerated.
+                continue;
+            }
         }
-        return false;
-    }
-    else if(role == Qt::TextAlignmentRole) {
-        if(!item->isObjectItem()) {
-            return Qt::AlignCenter;
+        else if(role == CheckedRole) {
+            if(ModificationNode* node = dynamic_object_cast<ModificationNode>(item->object())) {
+                roleData.setData(node->modifier() && node->modifier()->isEnabled());
+                continue;
+            }
+            else if(ActiveObject* object = dynamic_object_cast<ActiveObject>(item->object())) {
+                if(item->itemType() != PipelineListItem::DataSource) {
+                    roleData.setData(object->isEnabled());
+                    continue;
+                }
+            }
+            roleData.setData(false);
+            continue;
         }
-    }
-    else if(role == Qt::BackgroundRole) {
-        if(!item->isObjectItem()) {
-            if(item->itemType() != PipelineListItem::PipelineBranch)
-                return _sectionHeaderBackgroundBrush;
-            else
-                return QBrush(Qt::lightGray, Qt::Dense6Pattern);
+        else if(role == Qt::TextAlignmentRole) {
+            if(!item->isObjectItem()) {
+                roleData.setData(Qt::AlignCenter);
+                continue;
+            }
         }
+        else if(role == Qt::BackgroundRole) {
+            if(!item->isObjectItem()) {
+                if(item->itemType() != PipelineListItem::PipelineBranch)
+                    roleData.setData(_sectionHeaderBackgroundBrush);
+                else
+                    roleData.setData(QBrush(Qt::lightGray, Qt::Dense6Pattern));
+                continue;
+            }
+        }
+        else if(role == Qt::ForegroundRole) {
+            if(!item->isObjectItem()) {
+                roleData.setData(_sectionHeaderForegroundBrush);
+                continue;
+            }
+            else if(item->itemType() == PipelineListItem::Modifier && static_object_cast<ModificationNode>(item->object())->modifierAndGroupEnabled() == false) {
+                roleData.setData(_disabledForegroundBrush);
+                continue;
+            }
+            else if(item->itemType() == PipelineListItem::ModifierGroup && static_object_cast<ModifierGroup>(item->object())->isEnabled() == false) {
+                roleData.setData(_disabledForegroundBrush);
+                continue;
+            }
+        }
+        else if(role == Qt::FontRole) {
+            if(!item->isObjectItem()) {
+                roleData.setData(_sectionHeaderFont);
+                continue;
+            }
+            else if(isSharedObject(item->object())) {
+                roleData.setData(_sharedObjectFont);
+                continue;
+            }
+        }
+        roleData.clearData();
     }
-    else if(role == Qt::ForegroundRole) {
-        if(!item->isObjectItem())
-            return _sectionHeaderForegroundBrush;
-        else if(item->itemType() == PipelineListItem::Modifier && static_object_cast<ModificationNode>(item->object())->modifierAndGroupEnabled() == false)
-            return _disabledForegroundBrush;
-        else if(item->itemType() == PipelineListItem::ModifierGroup && static_object_cast<ModifierGroup>(item->object())->isEnabled() == false)
-            return _disabledForegroundBrush;
-    }
-    else if(role == Qt::FontRole) {
-        if(!item->isObjectItem())
-            return _sectionHeaderFont;
-        else if(isSharedObject(item->object()))
-            return _sharedObjectFont;
-    }
-
-    return {};
 }
 
 /******************************************************************************

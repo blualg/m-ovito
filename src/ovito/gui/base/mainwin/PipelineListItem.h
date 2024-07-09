@@ -74,7 +74,7 @@ public:
     QVariant shortInfo(Pipeline* selectedPipeline) const;
 
     /// Returns whether an active computation is in progress for this object.
-    bool isObjectActive() const;
+    bool isObjectActive() const { return _isObjectActive; }
 
     /// Returns the title text for this list item.
     const QString& title() const { return _title; }
@@ -118,11 +118,17 @@ private:
     /// The display title of the list item.
     QString _title;
 
-    /// Timer used to implement delayed UI updates of the activity state.
-    QBasicTimer _activityTimer;
+    /// Timer used to throttle UI updates due to status and activity state changes.
+    QBasicTimer _statusAndActivityTimer;
 
-    /// Timer used to implement delayed UI updates whenever object status changes.
-    QBasicTimer _statusTimer;
+    /// Indicates whether the object is currently doing a computation.
+    bool _isObjectActive = false;
+
+    /// Indicates that the UI of the item needs to be updated.
+    bool _statusUpdatePending = false;
+
+    /// Indicates that the UI of the item needs to be updated.
+    bool _activityUpdatePending = false;
 };
 
 }   // End of namespace

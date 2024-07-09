@@ -72,7 +72,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 
     class PipelineListView : public QListView {
     public:
-        PipelineListView(QWidget* parent) : QListView(parent) {}
+        using QListView::QListView;
         virtual QSize sizeHint() const override { return QSize(256, 260); }
     protected:
         virtual bool edit(const QModelIndex& index, QAbstractItemView::EditTrigger trigger, QEvent* event) override {
