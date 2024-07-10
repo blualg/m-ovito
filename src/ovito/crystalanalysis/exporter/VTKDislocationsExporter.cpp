@@ -22,7 +22,7 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/RenderableDislocationLines.h>
-#include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/crystalanalysis/objects/DislocationVis.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -71,22 +71,22 @@ void VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePa
     const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
 
     // Look up the dislocation network object in the pipeline state.
-    const DislocationNetworkObject* dislocationsObj = state.getObject<DislocationNetworkObject>();
-    if(!dislocationsObj)
+    const DislocationNetwork* dislocations = state.getObject<DislocationNetwork>();
+    if(!dislocations)
         throw Exception(tr("The object to be exported does not contain any exportable dislocation line data."));
 
     // Get the visual element associated with the dislocation network.
-    OORef<DislocationVis> dislocationVis = dislocationsObj->visElement<DislocationVis>();
+    OORef<DislocationVis> dislocationVis = dislocations->visElement<DislocationVis>();
     if(!dislocationVis)
         dislocationVis = OORef<DislocationVis>::create();
 
     // Generate non-periodic version of the dislocation line network.
-    std::shared_ptr<RenderableDislocationLines> renderableLines = dislocationVis->transformDislocations(dislocationsObj).result();
+    std::shared_ptr<RenderableDislocationLines> renderableLines = dislocationVis->transformDislocations(dislocations).result();
 
     // Count dislocation polylines and output vertices.
     std::vector<size_t> polyVertexCounts;
     for(size_t i = 0; i < renderableLines->lineSegments().size(); i++) {
-        if(renderableLines->lineSegments()[i].dislocationIndex >= dislocationsObj->segments().size())
+        if(renderableLines->lineSegments()[i].dislocationIndex >= dislocations->segments().size())
             throw Exception(tr("Inconsistent data: Dislocation index out of range."));
         if(i != 0) {
             const auto& s1 = renderableLines->lineSegments()[i-1];
@@ -145,7 +145,7 @@ void VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePa
     textStream() << "\nVECTORS burgers_vector_local double\n";
     segment = renderableLines->lineSegments().begin();
     for(auto c : polyVertexCounts) {
-        const DislocationSegment* dislocation = dislocationsObj->segments()[segment->dislocationIndex];
+        const DislocationSegment* dislocation = dislocations->segments()[segment->dislocationIndex];
         textStream() << dislocation->burgersVector.localVec().x() << " " << dislocation->burgersVector.localVec().y() << " " << dislocation->burgersVector.localVec().z() << "\n";
         segment += c - 1;
     }
@@ -154,7 +154,7 @@ void VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePa
     textStream() << "\nVECTORS burgers_vector_world double\n";
     segment = renderableLines->lineSegments().begin();
     for(auto c : polyVertexCounts) {
-        const DislocationSegment* dislocation = dislocationsObj->segments()[segment->dislocationIndex];
+        const DislocationSegment* dislocation = dislocations->segments()[segment->dislocationIndex];
         Vector3 transformedVector = dislocation->burgersVector.toSpatialVector();
         textStream() << transformedVector.x() << " " << transformedVector.y() << " " << transformedVector.z() << "\n";
         segment += c - 1;

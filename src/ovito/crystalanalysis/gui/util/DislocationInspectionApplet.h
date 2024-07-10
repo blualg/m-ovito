@@ -24,7 +24,7 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/crystalanalysis/objects/DislocationVis.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectionApplet.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
@@ -44,7 +44,7 @@ class DislocationInspectionApplet : public DataInspectionApplet
 public:
 
     /// Constructor.
-    void initializeObject() { DataInspectionApplet::initializeObject(DislocationNetworkObject::OOClass()); }
+    void initializeObject() { DataInspectionApplet::initializeObject(DislocationNetwork::OOClass()); }
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
     virtual int orderingKey() const override { return 50; }
@@ -107,7 +107,7 @@ private:
         void setContents(const PipelineFlowState& state) {
             beginResetModel();
             if(state) {
-                _dislocationObj = state.getObject<DislocationNetworkObject>();
+                _dislocationObj = state.getObject<DislocationNetwork>();
             }
             else {
                 _dislocationObj.reset();
@@ -117,7 +117,7 @@ private:
 
     private:
 
-        OORef<DislocationNetworkObject> _dislocationObj;
+        DataOORef<const DislocationNetwork> _dislocationObj;
     };
 
 

@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -39,8 +39,8 @@ OVITO_CLASSINFO(DislocationSliceModifierDelegate, "DisplayName", "Dislocation li
 ******************************************************************************/
 QVector<DataObjectReference> DislocationSliceModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<DislocationNetworkObject>())
-        return { DataObjectReference(&DislocationNetworkObject::OOClass()) };
+    if(input.containsObject<DislocationNetwork>())
+        return { DataObjectReference(&DislocationNetwork::OOClass()) };
     return {};
 }
 
@@ -60,7 +60,7 @@ Future<PipelineFlowState> DislocationSliceModifierDelegate::apply(const Modifier
     std::tie(plane, sliceWidth) = modifier->slicingPlane(request.time(), state.mutableStateValidity(), state);
 
     for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-        if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(state.data()->objects()[i])) {
+        if(const DislocationNetwork* inputDislocations = dynamic_object_cast<DislocationNetwork>(state.data()->objects()[i])) {
             QVector<Plane3> planes = inputDislocations->cuttingPlanes();
             if(sliceWidth <= 0) {
                 planes.push_back(plane);
@@ -69,7 +69,7 @@ Future<PipelineFlowState> DislocationSliceModifierDelegate::apply(const Modifier
                 planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth/2));
                 planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth/2));
             }
-            DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
+            DislocationNetwork* outputDislocations = state.makeMutable(inputDislocations);
             outputDislocations->setCuttingPlanes(std::move(planes));
         }
     }

@@ -128,7 +128,7 @@ Missing XCB system libraries
 
   .. admonition:: Solution
 
-    Install the required system libraries using your Linux package manager:
+    Install the required system libraries using your system's package manager:
 
     .. code-block:: shell
 
@@ -154,12 +154,26 @@ Missing OpenGL system libraries
 
   .. admonition:: Solution
 
-    Install the required system libraries using your package manager:
+    Install the required system libraries using your system's package manager:
 
     .. code-block:: shell
 
       # On Ubuntu/Debian systems:
       sudo apt install libopengl0 libgl1-mesa-glx libegl1
+      # On CentOS/RHEL systems:
+      sudo yum install libglvnd-opengl libglvnd-glx
+
+    If an installation of the required system libraries is not possible due to restrictions on the target machine, you can
+    set up a local :ref:`conda environment and install the OVITO Pro package <installation.anaconda>`. Next, install
+    the missing system libraries in the conda environment and make them available:
+
+    .. code-block:: shell
+
+      conda install -c conda-forge libglvnd-opengl-cos7-x86_64 libglvnd-cos7-x86_64 libglvnd-glx-cos7-x86_64 libglvnd-egl-cos7-x86_64
+      export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDA_PREFIX}/x86_64-conda-linux-gnu/sysroot/usr/lib
+
+    This should allow you to at least run Python scripts that import the OVITO Python module. The OVITO desktop application
+    will still not work, however, because your system is lacking true OpenGL graphics support.
 
 .. _installation.troubleshooting.macos:
 

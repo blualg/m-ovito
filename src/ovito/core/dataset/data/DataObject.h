@@ -62,6 +62,21 @@ public:
         NEXT_AVAILABLE_EVENT_ID
     };
 
+    /// Enum values that control if and how the object should be displayed in the GUI pipeline editor
+    /// when it is part of a DataCollection loaded by a file importer. The object indicates
+    /// its preference by returning one of these values from the virtual pipelineEditorObjectListMode() method.
+    enum class PipelineEditorObjectListMode {
+        /// The object itself should not be shown in the pipeline editor but its sub-objects may be shown.
+        Hide,
+        /// The object should not be shown in the pipeline editor nor should its sub-objects.
+        HideIncludingSubObjects,
+        /// The object should be shown in the pipeline editor but not its sub-objects.
+        Show,
+        /// The object should be shown in the pipeline editor including its sub-objects.
+        ShowIncludingSubObjects
+    };
+    Q_ENUM(PipelineEditorObjectListMode);
+
     /// \brief Asks the object for its validity interval at the given time.
     /// \param time The animation time at which the validity interval should be computed.
     /// \return The maximum time interval that contains \a time and during which the object is valid.
@@ -132,9 +147,8 @@ public:
     /// is already safe to modify.
     bool isSafeToModifySubObject(const DataObject* subObject) const;
 
-    /// Returns whether this data object wants to be shown in the pipeline editor
-    /// under the data source section. The default implementation returns false.
-    virtual bool showInPipelineEditor() const { return false; }
+    /// Indicates how this data object wants to be shown in the pipeline editor under the data source section.
+    virtual PipelineEditorObjectListMode pipelineEditorObjectListMode() const { return PipelineEditorObjectListMode::Hide; }
 
     /// \brief Visits the direct sub-objects of this data object
     ///        and invokes the given visitor function for every sub-object.

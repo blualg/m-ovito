@@ -21,9 +21,9 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/crystalanalysis/objects/DislocationVis.h>
-#include <ovito/crystalanalysis/objects/ClusterGraphObject.h>
+#include <ovito/crystalanalysis/objects/ClusterGraph.h>
 #include <ovito/crystalanalysis/modifier/dxa/DislocationAnalysisEngine.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
@@ -142,8 +142,8 @@ void CAImporter::FrameLoader::loadFile()
     int numClusterTransitions = 0;
     int numDislocationSegments = 0;
     SurfaceMesh* defectSurface = nullptr;
-    ClusterGraphPtr clusterGraph = std::make_shared<ClusterGraph>();
-    std::shared_ptr<DislocationNetwork> dislocations;
+    DataOORef<DislocationNetwork> dislocations;
+    DataOORef<ClusterGraph> clusterGraph = DataOORef<ClusterGraph>::create();
     QVector<PatternInfo> patterns;
 
     while(!stream.eof()) {
@@ -347,7 +347,14 @@ void CAImporter::FrameLoader::loadFile()
                 throw Exception(tr("Failed to parse file. Invalid number of dislocation segments in line %1.").arg(stream.lineNumber()));
             setProgressText(tr("Reading dislocations"));
             setProgressMaximum(numDislocationSegments);
-            dislocations = std::make_shared<DislocationNetwork>(clusterGraph);
+            if(const DislocationNetwork* existingDislocationsObj = state().getObject<DislocationNetwork>()) {
+                dislocations = state().makeMutable(existingDislocationsObj);
+            }
+            else {
+                dislocations = state().createObject<DislocationNetwork>(pipelineNode());
+            }
+            dislocations->setClusterGraph(clusterGraph);
+            dislocations->segments().clear();
             for(int index = 0; index < numDislocationSegments; index++) {
                 setProgressValueIntermittent(index);
                 int segmentId;
@@ -511,7 +518,6 @@ void CAImporter::FrameLoader::loadFile()
 
     std::vector<size_t> structureCounts;
     if(clusterGraph) {
-
         // Count how many atoms of each structure type exist by summing the cluster atom counts.
         for(const Cluster* cluster : clusterGraph->clusters()) {
             if(cluster->structure < 0) continue;
@@ -519,33 +525,15 @@ void CAImporter::FrameLoader::loadFile()
                 structureCounts.resize(cluster->structure + 1, 0);
             structureCounts[cluster->structure] += cluster->atomCount;
         }
-
-        // Insert cluster graph.
-        ClusterGraphObject* clusterGraphObj;
-        if(const ClusterGraphObject* existingClusterGraphObj = state().getObject<ClusterGraphObject>()) {
-            clusterGraphObj = state().makeMutable(existingClusterGraphObj);
-        }
-        else {
-            clusterGraphObj = state().createObject<ClusterGraphObject>(pipelineNode());
-        }
-        clusterGraphObj->setStorage(std::move(clusterGraph));
     }
 
     // Insert dislocations.
     if(dislocations) {
-        DislocationNetworkObject* dislocationNetwork;
-        if(const DislocationNetworkObject* existingDislocationsObj = state().getObject<DislocationNetworkObject>()) {
-            dislocationNetwork = state().makeMutable(existingDislocationsObj);
-        }
-        else {
-            dislocationNetwork = state().createObject<DislocationNetworkObject>(pipelineNode());
-        }
-        dislocationNetwork->setDomain(simulationCell());
-        dislocationNetwork->setStorage(dislocations);
+        dislocations->setDomain(simulationCell());
 
         // Update structure catalog.
         for(int i = 0; i < patterns.size(); i++) {
-            if(dislocationNetwork->structureByName(patterns[i].longName))
+            if(dislocations->structureByName(patterns[i].longName))
                 continue;
 
             DataOORef<MicrostructurePhase> pattern = DataOORef<MicrostructurePhase>::create();
@@ -556,7 +544,7 @@ void CAImporter::FrameLoader::loadFile()
             pattern->setNumericId(patterns[i].id);
             pattern->setCrystalSymmetryClass(patterns[i].symmetryType);
             pattern->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name), SHADOW_PROPERTY_FIELD(ElementType::color), SHADOW_PROPERTY_FIELD(MicrostructurePhase::shortName), SHADOW_PROPERTY_FIELD(MicrostructurePhase::dimensionality), SHADOW_PROPERTY_FIELD(MicrostructurePhase::crystalSymmetryClass)});
-            dislocationNetwork->addCrystalStructure(pattern);
+            dislocations->addCrystalStructure(pattern);
 
             // Add Burgers vector families.
             for(int j = 0; j < patterns[i].burgersVectorFamilies.size(); j++) {
@@ -578,11 +566,11 @@ void CAImporter::FrameLoader::loadFile()
         const MicrostructurePhase* mainStructure = nullptr;
         if(!structureCounts.empty()) {
             int maxStructure = std::distance(structureCounts.begin(), std::max_element(structureCounts.begin(), structureCounts.end()));
-            mainStructure = dislocationNetwork->structureById(maxStructure);
+            mainStructure = dislocations->structureById(maxStructure);
         }
 
         // Compute dislocation line statistics.
-        DislocationAnalysisEngine::generateDislocationStatistics(pipelineNode(), state(), dislocationNetwork, true, mainStructure);
+        DislocationAnalysisEngine::generateDislocationStatistics(pipelineNode(), state(), dislocations, true, mainStructure);
     }
 
     state().setStatus(tr("Number of dislocations: %1").arg(numDislocationSegments));

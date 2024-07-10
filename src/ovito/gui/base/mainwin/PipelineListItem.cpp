@@ -42,6 +42,9 @@ void PipelineListItem::initializeObject(RefTarget* object, PipelineItemType item
     _itemType = itemType;
     _object.set(this, PROPERTY_FIELD(object), object);
 
+    if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object))
+        _isObjectActive = activeObject->isObjectActive();
+
     switch(_itemType) {
     case VisualElementsHeader: _title = tr("Visual elements"); break;
     case ModificationsHeader: _title = tr("Modifications"); break;
@@ -72,29 +75,24 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
     }
     // Update item with some delay after its status has changed.
     else if(event.type() == ReferenceEvent::ObjectStatusChanged) {
-        if(!_statusTimer.isActive()) {
-            _statusTimer.start(100, Qt::CoarseTimer, this);
-        }
+        // Display new status in the UI with a short delay to prevent excessive updates in case of frequent updates.
+        _statusUpdatePending = true;
+        if(!_statusAndActivityTimer.isActive())
+            _statusAndActivityTimer.start(200, Qt::CoarseTimer, this);
     }
     // Update item with some delay after its activity status has changed.
-    else if(ActiveObject::OOClass().isMember(object()) && event.type() == ActiveObject::ActivityChanged) {
-        // Indicate activity status in the UI with a 100 ms delay to prevent excessive updates in case of short-running tasks.
-        ActiveObject* activeObject = static_object_cast<ActiveObject>(object());
-        if(activeObject->isObjectActive()) {
-            if(!_activityTimer.isActive()) {
-                _activityTimer.start(100, Qt::CoarseTimer, this);
-            }
-        }
-        else {
-            _activityTimer.stop();
-            Q_EMIT itemChanged(this);
-        }
+    else if(event.type() == ActiveObject::ActivityChanged && ActiveObject::OOClass().isMember(object())) {
+        // Display activity state in the UI with a short delay to prevent excessive updates in case of many short-running tasks.
+        _activityUpdatePending = true;
+        if(!_statusAndActivityTimer.isActive())
+            _statusAndActivityTimer.start(200, Qt::CoarseTimer, this);
     }
     // Update item (and the entire list) if a group is being collapsed or uncollapsed.
     else if(event.type() == ReferenceEvent::TargetChanged && static_cast<const PropertyFieldEvent&>(event).field() == PROPERTY_FIELD(ModifierGroup::isCollapsed)) {
         Q_EMIT subitemsChanged(this);
     }
     else if(event.type() == ReferenceEvent::TargetDeleted) {
+        _isObjectActive = false;
         if(_itemType == DataObject)
             _itemType = DeletedDataObject;
         else if(_itemType == VisualElement)
@@ -112,17 +110,26 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
 ******************************************************************************/
 void PipelineListItem::timerEvent(QTimerEvent* event)
 {
-    if(event->timerId() == _activityTimer.timerId()) {
-        OVITO_ASSERT(_activityTimer.isActive());
-        _activityTimer.stop();
-        updateTitle();
-        Q_EMIT itemChanged(this);
-    }
-    else if(event->timerId() == _statusTimer.timerId()) {
-        OVITO_ASSERT(_statusTimer.isActive());
-        _statusTimer.stop();
-        updateTitle();
-        Q_EMIT itemChanged(this);
+    if(event->timerId() == _statusAndActivityTimer.timerId()) {
+        OVITO_ASSERT(_statusAndActivityTimer.isActive());
+        if(_activityUpdatePending) {
+            _activityUpdatePending = false;
+            bool isActive = false;
+            if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object()))
+                isActive = activeObject->isObjectActive();
+            if(isActive != _isObjectActive) {
+                _isObjectActive = isActive;
+                _statusUpdatePending = true;
+            }
+        }
+        if(_statusUpdatePending) {
+            _statusUpdatePending = false;
+            updateTitle();
+            Q_EMIT itemChanged(this);
+        }
+        else {
+            _statusAndActivityTimer.stop();
+        }
     }
     QObject::timerEvent(event);
 }
@@ -185,17 +192,6 @@ QVariant PipelineListItem::shortInfo(Pipeline* selectedPipeline) const
         }
     }
     return {};
-}
-
-/******************************************************************************
-* Returns whether an active computation is in progress for this object.
-******************************************************************************/
-bool PipelineListItem::isObjectActive() const
-{
-    if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
-        return activeObject->isObjectActive();
-    }
-    return false;
 }
 
 }   // End of namespace

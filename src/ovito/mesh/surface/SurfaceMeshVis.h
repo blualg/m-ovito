@@ -257,7 +257,7 @@ public:
     }
 
     /// The data object containing the surface mesh.
-    const OORef<SurfaceMesh>& surfaceMesh() const { return _surfaceMesh; }
+    const DataOORef<const SurfaceMesh>& surfaceMesh() const { return _surfaceMesh; }
 
     /// The renderable version of the surface mesh.
     const std::shared_ptr<RenderableSurfaceMesh>& renderableMesh() const { return _renderableMesh; }
@@ -279,7 +279,7 @@ public:
 private:
 
     /// The original surface mesh.
-    OORef<SurfaceMesh> _surfaceMesh;
+    DataOORef<const SurfaceMesh> _surfaceMesh;
 
     /// The renderable version of the surface mesh.
     std::shared_ptr<RenderableSurfaceMesh> _renderableMesh;

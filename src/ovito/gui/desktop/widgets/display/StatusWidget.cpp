@@ -54,19 +54,19 @@ StatusWidget::StatusWidget(QWidget* parent) : QScrollArea(parent)
 ******************************************************************************/
 void StatusWidget::setStatus(const PipelineStatus& status)
 {
-    _status = status;
+    if(status.type() != _status.type()) {
+        const static QPixmap statusWarningIcon(":/guibase/mainwin/status/status_warning.png");
+        const static QPixmap statusErrorIcon(":/guibase/mainwin/status/status_error.png");
 
+        if(status.type() == PipelineStatus::Warning)
+            _iconLabel->setPixmap(statusWarningIcon);
+        else if(status.type() == PipelineStatus::Error)
+            _iconLabel->setPixmap(statusErrorIcon);
+        else
+            _iconLabel->clear();
+    }
     _textLabel->setText(status.text());
-
-    const static QPixmap statusWarningIcon(":/guibase/mainwin/status/status_warning.png");
-    const static QPixmap statusErrorIcon(":/guibase/mainwin/status/status_error.png");
-
-    if(status.type() == PipelineStatus::Warning)
-        _iconLabel->setPixmap(statusWarningIcon);
-    else if(status.type() == PipelineStatus::Error)
-        _iconLabel->setPixmap(statusErrorIcon);
-    else
-        _iconLabel->clear();
+    _status = status;
 }
 
 /******************************************************************************
@@ -75,8 +75,10 @@ void StatusWidget::setStatus(const PipelineStatus& status)
 QSize StatusWidget::minimumSizeHint() const
 {
     int widgetHeight = widget()->minimumSizeHint().height();
-    if(widgetHeight < 20) widgetHeight = 40;
-    else if(widgetHeight < 30) widgetHeight *= 2;
+    if(widgetHeight < 20)
+        widgetHeight = 40;
+    else if(widgetHeight < 30)
+        widgetHeight *= 2;
     return QSize(QScrollArea::minimumSizeHint().width(),
             frameWidth()*2 + widgetHeight);
 }
@@ -87,8 +89,10 @@ QSize StatusWidget::minimumSizeHint() const
 QSize StatusWidget::sizeHint() const
 {
     int widgetHeight = widget()->minimumSizeHint().height();
-    if(widgetHeight < 20) widgetHeight = 40;
-    else if(widgetHeight < 30) widgetHeight *= 2;
+    if(widgetHeight < 20)
+        widgetHeight = 40;
+    else if(widgetHeight < 30)
+        widgetHeight *= 2;
     return QSize(QScrollArea::sizeHint().width(),
             frameWidth()*2 + widgetHeight);
 }

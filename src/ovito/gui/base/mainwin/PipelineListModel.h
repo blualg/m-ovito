@@ -36,7 +36,7 @@ namespace Ovito {
 /**
  * This Qt model class is used to populate the QListView widget.
  */
-class OVITO_GUIBASE_EXPORT PipelineListModel : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT PipelineListModel final : public QAbstractListModel
 {
     Q_OBJECT
 
@@ -60,6 +60,9 @@ public:
 
     /// Returns the data associated with a list entry.
     virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+
+    /// Fills the roleDataSpan with the requested data for the given index.
+    virtual void multiData(const QModelIndex& index, QModelRoleDataSpan roleDataSpan) const override;
 
     /// Changes the data associated with a list entry.
     virtual bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole) override;
@@ -272,7 +275,7 @@ private:
     QPixmap _statusWarningIcon;
     QPixmap _statusErrorIcon;
     QPixmap _statusNoneIcon;
-    QMovie _statusPendingIcon;
+    mutable QMovie _statusPendingIcon;
     QIcon _modifierGroupCollapsed;
     QIcon _modifierGroupExpanded;
 

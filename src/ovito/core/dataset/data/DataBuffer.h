@@ -86,8 +86,8 @@ public:
 
     /// \brief The most commonly used data types. Note that, at least in principle,
     ///        the class supports any data type registered with the Qt meta type system.
-    enum DataTypes {
-
+    enum DataTypes
+    {
         Int8 = QMetaType::SChar,
         Int32 = QMetaType::Int,
         Int64 = QMetaType::LongLong,
@@ -116,7 +116,8 @@ public:
     template<typename dummy> struct TypeFromDataTypeId<Float32, dummy> { using type = float; };
     template<typename dummy> struct TypeFromDataTypeId<Float64, dummy> { using type = double; };
 
-    enum BufferInitialization {
+    enum BufferInitialization
+    {
         Uninitialized = 0,
         Initialized = 1
     };

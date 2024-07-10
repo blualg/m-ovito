@@ -24,10 +24,10 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
+#include <ovito/crystalanalysis/objects/Cluster.h>
+#include <ovito/crystalanalysis/objects/ClusterGraph.h>
 #include <ovito/delaunay/DelaunayTessellation.h>
 #include <ovito/core/utilities/MemoryPool.h>
-#include <ovito/crystalanalysis/data/Cluster.h>
-#include <ovito/crystalanalysis/data/ClusterGraph.h>
 #include "StructureAnalysis.h"
 
 namespace Ovito {
@@ -43,7 +43,7 @@ private:
     struct TessellationEdge {
 
         /// Constructor.
-        TessellationEdge(size_t v1, size_t v2) : vertex1(v1), vertex2(v2), clusterTransition(nullptr) {}
+        TessellationEdge(size_t v1, size_t v2) : vertex1(v1), vertex2(v2) {}
 
         /// The vertex this edge is originating from.
         size_t vertex1;
@@ -55,7 +55,7 @@ private:
         Vector3 clusterVector;
 
         /// The transition matrix when going from the cluster of vertex 1 to the cluster of vertex 2.
-        ClusterTransition* clusterTransition;
+        ClusterTransition* clusterTransition = nullptr;
 
         /// The next edge in the linked-list of edges leaving vertex 1.
         TessellationEdge* nextLeavingEdge;
@@ -100,7 +100,7 @@ public:
     const DelaunayTessellation& tessellation() const { return _tessellation; }
 
     /// Returns the cluster graph.
-    const std::shared_ptr<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
+    const DataOORef<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
 
     /// Builds the list of edges in the tetrahedral tessellation.
     void generateTessellationEdges();
@@ -160,7 +160,7 @@ private:
     DelaunayTessellation& _tessellation;
 
     /// The cluster graph.
-    const std::shared_ptr<ClusterGraph> _clusterGraph;
+    DataOORef<ClusterGraph> _clusterGraph;
 
     /// Stores the heads of the linked lists of leaving/arriving edges of each vertex.
     std::vector<std::pair<TessellationEdge*,TessellationEdge*>> _vertexEdges;

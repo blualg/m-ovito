@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
@@ -40,7 +40,7 @@ OVITO_CLASSINFO(DislocationInspectionApplet, "DisplayName", "Dislocations");
 ******************************************************************************/
 bool DislocationInspectionApplet::appliesTo(const DataCollection& data)
 {
-    return data.containsObject<DislocationNetworkObject>();
+    return data.containsObject<DislocationNetwork>();
 }
 
 /******************************************************************************
@@ -231,17 +231,17 @@ void DislocationInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewp
 
     PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
     const PipelineFlowState flowState = _applet->currentPipeline()->evaluatePipeline(request).result();
-    const DislocationNetworkObject* dislocationObj = flowState.getObject<DislocationNetworkObject>();
-    if(!dislocationObj)
+    const DislocationNetwork* dislocations = flowState.getObject<DislocationNetwork>();
+    if(!dislocations)
         return;
-    DislocationVis* vis = dynamic_object_cast<DislocationVis>(dislocationObj->visElement());
+    DislocationVis* vis = dynamic_object_cast<DislocationVis>(dislocations->visElement());
     if(!vis)
         return;
 
     for(const QModelIndex& index : _applet->_tableView->selectionModel()->selectedRows()) {
         int segmentIndex = index.row();
-        if(segmentIndex >= 0 && segmentIndex < dislocationObj->segments().size())
-            vis->renderOverlayMarker(dislocationObj, flowState, segmentIndex, frameGraph, _applet->currentPipeline());
+        if(segmentIndex >= 0 && segmentIndex < dislocations->segments().size())
+            vis->renderOverlayMarker(dislocations, flowState, segmentIndex, frameGraph, _applet->currentPipeline());
     }
 }
 

@@ -44,16 +44,11 @@ struct OVITO_CRYSTALANALYSIS_EXPORT DislocationNode
 
     /// Pointer to the next node in linked list of nodes that form a junction.
     /// If this node is not part of a junction, then this pointer points to the node itself.
-    DislocationNode* junctionRing;
+    DislocationNode* junctionRing = this;
 
     /// The Burgers circuit associated with this node.
     /// This field is only used during dislocation line tracing.
     BurgersCircuit* circuit = nullptr;
-
-    /// Constructor.
-    DislocationNode() {
-        junctionRing = this;
-    }
 
     /// Returns the (signed) Burgers vector of the node.
     /// This is the Burgers vector of the segment if this node is a forward node,
@@ -286,54 +281,5 @@ inline const Point3& DislocationNode::position() const
     else
         return segment->line.front();
 }
-
-/**
- * This class holds the entire network of dislocation segments.
- */
-class OVITO_CRYSTALANALYSIS_EXPORT DislocationNetwork
-{
-public:
-
-    /// Constructor that creates an empty dislocation network.
-    explicit DislocationNetwork(std::shared_ptr<ClusterGraph> clusterGraph) : _clusterGraph(std::move(clusterGraph)) {}
-
-    /// Copy constructor.
-    DislocationNetwork(const DislocationNetwork& other);
-
-    /// Returns a const-reference to the cluster graph.
-    const std::shared_ptr<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
-
-    /// Returns the list of dislocation segments.
-    const std::vector<DislocationSegment*>& segments() const { return _segments; }
-
-    /// Allocates a new dislocation segment terminated by two nodes.
-    DislocationSegment* createSegment(const ClusterVector& burgersVector);
-
-    /// Removes a segment from the global list of segments.
-    void discardSegment(DislocationSegment* segment);
-
-    /// Smoothens and coarsens the dislocation lines.
-    void smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval);
-
-private:
-
-    /// Smoothes the sampling points of a dislocation line.
-    static void smoothDislocationLine(int smoothingLevel, std::deque<Point3>& line, bool isLoop);
-
-    /// Removes some of the sampling points from a dislocation line.
-    static void coarsenDislocationLine(FloatType linePointInterval, const std::deque<Point3>& input, const std::deque<int>& coreSize, std::deque<Point3>& output, std::deque<int>& outputCoreSize, bool isClosedLoop, bool isInfiniteLine);
-
-    /// The associated cluster graph.
-    const std::shared_ptr<ClusterGraph> _clusterGraph;
-
-    // Used to allocate memory for DislocationNode instances.
-    MemoryPool<DislocationNode> _nodePool;
-
-    /// The list of dislocation segments.
-    std::vector<DislocationSegment*> _segments;
-
-    /// Used to allocate memory for DislocationSegment objects.
-    MemoryPool<DislocationSegment> _segmentPool;
-};
 
 }   // End of namespace

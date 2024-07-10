@@ -55,7 +55,7 @@ public:
     void setAtomClusters(PropertyPtr prop) { _atomClusters = std::move(prop); }
 
     /// Returns the created cluster graph.
-    const std::shared_ptr<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
+    const DataOORef<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
 
     /// Returns the property storage that contains the computed per-particle volumetric strain values.
     const PropertyPtr& volumetricStrains() const { return _volumetricStrains; }
@@ -75,19 +75,19 @@ private:
     std::vector<Matrix3> _preferredCrystalOrientations;
     std::optional<StructureAnalysis> _structureAnalysis;
 
-    /// This stores the cached atom-to-cluster assignments computed by the modifier.
+    /// Atom-to-cluster assignments computed by the modifier.
     PropertyPtr _atomClusters;
 
-    /// This stores the cached cluster graph computed by the modifier.
-    const std::shared_ptr<ClusterGraph> _clusterGraph;
+    /// Cluster graph computed by the modifier.
+    DataOORef<ClusterGraph> _clusterGraph = DataOORef<ClusterGraph>::create();
 
-    /// This stores the cached results of the modifier.
+    /// Results of the modifier.
     const PropertyPtr _volumetricStrains;
 
-    /// This stores the cached results of the modifier.
+    /// Results of the modifier.
     const PropertyPtr _strainTensors;
 
-    /// This stores the cached results of the modifier.
+    /// Results of the modifier.
     const PropertyPtr _deformationGradients;
 };
 

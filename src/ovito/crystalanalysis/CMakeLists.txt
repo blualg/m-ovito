@@ -25,12 +25,10 @@ SET(SourceFiles
     exporter/CAExporter.cpp
     exporter/VTKDislocationsExporter.cpp
     objects/BurgersVectorFamily.cpp
-    objects/ClusterGraphObject.cpp
-    objects/DislocationNetworkObject.cpp
+    objects/ClusterGraph.cpp
+    objects/DislocationNetwork.cpp
     objects/DislocationVis.cpp
     objects/MicrostructurePhase.cpp
-    data/ClusterGraph.cpp
-    data/DislocationNetwork.cpp
     modifier/dxa/DislocationAnalysisModifier.cpp
     modifier/dxa/DislocationAnalysisEngine.cpp
     modifier/dxa/StructureAnalysis.cpp

@@ -1,4 +1,4 @@
-/* -*- mode: C++ ; c-file-style: "stroustrup" -*- *****************************
+/******************************************************************************
  * Qwt Widget Library
  * Copyright (C) 1997   Josef Wilgen
  * Copyright (C) 2002   Uwe Rathmann
@@ -10,40 +10,6 @@
 #include "qwt_plot_canvas.h"
 #include "qwt_painter.h"
 #include "qwt_plot.h"
-#include "moc_qwt_plot_canvas.cpp"
-
-#ifndef QWT_NO_OPENGL
-
-#if QT_VERSION < 0x050000
-#define FBO_OPENGL 0
-#else
-#define FBO_OPENGL 1
-#endif
-
-#if FBO_OPENGL
-#include <qopenglcontext.h>
-#include <qopenglframebufferobject.h>
-#include <qopenglpaintdevice.h>
-
-#if QT_VERSION >= 0x050100
-#include <qoffscreensurface.h>
-typedef QOffscreenSurface QwtPlotCanvasSurfaceGL;
-
-#else
-#include <qwindow.h>
-class QwtPlotCanvasSurfaceGL: public QWindow
-{
-public:
-    QwtPlotCanvasSurfaceGL() { setSurfaceType( QWindow::OpenGLSurface ); }
-};
-#endif
-
-#else
-#include <qglframebufferobject.h>
-typedef QGLWidget QwtPlotCanvasSurfaceGL;
-#endif
-
-#endif // !QWT_NO_OPENGL
 
 #include <qpainter.h>
 #include <qpainterpath.h>
@@ -51,73 +17,65 @@ typedef QGLWidget QwtPlotCanvasSurfaceGL;
 
 class QwtPlotCanvas::PrivateData
 {
-public:
-    PrivateData():
-#ifndef QWT_NO_OPENGL
-        surfaceGL( NULL ),
-#endif
-        backingStore( NULL )
+  public:
+    PrivateData()
+        : backingStore( NULL )
     {
     }
 
     ~PrivateData()
     {
         delete backingStore;
-
-#ifndef QWT_NO_OPENGL
-        delete surfaceGL;
-#endif
     }
 
     QwtPlotCanvas::PaintAttributes paintAttributes;
-
-#ifndef QWT_NO_OPENGL
-    QwtPlotCanvasSurfaceGL *surfaceGL;
-#endif
-
-    QPixmap *backingStore;
+    QPixmap* backingStore;
 };
 
 /*!
-  \brief Constructor
+   \brief Constructor
 
-  \param plot Parent plot widget
-  \sa QwtPlot::setCanvas()
-*/
-QwtPlotCanvas::QwtPlotCanvas( QwtPlot *plot ):
-    QFrame( plot ),
-    QwtPlotAbstractCanvas( this )
+   \param plot Parent plot widget
+   \sa QwtPlot::setCanvas()
+ */
+QwtPlotCanvas::QwtPlotCanvas( QwtPlot* plot )
+    : QFrame( plot )
+    , QwtPlotAbstractCanvas( this )
 {
-    d_data = new PrivateData;
+    m_data = new PrivateData;
 
     setPaintAttribute( QwtPlotCanvas::BackingStore, true );
     setPaintAttribute( QwtPlotCanvas::Opaque, true );
     setPaintAttribute( QwtPlotCanvas::HackStyledBackground, true );
+
+    setLineWidth( 2 );
+    setFrameShadow( QFrame::Sunken );
+    setFrameShape( QFrame::Panel );
 }
 
 //! Destructor
 QwtPlotCanvas::~QwtPlotCanvas()
 {
-    delete d_data;
+    delete m_data;
 }
 
 /*!
-  \brief Changing the paint attributes
+   \brief Changing the paint attributes
 
-  \param attribute Paint attribute
-  \param on On/Off
+   \param attribute Paint attribute
+   \param on On/Off
 
-  \sa testPaintAttribute(), backingStore()
-*/
+   \sa testPaintAttribute(), backingStore()
+ */
 void QwtPlotCanvas::setPaintAttribute( PaintAttribute attribute, bool on )
 {
-    if ( bool( d_data->paintAttributes & attribute ) == on )
+    if ( bool( m_data->paintAttributes & attribute ) == on )
         return;
 
     if ( on )
-        d_data->paintAttributes |= attribute;
+        m_data->paintAttributes |= attribute;
     else
-        d_data->paintAttributes &= ~attribute;
+        m_data->paintAttributes &= ~attribute;
 
     switch ( attribute )
     {
@@ -125,23 +83,23 @@ void QwtPlotCanvas::setPaintAttribute( PaintAttribute attribute, bool on )
         {
             if ( on )
             {
-                if ( d_data->backingStore == NULL )
-                    d_data->backingStore = new QPixmap();
+                if ( m_data->backingStore == NULL )
+                    m_data->backingStore = new QPixmap();
 
                 if ( isVisible() )
                 {
 #if QT_VERSION >= 0x050000
-                    *d_data->backingStore = grab( rect() );
+                    *m_data->backingStore = grab( rect() );
 #else
-                    *d_data->backingStore =
+                    *m_data->backingStore =
                         QPixmap::grabWidget( this, rect() );
 #endif
                 }
             }
             else
             {
-                delete d_data->backingStore;
-                d_data->backingStore = NULL;
+                delete m_data->backingStore;
+                m_data->backingStore = NULL;
             }
             break;
         }
@@ -160,37 +118,37 @@ void QwtPlotCanvas::setPaintAttribute( PaintAttribute attribute, bool on )
 }
 
 /*!
-  Test whether a paint attribute is enabled
+   Test whether a paint attribute is enabled
 
-  \param attribute Paint attribute
-  \return true, when attribute is enabled
-  \sa setPaintAttribute()
-*/
+   \param attribute Paint attribute
+   \return true, when attribute is enabled
+   \sa setPaintAttribute()
+ */
 bool QwtPlotCanvas::testPaintAttribute( PaintAttribute attribute ) const
 {
-    return d_data->paintAttributes & attribute;
+    return m_data->paintAttributes & attribute;
 }
 
 //! \return Backing store, might be null
-const QPixmap *QwtPlotCanvas::backingStore() const
+const QPixmap* QwtPlotCanvas::backingStore() const
 {
-    return d_data->backingStore;
+    return m_data->backingStore;
 }
 
 //! Invalidate the internal backing store
 void QwtPlotCanvas::invalidateBackingStore()
 {
-    if ( d_data->backingStore )
-        *d_data->backingStore = QPixmap();
+    if ( m_data->backingStore )
+        *m_data->backingStore = QPixmap();
 }
 
 /*!
-  Qt event handler for QEvent::PolishRequest and QEvent::StyleChange
+   Qt event handler for QEvent::PolishRequest and QEvent::StyleChange
 
-  \param event Qt Event
-  \return See QFrame::event()
-*/
-bool QwtPlotCanvas::event( QEvent *event )
+   \param event Qt Event
+   \return See QFrame::event()
+ */
+bool QwtPlotCanvas::event( QEvent* event )
 {
     if ( event->type() == QEvent::PolishRequest )
     {
@@ -214,31 +172,22 @@ bool QwtPlotCanvas::event( QEvent *event )
 }
 
 /*!
-  Paint event
-  \param event Paint event
-*/
-void QwtPlotCanvas::paintEvent( QPaintEvent *event )
+   Paint event
+   \param event Paint event
+ */
+void QwtPlotCanvas::paintEvent( QPaintEvent* event )
 {
     QPainter painter( this );
     painter.setClipRegion( event->region() );
 
     if ( testPaintAttribute( QwtPlotCanvas::BackingStore ) &&
-        d_data->backingStore != NULL )
+        m_data->backingStore != NULL )
     {
-        QPixmap &bs = *d_data->backingStore;
+        QPixmap& bs = *m_data->backingStore;
         if ( bs.size() != size() * QwtPainter::devicePixelRatio( &bs ) )
         {
             bs = QwtPainter::backingStore( this, size() );
 
-#ifndef QWT_NO_OPENGL
-            if ( testPaintAttribute( OpenGLBuffer ) )
-            {
-                QPainter p( &bs );
-                p.drawImage( 0, 0, toImageFBO( size() ) );
-                p.end();
-            }
-            else
-#endif
             if ( testAttribute(Qt::WA_StyledBackground) )
             {
                 QPainter p( &bs );
@@ -264,17 +213,10 @@ void QwtPlotCanvas::paintEvent( QPaintEvent *event )
             }
         }
 
-        painter.drawPixmap( 0, 0, *d_data->backingStore );
+        painter.drawPixmap( 0, 0, *m_data->backingStore );
     }
     else
     {
-#ifndef QWT_NO_OPENGL
-        if ( testPaintAttribute( OpenGLBuffer ) )
-        {
-            painter.drawImage( 0, 0, toImageFBO( size() ) );
-        }
-        else
-#endif
         if ( testAttribute(Qt::WA_StyledBackground ) )
         {
             if ( testAttribute( Qt::WA_OpaquePaintEvent ) )
@@ -326,12 +268,12 @@ void QwtPlotCanvas::paintEvent( QPaintEvent *event )
 }
 
 /*!
-  Draw the border of the plot canvas
+   Draw the border of the plot canvas
 
-  \param painter Painter
-  \sa setBorderRadius()
-*/
-void QwtPlotCanvas::drawBorder( QPainter *painter )
+   \param painter Painter
+   \sa setBorderRadius()
+ */
+void QwtPlotCanvas::drawBorder( QPainter* painter )
 {
     if ( borderRadius() <= 0 )
     {
@@ -343,10 +285,10 @@ void QwtPlotCanvas::drawBorder( QPainter *painter )
 }
 
 /*!
-  Resize event
-  \param event Resize event
-*/
-void QwtPlotCanvas::resizeEvent( QResizeEvent *event )
+   Resize event
+   \param event Resize event
+ */
+void QwtPlotCanvas::resizeEvent( QResizeEvent* event )
 {
     QFrame::resizeEvent( event );
     updateStyleSheetInfo();
@@ -355,7 +297,7 @@ void QwtPlotCanvas::resizeEvent( QResizeEvent *event )
 /*!
    Invalidate the paint cache and repaint the canvas
    \sa invalidatePaintCache()
-*/
+ */
 void QwtPlotCanvas::replot()
 {
     invalidateBackingStore();
@@ -374,87 +316,10 @@ void QwtPlotCanvas::replot()
 
    \param rect Bounding rectangle of the canvas
    \return Painter path, that can be used for clipping
-*/
-QPainterPath QwtPlotCanvas::borderPath( const QRect &rect ) const
+ */
+QPainterPath QwtPlotCanvas::borderPath( const QRect& rect ) const
 {
-    return borderPath2( rect );
+    return canvasBorderPath( rect );
 }
 
-#ifndef QWT_NO_OPENGL
-
-QImage QwtPlotCanvas::toImageFBO( const QSize &size )
-{
-    const int numSamples = 4;
-
-#if FBO_OPENGL
-
-    if ( d_data->surfaceGL == NULL )
-    {
-        d_data->surfaceGL = new QwtPlotCanvasSurfaceGL();
-        d_data->surfaceGL->create();
-    }
-
-    QOpenGLContext context;
-    context.create();
-    context.makeCurrent( d_data->surfaceGL );
-
-    QOpenGLFramebufferObjectFormat fboFormat;
-    fboFormat.setSamples(numSamples);
-    QOpenGLFramebufferObject fbo( size, fboFormat );
-
-    QOpenGLPaintDevice pd( size );
-
-#else
-
-    if ( d_data->surfaceGL == NULL )
-    {
-        QGLFormat format = QGLFormat::defaultFormat();
-        format.setSampleBuffers( true );
-        format.setSamples( numSamples );
-
-        d_data->surfaceGL = new QwtPlotCanvasSurfaceGL( format );
-    }
-
-    d_data->surfaceGL->makeCurrent();
-
-    QGLFramebufferObjectFormat fboFormat;
-    fboFormat.setSamples(numSamples);
-
-    QGLFramebufferObject fbo( size, fboFormat );
-    QGLFramebufferObject &pd = fbo;
-
-#endif
-
-    QPainter painter( &pd );
-
-    if ( testAttribute( Qt::WA_StyledBackground ) )
-        drawStyled( &painter, testPaintAttribute( HackStyledBackground ) );
-    else
-        drawUnstyled( &painter );
-
-    if ( frameWidth() > 0 )
-        drawBorder( &painter );
-
-    painter.end();
-
-    QImage image = fbo.toImage();
-
-#if QT_VERSION >= 0x050000
-    image.setDevicePixelRatio( QwtPainter::devicePixelRatio( this ) );
-#endif
-    return image;
-}
-
-#else
-
-QImage QwtPlotCanvas::toImageFBO( const QSize &)
-{
-    // will never be called
-    return QImage();
-}
-
-#endif
-
-#if QWT_MOC_INCLUDE
 #include "moc_qwt_plot_canvas.cpp"
-#endif

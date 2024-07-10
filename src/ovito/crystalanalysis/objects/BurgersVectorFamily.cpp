@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/data/ClusterVector.h>
+#include <ovito/crystalanalysis/objects/ClusterVector.h>
 #include "BurgersVectorFamily.h"
 #include "MicrostructurePhase.h"
 

@@ -126,11 +126,12 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
         if(endFrame <= 1 || (unwrappedUpToTime() != AnimationTime::negativeInfinity() && animationTimeToSourceFrame(unwrappedUpToTime()) >= endFrame - 1))
             return Future<void>::createImmediateEmpty();
         auto inputFrameRange = boost::irange(startFrame, endFrame);
+        request.modificationNode()->setStatus(tr("Processing %1 trajectory frames...").arg(boost::size(inputFrameRange)));
 
         // Iterate over all frames of the input range in sequential order.
         unwrapOperation = for_each_sequential(
             std::move(inputFrameRange),
-            ObjectExecutor(this, true), // Require deferred execution of each frame
+            ObjectExecutor(this, true), // Require deferred execution
             // Requests the next frame from the upstream pipeline.
             [request = request](int frame) mutable -> SharedFuture<PipelineFlowState> {
                 request.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
@@ -157,6 +158,8 @@ void UnwrapTrajectoriesModificationNode::invalidateUnwrapData()
     _unwrappedUpToTime = AnimationTime::negativeInfinity();
     _unwrapRecords.clear();
     _unflipRecords.clear();
+    _mostRecentPbcShifts.clear();
+    _mostRecentIdMap.clear();
     _unwrapOperation.reset();
 }
 
@@ -166,9 +169,9 @@ void UnwrapTrajectoriesModificationNode::invalidateUnwrapData()
 void UnwrapTrajectoriesModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
+        // Do not discard stored information if the modifier is turned off and on again by the user.
         if(static_cast<const TargetChangedEvent&>(event).field() != PROPERTY_FIELD(Modifier::isEnabled) || event.sender() != modifier()) {
             // Throw away precomputed information when the modifier or the upstream pipeline change.
-            // This also discards the stored information in case the modifier is turned off by the user.
             invalidateUnwrapData();
         }
     }
@@ -213,13 +216,13 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
     }
 
     // Reverse any cell shear flips made by LAMMPS.
-    if(!unflipRecords().empty() && time >= unflipRecords().front().first) {
+    if(!unflipRecords().empty() && time >= unflipRecords().front().time) {
         auto iter = unflipRecords().rbegin();
-        while(iter->first > time) {
+        while(iter->time > time) {
             ++iter;
             OVITO_ASSERT(iter != unflipRecords().rend());
         }
-        const std::array<int,3>& flipState = iter->second;
+        const std::array<int,3>& flipState = iter->flipState;
         SimulationCell* simCellObj = state.expectMutableObject<SimulationCell>();
         AffineTransformation cell = simCellObj->cellMatrix();
         cell.column(2) += cell.column(0) * flipState[1] + cell.column(1) * flipState[2];
@@ -236,59 +239,110 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
 
     // Make a modifiable copy of the particles object.
     Particles* outputParticles = state.expectMutableObject<Particles>();
+    const size_t particleCount = outputParticles->elementCount();
 
     // Make a modifiable copy of the particle position property.
     BufferWriteAccess<Point3, access_mode::read_write> posProperty = outputParticles->expectMutableProperty(Particles::PositionProperty);
 
+    // The accumulated PBC shift vector for each particle.
+    std::vector<Vector3I> pbcShifts;
+
     // Get particle identifiers.
-    BufferReadAccess<IdentifierIntType> identifierProperty = outputParticles->getProperty(Particles::IdentifierProperty);
-    if(identifierProperty && identifierProperty.size() != posProperty.size())
-        identifierProperty.reset();
+    bool allUnwrapped = true;
+    if(BufferReadAccess<IdentifierIntType> identifierProperty = outputParticles->getProperty(Particles::IdentifierProperty)) {
 
-    // Compute unwrapped particle coordinates.
-    qlonglong index = 0;
-    for(Point3& p : posProperty) {
-        auto range = unwrapRecords().equal_range(identifierProperty ? identifierProperty[index] : index);
-        bool shifted = false;
-        Vector3 pbcShift = Vector3::Zero();
-        for(auto iter = range.first; iter != range.second; ++iter) {
-            if(std::get<0>(iter->second) <= time) {
-                pbcShift[std::get<1>(iter->second)] += std::get<2>(iter->second);
-                shifted = true;
-            }
-        }
-        if(shifted) {
-            p += cellMatrix * pbcShift;
-        }
-        index++;
-    }
+        // Build id-to-index map.
+        std::unordered_map<IdentifierIntType, size_t> idMap;
+        idMap.reserve(particleCount);
+        size_t index = 0;
+        for(auto id : identifierProperty)
+            idMap.emplace(id, index++);
 
-    // Unwrap bonds by adjusting their PBC shift vectors.
-    if(outputParticles->bonds()) {
-        if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(Bonds::TopologyProperty)) {
-            BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, Bonds::PeriodicImageProperty);
-            for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
-                size_t particleIndex1 = topologyProperty[bondIndex][0];
-                size_t particleIndex2 = topologyProperty[bondIndex][1];
-                if(particleIndex1 >= posProperty.size() || particleIndex2 >= posProperty.size())
-                    continue;
-
-                Vector3I& pbcShift = periodicImageProperty[bondIndex];
-                auto range1 = unwrapRecords().equal_range(identifierProperty ? identifierProperty[particleIndex1] : particleIndex1);
-                auto range2 = unwrapRecords().equal_range(identifierProperty ? identifierProperty[particleIndex2] : particleIndex2);
-                for(auto iter = range1.first; iter != range1.second; ++iter) {
-                    if(std::get<0>(iter->second) <= time) {
-                        pbcShift[std::get<1>(iter->second)] += std::get<2>(iter->second);
-                    }
-                }
-                for(auto iter = range2.first; iter != range2.second; ++iter) {
-                    if(std::get<0>(iter->second) <= time) {
-                        pbcShift[std::get<1>(iter->second)] -= std::get<2>(iter->second);
-                    }
+        // Preparation step, which might reuse the most recent PBC shift vectors.
+        auto startAt = unwrapRecords().cbegin();
+        pbcShifts.resize(particleCount, Vector3I::Zero());
+        if(!_mostRecentPbcShifts.empty() && _mostRecentTime <= time) {
+            // Determine how many records we can skip in the time-sorted list, i.e., which records are already accounted for in the most recent shift vectors.
+            startAt = std::upper_bound(unwrapRecords().cbegin(), unwrapRecords().cend(), _mostRecentTime, [](const AnimationTime& a, const UnwrapRecord& b) { return a < b.time; });
+            OVITO_ASSERT(startAt == unwrapRecords().cend() || startAt->time > _mostRecentTime);
+            // Remap most recent shift vectors to current particle ordering.
+            for(const auto& [id, index] : _mostRecentIdMap) {
+                OVITO_ASSERT(index >= 0 && index < _mostRecentPbcShifts.size());
+                if(auto iter = idMap.find(id); iter != idMap.end()) {
+                    pbcShifts[iter->second] = _mostRecentPbcShifts[index];
                 }
             }
+            allUnwrapped = false;
+        }
+
+        // Accumulate the shifts by stepping through the unwrap records up to the current time.
+        for(auto record = startAt; record != unwrapRecords().cend(); ++record) {
+            if(record->time > time)
+                break;
+            if(auto iter = idMap.find(record->id); iter != idMap.end()) {
+                pbcShifts[iter->second][record->dimension] += record->direction;
+                allUnwrapped = false;
+            }
+        }
+
+        _mostRecentIdMap = std::move(idMap);
+    }
+    else {
+        // Preparation step, which might reuse the most recent PBC shift vectors.
+        auto startAt = unwrapRecords().cbegin();
+        if(_mostRecentPbcShifts.empty() || _mostRecentTime > time) {
+            pbcShifts.resize(particleCount, Vector3I::Zero());
+        }
+        else {
+            // Determine how many records we can skip in the time-sorted list, i.e., which records are already accounted for in the most recent shift vectors.
+            startAt = std::upper_bound(unwrapRecords().cbegin(), unwrapRecords().cend(), _mostRecentTime, [](const AnimationTime& a, const UnwrapRecord& b) { return a < b.time; });
+            OVITO_ASSERT(startAt == unwrapRecords().cend() || startAt->time > _mostRecentTime);
+            pbcShifts = std::move(_mostRecentPbcShifts);
+            pbcShifts.resize(particleCount, Vector3I::Zero());
+            allUnwrapped = false;
+        }
+
+        // Accumulate the shifts by stepping through the unwrap records up to the current time.
+        for(auto record = startAt; record != unwrapRecords().cend(); ++record) {
+            if(record->time > time)
+                break;
+            if(record->id < particleCount) {
+                OVITO_ASSERT(record->id >= 0);
+                pbcShifts[record->id][record->dimension] += record->direction;
+                allUnwrapped = false;
+            }
+        }
+
+        _mostRecentIdMap.clear();
+    }
+
+    if(!allUnwrapped) {
+        // Apply accumulated shift vectors to obtain unwrapped particle coordinates.
+        auto pbcShift = pbcShifts.cbegin();
+        for(Point3& p : posProperty) {
+            if(*pbcShift != Vector3I::Zero())
+                p += cellMatrix * pbcShift->toDataType<FloatType>();
+            ++pbcShift;
+        }
+        OVITO_ASSERT(pbcShift == pbcShifts.cend());
+
+        // Unwrap bonds by adjusting their PBC shift vectors.
+        if(outputParticles->bonds()) {
+            if(BufferReadAccess<ParticleIndexPair> topologyProperty = outputParticles->bonds()->getProperty(Bonds::TopologyProperty)) {
+                BufferWriteAccess<Vector3I, access_mode::read_write> periodicImageProperty = outputParticles->makeBondsMutable()->createProperty(DataBuffer::Initialized, Bonds::PeriodicImageProperty);
+                for(size_t bondIndex = 0; bondIndex < topologyProperty.size(); bondIndex++) {
+                    size_t particleIndex1 = topologyProperty[bondIndex][0];
+                    size_t particleIndex2 = topologyProperty[bondIndex][1];
+                    if(particleIndex1 >= posProperty.size() || particleIndex2 >= posProperty.size())
+                        continue;
+                    periodicImageProperty[bondIndex] += pbcShifts[particleIndex1] - pbcShifts[particleIndex2];
+                }
+            }
         }
     }
+
+    _mostRecentTime = time;
+    _mostRecentPbcShifts = std::move(pbcShifts);
 }
 
 /******************************************************************************
@@ -304,7 +358,7 @@ void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, cons
     // Get simulation cell geometry and boundary conditions.
     const SimulationCell* cell = state.getObject<SimulationCell>();
     if(!cell)
-        throw Exception(tr("Input data contains no simulation cell information at frame %1.").arg(frame));
+        throw Exception(tr("Input contains no simulation cell information at trajectory frame %1.").arg(frame));
     if(!cell->hasPbcCorrected())
         throw Exception(tr("No periodic boundary conditions set for the simulation cell."));
     AffineTransformation reciprocalCellMatrix = cell->inverseMatrix();
@@ -312,37 +366,36 @@ void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, cons
     const Particles* particles = state.getObject<Particles>();
     if(!particles)
         throw Exception(tr("Input data contains no particles at frame %1.").arg(frame));
+    particles->verifyIntegrity();
     BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
     BufferReadAccess<IdentifierIntType> identifierProperty = particles->getProperty(Particles::IdentifierProperty);
-    if(identifierProperty && identifierProperty.size() != posProperty.size())
-        identifierProperty.reset();
 
     // Special handling of cell flips in LAMMPS, which occur whenever a tilt factor exceeds +/-50%.
     if(cell->matrix()(1,0) == 0 && cell->matrix()(2,0) == 0 && cell->matrix()(2,1) == 0 && cell->matrix()(0,0) > 0 && cell->matrix()(1,1) > 0) {
         if(_previousCell) {
-            std::array<int,3> flipState = _currentFlipState;
+            std::array<int, 3> flipState = _currentFlipState;
             // Detect discontinuities in the three tilt factors of the cell.
             if(cell->hasPbc(0)) {
                 FloatType xy1 = _previousCell->matrix()(0,1) / _previousCell->matrix()(0,0);
                 FloatType xy2 = cell->matrix()(0,1) / cell->matrix()(0,0);
-                if(int flip_xy = (int)std::round(xy2 - xy1))
+                if(auto flip_xy = std::lround(xy2 - xy1))
                     flipState[0] -= flip_xy;
                 if(!cell->is2D()) {
                     FloatType xz1 = _previousCell->matrix()(0,2) / _previousCell->matrix()(0,0);
                     FloatType xz2 = cell->matrix()(0,2) / cell->matrix()(0,0);
-                    if(int flip_xz = (int)std::round(xz2 - xz1))
+                    if(auto flip_xz = std::lround(xz2 - xz1))
                         flipState[1] -= flip_xz;
                 }
             }
             if(cell->hasPbc(1) && !cell->is2D()) {
                 FloatType yz1 = _previousCell->matrix()(1,2) / _previousCell->matrix()(1,1);
                 FloatType yz2 = cell->matrix()(1,2) / cell->matrix()(1,1);
-                if(int flip_yz = (int)std::round(yz2 - yz1))
+                if(auto flip_yz = std::lround(yz2 - yz1))
                     flipState[2] -= flip_yz;
             }
             // Emit a timeline record whever a flipping occurred.
             if(flipState != _currentFlipState)
-                _modNode->_unflipRecords.emplace_back(time, flipState);
+                _modNode->_unflipRecords.push_back({time, flipState});
             _currentFlipState = flipState;
         }
         _previousCell = cell;
@@ -356,6 +409,8 @@ void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, cons
         }
     }
 
+    const std::array<bool, 3> pbcFlags = cell->pbcFlagsCorrected();
+
     qlonglong index = 0;
     for(const Point3& p : posProperty) {
         Point3 rp = reciprocalCellMatrix * p;
@@ -366,11 +421,10 @@ void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, cons
         if(!result.second) {
             Vector3 delta = result.first->second - rp;
             for(size_t dim = 0; dim < 3; dim++) {
-                if(cell->hasPbcCorrected(dim)) {
-                    int shift = (int)std::round(delta[dim]);
-                    if(shift != 0) {
-                        // Create a new record when particle has crossed a periodic cell boundary.
-                        _modNode->_unwrapRecords.emplace(result.first->first, std::make_tuple(time, (qint8)dim, (qint16)shift));
+                if(pbcFlags[dim]) {
+                    if(auto shift = std::lround(delta[dim])) {
+                        // Create a new record when the particle has crossed a periodic cell boundary.
+                        _modNode->_unwrapRecords.push_back({result.first->first, time, (qint8)dim, (qint16)shift});
                     }
                 }
             }
@@ -380,7 +434,6 @@ void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, cons
     }
 
     _modNode->_unwrappedUpToTime = time;
-    _modNode->setStatus(tr("Processed input trajectory frame %1 of %2.").arg(frame).arg(_modNode->numberOfSourceFrames()));
 }
 
 /******************************************************************************
@@ -396,17 +449,17 @@ void UnwrapTrajectoriesModificationNode::saveToStream(ObjectSaveStream& stream, 
     stream.writeSizeT(unwrapRecords().size());
     for(const auto& item : unwrapRecords()) {
         OVITO_STATIC_ASSERT((std::is_same<qlonglong, qint64>::value));
-        stream << item.first;
-        stream << std::get<0>(item.second);
-        stream << std::get<1>(item.second);
-        stream << std::get<2>(item.second);
+        stream << item.id;
+        stream << item.time;
+        stream << item.dimension;
+        stream << item.direction;
     }
     stream.writeSizeT(unflipRecords().size());
     for(const auto& item : unflipRecords()) {
-        stream << item.first;
-        stream << std::get<0>(item.second);
-        stream << std::get<1>(item.second);
-        stream << std::get<2>(item.second);
+        stream << item.time;
+        stream << item.flipState[0];
+        stream << item.flipState[1];
+        stream << item.flipState[2];
     }
     stream.endChunk();
 }
@@ -422,22 +475,17 @@ void UnwrapTrajectoriesModificationNode::loadFromStream(ObjectLoadStream& stream
     stream.closeChunk();
     int version = stream.expectChunkRange(0x01, 1);
     size_t numItems = stream.readSizeT();
-    _unwrapRecords.reserve(numItems);
-    for(size_t i = 0; i < numItems; i++) {
-        UnwrapData::key_type particleId;
-        std::tuple_element_t<0, UnwrapData::mapped_type> time;
-        std::tuple_element_t<1, UnwrapData::mapped_type> dim;
-        std::tuple_element_t<2, UnwrapData::mapped_type> direction;
-        stream >> particleId >> time >> dim >> direction;
-        _unwrapRecords.emplace(particleId, std::make_tuple(time, dim, direction));
+    _unwrapRecords.resize(numItems);
+    for(UnwrapRecord& item : _unwrapRecords) {
+        stream >> item.id >> item.time >> item.dimension >> item.direction;
     }
+    // For backward compatibility with OVITO 3.10, which used a std::unordered_map for storing the unwrap records:
+    std::sort(_unwrapRecords.begin(), _unwrapRecords.end(), [](const UnwrapRecord& a, const UnwrapRecord& b) { return a.time < b.time; });
     if(version >= 1) {
         stream.readSizeT(numItems);
-        _unflipRecords.reserve(numItems);
-        for(size_t i = 0; i < numItems; i++) {
-            UnflipData::value_type item;
-            stream >> item.first >> item.second[0] >> item.second[1] >> item.second[2];
-            _unflipRecords.push_back(item);
+        _unflipRecords.resize(numItems);
+        for(UnflipRecord& item : _unflipRecords) {
+            stream >> item.time >> item.flipState[0] >> item.flipState[1] >> item.flipState[2];
         }
     }
     stream.closeChunk();
@@ -458,13 +506,13 @@ void UnwrapTrajectoriesModificationNode::loadFromStreamComplete(ObjectLoadStream
         if(!pipelines.empty()) {
             if(Scene* scene = (*pipelines.begin())->scene()) {
                 if(scene->animationSettings()) {
-                    int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
+                    int ticksPerFrame = std::lround(4800.0f / scene->animationSettings()->framesPerSecond());
                     _unwrappedUpToTime = AnimationTime::fromFrame(_unwrappedUpToTime.ticks() / ticksPerFrame);
                     for(auto& record : _unwrapRecords) {
-                        std::get<0>(record.second) = AnimationTime::fromFrame(std::get<0>(record.second).ticks() / ticksPerFrame);
+                        record.time = AnimationTime::fromFrame(record.time.ticks() / ticksPerFrame);
                     }
                     for(auto& record : _unflipRecords) {
-                        std::get<0>(record) = AnimationTime::fromFrame(std::get<0>(record).ticks() / ticksPerFrame);
+                        record.time = AnimationTime::fromFrame(record.time.ticks() / ticksPerFrame);
                     }
                 }
             }

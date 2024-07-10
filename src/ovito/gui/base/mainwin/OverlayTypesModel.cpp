@@ -132,6 +132,28 @@ OverlayTypesModel::OverlayTypesModel(QObject* parent, UserInterface& userInterfa
 
     // Sort actions by name.
     std::sort(_actions.begin(), _actions.end(), [](OverlayAction* a, OverlayAction* b) { return QString::localeAwareCompare(a->text(), b->text()) < 0; });
+
+    // Add the "Get more layers..." item.
+    _getMoreExtensionsItemIndex = _actions.size() + 1;
+
+    // Define fonts, colors, etc.
+    _getMoreExtensionsFont = QGuiApplication::font();
+
+    // Initialize UI colors.
+    updateColorPalette(QGuiApplication::palette());
+QT_WARNING_PUSH
+QT_WARNING_DISABLE_DEPRECATED
+    connect(qGuiApp, &QGuiApplication::paletteChanged, this, &OverlayTypesModel::updateColorPalette);
+QT_WARNING_POP
+}
+
+/******************************************************************************
+* Updates the color brushes of the model.
+******************************************************************************/
+void OverlayTypesModel::updateColorPalette(const QPalette& palette)
+{
+    bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
+    _getMoreExtensionsForegroundBrush = QBrush(darkTheme ? Qt::green : Qt::darkGreen);
 }
 
 /******************************************************************************
@@ -139,7 +161,8 @@ OverlayTypesModel::OverlayTypesModel(QObject* parent, UserInterface& userInterfa
 ******************************************************************************/
 OverlayAction* OverlayTypesModel::actionFromIndex(int index) const
 {
-    if(index == 0) return nullptr;
+    if(index == 0)
+        return nullptr;
     index--;
 
     if(index < _actions.size())
@@ -153,7 +176,9 @@ OverlayAction* OverlayTypesModel::actionFromIndex(int index) const
 ******************************************************************************/
 int OverlayTypesModel::rowCount(const QModelIndex& parent) const
 {
-    return _actions.size() + 1; // First entry is the "Add layer..." item.
+    // First entry is the "Add layer..." item.
+    // Last entry is the "Get more layers..." item.
+    return _actions.size() + 2;
 }
 
 /******************************************************************************
@@ -165,9 +190,20 @@ QVariant OverlayTypesModel::data(const QModelIndex& index, int role) const
         if(OverlayAction* action = actionFromIndex(index)) {
             return action->text();
         }
-        else {
+        else if(index.row() == 0) {
             return tr("Add layer...");
         }
+        else if(index.row() == getMoreExtensionsItemIndex()) {
+            return tr("Get more layers...");
+        }
+    }
+    else if(role == Qt::FontRole) {
+        if(index.row() == getMoreExtensionsItemIndex())
+            return _getMoreExtensionsFont;
+    }
+    else if(role == Qt::ForegroundRole) {
+        if(index.row() == getMoreExtensionsItemIndex())
+            return _getMoreExtensionsForegroundBrush;
     }
     return {};
 }
@@ -177,10 +213,12 @@ QVariant OverlayTypesModel::data(const QModelIndex& index, int role) const
 ******************************************************************************/
 Qt::ItemFlags OverlayTypesModel::flags(const QModelIndex& index) const
 {
-    if(OverlayAction* action = actionFromIndex(index))
+    if(index.row() == getMoreExtensionsItemIndex())
+        return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+    else if(OverlayAction* action = actionFromIndex(index))
         return action->isEnabled() ? (Qt::ItemIsEnabled | Qt::ItemIsSelectable) : Qt::NoItemFlags;
-
-    return QAbstractListModel::flags(index);
+    else
+        return QAbstractListModel::flags(index);
 }
 
 /******************************************************************************

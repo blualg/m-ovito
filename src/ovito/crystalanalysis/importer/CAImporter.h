@@ -25,8 +25,8 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/MicrostructurePhase.h>
-#include <ovito/crystalanalysis/data/ClusterGraph.h>
-#include <ovito/crystalanalysis/data/DislocationNetwork.h>
+#include <ovito/crystalanalysis/objects/ClusterGraph.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/particles/import/ParticleImporter.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 

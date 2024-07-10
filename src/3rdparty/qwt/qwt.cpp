@@ -1,4 +1,4 @@
-/* -*- mode: C++ ; c-file-style: "stroustrup" -*- *****************************
+/******************************************************************************
  * Qwt Widget Library
  * Copyright (C) 1997   Josef Wilgen
  * Copyright (C) 2002   Uwe Rathmann
@@ -18,7 +18,7 @@
     #endif
 #endif
 
-QSize qwtExpandedToGlobalStrut( const QSize &size )
+QSize qwtExpandedToGlobalStrut( const QSize& size )
 {
 #ifdef QWT_GLOBAL_STRUT
     return size.expandedTo( QApplication::globalStrut() );

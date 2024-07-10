@@ -39,7 +39,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
         throw OperationCanceled();
 
     if(maxWorkers == 0) {
-        setup(0);
+        std::invoke(std::forward<Setup>(setup), 0);
         return;
     }
 
@@ -57,7 +57,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
         workerCount = 1;
 
     // Run caller-provided setup function in the master thread.
-    setup(workerCount);
+    std::invoke(std::forward<Setup>(setup), workerCount);
 
     if(workerCount != 1) {
 
@@ -186,7 +186,8 @@ void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, Setup&& se
 
     Task* task = this_task::get();
     OVITO_ASSERT(task);
-    task->setProgressMaximum(loopCount);
+    if(loopCount != 0)
+        task->setProgressMaximum(loopCount);
 
     parallelForChunks(loopCount, minimumChunkSize, std::forward<Setup>(setup), [outerKernel = std::forward<OuterKernel>(outerKernel), minimumChunkSize, task](size_t workerIndex, size_t fromIndex, size_t toIndex) {
         outerKernel([&](auto&& innerKernel) {
@@ -208,7 +209,8 @@ void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, OuterKerne
 
     Task* task = this_task::get();
     OVITO_ASSERT(task);
-    task->setProgressMaximum(loopCount);
+    if(loopCount != 0)
+        task->setProgressMaximum(loopCount);
 
     parallelForChunks(loopCount, minimumChunkSize, [outerKernel = std::forward<OuterKernel>(outerKernel), minimumChunkSize, task](size_t fromIndex, size_t toIndex) {
         outerKernel([&](auto&& innerKernel) {

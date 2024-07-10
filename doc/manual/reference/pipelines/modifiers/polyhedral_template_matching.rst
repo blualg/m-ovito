@@ -146,7 +146,7 @@ This is a slight departure from the templates in the published PTM paper, in tha
   containing the :math:`(x,y,z,w)` components of the quaternion associated with each particle::
 
     q = data.particles['Orientation']
-    qx = q[:,0]; qy = q[:,1]; qz = q[:,2]; qw = q[:,3]
+    qx, qy, qz, qw = q[:,0], q[:,1], q[:,2], q[:,3]
 
   **Rotation axis and angle:**
   The following Python code translates the quaternions to pairs of rotation axes and angles.

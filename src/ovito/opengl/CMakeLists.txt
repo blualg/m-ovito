@@ -43,27 +43,10 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
 )
 
 IF(NOT OVITO_BUILD_CONDA)
-    # Find OpenGL library.
-    FIND_PACKAGE(OpenGL REQUIRED)
-
-    # Define a CMake imported target for the OpenGL libraries and headers.
-    # Newer versions of CMake do that by themselves.
-    IF(NOT TARGET OpenGL::GL AND OPENGL_FOUND)
-        ADD_LIBRARY(OpenGL::GL UNKNOWN IMPORTED)
-        SET_TARGET_PROPERTIES(OpenGL::GL PROPERTIES
-            IMPORTED_LOCATION "${OPENGL_gl_LIBRARY}"
-            INTERFACE_INCLUDE_DIRECTORIES "${OPENGL_INCLUDE_DIR}"
-        )
-    ENDIF()
-
-    # Link to OpenGL library.
-    TARGET_LINK_LIBRARIES(OpenGLRenderer PRIVATE OpenGL::GL)
-
     IF(APPLE)
         # OpenGL functions have been marked as deprecated since macOS 10.14. Silence the compiler warnings.
         TARGET_COMPILE_DEFINITIONS(OpenGLRenderer PRIVATE "GL_SILENCE_DEPRECATION")
     ENDIF()
-
 ENDIF()
 
 # Build module that containing the interactive viewport widget.

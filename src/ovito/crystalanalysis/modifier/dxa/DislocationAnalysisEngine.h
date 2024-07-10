@@ -22,7 +22,6 @@
 
 #pragma once
 
-
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/delaunay/DelaunayTessellation.h>
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
@@ -40,19 +39,21 @@ namespace Ovito {
 class DislocationAnalysisEngine : public StructureIdentificationModifier::Algorithm
 {
 public:
-
     /// Constructor.
     DislocationAnalysisEngine(PropertyPtr structures, size_t particleCount, int inputCrystalStructure, int maxTrialCircuitSize,
                               int maxCircuitElongation, ConstPropertyPtr particleSelection, ConstPropertyPtr crystalClusters,
                               std::vector<Matrix3> preferredCrystalOrientations, bool onlyPerfectDislocations, bool markCoreAtoms,
-                              int defectMeshSmoothingLevel, DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh,
-                              int lineSmoothingLevel, FloatType linePointInterval, OORef<DislocationVis> dislocationVis);
+                              int defectMeshSmoothingLevel, DataOORef<DislocationNetwork> dislocationNetwork,
+                              DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh, int lineSmoothingLevel,
+                              FloatType linePointInterval);
 
     /// Performs the atomic structure classification.
     virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
 
     /// Computes the structure identification statistics.
-    virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const override;
+    virtual std::vector<int64_t> computeStructureStatistics(const Property* structures, PipelineFlowState& state,
+                                                            const OOWeakRef<const PipelineNode>& createdByNode,
+                                                            const std::any& modifierParameters) const override;
 
     /// Returns the array of atom cluster IDs.
     const PropertyPtr& atomClusters() const { return _atomClusters; }
@@ -61,16 +62,10 @@ public:
     void setAtomClusters(PropertyPtr prop) { _atomClusters = std::move(prop); }
 
     /// Returns the created cluster graph.
-    const std::shared_ptr<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
-
-    /// Sets the created cluster graph.
-    void setClusterGraph(std::shared_ptr<ClusterGraph> graph) { _clusterGraph = std::move(graph); }
+    decltype(auto) clusterGraph() const { return dislocationNetwork()->clusterGraph(); }
 
     /// Returns the extracted dislocations.
-    const std::shared_ptr<DislocationNetwork>& dislocationNetwork() const { return _dislocationNetwork; }
-
-    /// Sets the extracted dislocations.
-    void setDislocationNetwork(std::shared_ptr<DislocationNetwork> network) { _dislocationNetwork = std::move(network); }
+    const DataOORef<DislocationNetwork>& dislocationNetwork() const { return _dislocationNetwork; }
 
     /// Returns the total volume of the input simulation cell.
     FloatType simCellVolume() const { return _simCellVolume; }
@@ -84,8 +79,11 @@ public:
     /// Returns the input particle property that stores the cluster assignment of atoms.
     const ConstPropertyPtr& crystalClusters() const { return _crystalClusters; }
 
-    /// Computes statistical information on the identified dislocation lines and outputs it to the pipeline as data tables and global attributes.
-    static FloatType generateDislocationStatistics(const OOWeakRef<const PipelineNode>& pipelineNode, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure);
+    /// Computes statistical information on the identified dislocation lines and outputs it to the pipeline as data tables and global
+    /// attributes.
+    static FloatType generateDislocationStatistics(const OOWeakRef<const PipelineNode>& pipelineNode, PipelineFlowState& state,
+                                                   const DislocationNetwork* dislocationsObj, bool replaceDataObjects,
+                                                   const MicrostructurePhase* defaultStructure);
 
 private:
     /// Create the output dislocation ID atom property and assign determined values
@@ -107,7 +105,6 @@ private:
     std::optional<InterfaceMesh> _interfaceMesh;
     std::optional<DislocationTracer> _dislocationTracer;
     ConstPropertyPtr _crystalClusters;
-    OORef<DislocationVis> _dislocationVis;
 
     /// The defect mesh produced by the modifier.
     DataOORef<SurfaceMesh> _defectMesh;
@@ -115,20 +112,17 @@ private:
     /// This stores the interface mesh produced by the modifier for visualization purposes.
     DataOORef<SurfaceMesh> _outputInterfaceMesh;
 
-    /// This stores the cached atom-to-cluster assignments computed by the modifier.
+    /// This stores the atom-to-cluster assignments computed by the modifier.
     PropertyPtr _atomClusters;
 
     /// This stores the cached atom-to-dislocation assignments computed by the modifier.
     PropertyPtr _atomDislocations;
 
-    /// This stores the cached cluster graph computed by the modifier.
-    std::shared_ptr<ClusterGraph> _clusterGraph;
-
-    /// This stores the cached dislocations computed by the modifier.
-    std::shared_ptr<DislocationNetwork> _dislocationNetwork;
+    /// The dislocations computed by the modifier.
+    DataOORef<DislocationNetwork> _dislocationNetwork;
 
     /// The total volume of the input simulation cell.
     FloatType _simCellVolume;
 };
 
-}   // End of namespace
+}  // namespace Ovito

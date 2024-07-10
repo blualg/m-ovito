@@ -22,10 +22,9 @@
 
 #pragma once
 
-
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/core/utilities/MemoryPool.h>
-#include <ovito/crystalanalysis/data/DislocationNetwork.h>
 #include "InterfaceMesh.h"
 
 namespace Ovito {
@@ -36,19 +35,19 @@ namespace Ovito {
 class DislocationTracer
 {
 public:
-
     /// Constructor.
-    DislocationTracer(InterfaceMesh& mesh, std::shared_ptr<ClusterGraph> clusterGraph, int maxTrialCircuitSize, int maxCircuitElongation,
+    DislocationTracer(InterfaceMesh& mesh, int maxTrialCircuitSize, int maxCircuitElongation, DislocationNetwork* network,
                       bool markCoreAtoms)
         : _mesh(mesh),
-          _clusterGraph(clusterGraph),
-          _network(std::make_shared<DislocationNetwork>(clusterGraph)),
-          _unusedCircuit(nullptr),
-          _rng(1),
+          _network(network),
+          _clusterGraph(network->clusterGraph()),
           _maxBurgersCircuitSize(maxTrialCircuitSize),
           _maxExtendedBurgersCircuitSize(maxTrialCircuitSize + maxCircuitElongation),
+          _unusedCircuit(nullptr),
+          _rng(1),
           _markCoreAtoms(markCoreAtoms)
-    {}
+    {
+    }
 
     /// Returns the interface mesh that separates the crystal defects from the perfect regions.
     const InterfaceMesh& mesh() const { return _mesh; }
@@ -57,10 +56,10 @@ public:
     InterfaceMesh& mesh() { return _mesh; }
 
     /// Returns a reference to the cluster graph.
-    const std::shared_ptr<ClusterGraph>& clusterGraph() { return _clusterGraph; }
+    const ClusterGraph* clusterGraph() { return _clusterGraph; }
 
     /// Returns the extracted network of dislocation segments.
-    const std::shared_ptr<DislocationNetwork>& network() { return _network; }
+    DislocationNetwork* network() { return _network; }
 
     /// Returns the simulation cell.
     const SimulationCell* cell() const { return mesh().domain(); }
@@ -79,7 +78,6 @@ public:
     const std::vector<DislocationNode*>& danglingNodes() const { return _danglingNodes; }
 
 private:
-
     BurgersCircuit* allocateCircuit();
     void discardCircuit(BurgersCircuit* circuit);
     void findPrimarySegments(int maxBurgersCircuitSize);
@@ -89,18 +87,23 @@ private:
     BurgersCircuit* buildReverseCircuit(BurgersCircuit* forwardCircuit);
     void traceSegment(DislocationSegment& segment, DislocationNode& node, int maxCircuitLength, bool isPrimarySegment);
     bool tryRemoveTwoCircuitEdges(InterfaceMesh::Edge*& edge0, InterfaceMesh::Edge*& edge1, InterfaceMesh::Edge*& edge2);
-    bool tryRemoveThreeCircuitEdges(InterfaceMesh::Edge*& edge0, InterfaceMesh::Edge*& edge1, InterfaceMesh::Edge*& edge2, bool isPrimarySegment);
-    bool tryRemoveOneCircuitEdge(InterfaceMesh::Edge*& edge0, InterfaceMesh::Edge*& edge1, InterfaceMesh::Edge*& edge2, bool isPrimarySegment);
+    bool tryRemoveThreeCircuitEdges(InterfaceMesh::Edge*& edge0, InterfaceMesh::Edge*& edge1, InterfaceMesh::Edge*& edge2,
+                                    bool isPrimarySegment);
+    bool tryRemoveOneCircuitEdge(InterfaceMesh::Edge*& edge0, InterfaceMesh::Edge*& edge1, InterfaceMesh::Edge*& edge2,
+                                 bool isPrimarySegment);
     bool trySweepTwoFacets(InterfaceMesh::Edge*& edge0, InterfaceMesh::Edge*& edge1, InterfaceMesh::Edge*& edge2, bool isPrimarySegment);
     bool tryInsertOneCircuitEdge(InterfaceMesh::Edge*& edge0, InterfaceMesh::Edge*& edge1, bool isPrimarySegment);
     void appendLinePoint(DislocationNode& node);
-    void circuitCircuitIntersection(InterfaceMesh::Edge* circuitAEdge1, InterfaceMesh::Edge* circuitAEdge2, InterfaceMesh::Edge* circuitBEdge1, InterfaceMesh::Edge* circuitBEdge2, int& goingOutside, int& goingInside);
+    void circuitCircuitIntersection(InterfaceMesh::Edge* circuitAEdge1, InterfaceMesh::Edge* circuitAEdge2,
+                                    InterfaceMesh::Edge* circuitBEdge1, InterfaceMesh::Edge* circuitBEdge2, int& goingOutside,
+                                    int& goingInside);
     size_t joinSegments(int maxCircuitLength);
     void createSecondarySegment(InterfaceMesh::Edge* firstEdge, BurgersCircuit* outerCircuit, int maxCircuitLength);
 
     /// Calculates the shift vector that must be subtracted from point B to bring it close to point A such that
     /// the vector (B-A) is not a wrapped vector.
-    Vector3 calculateShiftVector(const Point3& a, const Point3& b) const {
+    Vector3 calculateShiftVector(const Point3& a, const Point3& b) const
+    {
         if(cell()) {
             Vector3 d = cell()->absoluteToReduced(b - a);
             d.x() = cell()->hasPbc(0) ? std::floor(d.x() + FloatType(0.5)) : FloatType(0);
@@ -114,15 +117,14 @@ private:
     }
 
 private:
-
     /// The interface mesh that separates the crystal defects from the perfect regions.
     InterfaceMesh& _mesh;
 
     /// The extracted network of dislocation segments.
-    std::shared_ptr<DislocationNetwork> _network;
+    DislocationNetwork* _network;
 
     /// The cluster graph.
-    const std::shared_ptr<ClusterGraph> _clusterGraph;
+    const ClusterGraph* _clusterGraph;
 
     /// The maximum length (number of edges) for Burgers circuits during the first tracing phase.
     int _maxBurgersCircuitSize;
@@ -130,14 +132,14 @@ private:
     /// The maximum length (number of edges) for Burgers circuits during the second tracing phase.
     int _maxExtendedBurgersCircuitSize;
 
-    // Used to allocate memory for BurgersCircuit instances.
+    /// Used to allocate memory for BurgersCircuit instances.
     MemoryPool<BurgersCircuit> _circuitPool;
 
     /// List of nodes that do not form a junction.
     std::vector<DislocationNode*> _danglingNodes;
 
     /// Stores a pointer to the last allocated circuit which has been discarded.
-    /// It can be re-used on the next allocation request.
+    /// It can be re-used to serve the next allocation request.
     BurgersCircuit* _unusedCircuit;
 
     /// Used to generate random numbers;
@@ -159,4 +161,4 @@ private:
     bool _markCoreAtoms;
 };
 
-}   // End of namespace
+}  // namespace Ovito

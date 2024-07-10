@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/ClusterGraphObject.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
@@ -57,26 +56,26 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(DislocationPickInfo);
 /******************************************************************************
 * Transforms the DislocationNetwork into a renderable set of lines.
 ******************************************************************************/
-Future<std::shared_ptr<RenderableDislocationLines>> DislocationVis::transformDislocations(const DislocationNetworkObject* dislocationsObj)
+Future<std::shared_ptr<RenderableDislocationLines>> DislocationVis::transformDislocations(const DislocationNetwork* dislocations)
 {
     // The actual work can be performed in a separate thread.
-    return asyncLaunch([dislocationsObj = DataOORef<const DislocationNetworkObject>(dislocationsObj)]() {
+    return asyncLaunch([dislocations = DataOORef<const DislocationNetwork>(dislocations)]() {
 
         // Get the simulation cell (must be 3D).
-        const SimulationCell* cellObject = dislocationsObj->domain();
+        const SimulationCell* cellObject = dislocations->domain();
         if(!cellObject || cellObject->is2D())
             throw Exception(tr("Display of the dislocation line network requires a 3D simulation cell."));
 
         // Generate the list of clipped line segments.
         std::vector<RenderableDislocationLines::Segment> outputSegments;
-        std::shared_ptr<ClusterGraph> clusterGraph = dislocationsObj->storage()->clusterGraph();
+        const ClusterGraph* clusterGraph = dislocations->clusterGraph();
 
         // Convert the dislocations object.
         int segmentIndex = 0;
-        for(const DislocationSegment* segment : dislocationsObj->segments()) {
+        for(const DislocationSegment* segment : dislocations->segments()) {
             const ClusterVector& b = segment->burgersVector;
             // Determine the Burgers vector family the dislocation segment belongs to.
-            if(const MicrostructurePhase* phase = dislocationsObj->structureById(b.cluster()->structure)) {
+            if(const MicrostructurePhase* phase = dislocations->structureById(b.cluster()->structure)) {
                 const BurgersVectorFamily* family = phase->defaultBurgersVectorFamily();
                 for(const BurgersVectorFamily* f : phase->burgersVectorFamilies()) {
                     if(f->isMember(b.localVec(), phase)) {
@@ -90,7 +89,7 @@ Future<std::shared_ptr<RenderableDislocationLines>> DislocationVis::transformDis
                     continue;
                 }
             }
-            clipDislocationLine(segment->line, *cellObject, dislocationsObj->cuttingPlanes(), [segmentIndex, &outputSegments, &b](const Point3& p1, const Point3& p2, bool isInitialSegment) {
+            clipDislocationLine(segment->line, *cellObject, dislocations->cuttingPlanes(), [segmentIndex, &outputSegments, &b](const Point3& p1, const Point3& p2, bool isInitialSegment) {
                 outputSegments.push_back({ { p1, p2 }, b.localVec(), b.cluster()->id, segmentIndex });
             });
             segmentIndex++;
@@ -106,10 +105,10 @@ Future<std::shared_ptr<RenderableDislocationLines>> DislocationVis::transformDis
 ******************************************************************************/
 Box3 DislocationVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-    const DislocationNetworkObject* dislocationsObj = path.lastAs<DislocationNetworkObject>();
-    if(!dislocationsObj)
+    const DislocationNetwork* dislocations = path.lastAs<DislocationNetwork>();
+    if(!dislocations)
         return {};
-    const SimulationCell* cellObject = dislocationsObj->domain();
+    const SimulationCell* cellObject = dislocations->domain();
     if(!cellObject || cellObject->is2D())
         return {};
 
@@ -119,7 +118,7 @@ Box3 DislocationVis::boundingBoxImmediate(AnimationTime time, const ConstDataObj
 
     if(showBurgersVectors()) {
         padding = std::max(padding, burgersVectorWidth() * FloatType(2));
-        for(const DislocationSegment* segment : dislocationsObj->segments()) {
+        for(const DislocationSegment* segment : dislocations->segments()) {
             Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
             Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
             bb.addPoint(center + dir);
@@ -135,8 +134,8 @@ Box3 DislocationVis::boundingBoxImmediate(AnimationTime time, const ConstDataObj
 PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Get the dislocation line network to be rendered.
-    const DislocationNetworkObject* dislocationsObj = path.lastAs<DislocationNetworkObject>();
-    if(!dislocationsObj)
+    const DislocationNetwork* dislocations = path.lastAs<DislocationNetwork>();
+    if(!dislocations)
         return {};
 
     // The key type used for caching the renderable lines:
@@ -149,13 +148,13 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
 
     // Generate renderable lines.
     if(!renderableLines) {
-        auto future = transformDislocations(dislocationsObj);
+        auto future = transformDislocations(dislocations);
         registerActiveFuture(future);
         renderableLines = future.result();
     }
 
     // Get the simulation cell.
-    const SimulationCell* cellObject = dislocationsObj->domain();
+    const SimulationCell* cellObject = dislocations->domain();
     if(!cellObject)
         return {};
 
@@ -234,10 +233,10 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
                 lastRegion = lineSegment.region;
                 lineColor = ColorG(0.8f, 0.8f, 0.8f);
                 const MicrostructurePhase* phase = nullptr;
-                if(dislocationsObj && renderableLines->clusterGraph()) {
+                if(dislocations && renderableLines->clusterGraph()) {
                     Cluster* cluster = renderableLines->clusterGraph()->findCluster(lineSegment.region);
                     OVITO_ASSERT(cluster != nullptr);
-                    phase = dislocationsObj->structureById(cluster->structure);
+                    phase = dislocations->structureById(cluster->structure);
                     normalizedBurgersVector = ClusterVector(lineSegment.burgersVector, cluster).toSpatialVector();
                     normalizedBurgersVector.normalizeSafely();
                 }
@@ -271,10 +270,10 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
                 else
                     segmentColor = ColorG((FloatType(1)-angle) * 2, (FloatType(1)-angle) * 2, 1);
             }
-            if(dislocationsObj) {
+            if(dislocations) {
                 if(lastDislocationIndex != lineSegment.dislocationIndex) {
                     lastDislocationIndex = lineSegment.dislocationIndex;
-                    const auto& segmentList = dislocationsObj->segments();
+                    const auto& segmentList = dislocations->segments();
                     lastInputDislocationSegment = (lastDislocationIndex >= 0 && lastDislocationIndex < segmentList.size()) ?
                         segmentList[lastDislocationIndex] : nullptr;
                 }
@@ -310,18 +309,18 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
         primitives.corners.setColors(cornerColors.take());
         primitives.corners.setUniformRadius(0.5 * lineDiameter);
 
-        if(dislocationsObj) {
+        if(dislocations) {
             if(showBurgersVectors()) {
-                BufferFactory<Point3G> baseArrowPoints(dislocationsObj->segments().size());
-                BufferFactory<Point3G> headArrowPoints(dislocationsObj->segments().size());
-                subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocationsObj->segments().size());
+                BufferFactory<Point3G> baseArrowPoints(dislocations->segments().size());
+                BufferFactory<Point3G> headArrowPoints(dislocations->segments().size());
+                subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocations->segments().size());
                 int arrowIndex = 0;
-                for(const DislocationSegment* segment : dislocationsObj->segments()) {
+                for(const DislocationSegment* segment : dislocations->segments()) {
                     subobjToSegmentMap.push_back(arrowIndex);
                     Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
                     Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
                     // Check if arrow is clipped away by cutting planes.
-                    if(dislocationsObj->isPointCulled(center))
+                    if(dislocations->isPointCulled(center))
                         dir.setZero(); // Hide arrow by setting length to zero.
                     baseArrowPoints[arrowIndex] = center.toDataType<GraphicsFloatType>();
                     headArrowPoints[arrowIndex] = baseArrowPoints[arrowIndex] + dir.toDataType<GraphicsFloatType>();
@@ -334,7 +333,7 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
                 primitives.burgersArrows.setUniformColor(burgersVectorColor());
                 primitives.burgersArrows.setPositions(baseArrowPoints.take(), headArrowPoints.take());
             }
-            primitives.pickInfo = OORef<DislocationPickInfo>::create(this, dislocationsObj, std::move(subobjToSegmentMap));
+            primitives.pickInfo = OORef<DislocationPickInfo>::create(this, dislocations, std::move(subobjToSegmentMap));
         }
     }
 
@@ -362,25 +361,25 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
 void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Get the dislocations.
-    const DislocationNetworkObject* dislocationsObj = dynamic_object_cast<DislocationNetworkObject>(dataObject);
-    if(!dislocationsObj)
+    const DislocationNetwork* dislocations = dynamic_object_cast<DislocationNetwork>(dataObject);
+    if(!dislocations)
         return;
 
     // Get the simulation cell.
-    const SimulationCell* cellObject = dislocationsObj->domain();
+    const SimulationCell* cellObject = dislocations->domain();
     if(!cellObject)
         return;
 
-    if(segmentIndex < 0 || segmentIndex >= dislocationsObj->segments().size())
+    if(segmentIndex < 0 || segmentIndex >= dislocations->segments().size())
         return;
 
-    const DislocationSegment* segment = dislocationsObj->segments()[segmentIndex];
+    const DislocationSegment* segment = dislocations->segments()[segmentIndex];
 
     // Generate the polyline segments to render.
     BufferFactory<Point3G> baseSegmentPoints(0);
     BufferFactory<Point3G> headSegmentPoints(0);
     BufferFactory<Point3G> cornerVertices(0);
-    clipDislocationLine(segment->line, *cellObject, dislocationsObj->cuttingPlanes(), [&](const Point3& v1, const Point3& v2, bool isInitialSegment) {
+    clipDislocationLine(segment->line, *cellObject, dislocations->cuttingPlanes(), [&](const Point3& v1, const Point3& v2, bool isInitialSegment) {
         baseSegmentPoints.push_back(v1.toDataType<GraphicsFloatType>());
         headSegmentPoints.push_back(v2.toDataType<GraphicsFloatType>());
         if(!isInitialSegment)

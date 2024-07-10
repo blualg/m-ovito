@@ -64,7 +64,6 @@ public:
         // When the parent task finishes, we should detach our callback function immediately,
         // because a task object may not have callbacks registered at the end of its lifetime.
         if(state & Finished) {
-            OVITO_ASSERT(isFinished());
             return false; // Returning false indicates that the callback wishes to be unregistered.
         }
         return true;

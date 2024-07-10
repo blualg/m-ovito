@@ -68,15 +68,11 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
     _modifierSelector->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     _modifierSelector->setModel(new ModifierListModel(this, mainWindow, _pipelineListModel));
     _modifierSelector->setMaxVisibleItems(0xFFFF);
-    connect(_modifierSelector, qOverload<int>(&QComboBox::activated), this, [this](int index) {
-        QComboBox* selector = static_cast<QComboBox*>(sender());
-        static_cast<ModifierListModel*>(selector->model())->insertModifierByIndex(index);
-        selector->setCurrentIndex(0);
-    });
+    connect(_modifierSelector, qOverload<int>(&QComboBox::activated), this, &ModifyCommandPage::onInsertNewModifier);
 
     class PipelineListView : public QListView {
     public:
-        PipelineListView(QWidget* parent) : QListView(parent) {}
+        using QListView::QListView;
         virtual QSize sizeHint() const override { return QSize(256, 260); }
     protected:
         virtual bool edit(const QModelIndex& index, QAbstractItemView::EditTrigger trigger, QEvent* event) override {
@@ -239,6 +235,22 @@ void ModifyCommandPage::saveLayout()
     QSettings settings;
     settings.beginGroup("app/mainwindow/modify");
     settings.setValue("splitter", _splitter->saveState());
+}
+
+/******************************************************************************
+* Is called when the user has selected a modifier from drop-down list of available modifiers.
+******************************************************************************/
+void ModifyCommandPage::onInsertNewModifier(int index)
+{
+    QComboBox* selector = static_cast<QComboBox*>(sender());
+    ModifierListModel* model = static_cast<ModifierListModel*>(selector->model());
+    if(index == model->getMoreExtensionsItemIndex()) {
+        QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
+    }
+    else {
+        model->insertModifierByIndex(index);
+    }
+    selector->setCurrentIndex(0);
 }
 
 /******************************************************************************

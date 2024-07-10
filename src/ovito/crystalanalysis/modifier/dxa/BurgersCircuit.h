@@ -24,7 +24,7 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/data/ClusterVector.h>
+#include <ovito/crystalanalysis/objects/ClusterVector.h>
 #include "InterfaceMesh.h"
 
 namespace Ovito {

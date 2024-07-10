@@ -65,7 +65,7 @@ void TaskDisplayWidget::updateIndicator()
 
     // Visit all in-progress tasks and pick the one that should be displayed in the status bar.
     _mainWindow->visitRunningTasks([&](Task& task, const QString& text, int progressValue, int progressMaximum) {
-        if(!text.isEmpty()) {
+        if(!text.isEmpty() && activeText.isEmpty()) {
             activeText = text;
             activeValue = progressValue;
             activeMaximum = progressMaximum;

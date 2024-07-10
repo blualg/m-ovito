@@ -329,8 +329,8 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
     _localEventLoop = previousEventLoop;
     _waitingForTask.swap(wasWaitingForTask);
 
-    // Make sure the awaited task really has finished or was canceled by now.
-    OVITO_ASSERT(wasWaitingForTask->isCanceled() || wasWaitingForTask->isFinished());
+    // Make sure the awaited task really has finished or was canceled by now - or the waiting task has been canceled at least.
+    OVITO_ASSERT(wasWaitingForTask->isCanceled() || wasWaitingForTask->isFinished() || waitingTask->isCanceled());
 
     // If shutdown has been requested before, and we now have left all nested loops,
     // wait for all ramining tasks to finish and proceed with shutdown process as soon

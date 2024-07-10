@@ -52,13 +52,7 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
     _newLayerBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
     _newLayerBox->setModel(new OverlayTypesModel(this, mainWindow, _overlayListModel));
     _newLayerBox->setMaxVisibleItems(0xFFFF);
-    connect(_newLayerBox, qOverload<int>(&QComboBox::activated), this, [this](int index) {
-        QComboBox* selector = static_cast<QComboBox*>(sender());
-        if(QAction* action = static_cast<OverlayTypesModel*>(selector->model())->actionFromIndex(index))
-            action->trigger();
-        selector->setCurrentIndex(0);
-        _overlayListWidget->setFocus();
-    });
+    connect(_newLayerBox, qOverload<int>(&QComboBox::activated), this, &OverlayCommandPage::onInsertNewOverlay);
 
     _splitter = new QSplitter(Qt::Vertical);
     _splitter->setChildrenCollapsible(false);
@@ -170,6 +164,24 @@ ViewportOverlay* OverlayCommandPage::selectedLayer() const
 {
     OverlayListItem* currentItem = overlayListModel()->selectedItem();
     return currentItem ? currentItem->overlay() : nullptr;
+}
+
+/******************************************************************************
+* Is called when the user has selected an overlay type from drop-down list of available overlays.
+******************************************************************************/
+void OverlayCommandPage::onInsertNewOverlay(int index)
+{
+    QComboBox* selector = static_cast<QComboBox*>(sender());
+    OverlayTypesModel* model = static_cast<OverlayTypesModel*>(selector->model());
+    if(index == model->getMoreExtensionsItemIndex()) {
+        QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
+    }
+    else {
+        if(QAction* action = model->actionFromIndex(index))
+            action->trigger();
+    }
+    selector->setCurrentIndex(0);
+    _overlayListWidget->setFocus();
 }
 
 /******************************************************************************

@@ -217,8 +217,18 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor* field, R
             newTarget->editingStarted(mainWindow());
         }
         if(!isBeingDeleted()) {
-            emitPipelineInputChangedSignal(this);
-            emitPipelineOutputChangedSignal(this);
+            if(ExecutionContext::current().isValid()) {
+                emitPipelineInputChangedSignal(this);
+                emitPipelineOutputChangedSignal(this);
+            }
+            else {
+                // If there is no valid execution context, create an ad-hoc one.
+                // This should only be necessary under rare circumstances, e.g., during destruction of an asynchronous task.
+                mainWindow().handleExceptions([&]() {
+                    emitPipelineInputChangedSignal(this);
+                    emitPipelineOutputChangedSignal(this);
+                });
+            }
         }
     }
     RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);

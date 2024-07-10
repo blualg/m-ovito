@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/objects/DislocationNetworkObject.h>
+#include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
@@ -38,8 +38,8 @@ OVITO_CLASSINFO(DislocationAffineTransformationModifierDelegate, "DisplayName", 
 ******************************************************************************/
 QVector<DataObjectReference> DislocationAffineTransformationModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<DislocationNetworkObject>())
-        return { DataObjectReference(&DislocationNetworkObject::OOClass()) };
+    if(input.containsObject<DislocationNetwork>())
+        return { DataObjectReference(&DislocationNetwork::OOClass()) };
     return {};
 }
 
@@ -59,13 +59,21 @@ Future<PipelineFlowState> DislocationAffineTransformationModifierDelegate::apply
             tm = modifier->effectiveAffineTransformation(originalState)]() mutable {
 
         for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            if(const DislocationNetworkObject* inputDislocations = dynamic_object_cast<DislocationNetworkObject>(state.data()->objects()[i])) {
-                DislocationNetworkObject* outputDislocations = state.makeMutable(inputDislocations);
+            if(const DislocationNetwork* inputDislocations = dynamic_object_cast<DislocationNetwork>(state.data()->objects()[i])) {
+                DislocationNetwork* outputDislocations = state.makeMutable(inputDislocations);
 
                 // Apply transformation to the vertices of the dislocation lines.
-                for(DislocationSegment* segment : outputDislocations->modifiableSegments()) {
+                for(DislocationSegment* segment : outputDislocations->segments()) {
                     for(Point3& vertex : segment->line) {
                         vertex = tm * vertex;
+                    }
+                }
+
+                // Apply transformation to the crystal orientations of the clusters.
+                if(!tm.isTranslationMatrix()) {
+                    ClusterGraph* clusterGraph = outputDislocations->makeMutable(outputDislocations->clusterGraph());
+                    for(Cluster* cluster : clusterGraph->clusters()) {
+                        cluster->orientation = tm.linear() * cluster->orientation;
                     }
                 }
 

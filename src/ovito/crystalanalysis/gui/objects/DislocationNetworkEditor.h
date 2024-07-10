@@ -24,30 +24,31 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/crystalanalysis/data/ClusterGraph.h>
-#include <ovito/core/dataset/data/DataObject.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito {
 
 /**
- * \brief A graph of atomic clusters.
+ * \brief A properties editor for the DislocationNetworkObject class.
  */
-class OVITO_CRYSTALANALYSIS_EXPORT ClusterGraphObject : public DataObject
+class DislocationNetworkEditor : public PropertiesEditor
 {
-    OVITO_CLASS(ClusterGraphObject)
+    OVITO_CLASS(DislocationNetworkEditor)
+    Q_OBJECT
 
-public:
+protected:
 
-    /// Returns the list of nodes in the cluster graph.
-    const std::vector<Cluster*>& clusters() const { return storage()->clusters(); }
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-    /// Looks up the cluster with the given ID.
-    Cluster* findCluster(int id) const { return storage()->findCluster(id); }
+protected Q_SLOTS:
+
+    /// Is called when the user has double-clicked on one of the entries in the list widget.
+    void onDoubleClickPattern(const QModelIndex& index);
 
 private:
 
-    /// The internal data.
-    DECLARE_RUNTIME_PROPERTY_FIELD(std::shared_ptr<ClusterGraph>{}, storage, setStorage);
+    RefTargetListParameterUI* typesListUI;
 };
 
 }   // End of namespace

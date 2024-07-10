@@ -24,8 +24,8 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
+#include <ovito/crystalanalysis/objects/ClusterGraph.h>
 #include <ovito/particles/modifier/analysis/cna/CommonNeighborAnalysisModifier.h>
-#include <ovito/crystalanalysis/data/ClusterGraph.h>
 
 namespace Ovito {
 
@@ -98,6 +98,7 @@ public:
             const SimulationCell* simCell,
             LatticeStructureType inputCrystalType,
             ConstPropertyPtr particleSelection,
+            ClusterGraph* clusterGraph,
             PropertyPtr outputStructures,
             std::vector<Matrix3> preferredCrystalOrientations = std::vector<Matrix3>(),
             bool identifyPlanarDefects = true);
@@ -133,7 +134,7 @@ public:
     FloatType maximumNeighborDistance() const { return _maximumNeighborDistance; }
 
     /// Returns the cluster graph.
-    const std::shared_ptr<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
+    ClusterGraph* clusterGraph() const { return _clusterGraph; }
 
     /// Returns the cluster an atom belongs to.
     Cluster* atomCluster(int atomIndex) const {
@@ -216,7 +217,7 @@ private:
     std::vector<int> _atomSymmetryPermutations;
     size_t _neighborListsSize = 0;
     BufferReadAccessAndRef<SelectionIntType> _particleSelection;
-    const std::shared_ptr<ClusterGraph> _clusterGraph;
+    ClusterGraph* _clusterGraph;
     std::atomic<FloatType> _maximumNeighborDistance;
     DataOORef<const SimulationCell> _simCell;
     std::vector<Matrix3> _preferredCrystalOrientations;
