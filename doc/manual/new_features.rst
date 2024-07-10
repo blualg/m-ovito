@@ -34,6 +34,7 @@ Version 3.11.0 (xx-xxx-2024)
 - Updated third-party components: OpenSSL, Qt/PySide6, Python, Qwt
 - Fixed regression due to Qt 6.7: Missing colors in plot legends
 - :ref:`particles.modifiers.unwrap_trajectories` modifier: Performance optimizations
+- Extract dislocation core atoms 
 
 .. sidebar::
 
