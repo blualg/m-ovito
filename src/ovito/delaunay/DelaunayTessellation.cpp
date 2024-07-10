@@ -280,6 +280,7 @@ std::optional<bool> DelaunayTessellation::alphaTest(CellHandle cell, FloatType a
     return (nomin / denom) < alpha;
 }
 
+#if 0
 DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(const DelaunayTessellation& tessellation, FloatType binSize)
     : _tessellation(tessellation), _binSize(binSize)
 {
@@ -327,7 +328,7 @@ DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(const Delauna
 
     // Assign each tetrahedron a location hash value based on its centroid's position
     std::vector<size_t> cellHashes(_tessellation.numberOfTetrahedra());
-#if 0
+#if 1
     for(size_t cell = 0; cell < _tessellation.numberOfTetrahedra(); ++cell) {
         if(_tessellation.isGhostCell(cell) || !_tessellation.isFiniteCell(cell) || _tessellation.getUserField(cell) != -1) {
             continue;
@@ -446,5 +447,50 @@ void DelaunayTessellationSpatialQuery::getSurroundingCells(size_t hash, std::vec
         }
     }
 }
+#else
 
-}   // End of namespace
+DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(const DelaunayTessellation& tessellation, FloatType alpha)
+    : _tessellation(tessellation)
+{
+    namespace bg = boost::geometry;
+
+    // Create rtree with the bounding boxes
+    // rtree insertion is not thread safe!
+    for(size_t cell = 0; cell < _tessellation.numberOfTetrahedra(); ++cell) {
+        if(_tessellation.isGhostCell(cell) || !_tessellation.isFiniteCell(cell) || _tessellation.getUserField(cell) != -1) {
+            continue;
+        }
+
+        bool isFilledTetrehedron = false;
+        if(auto alphaTestResult = tessellation.alphaTest(cell, alpha)) {
+            isFilledTetrehedron = *alphaTestResult;
+        }
+        if(!isFilledTetrehedron) {
+            continue;
+        }
+
+        bPoint bboxLo{std::numeric_limits<Point3::value_type>::max(), cell};
+        bPoint bboxHi{std::numeric_limits<Point3::value_type>::min(), cell};
+        for(size_t vert = 0; vert < 4; ++vert) {
+            Point3 vertex = _tessellation.vertexPosition(_tessellation.cellVertex(cell, vert));
+            bg::set<0>(bboxLo, std::min(bg::get<0>(bboxLo), vertex[0]));
+            bg::set<0>(bboxHi, std::max(bg::get<0>(bboxHi), vertex[0]));
+            bg::set<1>(bboxLo, std::min(bg::get<1>(bboxLo), vertex[1]));
+            bg::set<1>(bboxHi, std::max(bg::get<1>(bboxHi), vertex[1]));
+            bg::set<2>(bboxLo, std::min(bg::get<0>(bboxLo), vertex[2]));
+            bg::set<2>(bboxHi, std::max(bg::get<0>(bboxHi), vertex[2]));
+        }
+        _rtree.insert(bBox(bboxLo, bboxHi));
+    }
+}
+
+void DelaunayTessellationSpatialQuery::getCells(const Point3& bboxLo, const Point3& bboxHi, std::vector<bBox>& cells) const
+{
+    namespace bgi = boost::geometry::index;
+    cells.clear();
+    _rtree.query(bgi::intersects(bBox(bPoint{bboxLo}, bPoint{bboxHi})), std::back_inserter(cells));
+}
+
+#endif
+
+}  // namespace Ovito

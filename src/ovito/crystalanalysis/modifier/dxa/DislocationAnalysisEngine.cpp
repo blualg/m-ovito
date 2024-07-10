@@ -168,25 +168,7 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     this_task::throwIfCanceled();
 
     if(_markCoreAtoms) {
-        // Create the output dislocation ID atom property and assign determined values
-        _atomDislocations = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(),
-                                                                        Particles::DislocationProperty);
-        _atomDislocations->fill(-1);
-        const BufferWriteAccess<int32_t, access_mode::write> dislocationsBuffer(_atomDislocations);
-        for(DelaunayTessellation::CellHandle cell = 0; cell < _tessellation->numberOfTetrahedra(); ++cell) {
-            const auto& dislocInfo = _tessellation->getDislocCoreInfo(cell);
-            DislocationSegment* segment = static_cast<DislocationSegment*>(dislocInfo.first);
-            if(segment && std::any_of(std::execution::par_unseq, segment->line.cbegin(), segment->line.cend(), [&](const Point3& p) {
-                   return _interfaceMesh->wrapVector(p - dislocInfo.second).squaredLength() < FLOATTYPE_EPSILON;
-               })) {
-                // if(segment) {
-                for(size_t lv = 0; lv < 4; ++lv) {
-                    size_t index = _tessellation->vertexIndex(_tessellation->cellVertex(cell, lv));
-                    OVITO_ASSERT(index < dislocationsBuffer.size());
-                    dislocationsBuffer[index] = segment->replacedId();
-                }
-            }
-        }
+        assignDislocationIDs(particles->elementCount());
     }
 #if 0
 
@@ -316,6 +298,42 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
 }
 
 /******************************************************************************
+ * Create the output dislocation ID atom property and assign determined values.
+ ******************************************************************************/
+void DislocationAnalysisEngine::assignDislocationIDs(size_t numParticles)
+{
+    // Create the output dislocation ID atom property and assign determined values
+    _atomDislocations =
+        Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, numParticles, Particles::DislocationProperty);
+    _atomDislocations->fill(-1);
+
+    const BufferWriteAccess<int32_t, access_mode::write> dislocationsBuffer(_atomDislocations);
+    for(DelaunayTessellation::CellHandle cell = 0; cell < _tessellation->numberOfTetrahedra(); ++cell) {
+        const auto& dislocInfo = _tessellation->getDislocCoreInfo(cell);
+        DislocationSegment* segment = static_cast<DislocationSegment*>(dislocInfo.first);
+        // Remove any tetrahedra originally marked, where the line has been clipped / back traching in
+        // DislocationTracer::finishDislocationSegments
+        if(segment && std::any_of(std::execution::par_unseq, segment->line.cbegin(), segment->line.cend(), [&](const Point3& p) {
+               return _interfaceMesh->wrapVector(p - dislocInfo.second).squaredLength() < FLOATTYPE_EPSILON;
+           })) {
+            for(size_t lv = 0; lv < 4; ++lv) {
+                size_t index = _tessellation->vertexIndex(_tessellation->cellVertex(cell, lv));
+
+                // OVITO_ASSERT(index < dislocationsBuffer.size());
+                // OVITO_ASSERT(segment->replacedId() == -1 || dislocationsBuffer[index] == segment->replacedId());
+                // if(dislocationsBuffer[index] != -1 && dislocationsBuffer[index] != segment->replacedId()) {
+                //     std::cout << dislocationsBuffer[index] << " " << segment->replacedId() << "\n";
+                // }
+
+                dislocationsBuffer[index] = segment->replacedId();
+                // (dislocationsBuffer[index] == -1) ? segment->replacedId() : std::min(segment->replacedId(), dislocationsBuffer[index]);
+            }
+        }
+    }
+    std::cout << "done with assign IDs" << std::endl;
+}
+
+/******************************************************************************
 * Computes the structure identification statistics.
 ******************************************************************************/
 std::vector<int64_t> DislocationAnalysisEngine::computeStructureStatistics(const Property* structures, PipelineFlowState& state, const OOWeakRef<const PipelineNode>& createdByNode, const std::any& modifierParameters) const
@@ -351,7 +369,8 @@ std::vector<int64_t> DislocationAnalysisEngine::computeStructureStatistics(const
         particles->createProperty(atomClusters());
     }
 
-    if(_markCoreAtoms) {
+    if(_atomDislocations) {
+        std::cout << "_atomDislocations " << _atomDislocations << std::endl;
         Particles* particles = state.expectMutableObject<Particles>();
         particles->createProperty(_atomDislocations);
     }

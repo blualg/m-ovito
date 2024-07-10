@@ -88,7 +88,10 @@ public:
     static FloatType generateDislocationStatistics(const OOWeakRef<const PipelineNode>& pipelineNode, PipelineFlowState& state, DislocationNetworkObject* dislocationsObj, bool replaceDataObjects, const MicrostructurePhase* defaultStructure);
 
 private:
+    /// Create the output dislocation ID atom property and assign determined values
+    void assignDislocationIDs(size_t numParticles);
 
+private:
     int _inputCrystalStructure;
     bool _onlyPerfectDislocations;
     bool _markCoreAtoms;

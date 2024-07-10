@@ -178,28 +178,7 @@ void DislocationTracer::finishDislocationSegments(int crystalStructure)
         segment->flipOrientation();
     }
 
-#if 0
-    const DelaunayTessellation& tessellation = mesh().tessellation();
-    const FloatType alpha = 3.5 * mesh().elasticMapping().structureAnalysis().maximumNeighborDistance();
-    DelaunayTessellationSpatialQuery query(tessellation, alpha / 2);
-
-    Point3 pt = {0, 0, 0};
-    size_t hash = query.hashPoint(pt);
-
-    size_t count = 0;
-    std::vector<std::span<const size_t>> ranges;
-    query.getSurroundingCells(hash, ranges);
-    for(const auto& range : ranges) {
-        for(const auto& item : range) {
-            count++;
-        }
-    }
-
-    std::cout << count << "/" << tessellation.numberOfTetrahedra() << " = " << (double)count / (double)tessellation.numberOfTetrahedra()
-              << "\n";
-#endif
-
-#if 0
+#if 1
     {
         const DelaunayTessellation& tessellation = mesh().tessellation();
         const InterfaceMesh& m = mesh();
@@ -217,8 +196,6 @@ void DislocationTracer::finishDislocationSegments(int crystalStructure)
             if(segment &&
                std::any_of(std::execution::par_unseq, segment->line.cbegin(), segment->line.cend(),
                            [&dislocInfo, &m](const Point3& p) { return m.wrapVector(p - dislocInfo.second).squaredLength() < 1e-6; })) {
-                // if(segment && std::find(segment->line.begin(), segment->line.end(), dislocInfo.second) != segment->line.end()) {
-                // if(segment) {
                 count++;
             }
         }
@@ -229,8 +206,6 @@ void DislocationTracer::finishDislocationSegments(int crystalStructure)
             if(segment &&
                std::any_of(std::execution::par_unseq, segment->line.cbegin(), segment->line.cend(),
                            [&dislocInfo, &m](const Point3& p) { return m.wrapVector(p - dislocInfo.second).squaredLength() < 1e-6; })) {
-                // if(segment && std::find(segment->line.begin(), segment->line.end(), dislocInfo.second) != segment->line.end()) {
-                // if(segment) {
                 stream << tessellation.cellVertex(cell, 0) << " " << tessellation.cellVertex(cell, 1) << " "
                        << tessellation.cellVertex(cell, 2) << " " << tessellation.cellVertex(cell, 3) << " " << segment->id << "\n";
             }
@@ -985,123 +960,154 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
         segment.coreSize.push_front(coreSize);
     }
 
+    DelaunayTessellation& tessellation = mesh().tessellation();
+    FloatType alpha = 3.5 * mesh().elasticMapping().structureAnalysis().maximumNeighborDistance();
+    if(!_spatialQuery) {
+        _spatialQuery.emplace(tessellation, alpha);
+    }
+
 #if 0
-    {
-        constexpr static FloatType epsilon = 1e-6;
-        FloatType alpha = 3.5 * mesh().elasticMapping().structureAnalysis().maximumNeighborDistance();
-        DelaunayTessellation& tessellation = mesh().tessellation();
+    InterfaceMesh::Edge* edge = node.circuit->firstEdge;
+    std::array<Point3, 4> tetrahedron;
+    std::array<Point3, 3> triangle;
+    do {
+        triangle[0] = newPoint + mesh().wrapVector(edge->vertex1()->pos() - newPoint);
+        triangle[1] = newPoint + mesh().wrapVector(edge->vertex2()->pos() - newPoint);
+        triangle[2] = newPoint;
+        Point3 com = (triangle[0] + (triangle[1] - Point3::Origin()) + (triangle[2] - Point3::Origin())) / 3.0;
 
-        std::array<Point3, 4> tetrahedron;
-        std::array<Point3, 3> triangle;
-        for(size_t cell = 0; cell < tessellation.numberOfTetrahedra(); ++cell) {
-            if(tessellation.isGhostCell(cell) || !tessellation.isFiniteCell(cell)) {
-                continue;
-            }
-            if(tessellation.getUserField(cell) != -1 || tessellation.getDislocCoreInfo(cell).first) {
-                continue;
-            }
-            bool isFilledTetrehedron = false;
-            if(auto alphaTestResult = tessellation.alphaTest(cell, alpha)) {
-                isFilledTetrehedron = *alphaTestResult;
-            }
-            if(!isFilledTetrehedron) {
-                continue;
-            }
+        _ranges.clear();
+        _spatialQuery->getSurroundingCells(_spatialQuery->hashPoint(com), _ranges);
 
+        for(const auto& span : _ranges) {
+            for(size_t cell : span) {
+                if(tessellation.isGhostCell(cell) || !tessellation.isFiniteCell(cell) || tessellation.getUserField(cell) != -1) {
+                    continue;
+                }
+
+                bool isFilledTetrehedron = false;
+                if(auto alphaTestResult = tessellation.alphaTest(cell, alpha)) {
+                    isFilledTetrehedron = *alphaTestResult;
+                }
+                if(!isFilledTetrehedron) {
+                    continue;
+                }
+
+                for(size_t t = 0; t < tetrahedron.size(); ++t) {
+                    tetrahedron[t] = newPoint + mesh().wrapVector(tessellation.vertexPosition(tessellation.cellVertex(cell, t)) - newPoint);
+                }
+
+                if(TetrahedronTriangleIntersection::test(tetrahedron, triangle)) {
+                    tessellation.setDislocCoreInfo(cell, node.circuit->dislocationNode->segment, newPoint);
+                }
+            }
+        }
+        edge = edge->nextCircuitEdge;
+    } while(edge != node.circuit->firstEdge);
+#elif 1
+    std::array<Point3, 4> tetrahedron;
+    std::array<Point3, 3> triangle;
+    InterfaceMesh::Edge* edge = node.circuit->firstEdge;
+    do {
+        Point3 bboxMin(std::numeric_limits<FloatType>::max());
+        Point3 bboxMax(std::numeric_limits<FloatType>::min());
+
+        triangle[0] = newPoint + mesh().wrapVector(edge->vertex1()->pos() - newPoint);
+        triangle[1] = newPoint + mesh().wrapVector(edge->vertex2()->pos() - newPoint);
+        triangle[2] = newPoint;
+
+        for(size_t i = 0; i < 3; ++i) {
+            for(size_t j = 0; j < 3; ++j) {
+                bboxMin[j] = std::min(bboxMin[j], triangle[i][j]);
+                bboxMax[j] = std::max(bboxMax[j], triangle[i][j]);
+            }
+        }
+        _ranges.clear();
+        _spatialQuery->getCells(bboxMin, bboxMax, _ranges);
+
+        for(const auto& bbox : _ranges) {
+            OVITO_ASSERT(bbox.max_corner().cell == bbox.min_corner().cell);
+
+            size_t cell = bbox.max_corner().cell;
             for(size_t t = 0; t < tetrahedron.size(); ++t) {
-                tetrahedron[t] = tessellation.vertexPosition(tessellation.cellVertex(cell, t));
-                tetrahedron[t] - Point3::Origin();
+                tetrahedron[t] = newPoint + mesh().wrapVector(tessellation.vertexPosition(tessellation.cellVertex(cell, t)) - newPoint);
             }
-            InterfaceMesh::Edge* edge = node.circuit->firstEdge;
-            bool intersection = false;
-            do {
-                triangle[0] = newPoint + mesh().wrapVector(edge->vertex1()->pos() - newPoint);
-                triangle[1] = newPoint + mesh().wrapVector(edge->vertex2()->pos() - newPoint);
-                triangle[2] = newPoint;
 
-                intersection = TetrahedronTriangleIntersection::test(tetrahedron, triangle);
-                if(intersection) {
+            if(TetrahedronTriangleIntersection::test(tetrahedron, triangle)) {
+                tessellation.setDislocCoreInfo(cell, node.circuit->dislocationNode->segment, newPoint);
+            }
+        }
+        edge = edge->nextCircuitEdge;
+    } while(edge != node.circuit->firstEdge);
+
+#else
+    // This refactor is many times faster than the original implementation
+    using bBox = DelaunayTessellationSpatialQuery::bBox;
+    std::array<Point3, 4> tetrahedron;
+
+    InterfaceMesh::Edge* edge = node.circuit->firstEdge;
+    Point3 bboxMin(std::numeric_limits<FloatType>::max());
+    Point3 bboxMax(std::numeric_limits<FloatType>::min());
+    _triangles.clear();
+    // Collect cap triangles and combined bounding box
+    do {
+        _triangles.push_back({newPoint + mesh().wrapVector(edge->vertex1()->pos() - newPoint),
+                              newPoint + mesh().wrapVector(edge->vertex2()->pos() - newPoint), newPoint});
+
+        for(size_t i = 0; i < 3; ++i) {
+            for(size_t j = 0; j < 3; ++j) {
+                bboxMin[j] = std::min(bboxMin[j], _triangles.back()[i][j]);
+                bboxMax[j] = std::max(bboxMax[j], _triangles.back()[i][j]);
+            }
+        }
+        edge = edge->nextCircuitEdge;
+    } while(edge != node.circuit->firstEdge);
+
+    _spatialQuery->getCells(bboxMin, bboxMax, _ranges);
+
+    // 256 treshold determined from inital testing
+    if(_ranges.size() < 256) {
+        for(const auto& bbox : _ranges) {
+            OVITO_ASSERT(bbox.max_corner().cell == bbox.min_corner().cell);
+
+            size_t cell = bbox.max_corner().cell;
+            for(size_t t = 0; t < tetrahedron.size(); ++t) {
+                tetrahedron[t] = newPoint + mesh().wrapVector(tessellation.vertexPosition(tessellation.cellVertex(cell, t)) - newPoint);
+            }
+
+            for(const std::array<Point3, 3>& triangle : _triangles) {
+                if(TetrahedronTriangleIntersection::test(tetrahedron, triangle)) {
+                    tessellation.setDislocCoreInfo(cell, node.circuit->dislocationNode->segment, newPoint);
                     break;
                 }
-                edge = edge->nextCircuitEdge;
-            } while(edge != node.circuit->firstEdge);
-            // If the tetrahedron is intersected -> store segment and point
-            if(intersection) {
-                tessellation.setDislocCoreInfo(cell, node.circuit->dislocationNode->segment, newPoint);
-                continue;
             }
         }
     }
-#else
-    if(_markCoreAtoms) {
-        constexpr static FloatType epsilon = 1e-6;
-        FloatType alpha = 3.5 * mesh().elasticMapping().structureAnalysis().maximumNeighborDistance();
-        DelaunayTessellation& tessellation = mesh().tessellation();
+    else {
+        // TODO: assert unique elements in _ranges
+        // Parallel over tetrahedrons, loop over each triangle until intersection is found
+        parallelFor(_ranges.size(), 256, [&](size_t idx) {
+            // create new tet variable for each thread
+            std::array<Point3, 4> tet;
 
-        if(!_spatialQuery) {
-            _spatialQuery.emplace(tessellation, alpha / 2);
-        }
+            const bBox& bbox = _ranges[idx];
+            OVITO_ASSERT(bbox.max_corner().cell == bbox.min_corner().cell);
 
-        std::array<Point3, 4> tetrahedron;
-        std::array<Point3, 3> triangle;
-
-        InterfaceMesh::Edge* edge = node.circuit->firstEdge;
-        do {
-            triangle[0] = newPoint + mesh().wrapVector(edge->vertex1()->pos() - newPoint);
-            triangle[1] = newPoint + mesh().wrapVector(edge->vertex2()->pos() - newPoint);
-            triangle[2] = newPoint;
-
-            Point3 comTriangle = triangle[0] + (triangle[1] - Point3::Origin()) + (triangle[2] - Point3::Origin());
-            comTriangle /= (FloatType)triangle.size();
-
-            _spatialQuery->getSurroundingCells(_spatialQuery->hashPoint(comTriangle), _ranges);
-
-#if 1
-            for(const std::span<const size_t> cellRange : _ranges) {
-                for(size_t cell : cellRange) {
-                    if(tessellation.getDislocCoreInfo(cell).first) {
-                        continue;
-                    }
-
-                    for(size_t t = 0; t < tetrahedron.size(); ++t) {
-                        tetrahedron[t] =
-                            newPoint + mesh().wrapVector(tessellation.vertexPosition(tessellation.cellVertex(cell, t)) - newPoint);
-                    }
-
-                    if(TetrahedronTriangleIntersection::test(tetrahedron, triangle)) {
-                        tessellation.setDislocCoreInfo(cell, node.circuit->dislocationNode->segment, newPoint);
-                    }
-                }
+            size_t cell = bbox.max_corner().cell;
+            for(size_t t = 0; t < tet.size(); ++t) {
+                tet[t] = newPoint + mesh().wrapVector(tessellation.vertexPosition(tessellation.cellVertex(cell, t)) - newPoint);
             }
-#else
-            parallelFor(27, 1, [&](size_t rangesIdx) {
-                if(rangesIdx >= _ranges.size()) {
+            for(const std::array<Point3, 3>& triangle : _triangles) {
+                if(TetrahedronTriangleIntersection::test(tet, triangle)) {
+                    tessellation.setDislocCoreInfo(cell, node.circuit->dislocationNode->segment, newPoint);
                     return;
                 }
-                OVITO_ASSERT(rangesIdx < _ranges.size());
-                std::array<Point3, 4> tetrahedron;
-                for(size_t cell : _ranges[rangesIdx]) {
-                    if(tessellation.getDislocCoreInfo(cell).first) {
-                        continue;
-                    }
-
-                    for(size_t t = 0; t < tetrahedron.size(); ++t) {
-                        tetrahedron[t] =
-                            newPoint + mesh().wrapVector(tessellation.vertexPosition(tessellation.cellVertex(cell, t)) - newPoint);
-                    }
-
-                    if(TetrahedronTriangleIntersection::test(tetrahedron, triangle)) {
-                        tessellation.setDislocCoreInfo(cell, node.circuit->dislocationNode->segment, newPoint);
-                    }
-                }
-            });
-#endif
-            edge = edge->nextCircuitEdge;
-        } while(edge != node.circuit->firstEdge);
+            }
+        });
     }
 #endif
 
-#if 0
+#if 1
     {
         std::ofstream stream("slices.data", std::ios_base::app);
         InterfaceMesh::Edge* edge = node.circuit->firstEdge;

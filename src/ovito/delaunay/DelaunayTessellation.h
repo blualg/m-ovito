@@ -29,6 +29,12 @@
 #include <geogram/Delaunay_psm.h>
 #include <boost/iterator/counting_iterator.hpp>
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point.hpp>
+#include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/index/rtree.hpp>
+#include <boost/geometry/geometries/register/point.hpp>
+
 namespace Ovito {
 
 /**
@@ -278,6 +284,7 @@ private:
     const SimulationCell* _simCell = nullptr;
 };
 
+#if 0
 class OVITO_DELAUNAY_EXPORT DelaunayTessellationSpatialQuery
 {
 public:
@@ -313,5 +320,46 @@ private:
     //
     std::vector<size_t> _cellIndices;
 };
+#else
 
-}   // End of namespace
+// This a not so nice but bPointCell cannot be defined inside of DelaunayTessellationSpatialQuery
+// since BOOST_GEOMETRY_REGISTER_POINT_3D needs to be placed before bBox but also be in
+// globale namespace
+namespace DelaunayTessellationSpatialQueryImpl {
+struct bPointCell {
+    Point3 point;
+    size_t cell;
+
+    bPointCell(Point3::value_type v, size_t c) : point(v), cell(c) {}
+    bPointCell(const Point3& p) : point(p) {}
+};
+}  // namespace DelaunayTessellationSpatialQueryImpl
+
+}  // End of namespace Ovito
+
+// Needs to be in the global namespace
+BOOST_GEOMETRY_REGISTER_POINT_3D(Ovito::DelaunayTessellationSpatialQueryImpl::bPointCell, Ovito::Point3::value_type,
+                                 boost::geometry::cs::cartesian, point[0], point[1], point[2]);
+
+namespace Ovito {
+
+class OVITO_DELAUNAY_EXPORT DelaunayTessellationSpatialQuery
+{
+public:
+    using bPoint = DelaunayTessellationSpatialQueryImpl::bPointCell;
+    using bBox = boost::geometry::model::box<DelaunayTessellationSpatialQueryImpl::bPointCell>;
+
+    DelaunayTessellationSpatialQuery(const DelaunayTessellation& tessellation, FloatType alpha);
+
+    void getCells(const Point3& bboxLow, const Point3& bboxHi, std::vector<bBox>& cells) const;
+
+private:
+    const DelaunayTessellation& _tessellation;
+
+    // boost::geometry::index::rtree<bBox, boost::geometry::index::rstar<16, 8>> _rtree;
+    boost::geometry::index::rtree<bBox, boost::geometry::index::quadratic<128>> _rtree;
+};
+
+#endif
+
+}  // End of namespace Ovito
