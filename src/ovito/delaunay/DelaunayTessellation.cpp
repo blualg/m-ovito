@@ -449,7 +449,11 @@ void DelaunayTessellationSpatialQuery::getSurroundingCells(size_t hash, std::vec
 }
 #else
 
-DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(const DelaunayTessellation& tessellation, FloatType alpha)
+/******************************************************************************
+ * Initialize the query class with a tessellation and a alpha value
+ * Alpha can be used to pre-filter cells added to the tree
+ ******************************************************************************/
+DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(const DelaunayTessellation& tessellation, std::optional<FloatType> alpha)
     : _tessellation(tessellation)
 {
     namespace bg = boost::geometry;
@@ -457,18 +461,23 @@ DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(const Delauna
     // Create rtree with the bounding boxes
     // rtree insertion is not thread safe!
     for(size_t cell = 0; cell < _tessellation.numberOfTetrahedra(); ++cell) {
-        if(_tessellation.isGhostCell(cell) || !_tessellation.isFiniteCell(cell) || _tessellation.getUserField(cell) != -1) {
+        // Only add defective and finite tetrahedrons
+        if(!_tessellation.isFiniteCell(cell) || _tessellation.getUserField(cell) != -1) {
             continue;
         }
 
-        bool isFilledTetrehedron = false;
-        if(auto alphaTestResult = tessellation.alphaTest(cell, alpha)) {
-            isFilledTetrehedron = *alphaTestResult;
-        }
-        if(!isFilledTetrehedron) {
-            continue;
+        // Skip based on alpha criterion
+        if(alpha) {
+            bool isFilledTetrehedron = false;
+            if(auto alphaTestResult = tessellation.alphaTest(cell, alpha.value())) {
+                isFilledTetrehedron = *alphaTestResult;
+            }
+            if(!isFilledTetrehedron) {
+                continue;
+            }
         }
 
+        // Add bbounding box to tree
         bPoint bboxLo{std::numeric_limits<Point3::value_type>::max(), cell};
         bPoint bboxHi{std::numeric_limits<Point3::value_type>::min(), cell};
         for(size_t vert = 0; vert < 4; ++vert) {
@@ -484,6 +493,11 @@ DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(const Delauna
     }
 }
 
+/******************************************************************************
+ * Get all cells intersecting with a given bounding box
+ * Target bounding box is defined by bboxLo and bboxHi
+ * Boxes are returned in the cells vector
+ ******************************************************************************/
 void DelaunayTessellationSpatialQuery::getCells(const Point3& bboxLo, const Point3& bboxHi, std::vector<bBox>& cells) const
 {
     namespace bgi = boost::geometry::index;

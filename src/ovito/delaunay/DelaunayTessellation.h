@@ -337,20 +337,28 @@ struct bPointCell {
 
 }  // End of namespace Ovito
 
+// Adds the bPointCell type to boost geometry
 // Needs to be in the global namespace
 BOOST_GEOMETRY_REGISTER_POINT_3D(Ovito::DelaunayTessellationSpatialQueryImpl::bPointCell, Ovito::Point3::value_type,
                                  boost::geometry::cs::cartesian, point[0], point[1], point[2]);
 
 namespace Ovito {
 
+// Create spatial querys on a Delaunay Tessellation finding all tetrahedrons
+// where their respective bounding boxes intersect with a target bounding bounding box
 class OVITO_DELAUNAY_EXPORT DelaunayTessellationSpatialQuery
 {
 public:
     using bPoint = DelaunayTessellationSpatialQueryImpl::bPointCell;
     using bBox = boost::geometry::model::box<DelaunayTessellationSpatialQueryImpl::bPointCell>;
 
-    DelaunayTessellationSpatialQuery(const DelaunayTessellation& tessellation, FloatType alpha);
+    // Initialize the query classa with a tessellation and a alpha value
+    // Alpha can be used to pre-filter cells added to the tree
+    DelaunayTessellationSpatialQuery(const DelaunayTessellation& tessellation, std::optional<FloatType> alpha);
 
+    // Get all cells intersecting with a given bounding box
+    // Target bounding box is defined by bboxLo and bboxHi
+    // Boxes are returned in the cells vector
     void getCells(const Point3& bboxLow, const Point3& bboxHi, std::vector<bBox>& cells) const;
 
 private:

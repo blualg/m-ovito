@@ -178,7 +178,7 @@ void DislocationTracer::finishDislocationSegments(int crystalStructure)
         segment->flipOrientation();
     }
 
-#if 1
+#if 0
     {
         const DelaunayTessellation& tessellation = mesh().tessellation();
         const InterfaceMesh& m = mesh();
@@ -1004,7 +1004,7 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
         }
         edge = edge->nextCircuitEdge;
     } while(edge != node.circuit->firstEdge);
-#elif 1
+#elif 0
     std::array<Point3, 4> tetrahedron;
     std::array<Point3, 3> triangle;
     InterfaceMesh::Edge* edge = node.circuit->firstEdge;
@@ -1030,7 +1030,7 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
 
             size_t cell = bbox.max_corner().cell;
             for(size_t t = 0; t < tetrahedron.size(); ++t) {
-                tetrahedron[t] = newPoint + mesh().wrapVector(tessellation.vertexPosition(tessellation.cellVertex(cell, t)) - newPoint);
+                tetrahedron[t] = tessellation.vertexPosition(tessellation.cellVertex(cell, t));
             }
 
             if(TetrahedronTriangleIntersection::test(tetrahedron, triangle)) {
@@ -1069,12 +1069,21 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
     if(_ranges.size() < 256) {
         for(const auto& bbox : _ranges) {
             OVITO_ASSERT(bbox.max_corner().cell == bbox.min_corner().cell);
-
             size_t cell = bbox.max_corner().cell;
-            for(size_t t = 0; t < tetrahedron.size(); ++t) {
-                tetrahedron[t] = newPoint + mesh().wrapVector(tessellation.vertexPosition(tessellation.cellVertex(cell, t)) - newPoint);
+
+            // Skip tetrahedrons that have been assigned previously
+            const auto& dislocInfo = tessellation.getDislocCoreInfo(cell);
+            DislocationSegment* segment = static_cast<DislocationSegment*>(dislocInfo.first);
+            if(segment) {
+                return;
             }
 
+            // Get tetrahedron positions -> unwrapped as newPoint should be in the
+            // real or ghost layer region of the tessellation containing tetrahedrons
+            for(size_t t = 0; t < tetrahedron.size(); ++t) {
+                tetrahedron[t] = tessellation.vertexPosition(tessellation.cellVertex(cell, t));
+            }
+            // Intersection test
             for(const std::array<Point3, 3>& triangle : _triangles) {
                 if(TetrahedronTriangleIntersection::test(tetrahedron, triangle)) {
                     tessellation.setDislocCoreInfo(cell, node.circuit->dislocationNode->segment, newPoint);
@@ -1084,19 +1093,29 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
         }
     }
     else {
-        // TODO: assert unique elements in _ranges
         // Parallel over tetrahedrons, loop over each triangle until intersection is found
         parallelFor(_ranges.size(), 256, [&](size_t idx) {
             // create new tet variable for each thread
             std::array<Point3, 4> tet;
 
+            // Grab bbox and cell
             const bBox& bbox = _ranges[idx];
             OVITO_ASSERT(bbox.max_corner().cell == bbox.min_corner().cell);
-
             size_t cell = bbox.max_corner().cell;
-            for(size_t t = 0; t < tet.size(); ++t) {
-                tet[t] = newPoint + mesh().wrapVector(tessellation.vertexPosition(tessellation.cellVertex(cell, t)) - newPoint);
+
+            // Skip tetrahedrons that have been assigned previously
+            const auto& dislocInfo = tessellation.getDislocCoreInfo(cell);
+            DislocationSegment* segment = static_cast<DislocationSegment*>(dislocInfo.first);
+            if(segment) {
+                return;
             }
+
+            // Get tetrahedron positions -> unwrapped as newPoint should be in the
+            // real or ghost layer region of the tessellation containing tetrahedrons
+            for(size_t t = 0; t < tet.size(); ++t) {
+                tet[t] = tessellation.vertexPosition(tessellation.cellVertex(cell, t));
+            }
+            // Intersection test
             for(const std::array<Point3, 3>& triangle : _triangles) {
                 if(TetrahedronTriangleIntersection::test(tet, triangle)) {
                     tessellation.setDislocCoreInfo(cell, node.circuit->dislocationNode->segment, newPoint);
@@ -1107,7 +1126,7 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
     }
 #endif
 
-#if 1
+#if 0
     {
         std::ofstream stream("slices.data", std::ios_base::app);
         InterfaceMesh::Edge* edge = node.circuit->firstEdge;

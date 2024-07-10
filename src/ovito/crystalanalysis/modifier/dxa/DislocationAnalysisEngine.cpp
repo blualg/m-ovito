@@ -318,19 +318,10 @@ void DislocationAnalysisEngine::assignDislocationIDs(size_t numParticles)
            })) {
             for(size_t lv = 0; lv < 4; ++lv) {
                 size_t index = _tessellation->vertexIndex(_tessellation->cellVertex(cell, lv));
-
-                // OVITO_ASSERT(index < dislocationsBuffer.size());
-                // OVITO_ASSERT(segment->replacedId() == -1 || dislocationsBuffer[index] == segment->replacedId());
-                // if(dislocationsBuffer[index] != -1 && dislocationsBuffer[index] != segment->replacedId()) {
-                //     std::cout << dislocationsBuffer[index] << " " << segment->replacedId() << "\n";
-                // }
-
                 dislocationsBuffer[index] = segment->replacedId();
-                // (dislocationsBuffer[index] == -1) ? segment->replacedId() : std::min(segment->replacedId(), dislocationsBuffer[index]);
             }
         }
     }
-    std::cout << "done with assign IDs" << std::endl;
 }
 
 /******************************************************************************
