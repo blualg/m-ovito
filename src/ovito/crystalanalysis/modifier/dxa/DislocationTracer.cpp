@@ -178,7 +178,7 @@ void DislocationTracer::finishDislocationSegments(int crystalStructure)
         segment->flipOrientation();
     }
 
-#if 0
+#if 1
     {
         const DelaunayTessellation& tessellation = mesh().tessellation();
         const InterfaceMesh& m = mesh();
@@ -1062,7 +1062,7 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
         }
         edge = edge->nextCircuitEdge;
     } while(edge != node.circuit->firstEdge);
-
+    _ranges.clear();
     _spatialQuery->getCells(bboxMin, bboxMax, _ranges);
 
     // 256 treshold determined from inital testing
@@ -1075,7 +1075,7 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
             const auto& dislocInfo = tessellation.getDislocCoreInfo(cell);
             DislocationSegment* segment = static_cast<DislocationSegment*>(dislocInfo.first);
             if(segment) {
-                return;
+                continue;
             }
 
             // Get tetrahedron positions -> unwrapped as newPoint should be in the
@@ -1126,7 +1126,7 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
     }
 #endif
 
-#if 0
+#if 1
     {
         std::ofstream stream("slices.data", std::ios_base::app);
         InterfaceMesh::Edge* edge = node.circuit->firstEdge;
