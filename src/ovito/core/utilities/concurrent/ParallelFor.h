@@ -179,15 +179,18 @@ void parallelForChunks(size_t loopCount, size_t minimumChunkSize, Kernel&& kerne
     );
 }
 
-template<typename Setup, typename OuterKernel>
+template <bool ProgressTracking = true, typename Setup, typename OuterKernel>
 void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, Setup&& setup, OuterKernel&& outerKernel)
 {
     OVITO_ASSERT(minimumChunkSize != 0);
 
     Task* task = this_task::get();
     OVITO_ASSERT(task);
-    if(loopCount != 0)
-        task->setProgressMaximum(loopCount);
+    if constexpr(ProgressTracking) {
+        if(loopCount != 0) {
+            task->setProgressMaximum(loopCount);
+        }
+    }
 
     parallelForChunks(loopCount, minimumChunkSize, std::forward<Setup>(setup), [outerKernel = std::forward<OuterKernel>(outerKernel), minimumChunkSize, task](size_t workerIndex, size_t fromIndex, size_t toIndex) {
         outerKernel([&](auto&& innerKernel) {
@@ -196,21 +199,26 @@ void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, Setup&& se
                 size_t count = end - i;
                 for(; i != end; ++i)
                     innerKernel(workerIndex, i);
-                task->incrementProgressValue(count);
+                if constexpr(ProgressTracking) {
+                    task->incrementProgressValue(count);
+                }
             }
         });
     });
 }
 
-template<typename OuterKernel>
+template <bool ProgressTracking = true, typename OuterKernel>
 void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, OuterKernel&& outerKernel)
 {
     OVITO_ASSERT(minimumChunkSize != 0);
 
     Task* task = this_task::get();
     OVITO_ASSERT(task);
-    if(loopCount != 0)
-        task->setProgressMaximum(loopCount);
+    if constexpr(ProgressTracking) {
+        if(loopCount != 0) {
+            task->setProgressMaximum(loopCount);
+        }
+    }
 
     parallelForChunks(loopCount, minimumChunkSize, [outerKernel = std::forward<OuterKernel>(outerKernel), minimumChunkSize, task](size_t fromIndex, size_t toIndex) {
         outerKernel([&](auto&& innerKernel) {
@@ -219,26 +227,26 @@ void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, OuterKerne
                 size_t count = end - i;
                 for(; i != end; ++i)
                     innerKernel(i);
-                task->incrementProgressValue(count);
+                if constexpr(ProgressTracking) {
+                    task->incrementProgressValue(count);
+                }
             }
         });
     });
 }
 
-template<typename Setup, typename Kernel>
+template <bool ProgressTracking = true, typename Setup, typename Kernel>
 void parallelFor(size_t loopCount, size_t minimumChunkSize, Setup&& setup, Kernel&& kernel)
 {
-    parallelForInnerOuter(loopCount, minimumChunkSize, std::forward<Setup>(setup), [kernel = std::forward<Kernel>(kernel)](auto&& iterate) {
-        iterate(kernel);
-    });
+    parallelForInnerOuter<ProgressTracking>(loopCount, minimumChunkSize, std::forward<Setup>(setup),
+                                            [kernel = std::forward<Kernel>(kernel)](auto&& iterate) { iterate(kernel); });
 }
 
-template<typename Kernel>
+template <bool ProgressTracking = true, typename Kernel>
 void parallelFor(size_t loopCount, size_t minimumChunkSize, Kernel&& kernel)
 {
-    parallelForInnerOuter(loopCount, minimumChunkSize, [kernel = std::forward<Kernel>(kernel)](auto&& iterate) {
-        iterate(kernel);
-    });
+    parallelForInnerOuter<ProgressTracking>(loopCount, minimumChunkSize,
+                                            [kernel = std::forward<Kernel>(kernel)](auto&& iterate) { iterate(kernel); });
 }
 
 template<typename ResultObject, typename Kernel>

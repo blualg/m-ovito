@@ -1094,7 +1094,7 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
     }
     else {
         // Parallel over tetrahedrons, loop over each triangle until intersection is found
-        parallelFor(_ranges.size(), 256, [&](size_t idx) {
+        parallelFor<false>(_ranges.size(), 256, [&](size_t idx) {
             // create new tet variable for each thread
             std::array<Point3, 4> tet;
 

@@ -89,8 +89,12 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     _interfaceMesh.emplace(*_elasticMapping);
     _dislocationTracer.emplace(*_interfaceMesh, _maxTrialCircuitSize, _maxCircuitElongation, dislocationNetwork(), _markCoreAtoms);
     setAtomClusters(_structureAnalysis->atomClusters());
-
-    this_task::beginProgressSubStepsWithWeights({35, 6, 1, 220, 60, 1, 53, 190, 146, 20, 4, 4});
+    if(_markCoreAtoms) {
+        this_task::beginProgressSubStepsWithWeights({35, 6, 1, 220, 60, 1, 53, 190, 146 * 5, 20, 4, 4});
+    }
+    else {
+        this_task::beginProgressSubStepsWithWeights({35, 6, 1, 220, 60, 1, 53, 190, 146, 20, 4, 4});
+    }
     _structureAnalysis->identifyStructures();
     this_task::throwIfCanceled();
 
