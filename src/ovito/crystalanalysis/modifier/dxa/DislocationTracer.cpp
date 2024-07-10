@@ -178,7 +178,7 @@ void DislocationTracer::finishDislocationSegments(int crystalStructure)
         segment->flipOrientation();
     }
 
-#if 1
+#if 0
     {
         const DelaunayTessellation& tessellation = mesh().tessellation();
         const InterfaceMesh& m = mesh();
@@ -1126,7 +1126,7 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
     }
 #endif
 
-#if 1
+#if 0
     {
         std::ofstream stream("slices.data", std::ios_base::app);
         InterfaceMesh::Edge* edge = node.circuit->firstEdge;
