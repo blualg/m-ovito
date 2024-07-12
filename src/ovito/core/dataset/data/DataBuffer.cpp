@@ -441,7 +441,7 @@ void DataBuffer::replicateFrom(size_t n, const DataBuffer& original)
 }
 
 /******************************************************************************
-* Reduces the size of the storage array, deleting elements for are marked in the selection array.
+* Reduces the size of the storage array, deleting elements for are marked in the boolean selection array.
 ******************************************************************************/
 void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selection, const DataBuffer& original)
 {
@@ -593,10 +593,10 @@ void DataBuffer::filterResizeCopyFrom(size_t newSize, const DataBuffer& selectio
 }
 
 /******************************************************************************
-* Copies the contents from the given source into this property storage using
-* a mapping of indices.
+* Copies the contents from the given source buffer into this buffer using an index mapping.
 ******************************************************************************/
-void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size_t>& mapping, bool discardOldContents)
+template<std::integral MappingT>
+void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const MappingT> mapping, bool discardOldContents)
 {
     OVITO_ASSERT(source.size() == mapping.size());
     OVITO_ASSERT(this->dataType() == source.dataType());
@@ -628,7 +628,7 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size
         T* __restrict dst = reinterpret_cast<T*>(data());
 #endif
         for(auto idx : mapping) {
-            OVITO_ASSERT(idx < this->size());
+            OVITO_ASSERT(idx >= 0 && idx < this->size());
             dst[idx] = *src++;
         }
     };
@@ -679,16 +679,22 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, const std::vector<size
 #endif
     const auto stride = this->stride();
     for(size_t i = 0; i < source.size(); i++, src += stride) {
-        OVITO_ASSERT(mapping[i] < this->size());
+        OVITO_ASSERT(mapping[i] >= 0 && mapping[i] < this->size());
         std::memcpy(dst + stride * mapping[i], src, stride);
     }
 }
 
+// Instantiate function template for different integral types.
+#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC)
+    template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const size_t> mapping) const;
+    template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const int> mapping) const;
+#endif
+
 /******************************************************************************
-* Copies the elements from this storage array into the given destination array
-* using an index mapping.
+* Copies the elements from this buffer into the given destination buffer using an index mapping.
 ******************************************************************************/
-void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>& mapping) const
+template<std::integral MappingT>
+void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const MappingT> mapping) const
 {
     OVITO_ASSERT(destination.size() == mapping.size());
     OVITO_ASSERT(this->stride() == destination.stride());
@@ -711,8 +717,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
         // Single float
         const FloatType* __restrict src = reinterpret_cast<const FloatType*>(cdata());
         FloatType* __restrict dst = reinterpret_cast<FloatType*>(destination.data());
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < size());
+        for(auto idx : mapping) {
+            OVITO_ASSERT(idx >= 0 && idx < size());
             *dst++ = src[idx];
         }
     }
@@ -720,8 +726,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
         // Single integer
         const int32_t* __restrict src = reinterpret_cast<const int32_t*>(cdata());
         int32_t* __restrict dst = reinterpret_cast<int32_t*>(destination.data());
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < size());
+        for(auto idx : mapping) {
+            OVITO_ASSERT(idx >= 0 && idx < size());
             *dst++ = src[idx];
         }
     }
@@ -729,16 +735,16 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
         // Single 64-bit integer
         const int64_t* __restrict src = reinterpret_cast<const int64_t*>(cdata());
         int64_t* __restrict dst = reinterpret_cast<int64_t*>(destination.data());
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < size());
+        for(auto idx : mapping) {
+            OVITO_ASSERT(idx >= 0 && idx < size());
             *dst++ = src[idx];
         }
     }
     else if(stride() == sizeof(int8_t)) {
         const int8_t* __restrict src = reinterpret_cast<const int8_t*>(cdata());
         int8_t* __restrict dst = reinterpret_cast<int8_t*>(destination.data());
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < size());
+        for(auto idx : mapping) {
+            OVITO_ASSERT(idx >= 0 && idx < size());
             *dst++ = src[idx];
         }
     }
@@ -746,8 +752,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
         // Triple float (may actually be four floats when SSE instructions are enabled).
         const Point3* __restrict src = reinterpret_cast<const Point3*>(cdata());
         Point3* __restrict dst = reinterpret_cast<Point3*>(destination.data());
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < size());
+        for(auto idx : mapping) {
+            OVITO_ASSERT(idx >= 0 && idx < size());
             *dst++ = src[idx];
         }
     }
@@ -755,8 +761,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
         // Triple float
         const Color* __restrict src = reinterpret_cast<const Color*>(cdata());
         Color* __restrict dst = reinterpret_cast<Color*>(destination.data());
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < size());
+        for(auto idx : mapping) {
+            OVITO_ASSERT(idx >= 0 && idx < size());
             *dst++ = src[idx];
         }
     }
@@ -764,8 +770,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
         // Triple int
         const Point3I* __restrict src = reinterpret_cast<const Point3I*>(cdata());
         Point3I* __restrict dst = reinterpret_cast<Point3I*>(destination.data());
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < size());
+        for(auto idx : mapping) {
+            OVITO_ASSERT(idx >= 0 && idx < size());
             *dst++ = src[idx];
         }
     }
@@ -780,8 +786,8 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
         DataBuffer::Byte* __restrict dst = writeAccessor.get_pointer();
 #endif
         size_t stride = this->stride();
-        for(size_t idx : mapping) {
-            OVITO_ASSERT(idx < size());
+        for(auto idx : mapping) {
+            OVITO_ASSERT(idx >= 0 && idx < size());
             std::memcpy(dst, src + stride * idx, stride);
             dst += stride;
         }
@@ -789,6 +795,12 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, const std::vector<size_t>
     }
 #endif
 }
+
+// Instantiate function template for different integral types.
+#if defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC)
+    template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const size_t> mapping, bool discardOldContents);
+    template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const int> mapping, bool discardOldContents);
+#endif
 
 /******************************************************************************
 * Reorders the existing elements in this storage array according to an index map.
@@ -838,8 +850,8 @@ void DataBuffer::reorderElements(const std::vector<size_t>& mapping)
 }
 
 /******************************************************************************
-* Copies the data elements from the given source array into this array.
-* Array size, component count and data type of source and destination must match exactly.
+* Copies the data elements from the given source buffer into this buffer.
+* Size, component count, and data type of source and destination buffers must match exactly.
 ******************************************************************************/
 void DataBuffer::copyFrom(const DataBuffer& source)
 {
@@ -923,105 +935,40 @@ bool DataBuffer::equals(const DataBuffer& other) const
 }
 
 /******************************************************************************
-* Changes the data type of the buffer in place and converts the stored values.
+* Copies the data elements from the given source buffer into this buffer while performing a nuermic data type conversion.
+* Array size and component count of source and destination must match but data type can be different.
 ******************************************************************************/
-void DataBuffer::convertToDataType(int newDataType)
+void DataBuffer::copyFromAndConvert(const DataBuffer& source)
 {
-    OVITO_ASSERT(newDataType == Int8 || newDataType == Int32 || newDataType == Int64 || newDataType == Float32 || newDataType == Float64);
-
-    if(dataType() == newDataType)
+    // Is an actual data type conversion required?
+    if(dataType() == source.dataType()) {
+        copyFrom(source);
         return;
-
-    size_t newDataTypeSize = QMetaType(newDataType).sizeOf();
-    size_t newStride = _componentCount * newDataTypeSize;
-#ifdef OVITO_USE_SYCL
-    std::optional<sycl::buffer<DataBuffer::Byte>> newData;
-    if(_numElements != 0)
-        newData = allocateBufferStorage(_numElements, newStride);
-#else
-#if __cpp_lib_smart_ptr_for_overwrite || _LIBCPP_STD_VER >= 20
-    auto newData = std::make_unique_for_overwrite<DataBuffer::Byte[]>(_numElements * newStride);
-#else
-    auto newData = std::unique_ptr<DataBuffer::Byte[]>(new DataBuffer::Byte[_numElements * newStride]); // Note: for backward compatibility with GCC 10
-#endif
-#endif
-
-    // Copy values from old buffer to new buffer and perform data type convertion.
-    if(_numElements != 0) {
-        switch(newDataType) {
-        case Int8:
-            {
-#ifdef OVITO_USE_SYCL
-                auto typedDest = newData->reinterpret<int8_t, 1>();
-                sycl::host_accessor writeAccessor(typedDest, sycl::write_only, sycl::no_init);
-                int8_t* __restrict dest = writeAccessor.get_pointer();
-#else
-                int8_t* __restrict dest = reinterpret_cast<int8_t*>(newData.get());
-#endif
-                copyTo(dest);
-            }
-            break;
-        case Int32:
-            {
-#ifdef OVITO_USE_SYCL
-                auto typedDest = newData->reinterpret<int32_t, 1>();
-                sycl::host_accessor writeAccessor(typedDest, sycl::write_only, sycl::no_init);
-                int32_t* __restrict dest = writeAccessor.get_pointer();
-#else
-                int32_t* __restrict dest = reinterpret_cast<int32_t*>(newData.get());
-#endif
-                copyTo(dest);
-            }
-            break;
-        case Int64:
-            {
-#ifdef OVITO_USE_SYCL
-                auto typedDest = newData->reinterpret<int64_t, 1>();
-                sycl::host_accessor writeAccessor(typedDest, sycl::write_only, sycl::no_init);
-                int64_t* __restrict dest = writeAccessor.get_pointer();
-#else
-                int64_t* __restrict dest = reinterpret_cast<int64_t*>(newData.get());
-#endif
-                copyTo(dest);
-            }
-            break;
-        case Float32:
-            {
-#ifdef OVITO_USE_SYCL
-                auto typedDest = newData->reinterpret<float, 1>();
-                sycl::host_accessor writeAccessor(typedDest, sycl::write_only, sycl::no_init);
-                float* __restrict dest = writeAccessor.get_pointer();
-#else
-                float* __restrict dest = reinterpret_cast<float*>(newData.get());
-#endif
-                copyTo(dest);
-            }
-            break;
-        case Float64:
-            {
-#ifdef OVITO_USE_SYCL
-                auto typedDest = newData->reinterpret<double, 1>();
-                sycl::host_accessor writeAccessor(typedDest, sycl::write_only, sycl::no_init);
-                double* __restrict dest = writeAccessor.get_pointer();
-#else
-                double* __restrict dest = reinterpret_cast<double*>(newData.get());
-#endif
-                copyTo(dest);
-            }
-            break;
-        default:
-            OVITO_ASSERT(false); // Unsupported data type
-        }
     }
 
-    WriteAccess writeAccess(*this);
-    _dataType = newDataType;
-    _dataTypeSize = newDataTypeSize;
-    _stride = newStride;
-    _data = std::move(newData);
-#ifndef OVITO_USE_SYCL
-    _capacity = _numElements;
+    OVITO_ASSERT(&source != this); // Do not allow aliasing.
+    OVITO_ASSERT(this->size() == source.size());
+    OVITO_ASSERT(this->componentCount() == source.componentCount());
+    OVITO_ASSERT(this->stride() == this->componentCount() * this->dataTypeSize());
+#ifdef OVITO_DEBUG
+    _isDataInitialized = true;
 #endif
+
+    // Copy values and perform data type convertion.
+    if(size() != 0) {
+        WriteAccess writeAccess(*this);
+        forAnyType([&](auto _) {
+            using T = decltype(_);
+            OVITO_ASSERT(sizeof(T) == dataTypeSize());
+#ifdef OVITO_USE_SYCL
+            auto typedDest = _data->reinterpret<T, 1>();
+            sycl::host_accessor writeAccessor(typedDest, sycl::write_only, sycl::no_init);
+            source.copyTo(writeAccessor.get_pointer());
+#else
+            source.copyTo(reinterpret_cast<T* __restrict>(data()));
+#endif
+        });
+    }
 }
 
 /******************************************************************************

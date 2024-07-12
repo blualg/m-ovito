@@ -39,9 +39,12 @@ enum class access_mode
 };
 
 namespace detail {
-    // Forward declarations
+    // Forward declarations:
     template<typename BufferType, bool StrongReference, Ovito::access_mode accessmode> class BufferAccessBase;
+    template<typename T, typename BufferType, bool StrongReference, Ovito::access_mode accessmode> class BufferAccessTyped;
+#ifdef OVITO_USE_SYCL
     template<typename T, Ovito::access_mode AccessMode> class SyclBufferAccessTyped;
+#endif
 
 #ifdef OVITO_USE_SYCL
     /// Allocates a new SYCL buffer object of the given type and dimensions.
@@ -219,9 +222,6 @@ public:
         _componentNames = std::move(names);
     }
 
-    /// Changes the data type of the buffer in place (only if necessary) and converts the stored values.
-    void convertToDataType(int dataType);
-
     /// \brief Sets all array elements to the given uniform value.
     template<typename T>
     void fill(const T value);
@@ -229,14 +229,14 @@ public:
     /// \brief Sets all array elements for which the corresponding entries in the
     ///        selection array are non-zero to the given uniform value.
     template<typename T>
-    void fillSelected(const T value, const DataBuffer& selectionProperty);
+    void fillSelected(const T value, const DataBuffer& selection);
 
     /// \brief Sets all array elements for which the corresponding entries in the
     ///        selection array are non-zero to the given uniform value.
     template<typename T>
-    void fillSelected(const T& value, const DataBuffer* selectionProperty) {
-        if(selectionProperty)
-            fillSelected(value, *selectionProperty);
+    void fillSelected(const T& value, const DataBuffer* selection) {
+        if(selection)
+            fillSelected(value, *selection);
         else
             fill(value);
     }
@@ -247,21 +247,57 @@ public:
     /// Replicates existing data N times.
     void replicateFrom(size_t n, const DataBuffer& original);
 
-    /// Reduces the size of the storage array, deleting elements for are marked in the selection array.
+    /// Reduces the size of the storage array, deleting elements for are marked in the boolean selection array.
     void filterResizeCopyFrom(size_t newSize, const DataBuffer& selection, const DataBuffer& original);
 
-    /// Copies the contents from the given source into this storage using a element mapping.
-    void mappedCopyFrom(const DataBuffer& source, const std::vector<size_t>& mapping, bool discardOldContents);
+    /// Copies the contents from the given source buffer into this buffer using an index mapping.
+    /// This method overload accepts a std::span with an integral value type as index mapping.
+    template<std::integral MappingT>
+    OVITO_CORE_EXPORT void mappedCopyFrom(const DataBuffer& source, std::span<const MappingT> mapping, bool discardOldContents);
 
-    /// Copies the elements from this storage array into the given destination array using an index mapping.
-    void mappedCopyTo(DataBuffer& destination, const std::vector<size_t>& mapping) const;
+    /// Copies the contents from the given source buffer into this buffer using an index mapping.
+    /// This method overload accepts a std::vector with an integral value type as index mapping.
+    template<std::integral MappingT>
+    void mappedCopyFrom(const DataBuffer& source, const std::vector<MappingT>& mapping, bool discardOldContents) {
+        mappedCopyFrom(source, std::span(mapping), discardOldContents);
+    }
+
+    /// Copies the contents from the given source buffer into this buffer using an index mapping.
+    /// This method overload accepts a buffer accessor with an integral value type as index mapping.
+    template<std::integral MappingT, typename BufferType, bool StrongReference, Ovito::access_mode accessmode>
+    void mappedCopyFrom(const DataBuffer& source, const detail::BufferAccessTyped<MappingT, BufferType, StrongReference, accessmode>& mapping, bool discardOldContents) {
+        mappedCopyFrom(source, std::span(mapping), discardOldContents);
+    }
+
+    /// Copies the elements from this buffer into the given destination buffer using an index mapping.
+    /// This method overload accepts a std::span with an integral value type as index mapping.
+    template<std::integral MappingT>
+    OVITO_CORE_EXPORT void mappedCopyTo(DataBuffer& destination, std::span<const MappingT> mapping) const;
+
+    /// Copies the elements from this buffer into the given destination buffer using an index mapping.
+    /// This method overload accepts a std::vector with an integral value type as index mapping.
+    template<std::integral MappingT>
+    void mappedCopyTo(DataBuffer& destination, const std::vector<MappingT>& mapping) const {
+        mappedCopyTo(destination, std::span(mapping));
+    }
+
+    /// Copies the elements from this buffer into the given destination buffer using an index mapping.
+    /// This method overload accepts a buffer accessor with an integral value type as index mapping.
+    template<std::integral MappingT, typename BufferType, bool StrongReference, Ovito::access_mode accessmode>
+    void mappedCopyTo(DataBuffer& destination, const detail::BufferAccessTyped<MappingT, BufferType, StrongReference, accessmode>& mapping) const {
+        mappedCopyTo(destination, std::span(mapping));
+    }
 
     /// Reorders the existing elements in this storage array according to an index map.
     void reorderElements(const std::vector<size_t>& mapping);
 
-    /// Copies the data elements from the given source array into this array.
-    /// Array size, component count and data type of source and destination must match exactly.
+    /// Copies the data elements from the given source buffer into this buffer.
+    /// Size, component count, and data type of source and destination buffers must match exactly.
     void copyFrom(const DataBuffer& source);
+
+    /// Copies the data elements from the given source buffer into this buffer while performing a nuermic data type conversion.
+    /// Array size and component count of source and destination must match but data type can be different.
+    void copyFromAndConvert(const DataBuffer& source);
 
     /// Copies a range of data elements from the given source array into this array.
     /// Component count and data type of source and destination must be compatible.
@@ -486,7 +522,9 @@ private:
 #endif
 
     template<typename BufferType, bool StrongReference, Ovito::access_mode accessmode> friend class detail::BufferAccessBase;
+#ifdef OVITO_USE_SYCL
     template<typename T, Ovito::access_mode AccessMode> friend class detail::SyclBufferAccessTyped;
+#endif
 };
 
 /// Class template returning the data type identifier for the components in the given C++ array structure.
@@ -574,29 +612,29 @@ inline void DataBuffer::fill(const T value)
 /// \brief Sets all array elements for which the corresponding entries in the
 ///        selection array are non-zero to the given uniform value.
 template<typename T>
-inline void DataBuffer::fillSelected(const T value, const DataBuffer& selectionProperty)
+inline void DataBuffer::fillSelected(const T value, const DataBuffer& selection)
 {
-    OVITO_ASSERT(&selectionProperty != this); // Do not allow aliasing.
-    OVITO_ASSERT(selectionProperty.size() == this->size());
-    OVITO_ASSERT(selectionProperty.dataType() == IntSelection);
-    OVITO_ASSERT(selectionProperty.componentCount() == 1);
+    OVITO_ASSERT(&selection != this); // Do not allow aliasing.
+    OVITO_ASSERT(selection.size() == this->size());
+    OVITO_ASSERT(selection.dataType() == IntSelection);
+    OVITO_ASSERT(selection.componentCount() == 1);
     OVITO_ASSERT(stride() == sizeof(T));
     if(size() == 0)
         return;
     OVITO_ASSERT(_isDataInitialized);
     WriteAccess writeAccess(*this);
-    ReadAccess readAccess(selectionProperty);
+    ReadAccess readAccess(selection);
 #ifdef OVITO_USE_SYCL
     ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
         SyclBufferAccess<T, access_mode::write> outputAccessor(this, cgh);
-        SyclBufferAccess<SelectionIntType, access_mode::read> selectionAccessor(&selectionProperty, cgh);
+        SyclBufferAccess<SelectionIntType, access_mode::read> selectionAccessor(&selection, cgh);
         OVITO_SYCL_PARALLEL_FOR(cgh, databuffer_fillSelected)(sycl::range(size()), [=](size_t i) {
             if(selectionAccessor[i])
                 outputAccessor[i] = value;
         });
     });
 #else
-    const SelectionIntType* __restrict selectionIter = reinterpret_cast<const SelectionIntType*>(selectionProperty.cdata());
+    const SelectionIntType* __restrict selectionIter = reinterpret_cast<const SelectionIntType*>(selection.cdata());
     for(T* __restrict v = reinterpret_cast<T*>(data()), *end = v + this->size(); v != end; ++v) {
         if(*selectionIter++)
             *v = value;
@@ -753,5 +791,20 @@ inline size_t DataBuffer::count(const T value) const
 #endif
     return count;
 }
+
+// Instantiate function templates for different integral types.
+#ifndef OVITO_BUILD_MONOLITHIC
+    #if !defined(Core_EXPORTS)
+        extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const size_t> mapping) const;
+        extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const int> mapping) const;
+        extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const size_t> mapping, bool discardOldContents);
+        extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const int> mapping, bool discardOldContents);
+    #elif !defined(Q_CC_MSVC) && !defined(Q_CC_CLANG)
+        template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const size_t> mapping) const;
+        template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const int> mapping) const;
+        template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const size_t> mapping, bool discardOldContents);
+        template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const int> mapping, bool discardOldContents);
+    #endif
+#endif
 
 }   // End of namespace

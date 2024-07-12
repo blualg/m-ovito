@@ -495,6 +495,26 @@ void PropertyContainer::replicate(size_t n)
 }
 
 /******************************************************************************
+* Performs a numeric data type conversion of a property (unless the property already has the requested type).
+******************************************************************************/
+const Property* PropertyContainer::convertPropertyToDataType(const ConstPropertyPtr& property, int dataType)
+{
+    OVITO_ASSERT(property);
+    OVITO_ASSERT(properties().contains(property.get()));
+    OVITO_ASSERT(!property->isStandardProperty() || dataType == getOOMetaClass().standardPropertyDataType(property->typeId()));
+
+    if(property->dataType() != dataType) {
+        PropertyPtr convertedProperty = property->cloneWithoutData(property->size(), dataType);
+        convertedProperty->copyFromAndConvert(*property);
+        replaceReferencesTo(property, convertedProperty);
+        return convertedProperty.get();
+    }
+    else {
+        return property.get();
+    }
+}
+
+/******************************************************************************
 * Sorts the data elements with respect to their unique IDs.
 * Does nothing if data elements do not have IDs.
 ******************************************************************************/
@@ -621,7 +641,6 @@ void PropertyContainer::verifyIntegrity() const
 {
     size_t c = elementCount();
     for(const Property* property : properties()) {
-//      OVITO_ASSERT_MSG(property->size() == c, "PropertyContainer::verifyIntegrity()", qPrintable(QString("Property array '%1' has wrong length. It does not match the number of elements in the parent %2 container.").arg(property->name()).arg(getOOMetaClass().propertyClassDisplayName())));
         if(property->size() != c) {
             throw Exception(tr("Property array '%1' has wrong length. It does not match the number of elements in the parent %2 container.").arg(property->name()).arg(getOOMetaClass().propertyClassDisplayName()));
         }
@@ -695,14 +714,13 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
         }
     }
 
-    // For backward compatibility with older OVITO versions that only knew FloatType.
-    // Perform data type conversion if necessary.
+    // For backward compatibility with older OVITO versions that only knew FloatType, i.e., not both single and double precision floating-point.
+    // Perform data type conversion for standard properties if necessary.
     if(stream.formatVersion() < 30010) {
         for(const Property* property : properties()) {
             if(property->isStandardProperty()) {
                 int expectedDataType = getOOMetaClass().standardPropertyDataType(property->typeId());
-                if(property->dataType() != expectedDataType)
-                    makeMutable(property)->convertToDataType(expectedDataType);
+                convertPropertyToDataType(property, expectedDataType);
             }
         }
     }

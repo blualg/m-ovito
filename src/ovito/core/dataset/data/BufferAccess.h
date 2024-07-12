@@ -664,21 +664,24 @@ public:
     BufferAccessConvertedTo() = default;
 
     /// Constructor that associates the access object with a buffer object (reference may be null).
-    BufferAccessConvertedTo(DataOORef<const DataBuffer> buffer) : base_type(performDataTypeConversion(std::move(buffer))) {}
+    BufferAccessConvertedTo(ConstDataBufferPtr buffer) : base_type(performDataTypeConversion(std::move(buffer))) {}
 
-    /// Constructor that takes a raw pointer to a DataBuffer.
+    /// Constructor that takes a raw pointer to a DataBuffer (may be null).
     BufferAccessConvertedTo(const DataBuffer* buffer) : BufferAccessConvertedTo(ConstDataBufferPtr(buffer)) {}
 
-    /// Constructor that takes a raw pointer to a DataBuffer.
-    BufferAccessConvertedTo(DataBuffer* buffer) : BufferAccessConvertedTo(DataBufferPtr(buffer)) {}
+    /// Constructor that takes a raw pointer to a DataBuffer (may be null).
+    BufferAccessConvertedTo(DataBuffer* buffer) : BufferAccessConvertedTo(static_cast<const DataBuffer*>(buffer)) {}
 
 private:
 
     /// Helper function that checks the data type of the incoming data buffer and performs a copy-and-conversion
     /// operation only if necessary.
-    static DataOORef<const DataBuffer> performDataTypeConversion(DataOORef<const DataBuffer> buffer) {
-        if(buffer && buffer->dataType() != DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value) {
-            buffer.makeMutableInplace()->convertToDataType(DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value);
+    static ConstDataBufferPtr performDataTypeConversion(ConstDataBufferPtr buffer) {
+        constexpr int TargetDataType = DataBufferPrimitiveType<std::remove_cv_t<element_type>>::value;
+        if(buffer && buffer->dataType() != TargetDataType) {
+            DataBufferPtr convertedBuffer = DataBufferPtr::create(DataBuffer::Uninitialized, buffer->size(), TargetDataType, buffer->componentCount(), buffer->componentNames());
+            convertedBuffer->copyFromAndConvert(*buffer);
+            return convertedBuffer;
         }
         return buffer;
     }
