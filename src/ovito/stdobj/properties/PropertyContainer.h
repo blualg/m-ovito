@@ -175,7 +175,11 @@ public:
     /// After this method returns, all property objects are exclusively owned by the container and
     /// can be safely modified without unwanted side effects.
     auto makePropertiesMutable() {
+
+        // Replace any shared properties with mutable copies.
         makePropertiesMutableInternal();
+
+        // Return an interator range allowing non-const access to the properties, e.g. for modifying them in a ranged-based for-loop.
         auto const_cast_op = [](const DataOORef<const Property>& p) noexcept { return const_cast<Property*>(p.get()); };
         using const_cast_iter_type = boost::transform_iterator<decltype(const_cast_op), typename std::decay_t<decltype(std::declval<PropertyContainer>().properties())>::const_iterator>;
         return boost::make_iterator_range(
@@ -183,6 +187,9 @@ public:
             const_cast_iter_type(properties().end(), const_cast_op)
         );
     }
+
+    /// Performs a numeric data type conversion of a property (unless the property already has the requested type).
+    const Property* convertPropertyToDataType(const ConstPropertyPtr& property, int dataType);
 
     /// Creates a standard property and adds it to the container.
     /// In case the property already exists, it is made sure that it's safe to modify it.

@@ -210,12 +210,12 @@ bool Property::equals(const Property& other) const
 * Creates an empty copy of this property object - without copying the stored
 * array data but cloning the metadata and list of element types.
 ******************************************************************************/
-PropertyPtr Property::cloneWithoutData(size_t newSize) const
+PropertyPtr Property::cloneWithoutData(size_t newSize, int overrideDataType) const
 {
     UndoSuspender noUndo;
 
     PropertyPtr clone = PropertyPtr::create(
-            ObjectInitializationFlag::DontInitializeObject, DataBuffer::Uninitialized, newSize, this->dataType(),
+            ObjectInitializationFlag::DontInitializeObject, DataBuffer::Uninitialized, newSize, overrideDataType != 0 ? overrideDataType : this->dataType(),
             this->componentCount(), this->name(), this->typeId(), this->componentNames());
 
     clone->setVisElements(this->visElements());

@@ -136,11 +136,6 @@ Future<PipelineFlowState> ConstructSurfaceModifier::evaluateModifier(const Modif
     ConstPropertyPtr grainProperty = particles->getProperty(QStringLiteral("Grain"));
     if(grainProperty && grainProperty->componentCount() != 1)
         grainProperty.reset();
-    if(grainProperty && grainProperty->dataType() != Property::Int64) {
-        auto copy = DataOORef<Property>::makeCopy(grainProperty);
-        copy->convertToDataType(DataBuffer::Int64);
-        grainProperty = std::move(copy);
-    }
 
     // Get simulation cell.
     const SimulationCell* simCell = state.expectObject<SimulationCell>();
@@ -263,14 +258,17 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
     SurfaceMeshBuilder meshBuilder(this->mesh());
 
+    // Access the per-particle grain IDs.
+    BufferAccessConvertedTo<const int64_t> particleGrains(_identifyRegions ? this->particleGrains().get() : nullptr);
+
     // Predefine the filled spatial regions of the output SurfaceMesh if the input particles are divided into separate grains by e.g. a GrainSegmentationModifier.
-    if(_identifyRegions && particleGrains()) {
+    if(particleGrains) {
 
         // Determine the maximum grain ID.
         int64_t maxGrainId = 0;
-        if(particleGrains()->size() != 0) {
+        if(particleGrains.size() != 0) {
             maxGrainId = qBound(int64_t{0},
-                *boost::max_element(BufferReadAccess<int64_t>(particleGrains())),
+                *boost::max_element(particleGrains),
                 static_cast<int64_t>(std::numeric_limits<SurfaceMesh::region_index>::max() - 1));
         }
 
@@ -282,14 +280,14 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     // This is only used if the input particles have previously been divided into grains by a GrainSegmentationModifier.
     // Otherwise, all tetrahedra are attributed to the null grain initially. Subsequently, they will be
     // grouped into disconnected sets, which form the regions of the output SurfaceMesh.
-    auto tetrahedronRegion = [&,grains = BufferReadAccess<int64_t>(_identifyRegions ? particleGrains() : nullptr)](DelaunayTessellation::CellHandle cell) -> SurfaceMesh::region_index {
-        if(grains) {
+    auto tetrahedronRegion = [&](DelaunayTessellation::CellHandle cell) -> SurfaceMesh::region_index {
+        if(particleGrains) {
             // Decide which particle cluster the Delaunay cell belongs to.
             // We need a tie-breaker in case the four vertex atoms belong to different grains.
             int64_t result = 0;
             for(int v = 0; v < 4; v++) {
                 size_t particleIndex = tessellation.vertexIndex(tessellation.cellVertex(cell, v));
-                int64_t clusterId = grains[particleIndex];
+                int64_t clusterId = particleGrains[particleIndex];
                 if(clusterId > result)
                     result = clusterId;
             }

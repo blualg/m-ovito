@@ -11,22 +11,28 @@ global illumination effects and shadows. Compared to CPU-based ray-tracing
 engines like :ref:`Tachyon <rendering.tachyon_renderer>` or :ref:`OSPRay <rendering.ospray_renderer>`,
 this renderer can achieve almost real-time performance on modern GPU hardware.
 
-**VisRTX requires NVIDIA hardware with CUDA support and a current NVIDIA graphics driver.**
-The renderer is not available on the macOS platform.
+**VisRTX requires NVIDIA hardware with CUDA support and a current NVIDIA graphics driver (CUDA 12.0+).**
+The renderer is not available on the macOS platform and doesn't work on *Windows Subsystem for Linux* (WSL),
+because this environment lacks the NVIDIA OptiX driver components required by VisRTX.
 
 .. caution::
 
   VisRTX is currently under active development by the *HPC Visualization Developer Technology* team at NVIDIA
-  in corporation with the OVITO developers, who integrate the technology.
+  in corporation with the OVITO developers integrating the technology.
   It is still considered experimental and not yet feature-complete.
   For more information, visit https://github.com/NVIDIA/VisRTX. Please report any issues you encounter
-  to the `OVITO developers <https://gitlab.com/stuko/ovito/-/issues>`__.
+  to the `OVITO developers <https://gitlab.com/stuko/ovito/-/issues>`__. Missing features and capabilities:
+
+    - Meshes with per-vertex transparency values
+    - Meshes with :ref:`highlighted edges (wireframes) <visual_elements.surface_mesh>`
+    - Materials with adjustable specular reflection parameters
+    - Flat-shaded primitives
 
 .. note::
 
   On first use of the VisRTX renderer, it will compile RTX shader programs for your specific GPU hardware.
   This process can take up to several minutes, but happens only once. The compiled shader programs are cached
-  on disk and reused in subsequent OVITO sessions.
+  on disk and will be reused in subsequent OVITO sessions.
 
 Parameters
 ----------
