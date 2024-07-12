@@ -43,8 +43,6 @@ public:
           _clusterGraph(network->clusterGraph()),
           _maxBurgersCircuitSize(maxTrialCircuitSize),
           _maxExtendedBurgersCircuitSize(maxTrialCircuitSize + maxCircuitElongation),
-          _unusedCircuit(nullptr),
-          _rng(1),
           _markCoreAtoms(markCoreAtoms)
     {
     }
@@ -140,10 +138,10 @@ private:
 
     /// Stores a pointer to the last allocated circuit which has been discarded.
     /// It can be re-used to serve the next allocation request.
-    BurgersCircuit* _unusedCircuit;
+    BurgersCircuit* _unusedCircuit = nullptr;
 
-    /// Used to generate random numbers;
-    std::mt19937 _rng;
+    /// Random number generator for the circuit sweeping algorithm, initialized with a fixed seed for reproducibility.
+    std::mt19937 _rng{1};
 
     /// Spatial query class used to find tetrahedrons based on their position
     std::optional<DelaunayTessellationSpatialQuery> _spatialQuery = std::nullopt;
