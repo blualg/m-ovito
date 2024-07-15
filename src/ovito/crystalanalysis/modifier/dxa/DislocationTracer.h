@@ -26,6 +26,7 @@
 #include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/core/utilities/MemoryPool.h>
 #include "InterfaceMesh.h"
+#include "DelaunayTessellationSpatialQuery.h"
 
 namespace Ovito {
 
@@ -76,6 +77,20 @@ public:
 
     /// Returns the list of nodes that are not part of a junction.
     const std::vector<DislocationNode*>& danglingNodes() const { return _danglingNodes; }
+
+    /// Returns the dislocation core info
+    const std::pair<DislocationNode*, bool>* dislocationCoreInfo(size_t cell) const
+    {
+        OVITO_ASSERT(_markCoreAtoms);
+        int cellIdx = _mesh.tessellation().getUserField(cell);
+        if(cellIdx == -1) {
+            return nullptr;
+        }
+        else {
+            OVITO_ASSERT(cellIdx < _coreInfo.size());
+            return (_coreInfo[cellIdx].first) ? &_coreInfo[cellIdx] : nullptr;
+        }
+    }
 
 private:
     BurgersCircuit* allocateCircuit();
@@ -149,13 +164,13 @@ private:
     std::optional<DelaunayTessellationSpatialQuery> _spatialQuery = std::nullopt;
 
     /// Cache used to store tetrahedron indices output from the spatial query class
-#if 1
     std::vector<DelaunayTessellationSpatialQuery::bBox> _ranges;
-#else
-    std::vector<std::span<const size_t>> _ranges;
-#endif
+
     /// Cache used to store per facet triangles
     std::vector<std::array<Point3, 3>> _triangles;
+
+    /// Store the per atom dislocation core atom information
+    std::vector<std::pair<DislocationNode*, bool>> _coreInfo;
 
     /// Store dislocation core atoms
     bool _markCoreAtoms;

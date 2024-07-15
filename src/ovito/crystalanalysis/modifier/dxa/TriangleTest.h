@@ -606,6 +606,7 @@ inline void test_cases()
 }
 #endif
 
+#if 0
 inline bool ptsSameSideTriTest(const Point3& t1, const Point3& t2, const Point3& t3, const Point3& t4, const Point3& p)
 {
     constexpr FloatType EPSILON = 1e-6;
@@ -830,30 +831,38 @@ inline FloatType triPtsSqDistance(const Point3& t1, const Point3& t2, const Poin
     Point3 closestPoint = t1 + s * e0 + t * e1;
     return (p - closestPoint).squaredLength();
 }
+#endif
 
 }  // namespace Implementation
 
+// Test the intersection of a tetrahedron and a triangle
+// Currently only intersection is tested. Triangles completly inside the
+// tetrahedron are not found! The code exists but is currently disabled (ptsInTetTest()).
 inline bool test(const std::array<Point3, 4>& tet, const std::array<Point3, 3>& tri)
 {
     static constexpr std::array<std::array<int, 3>, 4> tabVertexIndex = {{{1, 3, 2}, {0, 2, 3}, {0, 3, 1}, {0, 1, 2}}};
 
+#if 0
     // check if one or more of the triangle vertices are inside the tetrahedron.
-    // using Implementation::ptsInTetTest;
-    // for(size_t i = 0; i < 3; ++i) {
-    //     if(ptsInTetTest(tet[0], tet[1], tet[2], tet[3], tri[i]) && ptsInTetTest(tet[1], tet[2], tet[3], tet[0], tri[i]) &&
-    //        ptsInTetTest(tet[2], tet[3], tet[0], tet[1], tri[i]) && ptsInTetTest(tet[3], tet[0], tet[1], tet[2], tri[i])) {
-    //         return true;
-    //     }
-    // }
+    using Implementation::ptsInTetTest;
+    for(size_t i = 0; i < 3; ++i) {
+        if(ptsInTetTest(tet[0], tet[1], tet[2], tet[3], tri[i]) && ptsInTetTest(tet[1], tet[2], tet[3], tet[0], tri[i]) &&
+           ptsInTetTest(tet[2], tet[3], tet[0], tet[1], tri[i]) && ptsInTetTest(tet[3], tet[0], tet[1], tet[2], tri[i])) {
+            return true;
+        }
+    }
+#endif
 
-    // constexpr FloatType EPSILON = 1e-6;
-    // // check if any of the tet points are really close to the triangle
-    // for(size_t i = 0; i < 4; ++i) {
-    //     FloatType delta = Implementation::triPtsSqDistance(tri[0], tri[1], tri[2], tet[i]);
-    //     if(delta <= EPSILON) {
-    //         return true;
-    //     }
-    // }
+#if 0
+    constexpr FloatType EPSILON = 1e-6;
+    // check if any of the tet points are really close to the triangle
+    for(size_t i = 0; i < 4; ++i) {
+        FloatType delta = Implementation::triPtsSqDistance(tri[0], tri[1], tri[2], tet[i]);
+        if(delta <= EPSILON) {
+            return true;
+        }
+    }
+#endif
 
     // ckeck if any of the tetrahedron faces intersect with the triangle
     for(size_t i = 0; i < 4; ++i) {

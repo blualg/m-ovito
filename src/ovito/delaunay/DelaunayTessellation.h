@@ -29,12 +29,6 @@
 #include <geogram/Delaunay_psm.h>
 #include <boost/iterator/counting_iterator.hpp>
 
-#include <boost/geometry.hpp>
-#include <boost/geometry/geometries/point.hpp>
-#include <boost/geometry/geometries/box.hpp>
-#include <boost/geometry/index/rtree.hpp>
-#include <boost/geometry/geometries/register/point.hpp>
-
 namespace Ovito {
 
 /**
@@ -53,8 +47,6 @@ public:
     struct CellInfo {
         bool isGhost;   // Indicates whether this is a ghost tetrahedron.
         int userField;  // An additional field that can be used by client code.
-        std::pair<void*, Point3> dislocCoreInfo =
-            std::make_pair(nullptr, Point3::Origin());  // Associate each cell to a burgers circuit and line segement
         qint64 index;   // An index assigned to the cell.
     };
 
@@ -149,13 +141,6 @@ public:
     int getUserField(CellHandle cell) const {
         return _cellInfo[cell].userField;
     }
-
-    /// Set dislocation core info
-    void setDislocCoreInfo(CellHandle cell, void* v1, Point3 v2) { _cellInfo[cell].dislocCoreInfo = std::make_pair(v1, v2); }
-    void setDislocCoreInfo(CellHandle cell, const std::pair<void*, Point3>& info) { _cellInfo[cell].dislocCoreInfo = info; }
-
-    /// Get dislocation core info
-    const std::pair<void*, Point3>& getDislocCoreInfo(CellHandle cell) const { return _cellInfo[cell].dislocCoreInfo; }
 
     /// Returns whether the given tessellation cell connects four physical vertices.
     /// Returns false if one of the four vertices is the infinite vertex.
@@ -283,91 +268,5 @@ private:
     /// The simulation cell geometry.
     const SimulationCell* _simCell = nullptr;
 };
-
-#if 0
-class OVITO_DELAUNAY_EXPORT DelaunayTessellationSpatialQuery
-{
-public:
-    DelaunayTessellationSpatialQuery(const DelaunayTessellation& tessellation, FloatType binSize);
-
-    [[nodiscard]] size_t hashPoint(const Point3& p) const noexcept;
-
-    [[nodiscard]] const std::array<size_t, 3>& binCounts() const noexcept { return _binCounts; }
-
-    void getSurroundingCells(size_t hash, std::vector<std::span<const size_t>>& outRanges) const;
-
-private:
-    [[nodiscard]] std::span<const size_t> getRange(size_t hash) const;
-    [[nodiscard]] std::span<const size_t> getRange(size_t i, size_t j, size_t k) const;
-
-    [[nodiscard]] size_t hashCell(size_t i, size_t j, size_t k) const noexcept;
-    [[nodiscard]] std::array<int, 3> reverseCellHash(size_t hash) const noexcept;
-
-    const DelaunayTessellation& _tessellation;
-
-    // Bin size set by the user
-    const FloatType _binSize;
-
-    //
-    std::array<size_t, 3> _binCounts;
-
-    //
-    AffineTransformation _binCell;
-
-    //
-    std::vector<size_t> _cellCounts;
-
-    //
-    std::vector<size_t> _cellIndices;
-};
-#else
-
-// This a not so nice but bPointCell cannot be defined inside of DelaunayTessellationSpatialQuery
-// since BOOST_GEOMETRY_REGISTER_POINT_3D needs to be placed before bBox but also be in
-// globale namespace
-namespace DelaunayTessellationSpatialQueryImpl {
-struct bPointCell {
-    Point3 point;
-    size_t cell;
-
-    bPointCell(Point3::value_type v, size_t c) : point(v), cell(c) {}
-    bPointCell(const Point3& p) : point(p) {}
-};
-}  // namespace DelaunayTessellationSpatialQueryImpl
-
-}  // End of namespace Ovito
-
-// Adds the bPointCell type to boost geometry
-// Needs to be in the global namespace
-BOOST_GEOMETRY_REGISTER_POINT_3D(Ovito::DelaunayTessellationSpatialQueryImpl::bPointCell, Ovito::Point3::value_type,
-                                 boost::geometry::cs::cartesian, point[0], point[1], point[2]);
-
-namespace Ovito {
-
-// Create spatial querys on a Delaunay Tessellation finding all tetrahedrons
-// where their respective bounding boxes intersect with a target bounding bounding box
-class OVITO_DELAUNAY_EXPORT DelaunayTessellationSpatialQuery
-{
-public:
-    using bPoint = DelaunayTessellationSpatialQueryImpl::bPointCell;
-    using bBox = boost::geometry::model::box<DelaunayTessellationSpatialQueryImpl::bPointCell>;
-
-    // Initialize the query classa with a tessellation and a alpha value
-    // Alpha can be used to pre-filter cells added to the tree
-    DelaunayTessellationSpatialQuery(const DelaunayTessellation& tessellation, std::optional<FloatType> alpha);
-
-    // Get all cells intersecting with a given bounding box
-    // Target bounding box is defined by bboxLo and bboxHi
-    // Boxes are returned in the cells vector
-    void getCells(const Point3& bboxLow, const Point3& bboxHi, std::vector<bBox>& cells) const;
-
-private:
-    const DelaunayTessellation& _tessellation;
-
-    // boost::geometry::index::rtree<bBox, boost::geometry::index::rstar<16, 8>> _rtree;
-    boost::geometry::index::rtree<bBox, boost::geometry::index::quadratic<128>> _rtree;
-};
-
-#endif
 
 }  // End of namespace Ovito

@@ -1,0 +1,78 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright 2024 OVITO GmbH, Germany
+//
+//  This file is part of OVITO (Open Visualization Tool).
+//
+//  OVITO is free software; you can redistribute it and/or modify it either under the
+//  terms of the GNU General Public License version 3 as published by the Free Software
+//  Foundation (the "GPL") or, at your option, under the terms of the MIT License.
+//  If you do not alter this notice, a recipient may use your version of this
+//  file under either the GPL or the MIT License.
+//
+//  You should have received a copy of the GPL along with this program in a
+//  file LICENSE.GPL.txt.  You should have received a copy of the MIT License along
+//  with this program in a file LICENSE.MIT.txt
+//
+//  This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND,
+//  either express or implied. See the GPL or the MIT License for the specific language
+//  governing rights and limitations.
+//
+////////////////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+
+#include <ovito/stdobj/StdObj.h>
+#include <ovito/delaunay/DelaunayTessellation.h>
+
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point.hpp>
+#include <boost/geometry/geometries/box.hpp>
+#include <boost/geometry/index/rtree.hpp>
+#include <boost/geometry/geometries/register/point.hpp>
+
+// bPointCell cannot be defined inside of DelaunayTessellationSpatialQuery
+// since BOOST_GEOMETRY_REGISTER_POINT_3D needs to be placed before bBox but also be in
+// globale namespace
+namespace Ovito::DelaunayTessellationSpatialQueryImpl {
+struct bPointCell {
+    Point3 point;
+    size_t cell;
+};
+}  // End of namespace Ovito::DelaunayTessellationSpatialQueryImpl
+
+// Adds the bPointCell type to boost geometry
+// Needs to be in the global namespace
+BOOST_GEOMETRY_REGISTER_POINT_3D(Ovito::DelaunayTessellationSpatialQueryImpl::bPointCell, Ovito::Point3::value_type,
+                                 boost::geometry::cs::cartesian, point[0], point[1], point[2]);
+
+namespace Ovito {
+
+// Create spatial querys on a Delaunay Tessellation finding all tetrahedrons
+// where their respective bounding boxes intersect with a target bounding bounding box
+class DelaunayTessellationSpatialQuery
+{
+public:
+    using bPoint = DelaunayTessellationSpatialQueryImpl::bPointCell;
+    using bBox = boost::geometry::model::box<DelaunayTessellationSpatialQueryImpl::bPointCell>;
+
+    // Initialize the query classa with a tessellation and a alpha value
+    // Alpha can be used to pre-filter cells added to the tree
+    // This function modifies the user field in the tessellation!
+    DelaunayTessellationSpatialQuery(DelaunayTessellation& tessellation, std::optional<FloatType> alpha);
+
+    // Get all cells intersecting with a given bounding box
+    // Target bounding box is defined by bboxLo and bboxHi
+    // Boxes are returned in the cells vector
+    void getCells(const Box3& bbox, std::vector<bBox>& cells) const;
+
+    size_t numCells() const { return _rtree.size(); }
+
+private:
+    const DelaunayTessellation& _tessellation;
+
+    // boost::geometry::index::rtree<bBox, boost::geometry::index::rstar<16, 8>> _rtree;
+    boost::geometry::index::rtree<bBox, boost::geometry::index::quadratic<128>> _rtree;
+};
+
+}  // End of namespace Ovito
