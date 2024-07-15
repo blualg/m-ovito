@@ -92,9 +92,17 @@ public:
     /// All components of the returned Qt color are clamped to the [0,1] range.
     operator QColor() const {
         return QColor::fromRgbF(
-                qMin(qMax(r(), T(0)), T(1)),
-                qMin(qMax(g(), T(0)), T(1)),
-                qMin(qMax(b(), T(0)), T(1)));
+                qBound<float>(0.0f, static_cast<float>(r()), 1.0f),
+                qBound<float>(0.0f, static_cast<float>(g()), 1.0f),
+                qBound<float>(0.0f, static_cast<float>(b()), 1.0f));
+    }
+
+    /// Conversion to a QRgb value.
+    Q_DECL_CONSTEXPR QRgb qrgb() const {
+        return qRgb(
+            static_cast<int>(qBound(T(0), r(), T(1)) * 255),
+            static_cast<int>(qBound(T(0), g(), T(1)) * 255),
+            static_cast<int>(qBound(T(0), b(), T(1)) * 255));
     }
 
     /// Converts the RGB color to a 3-vector with XYZ components.
@@ -370,10 +378,19 @@ public:
     /// All components of the returned Qt color are clamped to the [0,1] range.
     operator QColor() const {
         return QColor::fromRgbF(
-                qMin(qMax(r(), T(0)), T(1)),
-                qMin(qMax(g(), T(0)), T(1)),
-                qMin(qMax(b(), T(0)), T(1)),
-                qMin(qMax(a(), T(0)), T(1)));
+                qBound<float>(0.0f, static_cast<float>(r()), 1.0f),
+                qBound<float>(0.0f, static_cast<float>(g()), 1.0f),
+                qBound<float>(0.0f, static_cast<float>(b()), 1.0f),
+                qBound<float>(0.0f, static_cast<float>(a()), 1.0f));
+    }
+
+    /// Conversion to a QRgb value.
+    Q_DECL_CONSTEXPR QRgb qrgb() const {
+        return qRgba(
+            static_cast<int>(qBound(T(0), r(), T(1)) * 255),
+            static_cast<int>(qBound(T(0), g(), T(1)) * 255),
+            static_cast<int>(qBound(T(0), b(), T(1)) * 255),
+            static_cast<int>(qBound(T(0), a(), T(1)) * 255));
     }
 
     //////////////////////////// Component access //////////////////////////

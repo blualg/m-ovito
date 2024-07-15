@@ -333,14 +333,14 @@ void DataBuffer::saveToStream(ObjectSaveStream& stream, bool excludeRecomputable
     }
     else {
         stream.writeSizeT(_numElements);
-        OVITO_ASSERT(_isDataInitialized);
-#ifdef OVITO_USE_SYCL
         if(_numElements != 0) {
+            OVITO_ASSERT(_isDataInitialized);
+#ifdef OVITO_USE_SYCL
             sycl::host_accessor readAccessor(*_data, sycl::read_only);
             stream.write(readAccessor.get_pointer(), _stride * _numElements);
-        }
 #else
-        stream.write(_data.get(), _stride * _numElements);
+            stream.write(_data.get(), _stride * _numElements);
+        }
 #endif
     }
     stream.endChunk();
@@ -384,7 +384,8 @@ void DataBuffer::loadFromStream(ObjectLoadStream& stream)
 #else
     _data = std::unique_ptr<DataBuffer::Byte[]>(new DataBuffer::Byte[_numElements * _stride]); // Note: for backward compatibility with GCC 10
 #endif
-    stream.read(_data.get(), _stride * _numElements);
+    if(_numElements != 0)
+        stream.read(_data.get(), _stride * _numElements);
 #endif
     stream.closeChunk();
 }

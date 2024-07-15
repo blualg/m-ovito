@@ -16,27 +16,30 @@ For more information on the capabilities of the OSPRay engine and its technical 
 please visit the website https://www.ospray.org.
 The OSPRay documentation contains more in-depth information on this rendering engine's various parameters.
 
-The "More Options" (vertical ellipsis) button next to each nummerical parameter opens a context menu with 
-the option to reset each paramter to its default value.
+The "More Options" (vertical ellipsis) button next to each nummerical parameter opens a context menu with
+the option to reset each parameter to its default value.
 
 Quality settings
 """"""""""""""""
 
 Refinement passes
   OSPRay uses a progressive rendering method, which further refines the generated image during each rendering pass.
-  This parameter controls the number of refinement passes to compute (default value: 4).
+  This parameter controls the number of refinement iterations to compute (default value: 4).
 
 Samples per pixel
-  The number of ray-tracing samples computed per pixel of the output image (default value: 2). 
-  Larger values can help reduce aliasing artifacts and will yield better results if the *depth of field* 
-  option has been enabled. 
+  The number of ray-tracing samples computed per pixel (default value: 8).
+  Larger values can help reduce aliasing artifacts and will yield better results, especially if the *depth of field*
+  option is turned on.
 
 Ray recursion depth
-  The maximum number of recursion steps taken during ray-tracing (default value: 10). 
+  The maximum number of recursion steps taken during ray-tracing (default value: 10).
   Normally, 1 or 2 is enough, but when rendering many overlapping semi-transparent objects, a larger recursion depth may be needed.
 
+Roulette depth
+  Ray recursion depth at which to start Russian roulette termination (default value: 5).
+
 Denoising filter
-  Applies a denoising filter to the rendered image to reduce Monte Carlo noise inherent to stochastic  
+  Applies a denoising filter to the rendered image to reduce Monte Carlo noise inherent to stochastic
   methods such as path tracing.
 
 Depth of field
@@ -49,9 +52,9 @@ Light sources
 """""""""""""
 
 Direct light
-  Enables a directional light source positioned behind the camera and pointing roughly along the viewing direction. 
+  Enables a directional light source positioned behind the camera and pointing roughly along the viewing direction.
   The *angular diameter* specifies the apparent size (angle in degrees) of the light source.
-  Setting the angular diameter to a value greater than zero yields soft shadows. For instance, the apparent size 
+  Setting the angular diameter to a value greater than zero yields soft shadows. For instance, the apparent size
   of the sun is about 0.53°.
 
 Ambient light
@@ -59,7 +62,7 @@ Ambient light
 
 Sun-sky light
   The sun-sky light produces the light typically coming from the sky and the sun in an outdoor scene.
-  The radiance values are calculated using the Hošek-Wilkie sky model and solar radiance function. 
+  The radiance values are calculated using the Hošek-Wilkie sky model and solar radiance function.
   The zenith of the sky as well as the sun are positioned along the positive Z axis of the scene and are independent of the camera orientation.
 
 Material
@@ -70,12 +73,6 @@ Specular brightness
 
 Shininess
   This specular Phong exponent is usually in the range between 2.0 and 10000.0 (default value: 10.0).
-
-Path tracer backend
-"""""""""""""""""""
-
-Roulette depth
-  Ray recursion depth at which to start Russian roulette termination (default value: 2).
 
 .. seealso::
 
