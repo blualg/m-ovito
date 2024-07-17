@@ -229,7 +229,6 @@ PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const Pip
         visCache.capPrimitive.setMesh({});
     }
 
-    // Handle picking of triangles.
     if(visCache.surfacePrimitive.mesh()) {
         // Update the color mapping.
         visCache.surfacePrimitive.setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());

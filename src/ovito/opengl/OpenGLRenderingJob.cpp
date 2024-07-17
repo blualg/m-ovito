@@ -286,8 +286,6 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
         // Fetch rendered image from OpenGL framebuffer.
         QImage renderedImage = glFrameBuffer->framebufferObject()->toImage();
         OVITO_ASSERT(renderedImage.size() == framebufferSize());
-        // We need it in ARGB32 format for best results.
-        renderedImage.reinterpretAsFormat(QImage::Format_ARGB32);
         // Rescale supersampled image to output size.
         QImage scaledImage = renderedImage.scaled(viewportRect.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 

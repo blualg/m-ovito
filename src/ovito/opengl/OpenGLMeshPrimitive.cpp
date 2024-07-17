@@ -63,10 +63,8 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
 
     // Decide whether per-pixel pseudo-color mapping is used.
     bool renderWithPseudoColorMapping = false;
-    if(primitive.pseudoColorMapping().isValid() && !isPickingPass() && !primitive.useInstancedRendering()) {
-        if(!mesh.hasVertexColors() && mesh.hasVertexPseudoColors())
-            renderWithPseudoColorMapping = true;
-        else if(!mesh.hasFaceColors() && mesh.hasFacePseudoColors())
+    if(primitive.pseudoColorMapping().isValid() && !isPickingPass() && !primitive.useInstancedRendering() && !mesh.hasVertexColors() && !mesh.hasFaceColors()) {
+        if(mesh.hasVertexPseudoColors() || mesh.hasFacePseudoColors())
             renderWithPseudoColorMapping = true;
     }
 

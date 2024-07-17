@@ -659,9 +659,9 @@ void PipelineListModel::multiData(const QModelIndex& index, QModelRoleDataSpan r
             }
             if(item->isObjectItem()) {
                 switch(item->status().type()) {
-                case PipelineStatus::Warning: roleData.setData(_statusWarningIcon);
-                case PipelineStatus::Error: roleData.setData(_statusErrorIcon);
-                default: roleData.setData(_statusNoneIcon);
+                case PipelineStatus::Warning: roleData.setData(_statusWarningIcon); break;
+                case PipelineStatus::Error: roleData.setData(_statusErrorIcon); break;
+                default: roleData.setData(_statusNoneIcon); break;
                 }
                 continue;
             }
@@ -682,8 +682,8 @@ void PipelineListModel::multiData(const QModelIndex& index, QModelRoleDataSpan r
             }
             if(item->isObjectItem()) {
                 switch(item->status().type()) {
-                case PipelineStatus::Warning: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_warning.png"));
-                case PipelineStatus::Error: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_error.png"));
+                case PipelineStatus::Warning: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_warning.png")); break;
+                case PipelineStatus::Error: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_error.png")); break;
                 default: roleData.setData(QStringLiteral("qrc:/guibase/mainwin/status/status_none.png"));
                 }
                 continue;

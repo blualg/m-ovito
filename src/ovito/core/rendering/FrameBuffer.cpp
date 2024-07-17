@@ -30,12 +30,10 @@
 
 namespace Ovito {
 
-#define IMAGE_FORMAT_FILE_FORMAT_VERSION        1
-
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-FrameBuffer::FrameBuffer(int width, int height, QObject* parent) : QObject(parent), _image(width, height, QImage::Format_ARGB32)
+FrameBuffer::FrameBuffer(int width, int height, QObject* parent) : QObject(parent), _image(width, height, QImage::Format_ARGB32_Premultiplied)
 {
     _info.setImageWidth(width);
     _info.setImageHeight(height);
@@ -89,7 +87,7 @@ bool ImageInfo::isMovie() const
 ******************************************************************************/
 SaveStream& operator<<(SaveStream& stream, const ImageInfo& i)
 {
-    stream.beginChunk(IMAGE_FORMAT_FILE_FORMAT_VERSION);
+    stream.beginChunk(0x01);
     stream << i._imageWidth;
     stream << i._imageHeight;
     stream << i._filename;
@@ -103,7 +101,7 @@ SaveStream& operator<<(SaveStream& stream, const ImageInfo& i)
 ******************************************************************************/
 LoadStream& operator>>(LoadStream& stream, ImageInfo& i)
 {
-    stream.expectChunk(IMAGE_FORMAT_FILE_FORMAT_VERSION);
+    stream.expectChunk(0x01);
     stream >> i._imageWidth;
     stream >> i._imageHeight;
     stream >> i._filename;
@@ -149,8 +147,10 @@ void FrameBuffer::commitChanges()
             _image.fill(_delayedClearColor);
         }
         else {
-            OVITO_ASSERT(_image.format() == QImage::Format_ARGB32);
-            QRgb clearColor = QColor(_delayedClearColor).rgba();
+            OVITO_ASSERT(_image.format() == QImage::Format_ARGB32 || _image.format() == QImage::Format_ARGB32_Premultiplied);
+            QRgb clearColor = _delayedClearColor.qrgb();
+            if(_image.format() == QImage::Format_ARGB32_Premultiplied)
+                clearColor = qPremultiply(clearColor);
             for(int y = clearRect.top(); y <= clearRect.bottom(); y++) {
                 QRgb* dst = reinterpret_cast<QRgb*>(_image.scanLine(y)) + clearRect.left();
                 std::fill(dst, dst + clearRect.width(), clearColor);
@@ -236,11 +236,13 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRec
 ******************************************************************************/
 bool FrameBuffer::autoCrop()
 {
-    QImage image = this->image().convertToFormat(QImage::Format_ARGB32);
+    const QImage& image = this->image();
+    OVITO_ASSERT(image.format() == QImage::Format_ARGB32 || image.format() == QImage::Format_ARGB32_Premultiplied);
+
     if(image.width() <= 0 || image.height() <= 0)
         return false;
 
-    auto determineCropRect = [&image](QRgb backgroundColor) -> QRect {
+    auto determineCropRect = [&](QRgb backgroundColor) -> QRect {
         int x1 = 0, y1 = 0;
         int x2 = image.width() - 1, y2 = image.height() - 1;
         bool significant;
@@ -298,12 +300,15 @@ bool FrameBuffer::autoCrop()
     // to the smallest crop rect.
     QRect cropRect = determineCropRect(image.pixel(0,0));
     QRect r;
-    r = determineCropRect(image.pixel(image.width()-1,0));
-    if(r.width()*r.height() < cropRect.width()*cropRect.height()) cropRect = r;
-    r = determineCropRect(image.pixel(image.width()-1,image.height()-1));
-    if(r.width()*r.height() < cropRect.width()*cropRect.height()) cropRect = r;
-    r = determineCropRect(image.pixel(0,image.height()-1));
-    if(r.width()*r.height() < cropRect.width()*cropRect.height()) cropRect = r;
+    r = determineCropRect(image.pixel(image.width()-1, 0));
+    if(r.width()*r.height() < cropRect.width()*cropRect.height())
+        cropRect = r;
+    r = determineCropRect(image.pixel(image.width()-1, image.height()-1));
+    if(r.width()*r.height() < cropRect.width()*cropRect.height())
+        cropRect = r;
+    r = determineCropRect(image.pixel(0, image.height()-1));
+    if(r.width()*r.height() < cropRect.width()*cropRect.height())
+        cropRect = r;
 
     if(cropRect != image.rect() && cropRect.width() > 0 && cropRect.height() > 0) {
         _image = _image.copy(cropRect);
