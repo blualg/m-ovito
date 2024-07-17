@@ -72,8 +72,6 @@ DislocationAnalysisEngine::DislocationAnalysisEngine(PropertyPtr structures, siz
 void DislocationAnalysisEngine::identifyStructures(const Particles* particles, const SimulationCell* simulationCell,
                                                    const Property* selection)
 {
-    auto start = std::chrono::high_resolution_clock::now();
-
     if(!simulationCell) throw Exception(DislocationAnalysisModifier::tr("DXA requires a simulation cell to be defined."));
     if(simulationCell->is2D()) throw Exception(DislocationAnalysisModifier::tr("DXA does not support 2d simulations."));
 
@@ -294,10 +292,6 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     _interfaceMesh.reset();
     _dislocationTracer.reset();
     _crystalClusters.reset();
-
-    auto end = std::chrono::high_resolution_clock::now();
-    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    std::cout << "Execution time: " << ms << " ms" << std::endl;
 }
 
 /******************************************************************************
@@ -312,16 +306,16 @@ void DislocationAnalysisEngine::assignDislocationIDs(size_t numParticles)
 
     const BufferWriteAccess<int32_t, access_mode::write> dislocationsBuffer(_atomDislocations);
     for(DelaunayTessellation::CellHandle cell = 0; cell < _tessellation->numberOfTetrahedra(); ++cell) {
-        const auto& dislocInfo = _tessellation->getDislocCoreInfo(cell);
-        DislocationSegment* segment = static_cast<DislocationSegment*>(dislocInfo.first);
-        // Remove any tetrahedra originally marked, where the line has been clipped / back traching in
-        // DislocationTracer::finishDislocationSegments
-        if(segment && std::any_of(std::execution::par_unseq, segment->line.cbegin(), segment->line.cend(), [&](const Point3& p) {
-               return _interfaceMesh->wrapVector(p - dislocInfo.second).squaredLength() < FLOATTYPE_EPSILON;
-           })) {
+        // Check if tet has dislocation core info
+        if(const auto& dislocInfo = _dislocationTracer->dislocationCoreInfo(cell)) {
+            OVITO_ASSERT(dislocInfo->first);
+            // Remove any tetrahedra originally marked, where the line has been clipped
+            if(dislocInfo->first->isDangling() && dislocInfo->second) {
+                continue;
+            }
             for(size_t lv = 0; lv < 4; ++lv) {
                 size_t index = _tessellation->vertexIndex(_tessellation->cellVertex(cell, lv));
-                dislocationsBuffer[index] = segment->replacedId();
+                dislocationsBuffer[index] = dislocInfo->first->segment->replacedId();
             }
         }
     }
@@ -365,7 +359,6 @@ std::vector<int64_t> DislocationAnalysisEngine::computeStructureStatistics(const
     }
 
     if(_atomDislocations) {
-        std::cout << "_atomDislocations " << _atomDislocations << std::endl;
         Particles* particles = state.expectMutableObject<Particles>();
         particles->createProperty(_atomDislocations);
     }

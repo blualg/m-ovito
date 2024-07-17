@@ -98,6 +98,13 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
     sublayout->addWidget(outputInterfaceMeshUI->checkBox(), row++, 0);
 
     BooleanParameterUI* markCoreAtomsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::markCoreAtoms));
+#ifdef OVITO_BUILD_PROFESSIONAL
+    markCoreAtomsUI->checkBox()->setText(PROPERTY_FIELD(DislocationAnalysisModifier::markCoreAtoms)->displayName());
+#else
+    markCoreAtomsUI->checkBox()->setText(PROPERTY_FIELD(DislocationAnalysisModifier::markCoreAtoms)->displayName() +
+                                         tr(" (requires OVITO Pro)"));
+    markCoreAtomsUI markCoreAtomsUI->setEnabled(false);
+#endif
     sublayout->addWidget(markCoreAtomsUI->checkBox(), row++, 0);
 
     BooleanParameterUI* onlyPerfectDislocationsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::onlyPerfectDislocations));
