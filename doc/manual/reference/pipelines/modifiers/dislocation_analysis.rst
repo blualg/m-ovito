@@ -100,6 +100,12 @@ Use only selected particles
 .. _particles.modifiers.dislocation_analysis.mark_core_atoms:
 
 Mark dislocation core atoms |ovito-pro|
+  .. figure:: /images/modifiers/dxa/dislocation_analysis_core_atoms_marked.png
+    :figwidth: 30%
+    :align: right
+
+    Atoms that have been identified as belonging to one of the dislocation cores.
+
   This function identifies atoms that belong to the cores of individual dislocations.
   The results are stored in a new particle property named ``Dislocation`` specifying the zero-based numerical identifier
   of the dislocation segment each atom is associated with. Atoms that do not belong to any dislocation core receive the special value -1.
