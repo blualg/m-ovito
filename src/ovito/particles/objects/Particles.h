@@ -101,7 +101,6 @@ public:
         StressTensorProperty,
         StrainTensorProperty,
         DeformationGradientProperty,
-        DislocationProperty,
         OrientationProperty,
         ForceProperty,
         MassProperty,

@@ -303,7 +303,7 @@ void DislocationAnalysisEngine::assignCoreAtomDislocationIDs(size_t numParticles
 
     // Create the output dislocation ID atom property and assign determined values
     _atomDislocations =
-        Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, numParticles, Particles::DislocationProperty);
+        Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, numParticles, Property::Int32, 1, QStringLiteral("Dislocation"));
 
     BufferWriteAccess<int32_t, access_mode::discard_write> dislocationPropertyAccess(_atomDislocations);
     boost::fill(dislocationPropertyAccess, -1);
