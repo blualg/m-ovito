@@ -212,7 +212,6 @@ DataObjectPath DataCollection::makeMutable(const ConstDataObjectPath& path, Clon
 ******************************************************************************/
 const DataObject* DataCollection::getObjectBy(const DataObject::OOMetaClass& objectClass, const PipelineNode* createdByNode, const QString& identifier) const
 {
-    OVITO_ASSERT(!identifier.isEmpty());
     if(!createdByNode)
         return nullptr;
 
@@ -220,7 +219,7 @@ const DataObject* DataCollection::getObjectBy(const DataObject::OOMetaClass& obj
     // an enumeration index that was appended by generateUniqueIdentifier().
     for(const DataObject* obj : objects()) {
         if(objectClass.isMember(obj) && obj->createdByNode().lock().get() == createdByNode) {
-            if(obj->identifier() == identifier || obj->identifier().startsWith(identifier + QChar('.')))
+            if(obj->identifier() == identifier || (!identifier.isEmpty() && obj->identifier().startsWith(identifier + QChar('.'))))
                 return obj;
         }
     }

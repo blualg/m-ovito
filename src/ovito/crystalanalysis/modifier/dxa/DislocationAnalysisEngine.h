@@ -87,7 +87,7 @@ public:
 
 private:
     /// Create the output dislocation ID atom property and assign determined values
-    void assignDislocationIDs(size_t numParticles);
+    void assignCoreAtomDislocationIDs(size_t numParticles);
 
 private:
     int _inputCrystalStructure;

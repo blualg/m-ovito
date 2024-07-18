@@ -22,10 +22,10 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/core/utilities/concurrent/Task.h>
+#include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "DislocationTracer.h"
 #include "InterfaceMesh.h"
-#include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include "TriangleTest.h"
+#include "TriangleTetrahedronIntersectionTest.h"
 
 namespace Ovito {
 
@@ -965,17 +965,19 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
         return;
     }
 
-    // Mark core atoms implementation
+    // Implementation of the core atom marking algorithm:
+
+    // One-time initialization of spatial query structure for Delaunay cells and auxiliary data array per "defective" Delaunay cell.
     DelaunayTessellation& tessellation = mesh().tessellation();
     FloatType alpha = 3.5 * mesh().elasticMapping().structureAnalysis().maximumNeighborDistance();
     if(!_spatialQuery) {
         _spatialQuery.emplace(tessellation, alpha);
-        _coreInfo.resize(_spatialQuery->numCells(), std::make_pair(nullptr, false));
+        _cellDataForCoreAtomIdentification.resize(_spatialQuery->numCells(), std::make_pair(nullptr, false));
     }
 
+    // Collect cap triangles and computed their combined bounding box.
     InterfaceMesh::Edge* edge = node.circuit->firstEdge;
     _triangles.clear();
-    // Collect cap triangles and combined bounding box
     Box3 bbox;
     do {
         _triangles.push_back({newPoint + mesh().wrapVector(edge->vertex1()->pos() - newPoint),
@@ -985,40 +987,43 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
             bbox.addPoint(_triangles.back()[i]);
         }
         edge = edge->nextCircuitEdge;
-    } while(edge != node.circuit->firstEdge);
-    _ranges.clear();
+    }
+    while(edge != node.circuit->firstEdge);
+
+    // Obtain the list of all Delaunay cells intersecting with the bounding box
     _spatialQuery->getCells(bbox, _ranges);
 
     using bBox = DelaunayTessellationSpatialQuery::bBox;
 
-    // 256 treshold determined from inital testing
-    // Parallel over tetrahedrons, loop over each triangle until intersection is found
+    // Work chunk size of 256 is used as threshold for parallelization and has been determined from inital testing.
+    // Parallel loop over tetrahedrons to be tested for intersection with the cap polygon.
+    // Inner loop over each triangle until a intersection is detected.
     parallelFor<false>(_ranges.size(), 256, [&](size_t idx) {
-        // create new tet variable for each thread
-        std::array<Point3, 4> tet;
 
         // Grab bbox and cell
         const bBox& bbox = _ranges[idx];
         OVITO_ASSERT(bbox.max_corner().cell == bbox.min_corner().cell);
         size_t cell = bbox.max_corner().cell;
         int cellIdx = tessellation.getUserField(cell);
-        OVITO_ASSERT(cellIdx == -1 || cellIdx < _coreInfo.size());
+        OVITO_ASSERT(cellIdx == -1 || cellIdx < _cellDataForCoreAtomIdentification.size());
 
-        // Skip tetrahedrons that have been assigned previously
-        if(cellIdx == -1 || _coreInfo[cellIdx].first) {
+        // Skip over tetrahedrons that have already been assigned to some dislocation.
+        if(cellIdx == -1 || _cellDataForCoreAtomIdentification[cellIdx].first) {
             return;
         }
 
-        // Get tetrahedron positions -> unwrapped as newPoint should be in the
+        // Get tetrahedron coordinates -> unwrapped as newPoint should be in the
         // real or ghost layer region of the tessellation containing tetrahedrons
+        std::array<Point3, 4> tet;
         for(size_t t = 0; t < tet.size(); ++t) {
             tet[t] = tessellation.vertexPosition(tessellation.cellVertex(cell, t));
         }
+
         // Intersection test
         for(const std::array<Point3, 3>& triangle : _triangles) {
             if(TetrahedronTriangleIntersection::test(tet, triangle)) {
-                // Add tetrahedron to coreInfo
-                _coreInfo[cellIdx] = std::make_pair(node.circuit->dislocationNode, !node.circuit->segmentMeshCap.empty());
+                // Tag tetrahedron as belonging to the current dislocation line end.
+                _cellDataForCoreAtomIdentification[cellIdx] = std::make_pair(&node, !node.circuit->segmentMeshCap.empty());
                 return;
             }
         }

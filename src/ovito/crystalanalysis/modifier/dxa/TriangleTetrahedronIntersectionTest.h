@@ -23,7 +23,7 @@
 #pragma once
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include "ovito/core/utilities/DataTypes.h"
+#include <ovito/core/utilities/DataTypes.h>
 
 namespace Ovito::TetrahedronTriangleIntersection {
 
@@ -836,8 +836,8 @@ inline FloatType triPtsSqDistance(const Point3& t1, const Point3& t2, const Poin
 }  // namespace Implementation
 
 // Test the intersection of a tetrahedron and a triangle
-// Currently only intersection is tested. Triangles completly inside the
-// tetrahedron are not found! The code exists but is currently disabled (ptsInTetTest()).
+// Currently only tet face intersections are tested for. Triangles completely inside the
+// tetrahedron are not found! The code for the triangle-inside-tet test exists but is currently disabled (ptsInTetTest()).
 inline bool test(const std::array<Point3, 4>& tet, const std::array<Point3, 3>& tri)
 {
     static constexpr std::array<std::array<int, 3>, 4> tabVertexIndex = {{{1, 3, 2}, {0, 2, 3}, {0, 3, 1}, {0, 1, 2}}};

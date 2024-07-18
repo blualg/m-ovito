@@ -76,18 +76,15 @@ public:
     /// Returns the list of nodes that are not part of a junction.
     const std::vector<DislocationNode*>& danglingNodes() const { return _danglingNodes; }
 
-    /// Returns the dislocation core info
-    const std::pair<DislocationNode*, bool>* dislocationCoreInfo(size_t cell) const
-    {
+    /// Returns the the dislocation line end that got associated with the given Delaunay cell.
+    /// This method is part of the dislocation core atom identification algorithm.
+    std::pair<DislocationNode*, bool> getDislocationNodeForDelaunayCell(size_t cell) const {
         OVITO_ASSERT(_markCoreAtoms);
-        int cellIdx = _mesh.tessellation().getUserField(cell);
-        if(cellIdx == -1) {
-            return nullptr;
-        }
-        else {
-            OVITO_ASSERT(cellIdx < _coreInfo.size());
-            return (_coreInfo[cellIdx].first) ? &_coreInfo[cellIdx] : nullptr;
-        }
+
+        auto cellIdx = _mesh.tessellation().getUserField(cell);
+        OVITO_ASSERT(cellIdx == -1 || (size_t)cellIdx < _cellDataForCoreAtomIdentification.size());
+
+        return (cellIdx != -1) ? _cellDataForCoreAtomIdentification[cellIdx] : std::make_pair(nullptr, false);
     }
 
 private:
@@ -152,26 +149,31 @@ private:
     std::vector<DislocationNode*> _danglingNodes;
 
     /// Stores a pointer to the last allocated circuit which has been discarded.
-    /// It can be re-used to serve the next allocation request.
+    /// It can be recycled to serve the next allocation request.
     BurgersCircuit* _unusedCircuit = nullptr;
 
     /// Random number generator for the circuit sweeping algorithm, initialized with a fixed seed for reproducibility.
     std::mt19937 _rng{1};
 
-    /// Spatial query class used to find tetrahedrons based on their position
-    std::optional<DelaunayTessellationSpatialQuery> _spatialQuery = std::nullopt;
+    /// Controls the identification of dislocation core atoms.
+    bool _markCoreAtoms;
 
-    /// Cache used to store tetrahedron indices output from the spatial query class
+    /// Spatial query class used to find Delaunay tetrahedra based on their bounding box.
+    /// Used in the dislocation core atom identification algorithm.
+    std::optional<DelaunayTessellationSpatialQuery> _spatialQuery;
+
+    /// Output vector for tetrahedra obtained from the spatial query class.
+    /// Vector variable is being recycled to avoid memory allocation overhead.
     std::vector<DelaunayTessellationSpatialQuery::bBox> _ranges;
 
-    /// Cache used to store per facet triangles
+    /// List of triangles of the currently moved circuit cap polygon, which is used for dislocation core atom identification.
+    /// Vector variable is being recycled to avoid memory allocation overhead.
     std::vector<std::array<Point3, 3>> _triangles;
 
-    /// Store the per atom dislocation core atom information
-    std::vector<std::pair<DislocationNode*, bool>> _coreInfo;
-
-    /// Store dislocation core atoms
-    bool _markCoreAtoms;
+    /// Stores auxiliary information per "defective" Delaunay cell for dislocation core atom identification:
+    ///   1. The dislocation line end that got associated with the cell.
+    ///   2. A flag indicating whether that dislocation line end got extended already to detect dislocation junctions.
+    std::vector<std::pair<DislocationNode*, bool>> _cellDataForCoreAtomIdentification;
 };
 
 }  // namespace Ovito

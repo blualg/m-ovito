@@ -548,18 +548,16 @@ void CAImporter::FrameLoader::loadFile()
 
             // Add Burgers vector families.
             for(int j = 0; j < patterns[i].burgersVectorFamilies.size(); j++) {
-                DataOORef<BurgersVectorFamily> family = DataOORef<BurgersVectorFamily>::create();
-                family->setNumericId(patterns[i].burgersVectorFamilies[j].id);
-                family->setColor(patterns[i].burgersVectorFamilies[j].color);
-                family->setName(patterns[i].burgersVectorFamilies[j].name);
-                family->setBurgersVector(patterns[i].burgersVectorFamilies[j].burgersVector);
-                family->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name), SHADOW_PROPERTY_FIELD(ElementType::color), SHADOW_PROPERTY_FIELD(BurgersVectorFamily::burgersVector)});
-                pattern->addBurgersVectorFamily(family);
+                pattern->createBurgersVectorFamily(
+                    patterns[i].burgersVectorFamilies[j].id,
+                    patterns[i].burgersVectorFamilies[j].name,
+                    patterns[i].burgersVectorFamilies[j].burgersVector,
+                    patterns[i].burgersVectorFamilies[j].color);
             }
 
             // Make sure there always is a default family.
             if(pattern->burgersVectorFamilies().empty())
-                pattern->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create());
+                pattern->createBurgersVectorFamily();
         }
 
         // Determine the main crystal structure of the system, which has the most atoms.

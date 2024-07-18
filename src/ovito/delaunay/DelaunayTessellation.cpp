@@ -176,8 +176,7 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
     // Classify tessellation cells as ghost or local cells.
     _numPrimaryTetrahedra = 0;
     _cellInfo.resize(_dt->nb_cells());
-    for(CellIterator cellIter = begin_cells(); cellIter != end_cells(); ++cellIter) {
-        CellHandle cell = *cellIter;
+    for(CellHandle cell : cells()) {
         if(classifyGhostCell(cell)) {
             _cellInfo[cell].isGhost = true;
             _cellInfo[cell].index = -1;
@@ -272,7 +271,7 @@ std::optional<bool> DelaunayTessellation::alphaTest(CellHandle cell, FloatType a
 
     // Detect degnerate sliver elements, for which we cannot compute a reliable alpha value.
     if(std::abs(denom) < 1e-9 && std::abs(nomin) < 1e-9) {
-        return {}; // Indeterminate result
+        return std::nullopt; // Indeterminate result
     }
 
     return (nomin / denom) < alpha;

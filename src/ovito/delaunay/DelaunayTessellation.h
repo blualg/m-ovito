@@ -123,8 +123,14 @@ public:
     /// Returns the number of finite cells in the primary image of the simulation cell.
     size_type numberOfPrimaryTetrahedra() const { return _numPrimaryTetrahedra; }
 
+    /// Returns the beginning of the iterator range over all Delaunay tetrahedra.
     CellIterator begin_cells() const { return boost::make_counting_iterator<size_type>(0); }
+
+    /// Returns the end of the iterator range over all Delaunay tetrahedra.
     CellIterator end_cells() const { return boost::make_counting_iterator<size_type>(_dt->nb_cells()); }
+
+    /// Returns the iterator range over all Delaunay tetrahedra.
+    auto cells() const { return boost::make_iterator_range(begin_cells(), end_cells()); }
 
     void setCellIndex(CellHandle cell, qint64 value) {
         _cellInfo[cell].index = value;

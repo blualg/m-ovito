@@ -40,11 +40,11 @@ void ElasticMapping::generateTessellationEdges()
     this_task::setProgressMaximum(tessellation().numberOfPrimaryTetrahedra());
 
     // Generate list of tessellation edges.
-    for(DelaunayTessellation::CellIterator cellIter = tessellation().begin_cells(); cellIter != tessellation().end_cells(); ++cellIter) {
-        DelaunayTessellation::CellHandle cell = *cellIter;
+    for(DelaunayTessellation::CellHandle cell : tessellation().cells()) {
 
         // Skip invalid cells (those not connecting four physical atoms) and ghost cells.
-        if(tessellation().isGhostCell(cell)) continue;
+        if(tessellation().isGhostCell(cell))
+            continue;
 
         // Update progress indicator.
         this_task::setProgressValueIntermittent(tessellation().getCellIndex(cell));

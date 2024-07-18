@@ -67,6 +67,16 @@ public:
     /// Adds a new family to this phase's list of Burgers vector families.
     void addBurgersVectorFamily(const BurgersVectorFamily* family) { _burgersVectorFamilies.push_back(this, PROPERTY_FIELD(burgersVectorFamilies), family); }
 
+    /// Adds a new family to this phase's list of Burgers vector families.
+    BurgersVectorFamily* createBurgersVectorFamily(int id = 0, const QString& name = tr("Other"), const Vector3& burgersVector = Vector3::Zero(), const Color& color = Color(0.9, 0.2, 0.2)) {
+        DataOORef<BurgersVectorFamily> family = DataOORef<BurgersVectorFamily>::create(id, name);
+        family->setBurgersVector(burgersVector);
+        family->setColor(color);
+        family->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name), SHADOW_PROPERTY_FIELD(ElementType::color), SHADOW_PROPERTY_FIELD(BurgersVectorFamily::burgersVector)});
+        addBurgersVectorFamily(family);
+        return family;
+    }
+
     /// Removes a family from this lattice pattern's list of Burgers vector families.
     void removeBurgersVectorFamily(int index) { _burgersVectorFamilies.remove(this, PROPERTY_FIELD(burgersVectorFamilies), index); }
 

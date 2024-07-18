@@ -170,7 +170,7 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     this_task::throwIfCanceled();
 
     if(_markCoreAtoms) {
-        assignDislocationIDs(particles->elementCount());
+        assignCoreAtomDislocationIDs(particles->elementCount());
     }
 #if 0
 
@@ -297,25 +297,30 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
 /******************************************************************************
  * Create the output dislocation ID atom property and assign determined values.
  ******************************************************************************/
-void DislocationAnalysisEngine::assignDislocationIDs(size_t numParticles)
+void DislocationAnalysisEngine::assignCoreAtomDislocationIDs(size_t numParticles)
 {
+    OVITO_ASSERT(_markCoreAtoms);
+
     // Create the output dislocation ID atom property and assign determined values
     _atomDislocations =
         Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, numParticles, Particles::DislocationProperty);
-    _atomDislocations->fill(-1);
 
-    const BufferWriteAccess<int32_t, access_mode::write> dislocationsBuffer(_atomDislocations);
-    for(DelaunayTessellation::CellHandle cell = 0; cell < _tessellation->numberOfTetrahedra(); ++cell) {
-        // Check if tet has dislocation core info
-        if(const auto& dislocInfo = _dislocationTracer->dislocationCoreInfo(cell)) {
-            OVITO_ASSERT(dislocInfo->first);
-            // Remove any tetrahedra originally marked, where the line has been clipped
-            if(dislocInfo->first->isDangling() && dislocInfo->second) {
+    BufferWriteAccess<int32_t, access_mode::discard_write> dislocationPropertyAccess(_atomDislocations);
+    boost::fill(dislocationPropertyAccess, -1);
+
+    for(DelaunayTessellation::CellHandle cell : _tessellation->cells()) {
+        // Determine if the tetrahedron is a "defective" one and has been assigned to a dislocation line.
+        const auto [node, isExtendedLineSection] = _dislocationTracer->getDislocationNodeForDelaunayCell(cell);
+        if(node) {
+            // Ignore any tetrahedra originally marked that belong to the clipped line section of a dangling line end.
+            if(node->isDangling() && isExtendedLineSection) {
                 continue;
             }
+
+            // Assign the dislocation ID to the 4 atoms of the tetrahedron.
             for(size_t lv = 0; lv < 4; ++lv) {
-                size_t index = _tessellation->vertexIndex(_tessellation->cellVertex(cell, lv));
-                dislocationsBuffer[index] = dislocInfo->first->segment->replacedId();
+                size_t particleIndex = _tessellation->vertexIndex(_tessellation->cellVertex(cell, lv));
+                dislocationPropertyAccess[particleIndex] = node->segment->replacedId();
             }
         }
     }
@@ -336,14 +341,6 @@ std::vector<int64_t> DislocationAnalysisEngine::computeStructureStatistics(const
 
     // Output interface mesh.
     if(_outputInterfaceMesh) state.addObjectWithUniqueId<SurfaceMesh>(_outputInterfaceMesh);
-
-#if 0
-    // Output cluster graph to data collection.
-    if(const ClusterGraphObject* oldClusterGraph = state.getObject<ClusterGraphObject>())
-        state.removeObject(oldClusterGraph);
-    ClusterGraphObject* clusterGraphObj = state.createObject<ClusterGraphObject>(createdByNode);
-    clusterGraphObj->setStorage(clusterGraph());
-#endif
 
     // Output dislocations.
     while(!dislocationNetwork()->crystalStructures().empty())

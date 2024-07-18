@@ -50,24 +50,26 @@ computationally expensive analysis. The CA file format is specified :ref:`below 
 
   The DXA produces dislocation lines and Burgers vectors that follow the left-hand start-finish (LH/SF) convention.
 
+.. _particles.modifiers.dislocation_analysis.parameters:
+
 Parameters
 """"""""""
 
 Input crystal type
-  This parameter specifies the lattice type of the input crystal. Currently, simple crystal structures such as
-  FCC, HCP, BCC, and diamond are supported. The DXA ignores the chemical atom types. Thus,
-  a zincblende structure, for example, can simply be treated as a cubic diamond crystal.
+  This parameter specifies the lattice type of the input crystal. Currently, simple crystal structures like
+  FCC, HCP, BCC and diamond are supported. The DXA ignores the chemical atom types. Thus, for example,
+  a zincblende structure can simply be treated as a cubic diamond crystal.
 
   The selected input crystal type tells OVITO how to identify the local coordination structure of
   each atom and how to compute the local crystal orientation. The selected crystal type also determines
-  how the computed Burgers vectors are represented (three-component notation for crystals with cubic symmetry,
+  how the calculated Burgers vectors are represented (three-component notation for crystals with cubic symmetry,
   four-component notation for hexagonal crystals).
 
   Furthermore, for each available crystal type, OVITO defines a set of dislocation classes into which the
-  extracted dislocation lines are grouped. Dislocations with a Burgers vector that does not belong to any of the
-  predefined families are assigned to the category "Other". Currently, the list of dislocation classes is hardcoded
-  and cannot be changed by the user. Please contact the developer if you think that a new dislocation class should be
-  added for a certain crystal type.
+  extracted dislocation lines are grouped. Dislocations with a Burgers vector that does not belong to one of the
+  predefined families are assigned to the category "Other". Currently, the list of dislocation classes is hard-coded
+  and cannot be changed by the user. Please contact the developers if you think that a new dislocation class should be
+  added for a particular crystal type.
 
 Trial circuit length
   This sets the maximum length of trial Burgers circuits, which are constructed
@@ -87,12 +89,26 @@ Circuit stretchability
   nine steps longer than the limit set by the *trial circuit length* parameter above.
 
 Use only selected particles
-  This option restricts the analysis to the subset of currently selected atoms.
-  When activate, unselected atoms will be ignored (as if they did not exist) and will be
-  assigned the structure type "Other".
-  This option can be useful if you want to identify dislocations in a crystal with a structure
-  not supported by the modifier, but which has a sublattice that is supported
-  (and you do not want to delete atoms belonging to the other sublattice(s) for some reason).
+  This option restricts the analysis to a subset of the input atoms, i.e., only those atoms that are selected in the upstream data pipeline.
+  If turned on, unselected atoms will be ignored (as if they did not exist) and will be assigned the special structure type "Other".
+
+  This option can be useful if you want to identify dislocations in a crystal with a complex lattice structure
+  not directly supported by the modifier, but which contains a simpler sub-lattice formed by one or more atomic species.
+  In such a case, you can first select those atoms that belong to the supported sub-lattice, e.g. by inserting the :ref:`particles.modifiers.select_particle_type` modifier into the pipeline,
+  and then run the DXA on the selected atoms only.
+
+.. _particles.modifiers.dislocation_analysis.mark_core_atoms:
+
+Mark dislocation core atoms |ovito-pro|
+  This function identifies atoms that belong to the cores of individual dislocations.
+  The results are stored in a new particle property named ``Dislocation`` specifying the zero-based numerical identifier
+  of the dislocation segment each atom is associated with. Atoms that do not belong to any dislocation core receive the special value -1.
+
+  The algorithm considers atoms to be part of a dislocation core if they are located right on or inside the Burgers circuits that :ref:`DXA uses to
+  identify dislocation lines <particles.modifiers.dislocation_analysis.background>`. In other words, for an atom to be marked as a core atom, it must be on or inside the
+  :ref:`interface mesh <particles.modifiers.dislocation_analysis.interface_mesh>` that gets constructed around the crystal defects. The CNA structure type of the atom is *not* relevant
+  for this classification. Note that this selection criterion represents a reasonable, but also somewhat arbitrary, definition of the dislocation core concept, which may differ from
+  other ways of defining the extent of the *physical* dislocation core region at the atomic level.
 
 Output interface mesh
   Tells the analysis modifier to display the so-called interface mesh, a closed manifold which separates
@@ -110,37 +126,33 @@ Generate perfect dislocations
   to higher values when using this option, because longer Burgers circuits are required to trace perfect
   dislocations which are dissociated.
 
-Mark dislocation core atoms |ovito-pro|
-  This function identifies atoms belonging to the core of each dislocation. 
-  The output is stored in a new particle property labeled "Dislocation." 
-  Each atom is assigned the numerical ID corresponding to its associated dislocation. 
-  Atoms not part of any dislocation core receive an invalid index of -1. 
-  It's important to note that atoms identified by this method do not necessarily represent the physical dislocation core. 
-  Instead, all atoms which are inside and on the surface of the *"interface mesh"*, 
-  but not part of the *"defect mesh"*, are connected to the dislocation line located within. 
+.. _particles.modifiers.dislocation_analysis.postprocessing:
 
-Line smoothing level
-  The raw dislocation lines generated by the DXA are typically noisy (due to the atomistic nature of the dislocation cores)
-  and need to be post-processed to produce smooth dislocation curves. This parameter controls the number of
-  iterations of the smoothing algorithm to perform.
+Post-processing options
+"""""""""""""""""""""""
 
-Line point separation
-  The raw dislocation lines generated by the DXA consist of a very dense sequence of points.
-  To produce smooth lines, the number of points is reduced in a post-processing step. This parameter controls
-  the desired distance between successive points along a dislocation line. The distance is only an approximate number
-  and is measured in multiples of the interatomic spacing in the underlying crystal.
+Line smoothing
+  The original dislocation lines generated by DXA are typically noisy (due to the atomistic nature of the dislocation cores)
+  and need to be post-processed to produce smooth-looking dislocation curves. This parameter controls the number of
+  iterations of the fairing algorithm to apply, which slightly displaces the vertices of the discretized dislocation lines.
 
-Surface smoothing level
-  The raw defect mesh generated by the DXA contains atomically sharp steps and needs to be
-  post-processed to produce a smooth surface. This parameter controls the number of
-  iterations of the smoothing algorithm to perform.
+Line coarsening
+  The original dislocation lines generated by DXA are made of very closely spaced points, which get reduced in a post-processing step.
+  This parameter controls the desired spacing between successive points along a dislocation line. The output spacing
+  is specified in multiples of the typical spacing between atoms in the input crystal (nearest neighbor distance) and is
+  only an approximate number.
+
+Surface smoothing
+  The original defect mesh generated by DXA contains atomically sharp steps and needs to be
+  post-processed to obtain a smooth surface. This parameter controls the number of
+  iterations of the surface fairing algorithm to apply.
 
 .. _particles.modifiers.dislocation_analysis.outputs:
 
 Outputs
 """""""
 
-After analyzing the atomistic input crystal, the modifier produces several outputs:
+After analyzing the atomistic input crystal, the modifier produces several pieces of output:
 
 Dislocation lines
   The dislocations identified by the DXA are continuous curves in 3d space. Each dislocation line
@@ -233,6 +245,8 @@ Currently, a simple text-based output format is supported, which is also used by
 The CA dislocation file format is specified below. OVITO can also import CA files,
 which allows saving the results of a (possibly) expensive dislocation analysis to disk and then reloading them again later.
 
+.. _particles.modifiers.dislocation_analysis.background:
+
 Technical background
 """"""""""""""""""""
 
@@ -304,6 +318,8 @@ As mentioned above, the total number of possible circuits in a three-dimensional
 way to considerably reduce the search space. The solution is provided by the aforementioned partitioning into good and bad regions,
 which defines a boundary surface separating the two regions. In three-dimensional systems this boundary is called the *interface mesh* and
 is constituted by those triangular Delaunay facets having a good tetrahedral element on one side and a bad element on the other.
+
+.. _particles.modifiers.dislocation_analysis.interface_mesh:
 
 .. figure:: /images/modifiers/dxa/dxa_interface_mesh.png
   :figwidth: 60%

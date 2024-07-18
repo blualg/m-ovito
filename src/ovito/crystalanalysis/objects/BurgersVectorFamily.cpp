@@ -35,14 +35,12 @@ SET_PROPERTY_FIELD_LABEL(BurgersVectorFamily, burgersVector, "Burgers vector");
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-void BurgersVectorFamily::initializeObject(ObjectInitializationFlags flags, int id, const QString& name, const Vector3& burgersVector, const Color& color)
+void BurgersVectorFamily::initializeObject(ObjectInitializationFlags flags, int id, const QString& name)
 {
     ElementType::initializeObject(flags);
 
-    setBurgersVector(burgersVector);
     setNumericId(id);
     setName(name);
-    setColor(color);
 }
 
 /******************************************************************************

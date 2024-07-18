@@ -39,7 +39,7 @@ class OVITO_STDOBJ_EXPORT ElementType : public DataObject
 
 public:
 
-    /// \brief Constructor.
+    /// Constructor.
     void initializeObject(ObjectInitializationFlags flags);
 
     /// Initializes the element type to default parameter values.

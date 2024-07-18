@@ -53,7 +53,7 @@ void DislocationNetwork::initializeObject(ObjectInitializationFlags flags)
             DataOORef<MicrostructurePhase> defaultStructure = DataOORef<MicrostructurePhase>::create(flags);
             defaultStructure->setName(tr("Unidentified structure"));
             defaultStructure->setColor(Color(1,1,1));
-            defaultStructure->addBurgersVectorFamily(DataOORef<BurgersVectorFamily>::create(flags));
+            defaultStructure->createBurgersVectorFamily();
             addCrystalStructure(std::move(defaultStructure));
         }
 

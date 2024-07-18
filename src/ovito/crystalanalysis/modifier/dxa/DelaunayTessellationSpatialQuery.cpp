@@ -25,32 +25,26 @@
 namespace Ovito {
 
 /******************************************************************************
- * Initialize the query class with a tessellation and a alpha value
- * Alpha can be used to pre-filter cells added to the tree
- * This function modifies the user field in the tessellation!
+ * Initializes the query class with a tessellation and an alpha value.
+ * Alpha can be used to pre-filter cells added to the tree to include only cells that are located within the bulk region.
+ * This function modifies the user field of the tessellation cells!
  ******************************************************************************/
 DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(DelaunayTessellation& tessellation, std::optional<FloatType> alpha)
-    : _tessellation(tessellation)
 {
     // Create rtree with the bounding boxes
     // rtree insertion is not thread safe!
     int idx = 0;
-    for(size_t cell = 0; cell < _tessellation.numberOfTetrahedra(); ++cell) {
+    for(DelaunayTessellation::CellHandle cell : tessellation.cells()) {
         // Only add defective and finite tetrahedrons
-        if(!_tessellation.isFiniteCell(cell) || _tessellation.getUserField(cell) != -1) {
-            // invalid index in user field
+        if(!tessellation.isFiniteCell(cell) || tessellation.getUserField(cell) != -1) {
             tessellation.setUserField(cell, -1);
             continue;
         }
 
-        // Skip based on alpha criterion
-        if(alpha) {
-            bool isFilledTetrehedron = false;
-            if(auto alphaTestResult = tessellation.alphaTest(cell, alpha.value())) {
-                isFilledTetrehedron = *alphaTestResult;
-            }
+        // Skip cells that are outside the solid region based on alpha criterion
+        if(alpha.has_value()) {
+            bool isFilledTetrehedron = tessellation.alphaTest(cell, alpha.value()).value_or(false);
             if(!isFilledTetrehedron) {
-                // invalid index in user field
                 tessellation.setUserField(cell, -1);
                 continue;
             }
@@ -59,10 +53,10 @@ DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(DelaunayTesse
         // Add bbounding box to tree
         Box3 bbox;
         for(size_t vert = 0; vert < 4; ++vert) {
-            bbox.addPoint(_tessellation.vertexPosition(_tessellation.cellVertex(cell, vert)));
+            bbox.addPoint(tessellation.vertexPosition(tessellation.cellVertex(cell, vert)));
         }
         _rtree.insert(bBox({bbox.minc, cell}, {bbox.maxc, cell}));
-        // Give cells included in the tree a contiguous  user field that can used to index into a vector
+        // Give cells included in the tree a contiguous range of indices that can used to index into a separate data vector (DislocationTracer::_cellDataForCoreAtomIdentification)
         tessellation.setUserField(cell, idx++);
         OVITO_ASSERT(_rtree.size() == idx);
     }
@@ -76,7 +70,7 @@ DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(DelaunayTesse
 void DelaunayTessellationSpatialQuery::getCells(const Box3& bbox, std::vector<bBox>& cells) const
 {
     namespace bgi = boost::geometry::index;
-    cells.clear();
+    cells.clear(); // Recylcing the existing vector avoids memory allocation overhead
     _rtree.query(bgi::intersects(bBox({bbox.minc, 0}, {bbox.maxc, 0})), std::back_inserter(cells));
 }
 

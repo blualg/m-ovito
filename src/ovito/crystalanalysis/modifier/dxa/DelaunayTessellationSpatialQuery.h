@@ -48,30 +48,28 @@ BOOST_GEOMETRY_REGISTER_POINT_3D(Ovito::DelaunayTessellationSpatialQueryImpl::bP
 
 namespace Ovito {
 
-// Create spatial querys on a Delaunay Tessellation finding all tetrahedrons
-// where their respective bounding boxes intersect with a target bounding bounding box
+/// Create spatial querys on a Delaunay Tessellation finding all tetrahedrons
+/// where their respective bounding boxes intersect with a target bounding bounding box
 class DelaunayTessellationSpatialQuery
 {
 public:
     using bPoint = DelaunayTessellationSpatialQueryImpl::bPointCell;
     using bBox = boost::geometry::model::box<DelaunayTessellationSpatialQueryImpl::bPointCell>;
 
-    // Initialize the query classa with a tessellation and a alpha value
-    // Alpha can be used to pre-filter cells added to the tree
-    // This function modifies the user field in the tessellation!
+    /// Initializes the query class with a tessellation and an alpha value.
+    /// Alpha can be used to pre-filter cells added to the tree to include only cells that are located within the bulk region.
+    /// This function modifies the user field of the tessellation cells!
     DelaunayTessellationSpatialQuery(DelaunayTessellation& tessellation, std::optional<FloatType> alpha);
 
-    // Get all cells intersecting with a given bounding box
-    // Target bounding box is defined by bboxLo and bboxHi
-    // Boxes are returned in the cells vector
+    /// Get all cells intersecting with a given bounding box
+    /// Target bounding box is defined by bboxLo and bboxHi
+    /// Boxes are returned in the cells vector
     void getCells(const Box3& bbox, std::vector<bBox>& cells) const;
 
     size_t numCells() const { return _rtree.size(); }
 
 private:
-    const DelaunayTessellation& _tessellation;
 
-    // boost::geometry::index::rtree<bBox, boost::geometry::index::rstar<16, 8>> _rtree;
     boost::geometry::index::rtree<bBox, boost::geometry::index::quadratic<128>> _rtree;
 };
 

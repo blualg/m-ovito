@@ -358,14 +358,14 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             boost::fill(regionIds, -1);
             // Visit each tetrahedral cell and assign its four vertex particles to the region of the cell.
             DelaunayTessellation::CellHandle queryHint = DelaunayTessellation::CellHandle(-1);
-            for(DelaunayTessellation::CellIterator cell = tessellation.begin_cells(); cell != tessellation.end_cells(); ++cell) {
-                if(tessellation.isGhostCell(*cell) || !tessellation.isFiniteCell(*cell))
+            for(DelaunayTessellation::CellHandle cell : tessellation.cells()) {
+                if(tessellation.isGhostCell(cell) || !tessellation.isFiniteCell(cell))
                     continue;
-                queryHint = *cell;
-                if(int regionId = tessellation.getUserField(*cell); regionId >= 0) {
+                queryHint = cell;
+                if(int regionId = tessellation.getUserField(cell); regionId >= 0) {
                     OVITO_ASSERT(regionId >= 0 && regionId <= filledRegionCount + emptyRegionCount);
                     for(int v = 0; v < 4; v++) {
-                        size_t particleIndex = tessellation.vertexIndex(tessellation.cellVertex(*cell, v));
+                        size_t particleIndex = tessellation.vertexIndex(tessellation.cellVertex(cell, v));
                         OVITO_ASSERT(particleIndex < regionIds.size() || particleIndex == std::numeric_limits<size_t>::max());
                         // Give precedence to filled regions. Particles on the boundary are always assigned to the filled region, not the empty region.
                         if(particleIndex != std::numeric_limits<size_t>::max()) {

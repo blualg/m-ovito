@@ -46,7 +46,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(DislocationTypeListParameterUI);
 void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create the rollout.
-    QWidget* rollout = createRollout(tr("Dislocation analysis"), rolloutParams, "particles.modifiers.dislocation_analysis");
+    QWidget* rollout = createRollout(tr("Dislocation analysis"), rolloutParams, "manual:particles.modifiers.dislocation_analysis");
 
     QVBoxLayout* layout = new QVBoxLayout(rollout);
     layout->setContentsMargins(4,4,4,4);
@@ -79,7 +79,7 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
     sublayout->addWidget(circuitStretchabilityUI->label(), 1, 0);
     sublayout->addLayout(circuitStretchabilityUI->createFieldLayout(), 1, 1);
 
-    QGroupBox* advancedParamsBox = new QGroupBox(tr("Advanced settings"));
+    QGroupBox* advancedParamsBox = new QGroupBox(tr("Advanced options"));
     layout->addWidget(advancedParamsBox);
     sublayout = new QGridLayout(advancedParamsBox);
     sublayout->setContentsMargins(4,4,4,4);
@@ -94,21 +94,48 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
     BooleanParameterUI* onlySelectedParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(StructureIdentificationModifier::onlySelectedParticles));
     sublayout->addWidget(onlySelectedParticlesUI->checkBox(), row++, 0);
 
-    BooleanParameterUI* outputInterfaceMeshUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::outputInterfaceMesh));
-    sublayout->addWidget(outputInterfaceMeshUI->checkBox(), row++, 0);
-
     BooleanParameterUI* markCoreAtomsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::markCoreAtoms));
 #ifdef OVITO_BUILD_PROFESSIONAL
     markCoreAtomsUI->checkBox()->setText(PROPERTY_FIELD(DislocationAnalysisModifier::markCoreAtoms)->displayName());
 #else
     markCoreAtomsUI->checkBox()->setText(PROPERTY_FIELD(DislocationAnalysisModifier::markCoreAtoms)->displayName() +
                                          tr(" (requires OVITO Pro)"));
-    markCoreAtomsUI markCoreAtomsUI->setEnabled(false);
+    markCoreAtomsUI->setEnabled(false);
 #endif
     sublayout->addWidget(markCoreAtomsUI->checkBox(), row++, 0);
 
+    BooleanParameterUI* outputInterfaceMeshUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::outputInterfaceMesh));
+    sublayout->addWidget(outputInterfaceMeshUI->checkBox(), row++, 0);
+
     BooleanParameterUI* onlyPerfectDislocationsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::onlyPerfectDislocations));
     sublayout->addWidget(onlyPerfectDislocationsUI->checkBox(), row++, 0);
+
+    QGroupBox* postprocessingBox = new QGroupBox(tr("Post-processing"));
+    layout->addWidget(postprocessingBox);
+    sublayout = new QGridLayout(postprocessingBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    sublayout->setSpacing(4);
+     sublayout->setColumnStretch(1, 1);
+
+    BooleanParameterUI* lineSmoothingEnabledUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::lineSmoothingEnabled));
+    lineSmoothingEnabledUI->checkBox()->setText(tr("Line smoothing:"));
+    IntegerParameterUI* lineSmoothingLevelUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::lineSmoothingLevel));
+    sublayout->addWidget(lineSmoothingEnabledUI->checkBox(), 0, 0);
+    sublayout->addLayout(lineSmoothingLevelUI->createFieldLayout(), 0, 1);
+    lineSmoothingLevelUI->setEnabled(false);
+    connect(lineSmoothingEnabledUI->checkBox(), &QCheckBox::toggled, lineSmoothingLevelUI, &IntegerParameterUI::setEnabled);
+
+    BooleanParameterUI* lineCoarseningEnabledUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::lineCoarseningEnabled));
+    lineCoarseningEnabledUI->checkBox()->setText(tr("Line coarsening:"));
+    FloatParameterUI* linePointIntervalUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::linePointInterval));
+    sublayout->addWidget(lineCoarseningEnabledUI->checkBox(), 1, 0);
+    sublayout->addLayout(linePointIntervalUI->createFieldLayout(), 1, 1);
+    linePointIntervalUI->setEnabled(false);
+    connect(lineCoarseningEnabledUI->checkBox(), &QCheckBox::toggled, linePointIntervalUI, &IntegerParameterUI::setEnabled);
+
+    IntegerParameterUI* defectMeshSmoothingLevelUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::defectMeshSmoothingLevel));
+    sublayout->addWidget(defectMeshSmoothingLevelUI->label(), 2, 0);
+    sublayout->addLayout(defectMeshSmoothingLevelUI->createFieldLayout(), 2, 1);
 
     // Status label.
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
@@ -128,46 +155,6 @@ void DislocationAnalysisModifierEditor::createUI(const RolloutInsertionParameter
         // Get the current data pipeline output generated by the modifier.
         burgersFamilyListUI->updateDislocationCounts(getPipelineOutput(), modificationNode());
     });
-
-    // Line postprocessing.
-    rollout = createRollout(tr("Line post-processing"), rolloutParams.after(rollout), "particles.modifiers.dislocation_analysis");
-
-    layout = new QVBoxLayout(rollout);
-    layout->setContentsMargins(4,4,4,4);
-
-    BooleanGroupBoxParameterUI* lineSmoothingEnabledUI = createParamUI<BooleanGroupBoxParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::lineSmoothingEnabled));
-    lineSmoothingEnabledUI->groupBox()->setTitle(tr("Line smoothing"));
-    sublayout = new QGridLayout(lineSmoothingEnabledUI->childContainer());
-    sublayout->setContentsMargins(4,4,4,4);
-    sublayout->setColumnStretch(1, 1);
-    layout->addWidget(lineSmoothingEnabledUI->groupBox());
-
-    IntegerParameterUI* lineSmoothingLevelUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::lineSmoothingLevel));
-    sublayout->addWidget(lineSmoothingLevelUI->label(), 0, 0);
-    sublayout->addLayout(lineSmoothingLevelUI->createFieldLayout(), 0, 1);
-
-    BooleanGroupBoxParameterUI* lineCoarseningEnabledUI = createParamUI<BooleanGroupBoxParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::lineCoarseningEnabled));
-    lineCoarseningEnabledUI->groupBox()->setTitle(tr("Line coarsening"));
-    sublayout = new QGridLayout(lineCoarseningEnabledUI->childContainer());
-    sublayout->setContentsMargins(4,4,4,4);
-    sublayout->setColumnStretch(1, 1);
-    layout->addWidget(lineCoarseningEnabledUI->groupBox());
-
-    FloatParameterUI* linePointIntervalUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::linePointInterval));
-    sublayout->addWidget(linePointIntervalUI->label(), 0, 0);
-    sublayout->addLayout(linePointIntervalUI->createFieldLayout(), 0, 1);
-
-    // Surface post-processing.
-    rollout = createRollout(tr("Surface post-processing"), rolloutParams.after(rollout), "manual:particles.modifiers.dislocation_analysis");
-
-    QGridLayout* gridlayout = new QGridLayout(rollout);
-    gridlayout->setContentsMargins(4,4,4,4);
-    gridlayout->setSpacing(6);
-    gridlayout->setColumnStretch(1, 1);
-
-    IntegerParameterUI* defectMeshSmoothingLevelUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(DislocationAnalysisModifier::defectMeshSmoothingLevel));
-    gridlayout->addWidget(defectMeshSmoothingLevelUI->label(), 0, 0);
-    gridlayout->addLayout(defectMeshSmoothingLevelUI->createFieldLayout(), 0, 1);
 }
 
 /******************************************************************************

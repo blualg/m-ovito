@@ -243,8 +243,7 @@ public:
         // Loop over all cells to cluster them.
         this_task::setProgressMaximum(_tessellation.numberOfTetrahedra() - _numFilledCells);
         progressValue = 0;
-        for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
-            DelaunayTessellation::CellHandle cell = *cellIter;
+        for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
 
             // Only consider finite cells.
             if(!_tessellation.isFiniteCell(cell))
@@ -390,8 +389,7 @@ public:
         }
 
         // Update tesselation user field to reflect the compressed empty region IDs
-        for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
-            DelaunayTessellation::CellHandle cell = *cellIter;
+        for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
             int currentRegionId = _tessellation.getUserField(cell);
             if(currentRegionId >= _filledRegionCount) {
                 _tessellation.setUserField(cell, regionMapping[findRegion(currentRegionId - _filledRegionCount)]);
@@ -422,8 +420,7 @@ private:
         _mesh.setSpaceFillingRegion(SurfaceMesh::InvalidIndex);
         bool spaceFillingRegionUndetermined = true;
         bool isSpaceFilling = true;
-        for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
-            DelaunayTessellation::CellHandle cell = *cellIter;
+        for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
 
             // Update progress indicator.
             this_task::setProgressValueIntermittent(progressCounter++);
@@ -444,7 +441,7 @@ private:
                         if(!_tessellation.isFiniteCell(adjacentCell))
                             break;
                         auto adjacentAlphaTestResult = _tessellation.alphaTest(adjacentCell, _alpha);
-                        if(adjacentAlphaTestResult && !*adjacentAlphaTestResult)
+                        if(adjacentAlphaTestResult.has_value() && !adjacentAlphaTestResult.value())
                             break;
                     }
                     if(f == 4)
@@ -519,8 +516,7 @@ private:
             // Loop over all Delaunay cells to cluster them into connected components.
             // All filled cells have initially a user field value of 0.
             std::deque<size_t> toProcess;
-            for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
-                DelaunayTessellation::CellHandle cell = *cellIter;
+            for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
 
                 // Skip empty cells and cells that have already been assigned to a region.
                 if(_tessellation.getUserField(cell) != 0)
@@ -583,10 +579,10 @@ private:
 
             if(_mesh.regionCount() > 0) {
                 // Shift filled region IDs to start at index 0.
-                for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
-                    int region = _tessellation.getUserField(*cellIter);
+                for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
+                    int region = _tessellation.getUserField(cell);
                     if(region > 0)
-                        _tessellation.setUserField(*cellIter, region - 1);
+                        _tessellation.setUserField(cell, region - 1);
                 }
             }
         }
@@ -596,9 +592,8 @@ private:
 
             // Filled mesh regions have already been predefined by the caller.
             // We just need to compute the volume of each spatial region.
-            for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
+            for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
                 this_task::throwIfCanceled();
-                DelaunayTessellation::CellHandle cell = *cellIter;
 
                 // Skip empty cells.
                 SurfaceMesh::region_index region = _tessellation.getUserField(cell);
@@ -619,8 +614,7 @@ private:
         if(_filledRegionCount != 0) {
             // Copy assigned region IDs from primary tetrahedra to ghost tetrahedra.
             this_task::setProgressMaximum(_tessellation.numberOfTetrahedra());
-            for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
-                DelaunayTessellation::CellHandle cell = *cellIter;
+            for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
                 if(_tessellation.isGhostCell(cell) && _tessellation.getUserField(cell) != SurfaceMesh::InvalidIndex) {
                     this_task::setProgressValueIntermittent(cell);
 
@@ -647,8 +641,7 @@ private:
     void createCellMap()
     {
         this_task::setProgressMaximum(_tessellation.numberOfTetrahedra());
-        for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
-            DelaunayTessellation::CellHandle cell = *cellIter;
+        for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
 
             // Skip cells that belong to the exterior region.
             if(_tessellation.getUserField(cell) == SurfaceMesh::InvalidIndex)
@@ -698,8 +691,7 @@ private:
         this_task::setProgressMaximum(_numFilledCells);
         SurfaceMeshTopology* topo = _mesh.mutableTopology();
 
-        for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
-            DelaunayTessellation::CellHandle cell = *cellIter;
+        for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
 
             // Consider only filled local tetrahedra.
             if(_tessellation.getCellIndex(cell) == -1)
@@ -860,11 +852,11 @@ private:
 #endif
 
         auto tet = _tetrahedraFaceList.cbegin();
-        for(DelaunayTessellation::CellIterator cellIter = _tessellation.begin_cells(); cellIter != _tessellation.end_cells(); ++cellIter) {
-            DelaunayTessellation::CellHandle cell = *cellIter;
+        for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
 
             // Look for filled cells being adjacent to at least one mesh face.
-            if(_tessellation.getCellIndex(cell) == -1) continue;
+            if(_tessellation.getCellIndex(cell) == -1)
+                continue;
             OVITO_ASSERT(_tetrahedraFaceList.cbegin() + _tessellation.getCellIndex(cell) == tet);
 
             // Update progress indicator.
