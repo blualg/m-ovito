@@ -61,13 +61,13 @@ public:
     void commit();
 
     /// Undo all actions recorded so far and keep the current transaction open.
-    void revert();
+    bool revert();
 
     /// Undo all actions recorded after the given snapshot and keep the current transaction open.
-    void revertTo(int snapshot);
+    bool revertTo(int snapshot);
 
     /// Undo all actions recorded so far and close the current transaction.
-    void cancel();
+    bool cancel();
 
     /// Returns the current number of recorded operations.
     int snapshot() const { OVITO_ASSERT(operation()); return operation()->count(); }

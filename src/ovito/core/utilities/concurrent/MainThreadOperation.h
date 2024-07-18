@@ -39,7 +39,7 @@ class OVITO_CORE_EXPORT MainThreadOperation : public Promise<void>, ExecutionCon
 public:
 
     enum Kind {
-        Isolated, ///< When passed to the constructor, the created task has no parent parent.
+        Isolated, ///< When passed to the constructor, the task is created with no parent.
         Bound,    ///< When passed to the constructor, the created task becomes a child of the current task (if any).
     };
 

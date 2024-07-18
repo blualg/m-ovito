@@ -63,11 +63,11 @@ DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(DelaunayTesse
 }
 
 /******************************************************************************
- * Get all cells intersecting with a given bounding box
- * Target bounding box is defined by bboxLo and bboxHi
- * Boxes are returned in the cells vector
+ * Get all Delaunay cells intersecting with a given bounding box.
+ * Results are returned in the vector provided by the caller.
+ * The result is a list of rtree bounding boxes, which hold the actual cell references.
  ******************************************************************************/
-void DelaunayTessellationSpatialQuery::getCells(const Box3& bbox, std::vector<bBox>& cells) const
+void DelaunayTessellationSpatialQuery::getOverlappingCells(const Box3& bbox, std::vector<bBox>& cells) const
 {
     namespace bgi = boost::geometry::index;
     cells.clear(); // Recylcing the existing vector avoids memory allocation overhead

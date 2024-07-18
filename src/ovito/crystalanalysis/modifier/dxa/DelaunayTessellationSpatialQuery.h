@@ -61,10 +61,10 @@ public:
     /// This function modifies the user field of the tessellation cells!
     DelaunayTessellationSpatialQuery(DelaunayTessellation& tessellation, std::optional<FloatType> alpha);
 
-    /// Get all cells intersecting with a given bounding box
-    /// Target bounding box is defined by bboxLo and bboxHi
-    /// Boxes are returned in the cells vector
-    void getCells(const Box3& bbox, std::vector<bBox>& cells) const;
+    /// Get all Delaunay cells intersecting with a given bounding box.
+    /// Results are returned in the vector provided by the caller.
+    /// The result is a list of rtree bounding boxes, which hold the actual cell references.
+    void getOverlappingCells(const Box3& bbox, std::vector<bBox>& cells) const;
 
     size_t numCells() const { return _rtree.size(); }
 

@@ -164,7 +164,9 @@ public:
 
     /// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
     /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
-    template<typename Function>
+    /// The 'Isolated' template parameter can be set to true to indicate that the operation should execute independently
+    /// from the currently active task, i.e., cancelation of one of the tasks should not affect the other.
+    template<bool Isolated = false, typename Function>
     bool handleExceptions(Function&& func) noexcept;
 
     /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
@@ -258,12 +260,17 @@ namespace Ovito {
 
 /// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
 /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
-template<typename Function>
+/// The 'Isolated' template parameter can be set to true to indicate that the operation should execute independently
+/// from the currently active task, i.e., cancelation of one of the tasks should not affect the other.
+template<bool Isolated, typename Function>
 bool UserInterface::handleExceptions(Function&& func) noexcept
 {
     OVITO_ASSERT(!isBeingDeleted());
+
     // Note: The MainThreadOperation creates a temporary std::shared_ptr<UserInterface>, which keeps the UI alive until function exit.
-    MainThreadOperation operation(ExecutionContext::Type::Interactive, *this);
+    MainThreadOperation operation(ExecutionContext::Type::Interactive, *this,
+        Isolated ? MainThreadOperation::Kind::Isolated : MainThreadOperation::Kind::Bound);
+
     try {
         std::forward<Function>(func)();
         return !operation.isCanceled();

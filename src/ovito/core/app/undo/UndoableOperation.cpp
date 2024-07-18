@@ -86,12 +86,12 @@ void UndoableTransaction::commit()
 /******************************************************************************
 * Undo all actions recorded so far and keep the current transaction open.
 ******************************************************************************/
-void UndoableTransaction::revert()
+bool UndoableTransaction::revert()
 {
     OVITO_ASSERT(_operation);
     OVITO_ASSERT(_userInterface);
 
-    userInterface().handleExceptions([&] {
+    return userInterface().handleExceptions([&] {
         _operation->undo();
         _operation->clear();
     });
@@ -100,12 +100,12 @@ void UndoableTransaction::revert()
 /******************************************************************************
 * Undo all actions recorded after the given snapshot and keep the current transaction open.
 ******************************************************************************/
-void UndoableTransaction::revertTo(int snapshot)
+bool UndoableTransaction::revertTo(int snapshot)
 {
     OVITO_ASSERT(_operation);
     OVITO_ASSERT(_userInterface);
 
-    userInterface().handleExceptions([&] {
+    return userInterface().handleExceptions([&] {
         _operation->revertTo(snapshot);
         OVITO_ASSERT(_operation->count() == snapshot);
     });
@@ -114,15 +114,21 @@ void UndoableTransaction::revertTo(int snapshot)
 /******************************************************************************
 * Undo all actions recorded so far and close the current transaction.
 ******************************************************************************/
-void UndoableTransaction::cancel()
+bool UndoableTransaction::cancel()
 {
     OVITO_ASSERT(_operation);
 
-    userInterface().handleExceptions([&] {
-        _operation->undo();
-    });
+    bool success = true;
+    if(_operation->isSignificant()) {
+        // Perform the undo operations in an isolated transaction.
+        success = userInterface().handleExceptions<true>([&] {
+            _operation->undo();
+        });
+    }
     _operation.reset();
     _userInterface.reset();
+
+    return success;
 }
 
 /******************************************************************************

@@ -991,7 +991,7 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
     while(edge != node.circuit->firstEdge);
 
     // Obtain the list of all Delaunay cells intersecting with the bounding box
-    _spatialQuery->getCells(bbox, _ranges);
+    _spatialQuery->getOverlappingCells(bbox, _ranges);
 
     using bBox = DelaunayTessellationSpatialQuery::bBox;
 

@@ -184,11 +184,11 @@ void XFormMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
         _currentPoint = vpwin->getCurrentMousePos();
 
         // Revert the previous x-form operation.
-        _undoTransaction.revertTo(_undoSelectionOperation);
-
-        inputManager()->userInterface().performActions(_undoTransaction, [&] {
-            doXForm();
-        });
+        if(_undoTransaction.revertTo(_undoSelectionOperation)) {
+            inputManager()->userInterface().performActions(_undoTransaction, [&] {
+                doXForm();
+            });
+        }
 
         // Force immediate viewport repaints.
         inputManager()->userInterface().processViewportUpdateRequests();
