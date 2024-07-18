@@ -103,7 +103,7 @@ and ``WignerSeitz.interstitial_count`` by the modifier.
 Typical workflow
 """"""""""""""""
 
-When working in output mode :guilabel:`Sites`, each atomic site will be associated with a new integer property named ``Occupancy``.
+When working in output mode :guilabel:`Sites`, each atomic site will receive a new integer property named ``Occupancy``.
 You can subsequently use the :ref:`particles.modifiers.expression_select` modifier to select sites that
 correspond to certain types of point defects. For example, the selection expression ``Occupancy == 0`` selects all empty sites (vacancies)
 while the expression ``Occupancy > 1`` selects all sites containing at least one interstitial atom. Typically, you want
@@ -126,7 +126,7 @@ property component ``Occupancy.1`` will contain the number of atoms of type 1 oc
 OVITO's particle selection tools, in particular the :ref:`particles.modifiers.expression_select`
 modifier, can be used to select the sites that meet specific criteria, for example
 A-sites that are occupied by a B-atom (antisite). Another way of selecting this type of defect sites
-is using OVITO's scripting interface or OVITO's :ref:`particles.modifiers.python_script` modifier. You can find a detailed example in the 
+is using OVITO's scripting interface or OVITO's :ref:`particles.modifiers.python_script` modifier. You can find a detailed example in the
 documentation of the :py:class:`~ovito.modifiers.WignerSeitzAnalysisModifier` class.
 
 Affine mapping of the simulation cell
@@ -148,6 +148,6 @@ before performing the actual WS analysis. For that, OVITO determines the affine 
 simulation cell geometry and applies this homogeneous transformation to all particle coordinates. Now
 the particles will stay close to their original sites should the system expand or shrink as a whole.
 
-.. seealso:: 
+.. seealso::
 
   :py:class:`ovito.modifiers.WignerSeitzAnalysisModifier` (Python API)
