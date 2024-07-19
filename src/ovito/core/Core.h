@@ -60,8 +60,9 @@
 #include <version>
 #include <typeinfo>
 #include <execution>
+
 /******************************************************************************
-* Qt framework classes.
+* Qt framework
 ******************************************************************************/
 #include <QCoreApplication>
 #include <QStringList>
@@ -119,6 +120,11 @@
 #endif
 #if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
     #define QLatin1StringView QLatin1String
+#endif
+
+// Qt defines the 'emit' macro. It is in conflict with identifiers used in oenTBB and rapidyaml.
+#ifdef emit
+    #undef emit
 #endif
 
 /******************************************************************************

@@ -25,11 +25,6 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "LAMMPSDumpYAMLImporter.h"
 
-// Qt defines the 'emit' macro. Its is in conflict with identifiers used in rapidyaml.
-#ifdef emit
-    #undef emit
-#endif
-
 #define RYML_SINGLE_HDR_DEFINE_NOW
 #include <charconv>
 #include <rapidyaml/rapidyaml-0.5.0.hpp>
