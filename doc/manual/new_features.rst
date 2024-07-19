@@ -13,29 +13,29 @@ Changelog
 Version 3.11.0 (xx-xxx-2024)
 ----------------------------
 
-- The :ref:`particles.modifiers.generate_trajectory_lines` modifier now works automatically without the need to start the trajectory generation manually
-- Modifiers now keep their results in memory when temporarily turned off by the user
+- The :ref:`particles.modifiers.generate_trajectory_lines` modifier now works automatically - no longer necessary to start trajectory generation manually
+- Modifiers now keep their computed results in memory when temporarily turned off by the user to avoid recomputation when being reenabled again
+- New :ref:`Vectors <scene_objects.vectors>` object type and corresponding :py:class:`ovito.data.Vectors` Python class, which allow to visualize vectorial quantities and place arrows in the 3d scene
+- Updated mass of *Zn* in internal table of elements: old mass (pre 2007): 65.409; updated mass: 65.38 (https://www.ciaaw.org/zinc.htm). Old value is still recognized for compatibility reasons.
+- :ref:`particles.modifiers.affine_transformation` modifier: Rotational transformations now act on the Burgers vectors of :ref:`dislocation lines <scene_objects.dislocations>` too
+- OVITO Basic now includes demo versions of high-quality rendering backends :ref:`OSPRay <rendering.ospray_renderer>`, :ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`
+- Fixed regression due to Qt 6.7: Missing colors in plot legends
+- :ref:`particles.modifiers.unwrap_trajectories` modifier: Performance optimizations
 - |ovito-python| Added the :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_pos`, :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_dir`, and :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_up` fields to the :py:class:`ViewportOverlayInterface.Canvas <ovito.vis.ViewportOverlayInterface.Canvas>` class
 - |ovito-python| New property :py:attr:`ovito.pipeline.Pipeline.frames`
 - |ovito-python| New parameter trait types :py:class:`ovito.traits.DataObjectReference` and :py:class:`ovito.traits.PropertyReference`
 - |ovito-python| New class :py:class:`ovito.data.DataObject.Ref` and methods :py:meth:`ovito.data.DataCollection.get` and :py:meth:`ovito.data.PropertyContainer.get`
 - |ovito-python| Deprecated :py:meth:`!generate` method of the :py:class:`~ovito.modifiers.GenerateTrajectoryLinesModifier`
 - |ovito-python| Added the :py:attr:`HistogramModifier.select_elements <ovito.modifiers.HistogramModifier.select_elements>` option
-- |ovito-python| Initialize global Qt application object on demand only to avoid conflicts with other Python packages that also use the Qt framework
+- |ovito-python| Initialize global Qt application object on demand only to avoid conflicts with other Python packages that also use Qt framework
 - |ovito-python| Added support for Python's :py:mod:`!copy` module
 - |ovito-python| Added support for NumPy 2.x
 - |ovito-pro| Extended the Python code generator to support multiple pipeline, including branched pipeline structures and shared modifiers
 - |ovito-pro| Fixed error that occurs if the Render LAMMPS Regions modifier is inserted more than once into the same pipeline
 - |ovito-pro| :ref:`particles.modifiers.time_averaging` modifier: Added time-averaging of the simulation cell shape and new option to overwrite original values with average
 - |ovito-pro| :ref:`rendering.ospray_renderer`: Added support for pseudo-color mapping
-- Add support for :ref:`Vectors <scene_objects.vectors>`, :py:class:`ovito.data.Vectors` in GUI and Python
-- Add support for updated Zn mass: old mass (pre 2007) 65.409, update mass 65.38 (https://www.ciaaw.org/zinc.htm). Old mass is still supported for legacy reasons
-- Affine Transformation modifier: A rotational transformation now acts on the Burgers vectors of a dislocation network
-- OVITO Basic now includes demo versions of high-quality rendering backends OSPRay, Tachyon, and VisRTX
+- |ovito-pro| :ref:`particles.modifiers.dislocation_analysis` modifier: :ref:`Identification of dislocation core atoms <particles.modifiers.dislocation_analysis.mark_core_atoms>`
 - Updated third-party components: OpenSSL, Qt/PySide6, Python, Qwt
-- Fixed regression due to Qt 6.7: Missing colors in plot legends
-- :ref:`particles.modifiers.unwrap_trajectories` modifier: Performance optimizations
-- :ref:`particles.modifiers.dislocation_analysis` modifier: :ref:`Identification of dislocation core atoms <particles.modifiers.dislocation_analysis.mark_core_atoms>`
 
 .. sidebar::
 
