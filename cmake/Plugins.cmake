@@ -28,6 +28,10 @@ MACRO(OVITO_ADD_STANDARD_COMPILE_OPTIONS target_name)
         SET_TARGET_PROPERTIES(${target_name} PROPERTIES UNITY_BUILD ON)
     ENDIF()
 
+    # Tell Qt to not define the 'emit', 'slots' and 'signals' macros. They are in conflict with identifiers used in oneTBB, rapidyaml, and Python headers.
+    TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "QT_NO_FOREACH=1")
+    TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC "QT_NO_KEYWORDS=1")
+
     IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         # Turn off certain Microsoft compiler warnings.
         TARGET_COMPILE_OPTIONS(${target_name}
@@ -182,7 +186,7 @@ MACRO(OVITO_STANDARD_PLUGIN target_name)
     # Link to other third-party libraries needed by this specific plugin, which should not be visible to dependent plugins.
     TARGET_LINK_LIBRARIES(${target_name} PRIVATE ${private_lib_dependencies})
 
-    # Enable SYCL.
+    # Activate SYCL if enabled in the CMake configuration.
     OVITO_ADD_SYCL_TO_TARGET(${target_name})
 
     # Link to other plugin modules that are dependencies of this plugin.
