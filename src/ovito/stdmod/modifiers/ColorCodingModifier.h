@@ -185,6 +185,10 @@ private:
     /// Controls whether the value range of the color map is automatically adjusted to the range of input values.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, autoAdjustRange, setAutoAdjustRange);
 
+    /// Controls whether the value range of the color map is automatically symmetrized (centered) around 0.
+    /// This is intended to be used with diverging colormaps like blue-white-red.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, symmetricRange, setSymmetricRange);
+
     friend class ColorCodingModifierDelegate;
 };
 

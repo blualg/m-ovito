@@ -65,13 +65,15 @@ DEFINE_REFERENCE_FIELD(ColorCodingModifier, colorGradient);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, colorOnlySelected);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, keepSelection);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, autoAdjustRange);
+DEFINE_PROPERTY_FIELD(ColorCodingModifier, symmetricRange);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, sourceProperty);
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, startValueController, "Start value");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, endValueController, "End value");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, colorGradient, "Color gradient");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, colorOnlySelected, "Color only selected elements");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, keepSelection, "Keep selection");
-SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, autoAdjustRange, "Automatically adjust range");
+SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, autoAdjustRange, "Automatic range");
+SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, symmetricRange, "Symmetric range");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property");
 
 /******************************************************************************
@@ -223,22 +225,14 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
     }
 
     // The actual computation can be performed in a separate worker thread.
-    return asyncLaunch([
-            request,
-            state = std::move(state),
-            containerPath = std::move(containerPath),
-            selection = std::move(selection),
-            property = std::move(property),
-            vectorComponent,
-            outputColorPropertyId = outputColorPropertyId(),
-            startValue,
-            endValue,
-            autoAdjustRange = modifier->autoAdjustRange(),
-            gradient = OORef<ColorCodingGradient>(modifier->colorGradient())]() mutable
-    {
+    return asyncLaunch([request, state = std::move(state), containerPath = std::move(containerPath), selection = std::move(selection),
+                        property = std::move(property), vectorComponent, outputColorPropertyId = outputColorPropertyId(), startValue,
+                        endValue, autoAdjustRange = modifier->autoAdjustRange(), symmetricRange = modifier->symmetricRange(),
+                        gradient = OORef<ColorCodingGradient>(modifier->colorGradient())]() mutable {
         // Create the color output property.
         PropertyContainer* container = static_object_cast<PropertyContainer>(containerPath.back());
-        PropertyPtr colors = container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized, outputColorPropertyId, containerPath);
+        PropertyPtr colors = container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized,
+                                                       outputColorPropertyId, containerPath);
 
         // Determine input value range.
         if(autoAdjustRange) {
@@ -258,12 +252,33 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
 #endif
             // If the range is valid. It may be not if the property is empty or no elements are selected.
             if(startValue != std::numeric_limits<FloatType>::max()) {
-                state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), startValue, request.modificationNode());
-                state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), endValue, request.modificationNode());
+                if(!symmetricRange) {
+                    state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), startValue, request.modificationNode());
+                    state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), endValue, request.modificationNode());
+                }
             }
             else {
                 startValue = std::numeric_limits<FloatType>::infinity();
                 endValue = -std::numeric_limits<FloatType>::infinity();
+            }
+        }
+
+        if(symmetricRange) {
+            // Calculate new bounds
+            FloatType value = std::max(std::abs(startValue), std::abs(endValue));
+
+            // Used to maintain the original order of start and end
+            bool sorted = startValue < endValue;
+            // Update start and end to be symmetric
+            startValue = sorted ? -value : value;
+            endValue = sorted ? value : -value;
+
+            // Update attributes
+            if(std::isfinite(startValue) && std::abs(startValue) != std::numeric_limits<FloatType>::max()) {
+                state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), startValue, request.modificationNode());
+            }
+            if(std::isfinite(endValue) && std::abs(endValue) != std::numeric_limits<FloatType>::max()) {
+                state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), endValue, request.modificationNode());
             }
         }
 

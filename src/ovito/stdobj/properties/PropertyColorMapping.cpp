@@ -34,9 +34,11 @@ OVITO_CLASSINFO(PropertyColorMapping, "DisplayName", "Color mapping");
 DEFINE_REFERENCE_FIELD(PropertyColorMapping, colorGradient);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, startValue);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, endValue);
+DEFINE_PROPERTY_FIELD(PropertyColorMapping, symmetricRange);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, sourceProperty);
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, startValue, "Start value");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, endValue, "End value");
+SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, symmetricRange, "Symmetric range");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, colorGradient, "Color gradient");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, sourceProperty, "Source property");
 
@@ -80,6 +82,26 @@ void PropertyColorMapping::initializeObject(ObjectInitializationFlags flags)
 PseudoColorMapping PropertyColorMapping::pseudoColorMapping() const
 {
     return PseudoColorMapping(startValue(), endValue(), colorGradient());
+}
+
+/******************************************************************************
+ * Is called when the value of a property of this object has changed.
+ ******************************************************************************/
+void PropertyColorMapping::propertyChanged(const PropertyFieldDescriptor* field)
+{
+    if(field == PROPERTY_FIELD(endValue) && symmetricRange() && !isBeingLoaded() && !isUndoingOrRedoing() &&
+       ExecutionContext::isInteractive()) {
+        // Update start value when symmetricRange is on and end value changes
+        setStartValue(-endValue());
+    }
+    else if(field == PROPERTY_FIELD(symmetricRange) && symmetricRange() && !isBeingLoaded() && !isUndoingOrRedoing() &&
+            ExecutionContext::isInteractive()) {
+        // Update start end end value when symmetricRange is toggled on
+        FloatType value = std::max(std::abs(startValue()), std::abs(endValue()));
+        bool sorted = startValue() < endValue();
+        setStartValue(sorted ? -value : value);
+        setEndValue(sorted ? value : -value);
+    }
 }
 
 /******************************************************************************

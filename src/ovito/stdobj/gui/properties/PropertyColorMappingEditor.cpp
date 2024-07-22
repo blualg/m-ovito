@@ -127,6 +127,11 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
     connect(exportBtn, &QPushButton::clicked, this, &PropertyColorMappingEditor::onExportColorScale);
     layout2->addWidget(exportBtn, 1, 0, Qt::AlignCenter);
 
+    // Symmetric range
+    BooleanParameterUI* symmetricRangePUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(PropertyColorMapping::symmetricRange));
+    layout2->addWidget(symmetricRangePUI->checkBox(), 3, 1);
+    connect(symmetricRangePUI->checkBox(), &QCheckBox::toggled, _startValueUI, &FloatParameterUI::setDisabled);
+
     layout1->addSpacing(8);
 
     _adjustRangeBtn = new QPushButton(tr("Adjust range"), rollout);
@@ -282,7 +287,9 @@ void PropertyColorMappingEditor::onAdjustRange()
     performTransaction(tr("Adjust range"), [&]() {
         if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject())) {
             if(std::optional<std::pair<FloatType, FloatType>> range = determineValueRange()) {
-                mapping->setStartValue(range->first);
+                if(!mapping->symmetricRange()) {
+                    mapping->setStartValue(range->first);
+                }
                 mapping->setEndValue(range->second);
             }
         }

@@ -79,8 +79,12 @@ Color gradient
 Start & end value
   These parameters specify the source range of input property values getting mapped to the normalized [0,1] interval of the color map.
 
-Automatically adjust range
+Automatic range
   With this option turned on the modifier will dynamically adjust the start and end value parameters to the current min/max range of input property values.
+
+Symmetric range
+When this option is enabled, the modifier will automatically adjust the value range to be symmetric around 0. 
+Manually setting the maximum value will also adjust the minimum value to match.
 
 Color only selected elements
   This option restricts the assignment of colors to currently selected particles or bonds. The colors of unselected particles or bonds will remain unchanged.

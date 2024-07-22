@@ -48,6 +48,10 @@ public:
     /// Determines the min/max range of values stored in the given property array.
     std::optional<std::pair<FloatType, FloatType>> determineValueRange(const Property* pseudoColorProperty, int pseudoColorPropertyComponent) const;
 
+protected:
+    /// Is called when the value of a property of this object has changed.
+    virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
+
 public Q_SLOTS:
 
     /// Swaps the minimum and maximum values to reverse the color scale.
@@ -66,6 +70,10 @@ private:
 
     /// The input property (including an optional vector component) that is used as data source for the coloring.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, sourceProperty, setSourceProperty);
+
+    /// Controls whether the value range of the color map is automatically symmetrized (centered) around 0.
+    /// This is intended to be used with diverging colormaps like blue-white-red.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, symmetricRange, setSymmetricRange);
 };
 
 }   // End of namespace
