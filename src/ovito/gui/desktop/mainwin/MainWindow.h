@@ -148,6 +148,12 @@ public:
     /// Displays an error message to the user that is associated with a particular child window or dialog.
     void reportError(const Exception& exception, QWidget* window);
 
+    /// Displays a modal message box to the user. Blocks until the user closes the message box.
+    /// This method wraps the QMessageBox class of the Qt library.
+    virtual MessageBoxButton showMessageBox(MessageBoxIcon icon, const QString& title, const QString& text, int buttons, MessageBoxButton defaultButton = NoButton, const QString& detailedText = {}) override {
+        return showMessageBoxImpl(nullptr, icon, title, text, buttons, defaultButton, detailedText);
+    }
+
     /// Checks (or even modifies) the contents of a DataSet after it has been loaded from a file.
     /// Returns false if loading the DataSet was rejected by the application.
     virtual bool checkLoadedDataset(DataSet* dataset) override;
@@ -253,6 +259,9 @@ private:
 
     /// Creates a dock panel.
     QDockWidget* createDockPanel(const QString& caption, const QString& objectName, Qt::DockWidgetArea dockArea, Qt::DockWidgetAreas allowedAreas, QWidget* contents);
+
+    /// Displays a modal message box to the user. Blocks until the user closes the message box.
+    MessageBoxButton showMessageBoxImpl(QWidget* window, MessageBoxIcon icon, const QString& title, const QString& text, int buttons, MessageBoxButton defaultButton, const QString& detailedText);
 
 private:
 

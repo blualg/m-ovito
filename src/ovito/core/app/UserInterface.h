@@ -46,6 +46,34 @@ class OVITO_CORE_EXPORT UserInterface : public OvitoObject
 
 public:
 
+    /// Buttons that can be included in a GUI message box displayed to the user.
+    /// One or more buttons can be combined using the bitwise OR operator.
+    enum MessageBoxButton
+    {
+        NoButton = 0x00000000,
+        Ok = 0x00000400,
+        Cancel = 0x00400000,
+        Discard = 0x00800000,
+        Yes = 0x00004000,
+        No = 0x00010000,
+        Apply = 0x02000000,
+        Abort = 0x00040000,
+        Retry = 0x00080000,
+        Ignore = 0x00100000,
+    };
+
+    /// Icons to be displayed in a message box displayed to the user.
+    enum MessageBoxIcon
+    {
+        NoIcon = 0,
+        InformationIcon = 1,
+        WarningIcon = 2,
+        CriticalIcon = 3,
+        QuestionIcon = 4,
+    };
+
+public:
+
     /// Constructor.
     UserInterface();
 
@@ -72,6 +100,10 @@ public:
 
     /// Hides any messages currently displayed in the status bar.
     virtual void clearStatusBarMessage() {}
+
+    /// Displays a modal message box to the user. Blocks until the user closes the message box.
+    /// This method wraps the QMessageBox class of the Qt library.
+    virtual MessageBoxButton showMessageBox(MessageBoxIcon icon, const QString& title, const QString& text, int buttons, MessageBoxButton defaultButton = NoButton, const QString& detailedText = {}) { OVITO_ASSERT(false); return defaultButton; }
 
     /// Displays the error message(s) stored in the Exception object to the user.
     ///

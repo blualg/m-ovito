@@ -56,7 +56,7 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(MainWindow);
 
 /******************************************************************************
-* The constructor of the main window class.
+* Constructor.
 ******************************************************************************/
 MainWindow::MainWindow()
 {
@@ -697,19 +697,86 @@ void MainWindow::reportError(const Exception& ex, bool blocking)
 ******************************************************************************/
 void MainWindow::reportError(const Exception& exception, QWidget* window)
 {
+    // If the exception is associated with additional message strings,
+    // show them in the Details section of the message box dialog.
+    QString detailText;
+    if(exception.messages().size() > 1) {
+        for(int i = 1; i < exception.messages().size(); i++)
+            detailText += exception.messages()[i] + QStringLiteral("\n");
+    }
+    // Also show traceback information.
+    if(!exception.traceback().isEmpty()) {
+        if(!detailText.isEmpty())
+            detailText += QChar('\n');
+        detailText += exception.traceback();
+    }
+
+    // Display the message box to the user.
+    showMessageBoxImpl(
+        window,
+        MessageBoxIcon::CriticalIcon,
+        tr("Error - %1").arg(Application::applicationName()),
+        exception.message(),
+        MessageBoxButton::Ok,
+        MessageBoxButton::NoButton,
+        detailText);
+}
+
+/******************************************************************************
+* Displays an error message box. This slot is called by reportError().
+******************************************************************************/
+void MainWindow::showErrorMessages()
+{
+    // Kepp window alive while showing error messages.
+    auto selfGuard = shared_from_this();
+
+    while(!_errorList.empty()) {
+        // Show next exception from queue.
+        reportError(_errorList.front(), this);
+        _errorList.pop_front();
+    }
+}
+
+/******************************************************************************
+* Displays a modal message box to the user. Blocks until the user closes the message box.
+* This method wraps the QMessageBox class of the Qt library.
+******************************************************************************/
+UserInterface::MessageBoxButton MainWindow::showMessageBoxImpl(QWidget* window, MessageBoxIcon icon, const QString& title, const QString& text, int buttons, MessageBoxButton defaultButton, const QString& detailedText)
+{
+    OVITO_ASSERT(QThread::currentThread() == this->thread());
+
+    // Verify that our enum values match the corresponding values of the QMessageBox class, which allows us to perform a direct cast.
+    OVITO_STATIC_ASSERT(MessageBoxButton::Ok == QMessageBox::Ok);
+    OVITO_STATIC_ASSERT(MessageBoxButton::Cancel == QMessageBox::Cancel);
+    OVITO_STATIC_ASSERT(MessageBoxButton::Discard == QMessageBox::Discard);
+    OVITO_STATIC_ASSERT(MessageBoxButton::Yes == QMessageBox::Yes);
+    OVITO_STATIC_ASSERT(MessageBoxButton::No == QMessageBox::No);
+    OVITO_STATIC_ASSERT(MessageBoxButton::Apply == QMessageBox::Apply);
+    OVITO_STATIC_ASSERT(MessageBoxButton::Abort == QMessageBox::Abort);
+    OVITO_STATIC_ASSERT(MessageBoxButton::Retry == QMessageBox::Retry);
+    OVITO_STATIC_ASSERT(MessageBoxButton::Ignore == QMessageBox::Ignore);
+    OVITO_STATIC_ASSERT(MessageBoxIcon::NoIcon == QMessageBox::NoIcon);
+    OVITO_STATIC_ASSERT(MessageBoxIcon::InformationIcon == QMessageBox::Information);
+    OVITO_STATIC_ASSERT(MessageBoxIcon::WarningIcon == QMessageBox::Warning);
+    OVITO_STATIC_ASSERT(MessageBoxIcon::CriticalIcon == QMessageBox::Critical);
+    OVITO_STATIC_ASSERT(MessageBoxIcon::QuestionIcon == QMessageBox::Question);
+
     // Prepare a message box dialog.
     QPointer<MessageDialog> msgbox = new MessageDialog();
-    msgbox->setWindowTitle(tr("Error - %1").arg(Application::applicationName()));
-    msgbox->setStandardButtons(QMessageBox::Ok);
-    msgbox->setText(exception.message());
-    msgbox->setIcon(QMessageBox::Critical);
+    msgbox->setWindowTitle(title);
+    msgbox->setStandardButtons(static_cast<QMessageBox::StandardButtons>(buttons));
+    msgbox->setDefaultButton(static_cast<QMessageBox::StandardButton>(defaultButton));
+    msgbox->setText(text);
+    msgbox->setDetailedText(detailedText);
+    msgbox->setIcon(static_cast<QMessageBox::Icon>(icon));
     msgbox->setTextInteractionFlags(Qt::TextBrowserInteraction);
 
-    // Stop animation playback when an error occurred.
+    // Stop animation playback when showing a message box.
     QAction* playbackAction = actionManager()->getAction(ACTION_TOGGLE_ANIMATION_PLAYBACK);
     if(playbackAction && playbackAction->isChecked())
         playbackAction->trigger();
 
+    // Honor the parent window in case it was explicitly specified by the caller.
     if(window && window->isVisible()) {
         // If there currently is floating window being shown (e.g. the FrameBufferWindow),
         // make the error message dialog a child of this floating window to show it in front.
@@ -741,41 +808,13 @@ void MainWindow::reportError(const Exception& exception, QWidget* window)
         msgbox->setWindowModality(Qt::WindowModal);
     }
 
-    // If the exception is associated with additional message strings,
-    // show them in the Details section of the message box dialog.
-    QString detailText;
-    if(exception.messages().size() > 1) {
-        for(int i = 1; i < exception.messages().size(); i++)
-            detailText += exception.messages()[i] + QStringLiteral("\n");
-    }
-    // Also show traceback information.
-    if(!exception.traceback().isEmpty()) {
-        if(!detailText.isEmpty())
-            detailText += QChar('\n');
-        detailText += exception.traceback();
-    }
-    msgbox->setDetailedText(std::move(detailText));
-
     // Show message box.
-    msgbox->exec();
+    int result = msgbox->exec();
 
     // Discard message box.
     delete msgbox.data();
-}
 
-/******************************************************************************
-* Displays an error message box. This slot is called by reportError().
-******************************************************************************/
-void MainWindow::showErrorMessages()
-{
-    // Kepp window alive while showing error messages.
-    auto selfGuard = shared_from_this();
-
-    while(!_errorList.empty()) {
-        // Show next exception from queue.
-        reportError(_errorList.front(), this);
-        _errorList.pop_front();
-    }
+    return static_cast<UserInterface::MessageBoxButton>(result);
 }
 
 /******************************************************************************

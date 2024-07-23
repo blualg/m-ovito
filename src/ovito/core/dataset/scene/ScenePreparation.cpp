@@ -146,6 +146,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     PipelineEvaluationRequest request(scene()->animationSettings()->currentTime());
 
     // Pipeline evaluation must be done in a valid execution context and with an active task object.
+    // We use an isolated execution context to avoid interference with other ongoing tasks.
     MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface(), MainThreadOperation::Kind::Isolated);
 
     // Go through all pipelines of the scene until we find one
