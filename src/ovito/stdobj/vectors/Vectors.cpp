@@ -20,8 +20,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include "./Vectors.h"
-#include "./VectorVis.h"
+#include <ovito/stdobj/StdObj.h>
+#include "Vectors.h"
+#include "VectorVis.h"
 
 namespace Ovito {
 

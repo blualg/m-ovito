@@ -20,6 +20,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#include <ovito/stdobj/StdObj.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/dataset/DataSet.h>
