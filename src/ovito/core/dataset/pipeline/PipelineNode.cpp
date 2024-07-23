@@ -26,7 +26,7 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
-#include <ovito/core/utilities/concurrent/Map.h>
+#include <ovito/core/utilities/concurrent/ForEach.h>
 #include <ovito/core/app/Application.h>
 
 namespace Ovito {
@@ -144,13 +144,19 @@ Future<std::vector<PipelineFlowState>> PipelineNode::evaluateMultiple(const Pipe
     OVITO_ASSERT(request.interactiveMode() == false);
 
     // Perform the evaluation for all requested animation frames.
-    return map_sequential(
+    return for_each_sequential(
         std::move(times),
         ObjectExecutor(this, true), // require deferred execution
-        [request = PipelineEvaluationRequest(request), this](AnimationTime time) mutable -> SharedFuture<PipelineFlowState> {
+        // Iteration start function:
+        [request = PipelineEvaluationRequest(request), this](AnimationTime time, std::vector<PipelineFlowState>&) mutable {
             request.setTime(time);
             return this->evaluate(request).asFuture();
-        });
+        },
+        // Iteration complete function:
+        [](AnimationTime time, PipelineFlowState&& result, std::vector<PipelineFlowState>& outputList) {
+            outputList.push_back(std::move(result));
+        },
+        std::vector<PipelineFlowState>{});
 }
 
 }   // End of namespace
