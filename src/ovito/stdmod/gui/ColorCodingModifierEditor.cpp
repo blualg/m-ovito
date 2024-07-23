@@ -239,9 +239,10 @@ bool ColorCodingModifierEditor::referenceEvent(RefTarget* source, const Referenc
         }
     }
     else if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
-        if(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ColorCodingModifier::autoAdjustRange)) {
+        if((static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ColorCodingModifier::autoAdjustRange)) ||
+           (static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ColorCodingModifier::symmetricRange))) {
             ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
-            if(!mod->autoAdjustRange() && isUndoRecording()) {
+            if((!mod->autoAdjustRange() || !mod->symmetricRange()) && isUndoRecording()) {
                 // When the user turns off the auto-adjust option, adopt the current automatic range
                 // as the new user-defined range.
                 FloatType newMin = _lastAutoRangeMinValue;
