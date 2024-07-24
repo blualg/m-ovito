@@ -746,20 +746,20 @@ UserInterface::MessageBoxButton MainWindow::showMessageBoxImpl(QWidget* window, 
     OVITO_ASSERT(QThread::currentThread() == this->thread());
 
     // Verify that our enum values match the corresponding values of the QMessageBox class, which allows us to perform a direct cast.
-    OVITO_STATIC_ASSERT(MessageBoxButton::Ok == QMessageBox::Ok);
-    OVITO_STATIC_ASSERT(MessageBoxButton::Cancel == QMessageBox::Cancel);
-    OVITO_STATIC_ASSERT(MessageBoxButton::Discard == QMessageBox::Discard);
-    OVITO_STATIC_ASSERT(MessageBoxButton::Yes == QMessageBox::Yes);
-    OVITO_STATIC_ASSERT(MessageBoxButton::No == QMessageBox::No);
-    OVITO_STATIC_ASSERT(MessageBoxButton::Apply == QMessageBox::Apply);
-    OVITO_STATIC_ASSERT(MessageBoxButton::Abort == QMessageBox::Abort);
-    OVITO_STATIC_ASSERT(MessageBoxButton::Retry == QMessageBox::Retry);
-    OVITO_STATIC_ASSERT(MessageBoxButton::Ignore == QMessageBox::Ignore);
-    OVITO_STATIC_ASSERT(MessageBoxIcon::NoIcon == QMessageBox::NoIcon);
-    OVITO_STATIC_ASSERT(MessageBoxIcon::InformationIcon == QMessageBox::Information);
-    OVITO_STATIC_ASSERT(MessageBoxIcon::WarningIcon == QMessageBox::Warning);
-    OVITO_STATIC_ASSERT(MessageBoxIcon::CriticalIcon == QMessageBox::Critical);
-    OVITO_STATIC_ASSERT(MessageBoxIcon::QuestionIcon == QMessageBox::Question);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Ok) == QMessageBox::Ok);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Cancel) == QMessageBox::Cancel);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Discard) == QMessageBox::Discard);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Yes) == QMessageBox::Yes);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::No) == QMessageBox::No);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Apply) == QMessageBox::Apply);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Abort) == QMessageBox::Abort);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Retry) == QMessageBox::Retry);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Ignore) == QMessageBox::Ignore);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(MessageBoxIcon::NoIcon) == QMessageBox::NoIcon);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(MessageBoxIcon::InformationIcon) == QMessageBox::Information);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(MessageBoxIcon::WarningIcon) == QMessageBox::Warning);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(MessageBoxIcon::CriticalIcon) == QMessageBox::Critical);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(MessageBoxIcon::QuestionIcon) == QMessageBox::Question);
 
     // Prepare a message box dialog.
     QPointer<MessageDialog> msgbox = new MessageDialog();

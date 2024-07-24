@@ -143,20 +143,22 @@ Future<std::vector<PipelineFlowState>> PipelineNode::evaluateMultiple(const Pipe
     // This function should only be used to request final pipeline results, not preliminary results.
     OVITO_ASSERT(request.interactiveMode() == false);
 
+    std::vector<PipelineFlowState> outputList;
+
     // Perform the evaluation for all requested animation frames.
     return for_each_sequential(
         std::move(times),
         ObjectExecutor(this, true), // require deferred execution
         // Iteration start function:
-        [request = PipelineEvaluationRequest(request), this](AnimationTime time, std::vector<PipelineFlowState>&) mutable {
+        [this, request = PipelineEvaluationRequest(request)](AnimationTime time, std::vector<PipelineFlowState>&) mutable -> SharedFuture<PipelineFlowState> {
             request.setTime(time);
             return this->evaluate(request).asFuture();
         },
         // Iteration complete function:
-        [](AnimationTime time, PipelineFlowState&& result, std::vector<PipelineFlowState>& outputList) {
-            outputList.push_back(std::move(result));
+        [](AnimationTime time, const PipelineFlowState& result, std::vector<PipelineFlowState>& outputList) {
+            outputList.push_back(result);
         },
-        std::vector<PipelineFlowState>{});
+        std::move(outputList));
 }
 
 }   // End of namespace
