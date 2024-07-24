@@ -266,7 +266,14 @@ void ColorCodingModifierEditor::onModifierChanged()
 
     bool enableCustomRangeCtrls = (mod && !mod->autoAdjustRange());
     bool symmetricRange = (mod && mod->symmetricRange());
-
+    if(symmetricRange) {
+        FloatType start = _startValueUI->spinner()->floatValue();
+        FloatType end = _endValueUI->spinner()->floatValue();
+        if(std::abs(end) < std::abs(start)) {
+            mod->setEndValue((end > start) ? end : -end);
+            mod->setStartValue((end > start) ? -end : end);
+        }
+    }
     _startValueUI->setEnabled(enableCustomRangeCtrls && !symmetricRange);
     _endValueUI->setEnabled(enableCustomRangeCtrls);
     _adjustRangeBtn->setEnabled(enableCustomRangeCtrls);
