@@ -63,7 +63,7 @@ void SceneNode::initializeObject(ObjectInitializationFlags flags)
         // Assign random color to scene node.
         if(ExecutionContext::isInteractive()) {
             static std::default_random_engine rng;
-            setDisplayColor(Color::fromHSV(std::uniform_real_distribution<FloatType>()(rng), 1, 1));
+            setDisplayColor(Color::fromHSV(boost::random::uniform_real_distribution<FloatType>()(rng), 1, 1));
         }
 
         if(!isRootNode()) {

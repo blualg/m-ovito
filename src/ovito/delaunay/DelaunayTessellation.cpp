@@ -55,11 +55,7 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
 
     // Set up random number generator to generate random perturbations.
     std::mt19937 rng;
-#if 0
-    std::uniform_real_distribution<double> displacement(-epsilon, epsilon);
-#else
     boost::random::uniform_real_distribution<double> displacement(-epsilon, epsilon);
-#endif
 
     // Use fixed seed value for the sake of reproducibility.
     rng.seed(4);
@@ -166,10 +162,6 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
     _dt = GEO::Delaunay::create(3, "BDEL");
     _dt->set_keeps_infinite(true);
     _dt->set_reorder(true);
-
-    // The internal compute_BRIO_order() routine and other parts of Geogram use std::random_shuffle() and the random() function.
-    // This results in unstable ordering of the Delaunay cell list, unless we fix the seed number:
-    GEO::Numeric::random_reset();
 
     // Construct Delaunay tessellation.
     _dt->set_vertices(_pointData.size(), reinterpret_cast<const double*>(_pointData.data()), [](GEO::index_t value, GEO::index_t maxProgress) {

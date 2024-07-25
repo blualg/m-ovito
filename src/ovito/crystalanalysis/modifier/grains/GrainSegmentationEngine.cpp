@@ -544,7 +544,7 @@ void GrainSegmentationEngine2::perform()
     // Fill it with random color values (using constant random seed to keep it reproducible).
     _grainColors = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, DataBuffer::FloatGraphics, 3, QStringLiteral("Color"), 0, QStringList() << QStringLiteral("R") << QStringLiteral("G") << QStringLiteral("B"));
     std::default_random_engine rng(1);
-    std::uniform_real_distribution<FloatType> uniform_dist(0, 1);
+    boost::random::uniform_real_distribution<FloatType> uniform_dist(0, 1);
     boost::generate(BufferWriteAccess<ColorG, access_mode::discard_write>(_grainColors), [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.8f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.5f); });
     this_task::throwIfCanceled();
 
