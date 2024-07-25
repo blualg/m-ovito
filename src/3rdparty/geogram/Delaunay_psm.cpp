@@ -1,4 +1,6 @@
 #include "Delaunay_psm.h"
+#include <boost/random/uniform_int.hpp>
+#include <boost/random/uniform_real_distribution.hpp>
 
 /*
  *  Copyright (c) 2012-2014, Bruno Levy
@@ -8493,6 +8495,7 @@ namespace GEO {
 /******* extracted from ../basic/numeric.cpp *******/
 
 #include <stdlib.h>
+#include <random>
 
 #ifdef GEO_COMPILER_EMSCRIPTEN
 #pragma GCC diagnostic ignored "-Wc++11-long-long"
@@ -8501,12 +8504,14 @@ namespace GEO {
 namespace GEO {
 
     namespace Numeric {
+    static std::mt19937 static_rng(1);
 
-        bool is_nan(float32 x) {
+    bool is_nan(float32 x)
+    {
 #ifdef GEO_COMPILER_MSVC
-            return _isnan(x) || !_finite(x);
+        return _isnan(x) || !_finite(x);
 #else
-            return std::isnan(x) || !std::isfinite(x);
+        return std::isnan(x) || !std::isfinite(x);
 #endif
         }
 
@@ -8519,22 +8524,32 @@ namespace GEO {
         }
 
         void random_reset() {
+#if 0
 #ifdef GEO_OS_WINDOWS
             srand(1);
 #else
             srandom(1);
 #endif
+#else
+            static_rng.seed(1);
+#endif
         }
 
         int32 random_int32() {
+#if 0
 #ifdef GEO_OS_WINDOWS
             return rand();
 #else
             return int32(random() % std::numeric_limits<int32>::max());
 #endif
+#else
+            boost::random::uniform_int_distribution<int32> dist(0, std::numeric_limits<int32>::max());
+            return dist(static_rng);
+#endif
         }
 
         float32 random_float32() {
+#if 0
 #if defined(GEO_OS_WINDOWS)
             return float(rand()) / float(RAND_MAX);
 #elif defined(GEO_OS_ANDROID)
@@ -8546,9 +8561,14 @@ namespace GEO {
 #else
             return float(drand48());
 #endif
+#else
+            boost::random::uniform_real_distribution<float> dist(0, 1);
+            return dist(static_rng);
+#endif
         }
 
         float64 random_float64() {
+#if 0
 #if defined(GEO_OS_WINDOWS)
             return double(rand()) / double(RAND_MAX);
 #elif defined(GEO_OS_ANDROID)
@@ -8559,6 +8579,10 @@ namespace GEO {
                 double(std::numeric_limits<int32>::max());
 #else
             return double(drand48());
+#endif
+#else
+            boost::random::uniform_real_distribution<double> dist(0, 1);
+            return dist(static_rng);
 #endif
         }
     }
@@ -9288,7 +9312,18 @@ namespace GEO {
     }
 
 #endif
+    template <class RandomIt, class RngEngine>
+    void shuffle_range(RandomIt first, RandomIt last, RngEngine&& rng)
+    {
+        using diff_t = typename std::iterator_traits<RandomIt>::difference_type;
+        using dist_t = typename boost::random::uniform_int_distribution<diff_t>;
+        using param_t = typename dist_t::param_type;
 
+        dist_t dist;
+        for(diff_t i = last - first - 1; i > 0; --i) {
+            std::swap(first[i], first[dist(rng, param_t(0, i))]);
+        }
+    }
 
     void compute_Hilbert_order(
         index_t total_nb_vertices, const double* vertices,
@@ -9342,7 +9377,7 @@ namespace GEO {
         // progess...)
         //std::random_shuffle(sorted_indices.begin(), sorted_indices.end());
         std::mt19937 urng(1);
-        std::shuffle(sorted_indices.begin(), sorted_indices.end(), urng);
+        shuffle_range(sorted_indices.begin(), sorted_indices.end(), urng);
 
         compute_BRIO_order_recursive(
             nb_vertices, vertices,
@@ -9487,18 +9522,15 @@ namespace GEO {
     geo_assert(dimension == 3); // Only implemented for 3D.
     geo_argused(sorted_indices); // Accessed through b and e.
 
-
         //The next three lines replace the following commented-out line
         //(random_shuffle is deprecated in C++17, and they call this
         // progress...)
         // std::random_shuffle(b,e);
         std::mt19937 urng(1);
-        std::shuffle(b,e, urng);
+        shuffle_range(b, e, urng);
 
-    PeriodicVertexMesh3d M(nb_vertices, vertices, stride, period);
-    HilbertSort3d<Hilbert_vcmp_periodic, PeriodicVertexMesh3d>(
-        M, b, e
-    );
+        PeriodicVertexMesh3d M(nb_vertices, vertices, stride, period);
+        HilbertSort3d<Hilbert_vcmp_periodic, PeriodicVertexMesh3d>(M, b, e);
     }
 
 }
@@ -28549,6 +28581,7 @@ namespace {
 
     GEO::index_t thread_safe_random_(GEO::index_t choices_in) {
     GEO::signed_index_t choices = signed_index_t(choices_in);
+#if 0
         static thread_local long int randomseed = 1l ;
         if (choices >= 714025l) {
             long int newrandom = (randomseed * 1366l + 150889l) % 714025l;
@@ -28563,12 +28596,20 @@ namespace {
             randomseed = (randomseed * 1366l + 150889l) % 714025l;
             return GEO::index_t(randomseed % choices);
         }
+#else
+    static thread_local std::mt19937 gen(1);
+    boost::random::uniform_int_distribution<GEO::index_t> dist(0, choices - 1);
+    return dist(gen);
+#endif
     }
 
     GEO::index_t thread_safe_random_4_() {
-        static thread_local long int randomseed = 1l ;
-        randomseed = (randomseed * 1366l + 150889l) % 714025l;
-        return GEO::index_t(randomseed % 4);
+        // static thread_local long int randomseed = 1l ;
+        // randomseed = (randomseed * 1366l + 150889l) % 714025l;
+        // return GEO::index_t(randomseed % 4);
+        static thread_local std::mt19937 gen(1);
+        boost::random::uniform_int_distribution<GEO::index_t> dist(0, 3);
+        return dist(gen);
     }
 
     inline VBW::index_t pop_count(Numeric::uint32 x) {

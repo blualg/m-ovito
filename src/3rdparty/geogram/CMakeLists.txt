@@ -70,7 +70,8 @@ ENDIF()
 # Geogram requires pthread lib on Linux platform.
 SET(THREADS_PREFER_PTHREAD_FLAG ON)
 FIND_PACKAGE(Threads REQUIRED)
-TARGET_LINK_LIBRARIES(geogram PUBLIC Threads::Threads)
+FIND_PACKAGE(Boost REQUIRED)
+TARGET_LINK_LIBRARIES(geogram PUBLIC Threads::Threads Boost::boost)
 
 IF(EMSCRIPTEN)
     # Adopt the Emscript compiler flags from Qt's platform target.

@@ -127,6 +127,8 @@
 #include <boost/dynamic_bitset.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
+#include <boost/random/uniform_int.hpp>
+#include <boost/random/uniform_real_distribution.hpp>
 #include <boost/range/algorithm.hpp>
 #include <boost/range/algorithm_ext/is_sorted.hpp>
 #include <boost/range/irange.hpp>

@@ -37,6 +37,7 @@ Version 3.11.0 (xx-xxx-2024)
 - |ovito-pro| :ref:`particles.modifiers.dislocation_analysis` modifier: :ref:`Identification of dislocation core atoms <particles.modifiers.dislocation_analysis.mark_core_atoms>`
 - Updated third-party components: OpenSSL, Qt/PySide6, Python, Qwt
 - Symmetric range in color coding modifier and property color coding 
+- platform independent DXA results
 
 .. sidebar::
 
