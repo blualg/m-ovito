@@ -8521,9 +8521,10 @@ namespace GEO {
         }
 
         float64 random_float64() {
-            static thread_local std::mt19937 rng(1);
-            boost::random::uniform_real_distribution<double> dist(0, 1);
-            return dist(rng);
+            // This function does nothing and should never be called!
+            // Replace with upstream original if needed.
+            assert(false);
+            return 0.0;
         }
     }
 }
