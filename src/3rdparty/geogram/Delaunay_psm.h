@@ -6387,7 +6387,7 @@ namespace GEO {
 #define GEOGRAM_DELAUNAY_DELAUNAY
 
 #include <stdexcept>
-
+#include <random>
 
 namespace GEO {
 
@@ -6620,14 +6620,16 @@ namespace GEO {
         }
 
         void set_keep_regions(bool x) {
-        keep_regions_ = x;
-    }
+            keep_regions_ = x;
+        }
 
         virtual index_t region(index_t t) const;
 
         virtual index_t locate_point(const double* p, index_t hint) const {
             return index_t(-1);
         }
+
+        void random_reset() const;
 
     protected:
         Delaunay(coord_index_t dimension);
@@ -6658,10 +6660,6 @@ namespace GEO {
             cicl_[cell_size() * c1 + lv] = signed_index_t(c2);
         }
 
-    public:
-        virtual void store_neighbors_CB(index_t i);
-
-    protected:
         void set_dimension(coord_index_t dim) {
             dimension_ = dim;
             vertex_stride_ = dim;
@@ -6670,6 +6668,14 @@ namespace GEO {
             cell_neigh_stride_ = cell_size_;
         }
 
+        Numeric::int32 random_int32() const;
+        Numeric::float32 random_float32() const;
+        Numeric::float64 random_float64() const;
+
+    public:
+        virtual void store_neighbors_CB(index_t i);
+
+    protected:
         coord_index_t dimension_;
         index_t vertex_stride_;
         index_t cell_size_;
@@ -6701,7 +6707,9 @@ namespace GEO {
 
         index_t nb_finite_cells_;
 
-    bool keep_regions_;
+        bool keep_regions_;
+
+        mutable std::mt19937 rng_{1};
     };
 
     typedef SmartPointer<Delaunay> Delaunay_var;

@@ -8495,7 +8495,6 @@ namespace GEO {
 /******* extracted from ../basic/numeric.cpp *******/
 
 #include <stdlib.h>
-#include <random>
 
 #ifdef GEO_COMPILER_EMSCRIPTEN
 #pragma GCC diagnostic ignored "-Wc++11-long-long"
@@ -8504,8 +8503,6 @@ namespace GEO {
 namespace GEO {
 
     namespace Numeric {
-    static std::mt19937 static_rng(1);
-
     bool is_nan(float32 x)
     {
 #ifdef GEO_COMPILER_MSVC
@@ -8523,67 +8520,11 @@ namespace GEO {
 #endif
         }
 
-        void random_reset() {
-#if 0
-#ifdef GEO_OS_WINDOWS
-            srand(1);
-#else
-            srandom(1);
-#endif
-#else
-            static_rng.seed(1);
-#endif
-        }
-
-        int32 random_int32() {
-#if 0
-#ifdef GEO_OS_WINDOWS
-            return rand();
-#else
-            return int32(random() % std::numeric_limits<int32>::max());
-#endif
-#else
-            boost::random::uniform_int_distribution<int32> dist(0, std::numeric_limits<int32>::max());
-            return dist(static_rng);
-#endif
-        }
-
-        float32 random_float32() {
-#if 0
-#if defined(GEO_OS_WINDOWS)
-            return float(rand()) / float(RAND_MAX);
-#elif defined(GEO_OS_ANDROID)
-            // TODO: find a way to call drand48()
-            // (problem at link time)
-            return
-                float(random_int32()) /
-                float(std::numeric_limits<int32>::max());
-#else
-            return float(drand48());
-#endif
-#else
-            boost::random::uniform_real_distribution<float> dist(0, 1);
-            return dist(static_rng);
-#endif
-        }
-
         float64 random_float64() {
-#if 0
-#if defined(GEO_OS_WINDOWS)
-            return double(rand()) / double(RAND_MAX);
-#elif defined(GEO_OS_ANDROID)
-            // TODO: find a way to call drand48()
-            // (problem at link time)
-            return
-                double(random_int32()) /
-                double(std::numeric_limits<int32>::max());
-#else
-            return double(drand48());
-#endif
-#else
-            boost::random::uniform_real_distribution<double> dist(0, 1);
-            return dist(static_rng);
-#endif
+            // This function does nothing and should never be called!
+            // Replace with upstream original if needed.
+            assert(false);
+            return 0.0;
         }
     }
 }
@@ -9312,6 +9253,8 @@ namespace GEO {
     }
 
 #endif
+    /// Drop-in replacement for std::shuffle(), which uses a boost::random::uniform_int_distribution
+    /// instead of std::uniform_int_distribution, to ensure cross-platform reproducibility of results.
     template <class RandomIt, class RngEngine>
     void shuffle_range(RandomIt first, RandomIt last, RngEngine&& rng)
     {
@@ -22669,6 +22612,25 @@ namespace GEO {
     geo_debug_assert(t < nb_cells());
     return index_t(-1);
     }
+
+    void Delaunay::random_reset() const {
+        rng_.seed(1);
+    }
+
+    Numeric::int32 Delaunay::random_int32() const {
+        boost::random::uniform_int_distribution<Numeric::int32> dist(0, std::numeric_limits<Numeric::int32>::max());
+        return dist(rng_);
+    }
+
+    Numeric::float32 Delaunay::random_float32() const {
+        boost::random::uniform_real_distribution<Numeric::float32> dist(0.0, 1.0);
+        return dist(rng_);
+    }
+
+    Numeric::float64 Delaunay::random_float64() const {
+        boost::random::uniform_real_distribution<Numeric::float64> dist(0.0, 1.0);
+        return dist(rng_);
+    }
 }
 
 
@@ -23039,7 +23001,7 @@ namespace GEO {
 
         // If no hint specified, find a tetrahedron randomly
         while(hint == NO_TRIANGLE) {
-            hint = index_t(Numeric::random_int32()) % max_t();
+            hint = index_t(random_int32()) % max_t();
             if(triangle_is_free(hint)) {
                 hint = NO_TRIANGLE;
             }
@@ -23166,7 +23128,7 @@ namespace GEO {
 
         // If no hint specified, find a tetrahedron randomly
         while(hint == NO_TRIANGLE) {
-            hint = index_t(Numeric::random_int32()) % max_t();
+            hint = index_t(random_int32()) % max_t();
             if(triangle_is_free(hint)) {
                 hint = NO_TRIANGLE;
             }
@@ -23208,7 +23170,7 @@ namespace GEO {
             pv[2] = vertex_ptr(finite_triangle_vertex(t,2));
 
             // Start from a random facet
-            index_t e0 = index_t(Numeric::random_int32()) % 3;
+            index_t e0 = index_t(random_int32()) % 3;
             for(index_t de = 0; de < 3; ++de) {
                 index_t le = (e0 + de) % 3;
 
@@ -24104,7 +24066,7 @@ namespace GEO {
 
         // If no hint specified, find a tetrahedron randomly
         while(hint == NO_TETRAHEDRON) {
-            hint = index_t(Numeric::random_int32()) % max_t();
+            hint = index_t(random_int32()) % max_t();
             if(tet_is_free(hint)) {
                 hint = NO_TETRAHEDRON;
             }
@@ -24228,7 +24190,7 @@ namespace GEO {
 
         // If no hint specified, find a tetrahedron randomly
         while(hint == NO_TETRAHEDRON) {
-            hint = index_t(Numeric::random_int32()) % max_t();
+            hint = index_t(random_int32()) % max_t();
             if(tet_is_free(hint)) {
                 hint = NO_TETRAHEDRON;
             }
@@ -24264,7 +24226,7 @@ namespace GEO {
             pv[3] = vertex_ptr(finite_tet_vertex(t,3));
 
             // Start from a random facet
-            index_t f0 = index_t(Numeric::random_int32()) % 4;
+            index_t f0 = index_t(random_int32()) % 4;
             for(index_t df = 0; df < 4; ++df) {
                 index_t f = (f0 + df) % 4;
 
@@ -28580,8 +28542,7 @@ namespace {
     using namespace GEO;
 
     GEO::index_t thread_safe_random_(GEO::index_t choices_in) {
-    GEO::signed_index_t choices = signed_index_t(choices_in);
-#if 0
+        GEO::signed_index_t choices = signed_index_t(choices_in);
         static thread_local long int randomseed = 1l ;
         if (choices >= 714025l) {
             long int newrandom = (randomseed * 1366l + 150889l) % 714025l;
@@ -28596,20 +28557,12 @@ namespace {
             randomseed = (randomseed * 1366l + 150889l) % 714025l;
             return GEO::index_t(randomseed % choices);
         }
-#else
-    static thread_local std::mt19937 gen(1);
-    boost::random::uniform_int_distribution<GEO::index_t> dist(0, choices - 1);
-    return dist(gen);
-#endif
     }
 
     GEO::index_t thread_safe_random_4_() {
-        // static thread_local long int randomseed = 1l ;
-        // randomseed = (randomseed * 1366l + 150889l) % 714025l;
-        // return GEO::index_t(randomseed % 4);
-        static thread_local std::mt19937 gen(1);
-        boost::random::uniform_int_distribution<GEO::index_t> dist(0, 3);
-        return dist(gen);
+        static thread_local long int randomseed = 1l ;
+        randomseed = (randomseed * 1366l + 150889l) % 714025l;
+        return GEO::index_t(randomseed % 4);
     }
 
     inline VBW::index_t pop_count(Numeric::uint32 x) {

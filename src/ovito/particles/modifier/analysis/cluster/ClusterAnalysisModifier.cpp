@@ -566,7 +566,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::applyResults(PipelineFlowSt
         // Assign random colors to clusters.
         std::vector<ColorG> clusterColors(numClusters() + 1);
         std::default_random_engine rng(1);
-        std::uniform_real_distribution<FloatType> uniform_dist(0, 1);
+        boost::random::uniform_real_distribution<FloatType> uniform_dist(0, 1);
         boost::generate(clusterColors, [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.4f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.3f); });
         // Special color for particles not part of any cluster:
         clusterColors[0] = ColorG(0.8f, 0.8f, 0.8f);

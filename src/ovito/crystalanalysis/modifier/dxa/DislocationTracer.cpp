@@ -641,15 +641,10 @@ void DislocationTracer::traceSegment(DislocationSegment& segment, DislocationNod
 
     // Advance circuit as far as possible.
     for(;;) {
-
         // During each iteration, first shorten circuit as much as possible.
         // Pick a random start edge to distribute the removal of edges
         // over the whole circuit.
-#if 0
-        int edgeIndex = std::uniform_int_distribution<>(0, circuit.edgeCount - 1)(_rng);
-#else
         int edgeIndex = boost::random::uniform_int_distribution<>(0, circuit.edgeCount - 1)(_rng);
-#endif
 
         InterfaceMesh::Edge* firstEdge = circuit.getEdge(edgeIndex);
 
@@ -697,12 +692,7 @@ void DislocationTracer::traceSegment(DislocationSegment& segment, DislocationNod
 
         // Pick a random start edge to distribute the insertion of new edges
         // over the whole circuit.
-
-#if 0
-            edgeIndex = std::uniform_int_distribution<>(0, circuit.edgeCount - 1)(_rng);
-#else
         edgeIndex = boost::random::uniform_int_distribution<>(0, circuit.edgeCount - 1)(_rng);
-#endif
 
         firstEdge = circuit.getEdge(edgeIndex);
 
