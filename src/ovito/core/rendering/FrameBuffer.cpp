@@ -24,6 +24,8 @@
 #include <ovito/core/rendering/FrameBuffer.h>
 #include <ovito/core/rendering/ImagePrimitive.h>
 #include <ovito/core/rendering/TextPrimitive.h>
+#include <ovito/core/rendering/LinePrimitive.h>
+#include <ovito/core/viewport/ViewProjectionParameters.h>
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
     #include <ovito/core/utilities/io/video/VideoEncoder.h>
 #endif
@@ -229,6 +231,157 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRec
         QRectF boundingBox = primitive.computeBounds(textBounds.size(), 1.0);
         this->update(boundingBox.toAlignedRect());
     }
+}
+
+/******************************************************************************
+* Renders a line primitive directly into the framebuffer (without depth-testing).
+******************************************************************************/
+void FrameBuffer::renderLinePrimitive(const LinePrimitive& primitive, const AffineTransformation& worldTransform, const ViewProjectionParameters& projectionParams, const QRect& viewportRect, bool update)
+{
+    if(!primitive.positions() || primitive.positions()->size() == 0)
+        return;
+
+    QPainter painter(&image());
+    painter.setRenderHint(QPainter::Antialiasing);
+    if(!viewportRect.isNull() && viewportRect != image().rect())
+        painter.setClipRect(viewportRect);
+
+    if(!primitive.colors())
+        painter.setPen(primitive.uniformColor());
+    RawBufferReadAccess colorAccess(primitive.colors());
+
+    const qreal dpr = image().devicePixelRatioF();
+    const bool preprojectedCoords = (worldTransform == AffineTransformation::Zero());
+
+    primitive.positions()->forTypes<DataBuffer::Float32, DataBuffer::Float64>([&](auto _) {
+        using T = decltype(_);
+        using PointType = Point_3<T>;
+
+        BufferReadAccess<PointType> posAccess(primitive.positions());
+        size_t nlines = posAccess.size() / 2;
+
+        const AffineTransformationT<T> modelView = (worldTransform * projectionParams.viewMatrix).toDataType<T>();
+        const Matrix_4<T> projection = projectionParams.projectionMatrix.toDataType<T>();
+
+        for(size_t i = 0; i < nlines; i++) {
+
+            Vector_4<T> h1, h2;
+
+            if(!preprojectedCoords) {
+                // Transform to view space:
+                PointType view_pos1 = modelView * posAccess[i*2+0];
+                PointType view_pos2 = modelView * posAccess[i*2+1];
+
+                // Project to homogeneous clip space:
+                h1 = projection * Vector_4<T>(view_pos1.x(), view_pos1.y(), view_pos1.z(), 1);
+                h2 = projection * Vector_4<T>(view_pos2.x(), view_pos2.y(), view_pos2.z(), 1);
+            }
+            else {
+                // Us pre-projected coordinates directly:
+                const PointType& pos1 = posAccess[i*2+0];
+                const PointType& pos2 = posAccess[i*2+1];
+                h1 = Vector_4<T>(pos1.x(), pos1.y(), pos1.z(), 1);
+                h2 = Vector_4<T>(pos2.x(), pos2.y(), pos2.z(), 1);
+            }
+
+            // h1 and h2 describe the end points of a line segment in homogeneous coordinates.
+            // Clip the line at the sides of the view frustum.
+
+            // Check if both points are outside the view frustum
+            if((h1.x() < -h1.w() && h2.x() < -h2.w()) || (h1.x() > h1.w() && h2.x() > h2.w()) ||
+                (h1.y() < -h1.w() && h2.y() < -h2.w()) || (h1.y() > h1.w() && h2.y() > h2.w()) ||
+                (h1.z() < -h1.w() && h2.z() < -h2.w()) || (h1.z() > h1.w() && h2.z() > h2.w()))
+            {
+                continue; // Line segment is completely outside the view frustum, skip rendering.
+            }
+
+            // Clip the line segment against the near plane of the view frustum
+            if(h1.z() < -h1.w()) {
+                Vector_4<T> intersection1 = h1 + (h2 - h1) * (-h1.w() / (h2.w() - h1.w()));
+                h1 = intersection1;
+            }
+            if(h2.z() < -h2.w()) {
+                Vector_4<T> intersection2 = h1 + (h2 - h1) * (-h1.w() / (h2.w() - h1.w()));
+                h2 = intersection2;
+            }
+
+            // Clip the line segment against the left plane of the view frustum
+            if(h1.x() < -h1.w()) {
+                Vector_4<T> intersection1 = h1 + (h2 - h1) * ((-h1.w() - h1.x()) / ((h2.w() - h2.x()) - (h1.w() - h1.x())));
+                h1 = intersection1;
+            }
+            if(h2.x() < -h2.w()) {
+                Vector_4<T> intersection2 = h1 + (h2 - h1) * ((-h1.w() - h1.x()) / ((h2.w() - h2.x()) - (h1.w() - h1.x())));
+                h2 = intersection2;
+            }
+
+            // Clip the line segment against the right plane of the view frustum
+            if(h1.x() > h1.w()) {
+                Vector_4<T> intersection1 = h1 + (h2 - h1) * ((h1.w() - h1.x()) / ((h2.w() - h2.x()) - (h1.w() - h1.x())));
+                h1 = intersection1;
+            }
+            if(h2.x() > h2.w()) {
+                Vector_4<T> intersection2 = h1 + (h2 - h1) * ((h1.w() - h1.x()) / ((h2.w() - h2.x()) - (h1.w() - h1.x())));
+                h2 = intersection2;
+            }
+
+            // Clip the line segment against the bottom plane of the view frustum
+            if(h1.y() < -h1.w()) {
+                Vector_4<T> intersection1 = h1 + (h2 - h1) * ((-h1.w() - h1.y()) / ((h2.w() - h2.y()) - (h1.w() - h1.y())));
+                h1 = intersection1;
+            }
+            if(h2.y() < -h2.w()) {
+                Vector_4<T> intersection2 = h1 + (h2 - h1) * ((-h1.w() - h1.y()) / ((h2.w() - h2.y()) - (h1.w() - h1.y())));
+                h2 = intersection2;
+            }
+
+            // Clip the line segment against the top plane of the view frustum
+            if(h1.y() > h1.w()) {
+                Vector_4<T> intersection1 = h1 + (h2 - h1) * ((h1.w() - h1.y()) / ((h2.w() - h2.y()) - (h1.w() - h1.y())));
+                h1 = intersection1;
+            }
+            if(h2.y() > h2.w()) {
+                Vector_4<T> intersection2 = h1 + (h2 - h1) * ((h1.w() - h1.y()) / ((h2.w() - h2.y()) - (h1.w() - h1.y())));
+                h2 = intersection2;
+            }
+
+            // Project the clipped points to screen space (perspective division).
+            Vector_4<T> screen_pos1 = h1 / h1.w();
+            Vector_4<T> screen_pos2 = h2 / h2.w();
+
+            QPointF p1, p2;
+            p1.rx() = ( screen_pos1.x() + 1) * viewportRect.width()  / 2 + viewportRect.left();
+            p1.ry() = (-screen_pos1.y() + 1) * viewportRect.height() / 2 + viewportRect.top();
+            p2.rx() = ( screen_pos2.x() + 1) * viewportRect.width()  / 2 + viewportRect.left();
+            p2.ry() = (-screen_pos2.y() + 1) * viewportRect.height() / 2 + viewportRect.top();
+            p1.rx() /= dpr;
+            p1.ry() /= dpr;
+            p2.rx() /= dpr;
+            p2.ry() /= dpr;
+
+            if(colorAccess) {
+                float r1 = colorAccess.get<float>(i*2+0, 0);
+                float g1 = colorAccess.get<float>(i*2+0, 1);
+                float b1 = colorAccess.get<float>(i*2+0, 2);
+                float a1 = colorAccess.get<float>(i*2+0, 3);
+
+                float r2 = colorAccess.get<float>(i*2+1, 0);
+                float g2 = colorAccess.get<float>(i*2+1, 1);
+                float b2 = colorAccess.get<float>(i*2+1, 2);
+                float a2 = colorAccess.get<float>(i*2+1, 3);
+
+                // Note: Only support for uniform line colors.
+                if(r1 == r2 && g1 == g2 && b1 == b2 && a1 == a2) {
+                    painter.setPen(QColor::fromRgbF(r1, g1, b1, a1));
+                }
+            }
+
+            painter.drawLine(p1, p2);
+        }
+    });
+
+    if(update)
+        this->update(viewportRect);
 }
 
 /******************************************************************************

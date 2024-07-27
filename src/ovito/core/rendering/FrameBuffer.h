@@ -183,6 +183,9 @@ public:
     /// Renders a text primitive directly into the framebuffer.
     void renderTextPrimitive(const TextPrimitive& primitive, const QRect& viewportRect, bool update = true);
 
+    /// Renders a line primitive directly into the framebuffer (without depth-testing).
+    void renderLinePrimitive(const LinePrimitive& primitive, const AffineTransformation& worldTransform, const ViewProjectionParameters& projectionParams, const QRect& viewportRect, bool update = true);
+
     /// Applies a delayed clear buffer operation.
     void commitChanges();
 
