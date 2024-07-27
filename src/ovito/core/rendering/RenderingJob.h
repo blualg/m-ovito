@@ -83,15 +83,6 @@ class OVITO_CORE_EXPORT RenderingJob : public RefTarget
 
 public:
 
-    /// Constructor.
-    void initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache = std::make_shared<RendererResourceCache>()) {
-		RefTarget::initializeObject(flags);
-		_visCache = std::move(visCache);
-	}
-
-    /// Returns the cache managing rendering resources.
-    const std::shared_ptr<RendererResourceCache>& visCache() const { return _visCache; }
-
 	/// Creates a new abstract target frame buffer to render into.
 	virtual OORef<AbstractRenderingFrameBuffer> createOffscreenFrameBuffer(const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer) = 0;
 
@@ -119,8 +110,6 @@ protected:
 
 private:
 
-    /// The cache managing rendering resources.
-    std::shared_ptr<RendererResourceCache> _visCache;
 };
 
 }	// End of namespace

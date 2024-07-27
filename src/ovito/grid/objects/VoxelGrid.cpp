@@ -181,50 +181,50 @@ VectorVis::VectorData VoxelGrid::getVectorVisData(const ConstDataObjectPath& pat
     verifyIntegrity();
 
     // Look up the cell center coordinates in the cache.
-    using CacheKey = RendererResourceKey<struct VoxelGridCellCentersCache, ConstDataObjectRef>;
-    auto& basePositions = visCache.lookup<ConstDataBufferPtr>(CacheKey(this));
+    const auto& basePositions = visCache.lookup<ConstDataBufferPtr>(
+        RendererResourceKey<struct VoxelGridCellCentersCache, ConstDataObjectRef>{this},
+        [&](ConstDataBufferPtr& basePositions) {
+            BufferFactory<Point3> points(elementCount());
+            if(points.size() != 0) {
+                if(gridType() == GridType::CellData) {
+                    // Compute grid cell centers.
+                    OVITO_ASSERT(shape()[0] != 0 && shape()[1] != 0 && shape()[2] != 0);
+                    Point3 xyz;
+                    FloatType dx = FloatType(1) / shape()[0];
+                    FloatType dy = FloatType(1) / shape()[1];
+                    FloatType dz = FloatType(1) / shape()[2];
+                    auto p = points.begin();
+                    size_t x,y,z;
+                    for(z = 0, xyz.z() = dz/2; z < shape()[2]; z++, xyz.z() += dz) {
+                        if(domain()->is2D()) xyz.z() = 0;
+                        for(y = 0, xyz.y() = dy/2; y < shape()[1]; y++, xyz.y() += dy) {
+                            for(x = 0, xyz.x() = dx/2; x < shape()[0]; x++, xyz.x() += dx) {
+                                *p++ = domain()->reducedToAbsolute(xyz);
+                            }
+                        }
+                    }
+                }
+                else if(gridType() == GridType::PointData) {
+                    // Compute grid vertex positions.
+                    Point3 xyz;
+                    FloatType dx = FloatType(1) / ((domain()->pbcFlags()[0] || shape()[0] == 1) ? shape()[0] : (shape()[0] - 1));
+                    FloatType dy = FloatType(1) / ((domain()->pbcFlags()[1] || shape()[1] == 1) ? shape()[1] : (shape()[1] - 1));
+                    FloatType dz = FloatType(1) / ((domain()->pbcFlags()[2] || shape()[2] == 1) ? shape()[2] : (shape()[2] - 1));
+                    auto p = points.begin();
+                    size_t x,y,z;
+                    for(z = 0, xyz.z() = 0; z < shape()[2]; z++, xyz.z() += dz) {
+                        for(y = 0, xyz.y() = 0; y < shape()[1]; y++, xyz.y() += dy) {
+                            for(x = 0, xyz.x() = 0; x < shape()[0]; x++, xyz.x() += dx) {
+                                *p++ = domain()->reducedToAbsolute(xyz);
+                            }
+                        }
+                    }
+                }
+                else OVITO_ASSERT(false);
+            }
+            basePositions = points.take();
+        });
 
-    if(!basePositions) {
-        BufferFactory<Point3> points(elementCount());
-        if(points.size() != 0) {
-            if(gridType() == GridType::CellData) {
-                // Compute grid cell centers.
-                OVITO_ASSERT(shape()[0] != 0 && shape()[1] != 0 && shape()[2] != 0);
-                Point3 xyz;
-                FloatType dx = FloatType(1) / shape()[0];
-                FloatType dy = FloatType(1) / shape()[1];
-                FloatType dz = FloatType(1) / shape()[2];
-                auto p = points.begin();
-                size_t x,y,z;
-                for(z = 0, xyz.z() = dz/2; z < shape()[2]; z++, xyz.z() += dz) {
-                    if(domain()->is2D()) xyz.z() = 0;
-                    for(y = 0, xyz.y() = dy/2; y < shape()[1]; y++, xyz.y() += dy) {
-                        for(x = 0, xyz.x() = dx/2; x < shape()[0]; x++, xyz.x() += dx) {
-                            *p++ = domain()->reducedToAbsolute(xyz);
-                        }
-                    }
-                }
-            }
-            else if(gridType() == GridType::PointData) {
-                // Compute grid vertex positions.
-                Point3 xyz;
-                FloatType dx = FloatType(1) / ((domain()->pbcFlags()[0] || shape()[0] == 1) ? shape()[0] : (shape()[0] - 1));
-                FloatType dy = FloatType(1) / ((domain()->pbcFlags()[1] || shape()[1] == 1) ? shape()[1] : (shape()[1] - 1));
-                FloatType dz = FloatType(1) / ((domain()->pbcFlags()[2] || shape()[2] == 1) ? shape()[2] : (shape()[2] - 1));
-                auto p = points.begin();
-                size_t x,y,z;
-                for(z = 0, xyz.z() = 0; z < shape()[2]; z++, xyz.z() += dz) {
-                    for(y = 0, xyz.y() = 0; y < shape()[1]; y++, xyz.y() += dy) {
-                        for(x = 0, xyz.x() = 0; x < shape()[0]; x++, xyz.x() += dx) {
-                            *p++ = domain()->reducedToAbsolute(xyz);
-                        }
-                    }
-                }
-            }
-            else OVITO_ASSERT(false);
-        }
-        basePositions = points.take();
-    }
     return {basePositions, path.lastAs<DataBuffer>(), nullptr, nullptr};
 }
 

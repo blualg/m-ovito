@@ -214,69 +214,68 @@ void FrameGraph::renderTextAsImagePrimitives()
         if(const TextPrimitive* primitive = dynamic_cast<const TextPrimitive*>(command.primitive())) {
             if(!primitive->text().isEmpty()) {
                 // Look up the Qt image for the text in the cache.
-                auto& [image, offset] = visCache().lookup<std::tuple<QImage, QPointF>>(
+                const auto& [image, offset] = visCache().lookup<std::tuple<QImage, QPointF>>(
                     RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, FloatType, FloatType, qreal, QString, bool, int, Qt::TextFormat>{
                                                             primitive->text(), primitive->color(),
                                                             primitive->outlineColor(), primitive->outlineWidth(), primitive->rotation(),
                                                             devicePixelRatio(), primitive->font().key(), primitive->useTightBox(),
-                                                            primitive->alignment(), primitive->textFormat()});
+                                                            primitive->alignment(), primitive->textFormat()},
+                    [&](QImage& image, QPointF& offset) {
+                        Qt::TextFormat resolvedTextFormat = primitive->resolvedTextFormat();
 
-                if(image.isNull()) {
-                    Qt::TextFormat resolvedTextFormat = primitive->resolvedTextFormat();
+                        // Measure text size in local text coordinate system (does NOT include alignment/offset/rotation/outline).
+                        // Bounds are calculated as if text was drawn at base coordinates (0,0).
+                        QRectF textBounds = primitive->queryLocalBounds(devicePixelRatio(), resolvedTextFormat);
 
-                    // Measure text size in local text coordinate system (does NOT include alignment/offset/rotation/outline).
-                    // Bounds are calculated as if text was drawn at base coordinates (0,0).
-                    QRectF textBounds = primitive->queryLocalBounds(devicePixelRatio(), resolvedTextFormat);
+                        // Compute axis-aligned bounding box in absolute window coordinate system.
+                        QRectF boundingBox = primitive->computeBounds(textBounds.size(), devicePixelRatio());
 
-                    // Compute axis-aligned bounding box in absolute window coordinate system.
-                    QRectF boundingBox = primitive->computeBounds(textBounds.size(), devicePixelRatio());
+                        // Generate texture image.
+                        QRect pixelBounds = boundingBox.toAlignedRect();
+                        image = QImage(pixelBounds.width(), pixelBounds.height(), preferredImageFormat());
+                        image.setDevicePixelRatio(devicePixelRatio());
+                        image.fill(0);
+                        QPainter painter(&image);
+                        painter.setRenderHint(QPainter::Antialiasing);
+                        painter.setRenderHint(QPainter::TextAntialiasing);
 
-                    // Generate texture image.
-                    QRect pixelBounds = boundingBox.toAlignedRect();
-                    image = QImage(pixelBounds.width(), pixelBounds.height(), preferredImageFormat());
-                    image.setDevicePixelRatio(devicePixelRatio());
-                    image.fill(0);
-                    QPainter painter(&image);
-                    painter.setRenderHint(QPainter::Antialiasing);
-                    painter.setRenderHint(QPainter::TextAntialiasing);
+                        painter.translate(
+                            (primitive->position().x() - boundingBox.left()) / devicePixelRatio(),
+                            (primitive->position().y() - boundingBox.top()) / devicePixelRatio());
 
-                    painter.translate(
-                        (primitive->position().x() - boundingBox.left()) / devicePixelRatio(),
-                        (primitive->position().y() - boundingBox.top()) / devicePixelRatio());
+                        // Start with top-left alignment.
+                        QPointF textOffset(-textBounds.left(), -textBounds.top());
 
-                    // Start with top-left alignment.
-                    QPointF textOffset(-textBounds.left(), -textBounds.top());
+                        // Apply horizontal alignment.
+                        if(primitive->alignment() & Qt::AlignRight)
+                            textOffset.rx() += -textBounds.width();
+                        else if(primitive->alignment() & Qt::AlignHCenter)
+                            textOffset.rx() += -textBounds.width() / 2;
 
-                    // Apply horizontal alignment.
-                    if(primitive->alignment() & Qt::AlignRight)
-                        textOffset.rx() += -textBounds.width();
-                    else if(primitive->alignment() & Qt::AlignHCenter)
-                        textOffset.rx() += -textBounds.width() / 2;
+                        // Apply vertical alignment.
+                        if(primitive->alignment() & Qt::AlignBottom)
+                            textOffset.ry() += -textBounds.height();
+                        else if(primitive->alignment() & Qt::AlignVCenter)
+                            textOffset.ry() += -textBounds.height() / 2;
 
-                    // Apply vertical alignment.
-                    if(primitive->alignment() & Qt::AlignBottom)
-                        textOffset.ry() += -textBounds.height();
-                    else if(primitive->alignment() & Qt::AlignVCenter)
-                        textOffset.ry() += -textBounds.height() / 2;
+                        if(primitive->rotation() != 0) {
+                            // Rotate around point given by the primitive's position.
+                            qreal x = textOffset.x() * std::cos(primitive->rotation()) - textOffset.y() * std::sin(primitive->rotation());
+                            qreal y = textOffset.x() * std::sin(primitive->rotation()) + textOffset.y() * std::cos(primitive->rotation());
+                            painter.translate(x / devicePixelRatio(), y / devicePixelRatio());
+                            painter.rotate(qRadiansToDegrees(primitive->rotation()));
+                        }
+                        else {
+                            painter.translate(textOffset.x() / devicePixelRatio(), textOffset.y() / devicePixelRatio());
+                        }
 
-                    if(primitive->rotation() != 0) {
-                        // Rotate around point given by the primitive's position.
-                        qreal x = textOffset.x() * std::cos(primitive->rotation()) - textOffset.y() * std::sin(primitive->rotation());
-                        qreal y = textOffset.x() * std::sin(primitive->rotation()) + textOffset.y() * std::cos(primitive->rotation());
-                        painter.translate(x / devicePixelRatio(), y / devicePixelRatio());
-                        painter.rotate(qRadiansToDegrees(primitive->rotation()));
-                    }
-                    else {
-                        painter.translate(textOffset.x() / devicePixelRatio(), textOffset.y() / devicePixelRatio());
-                    }
+                        // Draw text.
+                        primitive->draw(painter, resolvedTextFormat, textBounds.width() / devicePixelRatio());
+                        painter.end();
 
-                    // Draw text.
-                    primitive->draw(painter, resolvedTextFormat, textBounds.width() / devicePixelRatio());
-                    painter.end();
-
-                    // Store image primitive in cache including offset vector relative to primitive position.
-                    offset = boundingBox.topLeft() - QPointF(primitive->position().x(), primitive->position().y());
-                }
+                        // Store image primitive in cache including offset vector relative to primitive position.
+                        offset = boundingBox.topLeft() - QPointF(primitive->position().x(), primitive->position().y());
+                    });
 
                 // Compute absolute image paint position by adding precomputed offset vector to current primitive position.
                 QPoint alignedPos = (QPointF(primitive->position().x(), primitive->position().y()) + offset).toPoint();

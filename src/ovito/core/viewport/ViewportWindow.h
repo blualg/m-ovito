@@ -222,6 +222,10 @@ Q_SIGNALS:
     /// has been finished and was displayed to the user.
     void frameRenderComplete();
 
+    /// Is emitted by the window when a fatal error has occurred, which prevents the window
+    /// from displaying any further content.
+    void fatalError(Exception& ex);
+
 protected:
 
     /// Handles timer events for this object.

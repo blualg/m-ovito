@@ -61,28 +61,28 @@ PipelineStatus TargetVis::render(const ConstDataObjectPath& path, const Pipeline
     FloatType scaling = FloatType(0.2) * frameGraph.nonScalingSize(Point3::Origin() + nodeTM.translation());
 
     // Cache the line vertices for the icon.
-    auto& vertexPositions = frameGraph.visCache().lookup<ConstDataBufferPtr>(RendererResourceKey<struct WireframeCube>{});
-
-    // Initialize geometry of wireframe cube.
-    if(!vertexPositions) {
-        const Point3G linePoints[] = {
-            {-1, -1, -1}, { 1,-1,-1},
-            {-1, -1,  1}, { 1,-1, 1},
-            {-1, -1, -1}, {-1,-1, 1},
-            { 1, -1, -1}, { 1,-1, 1},
-            {-1,  1, -1}, { 1, 1,-1},
-            {-1,  1,  1}, { 1, 1, 1},
-            {-1,  1, -1}, {-1, 1, 1},
-            { 1,  1, -1}, { 1, 1, 1},
-            {-1, -1, -1}, {-1, 1,-1},
-            { 1, -1, -1}, { 1, 1,-1},
-            { 1, -1,  1}, { 1, 1, 1},
-            {-1, -1,  1}, {-1, 1, 1}
-        };
-        BufferFactory<Point3G> vertices(std::size(linePoints));
-        boost::copy(linePoints, vertices.begin());
-        vertexPositions = vertices.take();
-    }
+    const auto& vertexPositions = frameGraph.visCache().lookup<ConstDataBufferPtr>(
+        RendererResourceKey<struct WireframeCube>{},
+        [](ConstDataBufferPtr& vertexPositions) {
+            // Initialize geometry of wireframe cube.
+            const Point3G linePoints[] = {
+                {-1, -1, -1}, { 1,-1,-1},
+                {-1, -1,  1}, { 1,-1, 1},
+                {-1, -1, -1}, {-1,-1, 1},
+                { 1, -1, -1}, { 1,-1, 1},
+                {-1,  1, -1}, { 1, 1,-1},
+                {-1,  1,  1}, { 1, 1, 1},
+                {-1,  1, -1}, {-1, 1, 1},
+                { 1,  1, -1}, { 1, 1, 1},
+                {-1, -1, -1}, {-1, 1,-1},
+                { 1, -1, -1}, { 1, 1,-1},
+                { 1, -1,  1}, { 1, 1, 1},
+                {-1, -1,  1}, {-1, 1, 1}
+            };
+            BufferFactory<Point3G> vertices(std::size(linePoints));
+            boost::copy(linePoints, vertices.begin());
+            vertexPositions = vertices.take();
+        });
 
     // Create line rendering primitive.
     std::unique_ptr<LinePrimitive> iconPrimitive = std::make_unique<LinePrimitive>();

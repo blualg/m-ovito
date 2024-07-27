@@ -44,10 +44,10 @@ void RenderingJob::render2DPrimitives(FrameGraph::RenderLayer renderLayer, const
             continue;
 
         if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
-            frameBuffer.outputFrameBuffer()->renderImagePrimitive(*primitive, frameBuffer.outputViewportRect());
+            frameBuffer.outputFrameBuffer()->renderImagePrimitive(*primitive, frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
         }
         else if(const TextPrimitive* primitive = dynamic_cast<const TextPrimitive*>(command.primitive())) {
-            frameBuffer.outputFrameBuffer()->renderTextPrimitive(*primitive, frameBuffer.outputViewportRect());
+            frameBuffer.outputFrameBuffer()->renderTextPrimitive(*primitive, frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
         }
     }
 }

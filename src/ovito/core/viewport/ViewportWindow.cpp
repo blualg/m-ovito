@@ -474,58 +474,57 @@ void ViewportWindow::renderOrientationIndicator(FrameGraph& frameGraph, const QS
     static const QString labelTexts[3] = { QStringLiteral("x"), QStringLiteral("y"), QStringLiteral("z") };
 
     // Cache line and text drawing primitives as long as camera hasn't moved and window size hasn't changed.
-    auto& [lines, labels] = frameGraph.visCache().lookup<std::tuple<LinePrimitive, std::array<TextPrimitive,3>>>(RendererResourceKey<struct OrientionIndicatorCache, Matrix3G, GraphicsFloatType, GraphicsFloatType>{
-        orientation, viewportScalingTM(0,0), viewportScalingTM(1,1)
-    });
+    const auto& lines = frameGraph.visCache().lookup<LinePrimitive>(
+        RendererResourceKey<struct OrientionIndicatorCache, Matrix3G, GraphicsFloatType, GraphicsFloatType>{
+            orientation, viewportScalingTM(0,0), viewportScalingTM(1,1)
+        },
+        [&](LinePrimitive& lines) {
+            // Create line primitive for the coordinate axis arrows.
+            BufferFactory<ColorAG> vertexColors(18);
+            std::fill(vertexColors.begin() + 0,  vertexColors.begin() + 6,  axisColors[0].toDataType<GraphicsFloatType>());
+            std::fill(vertexColors.begin() + 6,  vertexColors.begin() + 12, axisColors[1].toDataType<GraphicsFloatType>());
+            std::fill(vertexColors.begin() + 12, vertexColors.end(),        axisColors[2].toDataType<GraphicsFloatType>());
+            lines.setColors(vertexColors.take());
 
-    // Create line primitive for the coordinate axis arrows.
-    if(!lines.positions()) {
-        BufferFactory<ColorAG> vertexColors(18);
-        std::fill(vertexColors.begin() + 0,  vertexColors.begin() + 6,  axisColors[0].toDataType<GraphicsFloatType>());
-        std::fill(vertexColors.begin() + 6,  vertexColors.begin() + 12, axisColors[1].toDataType<GraphicsFloatType>());
-        std::fill(vertexColors.begin() + 12, vertexColors.end(),        axisColors[2].toDataType<GraphicsFloatType>());
-        lines.setColors(vertexColors.take());
-
-        // Update geometry of coordinate axis arrows.
-        BufferFactory<Point3G> vertices(18);
-        for(size_t axis = 0, index = 0; axis < 3; axis++) {
-            Vector3G dir = orientation.column(axis).normalized().toDataType<GraphicsFloatType>();
-            vertices[index++] = projectionMatrix * (Point3G::Origin());
-            vertices[index++] = projectionMatrix * (Point3G::Origin() + dir);
-            vertices[index++] = projectionMatrix * (Point3G::Origin() + dir);
-            vertices[index++] = projectionMatrix * (Point3G::Origin() + (dir + tripodArrowSize * Vector3G(dir.y() - dir.x(), -dir.x() - dir.y(), dir.z())));
-            vertices[index++] = projectionMatrix * (Point3G::Origin() + dir);
-            vertices[index++] = projectionMatrix * (Point3G::Origin() + (dir + tripodArrowSize * Vector3G(-dir.y() - dir.x(), dir.x() - dir.y(), dir.z())));
-        }
-        lines.setPositions(vertices.take());
-    }
+            // Update geometry of coordinate axis arrows.
+            BufferFactory<Point3G> vertices(18);
+            for(size_t axis = 0, index = 0; axis < 3; axis++) {
+                Vector3G dir = orientation.column(axis).normalized().toDataType<GraphicsFloatType>();
+                vertices[index++] = projectionMatrix * (Point3G::Origin());
+                vertices[index++] = projectionMatrix * (Point3G::Origin() + dir);
+                vertices[index++] = projectionMatrix * (Point3G::Origin() + dir);
+                vertices[index++] = projectionMatrix * (Point3G::Origin() + (dir + tripodArrowSize * Vector3G(dir.y() - dir.x(), -dir.x() - dir.y(), dir.z())));
+                vertices[index++] = projectionMatrix * (Point3G::Origin() + dir);
+                vertices[index++] = projectionMatrix * (Point3G::Origin() + (dir + tripodArrowSize * Vector3G(-dir.y() - dir.x(), dir.x() - dir.y(), dir.z())));
+            }
+            lines.setPositions(vertices.take());
+        });
 
     // Render coordinate axis arrows as 2d element.
     frameGraph.addCommand(std::make_unique<LinePrimitive>(lines));
 
     // Render x,y,z labels.
     for(int axis = 0; axis < 3; axis++) {
+        auto label = std::make_unique<TextPrimitive>();
 
         // Initialize the graphics primitives for rendering the text labels.
         // This needs to be done only once.
-        if(labels[axis].text().isEmpty()) {
-            labels[axis].setFont(ViewportSettings::getSettings().viewportFont());
-            labels[axis].setColor(axisColors[axis]);
-            labels[axis].setText(labelTexts[axis]);
-            labels[axis].setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-        }
+        label->setFont(ViewportSettings::getSettings().viewportFont());
+        label->setColor(axisColors[axis]);
+        label->setText(labelTexts[axis]);
+        label->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
 
         // Compute the projected position of the label in NDC space.
         Point3G p = Point3G::Origin() + orientation.column(axis).resized(1.23f);
         Point3G ndcPoint = projectionMatrix * p;
 
         // Convert position to window space.
-        labels[axis].setPositionWindow(Point2{
+        label->setPositionWindow(Point2{
             ( ndcPoint.x() + 1.0) * windowSize.width() / 2.0,
             (-ndcPoint.y() + 1.0) * windowSize.height() / 2.0
         });
 
-        frameGraph.addCommand(std::make_unique<TextPrimitive>(labels[axis]));
+        frameGraph.addCommand(std::move(label));
     }
 }
 

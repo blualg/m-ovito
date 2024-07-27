@@ -88,41 +88,39 @@ PipelineStatus SimulationCellVis::render(const ConstDataObjectPath& path, const 
 void SimulationCellVis::renderWireframe(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Look up the vertex data in the vis cache.
-    RendererResourceKey<struct WireframeVertices, bool> cacheKey{ cell->is2D() };
-    auto& lineVertices = frameGraph.visCache().lookup<ConstDataBufferPtr>(std::move(cacheKey));
-
-    // Check if we already have a valid rendering primitive that is up to date.
-    if(!lineVertices) {
-        // Depending on whether this cell is 3D or 2D, create a wireframe unit cube or unit square.
-        BufferFactory<Point3G> corners(cell->is2D() ? 8 : 24);
-        corners[0] = Point3G(0,0,0);
-        corners[1] = Point3G(1,0,0);
-        corners[2] = Point3G(1,0,0);
-        corners[3] = Point3G(1,1,0);
-        corners[4] = Point3G(1,1,0);
-        corners[5] = Point3G(0,1,0);
-        corners[6] = Point3G(0,1,0);
-        corners[7] = Point3G(0,0,0);
-        if(!cell->is2D()) {
-            corners[8]  = Point3G(0,0,1);
-            corners[9]  = Point3G(1,0,1);
-            corners[10] = Point3G(1,0,1);
-            corners[11] = Point3G(1,1,1);
-            corners[12] = Point3G(1,1,1);
-            corners[13] = Point3G(0,1,1);
-            corners[14] = Point3G(0,1,1);
-            corners[15] = Point3G(0,0,1);
-            corners[16] = Point3G(0,0,0);
-            corners[17] = Point3G(0,0,1);
-            corners[18] = Point3G(1,0,0);
-            corners[19] = Point3G(1,0,1);
-            corners[20] = Point3G(1,1,0);
-            corners[21] = Point3G(1,1,1);
-            corners[22] = Point3G(0,1,0);
-            corners[23] = Point3G(0,1,1);
-        }
-        lineVertices = corners.take();
-    }
+    const ConstDataBufferPtr& lineVertices = frameGraph.visCache().lookup<ConstDataBufferPtr>(
+        RendererResourceKey<struct WireframeVertices, bool>{cell->is2D()},
+        [&](ConstDataBufferPtr& lineVertices) {
+            // Depending on whether this cell is 3D or 2D, create a wireframe unit cube or unit square.
+            BufferFactory<Point3G> corners(cell->is2D() ? 8 : 24);
+            corners[0] = Point3G(0,0,0);
+            corners[1] = Point3G(1,0,0);
+            corners[2] = Point3G(1,0,0);
+            corners[3] = Point3G(1,1,0);
+            corners[4] = Point3G(1,1,0);
+            corners[5] = Point3G(0,1,0);
+            corners[6] = Point3G(0,1,0);
+            corners[7] = Point3G(0,0,0);
+            if(!cell->is2D()) {
+                corners[8]  = Point3G(0,0,1);
+                corners[9]  = Point3G(1,0,1);
+                corners[10] = Point3G(1,0,1);
+                corners[11] = Point3G(1,1,1);
+                corners[12] = Point3G(1,1,1);
+                corners[13] = Point3G(0,1,1);
+                corners[14] = Point3G(0,1,1);
+                corners[15] = Point3G(0,0,1);
+                corners[16] = Point3G(0,0,0);
+                corners[17] = Point3G(0,0,1);
+                corners[18] = Point3G(1,0,0);
+                corners[19] = Point3G(1,0,1);
+                corners[20] = Point3G(1,1,0);
+                corners[21] = Point3G(1,1,1);
+                corners[22] = Point3G(0,1,0);
+                corners[23] = Point3G(0,1,1);
+            }
+            lineVertices = corners.take();
+        });
 
     // Prepare line drawing primitive.
     std::unique_ptr<LinePrimitive> linePrimitive = std::make_unique<LinePrimitive>();
@@ -143,83 +141,74 @@ void SimulationCellVis::renderWireframe(const SimulationCell* cell, const Pipeli
 ******************************************************************************/
 void SimulationCellVis::renderSolid(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    // The key type used for caching the geometry primitive:
-    RendererResourceKey<struct SolidCellCache, ConstDataObjectRef, FloatType, Color> cacheKey{ cell, cellLineWidth(), cellColor() };
-
-    // The values stored in the vis cache.
-    struct CacheValue {
-        CylinderPrimitive edges;
-        ParticlePrimitive corners;
-    };
-
     // Lookup the rendering primitive in the vis cache.
-    auto& visCache = frameGraph.visCache().lookup<CacheValue>(std::move(cacheKey));
+    const auto& [edges, corners] = frameGraph.visCache().lookup<std::tuple<CylinderPrimitive, ParticlePrimitive>>(
+        RendererResourceKey<struct SolidCellCache, ConstDataObjectRef, FloatType, Color>{ cell, cellLineWidth(), cellColor() },
+        [&](CylinderPrimitive& edges, ParticlePrimitive& corners) {
+            edges.setShape(CylinderPrimitive::CylinderShape);
+            edges.setShadingMode(CylinderPrimitive::NormalShading);
+            edges.setUniformColor(cellColor());
+            edges.setUniformWidth(2 * cellLineWidth());
 
-    // Check if we already have a valid rendering primitive that is up to date.
-    if(!visCache.corners.positions()) {
+            // Create a data buffer for the box corner coordinates.
+            BufferFactory<Point3G> cornersAccesor(cell->is2D() ? 4 : 8);
 
-        visCache.edges.setShape(CylinderPrimitive::CylinderShape);
-        visCache.edges.setShadingMode(CylinderPrimitive::NormalShading);
-        visCache.edges.setUniformColor(cellColor());
-        visCache.edges.setUniformWidth(2 * cellLineWidth());
+            // Create a data buffer for the cylinder base points.
+            BufferFactory<Point3G> basePoints(cell->is2D() ? 4 : 12);
 
-        // Create a data buffer for the box corner coordinates.
-        BufferFactory<Point3G> corners(cell->is2D() ? 4 : 8);
+            // Create a data buffer for the cylinder head points.
+            BufferFactory<Point3G> headPoints(cell->is2D() ? 4 : 12);
 
-        // Create a data buffer for the cylinder base points.
-        BufferFactory<Point3G> basePoints(cell->is2D() ? 4 : 12);
+            cornersAccesor[0] = cell->cellOrigin().toDataType<GraphicsFloatType>();
+            if(cell->is2D())
+                cornersAccesor[0].z() = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.
+            cornersAccesor[1] = cornersAccesor[0] + cell->cellVector1().toDataType<GraphicsFloatType>();
+            cornersAccesor[2] = cornersAccesor[1] + cell->cellVector2().toDataType<GraphicsFloatType>();
+            cornersAccesor[3] = cornersAccesor[0] + cell->cellVector2().toDataType<GraphicsFloatType>();
+            basePoints[0] = cornersAccesor[0];
+            basePoints[1] = cornersAccesor[1];
+            basePoints[2] = cornersAccesor[2];
+            basePoints[3] = cornersAccesor[3];
+            headPoints[0] = cornersAccesor[1];
+            headPoints[1] = cornersAccesor[2];
+            headPoints[2] = cornersAccesor[3];
+            headPoints[3] = cornersAccesor[0];
+            if(cell->is2D() == false) {
+                cornersAccesor[4] = cornersAccesor[0] + cell->cellVector3().toDataType<GraphicsFloatType>();
+                cornersAccesor[5] = cornersAccesor[1] + cell->cellVector3().toDataType<GraphicsFloatType>();
+                cornersAccesor[6] = cornersAccesor[2] + cell->cellVector3().toDataType<GraphicsFloatType>();
+                cornersAccesor[7] = cornersAccesor[3] + cell->cellVector3().toDataType<GraphicsFloatType>();
+                basePoints[4] = cornersAccesor[4];
+                basePoints[5] = cornersAccesor[5];
+                basePoints[6] = cornersAccesor[6];
+                basePoints[7] = cornersAccesor[7];
+                basePoints[8] = cornersAccesor[0];
+                basePoints[9] = cornersAccesor[1];
+                basePoints[10] = cornersAccesor[2];
+                basePoints[11] = cornersAccesor[3];
+                headPoints[4] = cornersAccesor[5];
+                headPoints[5] = cornersAccesor[6];
+                headPoints[6] = cornersAccesor[7];
+                headPoints[7] = cornersAccesor[4];
+                headPoints[8] = cornersAccesor[4];
+                headPoints[9] = cornersAccesor[5];
+                headPoints[10] = cornersAccesor[6];
+                headPoints[11] = cornersAccesor[7];
+            }
+            edges.setPositions(basePoints.take(), headPoints.take());
 
-        // Create a data buffer for the cylinder head points.
-        BufferFactory<Point3G> headPoints(cell->is2D() ? 4 : 12);
+            // Render spheres in the corners of the simulation box.
+            corners.setParticleShape(ParticlePrimitive::SphericalShape);
+            corners.setShadingMode(ParticlePrimitive::NormalShading);
+            corners.setRenderingQuality(ParticlePrimitive::HighQuality);
+            corners.setPositions(cornersAccesor.take());
+            corners.setUniformRadius(cellLineWidth());
+            corners.setUniformColor(cellColor());
+        });
 
-        corners[0] = cell->cellOrigin().toDataType<GraphicsFloatType>();
-        if(cell->is2D()) corners[0].z() = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.
-        corners[1] = corners[0] + cell->cellVector1().toDataType<GraphicsFloatType>();
-        corners[2] = corners[1] + cell->cellVector2().toDataType<GraphicsFloatType>();
-        corners[3] = corners[0] + cell->cellVector2().toDataType<GraphicsFloatType>();
-        basePoints[0] = corners[0];
-        basePoints[1] = corners[1];
-        basePoints[2] = corners[2];
-        basePoints[3] = corners[3];
-        headPoints[0] = corners[1];
-        headPoints[1] = corners[2];
-        headPoints[2] = corners[3];
-        headPoints[3] = corners[0];
-        if(cell->is2D() == false) {
-            corners[4] = corners[0] + cell->cellVector3().toDataType<GraphicsFloatType>();
-            corners[5] = corners[1] + cell->cellVector3().toDataType<GraphicsFloatType>();
-            corners[6] = corners[2] + cell->cellVector3().toDataType<GraphicsFloatType>();
-            corners[7] = corners[3] + cell->cellVector3().toDataType<GraphicsFloatType>();
-            basePoints[4] = corners[4];
-            basePoints[5] = corners[5];
-            basePoints[6] = corners[6];
-            basePoints[7] = corners[7];
-            basePoints[8] = corners[0];
-            basePoints[9] = corners[1];
-            basePoints[10] = corners[2];
-            basePoints[11] = corners[3];
-            headPoints[4] = corners[5];
-            headPoints[5] = corners[6];
-            headPoints[6] = corners[7];
-            headPoints[7] = corners[4];
-            headPoints[8] = corners[4];
-            headPoints[9] = corners[5];
-            headPoints[10] = corners[6];
-            headPoints[11] = corners[7];
-        }
-        visCache.edges.setPositions(basePoints.take(), headPoints.take());
-
-        // Render spheres in the corners of the simulation box.
-        visCache.corners.setParticleShape(ParticlePrimitive::SphericalShape);
-        visCache.corners.setShadingMode(ParticlePrimitive::NormalShading);
-        visCache.corners.setRenderingQuality(ParticlePrimitive::HighQuality);
-        visCache.corners.setPositions(corners.take());
-        visCache.corners.setUniformRadius(cellLineWidth());
-        visCache.corners.setUniformColor(cellColor());
-    }
     auto pickingGroup = frameGraph.addPickingGroup(pipeline);
-    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(visCache.edges), pipeline, pickingGroup);
-    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(visCache.corners), pipeline, pickingGroup);
+    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(edges), pipeline, pickingGroup);
+    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(corners), pipeline, pickingGroup);
 }
 
 }   // End of namespace

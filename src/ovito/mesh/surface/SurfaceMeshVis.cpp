@@ -155,25 +155,28 @@ PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const Pip
         bool,                   // reverseOrientation
         bool,                   // smoothShading
         ColorMappingMode,       // colorMappingMode
-        PropertyReference,     // surfaceColorMapping()->sourceProperty()
+        PropertyReference,      // surfaceColorMapping()->sourceProperty()
         bool                    // clipAtDomainBoundaries
     >;
 
-    // Lookup the renderable mesh in the vis cache.
-    auto& renderableMesh = frameGraph.visCache().lookup<std::shared_ptr<RenderableSurfaceMesh>>(RenderableMeshCacheKey(
-        path.back(),
-        reverseOrientation(),
-        smoothShading(),
-        colorMappingMode(),
-        surfaceColorMapping()->sourceProperty(),
-        clipAtDomainBoundaries()));
+    // Look up the asynchronous task that generates the renderable TriangleMesh from the SurfaceMesh.
+    const auto& renderableMeshFuture = frameGraph.visCache().lookup<SharedFuture<std::shared_ptr<const RenderableSurfaceMesh>>>(
+        RenderableMeshCacheKey{
+            path.back(),
+            reverseOrientation(),
+            smoothShading(),
+            colorMappingMode(),
+            surfaceColorMapping()->sourceProperty(),
+            clipAtDomainBoundaries()
+        },
+        [&](SharedFuture<std::shared_ptr<const RenderableSurfaceMesh>>& renderableMeshFuture) {
+            // Generate renderable mesh.
+            renderableMeshFuture = transformSurfaceMesh(surfaceMesh);
+            registerActiveFuture(renderableMeshFuture);
+        });
 
-    // Generate renderable mesh.
-    if(!renderableMesh) {
-        auto future = transformSurfaceMesh(surfaceMesh);
-        registerActiveFuture(future);
-        renderableMesh = future.result();
-    }
+    // Wait for the renderable mesh to be generated.
+    std::shared_ptr<const RenderableSurfaceMesh> renderableMesh = renderableMeshFuture.result();
 
     // Get the rendering colors for the surface and cap meshes.
     FloatType surface_alpha = 1;
@@ -188,57 +191,48 @@ PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const Pip
 
     // The key type used for caching the rendering primitives:
     using PrimitiveCacheKey = RendererResourceKey<struct PrimitiveCache,
-        std::shared_ptr<RenderableSurfaceMesh>, // Renderable mesh
+        std::shared_ptr<const RenderableSurfaceMesh>, // Renderable mesh
         ColorA,                     // Surface color
-        ColorA,                     // Cap color
         bool                        // Edge highlighting
     >;
 
-    // The values stored in the vis cache.
-    struct CacheValue {
-        MeshPrimitive surfacePrimitive;
-        MeshPrimitive capPrimitive;
-        OORef<ObjectPickInfo> pickInfo;
-    };
+    // Lookup the rendering primitives in the vis cache.
+    const auto& [surfacePrimitive, pickInfo] = frameGraph.visCache().lookup<std::tuple<MeshPrimitive, OORef<ObjectPickInfo>>>(
+        PrimitiveCacheKey{
+            renderableMesh,
+            color_surface,
+            highlightEdges()
+        },
+        [&](MeshPrimitive& surfacePrimitive, OORef<ObjectPickInfo>& pickInfo) {
+            auto materialColors = renderableMesh->materialColors();
+            for(ColorA& c : materialColors) {
+                c.a() = surface_alpha;
+            }
+            surfacePrimitive.setMaterialColors(std::move(materialColors));
+            surfacePrimitive.setUniformColor(color_surface);
+            surfacePrimitive.setEmphasizeEdges(highlightEdges());
+            surfacePrimitive.setCullFaces(renderableMesh->backfaceCulling());
+            surfacePrimitive.setMesh(renderableMesh->surface());
 
-    // Lookup the rendering primitive in the vis cache.
-    auto& visCache = frameGraph.visCache().lookup<CacheValue>(PrimitiveCacheKey(renderableMesh, color_surface, color_cap, highlightEdges()));
+            // Create the pick record that keeps a reference to the original data.
+            pickInfo = createPickInfo(surfaceMesh, renderableMesh);
+        });
 
-    // Check if we already have a valid rendering primitive that is up to date.
-    if(!visCache.surfacePrimitive.mesh()) {
-        auto materialColors = renderableMesh->materialColors();
-        for(ColorA& c : materialColors) {
-            c.a() = surface_alpha;
-        }
-        visCache.surfacePrimitive.setMaterialColors(std::move(materialColors));
-        visCache.surfacePrimitive.setUniformColor(color_surface);
-        visCache.surfacePrimitive.setEmphasizeEdges(highlightEdges());
-        visCache.surfacePrimitive.setCullFaces(renderableMesh->backfaceCulling());
-        visCache.surfacePrimitive.setMesh(renderableMesh->surface());
-
-        // Create the pick record that keeps a reference to the original data.
-        visCache.pickInfo = createPickInfo(surfaceMesh, renderableMesh);
-    }
-
-    // Check if we already have a valid rendering primitive that is up to date.
-    if(!visCache.capPrimitive.mesh() && showCap()) {
-        visCache.capPrimitive.setUniformColor(color_cap);
-        visCache.capPrimitive.setMesh(renderableMesh->capPolygons(), MeshPrimitive::ConvexShapeMode);
-    }
-    else if(visCache.capPrimitive.mesh() && !showCap()) {
-        visCache.capPrimitive.setMesh({});
-    }
-
-    if(visCache.surfacePrimitive.mesh()) {
+    // Render the surface mesh.
+    if(surfacePrimitive.mesh()) {
+        auto coloredSurface = std::make_unique<MeshPrimitive>(surfacePrimitive);
         // Update the color mapping.
-        visCache.surfacePrimitive.setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());
-        // Render the surface mesh.
-        frameGraph.addPrimitive(std::make_unique<MeshPrimitive>(visCache.surfacePrimitive), pipeline, frameGraph.addPickingGroup(pipeline, visCache.pickInfo));
+        coloredSurface->setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());
+        frameGraph.addPrimitive(std::move(coloredSurface), pipeline, frameGraph.addPickingGroup(pipeline, pickInfo));
     }
-    if(showCap() && visCache.capPrimitive.mesh()) {
-        // Render the surface mesh cap.
+
+    // Render the surface mesh cap.
+    if(showCap() && renderableMesh->capPolygons() && renderableMesh->capPolygons()->faceCount() != 0) {
+        auto capPrimitive = std::make_unique<MeshPrimitive>();
+        capPrimitive->setUniformColor(color_cap);
+        capPrimitive->setMesh(renderableMesh->capPolygons(), MeshPrimitive::ConvexShapeMode);
         // If the caps are semi-transparent, we exclude them from the object picking render pass.
-        frameGraph.addPrimitive(std::make_unique<MeshPrimitive>(visCache.capPrimitive), pipeline, (cap_alpha >= 1) ? frameGraph.addPickingGroup(pipeline) : 0);
+        frameGraph.addPrimitive(std::move(capPrimitive), pipeline, (cap_alpha >= 1) ? frameGraph.addPickingGroup(pipeline) : 0);
     }
 
     return renderableMesh->status();
@@ -247,7 +241,7 @@ PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const Pip
 /******************************************************************************
 * Create the viewport picking record for the surface mesh object.
 ******************************************************************************/
-OORef<ObjectPickInfo> SurfaceMeshVis::createPickInfo(const SurfaceMesh* mesh, std::shared_ptr<RenderableSurfaceMesh> renderableMesh) const
+OORef<ObjectPickInfo> SurfaceMeshVis::createPickInfo(const SurfaceMesh* mesh, std::shared_ptr<const RenderableSurfaceMesh> renderableMesh) const
 {
     return OORef<SurfaceMeshPickInfo>::create(this, mesh, std::move(renderableMesh));
 }
@@ -386,7 +380,7 @@ QString SurfaceMeshPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
 /******************************************************************************
 * Transforms the SurfaceMesh into a renderable triangle mesh.
 ******************************************************************************/
-Future<std::shared_ptr<RenderableSurfaceMesh>> SurfaceMeshVis::transformSurfaceMesh(const SurfaceMesh* surfaceMesh)
+Future<std::shared_ptr<const RenderableSurfaceMesh>> SurfaceMeshVis::transformSurfaceMesh(const SurfaceMesh* surfaceMesh)
 {
     // Make sure the surface mesh is ok.
     surfaceMesh->verifyMeshIntegrity();

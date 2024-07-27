@@ -100,7 +100,7 @@ public:
 public:
 
     /// Transforms the DislocationNetwork into a renderable set of lines.
-    Future<std::shared_ptr<RenderableDislocationLines>> transformDislocations(const DislocationNetwork* dislocations);
+    Future<std::shared_ptr<const RenderableDislocationLines>> transformDislocations(const DislocationNetwork* dislocations);
 
     /// Lets the vis element render a data object.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;

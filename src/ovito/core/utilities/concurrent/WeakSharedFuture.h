@@ -28,9 +28,9 @@
 
 namespace Ovito {
 
-/******************************************************************************
-* A weak reference to a SharedFuture
-******************************************************************************/
+/**
+ * A weak reference to a SharedFuture
+ */
 template<typename R>
 class WeakSharedFuture : private std::weak_ptr<Task>
 {

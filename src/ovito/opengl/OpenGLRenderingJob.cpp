@@ -52,8 +52,9 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLRenderingJob);
  ******************************************************************************/
 void OpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency)
 {
-    RenderingJob::initializeObject(flags, std::move(visCache));
+    RenderingJob::initializeObject(flags);
 
+    _visCache = std::move(visCache);
     _multisamplingLevel = multisamplingLevel;
     _orderIndependentTransparency = orderIndependentTransparency;
 }
@@ -412,38 +413,33 @@ bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int
             // The order-independent transparency method does not support fully opaque geometry (transparency=0) very well.
             // Any such geometry still appears translucent and does not fully occlude the objects behind it. To mitigate the problem,
             // we render the fully opaque geometry already during the first rendering pass to fill the z-buffer.
-            struct OpaqueParticlesCache {
-                ConstDataBufferPtr opaqueIndices;
-                bool initialized = false;
-            };
-            auto& cache = currentResourceFrame().lookup<OpaqueParticlesCache>(
-                RendererResourceKey<struct OpaqueParticlesCacheKey, ConstDataBufferPtr, ConstDataBufferPtr>(primitive.transparencies(),
-                                                                                                            primitive.indices()));
-            if(!cache.initialized) {
-                cache.initialized = true;
-                // Are there any particles having a non-positive transparency value?
-                std::vector<int32_t> fullyOpaqueIndices;
-                if(!primitive.indices()) {
-                    int index = 0;
-                    for(FloatType t : BufferReadAccess<GraphicsFloatType>(primitive.transparencies())) {
-                        if(t <= 0) fullyOpaqueIndices.push_back(index);
-                        index++;
+            const ConstDataBufferPtr& opaqueIndices = currentResourceFrame().lookup<ConstDataBufferPtr>(
+                RendererResourceKey<struct OpaqueParticlesCacheKey, ConstDataBufferPtr, ConstDataBufferPtr>(primitive.transparencies(), primitive.indices()),
+                [&](ConstDataBufferPtr& opaqueIndices) {
+                    // Are there any particles having a non-positive transparency value?
+                    std::vector<int32_t> fullyOpaqueIndices;
+                    if(!primitive.indices()) {
+                        int index = 0;
+                        for(FloatType t : BufferReadAccess<GraphicsFloatType>(primitive.transparencies())) {
+                            if(t <= 0) fullyOpaqueIndices.push_back(index);
+                            index++;
+                        }
                     }
-                }
-                else {
-                    BufferReadAccess<GraphicsFloatType> transparencies(primitive.transparencies());
-                    for(auto index : BufferReadAccess<int32_t>(primitive.indices())) {
-                        if(transparencies[index] <= 0) fullyOpaqueIndices.push_back(index);
+                    else {
+                        BufferReadAccess<GraphicsFloatType> transparencies(primitive.transparencies());
+                        for(auto index : BufferReadAccess<int32_t>(primitive.indices())) {
+                            if(transparencies[index] <= 0) fullyOpaqueIndices.push_back(index);
+                        }
                     }
-                }
-                if(!fullyOpaqueIndices.empty()) {
-                    cache.opaqueIndices = BufferFactory<int32_t>(fullyOpaqueIndices.begin(), fullyOpaqueIndices.end()).take();
-                }
-            }
-            if(cache.opaqueIndices) {
+                    if(!fullyOpaqueIndices.empty()) {
+                        opaqueIndices = BufferFactory<int32_t>(fullyOpaqueIndices.begin(), fullyOpaqueIndices.end()).take();
+                    }
+                });
+
+            if(opaqueIndices) {
                 ParticlePrimitive opaqueParticles = primitive;
                 opaqueParticles.setTransparencies({});
-                opaqueParticles.setIndices(cache.opaqueIndices);
+                opaqueParticles.setIndices(opaqueIndices);
                 renderParticlesImplementation(opaqueParticles, pickingGroupID);
             }
         }
@@ -981,17 +977,17 @@ QOpenGLTexture* OpenGLRenderingJob::uploadImage(const QImage& image, QOpenGLText
     OVITO_ASSERT(!image.isNull());
 
     // Check if this image has already been uploaded to the GPU.
-    RendererResourceKey<struct ImageCache, quint64, QOpenGLContextGroup*> cacheKey{image.cacheKey(),
-                                                                                   QOpenGLContextGroup::currentContextGroup()};
-    std::unique_ptr<OpenGLTexture>& texture = currentResourceFrame().lookup<std::unique_ptr<OpenGLTexture>>(cacheKey);
-
-    // Create the texture object.
-    if(!texture || !texture->isCreated()) {
-        texture = std::make_unique<OpenGLTexture>(image, genMipMaps);
-        if(genMipMaps == QOpenGLTexture::DontGenerateMipMaps) {
-            texture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
-        }
-    }
+    const std::unique_ptr<OpenGLTexture>& texture = currentResourceFrame().lookup<std::unique_ptr<OpenGLTexture>>(
+        RendererResourceKey<struct ImageCache, quint64, QOpenGLContextGroup*>{image.cacheKey(), QOpenGLContextGroup::currentContextGroup()},
+        [&](std::unique_ptr<OpenGLTexture>& texture) {
+            texture = std::make_unique<OpenGLTexture>(image, genMipMaps);
+            if(genMipMaps == QOpenGLTexture::DontGenerateMipMaps) {
+                texture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
+            }
+            if(!texture->isCreated()) {
+                throw RendererException("Failed to create OpenGL texture object.");
+            }
+        });
 
     return texture.get();
 }
@@ -1002,39 +998,37 @@ QOpenGLTexture* OpenGLRenderingJob::uploadImage(const QImage& image, QOpenGLText
 QOpenGLTexture* OpenGLRenderingJob::uploadColorMap(ColorCodingGradient* gradient)
 {
     // Check if this color map has already been uploaded to the GPU.
-    RendererResourceKey<struct ColorMapCache, OORef<ColorCodingGradient>, QOpenGLContextGroup*> cacheKey{
-        gradient, QOpenGLContextGroup::currentContextGroup()};
-    std::unique_ptr<OpenGLTexture>& texture = currentResourceFrame().lookup<std::unique_ptr<OpenGLTexture>>(cacheKey);
+    const std::unique_ptr<OpenGLTexture>& texture = currentResourceFrame().lookup<std::unique_ptr<OpenGLTexture>>(
+        RendererResourceKey<struct ColorMapCache, OORef<ColorCodingGradient>, QOpenGLContextGroup*>{gradient, QOpenGLContextGroup::currentContextGroup()},
+        [&](std::unique_ptr<OpenGLTexture>& texture) {
+            // Sample the color gradient to produce a row of RGB pixel data.
+            int resolution;
+            std::vector<uint8_t> pixelData;
 
-    if(!texture || !texture->isCreated()) {
-        // Sample the color gradient to produce a row of RGB pixel data.
-        int resolution;
-        std::vector<uint8_t> pixelData;
-
-        if(gradient) {
-            resolution = 256;
-            pixelData.resize(resolution * 3);
-            for(int x = 0; x < resolution; x++) {
-                Color c = gradient->valueToColor((FloatType)x / (resolution - 1));
-                pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
-                pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
-                pixelData[x * 3 + 2] = (uint8_t)(255 * c.b());
+            if(gradient) {
+                resolution = 256;
+                pixelData.resize(resolution * 3);
+                for(int x = 0; x < resolution; x++) {
+                    Color c = gradient->valueToColor((FloatType)x / (resolution - 1));
+                    pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
+                    pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
+                    pixelData[x * 3 + 2] = (uint8_t)(255 * c.b());
+                }
             }
-        }
-        else {
-            resolution = 1;
-            pixelData.resize(3, 255);
-        }
+            else {
+                resolution = 1;
+                pixelData.resize(3, 255);
+            }
 
-        // Create the 1-d texture object.
-        texture = std::make_unique<OpenGLTexture>(QOpenGLTexture::Target1D);
-        texture->setFormat(QOpenGLTexture::RGB8_UNorm);
-        texture->setSize(resolution);
-        texture->allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt8);
-        texture->setAutoMipMapGenerationEnabled(true);
-        texture->setWrapMode(QOpenGLTexture::ClampToEdge);
-        texture->setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt8, pixelData.data());
-    }
+            // Create the 1-d texture object.
+            texture = std::make_unique<OpenGLTexture>(QOpenGLTexture::Target1D);
+            texture->setFormat(QOpenGLTexture::RGB8_UNorm);
+            texture->setSize(resolution);
+            texture->allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt8);
+            texture->setAutoMipMapGenerationEnabled(true);
+            texture->setWrapMode(QOpenGLTexture::ClampToEdge);
+            texture->setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt8, pixelData.data());
+        });
 
     return texture.get();
 }

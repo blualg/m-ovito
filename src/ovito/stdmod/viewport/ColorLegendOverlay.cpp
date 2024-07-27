@@ -513,42 +513,43 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
     // Compute bounding box of the entire legend to draw the background rectangle.
     QRectF boundingBox;
 
+    int borderWidth = borderEnabled() ? tickWidth : 0;
+
     // Look up the image primitive for the color bar in the cache.
-    auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
+    const auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
         RendererResourceKey<struct ColorBarImageCache, OORef<ColorCodingGradient>, FloatType, int, bool, Color, QSizeF>{
             mapping.gradient(), devicePixelRatio, orientation(), borderEnabled(), borderColor(),
-            colorBarRect.size()});
+            colorBarRect.size()},
+        [&](QImage& image, QPointF& offset) {
+            // Render the color bar into an image texture.
+            // Allocate the image buffer.
+            QSize gradientSize = colorBarRect.size().toSize();
+            image = QImage(gradientSize.width() + 2 * borderWidth, gradientSize.height() + 2 * borderWidth,
+                        frameGraph.preferredImageFormat());
+            if(borderEnabled()) image.fill((QColor)borderColor());
 
-    // Render the color bar into an image texture.
-    int borderWidth = borderEnabled() ? tickWidth : 0;
-    if(image.isNull()) {
-        // Allocate the image buffer.
-        QSize gradientSize = colorBarRect.size().toSize();
-        image = QImage(gradientSize.width() + 2 * borderWidth, gradientSize.height() + 2 * borderWidth,
-                       frameGraph.preferredImageFormat());
-        if(borderEnabled()) image.fill((QColor)borderColor());
-
-        // Create the color gradient image.
-        if(orientation() == Qt::Vertical) {
-            for(int y = 0; y < gradientSize.height(); y++) {
-                FloatType t = (FloatType)y / (FloatType)std::max(1, gradientSize.height() - 1);
-                unsigned int color = QColor(mapping.gradient()->valueToColor(1.0 - t)).rgb();
-                for(int x = 0; x < gradientSize.width(); x++) {
-                    image.setPixel(x + borderWidth, y + borderWidth, color);
-                }
-            }
-        }
-        else {
-            for(int x = 0; x < gradientSize.width(); x++) {
-                FloatType t = (FloatType)x / (FloatType)std::max(1, gradientSize.width() - 1);
-                unsigned int color = QColor(mapping.gradient()->valueToColor(t)).rgb();
+            // Create the color gradient image.
+            if(orientation() == Qt::Vertical) {
                 for(int y = 0; y < gradientSize.height(); y++) {
-                    image.setPixel(x + borderWidth, y + borderWidth, color);
+                    FloatType t = (FloatType)y / (FloatType)std::max(1, gradientSize.height() - 1);
+                    unsigned int color = QColor(mapping.gradient()->valueToColor(1.0 - t)).rgb();
+                    for(int x = 0; x < gradientSize.width(); x++) {
+                        image.setPixel(x + borderWidth, y + borderWidth, color);
+                    }
                 }
             }
-        }
-        offset = QPointF(-borderWidth, -borderWidth);
-    }
+            else {
+                for(int x = 0; x < gradientSize.width(); x++) {
+                    FloatType t = (FloatType)x / (FloatType)std::max(1, gradientSize.width() - 1);
+                    unsigned int color = QColor(mapping.gradient()->valueToColor(t)).rgb();
+                    for(int y = 0; y < gradientSize.height(); y++) {
+                        image.setPixel(x + borderWidth, y + borderWidth, color);
+                    }
+                }
+            }
+            offset = QPointF(-borderWidth, -borderWidth);
+        });
+
     QPoint alignedPos = (colorBarRect.topLeft() + offset).toPoint();
     std::unique_ptr<ImagePrimitive> imagePrimitive = std::make_unique<ImagePrimitive>();
     imagePrimitive->setRectWindow(QRect(alignedPos, image.size()));
@@ -699,24 +700,25 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
                                                                          : colorBarImageRect.height()};
 
         // Look up tick configuration in the cache
-        auto& [tickStart, tickStep, tickSpacingCacheSet] = frameGraph.visCache().lookup<std::tuple<FloatType, FloatType, bool>>(
+        const auto& [tickStart, tickStep] = frameGraph.visCache().lookup<std::tuple<FloatType, FloatType>>(
             RendererResourceKey<struct TickSpacingCache, QByteArray, FloatType, FloatType, FloatType, FloatType, FloatType, int>{
-                format, labelFontSize, mapping.maxValue(), mapping.minValue(), tickSpacing(), colorbarLength, orientation()});
-        // Calculate new tick configuration if it not found in the cache
-        // tickSpacing() == 0 activates the automatic calculation
-        // tickSpacing() != 0 uses the user defined settings
-        if(!tickSpacingCacheSet && tickSpacing() == 0) {
-            const auto [start, step]{
-                getAutomaticTickPositions(mapping.minValue(), mapping.maxValue(), colorbarLength, fontMetrics, format)};
-            tickStart = start;
-            tickStep = step;
-            tickSpacingCacheSet = true;
-        }
-        else if(!tickSpacingCacheSet && tickSpacing() != 0) {
-            tickStart = getUserDefinedTickPositions(mapping.minValue(), mapping.maxValue(), tickSpacing());
-            tickStep = tickSpacing();
-            tickSpacingCacheSet = true;
-        }
+                format, labelFontSize, mapping.maxValue(), mapping.minValue(), tickSpacing(), colorbarLength, orientation()},
+            [&](FloatType& tickStart, FloatType& tickStep) {
+                // Calculate new tick configuration if it not found in the cache
+                // tickSpacing() == 0 activates the automatic calculation
+                // tickSpacing() != 0 uses the user defined settings
+                if(tickSpacing() == 0) {
+                    const auto [start, step]{
+                        getAutomaticTickPositions(mapping.minValue(), mapping.maxValue(), colorbarLength, fontMetrics, format)};
+                    tickStart = start;
+                    tickStep = step;
+                }
+                else {
+                    tickStart = getUserDefinedTickPositions(mapping.minValue(), mapping.maxValue(), tickSpacing());
+                    tickStep = tickSpacing();
+                }
+            });
+
         int num_ticks{get_number_of_ticks(mapping.minValue(), mapping.maxValue(), tickStep)};
         // Check against the hard coded limit for the number of ticks. Prevents crash in the case of too many ticks
         {
@@ -843,15 +845,14 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
     // Render background rectangle.
     if(backgroundEnabled()) {
         // Look up tick image in the cache
-        auto& backgroundImage = frameGraph.visCache().lookup<QImage>(
-            RendererResourceKey<struct ColorBarBackgroundImageCache, Color>{backgroundColor()});
-
-        // Generate image if not found in the cache
-        if(backgroundImage.isNull()) {
-            // 1 x 1 px texture of the right color which will be stretched to the desired rectangle dimensions.
-            backgroundImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
-            backgroundImage.fill(static_cast<QColor>(backgroundColor()));
-        }
+        const QImage& backgroundImage = frameGraph.visCache().lookup<QImage>(
+            RendererResourceKey<struct ColorBarBackgroundImageCache, Color>{backgroundColor()},
+            [&](QImage& backgroundImage) {
+                // Generate image if not found in the cache
+                // 1 x 1 px texture of the right color which will be stretched to the desired rectangle dimensions.
+                backgroundImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
+                backgroundImage.fill(static_cast<QColor>(backgroundColor()));
+            });
 
         boundingBox.adjust(-textMargin, -textMargin, textMargin, textMargin);
         frameGraph.addCommand(std::make_unique<ImagePrimitive>(backgroundImage, boundingBox.toAlignedRect()));
@@ -869,15 +870,14 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
     if(!tickRects.empty()) {
 
         // Look up tick image in the cache.
-        auto& tickImage = frameGraph.visCache().lookup<QImage>(
-            RendererResourceKey<struct ColorBarTickImageCache, Color>{tickColor});
-
-        // Generate tick image primitive if not found in the cache.
-        if(tickImage.isNull()) {
-            // 1 x 1 px texture of the right color which will be streched to the desired tick dimensions
-            tickImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
-            tickImage.fill(static_cast<QColor>(tickColor));
-        }
+        const QImage& tickImage = frameGraph.visCache().lookup<QImage>(
+            RendererResourceKey<struct ColorBarTickImageCache, Color>{tickColor},
+            [&](QImage& tickImage) {
+                // Generate tick image primitive if not found in the cache.
+                // 1 x 1 px texture of the right color which will be streched to the desired tick dimensions
+                tickImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
+                tickImage.fill(static_cast<QColor>(tickColor));
+            });
 
         // Render the series of tick images.
         for(const auto& rect : tickRects) {
@@ -909,7 +909,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRec
     }
 
     // Look up the image primitive for the color bar in the cache.
-    auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
+    const auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
         RendererResourceKey<struct TypeColorsImageCache, std::vector<Color>, FloatType, int, bool, Color, QSizeF>{
             typeColors,
             devicePixelRatio,
@@ -917,40 +917,39 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRec
             borderEnabled(),
             borderColor(),
             colorBarRect.size()
+        },
+        [&](QImage& image, QPointF& offset) {
+            // Render the color fields into an image texture.
+            // Allocate the image buffer.
+            QSize gradientSize = colorBarRect.size().toSize();
+            int borderWidth = borderEnabled() ? (int)std::ceil(2.0 * devicePixelRatio) : 0;
+            image = QImage(gradientSize.width() + 2*borderWidth, gradientSize.height() + 2*borderWidth, frameGraph.preferredImageFormat());
+            if(borderEnabled())
+                image.fill((QColor)borderColor());
+
+            // Create the color gradient image.
+            if(!typeColors.empty()) {
+                QPainter painter(&image);
+                if(orientation() == Qt::Vertical) {
+                    int effectiveSize = gradientSize.height() - borderWidth * (typeColors.size() - 1);
+                    for(size_t i = 0; i < typeColors.size(); i++) {
+                        QRect rect(borderWidth, borderWidth + (i * effectiveSize / typeColors.size()) + i * borderWidth, gradientSize.width(), 0);
+                        rect.setBottom(borderWidth + ((i+1) * effectiveSize / typeColors.size()) + i * borderWidth - 1);
+                        painter.fillRect(rect, QColor(typeColors[i]));
+                    }
+                }
+                else {
+                    int effectiveSize = gradientSize.width() - borderWidth * (typeColors.size() - 1);
+                    for(size_t i = 0; i < typeColors.size(); i++) {
+                        QRect rect(borderWidth + (i * effectiveSize / typeColors.size()) + i * borderWidth, borderWidth, 0, gradientSize.height());
+                        rect.setRight(borderWidth + ((i+1) * effectiveSize / typeColors.size()) + i * borderWidth - 1);
+                        painter.fillRect(rect, QColor(typeColors[i]));
+                    }
+                }
+            }
+            offset = QPointF(-borderWidth,-borderWidth);
         });
 
-    // Render the color fields into an image texture.
-    if(image.isNull()) {
-
-        // Allocate the image buffer.
-        QSize gradientSize = colorBarRect.size().toSize();
-        int borderWidth = borderEnabled() ? (int)std::ceil(2.0 * devicePixelRatio) : 0;
-        image = QImage(gradientSize.width() + 2*borderWidth, gradientSize.height() + 2*borderWidth, frameGraph.preferredImageFormat());
-        if(borderEnabled())
-            image.fill((QColor)borderColor());
-
-        // Create the color gradient image.
-        if(!typeColors.empty()) {
-            QPainter painter(&image);
-            if(orientation() == Qt::Vertical) {
-                int effectiveSize = gradientSize.height() - borderWidth * (typeColors.size() - 1);
-                for(size_t i = 0; i < typeColors.size(); i++) {
-                    QRect rect(borderWidth, borderWidth + (i * effectiveSize / typeColors.size()) + i * borderWidth, gradientSize.width(), 0);
-                    rect.setBottom(borderWidth + ((i+1) * effectiveSize / typeColors.size()) + i * borderWidth - 1);
-                    painter.fillRect(rect, QColor(typeColors[i]));
-                }
-            }
-            else {
-                int effectiveSize = gradientSize.width() - borderWidth * (typeColors.size() - 1);
-                for(size_t i = 0; i < typeColors.size(); i++) {
-                    QRect rect(borderWidth + (i * effectiveSize / typeColors.size()) + i * borderWidth, borderWidth, 0, gradientSize.height());
-                    rect.setRight(borderWidth + ((i+1) * effectiveSize / typeColors.size()) + i * borderWidth - 1);
-                    painter.fillRect(rect, QColor(typeColors[i]));
-                }
-            }
-        }
-        offset = QPointF(-borderWidth,-borderWidth);
-    }
     QPoint alignedPos = (colorBarRect.topLeft() + offset).toPoint();
     std::unique_ptr<ImagePrimitive> imagePrimitive = std::make_unique<ImagePrimitive>();
     imagePrimitive->setRectWindow(QRect(alignedPos, image.size()));
@@ -1079,15 +1078,14 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRec
     // Render background rectangle.
     if(backgroundEnabled()) {
         // Look up tick image in the cache
-        auto& backgroundImage = frameGraph.visCache().lookup<QImage>(
-            RendererResourceKey<struct ColorBarBackgroundImageCache, Color>{backgroundColor()});
-
-        // Generate image if not found in the cache
-        if(backgroundImage.isNull()) {
-            // 1 x 1 px texture of the right color which will be streched to the desired rectangle dimensions.
-            backgroundImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
-            backgroundImage.fill(static_cast<QColor>(backgroundColor()));
-        }
+        const QImage& backgroundImage = frameGraph.visCache().lookup<QImage>(
+            RendererResourceKey<struct ColorBarBackgroundImageCache, Color>{backgroundColor()},
+            [&](QImage& backgroundImage) {
+                // Generate image if not found in the cache
+                // 1 x 1 px texture of the right color which will be streched to the desired rectangle dimensions.
+                backgroundImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
+                backgroundImage.fill(static_cast<QColor>(backgroundColor()));
+            });
 
         boundingBox.adjust(-textMargin, -textMargin, textMargin, textMargin);
         frameGraph.addCommand(std::make_unique<ImagePrimitive>(backgroundImage, boundingBox.toAlignedRect()));

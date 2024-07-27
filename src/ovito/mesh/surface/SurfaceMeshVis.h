@@ -58,7 +58,7 @@ public:
     void initializeObject(ObjectInitializationFlags flags);
 
     /// Transforms the SurfaceMesh into a renderable triangle mesh.
-    Future<std::shared_ptr<RenderableSurfaceMesh>> transformSurfaceMesh(const SurfaceMesh* surfaceMesh);
+    Future<std::shared_ptr<const RenderableSurfaceMesh>> transformSurfaceMesh(const SurfaceMesh* surfaceMesh);
 
     /// Lets the visualization element render the data object.
     virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
@@ -111,8 +111,8 @@ protected:
         const DataOORef<TriangleMesh>& capPolygonsMesh() { return _capPolygonsMesh; }
 
         /// Returns the final RenderableSurfaceMesh.
-        std::shared_ptr<RenderableSurfaceMesh> renderableMesh(bool backfaceCulling) {
-            return std::make_shared<RenderableSurfaceMesh>(
+        std::shared_ptr<const RenderableSurfaceMesh> renderableMesh(bool backfaceCulling) {
+            return std::make_shared<const RenderableSurfaceMesh>(
                 std::move(_outputMesh),
                 std::move(_capPolygonsMesh),
                 std::move(_materialColors),
@@ -189,7 +189,7 @@ protected:
     /// The default implementation returns null, because standard surface meshes do not support picking of
     /// mesh faces or vertices. Sub-classes can override this method to implement object-specific picking
     /// strategies.
-    virtual OORef<ObjectPickInfo> createPickInfo(const SurfaceMesh* mesh, std::shared_ptr<RenderableSurfaceMesh> renderableMesh) const;
+    virtual OORef<ObjectPickInfo> createPickInfo(const SurfaceMesh* mesh, std::shared_ptr<const RenderableSurfaceMesh> renderableMesh) const;
 
 private:
 
@@ -249,7 +249,7 @@ class OVITO_MESH_EXPORT SurfaceMeshPickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    void initializeObject(const SurfaceMeshVis* visElement, const SurfaceMesh* surfaceMesh, std::shared_ptr<RenderableSurfaceMesh> renderableMesh) {
+    void initializeObject(const SurfaceMeshVis* visElement, const SurfaceMesh* surfaceMesh, std::shared_ptr<const RenderableSurfaceMesh> renderableMesh) {
         ObjectPickInfo::initializeObject();
         _visElement = visElement;
         _surfaceMesh = surfaceMesh;
@@ -260,7 +260,7 @@ public:
     const DataOORef<const SurfaceMesh>& surfaceMesh() const { return _surfaceMesh; }
 
     /// The renderable version of the surface mesh.
-    const std::shared_ptr<RenderableSurfaceMesh>& renderableMesh() const { return _renderableMesh; }
+    const std::shared_ptr<const RenderableSurfaceMesh>& renderableMesh() const { return _renderableMesh; }
 
     /// Returns the vis element that rendered the surface mesh.
     const OORef<SurfaceMeshVis>& visElement() const { return _visElement; }
@@ -282,7 +282,7 @@ private:
     DataOORef<const SurfaceMesh> _surfaceMesh;
 
     /// The renderable version of the surface mesh.
-    std::shared_ptr<RenderableSurfaceMesh> _renderableMesh;
+    std::shared_ptr<const RenderableSurfaceMesh> _renderableMesh;
 
     /// The vis element that rendered the surface mesh.
     OORef<SurfaceMeshVis> _visElement;

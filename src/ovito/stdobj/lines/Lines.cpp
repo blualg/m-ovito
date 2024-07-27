@@ -160,43 +160,43 @@ VectorVis::VectorData Lines::getVectorVisData(const ConstDataObjectPath& path, c
             OVITO_ASSERT(vectorProperty->dataType() == Property::FloatDefault);
             if(vectorProperty->dataType() == Property::FloatDefault) {
                 if(const Property* positions = getProperty(PositionProperty)) {
-
                     // The line points are expensive to filter. That's why we store them in the vis cache.
-                    using CacheKey = RendererResourceKey<struct LinesVectorVisCache, ConstDataObjectRef, ConstDataObjectRef, DataOORef<const SimulationCell>>;
-                    auto& [filteredPositions, filteredVectors] = visCache.lookup<std::tuple<ConstDataBufferPtr, ConstDataBufferPtr>>(CacheKey(
-                        positions,
-                        vectorProperty,
-                        simulationCell));
-
-                    if(!filteredPositions) {
-                        if(simulationCell) {
-                            // Use wrapped point positions.
-                            filteredPositions = simulationCell->wrapPoints(positions);
-                        }
-                        else {
-                            // Use unwrapped point positions
-                            filteredPositions = positions;
-                        }
-
-                        if(cuttingPlanes().empty()) {
-                            // Use vectors as they are.
-                            filteredVectors = vectorProperty;
-                        }
-                        else {
-                            BufferReadAccess<Vector3> vecInAcc{vectorProperty};
-                            BufferWriteAccessAndRef<Vector3, access_mode::discard_write> vecOutAcc{vectorProperty->cloneWithoutData(vectorProperty->size())};
-                            // Cull points at the clipping planes. Culled points get hidden by setting their correponding vector to zero.
-                            size_t i = 0;
-                            for(const Point3& p : BufferReadAccess<Point3>{filteredPositions}) {
-                                if(isPointCulled(p))
-                                    vecOutAcc[i].setZero();
-                                else
-                                    vecOutAcc[i] = vecInAcc[i];
-                                i++;
+                    const auto& [filteredPositions, filteredVectors] = visCache.lookup<std::tuple<ConstDataBufferPtr, ConstDataBufferPtr>>(
+                        RendererResourceKey<struct LinesVectorVisCache, ConstDataObjectRef, ConstDataObjectRef, DataOORef<const SimulationCell>>{
+                            positions,
+                            vectorProperty,
+                            simulationCell
+                        },
+                        [&](ConstDataBufferPtr& filteredPositions, ConstDataBufferPtr& filteredVectors) {
+                            if(simulationCell) {
+                                // Use wrapped point positions.
+                                filteredPositions = simulationCell->wrapPoints(positions);
                             }
-                            filteredVectors = vecOutAcc.take();
-                        }
-                    }
+                            else {
+                                // Use unwrapped point positions
+                                filteredPositions = positions;
+                            }
+
+                            if(cuttingPlanes().empty()) {
+                                // Use vectors as they are.
+                                filteredVectors = vectorProperty;
+                            }
+                            else {
+                                BufferReadAccess<Vector3> vecInAcc{vectorProperty};
+                                BufferWriteAccessAndRef<Vector3, access_mode::discard_write> vecOutAcc{vectorProperty->cloneWithoutData(vectorProperty->size())};
+                                // Cull points at the clipping planes. Culled points get hidden by setting their correponding vector to zero.
+                                size_t i = 0;
+                                for(const Point3& p : BufferReadAccess<Point3>{filteredPositions}) {
+                                    if(isPointCulled(p))
+                                        vecOutAcc[i].setZero();
+                                    else
+                                        vecOutAcc[i] = vecInAcc[i];
+                                    i++;
+                                }
+                                filteredVectors = vecOutAcc.take();
+                            }
+                        });
+
                     return {filteredPositions, filteredVectors, nullptr, nullptr};
                 }
             }

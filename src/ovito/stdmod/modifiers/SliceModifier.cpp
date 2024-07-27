@@ -438,42 +438,43 @@ void SliceModifier::renderModifierVisual(ModificationNode* modNode, Pipeline* pi
 ******************************************************************************/
 void SliceModifier::renderPlane(FrameGraph& frameGraph, const Pipeline* pipeline, const Plane3& plane, const Box3& bb, const ColorA& color) const
 {
-    auto& vertexBuffer = frameGraph.visCache().lookup<ConstDataBufferPtr>(RendererResourceKey<struct SlicePlaneCache, Plane3, Box3>{plane, bb});
-    if(!vertexBuffer) {
-        // Compute intersection lines of slicing plane and bounding box.
-        Point3 corners[8];
-        for(size_t i = 0; i < 8; i++)
-            corners[i] = bb[i];
+    const ConstDataBufferPtr& vertexBuffer = frameGraph.visCache().lookup<ConstDataBufferPtr>(
+        RendererResourceKey<struct SlicePlaneCache, Plane3, Box3>{plane, bb},
+        [&](ConstDataBufferPtr& vertexBuffer) {
+            // Compute intersection lines of slicing plane and bounding box.
+            Point3 corners[8];
+            for(size_t i = 0; i < 8; i++)
+                corners[i] = bb[i];
 
-        std::vector<Point3> vertices;
-        vertices.reserve(8);
-        planeQuadIntersection(corners, {{0, 1, 5, 4}}, plane, vertices);
-        planeQuadIntersection(corners, {{1, 3, 7, 5}}, plane, vertices);
-        planeQuadIntersection(corners, {{3, 2, 6, 7}}, plane, vertices);
-        planeQuadIntersection(corners, {{2, 0, 4, 6}}, plane, vertices);
-        planeQuadIntersection(corners, {{4, 5, 7, 6}}, plane, vertices);
-        planeQuadIntersection(corners, {{0, 2, 3, 1}}, plane, vertices);
+            std::vector<Point3> vertices;
+            vertices.reserve(8);
+            planeQuadIntersection(corners, {{0, 1, 5, 4}}, plane, vertices);
+            planeQuadIntersection(corners, {{1, 3, 7, 5}}, plane, vertices);
+            planeQuadIntersection(corners, {{3, 2, 6, 7}}, plane, vertices);
+            planeQuadIntersection(corners, {{2, 0, 4, 6}}, plane, vertices);
+            planeQuadIntersection(corners, {{4, 5, 7, 6}}, plane, vertices);
+            planeQuadIntersection(corners, {{0, 2, 3, 1}}, plane, vertices);
 
-        // If there is not intersection with the simulation box then
-        // project the simulation box onto the plane.
-        if(vertices.empty()) {
-            const static int edges[12][2] = {
-                    {0,1},{1,3},{3,2},{2,0},
-                    {4,5},{5,7},{7,6},{6,4},
-                    {0,4},{1,5},{3,7},{2,6}
-            };
-            vertices.reserve(24);
-            for(int edge = 0; edge < 12; edge++) {
-                vertices.push_back(plane.projectPoint(corners[edges[edge][0]]));
-                vertices.push_back(plane.projectPoint(corners[edges[edge][1]]));
+            // If there is not intersection with the simulation box then
+            // project the simulation box onto the plane.
+            if(vertices.empty()) {
+                const static int edges[12][2] = {
+                        {0,1},{1,3},{3,2},{2,0},
+                        {4,5},{5,7},{7,6},{6,4},
+                        {0,4},{1,5},{3,7},{2,6}
+                };
+                vertices.reserve(24);
+                for(int edge = 0; edge < 12; edge++) {
+                    vertices.push_back(plane.projectPoint(corners[edges[edge][0]]));
+                    vertices.push_back(plane.projectPoint(corners[edges[edge][1]]));
+                }
             }
-        }
 
-        // Render plane-box intersection lines.
-        BufferFactory<Point3> positions(vertices.size());
-        boost::range::copy(vertices, positions.begin());
-        vertexBuffer = positions.take();
-    }
+            // Render plane-box intersection lines.
+            BufferFactory<Point3> positions(vertices.size());
+            boost::range::copy(vertices, positions.begin());
+            vertexBuffer = positions.take();
+        });
 
     // Render the wireframe lines to visualize the cutting plane.
     std::unique_ptr<LinePrimitive> lines = std::make_unique<LinePrimitive>();

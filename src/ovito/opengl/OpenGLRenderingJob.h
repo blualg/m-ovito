@@ -86,6 +86,9 @@ public:
     /// Called when this object is being destroyed.
     virtual void aboutToBeDeleted() override;
 
+    /// Returns the cache managing rendering resources.
+    const std::shared_ptr<RendererResourceCache>& visCache() const { return _visCache; }
+
 	/// Creates a new abstract target frame buffer for rendering into.
 	virtual OORef<AbstractRenderingFrameBuffer> createOffscreenFrameBuffer(const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer) override;
 
@@ -236,6 +239,9 @@ private:
 
     /// The OpenGL version of the context encoded as an integer.
     quint32 _glversion;
+
+    /// The cache managing rendering resources.
+    std::shared_ptr<RendererResourceCache> _visCache;
 
     /// Keeps alive the OpenGL resources that get created during frame rendering
     /// such that they can be re-used in subsequent frames.

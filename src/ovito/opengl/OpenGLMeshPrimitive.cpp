@@ -368,14 +368,11 @@ ConstDataBufferPtr OpenGLRenderingJob::generateMeshWireframeLines(const MeshPrim
     OVITO_ASSERT(primitive.mesh());
 
     // Cache the wireframe geometry generated for the current mesh.
-    RendererResourceKey<struct WireframeCache, DataOORef<const TriangleMesh>> cacheKey(primitive.mesh());
-    ConstDataBufferPtr& wireframeLines = currentResourceFrame().lookup<ConstDataBufferPtr>(std::move(cacheKey));
-
-    if(!wireframeLines) {
-        wireframeLines = primitive.generateWireframeLines();
-    }
-
-    return wireframeLines;
+    return currentResourceFrame().lookup<ConstDataBufferPtr>(
+        RendererResourceKey<struct WireframeCache, DataOORef<const TriangleMesh>>{ primitive.mesh() },
+        [&](ConstDataBufferPtr& wireframeLines) {
+            wireframeLines = primitive.generateWireframeLines();
+        });
 }
 
 /******************************************************************************

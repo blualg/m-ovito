@@ -513,96 +513,94 @@ void ParticlesVis::renderMeshBasedParticles(const Particles* particles, FrameGra
         ConstDataObjectRef,         // Transparency property
         ConstDataObjectRef          // Radius property
     >;
+
     // The data structure created for each mesh-based particle type.
     struct MeshParticleType {
         MeshPrimitive meshPrimitive;
         OORef<ParticlePickInfo> pickInfo;
         bool useMeshColors; ///< Controls the use of the original face colors from the mesh instead of the per-particle colors.
     };
-    // The data structure stored in the vis cache for the mesh-based particle shapes.
-    using ShapeMeshCacheValue = std::vector<MeshParticleType>;
 
     // Look up the rendering primitives for mesh-based particle types in the vis cache.
-    ShapeMeshCacheValue& meshVisCache = frameGraph.visCache().lookup<ShapeMeshCacheValue>(ShapeMeshCacheKey{
-        typeProperty,
-        defaultParticleRadius(),
-        radiusScaleFactor(),
-        positionProperty,
-        orientationProperty,
-        colorProperty,
-        selectionProperty,
-        transparencyProperty,
-        radiusProperty});
+    const std::vector<MeshParticleType>& meshVisCache = frameGraph.visCache().lookup<std::vector<MeshParticleType>>(
+        ShapeMeshCacheKey{
+            typeProperty,
+            defaultParticleRadius(),
+            radiusScaleFactor(),
+            positionProperty,
+            orientationProperty,
+            colorProperty,
+            selectionProperty,
+            transparencyProperty,
+            radiusProperty},
+        [&](std::vector<MeshParticleType>& meshVisCache) {
 
-    // Check if we already have valid rendering primitives that are up to date.
-    if(meshVisCache.empty()) {
-        meshVisCache.clear();
+            // This data structure stores temporary per-particle instance data, separated by mesh-based particle type.
+            struct MeshTypePerInstanceData {
+                BufferFactory<AffineTransformationG> particleTMs{0};   /// AffineTransformation of each particle to be rendered.
+                BufferFactory<ColorAG> particleColors{0};  /// Color of each particle to be rendered.
+                BufferFactory<int32_t> particleIndices{0}; /// Index of each particle to be rendered in the original particles list.
+            };
+            std::vector<MeshTypePerInstanceData> perInstanceData;
 
-        // This data structure stores temporary per-particle instance data, separated by mesh-based particle type.
-        struct MeshTypePerInstanceData {
-            BufferFactory<AffineTransformationG> particleTMs{0};   /// AffineTransformation of each particle to be rendered.
-            BufferFactory<ColorAG> particleColors{0};  /// Color of each particle to be rendered.
-            BufferFactory<int32_t> particleIndices{0}; /// Index of each particle to be rendered in the original particles list.
-        };
-        std::vector<MeshTypePerInstanceData> perInstanceData;
+            meshVisCache.reserve(shapeMeshParticleTypes.size());
+            perInstanceData.reserve(shapeMeshParticleTypes.size());
 
-        meshVisCache.reserve(shapeMeshParticleTypes.size());
-        perInstanceData.reserve(shapeMeshParticleTypes.size());
+            // Create one instanced mesh primitive for each mesh-based particle type.
+            for(int typeId : shapeMeshParticleTypes) {
+                // Create a new instanced mesh primitive for the particle type.
+                const ParticleType* ptype = static_object_cast<ParticleType>(typeProperty->elementType(typeId));
+                OVITO_ASSERT(ptype->shapeMesh());
+                MeshParticleType meshType;
+                meshType.meshPrimitive.setEmphasizeEdges(ptype->highlightShapeEdges());
+                meshType.meshPrimitive.setCullFaces(ptype->shapeBackfaceCullingEnabled());
+                meshType.meshPrimitive.setMesh(ptype->shapeMesh());
+                meshType.useMeshColors = ptype->shapeUseMeshColor();
+                meshVisCache.push_back(std::move(meshType));
+                perInstanceData.emplace_back();
+            }
 
-        // Create one instanced mesh primitive for each mesh-based particle type.
-        for(int typeId : shapeMeshParticleTypes) {
-            // Create a new instanced mesh primitive for the particle type.
-            const ParticleType* ptype = static_object_cast<ParticleType>(typeProperty->elementType(typeId));
-            OVITO_ASSERT(ptype->shapeMesh());
-            MeshParticleType meshType;
-            meshType.meshPrimitive.setEmphasizeEdges(ptype->highlightShapeEdges());
-            meshType.meshPrimitive.setCullFaces(ptype->shapeBackfaceCullingEnabled());
-            meshType.meshPrimitive.setMesh(ptype->shapeMesh());
-            meshType.useMeshColors = ptype->shapeUseMeshColor();
-            meshVisCache.push_back(std::move(meshType));
-            perInstanceData.emplace_back();
-        }
+            // Compile the per-instance particle data (positions, orientations, colors, etc) for each mesh-based particle type.
+            BufferReadAccessAndRef<ColorG> colors = particleColors(particles, frameGraph.isInteractive());
+            BufferReadAccessAndRef<GraphicsFloatType> radii = particleRadii(particles, true);
+            BufferReadAccess<int32_t> types(typeProperty);
+            BufferReadAccess<Point3> positions(positionProperty);
+            BufferReadAccess<QuaternionG> orientations(orientationProperty);
+            BufferReadAccess<GraphicsFloatType> transparencies(transparencyProperty);
+            size_t particleCount = particles->elementCount();
+            for(size_t i = 0; i < particleCount; i++) {
+                if(radii[i] <= 0)
+                    continue;
+                auto iter = boost::find(shapeMeshParticleTypes, types[i]);
+                if(iter == shapeMeshParticleTypes.end())
+                    continue;
+                size_t typeIndex = std::distance(shapeMeshParticleTypes.begin(), iter);
+                AffineTransformationG tm = AffineTransformationG::scaling(radii[i]);
+                if(positions)
+                    tm.translation() = positions[i].toDataType<GraphicsFloatType>() - Point3G::Origin();
+                if(orientations)
+                    tm = tm * Matrix_3<GraphicsFloatType>::rotation(orientations[i].safelyNormalized());
+                perInstanceData[typeIndex].particleTMs.push_back(tm);
+                perInstanceData[typeIndex].particleColors.push_back(ColorAG(colors[i], transparencies ? qBound<GraphicsFloatType>(0, 1 - transparencies[i], 1) : 1));
+                perInstanceData[typeIndex].particleIndices.push_back(i);
+            }
 
-        // Compile the per-instance particle data (positions, orientations, colors, etc) for each mesh-based particle type.
-        BufferReadAccessAndRef<ColorG> colors = particleColors(particles, frameGraph.isInteractive());
-        BufferReadAccessAndRef<GraphicsFloatType> radii = particleRadii(particles, true);
-        BufferReadAccess<int32_t> types(typeProperty);
-        BufferReadAccess<Point3> positions(positionProperty);
-        BufferReadAccess<QuaternionG> orientations(orientationProperty);
-        BufferReadAccess<GraphicsFloatType> transparencies(transparencyProperty);
-        size_t particleCount = particles->elementCount();
-        for(size_t i = 0; i < particleCount; i++) {
-            if(radii[i] <= 0)
-                continue;
-            auto iter = boost::find(shapeMeshParticleTypes, types[i]);
-            if(iter == shapeMeshParticleTypes.end())
-                continue;
-            size_t typeIndex = std::distance(shapeMeshParticleTypes.begin(), iter);
-            AffineTransformationG tm = AffineTransformationG::scaling(radii[i]);
-            if(positions)
-                tm.translation() = positions[i].toDataType<GraphicsFloatType>() - Point3G::Origin();
-            if(orientations)
-                tm = tm * Matrix_3<GraphicsFloatType>::rotation(orientations[i].safelyNormalized());
-            perInstanceData[typeIndex].particleTMs.push_back(tm);
-            perInstanceData[typeIndex].particleColors.push_back(ColorAG(colors[i], transparencies ? qBound<GraphicsFloatType>(0, 1 - transparencies[i], 1) : 1));
-            perInstanceData[typeIndex].particleIndices.push_back(i);
-        }
+            // Store the per-particle data into the mesh rendering primitives.
+            for(size_t typeIndex = 0; typeIndex < meshVisCache.size(); typeIndex++) {
+                if(meshVisCache[typeIndex].useMeshColors)
+                    perInstanceData[typeIndex].particleColors.reset();
+                meshVisCache[typeIndex].meshPrimitive.setInstancedRendering(
+                    perInstanceData[typeIndex].particleTMs.take(),
+                    perInstanceData[typeIndex].particleColors.take());
+                // Create a picking structure for this set of particles.
+                meshVisCache[typeIndex].pickInfo = OORef<ParticlePickInfo>::create(this, particles, perInstanceData[typeIndex].particleIndices.take());
+            }
+        });
 
-        // Store the per-particle data into the mesh rendering primitives.
-        for(size_t typeIndex = 0; typeIndex < meshVisCache.size(); typeIndex++) {
-            if(meshVisCache[typeIndex].useMeshColors)
-                perInstanceData[typeIndex].particleColors.reset();
-            meshVisCache[typeIndex].meshPrimitive.setInstancedRendering(
-                perInstanceData[typeIndex].particleTMs.take(),
-                perInstanceData[typeIndex].particleColors.take());
-            // Create a picking structure for this set of particles.
-            meshVisCache[typeIndex].pickInfo = OORef<ParticlePickInfo>::create(this, particles, perInstanceData[typeIndex].particleIndices.take());
-        }
-    }
     OVITO_ASSERT(meshVisCache.size() == shapeMeshParticleTypes.size());
 
     // Render the instanced mesh primitives, one for each particle type with a mesh-based shape.
-    for(MeshParticleType& t : meshVisCache) {
+    for(const MeshParticleType& t : meshVisCache) {
 
         // Update the pick info record with the latest particle data.
         t.pickInfo->setParticles(particles);
@@ -685,14 +683,15 @@ void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGra
             FloatType               // Scaling factor
         >;
         // Look up the scaled aspherical shape array in the vis cache, which have been multiplied with the uniform scaling factor.
-        ConstDataBufferPtr& scaledShapes = frameGraph.visCache().lookup<ConstDataBufferPtr>(ParticleShapeCacheKey(asphericalShapeProperty, radiusScaleFactor()));
-        if(!scaledShapes) {
-            // Make a copy of the original aspherical shape array and multiply all vectors with the scaling factor.
-            BufferWriteAccessAndRef<Vector3G, access_mode::read_write> values = ConstDataBufferPtr::makeCopy(asphericalShapeProperty);
-            for(Vector3G& s : values)
-                s *= radiusScaleFactor();
-            scaledShapes = values.take();
-        }
+        const ConstDataBufferPtr& scaledShapes = frameGraph.visCache().lookup<ConstDataBufferPtr>(
+            ParticleShapeCacheKey(asphericalShapeProperty, radiusScaleFactor()),
+            [&](ConstDataBufferPtr& scaledShapes) {
+                // Make a copy of the original aspherical shape array and multiply all vectors with the scaling factor.
+                BufferWriteAccessAndRef<Vector3G, access_mode::read_write> values = ConstDataBufferPtr::makeCopy(asphericalShapeProperty);
+                for(Vector3G& s : values)
+                    s *= radiusScaleFactor();
+                scaledShapes = values.take();
+            });
         primitive.setAsphericalShapes(scaledShapes);
     }
 
@@ -712,37 +711,37 @@ void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGra
         >;
 
         // Look up the particle indices in the vis cache.
-        ConstDataBufferPtr& indices = frameGraph.visCache().lookup<ConstDataBufferPtr>(ParticleCacheKey(
-            typeProperty,
-            shape,
-            uniformShape,
-            particles->elementCount()));
+        const ConstDataBufferPtr& indices = frameGraph.visCache().lookup<ConstDataBufferPtr>(
+            ParticleCacheKey(
+                typeProperty,
+                shape,
+                uniformShape,
+                particles->elementCount()),
+            [&](ConstDataBufferPtr& indices) {
+                // Determine the set of particles to be rendered using the current primitive shape.
+                if(uniformShape != shape) {
+                    OVITO_ASSERT(typeProperty);
 
-        if(!indices) {
-            // Determine the set of particles to be rendered using the current primitive shape.
-            if(uniformShape != shape) {
-                OVITO_ASSERT(typeProperty);
-
-                // Build list of type IDs that use the current shape.
-                std::vector<int> activeParticleTypes;
-                for(const ElementType* etype : typeProperty->elementTypes()) {
-                    if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(etype)) {
-                        if(ptype->shape() == shape || (ptype->shape() == ParticleShape::Default && shape == particleShape()) || (ptype->shape() == ParticleShape::Mesh && !ptype->shapeMesh() && shape == ParticleShape::Box))
-                            activeParticleTypes.push_back(ptype->numericId());
+                    // Build list of type IDs that use the current shape.
+                    std::vector<int> activeParticleTypes;
+                    for(const ElementType* etype : typeProperty->elementTypes()) {
+                        if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(etype)) {
+                            if(ptype->shape() == shape || (ptype->shape() == ParticleShape::Default && shape == particleShape()) || (ptype->shape() == ParticleShape::Mesh && !ptype->shapeMesh() && shape == ParticleShape::Box))
+                                activeParticleTypes.push_back(ptype->numericId());
+                        }
                     }
-                }
 
-                // Collect indices of all particles that have an active type.
-                BufferFactory<int32_t> activeParticleIndices(0);
-                size_t index = 0;
-                for(int32_t t : BufferReadAccess<int32_t>(typeProperty)) {
-                    if(boost::find(activeParticleTypes, t) != activeParticleTypes.cend())
-                        activeParticleIndices.push_back(index);
-                    index++;
+                    // Collect indices of all particles that have an active type.
+                    BufferFactory<int32_t> activeParticleIndices(0);
+                    size_t index = 0;
+                    for(int32_t t : BufferReadAccess<int32_t>(typeProperty)) {
+                        if(boost::find(activeParticleTypes, t) != activeParticleTypes.cend())
+                            activeParticleIndices.push_back(index);
+                        index++;
+                    }
+                    indices = activeParticleIndices.take();
                 }
-                indices = activeParticleIndices.take();
-            }
-        }
+            });
 
         if(indices && indices->size() == 0)
             continue;   // No particles to be rendered using the current primitive shape.
@@ -759,15 +758,16 @@ void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGra
                 ConstDataObjectRef,                 // Type property
                 size_t                              // Particle count
             >;
-            ConstPropertyPtr& radiusBuffer = frameGraph.visCache().lookup<ConstPropertyPtr>(RadiiCacheKey(
-                defaultParticleRadius(),
-                radiusScaleFactor(),
-                radiusProperty,
-                typeRadiusProperty,
-                particles->elementCount()));
-            if(!radiusBuffer)
-                radiusBuffer = particleRadii(particles, true);
-            primitive.setRadii(radiusBuffer);
+            primitive.setRadii(frameGraph.visCache().lookup<ConstPropertyPtr>(
+                RadiiCacheKey(
+                    defaultParticleRadius(),
+                    radiusScaleFactor(),
+                    radiusProperty,
+                    typeRadiusProperty,
+                    particles->elementCount()),
+                [&](ConstPropertyPtr& radiusBuffer) {
+                    radiusBuffer = particleRadii(particles, true);
+                }));
         }
 
         if(!primitive.colors()) {
@@ -777,13 +777,14 @@ void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGra
                 ConstDataObjectRef,                 // Color property
                 size_t                              // Particle count
             >;
-            ConstPropertyPtr& colorBuffer = frameGraph.visCache().lookup<ConstPropertyPtr>(ColorCacheKey(
-                typeProperty,
-                colorProperty,
-                particles->elementCount()));
-            if(!colorBuffer)
-                colorBuffer = particleColors(particles, false);
-            primitive.setColors(colorBuffer);
+            primitive.setColors(frameGraph.visCache().lookup<ConstPropertyPtr>(
+                ColorCacheKey(
+                    typeProperty,
+                    colorProperty,
+                    particles->elementCount()),
+                [&](ConstPropertyPtr& colorBuffer) {
+                    colorBuffer = particleColors(particles, false);
+                }));
         }
 
         // Configure rendering shape and shading style.
@@ -793,9 +794,11 @@ void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGra
         primitive.setShadingMode(primitiveShadingMode);
 
         // Look up or create the pick info record with the latest particle data.
-        auto& pickingInfo = frameGraph.visCache().lookup<OORef<ParticlePickInfo>>(ConstDataObjectRef(particles));
-        if(!pickingInfo)
-            pickingInfo = OORef<ParticlePickInfo>::create(this, particles);
+        const auto& pickingInfo = frameGraph.visCache().lookup<OORef<ParticlePickInfo>>(
+            ConstDataObjectRef(particles),
+            [&](OORef<ParticlePickInfo>& pickingInfo) {
+                pickingInfo = OORef<ParticlePickInfo>::create(this, particles);
+            });
 
         // Add the particles primitive to the frame graph.
         frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(primitive), pipeline, frameGraph.addPickingGroup(pipeline, pickingInfo));
@@ -870,159 +873,147 @@ void ParticlesVis::renderCylindricParticles(const Particles* particles, FrameGra
             ParticlesVis::ParticleShape,        // Global particle shape
             ParticlesVis::ParticleShape         // Local particle shape
         >;
-        // The data structure stored in the vis cache.
-        struct ParticleCacheValue {
-            CylinderPrimitive cylinderPrimitive;
-            ParticlePrimitive spheresPrimitives[2];
-            OORef<ParticlePickInfo> pickInfo;
-            bool isCreated = false;
-        };
 
         // Look up the rendering primitive in the vis cache.
-        auto& visCache = frameGraph.visCache().lookup<ParticleCacheValue>(ParticleCacheKey(
-            positionProperty,
-            typeProperty,
-            selectionProperty,
-            colorProperty,
-            transparencyProperty,
-            asphericalShapeProperty,
-            orientationProperty,
-            radiusProperty,
-            defaultParticleRadius(),
-            radiusScaleFactor(),
-            particleShape(),
-            shape));
+        const auto& [cylinderPrimitive, spheresPrimitives, pickInfo] = frameGraph.visCache().lookup<std::tuple<CylinderPrimitive, std::array<ParticlePrimitive, 2>, OORef<ParticlePickInfo>>>(
+            ParticleCacheKey(
+                positionProperty,
+                typeProperty,
+                selectionProperty,
+                colorProperty,
+                transparencyProperty,
+                asphericalShapeProperty,
+                orientationProperty,
+                radiusProperty,
+                defaultParticleRadius(),
+                radiusScaleFactor(),
+                particleShape(),
+                shape),
+            [&](CylinderPrimitive& cylinderPrimitive, std::array<ParticlePrimitive, 2>& spheresPrimitives, OORef<ParticlePickInfo>& pickInfo) {
 
-        // Check if the rendering primitive needs to be recreated from scratch.
-        if(!visCache.isCreated) {
-            visCache.isCreated = true;
+                // Determine the set of particles to be rendered using the current shape.
+                BufferFactory<int32_t> activeParticleIndices;
+                if(uniformShape != shape) {
+                    OVITO_ASSERT(typeProperty);
 
-            // Determine the set of particles to be rendered using the current shape.
-            BufferFactory<int32_t> activeParticleIndices;
-            if(uniformShape != shape) {
-                OVITO_ASSERT(typeProperty);
+                    // Build list of type IDs that use the current shape.
+                    std::vector<int> activeParticleTypes;
+                    for(const ElementType* etype : typeProperty->elementTypes()) {
+                        if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(etype)) {
+                            if(ptype->shape() == shape || (ptype->shape() == ParticleShape::Default && shape == particleShape()))
+                                activeParticleTypes.push_back(ptype->numericId());
+                        }
+                    }
 
-                // Build list of type IDs that use the current shape.
-                std::vector<int> activeParticleTypes;
-                for(const ElementType* etype : typeProperty->elementTypes()) {
-                    if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(etype)) {
-                        if(ptype->shape() == shape || (ptype->shape() == ParticleShape::Default && shape == particleShape()))
-                            activeParticleTypes.push_back(ptype->numericId());
+                    // Collect indices of all particles that have an active type.
+                    activeParticleIndices = BufferFactory<int32_t>(0);
+                    size_t index = 0;
+                    for(int32_t t : BufferReadAccess<int32_t>(typeProperty)) {
+                        if(boost::find(activeParticleTypes, t) != activeParticleTypes.cend())
+                            activeParticleIndices.push_back(index);
+                        index++;
+                    }
+
+                    if(activeParticleIndices.size() == 0) {
+                        return;   // No particles to be rendered using the current primitive shape.
                     }
                 }
+                int effectiveParticleCount = activeParticleIndices ? activeParticleIndices.size() : particles->elementCount();
 
-                // Collect indices of all particles that have an active type.
-                activeParticleIndices = BufferFactory<int32_t>(0);
-                size_t index = 0;
-                for(int32_t t : BufferReadAccess<int32_t>(typeProperty)) {
-                    if(boost::find(activeParticleTypes, t) != activeParticleTypes.cend())
-                        activeParticleIndices.push_back(index);
-                    index++;
+                // Create the rendering primitive for the cylinders.
+                cylinderPrimitive.setShape(CylinderPrimitive::CylinderShape);
+                cylinderPrimitive.setShadingMode(CylinderPrimitive::NormalShading);
+
+                // Determine cylinder colors.
+                if(!colorBuffer)
+                    colorBuffer = particleColors(particles, frameGraph.isInteractive());
+
+                // Determine cylinder radii (only needed if aspherical shape property is not present).
+                if(!radiusBuffer && !asphericalShapeProperty)
+                    radiusBuffer = particleRadii(particles, false);
+
+                // Allocate cylinder data buffers.
+                BufferFactory<Point3G> cylinderBasePositions(effectiveParticleCount);
+                BufferFactory<Point3G> cylinderHeadPositions(effectiveParticleCount);
+                BufferFactory<GraphicsFloatType> cylinderWidths(effectiveParticleCount);
+                BufferFactory<ColorG> cylinderColors(effectiveParticleCount);
+                BufferFactory<GraphicsFloatType> cylinderTransparencies = transparencyProperty ? BufferFactory<GraphicsFloatType>(effectiveParticleCount) : BufferFactory<GraphicsFloatType>{};
+                BufferFactory<GraphicsFloatType> sphereRadii = (shape == ParticleShape::Spherocylinder) ? BufferFactory<GraphicsFloatType>(effectiveParticleCount) : BufferFactory<GraphicsFloatType>{};
+
+                // Fill data buffers.
+                BufferReadAccess<Point3> positionArray(positionProperty);
+                BufferReadAccess<Vector3G> asphericalShapeArray(asphericalShapeProperty);
+                BufferReadAccess<QuaternionG> orientationArray(orientationProperty);
+                BufferReadAccess<ColorG> colorsArray(colorBuffer);
+                BufferReadAccess<GraphicsFloatType> radiiArray(radiusBuffer);
+                BufferReadAccess<GraphicsFloatType> transparencies(transparencyProperty);
+                const GraphicsFloatType scalingFactor = radiusScaleFactor();
+                for(int index = 0; index < effectiveParticleCount; index++) {
+                    int effectiveParticleIndex = activeParticleIndices ? activeParticleIndices[index] : index;
+                    const Point3& center = positionArray[effectiveParticleIndex];
+                    GraphicsFloatType radius, length;
+                    if(asphericalShapeArray) {
+                        radius = std::abs(asphericalShapeArray[effectiveParticleIndex].x()) * scalingFactor;
+                        length = asphericalShapeArray[effectiveParticleIndex].z() * scalingFactor;
+                    }
+                    else {
+                        radius = radiiArray[effectiveParticleIndex] * scalingFactor;
+                        length = radius * 2;
+                    }
+                    Vector3G dir(0, 0, length);
+                    if(orientationArray) {
+                        dir = orientationArray[effectiveParticleIndex].safelyNormalized() * dir;
+                    }
+                    Point3G p = center.toDataType<GraphicsFloatType>() - (dir * GraphicsFloatType(0.5));
+                    cylinderBasePositions[index] = p;
+                    cylinderHeadPositions[index] = p + dir;
+                    cylinderWidths[index] = 2 * radius;
+                    cylinderColors[index] = colorsArray[effectiveParticleIndex];
+                    if(cylinderTransparencies)
+                        cylinderTransparencies[index] = transparencies[effectiveParticleIndex];
+                    if(sphereRadii)
+                        sphereRadii[index] = radius;
+                }
+                cylinderPrimitive.setPositions(cylinderBasePositions.take(), cylinderHeadPositions.take());
+                cylinderPrimitive.setWidths(cylinderWidths.take());
+                cylinderPrimitive.setColors(cylinderColors.take());
+                cylinderPrimitive.setTransparencies(cylinderTransparencies.take());
+
+                // Create the rendering primitive for the spheres.
+                if(shape == ParticleShape::Spherocylinder) {
+                    spheresPrimitives[0].setParticleShape(ParticlePrimitive::SphericalShape);
+                    spheresPrimitives[0].setShadingMode(ParticlePrimitive::NormalShading);
+                    spheresPrimitives[0].setRenderingQuality(ParticlePrimitive::HighQuality);
+                    spheresPrimitives[0].setPositions(cylinderPrimitive.basePositions());
+                    spheresPrimitives[0].setRadii(sphereRadii.take());
+                    spheresPrimitives[0].setColors(cylinderPrimitive.colors());
+                    spheresPrimitives[0].setTransparencies(cylinderPrimitive.transparencies());
+                    spheresPrimitives[1].setParticleShape(ParticlePrimitive::SphericalShape);
+                    spheresPrimitives[1].setShadingMode(ParticlePrimitive::NormalShading);
+                    spheresPrimitives[1].setRenderingQuality(ParticlePrimitive::HighQuality);
+                    spheresPrimitives[1].setPositions(cylinderPrimitive.headPositions());
+                    spheresPrimitives[1].setRadii(spheresPrimitives[0].radii());
+                    spheresPrimitives[1].setColors(cylinderPrimitive.colors());
+                    spheresPrimitives[1].setTransparencies(cylinderPrimitive.transparencies());
                 }
 
-                if(activeParticleIndices.size() == 0) {
-                    visCache.cylinderPrimitive = CylinderPrimitive();
-                    visCache.spheresPrimitives[0] = ParticlePrimitive();
-                    visCache.spheresPrimitives[1] = ParticlePrimitive();
-                    visCache.pickInfo.reset();
-                    continue;   // No particles to be rendered using the current primitive shape.
-                }
-            }
-            int effectiveParticleCount = activeParticleIndices ? activeParticleIndices.size() : particles->elementCount();
+                // Also create the corresponding picking record.
+                pickInfo = OORef<ParticlePickInfo>::create(this, particles, activeParticleIndices.take());
+            });
 
-            // Create the rendering primitive for the cylinders.
-            visCache.cylinderPrimitive.setShape(CylinderPrimitive::CylinderShape);
-            visCache.cylinderPrimitive.setShadingMode(CylinderPrimitive::NormalShading);
-
-            // Determine cylinder colors.
-            if(!colorBuffer)
-                colorBuffer = particleColors(particles, frameGraph.isInteractive());
-
-            // Determine cylinder radii (only needed if aspherical shape property is not present).
-            if(!radiusBuffer && !asphericalShapeProperty)
-                radiusBuffer = particleRadii(particles, false);
-
-            // Allocate cylinder data buffers.
-            BufferFactory<Point3G> cylinderBasePositions(effectiveParticleCount);
-            BufferFactory<Point3G> cylinderHeadPositions(effectiveParticleCount);
-            BufferFactory<GraphicsFloatType> cylinderWidths(effectiveParticleCount);
-            BufferFactory<ColorG> cylinderColors(effectiveParticleCount);
-            BufferFactory<GraphicsFloatType> cylinderTransparencies = transparencyProperty ? BufferFactory<GraphicsFloatType>(effectiveParticleCount) : BufferFactory<GraphicsFloatType>{};
-            BufferFactory<GraphicsFloatType> sphereRadii = (shape == ParticleShape::Spherocylinder) ? BufferFactory<GraphicsFloatType>(effectiveParticleCount) : BufferFactory<GraphicsFloatType>{};
-
-            // Fill data buffers.
-            BufferReadAccess<Point3> positionArray(positionProperty);
-            BufferReadAccess<Vector3G> asphericalShapeArray(asphericalShapeProperty);
-            BufferReadAccess<QuaternionG> orientationArray(orientationProperty);
-            BufferReadAccess<ColorG> colorsArray(colorBuffer);
-            BufferReadAccess<GraphicsFloatType> radiiArray(radiusBuffer);
-            BufferReadAccess<GraphicsFloatType> transparencies(transparencyProperty);
-            const GraphicsFloatType scalingFactor = radiusScaleFactor();
-            for(int index = 0; index < effectiveParticleCount; index++) {
-                int effectiveParticleIndex = activeParticleIndices ? activeParticleIndices[index] : index;
-                const Point3& center = positionArray[effectiveParticleIndex];
-                GraphicsFloatType radius, length;
-                if(asphericalShapeArray) {
-                    radius = std::abs(asphericalShapeArray[effectiveParticleIndex].x()) * scalingFactor;
-                    length = asphericalShapeArray[effectiveParticleIndex].z() * scalingFactor;
-                }
-                else {
-                    radius = radiiArray[effectiveParticleIndex] * scalingFactor;
-                    length = radius * 2;
-                }
-                Vector3G dir(0, 0, length);
-                if(orientationArray) {
-                    dir = orientationArray[effectiveParticleIndex].safelyNormalized() * dir;
-                }
-                Point3G p = center.toDataType<GraphicsFloatType>() - (dir * GraphicsFloatType(0.5));
-                cylinderBasePositions[index] = p;
-                cylinderHeadPositions[index] = p + dir;
-                cylinderWidths[index] = 2 * radius;
-                cylinderColors[index] = colorsArray[effectiveParticleIndex];
-                if(cylinderTransparencies)
-                    cylinderTransparencies[index] = transparencies[effectiveParticleIndex];
-                if(sphereRadii)
-                    sphereRadii[index] = radius;
-            }
-            visCache.cylinderPrimitive.setPositions(cylinderBasePositions.take(), cylinderHeadPositions.take());
-            visCache.cylinderPrimitive.setWidths(cylinderWidths.take());
-            visCache.cylinderPrimitive.setColors(cylinderColors.take());
-            visCache.cylinderPrimitive.setTransparencies(cylinderTransparencies.take());
-
-            // Create the rendering primitive for the spheres.
-            if(shape == ParticleShape::Spherocylinder) {
-                visCache.spheresPrimitives[0].setParticleShape(ParticlePrimitive::SphericalShape);
-                visCache.spheresPrimitives[0].setShadingMode(ParticlePrimitive::NormalShading);
-                visCache.spheresPrimitives[0].setRenderingQuality(ParticlePrimitive::HighQuality);
-                visCache.spheresPrimitives[0].setPositions(visCache.cylinderPrimitive.basePositions());
-                visCache.spheresPrimitives[0].setRadii(sphereRadii.take());
-                visCache.spheresPrimitives[0].setColors(visCache.cylinderPrimitive.colors());
-                visCache.spheresPrimitives[0].setTransparencies(visCache.cylinderPrimitive.transparencies());
-                visCache.spheresPrimitives[1].setParticleShape(ParticlePrimitive::SphericalShape);
-                visCache.spheresPrimitives[1].setShadingMode(ParticlePrimitive::NormalShading);
-                visCache.spheresPrimitives[1].setRenderingQuality(ParticlePrimitive::HighQuality);
-                visCache.spheresPrimitives[1].setPositions(visCache.cylinderPrimitive.headPositions());
-                visCache.spheresPrimitives[1].setRadii(visCache.spheresPrimitives[0].radii());
-                visCache.spheresPrimitives[1].setColors(visCache.cylinderPrimitive.colors());
-                visCache.spheresPrimitives[1].setTransparencies(visCache.cylinderPrimitive.transparencies());
-            }
-
-            // Also create the corresponding picking record.
-            visCache.pickInfo = OORef<ParticlePickInfo>::create(this, particles, activeParticleIndices.take());
-        }
-        if(!visCache.pickInfo)
+        if(!pickInfo)
             continue;
 
         // Update the pick info record with the latest particle data.
-        visCache.pickInfo->setParticles(particles);
+        pickInfo->setParticles(particles);
 
         // Add the cylinder primitive to the frame graph.
-        frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(visCache.cylinderPrimitive), pipeline, frameGraph.addPickingGroup(pipeline, visCache.pickInfo));
+        frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(cylinderPrimitive), pipeline, frameGraph.addPickingGroup(pipeline, pickInfo));
 
         // Render the particle primitive.
-        if(visCache.spheresPrimitives[0].positions()) {
-            frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(visCache.spheresPrimitives[0]), pipeline, frameGraph.addPickingGroup(pipeline, visCache.pickInfo));
-            frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(visCache.spheresPrimitives[1]), pipeline, frameGraph.addPickingGroup(pipeline, visCache.pickInfo));
+        if(spheresPrimitives[0].positions()) {
+            frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(spheresPrimitives[0]), pipeline, frameGraph.addPickingGroup(pipeline, pickInfo));
+            frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(spheresPrimitives[1]), pipeline, frameGraph.addPickingGroup(pipeline, pickInfo));
         }
     }
 }

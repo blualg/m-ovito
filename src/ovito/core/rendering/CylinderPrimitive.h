@@ -138,16 +138,19 @@ public:
 
 	/// Computes the 3d bounding box of the primitive in local coordinate space.
 	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
-        auto& bb = visCache.lookup<Box3>(RendererResourceKey<struct CylinderBoundingBoxCache, ConstDataBufferPtr, ConstDataBufferPtr>{basePositions(), headPositions()});
-        if(bb.isEmpty() && basePositions() && headPositions()) {
-            bb.addBox(basePositions()->boundingBox3());
-            bb.addBox(headPositions()->boundingBox3());
-        }
+        const Box3& bb = visCache.lookup<Box3>(
+            RendererResourceKey<struct CylinderBoundingBoxCache, ConstDataBufferPtr, ConstDataBufferPtr>{basePositions(), headPositions()},
+            [this](Box3& bb) {
+                if(basePositions() && headPositions()) {
+                    bb.addBox(basePositions()->boundingBox3());
+                    bb.addBox(headPositions()->boundingBox3());
+                }
+            });
         FloatType maxWidth = 0;
         if(widths()) {
-            auto& cachedMaxWidth = visCache.lookup<FloatType>(RendererResourceKey<struct CylinderMaxWidthBoundingBoxCache, ConstDataBufferPtr>{widths()});
-            if(cachedMaxWidth == 0)
+            const FloatType& cachedMaxWidth = visCache.lookup<FloatType>(RendererResourceKey<struct CylinderMaxWidthBoundingBoxCache, ConstDataBufferPtr>{widths()}, [this](FloatType& cachedMaxWidth) {
                 cachedMaxWidth = widths()->minMax().second;
+            });
             maxWidth = std::max(maxWidth, cachedMaxWidth);
         }
         else {

@@ -186,24 +186,27 @@ public:
 
 	/// Computes the 3d bounding box of the primitive in local coordinates.
 	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
-        auto& bb = visCache.lookup<Box3>(RendererResourceKey<struct ParticlePositionsBoundingBoxCache, ConstDataBufferPtr, ConstDataBufferPtr>{positions(), indices()});
-        if(bb.isEmpty() && positions()) {
-            if(!indices())
-                bb = positions()->boundingBox3();
-            else
-                bb = positions()->boundingBox3Indexed(*indices());
-        }
+        const auto& bb = visCache.lookup<Box3>(
+            RendererResourceKey<struct ParticlePositionsBoundingBoxCache, ConstDataBufferPtr, ConstDataBufferPtr>{positions(), indices()},
+            [this](Box3& bb) {
+                if(positions()) {
+                    if(!indices())
+                        bb = positions()->boundingBox3();
+                    else
+                        bb = positions()->boundingBox3Indexed(*indices());
+                }
+            });
         FloatType maxRadius = std::max(uniformRadius(), FloatType(0));
         if(radii()) {
-            auto& cachedMaxRadius = visCache.lookup<FloatType>(RendererResourceKey<struct ParticlesMaxRadiusCache, ConstDataBufferPtr>{radii()});
-            if(cachedMaxRadius == 0)
+            auto& cachedMaxRadius = visCache.lookup<FloatType>(RendererResourceKey<struct ParticlesMaxRadiusCache, ConstDataBufferPtr>{radii()}, [this](FloatType& cachedMaxRadius) {
                 cachedMaxRadius = radii()->minMax().second;
+            });
             maxRadius = std::max(maxRadius, cachedMaxRadius);
         }
         if(asphericalShapes()) {
-            auto& cachedMaxShape = visCache.lookup<FloatType>(RendererResourceKey<struct ParticleMaxShapeBoxCache, ConstDataBufferPtr>{asphericalShapes()});
-            if(cachedMaxShape == 0)
+            auto& cachedMaxShape = visCache.lookup<FloatType>(RendererResourceKey<struct ParticleMaxShapeBoxCache, ConstDataBufferPtr>{asphericalShapes()}, [this](FloatType& cachedMaxShape) {
                 cachedMaxShape = (asphericalShapes()->boundingBox3().maxc - Point3::Origin()).length();
+            });
             maxRadius = std::max(maxRadius, cachedMaxShape);
         }
         return bb.padBox(maxRadius);

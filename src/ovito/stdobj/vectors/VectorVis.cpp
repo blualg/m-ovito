@@ -189,9 +189,11 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
     // Check last element in path:
     container = path.lastAs<PropertyContainer>();
     // If last element is not the container - check second to last element:
-    if(!container) container = path.lastAs<const PropertyContainer>(1);
+    if(!container)
+        container = path.lastAs<const PropertyContainer>(1);
     // Nothing to do
-    if(!container) return {};
+    if(!container)
+        return {};
 
     container->verifyIntegrity();
     VectorData vectorData = container->getVectorVisData(path, flowState, frameGraph.visCache());
@@ -249,95 +251,89 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
         transparency = transparencyController()->getFloatValue(frameGraph.time(), iv);
 
     // Lookup the rendering primitive in the vis cache.
-    auto& [arrows, pickInfo] = frameGraph.visCache().lookup<std::pair<CylinderPrimitive, OORef<VectorPickInfo>>>(
+    const CylinderPrimitive& arrows = frameGraph.visCache().lookup<CylinderPrimitive>(
         CacheKey(vectorData.directions, vectorData.positions, shadingMode(), scalingFactor(), arrowWidth(), arrowColor(),
                  transparency, reverseArrowDirection(), arrowPosition(), vectorData.colors,
-                 vectorData.transparencies, pseudoColorProperty, pseudoColorPropertyComponent, pseudoColorMapping));
-
-    // Check if we already have a valid rendering primitive that is up to date.
-    if(!arrows.basePositions()) {
-
-        // Determine number of non-zero vectors.
-        int vectorCount = 0;
-        BufferReadAccess<Vector_3<float>> vectorData32(
-            vectorData.directions && vectorData.directions->dataType() == DataBuffer::Float32 ? vectorData.directions : nullptr);
-        BufferReadAccess<Vector_3<double>> vectorData64(
-            vectorData.directions && vectorData.directions->dataType() == DataBuffer::Float64 ? vectorData.directions : nullptr);
-        if(vectorData.positions) {
-            if(vectorData32) {
-                for(const auto& v : vectorData32) {
-                    if(v != Vector_3<float>::Zero())
-                        vectorCount++;
+                 vectorData.transparencies, pseudoColorProperty, pseudoColorPropertyComponent, pseudoColorMapping),
+        [&](CylinderPrimitive& arrows) {
+            // Determine number of non-zero vectors.
+            int vectorCount = 0;
+            BufferReadAccess<Vector_3<float>> vectorData32(
+                vectorData.directions && vectorData.directions->dataType() == DataBuffer::Float32 ? vectorData.directions : nullptr);
+            BufferReadAccess<Vector_3<double>> vectorData64(
+                vectorData.directions && vectorData.directions->dataType() == DataBuffer::Float64 ? vectorData.directions : nullptr);
+            if(vectorData.positions) {
+                if(vectorData32) {
+                    for(const auto& v : vectorData32) {
+                        if(v != Vector_3<float>::Zero())
+                            vectorCount++;
+                    }
+                }
+                else if(vectorData64) {
+                    for(const auto& v : vectorData64) {
+                        if(v != Vector_3<double>::Zero())
+                            vectorCount++;
+                    }
                 }
             }
-            else if(vectorData64) {
-                for(const auto& v : vectorData64) {
-                    if(v != Vector_3<double>::Zero())
-                        vectorCount++;
+
+            // Allocate data buffers.
+            BufferFactory<Point3G> arrowBasePositions(vectorCount);
+            BufferFactory<Point3G> arrowHeadPositions(vectorCount);
+            BufferFactory<ColorG> arrowColors =
+                (vectorData.colors || pseudoColorProperty) ? BufferFactory<ColorG>(vectorCount) : BufferFactory<ColorG>{};
+            BufferFactory<GraphicsFloatType> arrowTransparencies =
+                vectorData.transparencies ? BufferFactory<GraphicsFloatType>(vectorCount) : BufferFactory<GraphicsFloatType>{};
+
+            // Fill data buffers.
+            if(vectorCount) {
+                FloatType scalingFac = scalingFactor();
+                if(reverseArrowDirection())
+                    scalingFac = -scalingFac;
+                BufferReadAccess<Point3> basePositionData(vectorData.positions);
+                BufferReadAccess<ColorG> vectorColorData(vectorData.colors);
+                BufferReadAccess<GraphicsFloatType> vectorTransparencyData(vectorData.transparencies);
+                RawBufferReadAccess vectorPseudoColorData(pseudoColorProperty);
+                size_t outIndex = 0;
+                const auto arrowPosition = this->arrowPosition();
+                for(size_t inIndex = 0; inIndex < basePositionData.size(); inIndex++) {
+                    const Vector3G vec = vectorData32 ? vectorData32[inIndex].toDataType<GraphicsFloatType>() : vectorData64[inIndex].toDataType<GraphicsFloatType>();
+                    if(vec != Vector3G::Zero()) {
+                        Vector3G v = vec * scalingFac;
+                        Point3G base = basePositionData[inIndex].toDataType<GraphicsFloatType>();
+                        if(arrowPosition == Head)
+                            base -= v;
+                        else if(arrowPosition == Center)
+                            base -= v * GraphicsFloatType(0.5);
+                        arrowBasePositions[outIndex] = base;
+                        arrowHeadPositions[outIndex] = base + v;
+                        if(vectorData.colors)
+                            arrowColors[outIndex] = vectorColorData[inIndex];
+                        else if(pseudoColorProperty)
+                            arrowColors[outIndex] = pseudoColorMapping.valueToColor(vectorPseudoColorData.get<GraphicsFloatType>(inIndex, pseudoColorPropertyComponent));
+                        if(vectorData.transparencies) arrowTransparencies[outIndex] = vectorTransparencyData[inIndex];
+                        outIndex++;
+                    }
                 }
+                OVITO_ASSERT(outIndex == vectorCount);
             }
-        }
 
-        // Allocate data buffers.
-        BufferFactory<Point3G> arrowBasePositions(vectorCount);
-        BufferFactory<Point3G> arrowHeadPositions(vectorCount);
-        BufferFactory<ColorG> arrowColors =
-            (vectorData.colors || pseudoColorProperty) ? BufferFactory<ColorG>(vectorCount) : BufferFactory<ColorG>{};
-        BufferFactory<GraphicsFloatType> arrowTransparencies =
-            vectorData.transparencies ? BufferFactory<GraphicsFloatType>(vectorCount) : BufferFactory<GraphicsFloatType>{};
-
-        // Fill data buffers.
-        if(vectorCount) {
-            FloatType scalingFac = scalingFactor();
-            if(reverseArrowDirection())
-                scalingFac = -scalingFac;
-            BufferReadAccess<Point3> basePositionData(vectorData.positions);
-            BufferReadAccess<ColorG> vectorColorData(vectorData.colors);
-            BufferReadAccess<GraphicsFloatType> vectorTransparencyData(vectorData.transparencies);
-            RawBufferReadAccess vectorPseudoColorData(pseudoColorProperty);
-            size_t outIndex = 0;
-            const auto arrowPosition = this->arrowPosition();
-            for(size_t inIndex = 0; inIndex < basePositionData.size(); inIndex++) {
-                const Vector3G vec = vectorData32 ? vectorData32[inIndex].toDataType<GraphicsFloatType>() : vectorData64[inIndex].toDataType<GraphicsFloatType>();
-                if(vec != Vector3G::Zero()) {
-                    Vector3G v = vec * scalingFac;
-                    Point3G base = basePositionData[inIndex].toDataType<GraphicsFloatType>();
-                    if(arrowPosition == Head)
-                        base -= v;
-                    else if(arrowPosition == Center)
-                        base -= v * GraphicsFloatType(0.5);
-                    arrowBasePositions[outIndex] = base;
-                    arrowHeadPositions[outIndex] = base + v;
-                    if(vectorData.colors)
-                        arrowColors[outIndex] = vectorColorData[inIndex];
-                    else if(pseudoColorProperty)
-                        arrowColors[outIndex] = pseudoColorMapping.valueToColor(vectorPseudoColorData.get<GraphicsFloatType>(inIndex, pseudoColorPropertyComponent));
-                    if(vectorData.transparencies) arrowTransparencies[outIndex] = vectorTransparencyData[inIndex];
-                    outIndex++;
-                }
+            // Create arrow rendering primitive.
+            arrows.setShape(CylinderPrimitive::ArrowShape);
+            arrows.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
+            arrows.setUniformWidth(2 * arrowWidth());
+            arrows.setUniformColor(arrowColor());
+            arrows.setPositions(arrowBasePositions.take(), arrowHeadPositions.take());
+            arrows.setColors(arrowColors.take());
+            if(arrowTransparencies) {
+                arrows.setTransparencies(arrowTransparencies.take());
             }
-            OVITO_ASSERT(outIndex == vectorCount);
-        }
-
-        // Create arrow rendering primitive.
-        arrows.setShape(CylinderPrimitive::ArrowShape);
-        arrows.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
-        arrows.setUniformWidth(2 * arrowWidth());
-        arrows.setUniformColor(arrowColor());
-        arrows.setPositions(arrowBasePositions.take(), arrowHeadPositions.take());
-        arrows.setColors(arrowColors.take());
-        if(arrowTransparencies) {
-            arrows.setTransparencies(arrowTransparencies.take());
-        }
-        else if(transparency > 0) {
-            DataBufferPtr transparencyBuffer = DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics);
-            transparencyBuffer->fill<GraphicsFloatType>(transparency);
-            arrows.setTransparencies(std::move(transparencyBuffer));
-        }
-    }
-    if(!pickInfo) {
-        pickInfo = OORef<VectorPickInfo>::create(this, path);
-    }
+            else if(transparency > 0) {
+                DataBufferPtr transparencyBuffer = DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics);
+                transparencyBuffer->fill<GraphicsFloatType>(transparency);
+                arrows.setTransparencies(std::move(transparencyBuffer));
+            }
+        });
 
     // Get world transformation matrix of scene node.
     TimeInterval interval;
@@ -347,7 +343,7 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
     const AffineTransformation tm = AffineTransformation::translation(offset()) * nodeTM;
 
     // Add arrow glyphs to the frame graph.
-    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(arrows), tm, frameGraph.addPickingGroup(pipeline, pickInfo));
+    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(arrows), tm, frameGraph.addPickingGroup(pipeline, OORef<VectorPickInfo>::create(this, path)));
 
     return status;
 }
@@ -361,12 +357,12 @@ size_t VectorPickInfo::elementIndexFromSubObjectID(quint32 subobjID) const
     size_t elementIndex = std::numeric_limits<size_t>::max();
 
     const Property* vectorProperty = nullptr;
-    // Check if last element in path is a vectors container
+    // Check if last element in path is a vectors container.
     if(const Vectors* container = dataPath().lastAs<Vectors>())
-        // extract direction property from vectors container
+        // Extract direction property from vectors container.
         vectorProperty = container->getProperty(Vectors::Type::DirectionProperty);
     else
-        // Otherwise grab property from path
+        // Otherwise grab property from path.
         vectorProperty = dataPath().lastAs<Property>();
 
     if(vectorProperty) {
@@ -399,11 +395,10 @@ QString VectorPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
         // Check last element in path:
         const PropertyContainer* container = dataPath().lastAs<PropertyContainer>(0);
         // If last element is not the container - check second to last element:
-        if(!container) container = dataPath().lastAs<PropertyContainer>(1);
-
-        if(container) {
+        if(!container)
+            container = dataPath().lastAs<PropertyContainer>(1);
+        if(container)
             return container->elementInfoString(elementIndex, dataPath());
-        }
     }
     return {};
 }

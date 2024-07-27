@@ -129,7 +129,7 @@ void OpenGLViewportWindow::paint()
     if(!frameGraph())
         return;
 
-    MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface());
+    MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface(), MainThreadOperation::Isolated);
     try {
         // Recreate/resize abstract frame buffer for rendering into the widget if necessary.
         const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
@@ -145,8 +145,6 @@ void OpenGLViewportWindow::paint()
             Q_EMIT frameRenderComplete();
     }
     catch(Exception& ex) {
-        ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewport contents. The program will quit."));
-
         QString openGLReport;
         QTextStream stream(&openGLReport, QIODevice::WriteOnly | QIODevice::Text);
         stream << "OpenGL version: " << OpenGLRenderer::openglSurfaceFormat().majorVersion() << QStringLiteral(".") << OpenGLRenderer::openglSurfaceFormat().minorVersion() << "\n";
@@ -158,8 +156,7 @@ void OpenGLViewportWindow::paint()
         stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
         ex.appendDetailMessage(openGLReport);
         setFrameGraph({});
-
-        userInterface().exitWithFatalError(ex);
+        Q_EMIT fatalError(ex);
     }
 }
 

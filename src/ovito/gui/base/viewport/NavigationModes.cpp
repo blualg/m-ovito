@@ -482,20 +482,21 @@ void PickOrbitCenterMode::renderOverlay(Viewport* vp, ViewportWindow* vpWin, Fra
 {
     // Prepare the cylinder graphics primitive for rendering the orbit center marker as a crosshair symbol.
     // The graphics primitive is immutable and can be reused across multiple frames.
-    auto& orbitCenterMarker = frameGraph.visCache().lookup<CylinderPrimitive>(RendererResourceKey<struct OrbitGlyphCache>{});
-    if(!orbitCenterMarker.basePositions()) {
-        BufferFactory<Point3G> basePositions(3);
-        BufferFactory<Point3G> headPositions(3);
-        BufferFactory<ColorG> colors(3);
-        basePositions[0] = Point3G(-1,0,0); headPositions[0] = Point3G(1,0,0); colors[0] = ColorG(1,0,0);
-        basePositions[1] = Point3G(0,-1,0); headPositions[1] = Point3G(0,1,0); colors[1] = ColorG(0,1,0);
-        basePositions[2] = Point3G(0,0,-1); headPositions[2] = Point3G(0,0,1); colors[2] = ColorG(0.4f,0.4f,1);
-        orbitCenterMarker.setShape(CylinderPrimitive::CylinderShape);
-        orbitCenterMarker.setShadingMode(CylinderPrimitive::NormalShading);
-        orbitCenterMarker.setUniformWidth(0.1);
-        orbitCenterMarker.setPositions(basePositions.take(), headPositions.take());
-        orbitCenterMarker.setColors(colors.take());
-    }
+    const auto& orbitCenterMarker = frameGraph.visCache().lookup<CylinderPrimitive>(
+        RendererResourceKey<struct OrbitGlyphCache>{},
+        [&](CylinderPrimitive& orbitCenterMarker) {
+            BufferFactory<Point3G> basePositions(3);
+            BufferFactory<Point3G> headPositions(3);
+            BufferFactory<ColorG> colors(3);
+            basePositions[0] = Point3G(-1,0,0); headPositions[0] = Point3G(1,0,0); colors[0] = ColorG(1,0,0);
+            basePositions[1] = Point3G(0,-1,0); headPositions[1] = Point3G(0,1,0); colors[1] = ColorG(0,1,0);
+            basePositions[2] = Point3G(0,0,-1); headPositions[2] = Point3G(0,0,1); colors[2] = ColorG(0.4f,0.4f,1);
+            orbitCenterMarker.setShape(CylinderPrimitive::CylinderShape);
+            orbitCenterMarker.setShadingMode(CylinderPrimitive::NormalShading);
+            orbitCenterMarker.setUniformWidth(0.1);
+            orbitCenterMarker.setPositions(basePositions.take(), headPositions.take());
+            orbitCenterMarker.setColors(colors.take());
+        });
 
     // Determine current center of rotation.
     // Note: Always using the active viewport's orbit center here to show a consistent picture across all viewports.

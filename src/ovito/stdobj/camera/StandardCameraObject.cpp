@@ -210,46 +210,46 @@ PipelineStatus CameraVis::render(const ConstDataObjectPath& path, const Pipeline
     >;
 
     // Lookup the rendering primitive in the vis cache.
-    auto& conePrimitive = frameGraph.visCache().lookup<LinePrimitive>(CacheKey(
+    const LinePrimitive& conePrimitive = frameGraph.visCache().lookup<LinePrimitive>(CacheKey(
             targetDistance,
             showTargetLine,
             aspectRatio,
-            coneAngle));
+            coneAngle),
+        [&](LinePrimitive& conePrimitive) {
+            BufferFactory<Point3G> targetLineVertices(0);
+            if(targetDistance != 0) {
+                if(showTargetLine) {
+                    targetLineVertices.push_back(Point3G::Origin());
+                    targetLineVertices.push_back(Point3G(0,0,-targetDistance));
+                }
+                if(aspectRatio != 0 && coneAngle != 0) {
+                    GraphicsFloatType sizeY = std::tan(GraphicsFloatType(0.5) * coneAngle) * targetDistance;
+                    GraphicsFloatType sizeX = sizeY / aspectRatio;
+                    targetLineVertices.push_back(Point3G::Origin());
+                    targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
+                    targetLineVertices.push_back(Point3G::Origin());
+                    targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
+                    targetLineVertices.push_back(Point3G::Origin());
+                    targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
+                    targetLineVertices.push_back(Point3G::Origin());
+                    targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
 
-    // Check if we already have a valid rendering primitive that is up to date.
-    if(!conePrimitive.positions()) {
-        BufferFactory<Point3G> targetLineVertices(0);
-        if(targetDistance != 0) {
-            if(showTargetLine) {
-                targetLineVertices.push_back(Point3G::Origin());
-                targetLineVertices.push_back(Point3G(0,0,-targetDistance));
+                    targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
+                    targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
+                    targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
+                    targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
+                    targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
+                    targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
+                    targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
+                    targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
+                }
             }
-            if(aspectRatio != 0 && coneAngle != 0) {
-                GraphicsFloatType sizeY = std::tan(GraphicsFloatType(0.5) * coneAngle) * targetDistance;
-                GraphicsFloatType sizeX = sizeY / aspectRatio;
-                targetLineVertices.push_back(Point3G::Origin());
-                targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
-                targetLineVertices.push_back(Point3G::Origin());
-                targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
-                targetLineVertices.push_back(Point3G::Origin());
-                targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
-                targetLineVertices.push_back(Point3G::Origin());
-                targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
+            conePrimitive.setPositions(targetLineVertices.take());
+        });
 
-                targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
-                targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
-                targetLineVertices.push_back(Point3G(-sizeX, sizeY, -targetDistance));
-                targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
-                targetLineVertices.push_back(Point3G(-sizeX, -sizeY, -targetDistance));
-                targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
-                targetLineVertices.push_back(Point3G(sizeX, -sizeY, -targetDistance));
-                targetLineVertices.push_back(Point3G(sizeX, sizeY, -targetDistance));
-            }
-        }
-        conePrimitive.setPositions(targetLineVertices.take());
-    }
-    conePrimitive.setUniformColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_CAMERAS));
-    frameGraph.addPrimitive(std::make_unique<LinePrimitive>(conePrimitive), pipeline);
+    auto coloredConePrimitive = std::make_unique<LinePrimitive>(conePrimitive);
+    coloredConePrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_CAMERAS));
+    frameGraph.addPrimitive(std::move(coloredConePrimitive), pipeline);
 
     // Load 3d camera icon.
     if(!_cameraIconVertices) {

@@ -489,48 +489,42 @@ void OpenGLShaderHelper::draw(GLenum mode)
             OVITO_ASSERT(_renderer->glversion() >= QT_VERSION_CHECK(4, 3, 0));
             OVITO_ASSERT(_renderer->glMultiDrawArraysIndirect != nullptr);
 
-            // The caching key for the indirect drawing buffers.
-            RendererResourceKey<struct IndirectDrawingCache, ConstDataBufferPtr, int> indirectDrawingCacheKey{
-                _instancesSubset,
-                verticesPerInstance()
-            };
-
             // Look up indirect drawing buffer.
-            QOpenGLBuffer& indirectBuffer = _renderer->currentResourceFrame().lookup<QOpenGLBuffer>(std::move(indirectDrawingCacheKey));
+            const QOpenGLBuffer& indirectBuffer = _renderer->currentResourceFrame().lookup<QOpenGLBuffer>(
+                RendererResourceKey<struct IndirectDrawingCache, ConstDataBufferPtr, int>{_instancesSubset, verticesPerInstance()},
+                [&](QOpenGLBuffer& indirectBuffer) {
+                    // Data structure used by the glMultiDrawArraysIndirect() command:
+                    struct DrawArraysIndirectCommand {
+                        GLuint count;
+                        GLuint instanceCount;
+                        GLuint first;
+                        GLuint baseInstance;
+                    };
 
-            // Data structure used by the glMultiDrawArraysIndirect() command:
-            struct DrawArraysIndirectCommand {
-                GLuint count;
-                GLuint instanceCount;
-                GLuint first;
-                GLuint baseInstance;
-            };
-
-            // Check if this indirect drawing buffer has already been uploaded to the GPU.
-            if(!indirectBuffer.isCreated()) {
-                indirectBuffer = createCachedBufferImpl(sizeof(DrawArraysIndirectCommand), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
-                    OVITO_ASSERT(!subset);
-                    // Fill the buffer with DrawArraysIndirectCommand records.
-                    DrawArraysIndirectCommand* dst = reinterpret_cast<DrawArraysIndirectCommand*>(buffer);
-                    for(auto index : BufferReadAccess<int32_t>(_instancesSubset)) {
-                        dst->count = verticesPerInstance();
-                        dst->instanceCount = 1;
-                        dst->first = 0;
-                        dst->baseInstance = index;
-                        ++dst;
-                    }
+                    // Check if this indirect drawing buffer has already been uploaded to the GPU.
+                    indirectBuffer = createCachedBufferImpl(sizeof(DrawArraysIndirectCommand), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
+                        OVITO_ASSERT(!subset);
+                        // Fill the buffer with DrawArraysIndirectCommand records.
+                        DrawArraysIndirectCommand* dst = reinterpret_cast<DrawArraysIndirectCommand*>(buffer);
+                        for(auto index : BufferReadAccess<int32_t>(_instancesSubset)) {
+                            dst->count = verticesPerInstance();
+                            dst->instanceCount = 1;
+                            dst->first = 0;
+                            dst->baseInstance = index;
+                            ++dst;
+                        }
+                    });
                 });
-            }
 
             // Bind the indirect drawing GL buffer.
-            if(!indirectBuffer.bind())
+            if(!const_cast<QOpenGLBuffer&>(indirectBuffer).bind())
                 throw RendererException(QStringLiteral("Failed to bind OpenGL indirect drawing buffer for shader '%1'.").arg(shaderObject().objectName()));
 
             // Draw instances in indexed order.
             OVITO_CHECK_OPENGL(_renderer, _renderer->glMultiDrawArraysIndirect(mode, nullptr, renderInstanceCount, 0));
 
             // Done.
-            indirectBuffer.release();
+            const_cast<QOpenGLBuffer&>(indirectBuffer).release();
         }
         else if(usingInstancedArrays()) {
             // Use native command for instanced drawing.
@@ -544,95 +538,6 @@ void OpenGLShaderHelper::draw(GLenum mode)
 }
 
 /******************************************************************************
-* Renders the primtives using a geometry shader in a specified order.
-******************************************************************************/
-void OpenGLShaderHelper::drawReorderedGeometryShader(QOpenGLBuffer& indexBuffer, std::function<void(std::span<GLuint>)>&& computeOrderingFunc)
-{
-    // The number of instances to be rendered.
-    GLsizei renderInstanceCount = _instancesSubset ? _instancesSubset->size() : instanceCount();
-
-    // Check if this index buffer has already been uploaded to the GPU.
-    if(!indexBuffer.isCreated()) {
-        indexBuffer = createCachedBufferImpl(sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
-            OVITO_ASSERT(!subset);
-            auto sortedIndices = std::span(static_cast<GLuint*>(buffer), renderInstanceCount);
-            if(!_instancesSubset)
-                std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
-            else
-                boost::copy(BufferReadAccess<int32_t>(_instancesSubset), sortedIndices.begin());
-            // Call user function to generate the element ordering.
-            std::move(computeOrderingFunc)(sortedIndices);
-        });
-    }
-
-    // Bind index buffer.
-    if(!indexBuffer.bind())
-        throw RendererException(QStringLiteral("Failed to bind OpenGL index buffer for shader '%1'.").arg(shaderObject().objectName()));
-
-    // Draw point primitives in sorted order.
-    OVITO_CHECK_OPENGL(_renderer, _renderer->glDrawElements(GL_POINTS, renderInstanceCount, GL_UNSIGNED_INT, nullptr));
-
-    indexBuffer.release();
-}
-
-#ifndef Q_OS_WASM
-/******************************************************************************
-* Issues a drawing command with an ordering of the instances.
-******************************************************************************/
-void OpenGLShaderHelper::drawReorderedOpenGL4(GLenum mode, QOpenGLBuffer& indirectBuffer, std::function<void(std::span<GLuint>)>&& computeOrderingFunc)
-{
-    // On OpenGL 4.3+ contexts, use glMultiDrawArraysIndirect() to render the instances in a prescribed order.
-    OVITO_ASSERT(_renderer->glversion() >= QT_VERSION_CHECK(4, 3, 0));
-    OVITO_ASSERT(_renderer->glMultiDrawArraysIndirect != nullptr);
-
-    // The number of instances to be rendered.
-    GLsizei renderInstanceCount = _instancesSubset ? _instancesSubset->size() : instanceCount();
-
-    // Data structure used by the glMultiDrawArraysIndirect() command:
-    struct DrawArraysIndirectCommand {
-        GLuint count;
-        GLuint instanceCount;
-        GLuint first;
-        GLuint baseInstance;
-    };
-
-    // Check if this indirect drawing buffer has already been uploaded to the GPU.
-    if(!indirectBuffer.isCreated()) {
-        indirectBuffer = createCachedBufferImpl(sizeof(DrawArraysIndirectCommand), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
-            OVITO_ASSERT(!subset);
-            auto sortedIndices = std::span(static_cast<GLuint*>(buffer), renderInstanceCount);
-            if(!_instancesSubset)
-                std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
-            else
-                boost::copy(BufferReadAccess<int32_t>(_instancesSubset), sortedIndices.begin());
-            // Call user function to generate the element ordering.
-            std::move(computeOrderingFunc)(sortedIndices);
-
-            // Fill the buffer with DrawArraysIndirectCommand records.
-            DrawArraysIndirectCommand* dst = reinterpret_cast<DrawArraysIndirectCommand*>(buffer);
-            for(auto index : sortedIndices) {
-                dst->count = verticesPerInstance();
-                dst->instanceCount = 1;
-                dst->first = 0;
-                dst->baseInstance = index;
-                ++dst;
-            }
-        });
-    }
-
-    // Bind the indirect drawing GL buffer.
-    if(!indirectBuffer.bind())
-        throw RendererException(QStringLiteral("Failed to bind OpenGL indirect drawing buffer for shader '%1'.").arg(shaderObject().objectName()));
-
-    // Draw instances in sorted order.
-    OVITO_CHECK_OPENGL(_renderer, _renderer->glMultiDrawArraysIndirect(mode, nullptr, renderInstanceCount, 0));
-
-    // Done.
-    indirectBuffer.release();
-}
-#endif
-
-/******************************************************************************
 * Makes the gl_VertexID and gl_InstanceID special variables available in
 * older OpenGL implementations.
 ******************************************************************************/
@@ -642,35 +547,39 @@ void OpenGLShaderHelper::setupVertexAndInstanceIDOpenGL2()
         // In GLSL 1.20, the 'gl_VertexID' and 'gl_InstanceID' special variables are not available.
         // Then we have to emulate them by providing a buffer-backed vertex attribute named 'vertexID' instead.
 
-        std::pair<QOpenGLBuffer, GLsizei>& buf = _renderer->currentResourceFrame().lookup<std::pair<QOpenGLBuffer, GLsizei>>(RendererResourceKey<struct VertexIDCache>{});
+        // Store the VBO in the cache.
+        auto& [vbo, vboSize] = const_cast<std::tuple<QOpenGLBuffer, GLsizei>&>(_renderer->currentResourceFrame().lookup<std::tuple<QOpenGLBuffer, GLsizei>>(
+            RendererResourceKey<struct VertexIDCache>{},
+            [&](QOpenGLBuffer& vbo, GLsizei& vboSize) { vboSize = 0; }));
 
-        if(!buf.first.isCreated() || buf.second < verticesPerInstance() * instanceCount()) {
-            buf.second = verticesPerInstance() * instanceCount();
-            buf.first = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-            buf.first.setUsagePattern(QOpenGLBuffer::StaticDraw);
-            if(!buf.first.create() || !buf.first.bind())
+        // Recreate/resize the buffer if necessary.
+        if(!vbo.isCreated() || vboSize < verticesPerInstance() * instanceCount()) {
+            vboSize = verticesPerInstance() * instanceCount();
+            vbo = QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+            vbo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+            if(!vbo.create() || !vbo.bind())
                 throw RendererException(QStringLiteral("Failed to create OpenGL buffer object."));
-            OVITO_CHECK_OPENGL(_renderer, buf.first.allocate(buf.second * sizeof(float)));
+            OVITO_CHECK_OPENGL(_renderer, vbo.allocate(vboSize * sizeof(float)));
 #ifndef Q_OS_WASM
-            void* p = buf.first.map(QOpenGLBuffer::WriteOnly);
+            void* p = vbo.map(QOpenGLBuffer::WriteOnly);
             if(p == nullptr)
-                throw RendererException(QStringLiteral("Failed to map memory of newly created OpenGL vertexID buffer of size %1 bytes.").arg(buf.second * sizeof(float)));
-            std::iota(reinterpret_cast<float*>(p), reinterpret_cast<float*>(p) + buf.second, 0);
-            OVITO_CHECK_OPENGL(_renderer, buf.first.unmap());
+                throw RendererException(QStringLiteral("Failed to map memory of newly created OpenGL vertexID buffer of size %1 bytes.").arg(vboSize * sizeof(float)));
+            std::iota(reinterpret_cast<float*>(p), reinterpret_cast<float*>(p) + vboSize, 0);
+            OVITO_CHECK_OPENGL(_renderer, vbo.unmap());
 #else
             // WebGL 1/OpenGL ES 2.0 does not support mapping a GL buffer to memory.
             // Need to emulate the map() method by providing a temporary memory buffer on the host.
-            std::vector<float> stagingBuffer(buf.second);
+            std::vector<float> stagingBuffer(vboSize);
             std::iota(stagingBuffer.begin(), stagingBuffer.end(), 0);
-            OVITO_CHECK_OPENGL(_renderer, buf.first.write(0, stagingBuffer.data(), buf.second * sizeof(float)));
+            OVITO_CHECK_OPENGL(_renderer, vbo.write(0, stagingBuffer.data(), vboSize * sizeof(float)));
 #endif
         }
         else {
-            OVITO_CHECK_OPENGL(_renderer, buf.first.bind());
+            OVITO_CHECK_OPENGL(_renderer, vbo.bind());
         }
         OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeBuffer("vertexID", GL_FLOAT, 0, 1, 0));
         OVITO_CHECK_OPENGL(_renderer, _shader->enableAttributeArray("vertexID"));
-        OVITO_CHECK_OPENGL(_renderer, buf.first.release());
+        OVITO_CHECK_OPENGL(_renderer, vbo.release());
     }
 
     // This is needed to compute the special shader variable 'gl_VertexID' correctly when instanced arrays are not supported:
@@ -694,20 +603,20 @@ void OpenGLShaderHelper::drawOpenGL2(GLenum mode, GLsizei renderInstanceCount)
     else if(renderInstanceCount > 1) {
         // Use glMultiDrawArrays() if available to draw all instances in one go.
         if(_renderer->glMultiDrawArrays) {
-            RendererResourceKey<struct IndexArrayCache, GLsizei, GLsizei> indexArrayCacheKey{ renderInstanceCount, verticesPerInstance() };
-            std::pair<std::vector<GLint>, std::vector<GLsizei>>& indexArrays = _renderer->currentResourceFrame().lookup<std::pair<std::vector<GLint>, std::vector<GLsizei>>>(indexArrayCacheKey);
-            if(indexArrays.first.empty()) {
-                // Fill the two arrays needed for glMultiDrawArrays().
-                indexArrays.second.resize(renderInstanceCount, verticesPerInstance());
-                indexArrays.first.resize(renderInstanceCount);
-                GLint index = 0;
-                for(GLint& f : indexArrays.first)
-                    f = (index++) * verticesPerInstance();
-            }
-            OVITO_ASSERT(indexArrays.first.size() == renderInstanceCount);
-            OVITO_ASSERT(indexArrays.second.size() == renderInstanceCount);
-            OVITO_ASSERT(indexArrays.second.front() == verticesPerInstance());
-            OVITO_CHECK_OPENGL(_renderer, _renderer->glMultiDrawArrays(mode, indexArrays.first.data(), indexArrays.second.data(), renderInstanceCount));
+            const auto& [indexFirst, indexCount] = _renderer->currentResourceFrame().lookup<std::tuple<std::vector<GLint>, std::vector<GLsizei>>>(
+                RendererResourceKey<struct IndexArrayCache, GLsizei, GLsizei>{ renderInstanceCount, verticesPerInstance() },
+                [&](std::vector<GLint>& indexFirst, std::vector<GLsizei>& indexCount) {
+                    // Fill the two arrays needed for glMultiDrawArrays().
+                    indexCount.resize(renderInstanceCount, verticesPerInstance());
+                    indexFirst.resize(renderInstanceCount);
+                    GLint index = 0;
+                    for(GLint& f : indexFirst)
+                        f = (index++) * verticesPerInstance();
+                });
+            OVITO_ASSERT(indexFirst.size() == renderInstanceCount);
+            OVITO_ASSERT(indexCount.size() == renderInstanceCount);
+            OVITO_ASSERT(indexCount.front() == verticesPerInstance());
+            OVITO_CHECK_OPENGL(_renderer, _renderer->glMultiDrawArrays(mode, indexFirst.data(), indexCount.data(), renderInstanceCount));
         }
         else {
             // If glMultiDrawArrays() is not available, fall back to drawing each instance with an individual glDrawArrays() call.

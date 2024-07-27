@@ -40,6 +40,8 @@ struct RendererResourceKey : public std::tuple<TupleFields...>
 
 /**
  * \brief A cache data structure that accepts keys with arbitrary type and which handles resource lifetime.
+ *
+ * All methods of the class are thread-safe.
  */
 class RendererResourceCache : public std::enable_shared_from_this<RendererResourceCache>
 {
@@ -78,10 +80,10 @@ public:
 
         /// Returns a reference to the cached value for the given key.
         /// Creates a new cache entry with a default-initialized value if the key doesn't exist.
-        template<typename Value, typename Key>
-        Value& lookup(Key&& key) const {
+        template<typename Value, typename Key, typename Initializer>
+        const Value& lookup(Key&& key, Initializer&& initializer) const {
             OVITO_ASSERT(_cache && _frameNumber != 0);
-            return _cache->lookup<Value>(std::forward<Key>(key), _frameNumber);
+            return _cache->lookup<Value>(std::forward<Key>(key), _frameNumber, std::forward<Initializer>(initializer));
         }
 
         /// Returns true if the frame is valid.
@@ -107,11 +109,11 @@ public:
     ~RendererResourceCache() {
         // The cache should be completely empty at the time it is destroyed.
         OVITO_ASSERT(_activeResourceFrames.empty());
-        OVITO_ASSERT(empty());
+        OVITO_ASSERT(_entries.empty());
     }
 #endif
 
-    // A cache cannot be copied or moved.
+    // A cache cannot be copied nor moved.
     RendererResourceCache(const RendererResourceCache& other) = delete;
     RendererResourceCache& operator=(const RendererResourceCache& other) = delete;
     RendererResourceCache(RendererResourceCache&& other) = delete;
@@ -119,42 +121,40 @@ public:
 
     /// Returns a reference to the value for the given key.
     /// Creates a new cache entry with a default-initialized value if the key doesn't exist.
-    template<typename Value, typename Key>
-    Value& lookup(Key&& key, ResourceFrameHandle resourceFrame) {
+    template<typename Value, typename Key, typename Initializer>
+    const Value& lookup(Key&& key, ResourceFrameHandle resourceFrame, Initializer&& initializer) {
+        std::lock_guard<std::mutex> lock(_mutex);
         OVITO_ASSERT(std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame) != _activeResourceFrames.end());
-
-        // Note: The following check has been disabled, because we now allow lookups to be made from worker threads.
-        // The user is responsible for ensuring that no two threads access the cache concurrently.
-
-        // OVITO_ASSERT(!_owningThread || QThread::currentThread() == _owningThread);
 
         // Check if the key exists in the cache.
         for(CacheEntry& entry : _entries) {
             if(entry.key.type() == typeid(Key) && entry.value.type() == typeid(Value) && key == any_cast<const Key&>(entry.key)) {
-                // Register the frame in which the resource was actively used.
+                // Register the frame in which the resource was accessed.
                 if(std::find(entry.frames.begin(), entry.frames.end(), resourceFrame) == entry.frames.end())
                     entry.frames.push_back(resourceFrame);
                 // Return reference to the value.
                 return any_cast<Value&>(entry.value);
             }
         }
+
         // Create a new key-value pair with a default-constructed value.
         _entries.emplace_back(std::forward<Key>(key), resourceFrame);
         any_moveonly& value = _entries.back().value;
-        value.emplace<Value>();
+        Value& v = value.emplace<Value>();
+        // Let the initializer function initialize the value.
+        if constexpr(std::is_invocable_v<Initializer, Value&>)
+            initializer(v);
+        else
+            std::apply(std::forward<Initializer>(initializer), v);
         OVITO_ASSERT(_entries.back().key.type() == typeid(Key));
         OVITO_ASSERT(value.type() == typeid(Value));
-        return any_cast<Value&>(value);
+        return v;
     }
-
-    /// Indicates whether the cache is currently empty.
-    bool empty() const { return _entries.empty(); }
-
-    /// Returns the current number of cache entries.
-    size_t size() const { return _entries.size(); }
 
     /// Opens a new frame with the resource manager.
     ResourceFrame acquireResourceFrame() {
+        std::lock_guard<std::mutex> lock(_mutex);
+
         // On the first frame, the cache should be empty.
         OVITO_ASSERT(!_activeResourceFrames.empty() || _entries.empty());
 
@@ -175,6 +175,7 @@ private:
     /// Informs the resource manager that the resources associated with the given frame can be released.
     void releaseResourceFrame(ResourceFrameHandle frame) {
         OVITO_ASSERT(frame > 0);
+        std::lock_guard<std::mutex> lock(_mutex);
 
 #ifdef OVITO_DEBUG
         // Remove frame from the list of active frames.
@@ -232,6 +233,9 @@ private:
     /// Note we are using std::deque instead of std::vector here, because we require stability of object addresses.
     /// lookup() returns references to elements stored in the cache, which must remain valid even when new objects are added.
     std::deque<CacheEntry> _entries;
+
+    /// Mutex to protect the cache from concurrent access.
+    std::mutex _mutex;
 
     /// Counter that keeps track of how many resource frames have been acquired in total.
     ResourceFrameHandle _nextResourceFrame = 0;

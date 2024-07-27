@@ -155,31 +155,29 @@ void CoordinateTripodOverlay::render(FrameGraph& frameGraph, const QRect& logica
 
     auto renderSolidJoint = [&]() {
         // Look up the image primitive for the axis arrow in the cache.
-        auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
+        const auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
             RendererResourceKey<struct SolidJointImageCache, Matrix3, FloatType>{
                 noninteractiveProjParams.viewMatrix.linear(),
                 lineWidth
+            },
+            [&](QImage& image, QPointF& offset) {
+                // Compute bounding box of joint.
+                FloatType margin = sqrt(3.0) * lineWidth;
+                QRectF imageRect = QRectF(-margin, -margin, 2*margin, 2*margin);
+
+                // Convert bounding box to physical units.
+                QRect pixelBounds = imageRect.toAlignedRect();
+
+                // Draw the joint into an image buffer, which will be cached.
+                image = QImage(pixelBounds.width(), pixelBounds.height(), frameGraph.preferredImageFormat());
+                image.fill(0);
+                QPainter painter(&image);
+                painter.setRenderHint(QPainter::Antialiasing);
+                painter.setWindow(pixelBounds);
+                paintSolidJoint(painter, QPointF(0,0), noninteractiveProjParams.viewMatrix, lineWidth);
+                painter.end(); // Release the QImage we've been painting into.
+                offset = imageRect.topLeft();
             });
-
-        // Render joint.
-        if(image.isNull()) {
-            // Compute bounding box of joint.
-            FloatType margin = sqrt(3.0) * lineWidth;
-            QRectF imageRect = QRectF(-margin, -margin, 2*margin, 2*margin);
-
-            // Convert bounding box to physical units.
-            QRect pixelBounds = imageRect.toAlignedRect();
-
-            // Draw the joint into an image buffer, which will be cached.
-            image = QImage(pixelBounds.width(), pixelBounds.height(), frameGraph.preferredImageFormat());
-            image.fill(0);
-            QPainter painter(&image);
-            painter.setRenderHint(QPainter::Antialiasing);
-            painter.setWindow(pixelBounds);
-            paintSolidJoint(painter, QPointF(0,0), noninteractiveProjParams.viewMatrix, lineWidth);
-            painter.end(); // Release the QImage we've been painting into.
-            offset = imageRect.topLeft();
-        }
 
         // Render the prepared image into the output framebuffer.
         QPoint alignedPos = (origin + offset).toPoint();
@@ -228,45 +226,43 @@ void CoordinateTripodOverlay::render(FrameGraph& frameGraph, const QRect& logica
         FloatType labelMargin = lineWidth * 2.5;
 
         // Look up the image primitive for the axis arrow in the cache.
-        auto& [image, offset, addedMargin] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF, FloatType>>(
+        const auto& [image, offset, addedMargin] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF, FloatType>>(
             RendererResourceKey<struct ArrowAxisImageCache, TripodStyle, Vector3, Vector2, FloatType, Color>{
                 tripodStyle(),
                 dir3d,
                 dir2d,
                 lineWidth,
                 axisColors[axis]
+            },
+            [&](QImage& image, QPointF& offset, FloatType& addedMargin) {
+                // Compute bounding box of arrow.
+                QRectF imageRect = QRectF(0, 0, dir2d.x(), dir2d.y()).normalized();
+                FloatType margin = std::max(lineWidth, (tripodStyle() == FlatArrows) ? (arrowSize * tripodSize) : 0.0);
+                imageRect.adjust(-margin, -margin, margin, margin);
+
+                // Convert bounding box to physical units.
+                QRect pixelBounds = imageRect.toAlignedRect();
+
+                // Draw the arrow into an image buffer, which will be cached.
+                image = QImage(pixelBounds.width(), pixelBounds.height(), frameGraph.preferredImageFormat());
+                image.fill(0);
+                QPainter painter(&image);
+                painter.setRenderHint(QPainter::Antialiasing);
+                painter.setWindow(pixelBounds);
+                QBrush brush(axisColors[axis]);
+                QPen pen(axisColors[axis]);
+                pen.setWidthF(lineWidth);
+                pen.setJoinStyle(Qt::MiterJoin);
+                pen.setCapStyle(Qt::RoundCap);
+                painter.setPen(pen);
+                painter.setBrush(brush);
+                if(tripodStyle() == FlatArrows)
+                    addedMargin = paintFlatArrow(painter, dir2d, arrowSize, lineWidth, tripodSize, QPointF(0,0));
+                else if(tripodStyle() == SolidArrows)
+                    addedMargin += paintSolidArrow(painter, dir2d, dir3d, arrowSize, lineWidth, tripodSize, QPointF(0,0));
+                painter.end(); // Release the QImage we've been painting into.
+                offset = imageRect.topLeft();
             });
-
-        // Render axis arrow.
-        if(image.isNull()) {
-            // Compute bounding box of arrow.
-            QRectF imageRect = QRectF(0, 0, dir2d.x(), dir2d.y()).normalized();
-            FloatType margin = std::max(lineWidth, (tripodStyle() == FlatArrows) ? (arrowSize * tripodSize) : 0.0);
-            imageRect.adjust(-margin, -margin, margin, margin);
-
-            // Convert bounding box to physical units.
-            QRect pixelBounds = imageRect.toAlignedRect();
-
-            // Draw the arrow into an image buffer, which will be cached.
-            image = QImage(pixelBounds.width(), pixelBounds.height(), frameGraph.preferredImageFormat());
-            image.fill(0);
-            QPainter painter(&image);
-            painter.setRenderHint(QPainter::Antialiasing);
-            painter.setWindow(pixelBounds);
-            QBrush brush(axisColors[axis]);
-            QPen pen(axisColors[axis]);
-            pen.setWidthF(lineWidth);
-            pen.setJoinStyle(Qt::MiterJoin);
-            pen.setCapStyle(Qt::RoundCap);
-            painter.setPen(pen);
-            painter.setBrush(brush);
-            if(tripodStyle() == FlatArrows)
-                addedMargin = paintFlatArrow(painter, dir2d, arrowSize, lineWidth, tripodSize, QPointF(0,0));
-            else if(tripodStyle() == SolidArrows)
-                addedMargin += paintSolidArrow(painter, dir2d, dir3d, arrowSize, lineWidth, tripodSize, QPointF(0,0));
-            painter.end(); // Release the QImage we've been painting into.
-            offset = imageRect.topLeft();
-        }
 
         // Paint the prepared image into the output framebuffer.
         labelMargin += addedMargin;

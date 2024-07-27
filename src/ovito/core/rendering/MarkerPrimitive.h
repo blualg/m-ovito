@@ -84,10 +84,10 @@ public:
 
 	/// Computes the 3d bounding box of the primitive in local coordinate space.
 	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
-        auto& bb = visCache.lookup<Box3>(RendererResourceKey<struct MarkerBoundingBoxCache, ConstDataBufferPtr>{positions()});
-        if(bb.isEmpty() && positions())
-            bb = positions()->boundingBox3();
-        return bb;
+        return visCache.lookup<Box3>(RendererResourceKey<struct MarkerBoundingBoxCache, ConstDataBufferPtr>{positions()}, [this](Box3& bb) {
+            if(positions())
+                bb = positions()->boundingBox3();
+        });
     }
 
 private:

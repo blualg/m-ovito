@@ -589,38 +589,38 @@ VectorVis::VectorData Bonds::getVectorVisData(const ConstDataObjectPath& path, c
             const SimulationCell* simulationCell = state.getObject<SimulationCell>();
 
             // Look up the bond centers in the cache.
-            using CacheKey = RendererResourceKey<struct BondCentersCache, ConstDataObjectRef, ConstDataObjectRef>;
-            auto& basePositions = visCache.lookup<ConstDataBufferPtr>(CacheKey(particles, simulationCell));
-            if(!basePositions) {
-                // Compute bond centers.
-                BufferFactory<Point3> centers(elementCount());
-                BufferReadAccess<ParticleIndexPair> bondTopology(bondTopologyProperty);
-                BufferReadAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
-                BufferReadAccess<Point3> positions(positionProperty);
+            const auto& basePositions = visCache.lookup<ConstDataBufferPtr>(
+                RendererResourceKey<struct BondCentersCache, ConstDataObjectRef, ConstDataObjectRef>{ particles, simulationCell },
+                [&](ConstDataBufferPtr& basePositions) {
+                    // Compute bond centers.
+                    BufferFactory<Point3> centers(elementCount());
+                    BufferReadAccess<ParticleIndexPair> bondTopology(bondTopologyProperty);
+                    BufferReadAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
+                    BufferReadAccess<Point3> positions(positionProperty);
 
-                size_t particleCount = positions.size();
-                const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
+                    size_t particleCount = positions.size();
+                    const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
 
-                for(size_t bondIndex = 0; bondIndex < bondTopology.size(); bondIndex++) {
-                    size_t index1 = bondTopology[bondIndex][0];
-                    size_t index2 = bondTopology[bondIndex][1];
-                    if(index1 >= particleCount || index2 >= particleCount) {
-                        centers[bondIndex] = Point3::Origin();
-                        continue;
-                    }
+                    for(size_t bondIndex = 0; bondIndex < bondTopology.size(); bondIndex++) {
+                        size_t index1 = bondTopology[bondIndex][0];
+                        size_t index2 = bondTopology[bondIndex][1];
+                        if(index1 >= particleCount || index2 >= particleCount) {
+                            centers[bondIndex] = Point3::Origin();
+                            continue;
+                        }
 
-                    Vector3 vec = positions[index2] - positions[index1];
-                    if(bondPeriodicImageProperty) {
-                        for(size_t k = 0; k < 3; k++) {
-                            if(int d = bondPeriodicImages[bondIndex][k]) {
-                                vec += cell.column(k) * (FloatType)d;
+                        Vector3 vec = positions[index2] - positions[index1];
+                        if(bondPeriodicImageProperty) {
+                            for(size_t k = 0; k < 3; k++) {
+                                if(int d = bondPeriodicImages[bondIndex][k]) {
+                                    vec += cell.column(k) * (FloatType)d;
+                                }
                             }
                         }
+                        centers[bondIndex] = positions[index1] + FloatType(0.5) * vec;
                     }
-                    centers[bondIndex] = positions[index1] + FloatType(0.5) * vec;
-                }
-                basePositions = centers.take();
-            }
+                    basePositions = centers.take();
+                });
             return {basePositions, path.lastAs<DataBuffer>(), nullptr, nullptr};
         }
     }

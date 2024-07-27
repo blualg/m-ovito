@@ -211,114 +211,112 @@ PipelineStatus NucleotidesVis::render(const ConstDataObjectPath& path, const Pip
     };
 
     // Look up the rendering primitives in the vis cache.
-    auto& cache = frameGraph.visCache().lookup<NucleotidesCacheValue>(NucleotidesCacheKey(
-        const_cast<Pipeline*>(pipeline),
-        positionProperty,
-        colorProperty,
-        strandProperty,
-        transparencyProperty,
-        selectionProperty,
-        nucleotideAxisProperty,
-        nucleotideNormalProperty,
-        defaultParticleRadius(),
-        cylinderRadius()));
+    const auto& cache = frameGraph.visCache().lookup<NucleotidesCacheValue>(
+        NucleotidesCacheKey(
+            const_cast<Pipeline*>(pipeline),
+            positionProperty,
+            colorProperty,
+            strandProperty,
+            transparencyProperty,
+            selectionProperty,
+            nucleotideAxisProperty,
+            nucleotideNormalProperty,
+            defaultParticleRadius(),
+            cylinderRadius()),
+        [&](NucleotidesCacheValue& cache) {
 
-    // Check if we already have valid rendering primitives that are up to date.
-    if(!cache.backbonePrimitive.positions()) {
+            // Create the rendering primitive for the backbone sites.
+            cache.backbonePrimitive.setShadingMode(ParticlePrimitive::NormalShading);
+            cache.backbonePrimitive.setRenderingQuality(ParticlePrimitive::MediumQuality);
 
-        // Create the rendering primitive for the backbone sites.
-        cache.backbonePrimitive.setShadingMode(ParticlePrimitive::NormalShading);
-        cache.backbonePrimitive.setRenderingQuality(ParticlePrimitive::MediumQuality);
+            // Fill in the position data.
+            cache.backbonePrimitive.setPositions(positionProperty);
 
-        // Fill in the position data.
-        cache.backbonePrimitive.setPositions(positionProperty);
+            // Fill in the transparency data.
+            cache.backbonePrimitive.setTransparencies(transparencyProperty);
 
-        // Fill in the transparency data.
-        cache.backbonePrimitive.setTransparencies(transparencyProperty);
+            // Compute the effective color of each particle.
+            ConstPropertyPtr colors = backboneColors(particles, frameGraph.isInteractive());
 
-        // Compute the effective color of each particle.
-        ConstPropertyPtr colors = backboneColors(particles, frameGraph.isInteractive());
+            // Fill in backbone color data.
+            cache.backbonePrimitive.setColors(colors);
 
-        // Fill in backbone color data.
-        cache.backbonePrimitive.setColors(colors);
+            // Assign a uniform radius to all particles.
+            cache.backbonePrimitive.setUniformRadius(defaultParticleRadius());
 
-        // Assign a uniform radius to all particles.
-        cache.backbonePrimitive.setUniformRadius(defaultParticleRadius());
+            if(nucleotideAxisProperty) {
+                // Create the rendering primitive for the base sites.
+                cache.basePrimitive.setParticleShape(ParticlePrimitive::EllipsoidShape);
+                cache.basePrimitive.setShadingMode(ParticlePrimitive::NormalShading);
+                cache.basePrimitive.setRenderingQuality(ParticlePrimitive::MediumQuality);
 
-        if(nucleotideAxisProperty) {
-            // Create the rendering primitive for the base sites.
-            cache.basePrimitive.setParticleShape(ParticlePrimitive::EllipsoidShape);
-            cache.basePrimitive.setShadingMode(ParticlePrimitive::NormalShading);
-            cache.basePrimitive.setRenderingQuality(ParticlePrimitive::MediumQuality);
+                // Fill in the position data for the base sites.
+                BufferFactory<Point3G> baseSites(particles->elementCount());
+                BufferReadAccess<Point3> positionsArray(positionProperty);
+                BufferReadAccess<Vector3> nucleotideAxisArray(nucleotideAxisProperty);
+                for(size_t i = 0; i < baseSites.size(); i++)
+                    baseSites[i] = (positionsArray[i] + (0.8 * nucleotideAxisArray[i])).toDataType<GraphicsFloatType>();
+                cache.basePrimitive.setPositions(baseSites.take());
 
-            // Fill in the position data for the base sites.
-            BufferFactory<Point3G> baseSites(particles->elementCount());
-            BufferReadAccess<Point3> positionsArray(positionProperty);
-            BufferReadAccess<Vector3> nucleotideAxisArray(nucleotideAxisProperty);
-            for(size_t i = 0; i < baseSites.size(); i++)
-                baseSites[i] = (positionsArray[i] + (0.8 * nucleotideAxisArray[i])).toDataType<GraphicsFloatType>();
-            cache.basePrimitive.setPositions(baseSites.take());
+                // Fill in base color data.
+                cache.basePrimitive.setColors(nucleobaseColors(particles, frameGraph.isInteractive()));
 
-            // Fill in base color data.
-            cache.basePrimitive.setColors(nucleobaseColors(particles, frameGraph.isInteractive()));
+                // Fill in aspherical shape values.
+                DataBufferPtr asphericalShapes = DataBufferPtr::create(particles->elementCount(), DataBuffer::FloatGraphics, 3);
+                asphericalShapes->fill<Vector3G>(static_cast<GraphicsFloatType>(cylinderRadius()) * Vector3G(2.0f, 3.0f, 1.0f));
+                cache.basePrimitive.setAsphericalShapes(std::move(asphericalShapes));
 
-            // Fill in aspherical shape values.
-            DataBufferPtr asphericalShapes = DataBufferPtr::create(particles->elementCount(), DataBuffer::FloatGraphics, 3);
-            asphericalShapes->fill<Vector3G>(static_cast<GraphicsFloatType>(cylinderRadius()) * Vector3G(2.0f, 3.0f, 1.0f));
-            cache.basePrimitive.setAsphericalShapes(std::move(asphericalShapes));
-
-            // Fill in base orientations.
-            if(BufferReadAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
-                PropertyPtr orientations = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), Particles::OrientationProperty);
-                BufferWriteAccess<QuaternionG, access_mode::discard_write> orientationsAccess(orientations);
-                for(size_t i = 0; i < orientations->size(); i++) {
-                    if(nucleotideNormalArray[i] != Vector3::Zero() && nucleotideAxisArray[i] != Vector3::Zero()) {
-                        // Build an orthonomal basis from the two direction vectors of a nucleotide.
-                        Matrix3 tm;
-                        tm.column(2) = nucleotideNormalArray[i];
-                        tm.column(1) = nucleotideAxisArray[i];
-                        tm.column(0) = tm.column(1).cross(tm.column(2));
-                        if(!tm.column(0).isZero()) {
-                            tm.orthonormalize();
-                            orientationsAccess[i] = Quaternion(tm).toDataType<GraphicsFloatType>();
+                // Fill in base orientations.
+                if(BufferReadAccess<Vector3> nucleotideNormalArray = nucleotideNormalProperty) {
+                    PropertyPtr orientations = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, particles->elementCount(), Particles::OrientationProperty);
+                    BufferWriteAccess<QuaternionG, access_mode::discard_write> orientationsAccess(orientations);
+                    for(size_t i = 0; i < orientations->size(); i++) {
+                        if(nucleotideNormalArray[i] != Vector3::Zero() && nucleotideAxisArray[i] != Vector3::Zero()) {
+                            // Build an orthonomal basis from the two direction vectors of a nucleotide.
+                            Matrix3 tm;
+                            tm.column(2) = nucleotideNormalArray[i];
+                            tm.column(1) = nucleotideAxisArray[i];
+                            tm.column(0) = tm.column(1).cross(tm.column(2));
+                            if(!tm.column(0).isZero()) {
+                                tm.orthonormalize();
+                                orientationsAccess[i] = Quaternion(tm).toDataType<GraphicsFloatType>();
+                            }
+                            else orientationsAccess[i] = QuaternionG::Identity();
                         }
-                        else orientationsAccess[i] = QuaternionG::Identity();
+                        else {
+                            orientationsAccess[i] = QuaternionG::Identity();
+                        }
                     }
-                    else {
-                        orientationsAccess[i] = QuaternionG::Identity();
-                    }
+                    cache.basePrimitive.setOrientations(std::move(orientations));
                 }
-                cache.basePrimitive.setOrientations(std::move(orientations));
+
+                // Create the rendering primitive for the connections between backbone and base sites.
+                cache.connectionPrimitive.setShape(CylinderPrimitive::CylinderShape);
+                cache.connectionPrimitive.setShadingMode(CylinderPrimitive::NormalShading);
+                cache.connectionPrimitive.setUniformWidth(2 * cylinderRadius());
+                cache.connectionPrimitive.setColors(colors);
+                BufferFactory<Point3G> headPositions(particles->elementCount());
+                for(size_t i = 0; i < positionsArray.size(); i++)
+                    headPositions[i] = (positionsArray[i] + 0.8 * nucleotideAxisArray[i]).toDataType<GraphicsFloatType>();
+                cache.connectionPrimitive.setPositions(positionProperty, headPositions.take());
+            }
+            else {
+                cache.connectionPrimitive = CylinderPrimitive();
+                cache.basePrimitive = ParticlePrimitive();
             }
 
-            // Create the rendering primitive for the connections between backbone and base sites.
-            cache.connectionPrimitive.setShape(CylinderPrimitive::CylinderShape);
-            cache.connectionPrimitive.setShadingMode(CylinderPrimitive::NormalShading);
-            cache.connectionPrimitive.setUniformWidth(2 * cylinderRadius());
-            cache.connectionPrimitive.setColors(colors);
-            BufferFactory<Point3G> headPositions(particles->elementCount());
-            for(size_t i = 0; i < positionsArray.size(); i++)
-                headPositions[i] = (positionsArray[i] + 0.8 * nucleotideAxisArray[i]).toDataType<GraphicsFloatType>();
-            cache.connectionPrimitive.setPositions(positionProperty, headPositions.take());
-        }
-        else {
-            cache.connectionPrimitive = CylinderPrimitive();
-            cache.basePrimitive = ParticlePrimitive();
-        }
+            // Create pick info record.
+            BufferFactory<int32_t> subobjectToParticleMapping(nucleotideAxisProperty ? (particles->elementCount() * 3) : particles->elementCount());
+            std::iota(subobjectToParticleMapping.begin(), subobjectToParticleMapping.begin() + particles->elementCount(), 0);
+            if(nucleotideAxisProperty) {
+                std::iota(subobjectToParticleMapping.begin() +     particles->elementCount(), subobjectToParticleMapping.begin() + 2 * particles->elementCount(), 0);
+                std::iota(subobjectToParticleMapping.begin() + 2 * particles->elementCount(), subobjectToParticleMapping.begin() + 3 * particles->elementCount(), 0);
+            }
+            cache.pickInfo = OORef<ParticlePickInfo>::create(this, particles, subobjectToParticleMapping.take());
+        });
 
-        // Create pick info record.
-        BufferFactory<int32_t> subobjectToParticleMapping(nucleotideAxisProperty ? (particles->elementCount() * 3) : particles->elementCount());
-        std::iota(subobjectToParticleMapping.begin(), subobjectToParticleMapping.begin() + particles->elementCount(), 0);
-        if(nucleotideAxisProperty) {
-            std::iota(subobjectToParticleMapping.begin() +     particles->elementCount(), subobjectToParticleMapping.begin() + 2 * particles->elementCount(), 0);
-            std::iota(subobjectToParticleMapping.begin() + 2 * particles->elementCount(), subobjectToParticleMapping.begin() + 3 * particles->elementCount(), 0);
-        }
-        cache.pickInfo = OORef<ParticlePickInfo>::create(this, particles, subobjectToParticleMapping.take());
-    }
-    else {
-        // Update the pipeline state stored in te picking object info.
-        cache.pickInfo->setParticles(particles);
-    }
+    // Update the pipeline state stored in te picking object info.
+    cache.pickInfo->setParticles(particles);
 
     auto pickingGroup = frameGraph.addPickingGroup(pipeline, cache.pickInfo);
 

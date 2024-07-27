@@ -228,6 +228,15 @@ public:
     /// Call this method after the last sub-step has been completed.
     void endProgressSubSteps();
 
+    /// \brief Suspends execution until the given task has reached the 'finished' or 'canceled' state.
+    ///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
+    /// \param awaitedTask The task to wait for.
+    /// \param throwOnError If the awaited task failed with an error, throw it as an exception.
+    /// \param returnEarlyIfCanceled If the awaited task or the waiting task get canceled, return early without waiting for the awaited task to actually finish.
+    /// \param cancelWaitingIfAwaitedCanceled Cancel the waiting task if the awaited task got canceled.
+    /// \return false if the waiting task got canceled (which may happen due to the awaited task getting canceled).
+    [[nodiscard]] static bool waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool returnEarlyIfCanceled, bool cancelWaitingIfAwaitedCanceled);
+
 protected:
 
     /// Assigns a value to the internal result storage of the task.
@@ -311,13 +320,6 @@ protected:
 
     /// Returns the mutex that is used to manage concurrent access to this task.
     operator Mutex&() const { return _mutex; }
-
-    /// \brief Suspends execution until the given task has reached the 'finished' or 'canceled' state.
-    ///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
-    /// \param task The task to wait for.
-    /// \param throwOnError If the awaited task finished with an error state, throw it as an exception.
-    /// \return false if either \a task or this operation have been canceled.
-    [[nodiscard]] static bool waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool returnEarlyIfCanceled);
 
     /// The current state this task is in.
     std::atomic_int _state;

@@ -103,7 +103,7 @@ public:
     /// Throws an OperationCanceled exception if the future or the task awaiting it got canceled.
     /// Throws an exception if the awaited task has failed to complete.
     void waitForFinished(bool returnEarlyIfCanceled = true) const & {
-        if(!Task::waitFor(task(), true, returnEarlyIfCanceled))
+        if(!Task::waitFor(task(), true, returnEarlyIfCanceled, true))
             throw OperationCanceled();
     }
 
@@ -111,7 +111,7 @@ public:
     /// Throws an OperationCanceled exception if the future or the task awaiting it got canceled.
     /// Throws an exception if the awaited task has failed to complete.
     void waitForFinished(bool returnEarlyIfCanceled = true) && {
-        if(!Task::waitFor(takeTaskDependency(), true, returnEarlyIfCanceled))
+        if(!Task::waitFor(takeTaskDependency(), true, returnEarlyIfCanceled, true))
             throw OperationCanceled();
     }
 
@@ -219,7 +219,7 @@ public:
     /// Returns the results computed by the associated Promise.
     /// The function blocks until the result become available.
     template<typename R2 = R>
-    [[nodiscard]]  std::enable_if_t<!std::is_void_v<R2>, R> result() {
+    [[nodiscard]] std::enable_if_t<!std::is_void_v<R2>, R> result() {
         OVITO_ASSERT_MSG(isValid(), "Future::results()", "Future must be valid.");
         waitForFinished();
         OVITO_ASSERT_MSG(isFinished(), "Future::results()", "Future must be in fulfilled state.");

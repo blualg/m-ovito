@@ -344,16 +344,16 @@ void Task::endProgressSubSteps()
 /******************************************************************************
 * Blocks execution until another task finishes.
 ******************************************************************************/
-bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool returnEarlyIfCanceled)
+bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool returnEarlyIfCanceled, bool cancelWaitingIfAwaitedCanceled)
 {
     OVITO_ASSERT(awaitedTask);
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
     // The task this function was called from.
     Task* waitingTask = this_task::get();
-    OVITO_ASSERT_MSG(waitingTask != nullptr, "Task::waitFor()", "No active task. This function may only be called from a task worker function or some other context with an active task.");
+    OVITO_ASSERT_MSG(waitingTask != nullptr, "Task::waitFor()", "No active task. This function may only be called from a context having an active task.");
 
-    // Lock access to the waiting task (this function was called from).
+    // Lock access to the waiting task this function was called by.
     MutexLock waitingTaskLock(*waitingTask);
 
     // No need to wait for the other task if the waiting task was already canceled.
@@ -366,8 +366,9 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
     // Quick check if the awaited task is already finished or canceled.
     MutexLock awaitedTaskLock(*awaitedTask);
     if(awaitedTask->isCanceled()) {
-        // If the awaited was canceled, cancel the waiting task as well.
-        waitingTask->cancelLocked(waitingTaskLock);
+        // If the awaited task was canceled, cancel the waiting task as well.
+        if(cancelWaitingIfAwaitedCanceled)
+            waitingTask->cancelLocked(waitingTaskLock);
         // Don't wait for the task to finish.
         if(returnEarlyIfCanceled)
             return false;
@@ -471,8 +472,13 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
 
     if(awaitedTaskPtr->isCanceled()) {
         // If the awaited task was canceled, cancel the waiting task as well.
-        waitingTask->cancelLocked(waitingTaskLock);
-        return false;
+        if(cancelWaitingIfAwaitedCanceled) {
+            waitingTask->cancelLocked(waitingTaskLock);
+            return false;
+        }
+        else {
+            return true;
+        }
     }
 
     OVITO_ASSERT(awaitedTaskPtr->isFinished());

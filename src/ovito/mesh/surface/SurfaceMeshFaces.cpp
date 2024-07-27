@@ -146,55 +146,56 @@ VectorVis::VectorData SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPa
     if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
         mesh->verifyMeshIntegrity();
         // Look up the face centroids in the cache.
-        using CacheKey = RendererResourceKey<struct SurfaceMeshFacesCentroidsCache, ConstDataObjectRef, ConstDataObjectRef>;
-        auto& [basePositions, vectorProperty] = visCache.lookup<std::tuple<ConstDataBufferPtr,ConstDataBufferPtr>>(CacheKey(mesh, path.lastAs<DataBuffer>()));
-        if(!basePositions) {
-            BufferWriteAccessAndRef<Vector3, access_mode::write> filteredVectors;
-            vectorProperty = path.lastAs<DataBuffer>();
-            if(vectorProperty && vectorProperty->componentCount() == 3) {
-                OVITO_ASSERT(vectorProperty->dataType() == Property::FloatDefault);
-                if(vectorProperty->dataType() == Property::FloatDefault) {
-                    // Does the mesh have cutting planes and do we need to perform point culling?
-                    if(!mesh->cuttingPlanes().empty()) {
-                        // Create a copy of the vector property in which the values of culled points
-                        // will be nulled out to hide the arrow glyphs for these points.
-                        filteredVectors = vectorProperty.makeCopy();
+        const auto& [basePositions, vectorProperty] = visCache.lookup<std::tuple<ConstDataBufferPtr, ConstDataBufferPtr>>(
+            RendererResourceKey<struct SurfaceMeshFacesCentroidsCache, ConstDataObjectRef, ConstDataObjectRef>{mesh, path.lastAs<DataBuffer>()},
+            [&](ConstDataBufferPtr& basePositions, ConstDataBufferPtr& vectorProperty) {
+                BufferWriteAccessAndRef<Vector3, access_mode::write> filteredVectors;
+                vectorProperty = path.lastAs<DataBuffer>();
+                if(vectorProperty && vectorProperty->componentCount() == 3) {
+                    OVITO_ASSERT(vectorProperty->dataType() == Property::FloatDefault);
+                    if(vectorProperty->dataType() == Property::FloatDefault) {
+                        // Does the mesh have cutting planes and do we need to perform point culling?
+                        if(!mesh->cuttingPlanes().empty()) {
+                            // Create a copy of the vector property in which the values of culled points
+                            // will be nulled out to hide the arrow glyphs for these points.
+                            filteredVectors = vectorProperty.makeCopy();
+                        }
                     }
                 }
-            }
 
-            // Compute face centroids.
-            const SurfaceMeshReadAccess meshAccess(mesh);
-            BufferReadAccess<Point3> vertexPositions(meshAccess.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
-            BufferFactory<Point3> centroids(mesh->faces()->elementCount());
-            for(SurfaceMesh::face_index face : mesh->topology()->facesRange()) {
-                Vector3 c = Vector3::Zero();
-                Vector3 com = Vector3::Zero();
-                int n = 0;
-                SurfaceMesh::edge_index firstFaceEdge = meshAccess.firstFaceEdge(face);
-                if(firstFaceEdge != SurfaceMesh::InvalidIndex) {
-                    SurfaceMesh::edge_index edge = firstFaceEdge;
-                    do {
-                        c += meshAccess.edgeVector(edge, vertexPositions);
-                        com += c;
-                        n++;
-                        edge = meshAccess.nextFaceEdge(edge);
+                // Compute face centroids.
+                const SurfaceMeshReadAccess meshAccess(mesh);
+                BufferReadAccess<Point3> vertexPositions(meshAccess.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
+                BufferFactory<Point3> centroids(mesh->faces()->elementCount());
+                for(SurfaceMesh::face_index face : mesh->topology()->facesRange()) {
+                    Vector3 c = Vector3::Zero();
+                    Vector3 com = Vector3::Zero();
+                    int n = 0;
+                    SurfaceMesh::edge_index firstFaceEdge = meshAccess.firstFaceEdge(face);
+                    if(firstFaceEdge != SurfaceMesh::InvalidIndex) {
+                        SurfaceMesh::edge_index edge = firstFaceEdge;
+                        do {
+                            c += meshAccess.edgeVector(edge, vertexPositions);
+                            com += c;
+                            n++;
+                            edge = meshAccess.nextFaceEdge(edge);
+                        }
+                        while(edge != firstFaceEdge);
+                        centroids[face] = meshAccess.wrapPoint(vertexPositions[meshAccess.vertex1(firstFaceEdge)] + (com / n));
+                        if(filteredVectors && mesh->isPointCulled(centroids[face]))
+                            filteredVectors[face].setZero();
                     }
-                    while(edge != firstFaceEdge);
-                    centroids[face] = meshAccess.wrapPoint(vertexPositions[meshAccess.vertex1(firstFaceEdge)] + (com / n));
-                    if(filteredVectors && mesh->isPointCulled(centroids[face]))
-                        filteredVectors[face].setZero();
+                    else {
+                        centroids[face] = Point3::Origin();
+                        if(filteredVectors)
+                            filteredVectors[face].setZero();
+                    }
                 }
-                else {
-                    centroids[face] = Point3::Origin();
-                    if(filteredVectors)
-                        filteredVectors[face].setZero();
-                }
-            }
-            basePositions = centroids.take();
-            if(filteredVectors)
-                vectorProperty = filteredVectors.take();
-        }
+                basePositions = centroids.take();
+                if(filteredVectors)
+                    vectorProperty = filteredVectors.take();
+            });
+
         return {basePositions, vectorProperty, nullptr, nullptr};
     }
     return {};

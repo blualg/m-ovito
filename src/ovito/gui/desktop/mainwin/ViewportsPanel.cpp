@@ -102,6 +102,13 @@ OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, M
     if(windowClass) {
         OORef<WidgetViewportWindow> window = static_object_cast<WidgetViewportWindow>(windowClass->createInstance());
         window->initializeWindow(&vp, mainWindow, parent);
+
+        // Handle fatal rendering errors by quitting the application.
+        connect(window.get(), &ViewportWindow::fatalError, &mainWindow, [&mainWindow](Exception& ex) {
+            ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewports. The program will quit."));
+            mainWindow.exitWithFatalError(ex);
+        });
+
         return window;
     }
 
