@@ -219,7 +219,17 @@ PipelineStatus LinesVis::render(const ConstDataObjectPath& path, const PipelineF
 
     // Look up the rendering primitives in the vis cache.
     const auto& [segments, corners, cornerPseudoColors, pickInfo] = frameGraph.visCache().lookup<std::tuple<CylinderPrimitive, ParticlePrimitive, ConstDataBufferPtr, OORef<LinesPickInfo>>>(
-        CacheKey(lines, lineWidth(), roundedCaps(), lineColor(), shadingMode(), endFrame, simulationCell, pseudoColorProperty, pseudoColorPropertyComponent),
+        CacheKey{
+            lines,
+            lineWidth(),
+            roundedCaps(),
+            lineColor(),
+            shadingMode(),
+            endFrame,
+            simulationCell,
+            pseudoColorProperty,
+            pseudoColorPropertyComponent
+        },
         [&](CylinderPrimitive& segments, ParticlePrimitive& corners, ConstDataBufferPtr& cornerPseudoColorsCached, OORef<LinesPickInfo>& pickInfo) {
 
             // The shading mode for corner spheres.
@@ -347,7 +357,7 @@ PipelineStatus LinesVis::render(const ConstDataObjectPath& path, const PipelineF
     coloredSegments->setPseudoColorMapping(colorMapping()->pseudoColorMapping());
 
     // Convert the pseudocolors of the corner spheres to RGB colors if necessary.
-    if(cornerPseudoColors) {
+    if(cornerPseudoColors && coloredSegments->pseudoColorMapping().isValid()) {
         // Perform a cache lookup to check if latest pseudocolors have already been mapped to RGB colors.
         const ConstDataBufferPtr& cornerColors = frameGraph.visCache().lookup<ConstDataBufferPtr>(
             std::make_pair(cornerPseudoColors, coloredSegments->pseudoColorMapping()),
@@ -355,7 +365,7 @@ PipelineStatus LinesVis::render(const ConstDataObjectPath& path, const PipelineF
                 // Create an RGB color array, which will be filled and then assigned to the ParticlesPrimitive.
                 BufferFactory<ColorG> cornerColorsArray(cornerPseudoColors->size());
                 boost::transform(BufferReadAccess<GraphicsFloatType>(cornerPseudoColors), cornerColorsArray.begin(),
-                                [&](GraphicsFloatType v) { return segments.pseudoColorMapping().valueToColor(v); });
+                                [&](GraphicsFloatType v) { return coloredSegments->pseudoColorMapping().valueToColor(v); });
                 cornerColors = cornerColorsArray.take();
             });
         coloredCorners->setColors(cornerColors);
