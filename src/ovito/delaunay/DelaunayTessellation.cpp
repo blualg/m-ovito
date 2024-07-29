@@ -54,11 +54,9 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
     double epsilon = 1e-10 * lengthScale;
 
     // Set up random number generator to generate random perturbations.
-    std::mt19937 rng;
+    // Use a fixed seed value for the sake of reproducibility.
+    std::mt19937 rng(4);
     boost::random::uniform_real_distribution<double> displacement(-epsilon, epsilon);
-
-    // Use fixed seed value for the sake of reproducibility.
-    rng.seed(4);
 
     _simCell = simCell;
 
