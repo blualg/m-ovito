@@ -54,10 +54,19 @@ void ViewportWindow::setViewport(Viewport* vp, UserInterface& userInterface)
 
     _userInterface = &userInterface;
     _viewport.set(this, PROPERTY_FIELD(viewport), vp);
-    _scenePreparation = OORef<ScenePreparation>::create(userInterface, vp->scene(), isVisible());
-
-    // Automatically rerender window whenever the scene is changed.
-    connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &ViewportWindow::requestUpdate);
+    if(vp) {
+        if(!_scenePreparation) {
+            _scenePreparation = OORef<ScenePreparation>::create(userInterface, vp->scene(), isVisible());
+            // Automatically rerender window whenever the scene is changed.
+            connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &ViewportWindow::requestUpdate);
+        }
+        else {
+            _scenePreparation->setScene(vp->scene());
+        }
+    }
+    else {
+        _scenePreparation.reset();
+    }
 }
 
 /******************************************************************************
@@ -67,7 +76,7 @@ void ViewportWindow::requestUpdate()
 {
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
-    if(!_updateRequested) {
+    if(!_updateRequested && viewport()) {
         _updateRequested = true;
         if(!userInterface().areViewportUpdatesSuspended()) {
             resumeViewportUpdates();
@@ -81,12 +90,21 @@ void ViewportWindow::requestUpdate()
 ******************************************************************************/
 void ViewportWindow::processViewportUpdate()
 {
-    if(_updateRequested && _updateTimer.isActive()) {
-        _updateTimer.stop();
-        // Calling handleUpdateRequest() asynchronously because it is a long-running
-        // operation that may start a local event loop. We can't allow user changes to the
-        // list of viewports while processViewportUpdate() is being executed.
-        QMetaObject::invokeMethod(this, "handleUpdateRequest", Qt::QueuedConnection);
+    if(!viewport())
+        return;
+
+    if(QCoreApplication::instance()) {
+        if(_updateRequested && _updateTimer.isActive()) {
+            _updateTimer.stop();
+            // Calling handleUpdateRequest() asynchronously because it is a long-running
+            // operation that may start a local event loop. We can't allow user changes to the
+            // list of viewports while processViewportUpdate() is being executed.
+            QMetaObject::invokeMethod(this, "handleUpdateRequest", Qt::QueuedConnection);
+        }
+    }
+    else {
+        if(_updateRequested)
+            handleUpdateRequest();
     }
 }
 
@@ -96,11 +114,14 @@ void ViewportWindow::processViewportUpdate()
 ******************************************************************************/
 void ViewportWindow::resumeViewportUpdates()
 {
+    if(!viewport())
+        return;
     OVITO_ASSERT(!userInterface().areViewportUpdatesSuspended());
-    OVITO_ASSERT(QCoreApplication::instance());
 
-    if(_updateRequested && !_updateTimer.isActive() && isVisible()) {
-        _updateTimer.start(10, Qt::CoarseTimer, this); // Refresh viewport window after a 10 ms delay to avoid excessive repaints.
+    if(QCoreApplication::instance()) {
+        if(_updateRequested && !_updateTimer.isActive() && isVisible()) {
+            _updateTimer.start(10, Qt::CoarseTimer, this); // Refresh viewport window after a 10 ms delay to avoid excessive repaints.
+        }
     }
 }
 
@@ -110,7 +131,7 @@ void ViewportWindow::resumeViewportUpdates()
 void ViewportWindow::timerEvent(QTimerEvent* event)
 {
     if(event->timerId() == _updateTimer.timerId()) {
-        _updateTimer.stop();
+         _updateTimer.stop();
         handleUpdateRequest();
     }
 }
@@ -175,11 +196,15 @@ void ViewportWindow::handleUpdateRequest()
             noninteractiveProjParams = viewport()->computeProjectionParameters(time, viewport()->renderAspectRatio(dataset));
         }
 
+        // Initialize the window's rendering job. Job may be null, e.g., in a JupyterViewportWindow.
+        OORef<RenderingJob> renderingJob = this->renderingJob();
+
         // Create a new fresh frame graph.
         std::shared_ptr<FrameGraph> frameGraph = std::make_shared<FrameGraph>(
             userInterface().datasetContainer().visCache()->acquireResourceFrame(),
             time, _projParams, viewportWindowDeviceIndependentSize(), isInteractive, isPreviewMode, stopOnPipelineError,
-            renderingJob()->preferredImageFormat(), devicePixelRatio());
+            renderingJob ? renderingJob->preferredImageFormat() : QImage::Format_ARGB32_Premultiplied,
+            devicePixelRatio());
 
         // Set background color.
         if(!viewport()->renderPreviewMode())
@@ -247,7 +272,8 @@ void ViewportWindow::handleUpdateRequest()
             renderPreviewFrame(*frameGraph, dataset, windowSize);
         }
         else {
-            renderOrientationIndicator(*frameGraph, windowSize);
+            if(isOrientationIndicatorVisible())
+                renderOrientationIndicator(*frameGraph, windowSize);
         }
 
         // Render viewport caption.
@@ -257,7 +283,8 @@ void ViewportWindow::handleUpdateRequest()
             _contextMenuArea = QRectF();
 
         // Let the renderer implementation post-process the frame graph.
-        renderingJob()->postprocessFrameGraph(*frameGraph);
+        if(renderingJob)
+            renderingJob->postprocessFrameGraph(*frameGraph);
 
         // Compute final projection based on the now known bounding box.
         _projParams = viewport()->computeProjectionParameters(time, aspectRatio, frameGraph->sceneBoundingBox());

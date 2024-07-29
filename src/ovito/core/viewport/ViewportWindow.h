@@ -125,6 +125,12 @@ public:
     /// Returns the device pixel ratio of the viewport window's canvas.
     virtual qreal devicePixelRatio() const = 0;
 
+    /// Returns the visibility of the orientation indicator.
+    bool isOrientationIndicatorVisible() const { return _showOrientationIndicator; }
+
+    /// Controls the visibility of the orientation indicator.
+    void setOrientationIndicatorVisible(bool visible) { _showOrientationIndicator = visible; }
+
     /// Returns whether the viewport caption is displayed.
     bool isViewportTitleVisible() const { return _showViewportTitle; }
 
@@ -289,6 +295,9 @@ private:
 
     /// Used to update the viewport contents after a short waiting period.
     QBasicTimer _updateTimer;
+
+    /// Controls the viisbility of the orientation indicator.
+    bool _showOrientationIndicator = true;
 
     /// Controls the visibility of the viewport caption.
     bool _showViewportTitle = true;

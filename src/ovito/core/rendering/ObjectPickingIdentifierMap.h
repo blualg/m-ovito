@@ -62,6 +62,9 @@ public:
     /// Computes the 3d world-space location corresponding to the given 2d window position.
     Point3 worldPositionAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const;
 
+	/// Returns the informational text to be displayed in the status bar for a pickable scene object.
+	QString pickableObjectInformationText(quint32 objectID) const;
+
 private:
 
     /// A copy of a ObjectPickingGroup that has been encoded as a range of object IDs in the frame buffer.

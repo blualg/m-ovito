@@ -61,9 +61,6 @@ void ScenePreparation::completeObjectInitialization()
 {
     RefMaker::completeObjectInitialization();
 
-    // This facility requires a Qt event loop.
-    Application::instance()->createQtApplication(false);
-
     // Start preparing the scene.
     restartPreparation();
 }
@@ -297,7 +294,11 @@ void ScenePreparation::restartPreparation(bool restartImmediately)
     _currentPipeline.reset();
     _completedScene = nullptr;
     if(scene() && autoRestart() && !isBeingInitializedOrDeleted()) {
-        if(_pipelineEvaluationFuture.isValid() && _currentTime != scene()->animationSettings()->currentTime()) {
+        // Force an immediate restart if there is no Qt event loop running.
+        if(!QCoreApplication::instance()) {
+            restartImmediately = true;
+        }
+        else if(_pipelineEvaluationFuture.isValid() && _currentTime != scene()->animationSettings()->currentTime()) {
             // Force an immediate restart if the animation time has changed.
             restartImmediately = true;
         }

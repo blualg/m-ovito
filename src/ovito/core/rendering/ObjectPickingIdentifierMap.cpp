@@ -86,6 +86,20 @@ std::optional<ViewportWindow::PickResult> ObjectPickingIdentifierMap::pickAt(con
 }
 
 /******************************************************************************
+* Returns the informational text to be displayed in the status bar for a pickable scene object.
+******************************************************************************/
+QString ObjectPickingIdentifierMap::pickableObjectInformationText(quint32 objectID) const
+{
+    if(const MappedObjectGroup* pickingGroup = lookupPickingGroupFromObjectId(objectID)) {
+        if(pickingGroup->pickInfo()) {
+            OVITO_ASSERT(pickingGroup->pipeline());
+            return pickingGroup->pickInfo()->infoString(pickingGroup->pipeline(), pickingGroup->resolveObjectID(objectID));
+        }
+    }
+    return {};
+}
+
+/******************************************************************************
 * Given an object ID from the picking render buffer, looks up the corresponding picking group.
 ******************************************************************************/
 const ObjectPickingIdentifierMap::MappedObjectGroup* ObjectPickingIdentifierMap::lookupPickingGroupFromObjectId(quint32 objectID) const

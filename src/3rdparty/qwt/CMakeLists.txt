@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt modules.
-FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui Widgets PrintSupport Concurrent REQUIRED)
+FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core Gui Widgets Concurrent REQUIRED)
 
 # Build the library.
 SET(QWT_SOURCE_FILES
@@ -133,7 +133,6 @@ TARGET_LINK_LIBRARIES(Qwt PUBLIC
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
-    Qt6::PrintSupport
     Qt6::Concurrent)
 
 # Tell CMake to run Qt moc on source files added to the target.
@@ -142,7 +141,7 @@ SET_TARGET_PROPERTIES(Qwt PROPERTIES AUTOMOC ON)
 SET_TARGET_PROPERTIES(Qwt PROPERTIES AUTORCC ON)
 
 # Some compile time flags for Qwt.
-TARGET_COMPILE_DEFINITIONS(Qwt PRIVATE QWT_NO_SVG QWT_NO_OPENGL)
+TARGET_COMPILE_DEFINITIONS(Qwt PRIVATE QWT_NO_SVG QWT_NO_OPENGL QT_NO_PRINTER)
 IF(BUILD_SHARED_LIBS)
     TARGET_COMPILE_DEFINITIONS(Qwt PRIVATE QWT_MAKEDLL)
     TARGET_COMPILE_DEFINITIONS(Qwt PUBLIC QWT_DLL)

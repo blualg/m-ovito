@@ -22,7 +22,7 @@
 #include <qpainter.h>
 #include <qpainterpath.h>
 #include <qtransform.h>
-#include <qprinter.h>
+//#include <qprinter.h>
 #include <qfiledialog.h>
 #include <qfileinfo.h>
 #include <qimagewriter.h>
