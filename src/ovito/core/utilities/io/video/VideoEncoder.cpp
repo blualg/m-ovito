@@ -427,9 +427,12 @@ void VideoEncoder::closeFile()
         ::av_write_trailer(_formatContext.get());
     }
 
+#if LIBAVCODEC_VERSION_MAJOR < 61 // ffmpeg>=7: avcodec_close() deprecated - Use avcodec_free_context() to destroy a codec context (either open or closed).
     // Close codec.
     if(_codecContext)
         ::avcodec_close(_codecContext.get());
+#endif
+    _codecContext.reset();
 
 #if LIBAVCODEC_VERSION_MAJOR < 57
     // Free streams.
@@ -457,7 +460,6 @@ void VideoEncoder::closeFile()
         ::sws_freeContext(_imgConvertCtx);
     _imgConvertCtx = nullptr;
     _videoStream = nullptr;
-    _codecContext.reset();
     _outputBuf.clear();
     _formatContext.reset();
     _isOpen = false;
