@@ -89,19 +89,19 @@ PseudoColorMapping PropertyColorMapping::pseudoColorMapping() const
  ******************************************************************************/
 void PropertyColorMapping::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(endValue) && symmetricRange() && !isBeingLoaded() && !isUndoingOrRedoing() &&
-       ExecutionContext::isInteractive()) {
-        // Update start value when symmetricRange is on and end value changes
+    if(field == PROPERTY_FIELD(endValue) && symmetricRange() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+        // Keep start value in sync when symmetricRange is active and end value changes
         setStartValue(-endValue());
     }
-    else if(field == PROPERTY_FIELD(symmetricRange) && symmetricRange() && !isBeingLoaded() && !isUndoingOrRedoing() &&
-            ExecutionContext::isInteractive()) {
-        // Update start end end value when symmetricRange is toggled on
-        FloatType value = std::max(std::abs(startValue()), std::abs(endValue()));
-        bool sorted = startValue() < endValue();
-        setStartValue(sorted ? -value : value);
-        setEndValue(sorted ? value : -value);
+    else if(field == PROPERTY_FIELD(symmetricRange) && symmetricRange() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+        // Symmetrize existing range when symmetricRange is turned on
+        FloatType range = std::max(std::abs(startValue()), std::abs(endValue()));
+        bool inverted = startValue() > endValue();
+        setStartValue(inverted ? range : -range);
+        setEndValue(inverted ? -range : range);
     }
+
+    RefTarget::propertyChanged(field);
 }
 
 /******************************************************************************

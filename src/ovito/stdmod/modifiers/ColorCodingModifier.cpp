@@ -59,16 +59,16 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingModifier);
 OVITO_CLASSINFO(ColorCodingModifier, "DisplayName", "Color coding");
 OVITO_CLASSINFO(ColorCodingModifier, "Description", "Colors elements based on property values.");
 OVITO_CLASSINFO(ColorCodingModifier, "ModifierCategory", "Coloring");
-DEFINE_REFERENCE_FIELD(ColorCodingModifier, startValueController);
-DEFINE_REFERENCE_FIELD(ColorCodingModifier, endValueController);
+DEFINE_PROPERTY_FIELD(ColorCodingModifier, startValue);
+DEFINE_PROPERTY_FIELD(ColorCodingModifier, endValue);
 DEFINE_REFERENCE_FIELD(ColorCodingModifier, colorGradient);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, colorOnlySelected);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, keepSelection);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, autoAdjustRange);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, symmetricRange);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, sourceProperty);
-SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, startValueController, "Start value");
-SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, endValueController, "End value");
+SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, startValue, "Start value");
+SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, endValue, "End value");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, colorGradient, "Color gradient");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, colorOnlySelected, "Color only selected elements");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, keepSelection, "Keep selection");
@@ -85,8 +85,6 @@ void ColorCodingModifier::initializeObject(ObjectInitializationFlags flags)
 
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setColorGradient(OORef<ColorCodingHSVGradient>::create());
-        setStartValueController(ControllerManager::createFloatController());
-        setEndValueController(ControllerManager::createFloatController());
 
         // Let this modifier act on particles by default.
         createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"));
@@ -126,9 +124,23 @@ void ColorCodingModifier::initializeObject(ObjectInitializationFlags flags)
 ******************************************************************************/
 void ColorCodingModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(ColorCodingModifier::sourceProperty) && !isBeingLoaded()) {
+    if(field == PROPERTY_FIELD(sourceProperty) && !isBeingLoaded()) {
         // Changes of some the modifier's parameters affect the result of ColorCodingModifier::getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
+    else if(field == PROPERTY_FIELD(endValue) && symmetricRange() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+        // If symmetric range is active, keep start and end value in sync.
+        setStartValue(-endValue());
+    }
+    else if(field == PROPERTY_FIELD(symmetricRange) && symmetricRange() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+        // If symmetric range is activated, symmetrize existing range.
+        FloatType range = std::max(std::abs(startValue()), std::abs(endValue()));
+
+        // Maintain the original order of start and end
+        bool inverted = startValue() > endValue();
+        // Update start and end to be symmetric
+        setStartValue(inverted ? range : -range);
+        setEndValue(inverted ? -range : range);
     }
 
     DelegatingModifier::propertyChanged(field);
@@ -155,22 +167,6 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
 
         // Automatically adjust value range to input.
         adjustRange(request.time());
-    }
-}
-
-/******************************************************************************
-* This function is called by the pipeline system before a new modifier evaluation begins.
-******************************************************************************/
-void ColorCodingModifierDelegate::preevaluateDelegate(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const
-{
-    const ColorCodingModifier* modifier = static_object_cast<ColorCodingModifier>(request.modifier());
-
-    // If the range of the pseudo-color mapping is animated, restrict the validity interval of the modifier results.
-    if(!modifier->autoAdjustRange()) {
-        if(modifier->startValueController())
-            validityInterval.intersect(modifier->startValueController()->validityInterval(request.time()));
-        if(modifier->endValueController())
-            validityInterval.intersect(modifier->endValueController()->validityInterval(request.time()));
     }
 }
 
@@ -213,10 +209,8 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
     FloatType startValue = 0, endValue = 0;
     TimeInterval validityInterval = state.stateValidity();
     if(!modifier->autoAdjustRange()) {
-        if(modifier->startValueController())
-            startValue = modifier->startValueController()->getFloatValue(request.time(), validityInterval);
-        if(modifier->endValueController())
-            endValue = modifier->endValueController()->getFloatValue(request.time(), validityInterval);
+        startValue = modifier->startValue();
+        endValue = modifier->endValue();
     }
 
     // Clear selection if requested.
@@ -252,33 +246,17 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
 #endif
             // If the range is valid. It may be not if the property is empty or no elements are selected.
             if(startValue != std::numeric_limits<FloatType>::max()) {
-                if(!symmetricRange) {
-                    state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), startValue, request.modificationNode());
-                    state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), endValue, request.modificationNode());
+                if(symmetricRange) {
+                    FloatType range = std::max(std::abs(startValue), std::abs(endValue));
+                    startValue = -range;
+                    endValue = range;
                 }
+                state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), startValue, request.modificationNode());
+                state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), endValue, request.modificationNode());
             }
             else {
                 startValue = std::numeric_limits<FloatType>::infinity();
                 endValue = -std::numeric_limits<FloatType>::infinity();
-            }
-        }
-
-        if(symmetricRange) {
-            // Calculate new bounds
-            FloatType value = std::max(std::abs(startValue), std::abs(endValue));
-
-            // Used to maintain the original order of start and end
-            bool sorted = startValue < endValue;
-            // Update start and end to be symmetric
-            startValue = sorted ? -value : value;
-            endValue = sorted ? value : -value;
-
-            // Update attributes
-            if(std::isfinite(startValue) && std::abs(startValue) != std::numeric_limits<FloatType>::max()) {
-                state.setAttribute(QStringLiteral("ColorCoding.RangeMin"), startValue, request.modificationNode());
-            }
-            if(std::isfinite(endValue) && std::abs(endValue) != std::numeric_limits<FloatType>::max()) {
-                state.setAttribute(QStringLiteral("ColorCoding.RangeMax"), endValue, request.modificationNode());
             }
         }
 
@@ -450,11 +428,16 @@ bool ColorCodingModifier::adjustRange(AnimationTime time)
     if(!success)
         return false;
 
+    // Symmetrize range.
+    if(symmetricRange()) {
+        FloatType range = std::max(std::abs(maxValue), std::abs(minValue));
+        minValue = -range;
+        maxValue = range;
+    }
+
     // Adjust range of color coding.
-    if(startValueController())
-        startValueController()->setFloatValue(time, minValue);
-    if(endValueController())
-        endValueController()->setFloatValue(time, maxValue);
+    setStartValue(minValue);
+    setEndValue(maxValue);
 
     return true;
 }
@@ -487,6 +470,13 @@ void ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
         this_task::throwIfCanceled();
     }
 
+    // Symmetrize range.
+    if(symmetricRange() && minValue != std::numeric_limits<FloatType>::max() && maxValue != std::numeric_limits<FloatType>::lowest()) {
+        FloatType range = std::max(std::abs(maxValue), std::abs(minValue));
+        minValue = -range;
+        maxValue = range;
+    }
+
     // Adjust range of color coding to the min/max values.
     if(minValue != std::numeric_limits<FloatType>::max())
         setStartValue(minValue);
@@ -499,10 +489,47 @@ void ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
 ******************************************************************************/
 void ColorCodingModifier::reverseRange()
 {
-    // Swap controllers for start and end value.
-    OORef<Controller> oldStartValue = startValueController();
-    setStartValueController(endValueController());
-    setEndValueController(std::move(oldStartValue));
+    // Swap start and end value.
+    auto temp = startValue();
+    setStartValue(endValue());
+    setEndValue(temp);
+}
+
+/******************************************************************************
+* Provides a custom function that takes are of the deserialization of a
+* serialized animation controller field that has been removed from the class.
+* This is needed for file backward compatibility with OVITO 3.10.
+******************************************************************************/
+RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr ColorCodingModifier::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
+{
+    // The ColorCodingModifier used to manage animation controllers for start and end value parameters in OVITO 3.10 and before.
+    if(field.identifier == "startValueController" && field.definingClass == &ColorCodingModifier::OOClass()) {
+        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+            OVITO_ASSERT(field.isReferenceField);
+            stream.expectChunk(0x02);
+            OORef<Controller> controller = stream.loadObject<Controller>();
+            stream.closeChunk();
+            // Need to wait until the animation keys of the controller have been completely loaded.
+            // Only then it is safe to query the controller for its value.
+            stream.registerPostLoadCallback([modifier = static_cast<ColorCodingModifier*>(&owner), controller = std::move(controller)]() {
+                modifier->setStartValue(controller->getFloatValue(AnimationTime(0)));
+            });
+        };
+    }
+    else if(field.identifier == "endValueController" && field.definingClass == &ColorCodingModifier::OOClass()) {
+        return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+            OVITO_ASSERT(field.isReferenceField);
+            stream.expectChunk(0x02);
+            OORef<Controller> controller = stream.loadObject<Controller>();
+            stream.closeChunk();
+            // Need to wait until the animation keys of the controller have been completely loaded.
+            // Only then it is safe to query the controller for its value.
+            stream.registerPostLoadCallback([modifier = static_cast<ColorCodingModifier*>(&owner), controller = std::move(controller)]() {
+                modifier->setEndValue(controller->getFloatValue(AnimationTime(0)));
+            });
+        };
+    }
+    return nullptr;
 }
 
 }   // End of namespace

@@ -105,7 +105,7 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout1->addLayout(layout2);
 
     // End value parameter.
-    _endValueUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ColorCodingModifier::endValueController));
+    _endValueUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ColorCodingModifier::endValue));
     layout2->addWidget(_endValueUI->label(), 0, 0);
     layout2->addLayout(_endValueUI->createFieldLayout(), 0, 1);
 
@@ -135,7 +135,7 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout2->addWidget(_colorLegendLabel, 1, 1);
 
     // Start value parameter.
-    _startValueUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ColorCodingModifier::startValueController));
+    _startValueUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ColorCodingModifier::startValue));
     layout2->addWidget(_startValueUI->label(), 2, 0);
     layout2->addLayout(_startValueUI->createFieldLayout(), 2, 1);
 
@@ -239,10 +239,9 @@ bool ColorCodingModifierEditor::referenceEvent(RefTarget* source, const Referenc
         }
     }
     else if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
-        if((static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ColorCodingModifier::autoAdjustRange)) ||
-           (static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ColorCodingModifier::symmetricRange))) {
+        if((static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(ColorCodingModifier::autoAdjustRange))) {
             ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
-            if((!mod->autoAdjustRange() || !mod->symmetricRange()) && isUndoRecording()) {
+            if(!mod->autoAdjustRange() && isUndoRecording()) {
                 // When the user turns off the auto-adjust option, adopt the current automatic range
                 // as the new user-defined range.
                 FloatType newMin = _lastAutoRangeMinValue;
@@ -266,20 +265,13 @@ void ColorCodingModifierEditor::onModifierChanged()
 
     bool enableCustomRangeCtrls = (mod && !mod->autoAdjustRange());
     bool symmetricRange = (mod && mod->symmetricRange());
-    if(symmetricRange) {
-        FloatType start = _startValueUI->spinner()->floatValue();
-        FloatType end = _endValueUI->spinner()->floatValue();
-        if(std::abs(end) < std::abs(start)) {
-            mod->setEndValue((end > start) ? end : -end);
-            mod->setStartValue((end > start) ? -end : end);
-        }
-    }
+
     _startValueUI->setEnabled(enableCustomRangeCtrls && !symmetricRange);
     _endValueUI->setEnabled(enableCustomRangeCtrls);
     _adjustRangeBtn->setEnabled(enableCustomRangeCtrls);
     _adjustRangeGlobalBtn->setEnabled(enableCustomRangeCtrls);
     _reverseRangeBtn->setEnabled(enableCustomRangeCtrls);
-    if(enableCustomRangeCtrls && !symmetricRange) {
+    if(enableCustomRangeCtrls) {
         _startValueUI->spinner()->updateTextBox();
         _endValueUI->spinner()->updateTextBox();
         _lastAutoRangeMinValue = std::numeric_limits<FloatType>::quiet_NaN();
@@ -296,14 +288,12 @@ void ColorCodingModifierEditor::onModifierChanged()
 void ColorCodingModifierEditor::autoRangeChanged()
 {
     ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
-    if(!mod || (!mod->autoAdjustRange() && !mod->symmetricRange())) {
+    if(!mod || !mod->autoAdjustRange())
         return;
-    }
 
     ModificationNode* modNode = modificationNode();
-    if(!modNode) {
+    if(!modNode)
         return;
-    }
 
     handleExceptions([&] {
         // Request the modifier's pipeline output.

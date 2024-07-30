@@ -56,9 +56,6 @@ public:
     /// Returns the ID of the standard property that will receive the computed colors.
     virtual int outputColorPropertyId() const { return Property::GenericColorProperty; }
 
-    /// Is called by the pipeline system before a new modifier evaluation begins.
-    virtual void preevaluateDelegate(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
-
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 };
@@ -105,6 +102,10 @@ public:
 
         /// Return the metaclass of delegates for this modifier type.
         virtual const ModifierDelegate::OOMetaClass& delegateMetaclass() const override { return ColorCodingModifierDelegate::OOClass(); }
+
+        /// Provides a custom function that takes are of the deserialization of a serialized animation controller field that has been removed from the class.
+        /// This is needed for backward compatibility with OVITO 3.10.
+        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const override;
     };
 
     OVITO_CLASS_META(ColorCodingModifier, ColorCodingModifierClass)
@@ -117,18 +118,6 @@ public:
     /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
     /// been changed and before the entire pipeline is recomputed.
     virtual bool shouldRefreshViewportsAfterChange() override { return true; }
-
-    /// Returns the range start value.
-    FloatType startValue() const { return startValueController() ? startValueController()->getFloatValue(AnimationTime(0)) : 0; }
-
-    /// Sets the range start value.
-    void setStartValue(FloatType value) { if(startValueController()) startValueController()->setFloatValue(AnimationTime(0), value); }
-
-    /// Returns the range end value.
-    FloatType endValue() const { return endValueController() ? endValueController()->getFloatValue(AnimationTime(0)) : 0; }
-
-    /// Sets the range end value.
-    void setEndValue(FloatType value) { if(endValueController()) endValueController()->setFloatValue(AnimationTime(0), value); }
 
     /// Sets the start and end value to the minimum and maximum value of the selected input property
     /// determined over the entire animation sequence.
@@ -164,11 +153,11 @@ protected:
 
 private:
 
-    /// This controller stores the start value of the color scale.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, startValueController, setStartValueController);
+    /// This lower bound of the input value internal.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, startValue, setStartValue);
 
-    /// This controller stores the end value of the color scale.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, endValueController, setEndValueController);
+    /// This upper bound of the input value internal.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, endValue, setEndValue);
 
     /// This object converts property values to colors.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<ColorCodingGradient>, colorGradient, setColorGradient);
