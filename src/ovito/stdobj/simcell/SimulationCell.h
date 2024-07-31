@@ -103,12 +103,14 @@ public:
     /// Returns inverse of the simulation cell matrix.
     /// This matrix maps the simulation cell to the unit cube ([0,1]^3).
     const AffineTransformation& reciprocalCellMatrix() const {
-        if(!_isReciprocalMatrixValid)
+        if(!_isReciprocalMatrixValid.load(std::memory_order_acquire))
             computeInverseMatrix();
         return _reciprocalSimulationCell;
     }
 
-    void invalidateReciprocalCellMatrix() { _isReciprocalMatrixValid = false; }
+    /// Discard the cached reciprocal cell matrix.
+    /// All code that changes the cell matrix should call this method to invalidate the cached matrix and force a recomputation on next access.
+    void invalidateReciprocalCellMatrix() { _isReciprocalMatrixValid.store(false, std::memory_order_relaxed); }
 
     /// Returns the current simulation cell matrix.
     const AffineTransformation& matrix() const { return cellMatrix(); }
@@ -305,7 +307,7 @@ private:
     /// The inverse of the cell matrix, which is kept in sync with the cell matrix at all times.
     mutable AffineTransformation _reciprocalSimulationCell{AffineTransformation::Zero()};
     /// Indicates whether the reciprocal matrix is in sync with the cell's matrix.
-    mutable bool _isReciprocalMatrixValid = false;
+    mutable std::atomic<bool> _isReciprocalMatrixValid{false};
 
     /// Specifies periodic boundary condition in the X direction.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, pbcX, setPbcX);

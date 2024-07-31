@@ -97,6 +97,16 @@ MACRO(OVITO_ADD_STANDARD_COMPILE_OPTIONS target_name)
         ENDIF()
     ENDIF()
 
+    # Enable build with ThreadSanitizer support if requested.
+    IF(OVITO_USE_THREAD_SANITIZER)
+        IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "/fsanitize=thread")
+        ELSE()
+            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-fsanitize=thread" "-fno-omit-frame-pointer")
+            TARGET_LINK_OPTIONS(${target_name} PUBLIC "-fsanitize=thread" "-fno-omit-frame-pointer")
+        ENDIF()
+    ENDIF()
+
 ENDMACRO()
 
 # This macro creates an OVITO plugin module.

@@ -64,7 +64,7 @@ Task::~Task()
 void Task::setFinished() noexcept
 {
     MutexLock lock(*this);
-    if(!isFinished())
+    if(!(_state.load(std::memory_order_relaxed) & Finished))
         finishLocked(lock);
 }
 
@@ -131,7 +131,7 @@ void Task::cancelAndFinish() noexcept
 void Task::cancelLocked(MutexLock& lock) noexcept
 {
     // Make sure the task isn't already finished.
-    if(isFinished())
+    if(_state.load(std::memory_order_relaxed) & Finished)
         return;
 
     // Set the canceled flag.
@@ -239,7 +239,7 @@ void Task::setProgressText(const QString& progressText)
 void Task::setProgressMaximum(qlonglong maximum, bool autoReset)
 {
     MutexLock lock(*this);
-    if(!isFinished()) {
+    if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
         UserInterface& ui = ExecutionContext::current().ui();
         ui.taskProgressMaximum(*this, maximum, autoReset);
@@ -278,9 +278,9 @@ void Task::setProgressValue(qlonglong value)
 void Task::incrementProgressValue(qlonglong increment)
 {
     MutexLock lock(*this);
-    if(isCanceled())
+    if((_state.load(std::memory_order_relaxed) & Canceled))
         throw OperationCanceled();
-    if(!isFinished()) {
+    if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
         UserInterface& ui = ExecutionContext::current().ui();
         ui.taskProgressIncrementValue(*this, increment);
@@ -306,7 +306,7 @@ void Task::beginProgressSubStepsWithWeights(std::vector<int> weights)
     OVITO_ASSERT(std::accumulate(weights.cbegin(), weights.cend(), 0) > 0);
 
     MutexLock lock(*this);
-    if(!isFinished()) {
+    if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
         UserInterface& ui = ExecutionContext::current().ui();
         ui.taskProgressBeginSubStepsWithWeights(*this, std::move(weights));
@@ -320,7 +320,7 @@ void Task::beginProgressSubStepsWithWeights(std::vector<int> weights)
 void Task::nextProgressSubStep()
 {
     MutexLock lock(*this);
-    if(!isFinished()) {
+    if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
         UserInterface& ui = ExecutionContext::current().ui();
         ui.taskProgressNextSubStep(*this);
@@ -334,7 +334,7 @@ void Task::nextProgressSubStep()
 void Task::endProgressSubSteps()
 {
     MutexLock lock(*this);
-    if(!isFinished()) {
+    if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
         UserInterface& ui = ExecutionContext::current().ui();
         ui.taskProgressEndSubSteps(*this);

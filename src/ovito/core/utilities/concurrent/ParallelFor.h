@@ -61,7 +61,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
 
     if(workerCount != 1) {
 
-        struct Runner : public QRunnable
+        struct Worker : public QRunnable
         {
             Kernel* kernel;
             detail::Latch* latch;
@@ -71,11 +71,11 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
             size_t workerCount;
             std::exception_ptr exception;
 
-            Runner(Kernel* kernel, detail::Latch* latch, ExecutionContext* context, Task* task, size_t workerIndex, size_t workerCount) noexcept
+            Worker(Kernel* kernel, detail::Latch* latch, ExecutionContext* context, Task* task, size_t workerIndex, size_t workerCount) noexcept
                 : kernel(kernel), latch(latch), context(context), task(task), workerIndex(workerIndex), workerCount(workerCount) {}
 
             // Move constructor - needed for std::vector requirement 'MoveInsertable'.
-            Runner(Runner&& other) noexcept
+            Worker(Worker&& other) noexcept
                 : kernel(other.kernel), latch(other.latch), context(other.context), task(other.task), workerIndex(other.workerIndex), workerCount(other.workerCount), exception(std::move(other.exception)) {}
 
             virtual void run() final override {
@@ -98,14 +98,14 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
             }
         };
 
-        std::vector<Runner> workers;
+        std::vector<Worker> workers;
         workers.reserve(workerCount);
 
-        // Create workers and submit them to the thread pool.
+        // Create workers.
         detail::Latch latch(workerCount);
         ExecutionContext context = ExecutionContext::current();
         for(size_t t = 0; t < workerCount; t++) {
-            Runner& runner = workers.emplace_back(
+            Worker& worker = workers.emplace_back(
                 &kernel,
                 &latch,
                 &context,
@@ -113,8 +113,13 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
                 t,
                 workerCount
             );
-            runner.setAutoDelete(false);
-            pool->start(&runner);
+            worker.setAutoDelete(false);
+        }
+
+        // Submit workers to the thread pool.
+        // Note: This needs to happen in a separate step, because a possible vector reallocation would lead to a race condition otherwise.
+        for(Worker& worker : workers) {
+            pool->start(&worker);
         }
 
         // Simultaneously execute as many workers as possible in the current thread.
@@ -127,7 +132,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
         latch.wait();
 
         // Rethrow any exceptions from workers.
-        for(auto& worker : workers) {
+        for(Worker& worker : workers) {
             if(worker.exception)
                 std::rethrow_exception(worker.exception);
         }
@@ -192,7 +197,7 @@ void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, Setup&& se
         }
     }
 
-    parallelForChunks(loopCount, minimumChunkSize, std::forward<Setup>(setup), [outerKernel = std::forward<OuterKernel>(outerKernel), minimumChunkSize, task](size_t workerIndex, size_t fromIndex, size_t toIndex) {
+    parallelForChunks(loopCount, minimumChunkSize, std::forward<Setup>(setup), [&outerKernel, minimumChunkSize, task](size_t workerIndex, size_t fromIndex, size_t toIndex) {
         outerKernel([&](auto&& innerKernel) {
             for(size_t i = fromIndex; i != toIndex; ) {
                 size_t end = std::min(i + minimumChunkSize, toIndex);
@@ -220,7 +225,7 @@ void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, OuterKerne
         }
     }
 
-    parallelForChunks(loopCount, minimumChunkSize, [outerKernel = std::forward<OuterKernel>(outerKernel), minimumChunkSize, task](size_t fromIndex, size_t toIndex) {
+    parallelForChunks(loopCount, minimumChunkSize, [&outerKernel, minimumChunkSize, task](size_t fromIndex, size_t toIndex) {
         outerKernel([&](auto&& innerKernel) {
             for(size_t i = fromIndex; i != toIndex; ) {
                 size_t end = std::min(i + minimumChunkSize, toIndex);

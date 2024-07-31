@@ -215,10 +215,29 @@ void ExpandSelectionModifier::ExpandSelectionBondedEngine::expandSelection()
         size_t index2 = bondTopologyArray[index][1];
         if(index1 >= particleCount || index2 >= particleCount)
             return;
+#if !defined(__has_feature) || !__has_feature(thread_sanitizer)
+        // TSAN complains about the following, because more than one thread may concurrently flag the same item as selected.
+        // But this DOES NOT represent a race condition, because it doesn't matter which thread sets the selection flag first.
         if(inputSelectionArray[index1])
             outputSelectionArray[index2] = 1;
         if(inputSelectionArray[index2])
             outputSelectionArray[index1] = 1;
+#else
+        // Workaround for false positive TSAN warning about data race.
+    #if defined(__cpp_lib_atomic_ref)
+        // The atomic_ref class is not yet available in all C++20 compilers.
+        if(inputSelectionArray[index1])
+            std::atomic_ref(outputSelectionArray[index2]).store(1, std::memory_order_release);
+        if(inputSelectionArray[index2])
+            std::atomic_ref(outputSelectionArray[index1]).store(1, std::memory_order_release);
+    #else
+        // If the atomic_ref class is not yet supported by the compiler (e.g. Apple Clang), use GCC intrinsics instead.
+        if(inputSelectionArray[index1])
+            __atomic_store_n(&outputSelectionArray[index2], 1, __ATOMIC_RELEASE);
+        if(inputSelectionArray[index2])
+            __atomic_store_n(&outputSelectionArray[index1], 1, __ATOMIC_RELEASE);
+    #endif
+#endif
     });
 }
 

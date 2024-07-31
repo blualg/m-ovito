@@ -71,7 +71,7 @@ void SimulationCell::computeInverseMatrix() const
             _reciprocalSimulationCell.translation().y() = -(_reciprocalSimulationCell(1,0) * cellMatrix().translation().x() + _reciprocalSimulationCell(1,1) * cellMatrix().translation().y());
         }
     }
-    _isReciprocalMatrixValid = true;
+    _isReciprocalMatrixValid.store(true, std::memory_order_release);
 }
 
 /******************************************************************************

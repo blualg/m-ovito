@@ -59,6 +59,7 @@ OPTION(OVITO_REDISTRIBUTABLE_PACKAGE "Create a redistributable program package t
 OPTION(OVITO_BUILD_APPSTORE_VERSION "Build binaries for the Apple App Store and Windows Store." "OFF")
 OPTION(OVITO_RUN_CLANG_TIDY "Run the clang-tidy tool to check code." "OFF")
 OPTION(OVITO_USE_ADDRESS_SANITIZER "Builds the code with AddressSanitizer support to detect memory errors." "OFF")
+OPTION(OVITO_USE_THREAD_SANITIZER "Builds the code with ThreadSanitizer support to detect race condition errors." "OFF")
 OPTION(OVITO_USE_PRECOMPILED_HEADERS "Use precompiled C++ headers to speed up build." "ON")
 OPTION(OVITO_USE_UNITY_BUILD "Use unity builds to speed up compilation." "OFF")
 OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for development purposes)." "OFF")

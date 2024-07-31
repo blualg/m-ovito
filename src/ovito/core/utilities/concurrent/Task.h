@@ -78,10 +78,10 @@ public:
     class Scope;
 
     /// Returns whether this shared state has been canceled by a previous call to cancel().
-    bool isCanceled() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & Canceled); }
+    bool isCanceled() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_acquire) & Canceled); }
 
     /// Returns true if the promise is in the 'finished' state.
-    bool isFinished() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & Finished); }
+    bool isFinished() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_acquire) & Finished); }
 
     /// Indicates whether this task's class is derived from the AsynchronousTaskBase class.
     bool isAsynchronousTask() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & IsAsynchronous); }
