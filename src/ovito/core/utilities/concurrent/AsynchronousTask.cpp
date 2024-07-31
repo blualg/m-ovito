@@ -66,6 +66,12 @@ void AsynchronousTaskBase::operator()()
     // Determine the thread pool to use for this task.
     _threadPool = _executionContext.ui().taskManager().chooseThreadPool(*this);
 
+#ifdef QT_BUILDING_UNDER_TSAN
+    // Workaround for a false positive error by TSAN, which doesn't know the internals of the QThreadPool implementation (unless Qt itself was built with TSAN support).
+    // This annotation establishes a happens-before relation with the corresponding __tsan_acquire() call in the worker function executed in the thread pool.
+    ::__tsan_release(this);
+#endif
+
     // Submit to thread pool.
     _threadPool->start(this);
 }
@@ -75,6 +81,12 @@ void AsynchronousTaskBase::operator()()
 ******************************************************************************/
 void AsynchronousTaskBase::run()
 {
+#ifdef QT_BUILDING_UNDER_TSAN
+    // Workaround for a false positive error by TSAN, which doesn't know the internals of the QThreadPool implementation (unless Qt itself was built with TSAN support).
+    // This annotation establishes a happens-after relation with the corresponding __tsan_release() call when this runnable is submitted to the thread pool.
+    ::__tsan_acquire(this);
+#endif
+
     OVITO_ASSERT(_executionContext.isValid());
 
     // Execute the work function in the original execution context.

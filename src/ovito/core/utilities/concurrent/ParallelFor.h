@@ -79,6 +79,11 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
                 : kernel(other.kernel), latch(other.latch), context(other.context), task(other.task), workerIndex(other.workerIndex), workerCount(other.workerCount), exception(std::move(other.exception)) {}
 
             virtual void run() final override {
+#ifdef QT_BUILDING_UNDER_TSAN
+                // Workaround for a false positive error by TSAN, which doesn't know the internals of the QThreadPool implementation (unless Qt itself was built with TSAN support).
+                // This annotation establishes a happens-after relation with the corresponding __tsan_release() call when this runnable is submitted to the thread pool.
+                ::__tsan_acquire(this);
+#endif
                 try {
                     if(!task->isCanceled()) {
                         // Execute the work function in the scope of this task object.
@@ -119,6 +124,11 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
         // Submit workers to the thread pool.
         // Note: This needs to happen in a separate step, because a possible vector reallocation would lead to a race condition otherwise.
         for(Worker& worker : workers) {
+#ifdef QT_BUILDING_UNDER_TSAN
+            // Workaround for a false positive error by TSAN, which doesn't know the internals of the QThreadPool implementation (unless Qt itself was built with TSAN support).
+            // This annotation establishes a happens-before relation with the corresponding __tsan_acquire() call in the worker function executed in the thread pool.
+            ::__tsan_release(&worker);
+#endif
             pool->start(&worker);
         }
 
