@@ -63,7 +63,7 @@ public:
     }
 
     /// Stores the list of particle type names and corresponding shape file URLs to be loaded.
-    void setParticleShapeFileList(std::vector<ParaViewVTMBlockInfo> particleShapeFiles) {
+    void setParticleShapeFileList(std::vector<ParaViewVTMBlockInfo>&& particleShapeFiles) {
         _particleShapeFiles = std::move(particleShapeFiles);
     }
 

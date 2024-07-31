@@ -189,6 +189,11 @@ public:
         return vertices()->expectProperty(ptype);
     }
 
+    /// Returns a user vertex property (or null if the property is not defined).
+    const Property* vertexProperty(const QString& name) const {
+        return vertices()->getProperty(name);
+    }
+
     /// Returns one of the standard face properties (or null if the property is not defined).
     const Property* faceProperty(SurfaceMeshFaces::Type ptype) const {
         return faces()->getProperty(ptype);
@@ -212,6 +217,11 @@ public:
     /// Returns one of the standard region properties (throws exception if the property is not defined).
     const Property* expectRegionProperty(SurfaceMeshRegions::Type ptype) const {
         return regions()->expectProperty(ptype);
+    }
+
+    /// Returns a user region property (or null if the property is not defined).
+    const Property* regionProperty(const QString& name) const {
+        return regions()->getProperty(name);
     }
 
     /// Triangulates the polygonal faces of this mesh and outputs the results as a TriangleMesh.

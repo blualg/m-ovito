@@ -75,7 +75,8 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 
     // Create the destination mesh object.
     QString meshIdentifier = loadRequest().dataBlockPrefix;
-    if(meshIdentifier.isEmpty()) meshIdentifier = "mesh";
+    if(meshIdentifier.isEmpty())
+        meshIdentifier = "mesh";
     SurfaceMesh* mesh = state().getMutableLeafObject<SurfaceMesh>(SurfaceMesh::OOClass(), meshIdentifier);
     if(!mesh) {
         mesh = state().createObject<SurfaceMesh>(pipelineNode());
@@ -89,11 +90,13 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
         }
         if(!loadRequest().dataBlockPrefix.isEmpty()) {
             mesh->setTitle(tr("Mesh: %1").arg(loadRequest().dataBlockPrefix));
-            if(vis) vis->setTitle(tr("Mesh: %1").arg(loadRequest().dataBlockPrefix));
+            if(vis)
+                vis->setTitle(tr("Mesh: %1").arg(loadRequest().dataBlockPrefix));
         }
         else {
             mesh->setTitle(tr("Mesh"));
-            if(vis) vis->setTitle(tr("Mesh"));
+            if(vis)
+                vis->setTitle(tr("Mesh"));
         }
     }
     SurfaceMeshBuilder meshBuilder(mesh);
@@ -269,13 +272,21 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             if(!loadRequest().appendData) {
                 OVITO_ASSERT(property->size() == meshBuilder.faceCount());
                 OVITO_ASSERT(faceBaseIndex == 0);
-                meshBuilder.addFaceProperty(std::move(property));
+                const Property* existingProperty = property->isStandardProperty()
+                    ? meshBuilder.faceProperty(static_cast<SurfaceMeshFaces::Type>(property->typeId()))
+                    : meshBuilder.faceProperty(property->name());
+                if(!existingProperty)
+                    meshBuilder.addFaceProperty(std::move(property));
+                else
+                    meshBuilder.mutableFaces()->replaceReferencesTo(existingProperty, property);
             }
             else {
                 Property* existingProperty = property->isStandardProperty()
                     ? meshBuilder.mutableFaceProperty(static_cast<SurfaceMeshFaces::Type>(property->typeId()))
                     : meshBuilder.mutableFaceProperty(property->name());
-                if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
+                if(existingProperty) {
+                    if(existingProperty->dataType() != property->dataType() || existingProperty->componentCount() != property->componentCount())
+                        throw Exception(tr("Per mesh face data array '%1' has incompatible data type or component count in some trajectory frame(s).").arg(property->name()));
                     existingProperty->copyRangeFrom(*property, 0, faceBaseIndex, property->size());
                 }
             }
@@ -293,13 +304,21 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
         if(!loadRequest().appendData) {
             OVITO_ASSERT(property->size() == meshBuilder.vertexCount());
             OVITO_ASSERT(vertexBaseIndex == 0);
-            meshBuilder.addVertexProperty(std::move(property));
+            const Property* existingProperty = property->isStandardProperty()
+                ? meshBuilder.vertexProperty(static_cast<SurfaceMeshVertices::Type>(property->typeId()))
+                : meshBuilder.vertexProperty(property->name());
+            if(!existingProperty)
+                meshBuilder.addVertexProperty(std::move(property));
+            else
+                meshBuilder.mutableVertices()->replaceReferencesTo(existingProperty, property);
         }
         else {
             Property* existingProperty = property->isStandardProperty()
                 ? meshBuilder.mutableVertexProperty(static_cast<SurfaceMeshVertices::Type>(property->typeId()))
                 : meshBuilder.mutableVertexProperty(property->name());
-            if(existingProperty && existingProperty->dataType() == property->dataType() && existingProperty->componentCount() == property->componentCount()) {
+            if(existingProperty) {
+                if(existingProperty->dataType() != property->dataType() || existingProperty->componentCount() != property->componentCount())
+                    throw Exception(tr("Per mesh vertex data array '%1' has incompatible data type or component count in some trajectory frame(s).").arg(property->name()));
                 existingProperty->copyRangeFrom(*property, 0, vertexBaseIndex, property->size());
             }
         }

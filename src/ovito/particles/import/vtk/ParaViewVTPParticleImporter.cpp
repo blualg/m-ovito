@@ -134,7 +134,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                 xml.raiseError(tr("Number of vertices does not match number of points. This file parser can only read datasets consisting of vertices only."));
                 break;
             }
-            OVITO_ASSERT(baseParticleIndex + numParticles != 0); // Calling setParticleCount(0) discards an existing Particles. We never want that to happen!
+            OVITO_ASSERT(baseParticleIndex + numParticles != 0); // Calling setParticleCount(0) discards all existing Particles. We never want that to happen!
             setParticleCount(baseParticleIndex + numParticles);
         }
         else if(xml.name().compare(QLatin1String("PointData")) == 0 || xml.name().compare(QLatin1String("Points")) == 0 || xml.name().compare(QLatin1String("Verts")) == 0) {
@@ -150,9 +150,9 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 
                         // Create particle types if this is a typed property.
                         OvitoClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->typeId());
-                        if(!elementTypeClass && property->name() == QStringLiteral("Material Type")) elementTypeClass = &ElementType::OOClass();
+                        if(!elementTypeClass && property->name() == QStringLiteral("Material Type"))
+                            elementTypeClass = &ElementType::OOClass();
                         if(elementTypeClass) {
-#ifndef OVITO_USE_SYCL
                             for(int t : BufferReadAccess<int32_t>(property).subrange(baseParticleIndex)) {
                                 if(!property->elementType(t)) {
                                     DataOORef<ElementType> elementType =
@@ -167,9 +167,6 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                                     property->addElementType(std::move(elementType));
                                 }
                             }
-#else
-                            OVITO_ASSERT(false);  // This code path is not supported in the SYCL version of OVITO.
-#endif
                         }
                     }
                     if(xml.tokenType() != QXmlStreamReader::EndElement)
@@ -199,7 +196,6 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     // Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
     bool transposeOrientations = false;
     if(Property* roundnessProperty = particles()->getMutableProperty(Particles::SuperquadricRoundnessProperty)) {
-#ifndef OVITO_USE_SYCL
         for(auto& v :
             BufferWriteAccess<Vector_2<GraphicsFloatType>, access_mode::read_write>(roundnessProperty).subrange(baseParticleIndex)) {
             // Blockiness1: "north-south" blockiness
@@ -211,9 +207,6 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
             if(v.x() != 0) v.x() = GraphicsFloatType(2) / v.x();
             if(v.y() != 0) v.y() = GraphicsFloatType(2) / v.y();
         }
-#else
-        OVITO_ASSERT(false);  // This code path is not supported in the SYCL version of OVITO.
-#endif
         transposeOrientations = true;
         this_task::throwIfCanceled();
     }
@@ -225,7 +218,6 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                 particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::OrientationProperty),
                 preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized);
             auto* q = orientations.begin() + baseParticleIndex;
-#ifndef OVITO_USE_SYCL
             for(const Matrix3& tensor : BufferReadAccess<Matrix3>(tensorProperty).subrange(baseParticleIndex)) {
                 if(!tensor.isZero())
                     *q++ =
@@ -233,9 +225,6 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                 else
                     *q++ = QuaternionG::Identity();
             }
-#else
-            OVITO_ASSERT(false);  // This code path is not supported in the SYCL version of OVITO.
-#endif
             this_task::throwIfCanceled();
         }
     }
@@ -256,14 +245,10 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
         else if(!typesWithMeshShape.empty()) {
             if(BufferWriteAccess<GraphicsFloatType, access_mode::write> radiusArray = particles()->getMutableProperty(Particles::RadiusProperty)) {
                 auto* radius = radiusArray.begin() + baseParticleIndex;
-#ifndef OVITO_USE_SYCL
                 for(auto t : BufferReadAccess<int32_t>(typeProperty).subrange(baseParticleIndex)) {
                     if(std::find(typesWithMeshShape.cbegin(), typesWithMeshShape.cend(), t) != typesWithMeshShape.cend()) *radius = 0;
                     ++radius;
                 }
-#else
-                OVITO_ASSERT(false);  // This code path is not supported in the SYCL version of OVITO.
-#endif
             }
         }
     }
@@ -441,7 +426,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
 void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter)
 {
     // Resize particles object to zero elements in the existing pipeline state.
-    // This is mainly done to remove the existing particles in those animation frames in which the VTM file has empty data blocks.
+    // This is mainly done to remove any existing particles in those trajectory frames where the VTM file is made of empty data blocks.
     for(const DataObject* obj : request.state.data()->objects()) {
         if(const Particles* particles = dynamic_object_cast<Particles>(obj)) {
             Particles* mutableParticles = request.state.mutableData()->makeMutable(particles);
@@ -455,14 +440,19 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
 
     // Remove those datasets from the multi-block structure that represent Aspherix particle shapes (group block "Convex shapes").
     // Keep a list of these removed datasets for later to load them together with the particles dataset.
-    blockDatasets.erase(boost::remove_if(blockDatasets, [this](const auto& block) {
+    // Furthermore, skip the piece "Bodies", which stores the higher-level per Aspherix body data.
+    std::erase_if(blockDatasets, [this](const auto& block) {
         if(block.blockPath.size() == 2 && block.blockPath[0] == QStringLiteral("Convex shapes") && block.pieceIndex == -1) {
             // Store the particle type name and the URL of the type's shape file in the internal list.
             _particleShapeFiles.emplace_back(std::move(block));
             return true;
         }
+        else if(block.blockPath.size() == 1 && block.blockPath[0] == QStringLiteral("Bodies")) {
+            // Skip the 'Bodies' pieces.
+            return true;
+        }
         return false;
-    }), blockDatasets.end());
+    });
 }
 
 /******************************************************************************
@@ -471,7 +461,7 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
 void ParticlesParaViewVTMFileFilter::configureImporter(const ParaViewVTMBlockInfo& blockInfo, FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer)
 {
     // Pass the list of particle shape files to be loaded to the VTP particle importer, which will take care
-    // of loading the files.
+    // of loading the shape files.
     if(ParaViewVTPParticleImporter* particleImporter = dynamic_object_cast<ParaViewVTPParticleImporter>(importer)) {
         particleImporter->setParticleShapeFileList(std::move(_particleShapeFiles));
     }

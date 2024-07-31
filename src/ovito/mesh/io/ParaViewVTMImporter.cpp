@@ -149,8 +149,10 @@ std::vector<ParaViewVTMBlockInfo> ParaViewVTMImporter::loadVTMFile(const FileHan
                 // Also count the number of block pieces that are not empty.
                 int pieceCount = 0;
                 auto iter = std::find_if(datasetList.rbegin(), datasetList.rend(), [&](const ParaViewVTMBlockInfo& block) {
-                    if(block.blockPath != blockBranch) return true;
-                    if(!block.location.isEmpty()) pieceCount++;
+                    if(block.blockPath != blockBranch)
+                        return true;
+                    if(!block.location.isEmpty())
+                        pieceCount++;
                     return false;
                 });
                 OVITO_ASSERT(pieceCount <= datasetList.size());
@@ -158,8 +160,10 @@ std::vector<ParaViewVTMBlockInfo> ParaViewVTMImporter::loadVTMFile(const FileHan
                 int pieceIndex = pieceCount;
                 std::for_each(datasetList.rbegin(), iter, [&](ParaViewVTMBlockInfo& block) {
                     block.pieceCount = pieceCount;
-                    if(!block.location.isEmpty()) block.pieceIndex = --pieceIndex;
-                    else block.pieceIndex = -1;
+                    if(!block.location.isEmpty())
+                        block.pieceIndex = --pieceIndex;
+                    else
+                        block.pieceIndex = -1;
                 });
                 OVITO_ASSERT(pieceIndex == 0);
                 blockBranch.pop_back();
