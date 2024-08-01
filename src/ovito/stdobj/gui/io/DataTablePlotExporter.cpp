@@ -74,7 +74,16 @@ void DataTablePlotExporter::exportFrame(int frameNumber, const QString& filePath
     }
     table->verifyIntegrity();
 
+    QPalette palette;
+    palette.setCurrentColorGroup(QPalette::Active);
+    palette.setColor(QPalette::Text, Qt::black);
+    palette.setColor(QPalette::WindowText, Qt::black);
+    palette.setColor(QPalette::ButtonText, Qt::black);
+    palette.setColor(QPalette::Window, Qt::white);
+    palette.setColor(QPalette::Base, Qt::white);
+
     DataTablePlotWidget plotWidget;
+    plotWidget.setPalette(std::move(palette));
     plotWidget.setTable(table);
     plotWidget.axisScaleDraw(QwtPlot::yLeft)->setPenWidthF(1);
     plotWidget.axisScaleDraw(QwtPlot::xBottom)->setPenWidthF(1);

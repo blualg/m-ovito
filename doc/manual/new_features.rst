@@ -26,6 +26,7 @@ Version 3.11.0 (xx-xxx-2024)
 - Simulation file import: Updated mass of *Zn* in internal table of elements from 65.409 (pre 2007 value) to 65.38 (see https://www.ciaaw.org/zinc.htm) - old value is still recognized for compatibility reasons
 - OVITO Basic now includes demo versions of the high-fidelity rendering backends :ref:`OSPRay <rendering.ospray_renderer>`, :ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`
 - Fixed regression due to update of the Qt framework: Missing colors in plot legends
+- Fixed: Axis scales and labels are invisible (white on white) in exported data plots if dark mode UI is active
 - Updated third-party components: OpenSSL, Qt, PySide6, Python, Qwt
 - |ovito-python| New class attribute :py:attr:`ovito.pipeline.Pipeline.frames`
 - |ovito-python| Added the :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_pos`, :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_dir`, and :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_up` fields to the :py:class:`ViewportOverlayInterface.Canvas <ovito.vis.ViewportOverlayInterface.Canvas>` class
