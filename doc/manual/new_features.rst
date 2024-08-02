@@ -24,6 +24,7 @@ Version 3.11.0 (xx-xxx-2024)
 - :ref:`particles.modifiers.color_coding` modifier: New symmetric range option
 - :ref:`particles.modifiers.dislocation_analysis` modifier: Ensure cross-platform reproducible results
 - Simulation file import: Updated mass of *Zn* in internal table of elements from 65.409 (pre 2007 value) to 65.38 (see https://www.ciaaw.org/zinc.htm) - old value is still recognized for compatibility reasons
+- Added support for reading modern Aspherix *.vtm* files that have a "Bodies" section
 - OVITO Basic now includes demo versions of the high-fidelity rendering backends :ref:`OSPRay <rendering.ospray_renderer>`, :ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`
 - Fixed regression due to update of the Qt framework: Missing colors in plot legends
 - Fixed: Axis scales and labels are invisible (white on white) in exported data plots if dark mode UI is active
@@ -44,7 +45,9 @@ Version 3.11.0 (xx-xxx-2024)
 - |ovito-pro| :ref:`particles.modifiers.dislocation_analysis` modifier: :ref:`Identification of dislocation core atoms <particles.modifiers.dislocation_analysis.mark_core_atoms>`
 - |ovito-pro| :ref:`rendering.ospray_renderer`: Added support for pseudo-color mapping
 - |ovito-pro| :ref:`rendering.ospray_renderer`: Improved rendering quality for semi-transparent objects and fixed dark artifacts along object edges on light backgrounds
+- |ovito-pro| :ref:`rendering.visrtx_renderer`: Improved rendering performance for scenes with large numbers of cubic, ellipsoidal, or superquadric particles
 - |ovito-pro| Environment variable ``OVITO_SAFE_MODE=1`` effectively blocks execution of Python scripts embedded in .ovito session state files from untrusted sources
+- |ovito-pro| Fix: :ref:`particles.modifiers.time_averaging` modifier uses wrong divisor in average calculation if trajectory length is not an integer multiple of the sampling frequency
 
 .. sidebar::
 

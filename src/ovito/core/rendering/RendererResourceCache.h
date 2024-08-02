@@ -123,7 +123,7 @@ public:
     /// Creates a new cache entry with a default-initialized value if the key doesn't exist.
     template<typename Value, typename Key, typename Initializer>
     const Value& lookup(Key&& key, ResourceFrameHandle resourceFrame, Initializer&& initializer) {
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard lock(_mutex);
         OVITO_ASSERT(std::find(_activeResourceFrames.begin(), _activeResourceFrames.end(), resourceFrame) != _activeResourceFrames.end());
 
         // Check if the key exists in the cache.
@@ -142,18 +142,18 @@ public:
         any_moveonly& value = _entries.back().value;
         Value& v = value.emplace<Value>();
         // Let the initializer function initialize the value.
+        // Note: The initializer may perform more cache lookups, that's why we are using a recursive mutex here.
         if constexpr(std::is_invocable_v<Initializer, Value&>)
             initializer(v);
         else
             std::apply(std::forward<Initializer>(initializer), v);
-        OVITO_ASSERT(_entries.back().key.type() == typeid(Key));
         OVITO_ASSERT(value.type() == typeid(Value));
         return v;
     }
 
     /// Opens a new frame with the resource manager.
     ResourceFrame acquireResourceFrame() {
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard lock(_mutex);
 
         // On the first frame, the cache should be empty.
         OVITO_ASSERT(!_activeResourceFrames.empty() || _entries.empty());
@@ -175,7 +175,7 @@ private:
     /// Informs the resource manager that the resources associated with the given frame can be released.
     void releaseResourceFrame(ResourceFrameHandle frame) {
         OVITO_ASSERT(frame > 0);
-        std::lock_guard<std::mutex> lock(_mutex);
+        std::lock_guard lock(_mutex);
 
 #ifdef OVITO_DEBUG
         // Remove frame from the list of active frames.
@@ -235,7 +235,7 @@ private:
     std::deque<CacheEntry> _entries;
 
     /// Mutex to protect the cache from concurrent access.
-    std::mutex _mutex;
+    std::recursive_mutex _mutex;
 
     /// Counter that keeps track of how many resource frames have been acquired in total.
     ResourceFrameHandle _nextResourceFrame = 0;
