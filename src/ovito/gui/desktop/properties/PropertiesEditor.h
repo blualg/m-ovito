@@ -46,6 +46,7 @@ class OVITO_GUI_EXPORT PropertiesEditor : public QObject, public RefMaker
 public:
 
     /// Registry for editor classes.
+    /// Use the SET_OVITO_OBJECT_EDITOR macro to register an editor class for a RefTarget class at compile time.
     class Registry : private std::map<OvitoClassPtr, OvitoClassPtr>
     {
     public:
@@ -115,9 +116,6 @@ public:
     /// \param rolloutWidget The rollout widget, which has been created by createRollout().
     /// \param noticeText A text to displayed in the rollout panel to inform the user why the rollout has been disabled.
     void showNotice(QWidget* rolloutWidget, const QString& noticeText);
-
-    /// Changes the value of a non-animatable property field of the object being edited.
-    void changePropertyFieldValue(const PropertyFieldDescriptor* field, const QVariant& newValue);
 
     /// Returns the current input data from the upstream pipeline.
     PipelineFlowState getPipelineInput() const;

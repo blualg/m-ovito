@@ -133,7 +133,7 @@ void IntegerCheckBoxParameterUI::updatePropertyValue()
                 }
             }
             else if(isPropertyFieldUI()) {
-                editor()->changePropertyFieldValue(propertyField(), value);
+                editObject()->setPropertyFieldValue(propertyField(), value);
             }
             Q_EMIT valueEntered();
         });

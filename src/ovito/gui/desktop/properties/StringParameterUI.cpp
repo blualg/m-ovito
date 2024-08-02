@@ -149,7 +149,7 @@ void StringParameterUI::updatePropertyValue()
     if(editObject()) {
         performTransaction(tr("Change parameter"), [this,text]() {
             if(isPropertyFieldUI()) {
-                editor()->changePropertyFieldValue(propertyField(), text);
+                editObject()->setPropertyFieldValue(propertyField(), text);
             }
             Q_EMIT valueEntered();
         });

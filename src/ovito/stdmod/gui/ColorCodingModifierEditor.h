@@ -56,7 +56,7 @@ private:
 
 protected Q_SLOTS:
 
-    /// This is called whenever the parameters of the ColoCodingModifier change.
+    /// This is called whenever the parameters of the ColorCodingModifier change.
     void onModifierChanged();
 
     /// Is called whenever the modifier has been newly evaluated and has auto-adjusted the value range.

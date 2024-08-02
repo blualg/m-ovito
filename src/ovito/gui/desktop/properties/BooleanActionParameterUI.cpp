@@ -94,7 +94,7 @@ void BooleanActionParameterUI::updatePropertyValue()
     if(action() && editObject()) {
         performTransaction(tr("Change parameter value"), [&]() {
             if(isPropertyFieldUI()) {
-                editor()->changePropertyFieldValue(propertyField(), action()->isChecked());
+                editObject()->setPropertyFieldValue(propertyField(), action()->isChecked());
             }
             Q_EMIT valueEntered();
         });

@@ -50,7 +50,7 @@ void IntegerParameterUI::updatePropertyValue()
                 ctrl->setIntValue(currentAnimationTime().value_or(AnimationTime(0)), spinner()->intValue());
         }
         else if(isPropertyFieldUI()) {
-            editor()->changePropertyFieldValue(propertyField(), spinner()->intValue());
+            editObject()->setPropertyFieldValue(propertyField(), spinner()->intValue());
         }
         Q_EMIT valueEntered();
     }

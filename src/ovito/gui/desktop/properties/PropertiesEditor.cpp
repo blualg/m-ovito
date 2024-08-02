@@ -235,15 +235,6 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor* field, R
 }
 
 /******************************************************************************
-* Changes the value of a non-animatable property field of the object being edited.
-******************************************************************************/
-void PropertiesEditor::changePropertyFieldValue(const PropertyFieldDescriptor* field, const QVariant& newValue)
-{
-    if(editObject())
-        editObject()->setPropertyFieldValue(field, newValue);
-}
-
-/******************************************************************************
 * Returns the current input data from the upstream pipeline.
 ******************************************************************************/
 PipelineFlowState PropertiesEditor::getPipelineInput() const

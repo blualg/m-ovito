@@ -110,7 +110,7 @@ void VariantComboBoxParameterUI::updatePropertyValue()
                 newValue = comboBox()->itemData(comboBox()->currentIndex());
 
             if(isPropertyFieldUI()) {
-                editor()->changePropertyFieldValue(propertyField(), newValue);
+                editObject()->setPropertyFieldValue(propertyField(), newValue);
             }
 
             Q_EMIT valueEntered();

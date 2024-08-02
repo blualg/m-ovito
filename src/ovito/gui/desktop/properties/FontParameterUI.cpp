@@ -116,9 +116,9 @@ void FontParameterUI::onButtonClicked()
             currentFont = currentValue.value<QFont>();
         bool ok;
         QFont font = FontSelectionDialog::getFont(&ok, currentFont, fontPicker()->window());
-        if(ok && font != currentFont) {
+        if(ok && font != currentFont && editObject()) {
             performTransaction(tr("Change font"), [this, &font]() {
-                editor()->changePropertyFieldValue(propertyField(), QVariant::fromValue(font));
+                editObject()->setPropertyFieldValue(propertyField(), QVariant::fromValue(font));
                 Q_EMIT valueEntered();
             });
         }

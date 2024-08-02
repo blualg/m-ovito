@@ -117,7 +117,7 @@ void BooleanGroupBoxParameterUI::updatePropertyValue()
     if(groupBox() && editObject()) {
         performTransaction(tr("Change parameter value"), [&]() {
             if(isPropertyFieldUI()) {
-                editor()->changePropertyFieldValue(propertyField(), groupBox()->isChecked());
+                editObject()->setPropertyFieldValue(propertyField(), groupBox()->isChecked());
             }
             Q_EMIT valueEntered();
         });

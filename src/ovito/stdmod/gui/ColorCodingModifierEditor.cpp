@@ -92,6 +92,7 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
 
     // Update color legend if another modifier has been loaded into the editor.
     connect(this, &ColorCodingModifierEditor::contentsReplaced, this, &ColorCodingModifierEditor::updateColorGradient);
+    // Update editor UI if the modifier's settings change.
     connect(this, &ColorCodingModifierEditor::contentsChanged, this, &ColorCodingModifierEditor::onModifierChanged);
 
     // Update the start/end parameters display whenever the modifier has been evaluated.
@@ -244,12 +245,12 @@ bool ColorCodingModifierEditor::referenceEvent(RefTarget* source, const Referenc
             if(!mod->autoAdjustRange() && isUndoRecording()) {
                 // When the user turns off the auto-adjust option, adopt the current automatic range
                 // as the new user-defined range.
-                FloatType newMin = _lastAutoRangeMinValue;
-                FloatType newMax = _lastAutoRangeMaxValue;
-                if(std::isfinite(newMin))
-                    mod->setStartValue(newMin);
-                if(std::isfinite(newMax))
-                    mod->setEndValue(newMax);
+                auto newStartValue = _lastAutoRangeMinValue;
+                auto newEndValue = _lastAutoRangeMaxValue; // Note: Copying value, because setStartValue() will overwrite _lastAutoRangeMaxValue.
+                if(std::isfinite(newStartValue))
+                    mod->setStartValue(newStartValue);
+                if(std::isfinite(newEndValue))
+                    mod->setEndValue(newEndValue);
             }
         }
     }
@@ -257,7 +258,7 @@ bool ColorCodingModifierEditor::referenceEvent(RefTarget* source, const Referenc
 }
 
 /******************************************************************************
-* This method is called whenever the parameters of the ColoCodingModifier change.
+* This method is called whenever the parameters of the ColorCodingModifier change.
 ******************************************************************************/
 void ColorCodingModifierEditor::onModifierChanged()
 {
@@ -327,7 +328,7 @@ void ColorCodingModifierEditor::autoRangeChanged()
 FloatType ColorCodingModifierEditor::computeRangeValue(FloatType t) const
 {
     if(ColorCodingModifier* modifier = static_object_cast<ColorCodingModifier>(editObject())) {
-        if(!modifier->autoAdjustRange() && !modifier->symmetricRange()) {
+        if(!modifier->autoAdjustRange()) {
             return modifier->startValue() + t * (modifier->endValue() - modifier->startValue());
         }
         else {

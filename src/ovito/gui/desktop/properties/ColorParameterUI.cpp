@@ -130,7 +130,7 @@ void ColorParameterUI::onColorPickerChanged()
                 }
             }
             else if(isPropertyFieldUI()) {
-                editor()->changePropertyFieldValue(propertyField(), QVariant::fromValue((QColor)colorPicker()->color()));
+                editObject()->setPropertyFieldValue(propertyField(), QVariant::fromValue((QColor)colorPicker()->color()));
             }
             Q_EMIT valueEntered();
         });

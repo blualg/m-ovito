@@ -117,8 +117,8 @@ void FilenameParameterUI::onPickFilename()
             QStringList selectedFiles = fileDialog.selectedFiles();
             if(!selectedFiles.empty()) {
                 ProgressDialog progressDialog(mainWindow(), editor()->container());
-                if(isPropertyFieldUI()) {
-                    editor()->changePropertyFieldValue(propertyField(), selectedFiles.join(QDir::listSeparator()));
+                if(isPropertyFieldUI() && editObject()) {
+                    editObject()->setPropertyFieldValue(propertyField(), selectedFiles.join(QDir::listSeparator()));
                 }
                 Q_EMIT valueEntered();
             }

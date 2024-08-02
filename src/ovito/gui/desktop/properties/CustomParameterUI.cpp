@@ -113,7 +113,7 @@ void CustomParameterUI::updatePropertyValue()
         performTransaction(tr("Change parameter"), [this]() {
             QVariant newValue = _updatePropertyFunction();
             if(isPropertyFieldUI()) {
-                editor()->changePropertyFieldValue(propertyField(), newValue);
+                editObject()->setPropertyFieldValue(propertyField(), newValue);
             }
             else if(isReferenceFieldUI() && !propertyField()->isVector()) {
                 OORef<RefTarget> target = newValue.value<RefTarget*>();

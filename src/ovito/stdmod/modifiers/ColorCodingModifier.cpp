@@ -77,7 +77,7 @@ SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, symmetricRange, "Symmetric range")
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property");
 
 /******************************************************************************
-* Constructs the modifier object.
+* Constructor.
 ******************************************************************************/
 void ColorCodingModifier::initializeObject(ObjectInitializationFlags flags)
 {
@@ -205,7 +205,7 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
     if(modifier->colorOnlySelected() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty))
         selection = container->getProperty(Property::GenericSelectionProperty);
 
-    // Get modifier's parameters.
+    // Get the modifier's parameters.
     FloatType startValue = 0, endValue = 0;
     TimeInterval validityInterval = state.stateValidity();
     if(!modifier->autoAdjustRange()) {

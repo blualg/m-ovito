@@ -90,7 +90,7 @@ void VectorParameterUI::updatePropertyValue()
                         currentValue.setValue(val);
                     }
                 }
-                editor()->changePropertyFieldValue(propertyField(), currentValue);
+                editObject()->setPropertyFieldValue(propertyField(), currentValue);
             }
 
             Q_EMIT valueEntered();
