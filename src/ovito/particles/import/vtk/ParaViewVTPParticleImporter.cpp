@@ -101,6 +101,10 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     // to NOT reset the bonds list (which it would otherwise do, because ParaViewVTPParticleImporter doesn't create any bonds).
     setKeepExistingTopology(true);
 
+    PropertyPtr roundnessProperty;
+    PropertyPtr typeProperty;
+    PropertyPtr tensorProperty;
+
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {
         this_task::throwIfCanceled();
@@ -147,6 +151,13 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
                             break;
                         if(xml.hasError() || isCanceled())
                             break;
+
+                        if(property->typeId() == Particles::SuperquadricRoundnessProperty)
+                            roundnessProperty = property;
+                        if(property->typeId() == Particles::TypeProperty)
+                            typeProperty = property;
+                        else if(property->name() == QStringLiteral("Tensor"))
+                            tensorProperty = property;
 
                         // Create particle types if this is a typed property.
                         OvitoClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->typeId());
@@ -195,7 +206,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 
     // Convert superquadric 'Blockiness' values from the Aspherix simulation to 'Roundness' values used by OVITO particle visualization.
     bool transposeOrientations = false;
-    if(Property* roundnessProperty = particles()->getMutableProperty(Particles::SuperquadricRoundnessProperty)) {
+    if(roundnessProperty) {
         for(auto& v :
             BufferWriteAccess<Vector_2<GraphicsFloatType>, access_mode::read_write>(roundnessProperty).subrange(baseParticleIndex)) {
             // Blockiness1: "north-south" blockiness
@@ -212,25 +223,23 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     }
 
     // Convert 3x3 'Tensor' property into particle orientation.
-    if(const Property* tensorProperty = particles()->getProperty(QStringLiteral("Tensor"))) {
-        if(tensorProperty->dataType() == Property::FloatDefault && tensorProperty->componentCount() == 9) {
-            BufferWriteAccess<QuaternionG, access_mode::write> orientations(
-                particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::OrientationProperty),
-                preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized);
-            auto* q = orientations.begin() + baseParticleIndex;
-            for(const Matrix3& tensor : BufferReadAccess<Matrix3>(tensorProperty).subrange(baseParticleIndex)) {
-                if(!tensor.isZero())
-                    *q++ =
-                        Quaternion(transposeOrientations ? tensor.transposed() : tensor, FloatType(1e-6)).toDataType<GraphicsFloatType>();
-                else
-                    *q++ = QuaternionG::Identity();
-            }
-            this_task::throwIfCanceled();
+    if(tensorProperty && tensorProperty->dataType() == Property::FloatDefault && tensorProperty->componentCount() == 9) {
+        BufferWriteAccess<QuaternionG, access_mode::write> orientations(
+            particles()->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::OrientationProperty),
+            preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+        auto* q = orientations.begin() + baseParticleIndex;
+        for(const Matrix3& tensor : BufferReadAccess<Matrix3>(tensorProperty).subrange(baseParticleIndex)) {
+            if(!tensor.isZero())
+                *q++ =
+                    Quaternion(transposeOrientations ? tensor.transposed() : tensor, FloatType(1e-6)).toDataType<GraphicsFloatType>();
+            else
+                *q++ = QuaternionG::Identity();
         }
+        this_task::throwIfCanceled();
     }
 
     // Reset "Radius" property of particles with a mesh-based shape to zero to get correct scaling.
-    if(const Property* typeProperty = particles()->getProperty(Particles::TypeProperty)) {
+    if(typeProperty) {
         std::vector<int> typesWithMeshShape;
         for(const ElementType* type : typeProperty->elementTypes()) {
             if(const ParticleType* particleType = dynamic_object_cast<ParticleType>(type))
