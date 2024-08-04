@@ -29,8 +29,10 @@ Version 3.11.0 (xx-xxx-2024)
 - Fixed regression due to update of the Qt framework: Missing colors in plot legends
 - Fixed: Axis scales and labels are invisible (white on white) in exported data plots if dark mode UI is active
 - Updated third-party components: OpenSSL, Qt, PySide6, Python, Qwt
-- |ovito-python| Implement :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` method
+- |ovito-python| New method :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` to efficiently determine the closest particles around several spatial locations.
 - |ovito-python| New class attribute :py:attr:`ovito.pipeline.Pipeline.frames`
+- |ovito-python| New class attributes :py:attr:`ovito.pipeline.FileSource.playback_ratio`, :py:attr:`ovito.pipeline.FileSource.playback_start_time`, and :py:attr:`ovito.pipeline.FileSource.static_frame`
+- |ovito-python| New advanced methods :py:meth:`ovito.pipeline.Pipeline.make_vis_element_independent` and :py:meth:`ovito.pipeline.Pipeline.get_replacement_vis_element`
 - |ovito-python| Added the :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_pos`, :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_dir`, and :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_up` fields to the :py:class:`ViewportOverlayInterface.Canvas <ovito.vis.ViewportOverlayInterface.Canvas>` class
 - |ovito-python| New parameter trait types :py:class:`ovito.traits.DataObjectReference` and :py:class:`ovito.traits.PropertyReference`
 - |ovito-python| New class :py:class:`ovito.data.DataObject.Ref` and methods :py:meth:`ovito.data.DataCollection.get` and :py:meth:`ovito.data.PropertyContainer.get`
