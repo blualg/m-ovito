@@ -44,7 +44,7 @@ Thus, to analyze a dataset with 1 million atoms up to 1 GB of free memory is req
 OVITO allows you to save the dislocation lines extracted by the modifier to a so-called *Crystal Analysis (CA) file*
 using the program's :ref:`file export function <usage.export>`. This allows you to further process the
 dislocation lines outside of OVITO or to reload the dislocation data at a later time without the need to re-perform the
-computationally expensive analysis. The CA file format is specified :ref:`below <particles.modifiers.dislocation_analysis.fileformat>`.
+computationally expensive analysis |ovito-pro|. The CA file format is specified :ref:`below <particles.modifiers.dislocation_analysis.fileformat>`.
 
 .. note::
 
@@ -187,7 +187,7 @@ Dislocation lines
     fixed with respect to the line sense chosen by the algorithm (so it also changes sign if the line direction is reversed).
     The DXA algorithm always outputs dislocations that follow the left-hand start-finish (LH/SF) convention!
 
-  In addition to this geometric information, each dislocation is asscicated with two additional properties: The id of the crystallite cluster
+  In addition to this geometric information, each dislocation is associated with two additional properties: The id of the crystallite cluster
   the dislocation is embedded in (see below) and its Burgers vector. The Burgers vector computed for a dislocation is its *true* Burgers vector, i.e.
   a vector expressed in the ideal reference crystal frame.
 
@@ -357,7 +357,7 @@ circuit from sweeping past dislocation junctions or interfaces, a hard limit is 
 CA file format
 """"""""""""""
 
-The dislocation lines extracted by the analysis modifier can be exported to this simple text-based file format,
+The dislocation lines extracted by the analysis modifier can be :ref:`exported to this simple text-based file format <usage.export>`,
 which is described next.
 
 A CA file always begins with the string ``CA_FILE_VERSION`` followed by the file format version number.

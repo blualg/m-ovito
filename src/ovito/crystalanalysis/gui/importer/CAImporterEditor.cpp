@@ -59,4 +59,18 @@ bool CAImporterEditor::referenceEvent(RefTarget* source, const ReferenceEvent& e
     return PropertiesEditor::referenceEvent(source, event);
 }
 
+#ifndef OVITO_BUILD_PROFESSIONAL
+/******************************************************************************
+* This method is called by the FileSource each time a new source
+* file has been selected by the user.
+******************************************************************************/
+void CAImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
+{
+    throw Exception(tr(
+        "Crystal Analysis (CA) file import requires OVITO Pro."
+        "\n\n"
+        "Please consider upgrading to the professional version, which offers more features for working with precomputed DXA results. "));
+}
+#endif
+
 }   // End of namespace

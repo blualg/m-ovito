@@ -28,6 +28,7 @@ Version 3.11.0 (xx-xxx-2024)
 - OVITO Basic now includes demo versions of the high-fidelity rendering backends :ref:`OSPRay <rendering.ospray_renderer>`, :ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`
 - Fixed regression due to update of the Qt framework: Missing colors in plot legends
 - Fixed: Axis scales and labels are invisible (white on white) in exported data plots if dark mode UI is active
+- CA file import (loading precomputed DXA results) is now an exclusive OVITO Pro feature
 - Updated third-party components: OpenSSL, Qt, PySide6, Python, Qwt
 - |ovito-python| New method :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` to efficiently determine the closest particles around several spatial locations.
 - |ovito-python| New class attribute :py:attr:`ovito.pipeline.Pipeline.frames`

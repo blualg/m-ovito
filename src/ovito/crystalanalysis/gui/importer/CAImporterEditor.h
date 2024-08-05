@@ -24,16 +24,23 @@
 
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
-#include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
 
 namespace Ovito {
 
 /**
  * \brief A properties editor for the CAImporter class.
  */
-class CAImporterEditor : public PropertiesEditor
+class CAImporterEditor : public FileImporterEditor
 {
     OVITO_CLASS(CAImporterEditor)
+
+public:
+
+#ifndef OVITO_BUILD_PROFESSIONAL
+    /// This is called by the system when the user has selected a new file to import.
+    virtual void inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
+#endif
 
 protected:
 
