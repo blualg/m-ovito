@@ -56,11 +56,12 @@ public:
     /// Flags which may be associated with an OvitoObject.
     enum ObjectFlag
     {
-        NoFlags               = 0,        //< No flags set.
-        BeingConstructed      = (1 << 0), //< Indicates that this object's constructor is executing.
-        BeingInitialized      = (1 << 1), //< Indicates that this object is being initialized (initializeObject() hasn't finished yet).
-        BeingDeleted          = (1 << 2), //< Indicates that this object is in the process of being deleted.
-        BeingLoaded           = (1 << 3), //< Indicates that this object is in the process of being restored from an ObjectLoadStream.
+        NoFlags = 0,                  //< No flags set.
+        BeingConstructed = (1 << 0),  //< Indicates that this object's constructor is executing.
+        BeingInitialized = (1 << 1),  //< Indicates that this object is being initialized (initializeObject() hasn't finished yet).
+        BeingDeleted = (1 << 2),      //< Indicates that this object is in the process of being deleted.
+        BeingLoaded = (1 << 3),       //< Indicates that this object is in the process of being restored from an ObjectLoadStream.
+        BeingCopied = (1 << 4),       //< Indicates that this object is in the process of being copied or cloned.
     };
     Q_DECLARE_FLAGS(ObjectFlags, ObjectFlag);
 
@@ -93,6 +94,9 @@ public:
     /// Returns true if this object is about to be deleted, i.e., if the reference count has reached zero
     /// and aboutToBeDeleted() is being invoked.
     inline bool isBeingDeleted() const { return _flags.testFlag(BeingDeleted); }
+
+    /// Indicates whether this object is currently being copied or cloned.
+    inline bool isBeingCopied() const { return _flags.testFlag(BeingCopied); }
 
     /// Indicates whether this object is currently being initialized or destroyed.
     inline bool isBeingInitializedOrDeleted() const { return _flags.testAnyFlags(ObjectFlags(BeingInitialized | BeingDeleted)); }
@@ -163,6 +167,24 @@ protected:
         OVITO_ASSERT(!isBeingConstructed());
         OVITO_ASSERT(isBeingInitialized());
         _flags.setFlag(BeingInitialized, false);
+    }
+
+    /// Sets the BeingCopied flag of the object indicating that the object is in the
+    /// process of being copied. Set by RefTarget::clone
+    inline void beginObjectCopy()
+    {
+        OVITO_ASSERT(!isBeingCopied());
+        qDebug() << "Set is being copied";
+        _flags.setFlag(BeingCopied, true);
+    }
+
+    /// Clears the BeingCopied flag of the object indicating that the copy has been completed.
+    /// Called by the CloneHelper class.
+    inline void completeObjectCopy()
+    {
+        OVITO_ASSERT(isBeingCopied());
+        qDebug() << "Clear is being copied";
+        _flags.setFlag(BeingCopied, false);
     }
 
     /// \brief Saves the internal data of this object to an output stream.
