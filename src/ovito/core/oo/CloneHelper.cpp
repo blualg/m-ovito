@@ -62,6 +62,10 @@ RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
 #else
     _cloneTable.push_back(std::make_pair(obj, std::move(copy)));
 #endif
+
+    // Clear copy flag
+    _cloneTable.back().second->completeObjectCopy();
+
     return _cloneTable.back().second;
 }
 
@@ -86,6 +90,9 @@ OORef<RefTarget> CloneHelper::cloneSingleObjectImpl(const RefTarget* obj, bool d
         throw Exception(QStringLiteral("Object of class %1 cannot be cloned. It does not implement the clone() method.").arg(obj->getOOClass().name()));
 
     OVITO_ASSERT_MSG(copy->getOOClass().isDerivedFrom(obj->getOOClass()), "CloneHelper::cloneSingleObject", qPrintable(QString("The clone method of class %1 did not return a compatible class instance.").arg(obj->getOOClass().name())));
+
+    // Clear copy flag
+    copy->completeObjectCopy();
 
     return copy;
 }
