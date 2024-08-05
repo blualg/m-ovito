@@ -41,7 +41,7 @@ Spaces that are part of a standard property name must be left out, because LAMMP
 a dump file column named ``BondType`` will be mapped to the standard property :guilabel:`Bond Type`.
 
 For standard properties with multiple components, a component name must be appended with a dot. For example, a dump file column
-named ``ParticleIdentifiers.A`` will automatically be mapped to the second component of the :guilabel:`Particle Identifiers` standard bond property
+named ``ParticleIdentifiers.A`` will automatically be mapped to the second component of the :guilabel:`Particle Identifiers` :ref:`standard bond property <bond-types-list>`
 in OVITO. Note that you can use the LAMMPS `dump_modify colname` command to give the columns in your dump file specific names.
 
 For further information on how to set up the bond property mapping correctly, see the :ref:`particles.modifiers.load_trajectory` modifier.

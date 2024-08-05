@@ -453,7 +453,7 @@ void Property::throwIfInvalidPropertyName(const QStringView name)
 }
 
 /******************************************************************************
-* Performs name mangeling if necessary to turn the given name into a valid property name.
+* Performs name mangling if necessary to turn the given name into a valid property name.
 ******************************************************************************/
 QString Property::makePropertyNameValid(const QString& name)
 {

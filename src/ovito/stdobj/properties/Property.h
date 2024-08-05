@@ -242,12 +242,12 @@ public:
     /// For example, to be valid, the name must not contains any dots.
     static void throwIfInvalidPropertyName(const QStringView name);
 
-    /// Performs name mangeling if necessary to turn the given name into a valid property name.
+    /// Performs name mangling if necessary to turn the given name into a valid property name.
     static QString makePropertyNameValid(const QString& name);
 
 public:
 
-    /// Indicates that there current exists a Numpy view referencing this property's memory buffer.
+    /// Indicates that there current exists a NumPy view referencing this property's memory buffer.
     bool isBeingAccessedFromPython() const { return !_pythonAccessGuard.expired(); }
 
 protected:
