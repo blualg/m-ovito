@@ -264,7 +264,7 @@ std::optional<bool> DelaunayTessellation::alphaTest(CellHandle cell, FloatType a
         qInfo() << "Found element 1 " << "nomin=" << nomin << "denom=" << denom << "(nomin / denom)=" << (nomin / denom) << "alpha=" << alpha;
 #endif
 
-    // Detect degnerate sliver elements, for which we cannot compute a reliable alpha value.
+    // Detect degenerate sliver elements, for which we cannot compute a reliable alpha value.
     if(std::abs(denom) < 1e-9 && std::abs(nomin) < 1e-9) {
         return std::nullopt; // Indeterminate result
     }

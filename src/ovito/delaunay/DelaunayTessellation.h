@@ -194,7 +194,7 @@ public:
         return mirrorFacet(facet.first, facet.second);
     }
 
-    /// Retreives a local vertex index from cell index and global vertex index.
+    /// Retrieves a local vertex index from cell index and global vertex index.
     int index(CellHandle cell, VertexHandle vertex) const {
         for(int iv = 0; iv < 4; iv++) {
             if(cellVertex(cell, iv) == vertex) {
@@ -210,7 +210,7 @@ public:
         return _dt->cell_adjacent(cell, localFace);
     }
 
-    /// Retreives a local facet index from two adacent cell global indices.
+    /// Retrieves a local facet index from two adjacent cell global indices.
     int adjacentIndex(CellHandle c1, CellHandle c2) const {
         for(int f = 0; f < 4; f++) {
             if(cellAdjacent(c1, f) == c2) {

@@ -90,7 +90,10 @@ private:
                     const QVariant& v = _attributes[index.row()]->value();
                     if(v.typeId() == QMetaType::Double)
                         return QString::number(v.toDouble());
-                    return v;
+                    else if(v.isValid() && !v.canConvert<QString>())
+                        return tr("<data not displayable as text>");
+                    else
+                        return v;
                 }
             }
             return {};

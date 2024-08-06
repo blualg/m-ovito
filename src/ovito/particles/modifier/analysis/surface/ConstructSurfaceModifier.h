@@ -85,7 +85,7 @@ private:
 
         /// Constructor.
         ConstructSurfaceEngineBase(ConstPropertyPtr positions, ConstPropertyPtr selection,
-                                   SurfaceMesh* mesh, bool identifyRegions, bool mapParticlesToRegions,
+                                   SurfaceMesh* mesh, bool identifyRegions,
                                    bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties,
                                    OOWeakRef<const PipelineNode> createdByNode)
             : _positions(positions),
@@ -93,8 +93,7 @@ private:
               _mesh(std::move(mesh)),
               _particleProperties(std::move(particleProperties)),
               _identifyRegions(identifyRegions),
-              _particleRegionIds(mapParticlesToRegions ? Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(), Property::Int32, 1, tr("Region")) : nullptr),
-              _surfaceDistances(computeSurfaceDistance ? Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(), Property::FloatDefault, 1, tr("Surface Distance")) : nullptr),
+              _surfaceDistances(computeSurfaceDistance ? Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, positions->size(), Property::FloatDefault, 1, QStringLiteral("Surface Distance")) : nullptr),
               _createdByNode(std::move(createdByNode))
         {
         }
@@ -146,8 +145,8 @@ private:
         /// The computed total surface area.
         double _totalSurfaceArea = 0;
 
-        /// The assignment of input particles to volumetric regions.
-        PropertyPtr _particleRegionIds;
+        /// The pipeline node that created this engine.
+        OOWeakRef<const PipelineNode> _createdByNode;
 
     private:
 
@@ -165,9 +164,6 @@ private:
 
         /// The list of particle properties to copy over to the generated mesh.
         std::vector<ConstPropertyPtr> _particleProperties;
-
-        /// The pipeline node that created this engine.
-        OOWeakRef<const PipelineNode> _createdByNode;
     };
 
     /// Compute engine building the surface mesh using the alpha shape method.
@@ -182,10 +178,11 @@ private:
                          bool computeSurfaceDistance, std::vector<ConstPropertyPtr> particleProperties,
                          OOWeakRef<const PipelineNode> createdByNode)
             : ConstructSurfaceEngineBase(std::move(positions), std::move(selection), std::move(mesh), identifyRegions,
-                                         mapParticlesToRegions, computeSurfaceDistance, std::move(particleProperties), std::move(createdByNode)),
+                                         computeSurfaceDistance, std::move(particleProperties), std::move(createdByNode)),
               _particleGrains(std::move(particleGrains)),
               _probeSphereRadius(probeSphereRadius),
               _smoothingLevel(smoothingLevel),
+              _mapParticlesToRegions(mapParticlesToRegions),
               _surfaceParticleSelection(
                   selectSurfaceParticles
                       ? Particles::OOClass().createStandardProperty(DataBuffer::Initialized,
@@ -209,7 +206,7 @@ private:
         /// Returns the assignment of input particles to volumetric regions.
         const PropertyPtr& particleRegionIds() const { return _particleRegionIds; }
 
-        /// Returns the evalue of the probe sphere radius parameter.
+        /// Returns the value of the probe sphere radius parameter.
         FloatType probeSphereRadius() const { return _probeSphereRadius; }
 
     private:
@@ -225,6 +222,15 @@ private:
 
         /// The selection set of particles located right on the constructed surfaces.
         PropertyPtr _surfaceParticleSelection;
+
+        /// The assignment of input particles to a volumetric region.
+        PropertyPtr _particleRegionIds;
+
+        /// The full assignment of particles to regions, which takes into account that particles can be part of multiple regions simultaneously.
+        QVariant _regionParticleLists;
+
+        /// Indicates that the "Regions" particle property should be created.
+        bool _mapParticlesToRegions;
     };
 
     /// Compute engine building the surface mesh using the Gaussian density method.
@@ -235,11 +241,11 @@ private:
         /// Constructor.
         GaussianDensityEngine(ConstPropertyPtr positions, ConstPropertyPtr selection,
                               SurfaceMesh* mesh, FloatType radiusFactor, FloatType isoLevel, int gridResolution,
-                              bool identifyRegions, bool mapParticlesToRegions, bool computeSurfaceDistance,
+                              bool identifyRegions, bool computeSurfaceDistance,
                               ConstPropertyPtr radii, std::vector<ConstPropertyPtr> particleProperties,
                               OOWeakRef<const PipelineNode> createdByNode)
             : ConstructSurfaceEngineBase(std::move(positions), std::move(selection), std::move(mesh), identifyRegions,
-                                         mapParticlesToRegions, computeSurfaceDistance, std::move(particleProperties), std::move(createdByNode)),
+                                         computeSurfaceDistance, std::move(particleProperties), std::move(createdByNode)),
               _radiusFactor(radiusFactor),
               _isoLevel(isoLevel),
               _gridResolution(gridResolution),

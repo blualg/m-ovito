@@ -190,8 +190,8 @@ Future<PipelineFlowState> ConstructSurfaceModifier::evaluateModifier(const Modif
         // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
         engine = std::make_unique<GaussianDensityEngine>(posProperty, selProperty, std::move(mesh), radiusFactor(),
                                                        isoValue(), gridResolution(), identifyRegions(),
-                                                       mapParticlesToRegions() && identifyRegions(), computeSurfaceDistance(),
-                                                       particles->inputParticleRadii(), std::move(particleProperties), request.modificationNode());
+                                                       computeSurfaceDistance(), particles->inputParticleRadii(),
+                                                       std::move(particleProperties), request.modificationNode());
     }
 
     // Perform the calculation in a separate thread.
@@ -338,7 +338,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
         this_task::nextProgressSubStep();
 
-        // After construct() above has identified the filled regions, now identify the empty regions.
+        // After construct() has identified the filled regions, identify the empty regions.
         manifoldConstructor.formEmptyRegions();
         this_task::throwIfCanceled();
 
@@ -350,12 +350,22 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         emptyRegionCount = manifoldConstructor.emptyRegionCount();
 
         // Transfer the region ID information to the output particles.
-        if(BufferWriteAccess<int32_t, access_mode::discard_read_write> regionIds = particleRegionIds()) {
+        if(_mapParticlesToRegions) {
             this_task::nextProgressSubStep();
-            this_task::setProgressMaximum(regionIds.size());
-            size_t numProcessedParticles = 0;
+            this_task::setProgressMaximum(positions()->size());
+            size_t numVisitedParticles = 0;
+
             // Initially, mark all particles as not assigned to any region (special region ID -1).
+            _particleRegionIds = Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, positions()->size(), Property::Int32, 1, QStringLiteral("Region"));
+            BufferWriteAccess<int32_t, access_mode::discard_read_write> regionIds{_particleRegionIds};
             boost::fill(regionIds, -1);
+
+            // Create one list (growable Property) per region, which stores the particle indices belonging to the region.
+            std::vector<PropertyFactory<int64_t>> regionParticleLists(meshBuilder.regionCount());
+            int regionIndex = 0;
+            for(PropertyFactory<int64_t>& bufferFactory : regionParticleLists)
+                bufferFactory = PropertyFactory<int64_t>{PropertyContainer::OOClass(), 0, QStringLiteral("Particles Region %1").arg(regionIndex++)};
+
             // Visit each tetrahedral cell and assign its four vertex particles to the region of the cell.
             DelaunayTessellation::CellHandle queryHint = DelaunayTessellation::CellHandle(-1);
             for(DelaunayTessellation::CellHandle cell : tessellation.cells()) {
@@ -363,16 +373,22 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
                     continue;
                 queryHint = cell;
                 if(int regionId = tessellation.getUserField(cell); regionId >= 0) {
-                    OVITO_ASSERT(regionId >= 0 && regionId <= filledRegionCount + emptyRegionCount);
+                    OVITO_ASSERT(regionId >= 0 && regionId < filledRegionCount + emptyRegionCount);
+                    OVITO_ASSERT(regionId < regionParticleLists.size());
                     for(int v = 0; v < 4; v++) {
                         size_t particleIndex = tessellation.vertexIndex(tessellation.cellVertex(cell, v));
                         OVITO_ASSERT(particleIndex < regionIds.size() || particleIndex == std::numeric_limits<size_t>::max());
-                        // Give precedence to filled regions. Particles on the boundary are always assigned to the filled region, not the empty region.
                         if(particleIndex != std::numeric_limits<size_t>::max()) {
-                            if(regionIds[particleIndex] == -1) {
-                                this_task::setProgressValueIntermittent(++numProcessedParticles);
-                            }
-                            if(regionId < filledRegionCount || regionIds[particleIndex] == -1) regionIds[particleIndex] = regionId;
+                            // Keep track of the number of particles visited so far.
+                            if(regionIds[particleIndex] == -1)
+                                this_task::setProgressValueIntermittent(++numVisitedParticles);
+
+                            // Give precedence to filled regions. Particles on the boundary are always assigned to the filled region, not the empty region.
+                            if(regionId < filledRegionCount || regionIds[particleIndex] == -1)
+                                regionIds[particleIndex] = regionId;
+
+                            // Add to the region's particle list.
+                            regionParticleLists[regionId].push_back(particleIndex);
                         }
                     }
                 }
@@ -381,22 +397,32 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             // If only selected particles were used as input points for the Delaunay tessellation, the unselected particles
             // are not attributed to any region yet. We do the attribution next by performing point queries on the Delaunay tessellation.
             // For each unassigned particle we determine the Delaunay cell it is located in and then use its region.
-            auto particleRegionId = regionIds.begin();
+            size_t particleIndex = 0;
             for(const Point3& pos : BufferReadAccess<Point3>(positions())) {
-                if(*particleRegionId == -1) {
-                    this_task::setProgressValueIntermittent(++numProcessedParticles);
+                auto& particleRegionId = regionIds[particleIndex];
+                if(particleRegionId == -1) {
+                    this_task::setProgressValueIntermittent(++numVisitedParticles);
 
                     DelaunayTessellation::CellHandle cell = tessellation.locate(tessellation.simCell()->wrapPoint(pos), queryHint);
                     OVITO_ASSERT(cell >= 0 && cell < tessellation.numberOfTetrahedra());
 
                     if(int regionId = tessellation.getUserField(cell); regionId >= 0) {
                         OVITO_ASSERT(regionId >= 0 && regionId < filledRegionCount + emptyRegionCount);
-                        *particleRegionId = regionId;
+                        particleRegionId = regionId;
+                        regionParticleLists[regionId].push_back(particleIndex);
                     }
                     queryHint = cell;
                 }
-                ++particleRegionId;
+                ++particleIndex;
             }
+
+            // Finalize regionParticleLists structure. Convert it to a QVariant such that the nested list structure can be output as a global attribute.
+            QVariantList regionParticleListsVariant(regionParticleLists.size());
+            std::transform(regionParticleLists.begin(), regionParticleLists.end(), regionParticleListsVariant.begin(), [](PropertyFactory<int64_t>& bufferFactory) {
+                // Note: QVariant can only hold a OORef<OvitoObject>, not a DataOORef<Property>, because only the former is a registered Qt meta type.
+                return QVariant::fromValue(static_cast<OORef<OvitoObject>>(bufferFactory.take().get()));
+            });
+            _regionParticleLists.setValue(std::move(regionParticleListsVariant));
         }
 
         // Output "Filled" region property.
@@ -848,6 +874,11 @@ void ConstructSurfaceModifier::AlphaShapeEngine::applyResults(PipelineFlowState&
 
         // Output particle region IDs.
         if(particleRegionIds()) particles->createProperty(particleRegionIds());
+
+        // Output per-region particle lists.
+        if(_regionParticleLists.isValid()) {
+            state.addAttribute(QStringLiteral("ConstructSurfaceMesh.region_memberships"), _regionParticleLists, _createdByNode);
+        }
     }
 }
 
