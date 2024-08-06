@@ -61,7 +61,7 @@ public:
         BeingInitialized = (1 << 1),  //< Indicates that this object is being initialized (initializeObject() hasn't finished yet).
         BeingDeleted = (1 << 2),      //< Indicates that this object is in the process of being deleted.
         BeingLoaded = (1 << 3),       //< Indicates that this object is in the process of being restored from an ObjectLoadStream.
-        BeingCopied = (1 << 4),       //< Indicates that this object is in the process of being copied or cloned.
+        BeingCopied = (1 << 4),       //< Indicates that this object is in the process of being constructed by copying another object.
     };
     Q_DECLARE_FLAGS(ObjectFlags, ObjectFlag);
 
@@ -95,7 +95,7 @@ public:
     /// and aboutToBeDeleted() is being invoked.
     inline bool isBeingDeleted() const { return _flags.testFlag(BeingDeleted); }
 
-    /// Indicates whether this object is currently being copied or cloned.
+    /// Indicates whether this object is currently being constructed by copying parameter values from another object.
     inline bool isBeingCopied() const { return _flags.testFlag(BeingCopied); }
 
     /// Indicates whether this object is currently being initialized or destroyed.
@@ -124,7 +124,7 @@ public:
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(ExecutionContext::current().isValid());
         OVITO_ASSERT(!isBeingConstructed()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed yet.
-        OVITO_ASSERT(!isBeingDeleted());     // Note: Cannot create a OOWeakRefr<> if the object is already being destructed.
+        OVITO_ASSERT(!isBeingDeleted());     // Note: Cannot create a OOWeakRef<> if the object is already being destructed.
         return [weakRef = weak_from_this(), context = ExecutionContext::current(), f = std::forward<Function>(f)]() mutable noexcept {
             if(auto self = weakRef.lock()) {
                 ExecutionContext::Scope execScope(std::move(context));
@@ -139,7 +139,7 @@ public:
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(ExecutionContext::current().isValid());
         OVITO_ASSERT(!isBeingConstructed()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed yet.
-        OVITO_ASSERT(!isBeingDeleted());     // Note: Cannot create a OOWeakRefr<> if the object is already being destructed.
+        OVITO_ASSERT(!isBeingDeleted());     // Note: Cannot create a OOWeakRef<> if the object is already being destructed.
         // If we are in the main thread already, we can immediately execute the work.
         // Otherwise, schedule its execution in the main thread.
         if(ExecutionContext::isMainThread()) {
@@ -169,22 +169,11 @@ protected:
         _flags.setFlag(BeingInitialized, false);
     }
 
-    /// Sets the BeingCopied flag of the object indicating that the object is in the
-    /// process of being copied. Set by RefTarget::clone
-    inline void beginObjectCopy()
-    {
-        OVITO_ASSERT(!isBeingCopied());
-        qDebug() << "Set is being copied";
-        _flags.setFlag(BeingCopied, true);
-    }
-
-    /// Clears the BeingCopied flag of the object indicating that the copy has been completed.
-    /// Called by the CloneHelper class.
-    inline void completeObjectCopy()
-    {
-        OVITO_ASSERT(isBeingCopied());
-        qDebug() << "Clear is being copied";
-        _flags.setFlag(BeingCopied, false);
+    /// Sets the BeingCopied flag of the object indicating that the object's parameters are in the
+    /// process of being copied from another object. Set by RefTarget::clone() when cloning begins and cleared
+    /// by CloneHelper when cloning is complete.
+    void setIsBeingCopied(bool isBeingCopied) {
+        _flags.setFlag(BeingCopied, isBeingCopied);
     }
 
     /// \brief Saves the internal data of this object to an output stream.
@@ -242,7 +231,7 @@ private:
     /// This method is an implementation detail required by the Q_PROPERTY macro above.
     const QString& className() const { return getOOClass().name(); }
 
-    /// Returns the idenitifier of the plugin module this object belongs to.
+    /// Returns the identifier of the plugin module this object belongs to.
     /// This method is an implementation detail required by the Q_PROPERTY macro above.
     QString pluginId() const { return QString::fromLatin1(getOOClass().pluginId()); }
 

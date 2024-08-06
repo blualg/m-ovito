@@ -45,28 +45,30 @@ RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
 
     OVITO_CHECK_OBJECT_POINTER(obj);
 
+    // First, check if the same object has already been cloned before.
     if(RefTarget* clone = lookupCloneOf(obj))
         return clone;
 
     // Never generate undo records for a cloning operation.
     UndoSuspender noUndo;
 
+    // Create the object copy.
     OORef<RefTarget> copy = obj->clone(deepCopy, *this);
     if(!copy)
         throw Exception(QString("Object of class %1 cannot be cloned. It does not implement the clone() method.").arg(obj->getOOClass().name()));
 
     OVITO_ASSERT_MSG(copy->getOOClass().isDerivedFrom(obj->getOOClass()), "CloneHelper::cloneObject", qPrintable(QString("The clone method of class %1 did not return a compatible class instance.").arg(obj->getOOClass().name())));
 
+    // Clear copy flag
+    copy->setIsBeingCopied(false);
+
+    // Keep track of the objects that have been cloned so far.
 #if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
-    _cloneTable.emplace_back(obj, std::move(copy));
+    return _cloneTable.emplace_back(obj, std::move(copy)).second;
 #else
     _cloneTable.push_back(std::make_pair(obj, std::move(copy)));
-#endif
-
-    // Clear copy flag
-    _cloneTable.back().second->completeObjectCopy();
-
     return _cloneTable.back().second;
+#endif
 }
 
 /******************************************************************************
@@ -92,7 +94,7 @@ OORef<RefTarget> CloneHelper::cloneSingleObjectImpl(const RefTarget* obj, bool d
     OVITO_ASSERT_MSG(copy->getOOClass().isDerivedFrom(obj->getOOClass()), "CloneHelper::cloneSingleObject", qPrintable(QString("The clone method of class %1 did not return a compatible class instance.").arg(obj->getOOClass().name())));
 
     // Clear copy flag
-    copy->completeObjectCopy();
+    copy->setIsBeingCopied(false);
 
     return copy;
 }

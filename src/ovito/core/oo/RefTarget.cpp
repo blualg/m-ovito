@@ -186,8 +186,8 @@ OORef<RefTarget> RefTarget::clone(bool deepCopy, CloneHelper& cloneHelper) const
         throw Exception(tr("Failed to create clone instance of class %1.").arg(getOOClass().name()));
     OVITO_ASSERT(clone->getOOClass().isDerivedFrom(getOOClass()));
 
-    // Set copy/clone flag
-    clone->beginObjectCopy();
+    // Set being copied flag of the object.
+    clone->setIsBeingCopied(true);
 
     // Clone properties and referenced objects.
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {

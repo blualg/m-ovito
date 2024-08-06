@@ -127,7 +127,8 @@ public:
     /// to copy/transfer references to sub-objects for deep copies as well as shallow copies.
     template<class T>
     OORef<T> copyReference(const T* obj, bool deepCopy) {
-        if(!deepCopy) return const_cast<T*>(obj);
+        if(!deepCopy)
+            return const_cast<T*>(obj);
         return cloneObject(obj, true);
     }
 

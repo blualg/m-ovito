@@ -116,6 +116,8 @@ Mark dislocation core atoms |ovito-pro|
   for this classification. Note that this selection criterion represents a reasonable, but also somewhat arbitrary, definition of the dislocation core concept, which may differ from
   other ways of defining the extent of the *physical* dislocation core region at the atomic level.
 
+  .. versionadded:: 3.11.0
+
 Output interface mesh
   Tells the analysis modifier to display the so-called interface mesh, a closed manifold which separates
   the good crystal region from the bad crystal region. The interface mesh is normally not of interest and
