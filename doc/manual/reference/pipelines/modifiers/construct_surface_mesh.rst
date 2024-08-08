@@ -249,7 +249,7 @@ Identification of volumetric regions |ovito-pro|
   :figwidth: 40%
   :align: right
 
-  A periodic 2d structure consisting of two empty regions (pores) and two filled regions.
+  A periodic 2d structure consisting of two empty regions (pores) and two filled regions, processed with the alpha-shape method.
 
 In OVITO Pro, the modifier provides the option to individually identify spatial regions bounded by the
 surface and to compute the volumes and surface areas of these disconnected regions (empty voids/cavities and filled regions).
@@ -293,7 +293,7 @@ mapping option of the :ref:`visual_elements.surface_mesh` visual element to rend
 surface parts belonging to different spatial regions with different colors as in the example image above.
 Note, that initially each surface mesh region will have the color corresponding to the region on its inside assigned to it.
 For example, if region ID 1 has the color red, the outside of the surface mesh enclosing region 1 will be rendered in red. Meanwhile,
-the inside of this this mesh will have the color of the surrounding region, e.g., blue. Toggling the ``Flip surface orientation`` setting of the
+the inside of this this mesh will have the color of the surrounding region, e.g., blue. Toggling the :guilabel:`Flip surface orientation` setting of the
 surface mesh will flip these colorings. Thereby, rendering the red color of region ID 1 on the side, while the outside of the mesh will get a blue color.
 
 .. attention::
@@ -344,18 +344,28 @@ The modifier outputs the following :ref:`global attributes <usage.global_attribu
   * - ``ConstructSurfaceMesh.void_region_count``
     - Number of disconnected empty regions which have *not* been counted as exterior space.
 
+.. _particles.modifiers.construct_surface_mesh.map_particles_to_regions:
+
 .. rubric:: Map particles to regions
 
 This option lets the modifier determine for each input particle which spatial region it is located in.
-It is only available in the :ref:`alpha-shape method <particles.modifiers.construct_surface_mesh.alpha_shape_method>`.
+It is only available for the :ref:`alpha-shape method <particles.modifiers.construct_surface_mesh.alpha_shape_method>`.
 
-The assignment of particles to spatial regions is output by the modifier in the form of the ``Region`` particle property, which stores a
+The affiliation with spatial regions is output as a new particle property named ``Region``, which stores a
 zero-based region index for each particle.
-Note that the modifier will assign *every* particle of the input model to some region -
+Note that the modifier will assign *every* particle of the input structure to some region -
 including unselected particles if the option :guilabel:`Use only selected input particles` is active. Particles that are located right on a surface manifold,
 i.e. which are adjacent to a filled *and* an empty region, will be attributed to the filled region. Note that the assignment of particles to regions
 happens *before* the surface smoothing step of the alpha-shape algorithm, which slightly displaces the mesh vertices. Thus, particles may end up slightly
 outside the spatial region they belong to.
+
+In general, a particle can belong to several regions simultaneously if it is located right on the boundary between two adjacent regions.
+It may even be affiliated with more than one *filled* region if the surface mesh contains internal interfaces because it was constructed
+from a subdivided input structure (see :ref:`particles.modifiers.grain_segmentation` modifier).
+In such cases, the per-particle property ``Region`` described above is insufficient to represent the multiple region affiliations a particle can have.
+Therefore, the modifier also generates a membership list for each spatial region, which lists the indices of all particles affiliated with that region.
+These membership lists are accessible as global attribute ``ConstructSurfaceMesh.region_memberships``, as described in more detail in the Python documentation
+for the :py:attr:`~ovito.modifiers.ConstructSurfaceModifier.map_particles_to_regions` option.
 
 .. _particles.modifiers.construct_surface_mesh.method_comparison:
 

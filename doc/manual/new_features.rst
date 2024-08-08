@@ -30,7 +30,7 @@ Version 3.11.0 (xx-xxx-2024)
 - Fixed: Axis scales and labels are invisible (white on white) in exported data plots if dark mode UI is active
 - CA file import (loading precomputed DXA results) is now an exclusive OVITO Pro feature
 - Updated third-party components: OpenSSL, Qt, PySide6, Python, Qwt
-- |ovito-python| :py:class:`~ovito.modifiers.ConstructSurfaceModifier`: Option :py:attr:`ovito.modifiers.ConstructSurfaceModifier.map_particles_to_regions` now outputs per-region particle membership lists
+- |ovito-python| :py:class:`~ovito.modifiers.ConstructSurfaceModifier`: Option :py:attr:`~ovito.modifiers.ConstructSurfaceModifier.map_particles_to_regions` now outputs per-region particle membership lists
 - |ovito-python| New method :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` to efficiently determine the closest particles around several spatial locations.
 - |ovito-python| New class attribute :py:attr:`ovito.pipeline.Pipeline.frames`
 - |ovito-python| New class attributes :py:attr:`ovito.pipeline.FileSource.playback_ratio`, :py:attr:`ovito.pipeline.FileSource.playback_start_time`, and :py:attr:`ovito.pipeline.FileSource.static_frame`

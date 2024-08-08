@@ -40,6 +40,8 @@ the entire simulation trajectory to determine the range of input property values
 The function :guilabel:`Reverse range` simply
 swaps the :guilabel:`Start value` and :guilabel:`End value` parameters to effectively reverse the color scale.
 
+.. _particles.modifiers.color_coding.custom_gradients:
+
 Custom color gradients
 """"""""""""""""""""""
 
@@ -83,7 +85,7 @@ Automatic range
   With this option turned on the modifier will dynamically adjust the start and end value parameters to the current min/max range of input property values.
 
 Symmetric range
-When this option is enabled, the modifier will automatically adjust the value range to be symmetric around 0. 
+When this option is enabled, the modifier will automatically adjust the value range to be symmetric around 0.
 Manually setting the maximum value will also adjust the minimum value to match.
 
 Color only selected elements
