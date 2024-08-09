@@ -33,6 +33,8 @@ OVITO_STANDARD_PLUGIN(GuiBase
         mainwin/PipelineListModel.cpp
         mainwin/PipelineListItem.cpp
         mainwin/ModifierListModel.cpp
+        mainwin/templates/ModifierTemplates.cpp
+        mainwin/templates/ObjectTemplates.cpp
         viewport/ViewportInputManager.cpp
         viewport/ViewportInputMode.cpp
         viewport/NavigationModes.cpp

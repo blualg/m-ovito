@@ -23,10 +23,10 @@
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/gui/base/actions/ActionManager.h>
+#include <ovito/gui/base/mainwin/templates/ModifierTemplates.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/dataset/pipeline/ModifierTemplates.h>
 #include "ModifierListModel.h"
 #include "PipelineListModel.h"
 

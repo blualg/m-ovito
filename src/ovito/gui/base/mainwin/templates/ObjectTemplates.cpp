@@ -20,49 +20,40 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/core/Core.h>
-#include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/gui/base/GUIBase.h>
+#include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/app/UserInterface.h>
-#include "ModifierTemplates.h"
+#include "ObjectTemplates.h"
 
 namespace Ovito {
-
-static const QString modTemplateStoreGroup = QStringLiteral("core/modifier/templates/");
-
-/******************************************************************************
-* Returns the singleton instance of this class.
-******************************************************************************/
-ModifierTemplates* ModifierTemplates::get()
-{
-    static ModifierTemplates* instance = new ModifierTemplates(Application::instance());
-    return instance;
-}
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ModifierTemplates::ModifierTemplates(QObject* parent) : QAbstractListModel(parent)
+ObjectTemplates::ObjectTemplates(const QString& templateStoreGroup, const QString& objectName, QObject* parent) :
+    QAbstractListModel(parent),
+    _templateStoreGroup(templateStoreGroup),
+    _objectName(objectName)
 {
     restore();
 }
 
 /******************************************************************************
-* Creates a new modifier template on the basis of the given modifier(s).
+* Creates a new template on the basis of the given object(s).
 ******************************************************************************/
-int ModifierTemplates::createTemplate(const QString& templateName, const QVector<OORef<Modifier>>& modifiers)
+int ObjectTemplates::createTemplate(const QString& templateName, const QVector<OORef<RefTarget>>& objects)
 {
-    if(modifiers.empty())
-        throw Exception(tr("Expected non-empty modifier list for creating a new modifier template."));
+    if(objects.empty())
+        throw Exception(tr("Expected non-empty %1 list for creating a new %1 template.").arg(_objectName.toLower()));
 
     QByteArray buffer;
     QDataStream dstream(&buffer, QIODevice::WriteOnly);
     ObjectSaveStream stream(dstream);
 
-    // Serialize modifiers.
-    for(Modifier* modifier : modifiers) {
+    // Serialize objects.
+    for(RefTarget* obj : objects) {
         stream.beginChunk(0x01);
-        stream.saveObject(modifier);
+        stream.saveObject(obj);
         stream.endChunk();
     }
 
@@ -75,12 +66,12 @@ int ModifierTemplates::createTemplate(const QString& templateName, const QVector
 }
 
 /******************************************************************************
-* Creates a modifier template from a serialized version of the modifier.
+* Creates a template from a serialized version of the object(s).
 ******************************************************************************/
-int ModifierTemplates::restoreTemplate(const QString& templateName, QByteArray data)
+int ObjectTemplates::restoreTemplate(const QString& templateName, QByteArray data)
 {
     if(templateName.trimmed().isEmpty())
-        throw Exception(tr("Invalid modifier template name."));
+        throw Exception(tr("Invalid %1 template name.").arg(_objectName.toLower()));
 
     _templateData[templateName] = std::move(data);
     int idx = _templateNames.indexOf(templateName);
@@ -97,13 +88,13 @@ int ModifierTemplates::restoreTemplate(const QString& templateName, QByteArray d
 }
 
 /******************************************************************************
-* Deletes the given modifier template from the store.
+* Deletes the given template from the store.
 ******************************************************************************/
-void ModifierTemplates::removeTemplate(const QString& templateName)
+void ObjectTemplates::removeTemplate(const QString& templateName)
 {
     int idx = _templateNames.indexOf(templateName);
     if(idx < 0)
-        throw Exception(tr("Modifier template with the name '%1' does not exist.").arg(templateName));
+        throw Exception(tr("%1 template with the name '%2' does not exist.").arg(_objectName).arg(templateName));
 
     _templateData.erase(templateName);
     beginRemoveRows(QModelIndex(), idx, idx);
@@ -112,17 +103,17 @@ void ModifierTemplates::removeTemplate(const QString& templateName)
 }
 
 /******************************************************************************
-* Renames an existing modifier template.
+* Renames an existing template.
 ******************************************************************************/
-void ModifierTemplates::renameTemplate(const QString& oldTemplateName, const QString& newTemplateName)
+void ObjectTemplates::renameTemplate(const QString& oldTemplateName, const QString& newTemplateName)
 {
     int idx = _templateNames.indexOf(oldTemplateName);
     if(idx < 0)
-        throw Exception(tr("Modifier template with the name '%1' does not exist.").arg(oldTemplateName));
+        throw Exception(tr("%1 template with the name '%2' does not exist.").arg(_objectName).arg(oldTemplateName));
     if(_templateNames.contains(newTemplateName))
-        throw Exception(tr("Modifier template with the name '%1' does already exist.").arg(newTemplateName));
+        throw Exception(tr("%1 template with the name '%2' does already exist.").arg(_objectName).arg(newTemplateName));
     if(newTemplateName.trimmed().isEmpty())
-        throw Exception(tr("Invalid new modifier template name."));
+        throw Exception(tr("Invalid new %1 template name.").arg(_objectName.toLower()));
 
     _templateData[newTemplateName] = templateData(oldTemplateName);
     _templateData.erase(oldTemplateName);
@@ -131,19 +122,19 @@ void ModifierTemplates::renameTemplate(const QString& oldTemplateName, const QSt
 }
 
 /******************************************************************************
-* Returns the serialized modifier data for the given template.
+* Returns the serialized object data for the given template.
 ******************************************************************************/
-QByteArray ModifierTemplates::templateData(const QString& templateName)
+QByteArray ObjectTemplates::templateData(const QString& templateName)
 {
     int idx = _templateNames.indexOf(templateName);
     if(idx < 0)
-        throw Exception(tr("Modifier template with the name '%1' does not exist.").arg(templateName));
+        throw Exception(tr("%1 template with the name '%2' does not exist.").arg(_objectName).arg(templateName));
     auto iter = _templateData.find(templateName);
     if(iter != _templateData.end())
         return iter->second;
 #ifndef OVITO_DISABLE_QSETTINGS
     QSettings settings;
-    settings.beginGroup(modTemplateStoreGroup);
+    settings.beginGroup(_templateStoreGroup);
     QByteArray buffer = settings.value(templateName).toByteArray();
 #else
     QByteArray buffer;
@@ -155,47 +146,47 @@ QByteArray ModifierTemplates::templateData(const QString& templateName)
 }
 
 /******************************************************************************
-* Instantiates the modifiers that are stored under the given template name.
+* Instantiates the objects that are stored under the given template name.
 ******************************************************************************/
-QVector<OORef<Modifier>> ModifierTemplates::instantiateTemplate(const QString& templateName)
+QVector<OORef<RefTarget>> ObjectTemplates::instantiateTemplate(const QString& templateName)
 {
-    QVector<OORef<Modifier>> modifierSet;
+    QVector<OORef<RefTarget>> objectSet;
     try {
         UndoSuspender noUndo;
 #ifndef OVITO_DISABLE_QSETTINGS
         QSettings settings;
-        settings.beginGroup(modTemplateStoreGroup);
+        settings.beginGroup(_templateStoreGroup);
         QByteArray buffer = settings.value(templateName).toByteArray();
 #else
         QByteArray buffer;
 #endif
         if(buffer.isEmpty())
-            throw Exception(tr("Modifier template with the name '%1' does not exist.").arg(templateName));
+            throw Exception(tr("%1 template with the name '%2' does not exist.").arg(_objectName).arg(templateName));
         QDataStream dstream(buffer);
         ObjectLoadStream stream(dstream);
         for(int chunkId = stream.expectChunkRange(0,1); chunkId == 1; chunkId = stream.expectChunkRange(0,1)) {
-            modifierSet.push_back(stream.loadObject<Modifier>());
+            objectSet.push_back(stream.loadObject<RefTarget>());
             stream.closeChunk();
         }
         stream.closeChunk();
         stream.close();
     }
     catch(Exception& ex) {
-        throw ex.prependToMessage(tr("Failed to load modifier template: "));
+        throw ex.prependToMessage(tr("Failed to load %1 template: ").arg(_objectName.toLower()));
     }
-    return modifierSet;
+    return objectSet;
 }
 
 #ifndef OVITO_DISABLE_QSETTINGS
 /******************************************************************************
 * Writes in-memory template list to the given settings store.
 ******************************************************************************/
-void ModifierTemplates::commit(QSettings& settings)
+void ObjectTemplates::commit(QSettings& settings)
 {
     for(const QString& templateName : _templateNames)
         templateData(templateName);
 
-    settings.beginGroup(modTemplateStoreGroup);
+    settings.beginGroup(_templateStoreGroup);
     settings.remove(QString());
     for(const auto& item : _templateData) {
         settings.setValue(item.first, item.second);
@@ -206,14 +197,14 @@ void ModifierTemplates::commit(QSettings& settings)
 /******************************************************************************
 * Loads a template list from the given settings store.
 ******************************************************************************/
-int ModifierTemplates::load(QSettings& settings)
+int ObjectTemplates::load(QSettings& settings)
 {
-    settings.beginGroup(modTemplateStoreGroup);
+    settings.beginGroup(_templateStoreGroup);
     int count = 0;
     for(const QString& templateName : settings.childKeys()) {
         QByteArray buffer = settings.value(templateName).toByteArray();
         if(buffer.isEmpty())
-            throw Exception(tr("The stored modifier template with the name '%1' is invalid.").arg(templateName));
+            throw Exception(tr("The stored %1 template with the name '%2' is invalid.").arg(_objectName.toLower()).arg(templateName));
         restoreTemplate(templateName, std::move(buffer));
         count++;
     }
@@ -224,10 +215,10 @@ int ModifierTemplates::load(QSettings& settings)
 /******************************************************************************
 * Reloads the in-memory template list from the given settings store.
 ******************************************************************************/
-void ModifierTemplates::restore(QSettings& settings)
+void ObjectTemplates::restore(QSettings& settings)
 {
     _templateData.clear();
-    settings.beginGroup(modTemplateStoreGroup);
+    settings.beginGroup(_templateStoreGroup);
     beginResetModel();
     _templateNames = settings.childKeys();
     endResetModel();

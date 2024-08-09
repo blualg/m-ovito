@@ -25,56 +25,61 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/dialogs/ApplicationSettingsDialog.h>
-#include <ovito/core/dataset/pipeline/ModifierTemplates.h>
+#include <ovito/gui/base/mainwin/templates/ModifierTemplates.h>
+#include "TemplatesPageBase.h"
 
 namespace Ovito {
 
 /**
- * Page of the application settings dialog, which allows the user to manage the defined modifier templates.
+ * Page of the application settings dialog, which allows the user to manage the user-defined modifier templates.
  */
-class OVITO_GUI_EXPORT ModifierTemplatesPage : public ApplicationSettingsDialogPage
+class OVITO_GUI_EXPORT ModifierTemplatesPage : public TemplatesPageBase
 {
     OVITO_CLASS(ModifierTemplatesPage)
     Q_OBJECT
 
+protected:
+
+    // UI title of the settings page.
+    virtual QString settingsPageTitle() override {
+        return tr("Modifier Templates");
+    }
+
+    // Informational text shown on the page.
+    virtual QString settingsPageDescription() override {
+        return tr(
+            "Modifier templates you define here will appear in the drop-down list of available modifiers, from where you can quickly insert them into a data pipeline. "
+            "Templates may consist of several modifiers, making your life easier if you repeatedly need the same modifier sequence.");
+    }
+
+    /// Help topic to open when the user presses the help button.
+    virtual QString helpTopicId() override {
+        return QStringLiteral("manual:modifier_templates");
+    }
+
+    /// The kind of objects for which templates are managed on this page.
+    virtual QString objectTypeName() override {
+        return tr("Modifier");
+    }
+
+    /// The file type and suffix used for saving and loading templates on this.
+    virtual QString templateFileFilter() override {
+        return tr("OVITO Modifier Templates (*.ovmod)");
+    }
+
+    /// The object that manages the templates shown on this page.
+    virtual ObjectTemplates* templateManager() override {
+        return ModifierTemplates::get();
+    }
+
+    /// When the user is creating a new template, this method populates the list of available objects,
+    /// which the the user can select to be included in the template.
+    virtual QVector<QTreeWidgetItem*> populateAvailableObjectsList(QTreeWidget* objectListWidget, QComboBox* nameBox) override;
+
 public:
-
-    /// Constructor.
-    explicit ModifierTemplatesPage() = default;
-
-    /// \brief Creates the widget.
-    virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
-
-    /// \brief Lets the settings page to save all values entered by the user.
-    virtual void saveValues(QTabWidget* tabWidget) override;
-
-    /// \brief Lets the settings page restore the original values of changed settings when the user presses the Cancel button.
-    virtual void restoreValues(QTabWidget* tabWidget) override;
 
     /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
     virtual int pageSortingKey() const override { return 3; }
-
-private Q_SLOTS:
-
-    /// Is invoked when the user presses the "Create template" button.
-    void onCreateTemplate();
-
-    /// Is invoked when the user presses the "Delete template" button.
-    void onDeleteTemplate();
-
-    /// Is invoked when the user presses the "Rename template" button.
-    void onRenameTemplate();
-
-    /// Is invoked when the user presses the "Export templates" button.
-    void onExportTemplates();
-
-    /// Is invoked when the user presses the "Import templates" button.
-    void onImportTemplates();
-
-private:
-
-    QListView* _listWidget;
-    bool _dirtyFlag = false;
 };
 
 }   // End of namespace

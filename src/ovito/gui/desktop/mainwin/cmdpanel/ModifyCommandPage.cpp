@@ -23,7 +23,6 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
-#include <ovito/core/dataset/pipeline/ModifierTemplates.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
@@ -33,6 +32,7 @@
 #include <ovito/core/oo/CloneHelper.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
+#include <ovito/gui/base/mainwin/templates/ModifierTemplates.h>
 #include <ovito/gui/desktop/app/GuiApplication.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/ModifierTemplatesPage.h>

@@ -103,7 +103,6 @@ SET(SourceFiles
     dataset/pipeline/Modifier.cpp
     dataset/pipeline/ModificationNode.cpp
     dataset/pipeline/ModifierGroup.cpp
-    dataset/pipeline/ModifierTemplates.cpp
     dataset/pipeline/StaticSource.cpp
     dataset/pipeline/BasePipelineSource.cpp
     dataset/pipeline/DelegatingModifier.cpp

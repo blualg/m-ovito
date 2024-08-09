@@ -23,30 +23,26 @@
 #pragma once
 
 
-#include <ovito/core/Core.h>
-
+#include <ovito/gui/base/GUIBase.h>
 #include <QAbstractListModel>
 
 namespace Ovito {
 
 /**
- * \brief Manages the application-wide list of modifier templates.
+ * \brief Base class for modifier and viewport overlay template management.
  */
-class OVITO_CORE_EXPORT ModifierTemplates : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT ObjectTemplates : public QAbstractListModel
 {
     Q_OBJECT
 
-private:
+protected:
 
     /// \brief Constructor.
-    ModifierTemplates(QObject* parent = nullptr);
+    ObjectTemplates(const QString& templateStoreGroup, const QString& objectName, QObject* parent = nullptr);
 
 public:
 
-    /// \brief Returns the singleton instance of this class.
-    static ModifierTemplates* get();
-
-    /// \brief Returns the names of the stored modifier templates.
+    /// \brief Returns the names of the stored templates.
     const QStringList& templateList() const { return _templateNames; }
 
     /// \brief Returns the number of rows in this list model.
@@ -60,28 +56,28 @@ public:
             return {};
     }
 
-    /// \brief Creates a new modifier template on the basis of the given modifier(s).
-    /// \param templateName The name of the new template. If a temnplate with the same name exists, it is overwritten.
-    /// \param modifiers The list of one or more modifiers from which the template should be created.
+    /// \brief Creates a new template on the basis of the given object(s).
+    /// \param templateName The name of the new template. If a template with the same name exists, it is overwritten.
+    /// \param objects The list of one or more objects from which the template should be created.
     /// \return The index of the created template.
-    int createTemplate(const QString& templateName, const QVector<OORef<Modifier>>& modifiers);
+    int createTemplate(const QString& templateName, const QVector<OORef<RefTarget>>& objects);
 
-    /// \brief Creates a new modifier template from a serialized version of the modifier.
-    /// \param templateName The name of the new template. If a temnplate with the same name exists, it is overwritten.
-    /// \param data The serialized modifier data, which was originally obtained by a call to templateData().
+    /// \brief Creates a new template from a serialized version of the object.
+    /// \param templateName The name of the new template. If a template with the same name exists, it is overwritten.
+    /// \param data The serialized object data, which was originally obtained by a call to templateData().
     /// \return The index of the created template.
     int restoreTemplate(const QString& templateName, QByteArray data);
 
-    /// \brief Deletes the given modifier template from the store.
+    /// \brief Deletes the given modifier  from the store.
     void removeTemplate(const QString& templateName);
 
-    /// \brief Renames an existing modifier template.
+    /// \brief Renames an existing template.
     void renameTemplate(const QString& oldTemplateName, const QString& newTemplateName);
 
-    /// \brief Instantiates the modifiers that are stored under the given template name.
-    QVector<OORef<Modifier>> instantiateTemplate(const QString& templateName);
+    /// \brief Instantiates the objects that are stored under the given template name.
+    QVector<OORef<RefTarget>> instantiateTemplate(const QString& templateName);
 
-    /// \brief Returns the serialized modifier data for the given template.
+    /// \brief Returns the serialized object data for the given template.
     QByteArray templateData(const QString& templateName);
 
 #ifndef OVITO_DISABLE_QSETTINGS
@@ -113,10 +109,16 @@ public:
 
 private:
 
+    /// Place where the templates are stored in the application settings store.
+    const QString _templateStoreGroup;
+
+    /// The type of object that is managed by this template store, e.g. "Modifier". This human-readable name is used in error messages and should be capitalized.
+    const QString _objectName;
+
     /// Holds the names of the templates.
     QStringList _templateNames;
 
-    /// Holds the serialized modifier data for the templates.
+    /// Holds the serialized templates in binary form.
     std::map<QString, QByteArray> _templateData;
 };
 

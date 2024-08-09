@@ -48,6 +48,7 @@ OVITO_STANDARD_PLUGIN(Gui
         dialogs/GeneralSettingsPage.cpp
         dialogs/ViewportSettingsPage.cpp
         dialogs/ModifierTemplatesPage.cpp
+        dialogs/TemplatesPageBase.cpp
         dialogs/HistoryFileDialog.cpp
         dialogs/ImportFileDialog.cpp
         dialogs/ImportRemoteFileDialog.cpp
