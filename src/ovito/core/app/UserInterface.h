@@ -197,7 +197,7 @@ public:
     /// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
     /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
     /// The 'Isolated' template parameter can be set to true to indicate that the operation should execute independently
-    /// from the currently active task, i.e., cancelation of one of the tasks should not affect the other.
+    /// from the currently active task, i.e., cancellation of one of the tasks should not affect the other.
     template<bool Isolated = false, typename Function>
     bool handleExceptions(Function&& func) noexcept;
 
@@ -293,7 +293,7 @@ namespace Ovito {
 /// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
 /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
 /// The 'Isolated' template parameter can be set to true to indicate that the operation should execute independently
-/// from the currently active task, i.e., cancelation of one of the tasks should not affect the other.
+/// from the currently active task, i.e., cancellation of one of the tasks should not affect the other.
 template<bool Isolated, typename Function>
 bool UserInterface::handleExceptions(Function&& func) noexcept
 {

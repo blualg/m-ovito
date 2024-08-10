@@ -39,3 +39,12 @@ Transferring templates to a different computer
 Note that OVITO stores the definition of all modifier templates in the application's settings file in a proprietary format.
 If needed, they can be exported to a special modifier template file (:file:`*.ovmod`) to transfer them to another computer.
 On the target computer, your can import them into another OVITO installation.
+
+.. _viewport_layer_templates:
+
+Viewport layer templates
+========================
+
+Viewport layer templates work in the same way as modifier templates and you can use them to define often-needed, pre-configured viewport layers.
+A viewport layer template can consist of one or more layers, allowing you to insert frequently used combinations of layers into the viewport
+with a single click.

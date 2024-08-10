@@ -17,7 +17,7 @@ Enable automatic dark mode
   This option is permanently active on Linux and macOS platforms. Note that the :ref:`color of the viewport windows <application_settings.viewports>`
   is controlled by a separate option.
 
-Use seperate working directories for data import/export and session states
+Use separate working directories for data import/export and session states
   If this is turned on, OVITO remembers across program sessions the most recently used folders
   for different file I/O operations, e.g., data file import & export,
   session state loading & saving, or image output.

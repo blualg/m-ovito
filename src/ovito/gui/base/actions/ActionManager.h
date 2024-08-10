@@ -97,7 +97,7 @@ namespace Ovito {
 /// This action moves the currently selected modifer down one entry in the modifier stack.
 #define ACTION_MODIFIER_MOVE_DOWN           "ModifierMoveDown"
 /// This action opens the dialog box for managing modifier templates.
-#define ACTION_MODIFIER_MANAGE_TEMPLATES    "ModifierManageTemplates"
+#define ACTION_MODIFIER_MANAGE_MODIFIER_TEMPLATES    "ModifierManageTemplates"
 /// This action creates a unique copy of the selected pipeline item.
 #define ACTION_PIPELINE_MAKE_INDEPENDENT    "PipelineMakeUnique"
 /// This action creates or dissolves a modifier group in the pipeline editor.
@@ -115,6 +115,8 @@ namespace Ovito {
 #define ACTION_VIEWPORT_LAYER_MOVE_DOWN         "ViewportLayerMoveDown"
 /// This action renames the currently selected viewport layer.
 #define ACTION_VIEWPORT_LAYER_RENAME            "ViewportLayerRename"
+/// This action opens the dialog box for managing viewport layer templates.
+#define ACTION_MODIFIER_MANAGE_OVERLAY_TEMPLATES    "ViewportLayerManageTemplates"
 
 /// This action jumps to the start of the animation
 #define ACTION_GOTO_START_OF_ANIMATION      "AnimationGotoStart"

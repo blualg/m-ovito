@@ -34,6 +34,14 @@ SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(ViewportOverlay, pipeline, "sourceNode"); //
 //SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(ViewportOverlay, pipeline, "dataSource"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
+* Returns the category under which the layer will be displayed in the drop-down list box.
+******************************************************************************/
+QString ViewportOverlay::OOMetaClass::viewportOverlayCategory() const
+{
+    return {};
+}
+
+/******************************************************************************
 * Is called when the overlay is being newly attached to a viewport.
 ******************************************************************************/
 void ViewportOverlay::initializeOverlay(Viewport* viewport)

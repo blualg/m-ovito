@@ -65,6 +65,13 @@ public:
     /// Returns the currently selected model item in list.
     OverlayListItem* selectedItem() const;
 
+    /// Returns the ViewportOverlay that is currently selected in the editor.
+    ViewportOverlay* selectedLayer() const {
+        if(OverlayListItem* item = selectedItem())
+            return item->overlay();
+        return nullptr;
+    }
+
     /// Returns the currently selected index in the overlay list.
     int selectedIndex() const;
 

@@ -110,7 +110,7 @@ void RemoteFileJob::start()
         _isActive = true;
     }
 
-    // Handle cancelation of this task.
+    // Handle cancellation of this task.
     _task.finally(ExecutionContext::current().ui(), [this](Task& task) noexcept {
         if(task.isCanceled())
             shutdown(false);
@@ -233,7 +233,7 @@ void RemoteFileJob::authenticationFailed()
 }
 
 /******************************************************************************
-* Handles cancelation by the user.
+* Handles cancellation by the user.
 ******************************************************************************/
 void RemoteFileJob::connectionCanceled()
 {

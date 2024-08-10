@@ -447,7 +447,7 @@ void RefMaker::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
                 stream.endChunk();
             }
             else {
-                // Indicate that this target is not serizalized.
+                // Indicate that this target is not serialized.
                 stream.beginChunk(0x05);
                 stream.endChunk();
             }
@@ -462,7 +462,7 @@ void RefMaker::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
 #endif
             }
             else {
-                // Indicate that this property field is not serizaliable.
+                // Indicate that this property field is not serializable.
                 stream.beginChunk(0x05);
             }
             stream.endChunk();
@@ -519,7 +519,7 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
                             fieldEntry.field->_singleReferenceWriteFunc(this, fieldEntry.field, target.get());
                     }
                     else {
-                        // Remove any prexisting targets from the reference field.
+                        // Remove any pre-existing targets from the reference field.
                         clearReferenceField(fieldEntry.field);
 
                         // Load each target object and store it in the list reference field.

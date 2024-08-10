@@ -78,7 +78,7 @@ protected Q_SLOTS:
     /// Is called when the network connection has been established.
     virtual void connectionEstablished() = 0;
 
-    /// Handles network connection cancelation by user.
+    /// Handles network connection cancellation by user.
     void connectionCanceled();
 
     /// Handles QNetworkReply finished signals.

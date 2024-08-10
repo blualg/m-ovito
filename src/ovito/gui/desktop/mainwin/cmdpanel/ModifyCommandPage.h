@@ -27,7 +27,7 @@
 #include <ovito/gui/desktop/properties/PropertiesPanel.h>
 #include <ovito/gui/desktop/widgets/general/RolloutContainer.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
-#include <ovito/gui/base/mainwin/ModifierListModel.h>
+#include <ovito/gui/base/mainwin/AvailableModifiersModel.h>
 #include <ovito/core/oo/RefTargetListener.h>
 
 namespace Ovito {
@@ -54,7 +54,7 @@ public:
     PipelineListModel* pipelineListModel() const { return _pipelineListModel; }
 
     /// Returns the list model that lists the available modifiers.
-    ModifierListModel* modifierListModel() const { return static_cast<ModifierListModel*>(_modifierSelector->model()); }
+    AvailableModifiersModel* availableModifiersModel() const { return static_cast<AvailableModifiersModel*>(_modifierSelector->model()); }
 
     /// Loads the layout of the widgets from the settings store.
     void restoreLayout();

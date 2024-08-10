@@ -27,13 +27,14 @@ OVITO_STANDARD_PLUGIN(GuiBase
         actions/ViewportModeAction.cpp
         actions/ViewportActions.cpp
         actions/AnimationActions.cpp
+        mainwin/AvailableModifiersModel.cpp
+        mainwin/AvailableOverlaysModel.cpp
         mainwin/OverlayListModel.cpp
         mainwin/OverlayListItem.cpp
-        mainwin/OverlayTypesModel.cpp
         mainwin/PipelineListModel.cpp
         mainwin/PipelineListItem.cpp
-        mainwin/ModifierListModel.cpp
         mainwin/templates/ModifierTemplates.cpp
+        mainwin/templates/OverlayTemplates.cpp
         mainwin/templates/ObjectTemplates.cpp
         viewport/ViewportInputManager.cpp
         viewport/ViewportInputMode.cpp

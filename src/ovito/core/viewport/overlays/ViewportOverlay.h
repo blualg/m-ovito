@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/pipeline/ActiveObject.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 
 namespace Ovito {
@@ -34,7 +35,18 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ViewportOverlay : public ActiveObject
 {
-    OVITO_CLASS(ViewportOverlay)
+    /// A meta-class for viewport layers (i.e. classes derived from ViewportOverlay).
+    class OVITO_CORE_EXPORT OOMetaClass : public ActiveObject::OOMetaClass
+    {
+    public:
+        /// Inherit standard constructor from base meta class.
+        using ActiveObject::OOMetaClass::OOMetaClass;
+
+        /// \brief Returns the category under which the layer will be displayed in the drop-down list box.
+        virtual QString viewportOverlayCategory() const;
+    };
+
+    OVITO_CLASS_META(ViewportOverlay, OOMetaClass);
 
 public:
 

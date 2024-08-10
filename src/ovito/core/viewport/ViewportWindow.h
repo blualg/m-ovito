@@ -296,7 +296,7 @@ private:
     /// Used to update the viewport contents after a short waiting period.
     QBasicTimer _updateTimer;
 
-    /// Controls the viisbility of the orientation indicator.
+    /// Controls the visibility of the orientation indicator.
     bool _showOrientationIndicator = true;
 
     /// Controls the visibility of the viewport caption.

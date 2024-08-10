@@ -20,44 +20,26 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-
-#include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/gui/desktop/dialogs/ApplicationSettingsDialog.h>
+#include <ovito/gui/base/GUIBase.h>
+#include <ovito/core/app/Application.h>
+#include "OverlayTemplates.h"
 
 namespace Ovito {
 
-/**
- * Page of the application settings dialog, which hosts particle-related options.
- */
-class ParticleSettingsPage : public ApplicationSettingsDialogPage
+/******************************************************************************
+* Returns the singleton instance of this class.
+******************************************************************************/
+OverlayTemplates* OverlayTemplates::get()
 {
-    OVITO_CLASS(ParticleSettingsPage)
-    Q_OBJECT
+    static OverlayTemplates* instance = new OverlayTemplates(Application::instance());
+    return instance;
+}
 
-public:
-
-    /// \brief Creates the widget.
-    virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
-
-    /// \brief Lets the settings page to save all values entered by the user.
-    /// \param settingsDialog The settings dialog box.
-    virtual void saveValues(QTabWidget* tabWidget) override;
-
-    /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
-    virtual int pageSortingKey() const override { return 5; }
-
-public Q_SLOTS:
-
-    /// Restores the built-in default particle colors and sizes.
-    void restoreBuiltinParticlePresets();
-
-private:
-
-    QTreeWidget* _predefTypesTable;
-    QTreeWidgetItem* _particleTypesItem;
-    QTreeWidgetItem* _structureTypesItem;
-};
+/******************************************************************************
+* Constructor.
+******************************************************************************/
+OverlayTemplates::OverlayTemplates(QObject* parent) : ObjectTemplates(QStringLiteral("core/overlay/templates/"), tr("Viewport layer"), parent)
+{
+}
 
 }   // End of namespace

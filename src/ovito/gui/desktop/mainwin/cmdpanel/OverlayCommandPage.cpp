@@ -26,10 +26,11 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/dialogs/OverlayTemplatesPage.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/mainwin/OverlayListModel.h>
 #include <ovito/gui/base/mainwin/OverlayListItem.h>
-#include <ovito/gui/base/mainwin/OverlayTypesModel.h>
+#include <ovito/gui/base/mainwin/AvailableOverlaysModel.h>
 #include "CommandPanel.h"
 #include "OverlayCommandPage.h"
 
@@ -50,7 +51,7 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
     _newLayerBox = new QComboBox(this);
     layout->addWidget(_newLayerBox);
     _newLayerBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    _newLayerBox->setModel(new OverlayTypesModel(this, mainWindow, _overlayListModel));
+    _newLayerBox->setModel(new AvailableOverlaysModel(this, mainWindow, _overlayListModel));
     _newLayerBox->setMaxVisibleItems(0xFFFF);
     connect(_newLayerBox, qOverload<int>(&QComboBox::activated), this, &OverlayCommandPage::onInsertNewOverlay);
 
@@ -124,6 +125,15 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
         _overlayListWidget->edit(_overlayListWidget->currentIndex());
     });
 
+    editToolbar->addSeparator();
+
+    QAction* manageOverlayTemplatesAction = actionManager->createCommandAction(ACTION_MODIFIER_MANAGE_OVERLAY_TEMPLATES, tr("Manage Viewport Layer Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved viewport layer templates."));
+    connect(manageOverlayTemplatesAction, &QAction::triggered, [&mainWindow]() {
+        ApplicationSettingsDialog dlg(mainWindow, &OverlayTemplatesPage::OOClass());
+        dlg.exec();
+    });
+    editToolbar->addAction(manageOverlayTemplatesAction);
+
     layout->addWidget(_splitter, 1);
 
     // Create the properties panel.
@@ -172,7 +182,7 @@ ViewportOverlay* OverlayCommandPage::selectedLayer() const
 void OverlayCommandPage::onInsertNewOverlay(int index)
 {
     QComboBox* selector = static_cast<QComboBox*>(sender());
-    OverlayTypesModel* model = static_cast<OverlayTypesModel*>(selector->model());
+    AvailableOverlaysModel* model = static_cast<AvailableOverlaysModel*>(selector->model());
     if(index == model->getMoreExtensionsItemIndex()) {
         QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
     }

@@ -59,14 +59,14 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
     public:
         using QComboBox::QComboBox;
         virtual void showPopup() override {
-            static_cast<ModifierListModel*>(model())->updateActionState();
+            static_cast<AvailableModifiersModel*>(model())->updateActionState();
             QComboBox::showPopup();
         }
     };
     _modifierSelector = new ModifierListBox(this);
     layout->addWidget(_modifierSelector, 1, 0, 1, 1);
     _modifierSelector->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    _modifierSelector->setModel(new ModifierListModel(this, mainWindow, _pipelineListModel));
+    _modifierSelector->setModel(new AvailableModifiersModel(this, mainWindow, _pipelineListModel));
     _modifierSelector->setMaxVisibleItems(0xFFFF);
     connect(_modifierSelector, qOverload<int>(&QComboBox::activated), this, &ModifyCommandPage::onInsertNewModifier);
 
@@ -167,7 +167,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
     editToolbar->addSeparator();
     editToolbar->addAction(actionManager->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
 
-    QAction* manageModifierTemplatesAction = actionManager->createCommandAction(ACTION_MODIFIER_MANAGE_TEMPLATES, tr("Manage Modifier Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved modifier templates."));
+    QAction* manageModifierTemplatesAction = actionManager->createCommandAction(ACTION_MODIFIER_MANAGE_MODIFIER_TEMPLATES, tr("Manage Modifier Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved modifier templates."));
     connect(manageModifierTemplatesAction, &QAction::triggered, [&mainWindow]() {
         ApplicationSettingsDialog dlg(mainWindow, &ModifierTemplatesPage::OOClass());
         dlg.exec();
@@ -242,15 +242,13 @@ void ModifyCommandPage::saveLayout()
 ******************************************************************************/
 void ModifyCommandPage::onInsertNewModifier(int index)
 {
-    QComboBox* selector = static_cast<QComboBox*>(sender());
-    ModifierListModel* model = static_cast<ModifierListModel*>(selector->model());
-    if(index == model->getMoreExtensionsItemIndex()) {
+    if(index == availableModifiersModel()->getMoreExtensionsItemIndex()) {
         QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
     }
     else {
-        model->insertModifierByIndex(index);
+        availableModifiersModel()->insertModifierByIndex(index);
     }
-    selector->setCurrentIndex(0);
+    _modifierSelector->setCurrentIndex(0);
 }
 
 /******************************************************************************

@@ -68,17 +68,17 @@ private:
 /**
  * A Qt list model that list all available modifier types that are applicable to the current data pipeline.
  */
-class OVITO_GUIBASE_EXPORT ModifierListModel : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT AvailableModifiersModel : public QAbstractListModel
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    ModifierListModel(QObject* parent, UserInterface& userInterface, PipelineListModel* pipelineListModel);
+    AvailableModifiersModel(QObject* parent, UserInterface& userInterface, PipelineListModel* pipelineListModel);
 
     /// Destructor.
-    virtual ~ModifierListModel() { _allModels.removeOne(this); }
+    virtual ~AvailableModifiersModel() { _allModels.removeOne(this); }
 
     /// Returns the number of rows in the model.
     virtual int rowCount(const QModelIndex& parent) const override;
@@ -99,7 +99,7 @@ public:
     ModifierAction* actionFromIndex(const QModelIndex& index) const { return actionFromIndex(index.row()); }
 
     /// Returns the category index for the modifier templates.
-    int modifierTemplatesCategory() const { return (int)_actionsPerCategory.size() - 1; }
+    int templatesCategory() const { return (int)_actionsPerCategory.size() - 1; }
 
     /// Returns the list index where the "Get more modifiers..." item is located.
     int getMoreExtensionsItemIndex() const { return _getMoreExtensionsItemIndex; }
@@ -107,13 +107,13 @@ public:
     /// Returns whether sorting of available modifiers into categories is enabled.
     bool useCategories() const { return _useCategories; }
 
-    /// Sets whether available modifiers are storted by category instead of name.
+    /// Sets whether available modifiers are sorted by category instead of name.
     void setUseCategories(bool on);
 
     /// Returns whether sorting of available modifiers into categories is enabled globally for the application.
     static bool useCategoriesGlobal();
 
-    /// Sets whether available modifiers are storted by category gloablly for the application.
+    /// Sets whether available modifiers are sorted by category globally for the application.
     static void setUseCategoriesGlobal(bool on);
 
 public Q_SLOTS:
@@ -130,7 +130,7 @@ private Q_SLOTS:
     void insertModifier();
 
     /// Rebuilds the list of actions for the modifier templates.
-    void refreshModifierTemplates();
+    void refreshTemplates();
 
     /// Updates the color brushes of the model.
     void updateColorPalette(const QPalette& palette);
@@ -164,15 +164,15 @@ private:
     /// Font used for category header items.
     QFont _categoryFont;
 
+    /// Colors used for category header items.
+    QBrush _categoryBackgroundBrush;
+    QBrush _categoryForegroundBrush;
+
     /// Font used for "Get more modifiers..." item.
     QFont _getMoreExtensionsFont;
 
     /// Color used for the "Get more modifiers..." item.
     QBrush _getMoreExtensionsForegroundBrush;
-
-    /// Colors used for category header items.
-    QBrush _categoryBackgroundBrush;
-    QBrush _categoryForegroundBrush;
 
     /// Controls the sorting of available modifiers into categories.
     bool _useCategories = useCategoriesGlobal();
@@ -180,8 +180,8 @@ private:
     /// The list index where the "Get more modifiers..." item is located.
     int _getMoreExtensionsItemIndex = -1;
 
-    /// Global list of all ModifierListModel instances that currently exist.
-    static QVector<ModifierListModel*> _allModels;
+    /// Global list of all AvailableModifiersModel instances that currently exist.
+    static QVector<AvailableModifiersModel*> _allModels;
 };
 
 }   // End of namespace

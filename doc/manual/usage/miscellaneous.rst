@@ -49,23 +49,22 @@ Viewport layers
 ---------------
 
 Viewport layers are a way to superimpose additional information and graphics
-such as text labels, color legends, and coordinate tripods on top of the rendered image of the three-dimensional scene.
+such as text labels, color legends, and coordinate tripods on top of the three-dimensional scene.
 OVITO offers several different layer types, which may be added to a viewport from the
 :ref:`Viewport Layers <viewport_layers>` tab of the command panel.
 
 
 .. _usage.modifier_templates:
 
-Modifier templates
-------------------
+Modifier & viewport layer templates
+-----------------------------------
 
 When working with OVITO on a regular basis, you may find yourself using the same modifiers again and again.
-Some modifiers are often used in the same combination to accomplish specific analysis, filter, or visualization
+Certain modifiers are often used in the same combination to accomplish specific analysis, filter, or visualization
 tasks. To make your life easier and save you from repetitive work, OVITO allows you to define so-called *modifier
-templates*. These are preconfigured modifiers or combinations of modifiers that can be inserted into
-the data pipeline with just a single click. See :ref:`this section <modifier_templates>` to learn
-more about this program feature.
-
+templates*. These are pre-configured modifiers, or combinations of several modifiers, that can be inserted into
+the data pipeline with just a single click. In the same way you can define templates for pre-configured viewport
+layers that you use frequently. See :ref:`modifier_templates` to learn more about this program feature.
 
 .. _usage.scripting:
 

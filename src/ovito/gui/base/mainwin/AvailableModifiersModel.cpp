@@ -27,12 +27,12 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include "ModifierListModel.h"
+#include "AvailableModifiersModel.h"
 #include "PipelineListModel.h"
 
 namespace Ovito {
 
-QVector<ModifierListModel*> ModifierListModel::_allModels;
+QVector<AvailableModifiersModel*> AvailableModifiersModel::_allModels;
 
 /******************************************************************************
 * Constructs an action for a built-in modifier class.
@@ -104,7 +104,7 @@ bool ModifierAction::updateState(const PipelineFlowState& input)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ModifierListModel::ModifierListModel(QObject* parent, UserInterface& userInterface, PipelineListModel* pipelineListModel) : QAbstractListModel(parent), _userInterface(userInterface), _pipelineListModel(pipelineListModel)
+AvailableModifiersModel::AvailableModifiersModel(QObject* parent, UserInterface& userInterface, PipelineListModel* pipelineListModel) : QAbstractListModel(parent), _userInterface(userInterface), _pipelineListModel(pipelineListModel)
 {
     OVITO_ASSERT(userInterface.actionManager());
 
@@ -112,13 +112,13 @@ ModifierListModel::ModifierListModel(QObject* parent, UserInterface& userInterfa
     _allModels.push_back(this);
 
     // Update the state of this model's actions whenever the ActionManager requests it.
-    connect(userInterface.actionManager(), &ActionManager::actionUpdateRequested, this, &ModifierListModel::updateActionState);
+    connect(userInterface.actionManager(), &ActionManager::actionUpdateRequested, this, &AvailableModifiersModel::updateActionState);
 
     // Initialize UI colors.
     updateColorPalette(QGuiApplication::palette());
 QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
-    connect(qGuiApp, &QGuiApplication::paletteChanged, this, &ModifierListModel::updateColorPalette);
+    connect(qGuiApp, &QGuiApplication::paletteChanged, this, &AvailableModifiersModel::updateColorPalette);
 QT_WARNING_POP
 
     // Enumerate all built-in modifier classes.
@@ -138,7 +138,7 @@ QT_WARNING_POP
         OVITO_ASSERT(action->parent() == userInterface.actionManager());
 
         // Handle the insertion action.
-        connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
+        connect(action, &QAction::triggered, this, &AvailableModifiersModel::insertModifier);
     }
 
     // Order actions list by category name.
@@ -171,7 +171,7 @@ QT_WARNING_POP
         OVITO_ASSERT(action->parent() == userInterface.actionManager());
 
         // Handle the action.
-        connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
+        connect(action, &QAction::triggered, this, &AvailableModifiersModel::insertModifier);
 
         // Insert action into complete list.
         _actions.push_back(action);
@@ -181,10 +181,10 @@ QT_WARNING_POP
     std::sort(_actions.begin(), _actions.end(), [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
 
     // Listen for changes to the underlying modifier template list.
-    connect(ModifierTemplates::get(), &QAbstractItemModel::rowsInserted, this, &ModifierListModel::refreshModifierTemplates);
-    connect(ModifierTemplates::get(), &QAbstractItemModel::rowsRemoved, this, &ModifierListModel::refreshModifierTemplates);
-    connect(ModifierTemplates::get(), &QAbstractItemModel::modelReset, this, &ModifierListModel::refreshModifierTemplates);
-    connect(ModifierTemplates::get(), &QAbstractItemModel::dataChanged, this, &ModifierListModel::refreshModifierTemplates);
+    connect(ModifierTemplates::get(), &QAbstractItemModel::rowsInserted, this, &AvailableModifiersModel::refreshTemplates);
+    connect(ModifierTemplates::get(), &QAbstractItemModel::rowsRemoved, this, &AvailableModifiersModel::refreshTemplates);
+    connect(ModifierTemplates::get(), &QAbstractItemModel::modelReset, this, &AvailableModifiersModel::refreshTemplates);
+    connect(ModifierTemplates::get(), &QAbstractItemModel::dataChanged, this, &AvailableModifiersModel::refreshTemplates);
 
     // Define fonts, colors, etc.
     _categoryFont = QGuiApplication::font();
@@ -196,7 +196,6 @@ QT_WARNING_POP
         _categoryFont.setPixelSize(_categoryFont.pixelSize() * 4 / 5);
 #endif
     _getMoreExtensionsFont = QGuiApplication::font();
-    //_getMoreExtensionsFont.setItalic(true);
 
     // Generate list items.
     updateModelLists();
@@ -205,7 +204,7 @@ QT_WARNING_POP
 /******************************************************************************
 * Updates the color brushes of the model.
 ******************************************************************************/
-void ModifierListModel::updateColorPalette(const QPalette& palette)
+void AvailableModifiersModel::updateColorPalette(const QPalette& palette)
 {
     bool darkTheme = palette.color(QPalette::Active, QPalette::Window).lightness() < 100;
 #ifndef Q_OS_LINUX
@@ -220,7 +219,7 @@ void ModifierListModel::updateColorPalette(const QPalette& palette)
 /******************************************************************************
 * Returns the number of rows in the model.
 ******************************************************************************/
-int ModifierListModel::rowCount(const QModelIndex& parent) const
+int AvailableModifiersModel::rowCount(const QModelIndex& parent) const
 {
     return _modelStrings.size();
 }
@@ -228,7 +227,7 @@ int ModifierListModel::rowCount(const QModelIndex& parent) const
 /******************************************************************************
 * Returns the model's role names.
 ******************************************************************************/
-QHash<int, QByteArray> ModifierListModel::roleNames() const
+QHash<int, QByteArray> AvailableModifiersModel::roleNames() const
 {
     return {
         { Qt::DisplayRole, "title" },
@@ -240,7 +239,7 @@ QHash<int, QByteArray> ModifierListModel::roleNames() const
 /******************************************************************************
 * Rebuilds the internal list of model items.
 ******************************************************************************/
-void ModifierListModel::updateModelLists()
+void AvailableModifiersModel::updateModelLists()
 {
     beginResetModel();
     _modelStrings.clear();
@@ -285,7 +284,7 @@ void ModifierListModel::updateModelLists()
 /******************************************************************************
 * Returns the data associated with a list item.
 ******************************************************************************/
-QVariant ModifierListModel::data(const QModelIndex& index, int role) const
+QVariant AvailableModifiersModel::data(const QModelIndex& index, int role) const
 {
     if(role == Qt::DisplayRole) {
         if(index.row() >= 0 && index.row() < _modelStrings.size())
@@ -328,7 +327,7 @@ QVariant ModifierListModel::data(const QModelIndex& index, int role) const
 /******************************************************************************
 * Returns the flags for an item.
 ******************************************************************************/
-Qt::ItemFlags ModifierListModel::flags(const QModelIndex& index) const
+Qt::ItemFlags AvailableModifiersModel::flags(const QModelIndex& index) const
 {
     if(index.row() > 0 && index.row() < _modelActions.size()) {
         if(_modelActions[index.row()])
@@ -344,7 +343,7 @@ Qt::ItemFlags ModifierListModel::flags(const QModelIndex& index) const
 /******************************************************************************
 * Signal handler that inserts the selected modifier into the current pipeline.
 ******************************************************************************/
-void ModifierListModel::insertModifier()
+void AvailableModifiersModel::insertModifier()
 {
     // Get the action that emitted the signal.
     ModifierAction* action = qobject_cast<ModifierAction*>(sender());
@@ -378,7 +377,7 @@ void ModifierListModel::insertModifier()
 /******************************************************************************
 * Inserts the i-th modifier from this model into the current pipeline.
 ******************************************************************************/
-void ModifierListModel::insertModifierByIndex(int index)
+void AvailableModifiersModel::insertModifierByIndex(int index)
 {
     if(QAction* action = actionFromIndex(index))
         action->trigger();
@@ -387,9 +386,9 @@ void ModifierListModel::insertModifierByIndex(int index)
 /******************************************************************************
 * Rebuilds the list of actions for the modifier templates.
 ******************************************************************************/
-void ModifierListModel::refreshModifierTemplates()
+void AvailableModifiersModel::refreshTemplates()
 {
-    std::vector<ModifierAction*>& templateActions = _actionsPerCategory[modifierTemplatesCategory()];
+    std::vector<ModifierAction*>& templateActions = _actionsPerCategory[templatesCategory()];
 
     // Discard old list of actions.
     if(!templateActions.empty()) {
@@ -415,7 +414,7 @@ void ModifierListModel::refreshModifierTemplates()
             OVITO_ASSERT(action->parent() == _userInterface.actionManager());
 
             // Handle the action.
-            connect(action, &QAction::triggered, this, &ModifierListModel::insertModifier);
+            connect(action, &QAction::triggered, this, &AvailableModifiersModel::insertModifier);
 
             // Append action to flat list.
             _actions.push_back(action);
@@ -432,7 +431,7 @@ void ModifierListModel::refreshModifierTemplates()
 /******************************************************************************
 * Updates the enabled/disabled state of all modifier actions based on the current pipeline.
 ******************************************************************************/
-void ModifierListModel::updateActionState()
+void AvailableModifiersModel::updateActionState()
 {
     // Retrieve the input pipeline state, which a newly inserted modifier would be applied to.
     // This is used to determine which modifiers are applicable.
@@ -462,9 +461,9 @@ void ModifierListModel::updateActionState()
 }
 
 /******************************************************************************
-* Sets whether available modifiers are storted by category instead of name.
+* Sets whether available modifiers are sorted by category instead of name.
 ******************************************************************************/
-void ModifierListModel::setUseCategories(bool on)
+void AvailableModifiersModel::setUseCategories(bool on)
 {
     if(on != _useCategories) {
         _useCategories = on;
@@ -475,7 +474,7 @@ void ModifierListModel::setUseCategories(bool on)
 /******************************************************************************
 * Returns whether sorting of available modifiers into categories is enabled globally for the application.
 ******************************************************************************/
-bool ModifierListModel::useCategoriesGlobal()
+bool AvailableModifiersModel::useCategoriesGlobal()
 {
 #ifndef OVITO_DISABLE_QSETTINGS
     QSettings settings;
@@ -486,9 +485,9 @@ bool ModifierListModel::useCategoriesGlobal()
 }
 
 /******************************************************************************
-* Sets whether available modifiers are storted by category gloablly for the application.
+* Sets whether available modifiers are sorted by category globally for the application.
 ******************************************************************************/
-void ModifierListModel::setUseCategoriesGlobal(bool on)
+void AvailableModifiersModel::setUseCategoriesGlobal(bool on)
 {
 #ifndef OVITO_DISABLE_QSETTINGS
     if(on != useCategoriesGlobal()) {
@@ -496,7 +495,7 @@ void ModifierListModel::setUseCategoriesGlobal(bool on)
         settings.setValue("modifiers/sort_by_category", on);
     }
 
-    for(ModifierListModel* model : _allModels)
+    for(AvailableModifiersModel* model : _allModels)
         model->setUseCategories(on);
 #endif
 }

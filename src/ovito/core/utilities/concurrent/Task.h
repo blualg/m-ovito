@@ -407,7 +407,7 @@ OVITO_CORE_EXPORT inline bool isCanceled() noexcept {
     return get()->isCanceled();
 }
 
-/// Throws an OperationCanceled exception if a cancelation request was made on the current task.
+/// Throws an OperationCanceled exception if a cancellation request was made on the current task.
 OVITO_CORE_EXPORT inline void throwIfCanceled() {
     if(isCanceled())
         throw OperationCanceled();
