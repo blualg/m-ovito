@@ -23,6 +23,7 @@ Version 3.11.0 (xx-xxx-2024)
 - :ref:`particles.modifiers.unwrap_trajectories` modifier: Performance optimizations
 - :ref:`particles.modifiers.color_coding` modifier: New symmetric range option
 - :ref:`particles.modifiers.dislocation_analysis` modifier: Ensure cross-platform reproducible results
+- User can now save pre-configured templates for viewport layers and reuse them in other scenes
 - Simulation file import: Updated mass of *Zn* in internal table of elements from 65.409 (pre 2007 value) to 65.38 (see https://www.ciaaw.org/zinc.htm) - old value is still recognized for compatibility reasons
 - Added support for reading modern Aspherix *.vtm* files that have a "Bodies" section
 - OVITO Basic now includes demo versions of the high-fidelity rendering backends :ref:`OSPRay <rendering.ospray_renderer>`, :ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`

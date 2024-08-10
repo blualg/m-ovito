@@ -127,6 +127,8 @@ std::vector<ParaViewVTMBlockInfo> ParaViewVTMImporter::loadVTMFile(const FileHan
 
                 // Parse value of 'file' attribute if present.
                 QString file = xml.attributes().value("file").toString();
+                // Aspherix fix: The Windows version may include backslashes in the file path.
+                file.replace('\\', '/');
                 // Resolve file path and record the URL, which will be loaded later.
                 if(!file.isEmpty())
                     blockInfo.location = fileHandle.sourceUrl().resolved(QUrl(file));
