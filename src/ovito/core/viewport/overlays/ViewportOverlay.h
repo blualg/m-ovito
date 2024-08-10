@@ -35,6 +35,8 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ViewportOverlay : public ActiveObject
 {
+public:
+
     /// A meta-class for viewport layers (i.e. classes derived from ViewportOverlay).
     class OVITO_CORE_EXPORT OOMetaClass : public ActiveObject::OOMetaClass
     {
