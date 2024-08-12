@@ -21,6 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include "CommandPanel.h"
 #include "RenderCommandPage.h"
 #include "ModifyCommandPage.h"
@@ -49,6 +51,15 @@ CommandPanel::CommandPanel(MainWindow& mainWindow, QWidget* parent) : QWidget(pa
     _tabWidget->setTabToolTip(1, tr("Rendering"));
     _tabWidget->setTabToolTip(2, tr("Viewport layers"));
     setCurrentPage(MainWindow::MODIFY_PAGE);
+
+    QAction* showModifyPageAction = mainWindow.actionManager()->createCommandAction(ACTION_COMMAND_PANEL_MODIFY, tr("Pipeline editor"), {}, tr("Switches to the pipeline editing tab."));
+    connect(showModifyPageAction, &QAction::triggered, this, [this]() { setCurrentPage(MainWindow::MODIFY_PAGE); });
+
+    QAction* showRenderPageAction = mainWindow.actionManager()->createCommandAction(ACTION_COMMAND_PANEL_RENDER, tr("Render settings"), {}, tr("Switches to the image & animation rendering tab."));
+    connect(showRenderPageAction, &QAction::triggered, this, [this]() { setCurrentPage(MainWindow::RENDER_PAGE); });
+
+    QAction* showOverlayPageAction = mainWindow.actionManager()->createCommandAction(ACTION_COMMAND_PANEL_OVERLAYS, tr("Viewport layers"), {}, tr("Switches to the viewport layers tab."));
+    connect(showOverlayPageAction, &QAction::triggered, this, [this]() { setCurrentPage(MainWindow::OVERLAY_PAGE); });
 }
 
 /******************************************************************************

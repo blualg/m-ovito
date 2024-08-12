@@ -371,6 +371,9 @@ void AvailableModifiersModel::insertModifier()
             // Insert modifier(s) into the data pipeline.
             _pipelineListModel->applyModifiers(modifierSet, modifierGroup);
         }
+
+        // Show the modify tab of the command panel.
+        _userInterface.actionManager()->getAction(ACTION_COMMAND_PANEL_MODIFY)->trigger();
     });
 }
 

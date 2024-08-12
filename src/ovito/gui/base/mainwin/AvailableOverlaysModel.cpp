@@ -211,7 +211,7 @@ void AvailableOverlaysModel::updateModelLists()
                 _modelActions.push_back(action);
                 _modelStrings.push_back(action->text());
             }
-            if(_categoryNames[categoryIndex] == tr("Python viewport layers")) {
+            if(_categoryNames[categoryIndex] == tr("Python layers")) {
                 _getMoreExtensionsItemIndex = _modelStrings.size();
                 _modelActions.push_back(nullptr);
                 _modelStrings.push_back(tr("Get more layers..."));
@@ -372,6 +372,8 @@ void AvailableOverlaysModel::insertViewportLayer()
             QVector<OORef<ViewportOverlay>> layerSet = OverlayTemplates::get()->instantiateTemplate(action->templateName());
             // Insert the layer(s) into either the overlays or the underlays list.
             for(OORef<ViewportOverlay>& layer : layerSet) {
+                // Make sure the new overlay gets selected in the UI.
+                _overlayListModel->setNextToSelectObject(layer);
                 if(underlayIndex >= 0)
                     vp->insertUnderlay(underlayIndex+1, std::move(layer));
                 else
@@ -382,6 +384,9 @@ void AvailableOverlaysModel::insertViewportLayer()
 
         // Automatically activate preview mode to make the overlay visible.
         vp->setRenderPreviewMode(true);
+
+        // Show the overlays tab of the command panel.
+        _userInterface.actionManager()->getAction(ACTION_COMMAND_PANEL_OVERLAYS)->trigger();
     });
 }
 

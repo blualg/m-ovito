@@ -139,13 +139,17 @@ namespace Ovito {
 
 /// This action starts rendering of the current view.
 #define ACTION_RENDER_ACTIVE_VIEWPORT       "RenderActiveViewport"
-/// This action displays the frame buffer windows showing the last rendered image.
-#define ACTION_SHOW_FRAME_BUFFER            "ShowFrameBuffer"
 
 /// This actions open the application's "Settings" dialog.
 #define ACTION_SETTINGS_DIALOG              "Settings"
 /// Opens a list of commands for quick access by the user.
 #define ACTION_COMMAND_QUICKSEARCH          "CommandQuickSearch"
+/// Activates the "Modify" tab of the command panel.
+#define ACTION_COMMAND_PANEL_MODIFY         "CommandPanel.Modify"
+/// Activates the "Render" tab of the command panel.
+#define ACTION_COMMAND_PANEL_RENDER         "CommandPanel.Render"
+/// Activates the "Viewport layers" tab of the command panel.
+#define ACTION_COMMAND_PANEL_OVERLAYS       "CommandPanel.Overlays"
 
 /// This actions activates the scene node selection mode.
 #define ACTION_SELECTION_MODE               "SelectionMode"
@@ -159,7 +163,8 @@ namespace Ovito {
 /// This actions lets the user generate script code from the selected data pipeline.
 #define ACTION_SCRIPTING_GENERATE_CODE      "ScriptingGenerateCode"
 
-#define ACTION_REMOTE_RENDERING "RemoteRendering"
+/// Show the "Render on remote computer" dialog.
+#define ACTION_REMOTE_RENDERING             "RemoteRendering"
 
 /// This action adds a new pipeline to the scene with a FileSource.
 #define ACTION_NEW_PIPELINE_FILESOURCE      "NewPipeline.FileSource"
