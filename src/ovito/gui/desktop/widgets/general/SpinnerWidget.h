@@ -118,6 +118,9 @@ public:
     /// \brief Clears the standard value.
     void unsetStandardValue() { setStandardValue(std::numeric_limits<FloatType>::quiet_NaN()); }
 
+    /// \brief Returns whether or not the spinner has a standard value set.
+    bool hasStandardValue() const { return std::isfinite(standardValue()); }
+
     /// \brief Returns the units of this spinner's value.
     /// \return The parameter unit object that performs the conversion from native units
     ///         to user units and back.

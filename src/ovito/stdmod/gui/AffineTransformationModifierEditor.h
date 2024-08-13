@@ -25,6 +25,7 @@
 
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/core/utilities/units/PrescribedScaleUnit.h>
 
 namespace Ovito {
 
@@ -55,9 +56,17 @@ private Q_SLOTS:
     /// Is called when the user presses the 'Enter rotation' button.
     void onEnterRotation();
 
+    /// Auto-adjusts the increment steps of the numeric parameter spinner widgets.
+    void updateParameterUnitScales();
+
 private:
 
-    SpinnerWidget* elementSpinners[3][4];
+    SpinnerWidget* relativeCellSpinners[3][4];
+    SpinnerWidget* absoluteCellSpinners[3][4];
+    std::optional<PrescribedScaleUnit> _relativeTranslationUnits[3];
+    std::optional<PrescribedScaleUnit> _relativeMatrixUnits;
+    std::optional<PrescribedScaleUnit> _absoluteCellUnits[3][3];
+    std::optional<PrescribedScaleUnit> _absoluteOriginUnits[3];
 };
 
 }   // End of namespace

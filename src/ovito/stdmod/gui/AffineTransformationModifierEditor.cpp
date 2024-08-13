@@ -73,23 +73,32 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
     connect(enterRotationAction, &QAction::triggered, this, &AffineTransformationModifierEditor::onEnterRotation);
     layout->addLayout(sublayout, 0, 0, 1, 8);
 
+    // Override automatic increment step sizes for the cell parameters.
+    _relativeMatrixUnits.emplace(mainWindow().unitsManager().floatIdentityUnit());
+    _relativeTranslationUnits[0].emplace(mainWindow().unitsManager().floatIdentityUnit());
+    _relativeTranslationUnits[1].emplace(mainWindow().unitsManager().floatIdentityUnit());
+    _relativeTranslationUnits[2].emplace(mainWindow().unitsManager().floatIdentityUnit());
+
     for(int col = 0; col < 3; col++) {
         layout->setColumnStretch(col*3 + 0, 1);
-        if(col < 2) layout->setColumnMinimumWidth(col*3 + 2, 4);
-        for(int row=0; row<4; row++) {
+        if(col < 2)
+            layout->setColumnMinimumWidth(col*3 + 2, 4);
+        for(int row = 0; row < 4; row++) {
             QLineEdit* lineEdit = new QLineEdit(rollout);
             SpinnerWidget* spinner = new SpinnerWidget(rollout);
             lineEdit->setEnabled(false);
             spinner->setEnabled(false);
             if(row < 3) {
-                elementSpinners[row][col] = spinner;
+                relativeCellSpinners[row][col] = spinner;
                 spinner->setProperty("column", col);
                 spinner->setProperty("row", row);
+                spinner->setUnit(&_relativeMatrixUnits.value());
             }
             else {
-                elementSpinners[col][row] = spinner;
+                relativeCellSpinners[col][row] = spinner;
                 spinner->setProperty("column", row);
                 spinner->setProperty("row", col);
+                spinner->setUnit(&_relativeTranslationUnits[col].value());
             }
             spinner->setTextBox(lineEdit);
 
@@ -139,6 +148,9 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
             destinationCellUI->setEnabled(false);
             layout->addLayout(destinationCellUI->createFieldLayout(), v*2+1, r*2);
             connect(relativeModeUI->buttonFalse(), &QRadioButton::toggled, destinationCellUI, &AffineTransformationParameterUI::setEnabled);
+            absoluteCellSpinners[r][v] = destinationCellUI->spinner();
+            _absoluteCellUnits[r][v].emplace(mainWindow().unitsManager().getUnit(destinationCellUI->parameterUnitType()));
+            destinationCellUI->spinner()->setUnit(&_absoluteCellUnits[r][v].value());
         }
     }
 
@@ -148,6 +160,9 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
         destinationCellUI->setEnabled(false);
         layout->addLayout(destinationCellUI->createFieldLayout(), 7, r*2);
         connect(relativeModeUI->buttonFalse(), &QRadioButton::toggled, destinationCellUI, &AffineTransformationParameterUI::setEnabled);
+        absoluteCellSpinners[r][3] = destinationCellUI->spinner();
+        _absoluteOriginUnits[r].emplace(mainWindow().unitsManager().getUnit(destinationCellUI->parameterUnitType()));
+        destinationCellUI->spinner()->setUnit(&_absoluteOriginUnits[r].value());
     }
 
     // Update spinner values when a new object has been loaded into the editor.
@@ -166,6 +181,9 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
 
     BooleanParameterUI* selectionUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AffineTransformationModifier::selectionOnly));
     topLayout->addWidget(selectionUI->checkBox());
+
+    // Whenever the pipeline input of the modifier changes, update the increment step sizes of the cell parameters.
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, &AffineTransformationModifierEditor::updateParameterUnitScales);
 }
 
 /******************************************************************************
@@ -180,9 +198,49 @@ void AffineTransformationModifierEditor::updateUI()
 
     for(int row = 0; row < 3; row++) {
         for(int column = 0; column < 4; column++) {
-            if(!elementSpinners[row][column]->isDragging())
-                elementSpinners[row][column]->setFloatValue(tm(row, column));
+            if(!relativeCellSpinners[row][column]->isDragging())
+                relativeCellSpinners[row][column]->setFloatValue(tm(row, column));
         }
+    }
+}
+
+/******************************************************************************
+* Auto-adjusts the increment steps of the numeric parameter spinner widgets.
+******************************************************************************/
+void AffineTransformationModifierEditor::updateParameterUnitScales()
+{
+    OVITO_ASSERT(_relativeMatrixUnits.has_value());
+
+    _relativeMatrixUnits->setScaleReference(0.1);
+    _relativeTranslationUnits[0]->setScaleReference(0.3);
+    _relativeTranslationUnits[1]->setScaleReference(0.3);
+    _relativeTranslationUnits[2]->setScaleReference(0.3);
+    _absoluteOriginUnits[0]->setScaleReference(0);
+    _absoluteOriginUnits[1]->setScaleReference(0);
+    _absoluteOriginUnits[2]->setScaleReference(0);
+
+    if(DataOORef<const SimulationCell> cell = getPipelineInput().getObject<SimulationCell>()) {
+        bool usingReducedCoords = editObject() ? static_object_cast<AffineTransformationModifier>(editObject())->translationReducedCoordinates() : false;
+
+        // If a simulation cell is available, set the translation increments proportional to the cell's dimensions - unless translation is given in reduced coordinates.
+        if(!usingReducedCoords) {
+            _relativeTranslationUnits[0]->setScaleReference(cell->cellMatrix().column(0).length());
+            _relativeTranslationUnits[1]->setScaleReference(cell->cellMatrix().column(1).length());
+            _relativeTranslationUnits[2]->setScaleReference(cell->cellMatrix().column(2).length());
+        }
+
+        // Let origin translation increments depend on the cell vector lengths.
+        _absoluteOriginUnits[0]->setScaleReference(cell->cellMatrix().column(0).length());
+        _absoluteOriginUnits[1]->setScaleReference(cell->cellMatrix().column(1).length());
+        _absoluteOriginUnits[2]->setScaleReference(cell->cellMatrix().column(2).length());
+
+        // Also let shear increments (off-diagonal cell matrix elements) depend on the cell vector lengths.
+        _absoluteCellUnits[1][0]->setScaleReference(0.3 * cell->cellMatrix().column(0).length());
+        _absoluteCellUnits[2][0]->setScaleReference(0.3 * cell->cellMatrix().column(0).length());
+        _absoluteCellUnits[0][1]->setScaleReference(0.3 * cell->cellMatrix().column(1).length());
+        _absoluteCellUnits[2][1]->setScaleReference(0.3 * cell->cellMatrix().column(1).length());
+        _absoluteCellUnits[0][2]->setScaleReference(0.3 * cell->cellMatrix().column(2).length());
+        _absoluteCellUnits[1][2]->setScaleReference(0.3 * cell->cellMatrix().column(2).length());
     }
 }
 
@@ -215,11 +273,15 @@ void AffineTransformationModifierEditor::onSpinnerValueChanged()
 void AffineTransformationModifierEditor::onReducedCoordinatesOptionChanged()
 {
     AffineTransformationModifier* mod = static_object_cast<AffineTransformationModifier>(editObject());
-    if(!mod) return;
+    if(!mod)
+        return;
+
+    updateParameterUnitScales();
 
     const PipelineFlowState& input = getPipelineInput();
     const SimulationCell* cell = input.getObject<SimulationCell>();
-    if(!cell) return;
+    if(!cell)
+        return;
 
     // Automatically convert translation vector to/from reduced cell coordinates.
     AffineTransformation tm = mod->transformationTM();

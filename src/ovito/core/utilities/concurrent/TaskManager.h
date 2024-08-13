@@ -161,9 +161,6 @@ private:
     /// Manages thread-safe concurrent access to the work queue and task list.
     std::mutex _mutex;
 
-    /// The current local event loop started by processWorkWhileWaiting();
-    QEventLoop* _localEventLoop = nullptr;
-
     /// Pool of threads for executing worker tasks.
     QThreadPool _threadPool;
 

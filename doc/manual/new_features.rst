@@ -30,6 +30,7 @@ Version 3.11.0 (xx-xxx-2024)
 - Fixed regression due to update of the Qt framework: Missing colors in plot legends
 - Fixed: Axis scales and labels are invisible (white on white) in exported data plots if dark mode UI is active
 - CA file import (loading precomputed DXA results) is now an exclusive OVITO Pro feature
+- :ref:`particles.modifiers.slice` and :ref:`particles.modifiers.affine_transformation` modifiers: Value increments used for step-wise parameter adjustment are now proportional to the simulation cell size instead of the current parameter value
 - Updated third-party components: OpenSSL, Qt, PySide6, Python, Qwt
 - |ovito-python| :py:class:`~ovito.modifiers.ConstructSurfaceModifier`: Option :py:attr:`~ovito.modifiers.ConstructSurfaceModifier.map_particles_to_regions` now outputs per-region particle membership lists
 - |ovito-python| New method :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` to efficiently determine the closest particles around several spatial locations.

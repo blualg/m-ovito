@@ -103,14 +103,13 @@ void NumericalParameterUI::resetUI()
     if(spinner()) {
         spinner()->setEnabled(editObject() && isEnabled());
         if(editObject()) {
-            ParameterUnit* unit = nullptr;
-            if(parameterUnitType())
-                unit = mainWindow().unitsManager().getUnit(parameterUnitType());
-            spinner()->setUnit(unit);
+            if(spinner()->unit() == nullptr) {
+                if(parameterUnitType())
+                    spinner()->setUnit(mainWindow().unitsManager().getUnit(parameterUnitType()));
+            }
         }
         else {
-            spinner()->setUnit(nullptr);
-            spinner()->setFloatValue(0);
+            spinner()->setFloatValue(spinner()->hasStandardValue() ? spinner()->standardValue() : 0);
         }
     }
 

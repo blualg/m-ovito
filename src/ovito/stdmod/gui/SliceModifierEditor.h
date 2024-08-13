@@ -28,6 +28,7 @@
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/stdmod/modifiers/SliceModifier.h>
+#include <ovito/core/utilities/units/PrescribedScaleUnit.h>
 
 namespace Ovito {
 
@@ -66,12 +67,18 @@ protected Q_SLOTS:
     /// Is called when the selected type of plane normal coordinates have changed.
     void updateCoordinateLabels();
 
+    /// Auto-adjusts the increment steps of the numeric parameter spinner widgets.
+    void updateParameterUnitScales();
+
 private:
 
     ViewportModeAction* _pickPlanePointsInputModeAction;
     BooleanRadioButtonParameterUI* _reducedCoordinatesPUI;
     VectorParameterUI* _normalPUI[3];
     FloatParameterUI* _distancePUI;
+    std::optional<PrescribedScaleUnit> _distanceUnit;
+    std::optional<PrescribedScaleUnit> _slabWidthUnit;
+    std::optional<PrescribedScaleUnit> _normalVectorUnit;
 };
 
 /******************************************************************************

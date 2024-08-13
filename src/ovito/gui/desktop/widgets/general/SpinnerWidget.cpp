@@ -103,7 +103,7 @@ void SpinnerWidget::onTextChanged()
 
     try {
         if(textBox()->text() == _originalText) return;
-        if(textBox()->text().isEmpty() && std::isfinite(standardValue())) {
+        if(textBox()->text().isEmpty() && hasStandardValue()) {
             setFloatValue(standardValue(), true);
         }
         else if(unit()) {

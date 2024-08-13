@@ -108,7 +108,6 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
 {
     OVITO_ASSERT(ExecutionContext::isMainThread());
     OVITO_ASSERT(isShuttingDown());
-    OVITO_ASSERT(!_localEventLoop);
     OVITO_ASSERT(!_waitingForTask);
 
     // Work item queue must be empty by now.
@@ -243,7 +242,6 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
     bool quitFlag = false;
 
     std::optional<QEventLoop> eventLoop;
-    QEventLoop* previousEventLoop = _localEventLoop;
 
     lock.unlock();
     // Register a callback function with the awaited task, which terminates the processing loop when the task gets canceled or finishes.
@@ -277,7 +275,6 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
         // Create a local event loop if a Qt application has been set up.
         if(QCoreApplication::instance() && !eventLoop) {
             eventLoop.emplace();
-            _localEventLoop = &eventLoop.value();
         }
 
         // Is the Qt main event loop running? If yes, start a local Qt event loop, which processes both Qt events and pending work items.
@@ -320,20 +317,20 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
             executePendingWorkLocked(lock);
         }
     }
-    // Make sure the awaited task really has finished running by now if the caller requested that.
-    OVITO_ASSERT(returnEarlyIfCanceled || _waitingForTask->isFinished());
 
     // Detach callbacks from the two task objects.
     waitingTaskCallback.unregisterCallback();
     awaitedTaskCallback.unregisterCallback();
-    _localEventLoop = previousEventLoop;
     _waitingForTask.swap(wasWaitingForTask);
+
+    // Make sure the awaited task really has finished running by now if the caller requested that.
+    OVITO_ASSERT(returnEarlyIfCanceled || wasWaitingForTask->isFinished());
 
     // Make sure the awaited task really has finished or was canceled by now - or the waiting task has been canceled at least.
     OVITO_ASSERT(wasWaitingForTask->isCanceled() || wasWaitingForTask->isFinished() || waitingTask->isCanceled());
 
     // If shutdown has been requested before, and we now have left all nested loops,
-    // wait for all ramining tasks to finish and proceed with shutdown process as soon
+    // wait for all remaining tasks to finish and proceed with shutdown process as soon
     // as control has returned to main event loop.
     if(isShuttingDown() && !_waitingForTask) {
         if(QCoreApplication::instance() && QThread::currentThread()->loopLevel() != 0)

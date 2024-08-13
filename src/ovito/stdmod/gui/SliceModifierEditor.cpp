@@ -98,7 +98,6 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
         gridlayout->addLayout(_normalPUI[i]->createFieldLayout(), i + 3, 1);
     }
     connect(_reducedCoordinatesPUI->buttonFalse(), &QAbstractButton::toggled, this, &SliceModifierEditor::updateCoordinateLabels);
-    updateCoordinateLabels();
 
     // Slice width parameter.
     FloatParameterUI* widthPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(SliceModifier::widthController));
@@ -159,6 +158,52 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 
     ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>(rolloutParams.after(rollout));
     layout->addWidget(delegatesPUI->listWidget());
+
+    // Override automatic step size for the distance and slice width parameters.
+    _distanceUnit.emplace(mainWindow().unitsManager().getUnit(_distancePUI->parameterUnitType()));
+    _distancePUI->spinner()->setUnit(&_distanceUnit.value());
+    _slabWidthUnit.emplace(mainWindow().unitsManager().getUnit(widthPUI->parameterUnitType()));
+    widthPUI->spinner()->setUnit(&_slabWidthUnit.value());
+    _normalVectorUnit.emplace(mainWindow().unitsManager().getUnit(_normalPUI[0]->parameterUnitType()));
+    _normalPUI[0]->spinner()->setUnit(&_normalVectorUnit.value());
+    _normalPUI[1]->spinner()->setUnit(&_normalVectorUnit.value());
+    _normalPUI[2]->spinner()->setUnit(&_normalVectorUnit.value());
+
+    // Whenever the pipeline input of the modifier changes, update the increment scale of the distance and slab width parameters.
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, &SliceModifierEditor::updateParameterUnitScales);
+
+    updateCoordinateLabels();
+}
+
+/******************************************************************************
+* Auto-adjusts the increment steps of the numeric parameter spinner widgets.
+******************************************************************************/
+void SliceModifierEditor::updateParameterUnitScales()
+{
+    OVITO_ASSERT(_distanceUnit.has_value());
+
+    bool usingReducedCoords = !_reducedCoordinatesPUI->buttonFalse()->isChecked();
+    FloatType distanceScale = 0;
+    FloatType slabWidthScale = 0;
+
+    if(usingReducedCoords) {
+        // When using reduced coordinates, use fixed step size.
+        distanceScale = 0.3;
+    }
+    if(DataOORef<const SimulationCell> cell = getPipelineInput().getObject<SimulationCell>()) {
+        // If a simulation cell is available, set the step size proportional to the cell's diameter.
+        FloatType cellDiameter = (
+                cell->cellMatrix().column(0) +
+                cell->cellMatrix().column(1) +
+                cell->cellMatrix().column(2) * !cell->is2D()).length() / 3;
+        if(!usingReducedCoords)
+            distanceScale = cellDiameter;
+        slabWidthScale = 0.1 * cellDiameter;
+    }
+
+    _distanceUnit->setScaleReference(distanceScale);
+    _slabWidthUnit->setScaleReference(slabWidthScale);
+    _normalVectorUnit->setScaleReference(1);
 }
 
 /******************************************************************************
@@ -180,6 +225,9 @@ void SliceModifierEditor::updateCoordinateLabels()
     _distancePUI->label()->setText(_reducedCoordinatesPUI->buttonFalse()->isChecked()
         ? tr("Distance:")
         : tr("<html>Distance [d<sub>hkl</sub>]:</html>"));
+
+    // Adjust the increment step size of the distance parameter.
+    updateParameterUnitScales();
 }
 
 /******************************************************************************

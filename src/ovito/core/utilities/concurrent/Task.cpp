@@ -74,7 +74,7 @@ void Task::setFinished() noexcept
 void Task::finishLocked(MutexLock& lock) noexcept
 {
     // Put this task into the 'finished' state.
-    auto state = _state.fetch_or(Finished, std::memory_order_release);
+    auto state = _state.fetch_or(Finished, std::memory_order_seq_cst);
 
     // Make sure that the result has been set (if not in canceled or error state).
     OVITO_ASSERT_MSG(_exceptionStore || isCanceled() || _hasResultsStored.load() || !_resultsStorage,
@@ -135,7 +135,7 @@ void Task::cancelLocked(MutexLock& lock) noexcept
         return;
 
     // Set the canceled flag.
-    auto state = _state.fetch_or(Canceled, std::memory_order_release);
+    auto state = _state.fetch_or(Canceled, std::memory_order_seq_cst);
 
     // Inform the registered callbacks that this task got canceled.
     if(!(state & Canceled)) {
