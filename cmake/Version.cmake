@@ -72,10 +72,10 @@ IF(OVITO_APPLICATION_NAME_OVERRIDE)
 ENDIF()
 
 # The copyright notice shown in the application's About dialog:
-STRING(TIMESTAMP _CURRENT_YEAR "%Y")
+STRING(TIMESTAMP OVITO_CURRENT_YEAR "%Y")
 SET(OVITO_COPYRIGHT_NOTICE
     "<p>A scientific data visualization and analysis software <br>for particle-based simulations.</p>\
-     <p>Copyright (C) ${_CURRENT_YEAR}, OVITO GmbH, Germany</p>\
+     <p>Copyright (C) ${OVITO_CURRENT_YEAR}, OVITO GmbH, Germany</p>\
      <p>\
      This is free, open-source software, and you are welcome to redistribute\
      it under certain conditions. See the user manual for copying conditions.</p>")

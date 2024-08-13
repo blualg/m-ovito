@@ -107,6 +107,7 @@ SET(SourceFiles
     dataset/pipeline/BasePipelineSource.cpp
     dataset/pipeline/DelegatingModifier.cpp
     utilities/units/UnitsManager.cpp
+    utilities/units/PrescribedScaleUnit.cpp
     utilities/io/ObjectSaveStream.cpp
     utilities/io/ObjectLoadStream.cpp
     utilities/io/FileManager.cpp

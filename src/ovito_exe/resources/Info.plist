@@ -27,9 +27,9 @@
 	<key>CSResourcesFileMapped</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright (C) 2022 OVITO GmbH, Germany</string>
+	<string>Copyright (C) ${OVITO_CURRENT_YEAR} OVITO GmbH, Germany</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.14</string>
+	<string>10.15</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
 	<key>NSHighResolutionCapable</key>
@@ -140,6 +140,48 @@
 			<array>
 				<string>gro</string>
 				<string>xtc</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleTypeName</key>
+			<string>CHARMM</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>dcd</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleTypeName</key>
+			<string>Crystallographic Information File</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>cif</string>
+				<string>mmcif</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleTypeName</key>
+			<string>Gaussian</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>cube</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>CFBundleTypeName</key>
+			<string>VTK</string>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>pvd</string>
+				<string>vtm</string>
 			</array>
 		</dict>
 	</array>

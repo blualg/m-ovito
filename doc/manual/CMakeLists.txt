@@ -41,9 +41,6 @@ IF(OVITO_BUILD_APP)
         FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
     ENDIF()
 
-    # Get current year.
-    STRING(TIMESTAMP current_year "%Y")
-
     # Tell Interpshinx where to find the scripting reference manual files when building the user manual.
     # Use the existing Sphinx output tree of the scripting reference manual for resolving cross-references if it exists
     # in the python/ sub-directory (only the case when building OVITO Pro).
@@ -74,7 +71,7 @@ IF(OVITO_BUILD_APP)
             # Additional config settings passed to Sphinx, which are added to the options found in conf.py:
             -D "version=${OVITO_VERSION_STRING}"
             -D "release=${OVITO_VERSION_STRING}"
-            -D "copyright=${current_year} OVITO GmbH, Germany"
+            -D "copyright=${OVITO_CURRENT_YEAR} OVITO GmbH, Germany"
 
         # Extract the link targets from the Intersphinx inventory file and write them to a text file.
         # The file will be used by the OVITO application to open the correct HTML page corresponding to
