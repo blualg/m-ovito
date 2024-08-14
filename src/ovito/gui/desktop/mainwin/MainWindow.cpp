@@ -52,7 +52,7 @@
 #include "data_inspector/DataInspectorPanel.h"
 
 #ifdef Q_OS_MAC
-#include <ApplicationServices/ApplicationServices.h>
+#include <ApplicationServices/ApplicationServices.h> // Needed in MainWindow::checkAccessibilityAccess()
 #endif
 
 namespace Ovito {
@@ -1236,7 +1236,7 @@ void MainWindow::notifyProgressTasksChanged()
 {
     // The following timer code ensures that the GUI task display is updated only once every 100 ms.
     // It also ensures that the UI update is done in the main thread and that short-lived
-    // tasks doen't show up in the GUI at all.
+    // tasks doesn't show up in the GUI at all.
     if(!_progressUpdateScheduled) {
         _progressUpdateScheduled = true;
         QTimer::singleShot(100, this, [this]() {
@@ -1380,25 +1380,33 @@ bool MainWindow::checkAccessibilityAccess(QWidget* parent) const
     QSettings settings;
     settings.beginGroup("app/mainwindow");
 
-    // Get version for which access was requested from cache
+    // Get program version for which permission was already requested.
     const int major = settings.value("AccessibilityDialogMajor", 0).toInt();
     const int minor = settings.value("AccessibilityDialogMinor", 0).toInt();
     const int revision = settings.value("AccessibilityDialogRevision", 0).toInt();
 
-    // Ovito version changed from the last time we requested permission
+    // Ovito version changed from the last time we requested permission?
     if(QT_VERSION_CHECK(Application::applicationVersionMajor(), Application::applicationVersionMinor(),
                         Application::applicationVersionRevision()) != QT_VERSION_CHECK(major, minor, revision) &&
        !AXIsProcessTrusted()) {
         // Present the user with a info dialog explaining the accessibility requirement
-        QMessageBox msgBox(parent);
-        msgBox.setText(tr("%1 requires Accessibility access").arg(Application::applicationName()));
+        MessageDialog msgBox(parent);
+        msgBox.setIcon(QMessageBox::Information);
+        msgBox.setDefaultButton(QMessageBox::Ok);
+        msgBox.setText(tr("%1 needs macOS accessibility access").arg(Application::applicationName()));
         msgBox.setInformativeText(
-            tr("Accessibility permission is required to reposition your cursor, which is necessary to wrap the mouse position while "
-               "dragging the spinner widget."));
-        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Help);
+            tr("MacOS accessibility permission is required for %1 to enable infinite scrolling while dragging the spinner widget. "
+               "The permission is needed by the application to reposition the mouse cursor when it leaves the screen.\n\n"
+               "Click 'Help' for more information. Click 'Next' to proceed to the macOS permission dialog.").arg(Application::applicationName()));
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Help | QMessageBox::Cancel);
+        msgBox.button(QMessageBox::Ok)->setText(tr("Next"));
         const int msgBoxRet = msgBox.exec();
         if(msgBoxRet == QMessageBox::Help) {
             actionManager()->openHelpTopic("manual:usage.spinner_widgets");
+            return false;
+        }
+        else if(msgBoxRet != QMessageBox::Ok) {
+            return false;
         }
 
         // Update stored value
