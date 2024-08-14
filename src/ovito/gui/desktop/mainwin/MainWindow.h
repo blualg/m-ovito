@@ -192,6 +192,10 @@ public:
     /// \brief Lets the caller visit all registered worker tasks that are in progress.
     void visitRunningTasks(std::function<void(Task&,const QString&,int,int)> visitor);
 
+    /// Checks if the current application has accessability access. This is required on macOS to move the cursor using QCursor::setPos().
+    /// This method will prompt the user the first time it is called (for each ovito version). Returns true on non macOS.
+    bool checkAccessibilityAccess(QWidget* parent = nullptr) const;
+
 Q_SIGNALS:
 
     /// Emitted whenever the progress state of the published tasks changed.

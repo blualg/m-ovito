@@ -371,28 +371,43 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
             }
         }
         else {
-            QPoint cursorPos = QCursor::pos();
-            int screenY = cursorPos.y();
+            const QPoint cursorPos = QCursor::pos();
+            const int screenY = cursorPos.y();
             if(screenY != _lastMouseY) {
-                int screenHeight = screen()->size().height();
-                if(screenY <= 5 && _lastMouseY == screenHeight - 1) return;
-                if(screenY >= screenHeight - 5 && _lastMouseY == 0) return;
+                // Get current screen top and bottom positions
+                // QT convention has greater Y values pointing down
+                const int screenMaxY = screen()->geometry().bottom();
+                const int screenMinY = screen()->geometry().top();
+                OVITO_ASSERT(screenMinY < screenMaxY);
+                // Distance from the edge at which warpping occurs
+                constexpr int borderWidth = 5;
+
+                if(screenY <= screenMinY + borderWidth && _lastMouseY == screenMaxY - 1) return;
+                if(screenY >= screenMaxY - borderWidth && _lastMouseY == screenMinY) return;
 
                 FloatType newVal = _oldValue + _currentStepSize * (FloatType)(_startMouseY - screenY) * FloatType(0.1);
                 if(unit())
                     newVal = unit()->roundValue(newVal);
 
-                if(screenY < _lastMouseY && screenY <= 5) {
-                    _lastMouseY = screenHeight - 1;
+                // Accessibility access is required on macOS to move the mouse
+                bool accessibilty = false;
+                if(MainWindow* mainWindow = qobject_cast<MainWindow*>(window())) {
+                    accessibilty = mainWindow->checkAccessibilityAccess(this);
+                }
+
+                if(accessibilty && screenY < _lastMouseY && screenY <= screenMinY + borderWidth) {
+                    _lastMouseY = screenMaxY - 1;
                     _startMouseY += _lastMouseY - screenY;
                     QCursor::setPos(cursorPos.x(), _lastMouseY);
                 }
-                else if(screenY > _lastMouseY && screenY >= screenHeight - 5) {
-                    _lastMouseY = 0;
+                else if(accessibilty && screenY > _lastMouseY && screenY >= screenMaxY - borderWidth) {
+                    _lastMouseY = screenMinY;
                     _startMouseY += _lastMouseY - screenY;
                     QCursor::setPos(cursorPos.x(), _lastMouseY);
                 }
-                else _lastMouseY = screenY;
+                else {
+                    _lastMouseY = screenY;
+                }
 
                 if(newVal != floatValue()) {
                     setFloatValue(newVal, true);

@@ -20,14 +20,16 @@ visualize several simulations using the same data analysis pipeline and camera s
 Spinner controls
 ----------------
 
-.. image:: /images/command_panel/spinner_widget.*
-  :width: 30%
-  :align: right
+.. image:: /images/command_panel/spinner_widget_usage.*
+  :width: 50%
+  :align: left
 
 A spinner widget is a user interface element used throughout the program for editing numerical parameters (see screenshot on the right).
 Here is how you use the spinner widget to vary the parameter value: (1) Click the spinner's up arrow once to increment the value; click the down arrow to decrement the value in a stepwise manner.
 (2) Alternatively, click and hold down the mouse button to vary the value continuously. Drag the cursor upward/downward to increase/decrease the parameter value.
 
+When dragging the cursor towards the edge of you screen OVITO will wrap the cursor position to allow for infinite scrolling. On macOS the 'Accessibility' permission is required to 
+programmatically reposition the mouse. You will be prompted for accessibility access the first time it is required.
 
 .. _usage.data_inspector:
 

@@ -51,6 +51,10 @@
 #include "cmdpanel/CommandPanel.h"
 #include "data_inspector/DataInspectorPanel.h"
 
+#ifdef Q_OS_MAC
+#include <ApplicationServices/ApplicationServices.h>
+#endif
+
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(MainWindow);
@@ -1364,6 +1368,61 @@ void MainWindow::taskProgressEndSubSteps(Task& task)
     taskInfo->progressMaximum = 0;
     taskInfo->progressValue = 0;
     notifyProgressTasksChanged();
+}
+
+/******************************************************************************
+ * Checks if the current application has accessability access. This is required on macOS to move the cursor using QCursor::setPos().
+ * This method will prompt the user the first time it is called (for each ovito version). Returns true on non macOS.
+ ******************************************************************************/
+bool MainWindow::checkAccessibilityAccess(QWidget* parent) const
+{
+#ifdef Q_OS_MAC
+    QSettings settings;
+    settings.beginGroup("app/mainwindow");
+
+    // Get version for which access was requested from cache
+    const int major = settings.value("AccessibilityDialogMajor", 0).toInt();
+    const int minor = settings.value("AccessibilityDialogMinor", 0).toInt();
+    const int revision = settings.value("AccessibilityDialogRevision", 0).toInt();
+
+    // Ovito version changed from the last time we requested permission
+    if(QT_VERSION_CHECK(Application::applicationVersionMajor(), Application::applicationVersionMinor(),
+                        Application::applicationVersionRevision()) != QT_VERSION_CHECK(major, minor, revision) &&
+       !AXIsProcessTrusted()) {
+        // Present the user with a info dialog explaining the accessibility requirement
+        QMessageBox msgBox(parent);
+        msgBox.setText(tr("%1 requires 'Accessibility' access").arg(Application::applicationName()));
+        msgBox.setInformativeText(
+            tr("'Accessibility' permission is required to reposition your mouse which is used to wrap the mouse position "
+               "while you drag the spinner widget."));
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Help);
+        const int msgBoxRet = msgBox.exec();
+        if(msgBoxRet == QMessageBox::Help) {
+            actionManager()->openHelpTopic("manual:usage.spinner_widgets");
+        }
+
+        // Update stored value
+        settings.setValue("AccessibilityDialogMajor", Application::applicationVersionMajor());
+        settings.setValue("AccessibilityDialogMinor", Application::applicationVersionMinor());
+        settings.setValue("AccessibilityDialogRevision", Application::applicationVersionRevision());
+
+        const CFStringRef keys[] = {kAXTrustedCheckOptionPrompt};
+        const CFTypeRef values[] = {kCFBooleanTrue};
+        const CFDictionaryRef options =
+            CFDictionaryCreate(nullptr, (const void**)&keys, (const void**)&values, sizeof(keys) / sizeof(keys[0]),
+                               &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+
+        // Ask for permission
+        AXIsProcessTrustedWithOptions(options);
+        CFRelease(options);
+    }
+    settings.endGroup();
+
+    // Return access state
+    return static_cast<bool>(AXIsProcessTrusted());
+#else
+    return true;
+#endif
 }
 
 }   // End of namespace

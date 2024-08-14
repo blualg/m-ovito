@@ -148,6 +148,10 @@ IF(UNIX AND NOT APPLE)
     TARGET_LINK_LIBRARIES(Gui PRIVATE Qt6::DBus)
 ENDIF()
 
+IF(APPLE)
+    TARGET_LINK_LIBRARIES(Gui PRIVATE "-framework ApplicationServices")
+ENDIF()
+
 # Inject copyright notice text into the source code.
 SET_PROPERTY(SOURCE actions/FileActions.cpp
     APPEND PROPERTY COMPILE_DEFINITIONS

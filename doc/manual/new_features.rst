@@ -29,6 +29,8 @@ Version 3.11.0 (xx-xxx-2024)
 - OVITO Basic now includes demo versions of the high-fidelity rendering backends :ref:`OSPRay <rendering.ospray_renderer>`, :ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`
 - Fixed regression due to update of the Qt framework: Missing colors in plot legends
 - Fixed: Axis scales and labels are invisible (white on white) in exported data plots if dark mode UI is active
+- Fixed: Mouse wrapping in Spinner Widget for vertical multi screen setups.
+- Fixed: Spinner widget mouse warp not working on macOS (requires accessibility access). 
 - CA file import (loading precomputed DXA results) is now an exclusive OVITO Pro feature
 - :ref:`particles.modifiers.slice` and :ref:`particles.modifiers.affine_transformation` modifiers: Value increments used for step-wise parameter adjustment are now proportional to the simulation cell size instead of the current parameter value
 - Updated third-party components: OpenSSL, Qt, PySide6, Python, Qwt
