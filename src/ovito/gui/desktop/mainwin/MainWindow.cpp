@@ -1398,14 +1398,15 @@ bool MainWindow::checkAccessibilityAccess(QWidget* parent) const
             tr("MacOS accessibility permission is required for %1 to enable infinite scrolling while dragging the spinner widget. "
                "The permission is needed by the application to reposition the mouse cursor when it leaves the screen.\n\n"
                "Click 'Help' for more information. Click 'Next' to proceed to the macOS permission dialog.").arg(Application::applicationName()));
-        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Help | QMessageBox::Cancel);
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Help | QMessageBox::Cancel | QMessageBox::Ignore);
         msgBox.button(QMessageBox::Ok)->setText(tr("Next"));
+        msgBox.button(QMessageBox::Ignore)->setText(tr("Don't ask again"));
         const int msgBoxRet = msgBox.exec();
         if(msgBoxRet == QMessageBox::Help) {
             actionManager()->openHelpTopic("manual:usage.spinner_widgets");
             return false;
         }
-        else if(msgBoxRet != QMessageBox::Ok) {
+        else if(msgBoxRet == QMessageBox::Cancel) {
             return false;
         }
 
@@ -1413,6 +1414,10 @@ bool MainWindow::checkAccessibilityAccess(QWidget* parent) const
         settings.setValue("AccessibilityDialogMajor", Application::applicationVersionMajor());
         settings.setValue("AccessibilityDialogMinor", Application::applicationVersionMinor());
         settings.setValue("AccessibilityDialogRevision", Application::applicationVersionRevision());
+
+        if(msgBoxRet == QMessageBox::Ignore) {
+            return false;
+        }
 
         const CFStringRef keys[] = {kAXTrustedCheckOptionPrompt};
         const CFTypeRef values[] = {kCFBooleanTrue};
