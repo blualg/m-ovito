@@ -37,3 +37,7 @@ macOS                      :file:`$HOME/Library/Preferences/org.ovito.Ovito.plis
 
 To reset OVITO to its factory default settings, simply delete the configuration file on Linux/macOS or remove the registry branch
 on Windows using the `Windows Registry Editor <https://support.microsoft.com/en-us/windows/how-to-open-registry-editor-in-windows-10-deab38e6-91d6-e0aa-4b7c-8878d9e07b11>`__ program.
+
+.. attention::
+
+  On macOS, preferences are cached. After deleting the ``org.ovito.Ovito.plist`` file, you need to reboot your computer or run the ``killall -u $USER cfprefsd`` command in the terminal.

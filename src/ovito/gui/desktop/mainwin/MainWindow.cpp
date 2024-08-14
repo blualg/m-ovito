@@ -1391,10 +1391,10 @@ bool MainWindow::checkAccessibilityAccess(QWidget* parent) const
        !AXIsProcessTrusted()) {
         // Present the user with a info dialog explaining the accessibility requirement
         QMessageBox msgBox(parent);
-        msgBox.setText(tr("%1 requires 'Accessibility' access").arg(Application::applicationName()));
+        msgBox.setText(tr("%1 requires Accessibility access").arg(Application::applicationName()));
         msgBox.setInformativeText(
-            tr("'Accessibility' permission is required to reposition your mouse which is used to wrap the mouse position "
-               "while you drag the spinner widget."));
+            tr("Accessibility permission is required to reposition your cursor, which is necessary to wrap the mouse position while "
+               "dragging the spinner widget."));
         msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Help);
         const int msgBoxRet = msgBox.exec();
         if(msgBoxRet == QMessageBox::Help) {
