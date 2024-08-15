@@ -57,6 +57,7 @@ Version 3.11.0 (xx-xxx-2024)
 - |ovito-pro| :ref:`rendering.visrtx_renderer`: Improved rendering performance for scenes with large numbers of cubic, ellipsoidal, or superquadric particles
 - |ovito-pro| Environment variable ``OVITO_SAFE_MODE=1`` effectively blocks execution of Python scripts embedded in .ovito session state files from untrusted sources
 - |ovito-pro| Fix: :ref:`particles.modifiers.time_averaging` modifier uses wrong divisor in average calculation if trajectory length is not an integer multiple of the sampling frequency
+- |ovito-pro| Updated the template in the :ref:`particles.modifiers.python_script` modifier to default to the :ref:`writing_custom_modifiers.advanced_interface`.
 
 .. sidebar::
 
