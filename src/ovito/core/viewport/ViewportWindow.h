@@ -62,7 +62,7 @@ public:
         /// Returns the coordinates of the hit point in world space.
         const Point3& hitLocation() const { return _hitLocation; }
 
-        /// Returns the subobject that was picked.
+        /// Returns the sub-object that was picked.
         quint32 subobjectId() const { return _subobjectId; }
 
     private:
@@ -141,14 +141,14 @@ public:
     /// viewport window area that activates the context menu.
     bool cursorInContextMenuArea() const { return _cursorInContextMenuArea; }
 
-    /// Sets a flag indicatring whether the mouse cursor is currently located in the
+    /// Sets a flag indicating whether the mouse cursor is currently located in the
     /// viewport window area that activates the context menu.
     void setCursorInContextMenuArea(bool flag);
 
     /// Returns the zone in the upper left corner of the viewport where the context menu can be activated by the user.
     const QRectF& contextMenuArea() const { return _contextMenuArea; }
 
-    /// Determines the object that is located under the given mouse cursor position.
+    /// Determines the object located under the given mouse cursor position.
     virtual std::optional<PickResult> pick(const QPointF& pos) = 0;
 
     /// Returns the list of gizmos to render in the viewport.

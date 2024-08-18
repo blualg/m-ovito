@@ -334,7 +334,9 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
         linesPrimitive->setPositions(lines.take());
         linesPrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_UNSELECTED));
         linesPrimitive->setLineWidth(4.0 * frameGraph.devicePixelRatio());
-        frameGraph.addPrimitive(std::move(linesPrimitive), AffineTransformation::Identity(), 0, Box3{}, FrameGraph::RenderingCommand::NoDepthTesting);
+        auto previousRenderLayer = frameGraph.setCurrentRenderLayer(FrameGraph::RenderLayer::OverLayer);
+        frameGraph.addPrimitive(std::move(linesPrimitive), AffineTransformation::Identity());
+        frameGraph.setCurrentRenderLayer(previousRenderLayer);
     }
 }
 

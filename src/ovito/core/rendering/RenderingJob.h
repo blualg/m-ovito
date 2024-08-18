@@ -107,9 +107,6 @@ protected:
 	/// Creates an image serving as watermark for demo versions of scene renderers.
     static QImage createWatermark(const QSize& size);
 #endif
-
-private:
-
 };
 
 }	// End of namespace

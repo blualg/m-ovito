@@ -50,9 +50,7 @@ void RenderingJob::render2DPrimitives(FrameGraph::RenderLayer renderLayer, const
             frameBuffer.outputFrameBuffer()->renderTextPrimitive(*primitive, frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
         }
         else if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
-            if(command.noDepthTesting()) {
-                frameBuffer.outputFrameBuffer()->renderLinePrimitive(*primitive, command.modelWorldTM(), frameGraph.projectionParams(), frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
-            }
+            frameBuffer.outputFrameBuffer()->renderLinePrimitive(*primitive, command.modelWorldTM(), frameGraph.projectionParams(), frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
         }
     }
 }

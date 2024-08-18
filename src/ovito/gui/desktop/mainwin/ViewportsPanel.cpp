@@ -63,7 +63,7 @@ ViewportsPanel::ViewportsPanel(MainWindow& mainWindow) : _mainWindow(mainWindow)
     // Update the viewport window positions when the viewport layout is modified.
     connect(&mainWindow.datasetContainer(), &DataSetContainer::viewportLayoutChanged, this, &ViewportsPanel::invalidateWindowLayout);
 
-    // Prevent the viewports from collpasing and disappearing completely.
+    // Prevent the viewports from collapsing and disappearing completely.
     setMinimumSize(40, 40);
 
     // Set the background color of the panel.
@@ -94,7 +94,10 @@ OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, M
     OvitoClassPtr windowClass = PluginManager::instance().findClass("OpenGLRendererWindow", "OpenGLViewportWindow");
 #ifdef OVITO_BUILD_PROFESSIONAL
     if(selectedGraphicsApi.compare("anari", Qt::CaseInsensitive) == 0) {
-        windowClass = PluginManager::instance().findClass("AnariRendererWindow", "AnariViewportWindow");
+        windowClass = PluginManager::instance().findClass("AnariRendererWindow", "OpenGLAnariViewportWindow");
+    }
+    else if(!selectedGraphicsApi.isEmpty() && selectedGraphicsApi.compare("opengl", Qt::CaseInsensitive) != 0) {
+        qWarning() << "Unknown OVITO_VIEWPORT_RENDERER value: " << selectedGraphicsApi;
     }
 #endif
 

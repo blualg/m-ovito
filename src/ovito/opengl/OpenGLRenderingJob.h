@@ -95,7 +95,7 @@ public:
 	/// Renders an image of the given frame graph into the given target frame buffer.
 	virtual Future<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap = {}) override;
 
-	/// Returns the multisampling level used to reduce anti-aliasing artifacts during offscreen rendering.
+	/// Returns the multi-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
 	virtual int multisamplingLevel() const override { return _multisamplingLevel; }
 
     /// Performs post-processing of a newly generated frame graph to be rendered by this implementation.
@@ -112,7 +112,14 @@ public:
     /// Requests the rendering job to make its OpenGL context current, e.g. for releasing OpenGL resources that require an active context.
     [[nodiscard]] virtual OpenGLContextRestore activateContext() = 0;
 
-private:
+protected:
+
+    /// Perform additional steps to composite the results from multiple renderers.
+    /// This can be implemented by derived classes.
+    virtual void performFrameCompositing() {}
+
+    /// Decides whether a command from the render graph should be executed by the renderer.
+    virtual bool filterRenderingCommand(const FrameGraph::RenderingCommand& command, FrameGraph::RenderLayer currentRenderLayer);
 
     /// Returns the resource cache frame used by the renderer to manage OpenGL resources.
     RendererResourceCache::ResourceFrame& currentResourceFrame() { return _currentResourceFrame; }
@@ -220,9 +227,6 @@ private:
 	/// Returns the output area in the OpenGL framebuffer (in device pixels).
 	const QSize& framebufferSize() const { return _framebufferSize; }
 
-    /// Activates the special object highlighting rendering mode.
-    void setHighlightMode(int mode);
-
 private:
 
     /// Controls the level of multisampling used to reduce antialiasing effects.
@@ -281,9 +285,6 @@ private:
 
 	/// The output area in the OpenGL framebuffer (in device pixels).
 	QSize _framebufferSize;
-
-    /// The active object highlighting rendering mode.
-    int _highlightRenderingMode = 0;
 
     friend class OpenGLShaderHelper;
     friend class OpenGLRenderingFrameBuffer;

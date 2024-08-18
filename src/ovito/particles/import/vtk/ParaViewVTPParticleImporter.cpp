@@ -96,7 +96,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
         preserveExistingData = (baseParticleIndex != 0);
     }
 
-    // Aspherix stores bonds in a seperate VTK file, which gets loaded alongside with this particles files.
+    // Aspherix stores bonds in a separate VTK file, which gets loaded alongside with this particles files.
     // To preserve the bonds loaded by ParaViewVTPBondsImporter, we have to explicitly tell the ParticleImporter base class here
     // to NOT reset the bonds list (which it would otherwise do, because ParaViewVTPParticleImporter doesn't create any bonds).
     setKeepExistingTopology(true);
@@ -417,7 +417,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
     particleType->setShape(ParticlesVis::Mesh);
 
     // Aspherix particle geometries seem not to have a consistent face winding order.
-    // Need to turn edge highlighting and backface culling off by default.
+    // Need to turn edge highlighting and back-face culling off by default.
     particleType->setShapeBackfaceCullingEnabled(false);
     particleType->setHighlightShapeEdges(false);
 

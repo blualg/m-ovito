@@ -140,7 +140,7 @@ void OpenGLViewportWindow::paint()
         auto future = renderingJob()->renderFrame(frameGraph(), _visualFrameBuffer);
         OVITO_ASSERT(future.isValid() && future.isFinished() && !future.isCanceled());
 
-        // Emit signal to inform listeners (e.g. SceneAnimationPlayback) that a full frame has been rendered.
+        // Emit signal to inform listeners (e.g. SceneAnimationPlayback) that a full frame has been rendered and presented on screen.
         if(frameGraph()->isPreliminaryState() == false)
             Q_EMIT frameRenderComplete();
     }

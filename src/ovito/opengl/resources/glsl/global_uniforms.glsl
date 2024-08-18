@@ -26,7 +26,7 @@ uniform mat4 inverse_projection_matrix;
 uniform mat4 modelview_matrix;
 uniform mat4 normal_tm;
 uniform vec2 viewport_origin; 			// Corner of the current viewport rectangle in window coordinates.
-uniform vec2 inverse_viewport_size;	    // One over the width/height of the viewport rectangle in window space.
+uniform vec2 inverse_viewport_size;	    // Two over the width/height of the viewport rectangle in window space.
 
 bool is_perspective()
 {

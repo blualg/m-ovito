@@ -1196,14 +1196,21 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* part
         }
     }
 
+    auto previousRenderLayer = frameGraph.setCurrentRenderLayer(FrameGraph::RenderLayer::HighlightLayer1);
+
     if(particleBuffer)
-        frameGraph.addPrimitive(std::move(particleBuffer), nodeTM, 0, Box3{}, FrameGraph::RenderingCommand::HighlightMode1);
+        frameGraph.addPrimitive(std::move(particleBuffer), nodeTM);
     if(cylinderBuffer)
-        frameGraph.addPrimitive(std::move(cylinderBuffer), nodeTM, 0, Box3{}, FrameGraph::RenderingCommand::HighlightMode1);
+        frameGraph.addPrimitive(std::move(cylinderBuffer), nodeTM);
+
+    frameGraph.setCurrentRenderLayer(FrameGraph::RenderLayer::HighlightLayer2);
+
     if(highlightParticleBuffer)
-        frameGraph.addPrimitive(std::move(highlightParticleBuffer), nodeTM, 0, Box3{}, FrameGraph::RenderingCommand::HighlightMode2);
+        frameGraph.addPrimitive(std::move(highlightParticleBuffer), nodeTM);
     if(highlightCylinderBuffer)
-        frameGraph.addPrimitive(std::move(highlightCylinderBuffer), nodeTM, 0, Box3{}, FrameGraph::RenderingCommand::HighlightMode2);
+        frameGraph.addPrimitive(std::move(highlightCylinderBuffer), nodeTM);
+
+    frameGraph.setCurrentRenderLayer(previousRenderLayer);
 }
 
 /******************************************************************************

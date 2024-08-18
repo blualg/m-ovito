@@ -385,13 +385,15 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
     FloatType lineDiameter = std::max(lineWidth() / 2, FloatType(0));
     FloatType headRadius = lineDiameter * (3.0/2.0);
 
+    auto previousRenderLayer = frameGraph.setCurrentRenderLayer(FrameGraph::RenderLayer::OverLayer);
+
     std::unique_ptr<CylinderPrimitive> segmentBuffer = std::make_unique<CylinderPrimitive>();
     segmentBuffer->setShape(CylinderPrimitive::CylinderShape);
     segmentBuffer->setShadingMode(CylinderPrimitive::FlatShading);
     segmentBuffer->setUniformWidth(lineDiameter);
     segmentBuffer->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
     segmentBuffer->setUniformColor(Color(1,1,1));
-    frameGraph.addPrimitive(std::move(segmentBuffer), pipeline, 0, Box3{}, FrameGraph::RenderingCommand::NoDepthTesting);
+    frameGraph.addPrimitive(std::move(segmentBuffer), pipeline);
 
     std::unique_ptr<ParticlePrimitive> cornerBuffer = std::make_unique<ParticlePrimitive>();
     cornerBuffer->setParticleShape(ParticlePrimitive::SphericalShape);
@@ -400,7 +402,7 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
     cornerBuffer->setPositions(cornerVertices.take());
     cornerBuffer->setUniformColor(Color(1,1,1));
     cornerBuffer->setUniformRadius(0.5 * lineDiameter);
-    frameGraph.addPrimitive(std::move(cornerBuffer), pipeline, 0, Box3{}, FrameGraph::RenderingCommand::NoDepthTesting);
+    frameGraph.addPrimitive(std::move(cornerBuffer), pipeline);
 
     if(!segment->line.empty()) {
         BufferFactory<Point3G> wrappedHeadPos(1);
@@ -411,8 +413,10 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
         headBuffer->setPositions(wrappedHeadPos.take());
         headBuffer->setUniformColor(Color(1,1,1));
         headBuffer->setUniformRadius(headRadius);
-        frameGraph.addPrimitive(std::move(headBuffer), pipeline, 0, Box3{}, FrameGraph::RenderingCommand::NoDepthTesting);
+        frameGraph.addPrimitive(std::move(headBuffer), pipeline);
     }
+
+    frameGraph.setCurrentRenderLayer(previousRenderLayer);
 }
 
 /******************************************************************************

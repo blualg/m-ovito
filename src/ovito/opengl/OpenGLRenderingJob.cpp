@@ -253,17 +253,56 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     OVITO_CHECK_OPENGL(this, this->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
     OVITO_REPORT_OPENGL_ERRORS(this);
 
-    // Render 2d background graphics.
+    // Render background graphics, typically 2D primitives only.
     _isTransparencyPass = false;
+    this->glDisable(GL_DEPTH_TEST);
     renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::UnderLayer);
 
-    // Render opaque 3d geometry.
-    if(renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::SceneLayer)) {
-        // Render translucent 3d geometry in a second pass.
+    // Render fully opaque 3D geometry.
+    this->glEnable(GL_DEPTH_TEST);
+    bool hasTransparentGeometry = renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::SceneLayer);
+
+    // Let sub-classes perform additional steps to composite the results from multiple renderers, e.g. ANARI.
+    performFrameCompositing();
+
+    // Render translucent 3D geometry in a second pass.
+    if(hasTransparentGeometry)
         renderTransparentGeometry(*frameGraph, *glFrameBuffer);
+
+    // Render highlighted geometry in a third and fourth pass.
+    if(std::any_of(frameGraph->commands().begin(), frameGraph->commands().end(),
+                   [](const FrameGraph::RenderingCommand& command) { return command.renderLayer() == FrameGraph::RenderLayer::HighlightLayer1; })) {
+
+        this->glClearStencil(0);
+        this->glClear(GL_STENCIL_BUFFER_BIT);
+        this->glEnable(GL_STENCIL_TEST);
+        this->glStencilFunc(GL_ALWAYS, 0x1, 0x1);
+        this->glStencilMask(0x1);
+        this->glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+#if defined(Q_OS_MACOS) && defined(Q_PROCESSOR_ARM)
+        // Partial workaround for a bug in the MacOS/arm64 OpenGL implementation.
+        // Fragment shaders discarding fragments (via conditional "discard") still modify the stencil buffer, which is unexpected.
+        // See also: https://developer.apple.com/forums/thread/721988
+        this->glStencilOp(GL_REPLACE, GL_KEEP, GL_REPLACE);
+#endif
+        this->glDepthFunc(GL_LEQUAL);
+        this->glEnable(GL_DEPTH_TEST);
+
+        renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::HighlightLayer1);
+
+        this->glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
+        this->glStencilMask(0x1);
+        this->glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+        this->glDisable(GL_DEPTH_TEST);
+
+        renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::HighlightLayer2);
+
+        this->glDepthFunc(GL_LESS);
+        this->glDisable(GL_STENCIL_TEST);
     }
 
-    // Render foreground graphics.
+    // Render foreground graphics, typically 2D primitives only.
+    this->glDisable(GL_DEPTH_TEST);
     renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::OverLayer);
 
     // Store the resource cache frame in the target frame buffer object to keep OpenGL resources alive
@@ -334,6 +373,28 @@ void OpenGLRenderingJob::renderTransparentGeometry(const FrameGraph& frameGraph,
 }
 
 /******************************************************************************
+ * Decides whether a command from the render graph should be executed by the renderer.
+ ******************************************************************************/
+bool OpenGLRenderingJob::filterRenderingCommand(const FrameGraph::RenderingCommand& command, FrameGraph::RenderLayer currentRenderLayer)
+{
+    // Skip commands that are not part of the current render layer.
+    if(command.renderLayer() != currentRenderLayer)
+        return true;
+
+    // Skip commands that are not relevant for the current rendering pass.
+    if(isPickingPass()) {
+        if(command.skipInPickingPass())
+            return true;
+    }
+    else {
+        if(command.skipInVisualPass())
+            return true;
+    }
+
+    return false;
+}
+
+/******************************************************************************
  * Executes the rendering commands stored in the given frame graph.
  ******************************************************************************/
 bool OpenGLRenderingJob::renderFrameGraph(const FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer)
@@ -342,26 +403,8 @@ bool OpenGLRenderingJob::renderFrameGraph(const FrameGraph& frameGraph, FrameGra
 
     for(const FrameGraph::RenderingCommand& command : frameGraph.commands()) {
         // Skip commands that are not part of the current render layer.
-        if(command.renderLayer() != renderLayer) continue;
-
-        // Skip commands that are not relevant for the current rendering pass.
-        if(isPickingPass()) {
-            if(command.skipInPickingPass()) continue;
-        }
-        else {
-            if(command.skipInVisualPass()) continue;
-        }
-
-        // Enable/disable depth testing as needed.
-        if(command.noDepthTesting() || command.highlightMode() == 2) {
-            OVITO_CHECK_OPENGL(this, glDisable(GL_DEPTH_TEST));
-        }
-        else {
-            OVITO_CHECK_OPENGL(this, glEnable(GL_DEPTH_TEST));
-        }
-
-        // Activate special highlight rendering mode.
-        setHighlightMode(command.highlightMode());
+        if(filterRenderingCommand(command, renderLayer))
+            continue;
 
         // Set up the model-view transformation matrix.
         if(command.modelWorldTM() != AffineTransformation::Zero()) {
@@ -769,7 +812,7 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
             if(_glversion >= QT_VERSION_CHECK(3, 0, 0))
                 line.replace("<calculate_view_ray_through_vertex>", "calculate_view_ray_through_vertex()");
             else
-                return;  // Skip view ray calculation in vertex/geometry shader and let the fragement shader do the full calculation for
+                return;  // Skip view ray calculation in vertex/geometry shader and let the fragment shader do the full calculation for
                          // each fragment.
         }
 
@@ -796,7 +839,7 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
                 line.replace("<flat_normal.output>", "flat_normal_fs");  // Note: "flat_normal_fs" is defined in "flat_normal.vert".
             }
             else {
-                // Pass view-space coordinates of vertex to fragment shader as texture coordintes.
+                // Pass view-space coordinates of vertex to fragment shader as texture coordinates.
                 if(!isGLES)
                     line = "gl_TexCoord[1] = inverse_projection_matrix * gl_Position;\n";
                 else
@@ -897,41 +940,6 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
     }
 
     OVITO_REPORT_OPENGL_ERRORS(this);
-}
-
-/******************************************************************************
-* Activates the special object highlighting rendering mode.
-******************************************************************************/
-void OpenGLRenderingJob::setHighlightMode(int mode)
-{
-    if(_highlightRenderingMode == mode)
-        return;
-
-    _highlightRenderingMode = mode;
-    if(mode == 1) {
-        this->glClearStencil(0);
-        this->glClear(GL_STENCIL_BUFFER_BIT);
-        this->glEnable(GL_STENCIL_TEST);
-        this->glStencilFunc(GL_ALWAYS, 0x1, 0x1);
-        this->glStencilMask(0x1);
-        this->glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-#if defined(Q_OS_MACOS) && defined(Q_PROCESSOR_ARM)
-        // Partial workaround for a bug in the MacOS/arm64 OpenGL implementation.
-        // Fragment shaders discarding fragments (via conditional "discard") still modify the stencil buffer, which is unexpected.
-        // See also: https://developer.apple.com/forums/thread/721988
-        this->glStencilOp(GL_REPLACE, GL_KEEP, GL_REPLACE);
-#endif
-        this->glDepthFunc(GL_LEQUAL);
-    }
-    else if(mode == 2) {
-        this->glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
-        this->glStencilMask(0x1);
-        this->glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-    }
-    else {
-        this->glDepthFunc(GL_LESS);
-        this->glDisable(GL_STENCIL_TEST);
-    }
 }
 
 /******************************************************************************

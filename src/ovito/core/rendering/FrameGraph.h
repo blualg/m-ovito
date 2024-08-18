@@ -57,10 +57,12 @@ class OVITO_CORE_EXPORT FrameGraph
 {
 public:
 
-    /// The render layers that get rendered on top of each other.
+    /// The layers that get rendered on top of each other. Each rendering primitive is part of one of these layers.
     enum RenderLayer {
         UnderLayer,
         SceneLayer,
+        HighlightLayer1,
+        HighlightLayer2,
         OverLayer
     };
 
@@ -71,19 +73,13 @@ public:
 		/// Bit-wise flags for rendering commands.
 		enum Flag {
 			NoFlags             = 0,
-			NoDepthTesting      = (1<<0), // Render the primitive without depth testing
-			ExcludeFromVisual   = (1<<1), // Skip the primitive in the visual rendering pass
-			HighlightMode1	    = (1<<2), // Render the primitive in highlight mode 1
-			HighlightMode2	    = (1<<3), // Render the primitive in highlight mode 2
+			ExcludeFromVisual   = (1<<0), // Skip the primitive in the visual rendering pass
 		};
 		Q_DECLARE_FLAGS(Flags, Flag);
 
-		/// Constructor taking a 3d rendering primitive.
-		explicit RenderingCommand(RenderLayer renderLayer, std::unique_ptr<FrameGraphPrimitive> primitive, const AffineTransformation& tm, int pickingGroupId, Flags flags) :
+		/// Constructor.
+		explicit RenderingCommand(RenderLayer renderLayer, std::unique_ptr<FrameGraphPrimitive> primitive, const AffineTransformation& tm = AffineTransformation::Zero(), int pickingGroupId = 0, Flags flags = NoFlags) :
 			_primitive(std::move(primitive)), _tm(tm), _pickingGroupId(pickingGroupId), _flags(flags), _renderLayer(renderLayer) {}
-
-		/// Constructor taking a 2d rendering primitive.
-		explicit RenderingCommand(RenderLayer renderLayer, std::unique_ptr<FrameGraphPrimitive> primitive, Flags flags = Flags(NoDepthTesting)) : _primitive(std::move(primitive)), _flags(flags), _renderLayer(renderLayer) {}
 
 		/// Returns the graphics primitive rendered by this command.
 		FrameGraphPrimitive* primitive() const { return _primitive.get(); }
@@ -97,9 +93,6 @@ public:
 		/// Returns the image layer the primitive should be rendered on.
 		RenderLayer renderLayer() const { return _renderLayer; }
 
-		/// Returns whether depth testing should be disabled while rendering the primitive.
-		bool noDepthTesting() const { return _flags.testFlag(NoDepthTesting); }
-
 		/// Returns whether this command should be skipped in object picking render mode.
 		bool skipInPickingPass() const { return pickingGroupId() == 0; }
 
@@ -108,9 +101,6 @@ public:
 
 		/// Returns the object picking group to which the primitive belongs.
 		int pickingGroupId() const { return _pickingGroupId; }
-
-		/// Returns the object highlight rendering mode to be used.
-		int highlightMode() const { return _flags.testFlag(HighlightMode1) ? 1 : (_flags.testFlag(HighlightMode2) ? 2 : 0); }
 
 	private:
 
@@ -216,7 +206,7 @@ public:
 	FloatType defaultLinePickingWidth() const;
 
 	/// Returns the layer new rendering primitives should be added to.
-	void setCurrentRenderLayer(RenderLayer layer) { _currentRenderLayer = layer; }
+	RenderLayer setCurrentRenderLayer(RenderLayer layer) { return std::exchange(_currentRenderLayer, layer); }
 
 	/// Returns the sequence of recorded rendering commands.
 	const std::vector<RenderingCommand>& commands() const { return _commands; }

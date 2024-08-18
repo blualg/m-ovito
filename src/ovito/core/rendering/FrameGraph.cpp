@@ -202,7 +202,10 @@ void FrameGraph::render2DPolyline(const Point2* points, int count, const ColorA&
     std::unique_ptr<LinePrimitive> primitive = std::make_unique<LinePrimitive>();
     primitive->setUniformColor(color);
     primitive->setPositions(vertices.take());
-    addCommand(std::move(primitive), AffineTransformation::Zero(), 0, FrameGraph::RenderingCommand::NoDepthTesting);
+
+    auto previousRenderLayer = setCurrentRenderLayer(RenderLayer::OverLayer);
+    addCommand(std::move(primitive), AffineTransformation::Zero());
+    setCurrentRenderLayer(previousRenderLayer);
 }
 
 /******************************************************************************

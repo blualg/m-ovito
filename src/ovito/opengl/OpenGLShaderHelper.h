@@ -38,7 +38,7 @@ namespace Ovito {
 /**
  * \brief A helper class that creates and binds GLSL shader programs.
  */
-class OpenGLShaderHelper
+class OVITO_OPENGLRENDERER_EXPORT OpenGLShaderHelper
 {
 public:
 
@@ -55,7 +55,7 @@ public:
     QOpenGLShaderProgram& shaderObject() const { return *_shader; }
 
     /// Loads a shader program.
-    void load(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile = QString());
+    void load(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile = QString(), const QString& shaderPathPrefix = QStringLiteral(":/openglrenderer/glsl/"));
 
     /// Destructor.
     ~OpenGLShaderHelper() {
@@ -406,7 +406,7 @@ private:
     /// Uploads some data to a new OpenGL buffer object.
     QOpenGLBuffer createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, BufferReadAccess<int32_t>)>&& fillMemoryFunc);
 
-    /// Implemention of the draw() method for OpenGL 2.x.
+    /// Implementation of the draw() method for OpenGL 2.x.
     void drawOpenGL2(GLenum mode, GLsizei renderInstanceCount);
 
     /// Issues a drawing command with an ordering of the instances.
