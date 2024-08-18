@@ -41,12 +41,12 @@ class OpenGLTexture : public QOpenGLTexture
 public:
 
     /// Constructor.
-    OpenGLTexture(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps = QOpenGLTexture::GenerateMipMaps) : QOpenGLTexture(image, genMipMaps) {
+    explicit OpenGLTexture(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps = QOpenGLTexture::GenerateMipMaps) : QOpenGLTexture(image, genMipMaps) {
         destroyTextureWithContext();
     }
 
     /// Constructor.
-    OpenGLTexture(QOpenGLTexture::Target target) : QOpenGLTexture(target) {
+    explicit OpenGLTexture(QOpenGLTexture::Target target) : QOpenGLTexture(target) {
         destroyTextureWithContext();
     }
 
