@@ -236,8 +236,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 
             // Retrieve the data file, then detect its format.
             // Note: FileImporter::autodetectFileFormat() may only be called from the main thread.
-            return Application::instance()
-                ->fileManager()
+            return Application::instance()->fileManager()
                 .fetchUrl(blockInfo.location)
                 .then(*fileSource, [&request](const SharedFuture<FileHandle>& fileFuture) mutable -> Future<void> {
                     OVITO_ASSERT(ExecutionContext::current().isValid());

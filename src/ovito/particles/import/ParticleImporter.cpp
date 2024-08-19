@@ -486,7 +486,7 @@ void ParticleImporter::FrameLoader::loadFile()
     }
 
     // Precompute checksum of Particle Identifier property to speed up
-    // the detectsion of particle reorderings.
+    // the detection of particle reorderings.
     if(_particles) {
         if(const Property* identifiers = _particles->getProperty(Particles::IdentifierProperty)) {
             (void)identifiers->checksum();
