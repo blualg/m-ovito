@@ -59,13 +59,16 @@ public:
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-        return std::make_shared<FrameLoader>(request, std::move(_particleShapeFiles));
+        return std::make_shared<FrameLoader>(request, std::move(_particleShapeFiles), std::move(_bodiesFiles));
     }
 
     /// Stores the list of particle type names and corresponding shape file URLs to be loaded.
     void setParticleShapeFileList(std::vector<ParaViewVTMBlockInfo>&& particleShapeFiles) {
         _particleShapeFiles = std::move(particleShapeFiles);
     }
+
+    /// Stores the list of particle type names and corresponding shape file URLs to be loaded.
+    void setBodiesFileList(std::vector<ParaViewVTMBlockInfo>&& bodiesFiles) { _bodiesFiles = std::move(bodiesFiles); }
 
 private:
 
@@ -75,8 +78,13 @@ private:
     public:
 
         /// Constructor.
-        FrameLoader(const LoadOperationRequest& request, std::vector<ParaViewVTMBlockInfo> particleShapeFiles)
-            : ParticleImporter::FrameLoader(request), _particleShapeFiles(std::move(particleShapeFiles)) {}
+        FrameLoader(const LoadOperationRequest& request, std::vector<ParaViewVTMBlockInfo>&& particleShapeFiles,
+                    std::vector<ParaViewVTMBlockInfo>&& bodesFiles)
+            : ParticleImporter::FrameLoader(request),
+              _particleShapeFiles(std::move(particleShapeFiles)),
+              _bodiesFiles(std::move(bodesFiles))
+        {
+        }
 
     protected:
 
@@ -89,14 +97,25 @@ private:
         /// Helper method that loads the shape of a particle type from an external geometry file.
         void loadParticleShape(ParticleType* particleType);
 
+        /// Helper method that loads all bodies from the bodies files.
+        void loadBodies();
+
         /// The list of particle type names and corresponding files containing the particle shapes.
         /// This list is extracted by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
         std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
+
+        /// The list of particle type names and corresponding files containing the bodies.
+        /// This list is extracted by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
+        std::vector<ParaViewVTMBlockInfo> _bodiesFiles;
     };
 
     /// The list of particle type names and corresponding files containing the particle shapes.
     /// This list is extracted by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
     std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
+
+    /// The list of particle type names and corresponding files containing the bodies.
+    /// This list is extracted by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
+    std::vector<ParaViewVTMBlockInfo> _bodiesFiles;
 };
 
 /**
@@ -119,6 +138,9 @@ private:
 
     /// The list of shape files for particle types.
     std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
+
+    /// The list of bodies files for body types
+    std::vector<ParaViewVTMBlockInfo> _bodiesFiles;
 };
 
 }   // End of namespace

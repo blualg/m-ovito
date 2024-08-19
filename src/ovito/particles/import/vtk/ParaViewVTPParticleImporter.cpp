@@ -29,6 +29,7 @@
 #include <ovito/mesh/io/ParaViewVTPMeshImporter.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "ParaViewVTPParticleImporter.h"
+#include <ovito/stdobj/table/DataTable.h>
 
 namespace Ovito {
 
@@ -266,6 +267,9 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
     QString statusString = tr("Particles: %1").arg(particles()->elementCount());
     state().setStatus(std::move(statusString));
 
+    // Load bodies
+    loadBodies();
+
     // Call base implementation to finalize the loaded particle data.
     ParticleImporter::FrameLoader::loadFile();
 }
@@ -370,25 +374,27 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
     // Fetch the shape geometry file, then continue in main thread.
     // Note: Invoking a file importer is currently only allowed from the main thread. This may change in the future.
     const QUrl& geometryFileUrl = _particleShapeFiles[particleType->numericId()].location;
-    Future<PipelineFlowState> stateFuture = Application::instance()->fileManager().fetchUrl(geometryFileUrl)
-            .then(*particleType, [pipelineNode=pipelineNode()](const FileHandle& fileHandle) {
+    Future<PipelineFlowState> stateFuture =
+        Application::instance()
+            ->fileManager()
+            .fetchUrl(geometryFileUrl)
+            .then(*particleType, [pipelineNode = pipelineNode()](const FileHandle& fileHandle) {
+                // Detect geometry file format and create an importer for it.
+                // Note: For loading particle shape geometries we only accept FileSourceImporters.
+                OORef<FileSourceImporter> importer =
+                    dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(fileHandle));
+                if(!importer) return Future<PipelineFlowState>::createImmediateEmpty();
 
-        // Detect geometry file format and create an importer for it.
-        // Note: For loading particle shape geometries we only accept FileSourceImporters.
-        OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(fileHandle));
-        if(!importer)
-            return Future<PipelineFlowState>::createImmediateEmpty();
+                // Set up a file load request to be passed to the importer.
+                LoadOperationRequest loadRequest;
+                loadRequest.pipelineNode = pipelineNode;
+                loadRequest.fileHandle = fileHandle;
+                loadRequest.frame = Frame(fileHandle);
+                loadRequest.state = PipelineFlowState(DataOORef<const DataCollection>::create(), PipelineStatus::Success);
 
-        // Set up a file load request to be passed to the importer.
-        LoadOperationRequest loadRequest;
-        loadRequest.pipelineNode = pipelineNode;
-        loadRequest.fileHandle = fileHandle;
-        loadRequest.frame = Frame(fileHandle);
-        loadRequest.state = PipelineFlowState(DataOORef<const DataCollection>::create(), PipelineStatus::Success);
-
-        // Let the importer parse the geometry file.
-        return importer->loadFrame(loadRequest);
-    });
+                // Let the importer parse the geometry file.
+                return importer->loadFrame(loadRequest);
+            });
 
     // Check if the importer has loaded any data.
     PipelineFlowState state = stateFuture.result();
@@ -429,10 +435,105 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
         SHADOW_PROPERTY_FIELD(ParticleType::shapeBackfaceCullingEnabled)});
 }
 
+void ParaViewVTPParticleImporter::FrameLoader::loadBodies()
+{
+    // Get the bodies object or create a new one if non is found
+    OORef<DataTable> bodiesTable = state().getMutableLeafObject<DataTable>(DataTable::OOClass(), tr("Bodies"));
+    if(!bodiesTable) {
+        bodiesTable = state().createObject<DataTable>(tr("Bodies"), pipelineNode(), DataTable::None, tr("Composed bodies"));
+    }
+
+    // Storage for file loader futures
+    std::vector<Future<PipelineFlowState>> stateFutures;
+    stateFutures.reserve(_bodiesFiles.size());
+
+    for(const ParaViewVTMBlockInfo& blockInfo : _bodiesFiles) {
+        // Skip if no location is given
+        if(blockInfo.location.isEmpty()) {
+            continue;
+        }
+        // Read the data into a particles object using the existing loader
+        Future<PipelineFlowState> future =
+            Application::instance()
+                ->fileManager()
+                .fetchUrl(blockInfo.location)
+                .then(*pipelineNode().lock(), [pipelineNode = pipelineNode()](const FileHandle& fileHandle) {
+                    // Create the importer
+                    const OORef<FileSourceImporter> importer =
+                        dynamic_object_cast<FileSourceImporter>(FileImporter::autodetectFileFormat(fileHandle));
+                    if(!importer) return Future<PipelineFlowState>::createImmediateEmpty();
+
+                    // Set up a file load request to be passed to the importer.
+                    LoadOperationRequest loadRequest;
+                    loadRequest.pipelineNode = pipelineNode;
+                    loadRequest.fileHandle = fileHandle;
+                    loadRequest.frame = Frame(fileHandle);
+                    loadRequest.state = PipelineFlowState(DataOORef<const DataCollection>::create(), PipelineStatus::Success);
+
+                    // Let the importer parse the geometry file.
+                    return importer->loadFrame(loadRequest);
+                });
+        // Store the future
+        stateFutures.push_back(std::move(future));
+    }
+
+    // Loop over futures and extract required information
+    for(Future<PipelineFlowState>& future : stateFutures) {
+        // Check if the importer has loaded any data.
+        PipelineFlowState futureState = future.result();
+        if(!futureState || futureState.status().type() == PipelineStatus::Error) {
+            // release the future state
+            futureState.reset();
+            continue;
+        }
+
+        // Get the imported particles object
+        const DataOORef<const Particles> bodies = futureState.getObject<Particles>();
+
+        // Append newly read data to existing data
+        const size_t baseIndex = bodiesTable->elementCount();
+        bodiesTable->setElementCount(baseIndex + bodies->elementCount());
+        const bool preserveExistingData = baseIndex != 0;
+
+        // Copy all other properties from the imported object
+        for(const auto& sourceProperty : bodies->properties()) {
+            // Create or get the output property in the table
+            Property* destinationProperty = bodiesTable->createProperty(
+                preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized,
+                Property::makePropertyNameValid(sourceProperty->name()), sourceProperty->dataType(), sourceProperty->componentCount());
+            OVITO_ASSERT(destinationProperty);
+
+            sourceProperty->forAnyType([&, destinationProperty](auto _) {
+                using T = decltype(_);
+
+                // Copy properties
+                BufferReadAccess<T*> source(sourceProperty);
+                BufferWriteAccess<T*, access_mode::write> destination(
+                    destinationProperty, preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+                for(size_t i = 0; i < source.size(); ++i) {
+                    for(size_t j = 0; j < source.componentCount(); ++j) {
+                        destination.set(i + baseIndex, j, source.get(i, j));
+                    }
+                }
+
+                // Set IdentifierProperty as x column (if it exists) for the table to hide the index column
+                if(sourceProperty->typeId() == Particles::IdentifierProperty) {
+                    bodiesTable->setX(destinationProperty);
+                }
+            });
+        }
+
+        // Release the future state
+        futureState.reset();
+    }
+}
+
 /******************************************************************************
-* Is called once before the datasets referenced in a multi-block VTM file will be loaded.
-******************************************************************************/
-void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter)
+ * Is called once before the datasets referenced in a multi-block VTM file will be loaded.
+ ******************************************************************************/
+void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets,
+                                                        FileSourceImporter::LoadOperationRequest& request,
+                                                        const ParaViewVTMImporter& vtmImporter)
 {
     // Resize particles object to zero elements in the existing pipeline state.
     // This is mainly done to remove any existing particles in those trajectory frames where the VTM file is made of empty data blocks.
@@ -440,9 +541,14 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
         if(const Particles* particles = dynamic_object_cast<Particles>(obj)) {
             Particles* mutableParticles = request.state.mutableData()->makeMutable(particles);
             mutableParticles->setElementCount(0);
-            if(mutableParticles->bonds())
-                mutableParticles->makeBondsMutable()->setElementCount(0);
+            if(mutableParticles->bonds()) mutableParticles->makeBondsMutable()->setElementCount(0);
         }
+    }
+
+    // Resize bodies data table to zero elements (clearing its content) in the existing pipeline state.
+    // This is mainly done to remove any existing data in those trajectory frames where the VTM file is made of empty data blocks.
+    if(DataTable* bodiesTable = request.state.getMutableLeafObject<DataTable>(DataTable::OOClass(), tr("Bodies"))) {
+        bodiesTable->setElementCount(0);
     }
 
     // The following is specific to VTM files written by the Aspherix code.
@@ -457,7 +563,8 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
             return true;
         }
         else if(block.blockPath.size() == 1 && block.blockPath[0] == QStringLiteral("Bodies")) {
-            // Skip the 'Bodies' pieces.
+            // Store the bodies information and URLs in the internal list.
+            _bodiesFiles.emplace_back(std::move(block));
             return true;
         }
         return false;
@@ -465,15 +572,17 @@ void ParticlesParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMB
 }
 
 /******************************************************************************
-* Is called before parsing of a dataset reference in a multi-block VTM file begins.
-******************************************************************************/
-void ParticlesParaViewVTMFileFilter::configureImporter(const ParaViewVTMBlockInfo& blockInfo, FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer)
+ * Is called before parsing of a dataset reference in a multi-block VTM file begins.
+ ******************************************************************************/
+void ParticlesParaViewVTMFileFilter::configureImporter(const ParaViewVTMBlockInfo& blockInfo,
+                                                       FileSourceImporter::LoadOperationRequest& loadRequest, FileSourceImporter* importer)
 {
-    // Pass the list of particle shape files to be loaded to the VTP particle importer, which will take care
-    // of loading the shape files.
+    // Pass the list of particle shape and bodes files to be loaded to the VTP particle importer, which will take care
+    // of loading the files.
     if(ParaViewVTPParticleImporter* particleImporter = dynamic_object_cast<ParaViewVTPParticleImporter>(importer)) {
         particleImporter->setParticleShapeFileList(std::move(_particleShapeFiles));
+        particleImporter->setBodiesFileList(std::move(_bodiesFiles));
     }
 }
 
-}   // End of namespace
+}  // namespace Ovito
