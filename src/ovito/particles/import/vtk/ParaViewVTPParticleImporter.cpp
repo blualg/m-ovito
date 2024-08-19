@@ -311,6 +311,9 @@ Property* ParaViewVTPParticleImporter::FrameLoader::createPropertyForDataArray(Q
         else if(name.compare(QLatin1String("shapetype"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
             return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::TypeProperty);
         }
+        else if(name.compare(QLatin1String("body"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
+            return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("body"), Property::Int32, numComponents);
+        }
         else if(name.compare(QLatin1String("mass"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
             return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Particles::MassProperty);
         }
