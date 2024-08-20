@@ -39,8 +39,6 @@ template<typename Function>
     class PackagedTask : public AsynchronousTask<R>
     {
     public:
-        /// The type of future associated with this task type. This typedef is used by the launchTask() function.
-        using future_type = Future<R>;
         explicit PackagedTask(Function&& f) : _func(std::forward<Function>(f)) {}
         virtual void perform() override {
             if constexpr(!std::is_void_v<R>)

@@ -101,6 +101,7 @@ void AsynchronousTaskBase::run()
         OVITO_ASSERT(!isFinished());
         setFinished();
     }
+    catch(const OperationCanceled&) {}
     catch(...) {
         OVITO_ASSERT(!isFinished());
         captureExceptionAndFinish();

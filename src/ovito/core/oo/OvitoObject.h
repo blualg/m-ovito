@@ -121,6 +121,7 @@ public:
     /// If the object gets destroyed before the work is executed, the scheduled work will be discarded.
     template<typename Function>
     [[nodiscard]] auto schedule(Function&& f) const {
+        static_assert(std::is_nothrow_invocable_r_v<void, Function>, "The function must be noexcept.");
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(ExecutionContext::current().isValid());
         OVITO_ASSERT(!isBeingConstructed()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed yet.
@@ -136,6 +137,7 @@ public:
     /// Executes some work in the context of this object (typically the main thread).
     template<typename Function>
     void execute(Function&& f) const {
+        static_assert(std::is_nothrow_invocable_r_v<void, Function>, "The function must be noexcept.");
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(ExecutionContext::current().isValid());
         OVITO_ASSERT(!isBeingConstructed()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed yet.
