@@ -163,16 +163,18 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
 template<typename Setup, typename Kernel>
 void parallelForChunks(size_t loopCount, size_t minimumChunkSize, Setup&& setup, Kernel&& kernel)
 {
-    OVITO_ASSERT(minimumChunkSize > 0);
+    OVITO_ASSERT(minimumChunkSize != 0);
     size_t maxWorkerCount = (loopCount + minimumChunkSize - 1) / minimumChunkSize;
 
     parallelCancellable(maxWorkerCount,
         std::forward<Setup>(setup),
         [&](size_t workerIndex, size_t workerCount) {
             size_t chunkSize = (loopCount + workerCount - 1) / workerCount;
+            OVITO_ASSERT(chunkSize != 0);
             size_t fromIndex = workerIndex * chunkSize;
             size_t toIndex = std::min(fromIndex + chunkSize, loopCount);
-            kernel(workerIndex, fromIndex, toIndex);
+            if(toIndex > fromIndex)
+                kernel(workerIndex, fromIndex, toIndex);
         }
     );
 }
@@ -180,16 +182,18 @@ void parallelForChunks(size_t loopCount, size_t minimumChunkSize, Setup&& setup,
 template<typename Kernel>
 void parallelForChunks(size_t loopCount, size_t minimumChunkSize, Kernel&& kernel)
 {
-    OVITO_ASSERT(minimumChunkSize > 0);
+    OVITO_ASSERT(minimumChunkSize != 0);
     size_t maxWorkerCount = (loopCount + minimumChunkSize - 1) / minimumChunkSize;
 
     parallelCancellable(maxWorkerCount,
         [](size_t workerCount) noexcept {},
         [&](size_t workerIndex, size_t workerCount) {
             size_t chunkSize = (loopCount + workerCount - 1) / workerCount;
+            OVITO_ASSERT(chunkSize != 0);
             size_t fromIndex = workerIndex * chunkSize;
             size_t toIndex = std::min(fromIndex + chunkSize, loopCount);
-            kernel(fromIndex, toIndex);
+            if(toIndex > fromIndex)
+                kernel(fromIndex, toIndex);
         }
     );
 }
