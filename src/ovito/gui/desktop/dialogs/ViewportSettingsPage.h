@@ -45,9 +45,6 @@ public:
     /// \brief Creates the widget.
     virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
 
-    /// \brief Lets the settings page validate the values entered by the user before saving them.
-    virtual bool validateValues(QTabWidget* tabWidget) override;
-
     /// \brief Lets the settings page to save all values entered by the user.
     /// \param settingsDialog The settings dialog box.
     virtual void saveValues(QTabWidget* tabWidget) override;
@@ -63,10 +60,7 @@ private:
     QButtonGroup* _upDirectionGroup;
     QCheckBox* _constrainCameraRotationBox;
     QButtonGroup* _colorScheme;
-#if 0
     QButtonGroup* _graphicsSystem;
-    QComboBox* _vulkanDevices;
-#endif
     QComboBox* _transparencyRenderingMethod;
 };
 

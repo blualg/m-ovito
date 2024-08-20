@@ -42,9 +42,6 @@ public:
     /// Constructs the viewport panel.
     explicit ViewportsPanel(MainWindow& parent);
 
-    /// Factory method which creates a new viewport window widget.
-    static OORef<WidgetViewportWindow> createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent);
-
     /// Returns the window that is associated with the given viewport (if any).
     WidgetViewportWindow* viewportWindow(Viewport* vp);
 
@@ -114,6 +111,9 @@ private:
         size_t childCellIndex;
         FloatType dragFactor;
     };
+
+    /// Factory method which creates a new viewport window widget.
+    OORef<WidgetViewportWindow> createViewportWindow(Viewport& vp, QWidget* parent);
 
     /// Recursive helper function for laying out the viewport windows.
     void layoutViewportsRecursive(ViewportLayoutCell* layoutCell, const QRect& rect);

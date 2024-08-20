@@ -95,89 +95,36 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
         lightColorScheme->setChecked(true);
 
     // Group "3D graphics system":
-    QGroupBox* graphicsGroupBox = new QGroupBox(tr("3D graphics"), page);
+    QGroupBox* graphicsGroupBox = new QGroupBox(tr("Interactive 3D graphics"), page);
     layout1->addWidget(graphicsGroupBox);
     layout2 = new QGridLayout(graphicsGroupBox);
     layout2->setColumnStretch(2, 1);
 
-#if 0
-    layout2->addWidget(new QLabel(tr("Graphics hardware interface:")), 0, 0);
+    layout2->addWidget(new QLabel(tr("Rendering backend:")), 0, 0);
     _graphicsSystem = new QButtonGroup(page);
     QRadioButton* openglOption = new QRadioButton(tr("OpenGL"), graphicsGroupBox);
-    QRadioButton* vulkanOption = new QRadioButton(tr("Vulkan"), graphicsGroupBox);
-    QRadioButton* anariOption = new QRadioButton(tr("Anari"), graphicsGroupBox);
+    QRadioButton* anariOption = new QRadioButton(tr("VisRTX (experimental, requires CUDA-capable GPU)"), graphicsGroupBox);
     layout2->addWidget(openglOption, 0, 1);
-    layout2->addWidget(vulkanOption, 1, 1);
-    layout2->addWidget(anariOption, 2, 1);
+    layout2->addWidget(anariOption, 1, 1);
     _graphicsSystem->addButton(openglOption, 0);
-    _graphicsSystem->addButton(vulkanOption, 1);
-    _graphicsSystem->addButton(anariOption, 2);
-    _vulkanDevices = new QComboBox();
-    layout2->addWidget(_vulkanDevices, 1, 2);
+    _graphicsSystem->addButton(anariOption, 1);
 
-    if(settings.value("rendering/selected_graphics_api").toString() == "Vulkan")
-        vulkanOption->setChecked(true);
-    else if(settings.value("rendering/selected_graphics_api").toString() == "Anari")
+    if(settings.value("rendering/selected_graphics_api").toString() == "Anari")
         anariOption->setChecked(true);
     else
         openglOption->setChecked(true);
 
-    if(OvitoClassPtr rendererClass = PluginManager::instance().findClass("VulkanRenderer", "VulkanSceneRenderer")) {
-        // Call the VulkanSceneRenderer::OOMetaClass::querySystemInformation() function to let the Vulkan plugin write the
-        // list of available devices to the application settings store, from where we can read them.
-        QString dummyBuffer;
-        QTextStream dummyStream(&dummyBuffer);
-        rendererClass->querySystemInformation(dummyStream, mainWindow());
-
-        settings.beginGroup("rendering/vulkan");
-        int numDevices = settings.beginReadArray("available_devices");
-        if(numDevices != 0) {
-            for(int deviceIndex = 0; deviceIndex < numDevices; deviceIndex++) {
-                settings.setArrayIndex(deviceIndex);
-                QString title = settings.value("name").toString();
-                switch(settings.value("deviceType").toInt()) {
-                case 1: // VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
-                    title += tr(" (integrated GPU)");
-                    break;
-                case 2: // VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
-                    title += tr(" (discrete GPU)");
-                    break;
-                case 3: // VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU
-                    title += tr(" (virtual GPU)");
-                    break;
-                }
-                _vulkanDevices->addItem(std::move(title));
-            }
-        }
-        else {
-            _vulkanDevices->addItem(tr("<No devices found>"));
-            vulkanOption->setEnabled(false);
-            openglOption->setChecked(true);
-            _vulkanDevices->setEnabled(false);
-        }
-        settings.endArray();
-        _vulkanDevices->setCurrentIndex(settings.value("selected_device", 0).toInt());
-        settings.endGroup();
-    }
-    else {
-        vulkanOption->setEnabled(false);
-        _vulkanDevices->setEnabled(false);
-        _vulkanDevices->addItem(tr("Not available on this platform"));
-    }
-
-    if(!PluginManager::instance().findClass("AnariRenderer", "AnariRenderer")) {
+    // Disable ANARI option in macOS release builds, because VisRTX is not available on this platform.
+#if !defined(Q_OS_MACOS) || defined(OVITO_DEBUG)
+    if(!PluginManager::instance().findClass("AnariRendererWindow", "OpenGLAnariViewportWindow"))
+#endif
+    {
         anariOption->setEnabled(false);
-        anariOption->setVisible(false);
     }
 
     // Automatically switch back to OpenGL if the currently selected renderer is not available anymore.
-    if(!vulkanOption->isEnabled() && vulkanOption->isChecked())
-        openglOption->setChecked(true);
     if(!anariOption->isEnabled() && anariOption->isChecked())
         openglOption->setChecked(true);
-    _vulkanDevices->setEnabled(vulkanOption->isChecked());
-    connect(vulkanOption, &QAbstractButton::toggled, _vulkanDevices, &QComboBox::setEnabled);
-#endif
 
     // Transparency rendering method.
     _transparencyRenderingMethod = new QComboBox();
@@ -188,50 +135,10 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     layout2->addWidget(new QLabel(tr("Transparency rendering method:")), 3, 0);
     layout2->addWidget(_transparencyRenderingMethod, 3, 1, 1, 2);
 
-#if 0
     _transparencyRenderingMethod->setEnabled(openglOption->isChecked());
     connect(openglOption, &QAbstractButton::toggled, _transparencyRenderingMethod, &QComboBox::setEnabled);
-#endif
 
     layout1->addStretch();
-}
-
-/******************************************************************************
-* Lets the settings page validate the values entered by the user before saving them.
-******************************************************************************/
-bool ViewportSettingsPage::validateValues(QTabWidget* tabWidget)
-{
-    QSettings settings;
-#if 0
-    // Check if user has selected a different 3D graphics API than before.
-    bool recreateViewportWindows = false;
-    bool wasVulkanSelected = (settings.value("rendering/selected_graphics_api").toString() == "Vulkan");
-    bool isVulkanSelected = (_graphicsSystem->checkedId() == 1);
-    if(isVulkanSelected != wasVulkanSelected && isVulkanSelected) {
-        // Warn the user that some Vulkan implementations may be incompatible with Ovito and can
-        // render the application unusable.
-        MessageDialog msgBox(settingsDialog());
-        msgBox.setIcon(QMessageBox::Question);
-        msgBox.setText("Are you sure you want to enable the Vulkan-based viewport renderer?");
-        msgBox.setInformativeText(tr(
-                    "In rare cases, Vulkan graphics drivers can be incompatible with OVITO. This concerns especially very old graphics chip models. "
-                    "In such a case, OVITO may only display a black window and become entirely unusable.\n\n"
-                    "It may then be necessary to deactivate the Vulkan renderer of OVITO again. If OVITO is no longer usable, this must be done manually "
-                    "by resetting the program settings to factory defaults. Please refer to the user manual to see where OVITO stores its program settings and how to reset them.\n\n"
-                    "Click OK to continue and activate the Vulkan renderer now."));
-        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel | QMessageBox::Help);
-        msgBox.setDefaultButton(QMessageBox::Ok);
-        int ret = msgBox.exec();
-        if(ret != QMessageBox::Ok) {
-            if(ret == QMessageBox::Help) {
-                settingsDialog()->onHelp();
-            }
-            return false;
-        }
-    }
-#endif
-
-    return true;
 }
 
 /******************************************************************************
@@ -243,11 +150,10 @@ void ViewportSettingsPage::saveValues(QTabWidget* tabWidget)
 
     // Check if user has selected a different 3D graphics API than before.
     bool recreateViewportWindows = false;
-#if 0
+
     QString oldGraphicsApi = settings.value("rendering/selected_graphics_api").toString();
     QString newGraphicsApi;
-    if(_graphicsSystem->checkedId() == 1) newGraphicsApi = "Vulkan";
-    else if(_graphicsSystem->checkedId() == 2) newGraphicsApi = "Anari";
+    if(_graphicsSystem->checkedId() == 1) newGraphicsApi = "Anari";
     if(newGraphicsApi != oldGraphicsApi) {
         // Save new API selection in the application settings store.
         if(!newGraphicsApi.isEmpty())
@@ -256,13 +162,6 @@ void ViewportSettingsPage::saveValues(QTabWidget* tabWidget)
             settings.remove("rendering/selected_graphics_api");
         recreateViewportWindows = true;
     }
-
-    // Check if a different Vulkan device was selected by the user.
-    if(settings.value("rendering/vulkan/selected_device", 0).toInt() != _vulkanDevices->currentIndex()) {
-        settings.setValue("rendering/vulkan/selected_device", _vulkanDevices->currentIndex());
-        recreateViewportWindows = true;
-    }
-#endif
 
     // Check if a different transparency rendering method was selected by the user.
     if(settings.value("rendering/transparency_method", 1).toInt() != _transparencyRenderingMethod->currentData().toInt()) {

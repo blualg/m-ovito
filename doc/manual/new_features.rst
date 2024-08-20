@@ -25,12 +25,13 @@ Version 3.11.0 (xx-xxx-2024)
 - :ref:`particles.modifiers.dislocation_analysis` modifier: Ensure cross-platform reproducible results
 - User can now save pre-configured templates for viewport layers and reuse them in other scenes
 - Simulation file import: Updated mass of *Zn* in internal table of elements from 65.409 (pre 2007 value) to 65.38 (see https://www.ciaaw.org/zinc.htm) - old value is still recognized for compatibility reasons
-- Added support for reading modern Aspherix *.vtm* files that have a "Bodies" section. Bodies section is read into a DataTable.
+- Added support for reading modern Aspherix *.vtm* files that have a "Bodies" section. Bodies information from non-convex particle simulations is read in as a :ref:`data table <scene_objects.data_table>`.
 - OVITO Basic now includes demo versions of the high-fidelity rendering backends :ref:`OSPRay <rendering.ospray_renderer>`, :ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`
+- New interactive viewport rendering backend: VisRTX
 - Fixed regression due to update of the Qt framework: Missing colors in plot legends
 - Fixed: Axis scales and labels are invisible (white on white) in exported data plots if dark mode UI is active
 - Fixed: Mouse wrapping in Spinner Widget for vertical multi screen setups.
-- Fixed: Spinner widget mouse warp not working on macOS (requires accessibility access). 
+- Fixed: Spinner widget mouse warp not working on macOS (requires accessibility access).
 - CA file import (loading precomputed DXA results) is now an exclusive OVITO Pro feature
 - :ref:`particles.modifiers.slice` and :ref:`particles.modifiers.affine_transformation` modifiers: Value increments used for step-wise parameter adjustment are now proportional to the simulation cell size instead of the current parameter value
 - Updated third-party components: OpenSSL, Qt, PySide6, Python, Qwt

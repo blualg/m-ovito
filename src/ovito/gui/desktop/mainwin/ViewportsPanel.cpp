@@ -80,15 +80,13 @@ ViewportsPanel::ViewportsPanel(MainWindow& mainWindow) : _mainWindow(mainWindow)
 /******************************************************************************
 * Factory method which creates a new viewport window widget.
 ******************************************************************************/
-OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, MainWindow& mainWindow, QWidget* parent)
+OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, QWidget* parent)
 {
     // Select the viewport window implementation to use.
     QByteArray selectedGraphicsApi = qgetenv("OVITO_VIEWPORT_RENDERER");
-#if 0
     QSettings settings;
     if(selectedGraphicsApi.isEmpty())
         selectedGraphicsApi = settings.value("rendering/selected_graphics_api").toString().toUtf8();
-#endif
 
     // Select the viewport window implementation to use.
     OvitoClassPtr windowClass = PluginManager::instance().findClass("OpenGLRendererWindow", "OpenGLViewportWindow");
@@ -104,12 +102,24 @@ OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, M
     // Instantiate the selected viewport window implementation.
     if(windowClass) {
         OORef<WidgetViewportWindow> window = static_object_cast<WidgetViewportWindow>(windowClass->createInstance());
-        window->initializeWindow(&vp, mainWindow, parent);
+        window->initializeWindow(&vp, _mainWindow, parent);
 
-        // Handle fatal rendering errors by quitting the application.
-        connect(window.get(), &ViewportWindow::fatalError, &mainWindow, [&mainWindow](Exception& ex) {
-            ex.prependGeneralMessage(tr("An unexpected error occurred in the interactive viewport windows. The program will quit."));
-            mainWindow.exitWithFatalError(ex);
+        // Handle fatal rendering errors.
+        connect(window.get(), &ViewportWindow::fatalError, this, [this](Exception& ex) {
+            if(_windowCreationErrorOccurred)
+                return;
+            _windowCreationErrorOccurred = true;
+            QSettings settings;
+            if(qgetenv("OVITO_VIEWPORT_RENDERER").isEmpty() && settings.value("rendering/selected_graphics_api").toString().isEmpty() == false) {
+                // Automatically switch back to the default OpenGL backend if there is a problem with the current backend.
+                QSettings().remove("rendering/selected_graphics_api");
+                _mainWindow.reportError(ex, true);
+                QMetaObject::invokeMethod(this, "recreateViewportWindows", Qt::QueuedConnection);
+            }
+            else {
+                ex.prependGeneralMessage(tr("There is a problem with the interactive viewport windows. The program will quit."));
+                _mainWindow.exitWithFatalError(ex);
+            }
         });
 
         return window;
@@ -310,7 +320,7 @@ void ViewportsPanel::createViewportWindows()
     for(Viewport* viewport : viewports) {
         if(!_windowCreationErrorOccurred && !viewportWindow(viewport)) {
             bool success = _mainWindow.handleExceptions([&] {
-                OORef<WidgetViewportWindow> viewportWindow = createViewportWindow(*viewport, _mainWindow, this);
+                OORef<WidgetViewportWindow> viewportWindow = createViewportWindow(*viewport, this);
                 if(!viewportWindow || !viewportWindow->widget())
                     throw Exception(tr("Failed to create viewport window or there is no realtime graphics implementation available. Please check your OVITO installation and the graphics capabilities of your system."));
                 if(_viewportConfig && _viewportConfig->activeViewport() == viewport)
