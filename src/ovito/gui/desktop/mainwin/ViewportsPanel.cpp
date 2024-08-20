@@ -108,7 +108,7 @@ OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, M
 
         // Handle fatal rendering errors by quitting the application.
         connect(window.get(), &ViewportWindow::fatalError, &mainWindow, [&mainWindow](Exception& ex) {
-            ex.prependGeneralMessage(tr("An unexpected error occurred while rendering the viewports. The program will quit."));
+            ex.prependGeneralMessage(tr("An unexpected error occurred in the interactive viewport windows. The program will quit."));
             mainWindow.exitWithFatalError(ex);
         });
 
@@ -133,30 +133,12 @@ WidgetViewportWindow* ViewportsPanel::viewportWindow(Viewport* vp)
 
 /******************************************************************************
 * Returns the widget that hosts the given viewport.
-* The widget is automatically created if it does not exist yet.
 ******************************************************************************/
 QWidget* ViewportsPanel::viewportWidget(Viewport* vp)
 {
     // Check if the viewport already has an associated window.
     if(WidgetViewportWindow* window = viewportWindow(vp))
         return window->widget();
-
-    // Create the viewport window if it hasn't been created for this viewport yet.
-    if(!_graphicsInitializationErrorOccurred) {
-        try {
-            OORef<WidgetViewportWindow> viewportWindow = createViewportWindow(*vp, _mainWindow, this);
-            if(!viewportWindow || !viewportWindow->widget())
-                throw Exception(tr("Failed to create viewport window or there is no realtime graphics implementation available. Please check your OVITO installation and the graphics capabilities of your system."));
-            if(_viewportConfig && _viewportConfig->activeViewport() == vp)
-                viewportWindow->widget()->setFocus();
-            _viewportWindows.push_back(viewportWindow);
-            return viewportWindow->widget();
-        }
-        catch(const Exception& ex) {
-            _graphicsInitializationErrorOccurred = true;
-            _mainWindow.reportError(ex, true);
-        }
-    }
 
     return nullptr;
 }
@@ -196,7 +178,8 @@ void ViewportsPanel::recreateViewportWindows()
     // Delete all widgets of the existing viewport windows immediately.
     for(auto& window : _viewportWindows)
         delete window->widget();
-    // Release all viewport windows.
+
+    // Release all viewport window objects.
     _viewportWindows.clear();
 
     // Now all child widgets should be gone.
@@ -206,11 +189,11 @@ void ViewportsPanel::recreateViewportWindows()
     OVITO_ASSERT(findChildren<QWidget*>(QString{}, Qt::FindDirectChildrenOnly).empty());
 #endif
 
-    if(_viewportConfig) {
-        // Layout viewport widgets.
-        // This function implicitly creates the windows for all viewports.
-        layoutViewports();
-    }
+    // Reset error flag.
+    _windowCreationErrorOccurred = false;
+
+    // This implicitly creates the new windows for the viewports by calling createViewportWindows().
+    layoutViewports();
 }
 
 /******************************************************************************
@@ -246,11 +229,9 @@ void ViewportsPanel::paintEvent(QPaintEvent* event)
     if(!_viewportConfig) return;
 
     // Get the active viewport and its associated Qt widget.
-    Viewport* vp = _viewportConfig->activeViewport();
-    if(!vp)
-        return;
-    QWidget* vpWidget = viewportWidget(vp);
-    if(!vpWidget || vpWidget->isHidden())
+    Viewport* activeViewport = _viewportConfig->activeViewport();
+    QWidget* activeWidget = activeViewport ? viewportWidget(activeViewport) : nullptr;
+    if(!activeWidget || activeWidget->isHidden())
         return;
 
     QPainter painter(this);
@@ -274,7 +255,7 @@ void ViewportsPanel::paintEvent(QPaintEvent* event)
         // Render a border around the active viewport.
         painter.setPen((QColor)borderColor);
         painter.setBrush(Qt::NoBrush);
-        QRect rect = vpWidget->geometry();
+        QRect rect = activeWidget->geometry();
         rect.adjust(-1, -1, 0, 0);
         painter.drawRect(rect);
         rect.adjust(-1, -1, 1, 1);
@@ -299,13 +280,60 @@ void ViewportsPanel::resizeEvent(QResizeEvent* event)
 }
 
 /******************************************************************************
-* Requests a relayout of the viewport windows.
+* Requests a re-layout of the viewport windows.
 ******************************************************************************/
 void ViewportsPanel::invalidateWindowLayout()
 {
-    if(!_relayoutRequested) {
-        _relayoutRequested = true;
+    if(!_layoutRequested) {
+        _layoutRequested = true;
         QMetaObject::invokeMethod(this, "layoutViewports", Qt::QueuedConnection);
+    }
+}
+
+/******************************************************************************
+* Creates the physical viewport windows for the viewports of the current viewport configuration.
+******************************************************************************/
+void ViewportsPanel::createViewportWindows()
+{
+    if(!_viewportConfig)
+        return;
+
+    // Get the list of all viewports that are part of the current viewport configuration.
+    const auto& viewports = _viewportConfig->viewports();
+
+    // Cleanup: Delete stale viewport windows belonging to viewports that have been removed from the current viewport configuration.
+    std::erase_if(_viewportWindows, [&](const auto& window) {
+        return boost::algorithm::none_of(viewports, [&](Viewport* vp) { return window->viewport() == vp; });
+    });
+
+    // Create new viewport windows for viewports that don't have one yet.
+    for(Viewport* viewport : viewports) {
+        if(!_windowCreationErrorOccurred && !viewportWindow(viewport)) {
+            bool success = _mainWindow.handleExceptions([&] {
+                OORef<WidgetViewportWindow> viewportWindow = createViewportWindow(*viewport, _mainWindow, this);
+                if(!viewportWindow || !viewportWindow->widget())
+                    throw Exception(tr("Failed to create viewport window or there is no realtime graphics implementation available. Please check your OVITO installation and the graphics capabilities of your system."));
+                if(_viewportConfig && _viewportConfig->activeViewport() == viewport)
+                    viewportWindow->widget()->setFocus();
+                _viewportWindows.push_back(viewportWindow);
+                return viewportWindow->widget();
+            });
+            if(!success)
+                _windowCreationErrorOccurred = true;
+        }
+    }
+
+    // Automatically activate a different viewport if the currently active one has been hidden.
+    if(_viewportConfig->maximizedViewport() && !viewportWindow(_viewportConfig->maximizedViewport())) {
+        _mainWindow.handleExceptions([&] {
+            _viewportConfig->setMaximizedViewport(viewports.empty() ? nullptr : viewports.front());
+            _viewportConfig->setActiveViewport(_viewportConfig->maximizedViewport());
+        });
+    }
+    if(_viewportConfig->activeViewport() && !viewportWindow(_viewportConfig->activeViewport())) {
+        _mainWindow.handleExceptions([&] {
+            _viewportConfig->setActiveViewport(viewports.empty() ? nullptr : viewports.front());
+        });
     }
 }
 
@@ -314,7 +342,7 @@ void ViewportsPanel::invalidateWindowLayout()
 ******************************************************************************/
 void ViewportsPanel::layoutViewports()
 {
-    _relayoutRequested = false;
+    _layoutRequested = false;
     _splitterRegions.clear();
     _hoveredSplitter = -1;
     _highlightSplitter = false;
@@ -322,22 +350,15 @@ void ViewportsPanel::layoutViewports()
     if(!_viewportConfig)
         return;
 
+    // Create the physical viewport windows for the viewports of the current viewport configuration.
+    createViewportWindows();
+
     // Get the list of all viewports.
     const auto& viewports = _viewportConfig->viewports();
 
-    // Delete stale viewport windows belonging to removed viewports.
-    std::erase_if(_viewportWindows, [&](const auto& window) {
-        return boost::algorithm::none_of(viewports, [&](Viewport* vp) { return window->viewport() == vp; });
-    });
-
-    // Create new viewport windows for viewports that don't have one yet.
-    for(Viewport* viewport : viewports) {
-        viewportWidget(viewport);
-    }
-
     // Get the viewport that is currently maximized.
     if(Viewport* maximizedViewport = _viewportConfig->maximizedViewport()) {
-        // If there is a maximized viewport, hide all other viewport windows.
+        // If there is a maximized viewport, hide all other viewport windows (only if they are not a free-floating viewport window).
         for(Viewport* viewport : viewports) {
             if(QWidget* widget = viewportWidget(viewport)) {
                 if(widget->parentWidget() == this) {
@@ -355,21 +376,8 @@ void ViewportsPanel::layoutViewports()
         }
     }
     else {
-        // Perform a reculation of the nested layout.
+        // Perform a recalculation of the nested layout.
         layoutViewportsRecursive(_viewportConfig->layoutRootCell(), rect());
-    }
-
-    // Automatically activate a different viewport if the currently active one has been hidden.
-    if(_viewportConfig->maximizedViewport() && !viewportWindow(_viewportConfig->maximizedViewport())) {
-        _mainWindow.handleExceptions([&] {
-            _viewportConfig->setMaximizedViewport(viewports.empty() ? nullptr : viewports.front());
-            _viewportConfig->setActiveViewport(_viewportConfig->maximizedViewport());
-        });
-    }
-    if(_viewportConfig->activeViewport() && !viewportWindow(_viewportConfig->activeViewport())) {
-        _mainWindow.handleExceptions([&] {
-            _viewportConfig->setActiveViewport(viewports.empty() ? nullptr : viewports.front());
-        });
     }
 }
 

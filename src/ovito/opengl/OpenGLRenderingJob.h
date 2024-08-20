@@ -114,7 +114,7 @@ public:
 
 protected:
 
-    /// Perform additional steps to composite the results from multiple renderers.
+    /// May combine the framebuffer contents from multiple renderers.
     /// This can be implemented by derived classes.
     virtual void performFrameCompositing() {}
 

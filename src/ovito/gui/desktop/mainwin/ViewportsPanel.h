@@ -48,7 +48,7 @@ public:
     /// Returns the window that is associated with the given viewport (if any).
     WidgetViewportWindow* viewportWindow(Viewport* vp);
 
-    /// Returns the widget that hosts the given viewport. The widget is automatically created if it does not exist yet.
+    /// Returns the widget that hosts the given viewport (if any).
     QWidget* viewportWidget(Viewport* vp);
 
     /// Returns the current viewport configuration object.
@@ -59,11 +59,14 @@ public:
 
 public Q_SLOTS:
 
-    /// Requests a relayout of the viewport windows.
+    /// Requests a re-layout of the viewport windows.
     void invalidateWindowLayout();
 
     /// Performs the layout of the viewports in the panel.
     void layoutViewports();
+
+    /// Creates the physical viewport windows for the viewports of the current viewport configuration.
+    void createViewportWindows();
 
     /// Destroys all viewport windows in the panel and recreates them.
     void recreateViewportWindows();
@@ -123,8 +126,8 @@ private:
     OORef<ViewportConfiguration> _viewportConfig;
     MainWindow& _mainWindow;
     std::vector<OORef<WidgetViewportWindow>> _viewportWindows;
-    bool _graphicsInitializationErrorOccurred = false;
-    bool _relayoutRequested = false;
+    bool _windowCreationErrorOccurred = false;
+    bool _layoutRequested = false;
     std::vector<SplitterRectangle> _splitterRegions;
     int _hoveredSplitter = -1;
     bool _highlightSplitter = false;

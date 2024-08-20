@@ -171,7 +171,7 @@ void ViewportWindow::handleUpdateRequest()
     // Keep this window alive while rendering is in progress.
     OORef<ViewportWindow> self = this;
 
-    // Graceful exception handling.
+    // Graceful handling of exceptions that might occur during viewport rendering.
     bool success = userInterface().handleExceptions([&]() {
 
         // Interactive viewport rendering is performed with a higher priority than other tasks.
@@ -671,7 +671,7 @@ QRectF ViewportWindow::renderViewportTitle(FrameGraph& frameGraph)
 }
 
 /******************************************************************************
-* Sets a flag indicatring whether the mouse cursor is currently located in the
+* Sets a flag indicating whether the mouse cursor is currently located in the
 * viewport window area that activates the context menu.
 ******************************************************************************/
 void ViewportWindow::setCursorInContextMenuArea(bool flag)
