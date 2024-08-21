@@ -703,7 +703,7 @@ Version 3.7.6 (23-Jun-2022)
 * Fix: Grain segmentation algorithm never terminates for particular inputs.
 * PyPI package for Linux: disabled built-in SSH client to improve compatibility with Ubuntu 22.04, which doesn't provide OpenSSL 1.1 libraries anymore.
 * |ovito-pro| New Python class :py:class:`ovito.data.SurfaceMeshTopology`, which provides script access to the face connectivity information of surface meshes.
-* |ovito-pro| Conda channel now provides additional variants of the ```ovito`` <https://conda.ovito.org>`_ package (built against ``tbb`` v2020 and v2021), which avoids dependency conflicts with certain third-party packages when installing them in the same environment.
+* |ovito-pro| Conda channel now provides additional variants of the `ovito <https://conda.ovito.org>`__ package (built against ``tbb`` v2020 and v2021), which avoids dependency conflicts with certain third-party packages when installing them in the same environment.
 
 .. sidebar::
 
