@@ -90,14 +90,12 @@ OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, Q
 
     // Select the viewport window implementation to use.
     OvitoClassPtr windowClass = PluginManager::instance().findClass("OpenGLRendererWindow", "OpenGLViewportWindow");
-#ifdef OVITO_BUILD_PROFESSIONAL
     if(selectedGraphicsApi.compare("anari", Qt::CaseInsensitive) == 0) {
         windowClass = PluginManager::instance().findClass("AnariRendererWindow", "OpenGLAnariViewportWindow");
     }
     else if(!selectedGraphicsApi.isEmpty() && selectedGraphicsApi.compare("opengl", Qt::CaseInsensitive) != 0) {
         qWarning() << "Unknown OVITO_VIEWPORT_RENDERER value: " << selectedGraphicsApi;
     }
-#endif
 
     // Instantiate the selected viewport window implementation.
     if(windowClass) {
