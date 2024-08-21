@@ -256,21 +256,21 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     // Render background graphics, typically 2D primitives only.
     _isTransparencyPass = false;
     this->glDisable(GL_DEPTH_TEST);
-    renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::UnderLayer);
+    renderFrameGraph(FrameGraph::RenderLayer::UnderLayer);
 
     // Render fully opaque 3D geometry.
     this->glEnable(GL_DEPTH_TEST);
-    bool hasTransparentGeometry = renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::SceneLayer);
+    bool hasTransparentGeometry = renderFrameGraph(FrameGraph::RenderLayer::SceneLayer);
 
     // Let sub-classes perform additional steps to composite the results from multiple renderers, e.g. ANARI.
     performFrameCompositing();
 
     // Render translucent 3D geometry in a second pass.
     if(hasTransparentGeometry)
-        renderTransparentGeometry(*frameGraph, *glFrameBuffer);
+        renderTransparentGeometry(*glFrameBuffer);
 
     // Render highlighted geometry in a third and fourth pass.
-    if(std::any_of(frameGraph->commands().begin(), frameGraph->commands().end(),
+    if(!isPickingPass() && std::any_of(frameGraph->commands().begin(), frameGraph->commands().end(),
                    [](const FrameGraph::RenderingCommand& command) { return command.renderLayer() == FrameGraph::RenderLayer::HighlightLayer1; })) {
 
         this->glClearStencil(0);
@@ -288,14 +288,14 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
         this->glDepthFunc(GL_LEQUAL);
         this->glEnable(GL_DEPTH_TEST);
 
-        renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::HighlightLayer1);
+        renderFrameGraph(FrameGraph::RenderLayer::HighlightLayer1);
 
         this->glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
         this->glStencilMask(0x1);
         this->glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
         this->glDisable(GL_DEPTH_TEST);
 
-        renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::HighlightLayer2);
+        renderFrameGraph(FrameGraph::RenderLayer::HighlightLayer2);
 
         this->glDepthFunc(GL_LESS);
         this->glDisable(GL_STENCIL_TEST);
@@ -303,7 +303,7 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
 
     // Render foreground graphics, typically 2D primitives only.
     this->glDisable(GL_DEPTH_TEST);
-    renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::OverLayer);
+    renderFrameGraph(FrameGraph::RenderLayer::OverLayer);
 
     // Store the resource cache frame in the target frame buffer object to keep OpenGL resources alive
     // for subsequent frames.
@@ -356,7 +356,7 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
 /******************************************************************************
  * Renders all semi-transparent geometry in a second rendering pass.
  ******************************************************************************/
-void OpenGLRenderingJob::renderTransparentGeometry(const FrameGraph& frameGraph, OpenGLRenderingFrameBuffer& frameBuffer)
+void OpenGLRenderingJob::renderTransparentGeometry(OpenGLRenderingFrameBuffer& frameBuffer)
 {
     // Semi-transparent geometry should never get rendered in a picking render pass.
     OVITO_ASSERT(!isPickingPass());
@@ -365,7 +365,7 @@ void OpenGLRenderingJob::renderTransparentGeometry(const FrameGraph& frameGraph,
     if(orderIndependentTransparency()) frameBuffer.beginOITRendering();
 
     _isTransparencyPass = true;
-    renderFrameGraph(frameGraph, FrameGraph::RenderLayer::SceneLayer);
+    renderFrameGraph(FrameGraph::RenderLayer::SceneLayer);
     _isTransparencyPass = false;
 
     // Second phase of the "Weighted Blended Order-Independent Transparency" method.
@@ -395,26 +395,34 @@ bool OpenGLRenderingJob::filterRenderingCommand(const FrameGraph::RenderingComma
 }
 
 /******************************************************************************
+ * Sets up the model-view transformation matrix for the given rendering command.
+ ******************************************************************************/
+void OpenGLRenderingJob::setupModelViewTransformation(const FrameGraph::RenderingCommand& command)
+{
+    if(command.modelWorldTM() != AffineTransformation::Zero()) {
+        _preprojectedCoordinates = false;
+        _modelViewTM = frameGraph()->projectionParams().viewMatrix * command.modelWorldTM();
+    }
+    else {
+        _preprojectedCoordinates = true;
+        _modelViewTM.setZero();
+    }
+}
+
+/******************************************************************************
  * Executes the rendering commands stored in the given frame graph.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderFrameGraph(const FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer)
+bool OpenGLRenderingJob::renderFrameGraph(FrameGraph::RenderLayer renderLayer)
 {
     bool hasTransparentGeometry = false;
 
-    for(const FrameGraph::RenderingCommand& command : frameGraph.commands()) {
+    for(const FrameGraph::RenderingCommand& command : frameGraph()->commands()) {
         // Skip commands that are not part of the current render layer.
         if(filterRenderingCommand(command, renderLayer))
             continue;
 
         // Set up the model-view transformation matrix.
-        if(command.modelWorldTM() != AffineTransformation::Zero()) {
-            _preprojectedCoordinates = false;
-            _modelViewTM = frameGraph.projectionParams().viewMatrix * command.modelWorldTM();
-        }
-        else {
-            _preprojectedCoordinates = true;
-            _modelViewTM.setZero();
-        }
+        setupModelViewTransformation(command);
 
         if(const ParticlePrimitive* primitive = dynamic_cast<const ParticlePrimitive*>(command.primitive())) {
             hasTransparentGeometry |= renderParticles(*primitive, command.pickingGroupId());

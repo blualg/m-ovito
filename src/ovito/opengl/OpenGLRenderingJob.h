@@ -121,6 +121,9 @@ protected:
     /// Decides whether a command from the render graph should be executed by the renderer.
     virtual bool filterRenderingCommand(const FrameGraph::RenderingCommand& command, FrameGraph::RenderLayer currentRenderLayer);
 
+    /// Sets up the model-view transformation matrix for the given rendering command.
+    void setupModelViewTransformation(const FrameGraph::RenderingCommand& command);
+
     /// Returns the resource cache frame used by the renderer to manage OpenGL resources.
     RendererResourceCache::ResourceFrame& currentResourceFrame() { return _currentResourceFrame; }
 
@@ -164,10 +167,10 @@ protected:
     bool isTransparencyPass() const { return _isTransparencyPass; }
 
     /// Executes the rendering commands stored in the given frame graph.
-    bool renderFrameGraph(const FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer);
+    bool renderFrameGraph(FrameGraph::RenderLayer renderLayer);
 
     /// Render all semi-transparent geometry in a second rendering pass.
-    void renderTransparentGeometry(const FrameGraph& frameGraph, OpenGLRenderingFrameBuffer& frameBuffer);
+    void renderTransparentGeometry(OpenGLRenderingFrameBuffer& frameBuffer);
 
     /// Renders a particles primitive.
     bool renderParticles(const ParticlePrimitive& primitive, int pickingGroupID);

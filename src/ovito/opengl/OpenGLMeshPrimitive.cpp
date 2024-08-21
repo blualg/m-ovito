@@ -80,7 +80,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
         shader.setInstanceCount(1);
     }
     else {
-        OVITO_ASSERT(!renderWithPseudoColorMapping); // Note: Color mapping has not been implemented yet for instanced mesh primtives.
+        OVITO_ASSERT(!renderWithPseudoColorMapping); // Note: Color mapping has not been implemented yet for instanced mesh primitives.
         if(!isPickingPass()) {
             if(!primitive.perInstanceColors())
                 shader.load("mesh_instanced", "mesh/mesh_instanced.vert", "mesh/mesh_instanced.frag");
@@ -104,7 +104,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
         OVITO_CHECK_OPENGL(this, glDisable(GL_CULL_FACE));
     }
 
-    // Apply optional positive depth-offset to mesh faces to make the wireframe lines fully visible.
+    // Apply optional positive depth offset to mesh faces to make the wireframe lines fully visible.
     if(primitive.emphasizeEdges() && !isPickingPass()) {
         OVITO_CHECK_OPENGL(this, glEnable(GL_POLYGON_OFFSET_FILL));
         OVITO_CHECK_OPENGL(this, glPolygonOffset(1.0f, 1.0f));
