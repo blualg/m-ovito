@@ -278,12 +278,22 @@ void Task::setProgressValue(qlonglong value)
 void Task::incrementProgressValue(qlonglong increment)
 {
     MutexLock lock(*this);
-    if((_state.load(std::memory_order_relaxed) & Canceled))
+    auto flags = _state.load(std::memory_order_relaxed);
+    if(flags & Canceled)
         throw OperationCanceled();
-    if(!(_state.load(std::memory_order_relaxed) & Finished)) {
+    if(!(flags & (Finished | Canceled))) {
         // Notify UI about progress status change.
         UserInterface& ui = ExecutionContext::current().ui();
         ui.taskProgressIncrementValue(*this, increment);
+    }
+
+    // When in the main thread, temporarily yield control back to the event loop to process UI events and
+    // keep the UI responsive during long-running tasks.
+    if((flags & YieldUI) && !(flags & IsAsynchronous) && ExecutionContext::isMainThread()) {
+        lock.unlock();
+        if(ExecutionContext::current().ui().processUIEvents()) {
+            cancel();
+        }
     }
 }
 

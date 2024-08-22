@@ -331,7 +331,7 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
         property->forAnyType([&](auto _) {
             using T = decltype(_);
             BufferReadAccess<T*> valueAcc(property);
-            parallelFor(colors->size(), 4096, [&](size_t i) {
+            parallelFor<false>(colors->size(), 4096, [&](size_t i) {
                 if(selectionAcc && !selectionAcc[i])
                     return;
                 auto value = valueAcc.get(i, vectorComponent);

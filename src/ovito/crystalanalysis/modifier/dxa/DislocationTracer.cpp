@@ -996,9 +996,9 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
 
     using bBox = DelaunayTessellationSpatialQuery::bBox;
 
-    // Work chunk size of 256 is used as threshold for parallelization and has been determined from inital testing.
+    // Work chunk size of 256 is used as threshold for parallelization and has been determined from initial testing.
     // Parallel loop over tetrahedrons to be tested for intersection with the cap polygon.
-    // Inner loop over each triangle until a intersection is detected.
+    // Inner loop over each triangle until an intersection is detected.
     parallelFor<false>(_ranges.size(), 256, [&](size_t idx) {
 
         // Grab bbox and cell

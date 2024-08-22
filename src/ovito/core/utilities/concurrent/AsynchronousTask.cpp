@@ -43,7 +43,7 @@ AsynchronousTaskBase::AsynchronousTaskBase(State initialState, void* resultsStor
 ******************************************************************************/
 AsynchronousTaskBase::~AsynchronousTaskBase()
 {
-    // If task was never submitted for execution, cancel and finish it.
+    // If task has never been submitted for execution, cancel and finish it now.
     cancelAndFinish();
 }
 
@@ -101,7 +101,9 @@ void AsynchronousTaskBase::run()
         OVITO_ASSERT(!isFinished());
         setFinished();
     }
-    catch(const OperationCanceled&) {}
+    catch(const OperationCanceled&) {
+        cancelAndFinish();
+    }
     catch(...) {
         OVITO_ASSERT(!isFinished());
         captureExceptionAndFinish();

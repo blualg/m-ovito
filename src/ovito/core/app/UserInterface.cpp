@@ -147,7 +147,7 @@ bool UserInterface::processUIEvents()
         QCoreApplication::processEvents();    // Process events sent by the OS
     }
 
-    // Process pending work items in our own queue.
+    // Process pending work waiting in our internal queue.
     taskManager().executePendingWork();
 
     return isShuttingDown();

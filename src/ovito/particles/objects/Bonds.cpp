@@ -527,7 +527,7 @@ ConstPropertyPtr Bonds::OOMetaClass::viewportFenceSelection(const QVector<Point2
                 PropertyPtr selection = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, topologyProperty.size(), Bonds::SelectionProperty, objectPath);
 
                 BufferWriteAccess<SelectionIntType, access_mode::discard_write> selectionAcc{selection};
-                parallelFor(topologyProperty.size(), 16000, [&](size_t index) {
+                parallelFor<false>(topologyProperty.size(), 16000, [&](size_t index) {
                     selectionAcc[index] = 0;
                     const ParticleIndexPair& t = topologyProperty[index];
                     int insideCount = 0;

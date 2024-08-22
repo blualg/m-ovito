@@ -1259,18 +1259,22 @@ void MainWindow::visitRunningTasks(std::function<void(Task&,const QString&,int,i
 
         // Compute overall progress, taking into account nested sub-steps of the task.
         float percentage;
-        if(info.progressMaximum > 0)
+        int totalProgressMaximum;
+        if(info.progressMaximum > 0) {
             percentage = (float)info.progressValue / info.progressMaximum;
-        else
+            totalProgressMaximum = 1000;
+        }
+        else {
             percentage = 0;
+            totalProgressMaximum = 0;
+        }
         for(auto level = info.subProgressStack.crbegin(); level != info.subProgressStack.crend(); ++level) {
             OVITO_ASSERT(level->first >= 0 && level->first <= level->second.size());
             int weightSum1 = std::accumulate(level->second.cbegin(), level->second.cbegin() + level->first, 0);
             int weightSum2 = std::accumulate(level->second.cbegin() + level->first, level->second.cend(), 0);
             percentage = ((float)weightSum1 + percentage * (level->first < level->second.size() ? level->second[level->first] : 0)) / (weightSum1 + weightSum2);
         }
-        int totalProgressMaximum = 1000;
-        int totalProgressValue = static_cast<int>(percentage * 1000.0f);
+        int totalProgressValue = static_cast<int>(percentage * totalProgressMaximum);
 
         // Call visitor function.
         visitor(*info.task, info.text, totalProgressValue, totalProgressMaximum);
