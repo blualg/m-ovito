@@ -70,7 +70,7 @@ UpdateBrowserDialog::UpdateBrowserDialog(QWidget* parent) : QDialog(parent)
     QPushButton* okButton = buttonBox->addButton(QDialogButtonBox::Ok);
     // Cancel / dont remind again button -> (also closes the dialog)
     QPushButton* cancelButton = buttonBox->addButton(QDialogButtonBox::Cancel);
-    cancelButton->setText(tr("Don't show again for this Version"));
+    cancelButton->setText(tr("Remind me later"));
     // Download button -> opens an external browser window
     QPushButton* downloadButton = buttonBox->addButton(tr("Download"), QDialogButtonBox::ActionRole);
 
