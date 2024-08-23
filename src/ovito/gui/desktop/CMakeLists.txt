@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Find the required Qt modules.
-SET(OVITO_GUI_REQUIRED_QT_COMPONENTS Widgets Network)
+SET(OVITO_GUI_REQUIRED_QT_COMPONENTS Widgets Network WebEngineWidgets)
 IF(UNIX AND NOT APPLE)
     # On Linux, the DBus component is needed to access dark/light desktop theme settings.
     LIST(APPEND OVITO_GUI_REQUIRED_QT_COMPONENTS DBus)
@@ -61,6 +61,7 @@ OVITO_STANDARD_PLUGIN(Gui
         dialogs/CopyPipelineItemDialog.cpp
         dialogs/FontSelectionDialog.cpp
         dialogs/ModalPropertiesEditorDialog.cpp
+        dialogs/UpdateDialog.cpp
         actions/WidgetActionManager.cpp
         actions/FileActions.cpp
         actions/RenderActions.cpp
@@ -141,6 +142,7 @@ OVITO_STANDARD_PLUGIN(Gui
     LIB_DEPENDENCIES
         Qt6::Widgets
         Qt6::Network
+        Qt6::WebEngineWidgets
     PRECOMPILED_HEADERS
         GUI.h
 )
