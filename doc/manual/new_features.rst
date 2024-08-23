@@ -32,6 +32,7 @@ Version 3.11.0 (xx-xxx-2024)
 - Fixed: Axis scales and labels are invisible (white on white) in exported data plots if dark mode UI is active
 - Fixed: Mouse wrapping in Spinner Widget for vertical multi screen setups.
 - Fixed: Spinner widget mouse warp not working on macOS (requires accessibility access).
+- Fixed: Imported property names ending in "_". Trailing "_" will now be stripped during import.
 - CA file import (loading precomputed DXA results) is now an exclusive OVITO Pro feature
 - :ref:`particles.modifiers.slice` and :ref:`particles.modifiers.affine_transformation` modifiers: Value increments used for step-wise parameter adjustment are now proportional to the simulation cell size instead of the current parameter value
 - Updated third-party components: OpenSSL, Qt, PySide6, Python, Qwt

@@ -461,6 +461,7 @@ QString Property::makePropertyNameValid(const QString& name)
     mangledName.replace(QChar('.'), QChar('_'));
     mangledName.replace(QChar('/'), QChar('_'));
     mangledName.replace(QChar(':'), QChar('_'));
+    mangledName.remove(QRegularExpression("_+$"));
     return mangledName;
 }
 
