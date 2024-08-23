@@ -286,7 +286,7 @@ ParticleInputColumnMapping AMBERNetCDFImporter::NetCDFFile::detectColumnMapping(
                     _coordinatesVar = varId;
             }
             else {
-                qDebug() << "Skipping NetCDF variable " << name << " because data type is not known.";
+                qWarning() << "Skipping NetCDF variable " << name << " because data type is not known.";
             }
         }
     }
@@ -618,7 +618,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
                 return;
         }
         else {
-            qDebug() << "Warning: Skipping field '" << columnName << "' of NetCDF file because it has an unrecognized data type.";
+            qWarning() << "Warning: Skipping field '" << columnName << "' of NetCDF file because it has an unrecognized data type.";
         }
     }
 
