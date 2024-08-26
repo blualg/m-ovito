@@ -44,7 +44,7 @@ UpdateDialog::UpdateDialog(int major, int minor, int patch, int dontRemind, QWid
     setText(QObject::tr("%1 version %2.%3.%4 is available for download.")
                 .arg(Application::applicationName(), QString::number(_major), QString::number(_minor), QString::number(_patch)));
     setInformativeText(
-        QObject::tr("Click 'Download' open the download page in your browser, "
+        QObject::tr("Click 'Download' to open the download page in your browser, "
                     "'OK' to close this dialog for now, "
                     "or 'Skip this version' to not be reminded again until the next significant update."));
     // Configure the buttons
