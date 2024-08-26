@@ -8,101 +8,8 @@
 
 #include <QtNetwork>
 
-#if 0
-#include <QWebEngineView>
-#endif
-
 namespace Ovito {
-#if 0
-class ExternalLinksWebPage : public QWebEnginePage
-{
-public:
-    ExternalLinksWebPage(QObject* parent = nullptr) : QWebEnginePage(parent) {}
 
-protected:
-    bool acceptNavigationRequest(const QUrl& url, NavigationType type, bool isMainFrame) override;
-};
-
-bool ExternalLinksWebPage::acceptNavigationRequest(const QUrl& url, NavigationType type, bool isMainFrame)
-{
-    if(type == NavigationTypeLinkClicked) {
-        QDesktopServices::openUrl(url);
-        return false;
-    }
-    return QWebEnginePage::acceptNavigationRequest(url, type, isMainFrame);
-}
-
-class UpdateBrowserDialog : public QDialog
-{
-public:
-    UpdateBrowserDialog(QWidget* parent = nullptr);
-
-    void setDontRemindVersion(int version) { _dontRemindVersion = version; }
-
-protected:
-    void onAccept();
-
-    void onReject();
-
-    static void onDownload();
-
-private:
-    int _dontRemindVersion = 0;
-};
-
-UpdateBrowserDialog::UpdateBrowserDialog(QWidget* parent) : QDialog(parent)
-{
-    setWindowTitle(tr("A new %1 version is available").arg(Application::applicationName()));
-    // Width 768 prevents the navigation sidebar in the manual from showing up
-    resize(768, 576);
-    QVBoxLayout* layout = new QVBoxLayout(this);
-
-    // Webview
-    QWebEngineView* view = new QWebEngineView(this);
-    // Use custom QWebEnginePage that opens links in a new window instead of navigating
-    ExternalLinksWebPage* page = new ExternalLinksWebPage(view);
-    view->setPage(page);
-    // Load our changelog
-    view->load(QUrl("https://docs.ovito.org/new_features.html#new-features"));
-
-    layout->addWidget(view);
-
-    // Buttons
-    QDialogButtonBox* buttonBox = new QDialogButtonBox(this);
-
-    // Ok button -> closes the change log
-    QPushButton* okButton = buttonBox->addButton(QDialogButtonBox::Ok);
-    // Cancel / dont remind again button -> (also closes the dialog)
-    QPushButton* cancelButton = buttonBox->addButton(QDialogButtonBox::Cancel);
-    cancelButton->setText(tr("Remind me later"));
-    // Download button -> opens an external browser window
-    QPushButton* downloadButton = buttonBox->addButton(tr("Download"), QDialogButtonBox::ActionRole);
-
-    connect(buttonBox, &QDialogButtonBox::accepted, this, &UpdateBrowserDialog::onAccept);
-    connect(buttonBox, &QDialogButtonBox::rejected, this, &UpdateBrowserDialog::onReject);
-    connect(downloadButton, &QPushButton::clicked, this, &UpdateBrowserDialog::onDownload);
-
-    layout->addWidget(buttonBox);
-}
-
-void UpdateBrowserDialog::onAccept()
-{
-    QSettings settings;
-    // Reset dont remind setting to be reminded again next time
-    settings.setValue("news/dontRemind", 0);
-    accept();
-}
-
-void UpdateBrowserDialog::onReject()
-{
-    QSettings settings;
-    // Update dont remind to the last "rejected" version
-    settings.setValue("news/dontRemind", _dontRemindVersion);
-    reject();
-}
-
-void UpdateBrowserDialog::onDownload() { QDesktopServices::openUrl(QUrl("https://www.ovito.org/#download")); }
-#else
 class UpdateDialog : public MessageDialog
 {
 public:
@@ -203,8 +110,6 @@ void UpdateDialog::onDontRemind() const
  * Called when user presses "Download"
  ******************************************************************************/
 void UpdateDialog::onDownload() { QDesktopServices::openUrl(QUrl("https://www.ovito.org/#download")); }
-
-#endif
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(GuiUpdateInfoService);
 
@@ -337,15 +242,10 @@ void GuiUpdateInfoService::createUpdateDialog(const QStringList& versionMatch) c
     if(!show) {
         return;
     }
-#if 0
-    UpdateBrowserDialog* updateBrowser = new UpdateBrowserDialog(_mainWindow);
-    updateBrowser->setDontRemindVersion(dontRemindVersionUpdate);
-    updateBrowser->show();
-#else
+
     // Show update information dialog (non-blocking)
     UpdateDialog* updateDialog = new UpdateDialog(remindMajor, remindMinor, remindPatch, dontRemindVersionUpdate, _mainWindow);
     updateDialog->show();
-#endif
 }
 
 /******************************************************************************
