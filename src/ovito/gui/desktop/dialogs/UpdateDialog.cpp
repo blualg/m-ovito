@@ -4,12 +4,16 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/CommandPanel.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/ModifyCommandPage.h>
+#include <ovito/gui/desktop/dialogs/MessageDialog.h>
 
 #include <QtNetwork>
+
+#if 0
 #include <QWebEngineView>
+#endif
 
 namespace Ovito {
-
+#if 0
 class ExternalLinksWebPage : public QWebEnginePage
 {
 public:
@@ -98,9 +102,116 @@ void UpdateBrowserDialog::onReject()
 }
 
 void UpdateBrowserDialog::onDownload() { QDesktopServices::openUrl(QUrl("https://www.ovito.org/#download")); }
+#else
+class UpdateDialog : public MessageDialog
+{
+public:
+    UpdateDialog(int major, int minor, int patch, int dontRemind = 0, QWidget* parent = nullptr);
+
+private:
+    // Called when any button is pressed by the user
+    void onButtonClicked(QAbstractButton* button);
+
+    // Called when user presses "OK"
+    static void onAccept();
+    // Called when user presses "Skip thisa version"
+    void onDontRemind() const;
+    // Called when user presses "Download"
+    static void onDownload();
+
+private:
+    // New version number displayed to the user
+    int _major;
+    int _minor;
+    int _patch;
+    // Version that no remind will be set to if pressed
+    int _dontRemindVersion;
+};
+
+UpdateDialog::UpdateDialog(int major, int minor, int patch, int dontRemind, QWidget* parent)
+    : MessageDialog(parent), _major(major), _minor(minor), _patch(patch), _dontRemindVersion(dontRemind)
+{
+    // Cofigure the message box
+    setIcon(QMessageBox::Information);
+    setDefaultButton(QMessageBox::Ok);
+    setText(QObject::tr("%1 version %2.%3.%4 is available for download.")
+                .arg(Application::applicationName(), QString::number(_major), QString::number(_minor), QString::number(_patch)));
+    setInformativeText(
+        QObject::tr("Click 'Download' open the download page in your browser, "
+                    "'OK' to close this dialog for now, "
+                    "or 'Skip this version' to not be reminded again until the next significant update."));
+    // Configure the buttons
+    setStandardButtons(QMessageBox::Ok | QMessageBox::Help | QMessageBox::Cancel);
+    button(QMessageBox::Cancel)->setText(QObject::tr("Skip this version"));
+    button(QMessageBox::Help)->setText(QObject::tr("Download"));
+    // Connect the button press
+    connect(this, &QMessageBox::buttonClicked, this, &UpdateDialog::onButtonClicked);
+}
+
+/******************************************************************************
+ * Handle button clicks
+ ******************************************************************************/
+void UpdateDialog::onButtonClicked(QAbstractButton* button)
+{
+    OVITO_ASSERT(button);
+    QMessageBox* messageBox = qobject_cast<QMessageBox*>(sender());
+    OVITO_ASSERT(messageBox);
+    // if no button or no messageBox close the dialog fallback
+    if(!messageBox || !button) {
+        close();
+    }
+
+    QMessageBox::ButtonRole role = messageBox->buttonRole(button);
+    if(role == QMessageBox::AcceptRole) {
+        onAccept();
+    }
+    else if(role == QMessageBox::HelpRole) {
+        onDownload();
+    }
+    else if(role == QMessageBox::RejectRole) {
+        onDontRemind();
+    }
+    else {
+        // unhandled button, should not happen
+        OVITO_ASSERT(false);
+        // fallback
+        close();
+    }
+}
+
+/******************************************************************************
+ * Called when user presses "OK"
+ ******************************************************************************/
+void UpdateDialog::onAccept()
+{
+    QSettings settings;
+    // Reset dont remind setting to be reminded again next time
+    settings.setValue("news/dontRemind", 0);
+}
+
+/******************************************************************************
+ * Called when user presses "Skip this version"
+ ******************************************************************************/
+void UpdateDialog::onDontRemind() const
+{
+    QSettings settings;
+    // Update dont remind to the last "rejected" version
+    settings.setValue("news/dontRemind", _dontRemindVersion);
+}
+
+/******************************************************************************
+ * Called when user presses "Download"
+ ******************************************************************************/
+void UpdateDialog::onDownload() { QDesktopServices::openUrl(QUrl("https://www.ovito.org/#download")); }
+
+#endif
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(GuiUpdateInfoService);
 
+/******************************************************************************
+ * Is called by the system during standalone application startup after the main window has been created.
+ * Downloads the new s segment from the web and sets the side panel and update dialog
+ ******************************************************************************/
 bool GuiUpdateInfoService::applicationStarting()
 {
     // Do nothing when running in console mode.
@@ -108,6 +219,7 @@ bool GuiUpdateInfoService::applicationStarting()
         return true;
     }
 
+    // Get operating system
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
     const QSettings settings;
     if(settings.value("updates/check_for_updates", true).toBool()) {
@@ -122,6 +234,7 @@ bool GuiUpdateInfoService::applicationStarting()
         operatingSystemString = QStringLiteral("other");
 #endif
 
+        // Get program edition
         QString programEdition;
 #if defined(OVITO_BUILD_BASIC)
         programEdition = QStringLiteral("basic/");
@@ -139,16 +252,26 @@ bool GuiUpdateInfoService::applicationStarting()
                                       .arg(QT_POINTER_SIZE * 8);
         QNetworkAccessManager* networkAccessManager = Application::instance()->networkAccessManager();
         QNetworkReply* networkReply = networkAccessManager->get(QNetworkRequest(QUrl(urlString)));
+
+        // Progress once the request finishes
         connect(networkReply, &QNetworkReply::finished, this, &GuiUpdateInfoService::onWebRequestFinished);
     }
 #endif
-
     return true;
 }
 
+/******************************************************************************
+ * Is called when a new main window is created.
+ * Store the main window
+ ******************************************************************************/
 void GuiUpdateInfoService::registerActions(ActionManager& actionManager, MainWindow& mainWindow) { _mainWindow = &mainWindow; }
 
-// Extracts <!--v3.11.0--> or <!--v!3.11.0--> from the first line of the news webpage
+/******************************************************************************
+ * Extracts the two version strings from the first line of the news webpage
+ * Pattern of the version strings: <!--vX+.Y+.Z+|vA+.B+.C+-->
+ * where X+.Y+.Z+ are the significant version even shown when "Skip this version" is pressed
+ * and A+.B+.C+ are all programm versions shown to every user
+ ******************************************************************************/
 QStringList GuiUpdateInfoService::extractVersion(const QString& input)
 {
     const static QRegularExpression regex(R"(<!--v(\d+)\.(\d+)\.(\d+)\|v(\d+)\.(\d+)\.(\d+)-->)");
@@ -172,6 +295,11 @@ int str_to_int(const QString& str)
 }
 }  // namespace
 
+/******************************************************************************
+ * Creates the update popup window
+ * Checks the newly available version and compares it against the current version
+ * and validates against the "Skip this version" choice by the user
+ ******************************************************************************/
 void GuiUpdateInfoService::createUpdateDialog(const QStringList& versionMatch) const
 {
     // something went wrong -> don't do anything anything
@@ -209,11 +337,21 @@ void GuiUpdateInfoService::createUpdateDialog(const QStringList& versionMatch) c
     if(!show) {
         return;
     }
+#if 0
     UpdateBrowserDialog* updateBrowser = new UpdateBrowserDialog(_mainWindow);
     updateBrowser->setDontRemindVersion(dontRemindVersionUpdate);
     updateBrowser->show();
+#else
+    // Show update information dialog (non-blocking)
+    UpdateDialog* updateDialog = new UpdateDialog(remindMajor, remindMinor, remindPatch, dontRemindVersionUpdate, _mainWindow);
+    updateDialog->show();
+#endif
 }
 
+/******************************************************************************
+ * Called when the web request finishes
+ * Show the update dialog and set the "ProgramNotice"
+ ******************************************************************************/
 void GuiUpdateInfoService::onWebRequestFinished()
 {
     QNetworkReply* reply = qobject_cast<QNetworkReply*>(QObject::sender());
@@ -237,6 +375,7 @@ void GuiUpdateInfoService::onWebRequestFinished()
         settings.setValue("news/cached_webpage", page);
     }
 
+    // Cleanup
     reply->deleteLater();
 }
 
