@@ -25,14 +25,14 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
-#include "FrameGraphPrimitive.h"
+#include "RenderingPrimitive.h"
 
 namespace Ovito {
 
 /**
  * \brief A set of particles to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT ParticlePrimitive final : public FrameGraphPrimitive
+class OVITO_CORE_EXPORT ParticlePrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 
@@ -186,6 +186,7 @@ public:
 
 	/// Computes the 3d bounding box of the primitive in local coordinates.
 	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
+        OVITO_ASSERT(this);
         const auto& bb = visCache.lookup<Box3>(
             RendererResourceKey<struct ParticlePositionsBoundingBoxCache, ConstDataBufferPtr, ConstDataBufferPtr>{positions(), indices()},
             [this](Box3& bb) {

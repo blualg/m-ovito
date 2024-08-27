@@ -104,7 +104,7 @@ public:
 
     /// \brief Lists all files in a remote directory.
     /// \return A Future that will provide the list of file names.
-    Future<QStringList> listDirectoryContents(const QUrl& url);
+    [[nodiscard]] Future<QStringList> listDirectoryContents(const QUrl& url);
 
     /// \brief Constructs a URL from a path entered by the user.
     static QUrl urlFromUserInput(const QString& path);

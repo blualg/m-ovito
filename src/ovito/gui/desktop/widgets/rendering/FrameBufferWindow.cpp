@@ -112,7 +112,7 @@ const std::shared_ptr<FrameBuffer>& FrameBufferWindow::createFrameBuffer(int w, 
     centralWidget()->updateGeometry();
     adjustSize();
     // Reenable the scrollbars, but only after a short delay, because otherwise
-    // they interfer with the resizing of the viewport widget.
+    // they interfere with the resizing of the viewport widget.
     QTimer::singleShot(0, _frameBufferWidget, [w = _frameBufferWidget]() {
         w->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         w->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -156,7 +156,7 @@ void FrameBufferWindow::showRenderingProgress()
     _taskProgressUpdateConnection = connect(&_mainWindow, &MainWindow::taskProgressUpdate, this, &FrameBufferWindow::onTaskProgressUpdate);
 
     // Disable OVITO main window while rendering is in progress,
-    // then emmediately te-enable this floating child window.
+    // then immediately re-enable this floating child window.
     parentWidget()->setEnabled(false);
     this->setEnabled(true);
 

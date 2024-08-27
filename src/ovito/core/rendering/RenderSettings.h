@@ -139,13 +139,13 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, renderAllViewports, setRenderAllViewports);
 
     /// Controls the visibility of separators between viewports when rendering an entire viewport layout.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, layoutSeperatorsEnabled, setLayoutSeperatorsEnabled, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, layoutSeparatorsEnabled, setLayoutSeparatorsEnabled, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the width (in pixels) of the separators between viewports when rendering an entire viewport layout.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{2}, layoutSeperatorWidth, setLayoutSeperatorWidth, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{2}, layoutSeparatorWidth, setLayoutSeparatorWidth, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the color of the separator lines between viewports when rendering an entire viewport layout.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0.5, 0.5, 0.5}), layoutSeperatorColor, setLayoutSeperatorColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0.5, 0.5, 0.5}), layoutSeparatorColor, setLayoutSeparatorColor, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether errors that occur within a data pipeline lead to an abortion of the rendering process.
     bool _stopOnPipelineError = false;

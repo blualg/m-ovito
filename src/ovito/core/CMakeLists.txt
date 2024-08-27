@@ -127,6 +127,7 @@ SET(SourceFiles
     rendering/SceneRenderer.cpp
     rendering/RenderingJob.cpp
     rendering/FrameGraph.cpp
+    rendering/FrameGraphBuilder.cpp
     rendering/MeshPrimitive.cpp
     rendering/TextPrimitive.cpp
     rendering/RenderSettings.cpp

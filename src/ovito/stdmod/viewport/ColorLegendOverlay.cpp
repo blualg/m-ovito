@@ -225,8 +225,9 @@ QVariant ColorLegendOverlay::getPipelineEditorShortInfo(Scene* scene) const
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene)
+std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene)
 {
+#if 0
     DataOORef<const Property> typedProperty;
 
     // Reset auto-generated label texts. Will be newly set by rendering code.
@@ -240,8 +241,6 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
 
     // Check whether a source has been set for this color legend:
     if(modifier() || colorMapping()) {
-        // Reset status of overlay.
-        setStatus(PipelineStatus::Success);
     }
     else if(sourceProperty()) {
         // Look up the typed property in one of the scene's pipeline outputs.
@@ -287,23 +286,20 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
         setStatus(PipelineStatus::Success);
     }
     else {
-        // Set warning status to be displayed in the GUI.
-        setStatus(PipelineStatus(PipelineStatus::Warning, tr("No data source has been specified for the color legend.")));
-
         // Escalate to an error state if in console mode.
         if(!Application::guiMode()) {
             throw Exception(tr("You are rendering a Viewport with a ColorLegendOverlay that is not associated with any "
                                "data source. Did you forget to specify a data source for the color legend?"));
         }
         else {
-            // Ignore invalid configuration in GUI mode by not rendering the legend.
-            return;
+            // Set warning status to be displayed in the GUI.
+            return PipelineStatus(PipelineStatus::Warning, tr("No data source has been specified for the color legend."));
         }
     }
 
     // Calculate position and size of color legend rectangle.
     FloatType legendSize = this->legendSize() * physicalViewportRect.height();
-    if(legendSize <= 0) return;
+    if(legendSize <= 0) return {};
 
     FloatType colorBarWidth = legendSize;
     FloatType colorBarHeight = colorBarWidth / std::max(FloatType(0.01), aspectRatio());
@@ -361,6 +357,9 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
 
     // Notify the UI that the automatic label texts were recalculated during rendering.
     notifyDependents(ColorLegendOverlay::AutoLabelsUpdated);
+#else
+    return {};
+#endif
 }
 
 /******************************************************************************
@@ -484,7 +483,7 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
 /******************************************************************************
 * Draws the color legend for a Color Coding modifier.
 ******************************************************************************/
-void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping)
+void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping)
 {
     const qreal devicePixelRatio = frameGraph.devicePixelRatio();
 
@@ -855,16 +854,16 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
             });
 
         boundingBox.adjust(-textMargin, -textMargin, textMargin, textMargin);
-        frameGraph.addCommand(std::make_unique<ImagePrimitive>(backgroundImage, boundingBox.toAlignedRect()));
+        commandGroup.addPrimitivePreprojected(std::make_unique<ImagePrimitive>(backgroundImage, boundingBox.toAlignedRect()));
     }
 
     // Render color bar.
-    frameGraph.addCommand(std::move(imagePrimitive));
+    commandGroup.addPrimitivePreprojected(std::move(imagePrimitive));
 
     // Render title and limit labels.
-    frameGraph.addCommand(std::move(titlePrimitive));
-    frameGraph.addCommand(std::move(label1Primitive));
-    frameGraph.addCommand(std::move(label2Primitive));
+    commandGroup.addPrimitivePreprojected(std::move(titlePrimitive));
+    commandGroup.addPrimitivePreprojected(std::move(label1Primitive));
+    commandGroup.addPrimitivePreprojected(std::move(label2Primitive));
 
     // Render ticks.
     if(!tickRects.empty()) {
@@ -874,27 +873,27 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
             RendererResourceKey<struct ColorBarTickImageCache, Color>{tickColor},
             [&](QImage& tickImage) {
                 // Generate tick image primitive if not found in the cache.
-                // 1 x 1 px texture of the right color which will be streched to the desired tick dimensions
+                // 1x1 pixel texture of the right color which will be stretched to the desired tick dimensions
                 tickImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
                 tickImage.fill(static_cast<QColor>(tickColor));
             });
 
         // Render the series of tick images.
         for(const auto& rect : tickRects) {
-            frameGraph.addCommand(std::make_unique<ImagePrimitive>(tickImage, rect));
+            commandGroup.addPrimitivePreprojected(std::make_unique<ImagePrimitive>(tickImage, rect));
         }
     }
 
     // Render tick labels.
     for(auto& labelPrimitive : tickLabels) {
-        frameGraph.addCommand(std::move(labelPrimitive));
+        commandGroup.addPrimitivePreprojected(std::move(labelPrimitive));
     }
 }
 
 /******************************************************************************
 * Draws the color legend for a typed property.
 ******************************************************************************/
-void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRectF& colorBarRect, FloatType legendSize, const Property* property)
+void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect, FloatType legendSize, const Property* property)
 {
     const qreal devicePixelRatio = frameGraph.devicePixelRatio();
 
@@ -1022,7 +1021,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRec
     if(numTypes == 0)
         numTypes = 1; // Avoid division by 0 below.
 
-    // Layouting of the type labels.
+    // Layout of the type labels.
     int labelFlags = 0;
     QPointF labelPos;
     if(orientation() == Qt::Vertical) {
@@ -1082,24 +1081,24 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRec
             RendererResourceKey<struct ColorBarBackgroundImageCache, Color>{backgroundColor()},
             [&](QImage& backgroundImage) {
                 // Generate image if not found in the cache
-                // 1 x 1 px texture of the right color which will be streched to the desired rectangle dimensions.
+                // 1x1 pixel texture of the right color which will be stretched to the desired rectangle dimensions.
                 backgroundImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
                 backgroundImage.fill(static_cast<QColor>(backgroundColor()));
             });
 
         boundingBox.adjust(-textMargin, -textMargin, textMargin, textMargin);
-        frameGraph.addCommand(std::make_unique<ImagePrimitive>(backgroundImage, boundingBox.toAlignedRect()));
+        commandGroup.addPrimitivePreprojected(std::make_unique<ImagePrimitive>(backgroundImage, boundingBox.toAlignedRect()));
     }
 
     // Render title.
-    frameGraph.addCommand(std::move(titlePrimitive));
+    commandGroup.addPrimitivePreprojected(std::move(titlePrimitive));
 
     // Render color bar.
-    frameGraph.addCommand(std::move(imagePrimitive));
+    commandGroup.addPrimitivePreprojected(std::move(imagePrimitive));
 
     // Render type labels.
     for(auto& labelPrimitive : labels) {
-        frameGraph.addCommand(std::move(labelPrimitive));
+        commandGroup.addPrimitivePreprojected(std::move(labelPrimitive));
     }
 }
 

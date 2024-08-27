@@ -166,7 +166,7 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const Particles* particles, bo
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus NucleotidesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> NucleotidesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Get input data.
     const Particles* particles = path.lastAs<Particles>();
@@ -272,7 +272,7 @@ PipelineStatus NucleotidesVis::render(const ConstDataObjectPath& path, const Pip
                     BufferWriteAccess<QuaternionG, access_mode::discard_write> orientationsAccess(orientations);
                     for(size_t i = 0; i < orientations->size(); i++) {
                         if(nucleotideNormalArray[i] != Vector3::Zero() && nucleotideAxisArray[i] != Vector3::Zero()) {
-                            // Build an orthonomal basis from the two direction vectors of a nucleotide.
+                            // Build an orthonormal basis from the two direction vectors of a nucleotide.
                             Matrix3 tm;
                             tm.column(2) = nucleotideNormalArray[i];
                             tm.column(1) = nucleotideAxisArray[i];
@@ -306,27 +306,20 @@ PipelineStatus NucleotidesVis::render(const ConstDataObjectPath& path, const Pip
             }
 
             // Create pick info record.
-            BufferFactory<int32_t> subobjectToParticleMapping(nucleotideAxisProperty ? (particles->elementCount() * 3) : particles->elementCount());
-            std::iota(subobjectToParticleMapping.begin(), subobjectToParticleMapping.begin() + particles->elementCount(), 0);
-            if(nucleotideAxisProperty) {
-                std::iota(subobjectToParticleMapping.begin() +     particles->elementCount(), subobjectToParticleMapping.begin() + 2 * particles->elementCount(), 0);
-                std::iota(subobjectToParticleMapping.begin() + 2 * particles->elementCount(), subobjectToParticleMapping.begin() + 3 * particles->elementCount(), 0);
-            }
-            cache.pickInfo = OORef<ParticlePickInfo>::create(this, particles, subobjectToParticleMapping.take());
+            cache.pickInfo = OORef<ParticlePickInfo>::create(this, particles);
         });
 
-    // Update the pipeline state stored in te picking object info.
+    // Update the pipeline state stored in the picking object info.
     cache.pickInfo->setParticles(particles);
 
-    auto pickingGroup = frameGraph.addPickingGroup(pipeline, cache.pickInfo);
-
-    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(cache.backbonePrimitive), pipeline, pickingGroup);
+    FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::SceneLayer);
+    frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(cache.backbonePrimitive), pipeline, cache.pickInfo);
 
     if(cache.connectionPrimitive.basePositions())
-        frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(cache.connectionPrimitive), pipeline, pickingGroup);
+        frameGraph.addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(cache.connectionPrimitive), pipeline, cache.pickInfo);
 
     if(cache.basePrimitive.positions())
-        frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(cache.basePrimitive), pipeline, pickingGroup);
+        frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(cache.basePrimitive), pipeline, cache.pickInfo);
 
     return {};
 }

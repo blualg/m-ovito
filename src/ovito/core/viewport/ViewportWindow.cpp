@@ -28,6 +28,7 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/RenderSettings.h>
+#include <ovito/core/rendering/FrameGraphBuilder.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
@@ -56,9 +57,10 @@ void ViewportWindow::setViewport(Viewport* vp, UserInterface& userInterface)
     _viewport.set(this, PROPERTY_FIELD(viewport), vp);
     if(vp) {
         if(!_scenePreparation) {
-            _scenePreparation = OORef<ScenePreparation>::create(userInterface, vp->scene(), isVisible());
+            _scenePreparation = OORef<ScenePreparation>::create(userInterface, vp->scene());
             // Automatically rerender window whenever the scene is changed.
             connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &ViewportWindow::requestUpdate);
+            _scenePreparation->setAutoRestart(isVisible());
         }
         else {
             _scenePreparation->setScene(vp->scene());
@@ -67,6 +69,19 @@ void ViewportWindow::setViewport(Viewport* vp, UserInterface& userInterface)
     else {
         _scenePreparation.reset();
     }
+}
+
+/******************************************************************************
+* Releases the renderer resources held by the viewport window and the renderer.
+******************************************************************************/
+void ViewportWindow::releaseResources()
+{
+    // Stop building a new frame graph.
+    _frameGraphFuture.reset();
+
+    // Release current frame graph and rendering job.
+    setFrameGraph({});
+    setRenderingJob({});
 }
 
 /******************************************************************************
@@ -147,8 +162,8 @@ void ViewportWindow::handleUpdateRequest()
     if(!isVisible() || !viewport())
         return;
 
-    // Do nothing if viewport updates are currently disabled.
-    // The UserInterface will issue a new update request once updates are re-enabled.
+    // Do nothing if viewport updates are currently suspended.
+    // The UserInterface will issue a new update request once updates are resumed.
     if(userInterface().areViewportUpdatesSuspended())
         return;
 
@@ -165,14 +180,7 @@ void ViewportWindow::handleUpdateRequest()
     if(windowSize.isEmpty())
         return;
 
-    // Temporarily suspend viewport updates to avoid recursive updates.
-    ViewportSuspender suspendUpdates(userInterface());
-
-    // Keep this window alive while rendering is in progress.
-    OORef<ViewportWindow> self = this;
-
-    // Graceful handling of exceptions that might occur during viewport rendering.
-    bool success = userInterface().handleExceptions([&]() {
+    userInterface().handleExceptions<true>([&]() {
 
         // Interactive viewport rendering is performed with a higher priority than other tasks.
         this_task::get()->setHighPriorityTask();
@@ -180,19 +188,12 @@ void ViewportWindow::handleUpdateRequest()
         // Set up preliminary projection without knowing the scene bounding box yet.
         AnimationTime time = viewport()->scene()->animationSettings()->currentTime();
         FloatType aspectRatio = (FloatType)windowSize.height() / windowSize.width();
-        _projParams = viewport()->computeProjectionParameters(time, aspectRatio);
-        if(this_task::isCanceled() || !viewport())
-            return;
-
-        // Frame generation control flags.
-        const bool isInteractive = true;
-        const bool isPreviewMode = viewport()->renderPreviewMode();
-        const bool stopOnPipelineError = false;
+        ViewProjectionParameters projParams = viewport()->computeProjectionParameters(time, aspectRatio);
 
         // Adjust projection if preview frame is enabled.
-        ViewProjectionParameters noninteractiveProjParams = _projParams;
-        if(isPreviewMode) {
-            adjustProjectionForRenderFrame(dataset, _projParams, windowSize);
+        ViewProjectionParameters noninteractiveProjParams = projParams;
+        if(viewport()->renderPreviewMode()) {
+            adjustProjectionForRenderPreviewFrame(dataset, projParams, windowSize);
             noninteractiveProjParams = viewport()->computeProjectionParameters(time, viewport()->renderAspectRatio(dataset));
         }
 
@@ -200,38 +201,21 @@ void ViewportWindow::handleUpdateRequest()
         OORef<RenderingJob> renderingJob = this->renderingJob();
 
         // Create a new fresh frame graph.
-        std::shared_ptr<FrameGraph> frameGraph = std::make_shared<FrameGraph>(
+        OORef<FrameGraph> frameGraph = OORef<FrameGraph>::create(
             userInterface().datasetContainer().visCache()->acquireResourceFrame(),
-            time, _projParams, viewportWindowDeviceIndependentSize(), isInteractive, isPreviewMode, stopOnPipelineError,
+            time,
+            projParams,
+            viewportWindowDeviceIndependentSize(),
+            true, // isInteractive
+            viewport()->renderPreviewMode(),
+            false, // stopOnPipelineError
             renderingJob ? renderingJob->preferredImageFormat() : QImage::Format_ARGB32_Premultiplied,
             devicePixelRatio());
 
-        // Set background color.
-        if(!viewport()->renderPreviewMode())
-            frameGraph->setClearColor(Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
-        else
-            frameGraph->setClearColor(dataset->renderSettings()->backgroundColorAt(time));
-
-        // Render viewport "underlays".
-        if(isPreviewMode) {
-            if(boost::algorithm::any_of(viewport()->underlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
-                QRect viewportRect = dataset->renderSettings()->viewportFramebufferArea(viewport(), dataset->viewportConfig());
-                if(!viewportRect.isEmpty()) {
-                    QRect frameBox = previewFrameGeometry(dataset, windowSize);
-                    if(!frameBox.isNull()) {
-                        frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::UnderLayer);
-                        frameGraph->renderOverlays(viewport(), true, viewportRect, frameBox, noninteractiveProjParams);
-                    }
-                }
-            }
-        }
-
-        // Render the 3d scene objects.
-        frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::SceneLayer);
-        frameGraph->renderSceneNode(viewport()->scene(), viewport());
-        this_task::throwIfCanceled();
-        if(this_task::isCanceled() || !viewport())
-            return;
+        // Set viewport background color.
+        frameGraph->setClearColor(viewport()->renderPreviewMode()
+            ? dataset->renderSettings()->backgroundColorAt(time)
+            : Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
 
         // Render construction grid.
         if(viewport()->isGridVisible())
@@ -243,64 +227,62 @@ void ViewportWindow::handleUpdateRequest()
             return true;
         });
 
-        // Render viewport gizmos.
+        // Render interactive viewport gizmos.
         for(ViewportGizmo* gizmo : viewportGizmos()) {
             gizmo->renderOverlay(viewport(), this, *frameGraph, dataset);
-            if(this_task::isCanceled() || !viewport())
+        }
+
+        QRect logicalViewportRect = dataset->renderSettings()->viewportFramebufferArea(viewport(), dataset->viewportConfig());
+        QRect physicalViewportRect = previewFrameGeometry(dataset, windowSize);
+
+        // Let the FrameGraphBuilder class do the heavy lifting and generate the frame graph for the current scene.
+        Future<OORef<FrameGraph>> frameGraphFuture = FrameGraphBuilder::build(std::move(frameGraph), viewport()->scene(), viewport(), logicalViewportRect, physicalViewportRect, noninteractiveProjParams);
+
+        // After the frame graph has been built for the scene, finish and then render it.
+        // Note: Temporarily suspending viewport updates while building the frame graph to prevent recursive updates.
+        _frameGraphFuture = frameGraphFuture.then(*this, [this, suspendUpdates=ViewportSuspender(userInterface())](OORef<FrameGraph> frameGraph) mutable {
+
+            DataSet* dataset = userInterface().datasetContainer().currentSet();
+            QSize windowSize = viewportWindowDeviceSize();
+            if(!viewport() || !dataset || !dataset->renderSettings() || windowSize.isEmpty())
                 return;
-        }
 
-        frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::OverLayer);
+            // Create a command group for the UI element rendering commands.
+            FrameGraph::RenderingCommandGroup& uiCommandGroup = frameGraph->addCommandGroup(FrameGraph::OverLayer);
 
-        // Render viewport "overlays".
-        if(isPreviewMode) {
-            if(boost::algorithm::any_of(viewport()->overlays(), [](ViewportOverlay* layer) { return layer->isEnabled(); })) {
-                QRect viewportRect = dataset->renderSettings()->viewportFramebufferArea(viewport(), dataset->viewportConfig());
-                if(!viewportRect.isEmpty()) {
-                    QRect frameBox = previewFrameGeometry(dataset, windowSize);
-                    if(!frameBox.isNull()) {
-                        frameGraph->renderOverlays(viewport(), false, viewportRect, frameBox, noninteractiveProjParams);
-                    }
-                }
+            // Render UI elements on top (e.g. viewport caption).
+            if(viewport()->renderPreviewMode()) {
+                renderPreviewFrame(*frameGraph, uiCommandGroup, dataset, windowSize);
             }
-        }
-        if(this_task::isCanceled() || !viewport())
-            return;
+            else {
+                if(isOrientationIndicatorVisible())
+                    renderOrientationIndicator(*frameGraph, uiCommandGroup, windowSize);
+            }
 
-        // Render UI elements on top (e.g. viewport caption).
-        if(isPreviewMode) {
-            renderPreviewFrame(*frameGraph, dataset, windowSize);
-        }
-        else {
-            if(isOrientationIndicatorVisible())
-                renderOrientationIndicator(*frameGraph, windowSize);
-        }
+            // Render viewport caption.
+            if(isViewportTitleVisible())
+                _contextMenuArea = renderViewportTitle(*frameGraph, uiCommandGroup);
+            else
+                _contextMenuArea = QRectF();
 
-        // Render viewport caption.
-        if(isViewportTitleVisible())
-            _contextMenuArea = renderViewportTitle(*frameGraph);
-        else
-            _contextMenuArea = QRectF();
+            // Let the renderer implementation post-process the frame graph.
+            this->renderingJob()->postprocessFrameGraph(*frameGraph);
 
-        // Let the renderer implementation post-process the frame graph.
-        if(renderingJob)
-            renderingJob->postprocessFrameGraph(*frameGraph);
+            // Compute final projection based on the now known bounding box.
+            _projParams = viewport()->computeProjectionParameters(frameGraph->time(), (FloatType)windowSize.height() / windowSize.width(), frameGraph->sceneBoundingBox());
 
-        // Compute final projection based on the now known bounding box.
-        _projParams = viewport()->computeProjectionParameters(time, aspectRatio, frameGraph->sceneBoundingBox());
+            // Adjust projection if render frame is enabled.
+            if(viewport()->renderPreviewMode())
+                adjustProjectionForRenderPreviewFrame(dataset, _projParams, windowSize);
+            frameGraph->setProjectionParams(_projParams);
 
-        // Adjust projection if render frame is enabled.
-        if(isPreviewMode)
-            adjustProjectionForRenderFrame(dataset, _projParams, windowSize);
-        frameGraph->setProjectionParams(_projParams);
+            // Adopt newly generated frame graph for this window.
+            setFrameGraph(std::move(frameGraph));
 
-        // Adopt newly generated frame graph.
-        setFrameGraph(std::move(frameGraph));
+            // After the frame graph has been rebuilt, let window implementation render and image and update the on-screen display.
+            rerender();
+        });
     });
-
-    // After the frame graph has been updated, rerender the on-screen display.
-    if(success && viewport())
-        rerender();
 }
 
 /******************************************************************************
@@ -374,10 +356,10 @@ QRect ViewportWindow::previewFrameGeometry(DataSet* dataset, const QSize& window
 }
 
 /******************************************************************************
-* Modifies the projection such that the render frame painted over the 3d scene exactly
-* matches the true visible area.
+* Modifies the projection such that the render preview frame painted over
+* the 3d scene exactly matches the true visible area.
 ******************************************************************************/
-void ViewportWindow::adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionParameters& params, const QSize& windowSize)
+void ViewportWindow::adjustProjectionForRenderPreviewFrame(DataSet* dataset, ViewProjectionParameters& params, const QSize& windowSize)
 {
     if(windowSize.isEmpty())
         return;
@@ -467,6 +449,7 @@ void ViewportWindow::zoomToSelectionExtents()
 void ViewportWindow::zoomToSceneExtentsWhenReady()
 {
     if(viewport()) {
+        // Fire-and-forget task that will zoom to the scene extents once the scene is ready.
         scenePreparation().future().finally([self = OOWeakRef<ViewportWindow>(this)](Task& task) noexcept {
             if(!task.isCanceled()) {
                 if(OORef<ViewportWindow> window = self.lock())
@@ -480,7 +463,7 @@ void ViewportWindow::zoomToSceneExtentsWhenReady()
 * Render the axis tripod symbol in the corner of the viewport that indicates
 * the coordinate system orientation.
 ******************************************************************************/
-void ViewportWindow::renderOrientationIndicator(FrameGraph& frameGraph, const QSize& windowSize)
+void ViewportWindow::renderOrientationIndicator(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QSize& windowSize)
 {
     constexpr GraphicsFloatType tripodSize = 80.0f;          // device-independent pixels
     constexpr GraphicsFloatType tripodArrowSize = 0.17f;     // percentage of the above value.
@@ -528,7 +511,7 @@ void ViewportWindow::renderOrientationIndicator(FrameGraph& frameGraph, const QS
         });
 
     // Render coordinate axis arrows as 2d element.
-    frameGraph.addCommand(std::make_unique<LinePrimitive>(lines));
+    commandGroup.addPrimitivePreprojected(std::make_unique<LinePrimitive>(lines));
 
     // Render x,y,z labels.
     for(int axis = 0; axis < 3; axis++) {
@@ -551,7 +534,7 @@ void ViewportWindow::renderOrientationIndicator(FrameGraph& frameGraph, const QS
             (-ndcPoint.y() + 1.0) * windowSize.height() / 2.0
         });
 
-        frameGraph.addCommand(std::move(label));
+        commandGroup.addPrimitivePreprojected(std::move(label));
     }
 }
 
@@ -602,7 +585,7 @@ Ray3 ViewportWindow::screenRay(const QPointF& screenPoint) const
 /******************************************************************************
 * Paints the rectangular frame on top of the scene to indicate the visible image area.
 ******************************************************************************/
-void ViewportWindow::renderPreviewFrame(FrameGraph& frameGraph, DataSet* dataset, const QSize& windowSize)
+void ViewportWindow::renderPreviewFrame(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, DataSet* dataset, const QSize& windowSize)
 {
     // The render frame in viewport coordinates.
     QRect frameRect = previewFrameGeometry(dataset, windowSize);
@@ -621,16 +604,16 @@ void ViewportWindow::renderPreviewFrame(FrameGraph& frameGraph, DataSet* dataset
 
     // Fill area around frame rectangle with semi-transparent color.
     // Use four rectangles to form the outer frame.
-    frameGraph.addCommand(std::make_unique<ImagePrimitive>(image, Box2(Point2(0, 0), Point2(frameRect.left(), windowSize.height()))));
-    frameGraph.addCommand(std::make_unique<ImagePrimitive>(image, Box2(Point2(frameRect.right(), 0), Point2(windowSize.width(), windowSize.height()))));
-    frameGraph.addCommand(std::make_unique<ImagePrimitive>(image, Box2(Point2(frameRect.left(), 0), Point2(frameRect.right(), frameRect.top()))));
-    frameGraph.addCommand(std::make_unique<ImagePrimitive>(image, Box2(Point2(frameRect.left(), frameRect.bottom()), Point2(frameRect.right(), windowSize.height()))));
+    commandGroup.addPrimitivePreprojected(std::make_unique<ImagePrimitive>(image, Box2(Point2(0, 0), Point2(frameRect.left(), windowSize.height()))));
+    commandGroup.addPrimitivePreprojected(std::make_unique<ImagePrimitive>(image, Box2(Point2(frameRect.right(), 0), Point2(windowSize.width(), windowSize.height()))));
+    commandGroup.addPrimitivePreprojected(std::make_unique<ImagePrimitive>(image, Box2(Point2(frameRect.left(), 0), Point2(frameRect.right(), frameRect.top()))));
+    commandGroup.addPrimitivePreprojected(std::make_unique<ImagePrimitive>(image, Box2(Point2(frameRect.left(), frameRect.bottom()), Point2(frameRect.right(), windowSize.height()))));
 }
 
 /******************************************************************************
 * Renders the viewport caption text.
 ******************************************************************************/
-QRectF ViewportWindow::renderViewportTitle(FrameGraph& frameGraph)
+QRectF ViewportWindow::renderViewportTitle(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup)
 {
     std::unique_ptr<TextPrimitive> primitive = std::make_unique<TextPrimitive>();
     primitive->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -665,7 +648,7 @@ QRectF ViewportWindow::renderViewportTitle(FrameGraph& frameGraph)
     textBounds.setWidth(std::max(textBounds.width(), 30.0));
     textBounds.adjust(-2, -2, 2, 2);
 
-    frameGraph.addCommand(std::move(primitive));
+    commandGroup.addPrimitivePreprojected(std::move(primitive));
 
     return textBounds;
 }
@@ -808,7 +791,7 @@ void ViewportWindow::renderConstructionGrid(FrameGraph& frameGraph)
     std::unique_ptr<LinePrimitive> primitive = std::make_unique<LinePrimitive>();
     primitive->setPositions(vertexPositions.take());
     primitive->setColors(vertexColors.take());
-    frameGraph.addPrimitive(std::move(primitive), viewport()->gridMatrix(), Box3(Point3(xstartF, ystartF, 0), Point3(xendF, yendF, 0)));
+    frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitiveNonpickable(std::move(primitive), viewport()->gridMatrix(), Box3(Point3(xstartF, ystartF, 0), Point3(xendF, yendF, 0)));
 }
 
 /******************************************************************************

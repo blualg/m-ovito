@@ -629,6 +629,18 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
 }
 
 /******************************************************************************
+* Is called when the value of a non-animatable property field of this RefMaker has changed.
+******************************************************************************/
+void XYZImporter::propertyChanged(const PropertyFieldDescriptor* field)
+{
+    ParticleImporter::propertyChanged(field);
+
+    if(field == PROPERTY_FIELD(columnMapping) && !isBeingLoaded()) {
+        requestReload();
+    }
+}
+
+/******************************************************************************
  * Saves the class' contents to the given stream.
  *****************************************************************************/
 void XYZImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const

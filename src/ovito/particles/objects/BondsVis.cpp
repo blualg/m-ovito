@@ -112,7 +112,7 @@ Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPat
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus BondsVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     const Bonds* bonds = path.lastAs<Bonds>(0);
     const Particles* particles = path.lastAs<Particles>(1);
@@ -327,11 +327,11 @@ PipelineStatus BondsVis::render(const ConstDataObjectPath& path, const PipelineF
     if(!cylinders.basePositions())
         return {};
 
-    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(cylinders), pipeline, frameGraph.addPickingGroup(pipeline, pickInfo));
+    FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::SceneLayer);
+    frameGraph.addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(cylinders), pipeline, pickInfo);
 
-    if(renderNodalVertices) {
-        frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(vertices), pipeline, frameGraph.addPickingGroup(pipeline));
-    }
+    if(renderNodalVertices)
+        frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(vertices), pipeline);
 
     return {};
 }
@@ -453,7 +453,7 @@ std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles, bool hi
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
-QString BondPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
+QString BondPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 {
     QString str;
     size_t bondIndex = subobjectId / 2;

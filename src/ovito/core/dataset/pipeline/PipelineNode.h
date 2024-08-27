@@ -53,7 +53,7 @@ public:
     }
 
     /// \brief Asks the pipeline stage to compute the results for several animation times in a row.
-    Future<std::vector<PipelineFlowState>> evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times);
+    [[nodiscard]] Future<std::vector<PipelineFlowState>> evaluateMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times);
 
     /// Returns the cached output of this data pipeline stage at the given time if available.
     /// This method will never throw an exception and doesn't require a valid execution context.

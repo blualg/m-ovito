@@ -150,9 +150,8 @@ void StandardCameraObject::projectionParameters(AnimationTime time, ViewProjecti
 FloatType StandardCameraObject::getTargetDistance(AnimationTime time, const Pipeline* pipeline)
 {
     if(pipeline && pipeline->lookatTargetNode() != nullptr) {
-        TimeInterval iv;
-        Vector3 cameraPos = pipeline->getWorldTransform(time, iv).translation();
-        Vector3 targetPos = pipeline->lookatTargetNode()->getWorldTransform(time, iv).translation();
+        Vector3 cameraPos = pipeline->getWorldTransform(time).translation();
+        Vector3 targetPos = pipeline->lookatTargetNode()->getWorldTransform(time).translation();
         return (cameraPos - targetPos).length();
     }
 
@@ -163,21 +162,19 @@ FloatType StandardCameraObject::getTargetDistance(AnimationTime time, const Pipe
 /******************************************************************************
 * Lets the vis element render a camera object.
 ******************************************************************************/
-PipelineStatus CameraVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> CameraVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Camera objects are only visible in the interactive viewports.
     if(frameGraph.isInteractive() == false)
         return {};
 
-    TimeInterval iv;
-
     // Determine the camera and target positions when rendering a target camera.
-    const AffineTransformation cameraTM = pipeline->getWorldTransform(frameGraph.time(), iv);
+    const AffineTransformation cameraTM = pipeline->getWorldTransform(frameGraph.time());
     Point3 cameraPos = Point3::Origin() + cameraTM.translation();
     FloatType targetDistance = 0;
     bool showTargetLine = false;
     if(pipeline->lookatTargetNode()) {
-        Point3 targetPos = Point3::Origin() + pipeline->lookatTargetNode()->getWorldTransform(frameGraph.time(), iv).translation();
+        Point3 targetPos = Point3::Origin() + pipeline->lookatTargetNode()->getWorldTransform(frameGraph.time()).translation();
         targetDistance = (cameraPos - targetPos).length();
         showTargetLine = true;
     }
@@ -191,6 +188,7 @@ PipelineStatus CameraVis::render(const ConstDataObjectPath& path, const Pipeline
             aspectRatio = dataset->renderSettings()->outputImageAspectRatio();
             if(const StandardCameraObject* camera = path.lastAs<StandardCameraObject>()) {
                 if(camera->isPerspective()) {
+                    TimeInterval iv;
                     coneAngle = camera->fieldOfView(frameGraph.time(), iv);
                     if(targetDistance == 0)
                         targetDistance = StandardCameraObject::getTargetDistance(frameGraph.time(), pipeline);
@@ -249,7 +247,9 @@ PipelineStatus CameraVis::render(const ConstDataObjectPath& path, const Pipeline
 
     auto coloredConePrimitive = std::make_unique<LinePrimitive>(conePrimitive);
     coloredConePrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_CAMERAS));
-    frameGraph.addPrimitive(std::move(coloredConePrimitive), pipeline);
+
+    FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::SceneLayer);
+    frameGraph.addPrimitive(commandGroup, std::move(coloredConePrimitive), pipeline);
 
     // Load 3d camera icon.
     if(!_cameraIconVertices) {
@@ -291,7 +291,7 @@ PipelineStatus CameraVis::render(const ConstDataObjectPath& path, const Pipeline
     std::unique_ptr<LinePrimitive> cameraPrimitive = std::make_unique<LinePrimitive>();
     cameraPrimitive->setPositions(_cameraIconVertices);
     cameraPrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
-    frameGraph.addPrimitive(std::move(cameraPrimitive), cameraTM * AffineTransformation::scaling(scaling), frameGraph.addPickingGroup(pipeline), Box3(Point3::Origin(), 2));
+    commandGroup.addPrimitive(std::move(cameraPrimitive), cameraTM * AffineTransformation::scaling(scaling), Box3(Point3::Origin(), 2), pipeline);
 
     return {};
 }

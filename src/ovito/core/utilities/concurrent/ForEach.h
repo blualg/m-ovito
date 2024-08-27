@@ -48,7 +48,7 @@ struct first_type { using type = std::tuple_element_t<0, Tuple>; };
 template<>
 struct first_type<std::tuple<>> { using type = void; };
 
-template<typename InputRange, class Executor, typename StartIterFunc, typename CompleteIterFunc, typename... ResultType>
+template<bool ShowProgress = true, typename InputRange, class Executor, typename StartIterFunc, typename CompleteIterFunc, typename... ResultType>
 [[nodiscard]] auto for_each_sequential(
     InputRange&& inputRange,
     Executor&& executor,
@@ -61,9 +61,6 @@ template<typename InputRange, class Executor, typename StartIterFunc, typename C
 
     // The type of future returned by the start function.
     using output_future_type = return_type<std::decay_t<StartIterFunc>>;
-
-    // Can we report progress because the total number of required iterations is known?
-    constexpr bool is_with_progress = std::is_same_v<typename std::iterator_traits<typename std::decay_t<InputRange>::iterator>::iterator_category, std::random_access_iterator_tag>;
 
     class ForEachTask : public detail::ContinuationTask<task_result_type>
     {
@@ -95,7 +92,7 @@ template<typename InputRange, class Executor, typename StartIterFunc, typename C
             if(_iterator != std::end(_range)) {
 
                 // Determine the number of iterations we are going to perform.
-                if constexpr(is_with_progress)
+                if constexpr(ShowProgress)
                     this->setProgressMaximum(std::distance(_iterator, std::end(_range)));
 
                 _executor.execute([promise = Promise<task_result_type>(this->shared_from_this())]() mutable noexcept {
@@ -115,7 +112,7 @@ template<typename InputRange, class Executor, typename StartIterFunc, typename C
                 output_future_type future;
                 try {
                     // Report the number of iterations we have performed so far.
-                    if constexpr(is_with_progress)
+                    if constexpr(ShowProgress)
                         this->setProgressValue(std::distance(std::begin(_range), _iterator));
 
                     Task::Scope taskScope(this);

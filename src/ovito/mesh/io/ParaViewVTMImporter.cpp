@@ -335,7 +335,7 @@ void ParaViewVTMImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
     FileSourceImporter::propertyChanged(field);
 
-    if(field == PROPERTY_FIELD(uniteMeshes)) {
+    if(field == PROPERTY_FIELD(uniteMeshes) && !isBeingLoaded()) {
         // Reload input file(s) when this option is changed by the user.
         // There is no need to refetch the data file(s) from the remote location though. Reparsing the cached files is sufficient.
         requestReload();

@@ -96,7 +96,7 @@ Box3 VoxelGridVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjec
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus VoxelGridVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> VoxelGridVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     PipelineStatus status;
 
@@ -634,7 +634,7 @@ PipelineStatus VoxelGridVis::render(const ConstDataObjectPath& path, const Pipel
         coloredVolumeFaces->setPseudoColorMapping(colorMapping()->pseudoColorMapping());
 
         // Add the mesh to the frame graph.
-        frameGraph.addPrimitive(std::move(coloredVolumeFaces), pipeline, frameGraph.addPickingGroup(pipeline, pickInfo), boundingBox);
+        frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(coloredVolumeFaces), pipeline->getWorldTransform(frameGraph.time()), boundingBox, pipeline, pickInfo);
     }
 
     return status;
@@ -644,7 +644,7 @@ PipelineStatus VoxelGridVis::render(const ConstDataObjectPath& path, const Pipel
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
-QString VoxelGridPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
+QString VoxelGridPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 {
     QString str = voxelGrid()->objectTitle();
 

@@ -467,7 +467,6 @@ bool GuiApplication::automaticallyEnableDarkMode()
         return false;
     #endif
 #endif
-
 }
 
 /******************************************************************************

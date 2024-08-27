@@ -24,6 +24,7 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/FrameBuffer.h>
 #include <ovito/core/rendering/FrameGraph.h>
+#include <ovito/core/rendering/FrameGraphBuilder.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/viewport/ViewportSuspender.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -57,9 +58,9 @@ DEFINE_PROPERTY_FIELD(RenderSettings, everyNthFrame);
 DEFINE_PROPERTY_FIELD(RenderSettings, fileNumberBase);
 DEFINE_PROPERTY_FIELD(RenderSettings, framesPerSecond);
 DEFINE_PROPERTY_FIELD(RenderSettings, renderAllViewports);
-DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeperatorsEnabled);
-DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeperatorWidth);
-DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeperatorColor);
+DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeparatorsEnabled);
+DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeparatorWidth);
+DEFINE_PROPERTY_FIELD(RenderSettings, layoutSeparatorColor);
 SET_PROPERTY_FIELD_LABEL(RenderSettings, imageInfo, "Image info");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, imageFilename, "Image output path");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, renderer, "Renderer");
@@ -77,14 +78,17 @@ SET_PROPERTY_FIELD_LABEL(RenderSettings, everyNthFrame, "Every Nth frame");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, fileNumberBase, "File number base");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, framesPerSecond, "Frames per second");
 SET_PROPERTY_FIELD_LABEL(RenderSettings, renderAllViewports, "Render all viewports");
-SET_PROPERTY_FIELD_LABEL(RenderSettings, layoutSeperatorsEnabled, "Layout separators");
-SET_PROPERTY_FIELD_LABEL(RenderSettings, layoutSeperatorWidth, "Separator width");
-SET_PROPERTY_FIELD_LABEL(RenderSettings, layoutSeperatorColor, "Separator color");
+SET_PROPERTY_FIELD_LABEL(RenderSettings, layoutSeparatorsEnabled, "Layout separators");
+SET_PROPERTY_FIELD_LABEL(RenderSettings, layoutSeparatorWidth, "Separator width");
+SET_PROPERTY_FIELD_LABEL(RenderSettings, layoutSeparatorColor, "Separator color");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, outputImageWidth, IntegerParameterUnit, 1);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, outputImageHeight, IntegerParameterUnit, 1);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, everyNthFrame, IntegerParameterUnit, 1);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, framesPerSecond, IntegerParameterUnit, 0);
-SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, layoutSeperatorWidth, IntegerParameterUnit, 1);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(RenderSettings, layoutSeparatorWidth, IntegerParameterUnit, 1);
+SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(RenderSettings, layoutSeparatorsEnabled, "layoutSeperatorsEnabled"); // For backward compatibility with OVITO 3.10.6
+SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(RenderSettings, layoutSeparatorWidth, "layoutSeperatorWidth"); // For backward compatibility with OVITO 3.10.6
+SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(RenderSettings, layoutSeparatorColor, "layoutSeperatorColor"); // For backward compatibility with OVITO 3.10.6
 
 /******************************************************************************
 * Constructor.
@@ -126,12 +130,12 @@ void RenderSettings::render(const ViewportConfiguration& viewportConfiguration, 
 {
     std::vector<std::pair<Viewport*, QRectF>> viewportLayout;
     if(renderAllViewports()) {
-        // When rendering an entire viewport layout, determine the each viewport's destination rectangle within the output frame buffer.
+        // When rendering an entire viewport layout, determine the each viewport's target rectangle within the output framebuffer.
         QSizeF borderSize(0,0);
-        if(layoutSeperatorsEnabled()) {
+        if(layoutSeparatorsEnabled()) {
             // Convert separator width from pixels to reduced units, which are relative to the framebuffer width/height.
-            borderSize.setWidth( 1.0 / outputImageWidth()  * layoutSeperatorWidth());
-            borderSize.setHeight(1.0 / outputImageHeight() * layoutSeperatorWidth());
+            borderSize.setWidth( 1.0 / outputImageWidth()  * layoutSeparatorWidth());
+            borderSize.setHeight(1.0 / outputImageHeight() * layoutSeparatorWidth());
         }
         viewportLayout = viewportConfiguration.getViewportRectangles(QRectF(0,0,1,1), borderSize);
     }
@@ -160,7 +164,7 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
     // Note: Using ref-counted pointer here, because the renderer may potentially be deleted before the current function returns.
     OORef<SceneRenderer> renderer = this->renderer();
     if(!renderer)
-        throw Exception(tr("No rendering engine has been selected."));
+        throw Exception(tr("No rendering backend has been selected."));
 
     // Create a ref-counted pointer to ourself to keep the RenderSettings alive even if the application
     // is shutting down while we are still in this function.
@@ -210,7 +214,7 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
 
     // Per viewport data.
     struct ViewportRenderingData {
-        Viewport* viewport;
+        OORef<Viewport> viewport;
         OORef<AbstractRenderingFrameBuffer> renderingFrameBuffer;
         RendererResourceCache::ResourceFrame inactiveCacheFrame;
     };
@@ -330,7 +334,7 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
             this_task::throwIfCanceled();
 
             // Create a new frame graph.
-            std::shared_ptr<FrameGraph> frameGraph = std::make_shared<FrameGraph>(
+            OORef<FrameGraph> frameGraph = OORef<FrameGraph>::create(
                 visCache->acquireResourceFrame(),
                 renderTime, projParams, vpData.renderingFrameBuffer->outputViewportRect().size(), false, false, stopOnPipelineError(),
                 renderingJob->preferredImageFormat(), renderingJob->multisamplingLevel());
@@ -342,19 +346,10 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
             const QRect& logicalOverlayRect = vpData.renderingFrameBuffer->outputViewportRect();
             const QRect& physicalOverlayRect = vpData.renderingFrameBuffer->renderingViewportRect();
 
-            // Generate draw commands for the viewport "underlays".
-            frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::UnderLayer);
-            frameGraph->renderOverlays(vpData.viewport, true, logicalOverlayRect, physicalOverlayRect, projParams);
-            this_task::throwIfCanceled();
-
-            // Generate draw commands for the 3d scene objects.
-            frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::SceneLayer);
-            frameGraph->renderSceneNode(vpData.viewport->scene(), vpData.viewport);
-
-            // Generate draw commands for the viewport "overlays".
-            frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::OverLayer);
-            frameGraph->renderOverlays(vpData.viewport, false, logicalOverlayRect, physicalOverlayRect, projParams);
-            this_task::throwIfCanceled();
+            // Let the FrameGraphBuilder class do the heavy lifting and generate the frame graph for the current scene.
+            frameGraph = FrameGraphBuilder::build(std::move(frameGraph),
+                vpData.viewport->scene(), vpData.viewport,
+                logicalOverlayRect, physicalOverlayRect, projParams).result();
 
             // Let the scene renderer implementation post-process the frame graph.
             renderingJob->postprocessFrameGraph(*frameGraph);
@@ -401,7 +396,7 @@ QRect RenderSettings::viewportFramebufferArea(const Viewport* viewport, const Vi
     if(renderAllViewports() && viewportConfig && viewport) {
 
         // Compute target rectangles of all viewports of the current layout.
-        // TODO: This should be optimized. Computing the full layout everytime seems unnecessary.
+        // TODO: This should be optimized. Computing the full layout every time seems unnecessary.
         std::vector<std::pair<Viewport*, QRectF>> viewportRects = viewportConfig->getViewportRectangles(frameBufferRect);
 
         // Find the viewport among the list of all viewports to look up its target rectangle in the output image.

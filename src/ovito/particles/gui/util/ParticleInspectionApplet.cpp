@@ -305,8 +305,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
                 }
                 if(BufferReadAccess<Point3> posProperty = particles->getProperty(Particles::PositionProperty)) {
                     if(particleIndex < posProperty.size()) {
-                        TimeInterval iv;
-                        const AffineTransformation& nodeTM = element.pipeline->getWorldTransform(frameGraph.time(), iv);
+                        const AffineTransformation& nodeTM = element.pipeline->getWorldTransform(frameGraph.time());
                         *outVertex++ = (nodeTM * posProperty[particleIndex]).toDataType<GraphicsFloatType>();
                     }
                 }
@@ -334,9 +333,10 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
         linesPrimitive->setPositions(lines.take());
         linesPrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(ViewportSettings::COLOR_UNSELECTED));
         linesPrimitive->setLineWidth(4.0 * frameGraph.devicePixelRatio());
-        auto previousRenderLayer = frameGraph.setCurrentRenderLayer(FrameGraph::RenderLayer::OverLayer);
-        frameGraph.addPrimitive(std::move(linesPrimitive), AffineTransformation::Identity());
-        frameGraph.setCurrentRenderLayer(previousRenderLayer);
+
+        FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::OverLayer);
+        const Box3& boundingBox = linesPrimitive->computeBoundingBox(frameGraph.visCache());
+        commandGroup.addPrimitiveNonpickable(std::move(linesPrimitive), AffineTransformation::Identity(), boundingBox);
     }
 }
 

@@ -289,8 +289,6 @@ void SliceModifierEditor::onAlignNormalWithAxis(const QString& link)
 ******************************************************************************/
 void SliceModifierEditor::onAlignPlaneToView()
 {
-    TimeInterval interval;
-
     Viewport* vp = activeViewport();
     if(!vp) return;
 
@@ -298,7 +296,7 @@ void SliceModifierEditor::onAlignPlaneToView()
     Pipeline* pipeline = selectedPipeline();
     if(!pipeline) return;
     AnimationTime time = currentAnimationTime();
-    const AffineTransformation& nodeTM = pipeline->getWorldTransform(time, interval);
+    const AffineTransformation& nodeTM = pipeline->getWorldTransform(time);
 
     performTransaction(tr("Align plane to view"), [&]() {
 
@@ -308,6 +306,7 @@ void SliceModifierEditor::onAlignPlaneToView()
 
         const PipelineFlowState& input = getPipelineInput();
 
+        TimeInterval interval;
         Plane3 oldPlaneLocal = std::get<Plane3>(mod->slicingPlane(time, interval, input));
         Point3 basePoint = Point3::Origin() + oldPlaneLocal.normal * oldPlaneLocal.dist;
 
@@ -540,13 +539,14 @@ void PickPlanePointsInputMode::renderOverlay(Viewport* vp, ViewportWindow* vpWin
     std::unique_ptr<MarkerPrimitive> markers = std::make_unique<MarkerPrimitive>(MarkerPrimitive::BoxShape);
     markers->makePositions(_pickedPoints, _pickedPoints + npoints);
     markers->setColor(ColorA(1, 1, 1));
-    frameGraph.addPrimitive(std::move(markers), AffineTransformation::Identity(), 0, boundingBox);
+    FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::SceneLayer);
+    commandGroup.addPrimitiveNonpickable(std::move(markers), AffineTransformation::Identity(), boundingBox);
 
     if(npoints == 2) {
         std::unique_ptr<LinePrimitive> lines = std::make_unique<LinePrimitive>();
         lines->makePositions(_pickedPoints, _pickedPoints + 2);
         lines->setUniformColor(ColorA(1, 1, 1));
-        frameGraph.addPrimitive(std::move(lines), AffineTransformation::Identity(), 0, boundingBox);
+        commandGroup.addPrimitiveNonpickable(std::move(lines), AffineTransformation::Identity(), boundingBox);
     }
     else if(npoints == 3) {
         DataOORef<TriangleMesh> tri = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
@@ -558,13 +558,13 @@ void PickPlanePointsInputMode::renderOverlay(Viewport* vp, ViewportWindow* vpWin
         std::unique_ptr<MeshPrimitive> meshPrimitive = std::make_unique<MeshPrimitive>();
         meshPrimitive->setMesh(std::move(tri), MeshPrimitive::ConvexShapeMode);
         meshPrimitive->setUniformColor(ColorA(0.7, 0.7, 1.0, 0.5));
-        frameGraph.addPrimitive(std::move(meshPrimitive), AffineTransformation::Identity(), 0, boundingBox);
+        commandGroup.addPrimitiveNonpickable(std::move(meshPrimitive), AffineTransformation::Identity(), boundingBox);
 
         std::unique_ptr<LinePrimitive> lines = std::make_unique<LinePrimitive>();
         const Point3 vertices[6] = { _pickedPoints[0], _pickedPoints[1], _pickedPoints[1], _pickedPoints[2], _pickedPoints[2], _pickedPoints[0] };
         lines->makePositions(vertices);
         lines->setUniformColor(ColorA(1, 1, 1));
-        frameGraph.addPrimitive(std::move(lines), AffineTransformation::Identity(), 0, boundingBox);
+        commandGroup.addPrimitiveNonpickable(std::move(lines), AffineTransformation::Identity(), boundingBox);
     }
 }
 

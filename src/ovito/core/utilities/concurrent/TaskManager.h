@@ -84,10 +84,7 @@ public:
 public Q_SLOTS:
 
     /// Executes pending work items waiting in the deferred execution queue.
-    void executePendingWork() {
-        std::unique_lock<std::mutex> lock{_mutex};
-        executePendingWorkLocked(lock);
-    }
+    void executePendingWork();
 
     /// Tells the task manager to interrupt the task it is currently waiting for.
     bool requestInterruption();

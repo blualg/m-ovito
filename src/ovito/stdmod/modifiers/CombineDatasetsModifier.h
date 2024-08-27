@@ -91,7 +91,7 @@ protected:
     virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
     /// Implementation method, which performs the merging of two pipeline states.
-    Future<PipelineFlowState> combineDatasets(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& secondaryState);
+    [[nodiscard]] Future<PipelineFlowState> combineDatasets(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& secondaryState);
 
 private:
 

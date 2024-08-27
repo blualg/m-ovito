@@ -27,14 +27,14 @@
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include "PseudoColorMapping.h"
-#include "FrameGraphPrimitive.h"
+#include "RenderingPrimitive.h"
 
 namespace Ovito {
 
 /**
  * \brief A triangle mesh to be rendered by a scene renderer.
  */
-class OVITO_CORE_EXPORT MeshPrimitive final : public FrameGraphPrimitive
+class OVITO_CORE_EXPORT MeshPrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 
@@ -153,6 +153,7 @@ public:
 
 	/// Computes the 3d bounding box of the primitive in local coordinate space.
 	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
+        OVITO_ASSERT(this);
         if(!mesh())
             return {};
         Box3 bb = mesh()->boundingBox();

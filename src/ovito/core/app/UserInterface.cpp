@@ -103,6 +103,7 @@ void UserInterface::shutdownComplete()
     if(_selfGuard) {
         if(QThread::currentThread()->loopLevel() != 0) {
             // Move the self-guard into a lambda function, which gets processed when control returns to the Qt event loop.
+            // The lambda's destructor will free the self-guard object and stop the event loop.
             OVITO_ASSERT(Application::instance()->isShuttingDown() == false);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
             Application::instance()->taskManager().submitWork(Application::instance(), [s = std::move(_selfGuard), locker = QEventLoopLocker()]() noexcept {}, true);

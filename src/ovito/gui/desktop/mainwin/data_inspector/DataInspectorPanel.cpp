@@ -99,6 +99,9 @@ DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
     connect(_scenePreparation.get(), &ScenePreparation::scenePreparationStarted, this, &DataInspectorPanel::onScenePreparationStarted);
     connect(_scenePreparation.get(), &ScenePreparation::scenePreparationFinished, this, &DataInspectorPanel::onScenePreparationFinished);
 
+    // Keep requesting output from the scene pipeline(s) indefinitely.
+    _scenePreparation->setAutoRestart(true);
+
     updateTabsList();
 }
 

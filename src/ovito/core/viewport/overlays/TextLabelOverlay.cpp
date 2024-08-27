@@ -85,7 +85,7 @@ QVariant TextLabelOverlay::getPipelineEditorShortInfo(Scene* scene) const
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void TextLabelOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene)
+std::variant<PipelineStatus, Future<PipelineStatus>> TextLabelOverlay::render(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene)
 {
     // Check alignment parameter.
     if(!frameGraph.isInteractive())
@@ -93,17 +93,19 @@ void TextLabelOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewpo
 
     if(pipeline()) {
         PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
-        renderImplementation(frameGraph, physicalViewportRect, pipeline()->evaluatePipeline(request).result());
+        return pipeline()->evaluatePipeline(request).then(*this, [this, frameGraph=OORef<FrameGraph>(&frameGraph), &commandGroup, physicalViewportRect](const PipelineFlowState& state) {
+            return renderImplementation(*frameGraph, commandGroup, physicalViewportRect, state);
+        });
     }
     else {
-        renderImplementation(frameGraph, physicalViewportRect, {});
+        return renderImplementation(frameGraph, commandGroup, physicalViewportRect, {});
     }
 }
 
 /******************************************************************************
 * This method paints the overlay contents onto the given canvas.
 ******************************************************************************/
-void TextLabelOverlay::renderImplementation(FrameGraph& frameGraph, const QRect& viewportRect, const PipelineFlowState& flowState)
+PipelineStatus TextLabelOverlay::renderImplementation(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRect& viewportRect, const PipelineFlowState& flowState)
 {
     // Resolve the label text.
     QString textString = labelText();
@@ -117,7 +119,6 @@ void TextLabelOverlay::renderImplementation(FrameGraph& frameGraph, const QRect&
         if(format.isEmpty() || format.contains("%s")) format = QByteArrayLiteral("###");
 
         for(auto a = attributes.cbegin(); a != attributes.cend(); ++a) {
-
             QString valueString;
             if(a.value().typeId() == QMetaType::Double || a.value().typeId() == QMetaType::Float) {
                 valueString = QString::asprintf(format.constData(), a.value().toDouble());
@@ -130,7 +131,7 @@ void TextLabelOverlay::renderImplementation(FrameGraph& frameGraph, const QRect&
         }
     }
     if(textString.isEmpty())
-        return;
+        return {};
 
     // Prepare the text rendering primitive.
     std::unique_ptr<TextPrimitive> textPrimitive = std::make_unique<TextPrimitive>();
@@ -144,7 +145,7 @@ void TextLabelOverlay::renderImplementation(FrameGraph& frameGraph, const QRect&
     // Resolve the font used by the label.
     FloatType fontSize = this->fontSize() * viewportRect.height();
     if(fontSize <= 0)
-        return;
+        return {};
     QFont font = this->font();
     font.setPointSizeF(fontSize / frameGraph.devicePixelRatio()); // Font size if always in logical coordinates.
     textPrimitive->setFont(std::move(font));
@@ -166,7 +167,11 @@ void TextLabelOverlay::renderImplementation(FrameGraph& frameGraph, const QRect&
 
     // Compute final positions.
     textPrimitive->setPositionWindow(pos + Vector2(offsetX() * viewportRect.width(), -offsetY() * viewportRect.height()));
-    frameGraph.addCommand(std::move(textPrimitive));
+
+    // Add drawing command to frame graph.
+    commandGroup.addPrimitivePreprojected(std::move(textPrimitive));
+
+    return {};
 }
 
 }   // End of namespace

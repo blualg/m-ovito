@@ -92,10 +92,10 @@ public:
     ScenePreparation& scenePreparation() { OVITO_ASSERT(_scenePreparation); return *_scenePreparation; }
 
     /// Returns the current frame graph displayed in the viewport window.
-    const std::shared_ptr<FrameGraph>& frameGraph() const { return _frameGraph; }
+    const OORef<FrameGraph>& frameGraph() const { return _frameGraph; }
 
     /// Sets the frame graph to be displayed in the viewport window.
-    void setFrameGraph(std::shared_ptr<FrameGraph> frameGraph) { _frameGraph = std::move(frameGraph); }
+    void setFrameGraph(OORef<FrameGraph> frameGraph) { _frameGraph = std::move(frameGraph); }
 
     /// Creates and returns the rendering job that renders the contents of the viewport window.
     const OORef<RenderingJob>& renderingJob() {
@@ -198,6 +198,9 @@ public:
 
 public Q_SLOTS:
 
+    /// Releases the renderer resources held by the viewport window and the renderer.
+    virtual void releaseResources();
+
     /// Schedules a refresh for this window.
     void requestUpdate();
 
@@ -249,18 +252,18 @@ protected:
     /// Replaces the rendering job used by this window to render its contents.
     void setRenderingJob(OORef<RenderingJob> job) { _renderingJob = std::move(job); }
 
-    /// Modifies the projection such that the render frame painted over the 3d scene exactly matches the true visible area.
-    void adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionParameters& params, const QSize& windowSize);
+    /// Modifies the projection such that the render preview frame painted over the 3d scene exactly matches the true visible area.
+    void adjustProjectionForRenderPreviewFrame(DataSet* dataset, ViewProjectionParameters& params, const QSize& windowSize);
 
     /// Render the axis tripod symbol in the corner of the viewport that indicates
     /// the coordinate system orientation.
-    void renderOrientationIndicator(FrameGraph& frameGraph, const QSize& windowSize);
+    void renderOrientationIndicator(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QSize& windowSize);
 
     /// Paints the rectangular frame on top of the scene to indicate the visible image area.
-    void renderPreviewFrame(FrameGraph& frameGraph, DataSet* dataset, const QSize& windowSize);
+    void renderPreviewFrame(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, DataSet* dataset, const QSize& windowSize);
 
     /// Renders the viewport caption text.
-    QRectF renderViewportTitle(FrameGraph& frameGraph);
+    QRectF renderViewportTitle(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup);
 
 	/// Renders the visual representation of the modifiers in a pipeline.
 	void renderPipelineModifiers(Pipeline* pipeline, FrameGraph& frameGraph);
@@ -310,8 +313,11 @@ private:
     /// viewport window area that activates the context menu.
     bool _cursorInContextMenuArea = false;
 
-    /// The current frame graph displayed in the viewport window.
-    std::shared_ptr<FrameGraph> _frameGraph;
+    /// The asynchronous operation building the frame graph for the viewport window.
+    Future<void> _frameGraphFuture;
+
+    /// The current frame graph displayed by the viewport window.
+    OORef<FrameGraph> _frameGraph;
 
     /// The current 3D projection for rendering the contents of the viewport window.
     ViewProjectionParameters _projParams;

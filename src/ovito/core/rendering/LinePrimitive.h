@@ -26,14 +26,14 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
-#include "FrameGraphPrimitive.h"
+#include "RenderingPrimitive.h"
 
 namespace Ovito {
 
 /**
  * \brief A set of lines to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT LinePrimitive final : public FrameGraphPrimitive
+class OVITO_CORE_EXPORT LinePrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 
@@ -108,6 +108,7 @@ public:
 
 	/// Computes the 3d bounding box of the primitive in local coordinate space.
 	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
+        OVITO_ASSERT(this);
         auto& bb = visCache.lookup<Box3>(
             RendererResourceKey<struct LineBoundingBoxCache, ConstDataBufferPtr>{positions()},
             [this](Box3& bb) {

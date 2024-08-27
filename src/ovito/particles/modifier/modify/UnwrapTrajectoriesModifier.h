@@ -94,7 +94,7 @@ public:
     const std::vector<UnflipRecord>& unflipRecords() const { return _unflipRecords; }
 
     /// Processes all frames of the input trajectory to detect periodic crossings of the particles.
-    SharedFuture<void> detectPeriodicCrossings(const ModifierEvaluationRequest& request);
+    [[nodiscard]] SharedFuture<void> detectPeriodicCrossings(const ModifierEvaluationRequest& request);
 
     /// Unwraps the current particle coordinates.
     void unwrapParticleCoordinates(const ModifierEvaluationRequest& request, PipelineFlowState& state);

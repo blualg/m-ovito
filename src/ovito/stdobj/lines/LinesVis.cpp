@@ -56,7 +56,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(LinesVis, lineWidth, WorldParameterUnit, 0)
  * Returns a human-readable string describing the picked object,
  * which will be displayed in the status bar by OVITO.
  ******************************************************************************/
-QString LinesPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
+QString LinesPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 {
     QString str;
 
@@ -181,7 +181,7 @@ Box3 LinesVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPat
 /******************************************************************************
  * Lets the visualization element render the data object.
  ******************************************************************************/
-PipelineStatus LinesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     PipelineStatus status;
 
@@ -371,9 +371,9 @@ PipelineStatus LinesVis::render(const ConstDataObjectPath& path, const PipelineF
         coloredCorners->setColors(cornerColors);
     }
 
-    auto pickingGroup = frameGraph.addPickingGroup(pipeline, pickInfo);
-    frameGraph.addPrimitive(std::move(coloredSegments), pipeline, pickingGroup);
-    frameGraph.addPrimitive(std::move(coloredCorners), pipeline, pickingGroup);
+    FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::SceneLayer);
+    frameGraph.addPrimitive(commandGroup, std::move(coloredSegments), pipeline, pickInfo);
+    frameGraph.addPrimitive(commandGroup, std::move(coloredCorners), pipeline); // No picking info for corner spheres
 
     return status;
 }

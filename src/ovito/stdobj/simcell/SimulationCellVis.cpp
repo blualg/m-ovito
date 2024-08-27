@@ -66,7 +66,7 @@ Box3 SimulationCellVis::boundingBoxImmediate(AnimationTime time, const ConstData
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus SimulationCellVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> SimulationCellVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     if(const SimulationCell* cell = path.lastAs<SimulationCell>()) {
         if(frameGraph.isInteractive() && !frameGraph.isPreviewMode()) {
@@ -87,6 +87,8 @@ PipelineStatus SimulationCellVis::render(const ConstDataObjectPath& path, const 
 ******************************************************************************/
 void SimulationCellVis::renderWireframe(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
     // Look up the vertex data in the vis cache.
     const ConstDataBufferPtr& lineVertices = frameGraph.visCache().lookup<ConstDataBufferPtr>(
         RendererResourceKey<struct WireframeVertices, bool>{cell->is2D()},
@@ -128,12 +130,11 @@ void SimulationCellVis::renderWireframe(const SimulationCell* cell, const Pipeli
     linePrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_UNSELECTED));
 
     // Compute transformation matrix from unit cell space to world space.
-    TimeInterval iv;
-    const AffineTransformation nodeTM = pipeline->getWorldTransform(frameGraph.time(), iv);
+    const AffineTransformation nodeTM = pipeline->getWorldTransform(frameGraph.time());
     AffineTransformation cellMatrix = cell->cellMatrix();
     if(cell->is2D())
         cellMatrix(2,3) = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.
-    frameGraph.addPrimitive(std::move(linePrimitive), nodeTM * cellMatrix, frameGraph.addPickingGroup(pipeline), Box3(Point3(0), Point3(1)));
+    frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(linePrimitive), nodeTM * cellMatrix, Box3(Point3(0), Point3(1)), pipeline);
 }
 
 /******************************************************************************
@@ -206,9 +207,9 @@ void SimulationCellVis::renderSolid(const SimulationCell* cell, const PipelineFl
             corners.setUniformColor(cellColor());
         });
 
-    auto pickingGroup = frameGraph.addPickingGroup(pipeline);
-    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(edges), pipeline, pickingGroup);
-    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(corners), pipeline, pickingGroup);
+    FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::SceneLayer);
+    frameGraph.addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(edges), pipeline);
+    frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(corners), pipeline);
 }
 
 }   // End of namespace

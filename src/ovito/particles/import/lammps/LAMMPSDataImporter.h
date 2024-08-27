@@ -101,7 +101,7 @@ public:
     };
 
     /// Inspects the header of the given file and returns the detected LAMMPS atom style.
-    Future<LAMMPSAtomStyleHints> inspectFileHeader(const Frame& frame);
+    [[nodiscard]] Future<LAMMPSAtomStyleHints> inspectFileHeader(const Frame& frame);
 
     /// Returns the name string of the given LAMMPS atom style.
     static QString atomStyleName(LAMMPSAtomStyle atomStyle);

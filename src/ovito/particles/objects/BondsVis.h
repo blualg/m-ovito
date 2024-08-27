@@ -59,7 +59,7 @@ public:
     Q_ENUM(ColoringMode);
 
     /// Renders the visual element.
-    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
+    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the visual element.
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
@@ -118,7 +118,7 @@ public:
     const DataOORef<const SimulationCell>& simulationCell() const { return _simulationCell; }
 
     /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-    virtual QString infoString(Pipeline* pipeline, quint32 subobjectId) override;
+    virtual QString infoString(const Pipeline* pipeline, uint32_t subobjectId) override;
 
 private:
 

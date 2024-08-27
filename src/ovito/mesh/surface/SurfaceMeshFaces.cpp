@@ -196,7 +196,7 @@ VectorVis::VectorData SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPa
                     vectorProperty = filteredVectors.take();
             });
 
-        return {basePositions, vectorProperty, nullptr, nullptr};
+        return { basePositions, vectorProperty, nullptr, nullptr };
     }
     return {};
 }

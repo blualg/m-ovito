@@ -240,15 +240,6 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     }
     else {
         OVITO_CHECK_OPENGL(this, this->glClearColor(0, 0, 0, 0));
-#if 1
-        // Object IDs start at 1 when rendering for object picking.
-        constexpr quint32 startObjectID = 1;
-#else
-        // This can be enabled during debugging to avoid alpha!=1 pixels in the picking render buffer.
-        constexpr quint32 startObjectID = 0xEF000000;
-#endif
-        // Reset the object IDs assigned to the object picking groups.
-        objectPickingIdentifierMap()->prepare(*frameGraph, startObjectID);
     }
     OVITO_CHECK_OPENGL(this, this->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
     OVITO_REPORT_OPENGL_ERRORS(this);
@@ -256,11 +247,11 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     // Render background graphics, typically 2D primitives only.
     _isTransparencyPass = false;
     this->glDisable(GL_DEPTH_TEST);
-    renderFrameGraph(FrameGraph::RenderLayer::UnderLayer);
+    renderFrameGraph(FrameGraph::UnderLayer);
 
     // Render fully opaque 3D geometry.
     this->glEnable(GL_DEPTH_TEST);
-    bool hasTransparentGeometry = renderFrameGraph(FrameGraph::RenderLayer::SceneLayer);
+    bool hasTransparentGeometry = renderFrameGraph(FrameGraph::SceneLayer);
 
     // Let sub-classes perform additional steps to composite the results from multiple renderers, e.g. ANARI.
     performFrameCompositing();
@@ -270,8 +261,8 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
         renderTransparentGeometry(*glFrameBuffer);
 
     // Render highlighted geometry in a third and fourth pass.
-    if(!isPickingPass() && std::any_of(frameGraph->commands().begin(), frameGraph->commands().end(),
-                   [](const FrameGraph::RenderingCommand& command) { return command.renderLayer() == FrameGraph::RenderLayer::HighlightLayer1; })) {
+    if(!isPickingPass() && std::any_of(frameGraph->commandGroups().cbegin(), frameGraph->commandGroups().cend(),
+                   [](const FrameGraph::RenderingCommandGroup& group) { return group.layerType() == FrameGraph::HighlightLayer1; })) {
 
         this->glClearStencil(0);
         this->glClear(GL_STENCIL_BUFFER_BIT);
@@ -288,14 +279,14 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
         this->glDepthFunc(GL_LEQUAL);
         this->glEnable(GL_DEPTH_TEST);
 
-        renderFrameGraph(FrameGraph::RenderLayer::HighlightLayer1);
+        renderFrameGraph(FrameGraph::HighlightLayer1);
 
         this->glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
         this->glStencilMask(0x1);
         this->glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
         this->glDisable(GL_DEPTH_TEST);
 
-        renderFrameGraph(FrameGraph::RenderLayer::HighlightLayer2);
+        renderFrameGraph(FrameGraph::HighlightLayer2);
 
         this->glDepthFunc(GL_LESS);
         this->glDisable(GL_STENCIL_TEST);
@@ -303,7 +294,7 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
 
     // Render foreground graphics, typically 2D primitives only.
     this->glDisable(GL_DEPTH_TEST);
-    renderFrameGraph(FrameGraph::RenderLayer::OverLayer);
+    renderFrameGraph(FrameGraph::OverLayer);
 
     // Store the resource cache frame in the target frame buffer object to keep OpenGL resources alive
     // for subsequent frames.
@@ -365,7 +356,7 @@ void OpenGLRenderingJob::renderTransparentGeometry(OpenGLRenderingFrameBuffer& f
     if(orderIndependentTransparency()) frameBuffer.beginOITRendering();
 
     _isTransparencyPass = true;
-    renderFrameGraph(FrameGraph::RenderLayer::SceneLayer);
+    renderFrameGraph(FrameGraph::SceneLayer);
     _isTransparencyPass = false;
 
     // Second phase of the "Weighted Blended Order-Independent Transparency" method.
@@ -375,12 +366,8 @@ void OpenGLRenderingJob::renderTransparentGeometry(OpenGLRenderingFrameBuffer& f
 /******************************************************************************
  * Decides whether a command from the render graph should be executed by the renderer.
  ******************************************************************************/
-bool OpenGLRenderingJob::filterRenderingCommand(const FrameGraph::RenderingCommand& command, FrameGraph::RenderLayer currentRenderLayer)
+bool OpenGLRenderingJob::filterRenderingCommand(const FrameGraph::RenderingCommand& command, const FrameGraph::RenderingCommandGroup& commandGroup)
 {
-    // Skip commands that are not part of the current render layer.
-    if(command.renderLayer() != currentRenderLayer)
-        return true;
-
     // Skip commands that are not relevant for the current rendering pass.
     if(isPickingPass()) {
         if(command.skipInPickingPass())
@@ -412,39 +399,45 @@ void OpenGLRenderingJob::setupModelViewTransformation(const FrameGraph::Renderin
 /******************************************************************************
  * Executes the rendering commands stored in the given frame graph.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderFrameGraph(FrameGraph::RenderLayer renderLayer)
+bool OpenGLRenderingJob::renderFrameGraph(FrameGraph::RenderLayerType layerType)
 {
     bool hasTransparentGeometry = false;
 
-    for(const FrameGraph::RenderingCommand& command : frameGraph()->commands()) {
-        // Skip commands that are not part of the current render layer.
-        if(filterRenderingCommand(command, renderLayer))
+    for(const FrameGraph::RenderingCommandGroup& commandGroup : frameGraph()->commandGroups()) {
+        // Skip command groups that are not part of the current render layer.
+        if(commandGroup.layerType() != layerType)
             continue;
 
-        // Set up the model-view transformation matrix.
-        setupModelViewTransformation(command);
+        for(const FrameGraph::RenderingCommand& command : commandGroup.commands()) {
+            // Skip commands that are not relevant or not supported by this renderer.
+            if(filterRenderingCommand(command, commandGroup))
+                continue;
 
-        if(const ParticlePrimitive* primitive = dynamic_cast<const ParticlePrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderParticles(*primitive, command.pickingGroupId());
-        }
-        else if(const CylinderPrimitive* primitive = dynamic_cast<const CylinderPrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderCylinders(*primitive, command.pickingGroupId());
-        }
-        else if(const MeshPrimitive* primitive = dynamic_cast<const MeshPrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderMesh(*primitive, command.pickingGroupId());
-        }
-        else if(!isTransparencyPass()) {
-            if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
-                renderLinesImplementation(*primitive, command.pickingGroupId());
+            // Set up the model-view transformation matrix.
+            setupModelViewTransformation(command);
+
+            if(const ParticlePrimitive* primitive = dynamic_cast<const ParticlePrimitive*>(command.primitive())) {
+                hasTransparentGeometry |= renderParticles(*primitive, command);
             }
-            else if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
-                renderImageImplementation(*primitive);
+            else if(const CylinderPrimitive* primitive = dynamic_cast<const CylinderPrimitive*>(command.primitive())) {
+                hasTransparentGeometry |= renderCylinders(*primitive, command);
             }
-            else if(const MarkerPrimitive* primitive = dynamic_cast<const MarkerPrimitive*>(command.primitive())) {
-                renderMarkersImplementation(*primitive, command.pickingGroupId());
+            else if(const MeshPrimitive* primitive = dynamic_cast<const MeshPrimitive*>(command.primitive())) {
+                hasTransparentGeometry |= renderMesh(*primitive, command);
             }
+            else if(!isTransparencyPass()) {
+                if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
+                    renderLinesImplementation(*primitive, command);
+                }
+                else if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
+                    renderImageImplementation(*primitive);
+                }
+                else if(const MarkerPrimitive* primitive = dynamic_cast<const MarkerPrimitive*>(command.primitive())) {
+                    renderMarkersImplementation(*primitive, command);
+                }
+            }
+            OVITO_REPORT_OPENGL_ERRORS(this);
         }
-        OVITO_REPORT_OPENGL_ERRORS(this);
     }
     return hasTransparentGeometry;
 }
@@ -452,11 +445,11 @@ bool OpenGLRenderingJob::renderFrameGraph(FrameGraph::RenderLayer renderLayer)
 /******************************************************************************
  * Renders a particles primitive.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int pickingGroupID)
+bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     // Render particles immediately if they are all fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != (!primitive.transparencies())) {
-        renderParticlesImplementation(primitive, pickingGroupID);
+        renderParticlesImplementation(primitive, command);
         return false;
     }
     else {
@@ -491,7 +484,7 @@ bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int
                 ParticlePrimitive opaqueParticles = primitive;
                 opaqueParticles.setTransparencies({});
                 opaqueParticles.setIndices(opaqueIndices);
-                renderParticlesImplementation(opaqueParticles, pickingGroupID);
+                renderParticlesImplementation(opaqueParticles, command);
             }
         }
         return true;
@@ -501,11 +494,11 @@ bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int
 /******************************************************************************
  * Renders a cylinders primitive.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderCylinders(const CylinderPrimitive& primitive, int pickingGroupID)
+bool OpenGLRenderingJob::renderCylinders(const CylinderPrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     // Render primitives immediately if they are all fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != (!primitive.transparencies())) {
-        renderCylindersImplementation(primitive, pickingGroupID);
+        renderCylindersImplementation(primitive, command);
         return false;
     }
     return true;
@@ -514,11 +507,11 @@ bool OpenGLRenderingJob::renderCylinders(const CylinderPrimitive& primitive, int
 /******************************************************************************
  * Renders a triangle mesh primitive.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderMesh(const MeshPrimitive& primitive, int pickingGroupID)
+bool OpenGLRenderingJob::renderMesh(const MeshPrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     // Render mesh immediately if it is fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != primitive.isFullyOpaque()) {
-        renderMeshImplementation(primitive, pickingGroupID);
+        renderMeshImplementation(primitive, command);
         return false;
     }
     return true;

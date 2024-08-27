@@ -93,7 +93,7 @@ public:
     /// Runs the given function and returns its results as a Future.
     /// Note: The function may never be executed if the future is canceled before execution begins.
     template<typename Function>
-    auto launch(Function&& f) {
+    [[nodiscard]] auto launch(Function&& f) {
         using R = std::invoke_result_t<Function>;
         Promise<R> promise = Promise<R>::create();
 

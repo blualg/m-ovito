@@ -53,7 +53,7 @@ public:
     virtual void initializeOverlay(Viewport* viewport) override;
 
     /// Lets the overlay paint its contents into the framebuffer.
-    virtual void render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene) override;
+    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene) override;
 
     /// Moves the position of the overlay in the viewport by the given amount,
     /// which is specified as a fraction of the viewport render size.
@@ -80,10 +80,10 @@ protected:
 private:
 
     /// Draws the color legend for a Color Coding modifier.
-    void drawContinuousColorMap(FrameGraph& frameGraph, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping);
+    void drawContinuousColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping);
 
 	/// Draws the color legend for a typed property.
-	void drawDiscreteColorMap(FrameGraph& frameGraph, const QRectF& colorBarRect, FloatType legendSize, const Property* property);
+	void drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect, FloatType legendSize, const Property* property);
 
     // Determine the starting value and the tick spacing for a given color bar length and character size
     [[nodiscard]] std::tuple<FloatType, FloatType> getAutomaticTickPositions(FloatType lowerLimit, FloatType upperLimit,
@@ -169,8 +169,8 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, tickSpacing, setTickSpacing);
 
     // Controls the rotation of the title.
-    // For vertical colorbars the title can either be vertical (enabled=true) or horizontal (enabled=false).
-    // This flag has no effect for horizontal colorbars.
+    // For vertical color bars the title can either be vertical (enabled=true) or horizontal (enabled=false).
+    // This flag has no effect for horizontal color bars.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, titleRotationEnabled, setTitleRotationEnabled, PROPERTY_FIELD_MEMORIZE);
 
     // Toggle background.

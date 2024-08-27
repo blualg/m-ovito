@@ -732,6 +732,18 @@ Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const 
 }
 
 /******************************************************************************
+* Is called when the value of a non-animatable property field of this RefMaker has changed.
+******************************************************************************/
+void AMBERNetCDFImporter::propertyChanged(const PropertyFieldDescriptor* field)
+{
+    ParticleImporter::propertyChanged(field);
+
+    if((field == PROPERTY_FIELD(customColumnMapping) || field == PROPERTY_FIELD(useCustomColumnMapping)) && !isBeingLoaded()) {
+        requestReload();
+    }
+}
+
+/******************************************************************************
  * Saves the class' contents to the given stream.
  *****************************************************************************/
 void AMBERNetCDFImporter::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const

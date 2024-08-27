@@ -176,6 +176,17 @@ void TaskManager::submitWork(const OvitoObject* contextObject, fu2::unique_funct
 /******************************************************************************
 * Executes pending work items waiting in the queue.
 ******************************************************************************/
+void TaskManager::executePendingWork()
+{
+    OORef<UserInterface> guard(_ui); // To keep the task manager alive while processing work.
+
+    std::unique_lock<std::mutex> lock{_mutex};
+    executePendingWorkLocked(lock);
+}
+
+/******************************************************************************
+* Executes pending work items waiting in the queue.
+******************************************************************************/
 void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
 {
     // Check that we are really in the main thread here.

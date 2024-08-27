@@ -74,7 +74,7 @@ public:
     PipelineEvaluationResult evaluateInput(const PipelineEvaluationRequest& request) const;
 
     /// Asks the object for the result of the upstream data pipeline at several animation times.
-    Future<std::vector<PipelineFlowState>> evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times) const;
+    [[nodiscard]] Future<std::vector<PipelineFlowState>> evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times) const;
 
     /// Is called by the pipeline system before a new evaluation begins to query the validity interval and evaluation result type of this pipeline stage.
     virtual void preevaluate(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) override;

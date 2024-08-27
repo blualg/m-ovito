@@ -25,160 +25,88 @@
 #include <ovito/core/dataset/scene/SceneNode.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/viewport/Viewport.h>
-#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ObjectPickInfo);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(FrameGraph);
 
 /******************************************************************************
-* Add a 3d graphics primitive to the frame graph.
+* Adds a 3d rendering primitive to the current layer of the frame graph.
+* Automatically computes the bounding box of the primitive and the model-to-world transformation.
 ******************************************************************************/
-void FrameGraph::addPrimitive(std::unique_ptr<FrameGraphPrimitive> primitive, const Pipeline* pipeline, int pickingGroup, const Box3& boundingBox, RenderingCommand::Flags flags)
+void FrameGraph::addPrimitive(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, OORef<const Pipeline> pipeline, OORef<ObjectPickInfo> pickInfo, uint32_t pickElementOffset)
 {
     OVITO_ASSERT(pipeline);
+    OVITO_ASSERT(ExecutionContext::isMainThread()); // Must be called from main thread, because we are accessing the pipeline.
 
-    // Get world transformation matrix of scene node.
-    TimeInterval interval;
-    const AffineTransformation& nodeTM = pipeline->getWorldTransform(time(), interval);
-    addPrimitive(std::move(primitive), nodeTM, pickingGroup, boundingBox, flags);
+    const AffineTransformation& tm = pipeline->getWorldTransform(time());
+    Box3 boundingBox = primitive->computeBoundingBox(visCache());
+    group.addPrimitive(std::move(primitive), tm, boundingBox, std::move(pipeline), std::move(pickInfo), pickElementOffset);
 }
 
 /******************************************************************************
-* Add a 3d graphics primitive to the frame graph.
+* Adds a 3d rendering primitive to the current layer of the frame graph.
+* Automatically computes the bounding box of the primitive and the model-to-world transformation.
 ******************************************************************************/
-void FrameGraph::addPrimitive(std::unique_ptr<FrameGraphPrimitive> primitive, const AffineTransformation& modelTM, int pickingGroup, const Box3& boundingBox, RenderingCommand::Flags flags)
+void FrameGraph::addPrimitiveNonpickable(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, const Pipeline* pipeline)
 {
-    OVITO_ASSERT(primitive);
+    OVITO_ASSERT(pipeline);
+    OVITO_ASSERT(ExecutionContext::isMainThread()); // Must be called from main thread, because we are accessing the pipeline.
 
-    // Add the world-space bounding box of the primitive to the scene bounding box.
-    _sceneBoundingBox.addBox((boundingBox.isEmpty() ? primitive->computeBoundingBox(visCache()) : boundingBox).transformed(modelTM));
-
-    // Record the draw command.
-    addCommand(std::move(primitive), modelTM, pickingGroup, flags);
+    Box3 boundingBox = primitive->computeBoundingBox(visCache());
+    group.addPrimitiveNonpickable(std::move(primitive), pipeline->getWorldTransform(time()), boundingBox);
 }
 
 /******************************************************************************
-* Generates the visual representation of a scene node (and all its children).
+* Adds a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
+* Automatically computes the bounding box of the primitive and the model-to-world transformation.
 ******************************************************************************/
-void FrameGraph::renderSceneNode(OORef<SceneNode> node, OORef<Viewport> viewport)
+void FrameGraph::RenderingCommandGroup::addPrimitive(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box, OORef<const Pipeline> pickablePipeline, OORef<ObjectPickInfo> pickInfo, uint32_t pickElementOffset)
 {
-    OVITO_ASSERT(node);
+    // Add the world-space bounding box of the primitive to the group's bounding box.
+    _boundingBox.addBox(box.transformed(tm));
 
-    // Skip node if it is hidden in the current viewport.
-    if(viewport && node->isHiddenInViewport(viewport, false))
-        return;
-
-    // Stop if rendering has been canceled.
-    this_task::throwIfCanceled();
-
-    if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
-        // Do not render node if it is the view node of the viewport or
-        // if it is the target of the view node.
-        if(!viewport || !viewport->viewNode() || (viewport->viewNode() != node && viewport->viewNode()->lookatTargetNode() != node)) {
-
-            // Evaluate pipeline and render the resulting data objects.
-            PipelineEvaluationResult pipelineResult = pipeline->evaluatePipeline(PipelineEvaluationRequest(time(), stopOnPipelineError(), isInteractive()));
-            if(const PipelineFlowState& state = pipelineResult.result()) {
-                // Invoke all vis elements of all data objects in the pipeline state.
-                ConstDataObjectPath dataObjectPath;
-                renderDataObject(state.data(), pipeline, state, dataObjectPath);
-                OVITO_ASSERT(dataObjectPath.empty());
-            }
-
-            // Flag the entire frame graph as preliminary if the obtained pipeline output is preliminary.
-            if(pipelineResult.evaluationTypes().testFlag(PipelineEvaluationResult::EvaluationType::Noninteractive) == false)
-                _isPreliminaryState = true;
-        }
-    }
-
-    // Render child nodes.
-    for(SceneNode* child : node->children()) {
-        renderSceneNode(child, viewport);
-    }
+    addCommand(RenderingCommand::NoFlags, std::move(primitive), tm, std::move(pickablePipeline), std::move(pickInfo), pickElementOffset);
 }
 
 /******************************************************************************
-* Generates the visual representation of a data object and all its sub-objects.
+* Adds a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
+* Automatically computes the bounding box of the primitive and the model-to-world transformation.
 ******************************************************************************/
-void FrameGraph::renderDataObject(const DataObject* dataObj, const Pipeline* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath)
+void FrameGraph::RenderingCommandGroup::addPrimitiveNonpickable(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box)
 {
-    // Stop if rendering has been canceled.
-    this_task::throwIfCanceled();
+    // Add the world-space bounding box of the primitive to the group's bounding box.
+    _boundingBox.addBox(box.transformed(tm));
 
-    bool isOnStack = false;
-
-    // Call all attached vis elements of the data object.
-    for(DataVis* vis : dataObj->visElements()) {
-        // Let the PipelineSceneNode substitude the vis element with another one.
-        vis = pipeline->getReplacementVisElement(vis);
-        if(vis->isEnabled()) {
-            // Push the data object onto the stack.
-            if(!isOnStack) {
-                dataObjectPath.push_back(dataObj);
-                isOnStack = true;
-            }
-            PipelineStatus status;
-            try {
-                // Let the vis element do the rendering.
-                status = vis->render(dataObjectPath, state, *this, pipeline);
-                // Pass error status codes to the exception handler below.
-                if(status.type() == PipelineStatus::Error)
-                    throw Exception(status.text());
-                // In console mode, print warning messages to the terminal.
-                if(status.type() == PipelineStatus::Warning && !status.text().isEmpty() && !Application::guiMode()) {
-                    qWarning() << "WARNING: Visual element" << vis->objectTitle() << "reported:" << status.text();
-                }
-            }
-            catch(Exception& ex) {
-                status = ex;
-                ex.prependToMessage(QStringLiteral("Visual element '%1' reported an error: ").arg(vis->objectTitle()));
-                // If the vis element fails, interrupt rendering process in console mode; swallow exceptions in GUI mode.
-                if(stopOnPipelineError())
-                    throw;
-            }
-            // Unless the vis element has indicated that it is in control of the status,
-            // automatically adopt the outcome of the rendering operation as status code.
-            if(!vis->manualErrorStateControl())
-                vis->setStatus(status);
-        }
-    }
-
-    // Recursively visit the sub-objects of the data object and render them as well.
-    dataObj->visitSubObjects([&](const DataObject* subObject) {
-        // Push the next data object onto the stack.
-        if(!isOnStack) {
-            dataObjectPath.push_back(dataObj);
-            isOnStack = true;
-        }
-        renderDataObject(subObject, pipeline, state, dataObjectPath);
-        return false;
-    });
-
-    // Pop the data object from the stack.
-    if(isOnStack)
-        dataObjectPath.pop_back();
+    addCommand(RenderingCommand::ExcludeFromPicking, std::move(primitive), tm);
 }
 
 /******************************************************************************
-* Render the overlays/underlays of a viewport.
+* Adds a primitive to the frame graph containing pre-projected coordinates.
 ******************************************************************************/
-void FrameGraph::renderOverlays(Viewport* viewport, bool underlays, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams)
+void FrameGraph::RenderingCommandGroup::addPrimitivePreprojected(std::unique_ptr<RenderingPrimitive> primitive)
 {
-    for(ViewportOverlay* layer : (underlays ? viewport->underlays() : viewport->overlays())) {
-        if(layer->isEnabled()) {
-            layer->render(*this, logicalViewportRect, physicalViewportRect, noninteractiveProjParams, viewport->scene());
-            this_task::throwIfCanceled();
-        }
+    addCommand(RenderingCommand::ExcludeFromPicking, std::move(primitive), AffineTransformation::Zero());
+}
+
+/******************************************************************************
+* Computes the combined scene bounding box from all command groups.
+******************************************************************************/
+void FrameGraph::computeSceneBoundingBox()
+{
+    for(const RenderingCommandGroup& group : _commandGroups) {
+        _sceneBoundingBox.addBox(group.boundingBox());
     }
 }
 
 /******************************************************************************
 * Renders a 2d polyline in the viewport.
 ******************************************************************************/
-void FrameGraph::render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed, const QSize& logicalViewportSize)
+void FrameGraph::RenderingCommandGroup::render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed, const QSize& logicalViewportSize)
 {
     OVITO_ASSERT(count >= 2);
+    OVITO_ASSERT(layerType() == OverLayer || layerType() == UnderLayer);
 
     FloatType w = logicalViewportSize.width();
     FloatType h = logicalViewportSize.height();
@@ -203,9 +131,7 @@ void FrameGraph::render2DPolyline(const Point2* points, int count, const ColorA&
     primitive->setUniformColor(color);
     primitive->setPositions(vertices.take());
 
-    auto previousRenderLayer = setCurrentRenderLayer(RenderLayer::OverLayer);
-    addCommand(std::move(primitive), AffineTransformation::Zero());
-    setCurrentRenderLayer(previousRenderLayer);
+    addPrimitivePreprojected(std::move(primitive));
 }
 
 /******************************************************************************
@@ -213,85 +139,87 @@ void FrameGraph::render2DPolyline(const Point2* points, int count, const ColorA&
  ******************************************************************************/
 void FrameGraph::renderTextAsImagePrimitives()
 {
-    for(RenderingCommand& command : _commands) {
-        if(const TextPrimitive* primitive = dynamic_cast<const TextPrimitive*>(command.primitive())) {
-            if(!primitive->text().isEmpty()) {
-                // Look up the Qt image for the text in the cache.
-                const auto& [image, offset] = visCache().lookup<std::tuple<QImage, QPointF>>(
-                    RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, FloatType, FloatType, qreal, QString, bool, int, Qt::TextFormat>{
-                                                            primitive->text(), primitive->color(),
-                                                            primitive->outlineColor(), primitive->outlineWidth(), primitive->rotation(),
-                                                            devicePixelRatio(), primitive->font().key(), primitive->useTightBox(),
-                                                            primitive->alignment(), primitive->textFormat()},
-                    [&](QImage& image, QPointF& offset) {
-                        Qt::TextFormat resolvedTextFormat = primitive->resolvedTextFormat();
+    for(RenderingCommandGroup& commandGroup : _commandGroups) {
+        for(RenderingCommand& command : commandGroup.commands()) {
+            if(const TextPrimitive* primitive = dynamic_cast<const TextPrimitive*>(command.primitive())) {
+                if(!primitive->text().isEmpty()) {
+                    // Look up the Qt image for the text in the cache.
+                    const auto& [image, offset] = visCache().lookup<std::tuple<QImage, QPointF>>(
+                        RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, FloatType, FloatType, qreal, QString, bool, int, Qt::TextFormat>{
+                                                                primitive->text(), primitive->color(),
+                                                                primitive->outlineColor(), primitive->outlineWidth(), primitive->rotation(),
+                                                                devicePixelRatio(), primitive->font().key(), primitive->useTightBox(),
+                                                                primitive->alignment(), primitive->textFormat()},
+                        [&](QImage& image, QPointF& offset) {
+                            Qt::TextFormat resolvedTextFormat = primitive->resolvedTextFormat();
 
-                        // Measure text size in local text coordinate system (does NOT include alignment/offset/rotation/outline).
-                        // Bounds are calculated as if text was drawn at base coordinates (0,0).
-                        QRectF textBounds = primitive->queryLocalBounds(devicePixelRatio(), resolvedTextFormat);
+                            // Measure text size in local text coordinate system (does NOT include alignment/offset/rotation/outline).
+                            // Bounds are calculated as if text was drawn at base coordinates (0,0).
+                            QRectF textBounds = primitive->queryLocalBounds(devicePixelRatio(), resolvedTextFormat);
 
-                        // Compute axis-aligned bounding box in absolute window coordinate system.
-                        QRectF boundingBox = primitive->computeBounds(textBounds.size(), devicePixelRatio());
+                            // Compute axis-aligned bounding box in absolute window coordinate system.
+                            QRectF boundingBox = primitive->computeBounds(textBounds.size(), devicePixelRatio());
 
-                        // Generate texture image.
-                        QRect pixelBounds = boundingBox.toAlignedRect();
-                        image = QImage(pixelBounds.width(), pixelBounds.height(), preferredImageFormat());
-                        image.setDevicePixelRatio(devicePixelRatio());
-                        image.fill(0);
-                        QPainter painter(&image);
-                        painter.setRenderHint(QPainter::Antialiasing);
-                        painter.setRenderHint(QPainter::TextAntialiasing);
+                            // Generate texture image.
+                            QRect pixelBounds = boundingBox.toAlignedRect();
+                            image = QImage(pixelBounds.width(), pixelBounds.height(), preferredImageFormat());
+                            image.setDevicePixelRatio(devicePixelRatio());
+                            image.fill(0);
+                            QPainter painter(&image);
+                            painter.setRenderHint(QPainter::Antialiasing);
+                            painter.setRenderHint(QPainter::TextAntialiasing);
 
-                        painter.translate(
-                            (primitive->position().x() - boundingBox.left()) / devicePixelRatio(),
-                            (primitive->position().y() - boundingBox.top()) / devicePixelRatio());
+                            painter.translate(
+                                (primitive->position().x() - boundingBox.left()) / devicePixelRatio(),
+                                (primitive->position().y() - boundingBox.top()) / devicePixelRatio());
 
-                        // Start with top-left alignment.
-                        QPointF textOffset(-textBounds.left(), -textBounds.top());
+                            // Start with top-left alignment.
+                            QPointF textOffset(-textBounds.left(), -textBounds.top());
 
-                        // Apply horizontal alignment.
-                        if(primitive->alignment() & Qt::AlignRight)
-                            textOffset.rx() += -textBounds.width();
-                        else if(primitive->alignment() & Qt::AlignHCenter)
-                            textOffset.rx() += -textBounds.width() / 2;
+                            // Apply horizontal alignment.
+                            if(primitive->alignment() & Qt::AlignRight)
+                                textOffset.rx() += -textBounds.width();
+                            else if(primitive->alignment() & Qt::AlignHCenter)
+                                textOffset.rx() += -textBounds.width() / 2;
 
-                        // Apply vertical alignment.
-                        if(primitive->alignment() & Qt::AlignBottom)
-                            textOffset.ry() += -textBounds.height();
-                        else if(primitive->alignment() & Qt::AlignVCenter)
-                            textOffset.ry() += -textBounds.height() / 2;
+                            // Apply vertical alignment.
+                            if(primitive->alignment() & Qt::AlignBottom)
+                                textOffset.ry() += -textBounds.height();
+                            else if(primitive->alignment() & Qt::AlignVCenter)
+                                textOffset.ry() += -textBounds.height() / 2;
 
-                        if(primitive->rotation() != 0) {
-                            // Rotate around point given by the primitive's position.
-                            qreal x = textOffset.x() * std::cos(primitive->rotation()) - textOffset.y() * std::sin(primitive->rotation());
-                            qreal y = textOffset.x() * std::sin(primitive->rotation()) + textOffset.y() * std::cos(primitive->rotation());
-                            painter.translate(x / devicePixelRatio(), y / devicePixelRatio());
-                            painter.rotate(qRadiansToDegrees(primitive->rotation()));
-                        }
-                        else {
-                            painter.translate(textOffset.x() / devicePixelRatio(), textOffset.y() / devicePixelRatio());
-                        }
+                            if(primitive->rotation() != 0) {
+                                // Rotate around point given by the primitive's position.
+                                qreal x = textOffset.x() * std::cos(primitive->rotation()) - textOffset.y() * std::sin(primitive->rotation());
+                                qreal y = textOffset.x() * std::sin(primitive->rotation()) + textOffset.y() * std::cos(primitive->rotation());
+                                painter.translate(x / devicePixelRatio(), y / devicePixelRatio());
+                                painter.rotate(qRadiansToDegrees(primitive->rotation()));
+                            }
+                            else {
+                                painter.translate(textOffset.x() / devicePixelRatio(), textOffset.y() / devicePixelRatio());
+                            }
 
-                        // Draw text.
-                        primitive->draw(painter, resolvedTextFormat, textBounds.width() / devicePixelRatio());
-                        painter.end();
+                            // Draw text.
+                            primitive->draw(painter, resolvedTextFormat, textBounds.width() / devicePixelRatio());
+                            painter.end();
 
-                        // Store image primitive in cache including offset vector relative to primitive position.
-                        offset = boundingBox.topLeft() - QPointF(primitive->position().x(), primitive->position().y());
-                    });
+                            // Store image primitive in cache including offset vector relative to primitive position.
+                            offset = boundingBox.topLeft() - QPointF(primitive->position().x(), primitive->position().y());
+                        });
 
-                // Compute absolute image paint position by adding precomputed offset vector to current primitive position.
-                QPoint alignedPos = (QPointF(primitive->position().x(), primitive->position().y()) + offset).toPoint();
-                std::unique_ptr<ImagePrimitive> imagePrimitive = std::make_unique<ImagePrimitive>();
-                imagePrimitive->setRectWindow(QRect(alignedPos, image.size()));
-                imagePrimitive->setImage(image);
+                    // Compute absolute image paint position by adding precomputed offset vector to current primitive position.
+                    QPoint alignedPos = (QPointF(primitive->position().x(), primitive->position().y()) + offset).toPoint();
+                    std::unique_ptr<ImagePrimitive> imagePrimitive = std::make_unique<ImagePrimitive>();
+                    imagePrimitive->setRectWindow(QRect(alignedPos, image.size()));
+                    imagePrimitive->setImage(image);
 
-                // Replace original text primitive with the image primitive.
-                command.setPrimitive(std::move(imagePrimitive));
-            }
-            else {
-                // Remove empty text primitives.
-                command.setPrimitive({});
+                    // Replace original text primitive with the image primitive.
+                    command.setPrimitive(std::move(imagePrimitive));
+                }
+                else {
+                    // Remove empty text primitives.
+                    command.setPrimitive({});
+                }
             }
         }
     }
@@ -302,14 +230,16 @@ void FrameGraph::renderTextAsImagePrimitives()
 ******************************************************************************/
 void FrameGraph::adjustWireframeLineWidths()
 {
-    for(RenderingCommand& command : _commands) {
-        if(LinePrimitive* primitive = dynamic_cast<LinePrimitive*>(command.primitive())) {
-            // Make the line 1 device-independent pixel wide.
-            if(primitive->lineWidth() <= 0) {
-                primitive->setLineWidth(devicePixelRatio());
-            }
-            if(primitive->pickingLineWidth() <= 0) {
-                primitive->setPickingLineWidth(defaultLinePickingWidth());
+    for(RenderingCommandGroup& commandGroup : _commandGroups) {
+        for(RenderingCommand& command : commandGroup.commands()) {
+            if(LinePrimitive* primitive = dynamic_cast<LinePrimitive*>(command.primitive())) {
+                // Make the line 1 device-independent pixel wide.
+                if(primitive->lineWidth() <= 0) {
+                    primitive->setLineWidth(devicePixelRatio());
+                }
+                if(primitive->pickingLineWidth() <= 0) {
+                    primitive->setPickingLineWidth(defaultLinePickingWidth());
+                }
             }
         }
     }
