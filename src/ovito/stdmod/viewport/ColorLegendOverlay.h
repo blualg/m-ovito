@@ -77,6 +77,9 @@ protected:
     /// Is called when the value of a reference field of this object changes.
     virtual void referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex) override;
 
+    /// This method is called once for this object after they have been completely loaded from a stream.
+    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
 private:
 
     /// Draws the color legend for a Color Coding modifier.
