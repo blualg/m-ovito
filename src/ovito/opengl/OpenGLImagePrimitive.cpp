@@ -44,6 +44,8 @@ void OpenGLRenderingJob::renderImageImplementation(const ImagePrimitive& primiti
 
     // Turn the image into an OpenGL texture.
     QOpenGLTexture* texture = uploadImage(primitive.image());
+    if(!texture || !texture->isCreated())
+        return;
     texture->bind();
 
     // Transform rectangle to normalized device coordinates.
