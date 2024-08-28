@@ -135,9 +135,11 @@ public:
 	};
 
 	/// A group of rendering commands.
-	class RenderingCommandGroup
-	{
-	public:
+    class OVITO_CORE_EXPORT RenderingCommandGroup
+    {
+        Q_DISABLE_COPY(RenderingCommandGroup)
+
+    public:
 
 		/// Constructor.
 		explicit RenderingCommandGroup(RenderLayerType layerType) : _layerType(layerType) {}

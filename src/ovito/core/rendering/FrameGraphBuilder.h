@@ -34,6 +34,8 @@ namespace Ovito {
 */
 class OVITO_CORE_EXPORT FrameGraphBuilder
 {
+    Q_DISABLE_COPY(FrameGraphBuilder)
+
 public:
 
 	/// Generates the frame graph contents for a scene.
