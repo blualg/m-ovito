@@ -70,13 +70,17 @@ QRectF TextPrimitive::queryLocalBounds(qreal devicePixelRatio, Qt::TextFormat te
         if(textFormatHint != Qt::AutoText) resolvedTextFormat = textFormatHint;
         else resolvedTextFormat = Qt::mightBeRichText(text()) ? Qt::RichText : Qt::PlainText;
     }
-#ifndef Q_OS_WIN
-    if(resolvedTextFormat != Qt::RichText) {
-#else
+#if defined(Q_OS_WIN)
     // On Windows, our own method for painting the text outline using QPainterPath does not work correctly.
     // Internal rounding issues in Qt's font engine lead to a mismatch between the outline and the filled text painted by QPainter::drawText().
     // As a workaround, fall back to the more expensive QTextDocument-based method for rendering the outline, which otherwise is only used for formatted text.
     if(resolvedTextFormat != Qt::RichText && effectiveOutlineWidth(devicePixelRatio) == 0) {
+#elif defined(Q_OS_MACOS)
+    // On macOS, the QPainterPath-based method and the regular text drawing method match only in GUI mode.
+    // In headless mode, outline and interior font size do not match (for unknown reasons).
+    if(resolvedTextFormat != Qt::RichText && Application::instance()->guiMode()) {
+#else
+    if(resolvedTextFormat != Qt::RichText) {
 #endif
         if(!useTightBox()) {
             textBounds = QFontMetricsF(font()).boundingRect(text());
@@ -151,14 +155,17 @@ void TextPrimitive::draw(QPainter& painter, Qt::TextFormat resolvedTextFormat, q
 {
     ensureFontRenderingCapability();
 
-#ifndef Q_OS_WIN
-    if(resolvedTextFormat != Qt::RichText) {
-#else
+#if defined(Q_OS_WIN)
     // On Windows, our own method for painting the text outline using QPainterPath does not work correctly.
-    // Internal rounding issues in Qt's font engine lead to a mismatch between the outline and the filled text painted
-    // by QPainter::drawText(). As a workaround, fall back to the more expensive QTextDocument-based method for
-    // rendering the outline, which otherwise is only used for formatted text.
-    if(resolvedTextFormat != Qt::RichText && effectiveOutlineWidth() == 0) {
+    // Internal rounding issues in Qt's font engine lead to a mismatch between the outline and the filled text painted by QPainter::drawText().
+    // As a workaround, fall back to the more expensive QTextDocument-based method for rendering the outline, which otherwise is only used for formatted text.
+    if(resolvedTextFormat != Qt::RichText && effectiveOutlineWidth(devicePixelRatio) == 0) {
+#elif defined(Q_OS_MACOS)
+    // On macOS, the QPainterPath-based method and the regular text drawing method match only in GUI mode.
+    // In headless mode, outline and interior font size do not match (for unknown reasons).
+    if(resolvedTextFormat != Qt::RichText && Application::instance()->guiMode()) {
+#else
+    if(resolvedTextFormat != Qt::RichText) {
 #endif
         drawPlainText(painter);
     }

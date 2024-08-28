@@ -59,7 +59,7 @@ class OVITO_CORE_EXPORT FrameGraph : public OvitoObject
 
 public:
 
-    /// The type of layers that get rendered on top of each other. Each rendering command belongs to of one of these layers.
+    /// The type of layers that get rendered on top of each other. Each rendering command belongs to one of these layers.
     enum RenderLayerType {
         UnderLayer,
         SceneLayer,
