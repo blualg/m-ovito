@@ -174,8 +174,7 @@ void WidgetActionManager::on_FileSave_triggered()
     if(!dataset())
         return;
 
-    // Set focus to main window.
-    // This will process any pending user inputs in QLineEdit fields.
+    // Set focus to main window to process any pending user inputs in QLineEdit widgets.
     mainWindow().setFocus();
 
     mainWindow().handleExceptions([&] {
@@ -191,8 +190,7 @@ void WidgetActionManager::on_FileSaveAs_triggered()
     if(!dataset())
         return;
 
-    // Set focus to main window.
-    // This will process any pending user inputs in QLineEdit fields.
+    // Set focus to main window to process any pending user inputs in QLineEdit widgets.
     mainWindow().setFocus();
 
     mainWindow().handleExceptions([&] {
@@ -287,8 +285,7 @@ void WidgetActionManager::on_FileExport_triggered()
         return;
     }
 
-    // Set focus to main window.
-    // This will process any pending user inputs in QLineEdit fields.
+    // Set focus to main window to process any pending user inputs in QLineEdit widgets.
     mainWindow().setFocus();
 
     // Build filter string.
@@ -350,7 +347,7 @@ void WidgetActionManager::on_FileExport_triggered()
     settings.setValue("last_export_filter", dialog.selectedNameFilter());
 
     // Export to selected file.
-    bool val = mainWindow().handleExceptions([&]() {
+    mainWindow().handleExceptions([&]() {
         int exportFilterIndex = filterStrings.indexOf(dialog.selectedNameFilter());
         OVITO_ASSERT(exportFilterIndex >= 0 && exportFilterIndex < exporterTypes.size());
 

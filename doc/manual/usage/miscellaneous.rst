@@ -24,15 +24,15 @@ Spinner controls
   :width: 50%
   :align: left
 
-A spinner widget is a user interface element used throughout the program for editing numerical parameters (see video on the left).
-Here is how you use the spinner widget to vary the parameter value: (1) Click the spinner's up arrow once to increment the value; click the down arrow to decrement the value in a stepwise manner.
-(2) Alternatively, click and hold down the mouse button to vary the value continuously. Drag the cursor upward/downward to increase/decrease the parameter value.
-When you drag the cursor toward the edge of your screen, OVITO will wrap the cursor position to allow for infinite scrolling.
+A spinner widget is a user interface element used throughout the program for editing numeric parameters (see video on the left).
+Here is how to use the spinner widget to vary the parameter value: (1) Click the spinner's up arrow once to increment the value; click the down arrow to decrease the value in a stepwise manner.
+(2) Alternatively, click and hold down the mouse button to change the value continuously. Drag the mouse up or down to increase/decrease the parameter value.
+When you drag the cursor to the edge of the screen, OVITO will wrap around the cursor position to allow infinite scrolling.
 
 .. attention::
 
-  On macOS, the *Accessibility* permission must be given to the application for it to programmatically reposition the cursor. You will be prompted
-  for accessibility access the first time it is needed. You can change this app permission at any time in the macOS system settings
+  On macOS, the application must be given the *Accessibility* permission to programmatically reposition the cursor. You will be prompted
+  for the accessibility permission the first time it is needed. You can change this permission for the app at any time in the macOS system preferences
   by going to :menuselection:`Apple menu --> System Settings --> Privacy & Security --> Accessibility`.
 
 .. _usage.data_inspector:
@@ -65,11 +65,11 @@ OVITO offers several different layer types, which may be added to a viewport fro
 Modifier & viewport layer templates
 -----------------------------------
 
-When working with OVITO on a regular basis, you may find yourself using the same modifiers again and again.
-Certain modifiers are often used in the same combination to accomplish specific analysis, filter, or visualization
+When working with OVITO on a regular basis, you may find yourself using the same modifiers over and over again.
+Certain modifiers are often used in the same combination to perform specific analysis, filtering, or visualization
 tasks. To make your life easier and save you from repetitive work, OVITO allows you to define so-called *modifier
-templates*. These are pre-configured modifiers, or combinations of several modifiers, that can be inserted into
-the data pipeline with just a single click. In the same way you can define templates for pre-configured viewport
+templates*. These are preconfigured modifiers, or combinations of several modifiers, that can be inserted into
+the data pipeline with just a single click. In the same way, you can define templates for preconfigured viewport
 layers that you use frequently. See :ref:`modifier_templates` to learn more about this program feature.
 
 .. _usage.scripting:
@@ -77,19 +77,18 @@ layers that you use frequently. See :ref:`modifier_templates` to learn more abou
 Python scripting |ovito-pro|
 ----------------------------
 
-:ref:`OVITO Pro <credits.ovito_pro>` provides a scripting interface that lets you automate analysis and visualization tasks.
-This can be useful, for example, when a large number of input files needs to be batch-processed.
+:ref:`OVITO Pro <credits.ovito_pro>` provides a scripting interface that allows you to automate analysis and visualization tasks.
+This can be useful, for example, when a large number of input files need to be batch processed.
 The scripting interface provides programmatic access to most program features such as simulation data input and output,
 modifiers, and rendering of images and movies.
 
-Scripts for OVITO Pro are written in the Python 3 programming language.
-The OVITO Python API is described in the :ref:`scripting reference manual <scripting_manual>`,
-which is also accessible from the help menu of OVITO.
+Scripts for OVITO Pro are written in the Python programming language.
+The OVITO Python API is described in the :ref:`scripting reference manual <scripting_manual>`, which is also available from the help menu of OVITO.
 
-In addition to automating workflows, the scripting interface allows you to extend the OVITO Pro desktop application.
+In addition to workflow automation, the scripting interface allows you to extend the OVITO Pro desktop application.
 For example, the :ref:`Python script modifier <particles.modifiers.python_script>`
-provides a mechanism for you to write your own data manipulation functions and integrate them into
+provides a mechanism for writing custom data manipulation functions and integrating them into
 OVITO's modification pipeline system. Furthermore, the :ref:`Python script viewport layer <viewport_layers.python_script>`
-lets you write a Python function that adds arbitrary 2D graphics
+allows you to write a Python function that overlays arbitrary 2D graphics
 on top of rendered images and enrich the visualization with additional information
 such as a :ref:`scale bar <howto.scale_bar>`.

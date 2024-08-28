@@ -90,6 +90,38 @@ public:
         }
     }
 
+    /// Runs the given function and returns its results as a Future.
+    /// Note: The function may never be executed if the future is canceled before execution begins.
+    template<typename Function>
+    [[nodiscard]] auto launch(Function&& f) {
+        using R = std::invoke_result_t<Function>;
+        Promise<R> promise = Promise<R>::create();
+
+        // Inherit the priority status from the parent task.
+        if(this_task::get() && this_task::get()->isHighPriorityTask())
+            promise.task()->setHighPriorityTask();
+
+        Future<R> future = promise.future();
+        execute([promise = std::move(promise), f = std::forward<Function>(f)]() mutable noexcept {
+            if(promise.isCanceled())
+                return;
+            try {
+                Task::Scope taskScope(promise.task());
+                if constexpr(!std::is_void_v<R>)
+                    promise.setResult(std::invoke(std::move(f)));
+                else
+                    std::invoke(std::move(f));
+                promise.setFinished();
+            }
+            catch(const OperationCanceled&) {}
+            catch(...) {
+                OVITO_ASSERT(!promise.isFinished());
+                promise.captureExceptionAndFinish();
+            }
+        });
+        return future;
+    }
+
     /// Returns the object this executor is associated with.
     /// Work submitted to this executor will be executed in the context of the object.
     const OOWeakRef<const OvitoObject>& contextObject() const { return _contextObject; }

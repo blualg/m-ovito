@@ -197,11 +197,12 @@ VectorVis::VectorData Lines::getVectorVisData(const ConstDataObjectPath& path, c
                             }
                         });
 
-                    return {filteredPositions, filteredVectors, nullptr, nullptr};
+                    return { filteredPositions, filteredVectors, nullptr, nullptr };
                 }
             }
         }
     }
     return {};
 }
+
 }  // namespace Ovito

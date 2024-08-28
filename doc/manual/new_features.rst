@@ -25,16 +25,19 @@ Version 3.11.0 (xx-xxx-2024)
 - :ref:`particles.modifiers.dislocation_analysis` modifier: Ensure cross-platform reproducible results
 - User can now save pre-configured templates for viewport layers and reuse them in other scenes
 - Simulation file import: Updated mass of *Zn* in internal table of elements from 65.409 (pre 2007 value) to 65.38 (see https://www.ciaaw.org/zinc.htm) - old value is still recognized for compatibility reasons
-- Added support for reading modern Aspherix *.vtm* files that have a "Bodies" section
+- Added support for reading modern Aspherix *.vtm* files that have a "Bodies" section. Bodies information from non-convex particle simulations is read in as a :ref:`data table <scene_objects.data_table>`.
 - OVITO Basic now includes demo versions of the high-fidelity rendering backends :ref:`OSPRay <rendering.ospray_renderer>`, :ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`
+- New interactive viewport rendering backend: VisRTX
 - Fixed regression due to update of the Qt framework: Missing colors in plot legends
 - Fixed: Axis scales and labels are invisible (white on white) in exported data plots if dark mode UI is active
 - Fixed: Mouse wrapping in Spinner Widget for vertical multi screen setups.
-- Fixed: Spinner widget mouse warp not working on macOS (requires accessibility access). 
+- Fixed: Spinner widget mouse warp not working on macOS (requires accessibility access).
+- Fixed: Imported property names ending in "_". Trailing "_" will now be stripped during import.
 - CA file import (loading precomputed DXA results) is now an exclusive OVITO Pro feature
 - :ref:`particles.modifiers.slice` and :ref:`particles.modifiers.affine_transformation` modifiers: Value increments used for step-wise parameter adjustment are now proportional to the simulation cell size instead of the current parameter value
 - Updated third-party components: OpenSSL, Qt, PySide6, Python, Qwt
 - |ovito-python| :py:class:`~ovito.modifiers.ConstructSurfaceModifier`: Option :py:attr:`~ovito.modifiers.ConstructSurfaceModifier.map_particles_to_regions` now outputs per-region particle membership lists
+- |ovito-python| :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` can now process multiple input points in parallel.
 - |ovito-python| New method :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` to efficiently determine the closest particles around several spatial locations.
 - |ovito-python| New class attribute :py:attr:`ovito.pipeline.Pipeline.frames`
 - |ovito-python| New class attributes :py:attr:`ovito.pipeline.FileSource.playback_ratio`, :py:attr:`ovito.pipeline.FileSource.playback_start_time`, and :py:attr:`ovito.pipeline.FileSource.static_frame`
@@ -57,6 +60,7 @@ Version 3.11.0 (xx-xxx-2024)
 - |ovito-pro| :ref:`rendering.visrtx_renderer`: Improved rendering performance for scenes with large numbers of cubic, ellipsoidal, or superquadric particles
 - |ovito-pro| Environment variable ``OVITO_SAFE_MODE=1`` effectively blocks execution of Python scripts embedded in .ovito session state files from untrusted sources
 - |ovito-pro| Fix: :ref:`particles.modifiers.time_averaging` modifier uses wrong divisor in average calculation if trajectory length is not an integer multiple of the sampling frequency
+- |ovito-pro| Updated the template in the :ref:`particles.modifiers.python_script` modifier to default to the :ref:`writing_custom_modifiers.advanced_interface`.
 
 .. sidebar::
 
@@ -701,7 +705,7 @@ Version 3.7.6 (23-Jun-2022)
 * Fix: Grain segmentation algorithm never terminates for particular inputs.
 * PyPI package for Linux: disabled built-in SSH client to improve compatibility with Ubuntu 22.04, which doesn't provide OpenSSL 1.1 libraries anymore.
 * |ovito-pro| New Python class :py:class:`ovito.data.SurfaceMeshTopology`, which provides script access to the face connectivity information of surface meshes.
-* |ovito-pro| Conda channel now provides additional variants of the ```ovito`` <https://conda.ovito.org>`_ package (built against ``tbb`` v2020 and v2021), which avoids dependency conflicts with certain third-party packages when installing them in the same environment.
+* |ovito-pro| Conda channel now provides additional variants of the `ovito <https://conda.ovito.org>`__ package (built against ``tbb`` v2020 and v2021), which avoids dependency conflicts with certain third-party packages when installing them in the same environment.
 
 .. sidebar::
 

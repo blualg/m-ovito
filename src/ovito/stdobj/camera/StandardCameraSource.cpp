@@ -216,8 +216,7 @@ void StandardCameraSource::setIsTargetCamera(bool enable)
                 targetNode->setSceneNodeName(tr("%1.target").arg(pipeline->sceneNodeName()));
                 parentNode->addChildNode(targetNode);
                 // Position the new target to match the current orientation of the camera.
-                TimeInterval iv;
-                const AffineTransformation& cameraTM = pipeline->getWorldTransform(time, iv);
+                const AffineTransformation& cameraTM = pipeline->getWorldTransform(time);
                 Vector3 cameraPos = cameraTM.translation();
                 Vector3 cameraDir = cameraTM.column(2).normalized();
                 Vector3 targetPos = cameraPos - targetDistance(time) * cameraDir;

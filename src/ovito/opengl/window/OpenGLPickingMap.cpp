@@ -79,24 +79,22 @@ void OpenGLPickingMap::acquire(const OORef<AbstractRenderingFrameBuffer>& frameB
         glfuncs->glReadPixels(0, 0, size.width(), size.height(), GL_DEPTH_COMPONENT, GL_FLOAT, _depthBuffer.get());
         _numDepthBufferBits = 0;
     }
-
-    postprocess();
 }
 
 /******************************************************************************
 * Returns the frame buffer object ID at the given frame buffer location.
 ******************************************************************************/
-quint32 OpenGLPickingMap::objectIdentifierAt(const QPoint& pos) const
+uint32_t OpenGLPickingMap::objectIdentifierAt(const QPoint& pos) const
 {
     if(!_image.isNull()) {
         if(pos.x() >= 0 && pos.x() < _image.width() && pos.y() >= 0 && pos.y() < _image.height()) {
             QPoint mirroredPos(pos.x(), _image.height() - 1 - pos.y());
             QRgb pixel = _image.pixel(mirroredPos);
-            quint32 red = qRed(pixel);
-            quint32 green = qGreen(pixel);
-            quint32 blue = qBlue(pixel);
-            quint32 alpha = qAlpha(pixel);
-            quint32 objectID = red + (green << 8) + (blue << 16) + (alpha << 24);
+            uint32_t red = qRed(pixel);
+            uint32_t green = qGreen(pixel);
+            uint32_t blue = qBlue(pixel);
+            uint32_t alpha = qAlpha(pixel);
+            uint32_t objectID = red + (green << 8) + (blue << 16) + (alpha << 24);
             return objectID;
         }
     }

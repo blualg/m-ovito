@@ -202,9 +202,8 @@ void PanMode::modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, boo
     }
     else {
         // Get parent's system.
-        TimeInterval iv;
         const AffineTransformation& parentSys =
-                vp->viewNode()->parentNode()->getWorldTransform(vp->scene()->animationSettings()->currentTime(), iv);
+                vp->viewNode()->parentNode()->getWorldTransform(vp->scene()->animationSettings()->currentTime());
 
         // Move node in parent's system.
         vp->viewNode()->transformationController()->translate(
@@ -232,8 +231,7 @@ void ZoomMode::modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, bo
             vp->setCameraPosition(_oldCameraPosition + _oldCameraDirection.resized(amount));
         }
         else {
-            TimeInterval iv;
-            const AffineTransformation& sys = vp->viewNode()->getWorldTransform(vp->scene()->animationSettings()->currentTime(), iv);
+            const AffineTransformation& sys = vp->viewNode()->getWorldTransform(vp->scene()->animationSettings()->currentTime());
             vp->viewNode()->transformationController()->translate(
                     vp->scene()->animationSettings()->currentTime(), Vector3(0,0,-amount), sys);
         }
@@ -282,8 +280,7 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps, UserInterface& ui)
         ui.performTransaction(tr("Zoom viewport"), [this, steps, vp]() {
             if(vp->isPerspectiveProjection()) {
                 FloatType amount = sceneSizeFactor(vp) * steps;
-                TimeInterval iv;
-                const AffineTransformation& sys = vp->viewNode()->getWorldTransform(vp->scene()->animationSettings()->currentTime(), iv);
+                const AffineTransformation& sys = vp->viewNode()->getWorldTransform(vp->scene()->animationSettings()->currentTime());
                 vp->viewNode()->transformationController()->translate(vp->scene()->animationSettings()->currentTime(), Vector3(0,0,-amount), sys);
             }
             else {
@@ -511,7 +508,7 @@ void PickOrbitCenterMode::renderOverlay(Viewport* vp, ViewportWindow* vpWin, Fra
     const FloatType symbolSize = frameGraph.projectionParams().nonScalingSize(center, vpWin->viewportWindowDeviceIndependentSize());
 
     // Emit the graphics primitive.
-    frameGraph.addPrimitive(
+    frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitiveNonpickable(
         std::make_unique<CylinderPrimitive>(orbitCenterMarker),
         AffineTransformation::translation(center - Point3::Origin()) * AffineTransformation::scaling(symbolSize),
         Box3(Point3(-1), Point3(1)));

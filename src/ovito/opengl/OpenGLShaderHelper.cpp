@@ -29,19 +29,16 @@ namespace Ovito {
 /******************************************************************************
 * Loads a shader program.
 ******************************************************************************/
-void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile)
+void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile, const QString& fragmentShaderFile, const QString& geometryShaderFile, const QString& shaderPathPrefix)
 {
     if(_shader)
         _shader->release();
 
-    // Prepend this to paths when loading GLSL shaders from the resource file.
-    QString prefix = QStringLiteral(":/openglrenderer/glsl/");
-
     // Compile the shader program.
     _shader = _renderer->loadShaderProgram(id,
-        prefix + vertexShaderFile,
-        prefix + fragmentShaderFile,
-        !geometryShaderFile.isEmpty() ? prefix + geometryShaderFile : QString());
+        shaderPathPrefix + vertexShaderFile,
+        shaderPathPrefix + fragmentShaderFile,
+        !geometryShaderFile.isEmpty() ? (shaderPathPrefix + geometryShaderFile) : QString());
     OVITO_REPORT_OPENGL_ERRORS(_renderer);
 
     // Are we using a geometry shader?
@@ -589,7 +586,7 @@ void OpenGLShaderHelper::setupVertexAndInstanceIDOpenGL2()
 }
 
 /******************************************************************************
-* Implemention of the drawArrays() method for OpenGL 2.x.
+* Implementation of the drawArrays() method for OpenGL 2.x.
 ******************************************************************************/
 void OpenGLShaderHelper::drawOpenGL2(GLenum mode, GLsizei renderInstanceCount)
 {

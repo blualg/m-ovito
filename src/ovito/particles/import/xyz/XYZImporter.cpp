@@ -564,7 +564,7 @@ ParticleInputColumnMapping XYZImporter::parseExtendedXYZColumnSpecification(cons
             case 'S':
                 for(int k = 0; k < nCols; k++) {
                     if(!mapVariableToProperty(mapping, col, propName, 0, k) && k == 0)
-                        qDebug() << "Warning: Skipping field" << propName << "of XYZ file because it has an unsupported data type (string).";
+                        qWarning() << "Warning: Skipping field" << propName << "of XYZ file because it has an unsupported data type (string).";
                     col++;
                 }
                 break;
@@ -626,6 +626,18 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
             }
             return detectedColumnMapping;
         });
+}
+
+/******************************************************************************
+* Is called when the value of a non-animatable property field of this RefMaker has changed.
+******************************************************************************/
+void XYZImporter::propertyChanged(const PropertyFieldDescriptor* field)
+{
+    ParticleImporter::propertyChanged(field);
+
+    if(field == PROPERTY_FIELD(columnMapping) && !isBeingLoaded()) {
+        requestReload();
+    }
 }
 
 /******************************************************************************

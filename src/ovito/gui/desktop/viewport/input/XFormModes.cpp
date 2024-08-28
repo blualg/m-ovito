@@ -225,10 +225,9 @@ Point3 XFormMode::transformationCenter()
     Point3 center = Point3::Origin();
     SelectionSet* selection = viewportWindow()->viewport()->scene()->selection();
     if(selection && !selection->nodes().empty()) {
-        TimeInterval interval;
         AnimationTime time = viewportWindow()->viewport()->scene()->animationSettings()->currentTime();
         for(SceneNode* node : selection->nodes()) {
-            const AffineTransformation& nodeTM = node->getWorldTransform(time, interval);
+            const AffineTransformation& nodeTM = node->getWorldTransform(time);
             center += nodeTM.translation();
         }
         center /= (FloatType)selection->nodes().size();
@@ -280,8 +279,7 @@ void MoveMode::applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet
         OVITO_CHECK_OBJECT_POINTER(node->transformationController());
 
         // Get parent's system.
-        TimeInterval iv;
-        const AffineTransformation& translationSys = node->parentNode()->getWorldTransform(time, iv);
+        const AffineTransformation& translationSys = node->parentNode()->getWorldTransform(time);
 
         // Move node in parent's system.
         node->transformationController()->translate(time, _delta * multiplier, translationSys.inverse());
@@ -381,8 +379,7 @@ void RotateMode::applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeS
         transformSystem.translation() = _transformationCenter - Point3::Origin();
 
         // Make transformation system relative to parent's tm.
-        TimeInterval iv;
-        const AffineTransformation& parentTM = node->parentNode()->getWorldTransform(time, iv);
+        const AffineTransformation& parentTM = node->parentNode()->getWorldTransform(time);
         transformSystem = transformSystem * parentTM.inverse();
 
         // Rotate node in transformation system.

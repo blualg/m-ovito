@@ -103,6 +103,7 @@ void UserInterface::shutdownComplete()
     if(_selfGuard) {
         if(QThread::currentThread()->loopLevel() != 0) {
             // Move the self-guard into a lambda function, which gets processed when control returns to the Qt event loop.
+            // The lambda's destructor will free the self-guard object and stop the event loop.
             OVITO_ASSERT(Application::instance()->isShuttingDown() == false);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
             Application::instance()->taskManager().submitWork(Application::instance(), [s = std::move(_selfGuard), locker = QEventLoopLocker()]() noexcept {}, true);
@@ -147,7 +148,7 @@ bool UserInterface::processUIEvents()
         QCoreApplication::processEvents();    // Process events sent by the OS
     }
 
-    // Process pending work items in our own queue.
+    // Process pending work waiting in our internal queue.
     taskManager().executePendingWork();
 
     return isShuttingDown();
@@ -181,6 +182,8 @@ void UserInterface::processViewportUpdateRequests()
 ******************************************************************************/
 void UserInterface::updateViewports()
 {
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
     if(ViewportConfiguration* viewportConfig = datasetContainer().activeViewportConfig()) {
         for(Viewport* vp : viewportConfig->viewports())
             vp->updateViewport();
@@ -192,7 +195,9 @@ void UserInterface::updateViewports()
 ******************************************************************************/
 void UserInterface::resumeViewportUpdates()
 {
+    OVITO_ASSERT(ExecutionContext::isMainThread());
     OVITO_ASSERT(areViewportUpdatesSuspended());
+
     if(--_viewportSuspendCount == 0) {
         if(ViewportConfiguration* viewportConfig = datasetContainer().activeViewportConfig()) {
             for(Viewport* vp : viewportConfig->viewports()) {

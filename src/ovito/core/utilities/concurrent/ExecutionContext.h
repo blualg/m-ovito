@@ -87,6 +87,8 @@ private:
 /// RAII helper class that can be used to temporarily set the current execution context.
 class OVITO_CORE_EXPORT ExecutionContext::Scope
 {
+    Q_DISABLE_COPY_MOVE(Scope)
+
 public:
 
     /// Constructor.
@@ -97,18 +99,6 @@ public:
 
     /// Destructor.
     ~Scope() noexcept { ExecutionContext::current() = std::move(_previous); }
-
-    /// Not a movable type.
-    Scope(Scope&& other) = delete;
-
-    /// Not a copyable type.
-    Scope(const Scope& other) = delete;
-
-    /// Not a movable type.
-    Scope& operator=(Scope&& other) = delete;
-
-    /// Not a copyable type.
-    Scope& operator=(const Scope& other) = delete;
 
 private:
 

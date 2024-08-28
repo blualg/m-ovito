@@ -49,15 +49,14 @@ void TargetObject::initializeObject(ObjectInitializationFlags flags)
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-PipelineStatus TargetVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> TargetVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Target objects are only visible in the interactive viewport windows.
     if(!frameGraph.isInteractive())
         return {};
 
     // Setup transformation matrix to always show the icon at the same size.
-    TimeInterval interval;
-    const AffineTransformation& nodeTM = pipeline->getWorldTransform(frameGraph.time(), interval);
+    const AffineTransformation& nodeTM = pipeline->getWorldTransform(frameGraph.time());
     FloatType scaling = FloatType(0.2) * frameGraph.nonScalingSize(Point3::Origin() + nodeTM.translation());
 
     // Cache the line vertices for the icon.
@@ -90,7 +89,7 @@ PipelineStatus TargetVis::render(const ConstDataObjectPath& path, const Pipeline
     iconPrimitive->setPositions(vertexPositions);
 
     // Render the lines.
-    frameGraph.addPrimitive(std::move(iconPrimitive), nodeTM * AffineTransformation::scaling(scaling), frameGraph.addPickingGroup(pipeline), Box3(Point3::Origin(), 1));
+    frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(iconPrimitive), nodeTM * AffineTransformation::scaling(scaling), Box3(Point3::Origin(), 1), pipeline);
 
     return {};
 }

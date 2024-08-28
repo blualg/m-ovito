@@ -411,7 +411,7 @@ ParticlePrimitive::RenderingQuality ParticlesVis::effectiveRenderingQuality(bool
 }
 
 /******************************************************************************
-* Returns the effective primtive shape for rendering the particles.
+* Returns the effective primitive shape for rendering the particles.
 ******************************************************************************/
 ParticlePrimitive::ParticleShape ParticlesVis::effectiveParticleShape(ParticleShape shape, const Property* shapeProperty, const Property* orientationProperty, const Property* roundnessProperty)
 {
@@ -439,35 +439,43 @@ ParticlePrimitive::ParticleShape ParticlesVis::effectiveParticleShape(ParticleSh
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus ParticlesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> ParticlesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
+    // Get input particle data.
+    DataOORef<const Particles> particles = path.lastAs<Particles>();
+    if(!particles)
+        return {};
+    particles->verifyIntegrity();
+
+    // Make sure the 'Position' property is present.
+    if(!particles->getProperty(Particles::PositionProperty))
+        throw Exception(tr("Cannot display particles because the 'Position' property is not present."));
+
+    // Make sure we don't exceed the internal limits. Rendering of more than 2 billion particles is not yet supported by OVITO.
+    size_t particleCount = particles->elementCount();
+    if(particleCount > (size_t)std::numeric_limits<int>::max()) {
+        throw Exception(tr("This version of OVITO doesn't support rendering of more than %1 particles.").arg(std::numeric_limits<int>::max()));
+    }
+
     // Perform rendering in a background thread to not block the GUI for too long.
-    return asyncLaunchAndJoin([&]() -> PipelineStatus {
-
-        // Get input particle data.
-        const Particles* particles = path.lastAs<Particles>();
-        if(!particles)
-            return {};
-        particles->verifyIntegrity();
-
-        // Make sure the 'Position' property is present.
-        if(!particles->getProperty(Particles::PositionProperty))
-            throw Exception(tr("Cannot display particles because the 'Position' property is not present."));
-
-        // Make sure we don't exceed the internal limits. Rendering of more than 2 billion particles is not yet supported by OVITO.
-        size_t particleCount = particles->elementCount();
-        if(particleCount > (size_t)std::numeric_limits<int>::max()) {
-            throw Exception(tr("This version of OVITO doesn't support rendering of more than %1 particles.").arg(std::numeric_limits<int>::max()));
-        }
+    return asyncLaunch([
+            this,
+            self=OORef<ParticlesVis>(this), // To keep this vis element alive while rendering.
+            &commandGroup=frameGraph.addCommandGroup(FrameGraph::SceneLayer),
+            frameGraph=OORef<FrameGraph>(&frameGraph),
+            pipeline=OORef<const Pipeline>(pipeline),
+            particles=std::move(particles),
+            tm=pipeline->getWorldTransform(frameGraph.time())
+        ]() -> PipelineStatus {
 
         // Render all mesh-based particle types.
-        renderMeshBasedParticles(particles, frameGraph, pipeline);
+        renderMeshBasedParticles(particles, *frameGraph, commandGroup, pipeline, tm);
 
         // Render all primitive particle types.
-        renderPrimitiveParticles(particles, frameGraph, pipeline);
+        renderPrimitiveParticles(particles, *frameGraph, commandGroup, pipeline, tm);
 
         // Render all (sphero-)cylindric particle types.
-        renderCylindricParticles(particles, frameGraph, pipeline);
+        renderCylindricParticles(particles, *frameGraph, commandGroup, pipeline, tm);
 
         return {};
     });
@@ -476,7 +484,7 @@ PipelineStatus ParticlesVis::render(const ConstDataObjectPath& path, const Pipel
 /******************************************************************************
 * Renders particle types that have a mesh-based shape assigned.
 ******************************************************************************/
-void ParticlesVis::renderMeshBasedParticles(const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline)
+void ParticlesVis::renderMeshBasedParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const Pipeline* pipeline, const AffineTransformation& tm) const
 {
     // Get input particle data.
     const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
@@ -606,14 +614,14 @@ void ParticlesVis::renderMeshBasedParticles(const Particles* particles, FrameGra
         t.pickInfo->setParticles(particles);
 
         // Add the instanced mesh primitive to the frame graph.
-        frameGraph.addPrimitive(std::make_unique<MeshPrimitive>(t.meshPrimitive), pipeline, frameGraph.addPickingGroup(pipeline, t.pickInfo));
+        commandGroup.addPrimitive(std::make_unique<MeshPrimitive>(t.meshPrimitive), tm, t.meshPrimitive.computeBoundingBox(frameGraph.visCache()), pipeline, t.pickInfo);
     }
 }
 
 /******************************************************************************
 * Renders all particles with a primitive shape (spherical, box, (super)quadrics).
 ******************************************************************************/
-void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline)
+void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const Pipeline* pipeline, const AffineTransformation& tm) const
 {
     // Determine whether all particle types use the same uniform shape or not.
     ParticlesVis::ParticleShape uniformShape = particleShape();
@@ -801,14 +809,14 @@ void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGra
             });
 
         // Add the particles primitive to the frame graph.
-        frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(primitive), pipeline, frameGraph.addPickingGroup(pipeline, pickingInfo));
+        commandGroup.addPrimitive(std::make_unique<ParticlePrimitive>(primitive), tm, primitive.computeBoundingBox(frameGraph.visCache()), pipeline, pickingInfo);
     }
 }
 
 /******************************************************************************
 * Renders all particles with a (sphero-)cylindrical shape.
 ******************************************************************************/
-void ParticlesVis::renderCylindricParticles(const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline)
+void ParticlesVis::renderCylindricParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const Pipeline* pipeline, const AffineTransformation& tm) const
 {
     // Determine whether all particle types use the same uniform shape or not.
     ParticlesVis::ParticleShape uniformShape = particleShape();
@@ -1007,13 +1015,13 @@ void ParticlesVis::renderCylindricParticles(const Particles* particles, FrameGra
         // Update the pick info record with the latest particle data.
         pickInfo->setParticles(particles);
 
-        // Add the cylinder primitive to the frame graph.
-        frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(cylinderPrimitive), pipeline, frameGraph.addPickingGroup(pipeline, pickInfo));
+        // Add the cylinders to the frame graph.
+        commandGroup.addPrimitive(std::make_unique<CylinderPrimitive>(cylinderPrimitive), tm, cylinderPrimitive.computeBoundingBox(frameGraph.visCache()), pipeline, pickInfo);
 
-        // Render the particle primitive.
+        // Render the spherical caps.
         if(spheresPrimitives[0].positions()) {
-            frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(spheresPrimitives[0]), pipeline, frameGraph.addPickingGroup(pipeline, pickInfo));
-            frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(spheresPrimitives[1]), pipeline, frameGraph.addPickingGroup(pipeline, pickInfo));
+            commandGroup.addPrimitive(std::make_unique<ParticlePrimitive>(spheresPrimitives[0]), tm, spheresPrimitives[0].computeBoundingBox(frameGraph.visCache()), pipeline, pickInfo);
+            commandGroup.addPrimitive(std::make_unique<ParticlePrimitive>(spheresPrimitives[1]), tm, spheresPrimitives[1].computeBoundingBox(frameGraph.visCache()), pipeline, pickInfo);
         }
     }
 }
@@ -1076,8 +1084,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* part
     GraphicsFloatType radius = particleRadius(particleIndex, radiusProperty, typeProperty);
 
     // Get world transformation matrix of scene node.
-    TimeInterval interval;
-    const AffineTransformation& nodeTM = pipeline->getWorldTransform(frameGraph.time(), interval);
+    const AffineTransformation& nodeTM = pipeline->getWorldTransform(frameGraph.time());
 
     FloatType padding = frameGraph.nonScalingSize(nodeTM * pos) * FloatType(1e-1);
 
@@ -1196,21 +1203,25 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* part
         }
     }
 
+    FrameGraph::RenderingCommandGroup& commandGroup1 = frameGraph.addCommandGroup(FrameGraph::HighlightLayer1);
+    FrameGraph::RenderingCommandGroup& commandGroup2 = frameGraph.addCommandGroup(FrameGraph::HighlightLayer2);
+
     if(particleBuffer)
-        frameGraph.addPrimitive(std::move(particleBuffer), nodeTM, 0, Box3{}, FrameGraph::RenderingCommand::HighlightMode1);
+        frameGraph.addPrimitiveNonpickable(commandGroup1, std::move(particleBuffer), pipeline);
     if(cylinderBuffer)
-        frameGraph.addPrimitive(std::move(cylinderBuffer), nodeTM, 0, Box3{}, FrameGraph::RenderingCommand::HighlightMode1);
+        frameGraph.addPrimitiveNonpickable(commandGroup1, std::move(cylinderBuffer), pipeline);
+
     if(highlightParticleBuffer)
-        frameGraph.addPrimitive(std::move(highlightParticleBuffer), nodeTM, 0, Box3{}, FrameGraph::RenderingCommand::HighlightMode2);
+        frameGraph.addPrimitiveNonpickable(commandGroup2, std::move(highlightParticleBuffer), pipeline);
     if(highlightCylinderBuffer)
-        frameGraph.addPrimitive(std::move(highlightCylinderBuffer), nodeTM, 0, Box3{}, FrameGraph::RenderingCommand::HighlightMode2);
+        frameGraph.addPrimitiveNonpickable(commandGroup2, std::move(highlightCylinderBuffer), pipeline);
 }
 
 /******************************************************************************
 * Given an sub-object ID returned by the Viewport::pick() method, looks up the
 * corresponding particle index.
 ******************************************************************************/
-size_t ParticlePickInfo::particleIndexFromSubObjectID(quint32 subobjID) const
+size_t ParticlePickInfo::particleIndexFromSubObjectID(uint32_t subobjID) const
 {
     if(_subobjectToParticleMapping && subobjID < _subobjectToParticleMapping->size())
         return BufferReadAccess<int32_t>(_subobjectToParticleMapping)[subobjID];
@@ -1221,7 +1232,7 @@ size_t ParticlePickInfo::particleIndexFromSubObjectID(quint32 subobjID) const
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
-QString ParticlePickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
+QString ParticlePickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 {
     size_t particleIndex = particleIndexFromSubObjectID(subobjectId);
     return particles()->elementInfoString(particleIndex);

@@ -98,18 +98,19 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ColorLegendOverlay, tickSpacing, FloatParam
 ******************************************************************************/
 void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
 {
-    if(ExecutionContext::isInteractive()) {
+    if(ExecutionContext::isInteractive() && !pipeline()) {
 
         // Find a ColorCodingModifier in the scene that we can connect to.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
             viewport->scene()->visitPipelines([&](Pipeline* pipeline) {
                 PipelineNode* node = pipeline->head();
-                while(node) {
+                for(;;) {
                     if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(node)) {
                         if(ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(modNode->modifier())) {
+                            setPipeline(pipeline);
                             setModifier(mod);
                             if(mod->isEnabled())
-                                return false; // Stop search.
+                                return false; // Stop search if modifier is enabled; otherwise, keep looking for an alternative.
                         }
                         node = modNode->input();
                     }
@@ -120,7 +121,7 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
         }
 
         // If there is no ColorCodingModifier in the scene, initialize the overlay to use
-        // the first available typed property as color source.
+        // the first available typed property as color mapping source.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
             viewport->scene()->visitPipelines([&](Pipeline* pipeline) {
                 const PipelineFlowState& state = pipeline->getCachedPipelineOutput(viewport->scene()->animationSettings()->currentTime());
@@ -128,6 +129,7 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
                     const Property* property = static_object_cast<Property>(dataPath.back());
                     // Check if the property is a typed property, i.e. it has one or more ElementType objects attached to it.
                     if(property->isTypedProperty() && dataPath.size() >= 2) {
+                        setPipeline(pipeline);
                         setSourceProperty(dataPath);
                         return false; // Stop search.
                     }
@@ -145,6 +147,7 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
                             if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(PropertyColorMapping::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM) && !field->isVector()) {
                                 if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(vis->getReferenceFieldTarget(field))) {
                                     if(mapping->sourceProperty()) {
+                                        setPipeline(pipeline);
                                         setColorMapping(mapping);
                                         return false; // Stop search.
                                     }
@@ -225,10 +228,8 @@ QVariant ColorLegendOverlay::getPipelineEditorShortInfo(Scene* scene) const
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene)
+std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene)
 {
-    DataOORef<const Property> typedProperty;
-
     // Reset auto-generated label texts. Will be newly set by rendering code.
     _autoTitleText.clear();
     _autoLabel1Text.clear();
@@ -238,72 +239,9 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
     if(!frameGraph.isInteractive())
         checkAlignmentParameterValue(alignment());
 
-    // Check whether a source has been set for this color legend:
-    if(modifier() || colorMapping()) {
-        // Reset status of overlay.
-        setStatus(PipelineStatus::Success);
-    }
-    else if(sourceProperty()) {
-        // Look up the typed property in one of the scene's pipeline outputs.
-        scene->visitPipelines([&](Pipeline* pipeline) {
-
-            // Evaluate pipeline and obtain output data collection.
-            PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
-            const PipelineFlowState state = pipeline->evaluatePipeline(request).result();
-
-            // Look up the typed property.
-            typedProperty = state.getLeafObject(sourceProperty());
-            if(typedProperty)
-                return false;
-
-            return true;
-        });
-        if(this_task::get()->isCanceled())
-            return;
-
-        // Verify that the typed property, which has been selected as the source of the color legend, is available.
-        if(!typedProperty) {
-            // Set warning status to be displayed in the GUI.
-            setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not available in the pipeline output.").arg(sourceProperty().dataTitleOrPath())));
-
-            // Escalate to an error state if in console mode.
-            if(!Application::guiMode())
-                throw Exception(tr("The property '%1' set as source of the color legend is not present in the data pipeline output.").arg(sourceProperty().dataTitleOrPath()));
-            else
-                return;
-        }
-        else if(!typedProperty->isTypedProperty()) {
-            // Set warning status to be displayed in the GUI.
-            setStatus(PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not a typed property.").arg(sourceProperty().dataTitleOrPath())));
-
-            // Escalate to an error state if in console mode.
-            if(!Application::guiMode())
-                throw Exception(tr("The property '%1' set as source of the color legend is not a typed property, i.e., it has no ElementType(s) attached.").arg(sourceProperty().dataTitleOrPath()));
-            else
-                return;
-        }
-
-        // Reset status of overlay.
-        setStatus(PipelineStatus::Success);
-    }
-    else {
-        // Set warning status to be displayed in the GUI.
-        setStatus(PipelineStatus(PipelineStatus::Warning, tr("No data source has been specified for the color legend.")));
-
-        // Escalate to an error state if in console mode.
-        if(!Application::guiMode()) {
-            throw Exception(tr("You are rendering a Viewport with a ColorLegendOverlay that is not associated with any "
-                               "data source. Did you forget to specify a data source for the color legend?"));
-        }
-        else {
-            // Ignore invalid configuration in GUI mode by not rendering the legend.
-            return;
-        }
-    }
-
     // Calculate position and size of color legend rectangle.
     FloatType legendSize = this->legendSize() * physicalViewportRect.height();
-    if(legendSize <= 0) return;
+    if(legendSize <= 0) return {};
 
     FloatType colorBarWidth = legendSize;
     FloatType colorBarHeight = colorBarWidth / std::max(FloatType(0.01), aspectRatio());
@@ -325,42 +263,103 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
 
     QRectF colorBarRect(origin, QSizeF(colorBarWidth, colorBarHeight));
 
-    if(modifier()) {
+    if(pipeline()) {
+        if(modifier()) {
+            // Get modifier's parameters.
+            _autoTitleText = modifier()->sourceProperty().nameWithComponent();
 
-        // Get modifier's parameters.
-        FloatType startValue = modifier()->startValue();
-        FloatType endValue = modifier()->endValue();
-        if(modifier()->autoAdjustRange() && (label1().isEmpty() || label2().isEmpty())) {
-            // Get the automatically adjusted range of the color coding modifier.
-            // This requires a partial pipeline evaluation up to the color coding modifier.
-            startValue = std::numeric_limits<FloatType>::quiet_NaN();
-            endValue = std::numeric_limits<FloatType>::quiet_NaN();
-            if(ModificationNode* modNode = modifier()->someNode()) {
-                PipelineEvaluationResult stateFuture = modNode->evaluate(PipelineEvaluationRequest(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive()));
-                const PipelineFlowState& state = stateFuture.result();
-                QVariant minValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMin"));
-                QVariant maxValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMax"));
-                if(minValue.isValid() && maxValue.isValid()) {
-                    startValue = minValue.value<FloatType>();
-                    endValue = maxValue.value<FloatType>();
+            // If the auto-adjust option is enabled for the color coding modifier, we have to do some more work to figure out
+            // the current value range of the color mapping. It requires a partial pipeline evaluation up to the color coding modifier.
+            if(modifier()->autoAdjustRange() && (label1().isEmpty() || label2().isEmpty())) {
+                // Figure out which of the modifier's modification nodes belongs to the pipeline associated with this viewport overlay.
+                ModificationNode* modNode = nullptr;
+                PipelineNode* node = pipeline()->head();
+                for(;;) {
+                    if((modNode = dynamic_object_cast<ModificationNode>(node))) {
+                        if(modNode->modifier() == modifier())
+                            break;
+                        node = modNode->input();
+                    }
+                    else break;
                 }
+                if(!modNode)
+                    throw Exception(tr("Selected color coding could not be found in the selected pipeline."));
+
+                // Request modifier's output.
+                PipelineEvaluationResult pipelineEvaluationResult = modNode->evaluate(PipelineEvaluationRequest(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive()));
+
+                // Wait for the modifier results.
+                return pipelineEvaluationResult.then(*this, [this, frameGraph=OORef<FrameGraph>(&frameGraph), &commandGroup, modNode, colorBarRect, legendSize](const PipelineFlowState& state) -> PipelineStatus {
+                    FloatType startValue = std::numeric_limits<FloatType>::quiet_NaN();
+                    FloatType endValue = std::numeric_limits<FloatType>::quiet_NaN();
+                    QVariant minValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMin"));
+                    QVariant maxValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMax"));
+                    if(minValue.isValid() && maxValue.isValid()) {
+                        startValue = minValue.value<FloatType>();
+                        endValue = maxValue.value<FloatType>();
+                    }
+                    if(modifier())
+                        drawContinuousColorMap(*frameGraph, commandGroup, colorBarRect, legendSize, PseudoColorMapping(startValue, endValue, modifier()->colorGradient()));
+                    return {};
+                });
+            }
+            else {
+                drawContinuousColorMap(frameGraph, commandGroup, colorBarRect, legendSize, PseudoColorMapping(modifier()->startValue(), modifier()->endValue(), modifier()->colorGradient()));
+                return {};
             }
         }
+        else if(colorMapping()) {
+            _autoTitleText = colorMapping()->sourceProperty().nameWithComponent();
+            drawContinuousColorMap(frameGraph, commandGroup, colorBarRect, legendSize, colorMapping()->pseudoColorMapping());
+            return {};
+        }
+        else if(sourceProperty()) {
+            // Evaluate pipeline.
+            PipelineEvaluationResult pipelineEvaluationResult = pipeline()->evaluatePipeline(PipelineEvaluationRequest(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive()));
 
-        _autoTitleText = modifier()->sourceProperty().nameWithComponent();
-        drawContinuousColorMap(frameGraph, colorBarRect, legendSize, PseudoColorMapping(startValue, endValue, modifier()->colorGradient()));
-    }
-    else if(colorMapping()) {
-        _autoTitleText = colorMapping()->sourceProperty().nameWithComponent();
-        drawContinuousColorMap(frameGraph, colorBarRect, legendSize, colorMapping()->pseudoColorMapping());
-    }
-    else if(typedProperty) {
-        _autoTitleText = typedProperty->objectTitle();
-        drawDiscreteColorMap(frameGraph, colorBarRect, legendSize, typedProperty);
+            // Wait for the pipeline results.
+            return pipelineEvaluationResult.then(*this, [this, frameGraph=OORef<FrameGraph>(&frameGraph), &commandGroup, colorBarRect, legendSize](const PipelineFlowState& state) -> PipelineStatus {
+
+                // Look up the typed property.
+                DataOORef<const Property> typedProperty = state.getLeafObject(sourceProperty());
+
+                // Verify that the typed property, which has been selected as the source of the color legend, is available.
+                if(!typedProperty) {
+                    // Escalate to an error state if in console mode.
+                    if(!Application::guiMode())
+                        throw Exception(tr("The property '%1' set as source of the color legend is not present in the data pipeline output.").arg(sourceProperty().dataTitleOrPath()));
+                    else
+                        return PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not available in the pipeline output.").arg(sourceProperty().dataTitleOrPath()));
+                }
+                else if(!typedProperty->isTypedProperty()) {
+                    // Escalate to an error state if in console mode.
+                    if(!Application::guiMode())
+                        throw Exception(tr("The property '%1' set as source of the color legend is not a typed property, i.e., it has no ElementType(s) attached.").arg(sourceProperty().dataTitleOrPath()));
+                    else
+                        return PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not a typed property.").arg(sourceProperty().dataTitleOrPath()));
+                }
+
+                _autoTitleText = typedProperty->objectTitle();
+                drawDiscreteColorMap(*frameGraph, commandGroup, colorBarRect, legendSize, typedProperty);
+                return {};
+            });
+        }
     }
 
-    // Notify the UI that the automatic label texts were recalculated during rendering.
-    notifyDependents(ColorLegendOverlay::AutoLabelsUpdated);
+    // Escalate to an error state if in console mode.
+    if(!Application::guiMode()) {
+        if(!pipeline())
+            throw Exception(tr("You are rendering a viewport with an attached ColorLegendOverlay that has no "
+                                "source pipeline set. Make sure you set the legend's 'pipeline' field."));
+        else
+            throw Exception(tr("You are rendering a viewport with an attached ColorLegendOverlay that has no "
+                                "source color mapping set. Did you forget to specify a color mapping for the color legend? "
+                                "Make sure you set the legend's 'modifier', 'property', or 'color_mapping_source' field. "));
+    }
+    else {
+        // Set warning status to be displayed in the GUI.
+        return PipelineStatus(PipelineStatus::Warning, tr("No source color mapping has been specified for the color legend."));
+    }
 }
 
 /******************************************************************************
@@ -368,10 +367,10 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
  * estimate since this approach has no mathematical proof
  * might not behave well for all edge cases
  ******************************************************************************/
-[[nodiscard]] static int estimateOrderOfMagnitude(const FloatType value)
+static int estimateOrderOfMagnitude(const FloatType value)
 {
     FloatType result{std::abs(value)};
-    const FloatType eps{1e-18};
+    constexpr FloatType eps{1e-18};
     if(result < eps) {
         return 0;
     }
@@ -392,7 +391,7 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
 
 /******************************************************************************
  * Returns the starting value and the tick spacing as function of a control parameter N. Increment (decrement) N to increase
- * (decrease) the tickspacing. Ideally N should start at 0.
+ * (decrease) the tick spacing. Ideally N should start at 0.
  ******************************************************************************/
 [[nodiscard]] static std::tuple<FloatType, FloatType> getTickPositionsFromN(FloatType lowerLimit, FloatType upperLimit,
                                                                             const int N)
@@ -448,7 +447,7 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
         if(orientation() == Qt::Horizontal) {
             // Sometimes start or start + inter might fall on a "shorter" string label. Two subsequent values need to be checked
             // to guarantee at least one "long" label (num_ticks + 1) to give some more space as usually ticks are not distributed
-            // all the way to the colorbar boundary
+            // all the way to the color bar boundary
             totalLabelSize =
                 (num_ticks + 1) *
                 std::max(
@@ -484,7 +483,7 @@ void ColorLegendOverlay::render(FrameGraph& frameGraph, const QRect& logicalView
 /******************************************************************************
 * Draws the color legend for a Color Coding modifier.
 ******************************************************************************/
-void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping)
+void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping)
 {
     const qreal devicePixelRatio = frameGraph.devicePixelRatio();
 
@@ -503,9 +502,9 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
     // This prevents duplication of the start and end values, especially for the horizontal color bar
     constexpr FloatType minTickDistanceFromEdge{0.005};
 
-    // Allows the second to last and last tick of a vertical colorbar to overlapp slightly to get a more
+    // Allows the second to last and last tick of a vertical color bar to overlap slightly to get a more
     // pleasant look.
-    constexpr FloatType tickOverlappFactor{0.8};
+    constexpr FloatType tickOverlapFactor{0.8};
 
     if(!mapping.gradient())
         return;
@@ -566,6 +565,9 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
     _autoLabel1Text = std::isfinite(mapping.maxValue()) ? QString::asprintf(format.constData(), mapping.maxValue()) : QStringLiteral("###");
     _autoLabel2Text = std::isfinite(mapping.minValue()) ? QString::asprintf(format.constData(), mapping.minValue()) : QStringLiteral("###");
 
+    // Notify the UI that the automatic label texts were recalculated during rendering.
+    notifyDependents(ColorLegendOverlay::AutoLabelsUpdated);
+
     QString titleLabel = title().isEmpty() ? _autoTitleText : title();
     QString topLabel = label1().isEmpty() ? _autoLabel1Text : label1();
     QString bottomLabel = label2().isEmpty() ? _autoLabel2Text : label2();
@@ -598,7 +600,7 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
         topPos = QPointF(colorBarImageRect.right() + textMargin, colorBarImageRect.top() + 0.5 * colorBarImageRect.height());
     }
     else {  // Vertical
-            // If ticks are drawn, the labels are top/bottom lables are drawn further out to align with the tick labels
+            // If ticks are drawn, the labels are top/bottom labels are drawn further out to align with the tick labels
         FloatType tickSpacing{static_cast<int>(ticksEnabled()) * outerTickHeight * colorBarImageRect.width()};
         if((alignment() & Qt::AlignLeft) || (alignment() & Qt::AlignHCenter)) {
             bottomFlags = Qt::AlignLeft | Qt::AlignVCenter;
@@ -690,7 +692,7 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
     std::vector<std::unique_ptr<TextPrimitive>> tickLabels;
 
     if(ticksEnabled() && std::isfinite(mapping.minValue()) && std::isfinite(mapping.maxValue())) {
-        // The font metric needs to be caculated without device pixel ratio scaling of the font.
+        // The font metric needs to be calculated without device pixel ratio scaling of the font.
         // A devicePixelRatio of 3 leads to an intermediate 3x larger colorbarLength during supersampling.
         // However, the font metrics and labels need to be measured based on the original size of 1x to give
         // the correct label size after downsampling the image back to 1x.
@@ -821,8 +823,8 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
 
                 // Hide the first and last tick mark and label if they overlap with the limit labels
                 if(((i == 0) || (i == (num_ticks - 1))) &&
-                   ((label_pos.y() > (colorBarImageRect.bottom() - tickOverlappFactor * fontMetrics.height())) ||
-                    (label_pos.y() < (colorBarImageRect.top() + tickOverlappFactor * fontMetrics.height()))))
+                   ((label_pos.y() > (colorBarImageRect.bottom() - tickOverlapFactor * fontMetrics.height())) ||
+                    (label_pos.y() < (colorBarImageRect.top() + tickOverlapFactor * fontMetrics.height()))))
                     continue;
                 labelPrimitive.setPositionWindow(label_pos);
                 boundingBox |= labelPrimitive.computeBounds(devicePixelRatio);
@@ -855,16 +857,16 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
             });
 
         boundingBox.adjust(-textMargin, -textMargin, textMargin, textMargin);
-        frameGraph.addCommand(std::make_unique<ImagePrimitive>(backgroundImage, boundingBox.toAlignedRect()));
+        commandGroup.addPrimitivePreprojected(std::make_unique<ImagePrimitive>(backgroundImage, boundingBox.toAlignedRect()));
     }
 
     // Render color bar.
-    frameGraph.addCommand(std::move(imagePrimitive));
+    commandGroup.addPrimitivePreprojected(std::move(imagePrimitive));
 
     // Render title and limit labels.
-    frameGraph.addCommand(std::move(titlePrimitive));
-    frameGraph.addCommand(std::move(label1Primitive));
-    frameGraph.addCommand(std::move(label2Primitive));
+    commandGroup.addPrimitivePreprojected(std::move(titlePrimitive));
+    commandGroup.addPrimitivePreprojected(std::move(label1Primitive));
+    commandGroup.addPrimitivePreprojected(std::move(label2Primitive));
 
     // Render ticks.
     if(!tickRects.empty()) {
@@ -874,27 +876,27 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, const QR
             RendererResourceKey<struct ColorBarTickImageCache, Color>{tickColor},
             [&](QImage& tickImage) {
                 // Generate tick image primitive if not found in the cache.
-                // 1 x 1 px texture of the right color which will be streched to the desired tick dimensions
+                // 1x1 pixel texture of the right color which will be stretched to the desired tick dimensions
                 tickImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
                 tickImage.fill(static_cast<QColor>(tickColor));
             });
 
         // Render the series of tick images.
         for(const auto& rect : tickRects) {
-            frameGraph.addCommand(std::make_unique<ImagePrimitive>(tickImage, rect));
+            commandGroup.addPrimitivePreprojected(std::make_unique<ImagePrimitive>(tickImage, rect));
         }
     }
 
     // Render tick labels.
     for(auto& labelPrimitive : tickLabels) {
-        frameGraph.addCommand(std::move(labelPrimitive));
+        commandGroup.addPrimitivePreprojected(std::move(labelPrimitive));
     }
 }
 
 /******************************************************************************
 * Draws the color legend for a typed property.
 ******************************************************************************/
-void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRectF& colorBarRect, FloatType legendSize, const Property* property)
+void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect, FloatType legendSize, const Property* property)
 {
     const qreal devicePixelRatio = frameGraph.devicePixelRatio();
 
@@ -969,9 +971,16 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRec
     int titleFlags = 0;
     QPointF titlePos;
     if(orientation() == Qt::Horizontal) {
-        titleFlags = Qt::AlignHCenter | Qt::AlignBottom;
-        titlePos.rx() = colorBarImageRect.left() + 0.5 * colorBarImageRect.width();
-        titlePos.ry() = colorBarImageRect.top() - 0.5 * textMargin;
+        if((alignment() & Qt::AlignTop) || (alignment() & Qt::AlignVCenter)) {
+            titleFlags = Qt::AlignHCenter | Qt::AlignBottom;
+            titlePos.rx() = colorBarImageRect.left() + 0.5 * colorBarImageRect.width();
+            titlePos.ry() = colorBarImageRect.top() - 0.5 * textMargin;
+        }
+        else {
+            titleFlags = Qt::AlignHCenter | Qt::AlignTop;
+            titlePos.rx() = colorBarImageRect.left() + 0.5 * colorBarImageRect.width();
+            titlePos.ry() = colorBarImageRect.bottom() + 0.5 * textMargin;
+        }
     }
     else { // bar orientation == Qt::Vertical
         if(!titleRotationEnabled()) { // title orientation == Qt::Horizontal
@@ -1022,7 +1031,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRec
     if(numTypes == 0)
         numTypes = 1; // Avoid division by 0 below.
 
-    // Layouting of the type labels.
+    // Layout of the type labels.
     int labelFlags = 0;
     QPointF labelPos;
     if(orientation() == Qt::Vertical) {
@@ -1082,24 +1091,72 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, const QRec
             RendererResourceKey<struct ColorBarBackgroundImageCache, Color>{backgroundColor()},
             [&](QImage& backgroundImage) {
                 // Generate image if not found in the cache
-                // 1 x 1 px texture of the right color which will be streched to the desired rectangle dimensions.
+                // 1x1 pixel texture of the right color which will be stretched to the desired rectangle dimensions.
                 backgroundImage = QImage{QSize(1, 1), frameGraph.preferredImageFormat()};
                 backgroundImage.fill(static_cast<QColor>(backgroundColor()));
             });
 
         boundingBox.adjust(-textMargin, -textMargin, textMargin, textMargin);
-        frameGraph.addCommand(std::make_unique<ImagePrimitive>(backgroundImage, boundingBox.toAlignedRect()));
+        commandGroup.addPrimitivePreprojected(std::make_unique<ImagePrimitive>(backgroundImage, boundingBox.toAlignedRect()));
     }
 
     // Render title.
-    frameGraph.addCommand(std::move(titlePrimitive));
+    commandGroup.addPrimitivePreprojected(std::move(titlePrimitive));
 
     // Render color bar.
-    frameGraph.addCommand(std::move(imagePrimitive));
+    commandGroup.addPrimitivePreprojected(std::move(imagePrimitive));
 
     // Render type labels.
     for(auto& labelPrimitive : labels) {
-        frameGraph.addCommand(std::move(labelPrimitive));
+        commandGroup.addPrimitivePreprojected(std::move(labelPrimitive));
+    }
+
+    // Notify the UI that the automatic label texts were recalculated during rendering.
+    notifyDependents(ColorLegendOverlay::AutoLabelsUpdated);
+}
+
+/******************************************************************************
+* This method is called once for this object after they have been completely loaded from a stream.
+******************************************************************************/
+void ColorLegendOverlay::loadFromStreamComplete(ObjectLoadStream& stream)
+{
+    ViewportOverlay::loadFromStreamComplete(stream);
+
+    // For backward compatibility with OVITO 3.10.6:
+    if(!pipeline() && stream.datasetToBePopulated()) {
+        // Automatically choose a scene pipeline for this overlay.
+        if(Viewport* vp = stream.datasetToBePopulated()->viewportConfig()->activeViewport()) {
+            if(Scene* scene = vp->scene()) {
+                Pipeline* selectedPipeline = nullptr;
+                scene->visitPipelines([&](Pipeline* pipeline) {
+                    if(selectedPipeline == nullptr)
+                        selectedPipeline = pipeline;
+                    if(modifier()) {
+                        ModificationNode* modNode = nullptr;
+                        PipelineNode* node = pipeline->head();
+                        for(;;) {
+                            if((modNode = dynamic_object_cast<ModificationNode>(node))) {
+                                if(modNode->modifier() == modifier()) {
+                                    selectedPipeline = pipeline;
+                                    return false;
+                                }
+                                node = modNode->input();
+                            }
+                            else break;
+                        }
+                    }
+                    else if(sourceProperty()) {
+                        const PipelineFlowState& state = pipeline->getCachedPipelineOutput(scene->animationSettings()->currentTime());
+                        if(state.getLeafObject(sourceProperty())) {
+                            selectedPipeline = pipeline;
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+                setPipeline(selectedPipeline);
+            }
+        }
     }
 }
 

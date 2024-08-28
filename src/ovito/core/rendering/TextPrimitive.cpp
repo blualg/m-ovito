@@ -70,14 +70,7 @@ QRectF TextPrimitive::queryLocalBounds(qreal devicePixelRatio, Qt::TextFormat te
         if(textFormatHint != Qt::AutoText) resolvedTextFormat = textFormatHint;
         else resolvedTextFormat = Qt::mightBeRichText(text()) ? Qt::RichText : Qt::PlainText;
     }
-#ifndef Q_OS_WIN
-    if(resolvedTextFormat != Qt::RichText) {
-#else
-    // On Windows, our own method for painting the text outline using QPainterPath does not work correctly.
-    // Internal rounding issues in Qt's font engine lead to a mismatch between the outline and the filled text painted by QPainter::drawText().
-    // As a workaround, fall back to the more expensive QTextDocument-based method for rendering the outline, which otherwise is only used for formatted text.
     if(resolvedTextFormat != Qt::RichText && effectiveOutlineWidth(devicePixelRatio) == 0) {
-#endif
         if(!useTightBox()) {
             textBounds = QFontMetricsF(font()).boundingRect(text());
         }
@@ -151,15 +144,7 @@ void TextPrimitive::draw(QPainter& painter, Qt::TextFormat resolvedTextFormat, q
 {
     ensureFontRenderingCapability();
 
-#ifndef Q_OS_WIN
-    if(resolvedTextFormat != Qt::RichText) {
-#else
-    // On Windows, our own method for painting the text outline using QPainterPath does not work correctly.
-    // Internal rounding issues in Qt's font engine lead to a mismatch between the outline and the filled text painted
-    // by QPainter::drawText(). As a workaround, fall back to the more expensive QTextDocument-based method for
-    // rendering the outline, which otherwise is only used for formatted text.
     if(resolvedTextFormat != Qt::RichText && effectiveOutlineWidth() == 0) {
-#endif
         drawPlainText(painter);
     }
     else {
@@ -172,15 +157,9 @@ void TextPrimitive::draw(QPainter& painter, Qt::TextFormat resolvedTextFormat, q
 ******************************************************************************/
 void TextPrimitive::drawPlainText(QPainter& painter) const
 {
+    OVITO_ASSERT_MSG(this->effectiveOutlineWidth() == 0, "TextPrimitive::drawPlainText()", "Outline rendering is only supported by the drawRichText routine.");
+
     painter.setFont(font());
-
-    if(qreal effectiveOutlineWidth = this->effectiveOutlineWidth()) {
-        QPainterPath textPath;
-        textPath.addText(QPointF(0,0), font(), text());
-        painter.setPen(QPen(QBrush(outlineColor()), 2 * effectiveOutlineWidth));
-        painter.drawPath(textPath);
-    }
-
     painter.setPen((QColor)color());
     painter.drawText(QPointF(0,0), text());
 }

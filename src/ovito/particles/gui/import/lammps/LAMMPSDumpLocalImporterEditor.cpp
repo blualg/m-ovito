@@ -197,8 +197,6 @@ void LAMMPSDumpLocalImporterEditor::onEditColumnMapping()
 
             // Show the dialog box, which lets the user modify the file column mapping.
             showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex]);
-
-            importer->requestReload();
         });
     }
 }

@@ -70,7 +70,7 @@ Box3 TriangleMeshVis::boundingBoxImmediate(AnimationTime time, const ConstDataOb
 /******************************************************************************
 * Lets the vis element produce a visual representation of a data object.
 ******************************************************************************/
-PipelineStatus TriangleMeshVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> TriangleMeshVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Obtain transparency parameter value and display color value.
     FloatType transp = 0;
@@ -85,8 +85,8 @@ PipelineStatus TriangleMeshVis::render(const ConstDataObjectPath& path, const Pi
     primitive->setMesh(path.lastAs<TriangleMesh>());
     primitive->setCullFaces(backfaceCulling());
 
-    // Emit graphics primitive.
-    frameGraph.addPrimitive(std::move(primitive), pipeline, frameGraph.addPickingGroup(pipeline));
+    // Add render primitive to graph.
+    frameGraph.addPrimitive(frameGraph.addCommandGroup(FrameGraph::SceneLayer), std::move(primitive), pipeline);
 
     return {};
 }

@@ -31,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of lines.
 ******************************************************************************/
-void OpenGLRenderingJob::renderLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
+void OpenGLRenderingJob::renderLinesImplementation(const LinePrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     FloatType lineWidth = !isPickingPass() ? primitive.lineWidth() : primitive.pickingLineWidth();
     OVITO_ASSERT(lineWidth > 0);
@@ -41,15 +41,15 @@ void OpenGLRenderingJob::renderLinesImplementation(const LinePrimitive& primitiv
         return;
 
     if(lineWidth == 1)
-        renderThinLinesImplementation(primitive, pickingGroupID);
+        renderThinLinesImplementation(primitive, command);
     else
-        renderThickLinesImplementation(primitive, pickingGroupID);
+        renderThickLinesImplementation(primitive, command);
 }
 
 /******************************************************************************
 * Renders a set of lines using GL_LINES mode.
 ******************************************************************************/
-void OpenGLRenderingJob::renderThinLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
+void OpenGLRenderingJob::renderThinLinesImplementation(const LinePrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     // Activate the right OpenGL shader program.
     OpenGLShaderHelper shader(this);
@@ -87,7 +87,7 @@ void OpenGLRenderingJob::renderThinLinesImplementation(const LinePrimitive& prim
     }
     else {
         // Pass picking base ID to shader.
-        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(pickingGroupID, primitive.positions()->size() / 2));
+        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(command, primitive.positions()->size() / 2));
     }
 
     // Issue line drawing command.
@@ -97,7 +97,7 @@ void OpenGLRenderingJob::renderThinLinesImplementation(const LinePrimitive& prim
 /******************************************************************************
 * Renders a set of lines using triangle strips.
 ******************************************************************************/
-void OpenGLRenderingJob::renderThickLinesImplementation(const LinePrimitive& primitive, int pickingGroupID)
+void OpenGLRenderingJob::renderThickLinesImplementation(const LinePrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     FloatType lineWidth = !isPickingPass() ? primitive.lineWidth() : primitive.pickingLineWidth();
 
@@ -139,7 +139,7 @@ void OpenGLRenderingJob::renderThickLinesImplementation(const LinePrimitive& pri
     }
     else {
         // Pass picking base ID to shader.
-        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(pickingGroupID, primitive.positions()->size() / 2));
+        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(command, primitive.positions()->size() / 2));
     }
 
     // Compute line width in viewport space.

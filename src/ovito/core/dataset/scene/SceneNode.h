@@ -65,6 +65,12 @@ public:
     ///         This matrix contains also the transformation of the parent node.
     const AffineTransformation& getWorldTransform(AnimationTime time, TimeInterval& validityInterval) const;
 
+    /// \brief Returns this node's world transformation matrix.
+    const AffineTransformation& getWorldTransform(AnimationTime time) const {
+        TimeInterval validity;
+        return getWorldTransform(time, validity);
+    }
+
     /// \brief Returns this node's local transformation matrix.
     /// \param[in] time The animation for which the transformation matrix should be computed.
     /// \param[in,out] validityInterval The validity interval of the returned transformation matrix.

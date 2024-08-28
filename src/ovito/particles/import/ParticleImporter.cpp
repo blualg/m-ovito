@@ -54,9 +54,11 @@ void ParticleImporter::propertyChanged(const PropertyFieldDescriptor* field)
     FileSourceImporter::propertyChanged(field);
 
     if(field == PROPERTY_FIELD(sortParticles) || field == PROPERTY_FIELD(generateBonds) || field == PROPERTY_FIELD(recenterCell)) {
-        // Reload input file(s) when these options are changed by the user.
-        // But there is no need to refetch the data file(s) from the remote location. Reparsing the cached files is sufficient.
-        requestReload();
+        if(!isBeingLoaded()) {
+            // Reload input file(s) when these options are changed by the user.
+            // But there is no need to refetch the data file(s) from the remote location. Re-parsing the cached files is sufficient.
+            requestReload();
+        }
     }
 }
 
@@ -223,7 +225,7 @@ void ParticleImporter::FrameLoader::setDihedralCount(size_t count)
 }
 
 /******************************************************************************
-* Creates an impropers containerobject (if the bond count is non-zero) and adjusts the
+* Creates an impropers container object (if the bond count is non-zero) and adjusts the
 * number of elements of the property container.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::setImproperCount(size_t count)
@@ -486,7 +488,7 @@ void ParticleImporter::FrameLoader::loadFile()
     }
 
     // Precompute checksum of Particle Identifier property to speed up
-    // the detectsion of particle reorderings.
+    // the detection of particle reorderings.
     if(_particles) {
         if(const Property* identifiers = _particles->getProperty(Particles::IdentifierProperty)) {
             (void)identifiers->checksum();

@@ -31,9 +31,8 @@
 namespace Ovito {
 
 template<typename Setup, typename Kernel>
-void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
+void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel, Task* task = this_task::get())
 {
-    Task* task = this_task::get();
     OVITO_ASSERT(task);
     if(task->isCanceled())
         throw OperationCanceled();
@@ -44,6 +43,15 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
     }
 
 #ifndef OVITO_DISABLE_THREADING
+
+    // Never block the UI thread. Instead, run the parallel loop in a worker thread and
+    // handle UI events while waiting.
+    if(ExecutionContext::isMainThread()) {
+        asyncLaunchAndJoin([&]() {
+            parallelCancellable(maxWorkers, std::forward<Setup>(setup), std::forward<Kernel>(kernel), task);
+        });
+        return;
+    }
 
     // This limits the number of runner objects to be allocated.
     static constexpr size_t builtinMaxWorkers = 128;
@@ -56,7 +64,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
     if(pool->maxThreadCount() == 1)
         workerCount = 1;
 
-    // Run caller-provided setup function in the master thread.
+    // Run caller-provided setup function in the caller's thread.
     std::invoke(std::forward<Setup>(setup), workerCount);
 
     if(workerCount != 1) {
@@ -153,6 +161,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
     }
 
 #else
+    // No-threaded mode.
     kernel(0, 1);
 #endif
 
@@ -163,16 +172,18 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel)
 template<typename Setup, typename Kernel>
 void parallelForChunks(size_t loopCount, size_t minimumChunkSize, Setup&& setup, Kernel&& kernel)
 {
-    OVITO_ASSERT(minimumChunkSize > 0);
+    OVITO_ASSERT(minimumChunkSize != 0);
     size_t maxWorkerCount = (loopCount + minimumChunkSize - 1) / minimumChunkSize;
 
     parallelCancellable(maxWorkerCount,
         std::forward<Setup>(setup),
         [&](size_t workerIndex, size_t workerCount) {
             size_t chunkSize = (loopCount + workerCount - 1) / workerCount;
+            OVITO_ASSERT(chunkSize != 0);
             size_t fromIndex = workerIndex * chunkSize;
             size_t toIndex = std::min(fromIndex + chunkSize, loopCount);
-            kernel(workerIndex, fromIndex, toIndex);
+            if(toIndex > fromIndex)
+                kernel(workerIndex, fromIndex, toIndex);
         }
     );
 }
@@ -180,28 +191,30 @@ void parallelForChunks(size_t loopCount, size_t minimumChunkSize, Setup&& setup,
 template<typename Kernel>
 void parallelForChunks(size_t loopCount, size_t minimumChunkSize, Kernel&& kernel)
 {
-    OVITO_ASSERT(minimumChunkSize > 0);
+    OVITO_ASSERT(minimumChunkSize != 0);
     size_t maxWorkerCount = (loopCount + minimumChunkSize - 1) / minimumChunkSize;
 
     parallelCancellable(maxWorkerCount,
         [](size_t workerCount) noexcept {},
         [&](size_t workerIndex, size_t workerCount) {
             size_t chunkSize = (loopCount + workerCount - 1) / workerCount;
+            OVITO_ASSERT(chunkSize != 0);
             size_t fromIndex = workerIndex * chunkSize;
             size_t toIndex = std::min(fromIndex + chunkSize, loopCount);
-            kernel(fromIndex, toIndex);
+            if(toIndex > fromIndex)
+                kernel(fromIndex, toIndex);
         }
     );
 }
 
-template <bool ProgressTracking = true, typename Setup, typename OuterKernel>
+template <bool ReportProgress = true, typename Setup, typename OuterKernel>
 void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, Setup&& setup, OuterKernel&& outerKernel)
 {
     OVITO_ASSERT(minimumChunkSize != 0);
 
     Task* task = this_task::get();
     OVITO_ASSERT(task);
-    if constexpr(ProgressTracking) {
+    if constexpr(ReportProgress) {
         if(loopCount != 0) {
             task->setProgressMaximum(loopCount);
         }
@@ -214,22 +227,26 @@ void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, Setup&& se
                 size_t count = end - i;
                 for(; i != end; ++i)
                     innerKernel(workerIndex, i);
-                if constexpr(ProgressTracking) {
+                if constexpr(ReportProgress) {
                     task->incrementProgressValue(count);
+                }
+                else {
+                    if(task->isCanceled())
+                        throw OperationCanceled();
                 }
             }
         });
     });
 }
 
-template <bool ProgressTracking = true, typename OuterKernel>
+template <bool ReportProgress = true, typename OuterKernel>
 void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, OuterKernel&& outerKernel)
 {
     OVITO_ASSERT(minimumChunkSize != 0);
 
     Task* task = this_task::get();
     OVITO_ASSERT(task);
-    if constexpr(ProgressTracking) {
+    if constexpr(ReportProgress) {
         if(loopCount != 0) {
             task->setProgressMaximum(loopCount);
         }
@@ -242,25 +259,29 @@ void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, OuterKerne
                 size_t count = end - i;
                 for(; i != end; ++i)
                     innerKernel(i);
-                if constexpr(ProgressTracking) {
+                if constexpr(ReportProgress) {
                     task->incrementProgressValue(count);
+                }
+                else {
+                    if(task->isCanceled())
+                        throw OperationCanceled();
                 }
             }
         });
     });
 }
 
-template <bool ProgressTracking = true, typename Setup, typename Kernel>
+template <bool ReportProgress = true, typename Setup, typename Kernel>
 void parallelFor(size_t loopCount, size_t minimumChunkSize, Setup&& setup, Kernel&& kernel)
 {
-    parallelForInnerOuter<ProgressTracking>(loopCount, minimumChunkSize, std::forward<Setup>(setup),
+    parallelForInnerOuter<ReportProgress>(loopCount, minimumChunkSize, std::forward<Setup>(setup),
                                             [kernel = std::forward<Kernel>(kernel)](auto&& iterate) { iterate(kernel); });
 }
 
-template <bool ProgressTracking = true, typename Kernel>
+template <bool ReportProgress = true, typename Kernel>
 void parallelFor(size_t loopCount, size_t minimumChunkSize, Kernel&& kernel)
 {
-    parallelForInnerOuter<ProgressTracking>(loopCount, minimumChunkSize,
+    parallelForInnerOuter<ReportProgress>(loopCount, minimumChunkSize,
                                             [kernel = std::forward<Kernel>(kernel)](auto&& iterate) { iterate(kernel); });
 }
 

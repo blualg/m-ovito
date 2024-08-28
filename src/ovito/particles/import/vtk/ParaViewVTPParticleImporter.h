@@ -59,13 +59,19 @@ public:
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-        return std::make_shared<FrameLoader>(request, std::move(_particleShapeFiles));
+        return std::make_shared<FrameLoader>(request, std::move(_particleShapeFiles), isBodiesFile());
     }
 
     /// Stores the list of particle type names and corresponding shape file URLs to be loaded.
     void setParticleShapeFileList(std::vector<ParaViewVTMBlockInfo>&& particleShapeFiles) {
         _particleShapeFiles = std::move(particleShapeFiles);
     }
+
+    /// Returns whether the current .vtp file contains per-particle or per-body information.
+    bool isBodiesFile() const { return _isBodiesFile; }
+
+    /// Specifies whether the current .vtp file contains per-particle or per-body information.
+    void setIsBodiesFile(bool isBodiesFile) { _isBodiesFile = isBodiesFile; }
 
 private:
 
@@ -75,8 +81,12 @@ private:
     public:
 
         /// Constructor.
-        FrameLoader(const LoadOperationRequest& request, std::vector<ParaViewVTMBlockInfo> particleShapeFiles)
-            : ParticleImporter::FrameLoader(request), _particleShapeFiles(std::move(particleShapeFiles)) {}
+        FrameLoader(const LoadOperationRequest& request, std::vector<ParaViewVTMBlockInfo>&& particleShapeFiles, bool isBodiesFile)
+            : ParticleImporter::FrameLoader(request),
+              _particleShapeFiles(std::move(particleShapeFiles)),
+              _isBodiesFile(isBodiesFile)
+        {
+        }
 
     protected:
 
@@ -84,7 +94,7 @@ private:
         virtual void loadFile() override;
 
         /// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
-        Property* createParticlePropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData);
+        Property* createPropertyForDataArray(QXmlStreamReader& xml, PropertyContainer* container, int& vectorComponent, bool preserveExistingData);
 
         /// Helper method that loads the shape of a particle type from an external geometry file.
         void loadParticleShape(ParticleType* particleType);
@@ -92,11 +102,18 @@ private:
         /// The list of particle type names and corresponding files containing the particle shapes.
         /// This list is extracted by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
         std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
+
+        /// Indicates whether the current .vtp file contains per-particle or per-body information.
+        bool _isBodiesFile;
     };
 
     /// The list of particle type names and corresponding files containing the particle shapes.
     /// This list is extracted by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
     std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
+
+    /// Indicates whether the current .vtp file contains per-particle or per-body information.
+    /// This is determined by the ParticlesParaViewVTMFileFilter class from the VTM multi-block structure.
+    bool _isBodiesFile = false;
 };
 
 /**
@@ -119,6 +136,9 @@ private:
 
     /// The list of shape files for particle types.
     std::vector<ParaViewVTMBlockInfo> _particleShapeFiles;
+
+    /// The list of bodies files for an Aspherix non-convex particle simulation.
+    std::vector<QUrl> _bodiesFiles;
 };
 
 }   // End of namespace

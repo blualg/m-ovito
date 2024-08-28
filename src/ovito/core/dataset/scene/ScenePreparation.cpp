@@ -39,12 +39,11 @@ DEFINE_REFERENCE_FIELD(ScenePreparation, selectionSet);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-void ScenePreparation::initializeObject(UserInterface& userInterface, Scene* scene, bool autoRestart)
+void ScenePreparation::initializeObject(UserInterface& userInterface, Scene* scene)
 {
     RefMaker::initializeObject();
 
     _userInterface = &userInterface;
-    _autoRestart = autoRestart;
 
     // Activate the initial scene provided to the constructor.
     setScene(scene);
@@ -135,7 +134,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
     // Request results from all data pipelines in the scene.
     // If at least one of them is not immediately available, we'll have to
-    // wait until its evaulation completes.
+    // wait until its evaluation completes.
     _currentPipeline.reset();
     _pipelineEvaluationFuture.reset();
     _completedFrame = scene()->animationSettings()->currentFrame();
@@ -182,7 +181,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
         // Update the viewports to reflect the final pipeline state.
         Q_EMIT viewportUpdateRequest();
 
-        // Also amit a Qt signal to indicate we've finished preparing the scene.
+        // Also emit a Qt signal to indicate we've finished preparing the scene.
         // Note: This must come AFTER refreshing the viewports to make animation playback work correctly.
         Q_EMIT scenePreparationFinished();
     }

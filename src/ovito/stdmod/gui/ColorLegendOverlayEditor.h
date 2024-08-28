@@ -46,18 +46,18 @@ protected:
 
 private Q_SLOTS:
 
-    /// Updates the combobox list showing the available data sources.
-    void updateSourcesList();
+    /// Updates the combo-box showing the available color mappings.
+    void updateColorMappingsList();
 
-    /// Is called when the user selects a new source object for the color legend.
-    void colorSourceSelected();
+    /// Is called when the user selects a new source color mapping for the color legend.
+    void colorMappingSelectedSelected();
 
     /// Updates the placeholder texts of the label input fields to reflect the current values.
     void updateLabelPlaceholderTexts();
 
 private:
 
-    PopupUpdateComboBox* _sourcesComboBox;
+    PopupUpdateComboBox* _colorMappingsComboBox;
     StringParameterUI* _titlePUI;
     StringParameterUI* _label1PUI;
     StringParameterUI* _label2PUI;

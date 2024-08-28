@@ -92,16 +92,17 @@ void CoordinateTripodOverlay::propertyChanged(const PropertyFieldDescriptor* fie
 /******************************************************************************
 * Lets the overlay paint its contents into the framebuffer.
 ******************************************************************************/
-void CoordinateTripodOverlay::render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene)
+std::variant<PipelineStatus, Future<PipelineStatus>> CoordinateTripodOverlay::render(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene)
 {
     // Check alignment parameter.
-    checkAlignmentParameterValue(alignment());
+    if(!frameGraph.isInteractive())
+        checkAlignmentParameterValue(alignment());
 
     FloatType tripodSize = this->tripodSize() * physicalViewportRect.height();
-    if(tripodSize <= 0) return;
+    if(tripodSize <= 0) return {};
 
     FloatType lineWidth = this->lineWidth() * tripodSize;
-    if(lineWidth <= 0) return;
+    if(lineWidth <= 0) return {};
 
     FloatType arrowSize = FloatType(0.17);
 
@@ -184,7 +185,7 @@ void CoordinateTripodOverlay::render(FrameGraph& frameGraph, const QRect& logica
         std::unique_ptr<ImagePrimitive> imagePrimitive = std::make_unique<ImagePrimitive>();
         imagePrimitive->setImage(image);
         imagePrimitive->setRectWindow(QRect(alignedPos, image.size()));
-        frameGraph.addCommand(std::move(imagePrimitive));
+        commandGroup.addPrimitivePreprojected(std::move(imagePrimitive));
     };
 
     // Render axis arrows.
@@ -270,7 +271,7 @@ void CoordinateTripodOverlay::render(FrameGraph& frameGraph, const QRect& logica
         std::unique_ptr<ImagePrimitive> imagePrimitive = std::make_unique<ImagePrimitive>();
         imagePrimitive->setImage(image);
         imagePrimitive->setRectWindow(QRect(alignedPos, image.size()));
-        frameGraph.addCommand(std::move(imagePrimitive));
+        commandGroup.addPrimitivePreprojected(std::move(imagePrimitive));
 
         // Render axis label.
         if(fontSize != 0 && !labels[axis].isEmpty()) {
@@ -306,13 +307,15 @@ void CoordinateTripodOverlay::render(FrameGraph& frameGraph, const QRect& logica
                 textRect.translate(dir2d_normalized.x(), dir2d_normalized.y());
             }
             textPrimitive->setPositionWindow(Point2(textRect.center().x(), textRect.center().y()));
-            frameGraph.addCommand(std::move(textPrimitive));
+            commandGroup.addPrimitivePreprojected(std::move(textPrimitive));
         }
     }
 
     if(tripodStyle() == SolidArrows && lastZ < 0) {
         renderSolidJoint();
     }
+
+    return {};
 }
 
 /******************************************************************************

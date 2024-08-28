@@ -44,7 +44,7 @@ class OVITO_CORE_EXPORT ScenePreparation : public QObject, public RefMaker
 public:
 
     /// Constructor.
-    void initializeObject(UserInterface& userInterface, Scene* scene = nullptr, bool autoRestart = true);
+    void initializeObject(UserInterface& userInterface, Scene* scene = nullptr);
 
     /// This method gets called by OORef<T>::create() right after the object has been fully initialized.
     void completeObjectInitialization();
@@ -53,7 +53,7 @@ public:
     UserInterface& userInterface() const { return *_userInterface; }
 
     /// Returns a future that gets fulfilled once the scene is ready.
-    SharedFuture<void> future();
+    [[nodiscard]] SharedFuture<void> future();
 
     /// Returns whether automatic restarting of the scene preparation is enabled after the scene has been changed.
     bool autoRestart() const { return _autoRestart; }
@@ -115,7 +115,7 @@ private:
     /// The active scene node selection set.
     DECLARE_REFERENCE_FIELD(SelectionSet*, selectionSet);
 
-    /// The abstract user interface in which this object operates.
+    /// The abstract user interface.
     UserInterface* _userInterface;
 
     /// The animation frame at which the scene was made ready. This is used to detect time changes.
@@ -145,8 +145,8 @@ private:
     /// Indicates that a restart of the preparation has been scheduled.
     bool _isRestartScheduled = false;
 
-    /// Enables automatical restarting of the scene preparation after the scene has been changed.
-    bool _autoRestart = true;
+    /// Enables automatic restarting of the scene preparation after the scene has been changed.
+    bool _autoRestart = false;
 };
 
 }   // End of namespace

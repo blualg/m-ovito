@@ -131,16 +131,11 @@ Box3 DislocationVis::boundingBoxImmediate(AnimationTime time, const ConstDataObj
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Get the dislocation network to be rendered.
-    const DislocationNetwork* dislocations = path.lastAs<DislocationNetwork>();
+    DataOORef<const DislocationNetwork> dislocations = path.lastAs<DislocationNetwork>();
     if(!dislocations)
-        return {};
-
-    // Get the simulation cell.
-    const SimulationCell* cellObject = dislocations->domain();
-    if(!cellObject)
         return {};
 
     // Look up the asynchronous task that generates the renderable lines.
@@ -153,202 +148,209 @@ PipelineStatus DislocationVis::render(const ConstDataObjectPath& path, const Pip
         });
 
     // Wait for the renderable lines to be generated.
-    std::shared_ptr<const RenderableDislocationLines> renderableLines = renderableLinesFuture.result();
+    return renderableLinesFuture.then(*this, [this, &commandGroup=frameGraph.addCommandGroup(FrameGraph::SceneLayer), frameGraph=OORef<FrameGraph>(&frameGraph), dislocations, pipeline=OORef<const Pipeline>(pipeline)](std::shared_ptr<const RenderableDislocationLines> renderableLines) -> PipelineStatus {
 
-    // Make sure we don't exceed our internal limits.
-    if(renderableLines->lineSegments().size() > (size_t)std::numeric_limits<int>::max())
-        throw Exception(tr("Cannot render more than %1 dislocation segments.").arg(std::numeric_limits<int>::max()));
+        // Make sure we don't exceed our internal limits.
+        if(renderableLines->lineSegments().size() > (size_t)std::numeric_limits<int>::max())
+            throw Exception(tr("Cannot render more than %1 dislocation segments.").arg(std::numeric_limits<int>::max()));
 
-    // The key type used for caching the rendering primitives:
-    using CacheKey = RendererResourceKey<struct DislocationVisCache,
-        std::shared_ptr<const RenderableDislocationLines>,     // Renderable object
-        ConstDataObjectRef,     // Simulation cell geometry
-        FloatType,              // Line width
-        bool,                   // Burgers vector display
-        FloatType,              // Burgers vectors scaling
-        FloatType,              // Burgers vector width
-        Color,                  // Burgers vector color
-        bool,                   // Indicate line directions
-        LineColoringMode,       // Way to color lines
-        CylinderPrimitive::ShadingMode  // Line shading mode
-    >;
+        // A simulation cell is needed to render dislocation lines.
+        const SimulationCell* cellObject = dislocations->domain();
+        if(!cellObject)
+            return Exception(tr("Cannot render dislocations without a simulation cell."));
 
-    // The values stored in the vis cache.
-    struct CacheValue {
-        CylinderPrimitive segments;
-        ParticlePrimitive corners;
-        CylinderPrimitive burgersArrows;
-        OORef<DislocationPickInfo> pickInfo;
-    };
+        // The key type used for caching the rendering primitives:
+        using CacheKey = RendererResourceKey<struct DislocationVisCache,
+            std::shared_ptr<const RenderableDislocationLines>,     // Renderable object
+            ConstDataObjectRef,     // Simulation cell geometry
+            FloatType,              // Line width
+            bool,                   // Burgers vector display
+            FloatType,              // Burgers vectors scaling
+            FloatType,              // Burgers vector width
+            Color,                  // Burgers vector color
+            bool,                   // Indicate line directions
+            LineColoringMode,       // Way to color lines
+            CylinderPrimitive::ShadingMode  // Line shading mode
+        >;
 
-    // Lookup the rendering primitives in the vis cache.
-    const auto& primitives = frameGraph.visCache().lookup<CacheValue>(
-        CacheKey(
-            renderableLines,
-            cellObject,
-            lineWidth(),
-            showBurgersVectors(),
-            burgersVectorScaling(),
-            burgersVectorWidth(),
-            burgersVectorColor(),
-            showLineDirections(),
-            lineColoringMode(),
-            shadingMode()),
-        [&](CacheValue& primitives) {
-
-            // First determine number of corner vertices/segments that are going to be rendered.
-            int lineSegmentCount = renderableLines->lineSegments().size();
+        // The values stored in the vis cache.
+        struct CacheValue {
+            CylinderPrimitive segments;
+            ParticlePrimitive corners;
+            CylinderPrimitive burgersArrows;
+            OORef<DislocationPickInfo> pickInfo;
+            int lineSegmentCount = 0;
             int cornerCount = 0;
-            for(size_t i = 1; i < renderableLines->lineSegments().size(); i++) {
-                const auto& s1 = renderableLines->lineSegments()[i-1];
-                const auto& s2 = renderableLines->lineSegments()[i];
-                if(s1.verts[1].equals(s2.verts[0])) cornerCount++;
-            }
-            // Allocate rendering data buffers.
-            std::vector<int> subobjToSegmentMap(lineSegmentCount + cornerCount);
-            FloatType lineDiameter = std::max(lineWidth(), FloatType(0));
-            BufferFactory<Point3G> cornerPoints(cornerCount);
-            BufferFactory<ColorG> cornerColors(cornerCount);
-            BufferFactory<Point3G> baseSegmentPoints(lineSegmentCount);
-            BufferFactory<Point3G> headSegmentPoints(lineSegmentCount);
-            BufferFactory<ColorG> segmentColors(lineSegmentCount);
+        };
 
-            // Build list of line segments.
-            auto cornerPointsIter = cornerPoints.begin();
-            auto cornerColorsIter = cornerColors.begin();
-            ColorG lineColor;
-            Vector3 normalizedBurgersVector;
-            Vector3 lastBurgersVector = Vector3::Zero();
-            int lastRegion = -1;
-            int lastDislocationIndex = -1;
-            const DislocationSegment* lastInputDislocationSegment = nullptr;
-            for(size_t lineSegmentIndex = 0; lineSegmentIndex < renderableLines->lineSegments().size(); lineSegmentIndex++) {
-                const auto& lineSegment = renderableLines->lineSegments()[lineSegmentIndex];
-                if(lineSegment.burgersVector != lastBurgersVector || lineSegment.region != lastRegion) {
-                    lastBurgersVector = lineSegment.burgersVector;
-                    lastRegion = lineSegment.region;
-                    lineColor = ColorG(0.8f, 0.8f, 0.8f);
-                    const MicrostructurePhase* phase = nullptr;
-                    if(dislocations && renderableLines->clusterGraph()) {
-                        Cluster* cluster = renderableLines->clusterGraph()->findCluster(lineSegment.region);
-                        OVITO_ASSERT(cluster != nullptr);
-                        phase = dislocations->structureById(cluster->structure);
-                        normalizedBurgersVector = ClusterVector(lineSegment.burgersVector, cluster).toSpatialVector();
-                        normalizedBurgersVector.normalizeSafely();
-                    }
-                    if(phase) {
-                        if(lineColoringMode() == ColorByDislocationType) {
-                            const BurgersVectorFamily* family = phase->defaultBurgersVectorFamily();
-                            for(const BurgersVectorFamily* f : phase->burgersVectorFamilies()) {
-                                if(f->isMember(lineSegment.burgersVector, phase)) {
-                                    family = f;
-                                    break;
+        // Look up the rendering primitives in the vis cache.
+        const auto& primitives = frameGraph->visCache().lookup<CacheValue>(
+            CacheKey(
+                renderableLines,
+                cellObject,
+                lineWidth(),
+                showBurgersVectors(),
+                burgersVectorScaling(),
+                burgersVectorWidth(),
+                burgersVectorColor(),
+                showLineDirections(),
+                lineColoringMode(),
+                shadingMode()),
+            [&](CacheValue& primitives) {
+
+                // First determine number of corner vertices/segments that are going to be rendered.
+                int& lineSegmentCount = primitives.lineSegmentCount = renderableLines->lineSegments().size();
+                int& cornerCount = primitives.cornerCount;
+                for(size_t i = 1; i < renderableLines->lineSegments().size(); i++) {
+                    const auto& s1 = renderableLines->lineSegments()[i-1];
+                    const auto& s2 = renderableLines->lineSegments()[i];
+                    if(s1.verts[1].equals(s2.verts[0])) cornerCount++;
+                }
+                // Allocate rendering data buffers.
+                std::vector<int> subobjToSegmentMap(lineSegmentCount + cornerCount);
+                FloatType lineDiameter = std::max(lineWidth(), FloatType(0));
+                BufferFactory<Point3G> cornerPoints(cornerCount);
+                BufferFactory<ColorG> cornerColors(cornerCount);
+                BufferFactory<Point3G> baseSegmentPoints(lineSegmentCount);
+                BufferFactory<Point3G> headSegmentPoints(lineSegmentCount);
+                BufferFactory<ColorG> segmentColors(lineSegmentCount);
+
+                // Build list of line segments.
+                auto cornerPointsIter = cornerPoints.begin();
+                auto cornerColorsIter = cornerColors.begin();
+                ColorG lineColor;
+                Vector3 normalizedBurgersVector;
+                Vector3 lastBurgersVector = Vector3::Zero();
+                int lastRegion = -1;
+                int lastDislocationIndex = -1;
+                const DislocationSegment* lastInputDislocationSegment = nullptr;
+                for(size_t lineSegmentIndex = 0; lineSegmentIndex < renderableLines->lineSegments().size(); lineSegmentIndex++) {
+                    const auto& lineSegment = renderableLines->lineSegments()[lineSegmentIndex];
+                    if(lineSegment.burgersVector != lastBurgersVector || lineSegment.region != lastRegion) {
+                        lastBurgersVector = lineSegment.burgersVector;
+                        lastRegion = lineSegment.region;
+                        lineColor = ColorG(0.8f, 0.8f, 0.8f);
+                        const MicrostructurePhase* phase = nullptr;
+                        if(dislocations && renderableLines->clusterGraph()) {
+                            Cluster* cluster = renderableLines->clusterGraph()->findCluster(lineSegment.region);
+                            OVITO_ASSERT(cluster != nullptr);
+                            phase = dislocations->structureById(cluster->structure);
+                            normalizedBurgersVector = ClusterVector(lineSegment.burgersVector, cluster).toSpatialVector();
+                            normalizedBurgersVector.normalizeSafely();
+                        }
+                        if(phase) {
+                            if(lineColoringMode() == ColorByDislocationType) {
+                                const BurgersVectorFamily* family = phase->defaultBurgersVectorFamily();
+                                for(const BurgersVectorFamily* f : phase->burgersVectorFamilies()) {
+                                    if(f->isMember(lineSegment.burgersVector, phase)) {
+                                        family = f;
+                                        break;
+                                    }
                                 }
+                                if(family)
+                                    lineColor = family->color().toDataType<GraphicsFloatType>();
                             }
-                            if(family)
-                                lineColor = family->color().toDataType<GraphicsFloatType>();
-                        }
-                        else if(lineColoringMode() == ColorByBurgersVector) {
-                            lineColor = MicrostructurePhase::getBurgersVectorColor(phase->name(), lineSegment.burgersVector).toDataType<GraphicsFloatType>();
+                            else if(lineColoringMode() == ColorByBurgersVector) {
+                                lineColor = MicrostructurePhase::getBurgersVectorColor(phase->name(), lineSegment.burgersVector).toDataType<GraphicsFloatType>();
+                            }
                         }
                     }
+                    subobjToSegmentMap[lineSegmentIndex] = lineSegment.dislocationIndex;
+                    ColorG segmentColor = lineColor;
+                    if(lineColoringMode() == ColorByCharacter) {
+                        Vector3 delta = lineSegment.verts[1] - lineSegment.verts[0];
+                        FloatType dot = std::abs(delta.dot(normalizedBurgersVector));
+                        if(dot != 0) dot /= delta.length();
+                        if(dot > 1) dot = 1;
+                        FloatType angle = std::acos(dot) / (FLOATTYPE_PI/2);
+                        if(angle <= FloatType(0.5))
+                            segmentColor = ColorG(1, angle * 2, angle * 2);
+                        else
+                            segmentColor = ColorG((FloatType(1)-angle) * 2, (FloatType(1)-angle) * 2, 1);
+                    }
+                    if(dislocations) {
+                        if(lastDislocationIndex != lineSegment.dislocationIndex) {
+                            lastDislocationIndex = lineSegment.dislocationIndex;
+                            const auto& segmentList = dislocations->segments();
+                            lastInputDislocationSegment = (lastDislocationIndex >= 0 && lastDislocationIndex < segmentList.size()) ?
+                                segmentList[lastDislocationIndex] : nullptr;
+                        }
+                        if(lastInputDislocationSegment) {
+                            if(lastInputDislocationSegment->customColor.r() >= 0 && lastInputDislocationSegment->customColor.g() >= 0 && lastInputDislocationSegment->customColor.b() >= 0) {
+                                segmentColor = lastInputDislocationSegment->customColor.toDataType<GraphicsFloatType>();
+                            }
+                        }
+                    }
+                    baseSegmentPoints[lineSegmentIndex] = lineSegment.verts[0].toDataType<GraphicsFloatType>();
+                    headSegmentPoints[lineSegmentIndex] = lineSegment.verts[1].toDataType<GraphicsFloatType>();
+                    segmentColors[lineSegmentIndex] = segmentColor;
+                    if(lineSegmentIndex != 0 && lineSegment.verts[0].equals(renderableLines->lineSegments()[lineSegmentIndex-1].verts[1])) {
+                        subobjToSegmentMap[(cornerPointsIter - cornerPoints.begin()) + lineSegmentCount] = lineSegment.dislocationIndex;
+                        *cornerPointsIter++ = lineSegment.verts[0].toDataType<GraphicsFloatType>();
+                        *cornerColorsIter++ = segmentColor;
+                    }
                 }
-                subobjToSegmentMap[lineSegmentIndex] = lineSegment.dislocationIndex;
-                ColorG segmentColor = lineColor;
-                if(lineColoringMode() == ColorByCharacter) {
-                    Vector3 delta = lineSegment.verts[1] - lineSegment.verts[0];
-                    FloatType dot = std::abs(delta.dot(normalizedBurgersVector));
-                    if(dot != 0) dot /= delta.length();
-                    if(dot > 1) dot = 1;
-                    FloatType angle = std::acos(dot) / (FLOATTYPE_PI/2);
-                    if(angle <= FloatType(0.5))
-                        segmentColor = ColorG(1, angle * 2, angle * 2);
-                    else
-                        segmentColor = ColorG((FloatType(1)-angle) * 2, (FloatType(1)-angle) * 2, 1);
-                }
+                OVITO_ASSERT(cornerPointsIter == cornerPoints.end());
+
+                // Create rendering primitive for the line segments.
+                primitives.segments.setShape(showLineDirections() ? CylinderPrimitive::ArrowShape : CylinderPrimitive::CylinderShape);
+                primitives.segments.setShadingMode(shadingMode());
+                primitives.segments.setUniformWidth(lineDiameter);
+                primitives.segments.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
+                primitives.segments.setColors(segmentColors.take());
+
+                // Create rendering primitive for the line corner points.
+                primitives.corners.setParticleShape(ParticlePrimitive::SphericalShape);
+                primitives.corners.setShadingMode((shadingMode() == CylinderPrimitive::NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading);
+                primitives.corners.setRenderingQuality(ParticlePrimitive::HighQuality);
+                primitives.corners.setPositions(cornerPoints.take());
+                primitives.corners.setColors(cornerColors.take());
+                primitives.corners.setUniformRadius(0.5 * lineDiameter);
+
                 if(dislocations) {
-                    if(lastDislocationIndex != lineSegment.dislocationIndex) {
-                        lastDislocationIndex = lineSegment.dislocationIndex;
-                        const auto& segmentList = dislocations->segments();
-                        lastInputDislocationSegment = (lastDislocationIndex >= 0 && lastDislocationIndex < segmentList.size()) ?
-                            segmentList[lastDislocationIndex] : nullptr;
-                    }
-                    if(lastInputDislocationSegment) {
-                        if(lastInputDislocationSegment->customColor.r() >= 0 && lastInputDislocationSegment->customColor.g() >= 0 && lastInputDislocationSegment->customColor.b() >= 0) {
-                            segmentColor = lastInputDislocationSegment->customColor.toDataType<GraphicsFloatType>();
+                    if(showBurgersVectors()) {
+                        BufferFactory<Point3G> baseArrowPoints(dislocations->segments().size());
+                        BufferFactory<Point3G> headArrowPoints(dislocations->segments().size());
+                        subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocations->segments().size());
+                        int arrowIndex = 0;
+                        for(const DislocationSegment* segment : dislocations->segments()) {
+                            subobjToSegmentMap.push_back(arrowIndex);
+                            Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
+                            Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
+                            // Check if arrow is clipped away by cutting planes.
+                            if(dislocations->isPointCulled(center))
+                                dir.setZero(); // Hide arrow by setting length to zero.
+                            baseArrowPoints[arrowIndex] = center.toDataType<GraphicsFloatType>();
+                            headArrowPoints[arrowIndex] = baseArrowPoints[arrowIndex] + dir.toDataType<GraphicsFloatType>();
+                            arrowIndex++;
                         }
+                        // Create rendering primitive for the Burgers vector arrows.
+                        primitives.burgersArrows.setShape(CylinderPrimitive::ArrowShape);
+                        primitives.burgersArrows.setShadingMode(shadingMode());
+                        primitives.burgersArrows.setUniformWidth(std::max(burgersVectorWidth(), FloatType(0)));
+                        primitives.burgersArrows.setUniformColor(burgersVectorColor());
+                        primitives.burgersArrows.setPositions(baseArrowPoints.take(), headArrowPoints.take());
                     }
+                    primitives.pickInfo = OORef<DislocationPickInfo>::create(this, dislocations, std::move(subobjToSegmentMap));
                 }
-                baseSegmentPoints[lineSegmentIndex] = lineSegment.verts[0].toDataType<GraphicsFloatType>();
-                headSegmentPoints[lineSegmentIndex] = lineSegment.verts[1].toDataType<GraphicsFloatType>();
-                segmentColors[lineSegmentIndex] = segmentColor;
-                if(lineSegmentIndex != 0 && lineSegment.verts[0].equals(renderableLines->lineSegments()[lineSegmentIndex-1].verts[1])) {
-                    subobjToSegmentMap[(cornerPointsIter - cornerPoints.begin()) + lineSegmentCount] = lineSegment.dislocationIndex;
-                    *cornerPointsIter++ = lineSegment.verts[0].toDataType<GraphicsFloatType>();
-                    *cornerColorsIter++ = segmentColor;
-                }
-            }
-            OVITO_ASSERT(cornerPointsIter == cornerPoints.end());
+            });
 
-            // Create rendering primitive for the line segments.
-            primitives.segments.setShape(showLineDirections() ? CylinderPrimitive::ArrowShape : CylinderPrimitive::CylinderShape);
-            primitives.segments.setShadingMode(shadingMode());
-            primitives.segments.setUniformWidth(lineDiameter);
-            primitives.segments.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
-            primitives.segments.setColors(segmentColors.take());
+        // Take simulation cell as bounding box of dislocation lines.
+        Box3 bb = Box3(Point3(0), Point3(1)).transformed(cellObject->cellMatrix()).padBox(std::max(lineWidth(), FloatType(0)) * FloatType(0.5));
+        const AffineTransformation& tm = pipeline->getWorldTransform(frameGraph->time());
 
-            // Create rendering primitive for the line corner points.
-            primitives.corners.setParticleShape(ParticlePrimitive::SphericalShape);
-            primitives.corners.setShadingMode((shadingMode() == CylinderPrimitive::NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading);
-            primitives.corners.setRenderingQuality(ParticlePrimitive::HighQuality);
-            primitives.corners.setPositions(cornerPoints.take());
-            primitives.corners.setColors(cornerColors.take());
-            primitives.corners.setUniformRadius(0.5 * lineDiameter);
+        // Render dislocation segments.
+        commandGroup.addPrimitive(std::make_unique<CylinderPrimitive>(primitives.segments), tm, bb, pipeline, primitives.pickInfo);
 
-            if(dislocations) {
-                if(showBurgersVectors()) {
-                    BufferFactory<Point3G> baseArrowPoints(dislocations->segments().size());
-                    BufferFactory<Point3G> headArrowPoints(dislocations->segments().size());
-                    subobjToSegmentMap.reserve(subobjToSegmentMap.size() + dislocations->segments().size());
-                    int arrowIndex = 0;
-                    for(const DislocationSegment* segment : dislocations->segments()) {
-                        subobjToSegmentMap.push_back(arrowIndex);
-                        Point3 center = cellObject->wrapPoint(segment->getPointOnLine(FloatType(0.5)));
-                        Vector3 dir = burgersVectorScaling() * segment->burgersVector.toSpatialVector();
-                        // Check if arrow is clipped away by cutting planes.
-                        if(dislocations->isPointCulled(center))
-                            dir.setZero(); // Hide arrow by setting length to zero.
-                        baseArrowPoints[arrowIndex] = center.toDataType<GraphicsFloatType>();
-                        headArrowPoints[arrowIndex] = baseArrowPoints[arrowIndex] + dir.toDataType<GraphicsFloatType>();
-                        arrowIndex++;
-                    }
-                    // Create rendering primitive for the Burgers vector arrows.
-                    primitives.burgersArrows.setShape(CylinderPrimitive::ArrowShape);
-                    primitives.burgersArrows.setShadingMode(shadingMode());
-                    primitives.burgersArrows.setUniformWidth(std::max(burgersVectorWidth(), FloatType(0)));
-                    primitives.burgersArrows.setUniformColor(burgersVectorColor());
-                    primitives.burgersArrows.setPositions(baseArrowPoints.take(), headArrowPoints.take());
-                }
-                primitives.pickInfo = OORef<DislocationPickInfo>::create(this, dislocations, std::move(subobjToSegmentMap));
-            }
-        });
+        // Render segment vertices.
+        commandGroup.addPrimitive(std::make_unique<ParticlePrimitive>(primitives.corners), tm, bb, pipeline, primitives.pickInfo, primitives.lineSegmentCount);
 
-    // Take simulation cell as bounding box of dislocation lines.
-    Box3 bb = Box3(Point3(0), Point3(1)).transformed(cellObject->cellMatrix()).padBox(std::max(lineWidth(), FloatType(0)) * FloatType(0.5));
+        // Render Burgers vectors.
+        if(showBurgersVectors() && primitives.burgersArrows.basePositions())
+            frameGraph->addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(primitives.burgersArrows), pipeline, primitives.pickInfo, primitives.lineSegmentCount + primitives.cornerCount);
 
-    auto pickingGroup = frameGraph.addPickingGroup(pipeline, primitives.pickInfo);
-
-    // Render dislocation segments.
-    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(primitives.segments), pipeline, pickingGroup, bb);
-
-    // Render segment vertices.
-    frameGraph.addPrimitive(std::make_unique<ParticlePrimitive>(primitives.corners), pipeline, pickingGroup, bb);
-
-    // Render Burgers vectors.
-    if(showBurgersVectors() && primitives.burgersArrows.basePositions())
-        frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(primitives.burgersArrows), pipeline, pickingGroup);
-
-    return {};
+        return {};
+    });
 }
 
 /******************************************************************************
@@ -385,13 +387,15 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
     FloatType lineDiameter = std::max(lineWidth() / 2, FloatType(0));
     FloatType headRadius = lineDiameter * (3.0/2.0);
 
+    FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::OverLayer);
+
     std::unique_ptr<CylinderPrimitive> segmentBuffer = std::make_unique<CylinderPrimitive>();
     segmentBuffer->setShape(CylinderPrimitive::CylinderShape);
     segmentBuffer->setShadingMode(CylinderPrimitive::FlatShading);
     segmentBuffer->setUniformWidth(lineDiameter);
     segmentBuffer->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
     segmentBuffer->setUniformColor(Color(1,1,1));
-    frameGraph.addPrimitive(std::move(segmentBuffer), pipeline, 0, Box3{}, FrameGraph::RenderingCommand::NoDepthTesting);
+    frameGraph.addPrimitiveNonpickable(commandGroup, std::move(segmentBuffer), pipeline);
 
     std::unique_ptr<ParticlePrimitive> cornerBuffer = std::make_unique<ParticlePrimitive>();
     cornerBuffer->setParticleShape(ParticlePrimitive::SphericalShape);
@@ -400,7 +404,7 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
     cornerBuffer->setPositions(cornerVertices.take());
     cornerBuffer->setUniformColor(Color(1,1,1));
     cornerBuffer->setUniformRadius(0.5 * lineDiameter);
-    frameGraph.addPrimitive(std::move(cornerBuffer), pipeline, 0, Box3{}, FrameGraph::RenderingCommand::NoDepthTesting);
+    frameGraph.addPrimitiveNonpickable(commandGroup, std::move(cornerBuffer), pipeline);
 
     if(!segment->line.empty()) {
         BufferFactory<Point3G> wrappedHeadPos(1);
@@ -411,7 +415,7 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
         headBuffer->setPositions(wrappedHeadPos.take());
         headBuffer->setUniformColor(Color(1,1,1));
         headBuffer->setUniformRadius(headRadius);
-        frameGraph.addPrimitive(std::move(headBuffer), pipeline, 0, Box3{}, FrameGraph::RenderingCommand::NoDepthTesting);
+        frameGraph.addPrimitiveNonpickable(commandGroup, std::move(headBuffer), pipeline);
     }
 }
 
@@ -605,7 +609,7 @@ QString DislocationVis::formatBurgersVector(const Vector3& b, const Microstructu
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
-QString DislocationPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
+QString DislocationPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 {
     QString str;
 

@@ -31,7 +31,7 @@ namespace Ovito {
 /******************************************************************************
 * Renders a set of markers.
 ******************************************************************************/
-void OpenGLRenderingJob::renderMarkersImplementation(const MarkerPrimitive& primitive, int pickingGroupID)
+void OpenGLRenderingJob::renderMarkersImplementation(const MarkerPrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     // Step out early if there is nothing to render.
     if(!primitive.positions() || primitive.positions()->size() == 0)
@@ -60,7 +60,7 @@ void OpenGLRenderingJob::renderMarkersImplementation(const MarkerPrimitive& prim
 
     if(isPickingPass()) {
         // Pass picking base ID to shader.
-        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(pickingGroupID, primitive.positions()->size()));
+        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(command, primitive.positions()->size()));
     }
     else {
         // Pass uniform marker color to fragment shader as a uniform value.

@@ -44,11 +44,6 @@ public:
     /// Returns the list of gizmos to render in the viewport.
     virtual std::vector<ViewportGizmo*> viewportGizmos() override;
 
-public Q_SLOTS:
-
-    /// Releases the renderer resources held by the viewport window and the renderer.
-    virtual void releaseResources();
-
 protected:
 
     /// This method is called after the reference counter of this object has reached zero

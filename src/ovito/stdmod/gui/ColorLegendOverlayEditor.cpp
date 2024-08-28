@@ -29,6 +29,7 @@
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/VectorParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
+#include <ovito/gui/desktop/properties/PipelineSelectionParameterUI.h>
 #include <ovito/gui/desktop/viewport/overlays/MoveOverlayInputMode.h>
 #include <ovito/gui/desktop/widgets/general/ViewportModeButton.h>
 #include <ovito/gui/desktop/widgets/general/PopupUpdateComboBox.h>
@@ -62,14 +63,21 @@ void ColorLegendOverlayEditor::createUI(const RolloutInsertionParameters& rollou
 
     QGroupBox* sourceBox = new QGroupBox(tr("Color legend source:"));
     parentLayout->addWidget(sourceBox);
-    QVBoxLayout* sourceLayout = new QVBoxLayout(sourceBox);
+    QGridLayout* sourceLayout = new QGridLayout(sourceBox);
     sourceLayout->setContentsMargins(4,4,4,4);
+    sourceLayout->setColumnStretch(1, 1);
+    sourceLayout->setSpacing(4);
 
-    _sourcesComboBox = new PopupUpdateComboBox();
-    connect(this, &PropertiesEditor::contentsChanged, this, &ColorLegendOverlayEditor::updateSourcesList);
-    connect(_sourcesComboBox, &PopupUpdateComboBox::dropDownActivated, this, &ColorLegendOverlayEditor::updateSourcesList);
-    connect(_sourcesComboBox, qOverload<int>(&QComboBox::activated), this, &ColorLegendOverlayEditor::colorSourceSelected);
-    sourceLayout->addWidget(_sourcesComboBox, 1);
+    PipelineSelectionParameterUI* pipelineUI = createParamUI<PipelineSelectionParameterUI>(PROPERTY_FIELD(ViewportOverlay::pipeline));
+    sourceLayout->addWidget(new QLabel(tr("Pipeline:")), 0, 0);
+    sourceLayout->addWidget(pipelineUI->comboBox(), 0, 1);
+
+    _colorMappingsComboBox = new PopupUpdateComboBox();
+    connect(this, &PropertiesEditor::contentsChanged, this, &ColorLegendOverlayEditor::updateColorMappingsList);
+    connect(_colorMappingsComboBox, &PopupUpdateComboBox::dropDownActivated, this, &ColorLegendOverlayEditor::updateColorMappingsList);
+    connect(_colorMappingsComboBox, qOverload<int>(&QComboBox::activated), this, &ColorLegendOverlayEditor::colorMappingSelectedSelected);
+    sourceLayout->addWidget(new QLabel(tr("Color mapping:")), 1, 0);
+    sourceLayout->addWidget(_colorMappingsComboBox, 1, 1);
 
     QGroupBox* positionBox = new QGroupBox(tr("Positioning"));
     parentLayout->addWidget(positionBox);
@@ -231,20 +239,20 @@ bool ColorLegendOverlayEditor::referenceEvent(RefTarget* source, const Reference
 }
 
 /******************************************************************************
-* Updates the combobox list showing the available data sources.
+* Updates the combo-box list showing the available color mappings.
 ******************************************************************************/
-void ColorLegendOverlayEditor::updateSourcesList()
+void ColorLegendOverlayEditor::updateColorMappingsList()
 {
     _label1PUI->setEnabled(false);
     _label2PUI->setEnabled(false);
     _valueFormatStringPUI->setEnabled(false);
     _tickEnabledPUI->setEnabled(false);
 
-    _sourcesComboBox->clear();
+    _colorMappingsComboBox->clear();
     if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject())) {
-        // List all ColorCodingModifiers, typed properties, and PropertyColorMappings in the scene. To find them, visit all
-        // pipelines and iterate over their modifier applications and output data collections.
-        visitScenePipelines([&](Pipeline* pipeline) {
+        // List all typed properties, PropertyColorMappings, and ColorCodingModifiers in the selected pipeline.
+        // To find them, iterate over the pipeline's modifier nodes and visit all visual elements and data objects in the pipeline's output data collection.
+        if(Pipeline* pipeline = overlay->pipeline()) {
 
             // Go through the visual elements of the pipeline and look if any one has a PropertyColorMapping attached to it.
             for(DataVis* vis : pipeline->visElements()) {
@@ -254,7 +262,7 @@ void ColorLegendOverlayEditor::updateSourcesList()
                             if(OORef<PropertyColorMapping> mapping = static_object_cast<PropertyColorMapping>(vis->getReferenceFieldTarget(field))) {
                                 if(mapping->sourceProperty()) {
                                     // Prepend property color mappings to the front of the list.
-                                    _sourcesComboBox->insertItem(0, QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(mapping->sourceProperty().nameWithComponent()), QVariant::fromValue(mapping));
+                                    _colorMappingsComboBox->insertItem(0, QStringLiteral("%1: %2").arg(vis->objectTitle()).arg(mapping->sourceProperty().nameWithComponent()), QVariant::fromValue(mapping));
                                 }
                             }
                             break;
@@ -263,13 +271,13 @@ void ColorLegendOverlayEditor::updateSourcesList()
                 }
             }
 
-            // Walk along the pipeline to find modification node associated with a ColorCodingModifier:
+            // Walk along the pipeline to find modification nodes associated with a ColorCodingModifier:
             PipelineNode* node = pipeline->head();
             while(node) {
                 if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(node)) {
                     if(OORef<ColorCodingModifier> mod = dynamic_object_cast<ColorCodingModifier>(modNode->modifier())) {
                         // Prepend color coding modifiers to the front of the list.
-                        _sourcesComboBox->insertItem(0, tr("Color coding: %1").arg(mod->sourceProperty().nameWithComponent()), QVariant::fromValue(mod));
+                        _colorMappingsComboBox->insertItem(0, tr("Color coding: %1").arg(mod->sourceProperty().nameWithComponent()), QVariant::fromValue(mod));
                     }
                     node = modNode->input();
                 }
@@ -289,23 +297,21 @@ void ColorLegendOverlayEditor::updateSourcesList()
                         QVariant ref = QVariant::fromValue(PropertyDataObjectReference(dataPath));
 
                         // Append typed properties at the end of the list.
-                        if(_sourcesComboBox->findData(ref) < 0)
-                            _sourcesComboBox->addItem(dataPath.toUIString(), std::move(ref));
+                        if(_colorMappingsComboBox->findData(ref) < 0)
+                            _colorMappingsComboBox->addItem(dataPath.toUIString(), std::move(ref));
                     }
                 }
             });
-
-            return true;
-        });
+        }
 
         // Select the item in the list that corresponds to the current parameter value.
         if(overlay->modifier()) {
-            int index = _sourcesComboBox->findData(QVariant::fromValue<OORef<ColorCodingModifier>>(overlay->modifier()));
+            int index = _colorMappingsComboBox->findData(QVariant::fromValue<OORef<ColorCodingModifier>>(overlay->modifier()));
             if(index >= 0)
-                _sourcesComboBox->setCurrentIndex(index);
+                _colorMappingsComboBox->setCurrentIndex(index);
             else {
-                _sourcesComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), overlay->modifier()->objectTitle());
-                _sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
+                _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), overlay->modifier()->objectTitle());
+                _colorMappingsComboBox->setCurrentIndex(_colorMappingsComboBox->count() - 1);
             }
             _label1PUI->setEnabled(true);
             _label2PUI->setEnabled(true);
@@ -313,12 +319,12 @@ void ColorLegendOverlayEditor::updateSourcesList()
             _tickEnabledPUI->setEnabled(true);
         }
         else if(overlay->colorMapping()) {
-            int index = _sourcesComboBox->findData(QVariant::fromValue<OORef<PropertyColorMapping>>(overlay->colorMapping()));
+            int index = _colorMappingsComboBox->findData(QVariant::fromValue<OORef<PropertyColorMapping>>(overlay->colorMapping()));
             if(index >= 0)
-                _sourcesComboBox->setCurrentIndex(index);
+                _colorMappingsComboBox->setCurrentIndex(index);
             else {
-                _sourcesComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), overlay->colorMapping()->sourceProperty().nameWithComponent());
-                _sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
+                _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), overlay->colorMapping()->sourceProperty().nameWithComponent());
+                _colorMappingsComboBox->setCurrentIndex(_colorMappingsComboBox->count() - 1);
             }
             _label1PUI->setEnabled(true);
             _label2PUI->setEnabled(true);
@@ -326,30 +332,30 @@ void ColorLegendOverlayEditor::updateSourcesList()
             _tickEnabledPUI->setEnabled(true);
         }
         else if(overlay->sourceProperty()) {
-            int index = _sourcesComboBox->findData(QVariant::fromValue(overlay->sourceProperty()));
+            int index = _colorMappingsComboBox->findData(QVariant::fromValue(overlay->sourceProperty()));
             if(index >= 0)
-                _sourcesComboBox->setCurrentIndex(index);
+                _colorMappingsComboBox->setCurrentIndex(index);
             else {
-                _sourcesComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), overlay->sourceProperty().dataTitleOrPath());
-                _sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
+                _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), overlay->sourceProperty().dataTitleOrPath());
+                _colorMappingsComboBox->setCurrentIndex(_colorMappingsComboBox->count() - 1);
             }
         }
         else {
-            _sourcesComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), tr("<none>"));
-            _sourcesComboBox->setCurrentIndex(_sourcesComboBox->count() - 1);
+            _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), tr("<none>"));
+            _colorMappingsComboBox->setCurrentIndex(_colorMappingsComboBox->count() - 1);
         }
     }
-    if(_sourcesComboBox->count() == 0)
-        _sourcesComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), tr("<none>"));
+    if(_colorMappingsComboBox->count() == 0)
+        _colorMappingsComboBox->addItem(QIcon(":/guibase/mainwin/status/status_warning.png"), tr("<none>"));
 }
 
 /******************************************************************************
-* Is called when the user selects a new source object for the color legend.
+* Is called when the user selects a new source color mapping for the color legend.
 ******************************************************************************/
-void ColorLegendOverlayEditor::colorSourceSelected()
+void ColorLegendOverlayEditor::colorMappingSelectedSelected()
 {
     if(ColorLegendOverlay* overlay = static_object_cast<ColorLegendOverlay>(editObject())) {
-        performTransaction(tr("Select color source"), [&]() {
+        performTransaction(tr("Select legend color mapping"), [&]() {
             QVariant selectedData = static_cast<QComboBox*>(sender())->currentData();
 
             if(selectedData.canConvert<OORef<ColorCodingModifier>>()) {

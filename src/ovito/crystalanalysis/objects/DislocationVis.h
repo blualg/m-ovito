@@ -59,7 +59,7 @@ public:
 
     /// \brief Given an sub-object ID returned by the Viewport::pick() method, looks up the
     /// corresponding dislocation segment.
-    int segmentIndexFromSubObjectID(quint32 subobjID) const {
+    int segmentIndexFromSubObjectID(uint32_t subobjID) const {
         if(subobjID < _subobjToSegmentMap.size())
             return _subobjToSegmentMap[subobjID];
         else
@@ -67,7 +67,7 @@ public:
     }
 
     /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-    virtual QString infoString(Pipeline* pipeline, quint32 subobjectId) override;
+    virtual QString infoString(const Pipeline* pipeline, uint32_t subobjectId) override;
 
 private:
 
@@ -100,10 +100,10 @@ public:
 public:
 
     /// Transforms the DislocationNetwork into a renderable set of lines.
-    Future<std::shared_ptr<const RenderableDislocationLines>> transformDislocations(const DislocationNetwork* dislocations);
+    [[nodiscard]] Future<std::shared_ptr<const RenderableDislocationLines>> transformDislocations(const DislocationNetwork* dislocations);
 
     /// Lets the vis element render a data object.
-    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
+    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the object.
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;

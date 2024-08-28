@@ -197,8 +197,6 @@ void LAMMPSBinaryDumpImporterEditor::onEditColumnMapping()
             int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
             showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex]);
-
-            importer->requestReload();
         });
     }
 }

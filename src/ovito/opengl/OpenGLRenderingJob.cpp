@@ -240,31 +240,61 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     }
     else {
         OVITO_CHECK_OPENGL(this, this->glClearColor(0, 0, 0, 0));
-#if 1
-        // Object IDs start at 1 when rendering for object picking.
-        constexpr quint32 startObjectID = 1;
-#else
-        // This can be enabled during debugging to avoid alpha!=1 pixels in the picking render buffer.
-        constexpr quint32 startObjectID = 0xEF000000;
-#endif
-        // Reset the object IDs assigned to the object picking groups.
-        objectPickingIdentifierMap()->prepare(*frameGraph, startObjectID);
     }
     OVITO_CHECK_OPENGL(this, this->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
     OVITO_REPORT_OPENGL_ERRORS(this);
 
-    // Render 2d background graphics.
+    // Render background graphics, typically 2D primitives only.
     _isTransparencyPass = false;
-    renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::UnderLayer);
+    this->glDisable(GL_DEPTH_TEST);
+    renderFrameGraph(FrameGraph::UnderLayer);
 
-    // Render opaque 3d geometry.
-    if(renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::SceneLayer)) {
-        // Render translucent 3d geometry in a second pass.
-        renderTransparentGeometry(*frameGraph, *glFrameBuffer);
+    // Render fully opaque 3D geometry.
+    this->glEnable(GL_DEPTH_TEST);
+    bool hasTransparentGeometry = renderFrameGraph(FrameGraph::SceneLayer);
+
+    // Let sub-classes perform additional steps to composite the results from multiple renderers, e.g. ANARI.
+    performFrameCompositing();
+
+    // Render translucent 3D geometry in a second pass.
+    if(hasTransparentGeometry)
+        renderTransparentGeometry(*glFrameBuffer);
+
+    // Render highlighted geometry in a third and fourth pass.
+    if(!isPickingPass() && std::any_of(frameGraph->commandGroups().cbegin(), frameGraph->commandGroups().cend(),
+                   [](const FrameGraph::RenderingCommandGroup& group) { return group.layerType() == FrameGraph::HighlightLayer1; })) {
+
+        this->glClearStencil(0);
+        this->glClear(GL_STENCIL_BUFFER_BIT);
+        this->glEnable(GL_STENCIL_TEST);
+        this->glStencilFunc(GL_ALWAYS, 0x1, 0x1);
+        this->glStencilMask(0x1);
+        this->glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+#if defined(Q_OS_MACOS) && defined(Q_PROCESSOR_ARM)
+        // Partial workaround for a bug in the MacOS/arm64 OpenGL implementation.
+        // Fragment shaders discarding fragments (via conditional "discard") still modify the stencil buffer, which is unexpected.
+        // See also: https://developer.apple.com/forums/thread/721988
+        this->glStencilOp(GL_REPLACE, GL_KEEP, GL_REPLACE);
+#endif
+        this->glDepthFunc(GL_LEQUAL);
+        this->glEnable(GL_DEPTH_TEST);
+
+        renderFrameGraph(FrameGraph::HighlightLayer1);
+
+        this->glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
+        this->glStencilMask(0x1);
+        this->glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+        this->glDisable(GL_DEPTH_TEST);
+
+        renderFrameGraph(FrameGraph::HighlightLayer2);
+
+        this->glDepthFunc(GL_LESS);
+        this->glDisable(GL_STENCIL_TEST);
     }
 
-    // Render foreground graphics.
-    renderFrameGraph(*frameGraph, FrameGraph::RenderLayer::OverLayer);
+    // Render foreground graphics, typically 2D primitives only.
+    this->glDisable(GL_DEPTH_TEST);
+    renderFrameGraph(FrameGraph::OverLayer);
 
     // Store the resource cache frame in the target frame buffer object to keep OpenGL resources alive
     // for subsequent frames.
@@ -317,7 +347,7 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
 /******************************************************************************
  * Renders all semi-transparent geometry in a second rendering pass.
  ******************************************************************************/
-void OpenGLRenderingJob::renderTransparentGeometry(const FrameGraph& frameGraph, OpenGLRenderingFrameBuffer& frameBuffer)
+void OpenGLRenderingJob::renderTransparentGeometry(OpenGLRenderingFrameBuffer& frameBuffer)
 {
     // Semi-transparent geometry should never get rendered in a picking render pass.
     OVITO_ASSERT(!isPickingPass());
@@ -326,7 +356,7 @@ void OpenGLRenderingJob::renderTransparentGeometry(const FrameGraph& frameGraph,
     if(orderIndependentTransparency()) frameBuffer.beginOITRendering();
 
     _isTransparencyPass = true;
-    renderFrameGraph(frameGraph, FrameGraph::RenderLayer::SceneLayer);
+    renderFrameGraph(FrameGraph::SceneLayer);
     _isTransparencyPass = false;
 
     // Second phase of the "Weighted Blended Order-Independent Transparency" method.
@@ -334,66 +364,80 @@ void OpenGLRenderingJob::renderTransparentGeometry(const FrameGraph& frameGraph,
 }
 
 /******************************************************************************
+ * Decides whether a command from the render graph should be executed by the renderer.
+ ******************************************************************************/
+bool OpenGLRenderingJob::filterRenderingCommand(const FrameGraph::RenderingCommand& command, const FrameGraph::RenderingCommandGroup& commandGroup)
+{
+    // Skip commands that are not relevant for the current rendering pass.
+    if(isPickingPass()) {
+        if(command.skipInPickingPass())
+            return true;
+    }
+    else {
+        if(command.skipInVisualPass())
+            return true;
+    }
+
+    return false;
+}
+
+/******************************************************************************
+ * Sets up the model-view transformation matrix for the given rendering command.
+ ******************************************************************************/
+void OpenGLRenderingJob::setupModelViewTransformation(const FrameGraph::RenderingCommand& command)
+{
+    if(command.modelWorldTM() != AffineTransformation::Zero()) {
+        _preprojectedCoordinates = false;
+        _modelViewTM = frameGraph()->projectionParams().viewMatrix * command.modelWorldTM();
+    }
+    else {
+        _preprojectedCoordinates = true;
+        _modelViewTM.setZero();
+    }
+}
+
+/******************************************************************************
  * Executes the rendering commands stored in the given frame graph.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderFrameGraph(const FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer)
+bool OpenGLRenderingJob::renderFrameGraph(FrameGraph::RenderLayerType layerType)
 {
     bool hasTransparentGeometry = false;
 
-    for(const FrameGraph::RenderingCommand& command : frameGraph.commands()) {
-        // Skip commands that are not part of the current render layer.
-        if(command.renderLayer() != renderLayer) continue;
+    for(const FrameGraph::RenderingCommandGroup& commandGroup : frameGraph()->commandGroups()) {
+        // Skip command groups that are not part of the current render layer.
+        if(commandGroup.layerType() != layerType)
+            continue;
 
-        // Skip commands that are not relevant for the current rendering pass.
-        if(isPickingPass()) {
-            if(command.skipInPickingPass()) continue;
-        }
-        else {
-            if(command.skipInVisualPass()) continue;
-        }
+        for(const FrameGraph::RenderingCommand& command : commandGroup.commands()) {
+            // Skip commands that are not relevant or not supported by this renderer.
+            if(filterRenderingCommand(command, commandGroup))
+                continue;
 
-        // Enable/disable depth testing as needed.
-        if(command.noDepthTesting() || command.highlightMode() == 2) {
-            OVITO_CHECK_OPENGL(this, glDisable(GL_DEPTH_TEST));
-        }
-        else {
-            OVITO_CHECK_OPENGL(this, glEnable(GL_DEPTH_TEST));
-        }
+            // Set up the model-view transformation matrix.
+            setupModelViewTransformation(command);
 
-        // Activate special highlight rendering mode.
-        setHighlightMode(command.highlightMode());
-
-        // Set up the model-view transformation matrix.
-        if(command.modelWorldTM() != AffineTransformation::Zero()) {
-            _preprojectedCoordinates = false;
-            _modelViewTM = frameGraph.projectionParams().viewMatrix * command.modelWorldTM();
-        }
-        else {
-            _preprojectedCoordinates = true;
-            _modelViewTM.setZero();
-        }
-
-        if(const ParticlePrimitive* primitive = dynamic_cast<const ParticlePrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderParticles(*primitive, command.pickingGroupId());
-        }
-        else if(const CylinderPrimitive* primitive = dynamic_cast<const CylinderPrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderCylinders(*primitive, command.pickingGroupId());
-        }
-        else if(const MeshPrimitive* primitive = dynamic_cast<const MeshPrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderMesh(*primitive, command.pickingGroupId());
-        }
-        else if(!isTransparencyPass()) {
-            if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
-                renderLinesImplementation(*primitive, command.pickingGroupId());
+            if(const ParticlePrimitive* primitive = dynamic_cast<const ParticlePrimitive*>(command.primitive())) {
+                hasTransparentGeometry |= renderParticles(*primitive, command);
             }
-            else if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
-                renderImageImplementation(*primitive);
+            else if(const CylinderPrimitive* primitive = dynamic_cast<const CylinderPrimitive*>(command.primitive())) {
+                hasTransparentGeometry |= renderCylinders(*primitive, command);
             }
-            else if(const MarkerPrimitive* primitive = dynamic_cast<const MarkerPrimitive*>(command.primitive())) {
-                renderMarkersImplementation(*primitive, command.pickingGroupId());
+            else if(const MeshPrimitive* primitive = dynamic_cast<const MeshPrimitive*>(command.primitive())) {
+                hasTransparentGeometry |= renderMesh(*primitive, command);
             }
+            else if(!isTransparencyPass()) {
+                if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
+                    renderLinesImplementation(*primitive, command);
+                }
+                else if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
+                    renderImageImplementation(*primitive);
+                }
+                else if(const MarkerPrimitive* primitive = dynamic_cast<const MarkerPrimitive*>(command.primitive())) {
+                    renderMarkersImplementation(*primitive, command);
+                }
+            }
+            OVITO_REPORT_OPENGL_ERRORS(this);
         }
-        OVITO_REPORT_OPENGL_ERRORS(this);
     }
     return hasTransparentGeometry;
 }
@@ -401,11 +445,11 @@ bool OpenGLRenderingJob::renderFrameGraph(const FrameGraph& frameGraph, FrameGra
 /******************************************************************************
  * Renders a particles primitive.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int pickingGroupID)
+bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     // Render particles immediately if they are all fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != (!primitive.transparencies())) {
-        renderParticlesImplementation(primitive, pickingGroupID);
+        renderParticlesImplementation(primitive, command);
         return false;
     }
     else {
@@ -440,7 +484,7 @@ bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int
                 ParticlePrimitive opaqueParticles = primitive;
                 opaqueParticles.setTransparencies({});
                 opaqueParticles.setIndices(opaqueIndices);
-                renderParticlesImplementation(opaqueParticles, pickingGroupID);
+                renderParticlesImplementation(opaqueParticles, command);
             }
         }
         return true;
@@ -450,11 +494,11 @@ bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int
 /******************************************************************************
  * Renders a cylinders primitive.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderCylinders(const CylinderPrimitive& primitive, int pickingGroupID)
+bool OpenGLRenderingJob::renderCylinders(const CylinderPrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     // Render primitives immediately if they are all fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != (!primitive.transparencies())) {
-        renderCylindersImplementation(primitive, pickingGroupID);
+        renderCylindersImplementation(primitive, command);
         return false;
     }
     return true;
@@ -463,11 +507,11 @@ bool OpenGLRenderingJob::renderCylinders(const CylinderPrimitive& primitive, int
 /******************************************************************************
  * Renders a triangle mesh primitive.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderMesh(const MeshPrimitive& primitive, int pickingGroupID)
+bool OpenGLRenderingJob::renderMesh(const MeshPrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     // Render mesh immediately if it is fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != primitive.isFullyOpaque()) {
-        renderMeshImplementation(primitive, pickingGroupID);
+        renderMeshImplementation(primitive, command);
         return false;
     }
     return true;
@@ -769,7 +813,7 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
             if(_glversion >= QT_VERSION_CHECK(3, 0, 0))
                 line.replace("<calculate_view_ray_through_vertex>", "calculate_view_ray_through_vertex()");
             else
-                return;  // Skip view ray calculation in vertex/geometry shader and let the fragement shader do the full calculation for
+                return;  // Skip view ray calculation in vertex/geometry shader and let the fragment shader do the full calculation for
                          // each fragment.
         }
 
@@ -796,7 +840,7 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
                 line.replace("<flat_normal.output>", "flat_normal_fs");  // Note: "flat_normal_fs" is defined in "flat_normal.vert".
             }
             else {
-                // Pass view-space coordinates of vertex to fragment shader as texture coordintes.
+                // Pass view-space coordinates of vertex to fragment shader as texture coordinates.
                 if(!isGLES)
                     line = "gl_TexCoord[1] = inverse_projection_matrix * gl_Position;\n";
                 else
@@ -897,41 +941,6 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
     }
 
     OVITO_REPORT_OPENGL_ERRORS(this);
-}
-
-/******************************************************************************
-* Activates the special object highlighting rendering mode.
-******************************************************************************/
-void OpenGLRenderingJob::setHighlightMode(int mode)
-{
-    if(_highlightRenderingMode == mode)
-        return;
-
-    _highlightRenderingMode = mode;
-    if(mode == 1) {
-        this->glClearStencil(0);
-        this->glClear(GL_STENCIL_BUFFER_BIT);
-        this->glEnable(GL_STENCIL_TEST);
-        this->glStencilFunc(GL_ALWAYS, 0x1, 0x1);
-        this->glStencilMask(0x1);
-        this->glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-#if defined(Q_OS_MACOS) && defined(Q_PROCESSOR_ARM)
-        // Partial workaround for a bug in the MacOS/arm64 OpenGL implementation.
-        // Fragment shaders discarding fragments (via conditional "discard") still modify the stencil buffer, which is unexpected.
-        // See also: https://developer.apple.com/forums/thread/721988
-        this->glStencilOp(GL_REPLACE, GL_KEEP, GL_REPLACE);
-#endif
-        this->glDepthFunc(GL_LEQUAL);
-    }
-    else if(mode == 2) {
-        this->glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
-        this->glStencilMask(0x1);
-        this->glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-    }
-    else {
-        this->glDepthFunc(GL_LESS);
-        this->glDisable(GL_STENCIL_TEST);
-    }
 }
 
 /******************************************************************************

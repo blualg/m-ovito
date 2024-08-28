@@ -649,7 +649,7 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
 void MeshParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockInfo>& blockDatasets, FileSourceImporter::LoadOperationRequest& request, const ParaViewVTMImporter& vtmImporter)
 {
     // Special handling of meshes that are grouped in the "Meshes" block of an Aspherix VTM file.
-    // This is specific bheavior for VTM files written by the Aspherix code.
+    // This is specific behavior for VTM files written by the Aspherix code.
     if(vtmImporter.uniteMeshes()) {
         // Count the total number of mesh data files referenced in the "Meshes" sections of the VTM file.
         int numMeshFiles = boost::count_if(blockDatasets, [](const ParaViewVTMBlockInfo& block) {

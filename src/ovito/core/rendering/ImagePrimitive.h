@@ -24,14 +24,14 @@
 
 
 #include <ovito/core/Core.h>
-#include "FrameGraphPrimitive.h"
+#include "RenderingPrimitive.h"
 
 namespace Ovito {
 
 /**
  * \brief A 2d image to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT ImagePrimitive final : public FrameGraphPrimitive
+class OVITO_CORE_EXPORT ImagePrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 

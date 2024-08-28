@@ -90,7 +90,7 @@ public:
 	virtual int multisamplingLevel() const { return 1; }
 
 	/// Renders an image of the given frame graph into the given target frame buffer.
-	virtual Future<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap = {}) = 0;
+	[[nodiscard]] virtual Future<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap = {}) = 0;
 
     /// Perform post-processing of a newly generated frame graph, which is to be rendered by this rendering job.
     virtual void postprocessFrameGraph(FrameGraph& frameGraph) {}
@@ -101,15 +101,12 @@ public:
 protected:
 
 	/// Renders the 2d graphics of a frame graph render layer into the frame buffer.
-	static void render2DPrimitives(FrameGraph::RenderLayer renderLayer, const FrameGraph& frameGraph, AbstractRenderingFrameBuffer& frameBuffer);
+	static void render2DPrimitives(FrameGraph::RenderLayerType layerType, const FrameGraph& frameGraph, AbstractRenderingFrameBuffer& frameBuffer);
 
 #ifdef OVITO_BUILD_BASIC
 	/// Creates an image serving as watermark for demo versions of scene renderers.
     static QImage createWatermark(const QSize& size);
 #endif
-
-private:
-
 };
 
 }	// End of namespace

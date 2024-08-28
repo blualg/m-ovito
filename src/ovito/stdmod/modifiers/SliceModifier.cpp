@@ -480,7 +480,7 @@ void SliceModifier::renderPlane(FrameGraph& frameGraph, const Pipeline* pipeline
     std::unique_ptr<LinePrimitive> lines = std::make_unique<LinePrimitive>();
     lines->setPositions(vertexBuffer);
     lines->setUniformColor(color);
-    frameGraph.addPrimitive(std::move(lines), pipeline);
+    frameGraph.addPrimitive(frameGraph.addCommandGroup(FrameGraph::SceneLayer), std::move(lines), pipeline);
 }
 
 /******************************************************************************

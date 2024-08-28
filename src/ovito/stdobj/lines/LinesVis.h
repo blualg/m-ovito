@@ -50,9 +50,8 @@ public:
     /// The data object containing the lines.
     const Lines* linesObj() const { return _linesObj; }
 
-    /// \brief Given an sub-object ID returned by the Viewport::pick() method, looks up the
-    /// corresponding lines segment.
-    int segmentIndexFromSubObjectID(quint32 subobjID) const {
+    /// Given an sub-object ID returned by the Viewport::pick() method, looks up the corresponding lines segment.
+    int segmentIndexFromSubObjectID(uint32_t subobjID) const {
         if(subobjID < _subobjToSegmentMap.size())
             return _subobjToSegmentMap[subobjID];
         else
@@ -60,13 +59,13 @@ public:
     }
 
     /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-    virtual QString infoString(Pipeline* pipeline, quint32 subobjectId) override;
+    virtual QString infoString(const Pipeline* pipeline, uint32_t subobjectId) override;
 
 private:
-    /// The data object containing the dislocations.
+    /// The data object containing the line segments.
     OORef<Lines> _linesObj;
 
-    // This array is used to map sub-object picking IDs back to line segments.
+    /// This array is used to map sub-object picking IDs back to line segments.
     std::vector<int> _subobjToSegmentMap;
 };
 
@@ -98,7 +97,7 @@ public:
     void initializeObject(ObjectInitializationFlags flags);
 
     /// Renders the associated data object.
-    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
+    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the data object.
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;

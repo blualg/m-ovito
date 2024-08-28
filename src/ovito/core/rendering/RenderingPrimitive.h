@@ -28,12 +28,23 @@
 
 namespace Ovito {
 
-class OVITO_CORE_EXPORT FrameGraphPrimitive
+/**
+ * Abstract base class for all rendering primitives in OVITO:
+ *
+ *   - ParticlePrimitive
+ *   - CylinderPrimitive
+ *   - LinePrimitive
+ *   - MeshPrimitive
+ *   - TextPrimitive
+ *   - ImagePrimitive
+ *   - MarkerPrimitive
+ */
+class OVITO_CORE_EXPORT RenderingPrimitive
 {
 public:
 
 	/// Virtual destructor.
-	virtual ~FrameGraphPrimitive() {}
+	virtual ~RenderingPrimitive() = default;
 
 	/// Computes the 3d bounding box of the primitive in local coordinate space.
 	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const { return Box3(); }

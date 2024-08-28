@@ -104,11 +104,11 @@ public:
     /// The provided continuation function must accept the results of this future as an input parameter.
     template<typename Executor, typename Function>
     [[nodiscard]] detail::continuation_future_type<Function, SharedFuture>
-    then(Executor&& executor, Function&& f);
+    then(Executor&& executor, Function&& f) const;
 
     /// Overload of the function above using the default inline executor.
     template<typename Function>
-    [[nodiscard]] decltype(auto) then(Function&& f) { return then(InlineExecutor{}, std::forward<Function>(f)); }
+    [[nodiscard]] decltype(auto) then(Function&& f) const { return then(InlineExecutor{}, std::forward<Function>(f)); }
 
     /// Applies a post-processing function to the future's results, which must returns the same type of value
     /// as the original future. The post-processing function is executed once the future is fulfilled.
@@ -130,7 +130,7 @@ protected:
 template<typename R>
 template<typename Executor, typename Function>
 detail::continuation_future_type<Function, SharedFuture<R>>
-SharedFuture<R>::then(Executor&& executor, Function&& f)
+SharedFuture<R>::then(Executor&& executor, Function&& f) const
 {
     // Infer the exact future/promise/task types to create.
     using result_future_type = detail::continuation_future_type<Function,SharedFuture<R>>;

@@ -267,8 +267,9 @@ MainThreadOperation GuiApplication::startupApplication()
         OORef<MainWindow> mainWin = OORef<MainWindow>::create();
         mainWin->keepAliveUntilShutdown();
 
-        // Make the application shutdown as soon as the last main window has been closed.
-        QGuiApplication::setQuitOnLastWindowClosed(true);
+        // Do not let the application shut down automatically when the last main window gets closed, because
+        // the TaskManager might still have some nested event loops running to process background tasks.
+        QGuiApplication::setQuitOnLastWindowClosed(false);
 
         // Show the main window.
         mainWin->setUpdatesEnabled(false);
@@ -466,7 +467,6 @@ bool GuiApplication::automaticallyEnableDarkMode()
         return false;
     #endif
 #endif
-
 }
 
 /******************************************************************************

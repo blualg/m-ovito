@@ -111,7 +111,7 @@ public:
     /// In console mode, this method just prints the error messages(s) to the console.
     ///
     /// Note that, unless 'blocking' is true, the reporting happens asynchronously in GUI mode.
-    /// The method returns immediately and the error messaeg is displayed to the user at a later time,
+    /// The method returns immediately and the error message is displayed to the user at a later time,
     /// as soon as control returns to the event loop.
     virtual void reportError(const Exception& ex, bool blocking = false);
 
@@ -297,6 +297,8 @@ namespace Ovito {
 template<bool Isolated, typename Function>
 bool UserInterface::handleExceptions(Function&& func) noexcept
 {
+    static_assert(std::is_invocable_v<Function>, "Function must be callable without arguments.");
+    static_assert(std::is_same_v<std::invoke_result_t<Function>, void>, "Function must return void.");
     OVITO_ASSERT(!isBeingDeleted());
 
     // Note: The MainThreadOperation creates a temporary std::shared_ptr<UserInterface>, which keeps the UI alive until function exit.

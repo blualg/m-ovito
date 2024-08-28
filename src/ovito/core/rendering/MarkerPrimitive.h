@@ -26,14 +26,14 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
-#include "FrameGraphPrimitive.h"
+#include "RenderingPrimitive.h"
 
 namespace Ovito {
 
 /**
  * \brief A point-like marker primitive to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT MarkerPrimitive final : public FrameGraphPrimitive
+class OVITO_CORE_EXPORT MarkerPrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 

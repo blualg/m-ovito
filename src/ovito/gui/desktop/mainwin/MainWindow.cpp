@@ -655,10 +655,6 @@ void MainWindow::clearStatusBarMessage()
 ******************************************************************************/
 std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int height)
 {
-    // This function must be called with an active task scope, because the frame buffer window
-    // will display the progress of the rendering process.
-    OVITO_ASSERT(this_task::get());
-
     // Create the frame buffer window.
     if(!_frameBufferWindow) {
         _frameBufferWindow = new FrameBufferWindow(*this, this);
@@ -1259,18 +1255,22 @@ void MainWindow::visitRunningTasks(std::function<void(Task&,const QString&,int,i
 
         // Compute overall progress, taking into account nested sub-steps of the task.
         float percentage;
-        if(info.progressMaximum > 0)
+        int totalProgressMaximum;
+        if(info.progressMaximum > 0) {
             percentage = (float)info.progressValue / info.progressMaximum;
-        else
+            totalProgressMaximum = 1000;
+        }
+        else {
             percentage = 0;
+            totalProgressMaximum = 0;
+        }
         for(auto level = info.subProgressStack.crbegin(); level != info.subProgressStack.crend(); ++level) {
             OVITO_ASSERT(level->first >= 0 && level->first <= level->second.size());
             int weightSum1 = std::accumulate(level->second.cbegin(), level->second.cbegin() + level->first, 0);
             int weightSum2 = std::accumulate(level->second.cbegin() + level->first, level->second.cend(), 0);
             percentage = ((float)weightSum1 + percentage * (level->first < level->second.size() ? level->second[level->first] : 0)) / (weightSum1 + weightSum2);
         }
-        int totalProgressMaximum = 1000;
-        int totalProgressValue = static_cast<int>(percentage * 1000.0f);
+        int totalProgressValue = static_cast<int>(percentage * totalProgressMaximum);
 
         // Call visitor function.
         visitor(*info.task, info.text, totalProgressValue, totalProgressMaximum);
@@ -1398,14 +1398,15 @@ bool MainWindow::checkAccessibilityAccess(QWidget* parent) const
             tr("MacOS accessibility permission is required for %1 to enable infinite scrolling while dragging the spinner widget. "
                "The permission is needed by the application to reposition the mouse cursor when it leaves the screen.\n\n"
                "Click 'Help' for more information. Click 'Next' to proceed to the macOS permission dialog.").arg(Application::applicationName()));
-        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Help | QMessageBox::Cancel);
+        msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Help | QMessageBox::Cancel | QMessageBox::Ignore);
         msgBox.button(QMessageBox::Ok)->setText(tr("Next"));
+        msgBox.button(QMessageBox::Ignore)->setText(tr("Don't ask again"));
         const int msgBoxRet = msgBox.exec();
         if(msgBoxRet == QMessageBox::Help) {
             actionManager()->openHelpTopic("manual:usage.spinner_widgets");
             return false;
         }
-        else if(msgBoxRet != QMessageBox::Ok) {
+        else if(msgBoxRet == QMessageBox::Cancel) {
             return false;
         }
 
@@ -1413,6 +1414,10 @@ bool MainWindow::checkAccessibilityAccess(QWidget* parent) const
         settings.setValue("AccessibilityDialogMajor", Application::applicationVersionMajor());
         settings.setValue("AccessibilityDialogMinor", Application::applicationVersionMinor());
         settings.setValue("AccessibilityDialogRevision", Application::applicationVersionRevision());
+
+        if(msgBoxRet == QMessageBox::Ignore) {
+            return false;
+        }
 
         const CFStringRef keys[] = {kAXTrustedCheckOptionPrompt};
         const CFTypeRef values[] = {kCFBooleanTrue};

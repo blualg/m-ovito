@@ -116,6 +116,13 @@ void DataTableInspectionApplet::onCurrentContainerChanged(const DataObject* data
     // Update the displayed plot.
     plotWidget()->setTable(static_object_cast<DataTable>(dataObject));
 
+    // Switch to table view if plot mode is none
+    if(const DataTable* table = static_object_cast<DataTable>(dataObject)) {
+        if(table->plotMode() == DataTable::None) {
+            _switchToTableAction->trigger();
+        }
+    }
+
     // Update actions.
     _exportTableToFileAction->setEnabled(plotWidget()->table() != nullptr);
 }

@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/pipeline/ActiveObject.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
+#include <ovito/core/rendering/FrameGraph.h>
 
 namespace Ovito {
 
@@ -56,7 +57,7 @@ public:
     virtual void initializeOverlay(Viewport* viewport);
 
     /// This method asks the overlay to paint its contents over the rendered image.
-    virtual void render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene) = 0;
+    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene) = 0;
 
     /// Moves the position of the layer in the viewport by the given amount,
     /// which is specified as a fraction of the viewport render size.

@@ -50,7 +50,7 @@ public:
     void preEvaluationCheck(const PipelineEvaluationRequest& request) const;
 
     /// Performs an asynchronous evaluation of the data pipeline.
-    PipelineEvaluationResult evaluatePipeline(const PipelineEvaluationRequest& request) {
+    [[nodiscard]] PipelineEvaluationResult evaluatePipeline(const PipelineEvaluationRequest& request) {
         return _pipelineCache.evaluatePipeline(request);
     }
 

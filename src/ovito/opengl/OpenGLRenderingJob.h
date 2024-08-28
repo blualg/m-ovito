@@ -93,9 +93,9 @@ public:
 	virtual OORef<AbstractRenderingFrameBuffer> createOffscreenFrameBuffer(const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer) override;
 
 	/// Renders an image of the given frame graph into the given target frame buffer.
-	virtual Future<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap = {}) override;
+	[[nodiscard]] virtual Future<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap = {}) override;
 
-	/// Returns the multisampling level used to reduce anti-aliasing artifacts during offscreen rendering.
+	/// Returns the multi-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
 	virtual int multisamplingLevel() const override { return _multisamplingLevel; }
 
     /// Performs post-processing of a newly generated frame graph to be rendered by this implementation.
@@ -112,7 +112,17 @@ public:
     /// Requests the rendering job to make its OpenGL context current, e.g. for releasing OpenGL resources that require an active context.
     [[nodiscard]] virtual OpenGLContextRestore activateContext() = 0;
 
-private:
+protected:
+
+    /// May combine the framebuffer contents from multiple renderers.
+    /// This can be implemented by derived classes.
+    virtual void performFrameCompositing() {}
+
+    /// Decides whether a command from the render graph should be executed by the renderer.
+    virtual bool filterRenderingCommand(const FrameGraph::RenderingCommand& command, const FrameGraph::RenderingCommandGroup& commandGroup);
+
+    /// Sets up the model-view transformation matrix for the given rendering command.
+    void setupModelViewTransformation(const FrameGraph::RenderingCommand& command);
 
     /// Returns the resource cache frame used by the renderer to manage OpenGL resources.
     RendererResourceCache::ResourceFrame& currentResourceFrame() { return _currentResourceFrame; }
@@ -157,25 +167,25 @@ private:
     bool isTransparencyPass() const { return _isTransparencyPass; }
 
     /// Executes the rendering commands stored in the given frame graph.
-    bool renderFrameGraph(const FrameGraph& frameGraph, FrameGraph::RenderLayer renderLayer);
+    bool renderFrameGraph(FrameGraph::RenderLayerType layerType);
 
     /// Render all semi-transparent geometry in a second rendering pass.
-    void renderTransparentGeometry(const FrameGraph& frameGraph, OpenGLRenderingFrameBuffer& frameBuffer);
+    void renderTransparentGeometry(OpenGLRenderingFrameBuffer& frameBuffer);
 
     /// Renders a particles primitive.
-    bool renderParticles(const ParticlePrimitive& primitive, int pickingGroupID);
+    bool renderParticles(const ParticlePrimitive& primitive, const FrameGraph::RenderingCommand& command);
 
     /// Renders a cylinders primitive.
-    bool renderCylinders(const CylinderPrimitive& primitive, int pickingGroupID);
+    bool renderCylinders(const CylinderPrimitive& primitive, const FrameGraph::RenderingCommand& command);
 
     /// Renders a triangle mesh primitive.
-    bool renderMesh(const MeshPrimitive& primitive, int pickingGroupID);
+    bool renderMesh(const MeshPrimitive& primitive, const FrameGraph::RenderingCommand& command);
 
     /// Renders a set of particles.
-    void renderParticlesImplementation(const ParticlePrimitive& primitive, int pickingGroupID);
+    void renderParticlesImplementation(const ParticlePrimitive& primitive, const FrameGraph::RenderingCommand& command);
 
     /// Renders a triangle mesh.
-    void renderMeshImplementation(const MeshPrimitive& primitive, int pickingGroupID);
+    void renderMeshImplementation(const MeshPrimitive& primitive, const FrameGraph::RenderingCommand& command);
 
     /// Renders just the edges of a triangle mesh as a wireframe model.
     void renderMeshWireframeImplementation(const MeshPrimitive& primitive);
@@ -183,24 +193,23 @@ private:
     /// Generates the wireframe line elements for the visible edges of a mesh.
     ConstDataBufferPtr generateMeshWireframeLines(const MeshPrimitive& primitive);
 
-    /// Prepares the OpenGL buffer with the per-instance transformation matrices for
-    /// rendering a set of meshes.
+    /// Prepares the OpenGL buffer with the per-instance transformation matrices for rendering a set of meshes.
     QOpenGLBuffer getMeshInstanceTMBuffer(const MeshPrimitive& primitive, OpenGLShaderHelper& shader);
 
     /// Renders a set of markers.
-    void renderMarkersImplementation(const MarkerPrimitive& primitive, int pickingGroupID);
+    void renderMarkersImplementation(const MarkerPrimitive& primitive, const FrameGraph::RenderingCommand& command);
 
     /// Renders a set of lines.
-    void renderLinesImplementation(const LinePrimitive& primitive, int pickingGroupID);
+    void renderLinesImplementation(const LinePrimitive& primitive, const FrameGraph::RenderingCommand& command);
 
     /// Renders a set of lines using GL_LINES mode.
-    void renderThinLinesImplementation(const LinePrimitive& primitive, int pickingGroupID);
+    void renderThinLinesImplementation(const LinePrimitive& primitive, const FrameGraph::RenderingCommand& command);
 
     /// Renders a set of lines using triangle strips.
-    void renderThickLinesImplementation(const LinePrimitive& primitive, int pickingGroupID);
+    void renderThickLinesImplementation(const LinePrimitive& primitive, const FrameGraph::RenderingCommand& command);
 
     /// Renders a set of cylinders or arrow glyphs.
-    void renderCylindersImplementation(const CylinderPrimitive& primitive, int pickingGroupID);
+    void renderCylindersImplementation(const CylinderPrimitive& primitive, const FrameGraph::RenderingCommand& command);
 
     /// Renders a 2d pixel image into the output framebuffer.
     void renderImageImplementation(const ImagePrimitive& primitive);
@@ -219,9 +228,6 @@ private:
 
 	/// Returns the output area in the OpenGL framebuffer (in device pixels).
 	const QSize& framebufferSize() const { return _framebufferSize; }
-
-    /// Activates the special object highlighting rendering mode.
-    void setHighlightMode(int mode);
 
 private:
 
@@ -281,9 +287,6 @@ private:
 
 	/// The output area in the OpenGL framebuffer (in device pixels).
 	QSize _framebufferSize;
-
-    /// The active object highlighting rendering mode.
-    int _highlightRenderingMode = 0;
 
     friend class OpenGLShaderHelper;
     friend class OpenGLRenderingFrameBuffer;
