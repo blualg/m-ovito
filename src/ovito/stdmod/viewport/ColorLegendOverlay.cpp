@@ -263,7 +263,17 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
 
     QRectF colorBarRect(origin, QSizeF(colorBarWidth, colorBarHeight));
 
-    if(pipeline()) {
+    // Determine the source pipeline.
+    Pipeline* sourcePipeline = this->pipeline();
+    if(!sourcePipeline) {
+        // If no source pipeline has been specified by the user, use the first pipeline found in the current scene as a fallback.
+        scene->visitPipelines([&](Pipeline* pipeline) {
+            sourcePipeline = pipeline;
+            return false;
+        });
+    }
+
+    if(sourcePipeline) {
         if(modifier()) {
             // Get modifier's parameters.
             _autoTitleText = modifier()->sourceProperty().nameWithComponent();
@@ -273,7 +283,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
             if(modifier()->autoAdjustRange() && (label1().isEmpty() || label2().isEmpty())) {
                 // Figure out which of the modifier's modification nodes belongs to the pipeline associated with this viewport overlay.
                 ModificationNode* modNode = nullptr;
-                PipelineNode* node = pipeline()->head();
+                PipelineNode* node = sourcePipeline->head();
                 for(;;) {
                     if((modNode = dynamic_object_cast<ModificationNode>(node))) {
                         if(modNode->modifier() == modifier())
@@ -315,7 +325,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
         }
         else if(sourceProperty()) {
             // Evaluate pipeline.
-            PipelineEvaluationResult pipelineEvaluationResult = pipeline()->evaluatePipeline(PipelineEvaluationRequest(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive()));
+            PipelineEvaluationResult pipelineEvaluationResult = sourcePipeline->evaluatePipeline(PipelineEvaluationRequest(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive()));
 
             // Wait for the pipeline results.
             return pipelineEvaluationResult.then(*this, [this, frameGraph=OORef<FrameGraph>(&frameGraph), &commandGroup, colorBarRect, legendSize](const PipelineFlowState& state) -> PipelineStatus {
@@ -348,7 +358,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
 
     // Escalate to an error state if in console mode.
     if(!Application::guiMode()) {
-        if(!pipeline())
+        if(!sourcePipeline)
             throw Exception(tr("You are rendering a viewport with an attached ColorLegendOverlay that has no "
                                 "source pipeline set. Make sure you set the legend's 'pipeline' field."));
         else
