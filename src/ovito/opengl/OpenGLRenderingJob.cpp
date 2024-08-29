@@ -231,7 +231,18 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     OVITO_CHECK_OPENGL(this, this->glDisable(GL_SCISSOR_TEST));
 
     // Set up OpenGL render viewport.
-    OVITO_CHECK_OPENGL(this, this->glViewport(0, 0, framebufferSize().width(), framebufferSize().height()));
+    int viewportX = 0, viewportY = 0;
+    int viewportWidth = framebufferSize().width(), viewportHeight = framebufferSize().height();
+    if(frameGraph->isInteractive()) {
+        // Compensate for dynamic size changes of the viewport window, which can happen before the frame graph is regenerated
+        // based on the new viewport size.
+        // To honor the aspect ratio of the existing frame graph, we may have to adjust the viewport rectangle.
+        FloatType originalAspectRatio = frameGraph->projectionParams().aspectRatio;
+        FloatType currentAspectRatio = (FloatType)viewportHeight / viewportWidth;
+        viewportWidth = (int)std::lround(viewportWidth / originalAspectRatio * currentAspectRatio);
+        viewportX = (framebufferSize().width() - viewportWidth) / 2;
+    }
+    OVITO_CHECK_OPENGL(this, this->glViewport(viewportX, viewportY, viewportWidth, viewportHeight));
 
     // Clear frame buffer.
     if(!isPickingPass()) {

@@ -232,8 +232,12 @@ void ViewportWindow::handleUpdateRequest()
             gizmo->renderOverlay(viewport(), this, *frameGraph, dataset);
         }
 
-        QRect logicalViewportRect = dataset->renderSettings()->viewportFramebufferArea(viewport(), dataset->viewportConfig());
-        QRect physicalViewportRect = previewFrameGeometry(dataset, windowSize);
+        QRect logicalViewportRect;
+        QRect physicalViewportRect;
+        if(viewport()->renderPreviewMode()) {
+            logicalViewportRect = dataset->renderSettings()->viewportFramebufferArea(viewport(), dataset->viewportConfig());
+            physicalViewportRect = previewFrameGeometry(dataset, windowSize);
+        }
 
         // Let the FrameGraphBuilder class do the heavy lifting and generate the frame graph for the current scene.
         Future<OORef<FrameGraph>> frameGraphFuture = FrameGraphBuilder::build(std::move(frameGraph), viewport()->scene(), viewport(), logicalViewportRect, physicalViewportRect, noninteractiveProjParams);
