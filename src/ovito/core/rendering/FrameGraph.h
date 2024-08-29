@@ -260,6 +260,9 @@ public:
 	/// Returns the list of command groups.
 	const std::deque<RenderingCommandGroup>& commandGroups() const { return _commandGroups; }
 
+	/// Returns the list of command groups.
+	std::deque<RenderingCommandGroup>& commandGroups() { return _commandGroups; }
+
 	/// Adds a new rendering command group to the graph.
 	RenderingCommandGroup& addCommandGroup(RenderLayerType layerType) {
 		return _commandGroups.emplace_back(layerType);
