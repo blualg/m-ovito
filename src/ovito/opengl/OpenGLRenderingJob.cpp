@@ -95,17 +95,18 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     // OpenGL rendering requires a Qt GUI application.
     if(!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
         throw RendererException(
-            tr("OVITO's OpenGLRenderer cannot be used in headless mode, that is if the application is running without access to a graphics "
+            tr("OVITO's OpenGLRenderer cannot be used in headless mode, that is if the application is running without access to a desktop graphics "
                "environment. "
                "Please use a different rendering backend or see "
                "https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
-               "on how to enable OpenGL rendering in Python script environments."));
+               "on how to enable OpenGL rendering in Python scripts."));
     }
 
     // Rendering requires an active GL context.
     OpenGLContextRestore contextRestore = activateContext();
     _glcontext = QOpenGLContext::currentContext();
-    if(!_glcontext) throw RendererException(tr("Cannot render scene: There is no active OpenGL context"));
+    if(!_glcontext)
+        throw RendererException(tr("Cannot render scene: There is no active OpenGL context"));
 
     // Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
     initializeOpenGLFunctions();
@@ -127,10 +128,12 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     _glformat = _glcontext->format();
     OVITO_REPORT_OPENGL_ERRORS(this);
 
+#ifdef Q_OS_WIN
     // OpenGL in a VirtualBox machine Windows guest reports "2.1 Chromium 1.9" as version string, which is
-    // not correctly parsed by Qt. We have to workaround this.
-    QByteArray openGLVersionString = reinterpret_cast<const char*>(glGetString(GL_VERSION));
-    QByteArray openGLRendererString = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+    // not correctly parsed by Qt. We have to work around this.
+    QByteArray openGLVersionString = reinterpret_cast<const char*>(this->glGetString(GL_VERSION));
+    QByteArray openGLRendererString = reinterpret_cast<const char*>(this->glGetString(GL_RENDERER));
+    QByteArray openGLVendorString = reinterpret_cast<const char*>(this->glGetString(GL_VENDOR));
     if(openGLVersionString.startsWith("2.1 ")) {
         _glformat.setMajorVersion(2);
         _glformat.setMinorVersion(1);
@@ -138,16 +141,16 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     if(glformat().majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (glformat().majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR &&
                                                                           glformat().minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
         throw RendererException(tr("The OpenGL graphics driver installed on this system does not support OpenGL version %6.%7 or newer.\n\n"
-                                   "Ovito requires modern graphics hardware and up-to-date graphics drivers to render 3D graphics. Your "
-                                   "current system configuration is not compatible with Ovito.\n\n"
+                                   "OVITO requires modern graphics hardware and up-to-date graphics drivers to render 3D graphics. Your "
+                                   "current system configuration is not compatible with OVITO.\n\n"
                                    "To avoid this error, please install the newest graphics driver of the hardware vendor or, if "
                                    "necessary, consider replacing your graphics card with a newer model.\n\n"
                                    "The installed OpenGL graphics driver reports the following information:\n\n"
                                    "OpenGL vendor: %1\n"
                                    "OpenGL renderer: %2\n"
                                    "OpenGL version: %3.%4 (%5)\n\n"
-                                   "Ovito requires at least OpenGL version %6.%7.")
-                                    .arg(QString::fromUtf8(reinterpret_cast<const char*>(glGetString(GL_VENDOR))))
+                                   "OVITO requires at least OpenGL version %6.%7.")
+                                    .arg(QString::fromUtf8(openGLVendorString))
                                     .arg(QString::fromUtf8(openGLRendererString))
                                     .arg(glformat().majorVersion())
                                     .arg(glformat().minorVersion())
@@ -156,19 +159,34 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
                                     .arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR));
     }
 
-#ifdef Q_OS_WIN
     if(openGLRendererString == "Intel(R) HD Graphics" || openGLRendererString == "Intel(R) HD Graphics 2000" ||
        openGLRendererString == "Intel(R) HD Graphics 3000" || openGLRendererString == "Intel(R) HD Graphics 4400") {
-        throw RendererException(tr("The graphics chip installed in this system is not compatible with OVITO, unfortunately.\n\n"
+        throw RendererException(tr("The graphics chip of your computer is not compatible with OVITO, unfortunately.\n\n"
                                    "Intel(R) HD Graphics, an integrated graphics chip released in the years 2010/2011/2012, does not "
-                                   "support the specific OpenGL functions required by OVITO. "
+                                   "support the specific OpenGL rendering functions required by OVITO. "
                                    "There is no known workaround to make OVITO work on systems with this particular graphics unit. Please "
                                    "use OVITO on a computer with a more modern graphics processor.\n\n"
                                    "Detected graphics interface:\n\n"
                                    "OpenGL vendor: %1\n"
                                    "OpenGL renderer: %2\n"
                                    "OpenGL version: %3.%4 (%5)")
-                                    .arg(QString::fromUtf8(reinterpret_cast<const char*>(glGetString(GL_VENDOR))))
+                                    .arg(QString::fromUtf8(openGLVendorString))
+                                    .arg(QString::fromUtf8(openGLRendererString))
+                                    .arg(glformat().majorVersion())
+                                    .arg(glformat().minorVersion())
+                                    .arg(QString::fromUtf8(openGLVersionString)));
+    }
+
+    if(openGLVendorString == "ATI Technologies Inc." && openGLRendererString.startsWidth("AMD Radeon") && openGLRendererString.endsWidth("HD 8350")) {
+        throw RendererException(tr("The graphics chip of your computer is not compatible with OVITO, unfortunately.\n\n"
+                                   "The AMD Radeon 8000 series does not support the specific OpenGL rendering functions required by OVITO. "
+                                   "There is no known workaround to make OVITO work on systems with this particular graphics unit, which is more than a decade old. Please "
+                                   "run OVITO on a computer with a more modern graphics processor.\n\n"
+                                   "Detected graphics interface:\n\n"
+                                   "OpenGL vendor: %1\n"
+                                   "OpenGL renderer: %2\n"
+                                   "OpenGL version: %3.%4 (%5)")
+                                    .arg(QString::fromUtf8(openGLVendorString))
                                     .arg(QString::fromUtf8(openGLRendererString))
                                     .arg(glformat().majorVersion())
                                     .arg(glformat().minorVersion())
