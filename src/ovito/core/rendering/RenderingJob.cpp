@@ -66,10 +66,11 @@ QImage RenderingJob::createWatermark(const QSize& size)
 {
     static const QBrush watermarkBrush = []() {
         QFont font;
-        font.setPointSize(24);
+        font.setPointSize(36);
+        font.setBold(true);
         QFontMetrics fm(font);
         QRect boundingRect = fm.boundingRect("OVITO Pro Demo");
-        boundingRect.adjust(-10, -10, 10, 10);
+        boundingRect.adjust(-20, -20, 20, 20);
 
         QImage watermark(boundingRect.size(), QImage::Format_ARGB32_Premultiplied);
         watermark.fill(QColor(0, 0, 0, 0));
@@ -77,7 +78,7 @@ QImage RenderingJob::createWatermark(const QSize& size)
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setRenderHint(QPainter::TextAntialiasing);
         painter.setRenderHint(QPainter::SmoothPixmapTransform);
-        painter.setPen(QColor(128, 128, 128, 128));
+        painter.setPen(QColor(128, 128, 128, 255));
         painter.setFont(font);
         painter.drawText(watermark.rect(), Qt::AlignCenter, "OVITO Pro Demo");
         return QBrush(watermark);

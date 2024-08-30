@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/RenderingJob.h>
 #include "OpenGLHelpers.h"
+#include "OpenGLTexture.h"
 
 #include <QOpenGLContext>
 #include <QOpenGLExtraFunctions>
@@ -35,7 +36,6 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLFramebufferObjectFormat>
-#include <QOpenGLTexture>
 
 namespace Ovito {
 
@@ -155,10 +155,10 @@ protected:
     bool useMultiDrawArraysIndirect() const { return !_disableMultiDrawArraysIndirect && glversion() >= QT_VERSION_CHECK(4, 3, 0); }
 
     /// Creates an OpenGL texture object for a QImage.
-    QOpenGLTexture* uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps = QOpenGLTexture::DontGenerateMipMaps);
+    const OpenGLTexture& uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps = QOpenGLTexture::DontGenerateMipMaps);
 
     /// Creates a 1-D OpenGL texture object for a ColorCodingGradient.
-    QOpenGLTexture* uploadColorMap(ColorCodingGradient* gradient);
+    const OpenGLTexture& uploadColorMap(const ColorCodingGradient* gradient);
 
     /// Returns the frame graph we are currently rendering.
     const FrameGraph* frameGraph() const { OVITO_ASSERT(_frameGraph); return _frameGraph; }

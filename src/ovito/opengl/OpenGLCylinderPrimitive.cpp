@@ -44,7 +44,7 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
     bool renderWithPseudoColorMapping = false;
     if(primitive.pseudoColorMapping().isValid() && !isPickingPass() && primitive.colors() && primitive.colors()->componentCount() == 1)
         renderWithPseudoColorMapping = true;
-    QOpenGLTexture* colorMapTexture = nullptr;
+    const OpenGLTexture* colorMapTexture = nullptr;
 
     // Activate the right OpenGL shader program.
     OpenGLShaderHelper shader(this);
@@ -218,8 +218,8 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
             shader.setUniformValue("color_range_max", maxValue);
 
             // Upload color map as a 1-d OpenGL texture.
-            colorMapTexture = uploadColorMap(primitive.pseudoColorMapping().gradient());
-            colorMapTexture->bind();
+            colorMapTexture = &uploadColorMap(primitive.pseudoColorMapping().gradient());
+            colorMapTexture->get().bind();
         }
         else {
             // This will turn pseudocolor mapping off in the fragment shader.
@@ -230,8 +230,8 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
             // Upload a null color map to satisfy the picky OpenGL driver on macOS, which complains about
             // no texture being bound when a sampler1D is defined in the fragment shader.
             if(!isPickingPass() && primitive.shape() == CylinderPrimitive::CylinderShape) {
-                colorMapTexture = uploadColorMap(nullptr);
-                colorMapTexture->bind();
+                colorMapTexture = &uploadColorMap(nullptr);
+                colorMapTexture->get().bind();
             }
 #endif
         }
@@ -253,9 +253,8 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
     }
 
     // Unbind color mapping texture.
-    if(colorMapTexture) {
-        colorMapTexture->release();
-    }
+    if(colorMapTexture)
+        colorMapTexture->get().release();
 }
 
 }   // End of namespace

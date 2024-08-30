@@ -36,7 +36,7 @@ namespace Ovito {
 ******************************************************************************/
 void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
-    QOpenGLTexture* colorMapTexture = nullptr;
+    const OpenGLTexture* colorMapTexture = nullptr;
 
     // Make sure there is something to be rendered. Otherwise, step out early.
     if(!primitive.mesh() || primitive.mesh()->faceCount() == 0)
@@ -159,8 +159,8 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
         shader.setUniformValue("color_range_max", maxValue);
 
         // Upload color map as a 1-d OpenGL texture.
-        colorMapTexture = uploadColorMap(primitive.pseudoColorMapping().gradient());
-        colorMapTexture->bind();
+        colorMapTexture = &uploadColorMap(primitive.pseudoColorMapping().gradient());
+        colorMapTexture->get().bind();
     }
 
     if(primitive.useInstancedRendering()) {
@@ -321,9 +321,8 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
     }
 
     // Unbind color mapping texture.
-    if(colorMapTexture) {
-        colorMapTexture->release();
-    }
+    if(colorMapTexture)
+        colorMapTexture->get().release();
 }
 
 /******************************************************************************

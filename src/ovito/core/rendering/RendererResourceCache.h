@@ -28,6 +28,18 @@
 
 namespace Ovito {
 
+namespace detail {
+
+// Helper alias template
+template <typename, typename = std::void_t<>>
+struct has_resource_validation_check : std::false_type {};
+
+// Specialization that checks for the existence of `bool isRendererResourceValid()`
+template <typename T>
+struct has_resource_validation_check<T, std::void_t<decltype(std::declval<T>().isRendererResourceValid())>> : std::true_type {};
+
+} // namespace detail
+
 /**
  * \brief A tagged (=strongly-typed) tuple, which can be used as key for the RendererResourceCache class.
  */
@@ -129,7 +141,18 @@ public:
         // Check if the key exists in the cache.
         for(CacheEntry& entry : _entries) {
             if(entry.key.type() == typeid(Key) && entry.value.type() == typeid(Value) && key == any_cast<const Key&>(entry.key)) {
-                // Register the frame in which the resource was accessed.
+
+                // Check at compile time if the Value class has a method 'isRendererResourceValid()'.
+                // If so, call it to check if the resource is still valid.
+                // This extra check is used, for example, for detecting expired OpenGL textures (see OpenGLTexture class).
+                if constexpr(detail::has_resource_validation_check<Value>::value) {
+                    if(!any_cast<const Value&>(entry.value).isRendererResourceValid()) {
+                        // If the resource is no longer valid, skip this cache entry and create a new one below.
+                        continue;
+                    }
+                }
+
+                // Keep track of the frame in which the requested resource was accessed most recently.
                 if(std::find(entry.frames.begin(), entry.frames.end(), resourceFrame) == entry.frames.end())
                     entry.frames.push_back(resourceFrame);
                 // Return reference to the value.

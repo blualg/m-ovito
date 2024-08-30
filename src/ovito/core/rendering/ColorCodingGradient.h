@@ -44,12 +44,12 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<double> valueToColor(double t) = 0;
+    virtual ColorT<double> valueToColor(double t) const = 0;
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<float> valueToColor(float t) = 0;
+    virtual ColorT<float> valueToColor(float t) const = 0;
 
     /// Returns a buffer with the RGB color values of this color gradient.
     ConstDataBufferPtr getColorMap();
@@ -72,7 +72,7 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<double> valueToColor(double t) override {
+    virtual ColorT<double> valueToColor(double t) const override {
         OVITO_ASSERT(t >= 0.0 && t <= 1.0);
         return ColorT<double>::fromHSV((1.0 - t) * 0.7, 1.0, 1.0);
     }
@@ -80,7 +80,7 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<float> valueToColor(float t) override {
+    virtual ColorT<float> valueToColor(float t) const override {
         OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
         return ColorT<float>::fromHSV((1.0f - t) * 0.7f, 1.0f, 1.0f);
     }
@@ -98,7 +98,7 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<double> valueToColor(double t) override {
+    virtual ColorT<double> valueToColor(double t) const override {
         OVITO_ASSERT(t >= 0.0 && t <= 1.0);
         return ColorT<double>(t, t, t);
     }
@@ -106,7 +106,7 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<float> valueToColor(float t) override {
+    virtual ColorT<float> valueToColor(float t) const override {
         OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
         return ColorT<float>(t, t, t);
     }
@@ -124,7 +124,7 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<double> valueToColor(double t) override {
+    virtual ColorT<double> valueToColor(double t) const override {
         OVITO_ASSERT(t >= 0.0 && t <= 1.0);
         // Interpolation black->red->yellow->white.
         return ColorT<double>(std::min(t / 0.375, 1.0), std::max(0.0, std::min((t-0.375)/0.375, 1.0)), std::max(0.0, t*4.0 - 3.0));
@@ -133,7 +133,7 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<float> valueToColor(float t) override {
+    virtual ColorT<float> valueToColor(float t) const override {
         OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
         // Interpolation black->red->yellow->white.
         return ColorT<float>(std::min(t / 0.375f, 1.0f), std::max(0.0f, std::min((t-0.375f)/0.375f, 1.0f)), std::max(0.0f, t*4.0f - 3.0f));
@@ -152,7 +152,7 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<double> valueToColor(double t) override {
+    virtual ColorT<double> valueToColor(double t) const override {
         OVITO_ASSERT(t >= 0.0 && t <= 1.0);
         if(t < 0.125) return ColorT<double>(0.0, 0.0, 0.5 + 0.5 * t / 0.125);
         else if(t < 0.125 + 0.25) return ColorT<double>(0.0, (t - 0.125) / 0.25, 1.0);
@@ -164,7 +164,7 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<float> valueToColor(float t) override {
+    virtual ColorT<float> valueToColor(float t) const override {
         OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
         if(t < 0.125f) return ColorT<float>(0.0f, 0.0f, 0.5f + 0.5f * t / 0.125f);
         else if(t < 0.125f + 0.25f) return ColorT<float>(0.0f, (t - 0.125f) / 0.25f, 1.0f);
@@ -186,7 +186,7 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<double> valueToColor(double t) override {
+    virtual ColorT<double> valueToColor(double t) const override {
         OVITO_ASSERT(t >= 0.0 && t <= 1.0);
         if(t <= 0.5)
             return ColorT<double>(t * 2.0, t * 2.0, 1.0);
@@ -197,7 +197,7 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<float> valueToColor(float t) override {
+    virtual ColorT<float> valueToColor(float t) const override {
         OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
         if(t <= 0.5f)
             return ColorT<float>(t * 2.0f, t * 2.0f, 1.0f);
@@ -218,14 +218,14 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<double> valueToColor(double t) override {
+    virtual ColorT<double> valueToColor(double t) const override {
         return ColorCodingViridisGradient::valueToColor(static_cast<float>(t)).toDataType<double>();
     }
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<float> valueToColor(float t) override {
+    virtual ColorT<float> valueToColor(float t) const override {
         OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
         t *= (std::size(colormap_viridis_data) - 1);
         auto t0 = std::floor(t);
@@ -247,14 +247,14 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<double> valueToColor(double t) override {
+    virtual ColorT<double> valueToColor(double t) const override {
         return ColorCodingMagmaGradient::valueToColor(static_cast<float>(t)).toDataType<double>();
     }
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<float> valueToColor(float t) override {
+    virtual ColorT<float> valueToColor(float t) const override {
         OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
         t *= (std::size(colormap_magma_data) - 1);
         auto t0 = std::floor(t);
@@ -276,12 +276,12 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<double> valueToColor(double t) override;
+    virtual ColorT<double> valueToColor(double t) const override;
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<float> valueToColor(float t) override {
+    virtual ColorT<float> valueToColor(float t) const override {
         return ColorCodingTableGradient::valueToColor(static_cast<double>(t)).toDataType<float>();
     }
 
@@ -303,12 +303,12 @@ public:
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<double> valueToColor(double t) override;
+    virtual ColorT<double> valueToColor(double t) const override;
 
     /// \brief Converts a scalar value to a color value.
     /// \param t A value between 0 and 1.
     /// \return The color that visualizes the given scalar value.
-    virtual ColorT<float> valueToColor(float t) override {
+    virtual ColorT<float> valueToColor(float t) const override {
         return ColorCodingImageGradient::valueToColor(static_cast<double>(t)).toDataType<float>();
     }
 

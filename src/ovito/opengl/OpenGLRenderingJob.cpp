@@ -992,35 +992,30 @@ void OpenGLRenderingJob::checkOpenGLErrorStatus(const char* command, const char*
 /******************************************************************************
  * Create an OpenGL texture object for a QImage.
  ******************************************************************************/
-QOpenGLTexture* OpenGLRenderingJob::uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps)
+const OpenGLTexture& OpenGLRenderingJob::uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps)
 {
     OVITO_ASSERT(!image.isNull());
 
     // Check if this image has already been uploaded to the GPU.
-    const std::unique_ptr<OpenGLTexture>& texture = currentResourceFrame().lookup<std::unique_ptr<OpenGLTexture>>(
-        RendererResourceKey<struct ImageCache, quint64, QOpenGLContextGroup*>{image.cacheKey(), QOpenGLContextGroup::currentContextGroup()},
-        [&](std::unique_ptr<OpenGLTexture>& texture) {
-            texture = std::make_unique<OpenGLTexture>(image, genMipMaps);
+    return currentResourceFrame().lookup<OpenGLTexture>(
+        RendererResourceKey<struct ImageCache, quint64, const QOpenGLContextGroup*>{image.cacheKey(), QOpenGLContextGroup::currentContextGroup()},
+        [&](OpenGLTexture& texture) {
+            texture.create(image, genMipMaps);
             if(genMipMaps == QOpenGLTexture::DontGenerateMipMaps) {
-                texture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
-            }
-            if(!texture->isCreated()) {
-                throw RendererException("Failed to create OpenGL texture object.");
+                texture.get().setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
             }
         });
-
-    return texture.get();
 }
 
 /******************************************************************************
  * Creates a 1-D OpenGL texture object for a ColorCodingGradient.
  ******************************************************************************/
-QOpenGLTexture* OpenGLRenderingJob::uploadColorMap(ColorCodingGradient* gradient)
+const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradient* gradient)
 {
     // Check if this color map has already been uploaded to the GPU.
-    const std::unique_ptr<OpenGLTexture>& texture = currentResourceFrame().lookup<std::unique_ptr<OpenGLTexture>>(
-        RendererResourceKey<struct ColorMapCache, OORef<ColorCodingGradient>, QOpenGLContextGroup*>{gradient, QOpenGLContextGroup::currentContextGroup()},
-        [&](std::unique_ptr<OpenGLTexture>& texture) {
+    return currentResourceFrame().lookup<OpenGLTexture>(
+        RendererResourceKey<struct ColorMapCache, OORef<const ColorCodingGradient>, const QOpenGLContextGroup*>{gradient, QOpenGLContextGroup::currentContextGroup()},
+        [&](OpenGLTexture& texture) {
             // Sample the color gradient to produce a row of RGB pixel data.
             int resolution;
             std::vector<uint8_t> pixelData;
@@ -1029,7 +1024,7 @@ QOpenGLTexture* OpenGLRenderingJob::uploadColorMap(ColorCodingGradient* gradient
                 resolution = 256;
                 pixelData.resize(resolution * 3);
                 for(int x = 0; x < resolution; x++) {
-                    Color c = gradient->valueToColor((FloatType)x / (resolution - 1));
+                    auto c = gradient->valueToColor((float)x / (resolution - 1));
                     pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
                     pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
                     pixelData[x * 3 + 2] = (uint8_t)(255 * c.b());
@@ -1041,16 +1036,16 @@ QOpenGLTexture* OpenGLRenderingJob::uploadColorMap(ColorCodingGradient* gradient
             }
 
             // Create the 1-d texture object.
-            texture = std::make_unique<OpenGLTexture>(QOpenGLTexture::Target1D);
-            texture->setFormat(QOpenGLTexture::RGB8_UNorm);
-            texture->setSize(resolution);
-            texture->allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt8);
-            texture->setAutoMipMapGenerationEnabled(true);
-            texture->setWrapMode(QOpenGLTexture::ClampToEdge);
-            texture->setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt8, pixelData.data());
+            texture.create(QOpenGLTexture::Target1D);
+            texture.get().setFormat(QOpenGLTexture::RGB8_UNorm);
+            texture.get().setSize(resolution);
+            texture.get().allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt8);
+            texture.get().setAutoMipMapGenerationEnabled(true);
+            texture.get().setWrapMode(QOpenGLTexture::ClampToEdge);
+            texture.get().setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt8, pixelData.data());
+            if(!texture.isRendererResourceValid())
+                throw RendererException("Failed to create OpenGL texture for color map.");
         });
-
-    return texture.get();
 }
 
 }  // namespace Ovito
