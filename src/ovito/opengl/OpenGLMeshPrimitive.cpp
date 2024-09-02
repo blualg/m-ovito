@@ -115,18 +115,21 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
         shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(command, primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount()));
     }
 
+    bool highlightSelectedFaces = frameGraph()->isInteractive() && !isPickingPass();
+
     // The lookup key for the buffer cache.
-    RendererResourceKey<struct MeshBufferCache, DataOORef<const TriangleMesh>, std::vector<ColorA>, ColorA, Color> meshCacheKey{
+    RendererResourceKey<struct MeshBufferCache, DataOORef<const TriangleMesh>, std::vector<ColorA>, ColorA, Color, bool, bool> meshCacheKey{
         primitive.mesh(),
         primitive.materialColors(),
         primitive.uniformColor(),
-        primitive.faceSelectionColor()
+        primitive.faceSelectionColor(),
+        highlightSelectedFaces,
+        renderWithPseudoColorMapping
     };
 
     // Upload vertex buffer to GPU memory.
     QOpenGLBuffer meshBuffer = shader.createCachedBuffer(std::move(meshCacheKey), sizeof(MeshPrimitive::RenderVertex), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferReadAccess<int32_t> subset) {
         OVITO_ASSERT(!subset);
-        bool highlightSelectedFaces = frameGraph()->isInteractive() && !isPickingPass();
         primitive.generateRenderableVertices(reinterpret_cast<MeshPrimitive::RenderVertex*>(buffer), highlightSelectedFaces, renderWithPseudoColorMapping);
     });
 

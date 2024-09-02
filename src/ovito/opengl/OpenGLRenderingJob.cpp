@@ -128,12 +128,12 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     _glformat = _glcontext->format();
     OVITO_REPORT_OPENGL_ERRORS(this);
 
-#ifdef Q_OS_WIN
-    // OpenGL in a VirtualBox machine Windows guest reports "2.1 Chromium 1.9" as version string, which is
-    // not correctly parsed by Qt. We have to work around this.
     QByteArray openGLVersionString = reinterpret_cast<const char*>(this->glGetString(GL_VERSION));
     QByteArray openGLRendererString = reinterpret_cast<const char*>(this->glGetString(GL_RENDERER));
     QByteArray openGLVendorString = reinterpret_cast<const char*>(this->glGetString(GL_VENDOR));
+#ifdef Q_OS_WIN
+    // OpenGL in a VirtualBox machine Windows guest reports "2.1 Chromium 1.9" as version string, which is
+    // not correctly parsed by Qt. We have to work around this.
     if(openGLVersionString.startsWith("2.1 ")) {
         _glformat.setMajorVersion(2);
         _glformat.setMinorVersion(1);
@@ -227,6 +227,16 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
         glcontext()->getProcAddress("glMultiDrawArraysIndirect"));
 #ifndef Q_OS_WASM
     OVITO_ASSERT(glMultiDrawArrays);  // glMultiDrawArrays() should always be available in desktop OpenGL 2.0+.
+#endif
+
+    // Decide whether we can use the "noperspective" qualifier in fragment shaders to interpolate view ray directions.
+    if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+        _useInterpolatedRayDirections = false;
+#ifdef Q_OS_LINUX
+    // Workaround for a bug in the Mesa driver on Linux: Attribute interpolation with the "noperspective" qualifier is
+    // broken for partially clipped triangles.
+    if(openGLRendererString.startsWith("llvmpipe"))
+        _useInterpolatedRayDirections = false;
 #endif
 
     // Set up a vertex array object (VAO). An active VAO is required during rendering according to the OpenGL 3.2 core profile.
@@ -839,7 +849,7 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
 
         // View ray calculation in vertex and geometry shaders.
         if(line.contains("<calculate_view_ray_through_vertex>")) {
-            if(_glversion >= QT_VERSION_CHECK(3, 0, 0))
+            if(_useInterpolatedRayDirections)
                 line.replace("<calculate_view_ray_through_vertex>", "calculate_view_ray_through_vertex()");
             else
                 return;  // Skip view ray calculation in vertex/geometry shader and let the fragment shader do the full calculation for
@@ -848,7 +858,7 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
 
         // View ray calculation in fragment shaders.
         if(line.contains("<calculate_view_ray_through_fragment>")) {
-            if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
+            if(_useInterpolatedRayDirections) {
                 // Calculate view ray based on interpolated values coming from the vertex shader.
                 line.replace("<calculate_view_ray_through_fragment>", "vec3 ray_dir_norm = normalize(ray_dir);");
             }
@@ -910,13 +920,13 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
                     includeFilePath = QStringLiteral(":/openglrenderer/glsl/shading_transparency.frag");
             }
             else if(line.contains("<view_ray.vert>")) {
-                if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+                if(!_useInterpolatedRayDirections)
                     continue;  // Skip this include file, because view ray calculation is performed by the fragment shaders in old GLSL
                                // versions.
                 includeFilePath = QStringLiteral(":/openglrenderer/glsl/view_ray.vert");
             }
             else if(line.contains("<view_ray.frag>")) {
-                if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+                if(!_useInterpolatedRayDirections)
                     continue;  // Skip this include file, because view ray calculation is performed by the fragment shaders in old GLSL
                                // versions.
                 includeFilePath = QStringLiteral(":/openglrenderer/glsl/view_ray.frag");

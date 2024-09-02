@@ -411,6 +411,14 @@ public:
     /// \brief Flip the orientation of all faces.
     void flipFaces();
 
+    /// Determines whether any of the mesh's face has the selection flag set.
+    bool hasSelectedFaces() const {
+        for(const TriMeshFace& face : faces())
+            if(face.isSelected())
+                return true;
+        return false;
+    }
+
     /// \brief Returns whether this mesh has RGBA colors associated with the individual faces.
     bool hasFaceColors() const {
         return _hasFaceColors;

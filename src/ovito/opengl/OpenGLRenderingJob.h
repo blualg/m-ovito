@@ -276,6 +276,9 @@ private:
     /// Indicates that the use of glMultiDrawArraysIndirect() has explicitly been disabled.
     bool _disableMultiDrawArraysIndirect = (qEnvironmentVariableIntValue("OVITO_DISABLE_MULTI_DRAW_ARRAYS_INDIRECT") != 0);
 
+    /// Indicates whether the renderer uses shader non-perspective attribute interpolation to compute fragment rays.
+    bool _useInterpolatedRayDirections = (qEnvironmentVariableIntValue("OVITO_DISABLE_INTERPOLATED_RAY_DIRS") == 0);
+
     /// The frame graph we are currently rendering.
     const FrameGraph* _frameGraph = nullptr;
 
