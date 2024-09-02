@@ -177,7 +177,7 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
                                     .arg(QString::fromUtf8(openGLVersionString)));
     }
 
-    if(openGLVendorString == "ATI Technologies Inc." && openGLRendererString.startsWidth("AMD Radeon") && openGLRendererString.endsWidth("HD 8350")) {
+    if(openGLVendorString == "ATI Technologies Inc." && openGLRendererString.startsWith("AMD Radeon") && openGLRendererString.endsWith("HD 8350")) {
         throw RendererException(tr("The graphics chip of your computer is not compatible with OVITO, unfortunately.\n\n"
                                    "The AMD Radeon 8000 series does not support the specific OpenGL rendering functions required by OVITO. "
                                    "There is no known workaround to make OVITO work on systems with this particular graphics unit, which is more than a decade old. Please "
