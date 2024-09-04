@@ -40,7 +40,7 @@ public:
     using future_type = Future<PipelineFlowState>;
 
     /// Constructor.
-    ModifierEvaluationTask(ModifierEvaluationRequest&& request) :
+    explicit ModifierEvaluationTask(ModifierEvaluationRequest&& request) :
         detail::ContinuationTask<PipelineFlowState>(Task::NoState),
         _request(std::move(request)) {}
 
@@ -59,11 +59,9 @@ public:
 
     /// Starts the execution of this task. This gets called by the launchTask() helper function.
     void operator()(SharedFuture<PipelineFlowState> inputFuture) noexcept {
-        OVITO_ASSERT(inputFuture.isValid());
-
         // Schedule callback upon completion of the future that yields the input pipeline state.
         whenTaskFinishes<ModifierEvaluationTask, &ModifierEvaluationTask::inputStateAvailable>(
-            inputFuture.takeTaskDependency(),
+            std::move(inputFuture),
             *modificationNode(),
             shared_from_this());
     }
@@ -120,13 +118,13 @@ protected:
     }
 
     /// Asks the modifier to compute its results based on the now available input.
-    void evaluateModifier(PromiseBase promise) noexcept {
+    virtual void evaluateModifier(PromiseBase promise) noexcept {
 
         Future<PipelineFlowState> modifierFuture;
         handleModifierExceptions([&]() {
             Task::Scope taskScope(this);
             modifierFuture = modifier()->evaluateModifier(request(), PipelineFlowState{resultStorage()});
-            OVITO_ASSERT(modifierFuture.isValid());
+            OVITO_ASSERT(modifierFuture);
 
             // Register the task to indicate in the UI that the pipeline node is currently doing some work.
             if(!request().interactiveMode())
@@ -134,9 +132,9 @@ protected:
         });
 
         // Schedule callback to be invoked once the modifier yields its results.
-        if(modifierFuture.isValid()) {
+        if(modifierFuture) {
             whenTaskFinishes<ModifierEvaluationTask, &ModifierEvaluationTask::modifierResultsAvailable>(
-                modifierFuture.takeTaskDependency(),
+                std::move(modifierFuture),
                 *modificationNode(),
                 std::move(promise));
         }

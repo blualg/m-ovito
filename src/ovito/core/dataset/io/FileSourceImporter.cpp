@@ -331,7 +331,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
     auto combinedList = std::make_shared<QVector<Frame>>();
     Future<QVector<Frame>> future;
     for(const QUrl& url : sourceUrls) {
-        if(!future.isValid()) {
+        if(!future) {
             future = discoverFrames(url);
         }
         else {

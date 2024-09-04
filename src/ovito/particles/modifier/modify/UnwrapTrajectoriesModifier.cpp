@@ -118,7 +118,7 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
     OVITO_ASSERT(request.modificationNode() == this);
 
     SharedFuture unwrapOperation = _unwrapOperation.lock();
-    if(unwrapOperation.isValid() == false || unwrapOperation.isCanceled()) {
+    if(!unwrapOperation || unwrapOperation.isCanceled()) {
 
         // Determine the range of animation frames to be processed.
         int startFrame = 0;
@@ -350,7 +350,7 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
 ******************************************************************************/
 void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, const PipelineFlowState& state)
 {
-    if(!_modNode->_unwrapOperation.lock().isValid())
+    if(!_modNode->_unwrapOperation.lock())
         return;
 
     AnimationTime time = _modNode->sourceFrameToAnimationTime(frame);

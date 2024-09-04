@@ -56,8 +56,7 @@ public:
         OVITO_ASSERT(!awaitedTask());
         OVITO_ASSERT(!this->isFinished());
         OVITO_ASSERT(promise.task().get() == this);
-        OVITO_ASSERT(future.isValid() && future.isFinished());
-        OVITO_ASSERT(!this->isFinished());
+        OVITO_ASSERT(future.isFinished());
 
         // Execute the continuation function in the scope of this task object.
         Task::Scope taskScope(this);
@@ -127,10 +126,9 @@ public:
                 this->captureExceptionAndFinish();
                 return;
             }
-            OVITO_ASSERT(nextFuture.isValid());
 
             whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailable<is_shared_future_v<decltype(nextFuture)>>>(
-                nextFuture.takeTaskDependency(),
+                std::move(nextFuture),
                 InlineExecutor{},
                 std::move(promise));
         }

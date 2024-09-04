@@ -50,7 +50,7 @@ public:
     ~PromiseBase() { reset(); }
 
     /// Returns whether this promise object points to a valid shared state.
-    bool isValid() const { return (bool)_task; }
+    explicit operator bool() const { return static_cast<bool>(_task); }
 
     /// Detaches this promise from its shared state and makes sure that it reached the 'finished' state.
     /// If the promise wasn't already finished when this function is called, it is automatically canceled.
@@ -141,7 +141,7 @@ public:
 
     /// Returns the task object associated with this promise (the shared state).
     const TaskPtr& task() const {
-        OVITO_ASSERT(isValid());
+        OVITO_ASSERT(_task);
         return _task;
     }
 
@@ -150,14 +150,14 @@ public:
     /// The callable may take one optional parameter: a reference to the Task object that finished.
     template<typename Executor, typename Function>
     void finally(Executor&& executor, Function&& f) {
-        OVITO_ASSERT_MSG(isValid(), "PromiseBase::finally()", "Promise must be valid.");
+        OVITO_ASSERT_MSG(_task, "PromiseBase::finally()", "Promise must be valid.");
         task()->finally(std::forward<Executor>(executor), std::forward<Function>(f));
     }
 
     /// Overload of the method above using the inline executor.
     template<typename Function>
     void finally(Function&& f) {
-        OVITO_ASSERT_MSG(isValid(), "PromiseBase::finally()", "Promise must be valid.");
+        OVITO_ASSERT_MSG(_task, "PromiseBase::finally()", "Promise must be valid.");
         task()->finally(std::forward<Function>(f));
     }
 

@@ -181,7 +181,7 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
         if(eval.validityInterval.contains(request.time()) && eval.throwOnError == request.throwOnError()) {
             if(eval.evaluationTypes.testFlag(request.interactiveMode() ? PipelineEvaluationResult::EvaluationType::Interactive : PipelineEvaluationResult::EvaluationType::Noninteractive)) {
                 SharedFuture<PipelineFlowState> future = eval.future.lock();
-                if(future.isValid() && !future.isCanceled()) {
+                if(future && !future.isCanceled()) {
 //                    if(pipelineNode)
 //                        qDebug() << "Cache lookup:" << ownerObject() << "time=" << request.time() << "interactive=" << request.interactiveMode() << " --> in-flight eval (validity:" << eval.validityInterval << ")";
                     startFramePrecomputation(request);
@@ -501,7 +501,7 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
     // Start the animation frame precomputation process if it has been activated.
-    if(_precomputeAllFrames && !_precomputeFramesOperation.isValid() && !_allFramesPrecomputed) {
+    if(_precomputeAllFrames && !_precomputeFramesOperation && !_allFramesPrecomputed) {
         // Create the async operation object that manages the frame precomputation.
         _precomputeFramesOperation = Promise<void>::create();
 
@@ -529,7 +529,7 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
 ******************************************************************************/
 void PipelineCache::precomputeNextAnimationFrame()
 {
-    OVITO_ASSERT(_precomputeFramesOperation.isValid());
+    OVITO_ASSERT(_precomputeFramesOperation);
     OVITO_ASSERT(!_precomputeFramesOperation.isCanceled());
 
     // Determine the total number of animation frames.
@@ -555,7 +555,7 @@ void PipelineCache::precomputeNextAnimationFrame()
     if(nextFrame >= numSourceFrames) {
         // Precomputation of trajectory frames is complete.
         _precomputeFramesOperation.setFinished();
-        OVITO_ASSERT(!_precomputeFrameFuture.isValid());
+        OVITO_ASSERT(!_precomputeFrameFuture);
         _allFramesPrecomputed = true;
         return;
     }
@@ -567,12 +567,12 @@ void PipelineCache::precomputeNextAnimationFrame()
     _precomputeFrameFuture.finally(*ownerObject(), [this](Task& task) {
         try {
             // If the pipeline evaluation has been canceled for some reason, we interrupt the precomputation process.
-            if(ownerObject()->isBeingDeleted() || !_precomputeFramesOperation.isValid() || _precomputeFramesOperation.isFinished() || task.isCanceled()) {
+            if(ownerObject()->isBeingDeleted() || !_precomputeFramesOperation || _precomputeFramesOperation.isFinished() || task.isCanceled()) {
                 _precomputeFramesOperation.reset();
-                OVITO_ASSERT(!_precomputeFrameFuture.isValid());
+                OVITO_ASSERT(!_precomputeFrameFuture);
                 return;
             }
-            OVITO_ASSERT(_precomputeFrameFuture.isValid());
+            OVITO_ASSERT(_precomputeFrameFuture);
 
             // Schedule the pipeline evaluation at the next frame.
             precomputeNextAnimationFrame();

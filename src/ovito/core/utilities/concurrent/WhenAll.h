@@ -87,10 +87,9 @@ template<typename InputRange, class Executor, typename... ResultType>
             // Did we already reach the end of the input range?
             if(!this->isCanceled()) {
                 if(_iterator != std::end(_range)) {
-                    auto& future = *_iterator;
-                    OVITO_ASSERT(future.isValid());
                     // Schedule next iteration upon completion of the future.
-                    this->template whenTaskFinishes<WhenAllFuturesTask, &WhenAllFuturesTask::iteration_complete>(future.takeTaskDependency(), _executor, std::move(promise));
+                    this->template whenTaskFinishes<WhenAllFuturesTask, &WhenAllFuturesTask::iteration_complete>(
+                        std::move(*_iterator), _executor, std::move(promise));
                 }
                 else {
                     // Inform caller we are done.

@@ -60,7 +60,7 @@ public:
     template<typename Executor, typename Function>
     void whenTaskFinishes(TaskDependency awaitedTask, Executor&& executor, PromiseBase promise, Function&& f) noexcept {
         OVITO_ASSERT(awaitedTask);
-        OVITO_ASSERT(promise.isValid());
+        OVITO_ASSERT(promise);
         Task& waitingTask = *promise.task();
 
         // Attach to the task to be waited on.

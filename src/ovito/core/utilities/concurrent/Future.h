@@ -49,7 +49,7 @@ public:
     bool isFinished() const { return task()->isFinished(); }
 
     /// Returns true if this Future is associated with a shared state.
-    bool isValid() const { return (bool)_task.get(); }
+    explicit operator bool() const { return static_cast<bool>(_task); }
 
     /// Dissociates this Future from its shared state.
     void reset() {
@@ -57,9 +57,8 @@ public:
     }
 
     /// Returns the shared state associated with this Future.
-    /// Use isValid() to make sure it has one before calling this function.
     const TaskPtr& task() const {
-        OVITO_ASSERT(isValid());
+        OVITO_ASSERT(_task);
         return _task.get();
     }
 
@@ -86,7 +85,7 @@ public:
     /// The callable must accept one parameter: a reference to the underlying Task object.
     template<typename Executor, typename Function>
     void finally(Executor&& executor, Function&& f) const noexcept {
-        OVITO_ASSERT_MSG(isValid(), "FutureBase::finally()", "Future must be valid.");
+        OVITO_ASSERT_MSG(_task, "FutureBase::finally()", "Future must be valid.");
         task()->finally(std::forward<Executor>(executor), std::forward<Function>(f));
     }
 
@@ -95,7 +94,7 @@ public:
     /// The callable must accept one parameter: a reference to the underlying Task object.
     template<typename Function>
     void finally(Function&& f) const noexcept {
-        OVITO_ASSERT_MSG(isValid(), "FutureBase::finally()", "Future must be valid.");
+        OVITO_ASSERT_MSG(_task, "FutureBase::finally()", "Future must be valid.");
         task()->finally(std::forward<Function>(f));
     }
 
@@ -215,7 +214,7 @@ public:
     /// The function blocks until the result become available.
     template<typename R2 = R>
     [[nodiscard]] std::enable_if_t<!std::is_void_v<R2>, R> result() {
-        OVITO_ASSERT_MSG(isValid(), "Future::results()", "Future must be valid.");
+        OVITO_ASSERT_MSG(*this, "Future::results()", "Future must be valid.");
         waitForFinished();
         OVITO_ASSERT_MSG(isFinished(), "Future::results()", "Future must be in fulfilled state.");
         OVITO_ASSERT_MSG(!isCanceled(), "Future::results()", "Future must not be canceled.");
@@ -272,7 +271,7 @@ Future<R>::then(Executor&& executor, Function&& f)
     using continuation_task_type = detail::ContinuationTask<typename result_future_type::result_type>;
 
     // This future must be valid for then() to work.
-    OVITO_ASSERT_MSG(isValid(), "Future::then()", "Future must be valid.");
+    OVITO_ASSERT_MSG(*this, "Future::then()", "Future must be valid.");
 
     class ThenTask : public continuation_task_type
     {

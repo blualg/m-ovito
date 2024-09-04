@@ -86,7 +86,7 @@ public:
     /// The function blocks until the result become available.
     template<typename R2 = R>
     [[nodiscard]] std::enable_if_t<!std::is_void_v<R2>, std::add_lvalue_reference_t<std::add_const_t<R>>> result() const& {
-        OVITO_ASSERT_MSG(isValid(), "SharedFuture::results()", "Future must be valid.");
+        OVITO_ASSERT_MSG(*this, "SharedFuture::results()", "Future must be valid.");
         waitForFinished();
         OVITO_ASSERT_MSG(isFinished(), "SharedFuture::results()", "Future must be in fulfilled state.");
         OVITO_ASSERT_MSG(!isCanceled(), "SharedFuture::results()", "Future must not be canceled.");
@@ -137,7 +137,7 @@ SharedFuture<R>::then(Executor&& executor, Function&& f) const
     using continuation_task_type = detail::ContinuationTask<typename result_future_type::result_type>;
 
     // This future must be valid for then() to work.
-    OVITO_ASSERT_MSG(isValid(), "SharedFuture::then()", "Future must be valid.");
+    OVITO_ASSERT_MSG(*this, "SharedFuture::then()", "Future must be valid.");
 
     class ThenTask : public continuation_task_type
     {

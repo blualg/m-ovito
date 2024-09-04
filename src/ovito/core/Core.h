@@ -168,6 +168,7 @@
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/utilities/linalg/LinAlg.h>
 #include <ovito/core/utilities/Color.h>
+#include <ovito/core/utilities/concurrent/ExecutionContext.h>
 #include <ovito/core/utilities/concurrent/Future.h>
 #include <ovito/core/utilities/concurrent/SharedFuture.h>
 #include <ovito/core/utilities/concurrent/WeakSharedFuture.h>

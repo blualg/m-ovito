@@ -419,7 +419,7 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(cons
     }
 
     // Is there an ongoing or already completed operation that we can reuse?
-    if(samplingOperation.isValid() == false || samplingOperation.isCanceled()) {
+    if(!samplingOperation || samplingOperation.isCanceled()) {
         // If not, start a new sampling operation that loops over all trajectory frames.
 
         // Determine time interval over which to generate trajectories and which need to be fetched from the upstream pipeline.

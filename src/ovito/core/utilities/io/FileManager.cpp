@@ -100,8 +100,7 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 
         // Check if requested URL is already being loaded.
         if(auto inProgressEntry = _pendingFiles.find(normalizedUrl); inProgressEntry != _pendingFiles.end()) {
-            SharedFuture<FileHandle> future = inProgressEntry->second.lock();
-            if(future.isValid())
+            if(SharedFuture<FileHandle> future = inProgressEntry->second.lock())
                 return future;
             else
                 _pendingFiles.erase(inProgressEntry);

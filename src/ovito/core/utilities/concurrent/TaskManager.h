@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/OORef.h>
+#include <function2/function2.hpp>
 
 namespace Ovito {
 

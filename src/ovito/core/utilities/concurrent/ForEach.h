@@ -130,10 +130,9 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
                     this->captureExceptionAndFinish();
                     return;
                 }
-                OVITO_ASSERT(future.isValid());
                 // Schedule next iteration upon completion of the future returned by the user function.
                 this->template whenTaskFinishes<ForEachTask, &ForEachTask::iteration_complete>(
-                    future.takeTaskDependency(),
+                    std::move(future),
                     _executor,
                     std::move(promise));
             }
@@ -152,7 +151,7 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
             output_future_type future(this->takeAwaitedTask());
 
             // Stop if the awaited future was canceled.
-            if(!future.isValid() || future.isCanceled()) {
+            if(!future || future.isCanceled()) {
                 this->cancelLocked(lock);
                 this->finishLocked(lock);
                 return;

@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/ExecutionContext.h>
+#include <ovito/core/utilities/concurrent/Task.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 
 namespace Ovito {

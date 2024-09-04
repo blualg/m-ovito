@@ -85,7 +85,7 @@ void ActiveObject::decrementNumberOfActiveTasks()
 ******************************************************************************/
 void ActiveObject::registerActiveFuture(const FutureBase& future)
 {
-    OVITO_ASSERT(future.isValid());
+    OVITO_ASSERT(future);
     if(!future.task()->isFinished() && Application::guiMode()) {
         incrementNumberOfActiveTasks();
         // Reset the pending status after the Future is fulfilled.

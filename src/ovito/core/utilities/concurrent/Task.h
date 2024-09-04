@@ -30,14 +30,6 @@
 
 namespace Ovito {
 
-namespace detail {
-    class TaskDependency; // Forward declaration
-    class TaskCallbackBase;
-    class TaskAwaiter;
-    template<typename Derived> class TaskCallback;
-    template<typename R> class ContinuationTask;
-}
-
 /// Exception type thrown by a task in case it got canceled.
 struct OVITO_CORE_EXPORT OperationCanceled {};
 

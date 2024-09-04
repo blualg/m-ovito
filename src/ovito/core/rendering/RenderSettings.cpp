@@ -263,7 +263,7 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
     QString lastOutputFilename;
     auto finishRenderingAndSaveToFile = [&](bool frameCompleted) {
         // Before rendering the next frame, wait for the previous one to complete.
-        if(renderFuture.isValid())
+        if(renderFuture)
             renderFuture.waitForFinished();
         renderFuture.reset();
 
