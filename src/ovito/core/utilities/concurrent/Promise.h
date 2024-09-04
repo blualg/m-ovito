@@ -37,6 +37,9 @@ public:
     /// Default constructor.
     PromiseBase() noexcept = default;
 
+    /// Constructor that takes ownership of a shared state.
+    PromiseBase(TaskPtr p) noexcept : _task(std::move(p)) {}
+
     /// Move constructor.
     PromiseBase(PromiseBase&& p) noexcept = default;
 
@@ -160,9 +163,6 @@ public:
 
 protected:
 
-    /// Constructor.
-    PromiseBase(TaskPtr p) noexcept : _task(std::move(p)) {}
-
     /// Pointer to the state, which is shared with futures.
     TaskPtr _task;
 
@@ -253,11 +253,6 @@ protected:
         Promise promise(std::make_shared<Task>(Task::Finished));
         promise.task()->_exceptionStore = std::move(ex_ptr);
         return promise;
-    }
-
-    /// Creates a promise without results that is in the canceled state.
-    [[nodiscard]] static Promise createCanceled() {
-        return Promise(std::make_shared<Task>(Task::State(Task::Canceled | Task::Finished)));
     }
 
 #ifdef OVITO_DEBUG

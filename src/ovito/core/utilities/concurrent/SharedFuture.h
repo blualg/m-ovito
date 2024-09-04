@@ -134,62 +134,74 @@ SharedFuture<R>::then(Executor&& executor, Function&& f) const
 {
     // Infer the exact future/promise/task types to create.
     using result_future_type = detail::continuation_future_type<Function,SharedFuture<R>>;
-    using result_promise_type = typename result_future_type::promise_type;
-    using continuation_task_type = detail::ContinuationTask<typename result_promise_type::result_type>;
+    using continuation_task_type = detail::ContinuationTask<typename result_future_type::result_type>;
 
     // This future must be valid for then() to work.
     OVITO_ASSERT_MSG(isValid(), "SharedFuture::then()", "Future must be valid.");
 
-    // Inherit the priority flag from the task adding the continuation.
-    bool isHighPriority = this_task::get()->isHighPriorityTask();
+    class ThenTask : public continuation_task_type
+    {
+    public:
 
-    // Create a task, promise and future for the continuation.
-    // Inherit the priority flag from the parent task.
-    result_promise_type promise{std::make_shared<continuation_task_type>(isHighPriority ? Task::HighPriority : Task::NoState)};
-    result_future_type future = promise.future();
-    continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
+        /// The type of future associated with this task type. This is used by the launchTask() function.
+        using future_type = result_future_type;
 
-    // Run the following function once the existing task finishes. We'll then invoke the user's continuation function.
-    continuationTask->whenTaskFinishes(
-            this->task(),
-            std::forward<Executor>(executor),
-            [f = std::forward<Function>(f), promise = std::move(promise)]() mutable noexcept {
+        /// Constructor.
+        explicit ThenTask(Function&& function) :
+            continuation_task_type(Task::NoState),
+            _function(std::forward<Function>(function)) {}
 
-        // Get the task that is about to continue.
-        continuation_task_type* continuationTask = static_cast<continuation_task_type*>(promise.task().get());
-
-        // Manage access to the task that represents the continuation.
-        Task::MutexLock lock(*continuationTask);
-
-        // Get the task that did just finish.
-        detail::TaskDependency finishedTask = continuationTask->takeAwaitedTask();
-
-        // Don't need to run continuation function if the continuation task has been canceled in the meantime.
-        // Also don't run continuation function if the preceding task was canceled.
-        if(!finishedTask || finishedTask->isCanceled())
-            return; // Note: The Promise's destructor automatically puts the continuation task into 'canceled' and 'finished' states.
-
-        OVITO_ASSERT(finishedTask->isFinished());
-        OVITO_ASSERT(!continuationTask->isFinished());
-        OVITO_ASSERT(!continuationTask->isCanceled());
-
-        // Don't execute continuation function in case an error occurred in the preceding task.
-        // In such a case, copy the exception state to the continuation promise.
-        if constexpr(!std::is_invocable_v<Function, SharedFuture<R>>) {
-            if(finishedTask->exceptionStore()) {
-                continuationTask->exceptionLocked(finishedTask->exceptionStore());
-                continuationTask->finishLocked(lock);
-                return;
-            }
+        /// Starts execution of the task.
+        void operator()(detail::TaskDependency awaitedTask, Executor&& executor) {
+            this->template whenTaskFinishes<ThenTask, &ThenTask::awaitedTaskFinished>(
+                std::move(awaitedTask),
+                std::forward<Executor>(executor),
+                this->shared_from_this());
         }
-        lock.unlock();
 
-        // Now it's time to execute the continuation function.
-        // Assign the function's return value as result of the continuation task.
-        continuationTask->fulfillWith(std::move(promise), std::forward<Function>(f), SharedFuture<R>(std::move(finishedTask)));
-    });
+        /// Callback to be invoked when the awaited task has finished.
+        void awaitedTaskFinished(PromiseBase promise) noexcept {
+            // Lock this task.
+            Task::MutexLock lock(*this);
 
-    return future;
+            // Get the task that did just finish.
+            detail::TaskDependency finishedTask = this->takeAwaitedTask();
+
+            // Don't need to run continuation function if the continuation task has been canceled in the meantime.
+            // Also don't run continuation function if the awaited task was canceled.
+            if(!finishedTask || finishedTask->isCanceled())
+                return; // Note: The Promise's destructor automatically puts the continuation task into 'canceled' and 'finished' states.
+
+            OVITO_ASSERT(finishedTask->isFinished());
+            OVITO_ASSERT(!this->isFinished());
+            OVITO_ASSERT(!this->isCanceled());
+
+            // Don't execute continuation function in case an error occurred in the preceding task and unless the continuation function takes a Future.
+            // Forward any preceding exception state directly to the continuation task.
+            if constexpr(!std::is_invocable_v<Function, SharedFuture<R>>) {
+                if(finishedTask->exceptionStore()) {
+                    this->exceptionLocked(finishedTask->exceptionStore());
+                    this->finishLocked(lock);
+                    return;
+                }
+            }
+            lock.unlock();
+
+            // Now it's time to execute the continuation function supplied by the user.
+            // This assigns the function's return value as result of this continuation task.
+            this->fulfillWith(std::move(promise), std::move(_function), SharedFuture<R>(std::move(finishedTask)));
+        }
+
+    private:
+
+        /// The caller's continuation function to be executed once the awaited task completes.
+        std::decay_t<Function> _function;
+    };
+
+    return launchTask(
+        std::make_shared<ThenTask>(std::forward<Function>(f)),
+        this->task(),
+        std::forward<Executor>(executor));
 }
 
 }   // End of namespace

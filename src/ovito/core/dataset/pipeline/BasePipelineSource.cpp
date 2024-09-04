@@ -45,9 +45,8 @@ void BasePipelineSource::postprocessDataCollection(Future<PipelineFlowState>& st
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
     // Register the task with this pipeline stage to indicate in the UI that this pipeline source is currently performing work.
-    if(!request.interactiveMode()) {
+    if(!request.interactiveMode())
         registerActiveFuture(stateFuture);
-    }
 
     stateFuture.postprocess(*this, [this, throwOnError = request.throwOnError(), interactiveMode = request.interactiveMode()](Future<PipelineFlowState> future) -> PipelineFlowState {
         OVITO_ASSERT(future.isFinished() && !future.isCanceled());

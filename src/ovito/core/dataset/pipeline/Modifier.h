@@ -131,13 +131,14 @@ protected:
 
 private:
 
-    /// Dndicates whether the modifier is currently enabled. A disabled modifier will be skipped during pipeline evaluation.
+    /// Indicates whether the modifier is currently enabled. A disabled modifier will be skipped during pipeline evaluation.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, isEnabled, setEnabled);
 
     /// A user-defined title of this modifier, which overrides the default title provided by the modifier class.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, title, setTitle);
 
-    friend ModificationNode;
+    friend class ModificationNode;
+    friend class ModifierEvaluationTask;
 };
 
 }   // End of namespace

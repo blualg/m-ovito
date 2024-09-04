@@ -106,7 +106,7 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
         }
 
         /// Performs the next iteration of the mapping process.
-        void iteration_begin(Promise<task_result_type> promise) noexcept {
+        void iteration_begin(PromiseBase promise) noexcept {
             // Did we already reach the end of the input range?
             if(_iterator != std::end(_range) && !this->isCanceled()) {
                 output_future_type future;
@@ -132,9 +132,10 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
                 }
                 OVITO_ASSERT(future.isValid());
                 // Schedule next iteration upon completion of the future returned by the user function.
-                this->whenTaskFinishes(future.takeTaskDependency(), _executor, [promise = std::move(promise)]() mutable noexcept {
-                    static_cast<ForEachTask*>(promise.task().get())->iteration_complete(std::move(promise));
-                });
+                this->template whenTaskFinishes<ForEachTask, &ForEachTask::iteration_complete>(
+                    future.takeTaskDependency(),
+                    _executor,
+                    std::move(promise));
             }
             else {
                 // Inform caller that the task has finished and the result is available.
@@ -143,7 +144,7 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
         }
 
         // Is called at the end of each iteration, when user function has finished performing its work.
-        void iteration_complete(Promise<task_result_type> promise) noexcept {
+        void iteration_complete(PromiseBase promise) noexcept {
             // Lock access to this task object.
             Task::MutexLock lock(*this);
 

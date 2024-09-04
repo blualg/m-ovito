@@ -171,6 +171,8 @@ private:
     /// Cache for partial results computed by the modifier.
     /// This can be used by the modifier to enable fast interactive updates after parameter changes that do not invalidate the entire result.
     FutureCache<DataOORef<const DataCollection>> _partialResultsCache;
+
+    friend class ModifierEvaluationTask;
 };
 
 /// This macro registers some ModificationNode-derived class as the pipeline node type of some Modifier-derived class.

@@ -33,6 +33,7 @@ namespace Ovito {
 namespace detail {
     class TaskDependency; // Forward declaration
     class TaskCallbackBase;
+    class TaskAwaiter;
     template<typename Derived> class TaskCallback;
     template<typename R> class ContinuationTask;
 }
@@ -45,6 +46,8 @@ struct OVITO_CORE_EXPORT OperationCanceled {};
  */
 class OVITO_CORE_EXPORT Task : public std::enable_shared_from_this<Task>
 {
+    Q_DISABLE_COPY_MOVE(Task)
+
 public:
 
     using Mutex = std::mutex;
@@ -243,7 +246,7 @@ protected:
     template<typename R, typename R2>
     void setResult(R2&& value) {
 #ifdef OVITO_DEBUG
-        OVITO_ASSERT(_hasResultsStored.exchange(true) == false);
+        OVITO_ASSERT(_hasResultsStored.exchange(true) == false); // May assign result only once to the task's storage.
 #endif
         OVITO_ASSERT(_resultsStorage != nullptr);
         *static_cast<R*>(_resultsStorage) = std::forward<R2>(value);
@@ -258,8 +261,7 @@ protected:
     /// Registers a callback function that will be run when this task reaches the 'finished' state.
     /// If the task is already in one of these states, the continuation function is invoked immediately.
     template<typename Executor, typename Function>
-    void addContinuation(Executor&& executor, Function&& f) {
-        MutexLock lock(*this);
+    void addContinuation(MutexLock&& lock, Executor&& executor, Function&& f) {
         // Check if task is already finished.
         if(isFinished()) {
             // Run continuation function immediately.
@@ -270,6 +272,13 @@ protected:
             // Otherwise, insert into list to run continuation function later.
             registerContinuation(std::forward<Executor>(executor).schedule(std::forward<Function>(f)));
         }
+    }
+
+    /// Registers a callback function that will be run when this task reaches the 'finished' state.
+    /// If the task is already in one of these states, the continuation function is invoked immediately.
+    template<typename Executor, typename Function>
+    void addContinuation(Executor&& executor, Function&& f) {
+        addContinuation(MutexLock(*this), std::forward<Executor>(executor), std::forward<Function>(f));
     }
 
     /// Registers a callback function that will be run when this task reaches the 'finished' state.
@@ -357,8 +366,9 @@ protected:
     friend class AsynchronousTaskBase;
     friend class detail::TaskDependency;
     friend class detail::TaskCallbackBase;
+    friend class detail::TaskAwaiter;
     template<typename Derived> friend class detail::TaskCallback;
-    template<typename tuple_type> friend class detail::ContinuationTask;
+    template<typename R> friend class detail::ContinuationTask;
     template<typename R2> friend class Future;
     template<typename R2> friend class SharedFuture;
     template<typename R2> friend class Promise;

@@ -27,7 +27,9 @@
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/utilities/concurrent/Future.h>
+#include <ovito/core/utilities/concurrent/LaunchTask.h>
 #include <ovito/core/app/Application.h>
+#include "ModifierEvaluationTask.h"
 
 namespace Ovito {
 
@@ -357,101 +359,15 @@ SharedFuture<PipelineFlowState> ModificationNode::evaluateInternal(const Pipelin
         modifier()->inputCachingHints(modifierRequest);
 
     // Obtain input data at the current frame from the upstream pipeline.
-    SharedFuture<PipelineFlowState> stateFuture = static_cast<SharedFuture<PipelineFlowState>&&>(evaluateInput(modifierRequest));
+    SharedFuture<PipelineFlowState> inputFuture = evaluateInput(modifierRequest).asFuture();
 
     // If the modifier is currently disabled, we can skip it and simply forward the unmodified results from the upstream pipeline.
     if(!modifierAndGroupEnabled())
-        return stateFuture;
+        return inputFuture;
 
-    // Keep a weak copy of the (future) upstream pipeline results. We might need them later in case this modifier fails.
-    TaskPtr upstreamTask = !request.throwOnError() ? stateFuture.task() : nullptr;
-
-    // Pass the input data on to the modifier function.
-    stateFuture.postprocess(*this, [this, request = std::move(modifierRequest)](PipelineFlowState state) -> Future<PipelineFlowState> {
-        // Sanity check: With the throwOnError option set, the input data must never be in an error state.
-        OVITO_ASSERT(!request.throwOnError() || state.status().type() != PipelineStatus::Error);
-
-        // Clear the status of the input.
-        state.setStatus(PipelineStatus::Success);
-
-        // This ModificationNode becomes a no-op if
-        //  - it doesn't have a modifier,
-        //  - the modifier is disabled,
-        //  - the upstream pipeline did not yield any data, or
-        //  - the modifier cannot be evaluated in interactive mode (this is handled by the modifier directly).
-        if(!modifierAndGroupEnabled() || !state)
-            return std::move(state);
-
-        // Let the modifier compute its results.
-        Future<PipelineFlowState> future = modifier()->evaluateModifier(request, std::move(state));
-        OVITO_ASSERT(future.isValid());
-
-        // Register the task with this pipeline stage to indicate in the UI that this stage is currently performing work.
-        if(!request.interactiveMode())
-            registerActiveFuture(future);
-
-        return future;
-    });
-
-    // Post-process the modifier results before returning them to the caller.
-    // Turn any exception thrown during modifier evaluation into a
-    // valid pipeline state with an error code (unless throwOnError is set).
-    stateFuture.postprocess(*this, [this, upstreamTask = std::move(upstreamTask), throwOnError = request.throwOnError(), interactiveMode = request.interactiveMode()](SharedFuture<PipelineFlowState> future) mutable {
-        OVITO_ASSERT(future.isFinished() && !future.isCanceled());
-        try {
-            try {
-                const PipelineFlowState& state = future.result();
-
-                // Indicate the status of the modifier calculation in the GUI.
-                if(!interactiveMode)
-                    setStatus(state.status());
-
-                return state;
-            }
-            catch(const Exception&) {
-                throw;  // Pass through regular exceptions.
-            }
-            catch(const std::bad_alloc&) {
-                throw Exception(tr("Not enough memory."));
-            }
-            catch(const std::exception& ex) {
-                OVITO_ASSERT_MSG(false, "ModificationNode::evaluateInternal()", "Caught an unexpected exception type during modifier evaluation.");
-                throw Exception(tr("A non-standard exception occurred: %1").arg(QString::fromLatin1(ex.what())));
-            }
-            catch(...) {
-                OVITO_ASSERT_MSG(false, "ModificationNode::evaluateInternal()", "Caught an unknown exception type during modifier evaluation.");
-                throw Exception(tr("An unknown exception occurred."));
-            }
-        }
-        catch(Exception& ex) {
-            if(throwOnError)
-                throw;
-
-            // Indicate the failure of the modifier calculation in the GUI.
-            if(!interactiveMode)
-                setStatus(ex);
-
-            if(modifier())
-                ex.prependToMessage(tr("Modifier '%1' reported: ").arg(modifier()->objectTitle()));
-
-            // Fall back to the results produced by the upstream pipeline.
-            // Note: This should never throw an exception, because the input pipeline results have already been accessed successfully.
-            OVITO_ASSERT(upstreamTask);
-            OVITO_ASSERT(upstreamTask->isFinished() && !upstreamTask->isCanceled() && !upstreamTask->exceptionStore());
-            try {
-                upstreamTask->throwPossibleException();
-                PipelineFlowState state = upstreamTask->getResult<PipelineFlowState>();
-                state.setStatus(PipelineStatus(ex, QStringLiteral(" ")));
-                return state;
-            }
-            catch(...) {
-                OVITO_ASSERT_MSG(false, "ModificationNode::evaluateInternal()", "Caught an unexpected exception type during modifier fallback.");
-                return PipelineFlowState(nullptr, PipelineStatus(PipelineStatus::Error, tr("An unknown exception occurred.")));
-            }
-        }
-    });
-
-    return stateFuture;
+    return launchTask(
+        std::make_shared<ModifierEvaluationTask>(std::move(modifierRequest)),
+        std::move(inputFuture));
 }
 
 /******************************************************************************
