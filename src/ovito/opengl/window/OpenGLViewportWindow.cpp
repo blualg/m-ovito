@@ -129,6 +129,7 @@ void OpenGLViewportWindow::paint()
     if(!frameGraph())
         return;
 
+    qDebug() << QDateTime::currentMSecsSinceEpoch() << "Start OpenGL rendering" << (OvitoObject*)this;
     MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface(), MainThreadOperation::Isolated);
     try {
         // Recreate/resize abstract frame buffer for rendering into the widget if necessary.
@@ -139,6 +140,7 @@ void OpenGLViewportWindow::paint()
         // Render the viewport contents. This requires an active GL context.
         auto future = renderingJob()->renderFrame(frameGraph(), _visualFrameBuffer);
         OVITO_ASSERT(future && future.isFinished() && !future.isCanceled());
+        qDebug() << QDateTime::currentMSecsSinceEpoch() << "Done OpenGL rendering" << (OvitoObject*)this;
 
         // Emit signal to inform listeners (e.g. SceneAnimationPlayback) that a full frame has been rendered and presented on screen.
         if(frameGraph()->isPreliminaryState() == false)

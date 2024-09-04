@@ -100,13 +100,9 @@ template<typename InputRange, class Executor, typename... ResultType>
         }
 
         // Is called at the end of each iteration, when another future has finished.
-        void iteration_complete(PromiseBase promise) noexcept {
-            // Lock access to this task object.
-            Task::MutexLock lock(*this);
-
-            // Get the task that did just finish and wrap it in a future of the original type.
-            *_iterator = std::decay_t<decltype(*_iterator)>(this->takeAwaitedTask());
-
+        void iteration_complete(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+            // Wrap the task that just finished in a future of the original type.
+            *_iterator = std::decay_t<decltype(*_iterator)>(std::move(finishedTask));
             lock.unlock();
 
             // Continue with next iteration.

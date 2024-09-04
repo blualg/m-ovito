@@ -60,6 +60,9 @@ public:
         }
     }
 
+    /// Moves the task pointer out of this promise, which invalidates the promise.
+    TaskPtr takeTask() noexcept { return std::move(_task); }
+
     /// Returns whether this promise has been canceled by a previous call to cancel().
     bool isCanceled() const { return task()->isCanceled(); }
 

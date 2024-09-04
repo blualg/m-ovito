@@ -85,7 +85,7 @@ public:
         // Compact the list if necessary.
         // But only do it if we are not currently visiting the list recursively or concurrently.
         if(--_reentranceCounter == 0 && containsEmptySlots) {
-            _entries.erase(std::remove_if(_entries.begin(), _entries.end(), std::mem_fn(&OOWeakRef<RefMaker>::expired)), _entries.end());
+            erase_if(_entries, std::mem_fn(&OOWeakRef<RefMaker>::expired));
         }
 
 #ifdef OVITO_DEBUG

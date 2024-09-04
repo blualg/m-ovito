@@ -160,21 +160,9 @@ SharedFuture<R>::then(Executor&& executor, Function&& f) const
         }
 
         /// Callback to be invoked when the awaited task has finished.
-        void awaitedTaskFinished(PromiseBase promise) noexcept {
-            // Lock this task.
-            Task::MutexLock lock(*this);
-
-            // Get the task that did just finish.
-            detail::TaskDependency finishedTask = this->takeAwaitedTask();
-
-            // Don't need to run continuation function if the continuation task has been canceled in the meantime.
-            // Also don't run continuation function if the awaited task was canceled.
-            if(!finishedTask || finishedTask->isCanceled())
-                return; // Note: The Promise's destructor automatically puts the continuation task into 'canceled' and 'finished' states.
-
+        void awaitedTaskFinished(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
             OVITO_ASSERT(finishedTask->isFinished());
-            OVITO_ASSERT(!this->isFinished());
-            OVITO_ASSERT(!this->isCanceled());
+            OVITO_ASSERT(!this->isFinished() && !this->isCanceled());
 
             // Don't execute continuation function in case an error occurred in the preceding task and unless the continuation function takes a Future.
             // Forward any preceding exception state directly to the continuation task.

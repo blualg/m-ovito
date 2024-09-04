@@ -143,19 +143,9 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
         }
 
         // Is called at the end of each iteration, when user function has finished performing its work.
-        void iteration_complete(PromiseBase promise) noexcept {
-            // Lock access to this task object.
-            Task::MutexLock lock(*this);
-
+        void iteration_complete(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
             // Get the task that did just finish and wrap it in a future of the original type.
-            output_future_type future(this->takeAwaitedTask());
-
-            // Stop if the awaited future was canceled.
-            if(!future || future.isCanceled()) {
-                this->cancelLocked(lock);
-                this->finishLocked(lock);
-                return;
-            }
+            output_future_type future(std::move(finishedTask));
 
             // Check if the awaited future completed with an error.
             if(future.task()->exceptionStore()) {

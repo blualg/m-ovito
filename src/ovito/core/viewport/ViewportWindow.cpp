@@ -135,7 +135,7 @@ void ViewportWindow::resumeViewportUpdates()
 
     if(QCoreApplication::instance()) {
         if(_updateRequested && !_updateTimer.isActive() && isVisible()) {
-            _updateTimer.start(10, Qt::CoarseTimer, this); // Refresh viewport window after a 10 ms delay to avoid excessive repaints.
+            _updateTimer.start(0, Qt::CoarseTimer, this);
         }
     }
 }
@@ -166,6 +166,7 @@ void ViewportWindow::handleUpdateRequest()
     // The UserInterface will issue a new update request once updates are resumed.
     if(userInterface().areViewportUpdatesSuspended())
         return;
+    qDebug() << QDateTime::currentMSecsSinceEpoch() << "Start rendering" << (OvitoObject*)this;
 
     // Reset update request flag.
     _updateRequested = false;
@@ -242,9 +243,11 @@ void ViewportWindow::handleUpdateRequest()
         // Let the FrameGraphBuilder class do the heavy lifting and generate the frame graph for the current scene.
         Future<OORef<FrameGraph>> frameGraphFuture = FrameGraphBuilder::build(std::move(frameGraph), viewport()->scene(), viewport(), logicalViewportRect, physicalViewportRect, noninteractiveProjParams);
 
+        // Temporarily suspend viewport updates while building the frame graph to prevent recursive updates.
+        userInterface().suspendViewportUpdates();
+
         // After the frame graph has been built for the scene, finish and then render it.
-        // Note: Temporarily suspending viewport updates while building the frame graph to prevent recursive updates.
-        _frameGraphFuture = frameGraphFuture.then(*this, [this, suspendUpdates=ViewportSuspender(userInterface())](OORef<FrameGraph> frameGraph) mutable {
+        _frameGraphFuture = frameGraphFuture.then(*this, [this](OORef<FrameGraph> frameGraph) mutable {
 
             DataSet* dataset = userInterface().datasetContainer().currentSet();
             QSize windowSize = viewportWindowDeviceSize();
@@ -285,6 +288,12 @@ void ViewportWindow::handleUpdateRequest()
 
             // After the frame graph has been rebuilt, let window implementation render and image and update the on-screen display.
             rerender();
+            qDebug() << QDateTime::currentMSecsSinceEpoch() << "Done rendering" << (OvitoObject*)this;
+        });
+
+        // Resume viewport updates once this task has finished.
+        _frameGraphFuture.finally(userInterface(), [ui=&userInterface()]() noexcept {
+            ui->resumeViewportUpdates();
         });
     });
 }

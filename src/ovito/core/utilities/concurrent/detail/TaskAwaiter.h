@@ -32,7 +32,7 @@ namespace Ovito::detail {
 /**
  * \brief Encapsulates the logic of one task waiting for another task to finish.
  */
-class OVITO_CORE_EXPORT TaskAwaiter : private TaskCallbackBase
+class TaskAwaiter : private TaskCallbackBase
 {
     Q_DISABLE_COPY_MOVE(TaskAwaiter)
 
@@ -56,9 +56,13 @@ public:
         return _awaitedTask;
     }
 
-    /// Runs the given continuation function once the given task reaches the 'finished' state.
-    template<typename Executor, typename Function>
-    void whenTaskFinishes(TaskDependency awaitedTask, Executor&& executor, PromiseBase promise, Function&& f) noexcept {
+    /// Runs a continuation method once the given task reaches the 'finished' state.
+    template<
+        typename TaskClass,
+        void(TaskClass::*ContinuationMethod)(PromiseBase, detail::TaskDependency, Task::MutexLock&),
+        typename Executor
+    >
+    void whenTaskFinishes(TaskDependency awaitedTask, Executor&& executor, PromiseBase promise) noexcept {
         OVITO_ASSERT(awaitedTask);
         OVITO_ASSERT(promise);
         Task& waitingTask = *promise.task();
@@ -71,31 +75,28 @@ public:
             return;
         }
         OVITO_ASSERT(!waitingTask.isFinished());
-        setAwaitedTask(std::move(awaitedTask));
-
-        // Run the function once the task finishes. Store the promise and pass it to the function.
-        this->awaitedTask().get()->addContinuation(
-            std::move(lock),
-            std::forward<Executor>(executor),
-            [promise=std::move(promise), f=std::forward<Function>(f)]() mutable noexcept {
-                std::invoke(std::move(f), std::move(promise));
-            });
-    }
-
-    /// Runs the given continuation method once the given task reaches the 'finished' state.
-    template<typename DerivedClass, void(DerivedClass::*ContinuationMethod)(PromiseBase), typename Executor>
-    void whenTaskFinishes(TaskDependency awaitedTask, Executor&& executor, PromiseBase promise) noexcept {
-        whenTaskFinishes(std::move(awaitedTask), std::forward<Executor>(executor), std::move(promise), [](PromiseBase promise) {
-            (static_cast<DerivedClass*>(promise.task().get())->*ContinuationMethod)(std::move(promise));
-        });
-    }
-
-protected:
-
-    /// Sets the task to be waited for.
-    /// Note: The waiting task's mutex must be locked when calling this function.
-    void setAwaitedTask(TaskDependency awaitedTask) noexcept {
         _awaitedTask = std::move(awaitedTask);
+        TaskPtr t = _awaitedTask.get(); // Keep a reference to the awaited task, because after unlocking our mutex, we might loose _awaitedTask.
+        lock.unlock();
+
+        // Run the waiting task's callback method once the awaited task finishes.
+        t->addContinuation(
+            std::forward<Executor>(executor),
+            [promise=std::move(promise), this]() mutable noexcept {
+                // Lock access to the waiting task.
+                Task::MutexLock lock(*promise.task());
+
+                // Get the awaited task that did just finish.
+                TaskDependency finishedTask = takeAwaitedTask();
+
+                // Bail out if the waiting or the awaited task have been canceled.
+                if(!finishedTask || finishedTask->isCanceled()) {
+                    return; // Note: The Promise's destructor automatically puts the waiting task into 'canceled' and 'finished' states if it isn't already.
+                }
+
+                // Invoke the callback method which processes the awaited task's result.
+                (static_cast<TaskClass*>(promise.task().get())->*ContinuationMethod)(std::move(promise), std::move(finishedTask), lock);
+            });
     }
 
 private:

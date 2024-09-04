@@ -253,7 +253,8 @@ protected:
     /// Registers a callback function that will be run when this task reaches the 'finished' state.
     /// If the task is already in one of these states, the continuation function is invoked immediately.
     template<typename Executor, typename Function>
-    void addContinuation(MutexLock&& lock, Executor&& executor, Function&& f) {
+    void addContinuation(Executor&& executor, Function&& f) {
+        MutexLock lock(*this);
         // Check if task is already finished.
         if(isFinished()) {
             // Run continuation function immediately.
@@ -264,13 +265,6 @@ protected:
             // Otherwise, insert into list to run continuation function later.
             registerContinuation(std::forward<Executor>(executor).schedule(std::forward<Function>(f)));
         }
-    }
-
-    /// Registers a callback function that will be run when this task reaches the 'finished' state.
-    /// If the task is already in one of these states, the continuation function is invoked immediately.
-    template<typename Executor, typename Function>
-    void addContinuation(Executor&& executor, Function&& f) {
-        addContinuation(MutexLock(*this), std::forward<Executor>(executor), std::forward<Function>(f));
     }
 
     /// Registers a callback function that will be run when this task reaches the 'finished' state.

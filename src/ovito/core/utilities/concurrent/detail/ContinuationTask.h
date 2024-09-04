@@ -138,18 +138,7 @@ private:
 
     /// Callback function which gets invoked once the unwrapped future has completed.
     template<bool IsSharedFuture>
-    void finalResultsAvailable(PromiseBase promise) noexcept {
-        // Lock access to this task object.
-        Task::MutexLock lock(*this);
-
-        // Get the task that did just finish.
-        TaskDependency finishedTask = takeAwaitedTask();
-
-        // Bail out if the preceding task has been canceled, or if the continuation has been canceled.
-        if(!finishedTask || finishedTask->isCanceled()) {
-            return; // Note: The Promise's destructor automatically puts the continuation task into 'canceled' and 'finished' states if it isn't already.
-        }
-
+    void finalResultsAvailable(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
         // There is a small chance that the continuation task was canceled in the meantime but hasn't let go of the awaited task yet
         // (because finishing and running the registered continuation functions is not an atomic operation).
         // We need to check for this situation here and bail out if it happened.

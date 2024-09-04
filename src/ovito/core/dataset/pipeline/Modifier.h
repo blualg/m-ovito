@@ -127,7 +127,10 @@ protected:
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const {}
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) = 0;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) {
+        OVITO_ASSERT_MSG(false, "Modifier::evaluateModifier()", "This method must be overridden by a derived class.");
+        return std::move(state);
+    }
 
 private:
 

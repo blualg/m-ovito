@@ -67,6 +67,9 @@ public:
     /// Returns a short piece of information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene) const;
 
+    /// Registers the given future as an active task associated with this object.
+    void registerActiveFuture(const FutureBase& future);
+
 protected:
 
     /// Is called when the value of a non-animatable property field of this RefMaker has changed.
@@ -78,9 +81,6 @@ protected:
     /// Decrements the internal task counter and, if the counter has reached zero, notifies the
     /// UI that this object is no longer active.
     void decrementNumberOfActiveTasks();
-
-    /// Registers the given future as an active task associated with this object.
-    void registerActiveFuture(const FutureBase& future);
 
 private:
 

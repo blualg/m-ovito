@@ -245,7 +245,7 @@ void DataInspectorPanel::resizeEvent(QResizeEvent* event)
 }
 
 /******************************************************************************
-* Updates the contents displayed in the data inpector.
+* Updates the contents displayed in the data inspector.
 ******************************************************************************/
 void DataInspectorPanel::updateInspector()
 {
@@ -255,7 +255,7 @@ void DataInspectorPanel::updateInspector()
     // Update the list of visible tabs.
     updateTabsList();
 
-    // Update content displayed by the current inpector tab page.
+    // Update content displayed by the current inspector tab page.
     if(_inspectorActive) {
         if(_activeAppletIndex >= 0 && _activeAppletIndex < _applets.size()) {
             _applets[_activeAppletIndex]->updateDisplay();

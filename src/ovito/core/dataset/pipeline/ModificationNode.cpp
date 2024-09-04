@@ -365,8 +365,16 @@ SharedFuture<PipelineFlowState> ModificationNode::evaluateInternal(const Pipelin
     if(!modifierAndGroupEnabled())
         return inputFuture;
 
+    return launchModifierEvaluation(std::move(modifierRequest), std::move(inputFuture));
+}
+
+/******************************************************************************
+ * Launches an asynchronous task to evaluate the node's modifier.
+ ******************************************************************************/
+Future<PipelineFlowState> ModificationNode::launchModifierEvaluation(ModifierEvaluationRequest&& request, SharedFuture<PipelineFlowState> inputFuture)
+{
     return launchTask(
-        std::make_shared<ModifierEvaluationTask>(std::move(modifierRequest)),
+        std::make_shared<ModifierEvaluationTask>(std::move(request)),
         std::move(inputFuture));
 }
 

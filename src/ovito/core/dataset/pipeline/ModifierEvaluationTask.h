@@ -41,8 +41,8 @@ public:
 
     /// Constructor.
     explicit ModifierEvaluationTask(ModifierEvaluationRequest&& request) :
-        detail::ContinuationTask<PipelineFlowState>(Task::NoState),
-        _request(std::move(request)) {}
+        detail::ContinuationTask<PipelineFlowState>(Task::NoState, PipelineFlowState{}),
+        _request(std::move(request)) { OVITO_ASSERT(_request.modificationNode() && _request.modifier()); }
 
     /// Returns the evaluation request descriptor.
     const ModifierEvaluationRequest& request() const { return _request; }
@@ -69,36 +69,23 @@ public:
 protected:
 
     /// This callback gets invoked once the input pipeline state has been computed.
-    void inputStateAvailable(PromiseBase promise) noexcept {
-        // Lock access to this task object.
-        Task::MutexLock lock(*this);
-
-        // Get the task that did just finish.
-        auto inputTask = takeAwaitedTask();
-
-        // Stop if the awaited task got canceled.
-        if(!inputTask || inputTask->isCanceled())
-            return; // The promise's destructor will take care of cancelling this task too.
-
+    void inputStateAvailable(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
         // Check if the awaited task completed with an error.
-        if(inputTask->exceptionStore()) {
+        if(finishedTask->exceptionStore()) {
             // Forward the pipeline error state.
-            exceptionLocked(inputTask->exceptionStore());
+            exceptionLocked(finishedTask->exceptionStore());
             finishLocked(lock);
             return;
         }
 
         // Get the input pipeline state.
-        PipelineFlowState state = inputTask->template getResult<PipelineFlowState>();
+        resultStorage() = finishedTask->template getResult<PipelineFlowState>();
 
         // Sanity check: With the throwOnError option set, the input data must never be in an error state.
-        OVITO_ASSERT(!request().throwOnError() || state.status().type() != PipelineStatus::Error);
+        OVITO_ASSERT(!request().throwOnError() || resultStorage().status().type() != PipelineStatus::Error);
 
         // Clear the status of the input.
-        state.setStatus(PipelineStatus::Success);
-
-        // Store the input state for later.
-        setResult<PipelineFlowState>(std::move(state));
+        resultStorage().setStatus(PipelineStatus::Success);
 
         // Evaluation becomes a no-op if
         //  - the pipeline node doesn't have a modifier,
@@ -111,14 +98,15 @@ protected:
         }
         OVITO_ASSERT(modifier());
 
-        lock.unlock();
-
         // Let the modifier operate on the input pipeline state.
-        evaluateModifier(std::move(promise));
+        evaluateModifier(std::move(promise), lock);
     }
 
-    /// Asks the modifier to compute its results based on the now available input.
-    virtual void evaluateModifier(PromiseBase promise) noexcept {
+    /// Asks the modifier to compute its results based on the now available upstream pipeline data.
+    virtual void evaluateModifier(PromiseBase promise, Task::MutexLock& lock) noexcept {
+        OVITO_ASSERT(resultStorage()); // Upstream data must be stored in this task's results storage.
+
+        lock.unlock();
 
         Future<PipelineFlowState> modifierFuture;
         handleModifierExceptions([&]() {
@@ -141,34 +129,26 @@ protected:
     }
 
     /// This callback gets invoked once the modifier has computed its results.
-    void modifierResultsAvailable(PromiseBase promise) noexcept {
-        // Lock access to this task object.
-        Task::MutexLock lock(*this);
-
-        // Get the task that did just finish.
-        auto modifierTask = takeAwaitedTask();
-
-        // Stop if the awaited task got canceled.
-        if(!modifierTask || modifierTask->isCanceled())
-            return; // The promise's destructor will take care of cancelling this task too.
-
+    void modifierResultsAvailable(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
         lock.unlock();
 
         // Check if the awaited task completed with an error.
-        if(modifierTask->exceptionStore()) {
+        if(finishedTask->exceptionStore()) {
             // Process the error output state.
             handleModifierExceptions([&]() {
-                std::rethrow_exception(modifierTask->exceptionStore());
+                std::rethrow_exception(finishedTask->exceptionStore());
             });
             return;
         }
 
         // Get the modifier's output pipeline state.
-        setEvaluationResults(modifierTask->template takeResult<PipelineFlowState>());
+        setEvaluationResults(finishedTask->template takeResult<PipelineFlowState>());
     }
 
     /// Sets the final output of this evaluation task.
     void setEvaluationResults(PipelineFlowState&& state) noexcept {
+        OVITO_ASSERT(!isFinished());
+
         // Move the output pipeline state into the task.
         resultStorage() = std::move(state);
 

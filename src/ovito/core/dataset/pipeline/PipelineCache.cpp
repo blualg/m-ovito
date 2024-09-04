@@ -144,17 +144,9 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
     if(_preparingEvaluation)
         return Exception(Pipeline::tr("A new pipeline evaluation is not permitted while another pipeline evaluation is already in progress. This error may be the result of an invalid user Python script invoking a function that is not permitted in this context."));
 
-    // Update the animation frames for which we should keep computed pipeline outputs.
-    if(!_precomputeAllFrames)
-        _requestedIntervals = request.cachingIntervals();
-    else
-        _requestedIntervals.add(TimeInterval::infinite());
-
     // Check if we can serve the request immediately by returning one of the cached states.
     for(const PipelineFlowState& state : _cachedStates) {
         if(state.stateValidity().contains(request.time())) {
-//            if(pipelineNode)
-//                qDebug() << "Cache lookup:" << ownerObject() << "time=" << request.time() << "interactive=" << request.interactiveMode() << " --> from cached state (validity:" << state.stateValidity() << ")";
             startFramePrecomputation(request);
             if(pipelineNode) {
                 // Give pipeline node the opportunity to postprocess the cached state before it is returned to the caller.
@@ -168,8 +160,6 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
 
     // Check if cache contains a valid state for interactive rendering.
     if(request.interactiveMode() && _interactiveState.stateValidity().contains(request.time())) {
-//        if(pipelineNode)
-//            qDebug() << "Cache lookup:" << ownerObject() << "time=" << request.time() << "interactive=" << request.interactiveMode() << " --> from interactive cache (validity:" << _interactiveState.stateValidity() << ")";
         return PipelineEvaluationResult(_interactiveState,
             _interactiveStateIsNotPreliminaryResult // Tagging this output state as preliminary if necessary.
                 ? PipelineEvaluationResult::EvaluationType::Both
@@ -182,8 +172,6 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
             if(eval.evaluationTypes.testFlag(request.interactiveMode() ? PipelineEvaluationResult::EvaluationType::Interactive : PipelineEvaluationResult::EvaluationType::Noninteractive)) {
                 SharedFuture<PipelineFlowState> future = eval.future.lock();
                 if(future && !future.isCanceled()) {
-//                    if(pipelineNode)
-//                        qDebug() << "Cache lookup:" << ownerObject() << "time=" << request.time() << "interactive=" << request.interactiveMode() << " --> in-flight eval (validity:" << eval.validityInterval << ")";
                     startFramePrecomputation(request);
                     return PipelineEvaluationResult(std::move(future), eval.evaluationTypes, eval.validityInterval);
                 }
@@ -195,9 +183,6 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
     _evaluationsInProgress.remove_if([](const EvaluationInProgress& eval) {
         return eval.future.expired();
     });
-
-//    if(pipelineNode)
-//        qDebug() << "Cache lookup:" << ownerObject() << "time=" << request.time() << "interactive=" << request.interactiveMode() << " --> launching new computation";
 
     // To detect unexpected calls to invalidate() and reentrant function calls.
     _preparingEvaluation = true;
@@ -261,7 +246,7 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
     }
 
     // Pre-register the evaluation operation.
-    _evaluationsInProgress.push_front({ request.throwOnError(), evalResult.evaluationTypes(), evalResult.validityInterval() });
+    _evaluationsInProgress.push_front({ request.throwOnError(), evalResult.evaluationTypes(), evalResult.validityInterval(), request.cachingIntervals() });
     auto evaluationInProgress = _evaluationsInProgress.begin();
 
     // Store the results in this cache after the evaluation completes.
@@ -326,19 +311,26 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
 ******************************************************************************/
 void PipelineCache::insertState(const PipelineFlowState& state)
 {
+    // Helper function deciding whether a pipeline state should be inserted into or retained in the cache.
+    auto shouldKeepInCache = [&](const PipelineFlowState& state) {
+        if(_precomputeAllFrames)
+            return true;
+        return std::any_of(_evaluationsInProgress.begin(), _evaluationsInProgress.end(), [&](const EvaluationInProgress& eval) {
+            return eval.requestedIntervals.overlap(state.stateValidity());
+        });
+    };
+
     // Evict existing states from cache that do not overlap with the requested time intervals,
     // or which *do* overlap with the newly computed state and have now become outdated.
-    _cachedStates.erase(std::remove_if(_cachedStates.begin(), _cachedStates.end(), [&](const PipelineFlowState& cachedState) {
+    erase_if(_cachedStates, [&](const PipelineFlowState& cachedState) {
         if(cachedState.stateValidity().overlap(state.stateValidity()))
             return true;
-        return !std::any_of(_requestedIntervals.cbegin(), _requestedIntervals.cend(),
-            std::bind(&TimeInterval::overlap, cachedState.stateValidity(), std::placeholders::_1));
-    }), _cachedStates.end());
+        return !shouldKeepInCache(cachedState);
+    });
 
     // Decide whether to store the newly computed state in the cache or not.
     // To keep it, its validity interval must be overlapping with one of the requested time intervals.
-    if(std::any_of(_requestedIntervals.cbegin(), _requestedIntervals.cend(),
-            std::bind(&TimeInterval::overlap, state.stateValidity(), std::placeholders::_1))) {
+    if(shouldKeepInCache(state)) {
         _cachedStates.push_back(state);
     }
 
