@@ -24,9 +24,11 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/core/dataset/pipeline/ModifierEvaluationTask.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/ForEach.h>
+#include <ovito/core/utilities/concurrent/LaunchTask.h>
 #include "UnwrapTrajectoriesModifier.h"
 
 namespace Ovito {
@@ -64,9 +66,21 @@ void UnwrapTrajectoriesModifier::preevaluateModifier(const ModifierEvaluationReq
 }
 
 /******************************************************************************
+ * Launches an asynchronous task to evaluate the node's modifier.
+ ******************************************************************************/
+SharedFuture<PipelineFlowState> UnwrapTrajectoriesModificationNode::launchModifierEvaluation(ModifierEvaluationRequest&& request, SharedFuture<PipelineFlowState> inputFuture)
+{
+    using UnwrapTrajectoriesTask = ModifierEvaluationTask<UnwrapTrajectoriesModifier, SharedFuture<void>>;
+
+    return launchTask(
+        std::make_shared<UnwrapTrajectoriesTask>(std::move(request), _unwrapWeakFuture.lock()),
+        std::move(inputFuture));
+}
+
+/******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
-Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
+Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state, SharedFuture<void> unwrapFuture)
 {
     if(!state)
         return std::move(state);
@@ -98,7 +112,7 @@ Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluateModifier(const Mod
     if(!request.interactiveMode()) {
         // Without the periodic image flags information, we have to scan the particle trajectories
         // from beginning to end before making them continuous.
-        return modNode->detectPeriodicCrossings(request).then(*modNode, [state = std::move(state), request]() mutable {
+        return modNode->detectPeriodicCrossings(request, std::move(unwrapFuture)).then(*modNode, [state = std::move(state), request]() mutable {
             static_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())->unwrapParticleCoordinates(request, state);
             return std::move(state);
         });
@@ -113,12 +127,11 @@ Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluateModifier(const Mod
 * Processes all frames of the input trajectory to detect periodic crossings
 * of the particles.
 ******************************************************************************/
-SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(const ModifierEvaluationRequest& request)
+SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(const ModifierEvaluationRequest& request, SharedFuture<void> unwrapFuture)
 {
     OVITO_ASSERT(request.modificationNode() == this);
 
-    SharedFuture unwrapOperation = _unwrapOperation.lock();
-    if(!unwrapOperation || unwrapOperation.isCanceled()) {
+    if(!unwrapFuture || unwrapFuture.isCanceled()) {
 
         // Determine the range of animation frames to be processed.
         int startFrame = 0;
@@ -129,7 +142,7 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
         request.modificationNode()->setStatus(tr("Processing %1 trajectory frames...").arg(boost::size(inputFrameRange)));
 
         // Iterate over all frames of the input range in sequential order.
-        unwrapOperation = for_each_sequential(
+        unwrapFuture = for_each_sequential(
             std::move(inputFrameRange),
             ObjectExecutor(this, true), // Require deferred execution
             // Requests the next frame from the upstream pipeline.
@@ -141,12 +154,12 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
             WorkingData{this});
 
         // Display progress in the UI.
-        unwrapOperation.task()->setProgressText(tr("Unwrapping particle trajectories"));
+        unwrapFuture.task()->setProgressText(tr("Unwrapping particle trajectories"));
 
         // Keep a weak reference to the task.
-        _unwrapOperation = unwrapOperation;
+        _unwrapWeakFuture = unwrapFuture;
     }
-    return unwrapOperation;
+    return unwrapFuture;
 }
 
 /******************************************************************************
@@ -160,7 +173,7 @@ void UnwrapTrajectoriesModificationNode::invalidateUnwrapData()
     _unflipRecords.clear();
     _mostRecentPbcShifts.clear();
     _mostRecentIdMap.clear();
-    _unwrapOperation.reset();
+    _unwrapWeakFuture.reset();
 }
 
 /******************************************************************************
@@ -350,7 +363,7 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
 ******************************************************************************/
 void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, const PipelineFlowState& state)
 {
-    if(!_modNode->_unwrapOperation.lock())
+    if(!_modNode->_unwrapWeakFuture.lock())
         return;
 
     AnimationTime time = _modNode->sourceFrameToAnimationTime(frame);

@@ -33,8 +33,18 @@ namespace Ovito {
 
 /**
  * \brief An asynchronous task object that takes care of evaluating the modifier associated with a modification pipeline node.
+ *
+ * The task gets created by the ModificationNode::launchModifierEvaluation() method as part of the pipeline evaluation process.
+ * It first takes care of obtaining the output of the upstream pipeline, i.e. the input data for the modifier.
+ * Then it calls the Modifier::evaluateModifier() method to let the modifier compute its results.
+ * Finally, it waits for these results to become available and returns them to the caller.
+ *
+ * The optional template argument AuxiliaryArgs... can be used to pass additional auxiliary input values to the modifier, which get
+ * temporarily stored in the task object until the upstream data is available and the modifier's evaluateModifier() is called.
+ * The auxiliary values are passed to the method as extra arguments.
  */
-class OVITO_CORE_EXPORT ModifierEvaluationTask : public detail::ContinuationTask<PipelineFlowState>
+template<typename ModifierClass = Modifier, typename... AuxiliaryArgs>
+class OVITO_CORE_EXPORT ModifierEvaluationTask : public detail::ContinuationTask<PipelineFlowState>, protected std::tuple<AuxiliaryArgs...>
 {
 public:
 
@@ -42,8 +52,10 @@ public:
     using future_type = SharedFuture<PipelineFlowState>;
 
     /// Constructor.
-    explicit ModifierEvaluationTask(ModifierEvaluationRequest&& request) :
+    template<typename... AuxiliaryArgs2>
+    explicit ModifierEvaluationTask(ModifierEvaluationRequest&& request, AuxiliaryArgs2&&... auxiliaryArgs) :
         detail::ContinuationTask<PipelineFlowState>(Task::NoState, PipelineFlowState{}),
+        std::tuple<AuxiliaryArgs...>(std::forward<AuxiliaryArgs2>(auxiliaryArgs)...),
         _request(std::move(request)) { OVITO_ASSERT(_request.modificationNode() && _request.modifier()); }
 
     /// Returns the evaluation request descriptor.
@@ -113,7 +125,7 @@ protected:
         Future<PipelineFlowState> modifierFuture;
         handleModifierExceptions([&]() {
             Task::Scope taskScope(this);
-            modifierFuture = modifier()->evaluateModifier(request(), PipelineFlowState{resultStorage()});
+            modifierFuture = static_object_cast<ModifierClass>(modifier())->evaluateModifier(request(), PipelineFlowState{resultStorage()}, std::move(std::get<AuxiliaryArgs>(static_cast<std::tuple<AuxiliaryArgs...>&>(*this)))...);
             OVITO_ASSERT(modifierFuture);
 
             // Register the task to indicate in the UI that the pipeline node is currently doing some work.

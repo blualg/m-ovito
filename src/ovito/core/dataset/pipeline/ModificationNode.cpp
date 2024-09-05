@@ -374,7 +374,7 @@ SharedFuture<PipelineFlowState> ModificationNode::evaluateInternal(const Pipelin
 SharedFuture<PipelineFlowState> ModificationNode::launchModifierEvaluation(ModifierEvaluationRequest&& request, SharedFuture<PipelineFlowState> inputFuture)
 {
     return launchTask(
-        std::make_shared<ModifierEvaluationTask>(std::move(request)),
+        std::make_shared<ModifierEvaluationTask<>>(std::move(request)),
         std::move(inputFuture));
 }
 

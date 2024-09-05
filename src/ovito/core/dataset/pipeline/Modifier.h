@@ -141,7 +141,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, title, setTitle);
 
     friend class ModificationNode;
-    friend class ModifierEvaluationTask;
+    template<typename ModifierClass, typename... AuxiliaryArgs> friend class ModifierEvaluationTask;
 };
 
 }   // End of namespace

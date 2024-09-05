@@ -34,7 +34,7 @@ namespace Ovito {
  *        The auxiliary input data for the modifier must be provided in the form of a future.
  */
 template<typename ModifierClass, typename AuxiliaryFutureType>
-class OVITO_CORE_EXPORT ComplexModifierEvaluationTask : public ModifierEvaluationTask
+class OVITO_CORE_EXPORT ComplexModifierEvaluationTask : public ModifierEvaluationTask<>
 {
 public:
 
