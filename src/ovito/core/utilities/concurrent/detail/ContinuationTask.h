@@ -127,14 +127,39 @@ public:
                 return;
             }
 
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 11
+            // Workaround for a deficiency in GCC 10 and older. The compiles reports an error: "not a valid template argument...must be a pointer-to-member of the form ‘&X::Y"
+            // because finalResultsAvailable() is a template member function. To work around this, we define two non-templated member functions that forward to the templated one.
+            if constexpr(is_shared_future_v<decltype(nextFuture)>)
+                whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailableShared>(
+                    std::move(nextFuture),
+                    InlineExecutor{},
+                    std::move(promise));
+            else
+                whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailableExclusive>(
+                    std::move(nextFuture),
+                    InlineExecutor{},
+                    std::move(promise));
+#else
             whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailable<is_shared_future_v<decltype(nextFuture)>>>(
                 std::move(nextFuture),
                 InlineExecutor{},
                 std::move(promise));
+#endif
         }
     }
 
 private:
+
+    // Workaround for a deficiency in GCC 10 and older.
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 11
+    void finalResultsAvailableShared(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+        finalResultsAvailable<true>(std::move(promise), std::move(finishedTask), lock);
+    }
+    void finalResultsAvailableExclusive(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+        finalResultsAvailable<false>(std::move(promise), std::move(finishedTask), lock);
+    }
+#endif
 
     /// Callback function which gets invoked once the unwrapped future has completed.
     template<bool IsSharedFuture>
