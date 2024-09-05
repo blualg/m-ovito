@@ -32,10 +32,47 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(OpenGLViewportWindow);
 
+#ifdef OVITO_USE_OPENGL_WINDOW
 /******************************************************************************
-* Creates the UI widget that is associated with this viewport window.
+* Creates the Qt window that is associated with this viewport window.
 ******************************************************************************/
-QWidget* OpenGLViewportWindow::createWidget(QWidget* parent)
+QWindow* OpenGLViewportWindow::createQtWindow()
+{
+    /// A custom QOpenGLWindow subclass that forwards paint events to the viewport window.
+    class OpenGLWindow : public QOpenGLWindow
+    {
+    public:
+
+        /// Constructor.
+        explicit OpenGLWindow(OpenGLViewportWindow* owner) : _owner(owner) {}
+
+        /// Is called once before the first call to paintGL() or resizeGL().
+        virtual void initializeGL() override {
+            // Determine OpenGL vendor string so other parts of the code can decide
+            // which OpenGL features are safe to use.
+            OpenGLRenderer::determineOpenGLInfo();
+
+            // Release any OpenGL resources before the widget's QOpenGLContext gets destroyed.
+            connect(context(), &QOpenGLContext::aboutToBeDestroyed, _owner, &OpenGLViewportWindow::releaseResources);
+        }
+
+        /// Is called whenever the widget needs to be painted.
+        virtual void paintGL() override {
+            _owner->paint();
+        }
+
+    private:
+        OpenGLViewportWindow* _owner;
+    };
+
+    // Create the native OpenGL window.
+    return new OpenGLWindow(this);
+}
+#else
+/******************************************************************************
+* Creates the Qt widget that is associated with this viewport window.
+******************************************************************************/
+QWidget* OpenGLViewportWindow::createQtWidget(QWidget* parent)
 {
     /// A custom QOpenGLWidget subclass that forwards paint events to the viewport window.
     class OpenGLViewportWidget : public QOpenGLWidget
@@ -67,6 +104,7 @@ QWidget* OpenGLViewportWindow::createWidget(QWidget* parent)
     // Create the QOpenGLWidget.
     return new OpenGLViewportWidget(parent, this);
 }
+#endif
 
 /******************************************************************************
 * Creates the rendering job that renders the contents of the viewport window.
@@ -83,7 +121,7 @@ OORef<RenderingJob> OpenGLViewportWindow::createRenderingJob()
 
     // Create the window's viewport renderer implementation.
     return OORef<WidgetOpenGLRenderingJob>::create(
-        widget(),
+        glwin(),
         userInterface().datasetContainer().visCache(), // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
         1, // multi-sampling level
         useOrderIndependentTransparency);
@@ -110,8 +148,13 @@ void OpenGLViewportWindow::releaseResources()
 ******************************************************************************/
 void OpenGLViewportWindow::rerender()
 {
-    if(widget())
-        widget()->update();
+#ifdef OVITO_USE_OPENGL_WINDOW
+    if(glwin())
+        glwin()->requestUpdate();
+#else
+    if(glwin())
+        glwin()->update();
+#endif
 }
 
 /******************************************************************************
@@ -129,18 +172,16 @@ void OpenGLViewportWindow::paint()
     if(!frameGraph())
         return;
 
-    qDebug() << QDateTime::currentMSecsSinceEpoch() << "Start OpenGL rendering" << (OvitoObject*)this;
     MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface(), MainThreadOperation::Isolated);
     try {
         // Recreate/resize abstract frame buffer for rendering into the widget if necessary.
         const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
         if(!_visualFrameBuffer || _visualFrameBuffer->outputViewportRect() != viewportRect)
-            _visualFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(static_object_cast<OpenGLRenderingJob>(renderingJob()), viewportRect, widget()->defaultFramebufferObject());
+            _visualFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(static_object_cast<OpenGLRenderingJob>(renderingJob()), viewportRect, glwin()->defaultFramebufferObject());
 
         // Render the viewport contents. This requires an active GL context.
         auto future = renderingJob()->renderFrame(frameGraph(), _visualFrameBuffer);
         OVITO_ASSERT(future && future.isFinished() && !future.isCanceled());
-        qDebug() << QDateTime::currentMSecsSinceEpoch() << "Done OpenGL rendering" << (OvitoObject*)this;
 
         // Emit signal to inform listeners (e.g. SceneAnimationPlayback) that a full frame has been rendered and presented on screen.
         if(frameGraph()->isPreliminaryState() == false)
@@ -168,7 +209,7 @@ void OpenGLViewportWindow::paint()
 std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPointF& pos)
 {
     // Cannot perform picking while viewport is not visible or when updates are disabled.
-    if(isVisible() && !userInterface().exitingDueToFatalError() && widget()->isValid() && widget()->isEnabled() && widget()->defaultFramebufferObject() != 0) {
+    if(isVisible() && !userInterface().exitingDueToFatalError() && glwin()->isValid() && widget()->isEnabled() && glwin()->defaultFramebufferObject() != 0) {
 
         // Is the picking buffer still valid? If not, we need to render a new frame.
         if(!_objectPickingMap->isValid() && frameGraph()) {

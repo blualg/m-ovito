@@ -25,8 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/opengl/OpenGLRenderingJob.h>
-
-#include <QOpenGLWidget>
+#include "OpenGLViewportWindow.h"
 
 namespace Ovito {
 
@@ -40,21 +39,21 @@ class OVITO_OPENGLRENDERERWINDOW_EXPORT WidgetOpenGLRenderingJob : public OpenGL
 public:
 
     /// Constructor.
-    void initializeObject(ObjectInitializationFlags flags, QOpenGLWidget* widget, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency);
+    void initializeObject(ObjectInitializationFlags flags, OpenGLViewportWindow::OpenGLWindowType* glwin, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency);
 
     /// Requests the rendering job to make its OpenGL context current, e.g. for releasing OpenGL resources that require an active context.
     [[nodiscard]] virtual OpenGLContextRestore activateContext() override {
         OpenGLContextRestore restore;
-        OVITO_ASSERT(_widget);
-        if(_widget)
-            _widget->makeCurrent();
+        OVITO_ASSERT(_glwin);
+        if(_glwin)
+            _glwin->makeCurrent();
         return restore;
     }
 
 private:
 
-    /// The widget we are rendering into.
-    QPointer<QOpenGLWidget> _widget;
+    /// The window we are rendering into.
+    QPointer<OpenGLViewportWindow::OpenGLWindowType> _glwin;
 };
 
 }   // End of namespace

@@ -66,6 +66,7 @@ OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for dev
 OPTION(OVITO_USE_GIT_REVISION_NUMBER "Include Git revision information in OVITO version string." "OFF")
 OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file access (requires libssh)." "OFF")
 OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
+OPTION(OVITO_USE_OPENGL_WINDOW "Use QOpenGLWindow instead of QOpenGLWidget for viewports" "OFF")
 OPTION(OVITO_USE_SYCL "Build with SYCL support" "OFF")
 SET(OVITO_USE_SYCL None CACHE STRING "SYCL implementation to use")
 SET_PROPERTY(CACHE OVITO_USE_SYCL PROPERTY STRINGS OFF AdaptiveCpp DPC++)

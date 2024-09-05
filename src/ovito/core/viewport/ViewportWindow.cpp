@@ -166,7 +166,6 @@ void ViewportWindow::handleUpdateRequest()
     // The UserInterface will issue a new update request once updates are resumed.
     if(userInterface().areViewportUpdatesSuspended())
         return;
-    qDebug() << QDateTime::currentMSecsSinceEpoch() << "Start rendering" << (OvitoObject*)this;
 
     // Reset update request flag.
     _updateRequested = false;
@@ -288,7 +287,6 @@ void ViewportWindow::handleUpdateRequest()
 
             // After the frame graph has been rebuilt, let window implementation render and image and update the on-screen display.
             rerender();
-            qDebug() << QDateTime::currentMSecsSinceEpoch() << "Done rendering" << (OvitoObject*)this;
         });
 
         // Resume viewport updates once this task has finished.

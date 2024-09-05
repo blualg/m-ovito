@@ -155,7 +155,7 @@ protected:
     bool useMultiDrawArraysIndirect() const { return !_disableMultiDrawArraysIndirect && glversion() >= QT_VERSION_CHECK(4, 3, 0); }
 
     /// Creates an OpenGL texture object for a QImage.
-    const OpenGLTexture& uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps = QOpenGLTexture::DontGenerateMipMaps);
+    const OpenGLTexture& uploadImage(const QImage& image);
 
     /// Creates a 1-D OpenGL texture object for a ColorCodingGradient.
     const OpenGLTexture& uploadColorMap(const ColorCodingGradient* gradient);

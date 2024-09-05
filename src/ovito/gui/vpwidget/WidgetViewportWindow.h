@@ -43,8 +43,11 @@ public:
     /// Associates this window with a viewport and creates the UI widget.
     void initializeWindow(Viewport* vp, UserInterface& userInterface, QWidget* parent);
 
-    /// Returns the QWidget that is associated with this viewport window.
+    /// Returns the QWidget encapsulated by this ViewportWindow object.
     QWidget* widget() const { return _widget; }
+
+    /// Returns the physical QWindow encapsulated by this ViewportWindow object.
+    QWindow* embeddedWindow() const { return _embeddedWindow; }
 
     /// Indicates whether the window is currently shown or not.
     virtual bool isVisible() const override {
@@ -82,8 +85,11 @@ protected:
     /// and before the object is being finally deleted.
     virtual void aboutToBeDeleted() override;
 
-    /// Creates the UI widget that is associated with this viewport window.
-    virtual QWidget* createWidget(QWidget* parent) = 0;
+    /// Creates the Qt widget that is associated with this viewport window.
+    virtual QWidget* createQtWidget(QWidget* parent) { return nullptr;}
+
+    /// Creates the Qt window that is associated with this viewport window.
+    virtual QWindow* createQtWindow() { return nullptr; }
 
     /// Filters events sent to the widget.
     bool eventFilter(QObject* obj, QEvent* event) override;
@@ -92,6 +98,9 @@ private:
 
     /// The actual Qt GUI widget of the viewport window.
     QPointer<QWidget> _widget;
+
+    /// The actual Qt GUI window (if any) of the viewport window.
+    QPointer<QWindow> _embeddedWindow;
 };
 
 }   // End of namespace

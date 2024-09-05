@@ -44,7 +44,7 @@ void OpenGLRenderingJob::renderImageImplementation(const ImagePrimitive& primiti
 
     // Turn the image into an OpenGL texture.
     const OpenGLTexture& texture = uploadImage(primitive.image());
-    texture.get().bind();
+    texture.bind();
 
     // Transform rectangle to normalized device coordinates.
     Box2 b = primitive.windowRect();
@@ -72,7 +72,7 @@ void OpenGLRenderingJob::renderImageImplementation(const ImagePrimitive& primiti
     shader.draw(GL_TRIANGLE_STRIP);
 
     // Release the texture.
-    texture.get().release();
+    texture.release();
 }
 
 }   // End of namespace

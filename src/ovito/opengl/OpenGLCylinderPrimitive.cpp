@@ -219,7 +219,7 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
 
             // Upload color map as a 1-d OpenGL texture.
             colorMapTexture = &uploadColorMap(primitive.pseudoColorMapping().gradient());
-            colorMapTexture->get().bind();
+            colorMapTexture->bind();
         }
         else {
             // This will turn pseudocolor mapping off in the fragment shader.
@@ -231,7 +231,7 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
             // no texture being bound when a sampler1D is defined in the fragment shader.
             if(!isPickingPass() && primitive.shape() == CylinderPrimitive::CylinderShape) {
                 colorMapTexture = &uploadColorMap(nullptr);
-                colorMapTexture->get().bind();
+                colorMapTexture->bind();
             }
 #endif
         }
@@ -254,7 +254,7 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
 
     // Unbind color mapping texture.
     if(colorMapTexture)
-        colorMapTexture->get().release();
+        colorMapTexture->release();
 }
 
 }   // End of namespace

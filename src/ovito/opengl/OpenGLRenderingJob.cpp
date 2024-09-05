@@ -1020,7 +1020,7 @@ void OpenGLRenderingJob::checkOpenGLErrorStatus(const char* command, const char*
 /******************************************************************************
  * Create an OpenGL texture object for a QImage.
  ******************************************************************************/
-const OpenGLTexture& OpenGLRenderingJob::uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps)
+const OpenGLTexture& OpenGLRenderingJob::uploadImage(const QImage& image)
 {
     OVITO_ASSERT(!image.isNull());
 
@@ -1028,10 +1028,8 @@ const OpenGLTexture& OpenGLRenderingJob::uploadImage(const QImage& image, QOpenG
     return currentResourceFrame().lookup<OpenGLTexture>(
         RendererResourceKey<struct ImageCache, quint64, const QOpenGLContextGroup*>{image.cacheKey(), QOpenGLContextGroup::currentContextGroup()},
         [&](OpenGLTexture& texture) {
-            texture.create(image, genMipMaps);
-            if(genMipMaps == QOpenGLTexture::DontGenerateMipMaps) {
-                texture.get().setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
-            }
+            texture.create(image);
+            texture.setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
         });
 }
 
@@ -1064,15 +1062,14 @@ const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradien
             }
 
             // Create the 1-d texture object.
-            texture.create(QOpenGLTexture::Target1D);
-            texture.get().setFormat(QOpenGLTexture::RGB8_UNorm);
-            texture.get().setSize(resolution);
-            texture.get().allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt8);
-            texture.get().setAutoMipMapGenerationEnabled(true);
-            texture.get().setWrapMode(QOpenGLTexture::ClampToEdge);
-            texture.get().setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt8, pixelData.data());
-            if(!texture.isRendererResourceValid())
-                throw RendererException("Failed to create OpenGL texture for color map.");
+            texture.create(QOpenGLTexture::Target2D);
+            texture.setWrapMode(QOpenGLTexture::ClampToEdge);
+            texture.setMinMagFilters(QOpenGLTexture::LinearMipMapLinear, QOpenGLTexture::Linear);
+            texture.setData(
+                QOpenGLTexture::RGB8_UNorm, QOpenGLTexture::RGB, QOpenGLTexture::UInt8,
+                resolution, 1,
+                pixelData.data(),
+                (resolution != 1) ? true : false);
         });
 }
 

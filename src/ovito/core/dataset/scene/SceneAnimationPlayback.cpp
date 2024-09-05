@@ -184,7 +184,6 @@ void SceneAnimationPlayback::scheduleNextAnimationFrame()
 
         // Take into account how long it took to render the previous frame.
         if(_frameRenderingTimer.isValid()) {
-            qDebug() << "------------ frame took" << _frameRenderingTimer.elapsed() << "msecs";
             msec -= _frameRenderingTimer.elapsed();
         }
 

@@ -163,7 +163,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
 
         // Upload color map as a 1-d OpenGL texture.
         colorMapTexture = &uploadColorMap(primitive.pseudoColorMapping().gradient());
-        colorMapTexture->get().bind();
+        colorMapTexture->bind();
     }
 
     if(primitive.useInstancedRendering()) {
@@ -325,7 +325,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
 
     // Unbind color mapping texture.
     if(colorMapTexture)
-        colorMapTexture->get().release();
+        colorMapTexture->release();
 }
 
 /******************************************************************************

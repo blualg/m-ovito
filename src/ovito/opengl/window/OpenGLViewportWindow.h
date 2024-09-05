@@ -29,7 +29,11 @@
 #include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
 #include "OpenGLPickingMap.h"
 
+#ifdef OVITO_USE_OPENGL_WINDOW
+#include <QOpenGLWindow>
+#else
 #include <QOpenGLWidget>
+#endif
 
 namespace Ovito {
 
@@ -43,6 +47,12 @@ class OVITO_OPENGLRENDERERWINDOW_EXPORT OpenGLViewportWindow : public WidgetView
 
 public:
 
+#ifdef OVITO_USE_OPENGL_WINDOW
+    using OpenGLWindowType = QOpenGLWindow;
+#else
+    using OpenGLWindowType = QOpenGLWidget;
+#endif
+
     /// Determines the object located under the given mouse cursor position.
     virtual std::optional<PickResult> pick(const QPointF& pos) override;
 
@@ -51,8 +61,13 @@ public:
 
 protected:
 
-    /// Creates the UI widget that is associated with this viewport window.
-    virtual QWidget* createWidget(QWidget* parent) override;
+#ifdef OVITO_USE_OPENGL_WINDOW
+    /// Creates the Qt window that is associated with this viewport window.
+    virtual QWindow* createQtWindow() override;
+#else
+    /// Creates the Qt widget that is associated with this viewport window.
+    virtual QWidget* createQtWidget(QWidget* parent) override;
+#endif
 
     /// Creates the rendering job that renders the contents of the viewport window.
     virtual OORef<RenderingJob> createRenderingJob() override;
@@ -60,8 +75,13 @@ protected:
     /// Newly renders the window contents after the frame graph has been regenerated.
     virtual void rerender() override;
 
+#ifdef OVITO_USE_OPENGL_WINDOW
+    /// Returns the QOpenGLWindow that is associated with this viewport window.
+    QOpenGLWindow* glwin() const { return static_cast<QOpenGLWindow*>(embeddedWindow()); }
+#else
     /// Returns the QOpenGLWidget that is associated with this viewport window.
-    QOpenGLWidget* widget() const { return static_cast<QOpenGLWidget*>(WidgetViewportWindow::widget()); }
+    QOpenGLWidget* glwin() const { return static_cast<QOpenGLWidget*>(widget()); }
+#endif
 
     /// Is called whenever the widget needs to be painted.
     void paint();
