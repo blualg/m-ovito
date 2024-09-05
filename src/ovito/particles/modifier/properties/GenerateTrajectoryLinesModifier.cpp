@@ -258,6 +258,7 @@ public:
 
         // Create the lines data container object.
         DataOORef<Lines> trajectoryLines = DataOORef<Lines>::create();
+        trajectoryLines->setCreatedByNode(_modNode);
         trajectoryLines->setTitle(GenerateTrajectoryLinesModifier::tr("Particle trajectories"));
         trajectoryLines->setIdentifier(_firstState.generateUniqueIdentifier<Lines>(QStringLiteral("trajectories")));
 

@@ -99,12 +99,12 @@ void ReferenceConfigurationModifier::inputCachingHints(ModifierEvaluationRequest
                 int endFrame = request.modificationNode()->animationTimeToSourceFrame(iv.end());
                 AnimationTime shiftedStartTime = request.modificationNode()->sourceFrameToAnimationTime(startFrame + referenceFrameOffset());
                 AnimationTime shiftedEndTime = request.modificationNode()->sourceFrameToAnimationTime(endFrame + referenceFrameOffset());
-                request.modifiableCachingIntervals().add(TimeInterval(shiftedStartTime, shiftedEndTime));
+                request.mutableCachingIntervals().add(TimeInterval(shiftedStartTime, shiftedEndTime));
             }
         }
         else {
             // When using a static reference configuration, ask the upstream pipeline to cache the corresponding animation frame.
-            request.modifiableCachingIntervals().add(request.modificationNode()->sourceFrameToAnimationTime(referenceFrameNumber()));
+            request.mutableCachingIntervals().add(request.modificationNode()->sourceFrameToAnimationTime(referenceFrameNumber()));
         }
     }
 

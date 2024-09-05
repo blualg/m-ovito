@@ -1064,12 +1064,12 @@ const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradien
             // Create the 1-d texture object.
             texture.create(QOpenGLTexture::Target2D);
             texture.setWrapMode(QOpenGLTexture::ClampToEdge);
-            texture.setMinMagFilters(QOpenGLTexture::LinearMipMapLinear, QOpenGLTexture::Linear);
+            texture.setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear); // Note: Other modes may cause artifacts, e.g., at cylinder ends.
             texture.setData(
                 QOpenGLTexture::RGB8_UNorm, QOpenGLTexture::RGB, QOpenGLTexture::UInt8,
                 resolution, 1,
                 pixelData.data(),
-                (resolution != 1) ? true : false);
+                false);
         });
 }
 
