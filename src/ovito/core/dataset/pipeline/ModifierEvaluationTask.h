@@ -39,7 +39,7 @@ class OVITO_CORE_EXPORT ModifierEvaluationTask : public detail::ContinuationTask
 public:
 
     /// The type of future associated with this task type. This is used by the launchTask() function.
-    using future_type = Future<PipelineFlowState>;
+    using future_type = SharedFuture<PipelineFlowState>;
 
     /// Constructor.
     explicit ModifierEvaluationTask(ModifierEvaluationRequest&& request) :
@@ -217,4 +217,3 @@ private:
 };
 
 }   // End of namespace
-

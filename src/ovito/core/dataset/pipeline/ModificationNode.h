@@ -145,7 +145,7 @@ protected:
     virtual SharedFuture<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override;
 
     /// Launches an asynchronous task to evaluate the node's modifier.
-    virtual Future<PipelineFlowState> launchModifierEvaluation(ModifierEvaluationRequest&& request, SharedFuture<PipelineFlowState> inputFuture);
+    virtual SharedFuture<PipelineFlowState> launchModifierEvaluation(ModifierEvaluationRequest&& request, SharedFuture<PipelineFlowState> inputFuture);
 
     /// Decides whether a preliminary viewport update is performed after this pipeline object has been
     /// evaluated but before the rest of the pipeline is complete.
