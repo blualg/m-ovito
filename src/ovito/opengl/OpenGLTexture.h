@@ -137,8 +137,9 @@ public:
         functions()->glBindTexture(_target, 0);
     }
 
-    int width() const { return _size.width(); }
-    int height() const { return _size.height(); }
+    auto width() const { return _size.width(); }
+    auto height() const { return _size.height(); }
+    auto textureId() const { return _textureId; }
 
 private:
 

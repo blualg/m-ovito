@@ -118,13 +118,11 @@ QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& 
 #endif
 
 #if defined(Q_OS_WIN) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-        // Use Fusion UI style (Qt 6.5) or Windows 11 UI style (Qt 6.7+) on Windows to enable dark mode support (can be changed by the user in the application settings).
+        // Use Fusion UI style on Windows to enable dark mode support (can be changed by the user in the application settings).
         // If dark mode is not enabled in the application settings (default), use the classic Windows Vista UI style.
         if(automaticallyEnableDarkMode()) {
-#if QT_VERSION < QT_VERSION_CHECK(6, 7, 0)
             qputenv("QT_QPA_PLATFORM", "windows:darkmode=2");
             QApplication::setStyle("Fusion");
-#endif
         }
         else {
             qputenv("QT_QPA_PLATFORM", "windows:darkmode=0");
