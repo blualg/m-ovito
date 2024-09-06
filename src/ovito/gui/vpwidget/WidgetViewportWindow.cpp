@@ -52,20 +52,9 @@ void WidgetViewportWindow::initializeWindow(Viewport* vp, UserInterface& userInt
     setViewport(vp, userInterface);
 
     OVITO_ASSERT(!_widget);
-    OVITO_ASSERT(!_embeddedWindow);
+    _widget = createQtWidget(parent);
 
-    _embeddedWindow = createQtWindow();
-    if(_embeddedWindow)
-        _widget = QWidget::createWindowContainer(_embeddedWindow, parent);
-    else
-        _widget = createQtWidget(parent);
-
-    if(embeddedWindow()) {
-        embeddedWindow()->installEventFilter(this);
-    }
-    else if(widget()) {
-        widget()->installEventFilter(this);
-    }
+    widget()->installEventFilter(this);
     widget()->setMouseTracking(true);
     widget()->setFocusPolicy(Qt::StrongFocus);
     widget()->setAcceptDrops(false); // File drop events are handled by the root main window. This makes them propagate up the widget hierarchy.
@@ -94,15 +83,8 @@ bool WidgetViewportWindow::eventFilter(QObject* obj, QEvent* event)
             mouseDoubleClickEvent(static_cast<QMouseEvent*>(event));
         break;
     case QEvent::MouseButtonPress:
-        if(widget()->isEnabled()) {
-            if(embeddedWindow()) {
-                embeddedWindow()->requestActivate();
-                if(QWidget* popup = QApplication::activePopupWidget()) {
-                    popup->close();
-                }
-            }
+        if(widget()->isEnabled())
             mousePressEvent(static_cast<QMouseEvent*>(event));
-        }
         break;
     case QEvent::MouseButtonRelease:
         if(widget()->isEnabled())

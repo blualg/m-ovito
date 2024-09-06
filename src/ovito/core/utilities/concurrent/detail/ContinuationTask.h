@@ -27,6 +27,7 @@
 #include "TaskWithStorage.h"
 #include "TaskAwaiter.h"
 #include "../InlineExecutor.h"
+#include "../Promise.h"
 
 namespace Ovito::detail {
 
@@ -57,14 +58,13 @@ public:
         OVITO_ASSERT(!this->isFinished());
         OVITO_ASSERT(promise.task().get() == this);
         OVITO_ASSERT(future.isFinished());
+        try {
+            // Execute the continuation function in the scope of this task object.
+            Task::Scope taskScope(this);
 
-        // Execute the continuation function in the scope of this task object.
-        Task::Scope taskScope(this);
-
-        // Inspect return value type of the continuation function.
-        if constexpr(!detail::returns_future_v<Function, FutureType>) {
-            // Continuation function returns a result value or void.
-            try {
+            // Inspect return value type of the continuation function.
+            if constexpr(!detail::returns_future_v<Function, FutureType>) {
+                // Continuation function returns a result value or void.
                 if constexpr(!detail::returns_void_v<Function, FutureType>) {
                     // Function returns non-void results.
                     if constexpr(!std::is_invocable_v<Function, FutureType>)
@@ -97,17 +97,11 @@ public:
                         std::invoke(std::forward<Function>(f), std::forward<FutureType>(future));
                     }
                 }
-
                 this->setFinished();
             }
-            catch(...) {
-                this->captureExceptionAndFinish();
-            }
-        }
-        else {
-            // The continuation function returns a new future, whose result will be used to fulfill this task.
-            std::decay_t<callable_result_t<Function, FutureType>> nextFuture;
-            try {
+            else {
+                // The continuation function returns a new future, whose result will be used to fulfill this task.
+                std::decay_t<callable_result_t<Function, FutureType>> nextFuture;
                 // Call the continuation function with the results of the finished task or the finished future itself.
                 if constexpr(!std::is_invocable_v<Function, FutureType>) {
                     if constexpr(!std::is_void_v<typename FutureType::result_type>) {
@@ -121,35 +115,40 @@ public:
                 else {
                     nextFuture = std::invoke(std::forward<Function>(f), std::forward<FutureType>(future));
                 }
+                handleUnwrappedFuture(std::move(promise), std::move(nextFuture));
             }
-            catch(...) {
-                this->captureExceptionAndFinish();
-                return;
-            }
+        }
+        catch(...) {
+            this->captureExceptionAndFinish();
+        }
+    }
 
+protected:
+
+    /// Uses the results of the given future to fulfill this task.
+    void handleUnwrappedFuture(PromiseBase promise, auto&& future) noexcept {
 #if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 11
-            // Workaround for a deficiency in GCC 10: The compiler stops with the error "not a valid template argument...must be a pointer-to-member of the form ‘&X::Y",
-            // because finalResultsAvailable() is a template member function. To work around this, we define two non-templated helper functions that forward to the templated one.
-            if constexpr(is_shared_future_v<decltype(nextFuture)>)
-                whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailableShared>(
-                    std::move(nextFuture),
-                    InlineExecutor{},
-                    std::move(promise));
-            else
-                whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailableExclusive>(
-                    std::move(nextFuture),
-                    InlineExecutor{},
-                    std::move(promise));
-#else
-            // Schedule the continuation task to run once the new future completes.
-            // We are passing the type of the future (Future or SharedFuture) to the callback routine via a template parameter,
-            // because this information would otherwise get lost when we unpack the task dependency from the future.
-            whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailable<is_shared_future_v<decltype(nextFuture)>>>(
-                std::move(nextFuture),
+        // Workaround for a deficiency in GCC 10: The compiler stops with the error "not a valid template argument...must be a pointer-to-member of the form ‘&X::Y",
+        // because finalResultsAvailable() is a template member function. To work around this, we define two non-templated helper functions that forward to the templated one.
+        if constexpr(is_shared_future_v<decltype(future)>)
+            whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailableShared>(
+                std::move(future),
                 InlineExecutor{},
                 std::move(promise));
+        else
+            whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailableExclusive>(
+                std::move(future),
+                InlineExecutor{},
+                std::move(promise));
+#else
+        // Schedule the continuation task to run once the new future completes.
+        // We are passing the type of the future (Future or SharedFuture) to the callback routine via a template parameter,
+        // because this information would otherwise get lost when we unpack the task dependency from the future.
+        whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailable<is_shared_future_v<decltype(future)>>>(
+            std::move(future),
+            InlineExecutor{},
+            std::move(promise));
 #endif
-        }
     }
 
 private:

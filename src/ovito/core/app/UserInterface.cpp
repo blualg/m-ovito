@@ -163,21 +163,6 @@ std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, 
 }
 
 /******************************************************************************
-* Immediately redraws the viewports to reflect any changes made to the scene.
-******************************************************************************/
-void UserInterface::processViewportUpdateRequests()
-{
-    if(ViewportConfiguration* viewportConfig = datasetContainer().activeViewportConfig()) {
-        // Note: For a better user experience, redraw the active viewport first, then the others.
-        if(Viewport* vp = viewportConfig->activeViewport())
-            vp->processUpdateRequest();
-        for(Viewport* vp : viewportConfig->viewports())
-            if(vp != viewportConfig->activeViewport())
-                vp->processUpdateRequest();
-    }
-}
-
-/******************************************************************************
 * Flags all viewports for redrawing.
 ******************************************************************************/
 void UserInterface::updateViewports()

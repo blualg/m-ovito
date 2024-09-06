@@ -29,11 +29,7 @@
 #include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
 #include "OpenGLPickingMap.h"
 
-#ifdef OVITO_USE_OPENGL_WINDOW
-#include <QOpenGLWindow>
-#else
 #include <QOpenGLWidget>
-#endif
 
 namespace Ovito {
 
@@ -47,46 +43,36 @@ class OVITO_OPENGLRENDERERWINDOW_EXPORT OpenGLViewportWindow : public WidgetView
 
 public:
 
-#ifdef OVITO_USE_OPENGL_WINDOW
-    using OpenGLWindowType = QOpenGLWindow;
-#else
-    using OpenGLWindowType = QOpenGLWidget;
-#endif
-
     /// Determines the object located under the given mouse cursor position.
     virtual std::optional<PickResult> pick(const QPointF& pos) override;
 
     /// Releases the renderer resources held by the viewport's surface and picking renderers.
     virtual void releaseResources() override;
 
+    /// Returns the current frame graph being rendered by OpenGL.
+    const OORef<FrameGraph>& frameGraph() const { return _frameGraph; }
+
 protected:
 
-#ifdef OVITO_USE_OPENGL_WINDOW
-    /// Creates the Qt window that is associated with this viewport window.
-    virtual QWindow* createQtWindow() override;
-#else
     /// Creates the Qt widget that is associated with this viewport window.
     virtual QWidget* createQtWidget(QWidget* parent) override;
-#endif
 
     /// Creates the rendering job that renders the contents of the viewport window.
     virtual OORef<RenderingJob> createRenderingJob() override;
 
-    /// Newly renders the window contents after the frame graph has been regenerated.
-    virtual void rerender() override;
+    /// Renders the window contents after the frame graph has been regenerated.
+    virtual Future<void> renderFrameGraph(OORef<FrameGraph> frameGraph) override;
 
-#ifdef OVITO_USE_OPENGL_WINDOW
-    /// Returns the QOpenGLWindow that is associated with this viewport window.
-    QOpenGLWindow* glwin() const { return static_cast<QOpenGLWindow*>(embeddedWindow()); }
-#else
     /// Returns the QOpenGLWidget that is associated with this viewport window.
     QOpenGLWidget* glwin() const { return static_cast<QOpenGLWidget*>(widget()); }
-#endif
 
-    /// Is called whenever the widget needs to be painted.
+    /// Is called by Qt whenever the widget needs to be painted.
     void paint();
 
 private:
+
+    /// The frame graph to be rendered by OpenGL.
+    OORef<FrameGraph> _frameGraph;
 
     /// The abstract frame buffer for on-screen rendering into the QOpenGLWidget.
     OORef<AbstractRenderingFrameBuffer> _visualFrameBuffer;

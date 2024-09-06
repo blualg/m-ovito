@@ -39,7 +39,7 @@ class OVITO_OPENGLRENDERERWINDOW_EXPORT WidgetOpenGLRenderingJob : public OpenGL
 public:
 
     /// Constructor.
-    void initializeObject(ObjectInitializationFlags flags, OpenGLViewportWindow::OpenGLWindowType* glwin, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency);
+    void initializeObject(ObjectInitializationFlags flags, QOpenGLWidget* glwin, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency);
 
     /// Requests the rendering job to make its OpenGL context current, e.g. for releasing OpenGL resources that require an active context.
     [[nodiscard]] virtual OpenGLContextRestore activateContext() override {
@@ -53,7 +53,7 @@ public:
 private:
 
     /// The window we are rendering into.
-    QPointer<OpenGLViewportWindow::OpenGLWindowType> _glwin;
+    QPointer<QOpenGLWidget> _glwin;
 };
 
 }   // End of namespace

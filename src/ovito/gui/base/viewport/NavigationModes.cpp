@@ -163,9 +163,6 @@ void NavigationMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
         inputManager()->userInterface().performActions(_undoTransaction, [&] {
             modifyView(vpwin, _viewport, pos - _startPoint, false);
         });
-
-        // Force immediate viewport repaint.
-        inputManager()->userInterface().processViewportUpdateRequests();
     }
 }
 

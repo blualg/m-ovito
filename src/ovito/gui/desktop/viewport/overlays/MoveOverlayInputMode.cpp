@@ -126,9 +126,6 @@ void MoveOverlayInputMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* ev
             })) {
                 inputManager()->removeInputMode(this);
             }
-
-            // Force immediate viewport repaints.
-            inputManager()->userInterface().processViewportUpdateRequests();
         }
     }
     else {

@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include "TaskDependency.h"
 #include "TaskCallback.h"
+#include "../Promise.h"
 
 namespace Ovito::detail {
 

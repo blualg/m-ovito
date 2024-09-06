@@ -32,43 +32,6 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(OpenGLViewportWindow);
 
-#ifdef OVITO_USE_OPENGL_WINDOW
-/******************************************************************************
-* Creates the Qt window that is associated with this viewport window.
-******************************************************************************/
-QWindow* OpenGLViewportWindow::createQtWindow()
-{
-    /// A custom QOpenGLWindow subclass that forwards paint events to the viewport window.
-    class OpenGLWindow : public QOpenGLWindow
-    {
-    public:
-
-        /// Constructor.
-        explicit OpenGLWindow(OpenGLViewportWindow* owner) : _owner(owner) {}
-
-        /// Is called once before the first call to paintGL() or resizeGL().
-        virtual void initializeGL() override {
-            // Determine OpenGL vendor string so other parts of the code can decide
-            // which OpenGL features are safe to use.
-            OpenGLRenderer::determineOpenGLInfo();
-
-            // Release any OpenGL resources before the widget's QOpenGLContext gets destroyed.
-            connect(context(), &QOpenGLContext::aboutToBeDestroyed, _owner, &OpenGLViewportWindow::releaseResources);
-        }
-
-        /// Is called whenever the widget needs to be painted.
-        virtual void paintGL() override {
-            _owner->paint();
-        }
-
-    private:
-        OpenGLViewportWindow* _owner;
-    };
-
-    // Create the native OpenGL window.
-    return new OpenGLWindow(this);
-}
-#else
 /******************************************************************************
 * Creates the Qt widget that is associated with this viewport window.
 ******************************************************************************/
@@ -104,7 +67,6 @@ QWidget* OpenGLViewportWindow::createQtWidget(QWidget* parent)
     // Create the QOpenGLWidget.
     return new OpenGLViewportWidget(parent, this);
 }
-#endif
 
 /******************************************************************************
 * Creates the rendering job that renders the contents of the viewport window.
@@ -139,26 +101,27 @@ void OpenGLViewportWindow::releaseResources()
     // Release picking data.
     _objectPickingMap->reset();
 
+    // Release frame graph.
+    _frameGraph.reset();
+
     // This also releases the rendering job and the OpenGL resources it holds.
     WidgetViewportWindow::releaseResources();
 }
 
 /******************************************************************************
-* Newly renders the window contents after the frame graph has been regenerated.
+* Renders the window contents after the frame graph has been regenerated.
 ******************************************************************************/
-void OpenGLViewportWindow::rerender()
+Future<void> OpenGLViewportWindow::renderFrameGraph(OORef<FrameGraph> frameGraph)
 {
-#ifdef OVITO_USE_OPENGL_WINDOW
-    if(glwin())
-        glwin()->requestUpdate();
-#else
-    if(glwin())
-        glwin()->update();
-#endif
+    // Hold on to the frame graph.
+    _frameGraph = std::move(frameGraph);
+
+    // Return immediately, because the OpenGL window performs all rendering in the paint() routine.
+    return Future<void>::createImmediateEmpty();
 }
 
 /******************************************************************************
-* Is called whenever the widget needs to be painted.
+* Is called by Qt whenever the widget needs to be painted.
 ******************************************************************************/
 void OpenGLViewportWindow::paint()
 {
@@ -198,7 +161,7 @@ void OpenGLViewportWindow::paint()
         stream << "OpenGL shading language: " << QString::fromUtf8(OpenGLRenderer::openGLSLVersion()) << "\n";
         stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
         ex.appendDetailMessage(openGLReport);
-        setFrameGraph({});
+        releaseResources();
         Q_EMIT fatalError(ex);
     }
 }

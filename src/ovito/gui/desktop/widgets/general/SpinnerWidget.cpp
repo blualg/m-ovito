@@ -411,14 +411,8 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
 
                 if(newVal != floatValue()) {
                     setFloatValue(newVal, true);
-
-                    // Repaint viewports for immediate visual feedback when changing a parameter.
-                    if(MainWindow* mainWindow = qobject_cast<MainWindow*>(window()))
-                        mainWindow->processViewportUpdateRequests();
-
-                    // Also repaint text box for immediate visual updates.
                     if(textBox())
-                        textBox()->repaint();
+                        textBox()->update();
                 }
             }
         }

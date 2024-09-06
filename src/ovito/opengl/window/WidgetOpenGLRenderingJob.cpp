@@ -30,7 +30,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(WidgetOpenGLRenderingJob);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-void WidgetOpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, OpenGLViewportWindow::OpenGLWindowType* glwin, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency)
+void WidgetOpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, QOpenGLWidget* glwin, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency)
 {
     OpenGLRenderingJob::initializeObject(flags, std::move(visCache), multisamplingLevel, orderIndependentTransparency);
 

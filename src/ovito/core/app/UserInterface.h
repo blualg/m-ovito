@@ -139,9 +139,6 @@ public:
     /// The function can return true to indicate that the running operation should be canceled.
     virtual bool processUIEvents();
 
-    /// Immediately redraws the viewports to reflect any changes made to the scene.
-    void processViewportUpdateRequests();
-
     /// Returns the manager of the user interface actions.
     ActionManager* actionManager() const { return _actionManager; }
 
@@ -213,6 +210,28 @@ public:
     template<typename Function>
     bool performTransaction(const QString& undoOperationName, Function&& func) noexcept;
 
+    /// Returns the list of all viewport windows currently associated with this user interface.
+    const std::vector<ViewportWindow*>& viewportWindows() const {
+        OVITO_ASSERT(ExecutionContext::isMainThread());
+        return _viewportWindows;
+    }
+
+    /// Registers a viewport window with this user interface.
+    void registerViewportWindow(ViewportWindow* window) {
+        OVITO_ASSERT(window);
+        OVITO_ASSERT(ExecutionContext::isMainThread());
+        _viewportWindows.push_back(window);
+    }
+
+    /// Unregisters a viewport window from this user interface.
+    void unregisterViewportWindow(ViewportWindow* window) {
+        OVITO_ASSERT(window);
+        OVITO_ASSERT(ExecutionContext::isMainThread());
+        auto it = std::find(_viewportWindows.begin(), _viewportWindows.end(), window);
+        OVITO_ASSERT(it != _viewportWindows.end());
+        _viewportWindows.erase(it);
+    }
+
 protected:
 
     /// Assigns an ActionManager.
@@ -264,6 +283,9 @@ protected:
 
     /// The manager of ParameterUnit objects.
     UnitsManager _unitsManager;
+
+    /// List of all viewport windows associated with this abstract user interface.
+    std::vector<ViewportWindow*> _viewportWindows;
 
     /// This counter tracks temporary suspension of viewport updates.
     int _viewportSuspendCount = 0;
