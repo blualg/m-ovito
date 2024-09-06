@@ -44,60 +44,65 @@ void BasePipelineSource::postprocessDataCollection(Future<PipelineFlowState>& st
 {
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
-    // Register the task with this pipeline stage to indicate in the UI that this pipeline source is currently performing work.
+    // Register the task to indicate in the UI that this pipeline stage is currently performing some work.
     if(!request.interactiveMode())
         registerActiveFuture(stateFuture);
 
-    stateFuture.postprocess(*this, [this, throwOnError = request.throwOnError(), interactiveMode = request.interactiveMode()](Future<PipelineFlowState> future) -> PipelineFlowState {
+    stateFuture.postprocess(*this, [this, request](Future<PipelineFlowState> future) -> PipelineFlowState {
         OVITO_ASSERT(future.isFinished() && !future.isCanceled());
 
         try {
-            PipelineFlowState state = future.result();
+            try {
+                PipelineFlowState state = future.result();
 
-            if(!interactiveMode)
-                setStatus(state.status());
+                // Display status of the source in the UI.
+                setStatusIfCurrentFrame(state.status(), request);
 
-            // Check if the generated pipeline state is valid.
-            if(state.data() && state.status().type() != PipelineStatus::Error) {
+                // Check if the generated pipeline state is valid.
+                if(state.data() && state.status().type() != PipelineStatus::Error) {
 
-                // In GUI mode, create editable proxy objects for the data objects in the generated collection.
-                if(Application::guiMode()) {
-                    _updatingEditableProxies = true;
-                    ConstDataObjectPath dataPath = { state.data() };
-                    state.data()->updateEditableProxies(state, dataPath);
-                    _updatingEditableProxies = false;
+                    // In GUI mode, create editable proxy objects for the data objects in the generated collection.
+                    if(Application::guiMode()) {
+                        _updatingEditableProxies = true;
+                        ConstDataObjectPath dataPath = { state.data() };
+                        state.data()->updateEditableProxies(state, dataPath);
+                        _updatingEditableProxies = false;
+                    }
+
+                    // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
+                    AnimationTime currentTime = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+                    if(state.stateValidity().contains(currentTime)) {
+                        setDataCollectionFrame(std::clamp(0, animationTimeToSourceFrame(currentTime), numberOfSourceFrames() - 1));
+                        setDataCollection(state.data());
+                    }
                 }
 
-                // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
-                AnimationTime currentTime = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
-                if(state.stateValidity().contains(currentTime)) {
-                    setDataCollectionFrame(currentTime.frame());
-                    setDataCollection(state.data());
-                }
+                return state;
             }
-
-            return state;
+            catch(const Exception&) {
+                throw;  // Pass through regular exceptions.
+            }
+            catch(const OperationCanceled&) {
+                throw;  // Pass through regular exceptions.
+            }
+            catch(const std::bad_alloc&) {
+                throw Exception(tr("Not enough memory."));
+            }
+            catch(const std::exception& ex) {
+                OVITO_ASSERT_MSG(false, "BasePipelineSource::postprocessDataCollection()", "Caught an unexpected exception type during source evaluation.");
+                throw Exception(tr("A non-standard exception occurred: %1").arg(QString::fromLatin1(ex.what())));
+            }
+            catch(...) {
+                OVITO_ASSERT_MSG(false, "BasePipelineSource::postprocessDataCollection()", "Caught an unknown exception type during source evaluation.");
+                throw Exception(tr("An unknown type of exception occurred."));
+            }
         }
         catch(Exception& ex) {
-            if(throwOnError)
+            setStatusIfCurrentFrame(ex, request);
+            if(request.throwOnError())
                 throw;
-            if(!interactiveMode)
-                setStatus(ex);
             ex.prependToMessage(tr("Pipeline source reported: "));
             return PipelineFlowState(dataCollection(), PipelineStatus(ex, QStringLiteral(" ")));
-        }
-        catch(const std::bad_alloc&) {
-            setStatus(PipelineStatus(PipelineStatus::Error, tr("Not enough memory.")));
-            return PipelineFlowState(dataCollection(), status());
-        }
-        catch(...) {
-            if(throwOnError)
-                throw;
-            OVITO_ASSERT_MSG(false, "BasePipelineSource::postprocessDataCollection()", "Caught an unexpected exception type during source function execution.");
-            PipelineStatus status(PipelineStatus::Error, tr("Unknown exception caught during execution of pipeline source function."));
-            if(!interactiveMode)
-                setStatus(status);
-            return PipelineFlowState(dataCollection(), status);
         }
     });
 }
@@ -110,7 +115,7 @@ PipelineEvaluationResult BasePipelineSource::postprocessCachedState(const Pipeli
     OVITO_ASSERT(ExecutionContext::current().isValid());
 
     PipelineFlowState state = cachedState;
-    setStatus(state.status());
+    setStatusIfCurrentFrame(state.status(), request);
 
     if(state.data() && state.status().type() != PipelineStatus::Error) {
 
@@ -124,8 +129,9 @@ PipelineEvaluationResult BasePipelineSource::postprocessCachedState(const Pipeli
         }
 
         // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
-        if(state.stateValidity().contains(ExecutionContext::current().ui().datasetContainer().currentAnimationTime())) {
-            setDataCollectionFrame(animationTimeToSourceFrame(request.time()));
+        AnimationTime currentTime = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+        if(state.stateValidity().contains(currentTime)) {
+            setDataCollectionFrame(std::clamp(0, animationTimeToSourceFrame(currentTime), numberOfSourceFrames() - 1));
             setDataCollection(state.data());
         }
     }

@@ -26,7 +26,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/concurrent/detail/ContinuationTask.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>
 
 namespace Ovito {
@@ -167,10 +166,7 @@ protected:
         resultStorage() = std::move(state);
 
         // Indicate the outcome of the calculation in the GUI.
-        // Don't show outcome of preliminary interactive pipeline evaluations or evaluations at animation times other than the current one.
-        if(!request().interactiveMode() && Application::instance()->guiMode() && resultStorage().stateValidity().contains(ExecutionContext::current().ui().datasetContainer().currentAnimationTime())) {
-            modificationNode()->setStatus(resultStorage().status());
-        }
+        modificationNode()->setStatusIfCurrentFrame(resultStorage().status(), request());
 
         // Return results to the caller.
         setFinished();
@@ -203,9 +199,7 @@ protected:
         }
         catch(Exception& ex) {
             // Indicate the failure of the modifier calculation in the GUI.
-            // Don't show outcome of preliminary interactive pipeline evaluations or evaluations at animation times other than the current one.
-            if(!request().interactiveMode() && Application::instance()->guiMode() && request().time() == ExecutionContext::current().ui().datasetContainer().currentAnimationTime())
-                modificationNode()->setStatus(ex);
+            modificationNode()->setStatusIfCurrentFrame(ex, request());
 
             // In a Python environment, it's useful if the error message indicates which modifier has failed.
             ex.prependToMessage(ModificationNode::tr("Modifier '%1' reported: ").arg(modificationNode()->objectTitle()));

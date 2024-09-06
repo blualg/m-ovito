@@ -70,6 +70,11 @@ public:
     /// Registers the given future as an active task associated with this object.
     void registerActiveFuture(const FutureBase& future);
 
+    /// Displays the given status information in the GUI for this object.
+    /// The status is only displayed if the current frame of the pipeline matches the frame
+    /// for which the status was generated.
+    void setStatusIfCurrentFrame(const PipelineStatus& status, const PipelineEvaluationRequest& request);
+
 protected:
 
     /// Is called when the value of a non-animatable property field of this RefMaker has changed.
