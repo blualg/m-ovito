@@ -282,9 +282,12 @@ public:
 	/// Adjust wireframe line widths to match device pixel ratio.
 	void adjustWireframeLineWidths();
 
+	/// Returns the size of the rendering viewport in device-independent pixels.
+	const QSize& viewportDeviceIndependentSize() const { return _viewportDeviceIndependentSize; }
+
     /// Computes the world size of an object that should appear always in the same size on the screen.
     FloatType nonScalingSize(const Point3& worldPosition) const {
-		return projectionParams().nonScalingSize(worldPosition, _viewportDeviceIndependentSize);
+		return projectionParams().nonScalingSize(worldPosition, viewportDeviceIndependentSize());
 	}
 
 private:

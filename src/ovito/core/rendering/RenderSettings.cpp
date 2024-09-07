@@ -336,8 +336,14 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
             // Create a new frame graph.
             OORef<FrameGraph> frameGraph = OORef<FrameGraph>::create(
                 visCache->acquireResourceFrame(),
-                renderTime, projParams, vpData.renderingFrameBuffer->outputViewportRect().size(), false, false, stopOnPipelineError(),
-                renderingJob->preferredImageFormat(), renderingJob->multisamplingLevel());
+                renderTime,
+                projParams,
+                vpData.renderingFrameBuffer->outputViewportRect().size(),
+                false,
+                false,
+                stopOnPipelineError(),
+                renderingJob->preferredImageFormat(),
+                renderingJob->multisamplingLevel());
 
             // Set background color.
             frameGraph->setClearColor(generateAlphaChannel() ? ColorA(0,0,0,0) : ColorA(backgroundColorAt(renderTime)));
