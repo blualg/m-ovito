@@ -404,4 +404,16 @@ Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const 
         });
 }
 
+/******************************************************************************
+* Is called when the value of a non-animatable property field of this RefMaker has changed.
+******************************************************************************/
+void LAMMPSDumpLocalImporter::propertyChanged(const PropertyFieldDescriptor* field)
+{
+    ParticleImporter::propertyChanged(field);
+
+    if(field == PROPERTY_FIELD(columnMapping) && !isBeingLoaded()) {
+        requestReload();
+    }
+}
+
 }   // End of namespace

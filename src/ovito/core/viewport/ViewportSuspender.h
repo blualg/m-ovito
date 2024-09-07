@@ -38,6 +38,8 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT ViewportSuspender
 {
+    Q_DISABLE_COPY(ViewportSuspender)
+
 public:
 
     /// Calls UserInterface::suspendViewportUpdates().
@@ -51,6 +53,15 @@ public:
             ui->resumeViewportUpdates();
     }
 
+    /// Move constructor.
+    ViewportSuspender(ViewportSuspender&& other) noexcept : _userInterface(std::move(other._userInterface)) {}
+
+    /// Move assignment operator.
+    ViewportSuspender& operator=(ViewportSuspender&& other) noexcept {
+        _userInterface.swap(other._userInterface);
+        return *this;
+    }
+
 private:
 
     OOWeakRef<UserInterface> _userInterface;
@@ -61,6 +72,8 @@ private:
  */
 class OVITO_CORE_EXPORT PreliminaryViewportUpdatesSuspender
 {
+    Q_DISABLE_COPY(PreliminaryViewportUpdatesSuspender)
+
 public:
 
     /// Calls UserInterface::suspendPreliminaryViewportUpdates().

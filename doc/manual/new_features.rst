@@ -32,12 +32,13 @@ Version 3.11.0 (xx-xxx-2024)
 - Fixed: Axis scales and labels are invisible (white on white) in exported data plots if dark mode UI is active
 - Fixed: Mouse wrapping in Spinner Widget for vertical multi screen setups.
 - Fixed: Spinner widget mouse warp not working on macOS (requires accessibility access).
+- Trailing "_" in particle property names will now be stripped during file import to avoid possible conflicts with the :py:ref:`underscore notation <underscore_notation>` used in the Python API.
 - CA file import (loading precomputed DXA results) is now an exclusive OVITO Pro feature
 - :ref:`particles.modifiers.slice` and :ref:`particles.modifiers.affine_transformation` modifiers: Value increments used for step-wise parameter adjustment are now proportional to the simulation cell size instead of the current parameter value
 - Updated third-party components: OpenSSL, Qt, PySide6, Python, Qwt
 - Add update notification for future versions
 - |ovito-python| :py:class:`~ovito.modifiers.ConstructSurfaceModifier`: Option :py:attr:`~ovito.modifiers.ConstructSurfaceModifier.map_particles_to_regions` now outputs per-region particle membership lists
-- |ovito-python| :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` can now process multiple input points in parallel.
+- |ovito-python| :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` can now process an array of input points using all CPU cores.
 - |ovito-python| New method :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` to efficiently determine the closest particles around several spatial locations.
 - |ovito-python| New class attribute :py:attr:`ovito.pipeline.Pipeline.frames`
 - |ovito-python| New class attributes :py:attr:`ovito.pipeline.FileSource.playback_ratio`, :py:attr:`ovito.pipeline.FileSource.playback_start_time`, and :py:attr:`ovito.pipeline.FileSource.static_frame`
@@ -45,6 +46,7 @@ Version 3.11.0 (xx-xxx-2024)
 - |ovito-python| Added the :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_pos`, :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_dir`, and :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_up` fields to the :py:class:`ViewportOverlayInterface.Canvas <ovito.vis.ViewportOverlayInterface.Canvas>` class
 - |ovito-python| New parameter trait types :py:class:`ovito.traits.DataObjectReference` and :py:class:`ovito.traits.PropertyReference`
 - |ovito-python| New class :py:class:`ovito.data.DataObject.Ref` and methods :py:meth:`ovito.data.DataCollection.get` and :py:meth:`ovito.data.PropertyContainer.get`
+- |ovito-python| :py:class:`~ovito.vis.ColorLegendOverlay`: Added :py:attr:`~ovito.vis.ColorLegendOverlay.pipeline` field
 - |ovito-python| :py:class:`~ovito.modifiers.GenerateTrajectoryLinesModifier`: Deprecated :py:meth:`!generate` method
 - |ovito-python| Added the :py:attr:`HistogramModifier.select_elements <ovito.modifiers.HistogramModifier.select_elements>` option
 - |ovito-python| Initialize global Qt application object on demand only to avoid conflicts with other Python packages that also use Qt framework

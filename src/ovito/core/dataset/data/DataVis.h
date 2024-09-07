@@ -49,7 +49,7 @@ public:
     /// \param frameGraph The output frame graph being generated.
     /// \param pipeline The pipeline scene node that produced the data object.
     /// \return A status code indicating the success or failure of the rendering operation.
-    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) = 0;
+    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) = 0;
 
     /// \brief Computes the view-dependent bounding box of the given data object.
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) = 0;
@@ -63,20 +63,6 @@ public:
     /// \brief Returns all pipelines that produced this visualization element.
     /// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.
     QSet<Pipeline*> pipelines(bool onlyScenePipelines) const;
-
-    /// Returns whether the DataVis class currently manages its error state and not the scene renderer.
-    bool manualErrorStateControl() const { return _manualErrorStateControl; }
-
-    /// Sets whether the DataVis class currently manages its error state and not the scene renderer.
-    void setManualErrorStateControl(bool enable) { _manualErrorStateControl = enable; }
-
-private:
-
-    /// Indicates that the DataVis class manages its error state and not the scene renderer.
-    /// This flag is used by TransformingDataVis class to preserve an error state generated during
-    /// the transformation process. Otherwise, the scene renderer would automatically reset the
-    /// error state during rendering.
-    bool _manualErrorStateControl = false;
 };
 
 }   // End of namespace

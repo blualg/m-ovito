@@ -26,7 +26,7 @@
 // Uniforms:
 uniform float color_range_min;
 uniform float color_range_max;
-uniform sampler1D color_map;
+uniform sampler2D color_map;
 
 // Inputs:
 in vec4 color_fs;
@@ -40,7 +40,7 @@ void main()
 	// which is stored in the R component of the input color.
 	if(color_range_min != color_range_max) {
 		float pseudocolor_value = (color.r - color_range_min) / (color_range_max - color_range_min);
-		color.rgb = <texture1D>(color_map, pseudocolor_value).rgb;
+		color.rgb = <texture2D>(color_map, vec2(pseudocolor_value, 0.0)).rgb;
 	}
 
     // Flat shading:

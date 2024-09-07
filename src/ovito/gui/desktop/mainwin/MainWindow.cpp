@@ -655,10 +655,6 @@ void MainWindow::clearStatusBarMessage()
 ******************************************************************************/
 std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int height)
 {
-    // This function must be called with an active task scope, because the frame buffer window
-    // will display the progress of the rendering process.
-    OVITO_ASSERT(this_task::get());
-
     // Create the frame buffer window.
     if(!_frameBufferWindow) {
         _frameBufferWindow = new FrameBufferWindow(*this, this);

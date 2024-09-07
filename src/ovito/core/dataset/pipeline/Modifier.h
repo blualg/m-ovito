@@ -127,17 +127,21 @@ protected:
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const {}
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) = 0;
+    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) {
+        OVITO_ASSERT_MSG(false, "Modifier::evaluateModifier()", "This method must be overridden by a derived class.");
+        return std::move(state);
+    }
 
 private:
 
-    /// Dndicates whether the modifier is currently enabled. A disabled modifier will be skipped during pipeline evaluation.
+    /// Indicates whether the modifier is currently enabled. A disabled modifier will be skipped during pipeline evaluation.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, isEnabled, setEnabled);
 
     /// A user-defined title of this modifier, which overrides the default title provided by the modifier class.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, title, setTitle);
 
-    friend ModificationNode;
+    friend class ModificationNode;
+    template<typename ModifierClass, typename... AuxiliaryArgs> friend class ModifierEvaluationTask;
 };
 
 }   // End of namespace

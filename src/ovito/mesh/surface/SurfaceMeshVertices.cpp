@@ -166,7 +166,7 @@ VectorVis::VectorData SurfaceMeshVertices::getVectorVisData(const ConstDataObjec
             }
         }
 
-        return {getProperty(PositionProperty), std::move(vectorProperty), nullptr, nullptr};
+        return { getProperty(PositionProperty), std::move(vectorProperty), nullptr, nullptr };
     }
     return {};
 }

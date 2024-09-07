@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/OORef.h>
+#include <function2/function2.hpp>
 
 namespace Ovito {
 
@@ -84,10 +85,7 @@ public:
 public Q_SLOTS:
 
     /// Executes pending work items waiting in the deferred execution queue.
-    void executePendingWork() {
-        std::unique_lock<std::mutex> lock{_mutex};
-        executePendingWorkLocked(lock);
-    }
+    void executePendingWork();
 
     /// Tells the task manager to interrupt the task it is currently waiting for.
     bool requestInterruption();

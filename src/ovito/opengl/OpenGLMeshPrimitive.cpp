@@ -34,9 +34,9 @@ namespace Ovito {
 /******************************************************************************
 * Renders a triangle mesh.
 ******************************************************************************/
-void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive, int pickingGroupID)
+void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
-    QOpenGLTexture* colorMapTexture = nullptr;
+    const OpenGLTexture* colorMapTexture = nullptr;
 
     // Make sure there is something to be rendered. Otherwise, step out early.
     if(!primitive.mesh() || primitive.mesh()->faceCount() == 0)
@@ -112,21 +112,24 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
 
     // Pass picking base ID to shader.
     if(isPickingPass()) {
-        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(pickingGroupID, primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount()));
+        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(command, primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount()));
     }
 
+    bool highlightSelectedFaces = frameGraph()->isInteractive() && !isPickingPass();
+
     // The lookup key for the buffer cache.
-    RendererResourceKey<struct MeshBufferCache, DataOORef<const TriangleMesh>, std::vector<ColorA>, ColorA, Color> meshCacheKey{
+    RendererResourceKey<struct MeshBufferCache, DataOORef<const TriangleMesh>, std::vector<ColorA>, ColorA, Color, bool, bool> meshCacheKey{
         primitive.mesh(),
         primitive.materialColors(),
         primitive.uniformColor(),
-        primitive.faceSelectionColor()
+        primitive.faceSelectionColor(),
+        highlightSelectedFaces,
+        renderWithPseudoColorMapping
     };
 
     // Upload vertex buffer to GPU memory.
     QOpenGLBuffer meshBuffer = shader.createCachedBuffer(std::move(meshCacheKey), sizeof(MeshPrimitive::RenderVertex), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferReadAccess<int32_t> subset) {
         OVITO_ASSERT(!subset);
-        bool highlightSelectedFaces = frameGraph()->isInteractive() && !isPickingPass();
         primitive.generateRenderableVertices(reinterpret_cast<MeshPrimitive::RenderVertex*>(buffer), highlightSelectedFaces, renderWithPseudoColorMapping);
     });
 
@@ -159,7 +162,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
         shader.setUniformValue("color_range_max", maxValue);
 
         // Upload color map as a 1-d OpenGL texture.
-        colorMapTexture = uploadColorMap(primitive.pseudoColorMapping().gradient());
+        colorMapTexture = &uploadColorMap(primitive.pseudoColorMapping().gradient());
         colorMapTexture->bind();
     }
 
@@ -321,9 +324,8 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
     }
 
     // Unbind color mapping texture.
-    if(colorMapTexture) {
+    if(colorMapTexture)
         colorMapTexture->release();
-    }
 }
 
 /******************************************************************************

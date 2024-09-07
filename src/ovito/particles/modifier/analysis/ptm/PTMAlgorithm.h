@@ -296,7 +296,6 @@ public:
 
             FloatType minDist = std::numeric_limits<FloatType>::infinity();;
             FloatType distances[PTM_MAX_INPUT_POINTS];
-            //qDebug() << "_env.num:" << _env.num << PTM_MAX_INPUT_POINTS << minDist;
             OVITO_ASSERT(_env.num <= PTM_MAX_INPUT_POINTS);
             for (int i=1;i<_env.num;i++) {
                 FloatType dx = _env.points[i][0];

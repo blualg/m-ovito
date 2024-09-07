@@ -142,10 +142,10 @@ Box3 SurfaceMeshVis::boundingBoxImmediate(AnimationTime time, const ConstDataObj
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> SurfaceMeshVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     // Get the surface mesh.
-    const SurfaceMesh* surfaceMesh = path.lastAs<SurfaceMesh>();
+    DataOORef<const SurfaceMesh> surfaceMesh = path.lastAs<SurfaceMesh>();
     if(!surfaceMesh)
         return {};
 
@@ -176,66 +176,74 @@ PipelineStatus SurfaceMeshVis::render(const ConstDataObjectPath& path, const Pip
         });
 
     // Wait for the renderable mesh to be generated.
-    std::shared_ptr<const RenderableSurfaceMesh> renderableMesh = renderableMeshFuture.result();
+    return renderableMeshFuture.then(*this, [this, frameGraph=OORef<FrameGraph>(&frameGraph), surfaceMesh, pipeline=OORef<const Pipeline>(pipeline)](std::shared_ptr<const RenderableSurfaceMesh> renderableMesh) {
 
-    // Get the rendering colors for the surface and cap meshes.
-    FloatType surface_alpha = 1;
-    FloatType cap_alpha = 1;
-    TimeInterval iv;
-    if(surfaceTransparencyController())
-        surface_alpha = qBound(0.0, FloatType(1) - surfaceTransparencyController()->getFloatValue(frameGraph.time(), iv), 1.0);
-    if(capTransparencyController())
-        cap_alpha = qBound(0.0, FloatType(1) - capTransparencyController()->getFloatValue(frameGraph.time(), iv), 1.0);
-    ColorA color_surface(colorMappingMode() == NoPseudoColoring ? surfaceColor() : Color(1,1,1), surface_alpha);
-    ColorA color_cap(capColor(), cap_alpha);
+        // Get the rendering colors for the surface and cap meshes.
+        FloatType surface_alpha = 1;
+        FloatType cap_alpha = 1;
+        TimeInterval iv;
+        if(surfaceTransparencyController())
+            surface_alpha = qBound(0.0, 1.0 - surfaceTransparencyController()->getFloatValue(frameGraph->time(), iv), 1.0);
+        if(capTransparencyController())
+            cap_alpha = qBound(0.0, 1.0 - capTransparencyController()->getFloatValue(frameGraph->time(), iv), 1.0);
+        ColorA color_surface(colorMappingMode() == NoPseudoColoring ? surfaceColor() : Color(1,1,1), surface_alpha);
+        ColorA color_cap(capColor(), cap_alpha);
 
-    // The key type used for caching the rendering primitives:
-    using PrimitiveCacheKey = RendererResourceKey<struct PrimitiveCache,
-        std::shared_ptr<const RenderableSurfaceMesh>, // Renderable mesh
-        ColorA,                     // Surface color
-        bool                        // Edge highlighting
-    >;
+        // The key type used for caching the rendering primitives:
+        using PrimitiveCacheKey = RendererResourceKey<struct PrimitiveCache,
+            std::shared_ptr<const RenderableSurfaceMesh>, // Renderable mesh
+            ColorA,                     // Surface color
+            bool                        // Edge highlighting
+        >;
 
-    // Lookup the rendering primitives in the vis cache.
-    const auto& [surfacePrimitive, pickInfo] = frameGraph.visCache().lookup<std::tuple<MeshPrimitive, OORef<ObjectPickInfo>>>(
-        PrimitiveCacheKey{
-            renderableMesh,
-            color_surface,
-            highlightEdges()
-        },
-        [&](MeshPrimitive& surfacePrimitive, OORef<ObjectPickInfo>& pickInfo) {
-            auto materialColors = renderableMesh->materialColors();
-            for(ColorA& c : materialColors) {
-                c.a() = surface_alpha;
-            }
-            surfacePrimitive.setMaterialColors(std::move(materialColors));
-            surfacePrimitive.setUniformColor(color_surface);
-            surfacePrimitive.setEmphasizeEdges(highlightEdges());
-            surfacePrimitive.setCullFaces(renderableMesh->backfaceCulling());
-            surfacePrimitive.setMesh(renderableMesh->surface());
+        // Lookup the rendering primitives in the vis cache.
+        const auto& [surfacePrimitive, pickInfo] = frameGraph->visCache().lookup<std::tuple<MeshPrimitive, OORef<ObjectPickInfo>>>(
+            PrimitiveCacheKey{
+                renderableMesh,
+                color_surface,
+                highlightEdges()
+            },
+            [&](MeshPrimitive& surfacePrimitive, OORef<ObjectPickInfo>& pickInfo) {
+                auto materialColors = renderableMesh->materialColors();
+                for(ColorA& c : materialColors) {
+                    c.a() = surface_alpha;
+                }
+                surfacePrimitive.setMaterialColors(std::move(materialColors));
+                surfacePrimitive.setUniformColor(color_surface);
+                surfacePrimitive.setEmphasizeEdges(highlightEdges());
+                surfacePrimitive.setCullFaces(renderableMesh->backfaceCulling());
+                surfacePrimitive.setMesh(renderableMesh->surface());
 
-            // Create the pick record that keeps a reference to the original data.
-            pickInfo = createPickInfo(surfaceMesh, renderableMesh);
-        });
+                // Create the pick record that keeps a reference to the original data.
+                pickInfo = createPickInfo(surfaceMesh, renderableMesh);
+            });
 
-    // Render the surface mesh.
-    if(surfacePrimitive.mesh()) {
-        auto coloredSurface = std::make_unique<MeshPrimitive>(surfacePrimitive);
-        // Update the color mapping.
-        coloredSurface->setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());
-        frameGraph.addPrimitive(std::move(coloredSurface), pipeline, frameGraph.addPickingGroup(pipeline, pickInfo));
-    }
+        FrameGraph::RenderingCommandGroup& commandGroup = frameGraph->addCommandGroup(FrameGraph::SceneLayer);
 
-    // Render the surface mesh cap.
-    if(showCap() && renderableMesh->capPolygons() && renderableMesh->capPolygons()->faceCount() != 0) {
-        auto capPrimitive = std::make_unique<MeshPrimitive>();
-        capPrimitive->setUniformColor(color_cap);
-        capPrimitive->setMesh(renderableMesh->capPolygons(), MeshPrimitive::ConvexShapeMode);
-        // If the caps are semi-transparent, we exclude them from the object picking render pass.
-        frameGraph.addPrimitive(std::move(capPrimitive), pipeline, (cap_alpha >= 1) ? frameGraph.addPickingGroup(pipeline) : 0);
-    }
+        // Render the surface mesh.
+        if(surfacePrimitive.mesh()) {
+            auto coloredSurface = std::make_unique<MeshPrimitive>(surfacePrimitive);
+            // Update the color mapping.
+            coloredSurface->setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());
+            frameGraph->addPrimitive(commandGroup, std::move(coloredSurface), pipeline, pickInfo);
+        }
 
-    return renderableMesh->status();
+        // Render the surface mesh cap.
+        if(showCap() && renderableMesh->capPolygons() && renderableMesh->capPolygons()->faceCount() != 0) {
+            auto capPrimitive = std::make_unique<MeshPrimitive>();
+            capPrimitive->setUniformColor(color_cap);
+            capPrimitive->setMesh(renderableMesh->capPolygons(), MeshPrimitive::ConvexShapeMode);
+
+            // If the caps are semi-transparent, exclude them from the object picking render pass to
+            // make it easier for the user to pick other things inside the mesh.
+            if(cap_alpha >= 1)
+                frameGraph->addPrimitive(commandGroup, std::move(capPrimitive), pipeline);
+            else
+                frameGraph->addPrimitiveNonpickable(commandGroup, std::move(capPrimitive), pipeline);
+        }
+
+        return renderableMesh->status();
+    });
 }
 
 /******************************************************************************
@@ -250,7 +258,7 @@ OORef<ObjectPickInfo> SurfaceMeshVis::createPickInfo(const SurfaceMesh* mesh, st
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
-QString SurfaceMeshPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
+QString SurfaceMeshPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 {
     QString str = surfaceMesh()->objectTitle();
 

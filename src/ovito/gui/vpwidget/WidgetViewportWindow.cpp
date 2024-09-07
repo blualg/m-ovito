@@ -26,6 +26,8 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include "WidgetViewportWindow.h"
 
+#include <QApplication>
+
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(WidgetViewportWindow);
@@ -50,12 +52,12 @@ void WidgetViewportWindow::initializeWindow(Viewport* vp, UserInterface& userInt
     setViewport(vp, userInterface);
 
     OVITO_ASSERT(!_widget);
-    _widget = createWidget(parent);
+    _widget = createQtWidget(parent);
 
+    widget()->installEventFilter(this);
     widget()->setMouseTracking(true);
     widget()->setFocusPolicy(Qt::StrongFocus);
     widget()->setAcceptDrops(false); // File drop events are handled by the root main window. This makes them propagate up the widget hierarchy.
-    widget()->installEventFilter(this);
 
     // Make sure the viewport window releases its resources before the application shuts down, e.g. due to a Python script error.
     connect(QCoreApplication::instance(), &QObject::destroyed, this, &BaseViewportWindow::releaseResources);

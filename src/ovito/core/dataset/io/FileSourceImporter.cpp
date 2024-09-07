@@ -50,10 +50,10 @@ void FileSourceImporter::propertyChanged(const PropertyFieldDescriptor* field)
     FileImporter::propertyChanged(field);
 
     if(field == PROPERTY_FIELD(isMultiTimestepFile)) {
-        // Automatically rescan input file for animation frames when this option is changed.
+        // Automatically re-scan input file for animation frames when this option is changed.
         requestFramesUpdate();
 
-        // Also notify the UI explicitly, because target-changed messages are supressed for this property field.
+        // Also notify the UI explicitly, because target-changed messages are suppressed for this property field.
         notifyDependents(FileSourceImporter::MultiTimestepFileChanged);
     }
 }
@@ -195,7 +195,7 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
     OORef<Pipeline> pipeline;
     if(existingPipeline == nullptr) {
         {
-            UndoSuspender unsoSuspender;    // Do not create undo records for this part.
+            UndoSuspender undoSuspender;    // Do not create undo records for this part.
 
             // Add object to scene.
             pipeline = OORef<Pipeline>::create();
@@ -326,12 +326,12 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
     if(sourceUrls.size() == 1)
         return discoverFrames(sourceUrls.front());
 
-    // Sequentually invoke single-path routine for each input path and compile results
+    // Sequentially invoke single-path routine for each input path and compile results
     // into one big list that is returned to the caller.
     auto combinedList = std::make_shared<QVector<Frame>>();
     Future<QVector<Frame>> future;
     for(const QUrl& url : sourceUrls) {
-        if(!future.isValid()) {
+        if(!future) {
             future = discoverFrames(url);
         }
         else {

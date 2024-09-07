@@ -74,7 +74,7 @@ public:
     PipelineEvaluationResult evaluateInput(const PipelineEvaluationRequest& request) const;
 
     /// Asks the object for the result of the upstream data pipeline at several animation times.
-    Future<std::vector<PipelineFlowState>> evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times) const;
+    [[nodiscard]] Future<std::vector<PipelineFlowState>> evaluateInputMultiple(const PipelineEvaluationRequest& request, std::vector<AnimationTime> times) const;
 
     /// Is called by the pipeline system before a new evaluation begins to query the validity interval and evaluation result type of this pipeline stage.
     virtual void preevaluate(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) override;
@@ -144,6 +144,9 @@ protected:
     /// Asks the object for the result of the data pipeline.
     virtual SharedFuture<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override;
 
+    /// Launches an asynchronous task to evaluate the node's modifier.
+    virtual SharedFuture<PipelineFlowState> launchModifierEvaluation(ModifierEvaluationRequest&& request, SharedFuture<PipelineFlowState> inputFuture);
+
     /// Decides whether a preliminary viewport update is performed after this pipeline object has been
     /// evaluated but before the rest of the pipeline is complete.
     virtual bool shouldRefreshViewportsAfterEvaluation() override;
@@ -171,6 +174,8 @@ private:
     /// Cache for partial results computed by the modifier.
     /// This can be used by the modifier to enable fast interactive updates after parameter changes that do not invalidate the entire result.
     FutureCache<DataOORef<const DataCollection>> _partialResultsCache;
+
+    template<typename ModifierClass, typename... AuxiliaryArgs> friend class ModifierEvaluationTask;
 };
 
 /// This macro registers some ModificationNode-derived class as the pipeline node type of some Modifier-derived class.

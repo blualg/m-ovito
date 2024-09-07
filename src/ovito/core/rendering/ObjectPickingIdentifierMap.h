@@ -36,25 +36,20 @@ class OVITO_CORE_EXPORT ObjectPickingIdentifierMap
 {
 public:
 
-	/// Prepares the mapping.
-	void prepare(const FrameGraph& frameGraph, quint32 startObjectID = 1);
-
-	/// Post-processes the mapping after acquisition.
-	void postprocess();
-
 	/// Releases all data held by the object.
 	virtual void reset() {
-		_pickingGroups.clear();
+		_nextAvailablePickingID = 1;
+		_pickingRecords.clear();
 	}
 
 	/// Registers a range of unique IDs for the current object picking group being rendered.
-	quint32 allocateObjectPickingIDs(int pickingGroupID, quint32 objectCount, const ConstDataBufferPtr& indices = {});
+	uint32_t allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, const ConstDataBufferPtr& indices = {});
 
 	/// Finds the picked object at the given frame buffer pixel position.
 	std::optional<ViewportWindow::PickResult> pickAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const;
 
     /// Returns the frame buffer object ID at the given frame buffer location.
-    virtual quint32 objectIdentifierAt(const QPoint& frameBufferLocation) const { return 0; }
+    virtual uint32_t objectIdentifierAt(const QPoint& frameBufferLocation) const { return 0; }
 
     /// Returns the z-value at the given frame buffer location.
     virtual FloatType depthAt(const QPoint& frameBufferLocation) const { return 0; }
@@ -63,64 +58,68 @@ public:
     Point3 worldPositionAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const;
 
 	/// Returns the informational text to be displayed in the status bar for a pickable scene object.
-	QString pickableObjectInformationText(quint32 objectID) const;
+	QString pickableObjectInformationText(uint32_t objectID) const;
 
 private:
 
-    /// A copy of a ObjectPickingGroup that has been encoded as a range of object IDs in the frame buffer.
-	class MappedObjectGroup : public FrameGraph::ObjectPickingGroup
+    /// Describes a pickable rendering primitive that has been encoded as a range of object IDs in the frame buffer.
+	class PickingRecord
 	{
 	public:
 
 		/// Constructor.
-		using FrameGraph::ObjectPickingGroup::ObjectPickingGroup;
+		explicit PickingRecord(uint32_t baseObjectID, const ConstDataBufferPtr& indices, const FrameGraph::RenderingCommand& command) :
+			_baseObjectID(baseObjectID), _indices(indices), _pipeline(command.pipeline()), _pickInfo(command.pickInfo()), _pickElementOffset(command.pickElementOffset()) {}
 
-		/// Returns the base object ID at which the rendering primitives of this group start.
-		quint32 baseObjectID() const { return _baseObjectID; }
+		/// Returns the base object ID at which the rendering primitives start.
+		uint32_t baseObjectID() const { return _baseObjectID; }
 
-		/// Sets the base object ID at which the rendering primitives of this group start.
-		void setBaseObjectID(quint32 id) { _baseObjectID = id; }
+		/// Returns the picked scene pipeline.
+		const OORef<const Pipeline>& pipeline() const { return _pipeline; }
 
-		/// Registers a range of indexed rendering primitives.
-		void addIndexedRange(const ConstDataBufferPtr& buffer, quint32 baseIndex) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
-			_indexedRanges.emplace_back(buffer, baseIndex);
-#else
-			_indexedRanges.push_back(std::make_pair(buffer, baseIndex));
-#endif
-		}
+		/// Returns an optional object that knows what high-level data was picked.
+		const OORef<ObjectPickInfo>& pickInfo() const { return _pickInfo; }
 
 		/// If the global object ID is within the range of this picking group, resolve it to the local object ID.
-		quint32 resolveObjectID(quint32 objectID) const {
+		uint32_t resolveObjectID(uint32_t objectID) const {
 			OVITO_ASSERT(objectID >= baseObjectID());
-			quint32 localID = objectID - baseObjectID();
-			for(const auto& range : _indexedRanges) {
-				if(localID >= range.second && localID < range.second + range.first->size()) {
-					localID = range.second + BufferReadAccess<int32_t>(range.first).get(localID - range.second);
-					break;
-				}
+			uint32_t localID = objectID - baseObjectID();
+			if(_indices) {
+				OVITO_ASSERT(localID >= 0 && localID < _indices->size());
+				localID = BufferReadAccess<int32_t>(_indices).get(localID);
 			}
-			return localID;
+			return localID + _pickElementOffset;
 		}
 
 	private:
 
-		/// If the renderer uses an indexed drawing command, this information allows mapping the rendered primitive indices
-		/// back to the original indices of the data object.
-		QVarLengthArray<std::pair<ConstDataBufferPtr, quint32>, 1> _indexedRanges;
+		/// If the renderer uses an indexed drawing command, this information allows mapping the packed object IDs in the frame buffer
+		/// back to the original indices of the rendering primitive.
+		ConstDataBufferPtr _indices;
+
+		/// The scene pipeline to which this rendering command belongs.
+		/// Note: may be null in rare cases, e.g., when the AmbientOcclusionModifier renders particles using false colors.
+		OORef<const Pipeline> _pipeline;
+
+		/// An optional object that knows what high-level data is being represented by this render command and which sub-elements it consists of.
+		OORef<ObjectPickInfo> _pickInfo;
 
 		/// The base object ID at which the rendering primitives of this group start.
-		quint32 _baseObjectID = 0;
+		uint32_t _baseObjectID;
+
+		/// If this rendering command is part of a composite object that requires multiple rendering commands,
+		/// then this offset indicates where this command's primitive elements start in the composite range.
+		uint32_t _pickElementOffset;
 	};
 
-	/// Given an frame buffer object ID, looks up the corresponding picking group.
-	const MappedObjectGroup* lookupPickingGroupFromObjectId(quint32 objectID) const;
+	/// Given an frame buffer object ID, looks up the corresponding picking record.
+	const PickingRecord* lookupPickingRecordFromObjectId(uint32_t objectID) const;
 
-	/// The object picking groups.
-	std::vector<MappedObjectGroup> _pickingGroups;
+	/// The picking infos of rendered primitives.
+	std::vector<PickingRecord> _pickingRecords;
 
 	/// The next available frame buffer object ID to be used.
-	quint32 _nextAvailablePickingID = 0;
+	uint32_t _nextAvailablePickingID = 1;
 };
 
 }   // End of namespace

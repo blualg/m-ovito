@@ -111,7 +111,7 @@ public:
     /// In console mode, this method just prints the error messages(s) to the console.
     ///
     /// Note that, unless 'blocking' is true, the reporting happens asynchronously in GUI mode.
-    /// The method returns immediately and the error messaeg is displayed to the user at a later time,
+    /// The method returns immediately and the error message is displayed to the user at a later time,
     /// as soon as control returns to the event loop.
     virtual void reportError(const Exception& ex, bool blocking = false);
 
@@ -138,9 +138,6 @@ public:
     /// Tells the UI to process any pending events in the event queue and return immediately.
     /// The function can return true to indicate that the running operation should be canceled.
     virtual bool processUIEvents();
-
-    /// Immediately redraws the viewports to reflect any changes made to the scene.
-    void processViewportUpdateRequests();
 
     /// Returns the manager of the user interface actions.
     ActionManager* actionManager() const { return _actionManager; }
@@ -213,6 +210,28 @@ public:
     template<typename Function>
     bool performTransaction(const QString& undoOperationName, Function&& func) noexcept;
 
+    /// Returns the list of all viewport windows currently associated with this user interface.
+    const std::vector<ViewportWindow*>& viewportWindows() const {
+        OVITO_ASSERT(ExecutionContext::isMainThread());
+        return _viewportWindows;
+    }
+
+    /// Registers a viewport window with this user interface.
+    void registerViewportWindow(ViewportWindow* window) {
+        OVITO_ASSERT(window);
+        OVITO_ASSERT(ExecutionContext::isMainThread());
+        _viewportWindows.push_back(window);
+    }
+
+    /// Unregisters a viewport window from this user interface.
+    void unregisterViewportWindow(ViewportWindow* window) {
+        OVITO_ASSERT(window);
+        OVITO_ASSERT(ExecutionContext::isMainThread());
+        auto it = std::find(_viewportWindows.begin(), _viewportWindows.end(), window);
+        OVITO_ASSERT(it != _viewportWindows.end());
+        _viewportWindows.erase(it);
+    }
+
 protected:
 
     /// Assigns an ActionManager.
@@ -265,6 +284,9 @@ protected:
     /// The manager of ParameterUnit objects.
     UnitsManager _unitsManager;
 
+    /// List of all viewport windows associated with this abstract user interface.
+    std::vector<ViewportWindow*> _viewportWindows;
+
     /// This counter tracks temporary suspension of viewport updates.
     int _viewportSuspendCount = 0;
 
@@ -297,6 +319,8 @@ namespace Ovito {
 template<bool Isolated, typename Function>
 bool UserInterface::handleExceptions(Function&& func) noexcept
 {
+    static_assert(std::is_invocable_v<Function>, "Function must be callable without arguments.");
+    static_assert(std::is_same_v<std::invoke_result_t<Function>, void>, "Function must return void.");
     OVITO_ASSERT(!isBeingDeleted());
 
     // Note: The MainThreadOperation creates a temporary std::shared_ptr<UserInterface>, which keeps the UI alive until function exit.

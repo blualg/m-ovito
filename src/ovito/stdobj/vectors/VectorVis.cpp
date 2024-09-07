@@ -180,7 +180,7 @@ Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuf
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> VectorVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
     PipelineStatus status;
 
@@ -336,14 +336,13 @@ PipelineStatus VectorVis::render(const ConstDataObjectPath& path, const Pipeline
         });
 
     // Get world transformation matrix of scene node.
-    TimeInterval interval;
-    const AffineTransformation& nodeTM = pipeline->getWorldTransform(frameGraph.time(), interval);
+    const AffineTransformation& nodeTM = pipeline->getWorldTransform(frameGraph.time());
 
     // Apply offset translation
     const AffineTransformation tm = AffineTransformation::translation(offset()) * nodeTM;
 
     // Add arrow glyphs to the frame graph.
-    frameGraph.addPrimitive(std::make_unique<CylinderPrimitive>(arrows), tm, frameGraph.addPickingGroup(pipeline, OORef<VectorPickInfo>::create(this, path)));
+    frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::make_unique<CylinderPrimitive>(arrows), tm, arrows.computeBoundingBox(frameGraph.visCache()), pipeline, OORef<VectorPickInfo>::create(this, path));
 
     return status;
 }
@@ -388,7 +387,7 @@ size_t VectorPickInfo::elementIndexFromSubObjectID(quint32 subobjID) const
 * Returns a human-readable string describing the picked object,
 * which will be displayed in the status bar by OVITO.
 ******************************************************************************/
-QString VectorPickInfo::infoString(Pipeline* pipeline, quint32 subobjectId)
+QString VectorPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 {
     size_t elementIndex = elementIndexFromSubObjectID(subobjectId);
     if(elementIndex != std::numeric_limits<size_t>::max()) {

@@ -450,6 +450,8 @@ void Property::throwIfInvalidPropertyName(const QStringView name)
         throw Exception(tr("Invalid property name: '%1'. OVITO property names must not start with whitespace.").arg(name));
     if(name.endsWith(QChar(' ')))
         throw Exception(tr("Invalid property name: '%1'. OVITO property names must not end with whitespace.").arg(name));
+    if(name.endsWith(QChar('_')))
+        throw Exception(tr("Invalid property name: '%1'. OVITO property names must not end with an underscore.").arg(name));
 }
 
 /******************************************************************************
@@ -461,6 +463,10 @@ QString Property::makePropertyNameValid(const QString& name)
     mangledName.replace(QChar('.'), QChar('_'));
     mangledName.replace(QChar('/'), QChar('_'));
     mangledName.replace(QChar(':'), QChar('_'));
+    // Remove all underscores from the end of the name, because they interfere with
+    // the "underscore notation" in OVITO's Python API (PropertyContainer dict lookup).
+    while(mangledName.endsWith(QChar('_')))
+        mangledName.chop(1);
     return mangledName;
 }
 

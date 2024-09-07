@@ -57,7 +57,7 @@ public:
 public:
 
     /// Renders the visual element.
-    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
+    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the visual element.
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
@@ -106,13 +106,13 @@ public:
 private:
 
     /// Renders particle types that have a mesh-based shape assigned.
-    void renderMeshBasedParticles(const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline);
+    void renderMeshBasedParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const Pipeline* pipeline, const AffineTransformation& tm) const;
 
     /// Renders all particles with a primitive shape (spherical, box, (super)quadrics).
-    void renderPrimitiveParticles(const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline);
+    void renderPrimitiveParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const Pipeline* pipeline, const AffineTransformation& tm) const;
 
     /// Renders all particles with a (sphero-)cylindrical shape.
-    void renderCylindricParticles(const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline);
+    void renderCylindricParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const Pipeline* pipeline, const AffineTransformation& tm) const;
 
 private:
 
@@ -140,7 +140,7 @@ class OVITO_PARTICLES_EXPORT ParticlePickInfo : public ObjectPickInfo
 public:
 
     /// Constructor.
-    void initializeObject(ParticlesVis* visElement, DataOORef<const Particles> particles, ConstDataBufferPtr subobjectToParticleMapping = {}) {
+    void initializeObject(const ParticlesVis* visElement, DataOORef<const Particles> particles, ConstDataBufferPtr subobjectToParticleMapping = {}) {
         ObjectPickInfo::initializeObject();
         _visElement = visElement;
         _particles = std::move(particles);
@@ -154,16 +154,16 @@ public:
     void setParticles(DataOORef<const Particles> particles) { _particles = std::move(particles); }
 
     /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-    virtual QString infoString(Pipeline* pipeline, quint32 subobjectId) override;
+    virtual QString infoString(const Pipeline* pipeline, uint32_t subobjectId) override;
 
     /// Given an sub-object ID returned by the Viewport::pick() method, looks up the
     /// corresponding particle index.
-    size_t particleIndexFromSubObjectID(quint32 subobjID) const;
+    size_t particleIndexFromSubObjectID(uint32_t subobjID) const;
 
 private:
 
     /// The vis element that rendered the particles.
-    OORef<ParticlesVis> _visElement;
+    OORef<const ParticlesVis> _visElement;
 
     /// The particles object.
     DataOORef<const Particles> _particles;

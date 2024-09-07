@@ -85,17 +85,15 @@ public:
     /// Associates this window with a viewport.
     void setViewport(Viewport* vp, UserInterface& userInterface);
 
+    /// This method is called after the reference counter of this object has reached zero
+    /// and before the object is being finally deleted.
+    virtual void aboutToBeDeleted() override;
+
     /// Returns the abstract user interface hosting this viewport window.
     UserInterface& userInterface() const { OVITO_ASSERT(_userInterface); return *_userInterface; }
 
     /// Returns the object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
     ScenePreparation& scenePreparation() { OVITO_ASSERT(_scenePreparation); return *_scenePreparation; }
-
-    /// Returns the current frame graph displayed in the viewport window.
-    const std::shared_ptr<FrameGraph>& frameGraph() const { return _frameGraph; }
-
-    /// Sets the frame graph to be displayed in the viewport window.
-    void setFrameGraph(std::shared_ptr<FrameGraph> frameGraph) { _frameGraph = std::move(frameGraph); }
 
     /// Creates and returns the rendering job that renders the contents of the viewport window.
     const OORef<RenderingJob>& renderingJob() {
@@ -198,12 +196,11 @@ public:
 
 public Q_SLOTS:
 
+    /// Releases the renderer resources held by the viewport window and the renderer.
+    virtual void releaseResources();
+
     /// Schedules a refresh for this window.
     void requestUpdate();
-
-    /// If an update request is pending for this viewport window, immediately
-    /// processes it and redraw the window contents.
-    void processViewportUpdate();
 
     /// Zooms to the extents of the scene.
     void zoomToSceneExtents();
@@ -213,11 +210,6 @@ public Q_SLOTS:
 
     /// Zooms to the extents of the scene once all scene pipelines have been computed.
     void zoomToSceneExtentsWhenReady();
-
-private Q_SLOTS:
-
-    /// Is called when the viewport's scene has changed and a rerendering is required.
-    void handleUpdateRequest();
 
 Q_SIGNALS:
 
@@ -234,6 +226,9 @@ Q_SIGNALS:
 
 protected:
 
+    /// Tells the window implementation to present a rendered frame on screen.
+    virtual void presentFrame() = 0;
+
     /// Handles timer events for this object.
     virtual void timerEvent(QTimerEvent* event) override;
 
@@ -241,7 +236,7 @@ protected:
     virtual OORef<RenderingJob> createRenderingJob() = 0;
 
     /// Newly renders the window contents after the frame graph has been regenerated.
-    virtual void rerender() = 0;
+    virtual Future<void> renderFrameGraph(OORef<FrameGraph> frameGraph) = 0;
 
     /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
@@ -249,18 +244,18 @@ protected:
     /// Replaces the rendering job used by this window to render its contents.
     void setRenderingJob(OORef<RenderingJob> job) { _renderingJob = std::move(job); }
 
-    /// Modifies the projection such that the render frame painted over the 3d scene exactly matches the true visible area.
-    void adjustProjectionForRenderFrame(DataSet* dataset, ViewProjectionParameters& params, const QSize& windowSize);
+    /// Modifies the projection such that the render preview frame painted over the 3d scene exactly matches the true visible area.
+    void adjustProjectionForRenderPreviewFrame(DataSet* dataset, ViewProjectionParameters& params, const QSize& windowSize);
 
     /// Render the axis tripod symbol in the corner of the viewport that indicates
     /// the coordinate system orientation.
-    void renderOrientationIndicator(FrameGraph& frameGraph, const QSize& windowSize);
+    void renderOrientationIndicator(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QSize& windowSize);
 
     /// Paints the rectangular frame on top of the scene to indicate the visible image area.
-    void renderPreviewFrame(FrameGraph& frameGraph, DataSet* dataset, const QSize& windowSize);
+    void renderPreviewFrame(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, DataSet* dataset, const QSize& windowSize);
 
     /// Renders the viewport caption text.
-    QRectF renderViewportTitle(FrameGraph& frameGraph);
+    QRectF renderViewportTitle(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup);
 
 	/// Renders the visual representation of the modifiers in a pipeline.
 	void renderPipelineModifiers(Pipeline* pipeline, FrameGraph& frameGraph);
@@ -270,6 +265,17 @@ protected:
 
 	/// Renders the construction grid in a viewport.
 	void renderConstructionGrid(FrameGraph& frameGraph);
+
+private:
+
+    /// Generates the frame graph for this viewport window and calls the attached RenderingJob to render the frame.
+    Future<void> buildAndRenderFrameGraph();
+
+    /// Is called once the frame has been rendered by the window's RenderingJob.
+    void frameGraphRenderingFinished(Task& task) noexcept;
+
+    /// Is called when a rendered frame needs to be presented on screen.
+    void becameReadyForPresentation();
 
 private:
 
@@ -290,11 +296,17 @@ private:
     /// Object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
     OORef<ScenePreparation> _scenePreparation;
 
-    /// Indicates that a rerendering of the viewport has been requested by the program.
-    bool _updateRequested = false;
+    /// Indicates that the program has requested an update of this viewport window.
+    bool _updateNeeded = false;
 
-    /// Used to update the viewport contents after a short waiting period.
-    QBasicTimer _updateTimer;
+    /// The future object representing the asynchronous operation of updating the viewport contents.
+    Future<void> _frameFuture;
+
+    /// Indicates that this viewport window can now present a new image on screen.
+    bool _readyForPresentation = false;
+
+    /// Used to present the viewport contents after a short waiting period.
+    QBasicTimer _presentTimer;
 
     /// Controls the visibility of the orientation indicator.
     bool _showOrientationIndicator = true;
@@ -309,9 +321,6 @@ private:
     /// Indicates that the mouse cursor is currently positioned inside the
     /// viewport window area that activates the context menu.
     bool _cursorInContextMenuArea = false;
-
-    /// The current frame graph displayed in the viewport window.
-    std::shared_ptr<FrameGraph> _frameGraph;
 
     /// The current 3D projection for rendering the contents of the viewport window.
     ViewProjectionParameters _projParams;

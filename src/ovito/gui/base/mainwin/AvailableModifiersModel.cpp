@@ -257,7 +257,11 @@ void AvailableModifiersModel::updateModelLists()
                     _modelActions.push_back(action);
                     _modelStrings.push_back(action->text());
                 }
+#ifndef OVITO_BUILD_BASIC
                 if(_categoryNames[categoryIndex] == tr("Python modifiers")) {
+#else
+                if(_categoryNames[categoryIndex] == tr("Python modifiers (Pro)")) {
+#endif
                     _getMoreExtensionsItemIndex = _modelStrings.size();
                     _modelActions.push_back(nullptr);
                     _modelStrings.push_back(tr("Get more modifiers..."));

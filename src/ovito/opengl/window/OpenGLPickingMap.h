@@ -50,7 +50,7 @@ public:
     void acquire(const OORef<AbstractRenderingFrameBuffer>& frameBuffer);
 
     /// Returns the frame buffer object ID at the given frame buffer location.
-    virtual quint32 objectIdentifierAt(const QPoint& pos) const override;
+    virtual uint32_t objectIdentifierAt(const QPoint& pos) const override;
 
     /// Returns the z-value at the given frame buffer location.
     virtual FloatType depthAt(const QPoint& frameBufferLocation) const override;

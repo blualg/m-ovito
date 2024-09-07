@@ -15,19 +15,18 @@ and a discrete color legend for the ``Particle Type`` property:
 .. image:: /images/viewport_layers/color_legend_example.*
    :width: 60%
 
-Color source
-""""""""""""
+Color legend source
+"""""""""""""""""""
 
-The selected :guilabel:`Color legend source` determines where the legend takes
-its colors from. In the current program version, three types of sources are available
-in the drop-down list:
+The legend obtains the displayed :guilabel:`Color mapping` from the selected :guilabel:`Pipeline`.
+In the current program version, three types of color mapping sources are shown in the drop-down list:
 
 Color coding modifier
-  If the current data pipeline contains a :ref:`Color coding <particles.modifiers.color_coding>` modifier, the legend can display its
+  If the selected data pipeline contains a :ref:`Color coding <particles.modifiers.color_coding>` modifier, the legend can display its
   gradient and min/max value interval.
 
 Typed properties
-  Alternatively, the legend can display a list of discrete element types associated with a :ref:`typed property <scene_objects.particle_types>` in the data pipeline's output.
+  Alternatively, the legend can display a list of discrete element types associated with a :ref:`typed property <scene_objects.particle_types>` in the pipeline's output.
   Typical examples are the particle properties ``Particle Type``, ``Structure Type`` or ``Residue Type``.
   The legend will display the name and color of each type defined for the selected source property.
 
@@ -37,10 +36,10 @@ Typed properties
     It may be necessary to insert a :ref:`Color by type <particles.modifiers.color_by_type>` modifier
     into the pipeline to actually give particles and bonds their corresponding colors.
 
-Pseudo color mappings
+Pseudo-color mappings
   Some :ref:`visual elements <visual_elements>` provide an option to color
-  objects or surfaces based on a local property. If such a color mapping function has been activated
-  for some visual element in the scene, it can be selected as the source of the color legend layer.
+  discrete elements or surfaces based on some local property. If such a color mapping function has been activated
+  for a visual element in the scene, you can select it here as source for the color legend.
 
 Options
 """""""

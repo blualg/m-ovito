@@ -349,6 +349,13 @@ public:
         // TODO: Merge adjacent time intervals.
     }
 
+    /// Tests if the given interval overlaps with this union of intervals on at least one instance of time.
+    bool overlap(const TimeInterval& iv) const {
+        return std::any_of(cbegin(), cend(), [&](const TimeInterval& interval) {
+            return interval.overlap(iv);
+        });
+    }
+
     // Inherited const methods from QVarLengthArray.
     using base_class::begin;
     using base_class::end;

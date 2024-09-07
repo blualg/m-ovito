@@ -103,6 +103,7 @@ void UserInterface::shutdownComplete()
     if(_selfGuard) {
         if(QThread::currentThread()->loopLevel() != 0) {
             // Move the self-guard into a lambda function, which gets processed when control returns to the Qt event loop.
+            // The lambda's destructor will free the self-guard object and stop the event loop.
             OVITO_ASSERT(Application::instance()->isShuttingDown() == false);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
             Application::instance()->taskManager().submitWork(Application::instance(), [s = std::move(_selfGuard), locker = QEventLoopLocker()]() noexcept {}, true);
@@ -159,21 +160,6 @@ bool UserInterface::processUIEvents()
 std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, int height)
 {
     return std::make_shared<FrameBuffer>(width, height);
-}
-
-/******************************************************************************
-* Immediately redraws the viewports to reflect any changes made to the scene.
-******************************************************************************/
-void UserInterface::processViewportUpdateRequests()
-{
-    if(ViewportConfiguration* viewportConfig = datasetContainer().activeViewportConfig()) {
-        // Note: For a better user experience, redraw the active viewport first, then the others.
-        if(Viewport* vp = viewportConfig->activeViewport())
-            vp->processUpdateRequest();
-        for(Viewport* vp : viewportConfig->viewports())
-            if(vp != viewportConfig->activeViewport())
-                vp->processUpdateRequest();
-    }
 }
 
 /******************************************************************************

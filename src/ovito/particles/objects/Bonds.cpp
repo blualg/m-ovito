@@ -621,7 +621,7 @@ VectorVis::VectorData Bonds::getVectorVisData(const ConstDataObjectPath& path, c
                     }
                     basePositions = centers.take();
                 });
-            return {basePositions, path.lastAs<DataBuffer>(), nullptr, nullptr};
+            return { basePositions, path.lastAs<DataBuffer>(), nullptr, nullptr };
         }
     }
     return {};

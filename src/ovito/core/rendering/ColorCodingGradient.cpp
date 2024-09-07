@@ -68,7 +68,7 @@ ConstDataBufferPtr ColorCodingGradient::getColorMap()
 /******************************************************************************
 * Converts a scalar value to a color value.
 ******************************************************************************/
-Color ColorCodingTableGradient::valueToColor(FloatType t)
+Color ColorCodingTableGradient::valueToColor(FloatType t) const
 {
     OVITO_ASSERT(t >= 0.0 && t <= 1.0);
     if(table().empty()) return Color(0,0,0);
@@ -95,7 +95,7 @@ void ColorCodingImageGradient::loadImage(const QString& filename)
 /******************************************************************************
 * Converts a scalar value to a color value.
 ******************************************************************************/
-Color ColorCodingImageGradient::valueToColor(FloatType t)
+Color ColorCodingImageGradient::valueToColor(FloatType t) const
 {
     OVITO_ASSERT(t >= 0.0 && t <= 1.0);
     if(image().isNull())

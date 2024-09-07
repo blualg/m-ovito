@@ -79,6 +79,8 @@ void SceneNode::initializeObject(ObjectInitializationFlags flags)
 ******************************************************************************/
 const AffineTransformation& SceneNode::getWorldTransform(AnimationTime time, TimeInterval& validityInterval) const
 {
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
     if(!_worldTransformValidity.contains(time)) {
         _worldTransformValidity.setInfinite();
         _worldTransform.setIdentity();
@@ -101,6 +103,8 @@ const AffineTransformation& SceneNode::getWorldTransform(AnimationTime time, Tim
 ******************************************************************************/
 AffineTransformation SceneNode::getLocalTransform(AnimationTime time, TimeInterval& validityInterval) const
 {
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
     AffineTransformation result = AffineTransformation::Identity();
     if(transformationController())
         transformationController()->applyTransformation(time, result, validityInterval);
@@ -113,6 +117,8 @@ AffineTransformation SceneNode::getLocalTransform(AnimationTime time, TimeInterv
 ******************************************************************************/
 void SceneNode::invalidateWorldTransformation()
 {
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
     _worldTransformValidity.setEmpty();
     invalidateBoundingBox();
     for(SceneNode* child : children())
@@ -311,6 +317,7 @@ void SceneNode::invalidateBoundingBox()
 void SceneNode::insertChildNode(qsizetype index, OORef<SceneNode> newChild)
 {
     OVITO_CHECK_OBJECT_POINTER(newChild);
+    OVITO_ASSERT(ExecutionContext::isMainThread());
 
     // Check whether it is already a child of this parent.
     if(newChild->parentNode() == this) {
@@ -345,6 +352,7 @@ void SceneNode::insertChildNode(qsizetype index, OORef<SceneNode> newChild)
 void SceneNode::removeChildNode(qsizetype index)
 {
     OVITO_ASSERT(index >= 0 && index < children().size());
+    OVITO_ASSERT(ExecutionContext::isMainThread());
 
     OORef<SceneNode> child = children()[index];
     OVITO_ASSERT_MSG(child->parentNode() == this, "SceneNode::removeChildNode()", "The node to be removed is not a child of this parent node.");
@@ -460,6 +468,8 @@ Box3 SceneNode::localBoundingBox(AnimationTime time) const
 ******************************************************************************/
 Box3 SceneNode::worldBoundingBox(AnimationTime time, Viewport* vp) const
 {
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
     if(vp && isHiddenInViewport(vp, true))
         return Box3();
     TimeInterval iv;
@@ -477,6 +487,7 @@ Box3 SceneNode::worldBoundingBox(AnimationTime time, Viewport* vp) const
 void SceneNode::setPerViewportVisibility(Viewport* vp, bool visible)
 {
     OVITO_ASSERT(vp);
+    OVITO_ASSERT(ExecutionContext::isMainThread());
 
     if(visible) {
         int index = _hiddenInViewports.indexOf(vp);
@@ -496,6 +507,8 @@ void SceneNode::setPerViewportVisibility(Viewport* vp, bool visible)
 bool SceneNode::isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) const
 {
     OVITO_ASSERT(vp);
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
     if(_hiddenInViewports.contains(vp))
         return true;
     if(includeHierarchyParent && parentNode())

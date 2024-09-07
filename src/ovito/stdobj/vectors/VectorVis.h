@@ -79,8 +79,7 @@ public:
     void initializeObject(ObjectInitializationFlags flags);
 
     /// Lets the visualization element render the data object.
-    virtual PipelineStatus render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph,
-                                  const Pipeline* pipeline) override;
+    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
 
     /// Computes the bounding box of the object.
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline,
@@ -163,7 +162,7 @@ public:
     const ConstDataObjectRefPath& dataPath() const { return _dataPath; }
 
     /// Returns a human-readable string describing the picked object, which will be displayed in the status bar by OVITO.
-    virtual QString infoString(Pipeline* pipeline, quint32 subobjectId) override;
+    virtual QString infoString(const Pipeline* pipeline, uint32_t subobjectId) override;
 
     /// Given an sub-object ID returned by the Viewport::pick() method, looks up the
     /// corresponding data element index.

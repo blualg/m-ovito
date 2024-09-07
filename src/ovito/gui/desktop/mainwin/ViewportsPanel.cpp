@@ -324,7 +324,6 @@ void ViewportsPanel::createViewportWindows()
                 if(_viewportConfig && _viewportConfig->activeViewport() == viewport)
                     viewportWindow->widget()->setFocus();
                 _viewportWindows.push_back(viewportWindow);
-                return viewportWindow->widget();
             });
             if(!success)
                 _windowCreationErrorOccurred = true;

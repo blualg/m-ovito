@@ -49,16 +49,6 @@ void BaseViewportWindow::aboutToBeDeleted()
 }
 
 /******************************************************************************
-* Releases the renderer resources held by the viewport window and the renderer.
-******************************************************************************/
-void BaseViewportWindow::releaseResources()
-{
-    // Release current frame graph and rendering job.
-    setFrameGraph({});
-    setRenderingJob({});
-}
-
-/******************************************************************************
 * Returns the input manager handling mouse events of the viewport (if any).
 ******************************************************************************/
 ViewportInputManager* BaseViewportWindow::inputManager() const

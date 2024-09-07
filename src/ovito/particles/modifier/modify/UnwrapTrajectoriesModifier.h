@@ -56,7 +56,7 @@ public:
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
+    Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state, SharedFuture<void> unwrapFuture);
 };
 
 /**
@@ -94,7 +94,7 @@ public:
     const std::vector<UnflipRecord>& unflipRecords() const { return _unflipRecords; }
 
     /// Processes all frames of the input trajectory to detect periodic crossings of the particles.
-    SharedFuture<void> detectPeriodicCrossings(const ModifierEvaluationRequest& request);
+    SharedFuture<void> detectPeriodicCrossings(const ModifierEvaluationRequest& request, SharedFuture<void> unwrapFuture);
 
     /// Unwraps the current particle coordinates.
     void unwrapParticleCoordinates(const ModifierEvaluationRequest& request, PipelineFlowState& state);
@@ -103,6 +103,9 @@ public:
     virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
 
 protected:
+
+    /// Launches an asynchronous task to evaluate the node's modifier.
+    virtual SharedFuture<PipelineFlowState> launchModifierEvaluation(ModifierEvaluationRequest&& request, SharedFuture<PipelineFlowState> inputFuture) override;
 
     /// Saves the class' contents to an output stream.
     virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
@@ -123,7 +126,7 @@ protected:
 private:
 
     /// The operation that processes all trajectory frames in the background to detect periodic crossings of particles.
-    WeakSharedFuture<void> _unwrapOperation;
+    WeakSharedFuture<void> _unwrapWeakFuture;
 
     /// The animation time up to which trajectories have already been unwrapped so far.
     AnimationTime _unwrappedUpToTime = AnimationTime::negativeInfinity();

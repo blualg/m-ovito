@@ -41,8 +41,7 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 
     mainWindow().handleExceptions([&] {
 
-        // Set input focus to main window.
-        // This will process any pending user inputs in QLineEdit fields that haven't been processed yet.
+        // Set focus to main window to process any pending user inputs in QLineEdit widgets.
         mainWindow().setFocus();
 
         // Stop animation playback in the interactive viewports before rendering an image.

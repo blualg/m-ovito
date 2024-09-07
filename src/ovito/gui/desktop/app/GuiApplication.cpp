@@ -118,11 +118,15 @@ QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& 
 #endif
 
 #if defined(Q_OS_WIN) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
-        // Use Fusion UI style on Windows (Qt 6.5+) to enable dark mode support (can be changed by the user in the application settings).
-        QSettings settings;
-        if(settings.value("ui/automatic_dark_mode", false).toBool()) {
+        // Use Fusion UI style on Windows to enable dark mode support (can be changed by the user in the application settings).
+        // If dark mode is not enabled in the application settings (default), use the classic Windows Vista UI style.
+        if(automaticallyEnableDarkMode()) {
             qputenv("QT_QPA_PLATFORM", "windows:darkmode=2");
             QApplication::setStyle("Fusion");
+        }
+        else {
+            qputenv("QT_QPA_PLATFORM", "windows:darkmode=0");
+            QApplication::setStyle("windowsvista");
         }
 #elif defined(Q_OS_LINUX)
         // Always enforce Fusion UI style on Linux.
@@ -467,7 +471,6 @@ bool GuiApplication::automaticallyEnableDarkMode()
         return false;
     #endif
 #endif
-
 }
 
 /******************************************************************************

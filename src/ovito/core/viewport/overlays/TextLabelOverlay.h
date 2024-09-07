@@ -42,7 +42,7 @@ class OVITO_CORE_EXPORT TextLabelOverlay : public ViewportOverlay
 public:
 
     /// Lets the overlay paint its contents into the framebuffer.
-    virtual void render(FrameGraph& frameGraph, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene) override;
+    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams, const Scene* scene) override;
 
     /// Moves the position of the overlay in the viewport by the given amount,
     /// which is specified as a fraction of the viewport render size.
@@ -63,7 +63,7 @@ protected:
 private:
 
     /// This method paints the overlay contents onto the given canvas.
-    void renderImplementation(FrameGraph& frameGraph, const QRect& targetRect, const PipelineFlowState& flowState);
+    PipelineStatus renderImplementation(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRect& targetRect, const PipelineFlowState& flowState);
 
     /// The corner of the viewport where the label is shown in.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(int{Qt::AlignLeft | Qt::AlignTop}, alignment, setAlignment, PROPERTY_FIELD_MEMORIZE);

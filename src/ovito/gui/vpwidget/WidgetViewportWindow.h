@@ -43,7 +43,7 @@ public:
     /// Associates this window with a viewport and creates the UI widget.
     void initializeWindow(Viewport* vp, UserInterface& userInterface, QWidget* parent);
 
-    /// Returns the QWidget that is associated with this viewport window.
+    /// Returns the QWidget encapsulated by this ViewportWindow object.
     QWidget* widget() const { return _widget; }
 
     /// Indicates whether the window is currently shown or not.
@@ -82,8 +82,14 @@ protected:
     /// and before the object is being finally deleted.
     virtual void aboutToBeDeleted() override;
 
-    /// Creates the UI widget that is associated with this viewport window.
-    virtual QWidget* createWidget(QWidget* parent) = 0;
+    /// Creates the Qt widget that is associated with this viewport window.
+    virtual QWidget* createQtWidget(QWidget* parent) = 0;
+
+    /// Tells the window implementation to present a rendered frame on screen.
+    virtual void presentFrame() override {
+        if(widget())
+            widget()->update();
+    }
 
     /// Filters events sent to the widget.
     bool eventFilter(QObject* obj, QEvent* event) override;

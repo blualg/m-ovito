@@ -298,8 +298,7 @@ void RenderSettingsEditor::onSwitchRenderer()
 
     // Filter out internal renderer implementations, which should not be visible to the user.
     // Internal renderer implementation have no UI description string.
-    rendererClasses.erase(std::remove_if(rendererClasses.begin(), rendererClasses.end(),
-        [](OvitoClassPtr clazz) { return clazz->descriptionString().isEmpty(); }), rendererClasses.end());
+    erase_if(rendererClasses, [](OvitoClassPtr clazz) { return clazz->descriptionString().isEmpty(); });
 
     // Preferred ordering of renderers:
     const QStringList displayOrdering = {

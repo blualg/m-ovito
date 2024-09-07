@@ -286,7 +286,7 @@ ParticleInputColumnMapping AMBERNetCDFImporter::NetCDFFile::detectColumnMapping(
                     _coordinatesVar = varId;
             }
             else {
-                qDebug() << "Skipping NetCDF variable " << name << " because data type is not known.";
+                qWarning() << "Skipping NetCDF variable " << name << " because data type is not known.";
             }
         }
     }
@@ -618,7 +618,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
                 return;
         }
         else {
-            qDebug() << "Warning: Skipping field '" << columnName << "' of NetCDF file because it has an unrecognized data type.";
+            qWarning() << "Warning: Skipping field '" << columnName << "' of NetCDF file because it has an unrecognized data type.";
         }
     }
 
@@ -729,6 +729,18 @@ Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const 
             // Scan NetCDF file and enumerate supported column names.
             return ncFile.detectColumnMapping();
         });
+}
+
+/******************************************************************************
+* Is called when the value of a non-animatable property field of this RefMaker has changed.
+******************************************************************************/
+void AMBERNetCDFImporter::propertyChanged(const PropertyFieldDescriptor* field)
+{
+    ParticleImporter::propertyChanged(field);
+
+    if((field == PROPERTY_FIELD(customColumnMapping) || field == PROPERTY_FIELD(useCustomColumnMapping)) && !isBeingLoaded()) {
+        requestReload();
+    }
 }
 
 /******************************************************************************

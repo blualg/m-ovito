@@ -25,9 +25,9 @@
 
 #include <ovito/core/Core.h>
 #include "TaskWithStorage.h"
-#include "TaskDependency.h"
-#include "TaskCallback.h"
-#include "../ExecutionContext.h"
+#include "TaskAwaiter.h"
+#include "../InlineExecutor.h"
+#include "../Promise.h"
 
 namespace Ovito::detail {
 
@@ -35,7 +35,7 @@ namespace Ovito::detail {
  * \brief The type of task that is returned by the Future::then() method.
  */
 template<typename R>
-class ContinuationTask : public TaskWithStorage<R>, private TaskCallbackBase
+class ContinuationTask : public TaskWithStorage<R>, public TaskAwaiter
 {
 public:
 
@@ -46,61 +46,25 @@ public:
     template<typename InitialValue>
     explicit ContinuationTask(Task::State initialState, InitialValue&& initialResult) noexcept :
             TaskWithStorage<R>(initialState, std::forward<InitialValue>(initialResult)),
-            TaskCallbackBase(&taskStateChangedCallback)
+            TaskAwaiter(static_cast<Task&>(*this))
     {
         OVITO_ASSERT(!(initialState & (Task::Canceled | Task::Finished)));
-
-        // Insert into own linked list of callbacks.
-        _nextInList = TaskWithStorage<R>::_callbacks;
-        TaskWithStorage<R>::_callbacks = this;
-    }
-
-    /// Moves the dependency on the preceding task out of this task object.
-    /// Note: Make sure this task's mutex is locked when calling this function.
-    TaskDependency takeAwaitedTask() noexcept {
-        return std::move(_awaitedTask);
-    }
-
-    /// Runs the given continuation function once the given task reaches the 'finished' state.
-    template<typename Executor, typename Function>
-    void whenTaskFinishes(TaskDependency awaitedTask, Executor&& executor, Function&& f) noexcept {
-        OVITO_ASSERT(awaitedTask);
-
-        // Attach to the task to be waited on.
-        Task::MutexLock lock(*this);
-        OVITO_ASSERT(!_awaitedTask);
-        if(this->isCanceled()) {
-            lock.unlock();
-            // Bail out and do not attach to the input task if this continuation task is already canceled.
-            // Still run continuation function, because the caller may depend on it.
-            std::forward<Executor>(executor).execute(std::forward<Function>(f));
-            return;
-        }
-        OVITO_ASSERT(!this->isFinished());
-        _awaitedTask = std::move(awaitedTask);
-        TaskPtr t = _awaitedTask.get();
-        lock.unlock();
-
-        // Run the work function once the task finishes.
-        t->addContinuation(std::forward<Executor>(executor), std::forward<Function>(f));
     }
 
     /// Sets the result of this task upon completion of the preceding task.
     template<typename Function, typename FutureType>
     void fulfillWith(PromiseBase&& promise, Function&& f, FutureType&& future) noexcept {
-        OVITO_ASSERT(!_awaitedTask);
+        OVITO_ASSERT(!awaitedTask());
         OVITO_ASSERT(!this->isFinished());
         OVITO_ASSERT(promise.task().get() == this);
-        OVITO_ASSERT(future.isValid() && future.isFinished());
-        OVITO_ASSERT(!this->isFinished());
+        OVITO_ASSERT(future.isFinished());
+        try {
+            // Execute the continuation function in the scope of this task object.
+            Task::Scope taskScope(this);
 
-        // Execute the continuation function in the scope of this task object.
-        Task::Scope taskScope(this);
-
-        // Inspect return value type of the continuation function.
-        if constexpr(!detail::returns_future_v<Function, FutureType>) {
-            // Continuation function returns a result value or void.
-            try {
+            // Inspect return value type of the continuation function.
+            if constexpr(!detail::returns_future_v<Function, FutureType>) {
+                // Continuation function returns a result value or void.
                 if constexpr(!detail::returns_void_v<Function, FutureType>) {
                     // Function returns non-void results.
                     if constexpr(!std::is_invocable_v<Function, FutureType>)
@@ -133,17 +97,11 @@ public:
                         std::invoke(std::forward<Function>(f), std::forward<FutureType>(future));
                     }
                 }
-
                 this->setFinished();
             }
-            catch(...) {
-                this->captureExceptionAndFinish();
-            }
-        }
-        else {
-            // The continuation function returns a new future, whose result will be used to fulfill this task.
-            std::decay_t<callable_result_t<Function, FutureType>> nextFuture;
-            try {
+            else {
+                // The continuation function returns a new future, whose result will be used to fulfill this task.
+                std::decay_t<callable_result_t<Function, FutureType>> nextFuture;
                 // Call the continuation function with the results of the finished task or the finished future itself.
                 if constexpr(!std::is_invocable_v<Function, FutureType>) {
                     if constexpr(!std::is_void_v<typename FutureType::result_type>) {
@@ -157,95 +115,79 @@ public:
                 else {
                     nextFuture = std::invoke(std::forward<Function>(f), std::forward<FutureType>(future));
                 }
+                handleUnwrappedFuture(std::move(promise), std::move(nextFuture));
             }
-            catch(...) {
-                this->captureExceptionAndFinish();
-                return;
-            }
-            OVITO_ASSERT(nextFuture.isValid());
-
-            // The new future's task now becomes the one we wait for.
-            Task::MutexLock lock(*this);
-            // This continuation task might have been canceled. In this case, there is no need to attach to the new future.
-            if(this->isCanceled()) {
-                this->finishLocked(lock);
-                return;
-            }
-            _awaitedTask = nextFuture.task();
-            lock.unlock();
-
-            // Get results from the future's task once it completes and use it as the results of this continuation task.
-            nextFuture.task()->addContinuation([promise = std::move(promise)]() mutable noexcept {
-
-                // Thread-safe access to the ContinuationTask.
-                ContinuationTask* thisTask = static_cast<ContinuationTask*>(promise.task().get());
-                Task::MutexLock lock(*thisTask);
-
-                // Get the task that did just finish.
-                TaskDependency finishedTask = thisTask->takeAwaitedTask();
-
-                // Bail out if the preceding task has been canceled, or if the continuation has been canceled.
-                if(!finishedTask || finishedTask->isCanceled()) {
-                    return; // Note: The Promise's destructor automatically puts the continuation task into 'canceled' and 'finished' states if it isn't already.
-                }
-
-                // There is a small chance that the continuation task was canceled in the meantime but hasn't let go of the awaited task yet
-                // (because finishing and running the registered continuation functions is not an atomic operation).
-                // We need to check for this situation here and bail out if it happened.
-                if(thisTask->isFinished()) {
-                    return;
-                }
-
-                // If the preceding task failed, inherit the error state.
-                if(finishedTask->exceptionStore()) {
-                    thisTask->exceptionLocked(finishedTask->exceptionStore());
-                }
-                else {
-                    // Adopt result value from the completed future.
-                    if constexpr(!std::is_void_v<R>) {
-                        if constexpr(is_shared_future_v<decltype(nextFuture)>)
-                            thisTask->setResult(finishedTask->template getResult<R>());
-                        else
-                            thisTask->setResult(finishedTask->template takeResult<R>());
-                    }
-                }
-
-                thisTask->finishLocked(lock);
-            });
         }
+        catch(...) {
+            this->captureExceptionAndFinish();
+        }
+    }
+
+protected:
+
+    /// Uses the results of the given future to fulfill this task.
+    void handleUnwrappedFuture(PromiseBase promise, auto&& future) noexcept {
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 11
+        // Workaround for a deficiency in GCC 10: The compiler stops with the error "not a valid template argument...must be a pointer-to-member of the form ‘&X::Y",
+        // because finalResultsAvailable() is a template member function. To work around this, we define two non-templated helper functions that forward to the templated one.
+        if constexpr(is_shared_future_v<decltype(future)>)
+            whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailableShared>(
+                std::move(future),
+                InlineExecutor{},
+                std::move(promise));
+        else
+            whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailableExclusive>(
+                std::move(future),
+                InlineExecutor{},
+                std::move(promise));
+#else
+        // Schedule the continuation task to run once the new future completes.
+        // We are passing the type of the future (Future or SharedFuture) to the callback routine via a template parameter,
+        // because this information would otherwise get lost when we unpack the task dependency from the future.
+        whenTaskFinishes<ContinuationTask, &ContinuationTask::finalResultsAvailable<is_shared_future_v<decltype(future)>>>(
+            std::move(future),
+            InlineExecutor{},
+            std::move(promise));
+#endif
     }
 
 private:
 
-    /// This function gets invoked when the state of this task changes.
-    static bool taskStateChangedCallback(TaskCallbackBase* f, int state, Task::MutexLock& lock) noexcept {
-        // Canceled either gets canceled or finished. Other state changes are not possible.
-        OVITO_ASSERT(state & (Task::Finished | Task::Canceled));
-
-        // When this task gets canceled, we discard the reference to the
-        // task we are waiting for in order to cancel that one as well.
-        ContinuationTask* self = static_cast<ContinuationTask*>(f);
-
-        // Move the dependency on the preceding task out of this object. This may implicitly cancel the
-        // awaited task when the reference goes out of scope.
-        if(auto awaitedTask = self->takeAwaitedTask()) {
-            // Note: It's critical to first unlock the mutex before releasing the reference to the awaited task.
-            lock.unlock();
-            awaitedTask.reset();
-            lock.lock();
-        }
-
-        // When this task finishes, we should detach our callback function immediately,
-        // because a task object may not have callbacks registered at the end of its lifetime.
-        if(state & Task::Finished) {
-            OVITO_ASSERT(self->isFinished());
-            return false; // Returning false indicates that the callback wishes to be unregistered.
-        }
-        return true;
+    // Workaround for a deficiency in GCC 10 and older.
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 11
+    void finalResultsAvailableShared(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+        finalResultsAvailable<true>(std::move(promise), std::move(finishedTask), lock);
     }
+    void finalResultsAvailableExclusive(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+        finalResultsAvailable<false>(std::move(promise), std::move(finishedTask), lock);
+    }
+#endif
 
-    /// The task that must finish first before this task can continue.
-    TaskDependency _awaitedTask;
+    /// Callback function which gets invoked once the unwrapped future has completed.
+    template<bool IsSharedFuture>
+    void finalResultsAvailable(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+        // There is a small chance that the continuation task was canceled in the meantime but hasn't let go of the awaited task yet
+        // (because finishing and running the registered continuation functions is not an atomic operation).
+        // We need to check for this situation here and bail out if it happened.
+        if(this->isFinished())
+            return;
+
+        // If the awaited task failed, inherit the error state.
+        if(finishedTask->exceptionStore()) {
+            this->exceptionLocked(finishedTask->exceptionStore());
+        }
+        else {
+            // Adopt result value from the completed task.
+            if constexpr(!std::is_void_v<R>) {
+                if constexpr(IsSharedFuture)
+                    this->setResult(finishedTask->template getResult<R>());
+                else
+                    this->setResult(finishedTask->template takeResult<R>());
+            }
+        }
+
+        this->finishLocked(lock);
+    }
 };
 
 } // End of namespace

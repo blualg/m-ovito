@@ -79,7 +79,7 @@ public:
     };
 
     struct LatticeStructure {
-        const CoordinationStructure* coordStructure;
+        const CoordinationStructure* coordStructure = nullptr;
         std::vector<Vector3> latticeVectors;
         Matrix3 primitiveCell;
         Matrix3 primitiveCellInverse;

@@ -32,25 +32,28 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(AbstractRenderingFrameBuffer);
 /******************************************************************************
  * Renders the 2d graphics of a frame graph render layer into the frame buffer.
  ******************************************************************************/
-void RenderingJob::render2DPrimitives(FrameGraph::RenderLayer renderLayer, const FrameGraph& frameGraph, AbstractRenderingFrameBuffer& frameBuffer)
+void RenderingJob::render2DPrimitives(FrameGraph::RenderLayerType layerType, const FrameGraph& frameGraph, AbstractRenderingFrameBuffer& frameBuffer)
 {
     if(!frameBuffer.outputFrameBuffer())
         return;
 
-    for(const FrameGraph::RenderingCommand& command : frameGraph.commands()) {
-
-        // Skip commands that are not relevant for the current rendering pass.
-        if(command.skipInVisualPass() || command.renderLayer() != renderLayer)
+    for(const FrameGraph::RenderingCommandGroup& commandGroup : frameGraph.commandGroups()) {
+        if(commandGroup.layerType() != layerType)
             continue;
 
-        if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
-            frameBuffer.outputFrameBuffer()->renderImagePrimitive(*primitive, frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
-        }
-        else if(const TextPrimitive* primitive = dynamic_cast<const TextPrimitive*>(command.primitive())) {
-            frameBuffer.outputFrameBuffer()->renderTextPrimitive(*primitive, frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
-        }
-        else if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
-            frameBuffer.outputFrameBuffer()->renderLinePrimitive(*primitive, command.modelWorldTM(), frameGraph.projectionParams(), frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
+        for(const FrameGraph::RenderingCommand& command : commandGroup.commands()) {
+            if(command.skipInVisualPass())
+                continue;
+
+            if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
+                frameBuffer.outputFrameBuffer()->renderImagePrimitive(*primitive, frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
+            }
+            else if(const TextPrimitive* primitive = dynamic_cast<const TextPrimitive*>(command.primitive())) {
+                frameBuffer.outputFrameBuffer()->renderTextPrimitive(*primitive, frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
+            }
+            else if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
+                frameBuffer.outputFrameBuffer()->renderLinePrimitive(*primitive, command.modelWorldTM(), frameGraph.projectionParams(), frameBuffer.outputViewportRect(), !frameGraph.isInteractive());
+            }
         }
     }
 }
@@ -63,10 +66,11 @@ QImage RenderingJob::createWatermark(const QSize& size)
 {
     static const QBrush watermarkBrush = []() {
         QFont font;
-        font.setPointSize(24);
+        font.setPointSize(36);
+        font.setBold(true);
         QFontMetrics fm(font);
         QRect boundingRect = fm.boundingRect("OVITO Pro Demo");
-        boundingRect.adjust(-10, -10, 10, 10);
+        boundingRect.adjust(-20, -20, 20, 20);
 
         QImage watermark(boundingRect.size(), QImage::Format_ARGB32_Premultiplied);
         watermark.fill(QColor(0, 0, 0, 0));
@@ -74,7 +78,7 @@ QImage RenderingJob::createWatermark(const QSize& size)
         painter.setRenderHint(QPainter::Antialiasing);
         painter.setRenderHint(QPainter::TextAntialiasing);
         painter.setRenderHint(QPainter::SmoothPixmapTransform);
-        painter.setPen(QColor(128, 128, 128, 128));
+        painter.setPen(QColor(128, 128, 128, 255));
         painter.setFont(font);
         painter.drawText(watermark.rect(), Qt::AlignCenter, "OVITO Pro Demo");
         return QBrush(watermark);

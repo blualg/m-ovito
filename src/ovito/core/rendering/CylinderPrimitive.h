@@ -26,14 +26,14 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include "PseudoColorMapping.h"
-#include "FrameGraphPrimitive.h"
+#include "RenderingPrimitive.h"
 
 namespace Ovito {
 
 /**
  * \brief A set of cylinders or arrow glyphs to be rendered by a SceneRenderer implementation.
  */
-class OVITO_CORE_EXPORT CylinderPrimitive final : public FrameGraphPrimitive
+class OVITO_CORE_EXPORT CylinderPrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 
@@ -138,6 +138,7 @@ public:
 
 	/// Computes the 3d bounding box of the primitive in local coordinate space.
 	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
+        OVITO_ASSERT(this);
         const Box3& bb = visCache.lookup<Box3>(
             RendererResourceKey<struct CylinderBoundingBoxCache, ConstDataBufferPtr, ConstDataBufferPtr>{basePositions(), headPositions()},
             [this](Box3& bb) {

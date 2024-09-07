@@ -148,8 +148,7 @@ void Viewport::setViewType(ViewType type, bool keepCameraTransformation, bool ke
             break;
         case VIEW_SCENENODE:
             if(!keepCameraTransformation && viewNode() && scene()) {
-                TimeInterval iv;
-                setCameraTransformation(viewNode()->getWorldTransform(scene()->animationSettings()->currentTime(), iv));
+                setCameraTransformation(viewNode()->getWorldTransform(scene()->animationSettings()->currentTime()));
             }
             setGridMatrix(AffineTransformation(coordSys));
             break;
@@ -257,7 +256,6 @@ bool Viewport::isPerspectiveProjection() const
 ******************************************************************************/
 DataOORef<const AbstractCameraObject> Viewport::cameraObject(AnimationTime time) const
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
     if(viewNode()) {
         if(const AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(viewNode()->head())) {
             return cameraSource->cameraObject(time);
@@ -539,14 +537,6 @@ void Viewport::updateViewport()
 }
 
 /******************************************************************************
-* If an update request is pending for this viewport, immediately processes it and refresh the viewport.
-******************************************************************************/
-void Viewport::processUpdateRequest()
-{
-    notifyDependents(Viewport::ViewportWindowHandleUpdatesRequested);
-}
-
-/******************************************************************************
 * Determines the aspect ratio of this viewport's area in the rendered output image.
 ******************************************************************************/
 FloatType Viewport::renderAspectRatio(DataSet* dataset) const
@@ -568,9 +558,8 @@ Point3 Viewport::orbitCenter()
 {
     // Use the target of a camera as the orbit center.
     if(viewNode() && viewType() == Viewport::VIEW_SCENENODE && viewNode()->lookatTargetNode()) {
-        TimeInterval iv;
         AnimationTime time = scene()->animationSettings()->currentTime();
-        return Point3::Origin() + viewNode()->lookatTargetNode()->getWorldTransform(time, iv).translation();
+        return Point3::Origin() + viewNode()->lookatTargetNode()->getWorldTransform(time).translation();
     }
 
     Point3 center = Point3::Origin();

@@ -26,45 +26,16 @@
 namespace Ovito {
 
 /******************************************************************************
-* Prepares the mapping.
-******************************************************************************/
-void ObjectPickingIdentifierMap::prepare(const FrameGraph& frameGraph, quint32 startObjectID)
-{
-    OVITO_ASSERT(startObjectID > 0);
-    _nextAvailablePickingID = startObjectID;
-
-    // Copy the picking groups from the frame graph.
-    _pickingGroups.clear();
-    _pickingGroups.reserve(frameGraph.pickingGroups().size());
-    for(const auto& group : frameGraph.pickingGroups()) {
-        _pickingGroups.emplace_back(group.pipeline(), group.pickInfo());
-    }
-}
-
-/******************************************************************************
 * Registers a range of unique IDs for the current object picking group being rendered.
 ******************************************************************************/
-quint32 ObjectPickingIdentifierMap::allocateObjectPickingIDs(int pickingGroupID, quint32 objectCount, const ConstDataBufferPtr& indices)
+uint32_t ObjectPickingIdentifierMap::allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, const ConstDataBufferPtr& indices)
 {
-    OVITO_ASSERT(pickingGroupID > 0 && pickingGroupID <= _pickingGroups.size());
-    MappedObjectGroup& group = _pickingGroups[pickingGroupID - 1]; // Convert 1-based group ID to 0-based index.
+    OVITO_ASSERT(!command.skipInPickingPass());
 
-    quint32 baseObjectID = _nextAvailablePickingID;
-    if(group.baseObjectID() == 0)
-        group.setBaseObjectID(baseObjectID);
-    if(indices)
-        group.addIndexedRange(indices, _nextAvailablePickingID - group.baseObjectID());
+    auto baseObjectID = _nextAvailablePickingID;
+    _pickingRecords.emplace_back(baseObjectID, indices, command);
     _nextAvailablePickingID += objectCount;
     return baseObjectID;
-}
-
-/******************************************************************************
-* Post-processes the mapping after acquisition.
-******************************************************************************/
-void ObjectPickingIdentifierMap::postprocess()
-{
-    // Discard all groups that have not been rendered.
-    std::erase_if(_pickingGroups, [](const MappedObjectGroup& group) { return group.baseObjectID() == 0; });
 }
 
 /******************************************************************************
@@ -72,14 +43,14 @@ void ObjectPickingIdentifierMap::postprocess()
 ******************************************************************************/
 std::optional<ViewportWindow::PickResult> ObjectPickingIdentifierMap::pickAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const
 {
-    if(quint32 objectID = objectIdentifierAt(frameBufferLocation)) {
-        if(const MappedObjectGroup* pickingGroup = lookupPickingGroupFromObjectId(objectID)) {
-            OVITO_ASSERT(pickingGroup->pipeline());
+    if(uint32_t objectID = objectIdentifierAt(frameBufferLocation)) {
+        if(const PickingRecord* pickingRecord = lookupPickingRecordFromObjectId(objectID)) {
+            OVITO_ASSERT(pickingRecord->pipeline());
             return ViewportWindow::PickResult(
-                pickingGroup->pipeline(),
-                pickingGroup->pickInfo(),
+                const_cast<Pipeline*>(pickingRecord->pipeline().get()),
+                pickingRecord->pickInfo(),
                 worldPositionAt(frameBufferLocation, projectionParams, framebufferSize),
-                pickingGroup->resolveObjectID(objectID));
+                pickingRecord->resolveObjectID(objectID));
         }
     }
     return std::nullopt;
@@ -88,44 +59,44 @@ std::optional<ViewportWindow::PickResult> ObjectPickingIdentifierMap::pickAt(con
 /******************************************************************************
 * Returns the informational text to be displayed in the status bar for a pickable scene object.
 ******************************************************************************/
-QString ObjectPickingIdentifierMap::pickableObjectInformationText(quint32 objectID) const
+QString ObjectPickingIdentifierMap::pickableObjectInformationText(uint32_t objectID) const
 {
-    if(const MappedObjectGroup* pickingGroup = lookupPickingGroupFromObjectId(objectID)) {
-        if(pickingGroup->pickInfo()) {
-            OVITO_ASSERT(pickingGroup->pipeline());
-            return pickingGroup->pickInfo()->infoString(pickingGroup->pipeline(), pickingGroup->resolveObjectID(objectID));
+    if(const PickingRecord* pickingRecord = lookupPickingRecordFromObjectId(objectID)) {
+        if(pickingRecord->pickInfo()) {
+            OVITO_ASSERT(pickingRecord->pipeline());
+            return pickingRecord->pickInfo()->infoString(pickingRecord->pipeline(), pickingRecord->resolveObjectID(objectID));
         }
     }
     return {};
 }
 
 /******************************************************************************
-* Given an object ID from the picking render buffer, looks up the corresponding picking group.
+* Given an object ID from the picking render buffer, looks up the corresponding picking record.
 ******************************************************************************/
-const ObjectPickingIdentifierMap::MappedObjectGroup* ObjectPickingIdentifierMap::lookupPickingGroupFromObjectId(quint32 objectID) const
+const ObjectPickingIdentifierMap::PickingRecord* ObjectPickingIdentifierMap::lookupPickingRecordFromObjectId(uint32_t objectID) const
 {
-    if(objectID == 0 || _pickingGroups.empty())
+    if(objectID == 0 || _pickingRecords.empty())
         return nullptr;
 
-    // Make sure the groups are sorted by base object ID.
-    OVITO_ASSERT(std::is_sorted(_pickingGroups.begin(), _pickingGroups.end(),
-        [](const MappedObjectGroup& a, const MappedObjectGroup& b) { return a.baseObjectID() < b.baseObjectID(); }));
+    // Make sure the records are sorted by base object ID.
+    OVITO_ASSERT(std::is_sorted(_pickingRecords.begin(), _pickingRecords.end(),
+        [](const PickingRecord& a, const PickingRecord& b) { return a.baseObjectID() < b.baseObjectID(); }));
 
-    // Find the group that succeeds the one containing the given object ID.
-    auto iter = std::upper_bound(_pickingGroups.begin(), _pickingGroups.end(), objectID,
-        [](quint32 id, const MappedObjectGroup& group) { return id < group.baseObjectID(); });
+    // Find the records that succeeds the one containing the given object ID.
+    auto iter = std::upper_bound(_pickingRecords.begin(), _pickingRecords.end(), objectID,
+        [](uint32_t id, const PickingRecord& record) { return id < record.baseObjectID(); });
 
-    if(iter == _pickingGroups.begin())
+    if(iter == _pickingRecords.begin())
         return nullptr;
 
-    if(iter != _pickingGroups.end()) {
+    if(iter != _pickingRecords.end()) {
         OVITO_ASSERT(iter->baseObjectID() > objectID);
         OVITO_ASSERT(objectID >= std::prev(iter)->baseObjectID());
         return &*std::prev(iter);
     }
     else {
-        OVITO_ASSERT(objectID >= _pickingGroups.back().baseObjectID());
-        return &_pickingGroups.back();
+        OVITO_ASSERT(objectID >= _pickingRecords.back().baseObjectID());
+        return &_pickingRecords.back();
     }
 }
 

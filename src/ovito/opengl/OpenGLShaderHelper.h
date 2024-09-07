@@ -132,6 +132,11 @@ public:
         OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue(name, value));
     }
 
+    /// Passes a uniform value to the shader.
+    void setUniformValue(const char* name, GLfloat x, GLfloat y) {
+        OVITO_CHECK_OPENGL(_renderer, _shader->setUniformValue(name, x, y));
+    }
+
     /// Passes a constant vertex attribute to the shader.
     void setAttributeValue(const char* name, const ColorA& color) {
         OVITO_CHECK_OPENGL(_renderer, _shader->setAttributeValue(name, color.r(), color.g(), color.b(), color.a()));

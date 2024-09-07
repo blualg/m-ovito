@@ -142,7 +142,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             QRect frameBufferRect(QPoint(0,0), frameBuffer->size());
 
             // Create a frame graph.
-            std::shared_ptr<FrameGraph> frameGraph = std::make_shared<FrameGraph>(
+            OORef<FrameGraph> frameGraph = OORef<FrameGraph>::create(
                 renderingJob->visCache()->acquireResourceFrame(),
                 AnimationTime(0), ViewProjectionParameters{}, frameBufferRect.size(), false, false, false,
                 renderingJob->preferredImageFormat(), 1.0);
@@ -155,10 +155,10 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             particleBuffer->setRenderingQuality(ParticlePrimitive::LowQuality);
             particleBuffer->setPositions(positions);
             particleBuffer->setRadii(radii);
-            auto pickingGroup = frameGraph->addPickingGroup(nullptr);
-            OVITO_ASSERT(pickingGroup == 1);
-            frameGraph->setCurrentRenderLayer(FrameGraph::RenderLayer::SceneLayer);
-            frameGraph->addPrimitive(std::move(particleBuffer), AffineTransformation::Identity(), pickingGroup, boundingBox);
+            frameGraph->addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(particleBuffer), AffineTransformation::Identity(), boundingBox, OORef<const Pipeline>{});
+            OVITO_ASSERT(frameGraph->commandGroups().size() == 1);
+            OVITO_ASSERT(frameGraph->commandGroups().front().commands().size() == 1);
+            OVITO_ASSERT(frameGraph->commandGroups().front().commands().front().skipInPickingPass() == false);
             renderingJob->postprocessFrameGraph(*frameGraph);
             this_task::throwIfCanceled();
 
@@ -207,8 +207,9 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                 frameBuffer->image() = QImage();
 
                 // Render the current view to the frame buffer
+                objectIdentifierMap->reset();
                 auto future = renderingJob->renderFrame(frameGraph, renderBuffer, objectIdentifierMap);
-                OVITO_ASSERT(future.isValid() && future.isFinished() && !future.isCanceled());
+                OVITO_ASSERT(future && future.isFinished() && !future.isCanceled());
 
                 // Extract brightness values from rendered image.
                 const QImage& image = frameBuffer->image();
@@ -217,14 +218,14 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                 for(int y = 0; y < resolution; y++) {
                     const QRgb* pixel = reinterpret_cast<const QRgb*>(image.scanLine(y));
                     for(int x = 0; x < resolution; x++, ++pixel) {
-                        quint32 red = qRed(*pixel);
-                        quint32 green = qGreen(*pixel);
-                        quint32 blue = qBlue(*pixel);
-                        quint32 alpha = qAlpha(*pixel);
-                        quint32 id = red + (green << 8) + (blue << 16) + (alpha << 24);
+                        uint32_t red = qRed(*pixel);
+                        uint32_t green = qGreen(*pixel);
+                        uint32_t blue = qBlue(*pixel);
+                        uint32_t alpha = qAlpha(*pixel);
+                        uint32_t id = red + (green << 8) + (blue << 16) + (alpha << 24);
                         if(id == 0)
                             continue;
-                        quint32 particleIndex = id - 1; // Note: frame buffer object IDs start at 1.
+                        uint32_t particleIndex = id - 1; // Note: frame buffer object IDs start at 1.
                         OVITO_ASSERT(particleIndex < brightnessValues.size());
                         brightnessValues[particleIndex] += 1;
                     }

@@ -95,17 +95,18 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     // OpenGL rendering requires a Qt GUI application.
     if(!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
         throw RendererException(
-            tr("OVITO's OpenGLRenderer cannot be used in headless mode, that is if the application is running without access to a graphics "
+            tr("OVITO's OpenGLRenderer cannot be used in headless mode, that is if the application is running without access to a desktop graphics "
                "environment. "
                "Please use a different rendering backend or see "
                "https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
-               "on how to enable OpenGL rendering in Python script environments."));
+               "on how to enable OpenGL rendering in Python scripts."));
     }
 
     // Rendering requires an active GL context.
     OpenGLContextRestore contextRestore = activateContext();
     _glcontext = QOpenGLContext::currentContext();
-    if(!_glcontext) throw RendererException(tr("Cannot render scene: There is no active OpenGL context"));
+    if(!_glcontext)
+        throw RendererException(tr("Cannot render scene: There is no active OpenGL context"));
 
     // Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
     initializeOpenGLFunctions();
@@ -127,10 +128,12 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     _glformat = _glcontext->format();
     OVITO_REPORT_OPENGL_ERRORS(this);
 
+    QByteArray openGLVersionString = reinterpret_cast<const char*>(this->glGetString(GL_VERSION));
+    QByteArray openGLRendererString = reinterpret_cast<const char*>(this->glGetString(GL_RENDERER));
+    QByteArray openGLVendorString = reinterpret_cast<const char*>(this->glGetString(GL_VENDOR));
+#ifdef Q_OS_WIN
     // OpenGL in a VirtualBox machine Windows guest reports "2.1 Chromium 1.9" as version string, which is
-    // not correctly parsed by Qt. We have to workaround this.
-    QByteArray openGLVersionString = reinterpret_cast<const char*>(glGetString(GL_VERSION));
-    QByteArray openGLRendererString = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+    // not correctly parsed by Qt. We have to work around this.
     if(openGLVersionString.startsWith("2.1 ")) {
         _glformat.setMajorVersion(2);
         _glformat.setMinorVersion(1);
@@ -138,16 +141,16 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     if(glformat().majorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MAJOR || (glformat().majorVersion() == OVITO_OPENGL_MINIMUM_VERSION_MAJOR &&
                                                                           glformat().minorVersion() < OVITO_OPENGL_MINIMUM_VERSION_MINOR)) {
         throw RendererException(tr("The OpenGL graphics driver installed on this system does not support OpenGL version %6.%7 or newer.\n\n"
-                                   "Ovito requires modern graphics hardware and up-to-date graphics drivers to render 3D graphics. Your "
-                                   "current system configuration is not compatible with Ovito.\n\n"
+                                   "OVITO requires modern graphics hardware and up-to-date graphics drivers to render 3D graphics. Your "
+                                   "current system configuration is not compatible with OVITO.\n\n"
                                    "To avoid this error, please install the newest graphics driver of the hardware vendor or, if "
                                    "necessary, consider replacing your graphics card with a newer model.\n\n"
                                    "The installed OpenGL graphics driver reports the following information:\n\n"
                                    "OpenGL vendor: %1\n"
                                    "OpenGL renderer: %2\n"
                                    "OpenGL version: %3.%4 (%5)\n\n"
-                                   "Ovito requires at least OpenGL version %6.%7.")
-                                    .arg(QString::fromUtf8(reinterpret_cast<const char*>(glGetString(GL_VENDOR))))
+                                   "OVITO requires at least OpenGL version %6.%7.")
+                                    .arg(QString::fromUtf8(openGLVendorString))
                                     .arg(QString::fromUtf8(openGLRendererString))
                                     .arg(glformat().majorVersion())
                                     .arg(glformat().minorVersion())
@@ -156,19 +159,34 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
                                     .arg(OVITO_OPENGL_MINIMUM_VERSION_MINOR));
     }
 
-#ifdef Q_OS_WIN
     if(openGLRendererString == "Intel(R) HD Graphics" || openGLRendererString == "Intel(R) HD Graphics 2000" ||
        openGLRendererString == "Intel(R) HD Graphics 3000" || openGLRendererString == "Intel(R) HD Graphics 4400") {
-        throw RendererException(tr("The graphics chip installed in this system is not compatible with OVITO, unfortunately.\n\n"
+        throw RendererException(tr("The graphics chip of your computer is not compatible with OVITO, unfortunately.\n\n"
                                    "Intel(R) HD Graphics, an integrated graphics chip released in the years 2010/2011/2012, does not "
-                                   "support the specific OpenGL functions required by OVITO. "
+                                   "support the specific OpenGL rendering functions required by OVITO. "
                                    "There is no known workaround to make OVITO work on systems with this particular graphics unit. Please "
                                    "use OVITO on a computer with a more modern graphics processor.\n\n"
                                    "Detected graphics interface:\n\n"
                                    "OpenGL vendor: %1\n"
                                    "OpenGL renderer: %2\n"
                                    "OpenGL version: %3.%4 (%5)")
-                                    .arg(QString::fromUtf8(reinterpret_cast<const char*>(glGetString(GL_VENDOR))))
+                                    .arg(QString::fromUtf8(openGLVendorString))
+                                    .arg(QString::fromUtf8(openGLRendererString))
+                                    .arg(glformat().majorVersion())
+                                    .arg(glformat().minorVersion())
+                                    .arg(QString::fromUtf8(openGLVersionString)));
+    }
+
+    if(openGLVendorString == "ATI Technologies Inc." && openGLRendererString.startsWith("AMD Radeon") && openGLRendererString.endsWith("HD 8350")) {
+        throw RendererException(tr("The graphics chip of your computer is not compatible with OVITO, unfortunately.\n\n"
+                                   "The AMD Radeon 8000 series does not support the specific OpenGL rendering functions required by OVITO. "
+                                   "There is no known workaround to make OVITO work on systems with this particular graphics unit, which is more than a decade old. Please "
+                                   "run OVITO on a computer with a more modern graphics processor.\n\n"
+                                   "Detected graphics interface:\n\n"
+                                   "OpenGL vendor: %1\n"
+                                   "OpenGL renderer: %2\n"
+                                   "OpenGL version: %3.%4 (%5)")
+                                    .arg(QString::fromUtf8(openGLVendorString))
                                     .arg(QString::fromUtf8(openGLRendererString))
                                     .arg(glformat().majorVersion())
                                     .arg(glformat().minorVersion())
@@ -211,6 +229,16 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     OVITO_ASSERT(glMultiDrawArrays);  // glMultiDrawArrays() should always be available in desktop OpenGL 2.0+.
 #endif
 
+    // Decide whether we can use the "noperspective" qualifier in fragment shaders to interpolate view ray directions.
+    if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+        _useInterpolatedRayDirections = false;
+#ifdef Q_OS_LINUX
+    // Workaround for a bug in the Mesa driver on Linux: Attribute interpolation with the "noperspective" qualifier is
+    // broken for partially clipped triangles.
+    if(openGLRendererString.startsWith("llvmpipe"))
+        _useInterpolatedRayDirections = false;
+#endif
+
     // Set up a vertex array object (VAO). An active VAO is required during rendering according to the OpenGL 3.2 core profile.
     std::optional<QOpenGLVertexArrayObject> vertexArrayObject;
     if(glformat().majorVersion() >= 3) {
@@ -231,7 +259,18 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     OVITO_CHECK_OPENGL(this, this->glDisable(GL_SCISSOR_TEST));
 
     // Set up OpenGL render viewport.
-    OVITO_CHECK_OPENGL(this, this->glViewport(0, 0, framebufferSize().width(), framebufferSize().height()));
+    int viewportX = 0, viewportY = 0;
+    int viewportWidth = framebufferSize().width(), viewportHeight = framebufferSize().height();
+    if(frameGraph->isInteractive()) {
+        // Compensate for dynamic size changes of the viewport window, which can happen before the frame graph is regenerated
+        // based on the new viewport size.
+        // To honor the aspect ratio of the existing frame graph, we may have to adjust the viewport rectangle.
+        FloatType originalAspectRatio = frameGraph->projectionParams().aspectRatio;
+        FloatType currentAspectRatio = (FloatType)viewportHeight / viewportWidth;
+        viewportWidth = (int)std::lround(viewportWidth / originalAspectRatio * currentAspectRatio);
+        viewportX = (framebufferSize().width() - viewportWidth) / 2;
+    }
+    OVITO_CHECK_OPENGL(this, this->glViewport(viewportX, viewportY, viewportWidth, viewportHeight));
 
     // Clear frame buffer.
     if(!isPickingPass()) {
@@ -240,15 +279,6 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     }
     else {
         OVITO_CHECK_OPENGL(this, this->glClearColor(0, 0, 0, 0));
-#if 1
-        // Object IDs start at 1 when rendering for object picking.
-        constexpr quint32 startObjectID = 1;
-#else
-        // This can be enabled during debugging to avoid alpha!=1 pixels in the picking render buffer.
-        constexpr quint32 startObjectID = 0xEF000000;
-#endif
-        // Reset the object IDs assigned to the object picking groups.
-        objectPickingIdentifierMap()->prepare(*frameGraph, startObjectID);
     }
     OVITO_CHECK_OPENGL(this, this->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
     OVITO_REPORT_OPENGL_ERRORS(this);
@@ -256,11 +286,11 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     // Render background graphics, typically 2D primitives only.
     _isTransparencyPass = false;
     this->glDisable(GL_DEPTH_TEST);
-    renderFrameGraph(FrameGraph::RenderLayer::UnderLayer);
+    renderFrameGraph(FrameGraph::UnderLayer);
 
     // Render fully opaque 3D geometry.
     this->glEnable(GL_DEPTH_TEST);
-    bool hasTransparentGeometry = renderFrameGraph(FrameGraph::RenderLayer::SceneLayer);
+    bool hasTransparentGeometry = renderFrameGraph(FrameGraph::SceneLayer);
 
     // Let sub-classes perform additional steps to composite the results from multiple renderers, e.g. ANARI.
     performFrameCompositing();
@@ -270,8 +300,8 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
         renderTransparentGeometry(*glFrameBuffer);
 
     // Render highlighted geometry in a third and fourth pass.
-    if(!isPickingPass() && std::any_of(frameGraph->commands().begin(), frameGraph->commands().end(),
-                   [](const FrameGraph::RenderingCommand& command) { return command.renderLayer() == FrameGraph::RenderLayer::HighlightLayer1; })) {
+    if(!isPickingPass() && std::any_of(frameGraph->commandGroups().cbegin(), frameGraph->commandGroups().cend(),
+                   [](const FrameGraph::RenderingCommandGroup& group) { return group.layerType() == FrameGraph::HighlightLayer1; })) {
 
         this->glClearStencil(0);
         this->glClear(GL_STENCIL_BUFFER_BIT);
@@ -288,14 +318,14 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
         this->glDepthFunc(GL_LEQUAL);
         this->glEnable(GL_DEPTH_TEST);
 
-        renderFrameGraph(FrameGraph::RenderLayer::HighlightLayer1);
+        renderFrameGraph(FrameGraph::HighlightLayer1);
 
         this->glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
         this->glStencilMask(0x1);
         this->glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
         this->glDisable(GL_DEPTH_TEST);
 
-        renderFrameGraph(FrameGraph::RenderLayer::HighlightLayer2);
+        renderFrameGraph(FrameGraph::HighlightLayer2);
 
         this->glDepthFunc(GL_LESS);
         this->glDisable(GL_STENCIL_TEST);
@@ -303,7 +333,7 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
 
     // Render foreground graphics, typically 2D primitives only.
     this->glDisable(GL_DEPTH_TEST);
-    renderFrameGraph(FrameGraph::RenderLayer::OverLayer);
+    renderFrameGraph(FrameGraph::OverLayer);
 
     // Store the resource cache frame in the target frame buffer object to keep OpenGL resources alive
     // for subsequent frames.
@@ -365,7 +395,7 @@ void OpenGLRenderingJob::renderTransparentGeometry(OpenGLRenderingFrameBuffer& f
     if(orderIndependentTransparency()) frameBuffer.beginOITRendering();
 
     _isTransparencyPass = true;
-    renderFrameGraph(FrameGraph::RenderLayer::SceneLayer);
+    renderFrameGraph(FrameGraph::SceneLayer);
     _isTransparencyPass = false;
 
     // Second phase of the "Weighted Blended Order-Independent Transparency" method.
@@ -375,12 +405,8 @@ void OpenGLRenderingJob::renderTransparentGeometry(OpenGLRenderingFrameBuffer& f
 /******************************************************************************
  * Decides whether a command from the render graph should be executed by the renderer.
  ******************************************************************************/
-bool OpenGLRenderingJob::filterRenderingCommand(const FrameGraph::RenderingCommand& command, FrameGraph::RenderLayer currentRenderLayer)
+bool OpenGLRenderingJob::filterRenderingCommand(const FrameGraph::RenderingCommand& command, const FrameGraph::RenderingCommandGroup& commandGroup)
 {
-    // Skip commands that are not part of the current render layer.
-    if(command.renderLayer() != currentRenderLayer)
-        return true;
-
     // Skip commands that are not relevant for the current rendering pass.
     if(isPickingPass()) {
         if(command.skipInPickingPass())
@@ -412,39 +438,45 @@ void OpenGLRenderingJob::setupModelViewTransformation(const FrameGraph::Renderin
 /******************************************************************************
  * Executes the rendering commands stored in the given frame graph.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderFrameGraph(FrameGraph::RenderLayer renderLayer)
+bool OpenGLRenderingJob::renderFrameGraph(FrameGraph::RenderLayerType layerType)
 {
     bool hasTransparentGeometry = false;
 
-    for(const FrameGraph::RenderingCommand& command : frameGraph()->commands()) {
-        // Skip commands that are not part of the current render layer.
-        if(filterRenderingCommand(command, renderLayer))
+    for(const FrameGraph::RenderingCommandGroup& commandGroup : frameGraph()->commandGroups()) {
+        // Skip command groups that are not part of the current render layer.
+        if(commandGroup.layerType() != layerType)
             continue;
 
-        // Set up the model-view transformation matrix.
-        setupModelViewTransformation(command);
+        for(const FrameGraph::RenderingCommand& command : commandGroup.commands()) {
+            // Skip commands that are not relevant or not supported by this renderer.
+            if(filterRenderingCommand(command, commandGroup))
+                continue;
 
-        if(const ParticlePrimitive* primitive = dynamic_cast<const ParticlePrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderParticles(*primitive, command.pickingGroupId());
-        }
-        else if(const CylinderPrimitive* primitive = dynamic_cast<const CylinderPrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderCylinders(*primitive, command.pickingGroupId());
-        }
-        else if(const MeshPrimitive* primitive = dynamic_cast<const MeshPrimitive*>(command.primitive())) {
-            hasTransparentGeometry |= renderMesh(*primitive, command.pickingGroupId());
-        }
-        else if(!isTransparencyPass()) {
-            if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
-                renderLinesImplementation(*primitive, command.pickingGroupId());
+            // Set up the model-view transformation matrix.
+            setupModelViewTransformation(command);
+
+            if(const ParticlePrimitive* primitive = dynamic_cast<const ParticlePrimitive*>(command.primitive())) {
+                hasTransparentGeometry |= renderParticles(*primitive, command);
             }
-            else if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
-                renderImageImplementation(*primitive);
+            else if(const CylinderPrimitive* primitive = dynamic_cast<const CylinderPrimitive*>(command.primitive())) {
+                hasTransparentGeometry |= renderCylinders(*primitive, command);
             }
-            else if(const MarkerPrimitive* primitive = dynamic_cast<const MarkerPrimitive*>(command.primitive())) {
-                renderMarkersImplementation(*primitive, command.pickingGroupId());
+            else if(const MeshPrimitive* primitive = dynamic_cast<const MeshPrimitive*>(command.primitive())) {
+                hasTransparentGeometry |= renderMesh(*primitive, command);
             }
+            else if(!isTransparencyPass()) {
+                if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
+                    renderLinesImplementation(*primitive, command);
+                }
+                else if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
+                    renderImageImplementation(*primitive);
+                }
+                else if(const MarkerPrimitive* primitive = dynamic_cast<const MarkerPrimitive*>(command.primitive())) {
+                    renderMarkersImplementation(*primitive, command);
+                }
+            }
+            OVITO_REPORT_OPENGL_ERRORS(this);
         }
-        OVITO_REPORT_OPENGL_ERRORS(this);
     }
     return hasTransparentGeometry;
 }
@@ -452,11 +484,11 @@ bool OpenGLRenderingJob::renderFrameGraph(FrameGraph::RenderLayer renderLayer)
 /******************************************************************************
  * Renders a particles primitive.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int pickingGroupID)
+bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     // Render particles immediately if they are all fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != (!primitive.transparencies())) {
-        renderParticlesImplementation(primitive, pickingGroupID);
+        renderParticlesImplementation(primitive, command);
         return false;
     }
     else {
@@ -491,7 +523,7 @@ bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int
                 ParticlePrimitive opaqueParticles = primitive;
                 opaqueParticles.setTransparencies({});
                 opaqueParticles.setIndices(opaqueIndices);
-                renderParticlesImplementation(opaqueParticles, pickingGroupID);
+                renderParticlesImplementation(opaqueParticles, command);
             }
         }
         return true;
@@ -501,11 +533,11 @@ bool OpenGLRenderingJob::renderParticles(const ParticlePrimitive& primitive, int
 /******************************************************************************
  * Renders a cylinders primitive.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderCylinders(const CylinderPrimitive& primitive, int pickingGroupID)
+bool OpenGLRenderingJob::renderCylinders(const CylinderPrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     // Render primitives immediately if they are all fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != (!primitive.transparencies())) {
-        renderCylindersImplementation(primitive, pickingGroupID);
+        renderCylindersImplementation(primitive, command);
         return false;
     }
     return true;
@@ -514,11 +546,11 @@ bool OpenGLRenderingJob::renderCylinders(const CylinderPrimitive& primitive, int
 /******************************************************************************
  * Renders a triangle mesh primitive.
  ******************************************************************************/
-bool OpenGLRenderingJob::renderMesh(const MeshPrimitive& primitive, int pickingGroupID)
+bool OpenGLRenderingJob::renderMesh(const MeshPrimitive& primitive, const FrameGraph::RenderingCommand& command)
 {
     // Render mesh immediately if it is fully opaque. Otherwise defer rendering to a later time.
     if(isPickingPass() || isTransparencyPass() != primitive.isFullyOpaque()) {
-        renderMeshImplementation(primitive, pickingGroupID);
+        renderMeshImplementation(primitive, command);
         return false;
     }
     return true;
@@ -817,7 +849,7 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
 
         // View ray calculation in vertex and geometry shaders.
         if(line.contains("<calculate_view_ray_through_vertex>")) {
-            if(_glversion >= QT_VERSION_CHECK(3, 0, 0))
+            if(_useInterpolatedRayDirections)
                 line.replace("<calculate_view_ray_through_vertex>", "calculate_view_ray_through_vertex()");
             else
                 return;  // Skip view ray calculation in vertex/geometry shader and let the fragment shader do the full calculation for
@@ -826,7 +858,7 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
 
         // View ray calculation in fragment shaders.
         if(line.contains("<calculate_view_ray_through_fragment>")) {
-            if(_glversion >= QT_VERSION_CHECK(3, 0, 0)) {
+            if(_useInterpolatedRayDirections) {
                 // Calculate view ray based on interpolated values coming from the vertex shader.
                 line.replace("<calculate_view_ray_through_fragment>", "vec3 ray_dir_norm = normalize(ray_dir);");
             }
@@ -888,13 +920,13 @@ void OpenGLRenderingJob::loadShader(QOpenGLShaderProgram* program, QOpenGLShader
                     includeFilePath = QStringLiteral(":/openglrenderer/glsl/shading_transparency.frag");
             }
             else if(line.contains("<view_ray.vert>")) {
-                if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+                if(!_useInterpolatedRayDirections)
                     continue;  // Skip this include file, because view ray calculation is performed by the fragment shaders in old GLSL
                                // versions.
                 includeFilePath = QStringLiteral(":/openglrenderer/glsl/view_ray.vert");
             }
             else if(line.contains("<view_ray.frag>")) {
-                if(_glversion < QT_VERSION_CHECK(3, 0, 0))
+                if(!_useInterpolatedRayDirections)
                     continue;  // Skip this include file, because view ray calculation is performed by the fragment shaders in old GLSL
                                // versions.
                 includeFilePath = QStringLiteral(":/openglrenderer/glsl/view_ray.frag");
@@ -988,35 +1020,28 @@ void OpenGLRenderingJob::checkOpenGLErrorStatus(const char* command, const char*
 /******************************************************************************
  * Create an OpenGL texture object for a QImage.
  ******************************************************************************/
-QOpenGLTexture* OpenGLRenderingJob::uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps)
+const OpenGLTexture& OpenGLRenderingJob::uploadImage(const QImage& image)
 {
     OVITO_ASSERT(!image.isNull());
 
     // Check if this image has already been uploaded to the GPU.
-    const std::unique_ptr<OpenGLTexture>& texture = currentResourceFrame().lookup<std::unique_ptr<OpenGLTexture>>(
-        RendererResourceKey<struct ImageCache, quint64, QOpenGLContextGroup*>{image.cacheKey(), QOpenGLContextGroup::currentContextGroup()},
-        [&](std::unique_ptr<OpenGLTexture>& texture) {
-            texture = std::make_unique<OpenGLTexture>(image, genMipMaps);
-            if(genMipMaps == QOpenGLTexture::DontGenerateMipMaps) {
-                texture->setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
-            }
-            if(!texture->isCreated()) {
-                throw RendererException("Failed to create OpenGL texture object.");
-            }
+    return currentResourceFrame().lookup<OpenGLTexture>(
+        RendererResourceKey<struct ImageCache, quint64, const QOpenGLContextGroup*>{image.cacheKey(), QOpenGLContextGroup::currentContextGroup()},
+        [&](OpenGLTexture& texture) {
+            texture.create(image);
+            texture.setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
         });
-
-    return texture.get();
 }
 
 /******************************************************************************
  * Creates a 1-D OpenGL texture object for a ColorCodingGradient.
  ******************************************************************************/
-QOpenGLTexture* OpenGLRenderingJob::uploadColorMap(ColorCodingGradient* gradient)
+const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradient* gradient)
 {
     // Check if this color map has already been uploaded to the GPU.
-    const std::unique_ptr<OpenGLTexture>& texture = currentResourceFrame().lookup<std::unique_ptr<OpenGLTexture>>(
-        RendererResourceKey<struct ColorMapCache, OORef<ColorCodingGradient>, QOpenGLContextGroup*>{gradient, QOpenGLContextGroup::currentContextGroup()},
-        [&](std::unique_ptr<OpenGLTexture>& texture) {
+    return currentResourceFrame().lookup<OpenGLTexture>(
+        RendererResourceKey<struct ColorMapCache, OORef<const ColorCodingGradient>, const QOpenGLContextGroup*>{gradient, QOpenGLContextGroup::currentContextGroup()},
+        [&](OpenGLTexture& texture) {
             // Sample the color gradient to produce a row of RGB pixel data.
             int resolution;
             std::vector<uint8_t> pixelData;
@@ -1025,7 +1050,7 @@ QOpenGLTexture* OpenGLRenderingJob::uploadColorMap(ColorCodingGradient* gradient
                 resolution = 256;
                 pixelData.resize(resolution * 3);
                 for(int x = 0; x < resolution; x++) {
-                    Color c = gradient->valueToColor((FloatType)x / (resolution - 1));
+                    auto c = gradient->valueToColor((float)x / (resolution - 1));
                     pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
                     pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
                     pixelData[x * 3 + 2] = (uint8_t)(255 * c.b());
@@ -1037,16 +1062,15 @@ QOpenGLTexture* OpenGLRenderingJob::uploadColorMap(ColorCodingGradient* gradient
             }
 
             // Create the 1-d texture object.
-            texture = std::make_unique<OpenGLTexture>(QOpenGLTexture::Target1D);
-            texture->setFormat(QOpenGLTexture::RGB8_UNorm);
-            texture->setSize(resolution);
-            texture->allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt8);
-            texture->setAutoMipMapGenerationEnabled(true);
-            texture->setWrapMode(QOpenGLTexture::ClampToEdge);
-            texture->setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt8, pixelData.data());
+            texture.create(QOpenGLTexture::Target2D);
+            texture.setWrapMode(QOpenGLTexture::ClampToEdge);
+            texture.setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear); // Note: Other modes may cause artifacts, e.g., at cylinder ends.
+            texture.setData(
+                QOpenGLTexture::RGB8_UNorm, QOpenGLTexture::RGB, QOpenGLTexture::UInt8,
+                resolution, 1,
+                pixelData.data(),
+                false);
         });
-
-    return texture.get();
 }
 
 }  // namespace Ovito

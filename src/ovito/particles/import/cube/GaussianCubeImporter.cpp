@@ -44,7 +44,7 @@ void GaussianCubeImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
     ParticleImporter::propertyChanged(field);
 
-    if(field == PROPERTY_FIELD(generateBonds) || field == PROPERTY_FIELD(gridType)) {
+    if((field == PROPERTY_FIELD(generateBonds) || field == PROPERTY_FIELD(gridType)) && !isBeingLoaded()) {
         // Reload input file(s) when this option gets changed by the user.
         requestReload();
     }

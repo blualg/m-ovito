@@ -142,7 +142,7 @@ protected:
     void createDefaultModifierDelegate(const OvitoClass& delegateType, const QString& defaultDelegateTypeName);
 
     /// Lets the modifier's delegate operate on a pipeline flow state.
-    Future<PipelineFlowState> applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState&& input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+    [[nodiscard]] Future<PipelineFlowState> applyDelegate(const ModifierEvaluationRequest& request, PipelineFlowState&& input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
 
 protected:
 
@@ -199,7 +199,7 @@ protected:
     void createModifierDelegates(const OvitoClass& delegateType);
 
     /// Lets the registered modifier delegates operate on a pipeline flow state.
-    Future<PipelineFlowState> applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState&& input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+    [[nodiscard]] Future<PipelineFlowState> applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState&& input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
 
 protected:
 
