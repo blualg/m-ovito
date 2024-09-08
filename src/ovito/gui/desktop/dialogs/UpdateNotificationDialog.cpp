@@ -1,14 +1,38 @@
+////////////////////////////////////////////////////////////////////////////////////////
+//
+//  Copyright 2024 OVITO GmbH, Germany
+//
+//  This file is part of OVITO (Open Visualization Tool).
+//
+//  OVITO is free software; you can redistribute it and/or modify it either under the
+//  terms of the GNU General Public License version 3 as published by the Free Software
+//  Foundation (the "GPL") or, at your option, under the terms of the MIT License.
+//  If you do not alter this notice, a recipient may use your version of this
+//  file under either the GPL or the MIT License.
+//
+//  You should have received a copy of the GPL along with this program in a
+//  file LICENSE.GPL.txt.  You should have received a copy of the MIT License along
+//  with this program in a file LICENSE.MIT.txt
+//
+//  This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND,
+//  either express or implied. See the GPL or the MIT License for the specific language
+//  governing rights and limitations.
+//
+////////////////////////////////////////////////////////////////////////////////////////
 
-#include "UpdateDialog.h"
+#include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/CommandPanel.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/ModifyCommandPage.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
+#include "UpdateNotificationDialog.h"
 
 #include <QtNetwork>
 
 namespace Ovito {
+
+IMPLEMENT_CREATABLE_OVITO_CLASS(UpdateNotificationService);
 
 class UpdateDialog : public MessageDialog
 {
@@ -21,7 +45,7 @@ private:
 
     // Called when user presses "OK"
     static void onAccept();
-    // Called when user presses "Skip thisa version"
+    // Called when user presses "Skip this version"
     void onDontRemind() const;
     // Called when user presses "Download"
     static void onDownload();
@@ -31,27 +55,28 @@ private:
     int _major;
     int _minor;
     int _patch;
-    // Version that no remind will be set to if pressed
+    // Version that no-remind will be set to if selected
     int _dontRemindVersion;
 };
 
 UpdateDialog::UpdateDialog(int major, int minor, int patch, int dontRemind, QWidget* parent)
     : MessageDialog(parent), _major(major), _minor(minor), _patch(patch), _dontRemindVersion(dontRemind)
 {
-    // Cofigure the message box
+    // Configure the message box
     setIcon(QMessageBox::Information);
     setDefaultButton(QMessageBox::Ok);
-    setText(QObject::tr("%1 version %2.%3.%4 is available for download.")
-                .arg(Application::applicationName(), QString::number(_major), QString::number(_minor), QString::number(_patch)));
+    setWindowTitle(UpdateNotificationService::tr("New version available"));
+    setText(UpdateNotificationService::tr("%1 %2.%3.%4 is available for download")
+                .arg(Application::applicationName()).arg(_major).arg(_minor).arg(_patch));
     setInformativeText(
-        QObject::tr("Click 'Download' to open the download page in your browser, "
-                    "'OK' to close this dialog for now, "
-                    "or 'Skip this version' to not be reminded again until the next significant update."));
+        UpdateNotificationService::tr("<p><a href=\"https://docs.ovito.org/new_features.html\">New features and changes</a></p>"
+                    "<p>Click 'Download' to open the download page in your browser, "
+                    "'OK' to dismiss this message for now, "
+                    "or 'Skip this version' to not be reminded again until the next major program update.</p>"));
     // Configure the buttons
     setStandardButtons(QMessageBox::Ok | QMessageBox::Help | QMessageBox::Cancel);
-    button(QMessageBox::Cancel)->setText(QObject::tr("Skip this version"));
-    button(QMessageBox::Help)->setText(QObject::tr("Download"));
-    // Connect the button press
+    button(QMessageBox::Cancel)->setText(UpdateNotificationService::tr("Skip this version"));
+    button(QMessageBox::Help)->setText(UpdateNotificationService::tr("Download"));
     connect(this, &QMessageBox::buttonClicked, this, &UpdateDialog::onButtonClicked);
 }
 
@@ -63,7 +88,7 @@ void UpdateDialog::onButtonClicked(QAbstractButton* button)
     OVITO_ASSERT(button);
     QMessageBox* messageBox = qobject_cast<QMessageBox*>(sender());
     OVITO_ASSERT(messageBox);
-    // if no button or no messageBox close the dialog fallback
+    // if no button or no messageBox close the dialog as fallback
     if(!messageBox || !button) {
         close();
     }
@@ -92,8 +117,8 @@ void UpdateDialog::onButtonClicked(QAbstractButton* button)
 void UpdateDialog::onAccept()
 {
     QSettings settings;
-    // Reset dont remind setting to be reminded again next time
-    settings.setValue("news/dontRemind", 0);
+    // Reset don't remind setting to be reminded again next time
+    settings.remove("news/dontRemind");
 }
 
 /******************************************************************************
@@ -102,22 +127,23 @@ void UpdateDialog::onAccept()
 void UpdateDialog::onDontRemind() const
 {
     QSettings settings;
-    // Update dont remind to the last "rejected" version
+    // Update don't remind to the last "rejected" version
     settings.setValue("news/dontRemind", _dontRemindVersion);
 }
 
 /******************************************************************************
  * Called when user presses "Download"
  ******************************************************************************/
-void UpdateDialog::onDownload() { QDesktopServices::openUrl(QUrl("https://www.ovito.org/#download")); }
-
-IMPLEMENT_CREATABLE_OVITO_CLASS(GuiUpdateInfoService);
+void UpdateDialog::onDownload()
+{
+    QDesktopServices::openUrl(QUrl("https://www.ovito.org/#download"));
+}
 
 /******************************************************************************
  * Is called by the system during standalone application startup after the main window has been created.
  * Downloads the new s segment from the web and sets the side panel and update dialog
  ******************************************************************************/
-bool GuiUpdateInfoService::applicationStarting()
+bool UpdateNotificationService::applicationStarting()
 {
     // Do nothing when running in console mode.
     if(!Application::guiMode()) {
@@ -148,7 +174,7 @@ bool GuiUpdateInfoService::applicationStarting()
 #endif
 
         // Fetch newest web page from web server.
-        const QString urlString = QString("https://www.ovito.org/appnews/v%1.%2.%3/%4?ovito=000000000000000000&OS=%5%6")
+        const QString urlString = QStringLiteral("https://www.ovito.org/appnews/v%1.%2.%3/%4?ovito=000000000000000000&OS=%5%6")
                                       .arg(Application::applicationVersionMajor())
                                       .arg(Application::applicationVersionMinor())
                                       .arg(Application::applicationVersionRevision())
@@ -159,7 +185,7 @@ bool GuiUpdateInfoService::applicationStarting()
         QNetworkReply* networkReply = networkAccessManager->get(QNetworkRequest(QUrl(urlString)));
 
         // Progress once the request finishes
-        connect(networkReply, &QNetworkReply::finished, this, &GuiUpdateInfoService::onWebRequestFinished);
+        connect(networkReply, &QNetworkReply::finished, this, &UpdateNotificationService::onWebRequestFinished);
     }
 #endif
     return true;
@@ -169,15 +195,18 @@ bool GuiUpdateInfoService::applicationStarting()
  * Is called when a new main window is created.
  * Store the main window
  ******************************************************************************/
-void GuiUpdateInfoService::registerActions(ActionManager& actionManager, MainWindow& mainWindow) { _mainWindow = &mainWindow; }
+void UpdateNotificationService::registerActions(ActionManager& actionManager, MainWindow& mainWindow)
+{
+    _mainWindow = &mainWindow;
+}
 
 /******************************************************************************
  * Extracts the two version strings from the first line of the news webpage
  * Pattern of the version strings: <!--vX+.Y+.Z+|vA+.B+.C+-->
  * where X+.Y+.Z+ are the significant version even shown when "Skip this version" is pressed
- * and A+.B+.C+ are all programm versions shown to every user
+ * and A+.B+.C+ are all program versions shown to every user
  ******************************************************************************/
-QStringList GuiUpdateInfoService::extractVersion(const QString& input)
+QStringList UpdateNotificationService::extractVersion(const QString& input)
 {
     const static QRegularExpression regex(R"(<!--v(\d+)\.(\d+)\.(\d+)\|v(\d+)\.(\d+)\.(\d+)-->)");
     const QRegularExpressionMatch match = regex.match(input);
@@ -186,7 +215,8 @@ QStringList GuiUpdateInfoService::extractVersion(const QString& input)
 
 // Anonymous namespace instead of static for free function
 namespace {
-// Convert str to int with error checking (in debug mode)
+
+// Convert QString to int (with error checking in debug mode)
 int str_to_int(const QString& str)
 {
 #ifdef OVITO_DEBUG
@@ -198,14 +228,15 @@ int str_to_int(const QString& str)
     return str.toInt();
 #endif
 }
+
 }  // namespace
 
 /******************************************************************************
- * Creates the update popup window
+ * Creates the update popup window.
  * Checks the newly available version and compares it against the current version
- * and validates against the "Skip this version" choice by the user
+ * and validates against the "Skip this version" choice by the user.
  ******************************************************************************/
-void GuiUpdateInfoService::createUpdateDialog(const QStringList& versionMatch) const
+void UpdateNotificationService::createUpdateDialog(const QStringList& versionMatch) const
 {
     // something went wrong -> don't do anything anything
     if(!_mainWindow || versionMatch.size() != 2 * 3 + 1) {
@@ -230,20 +261,18 @@ void GuiUpdateInfoService::createUpdateDialog(const QStringList& versionMatch) c
     const int remindMinor = str_to_int(versionMatch[5]);
     const int remindPatch = str_to_int(versionMatch[6]);
 
-    // Compare versions
-    // Remind if "normal" remind version > current version
+    // Compare versions. Remind if "normal" remind version > current version.
     bool show = QT_VERSION_CHECK(remindMajor, remindMinor, remindPatch) > QT_VERSION_CHECK(Application::applicationVersionMajor(),
                                                                                            Application::applicationVersionMinor(),
                                                                                            Application::applicationVersionRevision());
     // AND dont remind version > stored dont remind version
-    // stored version will be 0 when it has never been set or the user is in "please remind" mode
+    // stored version will be 0 when it has never been set or the user is in "please remind" mode.
     show &= dontRemindVersionUpdate > dontRemindVersion;
 
-    if(!show) {
+    if(!show)
         return;
-    }
 
-    // Show update information dialog (non-blocking)
+    // Show update information dialog (non-blocking).
     UpdateDialog* updateDialog = new UpdateDialog(remindMajor, remindMinor, remindPatch, dontRemindVersionUpdate, _mainWindow);
     updateDialog->show();
 }
@@ -252,7 +281,7 @@ void GuiUpdateInfoService::createUpdateDialog(const QStringList& versionMatch) c
  * Called when the web request finishes
  * Show the update dialog and set the "ProgramNotice"
  ******************************************************************************/
-void GuiUpdateInfoService::onWebRequestFinished()
+void UpdateNotificationService::onWebRequestFinished()
 {
     QNetworkReply* reply = qobject_cast<QNetworkReply*>(QObject::sender());
     QByteArray page;
@@ -264,15 +293,14 @@ void GuiUpdateInfoService::onWebRequestFinished()
     if(_mainWindow && page.startsWith("<html><!--OVITO-->")) {
         const QString pageString = QString::fromUtf8(page.constData());
 
-        // Update the command panel with the downloaded page
+        // Display the downloaded page in the command panel on program startup.
         _mainWindow->commandPanel()->modifyPage()->showProgramNotice(pageString);
 
-        // Get the version from the first line of the pageString
+        // Extract the available update version from the first line of the HTML source code.
         createUpdateDialog(extractVersion(pageString.left(pageString.indexOf("\n"))));
 
         // Update the cache in the settings
-        QSettings settings;
-        settings.setValue("news/cached_webpage", page);
+        QSettings().setValue("news/cached_webpage", page);
     }
 
     // Cleanup

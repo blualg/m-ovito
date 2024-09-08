@@ -61,7 +61,7 @@ OVITO_STANDARD_PLUGIN(Gui
         dialogs/CopyPipelineItemDialog.cpp
         dialogs/FontSelectionDialog.cpp
         dialogs/ModalPropertiesEditorDialog.cpp
-        dialogs/UpdateDialog.cpp
+        dialogs/UpdateNotificationDialog.cpp
         actions/WidgetActionManager.cpp
         actions/FileActions.cpp
         actions/RenderActions.cpp
