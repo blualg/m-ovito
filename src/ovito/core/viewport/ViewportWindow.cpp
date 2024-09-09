@@ -133,7 +133,7 @@ void ViewportWindow::resumeViewportUpdates()
         ExecutionContext::Scope contextScope(ExecutionContext::Type::Interactive, userInterface().shared_from_this());
 
         // Run buildAndRenderFrameGraph() as soon as control returns to the main event loop.
-        _frameFuture = ObjectExecutor(this, true).launch(std::bind_front(&ViewportWindow::buildAndRenderFrameGraph, this));
+        _frameFuture = launchAsync(ObjectExecutor(this, true), std::bind_front(&ViewportWindow::buildAndRenderFrameGraph, this));
 
         // Afterwards, run frameGraphRenderingFinished().
         _frameFuture.finally(*this, std::bind_front(&ViewportWindow::frameGraphRenderingFinished, this));

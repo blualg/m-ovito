@@ -354,7 +354,7 @@ protected:
     friend class detail::TaskCallbackBase;
     friend class detail::TaskAwaiter;
     template<typename Derived> friend class detail::TaskCallback;
-    template<typename R> friend class detail::ContinuationTask;
+    template<typename R, typename TaskBase> friend class detail::ContinuationTask;
     template<typename R2> friend class Future;
     template<typename R2> friend class SharedFuture;
     template<typename R2> friend class Promise;

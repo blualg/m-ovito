@@ -158,6 +158,6 @@ namespace Ovito
         class TaskCallbackBase;
         class TaskAwaiter;
         template<typename Derived> class TaskCallback;
-        template<typename R> class ContinuationTask;
+        template<typename R, typename TaskBase> class ContinuationTask;
     }
 }
