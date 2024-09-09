@@ -105,6 +105,9 @@ public:
     /// Asks the window to handle any pending update request now after viewport updates were temporarily suspended.
     void resumeViewportUpdates();
 
+    /// Returns the future representing the asynchronous operation of updating the viewport contents (only if an update is in progress).
+    Future<void>& frameFuture() { return _frameFuture; }
+
     /// Return the current 3D projection used to render the contents of the viewport window.
     const ViewProjectionParameters& projectionParams() const { return _projParams; }
 

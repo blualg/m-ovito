@@ -284,7 +284,8 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
             _contextMenuArea = QRectF();
 
         // Let the renderer implementation post-process the frame graph.
-        this->renderingJob()->postprocessFrameGraph(*frameGraph);
+        if(this->renderingJob())
+            this->renderingJob()->postprocessFrameGraph(*frameGraph);
 
         // Compute final projection based on the now known bounding box.
         _projParams = viewport()->computeProjectionParameters(frameGraph->time(), (FloatType)windowSize.height() / windowSize.width(), frameGraph->sceneBoundingBox());
@@ -323,7 +324,7 @@ void ViewportWindow::becameReadyForPresentation()
             }
         }
     }
-    else {
+    else if(QCoreApplication::instance()) {
         // If not all windows are ready yet, wait for some more time before presenting just our frame.
         _presentTimer.start(200, this);
     }
