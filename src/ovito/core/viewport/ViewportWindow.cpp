@@ -157,8 +157,10 @@ void ViewportWindow::frameGraphRenderingFinished(Task& task) noexcept
             }
         }
         catch(OperationCanceled) {}
-        catch(const Exception& ex) {
-            userInterface().reportError(ex);
+        catch(Exception& ex) {
+            // Automatically switch back to the standard OpenGL renderer if there is a problem with
+            // the non-standard renderer.
+            fatalError(ex);
         }
     }
     OVITO_ASSERT(!_frameFuture);

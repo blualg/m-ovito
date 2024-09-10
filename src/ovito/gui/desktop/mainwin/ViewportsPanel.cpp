@@ -82,6 +82,10 @@ ViewportsPanel::ViewportsPanel(MainWindow& mainWindow) : _mainWindow(mainWindow)
 ******************************************************************************/
 OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, QWidget* parent)
 {
+    // If a critical error has occurred before, do not try creating a window again.
+    if(_windowCreationIsBroken)
+        return {};
+
     // Select the viewport window implementation to use.
     QByteArray selectedGraphicsApi = qgetenv("OVITO_VIEWPORT_RENDERER");
     QSettings settings;
@@ -111,13 +115,14 @@ OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, Q
             if(qgetenv("OVITO_VIEWPORT_RENDERER").isEmpty() && settings.value("rendering/selected_graphics_api").toString().isEmpty() == false) {
                 // Automatically switch back to the default OpenGL backend if there is a problem with the current backend.
                 QSettings().remove("rendering/selected_graphics_api");
-                _mainWindow.reportError(ex, true);
-                QMetaObject::invokeMethod(this, "recreateViewportWindows", Qt::QueuedConnection);
             }
             else {
-                ex.prependGeneralMessage(tr("There is a problem with the interactive viewport windows. The program will quit."));
-                _mainWindow.exitWithFatalError(ex);
+                // When using the standard OpenGL backend, do not try to use it again for the current program session.
+                ex.prependGeneralMessage(tr("There is a critical problem with the interactive viewport windows."));
+                _windowCreationIsBroken = true;
             }
+            _mainWindow.reportError(ex, true);
+            QMetaObject::invokeMethod(this, "recreateViewportWindows", Qt::QueuedConnection);
         });
 
         return window;

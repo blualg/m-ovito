@@ -127,6 +127,7 @@ private:
     MainWindow& _mainWindow;
     std::vector<OORef<WidgetViewportWindow>> _viewportWindows;
     bool _windowCreationErrorOccurred = false;
+    bool _windowCreationIsBroken = false;
     bool _layoutRequested = false;
     std::vector<SplitterRectangle> _splitterRegions;
     int _hoveredSplitter = -1;
