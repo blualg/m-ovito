@@ -257,8 +257,10 @@ FUNCTION(OVITO_DEPLOY_QT_FRAMEWORK_FILES)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/libqopensslbackend.so" DESTINATION "./plugins_qt/tls")
         # libQt6XcbQpa.so is required by the Qt Gui module and XCB platform plugin.
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/libQt6XcbQpa.so" DESTINATION "./lib")
-        # libQt6WaylandClient.so is required by the Qt platform plugin libqwayland-generic.so.
+        # libQt6WaylandClient.so and others are required by the Qt platform plugin libqwayland-generic.so and its sub-plugins.
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/libQt6WaylandClient.so" DESTINATION "./lib")
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/libQt6WlShellIntegration.so" DESTINATION "./lib")
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/libQt6WaylandEglClientHwIntegration.so" DESTINATION "./lib")
 
         # Distribute libxkbcommon.so with OVITO, which is a dependency of the Qt XCB plugin that might not be present on all systems.
         FIND_LIBRARY(OVITO_XKBCOMMON_DEP NAMES libxkbcommon.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH REQUIRED)
