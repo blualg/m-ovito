@@ -249,10 +249,12 @@ FUNCTION(OVITO_DEPLOY_QT_FRAMEWORK_FILES)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/networkinformation/libqglib.so" DESTINATION "./plugins_qt/networkinformation" OPTIONAL)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/libqcertonlybackend.so" DESTINATION "./plugins_qt/tls" OPTIONAL)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/libqopensslbackend.so" DESTINATION "./plugins_qt/tls")
-        # The XcbQpa library is required by the Qt Gui module.
+        # libQt6XcbQpa.so is required by the Qt Gui module and XCB platform plugin.
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/libQt6XcbQpa.so" DESTINATION "./lib")
+        # libQt6WaylandClient.so is required by the Qt platform plugin libqwayland-generic.so.
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/libQt6WaylandClient.so" DESTINATION "./lib")
 
-        # Distribute libxkbcommon.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
+        # Distribute libxkbcommon.so with OVITO, which is a dependency of the Qt XCB plugin that might not be present on all systems.
         FIND_LIBRARY(OVITO_XKBCOMMON_DEP NAMES libxkbcommon.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH REQUIRED)
         OVITO_INSTALL_SHARED_LIB("${OVITO_XKBCOMMON_DEP}" DESTINATION "./lib")
         UNSET(OVITO_XKBCOMMON_DEP CACHE)
@@ -260,12 +262,12 @@ FUNCTION(OVITO_DEPLOY_QT_FRAMEWORK_FILES)
         EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "lib/libxkbcommon.so.0" "${OVITO_LIBRARY_DIRECTORY}/libxkbcommon.so.0" COMMAND_ERROR_IS_FATAL ANY)
         INSTALL(FILES "${OVITO_LIBRARY_DIRECTORY}/libxkbcommon.so.0" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/")
 
-        # Distribute libxkbcommon-x11.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
+        # Distribute libxkbcommon-x11.so with OVITO, which is a dependency of the Qt XCB plugin that might not be present on all systems.
         FIND_LIBRARY(OVITO_XKBCOMMONX11_DEP NAMES libxkbcommon-x11.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH REQUIRED)
         OVITO_INSTALL_SHARED_LIB("${OVITO_XKBCOMMONX11_DEP}" DESTINATION "./lib")
         UNSET(OVITO_XKBCOMMONX11_DEP CACHE)
 
-        # Distribute libxcb-xinerama.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
+        # Distribute libxcb-xinerama.so with OVITO, which is a dependency of the Qt XCB plugin that might not be present on all systems.
         FIND_LIBRARY(OVITO_XINERAMA_DEP NAMES libxcb-xinerama.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH REQUIRED)
         OVITO_INSTALL_SHARED_LIB("${OVITO_XINERAMA_DEP}" DESTINATION "./lib")
         UNSET(OVITO_XINERAMA_DEP CACHE)
