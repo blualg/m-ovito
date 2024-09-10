@@ -67,9 +67,8 @@ bool CAImporterEditor::referenceEvent(RefTarget* source, const ReferenceEvent& e
 void CAImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
 {
     throw Exception(tr(
-        "Crystal Analysis (CA) file import requires OVITO Pro."
-        "\n\n"
-        "Please consider upgrading to the professional version, which offers more features for working with precomputed DXA results. "));
+        "<p>Crystal Analysis (CA) file import is only available in OVITO Pro.</p>"
+        "<p>Please consider upgrading to the <a href=\"https://www.ovito.org/#proFeatures\">professional version</a>, which offers more features for working with precomputed DXA results.</p>"));
 }
 #endif
 
