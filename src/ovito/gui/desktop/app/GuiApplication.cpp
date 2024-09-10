@@ -129,6 +129,10 @@ QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& 
             QApplication::setStyle("windowsvista");
         }
 #elif defined(Q_OS_LINUX)
+        // Prefer XCB platform plugin over Wayland.
+        if(!qEnvironmentVariableIsSet("QT_QPA_PLATFORM"))
+            qputenv("QT_QPA_PLATFORM", "xcb");
+
         // Always enforce Fusion UI style on Linux.
         qunsetenv("QT_STYLE_OVERRIDE");
         QApplication::setStyle("Fusion");
