@@ -56,8 +56,8 @@ TaskManager::TaskManager(UserInterface* ui) : _ui(ui)
     else {
         // Use all available processor cores by default -- or the user-specified
         // number given by the OVITO_THREAD_COUNT environment variable.
-        if(qEnvironmentVariableIsSet("OVITO_THREAD_COUNT"))
-            setMaxThreadCount(std::max(1, qgetenv("OVITO_THREAD_COUNT").toInt()));
+        if(int threadCount = qEnvironmentVariableIntValue("OVITO_THREAD_COUNT"))
+            setMaxThreadCount(std::max(1, threadCount));
     }
 
     // Execute pending work in the main thread when control returns to the Qt event loop.

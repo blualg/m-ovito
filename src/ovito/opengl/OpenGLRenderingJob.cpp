@@ -39,9 +39,7 @@
 #include <QOpenGLFunctions_3_0>
 #include <QOpenGLVersionFunctionsFactory>
 #include <QOpenGLTexture>
-#ifdef OVITO_DEBUG
 #include <QOpenGLDebugLogger>
-#endif
 
 namespace Ovito {
 
@@ -200,25 +198,28 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     // Get the OpenGL version.
     _glversion = QT_VERSION_CHECK(glformat().majorVersion(), glformat().minorVersion(), 0);
 
-#ifdef OVITO_DEBUG
     //  _glversion = QT_VERSION_CHECK(4, 1, 0);
     //  _glversion = QT_VERSION_CHECK(3, 2, 0);
     //  _glversion = QT_VERSION_CHECK(3, 1, 0);
     //  _glversion = QT_VERSION_CHECK(2, 1, 0);
 
-    // Initialize debug logger.
+    // Initialize OpenGL debug logger if requested (see OVITO_OPENGL_DEBUG_CONTEXT environment variable).
     if(glformat().testOption(QSurfaceFormat::DebugContext)) {
         QOpenGLDebugLogger* logger = glcontext()->findChild<QOpenGLDebugLogger*>();
         if(!logger) {
             logger = new QOpenGLDebugLogger(glcontext());
             QObject::connect(logger, &QOpenGLDebugLogger::messageLogged,
-                             [](const QOpenGLDebugMessage& debugMessage) { qDebug() << debugMessage; });
+                             [](const QOpenGLDebugMessage& debugMessage) {
+#ifndef OVITO_DEBUG
+                if(debugMessage.type() == QOpenGLDebugMessage::PerformanceType)
+                    return;
+#endif
+                qInfo() << debugMessage;
+            });
         }
         logger->initialize();
-        logger->startLogging(QOpenGLDebugLogger::SynchronousLogging);
-        logger->enableMessages();
+        logger->startLogging();
     }
-#endif
 
     // Get optional function pointers.
     glMultiDrawArrays = reinterpret_cast<void(QOPENGLF_APIENTRY*)(GLenum, const GLint*, const GLsizei*, GLsizei)>(
@@ -339,14 +340,12 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     // for subsequent frames.
     glFrameBuffer->storePreviousResourceFrame(std::move(_currentResourceFrame));
 
-    // Flush the contents to the FBO before extracting image.
-    if(glFrameBuffer->framebufferObject()) {
-        glcontext()->swapBuffers(glcontext()->surface());
-    }
-
     // Read the rendered image from the OpenGL framebuffer and paint it into to the output frame buffer.
     if(glFrameBuffer->outputFrameBuffer() && glFrameBuffer->framebufferObject()) {
         const QRect& viewportRect = glFrameBuffer->outputViewportRect();
+
+        // Flush the contents to the FBO before extracting the image.
+        glcontext()->swapBuffers(glcontext()->surface());
 
         // Clear destination area in the framebuffer (only necessary if OpenGL image is not fully opaque).
         FrameBuffer& outputFrameBuffer = *glFrameBuffer->outputFrameBuffer();
@@ -372,12 +371,12 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
         outputFrameBuffer.commitChanges();
     }
 
-#ifdef OVITO_DEBUG
     // Stop debug logger.
-    if(QOpenGLDebugLogger* logger = glcontext()->findChild<QOpenGLDebugLogger*>()) {
-        logger->stopLogging();
+    if(glformat().testOption(QSurfaceFormat::DebugContext)) {
+        if(QOpenGLDebugLogger* logger = glcontext()->findChild<QOpenGLDebugLogger*>())
+            logger->stopLogging();
     }
-#endif
+
     _glcontext = nullptr;
 
     return Future<void>::createImmediateEmpty();
