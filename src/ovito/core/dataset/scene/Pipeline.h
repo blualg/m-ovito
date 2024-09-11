@@ -38,7 +38,18 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT Pipeline : public SceneNode
 {
-    OVITO_CLASS(Pipeline)
+    /// Give this class its own metaclass.
+    class OVITO_CORE_EXPORT PipelineClass : public SceneNode::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using SceneNode::OOMetaClass::OOMetaClass;
+
+        /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class.
+        /// This is needed for backward compatibility with OVITO 3.11.
+        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const override;
+    };
+    OVITO_CLASS_META(Pipeline, PipelineClass)
 
 public:
 
@@ -98,9 +109,6 @@ protected:
     /// Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
     virtual void referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex) override;
 
-    /// Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
-    virtual void referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex) override;
-
     /// Is called when the value of a non-animatable property field of this RefMaker has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
@@ -137,17 +145,15 @@ private:
     /// Computes the bounding box of a data object and all its sub-objects.
     void getDataObjectBoundingBox(AnimationTime time, const DataObject* dataObj, const PipelineFlowState& state, TimeInterval& validity, Box3& bb, ConstDataObjectPath& dataObjectPath) const;
 
-    /// The terminal object of the pipeline that generates the data to be rendered in the scene.
+    /// The terminal node of the pipeline that generates the data to be rendered in the scene.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PipelineNode>, head, setHead);
 
-    /// The transient list of display objects that render the node's data in the viewports.
-    /// This list is for internal caching purposes only and is rebuilt every time the node's
-    /// pipeline is newly evaluated.
+    /// The transient list of visual elements that render the pipeline's output data objects in the viewports.
+    /// This list is for internal caching purposes only and is rebuilt every time the pipeline is newly evaluated.
     DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, visElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
-    /// List of weak references to visual elements coming from the pipeline which shall be replaced with
-    /// independent versions owned by this pipeline.
-    DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(DataVis*, replacedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_SUB_ANIM);
+    /// List of visual elements coming from the pipeline which shall be replaced with independent versions owned by this pipeline.
+    DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<OOWeakRef<DataVis>>{}, replacedVisElements, setReplacedVisElements);
 
     /// Visual elements owned by the pipeline itself, which replace the ones generated within the pipeline.
     DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, replacementVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_SUB_ANIM);
@@ -156,7 +162,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, pipelineTrajectoryCachingEnabled, setPipelineTrajectoryCachingEnabled, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
     /// Weak reference to the pipeline's source node.
-    DECLARE_REFERENCE_FIELD_FLAGS(PipelineNode*, source, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    DECLARE_REFERENCE_FIELD_FLAGS(OORef<PipelineNode>, source, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// Enables or disables InteractiveStateAvailable signals from the pipeline in order to refresh the viewports each time partial computation results become available.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, preliminaryUpdatesEnabled, setPreliminaryUpdatesEnabled, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);

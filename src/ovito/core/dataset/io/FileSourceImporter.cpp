@@ -212,7 +212,7 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
     else pipeline = existingPipeline;
 
     // Select new object in the scene.
-    if(importMode != DontAddToScene && scene != nullptr)
+    if(importMode != DontAddToScene && scene != nullptr && ExecutionContext::current().isInteractive())
         scene->selection()->setNode(pipeline);
 
     // Concatenate all files from the input list having the same file format into one sequence,

@@ -99,7 +99,7 @@ private:
     QVector<QComboBox*> _delegateBoxes;
 
     /// The current list of delegates.
-    DECLARE_VECTOR_REFERENCE_FIELD(ModifierDelegate*, delegates);
+    DECLARE_VECTOR_REFERENCE_FIELD(OORef<ModifierDelegate>, delegates);
 };
 
 }   // End of namespace

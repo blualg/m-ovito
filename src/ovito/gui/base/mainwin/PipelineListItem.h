@@ -107,7 +107,7 @@ protected:
 private:
 
     /// The object represented by this item in the list box.
-    DECLARE_REFERENCE_FIELD(RefTarget*, object);
+    DECLARE_REFERENCE_FIELD(OORef<RefTarget>, object);
 
     /// The type of this list item.
     PipelineItemType _itemType;

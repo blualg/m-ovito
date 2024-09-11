@@ -41,7 +41,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(SceneNode);
 DEFINE_REFERENCE_FIELD(SceneNode, transformationController);
 DEFINE_REFERENCE_FIELD(SceneNode, lookatTargetNode);
 DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, children);
-DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, hiddenInViewports);
+DEFINE_RUNTIME_PROPERTY_FIELD(SceneNode, hiddenInViewports);
 DEFINE_PROPERTY_FIELD(SceneNode, sceneNodeName);
 DEFINE_PROPERTY_FIELD(SceneNode, displayColor);
 SET_PROPERTY_FIELD_LABEL(SceneNode, transformationController, "Transformation");
@@ -405,8 +405,12 @@ void SceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableD
 {
     RefTarget::saveToStream(stream, excludeRecomputableData);
 
-    stream.beginChunk(0x02);
-    // This is for future use...
+    stream.beginChunk(0x03);
+    // Save list of weak references to viewports in which the node is hidden.
+    stream.writeSizeT(hiddenInViewports().size());
+    for(const auto& vpWeakRef : hiddenInViewports()) {
+        stream.saveObject(vpWeakRef.lock(), excludeRecomputableData);
+    }
     stream.endChunk();
 }
 
@@ -417,13 +421,49 @@ void SceneNode::loadFromStream(ObjectLoadStream& stream)
 {
     RefTarget::loadFromStream(stream);
 
-    stream.expectChunkRange(0x01, 0x02);
-    // This is for future use...
+    int version = stream.expectChunkRange(0x01, 2);
+    if(version >= 2) {
+        // Load list of weak references to viewports in which the node is hidden.
+        size_t numHiddenInViewports = stream.readSizeT();
+        std::vector<OOWeakRef<Viewport>> viewports;
+        for(size_t i = 0; i < numHiddenInViewports; i++) {
+            if(OORef<Viewport> vp = stream.loadObject<Viewport>())
+                viewports.push_back(std::move(vp));
+        }
+        setHiddenInViewports(std::move(viewports));
+    }
     stream.closeChunk();
 
     // Restore parent/child hierarchy.
     for(SceneNode* child : children())
         child->_parentNode = this;
+}
+
+/******************************************************************************
+* Provides a custom function that takes are of the deserialization of a
+* serialized property field that has been removed from the class.
+* This is needed for file backward compatibility with OVITO 3.11.
+******************************************************************************/
+RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr SceneNode::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+{
+    // The 'hiddenInViewports' list used to be a vector reference field in previous OVITO versions.
+    // Now it is a simple property field holding a vector of weak references to viewports.
+    if(field.definingClass == &SceneNode::OOClass() && stream.formatVersion() < 30013) {
+        if(field.identifier == "hiddenInViewports") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x02);
+                qint32 numHiddenInViewports;
+                stream >> numHiddenInViewports;
+                std::vector<OOWeakRef<Viewport>> viewports;
+                for(qint32 i = 0; i < numHiddenInViewports; i++) {
+                    viewports.push_back(stream.loadObject<Viewport>());
+                }
+                static_object_cast<SceneNode>(&owner)->setHiddenInViewports(std::move(viewports));
+                stream.closeChunk();
+            };
+        }
+    }
+    return RefTarget::OOMetaClass::overrideFieldDeserialization(stream, field);
 }
 
 /******************************************************************************
@@ -490,13 +530,25 @@ void SceneNode::setPerViewportVisibility(Viewport* vp, bool visible)
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
     if(visible) {
-        int index = _hiddenInViewports.indexOf(vp);
-        if(index >= 0)
-            _hiddenInViewports.remove(this, PROPERTY_FIELD(hiddenInViewports), index);
+        for(size_t i = 0; i < hiddenInViewports().size(); i++) {
+            if(hiddenInViewports()[i] == vp) {
+                auto newHiddenInViewports = hiddenInViewports();
+                newHiddenInViewports.erase(newHiddenInViewports.begin() + i);
+                // Remove expired weak references from the list.
+                std::erase_if(newHiddenInViewports, std::mem_fn(&OOWeakRef<Viewport>::expired));
+                setHiddenInViewports(std::move(newHiddenInViewports));
+                break;
+            }
+        }
     }
     else {
-        if(!_hiddenInViewports.contains(vp))
-            _hiddenInViewports.push_back(this, PROPERTY_FIELD(hiddenInViewports), vp);
+        if(boost::find(hiddenInViewports(), vp) == hiddenInViewports().end()) {
+            auto newHiddenInViewports = hiddenInViewports();
+            newHiddenInViewports.push_back(vp);
+            // Remove expired weak references from the list.
+            std::erase_if(newHiddenInViewports, std::mem_fn(&OOWeakRef<Viewport>::expired));
+            setHiddenInViewports(std::move(newHiddenInViewports));
+        }
     }
 }
 
@@ -509,7 +561,7 @@ bool SceneNode::isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) co
     OVITO_ASSERT(vp);
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
-    if(_hiddenInViewports.contains(vp))
+    if(boost::find(hiddenInViewports(), vp) != hiddenInViewports().end())
         return true;
     if(includeHierarchyParent && parentNode())
         return parentNode()->isHiddenInViewport(vp, true);

@@ -167,19 +167,19 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<DataSet>, currentSet, setCurrentSet);
 
     /// The active viewport configuration.
-    DECLARE_REFERENCE_FIELD(ViewportConfiguration*, activeViewportConfig);
+    DECLARE_REFERENCE_FIELD(OORef<ViewportConfiguration>, activeViewportConfig);
 
     /// The active viewport.
-    DECLARE_REFERENCE_FIELD(Viewport*, activeViewport);
+    DECLARE_REFERENCE_FIELD(OORef<Viewport>, activeViewport);
 
     /// The active scene.
-    DECLARE_REFERENCE_FIELD(Scene*, activeScene);
+    DECLARE_REFERENCE_FIELD(OORef<Scene>, activeScene);
 
     /// The active selection set of scene nodes.
-    DECLARE_REFERENCE_FIELD(SelectionSet*, activeSelectionSet);
+    DECLARE_REFERENCE_FIELD(OORef<SelectionSet>, activeSelectionSet);
 
     /// The active animation settings object.
-    DECLARE_REFERENCE_FIELD(AnimationSettings*, activeAnimationSettings);
+    DECLARE_REFERENCE_FIELD(OORef<AnimationSettings>, activeAnimationSettings);
 
     /// The manager of asynchronous tasks associated with this container.
     TaskManager* _taskManager;

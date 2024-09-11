@@ -107,13 +107,13 @@ private:
 private:
 
     /// The scene being prepared.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(Scene*, scene, setScene);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Scene>, scene, setScene);
 
     /// The active render settings.
-    DECLARE_REFERENCE_FIELD(RenderSettings*, renderSettings);
+    DECLARE_REFERENCE_FIELD(OORef<RenderSettings>, renderSettings);
 
     /// The active scene node selection set.
-    DECLARE_REFERENCE_FIELD(SelectionSet*, selectionSet);
+    DECLARE_REFERENCE_FIELD(OORef<SelectionSet>, selectionSet);
 
     /// The abstract user interface.
     UserInterface* _userInterface;

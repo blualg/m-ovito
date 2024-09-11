@@ -245,7 +245,7 @@ OORef<DataSet> DataSet::createFromFile(const QString& filename)
 * serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.7.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr DataSet::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
+RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr DataSet::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
 {
     // The DataSet class used to store an AnimationSettings object and the scene root node in OVITO 3.7 and earlier.
     if(field.definingClass == &DataSet::OOClass()) {
@@ -273,7 +273,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
             };
         }
     }
-    return nullptr;
+    return RefTarget::OOMetaClass::overrideFieldDeserialization(stream, field);
 }
 
 /******************************************************************************

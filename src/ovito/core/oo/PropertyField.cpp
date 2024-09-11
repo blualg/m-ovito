@@ -128,12 +128,12 @@ template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, cons
     // Check object type
     if(newTarget && !newTarget->getOOClass().isDerivedFrom(*descriptor->targetClass())) {
         OVITO_ASSERT_MSG(false, "SingleReferenceFieldBase::set()", "Tried to create a reference to an incompatible object for this reference field.");
-        throw Exception(QString("Cannot set a reference field of type %1 to an incompatible object of type %2.").arg(descriptor->targetClass()->name(), newTarget->getOOClass().name()));
+        throw Exception(QStringLiteral("Cannot set a reference field of type %1 to an incompatible object of type %2.").arg(descriptor->targetClass()->name(), newTarget->getOOClass().name()));
     }
 
     // Make sure automatic undo is disabled for a reference field of a class that is not derived from RefTarget.
     OVITO_ASSERT_MSG(descriptor->automaticUndo() == false || RefTarget::OOClass().isMember(owner), "SingleReferenceFieldBase::set()",
-            qPrintable(QString("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
+            qPrintable(QStringLiteral("PROPERTY_FIELD_NO_UNDO flag has not been set for reference field '%1' of non-RefTarget derived class '%2'.")
                 .arg(descriptor->identifier()).arg(descriptor->definingClass()->name())));
 
     class SetReferenceOperation final : public PropertyFieldOperation
@@ -181,11 +181,10 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
 {
     OVITO_ASSERT(ownerTypeCheck(owner, descriptor));
     OVITO_ASSERT(!descriptor->isVector());
-    OVITO_ASSERT((descriptor->isWeakReference() == std::is_same<pointer, RefTarget*>::value));
     OVITO_ASSERT(inactiveTarget != _target);
 
-    // Check for cyclic strong references.
-    if(inactiveTarget && (!descriptor->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !descriptor->isWeakReference()) && owner->isReferencedBy(inactiveTarget, true))
+    // Check for cyclic references.
+    if(inactiveTarget && owner->isReferencedBy(inactiveTarget, true))
         throw CyclicReferenceError();
 
     // Move the old pointer value into a local temporary.
@@ -207,8 +206,8 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
 
     // Inform owner object about the changed reference value.
     owner->referenceReplaced(descriptor,
-        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(inactiveTarget))),
-        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(_target))),
+        const_cast<RefTarget*>(static_cast<const RefTarget*>(inactiveTarget.get())),
+        const_cast<RefTarget*>(static_cast<const RefTarget*>(_target.get())),
         -1);
 
     // Emit object-changed signal.
@@ -221,7 +220,6 @@ template<typename T> void SingleReferenceFieldBase<T>::swapReference(RefMaker* o
 
 // Instantiate base class template for the fancy pointer base types needed.
 #if defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC)
-    template class OVITO_CORE_EXPORT SingleReferenceFieldBase<RefTarget*>;
     template class OVITO_CORE_EXPORT SingleReferenceFieldBase<OORef<RefTarget>>;
     template class OVITO_CORE_EXPORT SingleReferenceFieldBase<DataOORef<const DataObject>>;
 #endif
@@ -450,10 +448,9 @@ template<typename T> void VectorReferenceFieldBase<T>::swapReference(RefMaker* o
     OVITO_CHECK_POINTER(this);
     OVITO_CHECK_OBJECT_POINTER(owner);
     OVITO_ASSERT(descriptor->isVector());
-    OVITO_ASSERT((descriptor->isWeakReference() == std::is_same<pointer, RefTarget*>::value));
 
     // Check for cyclic strong references.
-    if(inactiveTarget && (!descriptor->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !descriptor->isWeakReference()) && owner->isReferencedBy(inactiveTarget, true))
+    if(inactiveTarget && owner->isReferencedBy(inactiveTarget, true))
         throw CyclicReferenceError();
 
     // Move the old pointer value into a local temporary.
@@ -474,8 +471,8 @@ template<typename T> void VectorReferenceFieldBase<T>::swapReference(RefMaker* o
 
     // Inform owner object about the changed reference value.
     owner->referenceReplaced(descriptor,
-        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(inactiveTarget))),
-        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(_targets[index]))),
+        const_cast<RefTarget*>(static_cast<const RefTarget*>(inactiveTarget.get())),
+        const_cast<RefTarget*>(static_cast<const RefTarget*>(_targets[index].get())),
         index);
 
     // Emit object-changed signal.
@@ -504,7 +501,7 @@ template<typename T> void VectorReferenceFieldBase<T>::removeReference(RefMaker*
 
     // Inform owner object about the removed reference value.
     owner->referenceRemoved(descriptor,
-        const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(inactiveTarget))),
+        const_cast<RefTarget*>(static_cast<const RefTarget*>(inactiveTarget.get())),
         index);
 
     // Emit object-changed signal.
@@ -524,7 +521,7 @@ template<typename T> auto VectorReferenceFieldBase<T>::addReference(RefMaker* ow
     OVITO_ASSERT(descriptor->isVector());
 
     // Check for cyclic strong references.
-    if(target && (!descriptor->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES) || !descriptor->isWeakReference()) && owner->isReferencedBy(target, true))
+    if(target && owner->isReferencedBy(target, true))
         throw CyclicReferenceError();
 
     // Add new reference to list.
@@ -543,7 +540,7 @@ template<typename T> auto VectorReferenceFieldBase<T>::addReference(RefMaker* ow
          _targets[index]->registerDependent(owner);
 
     // Inform derived classes.
-    owner->referenceInserted(descriptor, const_cast<RefTarget*>(static_cast<const RefTarget*>(to_address(_targets[index]))), index);
+    owner->referenceInserted(descriptor, const_cast<RefTarget*>(static_cast<const RefTarget*>(_targets[index].get())), index);
 
     // Send auto change message.
     generateTargetChangedEvent(owner, descriptor);
@@ -557,7 +554,6 @@ template<typename T> auto VectorReferenceFieldBase<T>::addReference(RefMaker* ow
 
 // Instantiate base class template for the fancy pointer base types needed.
 #if defined(Q_CC_MSVC) || defined(Q_CC_CLANG) || defined(OVITO_BUILD_MONOLITHIC)
-    template class OVITO_CORE_EXPORT VectorReferenceFieldBase<RefTarget*>;
     template class OVITO_CORE_EXPORT VectorReferenceFieldBase<OORef<RefTarget>>;
     template class OVITO_CORE_EXPORT VectorReferenceFieldBase<DataOORef<const DataObject>>;
 #endif

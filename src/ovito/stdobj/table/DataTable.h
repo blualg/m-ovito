@@ -82,6 +82,11 @@ public:
         return PipelineEditorObjectListMode::Show; // Note: Not showing typed properties in the pipeline editor that belong to this DataTable.
     }
 
+protected:
+
+    /// From RefMaker.
+    virtual void referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex) override;
+
 private:
 
     /// The lower bound of the x-interval of the histogram if data points have no explicit x-coordinates.
@@ -101,10 +106,14 @@ private:
     DECLARE_SHADOW_PROPERTY_FIELD(plotMode);
 
     /// Property containing the X coordinates of data points for plotting.
-    DECLARE_REFERENCE_FIELD_FLAGS(const Property*, x, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
+    /// Note: Using OORef<> instead of DataOORef<> here, because the PropertyContainer already holds a strong reference to the same property object.
+    /// Thus, there is no need to create a second strong reference here, because this would prevent modifying the property object even when it is exclusively owned by the data table.
+    DECLARE_REFERENCE_FIELD_FLAGS(OORef<const Property>, x, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// Property containing the Y coordinates of data points for plotting.
-    DECLARE_REFERENCE_FIELD_FLAGS(const Property*, y, PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
+    /// Note: Using OORef<> instead of DataOORef<> here, because the PropertyContainer already holds a strong reference to the same property object.
+    /// Thus, there is no need to create a second strong reference here, because this would prevent modifying the property object even when it is exclusively owned by the data table.
+    DECLARE_REFERENCE_FIELD_FLAGS(OORef<const Property>, y, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
 };
 
 }   // End of namespace

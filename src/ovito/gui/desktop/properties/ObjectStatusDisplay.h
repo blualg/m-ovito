@@ -74,7 +74,7 @@ private:
     bool _isUpToDate = true;
 
     /// The object whose status is being displayed.
-    DECLARE_REFERENCE_FIELD(ActiveObject*, activeObject);
+    DECLARE_REFERENCE_FIELD(OORef<ActiveObject>, activeObject);
 };
 
 }   // End of namespace

@@ -158,7 +158,7 @@ public:
     template<class Function>
     bool visitSubObjects(Function fn) const {
         for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
-            if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
+            if(field->isReferenceField() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
                 if(!field->isVector()) {
                     if(const DataObject* subObject = static_object_cast<DataObject>(getReferenceFieldTarget(field))) {
                         if(fn(subObject))

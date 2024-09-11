@@ -283,7 +283,7 @@ private:
 private:
 
     /// The viewport associated with this window.
-    DECLARE_REFERENCE_FIELD_FLAGS(Viewport*, viewport, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_UNDO);
+    DECLARE_REFERENCE_FIELD_FLAGS(OORef<Viewport>, viewport, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NO_UNDO);
 
     /// The abstract user interface hosting this viewport window.
     UserInterface* _userInterface = nullptr;

@@ -67,7 +67,7 @@ void StandardCameraObject::initializeObject(ObjectInitializationFlags flags)
 * serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.3.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr StandardCameraObject::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
+RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr StandardCameraObject::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
 {
     // The CameraObject used to manage animation controllers for FOV and Zoom parameters in OVITO 3.3 and earlier.
     if(field.identifier == "fovController" && field.definingClass == &StandardCameraObject::OOClass()) {
@@ -96,7 +96,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
             });
         };
     }
-    return nullptr;
+    return AbstractCameraObject::OOMetaClass::overrideFieldDeserialization(stream, field);
 }
 
 /******************************************************************************

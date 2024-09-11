@@ -98,7 +98,7 @@ public:
     }
 
     /// Lets the object class provide a custom function that takes are of the deserialization of a serialized property field.
-    virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const { return nullptr; }
+    virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const { return nullptr; }
 
 protected:
 

@@ -51,7 +51,7 @@ class OVITO_CORE_EXPORT DataSet final : public RefTarget
 
         /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class.
         /// This is needed for backward compatibility with OVITO 3.7.
-        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const override;
+        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const override;
     };
 
     OVITO_CLASS_META(DataSet, DataSetClass)

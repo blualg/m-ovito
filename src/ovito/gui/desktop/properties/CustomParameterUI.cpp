@@ -117,7 +117,7 @@ void CustomParameterUI::updatePropertyValue()
             }
             else if(isReferenceFieldUI() && !propertyField()->isVector()) {
                 OORef<RefTarget> target = newValue.value<RefTarget*>();
-                editObject()->setReferenceFieldTarget(propertyField(), target);
+                editObject()->setReferenceFieldTarget(propertyField(), std::move(target));
             }
 
             Q_EMIT valueEntered();

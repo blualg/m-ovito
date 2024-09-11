@@ -49,18 +49,18 @@ public:
     /// \brief Adds a scene node to this selection set.
     /// \param node The node to be added.
     /// \undoable
-    void push_back(SceneNode* node);
+    void push_back(OORef<SceneNode> node);
 
     /// \brief Inserts a scene node into this selection set.
     /// \param index The index at which to insert the node into the list.
     /// \param node The node to be inserted.
     /// \undoable
-    void insert(qsizetype index, SceneNode* node);
+    void insert(qsizetype index, OORef<SceneNode> node);
 
     /// \brief Removes a scene node from this selection set.
     /// \param node The node to be unselected.
     /// \undoable
-    void remove(SceneNode* node);
+    void remove(const SceneNode* node);
 
     /// \brief Removes a scene node from this selection set.
     /// \param index The index of the node to be unselected.
@@ -90,7 +90,7 @@ public:
 private:
 
     /// References to the selected scene nodes.
-    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(SceneNode*, nodes, setNodes, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF);
+    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, nodes, setNodes, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NEVER_CLONE_TARGET);
 };
 
 }   // End of namespace

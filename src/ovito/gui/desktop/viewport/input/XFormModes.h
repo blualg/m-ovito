@@ -83,7 +83,7 @@ protected:
     virtual QString undoDisplayName() = 0;
 
     /// Applies the current transformation to a set of nodes.
-    virtual void applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier) {}
+    virtual void applyXForm(AnimationTime time, const QVector<OORef<SceneNode>>& nodeSet, FloatType multiplier) {}
 
     /// Updates the values displayed in the coordinate display widget.
     virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) {}
@@ -110,7 +110,7 @@ protected Q_SLOT:
 private:
 
     /// The selected scene node.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(SceneNode*, selectedNode, setSelectedNode);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<SceneNode>, selectedNode, setSelectedNode);
 
 protected:
 
@@ -158,7 +158,7 @@ protected:
     virtual void doXForm() override;
 
     /// Applies the current transformation to a set of nodes.
-    virtual void applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier) override;
+    virtual void applyXForm(AnimationTime time, const QVector<OORef<SceneNode>>& nodeSet, FloatType multiplier) override;
 
     /// Updates the values displayed in the coordinate display widget.
     virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) override;
@@ -208,7 +208,7 @@ protected:
     virtual void doXForm() override;
 
     /// Applies the current transformation to a set of nodes.
-    virtual void applyXForm(AnimationTime time, const QVector<SceneNode*>& nodeSet, FloatType multiplier) override;
+    virtual void applyXForm(AnimationTime time, const QVector<OORef<SceneNode>>& nodeSet, FloatType multiplier) override;
 
     /// Updates the values displayed in the coordinate display widget.
     virtual void updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay) override;

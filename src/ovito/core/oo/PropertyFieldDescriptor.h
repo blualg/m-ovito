@@ -65,8 +65,7 @@ public:
     /// Constructor for a property field that stores a single reference to a RefTarget.
     PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags,
         RefTarget* (*singleReferenceReadFunc)(const RefMaker*, const PropertyFieldDescriptor*),
-        void (*singleReferenceWriteFunc)(RefMaker*, const PropertyFieldDescriptor*, const RefTarget*),
-        void (*singleReferenceWriteFuncRef)(RefMaker*, const PropertyFieldDescriptor*, OORef<RefTarget>));
+        void (*singleReferenceWriteFuncRef)(RefMaker*, const PropertyFieldDescriptor*, OORef<const RefTarget>));
 
     /// Constructor for a property field that stores a vector of references to RefTarget objects.
     PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags,
@@ -90,9 +89,6 @@ public:
 
     /// Returns whether this is a reference field that stores a pointer to a RefTarget derived class.
     bool isReferenceField() const { return _targetClassDescriptor != nullptr; }
-
-    /// Returns whether this reference field stores weak references.
-    bool isWeakReference() const { return _flags.testFlag(PROPERTY_FIELD_WEAK_REF); }
 
     /// Returns true if this reference field stores a vector of objects.
     bool isVector() const { return _flags.testFlag(PROPERTY_FIELD_VECTOR); }
@@ -182,10 +178,7 @@ protected:
     RefTarget* (*_singleReferenceReadFunc)(const RefMaker*, const PropertyFieldDescriptor*) = nullptr;
 
     /// Accessor function setting the referenced target object for a RefMaker instance.
-    void (*_singleReferenceWriteFunc)(RefMaker*, const PropertyFieldDescriptor*, const RefTarget*) = nullptr;
-
-    /// Accessor function setting the referenced target object for a RefMaker instance.
-    void (*_singleReferenceWriteFuncRef)(RefMaker*, const PropertyFieldDescriptor*, OORef<RefTarget>) = nullptr;
+    void (*_singleReferenceWriteFuncRef)(RefMaker*, const PropertyFieldDescriptor*, OORef<const RefTarget>) = nullptr;
 
     /// Accessor function returning the number of referenced target objects in a vector reference field.
     int (*_vectorReferenceCountFunc)(const RefMaker*, const PropertyFieldDescriptor*) = nullptr;
@@ -199,7 +192,7 @@ protected:
     /// Accessor function erasing the i-th referenced target object from a vector reference field.
     void (*_vectorReferenceRemoveFunc)(RefMaker*, const PropertyFieldDescriptor*, int) = nullptr;
 
-    /// Accessor function insertings a target object into a vector reference field.
+    /// Accessor function inserting a target object into a vector reference field.
     void (*_vectorReferenceInsertFunc)(RefMaker*, const PropertyFieldDescriptor*, int, OORef<RefTarget>) = nullptr;
 
     /// The human-readable name of this property field. It is used as label in the user interface.

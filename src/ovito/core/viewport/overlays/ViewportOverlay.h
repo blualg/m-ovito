@@ -80,7 +80,7 @@ protected:
 private:
 
     /// The pipeline generating the data that is being used by the overlay (optional).
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Pipeline*, pipeline, setPipeline, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Pipeline>, pipeline, setPipeline, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 };
 
 }   // End of namespace

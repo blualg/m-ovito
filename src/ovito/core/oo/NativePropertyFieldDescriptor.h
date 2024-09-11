@@ -99,13 +99,9 @@ public:
             [](const Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*) -> Ovito::RefTarget* { \
                 return const_cast<classname::__##name##_target_object_type*>(static_cast<const classname*>(obj)->_##name.get()); \
             }, \
-            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, const Ovito::RefTarget* newTarget) { \
+            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::OORef<const Ovito::RefTarget> newTarget) { \
                 static_cast<classname*>(obj)->_##name.set(obj, PROPERTY_FIELD(classname::name), \
-                    static_object_cast<classname::__##name##_target_object_type>(const_cast<Ovito::RefTarget*>(newTarget))); \
-            }, \
-            [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::OORef<Ovito::RefTarget> newTarget) { \
-                static_cast<classname*>(obj)->_##name.set(obj, PROPERTY_FIELD(classname::name), \
-                    static_object_cast<classname::__##name##_target_object_type>(std::move(newTarget))); \
+                    static_object_cast<classname::__##name##_target_object_type>(const_pointer_cast<Ovito::RefTarget>(std::move(newTarget)))); \
             } \
         );
 
@@ -139,13 +135,13 @@ public:
 /// The second parameter determines the name of the reference field. It must be unique within the current class.
 #define DECLARE_REFERENCE_FIELD_FLAGS(type, name, flags) \
     private: \
-        enum { __##name##_flags = flags | PROPERTY_FIELD_STANDARD_FLAGS | (std::is_pointer_v<type> ? PROPERTY_FIELD_WEAK_REF : PROPERTY_FIELD_NO_FLAGS) }; \
+        enum { __##name##_flags = flags | PROPERTY_FIELD_STANDARD_FLAGS }; \
         using __##name##_target_object_type = Ovito::ReferenceField<type>::target_object_type; \
         static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance; \
     public: \
         static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(name) { return &name##__propdescr_instance; } \
         Ovito::ReferenceField<type> _##name; \
-        inline decltype(std::declval<Ovito::ReferenceField<type>>().get()) name() const { return _##name.get(); } \
+        inline typename std::pointer_traits<type>::element_type* name() const { return _##name.get(); } \
     private:
 
 /// Adds a reference field to a class definition.
@@ -177,7 +173,7 @@ public:
 /// The second parameter determines the name of the vector reference field. It must be unique within the current class.
 #define DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(type, name, flags) \
     private: \
-        enum { __##name##_flags = flags | PROPERTY_FIELD_VECTOR | PROPERTY_FIELD_STANDARD_FLAGS | (std::is_pointer_v<type> ? PROPERTY_FIELD_WEAK_REF : PROPERTY_FIELD_NO_FLAGS) }; \
+        enum { __##name##_flags = flags | PROPERTY_FIELD_VECTOR | PROPERTY_FIELD_STANDARD_FLAGS }; \
         using __##name##_target_object_type = Ovito::VectorReferenceField<type>::target_object_type; \
         static Ovito::NativePropertyFieldDescriptor name##__propdescr_instance; \
     public: \
@@ -335,7 +331,7 @@ public:
             [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::LoadStream& stream) {} /* propertyStorageLoadFunc */ \
         );
 
-/// Adds a property field to a class definition which is not serializble .
+/// Adds a property field to a class definition which is not serializable .
 /// The first parameter specifies the initial value of the property field and, implicitly, also its data type.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this property field.

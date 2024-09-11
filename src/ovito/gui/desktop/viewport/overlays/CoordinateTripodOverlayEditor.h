@@ -49,7 +49,7 @@ protected:
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// The current viewport.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(Viewport*, viewport, setViewport);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Viewport>, viewport, setViewport);
 
     BooleanParameterUI* _perspectiveDistortionUI;
 };

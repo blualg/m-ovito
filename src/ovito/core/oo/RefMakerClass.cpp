@@ -123,7 +123,7 @@ void RefMakerClass::loadClassInfo(LoadStream& stream, OvitoClass::SerializedClas
         stream.closeChunk();
 
         // Give object class the chance to override deserialization behavior for this property field.
-        fieldInfo.customDeserializationFunction = overrideFieldDeserialization(fieldInfo);
+        fieldInfo.customDeserializationFunction = overrideFieldDeserialization(stream, fieldInfo);
         if(!fieldInfo.customDeserializationFunction) {
 
             // Verify consistency of serialized and runtime class hierarchy.

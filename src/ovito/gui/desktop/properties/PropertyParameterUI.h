@@ -104,7 +104,7 @@ private:
     /// The controller or sub-object whose value is being edited.
     /// This may be \c nullptr either when there is no editable object selected in the parent editor
     /// or if the editable object's reference field is currently empty.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(RefTarget*, parameterObject, setParameterObject);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<RefTarget>, parameterObject, setParameterObject);
 
     /// The property or reference field being edited.
     const PropertyFieldDescriptor* _propField = nullptr;

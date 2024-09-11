@@ -144,9 +144,9 @@ void AnimationSettings::jumpToNextFrame()
 * serialized property field that has been removed from the class.
 * This is needed for file backward compatibility with OVITO 3.7.
 ******************************************************************************/
-RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr AnimationSettings::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
+RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr AnimationSettings::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
 {
-    // For backward compaibility with OVITO 3.7:
+    // For backward compatibility with OVITO 3.7:
 
     // The AnimationSettings classes used to store the animation interval in a single property field.
     if(field.definingClass == &AnimationSettings::OOClass() && field.identifier == "animationInterval") {
@@ -184,7 +184,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
         };
     }
 
-    return nullptr;
+    return RefTarget::OOMetaClass::overrideFieldDeserialization(stream, field);
 }
 
 /******************************************************************************

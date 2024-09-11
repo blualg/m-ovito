@@ -254,7 +254,7 @@ private:
     PropertiesEditor* _parentEditor = nullptr;
 
     /// The object being edited in this editor.
-    DECLARE_REFERENCE_FIELD(RefTarget*, editObject);
+    DECLARE_REFERENCE_FIELD(OORef<RefTarget>, editObject);
 
     /// The list of ParameterUI components created by the editor.
     std::vector<OORef<ParameterUI>> _parameterUIs;

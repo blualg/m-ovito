@@ -40,7 +40,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(Pipeline);
 OVITO_CLASSINFO(Pipeline, "ClassNameAlias", "PipelineSceneNode");  // For backward compatibility with OVITO 3.9.2
 DEFINE_REFERENCE_FIELD(Pipeline, head);
 DEFINE_VECTOR_REFERENCE_FIELD(Pipeline, visElements);
-DEFINE_VECTOR_REFERENCE_FIELD(Pipeline, replacedVisElements);
+DEFINE_RUNTIME_PROPERTY_FIELD(Pipeline, replacedVisElements);
 DEFINE_VECTOR_REFERENCE_FIELD(Pipeline, replacementVisElements);
 DEFINE_REFERENCE_FIELD(Pipeline, source);
 DEFINE_PROPERTY_FIELD(Pipeline, pipelineTrajectoryCachingEnabled);
@@ -246,31 +246,6 @@ void Pipeline::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
 }
 
 /******************************************************************************
-* Saves the class' contents to the given stream.
-******************************************************************************/
-void Pipeline::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
-{
-    SceneNode::saveToStream(stream, excludeRecomputableData);
-    stream.beginChunk(0x01);
-    // For future use...
-    stream.endChunk();
-}
-
-/******************************************************************************
-* Loads the class' contents from the given stream.
-******************************************************************************/
-void Pipeline::loadFromStream(ObjectLoadStream& stream)
-{
-    SceneNode::loadFromStream(stream);
-    stream.expectChunk(0x01);
-    // For future use...
-    stream.closeChunk();
-
-    // Transfer the caching flag loaded from the state file to the internal cache instance.
-    _pipelineCache.setPrecomputeAllFrames(pipelineTrajectoryCachingEnabled());
-}
-
-/******************************************************************************
 * Rescales the times of all animation keys from the old animation interval to the new interval.
 ******************************************************************************/
 void Pipeline::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval)
@@ -371,7 +346,7 @@ void Pipeline::getDataObjectBoundingBox(AnimationTime time, const DataObject* da
 
     // Call all vis elements of the data object.
     for(DataVis* vis : dataObj->visElements()) {
-        // Let the pipeline substitude the vis element with another one.
+        // Let the pipeline substitute the vis element with another one.
         vis = getReplacementVisElement(vis);
         if(vis->isEnabled()) {
             // Push the data object onto the stack.
@@ -453,24 +428,6 @@ void Pipeline::referenceInserted(const PropertyFieldDescriptor* field, RefTarget
 }
 
 /******************************************************************************
-* Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
-******************************************************************************/
-void Pipeline::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
-{
-    if(field == PROPERTY_FIELD(replacedVisElements) && !isBeingDeleted()) {
-        // If an upstream vis element is being removed from the list, because the weakly referenced vis element is being deleted,
-        // then also discard our corresponding replacement element managed by the pipeline.
-        if(!isUndoingOrRedoing()) {
-            OVITO_ASSERT(replacedVisElements().size() + 1 == replacementVisElements().size());
-            _replacementVisElements.remove(this, PROPERTY_FIELD(replacementVisElements), listIndex);
-        }
-        // Reset pipeline cache if a replacement for a visual element is removed.
-        invalidatePipelineCache();
-    }
-    SceneNode::referenceRemoved(field, oldTarget, listIndex);
-}
-
-/******************************************************************************
 * Is called when the value of a non-animatable property field of this RefMaker has changed.
 ******************************************************************************/
 void Pipeline::propertyChanged(const PropertyFieldDescriptor* field)
@@ -488,6 +445,43 @@ void Pipeline::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
+* Saves the class' contents to the given stream.
+******************************************************************************/
+void Pipeline::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
+{
+    SceneNode::saveToStream(stream, excludeRecomputableData);
+    stream.beginChunk(0x02);
+    // Save list of weak references to vis elements that have been replaced with local copies.
+    stream.writeSizeT(replacedVisElements().size());
+    for(const auto& weakRef : replacedVisElements()) {
+        stream.saveObject(weakRef.lock(), excludeRecomputableData);
+    }
+    stream.endChunk();
+}
+
+/******************************************************************************
+* Loads the class' contents from the given stream.
+******************************************************************************/
+void Pipeline::loadFromStream(ObjectLoadStream& stream)
+{
+    SceneNode::loadFromStream(stream);
+
+    int version = stream.expectChunkRange(0x01, 1);
+    if(version >= 1) {
+        // Load list of weak references to replaced vis elements.
+        std::vector<OOWeakRef<DataVis>> visElements(stream.readSizeT());
+        for(auto& weakRef : visElements) {
+            weakRef = stream.loadObject<DataVis>();
+        }
+        setReplacedVisElements(std::move(visElements));
+    }
+    stream.closeChunk();
+
+    // Transfer the caching flag loaded from the state file to the internal cache instance.
+    _pipelineCache.setPrecomputeAllFrames(pipelineTrajectoryCachingEnabled());
+}
+
+/******************************************************************************
 * This method is called once for this object after it has been completely
 * loaded from a stream.
 ******************************************************************************/
@@ -495,14 +489,48 @@ void Pipeline::loadFromStreamComplete(ObjectLoadStream& stream)
 {
     SceneNode::loadFromStreamComplete(stream);
 
-    // Remove null entries from the replacedVisElements list due to expired weak references.
-    for(int i = replacedVisElements().size() - 1; i >= 0; i--) {
-        if(replacedVisElements()[i] == nullptr) {
-            _replacedVisElements.remove(this, PROPERTY_FIELD(replacedVisElements), i);
-        }
-    }
     OVITO_ASSERT(replacedVisElements().size() == replacementVisElements().size());
     OVITO_ASSERT(!isUndoRecording());
+
+    // Remove null entries from the replacedVisElements and replacementVisElements lists due to expired weak references.
+    if(boost::algorithm::any_of(replacedVisElements(), std::mem_fn(&OOWeakRef<DataVis>::expired))) {
+        auto newReplacedVisElements = replacedVisElements();
+        for(int i = (int)newReplacedVisElements.size() - 1; i >= 0; i--) {
+            if(newReplacedVisElements[i].expired()) {
+                newReplacedVisElements.erase(newReplacedVisElements.begin() + i);
+                _replacementVisElements.remove(this, PROPERTY_FIELD(replacementVisElements), i);
+            }
+        }
+        setReplacedVisElements(std::move(newReplacedVisElements));
+        OVITO_ASSERT(replacedVisElements().size() == replacementVisElements().size());
+    }
+}
+
+/******************************************************************************
+* Provides a custom function that takes are of the deserialization of a
+* serialized property field that has been removed from the class.
+* This is needed for file backward compatibility with OVITO 3.11.
+******************************************************************************/
+RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr Pipeline::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+{
+    // The 'replacedVisElements' list used to be a vector reference field in previous OVITO versions.
+    // Now it is a simple property field holding a vector of weak references to vis elements.
+    if(field.definingClass == &Pipeline::OOClass() && stream.formatVersion() < 30013) {
+        if(field.identifier == "replacedVisElements") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x02);
+                qint32 numElements;
+                stream >> numElements;
+                std::vector<OOWeakRef<DataVis>> elements;
+                for(qint32 i = 0; i < numElements; i++) {
+                    elements.push_back(stream.loadObject<DataVis>());
+                }
+                static_object_cast<Pipeline>(&owner)->setReplacedVisElements(std::move(elements));
+                stream.closeChunk();
+            };
+        }
+    }
+    return SceneNode::OOMetaClass::overrideFieldDeserialization(stream, field);
 }
 
 /******************************************************************************
@@ -511,11 +539,11 @@ void Pipeline::loadFromStreamComplete(ObjectLoadStream& stream)
 ******************************************************************************/
 DataVis* Pipeline::getReplacementVisElement(DataVis* vis) const
 {
+    OVITO_ASSERT(vis);
     OVITO_ASSERT(replacementVisElements().size() == replacedVisElements().size());
-    OVITO_ASSERT(std::find(replacedVisElements().begin(), replacedVisElements().end(), nullptr) == replacedVisElements().end());
-    int index = replacedVisElements().indexOf(vis);
-    if(index >= 0)
-        return replacementVisElements()[index];
+    auto it = boost::find(replacedVisElements(), vis);
+    if(it != replacedVisElements().end())
+        return replacementVisElements()[std::distance(replacedVisElements().begin(), it)];
     else
         return vis;
 }
@@ -530,9 +558,8 @@ DataVis* Pipeline::makeVisElementIndependent(DataVis* visElement)
     OVITO_ASSERT(replacedVisElements().size() == replacementVisElements().size());
 
     // Check if the visual element is already replaced.
-    int index = replacedVisElements().indexOf(visElement);
-    if(index >= 0)
-        return replacementVisElements()[index];
+    if(DataVis* replacement = getReplacementVisElement(visElement); replacement != visElement)
+        return replacement;
 
     // Clone the visual element.
     OORef<DataVis> clonedVisElement = CloneHelper::cloneSingleObject(visElement, true);
@@ -543,10 +570,12 @@ DataVis* Pipeline::makeVisElementIndependent(DataVis* visElement)
 
     // Put the copy into our mapping table, which will subsequently be applied
     // after every pipeline evaluation to replace the upstream visual element
-    // with our local copy.
-    index = replacementVisElements().indexOf(visElement);
+    // with our private copy.
+    auto index = replacementVisElements().indexOf(visElement);
     if(index == -1) {
-        _replacedVisElements.push_back(this, PROPERTY_FIELD(replacedVisElements), visElement);
+        auto newList = replacedVisElements();
+        newList.push_back(visElement);
+        setReplacedVisElements(std::move(newList));
         _replacementVisElements.push_back(this, PROPERTY_FIELD(replacementVisElements), std::move(clonedVisElement));
     }
     else {

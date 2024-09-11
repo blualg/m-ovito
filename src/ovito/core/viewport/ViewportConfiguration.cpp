@@ -100,6 +100,10 @@ void ViewportConfiguration::updateListOfViewports()
     std::vector<Viewport*> viewportList;
     gatherViewportsFromLayout(layoutRootCell(), viewportList);
     _viewports.setTargets(this, PROPERTY_FIELD(viewports), std::move(viewportList));
+    if(activeViewport() && !viewports().contains(activeViewport()))
+        setActiveViewport(nullptr);
+    if(maximizedViewport() && !viewports().contains(maximizedViewport()))
+        setMaximizedViewport(nullptr);
 }
 
 /******************************************************************************

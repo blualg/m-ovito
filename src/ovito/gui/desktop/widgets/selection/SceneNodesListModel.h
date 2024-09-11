@@ -37,8 +37,8 @@ class OVITO_GUI_EXPORT SceneNodesListModel : public QAbstractListModel
 
 public:
 
-    /// Constructs the model.
-    SceneNodesListModel(MainWindow& mainWindow, QWidget* parent = nullptr);
+    /// Constructor.
+    explicit SceneNodesListModel(MainWindow& mainWindow, QWidget* parent = nullptr);
 
     /// Returns the number of rows of the model.
     virtual int rowCount(const QModelIndex & parent = QModelIndex()) const override;
@@ -50,7 +50,7 @@ public:
     virtual Qt::ItemFlags flags(const QModelIndex& index) const override;
 
     /// Returns the current list of scene nodes in the scene.
-    const QVector<SceneNode*>& sceneNodes() const { return _nodeListener.targets(); }
+    const auto& sceneNodes() const { return _nodeListener.targets(); }
 
     /// Returns the scene node at the given index of the list model.
     SceneNode* sceneNodeFromListIndex(int index) const {

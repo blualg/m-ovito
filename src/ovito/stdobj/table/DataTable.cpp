@@ -120,4 +120,20 @@ ConstPropertyPtr DataTable::getXValues() const
     }
 }
 
+/******************************************************************************
+* From RefMaker.
+******************************************************************************/
+void DataTable::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
+{
+    if(field == PROPERTY_FIELD(PropertyContainer::properties)) {
+        if(!isBeingDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+            if(x() == oldTarget)
+                setX({});
+            if(y() == oldTarget)
+                setY({});
+        }
+    }
+    PropertyContainer::referenceRemoved(field, oldTarget, listIndex);
+}
+
 }   // End of namespace

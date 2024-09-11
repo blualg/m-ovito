@@ -80,7 +80,7 @@ private:
     void continuePlaybackAtFrame(int frame);
 
     /// The scene being played back.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(Scene*, scene, setScene);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Scene>, scene, setScene);
 
     /// The abstract user interface in which this object operates.
     UserInterface* _userInterface;

@@ -76,7 +76,7 @@ protected:
 private:
 
     /// The overlay represented by this item in the list box.
-    DECLARE_REFERENCE_FIELD(ViewportOverlay*, overlay);
+    DECLARE_REFERENCE_FIELD(OORef<ViewportOverlay>, overlay);
 
     /// The type of this list item.
     OverlayItemType _itemType;

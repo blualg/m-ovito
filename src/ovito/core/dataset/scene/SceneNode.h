@@ -39,7 +39,18 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT SceneNode : public RefTarget
 {
-    OVITO_CLASS(SceneNode)
+    /// Give this class its own metaclass.
+    class OVITO_CORE_EXPORT SceneNodeClass : public RefTarget::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using RefTarget::OOMetaClass::OOMetaClass;
+
+        /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class.
+        /// This is needed for backward compatibility with OVITO 3.11.
+        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const override;
+    };
+    OVITO_CLASS_META(SceneNode, SceneNodeClass)
 
 public:
 
@@ -89,8 +100,6 @@ public:
     /// \brief Deletes this node from the scene.
     ///
     /// This will also deletes all child nodes.
-    ///
-    /// \undoable
     virtual void deleteSceneNode();
 
     /// \brief Inserts a scene node into this node's list of children.
@@ -100,9 +109,6 @@ public:
     ///
     /// This method preserves the world transformation of the new child node by calling
     /// Transformation::changeParents() on the node's local transformation controller.
-    ///
-    /// \undoable
-    /// \sa children(), addChildNode(), removeChildNode()
     void insertChildNode(qsizetype index, OORef<SceneNode> newChild);
 
     /// \brief Adds a child scene node to this node.
@@ -111,9 +117,6 @@ public:
     ///
     /// This method preserves the world transformation of the new child node by calling
     /// Transformation::changeParents() on the node's local transformation controller.
-    ///
-    /// \undoable
-    /// \sa children(), insertChildNode(), removeChildNode()
     void addChildNode(SceneNode* newChild) {
         insertChildNode(children().size(), newChild);
     }
@@ -122,10 +125,6 @@ public:
     /// \param index An index into this node's list of children.
     ///
     /// This method preserves the world transformation of the child node by calling
-    /// Transformation::changeParents() on the node's local transformation controller.
-    ///
-    /// \undoable
-    /// \sa children(), insertChildNode(), addChildNode()
     void removeChildNode(qsizetype index);
 
     /// \brief Returns whether the given node is a parent of this node.
@@ -186,7 +185,6 @@ public:
     /// \return The newly created LookAtController assigned as rotation controller for this node.
     ///
     /// The target node will automatically be deleted if this SceneNode is deleted and vice versa.
-    /// \undoable
     LookAtController* setLookatTargetNode(AnimationTime time, SceneNode* targetNode);
 
     /// \brief Computes the bounding box of the scene node in local coordinates.
@@ -213,9 +211,6 @@ public:
 
     /// \brief Returns whether this is the root scene node.
     /// \return \c true if this is the root node of the scene.
-    ///
-    /// \sa DataSet::scene()
-    /// \sa parentNode()
     virtual bool isRootNode() const { return false; }
 
     /// \brief Returns whether this node is part of a scene.
@@ -296,8 +291,8 @@ private:
     /// The child nodes of this node.
     DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, children, PROPERTY_FIELD_ALWAYS_CLONE | PROPERTY_FIELD_NO_SUB_ANIM);
 
-    /// Viewports in which this node should NOT be rendered. Can be used to control the visibility in different viewports.
-    DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(Viewport*, hiddenInViewports, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_NO_SUB_ANIM);
+    /// Viewports in which this node should NOT be rendered. Allows to selectively control the visibility of the scene node in different viewports.
+    DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<OOWeakRef<Viewport>>{}, hiddenInViewports, setHiddenInViewports);
 
     /// This node's cached world transformation matrix.
     /// It contains the transformation of the parent node.

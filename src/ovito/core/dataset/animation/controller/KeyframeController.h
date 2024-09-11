@@ -53,10 +53,10 @@ public:
     bool areKeysSorted() const;
 
     /// Moves the keys in the given set by the given time shift.
-    void moveKeys(const QVector<AnimationKey*> keysToMove, AnimationTime::value_type shift);
+    void moveKeys(const QVector<OORef<AnimationKey>>& keysToMove, AnimationTime::value_type shift);
 
     /// Deletes the given set of keys from the controller.
-    void deleteKeys(const QVector<AnimationKey*> keysToDelete);
+    void deleteKeys(const QVector<OORef<AnimationKey>>& keysToDelete);
 
     /// Creates am animation key at the given time.
     /// Returns the index of the key, which may be an existing key.

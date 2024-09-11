@@ -53,7 +53,7 @@ protected:
 private:
 
     /// The RefTarget which is being monitored by this listener.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD(RefTarget*, target, setTarget);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<RefTarget>, target, setTarget);
 };
 
 /**
@@ -142,7 +142,7 @@ protected:
 private:
 
     /// The list of RefTargets which are being monitored by this listener.
-    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(RefTarget*, targets, setTargets);
+    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(OORef<RefTarget>, targets, setTargets);
 };
 
 /**
@@ -171,7 +171,10 @@ public:
     /// \brief Returns the list of targets this listener is listening to.
     /// \return The current list of target objects.
     /// \sa setTargets()
-    const QVector<T*>& targets() const { return reinterpret_cast<const QVector<T*>&>(_impl->targets()); }
+    const auto& targets() const {
+        static_assert(std::is_same_v<decltype(_impl->targets()), const QVector<OORef<RefTarget>>&>);
+        return reinterpret_cast<const QVector<OORef<T>>&>(_impl->targets());
+    }
 
     /// \brief Sets the list of targets this listener should listen to.
     /// \param newTargets The new list of targets.

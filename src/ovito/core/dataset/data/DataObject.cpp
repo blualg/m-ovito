@@ -261,7 +261,7 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
 
     // Visit all sub-objects recursively.
     for(const PropertyFieldDescriptor* field : self->getOOMetaClass().propertyFields()) {
-        if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
+        if(field->isReferenceField() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
             if(!field->isVector()) {
                 if(const DataObject* subObject = static_object_cast<DataObject>(self->getReferenceFieldTarget(field))) {
                     OVITO_ASSERT(self->hasReferenceTo(subObject));

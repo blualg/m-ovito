@@ -240,6 +240,8 @@ class OOWeakRef : public std::weak_ptr<OvitoObject>
 {
 public:
 
+    using element_type = T;
+
     /// Inherit all constructors from base class.
     constexpr OOWeakRef() noexcept = default;
 
@@ -285,6 +287,15 @@ public:
     }
 };
 
+template<typename T>
+struct is_weak_ref : std::false_type {};
+
+template<typename T>
+struct is_weak_ref<OOWeakRef<T>> : std::true_type {};
+
+template<typename T>
+inline constexpr bool is_weak_ref_v = is_weak_ref<std::decay_t<T>>::value;
+
 template<class T, class U> OORef<T> static_pointer_cast(const OORef<U>& p) noexcept
 {
     static_assert(std::is_convertible_v<const U*, const T*> || std::is_base_of_v<U, T>);
@@ -314,15 +325,19 @@ template<class T, class U> OORef<T> const_pointer_cast(const OORef<U>& p) noexce
 template<class T, class U> OORef<T> const_pointer_cast(OORef<U>&& p) noexcept
 {
     static_assert(std::is_convertible_v<const U*, const T*>);
+    if constexpr(std::is_same_v<T, U>)
+        return std::move(p);
+    else {
 #if !defined(_LIBCPP_VERSION) || _LIBCPP_VERSION >= 170000
-    return std::const_pointer_cast<T, U>(std::move(p));
+        return std::const_pointer_cast<T, U>(std::move(p));
 #else
-    // Note: libc++ < 17 does not implement move semantics for std::const_pointer_cast (introduced by c++20).
-    // We have to work around this limitation by explicitly resetting the source pointer.
-    auto d = std::const_pointer_cast<T, U>(std::move(p));
-    p.reset();
-    return d;
+        // Note: libc++ < 17 does not implement move semantics for std::const_pointer_cast (introduced by c++20).
+        // We have to work around this limitation by explicitly resetting the source pointer.
+        auto d = std::const_pointer_cast<T, U>(std::move(p));
+        p.reset();
+        return d;
 #endif
+    }
 }
 
 template<class T, class U> OORef<T> dynamic_pointer_cast(const OORef<U>& p) noexcept

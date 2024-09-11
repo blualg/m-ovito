@@ -72,8 +72,8 @@ private Q_SLOTS:
 
 private:
 
-    /// Weak reference to the currently active viewport.
-    DECLARE_REFERENCE_FIELD(Viewport*, activeViewport);
+    /// Reference to the currently active viewport.
+    DECLARE_REFERENCE_FIELD(OORef<Viewport>, activeViewport);
 
     QComboBox* _sizePresetsBox;
     QCheckBox* _viewportPreviewModeBox;

@@ -61,15 +61,13 @@ PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, c
 /// Constructor for a property field that stores a single reference to a RefTarget.
 PropertyFieldDescriptor::PropertyFieldDescriptor(RefMakerClass* definingClass, OvitoClassPtr targetClass, const char* identifier, PropertyFieldFlags flags,
     RefTarget* (*singleReferenceReadFunc)(const RefMaker*, const PropertyFieldDescriptor*),
-    void (*singleReferenceWriteFunc)(RefMaker*, const PropertyFieldDescriptor*, const RefTarget*),
-    void (*singleReferenceWriteFuncRef)(RefMaker*, const PropertyFieldDescriptor*, OORef<RefTarget>))
+    void (*singleReferenceWriteFuncRef)(RefMaker*, const PropertyFieldDescriptor*, OORef<const RefTarget>))
     : _definingClassDescriptor(definingClass), _targetClassDescriptor(targetClass), _identifier(identifier), _flags(flags),
         _singleReferenceReadFunc(singleReferenceReadFunc),
-        _singleReferenceWriteFunc(singleReferenceWriteFunc),
         _singleReferenceWriteFuncRef(singleReferenceWriteFuncRef)
 {
     OVITO_ASSERT(_identifier != nullptr);
-    OVITO_ASSERT(_singleReferenceReadFunc != nullptr && _singleReferenceWriteFunc != nullptr);
+    OVITO_ASSERT(_singleReferenceReadFunc != nullptr && _singleReferenceWriteFuncRef != nullptr);
     OVITO_ASSERT(!_flags.testFlag(PROPERTY_FIELD_VECTOR));
     OVITO_ASSERT(definingClass != nullptr);
     OVITO_ASSERT(targetClass != nullptr);

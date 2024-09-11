@@ -109,7 +109,7 @@ public:
     KeyframeController* ctrl() const { return _ctrl.target(); }
 
     /// Returns the list of animation keys.
-    const QVector<AnimationKey*>& keys() const { return _keys.targets(); }
+    const auto& keys() const { return _keys.targets(); }
 
     /// Returns the number of rows.
     virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override {
@@ -473,7 +473,7 @@ void AnimationKeyEditorDialog::onDeleteKey()
 {
     QModelIndexList selection = _tableWidget->selectionModel()->selectedRows();
     _mainWindow.performActions(*this, [&]() {
-        QVector<AnimationKey*> keysToDelete;
+        QVector<OORef<AnimationKey>> keysToDelete;
         for(const QModelIndex& index : selection) {
             OVITO_ASSERT(index.row() >= 0 && index.row() < ctrl()->keys().size());
             keysToDelete.push_back(ctrl()->keys()[index.row()]);

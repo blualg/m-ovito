@@ -284,11 +284,9 @@ private:
 };
 
 /// This utility class template maps a specific fancy pointer type to the right general fancy pointer type.
-///    T*                 ->  RefTarget*
 ///    OORef<T>           ->  OORef<RefTarget>
 ///    DataOORef<const T> ->  DataOORef<const DataObject>
 template<typename T> struct SelectGenericReferenceType {};
-template<typename T> struct SelectGenericReferenceType<T*> { using type = RefTarget*; };
 template<typename T> struct SelectGenericReferenceType<OORef<T>> { using type = OORef<RefTarget>; };
 template<typename T> struct SelectGenericReferenceType<DataOORef<const T>> { using type = DataOORef<const DataObject>; };
 
@@ -309,7 +307,7 @@ public:
 #endif
 
     /// Returns a raw, untyped pointer to the currently referenced object.
-    inline typename std::pointer_traits<pointer>::element_type* get() const noexcept { return to_address(_target); }
+    inline typename std::pointer_traits<pointer>::element_type* get() const noexcept { return _target.get(); }
 
 protected:
 
@@ -319,10 +317,6 @@ protected:
     /// Replaces the target stored in the reference field.
     void swapReference(RefMaker* owner, const PropertyFieldDescriptor* descriptor, pointer& inactiveTarget);
 
-    /// Obtains the object address represented by a fancy pointer.
-    template<class U> static constexpr U* to_address(U* p) noexcept { return p; }
-    template<class U> static constexpr auto to_address(const U& p) noexcept { return p.get(); }
-
     /// The actual fancy pointer value.
     pointer _target{};
 };
@@ -330,10 +324,8 @@ protected:
 // Instantiate base class template for the fancy pointer base types needed.
 #ifndef OVITO_BUILD_MONOLITHIC
     #if !defined(Core_EXPORTS)
-        extern template class OVITO_CORE_EXPORT SingleReferenceFieldBase<RefTarget*>;
         extern template class OVITO_CORE_EXPORT SingleReferenceFieldBase<OORef<RefTarget>>;
     #elif !defined(Q_CC_MSVC) && !defined(Q_CC_CLANG)
-        template class OVITO_CORE_EXPORT SingleReferenceFieldBase<RefTarget*>;
         template class OVITO_CORE_EXPORT SingleReferenceFieldBase<OORef<RefTarget>>;
     #endif
 #endif
@@ -360,10 +352,10 @@ public:
 
     /// Write access to the RefTarget pointer. Changes the value of the reference field.
     inline void set(RefMaker* owner, const PropertyFieldDescriptor* descriptor, fancy_pointer newPointer) {
-        if constexpr(!std::is_pointer_v<fancy_pointer> || !std::is_const_v<std::remove_pointer_t<fancy_pointer>>)
+        if constexpr(!std::is_const_v<typename std::pointer_traits<fancy_pointer>::element_type>)
             base_class::set(owner, descriptor, std::move(newPointer));
         else
-            base_class::set(owner, descriptor, const_cast<RefTarget*>(static_cast<const RefTarget*>(newPointer)));
+            base_class::set(owner, descriptor, const_pointer_cast<target_object_type>(std::move(newPointer)));
     }
 
     /// Returns the target object currently being referenced by the reference field.
@@ -393,7 +385,7 @@ public:
 #endif
 
     /// Returns a raw, untyped pointer to the i-th object in the vector.
-    inline typename std::pointer_traits<pointer>::element_type* get(size_type i) const noexcept { return to_address(_targets[i]); }
+    inline typename std::pointer_traits<pointer>::element_type* get(size_type i) const noexcept { return _targets[i].get(); }
 
     /// Clears all references and sets the vector size to zero.
     void clear(RefMaker* owner, const PropertyFieldDescriptor* descriptor);
@@ -436,10 +428,6 @@ protected:
     /// Adds the target to the vector reference field.
     size_type addReference(RefMaker* owner, const PropertyFieldDescriptor* descriptor, size_type index, pointer& target);
 
-    /// Obtains the object address represented by a fancy pointer.
-    template<class U> static constexpr U* to_address(U* p) noexcept { return p; }
-    template<class U> static constexpr auto to_address(const U& p) noexcept { return p.get(); }
-
     /// The actual list of fancy pointers to the RefTargets.
     container _targets;
 };
@@ -447,10 +435,8 @@ protected:
 // Instantiate base class template for the fancy pointer base types needed.
 #ifndef OVITO_BUILD_MONOLITHIC
     #if !defined(Core_EXPORTS)
-        extern template class OVITO_CORE_EXPORT VectorReferenceFieldBase<RefTarget*>;
         extern template class OVITO_CORE_EXPORT VectorReferenceFieldBase<OORef<RefTarget>>;
     #elif !defined(Q_CC_MSVC) && !defined(Q_CC_CLANG)
-        template class OVITO_CORE_EXPORT VectorReferenceFieldBase<RefTarget*>;
         template class OVITO_CORE_EXPORT VectorReferenceFieldBase<OORef<RefTarget>>;
     #endif
 #endif
@@ -520,9 +506,6 @@ public:
             this->remove(owner, descriptor, j);
     }
 };
-
-/// Vector container type used by vector reference fields with T* regular pointers.
-template<typename T> using WeakRefVector = typename VectorReferenceField<T*>::container;
 
 /// Vector container type used by vector reference fields with OORef<T> fancy pointers.
 template<typename T> using OORefVector = typename VectorReferenceField<OORef<T>>::container;

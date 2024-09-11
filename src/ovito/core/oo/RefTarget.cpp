@@ -27,7 +27,6 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/utilities/concurrent/detail/Latch.h>
 #include "RefTarget.h"
 
 namespace Ovito {
@@ -55,32 +54,6 @@ void RefTarget::aboutToBeDeleted()
     OVITO_ASSERT(this->__isObjectAlive());
     OVITO_ASSERT(isBeingDeleted());
 
-    // Make sure undo recording is not active while deleting the object from memory.
-    UndoSuspender noUndo;
-
-    if(ExecutionContext::isMainThread()) {
-        // No strong references to this target should exist at this point.
-        // But we still need to get rid of all remaining weak references to this target object.
-        ReferenceEvent deleteEvent(ReferenceEvent::TargetDeleted, this);
-        _dependents.visit([&](RefMaker* dependent) {
-            dependent->handleReferenceEvent(this, deleteEvent);
-        });
-    }
-    else if(!_dependents.empty()) {
-        // From a worker thread, we cannot directly notify the remaining weak dependents about the deletion of this object.
-        // We have to do it from the main thread and block here until the main thread has performed the notification calls.
-        detail::Latch latch(1);
-        OVITO_ASSERT(!ExecutionContext::current().ui().taskManager().isShuttingDown()); // Note: During late-phase shutdown the main thread may not be able to process tasks.
-        ExecutionContext::current().runDeferred(nullptr, [this, &latch]() noexcept {
-            ReferenceEvent deleteEvent(ReferenceEvent::TargetDeleted, this);
-            _dependents.visit([&](RefMaker* dependent) {
-                dependent->handleReferenceEvent(this, deleteEvent);
-            });
-            latch.count_down();
-        });
-        latch.wait();
-    }
-
     // No dependents should be left at this point.
 #ifdef OVITO_DEBUG
     if(!_dependents.empty()) {
@@ -92,8 +65,18 @@ void RefTarget::aboutToBeDeleted()
     }
 #endif
 
-    // Clears all references this RefMake has to other objects.
+    // Make sure no undo recording occurs while deleting the object.
+#ifdef OVITO_DEBUG
+    int oldCount = CompoundOperation::current() ? CompoundOperation::current()->count() : 0;
+#endif
+
+    // Clears all references this RefMaker has to other objects.
     RefMaker::aboutToBeDeleted();
+
+    // Verify that no undo records have been put on the stack during object destruction.
+#ifdef OVITO_DEBUG
+    OVITO_ASSERT(!CompoundOperation::current() || CompoundOperation::current()->count() == oldCount);
+#endif
 }
 
 /******************************************************************************

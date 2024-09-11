@@ -127,7 +127,7 @@ public Q_SLOTS:
 private:
 
     /// The object whose parameters are being edited.
-    DECLARE_REFERENCE_FIELD(RefTarget*, editObject);
+    DECLARE_REFERENCE_FIELD(OORef<RefTarget>, editObject);
 
     /// The editor hosting this parameter UI.
     PropertiesEditor* _editor;

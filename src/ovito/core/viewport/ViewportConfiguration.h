@@ -86,13 +86,13 @@ private:
     void updateListOfViewports();
 
     /// List of all viewports which get automatically refreshed whenever their scene changes.
-    DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(Viewport*, viewports, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_WEAK_REF);
+    DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<Viewport>, viewports, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NEVER_CLONE_TARGET);
 
     /// The active viewport. May be null.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport*, activeViewport, setActiveViewport, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Viewport>, activeViewport, setActiveViewport, PROPERTY_FIELD_NO_UNDO);
 
     /// The maximized viewport if any.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(Viewport*, maximizedViewport, setMaximizedViewport, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_WEAK_REF);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Viewport>, maximizedViewport, setMaximizedViewport, PROPERTY_FIELD_NO_UNDO);
 
     /// The viewport layout tree's root node.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<ViewportLayoutCell>, layoutRootCell, setLayoutRootCell);

@@ -120,14 +120,14 @@ bool KeyframeController::areKeysSorted() const
 /******************************************************************************
 * Moves the keys in the given set by the given time shift.
 ******************************************************************************/
-void KeyframeController::moveKeys(const QVector<AnimationKey*> keysToMove, AnimationTime::value_type shift)
+void KeyframeController::moveKeys(const QVector<OORef<AnimationKey>>& keysToMove, AnimationTime::value_type shift)
 {
     if(shift == 0)
         return;
 
     // First, remove the selected keys from the controller.
     QVector<OORef<AnimationKey>> removedKeys;
-    for(AnimationKey* key : keysToMove) {
+    for(const OORef<AnimationKey>& key : keysToMove) {
         int index = keys().indexOf(key);
         if(index >= 0) {
             removedKeys.push_back(key);
@@ -146,9 +146,9 @@ void KeyframeController::moveKeys(const QVector<AnimationKey*> keysToMove, Anima
 /******************************************************************************
 * Deletes the given set of keys from the controller.
 ******************************************************************************/
-void KeyframeController::deleteKeys(const QVector<AnimationKey*> keysToDelete)
+void KeyframeController::deleteKeys(const QVector<OORef<AnimationKey>>& keysToDelete)
 {
-    for(AnimationKey* key : keysToDelete)
+    for(const OORef<AnimationKey>& key : keysToDelete)
         key->requestObjectDeletion();
     updateKeys();
 }

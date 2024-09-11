@@ -101,13 +101,13 @@ RefTarget* RefMaker::getReferenceFieldTarget(const PropertyFieldDescriptor* fiel
 /******************************************************************************
 * Sets a reference field of this RefMaker to reference a different target.
 ******************************************************************************/
-void RefMaker::setReferenceFieldTarget(const PropertyFieldDescriptor* field, const RefTarget* target)
+void RefMaker::setReferenceFieldTarget(const PropertyFieldDescriptor* field, OORef<const RefTarget> target)
 {
     OVITO_ASSERT_MSG(field->isReferenceField(), "RefMaker::setReferenceFieldTarget()", "This function may not be used to set property fields.");
     OVITO_ASSERT_MSG(field->isVector() == false, "RefMaker::setReferenceFieldTarget()", "This function may not be used to set vector reference fields.");
     OVITO_ASSERT_MSG(getOOClass().isDerivedFrom(*field->definingClass()), "RefMaker::setReferenceFieldTarget()", "The reference field has not been defined in this class or its base classes.");
-    OVITO_ASSERT(field->_singleReferenceWriteFunc != nullptr);
-    field->_singleReferenceWriteFunc(this, field, target);
+    OVITO_ASSERT(field->_singleReferenceWriteFuncRef != nullptr);
+    field->_singleReferenceWriteFuncRef(this, field, std::move(target));
 }
 
 /******************************************************************************
@@ -292,9 +292,6 @@ bool RefMaker::hasStrongReferenceTo(const RefTarget* target) const
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
         if(!field->isReferenceField())
             continue;
-        // Skip weak references for which event propagation is disabled.
-        if(field->isWeakReference() && field->flags().testFlag(PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES))
-            continue;
         if(!field->isVector()) {
             if(getReferenceFieldTarget(field) == target)
                 return true;
@@ -425,7 +422,6 @@ void RefMaker::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
 
     // Iterate over all property fields in the class hierarchy.
     for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
-
         if(field->isReferenceField()) {
             // Write the object pointed to by the reference field to the stream.
             if(!field->dontSaveTarget()) {
@@ -513,10 +509,7 @@ void RefMaker::loadFromStream(ObjectLoadStream& stream)
 #if 0
                         qDebug() << "  Reference field" << fieldEntry.identifier << " contains" << target;
 #endif
-                        if(!fieldEntry.field->isWeakReference())
-                            fieldEntry.field->_singleReferenceWriteFuncRef(this, fieldEntry.field, std::move(target));
-                        else
-                            fieldEntry.field->_singleReferenceWriteFunc(this, fieldEntry.field, target.get());
+                        fieldEntry.field->_singleReferenceWriteFuncRef(this, fieldEntry.field, std::move(target));
                     }
                     else {
                         // Remove any pre-existing targets from the reference field.

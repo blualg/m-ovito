@@ -144,7 +144,7 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
                 for(DataVis* vis : pipeline->visElements()) {
                     if(vis->isEnabled()) {
                         for(const PropertyFieldDescriptor* field : vis->getOOMetaClass().propertyFields()) {
-                            if(field->isReferenceField() && !field->isWeakReference() && field->targetClass()->isDerivedFrom(PropertyColorMapping::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM) && !field->isVector()) {
+                            if(field->isReferenceField() && field->targetClass()->isDerivedFrom(PropertyColorMapping::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM) && !field->isVector()) {
                                 if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(vis->getReferenceFieldTarget(field))) {
                                     if(mapping->sourceProperty()) {
                                         setPipeline(pipeline);
