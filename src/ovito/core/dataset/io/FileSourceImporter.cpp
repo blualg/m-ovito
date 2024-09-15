@@ -65,12 +65,12 @@ void FileSourceImporter::propertyChanged(const PropertyFieldDescriptor* field)
 void FileSourceImporter::requestReload(bool refetchFiles, int frame)
 {
     OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     // Retrieve the FileSource that owns this importer by looking it up in the list of dependents.
     visitDependents([&](RefMaker* dependent) {
         if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent)) {
-            ExecutionContext::current().ui().handleExceptions([&] {
+            this_task::ui()->handleExceptions([&] {
                 fileSource->reloadFrame(refetchFiles, frame);
             });
         }
@@ -88,13 +88,13 @@ void FileSourceImporter::requestReload(bool refetchFiles, int frame)
 void FileSourceImporter::requestFramesUpdate(bool refetchCurrentFile)
 {
     OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     // Retrieve the FileSource that owns this importer by looking it up in the list of dependents.
     visitDependents([&](RefMaker* dependent) {
         if(FileSource* fileSource = dynamic_object_cast<FileSource>(dependent)) {
             // Scan input source for animation frames.
-            ExecutionContext::current().ui().handleExceptions([&] {
+            this_task::ui()->handleExceptions([&] {
                 fileSource->updateListOfFrames(refetchCurrentFile);
             });
         }
@@ -212,7 +212,7 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
     else pipeline = existingPipeline;
 
     // Select new object in the scene.
-    if(importMode != DontAddToScene && scene != nullptr && ExecutionContext::current().isInteractive())
+    if(importMode != DontAddToScene && scene != nullptr && this_task::isInteractive())
         scene->selection()->setNode(pipeline);
 
     // Concatenate all files from the input list having the same file format into one sequence,
@@ -238,7 +238,7 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
     if(importMode != ReplaceSelected && importMode != DontAddToScene) {
         // Adjust viewports to completely show the newly imported object.
         // This needs to be deferred until after the data has been completely loaded and its extents are known.
-        ExecutionContext::current().ui().zoomToSceneExtentsWhenReady();
+        this_task::ui()->zoomToSceneExtentsWhenReady();
     }
 
     // If this importer did not handle all supplied input files,
@@ -316,7 +316,7 @@ QString FileSourceImporter::deriveWildcardPatternFromFilename(const QString& fil
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const std::vector<QUrl>& sourceUrls)
 {
     OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     // No output if there is no input.
     if(sourceUrls.empty())
@@ -355,7 +355,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const QUrl& sourceUrl)
 {
     OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     if(shouldScanFileForFrames(sourceUrl)) {
         // Check if filename is a wildcard pattern.
@@ -405,7 +405,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const FileHandle& fileHandle)
 {
     OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     // Scan file.
     if(FrameFinderPtr frameFinder = createFrameFinder(fileHandle))
@@ -420,7 +420,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationRequest& request)
 {
     OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::loadFrame", "This function may only be called from the main thread.");
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     // Note: FileSourceImporter::loadFrame() may not be called while undo recording is active.
     OVITO_ASSERT(!isUndoRecording());
@@ -441,7 +441,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
             if(!task.isCanceled()) {
                 FrameLoader& frameLoader = static_cast<FrameLoader&>(task);
                 if(frameLoader.additionalFramesDetected() && !isMultiTimestepFile()) {
-                    ExecutionContext::current().ui().handleExceptions([&] {
+                    task.ui()->handleExceptions([&] {
                         setMultiTimestepFile(true);
                     });
                 }
@@ -486,7 +486,7 @@ void FileSourceImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImp
 ******************************************************************************/
 Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& sourceUrl)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     // Determine whether the filename contains a wildcard character.
     if(!isWildcardPattern(sourceUrl)) {

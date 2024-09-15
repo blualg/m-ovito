@@ -20,32 +20,40 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
+
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/concurrent/ExecutionContext.h>
-#include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/Task.h>
 
 namespace Ovito {
 
-/******************************************************************************
-* Returns the context the current thread performs its actions in.
-******************************************************************************/
-ExecutionContext& ExecutionContext::current() noexcept
+/**
+ * This RAII helper class temporarily clears the interactive flag of the current task to establish a non-interactive execution context.
+ */
+class NoninteractiveContext
 {
-    // The active execution context in the current thread.
-    static thread_local ExecutionContext _current;
+public:
 
-    return _current;
-}
+    /// Constructor.
+    NoninteractiveContext() noexcept : _wasInteractive(this_task::get()->setIsInteractive(false)) {
+        OVITO_ASSERT(this_task::get());
+    }
 
-/******************************************************************************
-* Determines whether the current thread is the main thread of the application.
-******************************************************************************/
-bool ExecutionContext::isMainThread()
-{
-    const static QThread* mainThread = Application::instance() ? Application::instance()->thread() : nullptr;
-    OVITO_ASSERT(mainThread != nullptr);
+    /// Destructor.
+    ~NoninteractiveContext() {
+        OVITO_ASSERT(_task == this_task::get());
+        if(_wasInteractive)
+            this_task::get()->setIsInteractive(true);
+    }
 
-    return QThread::currentThread() == mainThread;
-}
+private:
+
+    bool _wasInteractive;
+
+#ifdef OVITO_DEBUG
+    Task* _task = this_task::get();
+#endif
+};
 
 }   // End of namespace

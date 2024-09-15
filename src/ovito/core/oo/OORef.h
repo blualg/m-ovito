@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/concurrent/ExecutionContext.h>
+#include <ovito/core/utilities/concurrent/Task.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 
 namespace Ovito {
@@ -180,7 +180,7 @@ public:
         obj->initializeObject(flags, std::forward<Args>(args)...);
 
         // Initialize the object's parameters to their user-defined default values (only when the creation happens in the interactive UI).
-        if(ExecutionContext::isInteractive())
+        if(this_task::isInteractive())
             obj->initializeParametersToUserDefaultsNonrecursive();
 
         // Clear the BeingInitialized flag.
@@ -236,36 +236,45 @@ public:
  * A weak reference to an OvitoObject.
 */
 template<class T>
-class OOWeakRef : public std::weak_ptr<OvitoObject>
+class OOWeakRef : public std::weak_ptr<std::conditional_t<std::is_const_v<T>, const OvitoObject, OvitoObject>>
 {
 public:
 
+    using base_class = std::weak_ptr<std::conditional_t<std::is_const_v<T>, const OvitoObject, OvitoObject>>;
     using element_type = T;
 
     /// Inherit all constructors from base class.
     constexpr OOWeakRef() noexcept = default;
 
     /// Copy construction from another weak reference that is implicitly convertible.
-    template<typename U, class = std::enable_if_t<std::is_convertible_v<const U*, const T*>>>
-    OOWeakRef(const OOWeakRef<U>& p) noexcept : std::weak_ptr<OvitoObject>{p} {}
+    template<typename U, class = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+    OOWeakRef(const OOWeakRef<U>& p) noexcept : base_class{p} {}
+
+    /// Copy construction from another weak pointer that is implicitly convertible.
+    template<typename U, class = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+    OOWeakRef(const std::weak_ptr<U>& p) noexcept : base_class{p} {}
 
     /// Move construction from another weak reference that is implicitly convertible.
-    template<typename U, class = std::enable_if_t<std::is_convertible_v<const U*, const T*>>>
-    OOWeakRef(OOWeakRef<U>&& p) noexcept : std::weak_ptr<OvitoObject>{std::move(p)} {}
+    template<typename U, class = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+    OOWeakRef(OOWeakRef<U>&& p) noexcept : base_class{std::move(p)} {}
+
+    /// Move construction from another weak pointer that is implicitly convertible.
+    template<typename U, class = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+    OOWeakRef(std::weak_ptr<U>&& p) noexcept : base_class{std::move(p)} {}
 
     /// Construction from a strong reference that is implicitly convertible.
-    template<typename U, class = std::enable_if_t<std::is_convertible_v<const U*, const T*>>>
-    OOWeakRef(const OORef<U>& p) noexcept : std::weak_ptr<OvitoObject>{p} {}
+    template<typename U, class = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+    OOWeakRef(const OORef<U>& p) noexcept : base_class{p} {}
 
     /// Construction from raw pointer to an OvitoObject (may be null).
-    template<typename U, class = std::enable_if_t<std::is_convertible_v<const U*, const T*>>>
-    OOWeakRef(const U* p) noexcept : std::weak_ptr<OvitoObject>{p ? const_cast<U*>(p)->weak_from_this() : std::weak_ptr<OvitoObject>{}} {
+    template<typename U, class = std::enable_if_t<std::is_convertible_v<U*, T*>>>
+    OOWeakRef(U* p) noexcept : base_class{p ? p->weak_from_this() : base_class{}} {
         OVITO_ASSERT(!p || !p->isBeingConstructed());
     }
 
     /// Converts the weak pointer to a strong pointer.
     OORef<T> lock() const noexcept {
-        return static_object_cast<T>(std::weak_ptr<OvitoObject>::lock());
+        return static_object_cast<T>(base_class::lock());
     }
 
     /// Equal comparison operator (with another weak ref).
@@ -283,7 +292,7 @@ public:
     /// Returns true of this weak reference has been initialized with an explicit null object pointer.
     /// Note: This is different from the case where the referenced object has expired.
     bool empty() const {
-        return !this->owner_before(std::weak_ptr<OvitoObject>{}) && !std::weak_ptr<OvitoObject>{}.owner_before(*this);
+        return !this->owner_before(base_class{}) && !base_class{}.owner_before(*this);
     }
 };
 

@@ -329,7 +329,7 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
                 return;
             OVITO_ASSERT(component < rdfY->componentCount());
 #ifdef OVITO_USE_SYCL
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 SyclBufferAccess<int64_t*, access_mode::read> histogramAcc(rdfHistogram, cgh);
                 SyclBufferAccess<FloatType*, access_mode::discard_write> rdfAcc(rdfY, cgh);
                 OVITO_SYCL_PARALLEL_FOR(cgh, normalizeRDF_kernel)(sycl::range(rdfAcc.size()), [=](size_t i) {

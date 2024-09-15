@@ -50,76 +50,97 @@ template<typename InputRange, class Executor, typename... ResultType>
         WhenAllFuturesTask(
             InputRange&& inputRange,
             Executor&& executor) :
-                detail::ContinuationTask<task_result_type>(Task::NoState),
-                _range(std::forward<InputRange>(inputRange)),
+                detail::ContinuationTask<task_result_type>(this_task::ui(), Task::NoState, std::forward<InputRange>(inputRange)),
+                _taskCallback(*this, &taskStateChangedCallback),
                 _executor(std::forward<Executor>(executor)),
-                _iterator(std::begin(_range))
+                _iterator(std::begin(this->resultStorage()))
         {
+            // All futures must be valid.
+            OVITO_ASSERT(boost::algorithm::all_of(this->resultStorage(), [](const auto& future) { return (bool)future; }));
         }
 
         /// Starts execution of the task.
         void operator()() noexcept {
-            OVITO_ASSERT(_iterator == std::begin(_range));
-            if(_iterator != std::end(_range)) {
-
-                // Make sure all sub-tasks get canceled when the parent task gets canceled.
-                this->finally(_executor, [](Task& task) noexcept {
-                    if(task.isCanceled()) {
-                        OVITO_ASSERT(!static_cast<WhenAllFuturesTask&>(task)._range.empty());
-                        static_cast<WhenAllFuturesTask&>(task)._range.clear();
-                    }
-                });
-
+            OVITO_ASSERT(_iterator == std::begin(this->resultStorage()));
+            if(_iterator != std::end(this->resultStorage())) {
                 // Begin execution of first iteration.
-                _executor.execute([promise = Promise<task_result_type>(this->shared_from_this())]() mutable noexcept {
-                    static_cast<WhenAllFuturesTask*>(promise.task().get())->iteration_begin(std::move(promise));
+                _executor.execute([promise = PromiseBase(this->shared_from_this())]() mutable noexcept {
+                    WhenAllFuturesTask& self = static_cast<WhenAllFuturesTask&>(*promise.task());
+                    Task::MutexLock lock(self);
+                    if(!self.isCanceled())
+                        self.iteration_begin(std::move(promise), lock);
                 });
-                OVITO_ASSERT_MSG(_iterator == std::begin(_range), "when_all_futures()", "An executor that performs deferred execution is required.");
+                OVITO_ASSERT_MSG(_iterator == std::begin(this->resultStorage()), "when_all_futures()", "An executor that performs deferred execution is required.");
             }
             else {
-                this->template setResult<task_result_type>(std::move(_range));
                 this->setFinished();
             }
         }
 
         /// Performs the next iteration.
-        void iteration_begin(PromiseBase promise) noexcept {
+        void iteration_begin(PromiseBase promise, Task::MutexLock& lock) noexcept {
+            OVITO_ASSERT(!this->isFinished() && !this->isCanceled());
+
             // Did we already reach the end of the input range?
-            if(!this->isCanceled()) {
-                if(_iterator != std::end(_range)) {
-                    // Schedule next iteration upon completion of the future.
-                    this->template whenTaskFinishes<WhenAllFuturesTask, &WhenAllFuturesTask::iteration_complete>(
-                        std::move(*_iterator), _executor, std::move(promise));
-                }
-                else {
-                    // Inform caller we are done.
-                    this->template setResult<task_result_type>(std::move(_range));
-                    this->setFinished();
-                }
+            if(_iterator != std::end(this->resultStorage())) {
+                // Take next future from the range.
+                detail::TaskDependency awaitedTask = _iterator->takeTaskDependency();
+                OVITO_ASSERT(awaitedTask && !*_iterator);
+                lock.unlock();
+                // Schedule next iteration upon completion of the future.
+                this->template whenTaskFinishes<WhenAllFuturesTask, &WhenAllFuturesTask::iteration_complete>(
+                    std::move(awaitedTask), _executor, std::move(promise));
+            }
+            else {
+                this->finishLocked(lock);
             }
         }
 
         // Is called at the end of each iteration, when another future has finished.
-        void iteration_complete(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
-            // Wrap the task that just finished in a future of the original type.
+        void iteration_complete(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
+            Task::MutexLock lock(*this);
+
+            OVITO_ASSERT(!this->isFinished() && !this->isCanceled());
+            OVITO_ASSERT(_iterator != std::end(this->resultStorage()));
+            OVITO_ASSERT(!*_iterator);
+
+            // Wrap the task that just finished back into a future of the original type.
             *_iterator = std::decay_t<decltype(*_iterator)>(std::move(finishedTask));
-            lock.unlock();
+            OVITO_ASSERT(*_iterator);
 
             // Continue with next iteration.
             ++_iterator;
-            iteration_begin(std::move(promise));
+            iteration_begin(std::move(promise), lock);
         }
 
     private:
 
-        /// The range of items to be processed.
-        std::decay_t<InputRange> _range;
+        /// This function gets invoked when the state of this task changes.
+        /// The task's mutex is locked when this function is called.
+        static void taskStateChangedCallback(Task& task, detail::TaskCallbackBase& cb, int state, Task::MutexLock& lock) noexcept {
+            if(state & Task::Canceled) {
+                WhenAllFuturesTask& self = static_cast<WhenAllFuturesTask&>(task);
+                self._iterator = std::end(self.resultStorage());
+                OVITO_ASSERT(self.isCanceled());
+                // Note: It's critical to first unlock the mutex before releasing the references to the awaited tasks.
+                lock.unlock();
+                // Discard all dependencies on the awaited tasks.
+                for(auto& future : self.resultStorage())
+                    future.reset();
+                lock.lock();
+            }
+        }
+
+    private:
 
         /// The executor used for sub-tasks.
         std::decay_t<Executor> _executor;
 
-        /// The iterator pointing to the current item from the range.
+        /// The iterator pointing to the current item in the range of futures.
         typename std::decay_t<InputRange>::iterator _iterator;
+
+        /// Used to get notified when the state of this task changes.
+        detail::TaskCallbackBase _taskCallback;
     };
 
     // Launch the task.

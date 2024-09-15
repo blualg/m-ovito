@@ -46,7 +46,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel, Task
 
     // Never block the UI thread. Instead, run the parallel loop in a worker thread and
     // handle UI events while waiting.
-    if(ExecutionContext::isMainThread()) {
+    if(this_task::isMainThread()) {
         asyncLaunchAndJoin([&]() {
             parallelCancellable(maxWorkers, std::forward<Setup>(setup), std::forward<Kernel>(kernel), task);
         });
@@ -60,7 +60,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel, Task
     size_t workerCount = std::min({maxWorkers, builtinMaxWorkers, (size_t)detail::Latch::max()});
 
     // If the application is running in single-threaded mode, we don't use additional worker threads.
-    QThreadPool* pool = ExecutionContext::current().ui().taskManager().chooseThreadPool(*task);
+    QThreadPool* pool = this_task::ui()->taskManager().chooseThreadPool(*task);
     if(pool->maxThreadCount() == 1)
         workerCount = 1;
 
@@ -73,18 +73,17 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel, Task
         {
             Kernel* kernel;
             detail::Latch* latch;
-            ExecutionContext* context;
             Task* task;
             size_t workerIndex;
             size_t workerCount;
             std::exception_ptr exception;
 
-            Worker(Kernel* kernel, detail::Latch* latch, ExecutionContext* context, Task* task, size_t workerIndex, size_t workerCount) noexcept
-                : kernel(kernel), latch(latch), context(context), task(task), workerIndex(workerIndex), workerCount(workerCount) {}
+            Worker(Kernel* kernel, detail::Latch* latch, Task* task, size_t workerIndex, size_t workerCount) noexcept
+                : kernel(kernel), latch(latch), task(task), workerIndex(workerIndex), workerCount(workerCount) {}
 
             // Move constructor - needed for std::vector requirement 'MoveInsertable'.
             Worker(Worker&& other) noexcept
-                : kernel(other.kernel), latch(other.latch), context(other.context), task(other.task), workerIndex(other.workerIndex), workerCount(other.workerCount), exception(std::move(other.exception)) {}
+                : kernel(other.kernel), latch(other.latch), task(other.task), workerIndex(other.workerIndex), workerCount(other.workerCount), exception(std::move(other.exception)) {}
 
             virtual void run() final override {
 #ifdef QT_BUILDING_UNDER_TSAN
@@ -95,7 +94,6 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel, Task
                 try {
                     if(!task->isCanceled()) {
                         // Execute the work function in the scope of this task object.
-                        ExecutionContext::Scope execScope(*context);
                         Task::Scope taskScope(task);
                         (*kernel)(workerIndex, workerCount);
                     }
@@ -116,12 +114,10 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel, Task
 
         // Create workers.
         detail::Latch latch(workerCount);
-        ExecutionContext context = ExecutionContext::current();
         for(size_t t = 0; t < workerCount; t++) {
             Worker& worker = workers.emplace_back(
                 &kernel,
                 &latch,
-                &context,
                 task,
                 t,
                 workerCount

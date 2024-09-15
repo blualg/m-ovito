@@ -486,8 +486,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
 #ifdef OVITO_DEBUG
         // Check that the shutdown task does not get canceled (just for correctness).
-        this_task::get()->finally([](Task& task) noexcept {
-            OVITO_ASSERT(!task.isCanceled());
+        detail::FunctionTaskCallback taskCallback(this_task::get(), [](int state) noexcept {
+            OVITO_ASSERT(!(state & Task::Canceled));
         });
 #endif
 
@@ -516,7 +516,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
 ******************************************************************************/
 void MainWindow::exitWithFatalError(const Exception& ex)
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     // Avoid reentrance.
     if(_exitingDueToFatalError)
@@ -525,7 +525,7 @@ void MainWindow::exitWithFatalError(const Exception& ex)
     // Set flag.
     _exitingDueToFatalError = true;
 
-    // Disable all further viewport updates, because they may have beeen the reason for this fatal error.
+    // Disable all further viewport updates, because they may have been the reason for this fatal error.
     suspendViewportUpdates();
 
     // Display fatal error message to the user.
@@ -929,7 +929,7 @@ bool MainWindow::checkLoadedDataset(DataSet* dataset)
 ******************************************************************************/
 bool MainWindow::fileSave()
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
     OORef<DataSet> dataset = datasetContainer().currentSet();
 
     if(!dataset)
@@ -952,7 +952,7 @@ bool MainWindow::fileSave()
 ******************************************************************************/
 bool MainWindow::fileSaveAs(const QString& filename)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
     OORef<DataSet> dataset = datasetContainer().currentSet();
 
     if(!dataset)
@@ -1016,7 +1016,7 @@ bool MainWindow::fileSaveAs(const QString& filename)
 ******************************************************************************/
 void MainWindow::askForSaveChanges()
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
     OORef<DataSet> dataset = datasetContainer().currentSet();
 
     if(!dataset || dataset->filePath().isEmpty() || undoStack()->isClean())
@@ -1048,7 +1048,7 @@ void MainWindow::askForSaveChanges()
 ******************************************************************************/
 void MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType, const QString& importerFormat)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
     OVITO_ASSERT(!urls.empty());
 
     // Create a reference to the active scene to keep it alive during this long-running operation.
@@ -1203,7 +1203,7 @@ MainWindow::ProgressTaskInfo* MainWindow::registerProgressTask(Task& task)
 
     // Remove the task from the list again when it is done.
     // Note: Task::registerContinuation() requires the task's mutex to be locked.
-    // This should have been done in the Task method that called us.
+    // The locking is done in the Task method that called us.
     task.registerContinuation([self = weak_from_this(), &task]() noexcept {
         if(auto mainWindow = static_object_cast<MainWindow>(self.lock()))
             mainWindow->unregisterProgressTask(task);

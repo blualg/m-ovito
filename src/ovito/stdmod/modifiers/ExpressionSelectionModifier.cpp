@@ -114,7 +114,7 @@ Future<PipelineFlowState> ExpressionSelectionModifierDelegate::apply(const Modif
 
     // If the user has not entered an expression yet, let them know.
     if(modifier->expression().trimmed().isEmpty()) {
-        if(ExecutionContext::isInteractive()) {
+        if(this_task::isInteractive()) {
             state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Please enter a Boolean expression.")));
             return std::move(state);
         }

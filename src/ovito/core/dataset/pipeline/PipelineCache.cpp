@@ -51,8 +51,7 @@ PipelineCache::~PipelineCache() // NOLINT
 ******************************************************************************/
 void PipelineCache::preevaluatePipeline(const PipelineEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval)
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::isMainThread());
     OVITO_ASSERT(this_task::get());
 
     PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());
@@ -104,8 +103,7 @@ void PipelineCache::preevaluatePipeline(const PipelineEvaluationRequest& request
 ******************************************************************************/
 PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluationRequest& request)
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::isMainThread());
     OVITO_ASSERT(this_task::get());
 
     PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());
@@ -273,7 +271,7 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
             }
 
             // Post-evaluation work for Pipeline and PipelineNode objects.
-            if(state.stateValidity().contains(ExecutionContext::current().ui().datasetContainer().currentAnimationTime())) {
+            if(state.stateValidity().contains(this_task::ui()->datasetContainer().currentAnimationTime())) {
 
                 // Adopt the newly computed state as the current interactive cache state.
                 _interactiveState = state;
@@ -342,7 +340,7 @@ void PipelineCache::insertState(const PipelineFlowState& state)
 ******************************************************************************/
 void PipelineCache::invalidateInteractiveState()
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     _interactiveState.setStateValidity(TimeInterval::empty());
 
@@ -358,7 +356,7 @@ void PipelineCache::invalidateInteractiveState()
 ******************************************************************************/
 void PipelineCache::invalidate(TimeInterval keepInterval)
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     if(_preparingEvaluation) {
         qWarning() << "Warning: Invalidating the pipeline cache while preparing the evaluation of the pipeline is not allowed. This error may be the result of an invalid user Python script invoking a function that is not permitted in this context.";
@@ -394,7 +392,7 @@ void PipelineCache::invalidate(TimeInterval keepInterval)
 ******************************************************************************/
 void PipelineCache::reset()
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     if(_preparingEvaluation) {
         qWarning() << "Warning: Resetting the pipeline cache while preparing the evaluation of the pipeline is not allowed. This error may be the result of an invalid user Python script invoking a function that is not permitted in this context.";
@@ -480,7 +478,7 @@ void PipelineCache::setPrecomputeAllFrames(bool enable)
             _precomputeFramesOperation.reset();
 
             // Throw away all precomputed data (except frame currently shown in the GUI) to reduce memory footprint.
-            invalidate(TimeInterval(ExecutionContext::current().ui().datasetContainer().currentAnimationTime()));
+            invalidate(TimeInterval(this_task::ui()->datasetContainer().currentAnimationTime()));
         }
     }
 }
@@ -490,7 +488,7 @@ void PipelineCache::setPrecomputeAllFrames(bool enable)
 ******************************************************************************/
 void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& request)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     // Start the animation frame precomputation process if it has been activated.
     if(_precomputeAllFrames && !_precomputeFramesOperation && !_allFramesPrecomputed) {
@@ -506,7 +504,7 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
 
         // Automatically reset the async operation object and the current frame precomputation when the
         // task gets canceled by the system.
-        _precomputeFramesOperation.finally(*ownerObject(), [this]() noexcept {
+        _precomputeFramesOperation.task()->finally(*ownerObject(), [this]() noexcept {
             _precomputeFrameFuture.reset();
             _precomputeFramesOperation.reset();
         });
@@ -556,7 +554,7 @@ void PipelineCache::precomputeNextAnimationFrame()
     _precomputeFrameFuture = evaluatePipeline(PipelineEvaluationRequest(nextFrameTime));
 
     // Wait until input frame is ready.
-    _precomputeFrameFuture.finally(*ownerObject(), [this](Task& task) {
+    _precomputeFrameFuture.finally(*ownerObject(), [this](Task& task) noexcept {
         try {
             // If the pipeline evaluation has been canceled for some reason, we interrupt the precomputation process.
             if(ownerObject()->isBeingDeleted() || !_precomputeFramesOperation || _precomputeFramesOperation.isFinished() || task.isCanceled()) {

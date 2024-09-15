@@ -75,7 +75,7 @@ void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest
             PropertyReference bestProperty;
             for(const Property* property : container->properties()) {
                 if(property->isTypedProperty()) {
-                    if(ExecutionContext::isInteractive() || property->typeId() == Property::GenericTypeProperty) {
+                    if(this_task::isInteractive() || property->typeId() == Property::GenericTypeProperty) {
                         bestProperty = property;
                     }
                 }
@@ -152,7 +152,7 @@ void ColorByTypeModifier::colorByType(const Property* typeProperty, PropertyCont
         // Create type-color lookup table and convert it into a SYCL-compatible data structure.
         const SyclFlatMap colorMap = typeProperty->typeColorMap();
         if(!colorMap.empty()) {
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
 
                 // Access the input types.
                 SyclBufferAccess<int32_t, access_mode::read> inputAcc(typeProperty, cgh);

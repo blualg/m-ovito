@@ -147,8 +147,8 @@ SharedFuture<R>::then(Executor&& executor, Function&& f) const
         using future_type = result_future_type;
 
         /// Constructor.
-        explicit ThenTask(Function&& function) :
-            continuation_task_type(Task::NoState),
+        explicit ThenTask(std::shared_ptr<UserInterface> ui, Task::State initialState, Function&& function) :
+            continuation_task_type(std::move(ui), initialState),
             _function(std::forward<Function>(function)) {}
 
         /// Starts execution of the task.
@@ -160,7 +160,10 @@ SharedFuture<R>::then(Executor&& executor, Function&& f) const
         }
 
         /// Callback to be invoked when the awaited task has finished.
-        void awaitedTaskFinished(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+        void awaitedTaskFinished(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
+            // Lock access to this task.
+            Task::MutexLock lock(*this);
+
             OVITO_ASSERT(finishedTask->isFinished());
             OVITO_ASSERT(!this->isFinished() && !this->isCanceled());
 
@@ -186,8 +189,15 @@ SharedFuture<R>::then(Executor&& executor, Function&& f) const
         std::decay_t<Function> _function;
     };
 
+    // Inherit the user interface and flags from the current task (if there is one). Otherwise, inherit from preceding task.
+    Task* inheritFromTask = this_task::get();
+    if(!inheritFromTask)
+        inheritFromTask = this->task().get();
+    Task::State initialState = Task::State(inheritFromTask->_state.load(std::memory_order_relaxed) & (Task::HighPriority | Task::IsInteractive));
+    std::shared_ptr<UserInterface> ui = inheritFromTask->ui();
+
     return launchTask(
-        std::make_shared<ThenTask>(std::forward<Function>(f)),
+        std::make_shared<ThenTask>(std::move(ui), initialState, std::forward<Function>(f)),
         this->task(),
         std::forward<Executor>(executor));
 }

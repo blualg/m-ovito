@@ -153,8 +153,6 @@ protected:
     /// All reference fields containing a pointer to \a target will be reset to \c NULL.
     /// If \a target is referenced in a VectorReferenceField then the item is
     /// removed from the vector field.
-    ///
-    /// \undoable
     void clearReferencesTo(const RefTarget* target);
 
     /// \brief Clears a reference field.
@@ -162,8 +160,6 @@ protected:
     ///
     /// If the reference field specified by \a field is a single reference field then it is set to the value \c NULL.
     /// If it is a VectorReferenceField then all references are removed.
-    ///
-    /// \undoable
     void clearReferenceField(const PropertyFieldDescriptor* field);
 
     /// \brief Saves the class' contents to an output stream.
@@ -205,18 +201,12 @@ protected:
     /// The default implementation returns \c false.
     virtual bool loadPropertyFieldFromStream(ObjectLoadStream& stream, const RefMakerClass::SerializedClassInfo::PropertyFieldInfo& serializedField) { return false; }
 
-    /// This method is called after the reference counter of this object has reached zero
-    /// and before the object is being deleted.
-    virtual void aboutToBeDeleted() override;
-
 public:
 
     /// \brief Clears all references held by this RefMarker.
     ///
     /// All single reference fields are set to \c NULL and all vector reference
     /// fields are cleared.
-    ///
-    /// \undoable
     void clearAllReferences();
 
     /////////////////////////// Property field access ///////////////////////////////
@@ -319,7 +309,6 @@ public:
     /// \brief Replaces all references of this RefMaker to some RefTarget with new ones.
     /// \param oldTarget Specifies which references should be replaced.
     /// \param newTarget Specifies the new target that should replace the old one.
-    /// \undoable
     void replaceReferencesTo(const RefTarget* oldTarget, const RefTarget* newTarget);
 
     ///////////////////////////// User interface context ///////////////////////////////

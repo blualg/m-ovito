@@ -79,7 +79,7 @@ static int countNumberOfFiles(const QVector<FileSourceImporter::Frame>& frames)
 ******************************************************************************/
 void FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     // Make relative file paths absolute.
     for(QUrl& url : sourceUrls) {
@@ -182,9 +182,9 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(
     SharedFuture<QVector<FileSourceImporter::Frame>> framesFuture = requestFrameList(true);
 
     // Display any errors that occurred during scan operation to the user.
-    framesFuture.finally(*this, [](Task& task) {
+    framesFuture.finally(*this, [](Task& task) noexcept {
         try { if(!task.isCanceled()) task.throwPossibleException(); }
-        catch(const Exception& ex) { ExecutionContext::current().ui().reportError(ex); }
+        catch(const Exception& ex) { this_task::ui()->reportError(ex); }
         catch(...) {}
     });
 
@@ -243,7 +243,7 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
     // Adjust the global animation length to match the new number of source frames.
     notifyDependents(ReferenceEvent::AnimationFramesChanged);
 
-    if(ExecutionContext::isInteractive()) {
+    if(this_task::isInteractive()) {
         if(dataCollectionFrame() < 0 && !_originallySelectedFilename.contains(QChar('*'))) {
             // Position time slider to the frame corresponding to the file that was initially picked by the user
             // in the file selection dialog.
@@ -258,7 +258,7 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
         else {
             // If trajectory frames have been inserted, reposition time slider to remain at the previously selected frame.
             if(!previouslySelectedFrame.sourceFile.isEmpty()) {
-                int currentFrameIndex = animationTimeToSourceFrame(ExecutionContext::current().ui().datasetContainer().currentAnimationTime());
+                int currentFrameIndex = animationTimeToSourceFrame(this_task::ui()->datasetContainer().currentAnimationTime());
                 if(currentFrameIndex >= 0 && currentFrameIndex < _frames.size()) {
                     if(_frames[currentFrameIndex].sourceFile != previouslySelectedFrame.sourceFile) {
                         for(int frameIndex = 0; frameIndex < _frames.size(); frameIndex++) {
@@ -458,7 +458,7 @@ SharedFuture<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvalu
 ******************************************************************************/
 SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bool forceRescan)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     // Without an importer object the list of frames is empty.
     if(!importer())
@@ -482,7 +482,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
         // Note that storing the frames list in this FileSource is explicitly deferred to some later time,
         // because setListOfFrames() generates a TargetChanged event, which is not allowed during
         // a synchronous call to the pipeline evaluation function.
-        .then(ObjectExecutor(this, true), [this](QVector<FileSourceImporter::Frame>&& frameList) {
+        .then(ObjectExecutor(this), [this](QVector<FileSourceImporter::Frame>&& frameList) {
             // Store the new list of frames in the FileSource.
             setListOfFrames(frameList);
             // Pass the frame list on to the caller.
@@ -523,7 +523,7 @@ TimeInterval FileSource::frameTimeInterval(int frame) const
 ******************************************************************************/
 void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     if(!importer())
         return;

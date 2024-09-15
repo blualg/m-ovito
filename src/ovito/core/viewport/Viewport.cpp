@@ -71,8 +71,8 @@ void Viewport::initializeObject(ObjectInitializationFlags flags)
     // Automatically associate the new viewport with the global scene (if there is one).
     // This is needed for the Python interface, where each viewport created by the user must be automatically
     // associated with some scene.
-    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) && ExecutionContext::isScripting()) {
-        setScene(ExecutionContext::current().ui().datasetContainer().activeScene());
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) && this_task::isScripting()) {
+        setScene(this_task::ui()->datasetContainer().activeScene());
     }
 }
 
@@ -237,15 +237,8 @@ bool Viewport::isPerspectiveProjection() const
     else if(viewType() == VIEW_PERSPECTIVE)
         return true;
     else if(viewType() == VIEW_SCENENODE && viewNode() && scene()) {
-        if(ExecutionContext::current().isValid()) {
-            if(DataOORef<const AbstractCameraObject> camera = cameraObject(scene()->animationSettings()->currentTime())) {
-                return camera->isPerspectiveCamera();
-            }
-        }
-        else {
-            if(const AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(viewNode()->head())) {
-                return cameraSource->isPerspectiveCamera();
-            }
+        if(DataOORef<const AbstractCameraObject> camera = cameraObject(scene()->animationSettings()->currentTime())) {
+            return camera->isPerspectiveCamera();
         }
     }
     return false;
@@ -257,7 +250,7 @@ bool Viewport::isPerspectiveProjection() const
 DataOORef<const AbstractCameraObject> Viewport::cameraObject(AnimationTime time) const
 {
     if(viewNode()) {
-        if(const AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(viewNode()->head())) {
+        if(const AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(viewNode()->source())) {
             return cameraSource->cameraObject(time);
         }
     }

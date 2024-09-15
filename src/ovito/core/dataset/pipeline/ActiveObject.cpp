@@ -24,7 +24,6 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/utilities/concurrent/Future.h>
-#include <ovito/core/utilities/concurrent/ExecutionContext.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include "ActiveObject.h"
 
@@ -110,7 +109,7 @@ void ActiveObject::setStatusIfCurrentFrame(const PipelineStatus& status, const P
     if(!Application::instance()->guiMode())
         return;
 
-    if(request.time() != ExecutionContext::current().ui().datasetContainer().currentAnimationTime())
+    if(request.time() != this_task::ui()->datasetContainer().currentAnimationTime())
         return;
 
     setStatus(status);

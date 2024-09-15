@@ -98,7 +98,7 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ColorLegendOverlay, tickSpacing, FloatParam
 ******************************************************************************/
 void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
 {
-    if(ExecutionContext::isInteractive() && !pipeline()) {
+    if(this_task::isInteractive() && !pipeline()) {
 
         // Find a ColorCodingModifier in the scene that we can connect to.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
@@ -168,7 +168,7 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
 ******************************************************************************/
 void ColorLegendOverlay::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
+    if(field == PROPERTY_FIELD(alignment) && !isBeingLoaded() && !isBeingDeleted() && !isUndoingOrRedoing() && this_task::isInteractive()) {
         // Automatically reset offset to zero when user changes the alignment of the overlay in the viewport.
         setOffsetX(0);
         setOffsetY(0);

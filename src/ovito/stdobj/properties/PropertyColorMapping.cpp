@@ -50,7 +50,7 @@ void PropertyColorMapping::initializeObject(ObjectInitializationFlags flags)
     RefTarget::initializeObject(flags);
 
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
-        if(ExecutionContext::isInteractive()) {
+        if(this_task::isInteractive()) {
 #ifndef OVITO_DISABLE_QSETTINGS
             // Load the default gradient type set by the user.
             QSettings settings;

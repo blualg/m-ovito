@@ -117,7 +117,7 @@ void ParaViewPVDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceIm
 Future<PipelineFlowState> ParaViewPVDImporter::loadFrame(const LoadOperationRequest& request)
 {
     // Note: FileSourceImporter::loadFrame() may only be called from the main thread.
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     // Detect format of the referenced file and create an importer for it.
     OORef<FileImporter> importer = FileImporter::autodetectFileFormat(request.fileHandle, childImporter());

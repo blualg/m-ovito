@@ -61,7 +61,7 @@ void SceneNode::initializeObject(ObjectInitializationFlags flags)
 
     if(!flags.testFlag(DontInitializeObject)) {
         // Assign random color to scene node.
-        if(ExecutionContext::isInteractive()) {
+        if(this_task::isInteractive()) {
             static std::default_random_engine rng;
             setDisplayColor(Color::fromHSV(boost::random::uniform_real_distribution<FloatType>()(rng), 1, 1));
         }
@@ -79,7 +79,7 @@ void SceneNode::initializeObject(ObjectInitializationFlags flags)
 ******************************************************************************/
 const AffineTransformation& SceneNode::getWorldTransform(AnimationTime time, TimeInterval& validityInterval) const
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     if(!_worldTransformValidity.contains(time)) {
         _worldTransformValidity.setInfinite();
@@ -103,7 +103,7 @@ const AffineTransformation& SceneNode::getWorldTransform(AnimationTime time, Tim
 ******************************************************************************/
 AffineTransformation SceneNode::getLocalTransform(AnimationTime time, TimeInterval& validityInterval) const
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     AffineTransformation result = AffineTransformation::Identity();
     if(transformationController())
@@ -117,7 +117,7 @@ AffineTransformation SceneNode::getLocalTransform(AnimationTime time, TimeInterv
 ******************************************************************************/
 void SceneNode::invalidateWorldTransformation()
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     _worldTransformValidity.setEmpty();
     invalidateBoundingBox();
@@ -317,7 +317,7 @@ void SceneNode::invalidateBoundingBox()
 void SceneNode::insertChildNode(qsizetype index, OORef<SceneNode> newChild)
 {
     OVITO_CHECK_OBJECT_POINTER(newChild);
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     // Check whether it is already a child of this parent.
     if(newChild->parentNode() == this) {
@@ -339,7 +339,7 @@ void SceneNode::insertChildNode(qsizetype index, OORef<SceneNode> newChild)
 
     // Adjust transformation to preserve world position.
     TimeInterval iv;
-    AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+    AnimationTime time = this_task::ui()->datasetContainer().currentAnimationTime();
     const AffineTransformation& newParentTM = getWorldTransform(time, iv);
     if(newParentTM != AffineTransformation::Identity())
         newChild->transformationController()->changeParent(time, AffineTransformation::Identity(), newParentTM, newChild);
@@ -352,7 +352,7 @@ void SceneNode::insertChildNode(qsizetype index, OORef<SceneNode> newChild)
 void SceneNode::removeChildNode(qsizetype index)
 {
     OVITO_ASSERT(index >= 0 && index < children().size());
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     OORef<SceneNode> child = children()[index];
     OVITO_ASSERT_MSG(child->parentNode() == this, "SceneNode::removeChildNode()", "The node to be removed is not a child of this parent node.");
@@ -364,7 +364,7 @@ void SceneNode::removeChildNode(qsizetype index)
 
     // Update child node.
     TimeInterval iv;
-    AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+    AnimationTime time = this_task::ui()->datasetContainer().currentAnimationTime();
     AffineTransformation oldParentTM = getWorldTransform(time, iv);
     if(oldParentTM != AffineTransformation::Identity())
         child->transformationController()->changeParent(time, oldParentTM, AffineTransformation::Identity(), child);
@@ -508,7 +508,7 @@ Box3 SceneNode::localBoundingBox(AnimationTime time) const
 ******************************************************************************/
 Box3 SceneNode::worldBoundingBox(AnimationTime time, Viewport* vp) const
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     if(vp && isHiddenInViewport(vp, true))
         return Box3();
@@ -527,7 +527,7 @@ Box3 SceneNode::worldBoundingBox(AnimationTime time, Viewport* vp) const
 void SceneNode::setPerViewportVisibility(Viewport* vp, bool visible)
 {
     OVITO_ASSERT(vp);
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     if(visible) {
         for(size_t i = 0; i < hiddenInViewports().size(); i++) {
@@ -559,7 +559,7 @@ void SceneNode::setPerViewportVisibility(Viewport* vp, bool visible)
 bool SceneNode::isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) const
 {
     OVITO_ASSERT(vp);
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     if(boost::find(hiddenInViewports(), vp) != hiddenInViewports().end())
         return true;

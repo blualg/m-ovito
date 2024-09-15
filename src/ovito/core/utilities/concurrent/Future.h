@@ -80,23 +80,19 @@ public:
     /// Copy assignment.
     FutureBase& operator=(const FutureBase& other) noexcept = default;
 
-    /// Runs the given continuation function once this future has reached either the 'finished' or the 'canceled' state.
+    /// Runs the given continuation function once this future has reached either the 'finished' state.
     /// Note that the continuation function will always be executed, even if this future was canceled or set to an error state.
-    /// The callable must accept one parameter: a reference to the underlying Task object.
+    /// The callable can accept one parameter: a reference to the underlying Task object.
     template<typename Executor, typename Function>
-    void finally(Executor&& executor, Function&& f) const noexcept {
-        OVITO_ASSERT_MSG(_task, "FutureBase::finally()", "Future must be valid.");
+    void finally(Executor&& executor, Function&& f) const {
+        // This future must be valid for finally() to work.
+        OVITO_ASSERT_MSG(*this, "FutureBase::finally()", "Future must be valid.");
         task()->finally(std::forward<Executor>(executor), std::forward<Function>(f));
     }
 
-    /// Runs the given continuation function once this future has reached either the 'finished' or the 'canceled' state.
-    /// Note that the continuation function will always be executed, even if this future was canceled or set to an error state.
-    /// The callable must accept one parameter: a reference to the underlying Task object.
+    /// Overload of the function above using the inline executor.
     template<typename Function>
-    void finally(Function&& f) const noexcept {
-        OVITO_ASSERT_MSG(_task, "FutureBase::finally()", "Future must be valid.");
-        task()->finally(std::forward<Function>(f));
-    }
+    void finally(Function&& f) const { finally(InlineExecutor{}, std::forward<Function>(f)); }
 
     /// \brief Blocks execution until this future is fulfilled.
     /// Throws an OperationCanceled exception if the future or the task awaiting it got canceled.
@@ -227,7 +223,7 @@ public:
     [[nodiscard]] detail::continuation_future_type<Function, Future>
     then(Executor&& executor, Function&& f);
 
-    /// Overload of the function above using the default inline executor.
+    /// Overload of the function above using the inline executor.
     template<typename Function>
     [[nodiscard]] decltype(auto) then(Function&& f) { return then(InlineExecutor{}, std::forward<Function>(f)); }
 
@@ -281,8 +277,8 @@ Future<R>::then(Executor&& executor, Function&& f)
         using future_type = result_future_type;
 
         /// Constructor.
-        explicit ThenTask(Function&& function) :
-            continuation_task_type(Task::NoState),
+        explicit ThenTask(std::shared_ptr<UserInterface> ui, Task::State initialState, Function&& function) :
+            continuation_task_type(std::move(ui), initialState),
             _function(std::forward<Function>(function)) {}
 
         /// Starts execution of the task.
@@ -294,7 +290,10 @@ Future<R>::then(Executor&& executor, Function&& f)
         }
 
         /// Callback to be invoked when the awaited task has finished.
-        void awaitedTaskFinished(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+        void awaitedTaskFinished(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
+            // Lock access to this task.
+            Task::MutexLock lock(*this);
+
             OVITO_ASSERT(finishedTask->isFinished());
             OVITO_ASSERT(!this->isFinished() && !this->isCanceled());
 
@@ -320,8 +319,15 @@ Future<R>::then(Executor&& executor, Function&& f)
         std::decay_t<Function> _function;
     };
 
+    // Inherit the user interface and flags from the current task (if there is one). Otherwise, inherit from preceding task.
+    Task* inheritFromTask = this_task::get();
+    if(!inheritFromTask)
+        inheritFromTask = this->task().get();
+    Task::State initialState = Task::State(inheritFromTask->_state.load(std::memory_order_relaxed) & (Task::HighPriority | Task::IsInteractive));
+    std::shared_ptr<UserInterface> ui = inheritFromTask->ui();
+
     return launchTask(
-        std::make_shared<ThenTask>(std::forward<Function>(f)),
+        std::make_shared<ThenTask>(std::move(ui), initialState, std::forward<Function>(f)),
         this->takeTaskDependency(),
         std::forward<Executor>(executor));
 }

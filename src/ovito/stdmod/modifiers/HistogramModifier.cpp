@@ -82,7 +82,7 @@ void HistogramModifier::initializeModifier(const ModifierInitializationRequest& 
     GenericPropertyModifier::initializeModifier(request);
 
     // Use the first available property from the input state as data source when the modifier is newly created.
-    if(!sourceProperty() && subject() && ExecutionContext::isInteractive()) {
+    if(!sourceProperty() && subject() && this_task::isInteractive()) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             PropertyReference bestProperty;
@@ -208,7 +208,7 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
                 }
 
                 // Histogram calculation.
-                ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                     cgh.require(inputAcc);
                     sycl::accessor intervalStartAcc{intervalBuf.first, cgh, sycl::read_only};
                     sycl::accessor intervalEndAcc{intervalBuf.second, cgh, sycl::read_only};
@@ -240,7 +240,7 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
                     sycl::buffer<size_t> numSelectedBuf(&numSelected, 1);
                     std::array<FloatType, 2> selectionRange = { selectionRangeStart, selectionRangeEnd };
                     sycl::buffer<FloatType> selectionRangeBuf(selectionRange);
-                    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                    this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                         cgh.require(inputAcc);
                         sycl::accessor selectionRangeAcc{selectionRangeBuf, cgh, sycl::read_only};
                         SyclBufferAccess<SelectionIntType, access_mode::discard_write> selectionOutAcc(outputSelection, cgh);

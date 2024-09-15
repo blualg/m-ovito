@@ -33,7 +33,7 @@
     #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
 #endif
 #include "FileManager.h"
-#include "RemoteFileJob.h"
+//#include "RemoteFileJob.h"
 
 namespace Ovito {
 
@@ -56,7 +56,7 @@ std::unique_ptr<QIODevice> FileHandle::createIODevice() const
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-FileManager::FileManager()
+FileManager::FileManager(UserInterface& ui) : _ui(ui)
 {
 }
 
@@ -77,7 +77,8 @@ FileManager::~FileManager()
 ******************************************************************************/
 SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(this_task::get());
 
     if(url.isLocalFile()) {
         // Nothing to do to fetch local files. Simply return a finished Future object.
@@ -89,6 +90,7 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 
         return FileHandle(url, std::move(filePath));
     }
+#if 0
     else if(url.scheme() == QStringLiteral("sftp") || url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
         QUrl normalizedUrl = normalizeUrl(url);
         QMutexLocker lock(&mutex());
@@ -107,10 +109,11 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
         }
 
         // Start the background download job.
-        auto future = launchTask(std::make_shared<DownloadRemoteFileJob>(url));
+        auto future = launchTask(std::make_shared<DownloadRemoteFileJob>(url, _ui));
         _pendingFiles.emplace(normalizedUrl, future);
         return future;
     }
+#endif
     else {
         return Future<FileHandle>::createFailed(Exception(tr("URL scheme '%1' not supported. The program supports only the sftp and http(s) URLs as well as local file paths.").arg(url.scheme())));
     }
@@ -121,12 +124,16 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 ******************************************************************************/
 Future<QStringList> FileManager::listDirectoryContents(const QUrl& url)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(this_task::get());
 
+#if 0
     if(url.scheme() == QStringLiteral("sftp")) {
-        return launchTask(std::make_shared<ListRemoteDirectoryJob>(url));
+        return launchTask(std::make_shared<ListRemoteDirectoryJob>(url, _ui));
     }
-    else if(url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
+    else
+#endif
+    if(url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
 #ifndef Q_OS_WASM
         QUrl normalizedUrl = normalizeUrl(url);
         QMutexLocker lock(&mutex());
@@ -170,9 +177,9 @@ void FileManager::removeFromCache(const QUrl& url)
 /******************************************************************************
 * Is called when a remote file has been fetched.
 ******************************************************************************/
-void FileManager::fileFetched(QUrl url, QTemporaryFile* localFile)
+void FileManager::fileFetched(const QUrl& url, QTemporaryFile* localFile)
 {
-    QUrl normalizedUrl = normalizeUrl(std::move(url));
+    QUrl normalizedUrl = normalizeUrl(url);
     QMutexLocker lock(&mutex());
 
     if(auto itemInProgress = _pendingFiles.find(normalizedUrl); itemInProgress != _pendingFiles.end())
@@ -207,7 +214,7 @@ QUrl FileManager::urlFromUserInput(const QString& path)
 ******************************************************************************/
 SshConnection* FileManager::acquireSshConnection(const SshConnectionParameters& sshParams)
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     // Determine the kind of ssh connection method to use.
     SshConnection::SshImplementation sshImpl = SshConnection::getSshImplementation();
@@ -259,7 +266,7 @@ SshConnection* FileManager::acquireSshConnection(const SshConnectionParameters& 
 ******************************************************************************/
 void FileManager::releaseSshConnection(SshConnection* connection)
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     Q_DECL_UNUSED bool wasAcquired = _acquiredConnections.removeOne(connection);
     OVITO_ASSERT(wasAcquired);

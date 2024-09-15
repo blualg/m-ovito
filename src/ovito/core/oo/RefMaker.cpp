@@ -38,20 +38,6 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(RefMaker);
 
 /******************************************************************************
-* This method is called when the reference counter of this OvitoObject
-* has reached zero.
-******************************************************************************/
-void RefMaker::aboutToBeDeleted()
-{
-    OVITO_CHECK_OBJECT_POINTER(this);
-
-    // Make sure undo recording is not active while deleting a RefTarget.
-    OVITO_ASSERT_MSG(!RefTarget::OOClass().isMember(this) || isUndoRecording() == false, "RefMaker::aboutToBeDeleted()", "Cannot delete object from memory while undo recording is active.");
-
-    OvitoObject::aboutToBeDeleted();
-}
-
-/******************************************************************************
 * Returns the value stored in a non-animatable property field of this RefMaker object.
 ******************************************************************************/
 QVariant RefMaker::getPropertyFieldValue(const PropertyFieldDescriptor* field) const

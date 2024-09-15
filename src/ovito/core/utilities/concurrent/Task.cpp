@@ -22,6 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/app/UserInterface.h>
+#include <ovito/core/app/Application.h>
 #include "Task.h"
 #include "Future.h"
 #include "AsynchronousTask.h"
@@ -49,8 +50,8 @@ Task::~Task()
     // At the end of their lifetime, tasks must always end up in the finished state.
     OVITO_ASSERT(isFinished());
 
-    // All registered callbacks should have been unregistered by now.
-    OVITO_ASSERT(_callbacks == nullptr);
+    // No continuations should be left.
+    OVITO_ASSERT(_continuations.empty());
 
     // In debug builds we keep track of how many task objects exist to check whether they all get destroyed correctly
     // at program termination.
@@ -91,8 +92,9 @@ void Task::finishLocked(MutexLock& lock) noexcept
         lock.unlock();
 
         // Run all continuation functions.
-        for(auto& cont : continuations)
+        for(auto& cont : continuations) {
             std::move(cont)();
+        }
     }
 }
 
@@ -171,10 +173,8 @@ void Task::addCallback(detail::TaskCallbackBase* cb, bool replayStateChanges) no
 
     // Replay past state changes to the new callback if requested.
     if(replayStateChanges) {
-        if(!cb->callStateChanged(_state.load(std::memory_order_relaxed), lock)) {
-            // The callback requested to be removed from the list.
-            _callbacks = cb->_nextInList;
-        }
+        cb->callStateChanged(*this, _state.load(std::memory_order_relaxed), lock);
+        OVITO_ASSERT(lock.owns_lock());
     }
 }
 
@@ -183,13 +183,9 @@ void Task::addCallback(detail::TaskCallbackBase* cb, bool replayStateChanges) no
 ******************************************************************************/
 void Task::callCallbacks(int state, MutexLock& lock) noexcept
 {
-    detail::TaskCallbackBase** preceding = &_callbacks;
     for(detail::TaskCallbackBase* cb = _callbacks; cb != nullptr; cb = cb->_nextInList) {
-        if(!cb->callStateChanged(state, lock)) {
-            // The callback requested to be removed from the list.
-            *preceding = cb->_nextInList;
-        }
-        else preceding = &cb->_nextInList;
+        OVITO_ASSERT(lock.owns_lock());
+        cb->callStateChanged(*this, state, lock);
     }
 }
 
@@ -224,8 +220,7 @@ void Task::setProgressText(const QString& progressText)
     auto flags = _state.load(std::memory_order_relaxed);
     if(!(flags & (Finished | Canceled))) {
         // Notify UI about progress status change.
-        UserInterface& ui = ExecutionContext::current().ui();
-        ui.taskProgressText(*this, progressText);
+        ui()->taskProgressText(*this, progressText);
     }
 
     // Note: setProgressText() should not yield control to the UI event loop,
@@ -241,8 +236,7 @@ void Task::setProgressMaximum(qlonglong maximum, bool autoReset)
     MutexLock lock(*this);
     if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
-        UserInterface& ui = ExecutionContext::current().ui();
-        ui.taskProgressMaximum(*this, maximum, autoReset);
+        ui()->taskProgressMaximum(*this, maximum, autoReset);
     }
 }
 
@@ -251,22 +245,20 @@ void Task::setProgressMaximum(qlonglong maximum, bool autoReset)
 ******************************************************************************/
 void Task::setProgressValue(qlonglong value)
 {
-    UserInterface& ui = ExecutionContext::current().ui();
-
     MutexLock lock(*this);
     auto flags = _state.load(std::memory_order_relaxed);
     if(flags & Canceled)
         throw OperationCanceled();
     if(!(flags & (Finished | Canceled))) {
         // Notify UI about progress status change.
-        ui.taskProgressValue(*this, value);
+        ui()->taskProgressValue(*this, value);
     }
 
     // When in the main thread, temporarily yield control back to the event loop to process UI events and
     // keep the UI responsive during long-running tasks.
-    if((flags & YieldUI) && !(flags & IsAsynchronous) && ExecutionContext::isMainThread()) {
+    if((flags & YieldUI) && !(flags & IsAsynchronous) && this_task::isMainThread()) {
         lock.unlock();
-        if(ui.processUIEvents()) {
+        if(ui()->processUIEvents()) {
             cancel();
         }
     }
@@ -283,15 +275,14 @@ void Task::incrementProgressValue(qlonglong increment)
         throw OperationCanceled();
     if(!(flags & (Finished | Canceled))) {
         // Notify UI about progress status change.
-        UserInterface& ui = ExecutionContext::current().ui();
-        ui.taskProgressIncrementValue(*this, increment);
+        ui()->taskProgressIncrementValue(*this, increment);
     }
 
     // When in the main thread, temporarily yield control back to the event loop to process UI events and
     // keep the UI responsive during long-running tasks.
-    if((flags & YieldUI) && !(flags & IsAsynchronous) && ExecutionContext::isMainThread()) {
+    if((flags & YieldUI) && !(flags & IsAsynchronous) && this_task::isMainThread()) {
         lock.unlock();
-        if(ExecutionContext::current().ui().processUIEvents()) {
+        if(ui()->processUIEvents()) {
             cancel();
         }
     }
@@ -318,8 +309,7 @@ void Task::beginProgressSubStepsWithWeights(std::vector<int> weights)
     MutexLock lock(*this);
     if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
-        UserInterface& ui = ExecutionContext::current().ui();
-        ui.taskProgressBeginSubStepsWithWeights(*this, std::move(weights));
+        ui()->taskProgressBeginSubStepsWithWeights(*this, std::move(weights));
     }
 }
 
@@ -332,8 +322,7 @@ void Task::nextProgressSubStep()
     MutexLock lock(*this);
     if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
-        UserInterface& ui = ExecutionContext::current().ui();
-        ui.taskProgressNextSubStep(*this);
+        ui()->taskProgressNextSubStep(*this);
     }
 }
 
@@ -346,8 +335,7 @@ void Task::endProgressSubSteps()
     MutexLock lock(*this);
     if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
-        UserInterface& ui = ExecutionContext::current().ui();
-        ui.taskProgressEndSubSteps(*this);
+        ui()->taskProgressEndSubSteps(*this);
     }
 }
 
@@ -357,7 +345,7 @@ void Task::endProgressSubSteps()
 bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool returnEarlyIfCanceled, bool cancelWaitingIfAwaitedCanceled)
 {
     OVITO_ASSERT(awaitedTask);
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     // The task this function was called from.
     Task* waitingTask = this_task::get();
@@ -401,7 +389,7 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
     // Is the waiting task running in a thread pool?
     if(waitingTask->isAsynchronousTask()) {
         // Are we really in a worker thread?
-        OVITO_ASSERT(!ExecutionContext::isMainThread());
+        OVITO_ASSERT(!this_task::isMainThread());
         OVITO_ASSERT(static_cast<AsynchronousTaskBase*>(waitingTask)->threadPool());
 
         // Work-stealing mechanism to avoid deadlock when running out of threads in this thread pool.
@@ -410,12 +398,11 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
             // The task was taken from the current pool. Run it right away in the current thread.
 
             // Attach a temporary callback to the waiting task.
-            detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
+            detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) noexcept {
                 if(state & (Task::Canceled | Task::Finished)) {
                     // When the parent task gets canceled, discard the task dependency which keeps the awaited task running.
                     awaitedTask.reset();
                 }
-                return true;
             });
 
             // Execute awaited task now.
@@ -430,7 +417,7 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
             bool done = false;
 
             // Attach a temporary callback to the waiting task, which sets the wait condition in case the waiting task gets canceled.
-            detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
+            detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) noexcept {
                 if(state & (Task::Canceled | Task::Finished)) {
                     // When the parent task gets canceled, discard the task dependency which keeps the awaited task running.
                     awaitedTask.reset();
@@ -447,7 +434,7 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
             });
 
             // Attach a temporary callback function to the awaited task, which sets the wait condition when the task finishes or gets canceled.
-            detail::FunctionTaskCallback awaitedTaskCallback(awaitedTaskPtr.get(), [&](int state) {
+            detail::FunctionTaskCallback awaitedTaskCallback(awaitedTaskPtr.get(), [&](int state) noexcept {
                 if(state & (returnEarlyIfCanceled ? (Task::Finished | Task::Canceled) : Task::Finished)) {
                     {
                         std::lock_guard lock(waitMutex);
@@ -469,7 +456,7 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
     }
     else {
         // Process all pending work items while waiting for the task to finish.
-        ExecutionContext::current().ui().taskManager().processWorkWhileWaiting(waitingTask, awaitedTask, returnEarlyIfCanceled);
+        this_task::ui()->taskManager().processWorkWhileWaiting(waitingTask, awaitedTask, returnEarlyIfCanceled);
     }
 
     // Check if the waiting task has been canceled.
@@ -509,6 +496,17 @@ Task*& get() noexcept
     static thread_local Task* _current = nullptr;
 
     return _current;
+}
+
+/******************************************************************************
+* Determines whether the current thread is the main thread of the application.
+******************************************************************************/
+bool isMainThread() noexcept
+{
+    OVITO_ASSERT(Application::instance() != nullptr);
+    const static QThread* mainThread = Application::instance()->thread();
+
+    return QThread::currentThread() == mainThread;
 }
 
 } // End of namespace

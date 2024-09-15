@@ -57,23 +57,22 @@ public:
 protected:
 
     /// Asks the modifier to compute its results based on the now available upstream pipeline data.
-    virtual void evaluateModifier(PromiseBase promise, Task::MutexLock& lock) noexcept override {
+    virtual void evaluateModifier(PromiseBase promise) noexcept override {
         OVITO_ASSERT(resultStorage()); // Upstream data must be stored in this task's results storage.
-        evaluateModifierIfReady(std::move(promise), lock);
+        evaluateModifierIfReady(std::move(promise));
     }
 
 private:
 
     /// This callback gets invoked once the auxiliary data becomes ready.
-    void auxiliaryInputAvailable(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+    void auxiliaryInputAvailable(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
         _auxiliaryFuture = AuxiliaryFutureType{std::move(finishedTask)};
-        evaluateModifierIfReady(std::move(promise), lock);
+        evaluateModifierIfReady(std::move(promise));
     }
 
     /// Performs the actual modifier computation if all necessary inputs (upstream pipeline data and auxiliary data) are available.
-    void evaluateModifierIfReady(PromiseBase promise, Task::MutexLock& lock) noexcept {
+    void evaluateModifierIfReady(PromiseBase promise) noexcept {
         if(_auxiliaryFuture && resultStorage()) {
-            lock.unlock();
 
             Future<PipelineFlowState> modifierFuture;
             handleModifierExceptions([&]() {

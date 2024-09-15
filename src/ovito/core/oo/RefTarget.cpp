@@ -85,7 +85,7 @@ void RefTarget::aboutToBeDeleted()
 void RefTarget::requestObjectDeletion()
 {
     OVITO_CHECK_OBJECT_POINTER(this);
-    OVITO_ASSERT_MSG(ExecutionContext::isMainThread(), "RefTarget::requestObjectDeletion()", "This function may only be called from the main thread.");
+    OVITO_ASSERT_MSG(this_task::isMainThread(), "RefTarget::requestObjectDeletion()", "This function may only be called from the main thread.");
     OVITO_ASSERT(!isBeingInitialized());
     OVITO_ASSERT(!isBeingDeleted());
 

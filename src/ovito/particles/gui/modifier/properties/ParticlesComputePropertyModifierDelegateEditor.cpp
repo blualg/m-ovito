@@ -82,10 +82,10 @@ bool ParticlesComputePropertyModifierDelegateEditor::referenceEvent(RefTarget* s
 {
     if(source == editObject()) {
         if(event.type() == ReferenceEvent::TargetChanged) {
-            updateExpressionFieldsLater(this);
+            updateExpressionFieldsLater(this, mainWindow());
         }
         else if(event.type() == ReferenceEvent::ObjectStatusChanged) {
-            updateVariablesListLater(this);
+            updateVariablesListLater(this, mainWindow());
         }
     }
     return PropertiesEditor::referenceEvent(source, event);

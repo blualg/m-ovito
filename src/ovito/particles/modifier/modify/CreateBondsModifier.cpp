@@ -153,7 +153,7 @@ void CreateBondsModifier::initializeModifier(const ModifierInitializationRequest
         }
 
         // Initialize the pair-wise cutoffs based on the van der Waals radii of the particle types.
-        if(ExecutionContext::isInteractive() && pairwiseCutoffs().empty()) {
+        if(this_task::isInteractive() && pairwiseCutoffs().empty()) {
             if(const Property* typeProperty = particles->getProperty(Particles::TypeProperty)) {
                 PairwiseCutoffsList cutoffList;
                 for(const ElementType* type1 : typeProperty->elementTypes()) {
@@ -387,11 +387,11 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
         state.addAttribute(QStringLiteral("CreateBonds.num_bonds"), QVariant::fromValue(numGeneratedBonds), createdByNode);
 
         // If the total number of bonds is unusually high, we better turn off bonds display to prevent the program from freezing.
-        if(bonds->elementCount() > 2000000 && autoDisableBondDisplay && ExecutionContext::isInteractive()) {
+        if(bonds->elementCount() > 2000000 && autoDisableBondDisplay && this_task::isInteractive()) {
             // Modifying the vis element must be done in the main thread.
             if(BondsVis* vis = bonds->visElement<BondsVis>()) {
-                vis->execute([vis]() noexcept {
-                    ExecutionContext::current().ui().performTransaction(tr("Disable bonds display"), [&]() {
+                launchDetached(*vis, [vis]() {
+                    this_task::ui()->performTransaction(tr("Disable bonds display"), [&]() {
                         vis->setEnabled(false);
                     });
                 });

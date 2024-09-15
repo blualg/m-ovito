@@ -38,7 +38,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(FrameGraph);
 void FrameGraph::addPrimitive(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, OORef<const Pipeline> pipeline, OORef<ObjectPickInfo> pickInfo, uint32_t pickElementOffset)
 {
     OVITO_ASSERT(pipeline);
-    OVITO_ASSERT(ExecutionContext::isMainThread()); // Must be called from main thread, because we are accessing the pipeline.
+    OVITO_ASSERT(this_task::isMainThread()); // Must be called from main thread, because we are accessing the pipeline.
 
     const AffineTransformation& tm = pipeline->getWorldTransform(time());
     Box3 boundingBox = primitive->computeBoundingBox(visCache());
@@ -52,7 +52,7 @@ void FrameGraph::addPrimitive(RenderingCommandGroup& group, std::unique_ptr<Rend
 void FrameGraph::addPrimitiveNonpickable(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, const Pipeline* pipeline)
 {
     OVITO_ASSERT(pipeline);
-    OVITO_ASSERT(ExecutionContext::isMainThread()); // Must be called from main thread, because we are accessing the pipeline.
+    OVITO_ASSERT(this_task::isMainThread()); // Must be called from main thread, because we are accessing the pipeline.
 
     Box3 boundingBox = primitive->computeBoundingBox(visCache());
     group.addPrimitiveNonpickable(std::move(primitive), pipeline->getWorldTransform(time()), boundingBox);

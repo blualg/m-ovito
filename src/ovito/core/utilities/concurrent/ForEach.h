@@ -76,7 +76,7 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
             StartIterFunc&& startFunc,
             CompleteIterFunc&& completeFunc,
             ResultType&&... initialResult) :
-                detail::ContinuationTask<task_result_type>(Task::NoState, std::forward<ResultType>(initialResult)...),
+                detail::ContinuationTask<task_result_type>(this_task::ui(), Task::NoState, std::forward<ResultType>(initialResult)...),
                 _range(std::forward<InputRange>(inputRange)),
                 _executor(std::forward<Executor>(executor)),
                 _startFunc(std::forward<StartIterFunc>(startFunc)),
@@ -95,10 +95,10 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
                 if constexpr(ShowProgress)
                     this->setProgressMaximum(std::distance(_iterator, std::end(_range)));
 
-                _executor.execute([promise = Promise<task_result_type>(this->shared_from_this())]() mutable noexcept {
+                _executor.execute([promise = PromiseBase(this->shared_from_this())]() mutable noexcept {
                     static_cast<ForEachTask*>(promise.task().get())->iteration_begin(std::move(promise));
                 });
-                OVITO_ASSERT_MSG(_iterator == std::begin(_range), "for_each_sequential()", "An executor that performs deferred execution is required.");
+                OVITO_ASSERT_MSG(_iterator == std::begin(_range), "for_each_sequential()", "An executor performing deferred execution is required.");
             }
             else {
                 this->setFinished();
@@ -107,15 +107,17 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
 
         /// Performs the next iteration of the mapping process.
         void iteration_begin(PromiseBase promise) noexcept {
+
             // Did we already reach the end of the input range?
             if(_iterator != std::end(_range) && !this->isCanceled()) {
                 output_future_type future;
                 try {
+                    Task::Scope taskScope(this);
+
                     // Report the number of iterations we have performed so far.
                     if constexpr(ShowProgress)
                         this->setProgressValue(std::distance(std::begin(_range), _iterator));
 
-                    Task::Scope taskScope(this);
                     // Call the user-provided function with the current loop value and, optionally, the task's result storage
                     if constexpr(!std::is_void_v<task_result_type>) {
                         if constexpr(std::is_invocable_v<std::decay_t<StartIterFunc>, decltype(*std::begin(inputRange)), task_result_type&>)
@@ -143,21 +145,20 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
         }
 
         // Is called at the end of each iteration, when user function has finished performing its work.
-        void iteration_complete(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+        void iteration_complete(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
             // Get the task that did just finish and wrap it in a future of the original type.
             output_future_type future(std::move(finishedTask));
 
             // Check if the awaited future completed with an error.
             if(future.task()->exceptionStore()) {
-                this->exceptionLocked(future.task()->exceptionStore());
-                this->finishLocked(lock);
+                this->setException(future.task()->exceptionStore());
+                this->setFinished();
                 return;
             }
 
-            lock.unlock();
-
             try {
                 Task::Scope taskScope(this);
+
                 // Invoke the user function that completes this iteration by processing the results returned by the future.
                 if constexpr(!std::is_void_v<typename output_future_type::result_type>) {
                     if constexpr(!std::is_void_v<task_result_type>) {

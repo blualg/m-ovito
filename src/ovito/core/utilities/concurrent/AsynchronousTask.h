@@ -34,7 +34,7 @@ class OVITO_CORE_EXPORT AsynchronousTaskBase : public Task, public QRunnable
 public:
 
     /// Constructor.
-    AsynchronousTaskBase(State initialState, void* resultsStorage) noexcept;
+    AsynchronousTaskBase(OORef<UserInterface> ui, State initialState, void* resultsStorage) noexcept;
 
     /// Destructor.
     ~AsynchronousTaskBase();
@@ -61,9 +61,6 @@ private:
     /// The thread pool this task has been submitted to for execution (if any).
     QThreadPool* _threadPool = nullptr;
 
-    /// The execution context that this task inherits from its parent task.
-    ExecutionContext _executionContext;
-
     friend class Task; // Allow Task::waitFor() to invoke the run() method directly (as part of the work-stealing mechanism).
 };
 
@@ -76,7 +73,10 @@ public:
     using future_type = Future<R>;
 
     /// Constructor
-    AsynchronousTask() : detail::TaskWithStorage<R, AsynchronousTaskBase>(this_task::get()->isHighPriorityTask() ? Task::HighPriority : Task::NoState, std::nullopt) {}
+    AsynchronousTask() : detail::TaskWithStorage<R, AsynchronousTaskBase>(
+        this_task::ui(),
+        this_task::get()->isHighPriorityTask() ? Task::HighPriority : Task::NoState,
+        std::nullopt) {}
 };
 
 }   // End of namespace

@@ -161,7 +161,7 @@ private:
     /// Activates the precomputation of the pipeline results for all animation frames.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, pipelineTrajectoryCachingEnabled, setPipelineTrajectoryCachingEnabled, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 
-    /// Weak reference to the pipeline's source node.
+    /// Reference to the pipeline's source node.
     DECLARE_REFERENCE_FIELD_FLAGS(OORef<PipelineNode>, source, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// Enables or disables InteractiveStateAvailable signals from the pipeline in order to refresh the viewports each time partial computation results become available.

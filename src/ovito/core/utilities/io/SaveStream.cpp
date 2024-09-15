@@ -35,7 +35,7 @@ using namespace std;
 ******************************************************************************/
 SaveStream::SaveStream(QDataStream& destination) : _os(destination)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     OVITO_ASSERT_MSG(!_os.device()->isSequential(), "SaveStream constructor", "SaveStream class requires a seekable output stream.");
     if(_os.device()->isSequential())

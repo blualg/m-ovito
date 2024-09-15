@@ -303,7 +303,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 if(const Property* topologyProperty = bonds->getProperty(Bonds::TopologyProperty)) {
                     Property* periodicImageProperty = bonds->createProperty(DataBuffer::Uninitialized, Bonds::PeriodicImageProperty);
                     if(periodicImageProperty->size() != 0) {
-                        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                        this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                             SyclBufferAccess<ParticleIndexPair, access_mode::read> topologyAcc{topologyProperty, cgh};
                             SyclBufferAccess<Point3, access_mode::read> posInAcc{particles->expectProperty(Particles::PositionProperty), cgh};
                             SyclBufferAccess<Vector3I, access_mode::discard_write> imageAcc{periodicImageProperty, cgh};

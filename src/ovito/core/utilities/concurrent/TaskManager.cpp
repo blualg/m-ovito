@@ -23,7 +23,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
-#include <ovito/core/oo/ObjectExecutor.h>
 #include <ovito/core/dataset/data/RegisteredBufferAccess.h>
 
 namespace Ovito {
@@ -85,7 +84,7 @@ TaskManager::~TaskManager()
 ******************************************************************************/
 void TaskManager::requestShutdown()
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     // Set flag to indicate we are shutting down.
     std::unique_lock<std::mutex> lock(_mutex);
@@ -106,7 +105,7 @@ void TaskManager::requestShutdown()
 ******************************************************************************/
 void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
     OVITO_ASSERT(isShuttingDown());
     OVITO_ASSERT(!_waitingForTask);
 
@@ -145,21 +144,16 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
 }
 
 /******************************************************************************
-* Executes the given function at some later time unless the given object is
-* destroyed in the meantime or the user interface is shut down.
+* Executes the given function at some later time.
 ******************************************************************************/
-void TaskManager::submitWork(const OvitoObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext)
+void TaskManager::submitWork(work_function_type&& function)
 {
-    // Note: contextObject may be null for work not associated with any particular object.
-
-    OVITO_ASSERT(!contextObject || !contextObject->isBeingInitializedOrDeleted()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed.
-
     // Place work item into the queue.
     size_t numPendingWork;
     {
         std::lock_guard<std::mutex> lock(_mutex);
         OVITO_ASSERT(!_shutdownCompleted);
-        _pendingWork.emplace(contextObject, std::move(function), isScriptingContext);
+        _pendingWork.push(std::move(function));
         numPendingWork = _pendingWork.size();
     }
 
@@ -189,38 +183,21 @@ void TaskManager::executePendingWork()
 ******************************************************************************/
 void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
 {
-    // Check that we are really in the main thread here.
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
     OVITO_ASSERT(!_shutdownCompleted || _pendingWork.empty());
 
     while(!_pendingWork.empty()) {
         {
             // Grab the next work item from the queue.
-            Work work = std::move(_pendingWork.front());
+            auto work = std::move(_pendingWork.front());
             _pendingWork.pop();
             lock.unlock();
 
-            // Execute work item only if the context object still exists.
-            // Otherwise, silently cancel the work (which still runs the destructor of the work object).
-            auto contextObject = work.obj.lock();
+            // Provide a clean task environment for the work.
+            Task::Scope taskScope(nullptr);
 
-            // An exception is a null context object, i.e. work that is not associated with a specific object.
-            // In this case the work is always executed.
-            if(contextObject || work.obj.empty()) {
-
-                // Establish the execution context in which the work was submitted.
-                ExecutionContext::Scope execScope(work.isScriptingContext ? ExecutionContext::Type::Scripting : ExecutionContext::Type::Interactive, _ui->shared_from_this());
-
-                // No active task while executing the work.
-                Task::Scope taskScope(nullptr);
-
-                // Undo recording may still be active if the GUI is currently performing an extended user operation (e.g. Animation Settings dialog may be open).
-                // While the asynchronous work is being performed, undo recording should be suspended.
-                UndoSuspender noUndo;
-
-                // Execute the work function.
-                std::invoke(std::move(work.function));
-            }
+            // Execute the work function.
+            std::move(work)();
 
             // Note: Work item is destructed here at scope exit
             // and must happen while task manager's mutex is unlocked.
@@ -246,7 +223,7 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
 void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDependency& awaitedTask, bool returnEarlyIfCanceled)
 {
     // This method must only be used in the main thread.
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     std::unique_lock<std::mutex> lock(_mutex);
     TaskPtr wasWaitingForTask = std::exchange(_waitingForTask, awaitedTask.get());
@@ -256,7 +233,7 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
 
     lock.unlock();
     // Register a callback function with the awaited task, which terminates the processing loop when the task gets canceled or finishes.
-    detail::FunctionTaskCallback awaitedTaskCallback(_waitingForTask.get(), [&](int state) {
+    detail::FunctionTaskCallback awaitedTaskCallback(_waitingForTask.get(), [&](int state) noexcept {
         if(state & (returnEarlyIfCanceled ? (Task::Finished | Task::Canceled) : Task::Finished)) {
             quitWorkProcessingLoop(quitFlag, eventLoop);
         }
@@ -264,7 +241,7 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
     });
 
     // Register a callback function with the waiting task, which terminates the processing loop in case the waiting task gets canceled.
-    detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) {
+    detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) noexcept {
         if(state & (Task::Canceled | Task::Finished)) {
             // When the parent task gets canceled, discard the task dependency which keeps the awaited task running.
             awaitedTask.reset();
@@ -288,6 +265,9 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
             eventLoop.emplace();
         }
 
+        // Temporarily switch back to a null context while in the event loop.
+        Task::Scope taskScope(nullptr);
+
         // Is the Qt main event loop running? If yes, start a local Qt event loop, which processes both Qt events and pending work items.
         // Otherwise, in a non-GUI environment, enter into our own processing loop, which only processes pending work items of this task manager.
         if(eventLoop) {
@@ -295,11 +275,6 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
             executePendingWorkLocked(lock);
             if(quitFlag)
                 break;
-
-            // Temporarily switch back to a default context while in the Qt event loop.
-            ExecutionContext::Scope execScope(ExecutionContext{});
-            Task::Scope taskScope(nullptr);
-            UndoSuspender noUndo;
 
             // Enter the local Qt event loop.
             lock.unlock();

@@ -196,7 +196,7 @@ size_t SliceModifier::sliceCoordinatesToMask(Plane3 plane, FloatType sliceWidth,
         // This is a single-element counter variable that will be incremented by the kernel for each marked element.
         sycl::buffer<size_t> numMarkedBuf(&numMarked, 1);
 
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+        this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
             // Access the input coordinates.
             SyclBufferAccess<Point3, access_mode::read> posAcc(positionProperty, cgh);
             // Access the input selection flags.
@@ -518,7 +518,7 @@ void SliceModifier::initializeModifier(const ModifierInitializationRequest& requ
     MultiDelegatingModifier::initializeModifier(request);
 
     // Initially place the cutting plane in the center of the simulation cell.
-    if(ExecutionContext::isInteractive() && distanceController() && distanceController()->getFloatValue(AnimationTime(0)) == 0) {
+    if(this_task::isInteractive() && distanceController() && distanceController()->getFloatValue(AnimationTime(0)) == 0) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const SimulationCell* cell = input.getObject<SimulationCell>()) {
             Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);

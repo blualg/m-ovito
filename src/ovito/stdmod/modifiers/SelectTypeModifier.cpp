@@ -71,7 +71,7 @@ void SelectTypeModifier::initializeModifier(const ModifierInitializationRequest&
             PropertyReference bestProperty;
             for(const Property* property : container->properties()) {
                 if(property->isTypedProperty()) {
-                    if(ExecutionContext::isInteractive() || property->typeId() == Property::GenericTypeProperty) {
+                    if(this_task::isInteractive() || property->typeId() == Property::GenericTypeProperty) {
                         bestProperty = property;
                     }
                 }
@@ -157,7 +157,7 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
                 SyclFlatSet idsToSelectSycl{std::set<int32_t>{idsToSelect.begin(), idsToSelect.end()}};
                 // This is a single-element counter variable that will be incremented by the kernel for each selected element.
                 sycl::buffer<size_t> numSelectedBuf(&nSelected, 1);
-                ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                     // Access the input type values.
                     SyclBufferAccess<int32_t, access_mode::read> typeAcc(typePropertyObject, cgh);
                     // Access output selection array.
@@ -220,7 +220,7 @@ Future<PipelineFlowState> SelectTypeModifier::evaluateModifier(const ModifierEva
 ******************************************************************************/
 QVariant SelectTypeModifier::getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
     OVITO_ASSERT(scene);
 
     QString shortInfo;

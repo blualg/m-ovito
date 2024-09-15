@@ -88,7 +88,7 @@ QString OverlayListItem::title(Viewport* selectedViewport) const
 ******************************************************************************/
 QVariant OverlayListItem::shortInfo(Viewport* selectedViewport) const
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
     if(overlay()) {
         if(Scene* scene = selectedViewport->scene()) {
             return overlay()->getPipelineEditorShortInfo(scene);

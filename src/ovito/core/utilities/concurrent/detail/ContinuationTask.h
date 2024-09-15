@@ -40,12 +40,12 @@ class ContinuationTask : public TaskWithStorage<R, TaskBase>, public TaskAwaiter
 public:
 
     /// Delegating constructor.
-    explicit ContinuationTask(Task::State initialState) noexcept : ContinuationTask(initialState, std::nullopt) {}
+    explicit ContinuationTask(std::shared_ptr<UserInterface> ui, Task::State initialState) noexcept : ContinuationTask(std::move(ui), initialState, std::nullopt) {}
 
     /// Constructor initializing the results storage.
     template<typename InitialValue>
-    explicit ContinuationTask(Task::State initialState, InitialValue&& initialResult) noexcept :
-            TaskWithStorage<R, TaskBase>(initialState, std::forward<InitialValue>(initialResult)),
+    explicit ContinuationTask(std::shared_ptr<UserInterface> ui, Task::State initialState, InitialValue&& initialResult) noexcept :
+            TaskWithStorage<R, TaskBase>(std::move(ui), initialState, std::forward<InitialValue>(initialResult)),
             TaskAwaiter(static_cast<Task&>(*this))
     {
         OVITO_ASSERT(!(initialState & (Task::Canceled | Task::Finished)));
@@ -155,17 +155,20 @@ private:
 
     // Workaround for a deficiency in GCC 10 and older.
 #if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 11
-    void finalResultsAvailableShared(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
-        finalResultsAvailable<true>(std::move(promise), std::move(finishedTask), lock);
+    void finalResultsAvailableShared(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
+        finalResultsAvailable<true>(std::move(promise), std::move(finishedTask));
     }
-    void finalResultsAvailableExclusive(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
-        finalResultsAvailable<false>(std::move(promise), std::move(finishedTask), lock);
+    void finalResultsAvailableExclusive(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
+        finalResultsAvailable<false>(std::move(promise), std::move(finishedTask));
     }
 #endif
 
     /// Callback function which gets invoked once the unwrapped future has completed.
     template<bool IsSharedFuture>
-    void finalResultsAvailable(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+    void finalResultsAvailable(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
+        // Lock access to this task.
+        Task::MutexLock lock(*this);
+
         // There is a small chance that the continuation task was canceled in the meantime but hasn't let go of the awaited task yet
         // (because finishing and running the registered continuation functions is not an atomic operation).
         // We need to check for this situation here and bail out if it happened.

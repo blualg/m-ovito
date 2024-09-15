@@ -83,8 +83,8 @@ void GenerateTrajectoryLinesModifier::initializeModifier(const ModifierInitializ
 {
     Modifier::initializeModifier(request);
 
-    if(ExecutionContext::isInteractive()) {
-        auto [firstFrame, lastFrame] = ExecutionContext::current().ui().datasetContainer().currentAnimationInterval();
+    if(this_task::isInteractive()) {
+        auto [firstFrame, lastFrame] = this_task::ui()->datasetContainer().currentAnimationInterval();
         setCustomIntervalStart(firstFrame);
         setCustomIntervalEnd(lastFrame);
     }
@@ -432,7 +432,7 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(cons
         // Loop over all input animation frames and gather particle position data.
         Future<std::shared_ptr<TrajectoryGenerator>> future = for_each_sequential(
             boost::irange(startFrame, endFrame, everyNthFrame()),
-            ObjectExecutor(modNode, true), // Request deferred execution
+            ObjectExecutor(modNode), // Request deferred execution
             [request = request](int frame) mutable -> SharedFuture<PipelineFlowState> {
                 this_task::setProgressText(tr("Generating trajectory lines"));
                 // Evaluate upstream pipeline at current frame.

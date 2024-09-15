@@ -100,7 +100,7 @@ Future<std::unique_ptr<FrameGraphBuilder>> FrameGraphBuilder::gatherPipelineResu
 {
     return for_each_sequential<false>(
         _visiblePipelines,
-        ObjectExecutor(_fg, true),
+        ObjectExecutor(_fg),
 
         // Called for each pipeline.
         [this](Pipeline* pipeline) {
@@ -215,7 +215,7 @@ Future<std::unique_ptr<FrameGraphBuilder>> FrameGraphBuilder::waitForVisElements
             return Future<std::unique_ptr<FrameGraphBuilder>>::createImmediate(std::move(builder));
 
         // Wait for all asynchronous visual elements to finish rendering.
-        auto future = when_all_futures(std::move(builder->_asyncVisElementFutures), ObjectExecutor(builder->_fg, true));
+        auto future = when_all_futures(std::move(builder->_asyncVisElementFutures), ObjectExecutor(builder->_fg));
 
         // Once all future results are available, handle them one by one.
         const FrameGraph& fg = *builder->_fg;
@@ -246,7 +246,7 @@ Future<std::unique_ptr<FrameGraphBuilder>> FrameGraphBuilder::waitForViewportLay
         OVITO_ASSERT(!builder->_asyncViewportLayersFutures.empty());
 
         // Wait for all asynchronous viewport layers to finish rendering.
-        auto future = when_all_futures(std::move(builder->_asyncViewportLayersFutures), ObjectExecutor(builder->_fg, true));
+        auto future = when_all_futures(std::move(builder->_asyncViewportLayersFutures), ObjectExecutor(builder->_fg));
 
         // Once all future results are available, handle them one by one.
         const FrameGraph& fg = *builder->_fg;

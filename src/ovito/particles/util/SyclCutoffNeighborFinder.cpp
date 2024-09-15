@@ -169,7 +169,7 @@ void SyclCutoffNeighborFinder::prepare(FloatType cutoffRadius, const Property* p
 
     // Sort input particles into bins.
     if(localParticleCount() != 0) {
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+        this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
 
             SyclBufferAccess<int64_t, access_mode::read> mappingAcc{_packMapping, cgh};
             SyclBufferAccess<Point3, access_mode::read> positionInAcc{positions, cgh};

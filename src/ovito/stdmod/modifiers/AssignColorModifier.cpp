@@ -51,7 +51,7 @@ void AssignColorModifier::initializeObject(ObjectInitializationFlags flags)
     DelegatingModifier::initializeObject(flags);
 
     // In the graphical environment, we clear the selection by default to make the assigned colors visible.
-    setKeepSelection(ExecutionContext::isScripting());
+    setKeepSelection(this_task::isScripting());
 
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setColorController(ControllerManager::createColorController());

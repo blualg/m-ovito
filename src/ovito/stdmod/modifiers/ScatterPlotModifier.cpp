@@ -84,7 +84,7 @@ void ScatterPlotModifier::initializeModifier(const ModifierInitializationRequest
     GenericPropertyModifier::initializeModifier(request);
 
     // Use the first available property from the input state as data source when the modifier is newly created.
-    if((!xAxisProperty() || !yAxisProperty()) && subject() && ExecutionContext::isInteractive()) {
+    if((!xAxisProperty() || !yAxisProperty()) && subject() && this_task::isInteractive()) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             PropertyReference bestProperty;

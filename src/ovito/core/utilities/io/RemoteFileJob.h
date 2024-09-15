@@ -44,7 +44,7 @@ class RemoteFileJob : public QObject
 public:
 
     /// Constructor.
-    RemoteFileJob(QUrl url, Task& task);
+    RemoteFileJob(const QUrl& url, Task& task);
 
 #ifdef OVITO_DEBUG
     ~RemoteFileJob() {
@@ -62,7 +62,7 @@ public:
 protected:
 
     /// Opens the network connection.
-    void start();
+    void start() noexcept;
 
     /// Closes the network connection.
     virtual void shutdown(bool success);
@@ -95,9 +95,6 @@ protected:
     /// The SSH connection.
     Ovito::SshConnection* _connection = nullptr;
 
-    /// The local execution context.
-    ExecutionContext _executionContext;
-
 #ifndef Q_OS_WASM
     /// The Qt network request reply.
     QNetworkReply* _networkReply = nullptr;
@@ -129,9 +126,9 @@ public:
     using future_type = SharedFuture<FileHandle>;
 
     /// Constructor.
-    DownloadRemoteFileJob(QUrl url) :
-        RemoteFileJob(std::move(url), *this),
-        TaskWithStorage<FileHandle>(Task::NoState, std::nullopt) {}
+    explicit DownloadRemoteFileJob(const QUrl& url, UserInterface& ui) :
+        RemoteFileJob(url, *this),
+        TaskWithStorage<FileHandle>(ui.shared_from_this(), Task::NoState, std::nullopt) {}
 
 protected:
 
@@ -183,9 +180,9 @@ public:
     using future_type = Future<QStringList>;
 
     /// Constructor.
-    ListRemoteDirectoryJob(QUrl url) :
-        RemoteFileJob(std::move(url), *this),
-        TaskWithStorage<QStringList>(Task::NoState, std::nullopt) {}
+    explicit ListRemoteDirectoryJob(const QUrl& url, UserInterface& ui) :
+        RemoteFileJob(url, *this),
+        TaskWithStorage<QStringList>(ui.shared_from_this(), Task::NoState, std::nullopt) {}
 
 protected:
 

@@ -36,7 +36,7 @@ void FileColumnParticleExporter::initializeObject(ObjectInitializationFlags flag
     ParticleExporter::initializeObject(flags);
 
 #ifndef OVITO_DISABLE_QSETTINGS
-    if(ExecutionContext::isInteractive()) {
+    if(this_task::isInteractive()) {
         // Restore last output column mapping.
         QSettings settings;
         settings.beginGroup("exporter/particles/");

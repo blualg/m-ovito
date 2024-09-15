@@ -135,7 +135,7 @@ void OpenGLViewportWindow::paint()
     if(!frameGraph())
         return;
 
-    MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface(), MainThreadOperation::Isolated);
+    MainThreadOperation operation(userInterface(), MainThreadOperation::Isolated);
     try {
         // Recreate/resize abstract frame buffer for rendering into the widget if necessary.
         const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());

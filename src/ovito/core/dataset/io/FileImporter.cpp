@@ -62,7 +62,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
     // Note: FileImporter::autodetectFileFormat() may only be called from the main thread.
     // Event though the implementation of autodetectFileFormat() itself is thread-safe,
     // FileImporterClass::determineFileFormat() is currently limited to the main thread.
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     // Cache for the format of files already loaded during the current program session.
     //
@@ -144,7 +144,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
 void FileImporter::activateCLocale()
 {
     // The setlocale() function is not thread-safe and should only be called from the main thread.
-    if(ExecutionContext::isMainThread())
+    if(this_task::isMainThread())
         std::setlocale(LC_ALL, "C");
 }
 

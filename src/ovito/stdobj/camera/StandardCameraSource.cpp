@@ -66,8 +66,8 @@ void StandardCameraSource::initializeObject(ObjectInitializationFlags flags)
         zoomController()->setFloatValue(AnimationTime(0), 200);
 
         // Adopt the view parameters from the currently active Viewport.
-        if(ExecutionContext::current().isInteractive()) {
-            if(Viewport* vp = ExecutionContext::current().ui().datasetContainer().activeViewport()) {
+        if(this_task::isInteractive()) {
+            if(Viewport* vp = this_task::ui()->datasetContainer().activeViewport()) {
                 setIsPerspective(vp->isPerspectiveProjection());
                 if(vp->isPerspectiveProjection())
                     fovController()->setFloatValue(AnimationTime(0), vp->fieldOfView());
@@ -202,7 +202,7 @@ void StandardCameraSource::setIsTargetCamera(bool enable)
     pushIfUndoRecording<TargetChangedUndoOperation>(this);
 
     // Use current scene animation time to initialize camera objects.
-    AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+    AnimationTime time = this_task::ui()->datasetContainer().currentAnimationTime();
 
     for(Pipeline* pipeline : pipelines(true)) {
         if(pipeline->lookatTargetNode() == nullptr && enable) {

@@ -35,7 +35,7 @@ using namespace std;
 ******************************************************************************/
 LoadStream::LoadStream(QDataStream& source) : _is(source)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     OVITO_ASSERT_MSG(!_is.device()->isSequential(), "LoadStream constructor", "LoadStream class requires a seekable input stream.");
     if(_is.device()->isSequential())

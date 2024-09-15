@@ -193,7 +193,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
 ******************************************************************************/
 void AnimationSettings::adjustAnimationInterval()
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     int firstFrame = std::numeric_limits<int>::max();
     int lastFrame = std::numeric_limits<int>::lowest();

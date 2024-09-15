@@ -201,7 +201,7 @@ void DataSet::loadFromFile(const QString& filePath)
     ObjectLoadStream stream(dataStream);
 
     // Note: DataSet::loadFromFile() is only called by Python scripts.
-    OVITO_ASSERT(ExecutionContext::isScripting());
+    OVITO_ASSERT(this_task::isScripting());
     if(stream.applicationName() != QStringLiteral("OVITO Pro"))
         throw Exception(tr("This function can only load session states written by OVITO Pro or the OVITO Python package. Files created with OVITO Basic are no longer supported."));
 

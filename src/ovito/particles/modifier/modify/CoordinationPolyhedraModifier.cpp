@@ -54,7 +54,7 @@ void CoordinationPolyhedraModifier::initializeObject(ObjectInitializationFlags f
         surfaceMeshVis()->setSmoothShading(false);
         surfaceMeshVis()->setSurfaceTransparency(FloatType(0.25));
         surfaceMeshVis()->setObjectTitle(tr("Polyhedra"));
-        if(ExecutionContext::isInteractive())
+        if(this_task::isInteractive())
             surfaceMeshVis()->setHighlightEdges(true);
     }
 }

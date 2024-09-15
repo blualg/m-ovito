@@ -146,7 +146,7 @@ void SpatialCorrelationFunctionModifier::initializeModifier(const ModifierInitia
     Modifier::initializeModifier(request);
 
     // Use the first available particle property from the input state as data source when the modifier is newly created.
-    if((!sourceProperty1() || !sourceProperty2()) && ExecutionContext::isInteractive()) {
+    if((!sourceProperty1() || !sourceProperty2()) && this_task::isInteractive()) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const Particles* container = input.getObject<Particles>()) {
             PropertyReference bestProperty;

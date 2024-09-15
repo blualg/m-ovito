@@ -43,7 +43,7 @@ public:
     void initializeObject(ObjectInitializationFlags flags);
 
     /// Initializes the element type to default parameter values.
-    virtual void initializeType(const OwnerPropertyRef& property, bool loadUserDefaults = ExecutionContext::isInteractive());
+    virtual void initializeType(const OwnerPropertyRef& property, bool loadUserDefaults = this_task::isInteractive());
 
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
     virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
@@ -66,7 +66,7 @@ public:
     virtual QString objectTitle() const override { return nameOrNumericId(); }
 
     /// Returns the default color for a named element type.
-    static Color getDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults = ExecutionContext::isInteractive());
+    static Color getDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults = this_task::isInteractive());
 
     /// Changes the default color for a named element type.
     static void setDefaultColor(const OwnerPropertyRef& property, const QString& typeName, const Color& color);

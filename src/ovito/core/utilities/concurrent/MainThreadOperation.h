@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/concurrent/ExecutionContext.h>
+#include "Task.h"
 #include "Promise.h"
 
 namespace Ovito {
@@ -34,7 +34,7 @@ namespace Ovito {
  *
  * The operation is automatically put into the 'finished' state by the class' destructor.
  */
-class OVITO_CORE_EXPORT MainThreadOperation : public Promise<void>, ExecutionContext::Scope, Task::Scope
+class OVITO_CORE_EXPORT MainThreadOperation : public Promise<void>, Task::Scope
 {
 public:
 
@@ -45,9 +45,9 @@ public:
 
     /// Constructor.
     [[nodiscard]] explicit MainThreadOperation(
-        ExecutionContext::Type contextType = ExecutionContext::current().type(),
-        UserInterface& userInterface = ExecutionContext::current().ui(),
-        Kind kind = Bound);
+        UserInterface& userInterface = *this_task::ui(),
+        Kind kind = Bound,
+        bool isInteractive = true);
 
     /// Destructor.
     ~MainThreadOperation();

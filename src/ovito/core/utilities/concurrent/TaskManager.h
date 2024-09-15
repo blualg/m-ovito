@@ -39,8 +39,19 @@ class OVITO_CORE_EXPORT TaskManager : public QObject
 
 public:
 
+    /// The type-erased function object type to be used for work queue items.
+    using work_function_type = fu2::function_base<
+        true, // IsOwning = true: The function object owns the callable object and is responsible for its destruction.
+        false, // IsCopyable = false: The function object is not copyable.
+        fu2::capacity_fixed<4 * sizeof(std::shared_ptr<OvitoObject>)>, // Capacity: Defines the internal capacity of the function for small functor optimization.
+        false, // IsThrowing = false: Do not throw an exception on empty function call, call `std::abort` instead.
+        true, // HasStrongExceptGuarantee = true: All objects satisfy the strong exception guarantee
+        void() noexcept>;
+
+public:
+
     /// Constructor.
-    TaskManager(UserInterface* ui);
+    explicit TaskManager(UserInterface* ui);
 
 #ifdef OVITO_DEBUG
     /// Destructor.
@@ -58,8 +69,8 @@ public:
     /// Tells the TaskManager to wait for all in-flight tasks to complete, then shutdown.
     void requestShutdown();
 
-    /// Executes the given function at some later time unless the given object is destroyed in the meantime or the task manager is shut down.
-    void submitWork(const OvitoObject* contextObject, fu2::unique_function<void() noexcept> function, bool isScriptingContext);
+    /// Executes the given function at some later time.
+    void submitWork(work_function_type&& function);
 
     /// Determines the thread pool for executing the given asynchronous task.
     QThreadPool* chooseThreadPool(Task& task);
@@ -125,27 +136,8 @@ private:
     RegisteredBufferAccess* _registeredBufferAccessors = nullptr;
 #endif
 
-    /// A piece of work that has been submitted for deferred execution in the main thread.
-    struct Work
-    {
-        /// Constructor.
-        template<typename Function>
-        Work(OOWeakRef<const OvitoObject> obj_, Function&& function_, bool isScriptingContext_) :
-            obj(std::move(obj_)), function(std::forward<Function>(function_)), isScriptingContext(isScriptingContext_) {}
-
-        /// The context object this work is associated with.
-        /// If the object is destroyed before the work is executed, the work is canceled.
-        OOWeakRef<const OvitoObject> obj;
-
-        /// The function to be executed.
-        fu2::unique_function<void() noexcept> function;
-
-        /// Indicates whether the work is being performed in a scripting context or an interactive context.
-        bool isScriptingContext;
-    };
-
     /// The queue of all pending work items that have been submitted for deferred execution in the main thread.
-    std::queue<Work> _pendingWork;
+    std::queue<work_function_type> _pendingWork;
 
     /// Used to signal the arrival of new work items in the queue.
     std::condition_variable _pendingWorkCondition;

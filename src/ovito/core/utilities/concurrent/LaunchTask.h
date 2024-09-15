@@ -39,12 +39,18 @@ namespace Ovito {
 template<class TaskType, typename... Args>
 [[nodiscard]] auto launchTask(std::shared_ptr<TaskType> task, Args&&... args)
 {
+    OVITO_ASSERT(task);
+
     // The task class must define a type named 'future_type', which specifies what kind of return value the task produces.
     using future_type = typename TaskType::future_type;
 
-    // Inherit the priority status from the parent task.
-    if(this_task::get() && this_task::get()->isHighPriorityTask())
-        task->setHighPriorityTask();
+    // Inherit the priority status and interactive flag from the current task.
+    if(const Task* parentTask = this_task::get()) {
+        if(parentTask->isHighPriorityTask())
+            task->setHighPriorityTask();
+        if(parentTask->isInteractive())
+            task->setIsInteractive();
+    }
 
     // Check at compile-time whether the task's call operator is defined.
     if constexpr(std::is_invocable_v<TaskType, Args...>) {

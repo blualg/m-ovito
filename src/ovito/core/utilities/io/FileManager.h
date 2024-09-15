@@ -86,11 +86,12 @@ private:
 class OVITO_CORE_EXPORT FileManager : public QObject
 {
     Q_OBJECT
+    Q_DISABLE_COPY_MOVE(FileManager)
 
 public:
 
     /// Constructor.
-    FileManager();
+    explicit FileManager(UserInterface& ui);
 
     /// Destructor.
     ~FileManager();
@@ -194,13 +195,16 @@ private Q_SLOTS:
 private:
 
     /// Is called when a remote file has been fetched.
-    void fileFetched(QUrl url, QTemporaryFile* localFile);
+    void fileFetched(const QUrl& url, QTemporaryFile* localFile);
 
     /// Returns the filename (if it's a QFileDevice) or identifier (otherwise) for the given QIODevice,
     /// which can be used for cache lookups.
     static QString getFilenameFromDevice(QIODevice* device);
 
 private:
+
+    /// The abstract user interface this file manager belongs to.
+    UserInterface& _ui;
 
     /// The remote files that are currently being fetched.
     std::map<QUrl, WeakSharedFuture<FileHandle>> _pendingFiles;

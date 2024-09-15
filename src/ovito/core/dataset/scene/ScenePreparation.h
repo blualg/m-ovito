@@ -46,9 +46,6 @@ public:
     /// Constructor.
     void initializeObject(UserInterface& userInterface, Scene* scene = nullptr);
 
-    /// This method gets called by OORef<T>::create() right after the object has been fully initialized.
-    void completeObjectInitialization();
-
     /// Returns the abstract user interface in which this object operates.
     UserInterface& userInterface() const { return *_userInterface; }
 

@@ -38,7 +38,7 @@ namespace Ovito {
 ******************************************************************************/
 RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     if(obj == nullptr)
         return nullptr;
@@ -76,7 +76,7 @@ RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
 ******************************************************************************/
 OORef<RefTarget> CloneHelper::cloneSingleObjectImpl(const RefTarget* obj, bool deepCopy)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     if(obj == nullptr)
         return nullptr;

@@ -36,8 +36,8 @@ ObjectSaveStream::~ObjectSaveStream()
         ObjectSaveStream::close();
     }
     catch(const Exception& ex) {
-        if(ExecutionContext::current().isValid())
-            ExecutionContext::current().ui().reportError(ex);
+        if(this_task::get())
+            this_task::ui()->reportError(ex);
         else
             ex.logError();
     }

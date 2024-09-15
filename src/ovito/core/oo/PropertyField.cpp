@@ -64,7 +64,7 @@ void PropertyFieldBase::generateTargetChangedEvent(RefMaker* owner, const Proper
         // is not shared by multiple owners and if we are in the main thread.
         // This is a performance optimization to avoid sending change events unnecessarily
         // in situations where they certainly don't matter.
-        if(ExecutionContext::isMainThread() == false)
+        if(this_task::isMainThread() == false)
             return;
         if(static_object_cast<DataObject>(owner)->dataReferenceCount() > 1) // Note: Using dataReferenceCount() instead of isSafeToModify() here is a performance optimization.
             return;

@@ -107,7 +107,7 @@ Box3 VectorVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPa
         return {};
 
     VectorData vectorData = container->getVectorVisData(
-        path, flowState, ExecutionContext::current().ui().datasetContainer().visCache()->acquireResourceFrame());
+        path, flowState, this_task::ui()->datasetContainer().visCache()->acquireResourceFrame());
     OVITO_ASSERT(!vectorData.positions || vectorData.positions->size() == container->elementCount());
     OVITO_ASSERT(!vectorData.positions || vectorData.positions->dataType() == Property::FloatDefault);
     OVITO_ASSERT(!vectorData.positions ||

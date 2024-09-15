@@ -257,7 +257,7 @@ public:
         sycl::buffer result = detail::allocateSyclBuffer<std::remove_const_t<element_type>>(sycl::range<1>{1});
 
         if(!accessor_type::empty()) {
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 cgh.require(*this);
 #ifdef OVITO_USE_SYCL_ACPP
                 auto reduction = sycl::reduction(sycl::accessor{result, cgh, sycl::no_init}, identity, std::move(combiner));
@@ -298,7 +298,7 @@ public:
             detail::allocateSyclBuffer<std::remove_const_t<element_type>>(sycl::range<1>{1}));
 
         if(!accessor_type::empty()) {
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
 
                 // Access selection flags array (optional).
                 SyclBufferAccessTyped<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
@@ -381,7 +381,7 @@ public:
         OVITO_ASSERT(accessor_type::empty() || accessor_type::is_placeholder());
 
         if(!accessor_type::empty()) {
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 cgh.require(*this);
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_iota)(sycl::range(size()), [=, *this](size_t i) {
                     if constexpr(!ComponentWise)
@@ -404,7 +404,7 @@ public:
         OVITO_ASSERT(baseValue.get_range()[0] == 1);
 
         if(!accessor_type::empty()) {
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 cgh.require(*this);
                 auto baseValueAcc = baseValue.get_access(cgh, sycl::read_only);
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_iota_buf)(sycl::range(size()), [=, *this](size_t i) {
@@ -424,7 +424,7 @@ public:
         OVITO_ASSERT(accessor_type::empty() || accessor_type::is_placeholder());
 
         if(!accessor_type::empty()) {
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 cgh.require(*this);
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_add)(accessor_type::get_range(), [=, *this](auto id) {
                     (*this)[id] += increment;
@@ -444,7 +444,7 @@ public:
         OVITO_ASSERT(incrementBuffer.get_range()[0] == 1);
 
         if(!accessor_type::empty()) {
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 cgh.require(*this);
                 auto incrementAcc = incrementBuffer.get_access(cgh, sycl::read_only);
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_add_buf)(sycl::range(size()), [=, *this](size_t i) {
@@ -462,7 +462,7 @@ public:
         OVITO_ASSERT(accessor_type::empty() || accessor_type::is_placeholder());
 
         if(!accessor_type::empty()) {
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 cgh.require(*this);
                 OVITO_SYCL_PARALLEL_FOR(cgh, SyclBufferAccess_for_each)(accessor_type::get_range(), [=, *this](auto id) {
                     func((*this)[id]);
@@ -500,7 +500,7 @@ public:
             auto mincBufs = make_buffer_array(bb.minc, std::make_index_sequence<component_count>());
             auto maxcBufs = make_buffer_array(bb.maxc, std::make_index_sequence<component_count>());
 
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 cgh.require(*this);
                 SyclBufferAccessTyped<SelectionIntType, access_mode::read> selectionAcc{selection, cgh};
                 if constexpr(component_count == 3) {

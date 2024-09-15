@@ -26,7 +26,6 @@
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/FrameGraphBuilder.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/viewport/ViewportSuspender.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>
@@ -176,9 +175,6 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
         outputFrameBuffer->clear();
     }
 
-    // Don't render interactive viewports while rendering an offscreen image.
-    ViewportSuspender noVPUpdates;
-
     // Determine the range of frames to be rendered.
     int numberOfFrames = 1;
     int firstFrameNumber = 0;
@@ -257,7 +253,7 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
 #endif
 
     // The visualization data cache used for building the frame graph.
-    std::shared_ptr<RendererResourceCache> visCache = ExecutionContext::current().ui().datasetContainer().visCache();
+    std::shared_ptr<RendererResourceCache> visCache = this_task::ui()->datasetContainer().visCache();
 
     Future<void> renderFuture;
     QString lastOutputFilename;

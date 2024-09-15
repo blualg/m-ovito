@@ -95,9 +95,8 @@ OORef<Controller> ControllerManager::createTransformationController()
 ******************************************************************************/
 bool ControllerManager::isAutoGenerateAnimationKeysEnabled()
 {
-    const ExecutionContext& context = ExecutionContext::current();
-    if(context.isValid()) {
-        return context.ui().isAutoGenerateAnimationKeysEnabled();
+    if(Task* task = this_task::get()) {
+        return task->ui()->isAutoGenerateAnimationKeysEnabled();
     }
     return false;
 }

@@ -47,7 +47,7 @@ UserInterface::UserInterface() : _taskManager(this), _datasetContainer(OORef<Dat
 ******************************************************************************/
 void UserInterface::exitWithFatalError(const Exception& ex)
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     // Avoid reentrance.
     if(_exitingDueToFatalError)
@@ -78,10 +78,13 @@ void UserInterface::shutdown()
 {
     // Close the dataset container. This should release all objects in the current dataset and stop all associated background tasks.
     try {
-        // Set up a local execution context in case we don't have one.
+        // Set up a local task context in case we don't have one.
         // The shutdown() method may be called from anywhere.
-        ExecutionContext::Scope execScope(ExecutionContext::Type::Scripting, shared_from_this());
+        MainThreadOperation operation(*this, MainThreadOperation::Kind::Isolated);
         datasetContainer().clearAllReferences();
+    }
+    catch(OperationCanceled) {
+        qWarning() << "Warning: Shutdown cancelled unexpectedly";
     }
     catch(const Exception& ex) {
         qWarning() << "Warning: Exception caught during shutdown";
@@ -106,9 +109,9 @@ void UserInterface::shutdownComplete()
             // The lambda's destructor will free the self-guard object and stop the event loop.
             OVITO_ASSERT(Application::instance()->isShuttingDown() == false);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
-            Application::instance()->taskManager().submitWork(Application::instance(), [s = std::move(_selfGuard), locker = QEventLoopLocker()]() noexcept {}, true);
+            Application::instance()->taskManager().submitWork([s = std::move(_selfGuard), locker = QEventLoopLocker()]() noexcept {});
 #else
-            Application::instance()->taskManager().submitWork(Application::instance(), [s = std::move(_selfGuard), locker = std::make_unique<QEventLoopLocker>()]() noexcept {}, true);
+            Application::instance()->taskManager().submitWork([s = std::move(_selfGuard), locker = std::make_unique<QEventLoopLocker>()]() noexcept {});
 #endif
         }
         else {
@@ -136,12 +139,6 @@ void UserInterface::reportError(const Exception& ex, bool blocking)
 ******************************************************************************/
 bool UserInterface::processUIEvents()
 {
-    // While control is in the event loop, no context should be active.
-    // Temporarily switch back to null contexts here.
-    ExecutionContext::Scope execScope(ExecutionContext{});
-    Task::Scope taskScope(nullptr);
-    UndoSuspender noUndo;
-
     // Process Qt events (only if the main Qt event loop is running).
     if(QCoreApplication::instance() != nullptr && QThread::currentThread()->loopLevel() != 0) {
         QCoreApplication::sendPostedEvents(); // Process events sent by the application
@@ -167,7 +164,7 @@ std::shared_ptr<FrameBuffer> UserInterface::createAndShowFrameBuffer(int width, 
 ******************************************************************************/
 void UserInterface::updateViewports()
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     if(ViewportConfiguration* viewportConfig = datasetContainer().activeViewportConfig()) {
         for(Viewport* vp : viewportConfig->viewports())
@@ -180,7 +177,7 @@ void UserInterface::updateViewports()
 ******************************************************************************/
 void UserInterface::resumeViewportUpdates()
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
     OVITO_ASSERT(areViewportUpdatesSuspended());
 
     if(--_viewportSuspendCount == 0) {

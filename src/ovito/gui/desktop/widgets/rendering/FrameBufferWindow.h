@@ -108,8 +108,8 @@ private:
     /// Layout manager of the central container widget.
     QStackedLayout* _centralLayout;
 
-    /// The rendering task.
-    TaskPtr _renderingTask;
+    /// The rendering operation currently in progress.
+    SharedFuture<void> _renderingFuture;
 
     /// Layout component for displaying the progress of rendering operations.
     QVBoxLayout* _progressLayout;

@@ -70,7 +70,7 @@ void FreezePropertyModifier::initializeModifier(const ModifierInitializationRequ
     GenericPropertyModifier::initializeModifier(request);
 
     // Use the first available particle property from the input state as data source when the modifier is newly created.
-    if(!sourceProperty() && subject() && ExecutionContext::isInteractive()) {
+    if(!sourceProperty() && subject() && this_task::isInteractive()) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             for(const Property* property : container->properties()) {

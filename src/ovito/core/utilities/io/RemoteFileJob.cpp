@@ -52,10 +52,10 @@ constexpr int MaximumNumberOfSimultaneousJobs = 2;
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-RemoteFileJob::RemoteFileJob(QUrl url, Task& task) : _url(std::move(url)), _task(task)
+RemoteFileJob::RemoteFileJob(const QUrl& url, Task& task) : _url(url), _task(task)
 {
     // Run all signal handlers of this class in the main thread.
-    moveToThread(Application::instance()->thread());
+    moveToThread(task.ui()->taskManager().thread());
 }
 
 /******************************************************************************
@@ -65,23 +65,18 @@ void RemoteFileJob::operator()()
 {
     // We may not be in the main thread at this point.
     // Make sure to start the download process in the main thread.
-    ExecutionContext::current().ui().execute([self = QPointer<RemoteFileJob>(this)]() noexcept {
-        if(self)
-            self->start();
+    this_task::ui()->execute([promise = PromiseBase(_task.shared_from_this()), this]() mutable noexcept {
+        start(std::move(promise));
     });
 }
 
 /******************************************************************************
 * Opens the network connection.
 ******************************************************************************/
-void RemoteFileJob::start()
+void RemoteFileJob::start(PromiseBase promise) noexcept
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
     OVITO_ASSERT(!_isActive);
-
-    // Inherit the current execution context.
-    _executionContext = ExecutionContext::current();
-    OVITO_ASSERT(_executionContext.isValid());
 
     // Check if job has been canceled in the meantime.
     if(_task.isCanceled()) {
@@ -166,7 +161,7 @@ void RemoteFileJob::start()
 ******************************************************************************/
 void RemoteFileJob::shutdown(bool success)
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     if(_connection) {
         disconnect(_connection, nullptr, this, nullptr);

@@ -120,7 +120,7 @@ protected:
     bool _taskConsoleLoggingEnabled = false;
 
     /// The global file manager instance.
-    FileManager _fileManager;
+    FileManager _fileManager{*this};
 
 #ifndef Q_OS_WASM
     /// The application-wide network manager object.

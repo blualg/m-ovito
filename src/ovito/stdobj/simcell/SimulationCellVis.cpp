@@ -87,7 +87,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> SimulationCellVis::render(c
 ******************************************************************************/
 void SimulationCellVis::renderWireframe(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     // Look up the vertex data in the vis cache.
     const ConstDataBufferPtr& lineVertices = frameGraph.visCache().lookup<ConstDataBufferPtr>(

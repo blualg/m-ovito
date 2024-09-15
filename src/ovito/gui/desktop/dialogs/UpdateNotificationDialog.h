@@ -38,7 +38,7 @@ class OVITO_GUI_EXPORT UpdateNotificationService : public QObject, public GuiApp
 public:
     /// Is called by the system during standalone application startup.
     /// Downloads the news page from the web and sets the side panel and update dialog.
-    bool applicationStarting() override;
+    void applicationStarting() override;
 
     /// Is called when a new main window is created.
     /// Used to store the main window.

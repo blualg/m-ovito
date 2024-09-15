@@ -592,7 +592,7 @@ inline void DataBuffer::fill(const T value)
     _isDataInitialized = true;
 #endif
 #ifdef OVITO_USE_SYCL
-    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+    this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
         SyclBufferAccess<T, access_mode::discard_write> accessor(this, cgh);
         // Note: Tried handler.fill() method, but it led to segfaults. Using a custom fill kernel instead:
         OVITO_SYCL_PARALLEL_FOR(cgh, databuffer_fill)(sycl::range(size()), [=](size_t i) {
@@ -625,7 +625,7 @@ inline void DataBuffer::fillSelected(const T value, const DataBuffer& selection)
     WriteAccess writeAccess(*this);
     ReadAccess readAccess(selection);
 #ifdef OVITO_USE_SYCL
-    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+    this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
         SyclBufferAccess<T, access_mode::write> outputAccessor(this, cgh);
         SyclBufferAccess<SelectionIntType, access_mode::read> selectionAccessor(&selection, cgh);
         OVITO_SYCL_PARALLEL_FOR(cgh, databuffer_fillSelected)(sycl::range(size()), [=](size_t i) {
@@ -770,7 +770,7 @@ inline size_t DataBuffer::count(const T value) const
 #ifdef OVITO_USE_SYCL
     if(size() != 0) {
         sycl::buffer<size_t> countBuf(&count, 1);
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+        this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
             SyclBufferAccess<T, access_mode::read> acc(this, cgh);
 #ifdef OVITO_USE_SYCL_ACPP
             auto reduction = sycl::reduction(sycl::accessor{countBuf, cgh, sycl::no_init}, size_t{0}, sycl::plus<size_t>());

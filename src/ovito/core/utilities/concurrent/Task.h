@@ -42,8 +42,7 @@ class OVITO_CORE_EXPORT Task : public std::enable_shared_from_this<Task>
 
 public:
 
-    using Mutex = std::mutex;
-    using MutexLock = std::unique_lock<Mutex>;
+    using MutexLock = std::unique_lock<std::mutex>;
 
     /// The different states a task can be in.
     enum State {
@@ -53,10 +52,12 @@ public:
         IsAsynchronous = (1<<2), // The task is derived from AsynchronousTaskBase and runs in a worker thread.
         YieldUI        = (1<<3), // The task runs in the main thread should yield control to the event loop when its progress functions are called.
         HighPriority   = (1<<4), // The task should be executed with higher priority, because it is responsible for real-time GUI updates.
+        IsInteractive  = (1<<5), // The task is doing actions initiated by the user in the GUI - in contrast to automated actions performed by a script.
     };
 
     /// Constructor.
-    explicit Task(State initialState = NoState, void* resultsStorage = nullptr) noexcept : _state(initialState), _resultsStorage(resultsStorage) {
+    explicit Task(std::shared_ptr<UserInterface> ui, State initialState = NoState, void* resultsStorage = nullptr) noexcept : _ui(std::move(ui)), _state(initialState), _resultsStorage(resultsStorage) {
+        OVITO_ASSERT(_ui);
 #ifdef OVITO_DEBUG
         // In debug builds we keep track of how many task objects exist to check whether they all get destroyed correctly
         // at program termination.
@@ -73,19 +74,33 @@ public:
     class Scope;
 
     /// Returns whether this shared state has been canceled by a previous call to cancel().
-    bool isCanceled() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_acquire) & Canceled); }
+    bool isCanceled() const noexcept { OVITO_ASSERT(this); return (_state.load(std::memory_order_acquire) & Canceled); }
 
     /// Returns true if the promise is in the 'finished' state.
-    bool isFinished() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_acquire) & Finished); }
+    bool isFinished() const noexcept { OVITO_ASSERT(this); return (_state.load(std::memory_order_acquire) & Finished); }
 
     /// Indicates whether this task's class is derived from the AsynchronousTaskBase class.
-    bool isAsynchronousTask() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & IsAsynchronous); }
+    bool isAsynchronousTask() const noexcept { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & IsAsynchronous); }
 
     /// Indicates whether this task runs with elevated priority, because it is responsible for real-time GUI updates.
-    bool isHighPriorityTask() const { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & HighPriority); }
+    bool isHighPriorityTask() const noexcept { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & HighPriority); }
 
     /// Makes this task run with elevated priority, because it is responsible for real-time GUI updates.
-    void setHighPriorityTask() { _state.fetch_or(HighPriority, std::memory_order_relaxed); }
+    void setHighPriorityTask() noexcept { _state.fetch_or(HighPriority, std::memory_order_relaxed); }
+
+    /// Returns whether this task is doing actions initiated by the user in the GUI - in contrast to automated actions performed by a script.
+    bool isInteractive() const noexcept { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & IsInteractive); }
+
+    /// Marks this task as doing actions initiated by the user in the GUI - in contrast to automated actions performed by a script.
+    bool setIsInteractive(bool isInteractive = true) noexcept {
+        if(isInteractive)
+            return _state.fetch_or(IsInteractive, std::memory_order_relaxed) & IsInteractive;
+        else
+            return _state.fetch_and(~IsInteractive, std::memory_order_relaxed) & IsInteractive;
+    }
+
+    /// Returns the abstract user interface this task is associated with.
+    const std::shared_ptr<UserInterface>& ui() const noexcept { OVITO_ASSERT(_ui); return _ui; }
 
     /// \brief Requests cancellation of the task.
     void cancel() noexcept;
@@ -123,33 +138,6 @@ public:
             exceptionLocked(std::current_exception());
         }
         finishLocked(lock);
-    }
-
-    /// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
-    /// The function can optionally take a reference to this task object as an argument.
-    /// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
-    template<typename Executor, typename Function>
-    void finally(Executor&& executor, Function&& f) {
-        if constexpr(std::is_invocable_v<Function, Task&>)
-            // Must store a shared_ptr to this task in the lambda in order to keep it alive until the user
-            // function gets invoked. That's because it might happen at a much later time if the executor uses deferred scheduling.
-            addContinuation(std::forward<Executor>(executor),
-                [f = std::forward<Function>(f), self = shared_from_this()]() mutable noexcept {
-                    std::invoke(std::move(f), *self);
-                });
-        else
-            addContinuation(std::forward<Executor>(executor), std::forward<Function>(f));
-    }
-
-    /// Runs the given continuation function once this task has reached either the 'finished' or the 'canceled' state.
-    /// The function can optionally take a reference to this task object as an argument.
-    /// Note that the continuation function will always be executed, even if this task was canceled or set to an error state.
-    template<typename Function>
-    void finally(Function&& f) {
-        if constexpr(std::is_invocable_v<Function, Task&>)
-            addContinuation(std::bind_front(std::forward<Function>(f), std::ref(*this)));
-        else
-            addContinuation(std::forward<Function>(f));
     }
 
     /// Accessor function for the internal result storage.
@@ -232,6 +220,27 @@ public:
     /// \return false if the waiting task got canceled (which may happen due to the awaited task getting canceled).
     [[nodiscard]] static bool waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool returnEarlyIfCanceled, bool cancelWaitingIfAwaitedCanceled);
 
+    /// Runs the given continuation function once this task has reached either the 'finished' state.
+    /// Note that the continuation function will always be executed, even if the task was canceled or set to an error state.
+    /// The callable can accept one parameter: a reference to the Task object.
+    template<typename Executor, typename Function>
+    void finally(Executor&& executor, Function&& f) {
+        static_assert(std::is_nothrow_invocable_r_v<void, Function> || std::is_nothrow_invocable_r_v<void, Function, Task&>, "The function must be noexcept and parameter-free or accept a Task reference.");
+
+        if constexpr(std::is_invocable_v<Function, Task&>) {
+            addContinuation(
+                std::forward<Executor>(executor).schedule(
+                    [f = std::forward<Function>(f), task = shared_from_this()]() mutable noexcept {
+                        std::invoke(std::move(f), *task);
+                    }));
+        }
+        else {
+            addContinuation(
+                std::forward<Executor>(executor).schedule(
+                    std::forward<Function>(f)));
+        }
+    }
+
 protected:
 
     /// Assigns a value to the internal result storage of the task.
@@ -251,24 +260,7 @@ protected:
     void removeCallback(detail::TaskCallbackBase* cb) noexcept;
 
     /// Registers a callback function that will be run when this task reaches the 'finished' state.
-    /// If the task is already in one of these states, the continuation function is invoked immediately.
-    template<typename Executor, typename Function>
-    void addContinuation(Executor&& executor, Function&& f) {
-        MutexLock lock(*this);
-        // Check if task is already finished.
-        if(isFinished()) {
-            // Run continuation function immediately.
-            lock.unlock();
-            std::forward<Executor>(executor).execute(std::forward<Function>(f));
-        }
-        else {
-            // Otherwise, insert into list to run continuation function later.
-            registerContinuation(std::forward<Executor>(executor).schedule(std::forward<Function>(f)));
-        }
-    }
-
-    /// Registers a callback function that will be run when this task reaches the 'finished' state.
-    /// If the task is already in one of these states, the continuation function is invoked immediately.
+    /// If the task is already in this state, the continuation function is invoked immediately.
     template<typename Function>
     void addContinuation(Function&& f) {
         MutexLock lock(*this);
@@ -284,7 +276,17 @@ protected:
         }
     }
 
+    /// The type-erased function object type to be used for Task continuation functions.
+    using continuation_function = fu2::function_base<
+        true, // IsOwning = true: The function object owns the callable object and is responsible for its destruction.
+        false, // IsCopyable = false: The function object is not copyable.
+        fu2::capacity_fixed<4 * sizeof(std::shared_ptr<OvitoObject>)>, // Capacity: Defines the internal capacity of the function for small functor optimization.
+        false, // IsThrowing = false: Do not throw an exception on empty function call, call `std::abort` instead.
+        true, // HasStrongExceptGuarantee = true: All objects satisfy the strong exception guarantee
+        void() noexcept>;
+
     /// Registers a callback function that will be run when this task reaches the 'finished' state.
+    /// The task's mutex must be locked when calling this method.
     /// Do not call this method if the task is already in the 'finished' state.
     template<typename Function>
     void registerContinuation(Function&& f) {
@@ -293,7 +295,7 @@ protected:
 #if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         _continuations.emplace_back(std::forward<Function>(f));
 #else
-        _continuations.push_back(fu2::unique_function<void() noexcept>{std::forward<Function>(f)});
+        _continuations.push_back(continuation_function{std::forward<Function>(f)});
 #endif
     }
 
@@ -314,7 +316,7 @@ protected:
     void callCallbacks(int state, MutexLock& lock) noexcept;
 
     /// Returns the mutex that is used to manage concurrent access to this task.
-    operator Mutex&() const { return _mutex; }
+    operator std::mutex&() const { return _mutex; }
 
     /// The current state this task is in.
     std::atomic_int _state;
@@ -324,10 +326,13 @@ protected:
     std::atomic_int _dependentsCount{0};
 
     /// For managing concurrent access to this task's state.
-    mutable Mutex _mutex;
+    mutable std::mutex _mutex;
 
-    /// List of continuation functions that will be invoked when this task finishes, fails, or is canceled.
-    QVarLengthArray<fu2::unique_function<void() noexcept>, 2> _continuations;
+    /// The abstract user interface object this task is associated with.
+    std::shared_ptr<UserInterface> _ui;
+
+    /// List of continuation functions that will be invoked when this task finishes (successfully or not).
+    QVarLengthArray<continuation_function, 2> _continuations;
 
     /// Holds the exception object when this shared state is in the failed state.
     std::exception_ptr _exceptionStore;
@@ -364,8 +369,29 @@ protected:
 namespace this_task
 {
 
+/// Determines whether the current thread is the main thread of the application.
+OVITO_CORE_EXPORT bool isMainThread() noexcept;
+
 /// Returns the task object that is currently active in the current thread.
 OVITO_CORE_EXPORT Task*& get() noexcept;
+
+/// Returns the abstract user interface associated with the current task.
+OVITO_CORE_EXPORT inline const std::shared_ptr<UserInterface>& ui() noexcept {
+    OVITO_ASSERT(get() != nullptr);
+    return get()->ui();
+}
+
+/// Returns whether the current task is doing actions initiated by the user in the GUI - in contrast to automated actions performed by a script.
+OVITO_CORE_EXPORT inline bool isInteractive() noexcept {
+    OVITO_ASSERT(get() != nullptr);
+    return get()->isInteractive();
+}
+
+/// Returns whether the current task is doing actions initiated by a script - in contrast to interactive actions performed by the user.
+OVITO_CORE_EXPORT inline bool isScripting() noexcept {
+    OVITO_ASSERT(get() != nullptr);
+    return !get()->isInteractive();
+}
 
 /// Changes the UI description string of the current operation.
 OVITO_CORE_EXPORT inline void setProgressText(const QString& progressText) {

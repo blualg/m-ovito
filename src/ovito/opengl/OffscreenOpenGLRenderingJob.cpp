@@ -54,7 +54,7 @@ void OffscreenOpenGLRenderingJob::initializeObject(ObjectInitializationFlags fla
 void OffscreenOpenGLRenderingJob::createOffscreenSurface()
 {
     // Surface creation can only be performed in the main thread.
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     // OpenGL rendering and surface creation requires a Qt GUI application object.
     try {
@@ -119,7 +119,7 @@ void OffscreenOpenGLRenderingJob::aboutToBeDeleted()
 
     // Release the offscreen surface.
     if(_offscreenSurface) {
-        if(ExecutionContext::isMainThread())
+        if(this_task::isMainThread())
             _offscreenSurface.reset();
         else
             _offscreenSurface.release()->deleteLater();

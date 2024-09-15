@@ -56,7 +56,7 @@ void CalculateDisplacementsModifier::initializeObject(ObjectInitializationFlags 
         vectorVis()->setArrowPosition(VectorVis::Head);
 
         // In GUI mode, visualize the displacement magnitude by default.
-        if(ExecutionContext::isInteractive())
+        if(this_task::isInteractive())
             vectorVis()->colorMapping()->setSourceProperty(Particles::OOClass().standardPropertyName(Particles::DisplacementMagnitudeProperty));
     }
 }

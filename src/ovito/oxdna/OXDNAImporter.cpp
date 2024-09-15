@@ -129,7 +129,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 
         // Check if the topology file exists.
         if(!topoFileUrl.isValid() || (topoFileUrl.isLocalFile() && !QFileInfo::exists(topoFileUrl.toLocalFile()))) {
-            if(ExecutionContext::isInteractive()) {
+            if(this_task::isInteractive()) {
                 throw Exception(tr("Could not locate corresponding topology file for oxDNA configuration file '%1'.\n"
                     "Tried automatically inferred path:\n\n%2\n\nBut the path does not exist. Please pick the topology file manually.")
                         .arg(frame().sourceFile.fileName())

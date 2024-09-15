@@ -40,11 +40,7 @@ class TaskAwaiter : private TaskCallbackBase
 public:
 
     /// Constructor.
-    explicit TaskAwaiter(Task& owner) noexcept : TaskCallbackBase(&taskStateChangedCallback) {
-        // Insert into own linked list of callbacks.
-        _nextInList = owner._callbacks;
-        owner._callbacks = this;
-    }
+    explicit TaskAwaiter(Task& owner) noexcept : TaskCallbackBase(owner, &taskStateChangedCallback) {}
 
     /// Moves the dependency on the awaited task out of this object.
     /// Note: Make sure this owning task's mutex is locked while calling this function.
@@ -60,7 +56,7 @@ public:
     /// Runs a continuation method once the given task reaches the 'finished' state.
     template<
         typename TaskClass,
-        void(TaskClass::*ContinuationMethod)(PromiseBase, detail::TaskDependency, Task::MutexLock&),
+        void(TaskClass::*ContinuationMethod)(PromiseBase, detail::TaskDependency) noexcept,
         typename Executor
     >
     void whenTaskFinishes(TaskDependency awaitedTask, Executor&& executor, PromiseBase promise) noexcept {
@@ -81,51 +77,50 @@ public:
         lock.unlock();
 
         // Run the waiting task's callback method once the awaited task finishes.
-        t->addContinuation(
-            std::forward<Executor>(executor),
-            [promise=std::move(promise), this]() mutable noexcept {
-                // Lock access to the waiting task.
-                Task::MutexLock lock(*promise.task());
+        t->addContinuation([
+                f = std::forward<Executor>(executor).schedule([](PromiseBase promise, TaskDependency finishedTask) noexcept {
+                    (static_cast<TaskClass*>(promise.task().get())->*ContinuationMethod)(std::move(promise), std::move(finishedTask));
+                }),
+                this,
+                promise = std::move(promise)]() mutable noexcept
+            {
+            // Lock access to the waiting task.
+            Task::MutexLock lock(*promise.task());
 
-                // Get the awaited task that did just finish.
-                TaskDependency finishedTask = takeAwaitedTask();
+            // Get the awaited task that did just finish.
+            TaskDependency finishedTask = takeAwaitedTask();
 
-                // Bail out if the waiting or the awaited task have been canceled.
-                if(!finishedTask || finishedTask->isCanceled()) {
-                    return; // Note: The Promise's destructor automatically puts the waiting task into 'canceled' and 'finished' states if it isn't already.
-                }
+            // Bail out if the waiting task or the awaited task has been canceled.
+            if(!finishedTask || finishedTask->isCanceled()) {
+                return; // Note: The Promise's destructor automatically puts the waiting task into 'canceled' and 'finished' states if it isn't already.
+            }
+            lock.unlock();
 
-                // Invoke the callback method which processes the awaited task's result.
-                (static_cast<TaskClass*>(promise.task().get())->*ContinuationMethod)(std::move(promise), std::move(finishedTask), lock);
-            });
+            // Invoke the callback method which processes the awaited task's result.
+            std::invoke(std::move(f), std::move(promise), std::move(finishedTask));
+        });
     }
 
 private:
 
     /// This function gets invoked when the state of the waiting task changes.
     /// The waiting task's mutex is locked when this function is called.
-    static bool taskStateChangedCallback(TaskCallbackBase* f, int state, Task::MutexLock& lock) noexcept {
+    static void taskStateChangedCallback(Task& task, TaskCallbackBase& cb, int state, Task::MutexLock& lock) noexcept {
         // Task either gets canceled or finished. Other state changes are not possible.
         OVITO_ASSERT(state & (Task::Finished | Task::Canceled));
 
         // When this task gets canceled, we discard the reference to the
         // task we are waiting for in order to cancel that one as well.
-        TaskAwaiter* self = static_cast<TaskAwaiter*>(f);
+        TaskAwaiter& self = static_cast<TaskAwaiter&>(cb);
 
         // Move the dependency on the preceding task out of this object. This may implicitly cancel the
         // awaited task when the reference goes out of scope.
-        if(auto awaitedTask = self->takeAwaitedTask()) {
+        if(auto awaitedTask = self.takeAwaitedTask()) {
             // Note: It's critical to first unlock the mutex before releasing the reference to the awaited task.
             lock.unlock();
             awaitedTask.reset();
             lock.lock();
         }
-
-        // When this task finishes, we should detach our callback function immediately,
-        // because a task object may not have callbacks registered at the end of its lifetime.
-        if(state & Task::Finished)
-            return false; // Returning false indicates that the callback wishes to be unregistered.
-        return true;
     }
 
     /// The task we are waiting for.

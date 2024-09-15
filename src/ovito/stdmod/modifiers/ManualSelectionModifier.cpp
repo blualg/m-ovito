@@ -72,8 +72,8 @@ void ManualSelectionModifier::initializeModifier(const ModifierInitializationReq
 void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
     // Whenever the subject of this modifier is changed, reset the selection.
-    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing() && ExecutionContext::isInteractive()) {
-        PipelineEvaluationRequest request(ExecutionContext::current().ui().datasetContainer().currentAnimationTime());
+    if(field == PROPERTY_FIELD(GenericPropertyModifier::subject) && !isBeingLoaded() && !isUndoingOrRedoing() && this_task::isInteractive()) {
+        PipelineEvaluationRequest request(this_task::ui()->datasetContainer().currentAnimationTime());
         for(ModificationNode* node : nodes()) {
             try {
                 resetSelection(node, node->evaluateInput(request).result());

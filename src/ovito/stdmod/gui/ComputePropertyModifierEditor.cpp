@@ -126,10 +126,10 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
 bool ComputePropertyModifierEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
-        updateExpressionFieldsLater(this);
+        updateExpressionFieldsLater(this, mainWindow());
     }
     else if(source == editObject() && event.type() == ReferenceEvent::ObjectStatusChanged) {
-        updateVariablesListLater(this);
+        updateVariablesListLater(this, mainWindow());
     }
     return PropertiesEditor::referenceEvent(source, event);
 }

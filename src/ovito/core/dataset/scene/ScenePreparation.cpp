@@ -54,17 +54,6 @@ void ScenePreparation::initializeObject(UserInterface& userInterface, Scene* sce
 }
 
 /******************************************************************************
-* This method gets called by OORef<T>::create() right after the object is fully initialized.
-******************************************************************************/
-void ScenePreparation::completeObjectInitialization()
-{
-    RefMaker::completeObjectInitialization();
-
-    // Start preparing the scene.
-    restartPreparation();
-}
-
-/******************************************************************************
 * Returns a future that gets fulfilled once all data pipelines in the scene
 * have been completely evaluated at the current animation time.
 ******************************************************************************/
@@ -84,7 +73,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
     // Create a promise, which remains in the unfinished state as long as we are preparing the scene.
     if(!_promise || _promise.isCanceled()) {
-        _promise = Promise<void>::create();
+        _promise = Promise<void>(std::make_shared<Task>(userInterface().shared_from_this(), Task::NoState));
         _future = _promise.sharedFuture();
         _completedScene = scene();
         if(scene()) {
@@ -143,7 +132,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
     // Pipeline evaluation must be done in a valid execution context and with an active task object.
     // We use an isolated execution context to avoid interference with other ongoing tasks.
-    MainThreadOperation operation(ExecutionContext::Type::Interactive, userInterface(), MainThreadOperation::Kind::Isolated);
+    MainThreadOperation operation(userInterface(), MainThreadOperation::Kind::Isolated);
 
     // Go through all pipelines of the scene until we find one
     // that is not completely evaluated yet.
@@ -190,7 +179,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
         // If one of the pipelines is not complete yet, wait until it is.
         // Then start over to see if there are more pipelines that need to be evaluated.
-        _pipelineEvaluationFuture.finally(ObjectExecutor(this, true), [this](Task& task) noexcept {
+        _pipelineEvaluationFuture.finally(ObjectExecutor(this), [this](Task& task) noexcept {
             // Make sure we are still waiting for the same future that just reached the completed state.
             if(_pipelineEvaluationFuture && _pipelineEvaluationFuture.task().get() == &task && _currentPipeline) {
                 pipelineEvaluationFinished();

@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
+#include <ovito/core/utilities/concurrent/Task.h>
 #include <ovito/core/oo/OORef.h>
 #include <ovito/core/oo/OvitoObject.h>
 
@@ -158,7 +159,6 @@ public:
 
     /// Temporarily suspends repainting of the viewports.
     /// To resume redrawing of viewports call resumeViewportUpdates().
-    /// You should use the ViewportSuspender RAII helper class to temporarily suspend viewport updates.
     void suspendViewportUpdates() { _viewportSuspendCount++; }
 
     /// Resumes redrawing of the viewports after a call to suspendViewportUpdates().
@@ -212,21 +212,21 @@ public:
 
     /// Returns the list of all viewport windows currently associated with this user interface.
     const std::vector<ViewportWindow*>& viewportWindows() const {
-        OVITO_ASSERT(ExecutionContext::isMainThread());
+        OVITO_ASSERT(this_task::isMainThread());
         return _viewportWindows;
     }
 
     /// Registers a viewport window with this user interface.
     void registerViewportWindow(ViewportWindow* window) {
         OVITO_ASSERT(window);
-        OVITO_ASSERT(ExecutionContext::isMainThread());
+        OVITO_ASSERT(this_task::isMainThread());
         _viewportWindows.push_back(window);
     }
 
     /// Unregisters a viewport window from this user interface.
     void unregisterViewportWindow(ViewportWindow* window) {
         OVITO_ASSERT(window);
-        OVITO_ASSERT(ExecutionContext::isMainThread());
+        OVITO_ASSERT(this_task::isMainThread());
         auto it = std::find(_viewportWindows.begin(), _viewportWindows.end(), window);
         OVITO_ASSERT(it != _viewportWindows.end());
         _viewportWindows.erase(it);
@@ -308,7 +308,6 @@ protected:
 #include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/app/undo/UndoableTransaction.h>
 #include <ovito/core/utilities/concurrent/MainThreadOperation.h>
-#include <ovito/core/utilities/concurrent/ExecutionContext.h>
 
 namespace Ovito {
 
@@ -323,9 +322,8 @@ bool UserInterface::handleExceptions(Function&& func) noexcept
     static_assert(std::is_same_v<std::invoke_result_t<Function>, void>, "Function must return void.");
     OVITO_ASSERT(!isBeingDeleted());
 
-    // Note: The MainThreadOperation creates a temporary std::shared_ptr<UserInterface>, which keeps the UI alive until function exit.
-    MainThreadOperation operation(ExecutionContext::Type::Interactive, *this,
-        Isolated ? MainThreadOperation::Kind::Isolated : MainThreadOperation::Kind::Bound);
+    // Note: The MainThreadOperation creates a temporary OORef<UserInterface>, which keeps the UI alive until function exit.
+    MainThreadOperation operation(*this, Isolated ? MainThreadOperation::Kind::Isolated : MainThreadOperation::Kind::Bound);
 
     try {
         std::forward<Function>(func)();

@@ -447,7 +447,7 @@ void Particles::wrapCoordinates(const SimulationCell& cell)
         OVITO_ASSERT(bondsImagesOut != bondsImagesIn.get());
 
         if(bondsImagesOut->size() != 0) {
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 SyclBufferAccess<ParticleIndexPair, access_mode::read> topologyAcc{topologyProperty, cgh};
                 SyclBufferAccess<Point3, access_mode::read> posInAcc{inputPositions, cgh};
                 SyclBufferAccess<Vector3I, access_mode::read> imageInAcc{bondsImagesIn, cgh};
@@ -478,7 +478,7 @@ void Particles::wrapCoordinates(const SimulationCell& cell)
 
     // Wrap particles coordinates and adjust PBC image flags.
     if(inputPositions->size() != 0) {
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+        this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
             SyclBufferAccess<Vector3I, access_mode::read> imageInAcc{inputPbcImages, cgh};
             SyclBufferAccess<Vector3I, access_mode::discard_write> imageOutAcc{outputPbcImages, cgh};
             SyclBufferAccess<Point3, access_mode::read> posInAcc{inputPositions, cgh};
@@ -573,7 +573,7 @@ void Particles::unwrapCoordinates(const SimulationCell& cell)
 #ifdef OVITO_USE_SYCL
     // Shift the particle coordinates by the PBC image flags.
     if(inputPositions->size() != 0) {
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+        this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
             SyclBufferAccess<Point3, access_mode::read> posInAcc{inputPositions, cgh};
             SyclBufferAccess<Point3, access_mode::discard_write> posOutAcc{outputPositions, cgh};
             SyclBufferAccess<Vector3I, access_mode::read> imageAcc{particlePeriodicImageProperty, cgh};
@@ -592,7 +592,7 @@ void Particles::unwrapCoordinates(const SimulationCell& cell)
         OVITO_ASSERT(bondsImagesOut != bondsImagesIn.get());
 
         if(bondsImagesOut->size() != 0) {
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 SyclBufferAccess<ParticleIndexPair, access_mode::read> topologyAcc{topologyProperty, cgh};
                 SyclBufferAccess<Vector3I, access_mode::read> imageInAcc{bondsImagesIn, cgh};
                 SyclBufferAccess<Vector3I, access_mode::discard_write> imageOutAcc{bondsImagesOut, cgh};
@@ -797,7 +797,7 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
 #ifdef OVITO_USE_SYCL
                     const SyclFlatMap massMap = ParticleType::typeMassMap(typeProperty);
                     if(!massMap.empty()) {
-                        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                        this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                             SyclBufferAccess<int32_t, access_mode::read> typesAcc(typeProperty, cgh);
                             SyclBufferAccess<FloatType, access_mode::discard_write> massAcc(property, cgh);
                             auto massMapAcc = massMap.get_access(cgh);

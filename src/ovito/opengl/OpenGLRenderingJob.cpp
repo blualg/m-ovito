@@ -26,6 +26,7 @@
 #include <ovito/core/rendering/ColorCodingGradient.h>
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
+#include <ovito/core/utilities/concurrent/detail/Latch.h>
 #include "OpenGLRenderingJob.h"
 #include "OpenGLRenderingFrameBuffer.h"
 #include "OpenGLHelpers.h"
@@ -608,8 +609,8 @@ QOpenGLShaderProgram* OpenGLRenderingJob::loadShaderProgram(const QString& id, c
         program->moveToThread(contextGroup->thread());
         // Make the program object a child of the context group object in the main thread to follow the thread-affinity rules of Qt.
         detail::Latch latch(1);
-        OVITO_ASSERT(!ExecutionContext::current().ui().taskManager().isShuttingDown()); // Note: During late-phase shutdown the main thread may not be able to process tasks.
-        ExecutionContext::current().runDeferred(nullptr, [&]() noexcept {
+        OVITO_ASSERT(!this_task::ui()->taskManager().isShuttingDown()); // Note: During late-phase shutdown the main thread may not be able to process tasks.
+        this_task::ui()->taskManager().submitWork([&]() noexcept {
             program->setParent(contextGroup);
             latch.count_down();
         });

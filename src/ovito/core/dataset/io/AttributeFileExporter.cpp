@@ -41,13 +41,11 @@ void AttributeFileExporter::initializeObject(ObjectInitializationFlags flags)
 {
     FileExporter::initializeObject(flags);
 
-    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) && ExecutionContext::isInteractive()) {
+    if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) && this_task::isInteractive()) {
         // This exporter is typically used to export attributes as functions of time.
-        if(ExecutionContext::current().isValid()) {
-            if(AnimationSettings* anim = ExecutionContext::current().ui().datasetContainer().activeAnimationSettings()) {
-                if(!anim->isSingleFrame())
-                    setExportAnimation(true);
-            }
+        if(AnimationSettings* anim = this_task::ui()->datasetContainer().activeAnimationSettings()) {
+            if(!anim->isSingleFrame())
+                setExportAnimation(true);
         }
 
 #ifndef OVITO_DISABLE_QSETTINGS

@@ -86,7 +86,7 @@ public:
 public:
 
     /// Initializes the element type's attributes to standard values.
-    virtual void initializeType(const OwnerPropertyRef& property, bool loadUserDefaults = ExecutionContext::isInteractive()) override;
+    virtual void initializeType(const OwnerPropertyRef& property, bool loadUserDefaults = this_task::isInteractive()) override;
 
     using ElementType::initializeType;
 

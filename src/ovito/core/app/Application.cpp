@@ -342,7 +342,7 @@ void Application::createQtApplication(bool supportGui)
     }
 
     // The Qt application must be created in the main thread.
-    if(ExecutionContext::isMainThread()) {
+    if(this_task::isMainThread()) {
         // Let the derived class create the right QCoreApplication object.
         QCoreApplication* qtApp = createQtApplicationImpl(supportGui, *_argc, _argv);
 
@@ -354,18 +354,11 @@ void Application::createQtApplication(bool supportGui)
         std::setlocale(LC_NUMERIC, "C");
     }
     else {
-        // If called from a worker thread, we need to perform the creation of the Qt app in the mean thread
+        // If called from a worker thread, we need to perform the creation of the Qt app in the main thread
         // and block the worker thread until the Qt app has been created.
-        detail::Latch latch(1);
-        std::exception_ptr exception;
-        ExecutionContext::current().runDeferred(nullptr, [supportGui, &exception, &latch]() noexcept {
-            try { Application::instance()->createQtApplication(supportGui); }
-            catch(...) { exception = std::current_exception(); }
-            latch.count_down();
-        });
-        latch.wait();
-        if(exception)
-            std::rethrow_exception(exception);
+        launchAsync(ObjectExecutor(Application::instance()), [supportGui]() noexcept {
+            Application::instance()->createQtApplication(supportGui);
+        }).waitForFinished();
     }
 }
 

@@ -185,11 +185,11 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame) const
 
     try {
         // Evaluate pipeline.
-        PipelineEvaluationRequest request(AnimationTime::fromFrame(frame), ExecutionContext::current().isScripting());
+        PipelineEvaluationRequest request(AnimationTime::fromFrame(frame), this_task::isScripting());
         PipelineEvaluationResult result = pipeline->evaluatePipeline(request);
         const PipelineFlowState& state = result.result();
 
-        if(ExecutionContext::current().isScripting() && state.status().type() == PipelineStatus::Error)
+        if(this_task::isScripting() && state.status().type() == PipelineStatus::Error)
             throw Exception(state.status().text());
 
         if(!state)
@@ -303,7 +303,7 @@ void FileExporter::doExport()
 void FileExporter::activateCLocale()
 {
     // The setlocale() function is not thread-safe and should only be called from the main thread.
-    if(ExecutionContext::isMainThread())
+    if(this_task::isMainThread())
         std::setlocale(LC_ALL, "C");
 }
 

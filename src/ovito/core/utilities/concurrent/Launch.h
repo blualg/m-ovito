@@ -24,8 +24,8 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/app/UserInterface.h>
 #include "AsynchronousTask.h"
-#include "detail/Latch.h"
 #include "detail/TaskWithStorage.h"
 #include "detail/ContinuationTask.h"
 #include "Future.h"
@@ -36,8 +36,8 @@ namespace Ovito {
 /// Runs the given function using the given executor and returns its results as a Future.
 /// Note: The function may never execute if the future gets canceled before execution begins.
 template<typename Executor, typename Function>
-[[nodiscard]] auto launchAsync(Executor&& executor, Function&& function) {
-
+[[nodiscard]] auto launchAsync(Executor&& executor, Function&& function, std::shared_ptr<UserInterface> ui = this_task::ui())
+{
     // Infer the future to create. If the function returns a future, use it as is. Otherwise, wrap the result in a Future.
     using result_future_type = std::conditional_t<detail::is_future_v<std::invoke_result_t<Function>>,
                                                 std::invoke_result_t<Function>,
@@ -55,14 +55,14 @@ template<typename Executor, typename Function>
         using future_type = result_future_type;
 
         /// Constructor.
-        explicit LaunchTask(Function&& function) :
-            base_task_type(Task::NoState),
+        explicit LaunchTask(std::shared_ptr<UserInterface> ui, Function&& function) :
+            base_task_type(std::move(ui), Task::NoState),
             _function(std::forward<Function>(function)) {}
 
         /// Starts execution of the task.
         void operator()(Executor&& executor) {
-            std::forward<Executor>(executor).execute([promise = typename result_future_type::promise_type(this->shared_from_this())]() mutable noexcept {
-                static_cast<LaunchTask*>(promise.task().get())->invokeFunction(std::move(promise));
+            std::forward<Executor>(executor).execute([promise = PromiseBase(this->shared_from_this())]() mutable noexcept {
+                static_cast<LaunchTask*>(promise.task().get())->invokeFunction(std::move(promise).takeTask());
             });
         }
 
@@ -96,9 +96,38 @@ template<typename Executor, typename Function>
     };
 
     return launchTask(
-        std::make_shared<LaunchTask>(std::forward<Function>(function)),
+        std::make_shared<LaunchTask>(std::move(ui), std::forward<Function>(function)),
         std::forward<Executor>(executor));
 }
+
+/// Runs the given function using the given executor without waiting for its results.
+template<typename Executor, typename Function>
+void launchDetached(Executor&& executor, Function&& function, std::shared_ptr<UserInterface> ui = this_task::ui())
+{
+    static_assert(std::is_invocable_r_v<void, Function>, "The function must be callable with no arguments and should return no value.");
+
+    executor.execute(
+        [promise = PromiseBase(std::make_shared<Task>(std::move(ui))), function=std::forward<Function>(function)]() mutable noexcept {
+            OVITO_ASSERT(!promise.isCanceled() && !promise.isFinished());
+            try {
+                Task::Scope taskScope(promise.task().get());
+                std::invoke(std::move(function));
+                promise.setFinished();
+            }
+            catch(const OperationCanceled&) {}
+            catch(const Exception& ex) {
+                OVITO_ASSERT(!promise.isFinished());
+                if(this_task::isMainThread())
+                    promise.task()->ui()->reportError(ex);
+                promise.captureExceptionAndFinish();
+            }
+            catch(...) {
+                OVITO_ASSERT(!promise.isFinished());
+                promise.captureExceptionAndFinish();
+            }
+        });
+}
+
 
 /// Schedules the given function for execution in a worker thread.
 template<typename Function>

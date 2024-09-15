@@ -213,7 +213,7 @@ void CombineDatasetsModifierDelegate::mergeElementTypes(Property* property1, con
         // Convert the mapping table into a SYCL-compatible data structure.
         const SyclFlatMap typeMapSycl = typeMap;
 
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+        this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
             // Access the type property array (just the sub-section of newly added entries).
             SyclBufferAccess<int32_t, access_mode::read_write> typeAcc(property1, property1->size() - property2->size(), property2->size(), cgh);
             // Access mapping table.

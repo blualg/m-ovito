@@ -44,7 +44,7 @@ static void copySyclBufferContents(sycl::buffer<DataBuffer::Byte>& src, sycl::bu
     OVITO_ASSERT(nbytes != 0);
     OVITO_ASSERT(&src != &dst);
 
-    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+    this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
         if(srcOffset == 0 && dstOffset == 0 && no_init) {
             cgh.copy(
                 src.get_access(cgh, sycl::range(nbytes), sycl::read_only),
@@ -63,7 +63,7 @@ static void copySyclBufferContents(sycl::buffer<DataBuffer::Byte>& src, sycl::bu
 /// Helper function that fills a range of bytes in a device buffer with zero.
 static void fillSyclBufferZero(sycl::buffer<DataBuffer::Byte>& dst, size_t nbytes, size_t dstOffset = 0, bool no_init = true)
 {
-    ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+    this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
         cgh.fill(dst.get_access(cgh,
             sycl::range(nbytes),
             sycl::id(dstOffset),
@@ -413,7 +413,7 @@ void DataBuffer::replicateFrom(size_t n, const DataBuffer& original)
     const size_t nbytes = original.size() * original.stride();
     // Replicate data values N times.
     original._hasScheduledSyclReadOperations = true;
-    if(ExecutionContext::current().ui().taskManager().syclQueue().get_device().is_cpu()) {
+    if(this_task::ui()->taskManager().syclQueue().get_device().is_cpu()) {
         // When using a CPU device, perform the data copying on the host.
         auto readAccessor = original._data->get_host_access(sycl::read_only);
         auto writeAccessor = _data->get_host_access(sycl::write_only, sycl::no_init);

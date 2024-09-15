@@ -23,7 +23,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportWindow.h>
-#include <ovito/core/viewport/ViewportSuspender.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -115,7 +114,7 @@ void ViewportWindow::releaseResources()
 ******************************************************************************/
 void ViewportWindow::requestUpdate()
 {
-    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(this_task::isMainThread());
 
     if(!_updateNeeded && viewport()) {
         _updateNeeded = true;
@@ -130,10 +129,8 @@ void ViewportWindow::requestUpdate()
 void ViewportWindow::resumeViewportUpdates()
 {
     if(_updateNeeded && !_frameFuture && viewport() && !userInterface().areViewportUpdatesSuspended() && isVisible()) {
-        ExecutionContext::Scope contextScope(ExecutionContext::Type::Interactive, userInterface().shared_from_this());
-
         // Run buildAndRenderFrameGraph() as soon as control returns to the main event loop.
-        _frameFuture = launchAsync(ObjectExecutor(this, true), std::bind_front(&ViewportWindow::buildAndRenderFrameGraph, this));
+        _frameFuture = launchAsync(ObjectExecutor(this, userInterface().shared_from_this()), std::bind_front(&ViewportWindow::buildAndRenderFrameGraph, this), userInterface().shared_from_this());
 
         // Afterwards, run frameGraphRenderingFinished().
         _frameFuture.finally(*this, std::bind_front(&ViewportWindow::frameGraphRenderingFinished, this));
@@ -201,6 +198,9 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
 
     // Interactive viewport rendering is performed with a higher priority than other tasks.
     this_task::get()->setHighPriorityTask();
+
+    // Interactive viewport rendering always is an interactive task.
+    this_task::get()->setIsInteractive();
 
     // Set up preliminary projection without knowing the scene bounding box yet.
     AnimationTime time = viewport()->scene()->animationSettings()->currentTime();
@@ -475,7 +475,7 @@ void ViewportWindow::zoomToBox(const Box3& box)
 ******************************************************************************/
 void ViewportWindow::zoomToSceneExtents()
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     if(Scene* scene = viewport()->scene()) {
         Box3 sceneBoundingBox = scene->worldBoundingBox(scene->animationSettings()->currentTime(), viewport());
@@ -488,7 +488,7 @@ void ViewportWindow::zoomToSceneExtents()
 ******************************************************************************/
 void ViewportWindow::zoomToSelectionExtents()
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     if(Scene* scene = viewport()->scene()) {
         Box3 selectionBoundingBox;

@@ -29,7 +29,7 @@ namespace Ovito {
 
 /**
  * Utility class that invokes a member function of an object at some later time.
- * While another invocation is aleady queued, new calls will be ignored.
+ * While another invocation is already queued, new calls will be ignored.
  *
  * The DeferredMethodInvocation class can be used to compress rapid update signals
  * into a single call to a widget's repaint method.
@@ -37,26 +37,20 @@ namespace Ovito {
  * Two class template parameters must be specified: The QObject derived class to which
  * the member function to be called belongs and the member function pointer.
  */
-template<typename ObjectClass, void (ObjectClass::*method)(), int delay_msec = 0>
+template<typename ObjectClass, void (ObjectClass::*method)()>
 class DeferredMethodInvocation
 {
 public:
 
-    void operator()(ObjectClass* obj) {
-        OVITO_ASSERT(ExecutionContext::current().isValid());
+    void operator()(ObjectClass* obj, UserInterface& ui = *this_task::ui()) {
+        OVITO_ASSERT(this_task::isMainThread());
+        OVITO_ASSERT(QThread::currentThread()->loopLevel() != 0);
+
         // Unless another call is already underway, post an event to the event queue
         // to invoke the user function.
         if(!_event) {
-            _event = new Event(this, obj, ExecutionContext::current());
-            if constexpr(!delay_msec) {
-                QCoreApplication::postEvent(obj, _event);
-            }
-            else {
-                QTimer::singleShot(delay_msec, obj, [this]() {
-                    OVITO_ASSERT(_event != nullptr && _event->owner == this);
-                    QCoreApplication::postEvent(_event->object, _event);
-                });
-            }
+            _event = new Event(this, obj, ui.shared_from_this());
+            QCoreApplication::postEvent(obj, _event);
         }
     }
 
@@ -73,20 +67,17 @@ private:
     {
         DeferredMethodInvocation* owner;
         ObjectClass* object;
-        ExecutionContext context;
-        Event(DeferredMethodInvocation* owner, ObjectClass* object, ExecutionContext context) : QEvent(QEvent::None), owner(owner), object(object), context(std::move(context)) {}
+        std::shared_ptr<UserInterface> ui;
+        Event(DeferredMethodInvocation* owner, ObjectClass* object, std::shared_ptr<UserInterface> ui) : QEvent(QEvent::None), owner(owner), object(object), ui(std::move(ui)) {
+            OVITO_ASSERT(this->ui);
+        }
         ~Event() {
-            OVITO_ASSERT(context.isValid());
             if(owner) {
                 OVITO_ASSERT(owner->_event == this);
                 owner->_event = nullptr;
-                ExecutionContext::Scope scope(std::move(context));
-                try {
+                ui->handleExceptions([&]() {
                     (object->*method)();
-                }
-                catch(const Exception& ex) {
-                    ExecutionContext::current().ui().reportError(ex);
-                }
+                });
             }
         }
     };

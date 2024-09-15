@@ -143,12 +143,11 @@ void UpdateDialog::onDownload()
  * Is called by the system during standalone application startup after the main window has been created.
  * Downloads the new s segment from the web and sets the side panel and update dialog
  ******************************************************************************/
-bool UpdateNotificationService::applicationStarting()
+void UpdateNotificationService::applicationStarting()
 {
     // Do nothing when running in console mode.
-    if(!Application::guiMode()) {
-        return true;
-    }
+    if(!Application::guiMode())
+        return;
 
     // Get operating system
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
@@ -188,7 +187,6 @@ bool UpdateNotificationService::applicationStarting()
         connect(networkReply, &QNetworkReply::finished, this, &UpdateNotificationService::onWebRequestFinished);
     }
 #endif
-    return true;
 }
 
 /******************************************************************************

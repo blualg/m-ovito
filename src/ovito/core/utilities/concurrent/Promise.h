@@ -148,22 +148,6 @@ public:
         return _task;
     }
 
-    /// Runs the given function in any case once this promise's task has reached the 'finished' or 'canceled' state.
-    /// The continuation function will always be executed, even if this task was canceled or set to an error state.
-    /// The callable may take one optional parameter: a reference to the Task object that finished.
-    template<typename Executor, typename Function>
-    void finally(Executor&& executor, Function&& f) {
-        OVITO_ASSERT_MSG(_task, "PromiseBase::finally()", "Promise must be valid.");
-        task()->finally(std::forward<Executor>(executor), std::forward<Function>(f));
-    }
-
-    /// Overload of the method above using the inline executor.
-    template<typename Function>
-    void finally(Function&& f) {
-        OVITO_ASSERT_MSG(_task, "PromiseBase::finally()", "Promise must be valid.");
-        task()->finally(std::forward<Function>(f));
-    }
-
 protected:
 
     /// Pointer to the state, which is shared with futures.
@@ -191,7 +175,7 @@ public:
     /// Creates a promise together with a new task.
     template<typename task_type = Task>
     [[nodiscard]] static Promise create() {
-        return Promise(std::make_shared<detail::TaskWithStorage<R, task_type>>(Task::NoState, std::nullopt));
+        return Promise(std::make_shared<detail::TaskWithStorage<R, task_type>>(this_task::ui(), Task::NoState, std::nullopt));
     }
 
     /// Returns a Future that is associated with the same shared state as this promise.
@@ -218,13 +202,14 @@ protected:
 
     /// Create a promise that is ready and provides immediate default-constructed results.
     [[nodiscard]] static Promise createImmediateEmpty() {
-        return Promise(std::make_shared<detail::TaskWithStorage<R>>(Task::Finished));
+        return Promise(std::make_shared<detail::TaskWithStorage<R>>(this_task::ui(), Task::Finished));
     }
 
     /// Create a promise that is ready and provides an immediate result.
     template<typename R2>
     [[nodiscard]] static Promise createImmediate(R2&& value) {
         return Promise(std::make_shared<detail::TaskWithStorage<R>>(
+            this_task::ui(),
             Task::Finished,
             std::forward<R2>(value)));
     }
@@ -233,27 +218,28 @@ protected:
     template<typename... Args>
     [[nodiscard]] static Promise createImmediateEmplace(Args&&... args) {
         return Promise(std::make_shared<detail::TaskWithStorage<R>>(
+            this_task::ui(),
             Task::Finished,
             std::forward<Args>(args)...));
     }
 
     /// Creates a promise that is in the 'exception' state.
     [[nodiscard]] static Promise createFailed(const Exception& ex) {
-        Promise promise(std::make_shared<Task>(Task::Finished));
+        Promise promise(std::make_shared<Task>(this_task::ui(), Task::Finished));
         promise.task()->_exceptionStore = std::make_exception_ptr(ex);
         return promise;
     }
 
     /// Creates a promise that is in the 'exception' state.
     [[nodiscard]] static Promise createFailed(Exception&& ex) {
-        Promise promise(std::make_shared<Task>(Task::Finished));
+        Promise promise(std::make_shared<Task>(this_task::ui(), Task::Finished));
         promise.task()->_exceptionStore = std::make_exception_ptr(std::move(ex));
         return promise;
     }
 
     /// Creates a promise that is in the 'exception' state.
    [[nodiscard]]  static Promise createFailed(std::exception_ptr ex_ptr) {
-        Promise promise(std::make_shared<Task>(Task::Finished));
+        Promise promise(std::make_shared<Task>(this_task::ui(), Task::Finished));
         promise.task()->_exceptionStore = std::move(ex_ptr);
         return promise;
     }

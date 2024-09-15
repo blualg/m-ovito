@@ -123,7 +123,7 @@ public:
     public:
 
         /// Constructor.
-        FrameLoader(const LoadOperationRequest& request) : _loadRequest(request) {}
+        explicit FrameLoader(const LoadOperationRequest& request) : _loadRequest(request) {}
 
         /// Returns the source file information.
         const Frame& frame() const { return loadRequest().frame; }
@@ -175,7 +175,7 @@ public:
     public:
 
         /// Constructor.
-        FrameFinder(const FileHandle& file) : _file(file) {}
+        explicit FrameFinder(const FileHandle& file) : _file(file) {}
 
         /// Returns the data file to scan.
         const FileHandle& fileHandle() const { return _file; }

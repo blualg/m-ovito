@@ -148,7 +148,7 @@ Future<std::vector<PipelineFlowState>> PipelineNode::evaluateMultiple(const Pipe
     // Perform the evaluation for all requested animation frames.
     return for_each_sequential(
         std::move(times),
-        ObjectExecutor(this, true), // require deferred execution
+        ObjectExecutor(this), // require deferred execution
         // Iteration start function:
         [this, request = PipelineEvaluationRequest(request)](AnimationTime time, std::vector<PipelineFlowState>&) mutable -> SharedFuture<PipelineFlowState> {
             request.setTime(time);

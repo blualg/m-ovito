@@ -154,7 +154,7 @@ ConstPropertyPtr SimulationCell::wrapPoints(const Property* inputPositions) cons
 
 #ifdef OVITO_USE_SYCL
     if(inputPositions->size() != 0) {
-        ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+        this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
             SyclBufferAccess<Point3, access_mode::read> posInAcc{inputPositions, cgh};
             SyclBufferAccess<Point3, access_mode::discard_write> posOutAcc{outputPositions, cgh};
             OVITO_SYCL_PARALLEL_FOR(cgh, SimulationCell_wrapPoints)(sycl::range(posInAcc.size()), [=](size_t i) {

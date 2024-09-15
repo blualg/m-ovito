@@ -42,8 +42,6 @@ SET_PROPERTY_FIELD_LABEL(BasePipelineSource, dataCollectionFrame, "Active frame 
 ******************************************************************************/
 void BasePipelineSource::postprocessDataCollection(Future<PipelineFlowState>& stateFuture, const PipelineEvaluationRequest& request)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
-
     // Register the task to indicate in the UI that this pipeline stage is currently performing some work.
     if(!request.interactiveMode())
         registerActiveFuture(stateFuture);
@@ -70,7 +68,7 @@ void BasePipelineSource::postprocessDataCollection(Future<PipelineFlowState>& st
                     }
 
                     // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
-                    AnimationTime currentTime = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+                    AnimationTime currentTime = this_task::ui()->datasetContainer().currentAnimationTime();
                     if(state.stateValidity().contains(currentTime)) {
                         setDataCollectionFrame(std::clamp(0, animationTimeToSourceFrame(currentTime), numberOfSourceFrames() - 1));
                         setDataCollection(state.data());
@@ -112,8 +110,6 @@ void BasePipelineSource::postprocessDataCollection(Future<PipelineFlowState>& st
 ******************************************************************************/
 PipelineEvaluationResult BasePipelineSource::postprocessCachedState(const PipelineEvaluationRequest& request, const PipelineFlowState& cachedState)
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
-
     PipelineFlowState state = cachedState;
     setStatusIfCurrentFrame(state.status(), request);
 
@@ -129,7 +125,7 @@ PipelineEvaluationResult BasePipelineSource::postprocessCachedState(const Pipeli
         }
 
         // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
-        AnimationTime currentTime = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+        AnimationTime currentTime = this_task::ui()->datasetContainer().currentAnimationTime();
         if(state.stateValidity().contains(currentTime)) {
             setDataCollectionFrame(std::clamp(0, animationTimeToSourceFrame(currentTime), numberOfSourceFrames() - 1));
             setDataCollection(state.data());
@@ -145,7 +141,7 @@ PipelineEvaluationResult BasePipelineSource::postprocessCachedState(const Pipeli
 bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.type() == ReferenceEvent::TargetChanged && source == dataCollection() && !_updatingEditableProxies && !event.sender()->isBeingLoaded()) {
-        if(ExecutionContext::isInteractive()) {
+        if(this_task::isInteractive()) {
 
             // The user has modified one of the editable proxy objects attached to the data collection.
             // Apply the changes made to the proxy objects to the actual data objects.

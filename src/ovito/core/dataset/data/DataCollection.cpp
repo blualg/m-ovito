@@ -116,7 +116,7 @@ const DataObject* DataCollection::expectObject(const DataObject::OOMetaClass& ob
     if(const DataObject* obj = getObject(objectClass))
         return obj;
     else {
-        if(ExecutionContext::isInteractive()) {
+        if(this_task::isInteractive()) {
             throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
         }
         else {
@@ -133,7 +133,7 @@ const DataObject* DataCollection::expectLeafObject(const DataObject::OOMetaClass
 {
     const DataObject* obj = getLeafObject(objectClass, pathString);
     if(!obj) {
-        if(ExecutionContext::isInteractive()) {
+        if(this_task::isInteractive()) {
             if(pathString.isEmpty())
                 throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
             else
@@ -289,7 +289,7 @@ ConstDataObjectPath DataCollection::expectObject(const DataObject::OOMetaClass& 
 {
     ConstDataObjectPath path = getObject(objectClass, pathString);
     if(path.empty()) {
-        if(ExecutionContext::isInteractive()) {
+        if(this_task::isInteractive()) {
             if(pathString.isEmpty())
                 throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
             else
@@ -313,7 +313,7 @@ DataObjectPath DataCollection::expectMutableObject(const DataObject::OOMetaClass
 {
     DataObjectPath path = getMutableObject(objectClass, pathString);
     if(path.empty()) {
-        if(ExecutionContext::isInteractive()) {
+        if(this_task::isInteractive()) {
             if(pathString.isEmpty())
                 throw Exception(tr("The dataset does not contain an object of type: %1").arg(objectClass.displayName()));
             else

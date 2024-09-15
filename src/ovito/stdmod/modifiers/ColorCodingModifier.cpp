@@ -90,7 +90,7 @@ void ColorCodingModifier::initializeObject(ObjectInitializationFlags flags)
         createDefaultModifierDelegate(ColorCodingModifierDelegate::OOClass(), QStringLiteral("ParticlesColorCodingModifierDelegate"));
 
         // When the modifier is created by a Python script, enable automatic range adjustment.
-        if(ExecutionContext::isScripting()) {
+        if(this_task::isScripting()) {
             setAutoAdjustRange(true);
         }
         else {
@@ -155,7 +155,7 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
     DelegatingModifier::initializeModifier(request);
 
     // When the modifier is inserted, automatically select the most recently added property from the input.
-    if(!sourceProperty() && delegate() && ExecutionContext::isInteractive()) {
+    if(!sourceProperty() && delegate() && this_task::isInteractive()) {
         const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
         if(const PropertyContainer* container = input.getLeafObject(delegate()->inputContainerRef())) {
             PropertyReference bestProperty;
@@ -272,7 +272,7 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
             // Create color lookup table.
             ConstDataBufferPtr colorMap = gradient->getColorMap();
 
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
 
                 // Access selection flags array (optional).
                 SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);

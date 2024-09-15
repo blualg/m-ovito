@@ -36,7 +36,7 @@ class MainThreadTask : public Task, public detail::TaskCallback<MainThreadTask>
 {
 public:
 
-    MainThreadTask(Task* parentTask) noexcept : Task(Task::YieldUI) {
+    MainThreadTask(std::shared_ptr<UserInterface> ui, Task* parentTask, bool isInteractive) noexcept : Task(std::move(ui), isInteractive ? Task::State(Task::YieldUI | Task::IsInteractive) : Task::YieldUI) {
         if(parentTask) {
             // Sanity check: The parent cannot be in the finished state yet when the child task is being created.
             OVITO_ASSERT(!parentTask->isFinished());
@@ -58,28 +58,21 @@ public:
     }
 
     /// Callback function, which is invoked whenever the state of the parent task changes.
-    bool taskStateChangedCallback(int state, MutexLock& lock) noexcept {
-        if((state & Canceled) && !isFinished())
-            this->cancelLocked(lock);
-        // When the parent task finishes, we should detach our callback function immediately,
-        // because a task object may not have callbacks registered at the end of its lifetime.
-        if(state & Finished) {
-            return false; // Returning false indicates that the callback wishes to be unregistered.
-        }
-        return true;
+    void taskStateChangedCallback(int state, MutexLock& lock) noexcept {
+        if(state & Canceled)
+            this->cancel();
     }
 };
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-MainThreadOperation::MainThreadOperation(ExecutionContext::Type contextType, UserInterface& userInterface, Kind kind) :
-    Promise<void>(std::make_shared<MainThreadTask>(kind == Bound ? this_task::get() : nullptr)),
-    ExecutionContext::Scope(contextType, userInterface.shared_from_this()),
+MainThreadOperation::MainThreadOperation(UserInterface& userInterface, Kind kind, bool isInteractive) :
+    Promise<void>(std::make_shared<MainThreadTask>(userInterface.shared_from_this(), kind == Bound ? this_task::get() : nullptr, isInteractive)),
     Task::Scope(task())
 {
     // Usage of MainThreadOperation is only permitted in the main thread.
-    OVITO_ASSERT_MSG(ExecutionContext::isMainThread(), "MainThreadOperation", "MainThreadOperation may only be created in the main thread.");
+    OVITO_ASSERT_MSG(this_task::isMainThread(), "MainThreadOperation", "MainThreadOperation may only be created in the main thread.");
 }
 
 /******************************************************************************

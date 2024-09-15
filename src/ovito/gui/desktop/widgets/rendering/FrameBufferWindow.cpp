@@ -149,10 +149,11 @@ void FrameBufferWindow::showAndActivateWindow()
 void FrameBufferWindow::showRenderingProgress()
 {
     OVITO_ASSERT(this_task::get());
-    OVITO_ASSERT(ExecutionContext::current().isValid());
-    _renderingTask = this_task::get()->shared_from_this();
 
-    // Update UI whenever the progress state of the rendering task(s) changes.
+    // Attached to the current rendering task.
+    _renderingFuture = SharedFuture<void>(this_task::get()->shared_from_this());
+
+    // Update UI whenever the progress of the rendering task changes.
     _taskProgressUpdateConnection = connect(&_mainWindow, &MainWindow::taskProgressUpdate, this, &FrameBufferWindow::onTaskProgressUpdate);
 
     // Disable OVITO main window while rendering is in progress,
@@ -172,9 +173,9 @@ void FrameBufferWindow::showRenderingProgress()
     onTaskProgressUpdate();
 
     // Start watching the rendering task. Re-enable the window after rendering is done.
-    _renderingTask->finally(_mainWindow, [self = QPointer<FrameBufferWindow>(this)]() noexcept {
+    _renderingFuture.finally(_mainWindow, [self = QPointer<FrameBufferWindow>(this)]() noexcept {
         if(!self.isNull()) {
-            self->_renderingTask.reset();
+            self->_renderingFuture.reset();
             self->onRenderingFinished();
         }
     });
@@ -186,12 +187,14 @@ void FrameBufferWindow::showRenderingProgress()
 void FrameBufferWindow::onRenderingFinished()
 {
     disconnect(_taskProgressUpdateConnection);
+
     // Hide any remaining task widgets.
     for(auto& taskWidgets : _taskWidgets) {
         auto [statusLabel, progressBar] = taskWidgets;
         delete statusLabel;
         delete progressBar;
     }
+
     _taskWidgets.clear();
     parentWidget()->setEnabled(true);
     _saveToFileAction->setEnabled(true);
@@ -265,8 +268,7 @@ void FrameBufferWindow::zoomOut()
 ******************************************************************************/
 void FrameBufferWindow::cancelRendering()
 {
-    if(_renderingTask)
-        _renderingTask->cancel();
+    _renderingFuture.reset();
 }
 
 /******************************************************************************

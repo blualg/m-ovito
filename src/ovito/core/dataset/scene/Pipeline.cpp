@@ -277,7 +277,7 @@ QString Pipeline::objectTitle() const
 ModificationNode* Pipeline::applyModifier(AnimationTime time, bool interactiveMode, Modifier* modifier)
 {
     OVITO_ASSERT(modifier);
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     OORef<ModificationNode> node = modifier->createModificationNode();
     node->setModifier(modifier);
@@ -387,7 +387,7 @@ void Pipeline::getDataObjectBoundingBox(AnimationTime time, const DataObject* da
 ******************************************************************************/
 void Pipeline::deleteSceneNode()
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     // Temporary reference to the pipeline's stages.
     OORef<PipelineNode> oldHead = head();

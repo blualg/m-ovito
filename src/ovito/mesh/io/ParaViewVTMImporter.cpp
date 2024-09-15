@@ -219,7 +219,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 
     // Load each dataset referenced by the VTM file.
     Future<ExtendedLoadRequest> future = reduce_sequential(
-        std::move(modifiedRequest), std::move(blockDatasets), ObjectExecutor(request.pipelineNode, true),
+        std::move(modifiedRequest), std::move(blockDatasets), ObjectExecutor(request.pipelineNode),
         [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
             // We can skip empty datasets which are not associated with a VTK file.
             if(blockInfo.location.isEmpty()) return Future<void>::createImmediateEmpty();
@@ -239,7 +239,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
             return Application::instance()->fileManager()
                 .fetchUrl(blockInfo.location)
                 .then(*fileSource, [&request](const SharedFuture<FileHandle>& fileFuture) mutable -> Future<void> {
-                    OVITO_ASSERT(ExecutionContext::current().isValid());
+                    OVITO_ASSERT(this_task::get());
 
                     try {
                         // Obtain a handle to the referenced data file.
@@ -310,7 +310,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
                         request.state.setStatus(PipelineStatus(ex, QStringLiteral(" ")));
                         ex.prependGeneralMessage(tr("Failed to access data file referenced by block '%1' in VTK multi-block file.")
                                                      .arg(request.dataBlockPrefix));
-                        ExecutionContext::current().ui().reportError(ex);
+                        this_task::ui()->reportError(ex);
                         // We treat such an error as recoverable and continue with loading the remaining data blocks.
                         return Future<void>::createImmediateEmpty();
                     }

@@ -36,7 +36,7 @@ namespace Ovito {
 template<typename CGFunction>
 inline bool syclParallelForWithProgress(std::size_t total_problem_size, CGFunction&& cgf)
 {
-    sycl::queue& queue = ExecutionContext::current().ui().taskManager().syclQueue();
+    sycl::queue& queue = this_task::ui()->taskManager().syclQueue();
 
     // Allocate early-exit flag in kernel-accessible host memory.
     using early_exit_flag_t = int;

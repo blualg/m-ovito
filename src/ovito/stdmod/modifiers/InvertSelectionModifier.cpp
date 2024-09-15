@@ -67,7 +67,7 @@ Future<PipelineFlowState> InvertSelectionModifier::evaluateModifier(const Modifi
     {
         if(inputSelection) {
 #ifdef OVITO_USE_SYCL
-            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+            this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
                 SyclBufferAccess<SelectionIntType, access_mode::read> inputAcc(inputSelection, cgh);
                 SyclBufferAccess<SelectionIntType, access_mode::discard_write> outputAcc(outputSelection, cgh);
                 OVITO_SYCL_PARALLEL_FOR(cgh, InvertSelection_kernel)(sycl::range(inputAcc.size()), [=](size_t i) {

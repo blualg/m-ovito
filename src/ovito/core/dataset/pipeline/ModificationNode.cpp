@@ -383,7 +383,7 @@ SharedFuture<PipelineFlowState> ModificationNode::launchModifierEvaluation(Modif
  ******************************************************************************/
 int ModificationNode::numberOfSourceFrames() const
 {
-    OVITO_ASSERT(ExecutionContext::current().isValid());
+    OVITO_ASSERT(this_task::get());
 
     if(modifierAndGroupEnabled()) {
         OVITO_ASSERT(modifier() != nullptr);

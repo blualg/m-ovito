@@ -183,7 +183,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> CameraVis::render(const Con
     FloatType aspectRatio = 0;
     FloatType coneAngle = 0;
     if(pipeline->isSelected()) {
-        DataSet* dataset = ExecutionContext::current().ui().datasetContainer().currentSet();
+        DataSet* dataset = this_task::ui()->datasetContainer().currentSet();
         if(dataset && dataset->renderSettings()) {
             aspectRatio = dataset->renderSettings()->outputImageAspectRatio();
             if(const StandardCameraObject* camera = path.lastAs<StandardCameraObject>()) {

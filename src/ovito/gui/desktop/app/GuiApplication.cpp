@@ -205,7 +205,7 @@ static void activateThemeColors(bool dark)
 ******************************************************************************/
 MainThreadOperation GuiApplication::startupApplication()
 {
-    OVITO_ASSERT(!this_task::get());
+    OVITO_ASSERT(this_task::get());
 
     if(guiMode()) {
         // Setup graphical user interface.
@@ -285,11 +285,11 @@ MainThreadOperation GuiApplication::startupApplication()
         mainWin->restoreLayout();
         mainWin->setUpdatesEnabled(true);
 
-        return MainThreadOperation(ExecutionContext::Type::Interactive, *mainWin);
+        return MainThreadOperation(*mainWin, MainThreadOperation::Kind::Isolated);
     }
     else {
         // Use this application's command line user interface.
-        return MainThreadOperation(ExecutionContext::Type::Interactive, *this);
+        return MainThreadOperation(*this, MainThreadOperation::Kind::Isolated);
     }
 }
 
@@ -298,7 +298,7 @@ MainThreadOperation GuiApplication::startupApplication()
 ******************************************************************************/
 void GuiApplication::postStartupInitialization()
 {
-    GuiApplication::initializeUserInterface(ExecutionContext::current().ui(), cmdLineParser().positionalArguments());
+    GuiApplication::initializeUserInterface(*this_task::ui(), cmdLineParser().positionalArguments());
     StandaloneApplication::postStartupInitialization();
 }
 
@@ -307,7 +307,7 @@ void GuiApplication::postStartupInitialization()
 ******************************************************************************/
 void GuiApplication::initializeUserInterface(UserInterface& userInterface, const QStringList& arguments)
 {
-    OVITO_ASSERT(ExecutionContext::isInteractive());
+    OVITO_ASSERT(this_task::isInteractive());
 
     DataSetContainer& datasetContainer = userInterface.datasetContainer();
 

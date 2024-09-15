@@ -124,49 +124,38 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
             return true;
         }
 
-        // Establish an execution context in which application initialization takes place.
-        ExecutionContext::Scope initExecScope(ExecutionContext::Type::Scripting, shared_from_this());
+        // Establish a temporary task context in which application initialization takes place.
+        MainThreadOperation initializationTask(*this, MainThreadOperation::Kind::Isolated, false);
 
-        // Notify registered application services that application is initializing.
+        // Notify registered application services that the application is initializing.
         for(const auto& service : applicationServices()) {
-            // If any of the service callbacks returns false, stop application initialization and quit.
-            if(!service->applicationInitializing()) {
-                return false;
-            }
+            service->applicationInitializing();
         }
 
-        // Prepares the application to start running.
-        MainThreadOperation operation = startupApplication();
-        if(!operation)
-            return false;
+        // Prepare the application to start running.
+        MainThreadOperation startupOperation = startupApplication();
 
-        // We now should have a valid execution context and a UserInterface object.
-        OVITO_ASSERT(ExecutionContext::current().isValid());
-
-        // Notify registered application services that application is starting up.
+        // Notify registered application services that the application is starting up.
         for(const auto& service : applicationServices()) {
-            // If any of the service callbacks returns false, abort the application startup process and quit.
-            if(!service->applicationStarting()) {
-                return false;
-            }
+            service->applicationStarting();
         }
 
         // Complete the startup process by calling postStartupInitialization() once the main event loop is running.
-        ExecutionContext::current().runDeferred(this, [this, promise=Promise<void>(std::move(operation))]() noexcept {
-            Task::Scope taskScope(promise.task());
+        ObjectExecutor(this).execute([startupOperation = PromiseBase(std::move(startupOperation))]() noexcept {
+            Task::Scope taskScope(startupOperation.task());
             try {
                 try {
                     // Let the application perform further initialization steps.
-                    postStartupInitialization();
+                    StandaloneApplication::instance()->postStartupInitialization();
 
-                    if(promise.isCanceled()) {
+                    if(startupOperation.isCanceled()) {
                         // If something has canceled the startup process, close the window and quit the app.
-                        ExecutionContext::current().ui().shutdown();
+                        this_task::ui()->shutdown();
                         QCoreApplication::exit(1);
                     }
                     else {
                         // Startup phase is complete.
-                        promise.setFinished();
+                        startupOperation.setFinished();
                     }
                 }
                 catch(const Exception&) {
@@ -182,15 +171,18 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
             }
             catch(const Exception& ex) {
                 // Shutdown with error exit code when running in scripting mode.
-                if(guiMode())
-                    reportError(ex);
+                if(Application::instance()->guiMode())
+                    this_task::ui()->reportError(ex);
                 else
-                    ExecutionContext::current().ui().exitWithFatalError(ex);
+                    this_task::ui()->exitWithFatalError(ex);
             }
         });
 
         // Make sure the main event loop is not running yet at this point.
         OVITO_ASSERT(QThread::currentThread()->loopLevel() == 0);
+    }
+    catch(OperationCanceled) {
+        return false;
     }
     catch(const Exception& ex) {
         reportError(ex);

@@ -53,7 +53,7 @@ public:
     /// Constructor.
     template<typename... AuxiliaryArgs2>
     explicit ModifierEvaluationTask(ModifierEvaluationRequest&& request, AuxiliaryArgs2&&... auxiliaryArgs) :
-        detail::ContinuationTask<PipelineFlowState>(Task::NoState, PipelineFlowState{}),
+        detail::ContinuationTask<PipelineFlowState>(this_task::ui(), Task::NoState, PipelineFlowState{}),
         std::tuple<AuxiliaryArgs...>(std::forward<AuxiliaryArgs2>(auxiliaryArgs)...),
         _request(std::move(request)) { OVITO_ASSERT(_request.modificationNode() && _request.modifier()); }
 
@@ -82,12 +82,12 @@ public:
 protected:
 
     /// This callback gets invoked once the input pipeline state has been computed.
-    void inputStateAvailable(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+    void inputStateAvailable(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
         // Check if the awaited task completed with an error.
         if(finishedTask->exceptionStore()) {
             // Forward the pipeline error state.
-            exceptionLocked(finishedTask->exceptionStore());
-            finishLocked(lock);
+            setException(finishedTask->exceptionStore());
+            setFinished();
             return;
         }
 
@@ -106,20 +106,18 @@ protected:
         //  - the upstream pipeline did not yield any data, or
         //  - the modifier cannot be evaluated in interactive mode (this is handled by the modifier directly).
         if(!modificationNode()->modifierAndGroupEnabled() || !resultStorage()) {
-            finishLocked(lock);
+            setFinished();
             return;
         }
         OVITO_ASSERT(modifier());
 
         // Let the modifier operate on the input pipeline state.
-        evaluateModifier(std::move(promise), lock);
+        evaluateModifier(std::move(promise));
     }
 
     /// Asks the modifier to compute its results based on the now available upstream pipeline data.
-    virtual void evaluateModifier(PromiseBase promise, Task::MutexLock& lock) noexcept {
+    virtual void evaluateModifier(PromiseBase promise) noexcept {
         OVITO_ASSERT(resultStorage()); // Upstream data must be stored in this task's results storage.
-
-        lock.unlock();
 
         Future<PipelineFlowState> modifierFuture;
         handleModifierExceptions([&]() {
@@ -142,8 +140,7 @@ protected:
     }
 
     /// This callback gets invoked once the modifier has computed its results.
-    void modifierResultsAvailable(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
-        lock.unlock();
+    void modifierResultsAvailable(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
 
         // Check if the awaited task completed with an error.
         if(finishedTask->exceptionStore()) {

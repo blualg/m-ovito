@@ -25,7 +25,6 @@
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/AffineTransformationParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
-#include <ovito/core/viewport/ViewportSuspender.h>
 #include <ovito/stdmod/modifiers/AffineTransformationModifier.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include "AffineTransformationModifierEditor.h"
@@ -427,7 +426,6 @@ void AffineTransformationModifierEditor::onEnterRotation()
             Vector3 center(centerSpinnerX->floatValue(), centerSpinnerY->floatValue(), centerSpinnerZ->floatValue());
             Rotation rot(axis, angleSpinner->floatValue());
             AffineTransformation tm = AffineTransformation::translation(center) * AffineTransformation::rotation(rot) * AffineTransformation::translation(-center);
-            ViewportSuspender noVPUpdate(mainWindow());
             transaction.revert();
             performActions(transaction, [&] {
                 mod->setTranslationReducedCoordinates(false);

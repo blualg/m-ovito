@@ -144,7 +144,7 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
         // Iterate over all frames of the input range in sequential order.
         unwrapFuture = for_each_sequential(
             std::move(inputFrameRange),
-            ObjectExecutor(this, true), // Require deferred execution
+            ObjectExecutor(this), // Require deferred execution
             // Requests the next frame from the upstream pipeline.
             [request = request](int frame) mutable -> SharedFuture<PipelineFlowState> {
                 request.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
@@ -221,7 +221,7 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
 
     // Check if periodic cell boundary crossing have been precomputed or not.
     if(time > unwrappedUpToTime()) {
-        if(ExecutionContext::isInteractive())
+        if(this_task::isInteractive())
             state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Particle crossings of periodic cell boundaries have not been determined yet.")));
         else
             throw Exception(tr("Particle crossings of periodic cell boundaries have not been determined yet or the requested trajectory frame is out of range. Cannot unwrap trajectories at this time."));
