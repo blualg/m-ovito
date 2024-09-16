@@ -42,8 +42,8 @@ namespace Ovito {
  * temporarily stored in the task object until the upstream data is available and the modifier's evaluateModifier() is called.
  * The auxiliary values are passed to the method as extra arguments.
  */
-template<typename ModifierClass = Modifier, typename... AuxiliaryArgs>
-class OVITO_CORE_EXPORT ModifierEvaluationTask : public detail::ContinuationTask<PipelineFlowState>, protected std::tuple<AuxiliaryArgs...>
+template <typename ModifierClass = Modifier, typename... AuxiliaryArgs>
+class ModifierEvaluationTask : public detail::ContinuationTask<PipelineFlowState>, protected std::tuple<AuxiliaryArgs...>
 {
 public:
 

@@ -33,8 +33,8 @@ namespace Ovito {
  *        pipeline node. The task additionally waits for some auxiliary input of the modifier to become available (in addition to the upstream pipeline data).
  *        The auxiliary input data for the modifier must be provided in the form of a future.
  */
-template<typename ModifierClass, typename AuxiliaryFutureType>
-class OVITO_CORE_EXPORT ComplexModifierEvaluationTask : public ModifierEvaluationTask<>
+template <typename ModifierClass, typename AuxiliaryFutureType>
+class ComplexModifierEvaluationTask : public ModifierEvaluationTask<>
 {
 public:
 
