@@ -74,25 +74,35 @@ public:
 	public:
 
 		/// Bit-wise flags for rendering commands.
-		enum Flag {
-			NoFlags             = 0,
-			ExcludeFromVisual   = (1<<0), // Skip the primitive in the visual rendering pass
-			ExcludeFromPicking  = (1<<1), // Skip the primitive in the object picking rendering pass
-		};
-		Q_DECLARE_FLAGS(Flags, Flag);
+        enum Flag
+        {
+            NoFlags = 0,
+            ExcludeFromVisual = (1 << 0),   // Skip the primitive in the visual rendering pass
+            ExcludeFromPicking = (1 << 1),  // Skip the primitive in the object picking rendering pass
+            ExcludeFromOutline = (1 << 2),  // Skip the primitive in the outline calculation (when supported)
+        };
+        Q_DECLARE_FLAGS(Flags, Flag);
 
-		/// Constructor.
-		explicit RenderingCommand(Flags flags, std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, OORef<const Pipeline> pipeline = {}, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0) :
-			_primitive(std::move(primitive)), _tm(tm), _pipeline(std::move(pipeline)), _pickInfo(std::move(pickInfo)), _pickElementOffset(pickElementOffset), _flags(flags) {}
+        /// Constructor.
+        explicit RenderingCommand(Flags flags, std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm,
+                                  OORef<const Pipeline> pipeline = {}, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0)
+            : _primitive(std::move(primitive)),
+              _tm(tm),
+              _pipeline(std::move(pipeline)),
+              _pickInfo(std::move(pickInfo)),
+              _pickElementOffset(pickElementOffset),
+              _flags(flags)
+        {
+        }
 
-		/// Returns the graphics primitive rendered by this command.
-		RenderingPrimitive* primitive() const { return _primitive.get(); }
+        /// Returns the graphics primitive rendered by this command.
+        RenderingPrimitive* primitive() const { return _primitive.get(); }
 
-		/// Replaces the graphics primitive with a new one.
-		void setPrimitive(std::unique_ptr<RenderingPrimitive> primitive) { _primitive = std::move(primitive); }
+        /// Replaces the graphics primitive with a new one.
+        void setPrimitive(std::unique_ptr<RenderingPrimitive> primitive) { _primitive = std::move(primitive); }
 
-		/// Returns the model-to-world transformation matrix to be applied to the graphics primitive.
-		const AffineTransformation& modelWorldTM() const { return _tm; }
+        /// Returns the model-to-world transformation matrix to be applied to the graphics primitive.
+        const AffineTransformation& modelWorldTM() const { return _tm; }
 
 		/// The scene pipeline to which this rendering command belongs.
 		const OORef<const Pipeline>& pipeline() const { return _pipeline; }
@@ -110,20 +120,22 @@ public:
 		/// Determines whether this command should be skipped in visual render mode.
 		bool skipInVisualPass() const { return _flags.testFlag(ExcludeFromVisual); }
 
-	private:
+        /// Exclude this command from outline rendering
+        bool skipForOutline() const { return _flags.testFlag(ExcludeFromOutline); }
 
-		/// The graphics primitive to be rendered.
-		std::unique_ptr<RenderingPrimitive> _primitive;
+    private:
+        /// The graphics primitive to be rendered.
+        std::unique_ptr<RenderingPrimitive> _primitive;
 
-		/// The model-to-world transformation matrix to be applied to the primitive.
-		/// May be a null matrix to indicate that the primitive contains pre-projected coordinates.
-		AffineTransformation _tm = AffineTransformation::Zero();
+        /// The model-to-world transformation matrix to be applied to the primitive.
+        /// May be a null matrix to indicate that the primitive contains pre-projected coordinates.
+        AffineTransformation _tm = AffineTransformation::Zero();
 
-		/// The scene pipeline to which this rendering command belongs.
-		/// Note: may be null in rare cases, e.g., when the AmbientOcclusionModifier renders particles using false colors.
-		OORef<const Pipeline> _pipeline;
+        /// The scene pipeline to which this rendering command belongs.
+        /// Note: may be null in rare cases, e.g., when the AmbientOcclusionModifier renders particles using false colors.
+        OORef<const Pipeline> _pipeline;
 
-		/// An optional object that knows what high-level data is being represented by this render command and which sub-elements it consists of.
+        /// An optional object that knows what high-level data is being represented by this render command and which sub-elements it consists of.
 		OORef<ObjectPickInfo> _pickInfo;
 
 		/// If this rendering command is part of a composite object that requires multiple rendering commands,
@@ -162,21 +174,24 @@ public:
 			_commands.emplace_back(std::forward<Args>(args)...);
 		}
 
-		/// Add a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
-		/// Automatically computes the bounding box of the primitive and the model-to-world transformation.
-		void addPrimitive(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box, OORef<const Pipeline> pickablePipeline, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0);
+        /// Add a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
+        /// Automatically computes the bounding box of the primitive and the model-to-world transformation.
+        /// Optional: A FrameGraph::RenderingCommand::Flag can be give, default is "NoFlags"
+        void addPrimitive(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box,
+                          OORef<const Pipeline> pickablePipeline, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0,
+                          RenderingCommand::Flags flags = RenderingCommand::NoFlags);
 
-		/// Add a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
-		/// Automatically computes the bounding box of the primitive and the model-to-world transformation.
-		void addPrimitiveNonpickable(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box);
+        /// Add a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
+        /// Automatically computes the bounding box of the primitive and the model-to-world transformation.
+        void addPrimitiveNonpickable(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box);
 
-		/// Adds a primitive to the frame graph containing pre-projected coordinates.
-		void addPrimitivePreprojected(std::unique_ptr<RenderingPrimitive> primitive);
+        /// Adds a primitive to the frame graph containing pre-projected coordinates.
+        void addPrimitivePreprojected(std::unique_ptr<RenderingPrimitive> primitive);
 
-		/// Renders a 2d polyline or polygon into an interactive viewport.
-		void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed, const QSize& logicalViewportSize);
+        /// Renders a 2d polyline or polygon into an interactive viewport.
+        void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed, const QSize& logicalViewportSize);
 
-	private:
+    private:
 
 		/// The rendering commands in this group.
 		std::vector<RenderingCommand> _commands;
@@ -268,13 +283,16 @@ public:
 		return _commandGroups.emplace_back(layerType);
 	}
 
-	/// Add a 3d rendering primitive to the current layer of the frame graph.
-	/// Automatically computes the bounding box of the primitive and the model-to-world transformation.
-	void addPrimitive(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, OORef<const Pipeline> pipeline, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0);
+    /// Add a 3d rendering primitive to the current layer of the frame graph.
+    /// Automatically computes the bounding box of the primitive and the model-to-world transformation.
+    /// Optional: A FrameGraph::RenderingCommand::Flag can be give, default is "NoFlags"
+    void addPrimitive(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, OORef<const Pipeline> pipeline,
+                      OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0,
+                      RenderingCommand::Flags flags = RenderingCommand::NoFlags);
 
-	/// Add a 3d rendering primitive to the current layer of the frame graph.
-	/// Automatically computes the bounding box of the primitive and the model-to-world transformation.
-	void addPrimitiveNonpickable(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, const Pipeline* pipeline);
+    /// Add a 3d rendering primitive to the current layer of the frame graph.
+    /// Automatically computes the bounding box of the primitive and the model-to-world transformation.
+    void addPrimitiveNonpickable(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, const Pipeline* pipeline);
 
 	/// Replaces all text primitives with (cached) image primitives.
 	void renderTextAsImagePrimitives();

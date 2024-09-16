@@ -35,14 +35,15 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(FrameGraph);
 * Adds a 3d rendering primitive to the current layer of the frame graph.
 * Automatically computes the bounding box of the primitive and the model-to-world transformation.
 ******************************************************************************/
-void FrameGraph::addPrimitive(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, OORef<const Pipeline> pipeline, OORef<ObjectPickInfo> pickInfo, uint32_t pickElementOffset)
+void FrameGraph::addPrimitive(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, OORef<const Pipeline> pipeline,
+                              OORef<ObjectPickInfo> pickInfo, uint32_t pickElementOffset, RenderingCommand::Flags flags)
 {
     OVITO_ASSERT(pipeline);
     OVITO_ASSERT(ExecutionContext::isMainThread()); // Must be called from main thread, because we are accessing the pipeline.
 
     const AffineTransformation& tm = pipeline->getWorldTransform(time());
     Box3 boundingBox = primitive->computeBoundingBox(visCache());
-    group.addPrimitive(std::move(primitive), tm, boundingBox, std::move(pipeline), std::move(pickInfo), pickElementOffset);
+    group.addPrimitive(std::move(primitive), tm, boundingBox, std::move(pipeline), std::move(pickInfo), pickElementOffset, flags);
 }
 
 /******************************************************************************
@@ -59,15 +60,19 @@ void FrameGraph::addPrimitiveNonpickable(RenderingCommandGroup& group, std::uniq
 }
 
 /******************************************************************************
-* Adds a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
-* Automatically computes the bounding box of the primitive and the model-to-world transformation.
-******************************************************************************/
-void FrameGraph::RenderingCommandGroup::addPrimitive(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box, OORef<const Pipeline> pickablePipeline, OORef<ObjectPickInfo> pickInfo, uint32_t pickElementOffset)
+ * Adds a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
+ * Automatically computes the bounding box of the primitive and the model-to-world transformation.\
+ * Optional: A FrameGraph::RenderingCommand::Flag can be give, default is "NoFlags"
+ ******************************************************************************/
+void FrameGraph::RenderingCommandGroup::addPrimitive(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm,
+                                                     const Box3& box, OORef<const Pipeline> pickablePipeline,
+                                                     OORef<ObjectPickInfo> pickInfo, uint32_t pickElementOffset,
+                                                     RenderingCommand::Flags flags)
 {
     // Add the world-space bounding box of the primitive to the group's bounding box.
     _boundingBox.addBox(box.transformed(tm));
 
-    addCommand(RenderingCommand::NoFlags, std::move(primitive), tm, std::move(pickablePipeline), std::move(pickInfo), pickElementOffset);
+    addCommand(flags, std::move(primitive), tm, std::move(pickablePipeline), std::move(pickInfo), pickElementOffset);
 }
 
 /******************************************************************************

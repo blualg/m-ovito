@@ -134,7 +134,9 @@ void SimulationCellVis::renderWireframe(const SimulationCell* cell, const Pipeli
     AffineTransformation cellMatrix = cell->cellMatrix();
     if(cell->is2D())
         cellMatrix(2,3) = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.
-    frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(linePrimitive), nodeTM * cellMatrix, Box3(Point3(0), Point3(1)), pipeline);
+    frameGraph.addCommandGroup(FrameGraph::SceneLayer)
+        .addPrimitive(std::move(linePrimitive), nodeTM * cellMatrix, Box3(Point3(0), Point3(1)), pipeline, /*pickInfo=*/{},
+                      /*pickElementOffset=*/0, FrameGraph::RenderingCommand::ExcludeFromOutline);
 }
 
 /******************************************************************************
@@ -208,8 +210,10 @@ void SimulationCellVis::renderSolid(const SimulationCell* cell, const PipelineFl
         });
 
     FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::SceneLayer);
-    frameGraph.addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(edges), pipeline);
-    frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(corners), pipeline);
+    frameGraph.addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(edges), pipeline, /*pickInfo=*/{},
+                            /*pickElementOffset=*/0, FrameGraph::RenderingCommand::ExcludeFromOutline);
+    frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(corners), pipeline, /*pickInfo=*/{},
+                            /*pickElementOffset=*/0, FrameGraph::RenderingCommand::ExcludeFromOutline);
 }
 
 }   // End of namespace
