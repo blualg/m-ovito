@@ -25,16 +25,15 @@
 
 #include <ovito/core/Core.h>
 #include "detail/ContinuationTask.h"
+#include "InlineExecutor.h"
 #include "LaunchTask.h"
 
 namespace Ovito {
 
 /// Asynchronously waits for all futures in the given range to complete (or to get canceled).
 /// The function returns a new future that yields the original input range of futures upon completion.
-template<typename InputRange, class Executor, typename... ResultType>
-[[nodiscard]] auto when_all_futures(
-    InputRange&& inputRange,
-    Executor&& executor)
+template<typename InputRange, typename... ResultType>
+[[nodiscard]] auto when_all_futures(InputRange&& inputRange)
 {
     // The final output produced by the when-all task.
     using task_result_type = std::decay_t<InputRange>;
@@ -48,11 +47,9 @@ template<typename InputRange, class Executor, typename... ResultType>
 
         /// Constructor.
         WhenAllFuturesTask(
-            InputRange&& inputRange,
-            Executor&& executor) :
+            InputRange&& inputRange) :
                 detail::ContinuationTask<task_result_type>(this_task::ui(), Task::NoState, std::forward<InputRange>(inputRange)),
                 _taskCallback(*this, &taskStateChangedCallback),
-                _executor(std::forward<Executor>(executor)),
                 _iterator(std::begin(this->resultStorage()))
         {
             // All futures must be valid.
@@ -64,13 +61,8 @@ template<typename InputRange, class Executor, typename... ResultType>
             OVITO_ASSERT(_iterator == std::begin(this->resultStorage()));
             if(_iterator != std::end(this->resultStorage())) {
                 // Begin execution of first iteration.
-                _executor.execute([promise = PromiseBase(this->shared_from_this())]() mutable noexcept {
-                    WhenAllFuturesTask& self = static_cast<WhenAllFuturesTask&>(*promise.task());
-                    Task::MutexLock lock(self);
-                    if(!self.isCanceled())
-                        self.iteration_begin(std::move(promise), lock);
-                });
-                OVITO_ASSERT_MSG(_iterator == std::begin(this->resultStorage()), "when_all_futures()", "An executor that performs deferred execution is required.");
+                Task::MutexLock lock(*this);
+                this->iteration_begin(this->shared_from_this(), lock);
             }
             else {
                 this->setFinished();
@@ -87,9 +79,10 @@ template<typename InputRange, class Executor, typename... ResultType>
                 detail::TaskDependency awaitedTask = _iterator->takeTaskDependency();
                 OVITO_ASSERT(awaitedTask && !*_iterator);
                 lock.unlock();
+
                 // Schedule next iteration upon completion of the future.
                 this->template whenTaskFinishes<WhenAllFuturesTask, &WhenAllFuturesTask::iteration_complete>(
-                    std::move(awaitedTask), _executor, std::move(promise));
+                    std::move(awaitedTask), InlineExecutor{}, std::move(promise));
             }
             else {
                 this->finishLocked(lock);
@@ -133,9 +126,6 @@ template<typename InputRange, class Executor, typename... ResultType>
 
     private:
 
-        /// The executor used for sub-tasks.
-        std::decay_t<Executor> _executor;
-
         /// The iterator pointing to the current item in the range of futures.
         typename std::decay_t<InputRange>::iterator _iterator;
 
@@ -144,9 +134,7 @@ template<typename InputRange, class Executor, typename... ResultType>
     };
 
     // Launch the task.
-    return launchTask(std::make_shared<WhenAllFuturesTask>(
-        std::forward<InputRange>(inputRange),
-        std::forward<Executor>(executor)));
+    return launchTask(std::make_shared<WhenAllFuturesTask>(std::forward<InputRange>(inputRange)));
 }
 
 }   // End of namespace

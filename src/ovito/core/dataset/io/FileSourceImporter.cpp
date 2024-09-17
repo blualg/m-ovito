@@ -31,6 +31,7 @@
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/utilities/concurrent/Launch.h>
+#include <ovito/core/utilities/concurrent/ForEach.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/app/Application.h>
 #include "FileSourceImporter.h"
@@ -328,23 +329,16 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 
     // Sequentially invoke single-path routine for each input path and compile results
     // into one big list that is returned to the caller.
-    auto combinedList = std::make_shared<QVector<Frame>>();
-    Future<QVector<Frame>> future;
-    for(const QUrl& url : sourceUrls) {
-        if(!future) {
-            future = discoverFrames(url);
-        }
-        else {
-            future.postprocess(*this, [this, combinedList, url](const QVector<Frame>& frames) {
-                *combinedList += frames;
-                return discoverFrames(url);
-            });
-        }
-    }
-    return future.then([combinedList](const QVector<Frame>& frames) {
-        *combinedList += frames;
-        return std::move(*combinedList);
-    });
+    return for_each_sequential<false>(
+        sourceUrls,
+        ObjectExecutor(this),
+        [this](const QUrl& url) {
+            return discoverFrames(url);
+        },
+        [](const QUrl& url, QVector<Frame>&& frames, QVector<FileSourceImporter::Frame>& combinedList) {
+            combinedList += std::move(frames);
+        },
+        QVector<FileSourceImporter::Frame>{});
 }
 
 
@@ -404,7 +398,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 ******************************************************************************/
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const FileHandle& fileHandle)
 {
-    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
+    OVITO_ASSERT_MSG(this_task::isMainThread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
     OVITO_ASSERT(this_task::get());
 
     // Scan file.
@@ -470,15 +464,6 @@ void FileSourceImporter::FrameFinder::perform()
             frameList.pop_back();       // Remove last discovered frame because it may be corrupted or only partially written.
     }
     setResult(std::move(frameList));
-}
-
-/******************************************************************************
-* Scans the given file for source frames
-******************************************************************************/
-void FileSourceImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
-{
-    // By default, register a single frame.
-    frames.push_back(Frame(fileHandle()));
 }
 
 /******************************************************************************

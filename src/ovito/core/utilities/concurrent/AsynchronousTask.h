@@ -34,7 +34,7 @@ class OVITO_CORE_EXPORT AsynchronousTaskBase : public Task, public QRunnable
 public:
 
     /// Constructor.
-    AsynchronousTaskBase(OORef<UserInterface> ui, State initialState, void* resultsStorage) noexcept;
+    AsynchronousTaskBase(std::shared_ptr<UserInterface> ui, State initialState, void* resultsStorage) noexcept;
 
     /// Destructor.
     ~AsynchronousTaskBase();

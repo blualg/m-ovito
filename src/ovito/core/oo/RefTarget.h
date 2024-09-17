@@ -198,6 +198,11 @@ public:
         const_cast<DependentsList&>(_dependents).visit(std::forward<Callable>(fn));
     }
 
+    /// Returns whether this RefTarget currently has at least one dependent.
+    bool hasDependents() const {
+        return !_dependents.empty();
+    }
+
     /// \brief Asks this object to delete itself. This happens by requesting all dependents of the object to delete their reference to it.
     ///
     /// If undo recording is active, the object instance is kept alive such that

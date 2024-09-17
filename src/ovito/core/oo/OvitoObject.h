@@ -120,12 +120,12 @@ public:
     /// Creates some work that can be submitted for execution later and which will be executed in the context of this object (typically in the main thread).
     /// If the object gets destroyed before the work is executed, the scheduled work will be discarded.
     template<typename Function>
-    [[nodiscard]] auto schedule(Function&& f) const {
+    [[nodiscard]] auto schedule(Function&& f, std::shared_ptr<UserInterface> ui = this_task::ui()) const {
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(!isBeingConstructed()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed yet.
         OVITO_ASSERT(!isBeingDeleted());     // Note: Cannot create a OOWeakRef<> if the object is already being destructed.
 
-        return [weakRef = weak_from_this(), ui = this_task::ui(), f = std::forward<Function>(f)]<typename... Args>(Args&&... args) mutable noexcept {
+        return [weakRef = weak_from_this(), ui = std::move(ui), f = std::forward<Function>(f)]<typename... Args>(Args&&... args) mutable noexcept {
             if(auto self = weakRef.lock()) {
                 static_assert(std::is_invocable_v<Function, Args...>, "The function must be invocable with the right arguments.");
                 static_assert(std::is_invocable_r_v<void, Function, Args...>, "The function must return void.");
@@ -146,6 +146,9 @@ public:
     /// Executes some work in the context of this object (typically the main thread).
     template<typename Function, typename... Args>
     void execute(Function&& f, Args&&... args) const;
+
+    /// Returns the abstract user interface object that is used to submit work to the main thread.
+    //static const std::shared_ptr<UserInterface>& userInterface() { return this_task::ui(); }
 
 protected:
 

@@ -36,7 +36,7 @@ namespace Ovito {
 /// Runs the given function using the given executor and returns its results as a Future.
 /// Note: The function may never execute if the future gets canceled before execution begins.
 template<typename Executor, typename Function>
-[[nodiscard]] auto launchAsync(Executor&& executor, Function&& function, std::shared_ptr<UserInterface> ui = this_task::ui())
+[[nodiscard]] auto launchAsync(Executor&& executor, Function&& function)
 {
     // Infer the future to create. If the function returns a future, use it as is. Otherwise, wrap the result in a Future.
     using result_future_type = std::conditional_t<detail::is_future_v<std::invoke_result_t<Function>>,
@@ -95,6 +95,8 @@ template<typename Executor, typename Function>
         std::decay_t<Function> _function;
     };
 
+    std::shared_ptr<UserInterface> ui = executor.userInterface();
+
     return launchTask(
         std::make_shared<LaunchTask>(std::move(ui), std::forward<Function>(function)),
         std::forward<Executor>(executor));
@@ -102,9 +104,11 @@ template<typename Executor, typename Function>
 
 /// Runs the given function using the given executor without waiting for its results.
 template<typename Executor, typename Function>
-void launchDetached(Executor&& executor, Function&& function, std::shared_ptr<UserInterface> ui = this_task::ui())
+void launchDetached(Executor&& executor, Function&& function)
 {
     static_assert(std::is_invocable_r_v<void, Function>, "The function must be callable with no arguments and should return no value.");
+
+    std::shared_ptr<UserInterface> ui = executor.userInterface();
 
     executor.execute(
         [promise = PromiseBase(std::make_shared<Task>(std::move(ui))), function=std::forward<Function>(function)]() mutable noexcept {

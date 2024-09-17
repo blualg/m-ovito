@@ -186,7 +186,7 @@ public:
     protected:
 
         /// Scans the data file and builds a list of source frames.
-        virtual void discoverFramesInFile(QVector<Frame>& frames);
+        virtual void discoverFramesInFile(QVector<Frame>& frames) = 0;
 
     private:
 
@@ -242,7 +242,7 @@ public:
     ///
     /// The default implementation of this method checks if the given URLs contain a wild-card pattern.
     /// If yes, it scans the directory to find all matching files.
-    virtual Future<QVector<Frame>> discoverFrames(const QUrl& sourceUrl);
+    Future<QVector<Frame>> discoverFrames(const QUrl& sourceUrl);
 
     /// Scans the given data file to find all available animation frames.
     ///

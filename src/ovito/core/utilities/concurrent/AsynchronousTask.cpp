@@ -33,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AsynchronousTaskBase::AsynchronousTaskBase(OORef<UserInterface> ui, State initialState, void* resultsStorage) noexcept : Task(std::move(ui), State(initialState | Task::IsAsynchronous), resultsStorage)
+AsynchronousTaskBase::AsynchronousTaskBase(std::shared_ptr<UserInterface> ui, State initialState, void* resultsStorage) noexcept : Task(std::move(ui), State(initialState | Task::IsAsynchronous), resultsStorage)
 {
     QRunnable::setAutoDelete(false);
 }

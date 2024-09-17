@@ -46,6 +46,9 @@ struct InlineExecutor
             InlineExecutor::execute(std::move(f), std::forward<Args>(args)...);
         };
     }
+
+    /// Returns the abstract user interface object associated with this executor.
+    static const std::shared_ptr<UserInterface>& userInterface() { return this_task::ui(); }
 };
 
 } // End of namespace

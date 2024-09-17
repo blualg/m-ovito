@@ -130,7 +130,7 @@ void ViewportWindow::resumeViewportUpdates()
 {
     if(_updateNeeded && !_frameFuture && viewport() && !userInterface().areViewportUpdatesSuspended() && isVisible()) {
         // Run buildAndRenderFrameGraph() as soon as control returns to the main event loop.
-        _frameFuture = launchAsync(ObjectExecutor(this, userInterface().shared_from_this()), std::bind_front(&ViewportWindow::buildAndRenderFrameGraph, this), userInterface().shared_from_this());
+        _frameFuture = launchAsync(ObjectExecutor(this, userInterface().shared_from_this()), std::bind_front(&ViewportWindow::buildAndRenderFrameGraph, this));
 
         // Afterwards, run frameGraphRenderingFinished().
         _frameFuture.finally(*this, std::bind_front(&ViewportWindow::frameGraphRenderingFinished, this));

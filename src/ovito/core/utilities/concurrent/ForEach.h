@@ -57,7 +57,7 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
     ResultType&&... initialResult)
 {
     // The final output produced by the loop task.
-    using task_result_type = typename first_type<std::tuple<ResultType...>>::type;
+    using task_result_type = typename first_type<std::tuple<std::decay_t<ResultType>...>>::type;
 
     // The type of future returned by the start function.
     using output_future_type = return_type<std::decay_t<StartIterFunc>>;

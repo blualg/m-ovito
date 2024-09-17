@@ -388,8 +388,8 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
 
         // If the total number of bonds is unusually high, we better turn off bonds display to prevent the program from freezing.
         if(bonds->elementCount() > 2000000 && autoDisableBondDisplay && this_task::isInteractive()) {
-            // Modifying the vis element must be done in the main thread.
             if(BondsVis* vis = bonds->visElement<BondsVis>()) {
+                // Modifying the vis element must be done in the main thread.
                 launchDetached(*vis, [vis]() {
                     this_task::ui()->performTransaction(tr("Disable bonds display"), [&]() {
                         vis->setEnabled(false);

@@ -456,7 +456,7 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
     }
     else {
         // Process all pending work items while waiting for the task to finish.
-        this_task::ui()->taskManager().processWorkWhileWaiting(waitingTask, awaitedTask, returnEarlyIfCanceled);
+        awaitedTask->ui()->taskManager().processWorkWhileWaiting(waitingTask, awaitedTask, returnEarlyIfCanceled);
     }
 
     // Check if the waiting task has been canceled.

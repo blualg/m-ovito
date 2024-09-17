@@ -75,6 +75,9 @@ public:
     /// Work submitted to this executor will be executed in the context of the object.
     const OOWeakRef<const OvitoObject>& contextObject() const { return _contextObject; }
 
+    /// Returns the abstract user interface object that is used to submit work to the main thread.
+    const std::shared_ptr<UserInterface>& userInterface() const { return _ui; }
+
 private:
 
     /// The object work will be submitted to. Work will be executed in the context of this object,
@@ -99,7 +102,7 @@ inline void ObjectExecutor::execute(Function&& f, Args&&... args) const&
     static_assert(std::is_invocable_r_v<void, Function, Args...>, "The function must return void.");
     static_assert(std::is_nothrow_invocable_r_v<void, Function, Args...>, "The function must be noexcept.");
 
-    _ui->taskManager().submitWork([contextObject = contextObject(), f = std::forward<Function>(f), ...args = std::forward<Args>(args)]() mutable noexcept {
+    userInterface()->taskManager().submitWork([contextObject = contextObject(), f = std::forward<Function>(f), ...args = std::forward<Args>(args)]() mutable noexcept {
         if(OORef<const OvitoObject> target = contextObject.lock())
             std::invoke(std::move(f), std::move(args)...);
     });
@@ -112,7 +115,7 @@ inline void ObjectExecutor::execute(Function&& f, Args&&... args) &&
     static_assert(std::is_invocable_r_v<void, Function, Args...>, "The function must return void.");
     static_assert(std::is_nothrow_invocable_r_v<void, Function, Args...>, "The function must be noexcept.");
 
-    _ui->taskManager().submitWork([contextObject = std::move(_contextObject), f = std::forward<Function>(f), ...args = std::forward<Args>(args)]() mutable noexcept {
+    userInterface()->taskManager().submitWork([contextObject = std::move(_contextObject), f = std::forward<Function>(f), ...args = std::forward<Args>(args)]() mutable noexcept {
         if(OORef<const OvitoObject> target = contextObject.lock())
             std::invoke(std::move(f), std::move(args)...);
     });
