@@ -18,17 +18,23 @@ Version 3.11.0 (xx-xxx-2024)
 New data visualization option: Added the :ref:`Vectors <scene_objects.vectors>` object type to OVITO and the corresponding :py:class:`ovito.data.Vectors` Python class,
 which allow to visualize vectorial information and place arrows in the 3d scene (independently from particles)
 
+.. figure:: /images/new_features/3-11-0_render-vectors.*
+  :figwidth: 40%
+
 .. rubric:: Symmetric range option added to the :ref:`particles.modifiers.color_coding` modifier
 
-...
+.. figure:: /images/new_features/3-11-0_symmetric-colormap.*
+  :figwidth: 50%
 
 .. rubric:: Template system for :ref:`viewport layers <viewport_layers>`
 
 The user can now save pre-configured templates for viewport layers and reuse them in other scenes
 
+...IMAGE (Conny)...
+
 .. rubric:: New interactive viewport renderer: VisRTX |ovito-pro|
 
-...
+...VIDEO (Alex)...
 
 .. rubric:: Demo versions of the high-fidelity rendering backends in OVITO Basic
 
@@ -38,13 +44,22 @@ OVITO Basic now includes demo versions of the high-fidelity rendering backends :
 
 Spatial binning modifier: Added the capability to compute the dislocation density field from DXA output
 
+.. figure:: /images/modifiers/spatial_binning_example_dislocations.*
+  :figwidth: 40%
+
 .. rubric:: Identification of dislocation core atoms |ovito-pro|
 
 :ref:`particles.modifiers.dislocation_analysis` modifier: :ref:`Identification of dislocation core atoms <particles.modifiers.dislocation_analysis.mark_core_atoms>`
 
+.. figure:: /images/modifiers/dxa/dislocation_analysis_core_atoms_marked.*
+  :figwidth: 35%
+
 .. rubric:: Python code generator for complex pipeline architectures |ovito-pro|
 
 Extended the :ref:`Python code generator <python_code_generation>` to support scenes with multiple pipelines, including branched pipeline architectures and shared modifiers
+
+.. figure:: /images/new_features/3-11-0_code-generator-schematic.*
+  :figwidth: 100%
 
 .. rubric:: Improved rendering quality for semi-transparent objects and antialiased edges |ovito-pro|
 
@@ -62,6 +77,17 @@ Extended the :ref:`Python code generator <python_code_generation>` to support sc
 - Added a notification dialog that is shown on application startup when new program updates become available
 - Simulation file import: Updated mass of *Zn* in internal table of elements from 65.409 (pre 2007 value) to 65.38 (see https://www.ciaaw.org/zinc.htm) - old value is still recognized for compatibility reasons
 - Added parser support for modern Aspherix *.vtm* files that contain a "Bodies" section. Bodies information from non-convex particle simulations is read in as a :ref:`data table <scene_objects.data_table>`.
+
+  .. figure:: /images/new_features/3-11-0_bodies-before.*
+    :figwidth: 40%
+  
+    Each body is originally composed of multiple particles.
+
+  .. figure:: /images/new_features/3-11-0_bodies-after.*
+    :figwidth: 40%
+       
+    Particles coalesced into a single entity per body.
+
 - Import of existing CA files (i.e. loading of precomputed :ref:`DXA results <particles.modifiers.dislocation_analysis.fileformat>`) is now an exclusive OVITO Pro program feature
 - :ref:`particles.modifiers.slice` and :ref:`particles.modifiers.affine_transformation` modifiers: Step-wise parameter increments are now proportional to the simulation box size instead of the current parameter value to improve usability during :ref:`interactive adjustments <usage.spinner_widgets>`
 - Trailing "_" in imported particle property names are now stripped to avoid possible conflicts with the :py:ref:`underscore notation <underscore_notation>` in the Python API
@@ -80,7 +106,13 @@ Extended the :ref:`Python code generator <python_code_generation>` to support sc
 - |ovito-python| :py:class:`~ovito.modifiers.ConstructSurfaceModifier`: Option :py:attr:`~ovito.modifiers.ConstructSurfaceModifier.map_particles_to_regions` now outputs per-region particle membership lists
 - |ovito-python| The :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` method has been vectorized and can now process an array of input points using all CPU cores
 
-  [illustration]
+.. |point-in-mesh-demo| raw:: html
+
+  <video width="300" height="300" controls autoplay muted loop playsinline>
+    <source src="https://www.ovito.org/download/data/3-11-0_point-inside-mesh-demo.mp4" type="video/mp4">
+  </video>
+
+|point-in-mesh-demo|
 
 - |ovito-python| New method :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` to efficiently determine the closest particles around several spatial locations at once
 - |ovito-python| New attribute :py:attr:`ovito.pipeline.Pipeline.num_frames`, which allows querying the number of (output) trajectory frames of a pipeline
