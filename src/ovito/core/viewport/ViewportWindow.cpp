@@ -23,7 +23,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportWindow.h>
-#include <ovito/core/viewport/ViewportSuspender.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -113,13 +112,21 @@ void ViewportWindow::releaseResources()
 /******************************************************************************
 * Puts an update request event for this viewport on the event loop.
 ******************************************************************************/
-void ViewportWindow::requestUpdate()
+void ViewportWindow::requestUpdate(bool isPreliminaryUpdate)
 {
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
-    if(!_updateNeeded && viewport()) {
-        _updateNeeded = true;
+    _updateNeeded = true;
+
+    // Refresh the viewport immediately or after a short waiting period?
+    if(!isPreliminaryUpdate || QThread::currentThread()->loopLevel() == 0) {
+        _preliminaryUpdateTimer.stop();
         resumeViewportUpdates();
+    }
+    else {
+        // This reduces excessive repaints when a full scene state arrives shortly after a preliminary state.
+        if(!_preliminaryUpdateTimer.isActive())
+            _preliminaryUpdateTimer.start(20, this);
     }
 }
 
@@ -297,6 +304,14 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
             adjustProjectionForRenderPreviewFrame(dataset, _projParams, windowSize);
         frameGraph->setProjectionParams(_projParams);
 
+        // If the current scene represents only a preliminary pipeline state, we need to render the scene again
+        // as soon as all pipelines are ready.
+        if(frameGraph->isPreliminaryState()) {
+            // This restarts the evaluation of all pipelines in the scene and triggers
+            // a viewport refresh once all pipelines are ready.
+            (void)scenePreparation().future();
+        }
+
         // After the frame graph has been built, let window implementation render an image.
         return renderFrameGraph(std::move(frameGraph));
     });
@@ -337,7 +352,11 @@ void ViewportWindow::becameReadyForPresentation()
 ******************************************************************************/
 void ViewportWindow::timerEvent(QTimerEvent* event)
 {
-    if(event->timerId() == _presentTimer.timerId()) {
+    if(event->timerId() == _preliminaryUpdateTimer.timerId()) {
+        _preliminaryUpdateTimer.stop();
+        resumeViewportUpdates();
+    }
+    else if(event->timerId() == _presentTimer.timerId()) {
         _presentTimer.stop();
         if(_readyForPresentation) {
             _readyForPresentation = false;
@@ -355,7 +374,7 @@ bool ViewportWindow::referenceEvent(RefTarget* source, const ReferenceEvent& eve
 {
     if(source == viewport()) {
         if(event.type() == Viewport::ViewportWindowUpdateRequested) {
-            requestUpdate();
+            requestUpdate(false);
         }
         else if(event.type() == Viewport::ViewportWindowResumeUpdatesRequested) {
             resumeViewportUpdates();

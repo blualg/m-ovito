@@ -203,7 +203,7 @@ public Q_SLOTS:
     virtual void releaseResources();
 
     /// Schedules a refresh for this window.
-    void requestUpdate();
+    void requestUpdate(bool isPreliminaryUpdate);
 
     /// Zooms to the extents of the scene.
     void zoomToSceneExtents();
@@ -307,6 +307,9 @@ private:
 
     /// Indicates that this viewport window can now present a new image on screen.
     bool _readyForPresentation = false;
+
+    /// Used to refresh the viewport after a short waiting period.
+    QBasicTimer _preliminaryUpdateTimer;
 
     /// Used to present the viewport contents after a short waiting period.
     QBasicTimer _presentTimer;
