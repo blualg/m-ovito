@@ -13,56 +13,114 @@ Changelog
 Version 3.11.0 (xx-xxx-2024)
 ----------------------------
 
-- Major code refactoring to improve performance and maintainability, elimination of unnecessary data copies, preparatory steps for GPU acceleration of pipeline algorithms
-- Pipeline system: Modifiers now keep their computed results in memory when temporarily turned off by the user to avoid recomputation when being reenabled again
-- Pipeline system & GUI: Further decoupled the UI from the processing backend, in particular to speed up the processing of long trajectories, which caused an unnecessary number of display updates in the past
-- New data visualization option: Added the :ref:`Vectors <scene_objects.vectors>` object type to OVITO and the corresponding :py:class:`ovito.data.Vectors` Python class,
-  which allow to visualize vectorial information and place arrows in the 3d scene (independently from particles)
-- :ref:`particles.modifiers.generate_trajectory_lines` modifier: Trajectory processing begins automatically in the background - it's no longer necessary to start it manually
-- :ref:`particles.modifiers.affine_transformation` modifier: Rotational transformations now act on the Burgers vectors of :ref:`dislocation lines <scene_objects.dislocations>` too
+.. rubric:: Visualization of vector information
+
+New data visualization option: Added the :ref:`Vectors <scene_objects.vectors>` object type to OVITO and the corresponding :py:class:`ovito.data.Vectors` Python class,
+which allow to visualize vectorial information and place arrows in the 3d scene (independently from particles)
+
+.. rubric:: Symmetric range option added to the :ref:`particles.modifiers.color_coding` modifier
+
+...
+
+.. rubric:: Template system for :ref:`viewport layers <viewport_layers>`
+
+The user can now save pre-configured templates for viewport layers and reuse them in other scenes
+
+.. rubric:: New interactive viewport renderer: VisRTX |ovito-pro|
+
+...
+
+.. rubric:: Demo versions of the high-fidelity rendering backends in OVITO Basic
+
+OVITO Basic now includes demo versions of the high-fidelity rendering backends :ref:`OSPRay <rendering.ospray_renderer>`, :ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`.
+
+.. rubric:: Calculation of the dislocation density field from DXA output |ovito-pro|
+
+Spatial binning modifier: Added the capability to compute the dislocation density field from DXA output
+
+.. rubric:: Identification of dislocation core atoms |ovito-pro|
+
+:ref:`particles.modifiers.dislocation_analysis` modifier: :ref:`Identification of dislocation core atoms <particles.modifiers.dislocation_analysis.mark_core_atoms>`
+
+.. rubric:: Python code generator for complex pipeline architectures |ovito-pro|
+
+Extended the :ref:`Python code generator <python_code_generation>` to support scenes with multiple pipelines, including branched pipeline architectures and shared modifiers
+
+.. rubric:: Improved rendering quality for semi-transparent objects and antialiased edges |ovito-pro|
+
+:ref:`rendering.ospray_renderer`: Improved rendering quality for semi-transparent objects and fixed dark artifacts along object edges on light backgrounds
+
+.. rubric:: Further improvements in this program release:
+
+- Major code refactoring to improve performance and maintainability; elimination of unnecessary data copies in the pipeline system
+- Modifiers now keep their computed results in memory when being temporarily turned off by the user to avoid recomputation when reenabled again
+- Better decoupling of UI and pipeline system, in particular to speed up the processing of long trajectories, which caused an unnecessary number of display updates in the past
+- :ref:`particles.modifiers.generate_trajectory_lines` modifier: Trajectory processing now happens automatically in the background - it is no longer necessary to start the process manually
+- :ref:`particles.modifiers.affine_transformation` modifier: Rotational transformations now act on the Burgers vectors of :ref:`dislocation lines <scene_objects.dislocations>`
+- :ref:`particles.modifiers.dislocation_analysis` modifier: Ensure cross-platform reproducible output
 - :ref:`particles.modifiers.unwrap_trajectories` modifier: Performance optimizations
-- :ref:`particles.modifiers.color_coding` modifier: New symmetric range option
-- :ref:`particles.modifiers.dislocation_analysis` modifier: Ensure cross-platform reproducible results
-- User can now save pre-configured templates for viewport layers and reuse them in other scenes
+- Added a notification dialog that is shown on application startup when new program updates become available
 - Simulation file import: Updated mass of *Zn* in internal table of elements from 65.409 (pre 2007 value) to 65.38 (see https://www.ciaaw.org/zinc.htm) - old value is still recognized for compatibility reasons
-- Added support for reading modern Aspherix *.vtm* files that have a "Bodies" section. Bodies information from non-convex particle simulations is read in as a :ref:`data table <scene_objects.data_table>`.
-- OVITO Basic now includes demo versions of the high-fidelity rendering backends :ref:`OSPRay <rendering.ospray_renderer>`, :ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`
-- New interactive viewport rendering backend: VisRTX
-- Fixed regression due to update of the Qt framework: Missing colors in plot legends
-- Fixed: Axis scales and labels are invisible (white on white) in exported data plots if dark mode UI is active
-- Fixed: Mouse wrapping in Spinner Widget for vertical multi screen setups.
-- Fixed: Spinner widget mouse warp not working on macOS (requires accessibility access).
-- Trailing "_" in particle property names will now be stripped during file import to avoid possible conflicts with the :py:ref:`underscore notation <underscore_notation>` used in the Python API.
-- CA file import (loading precomputed DXA results) is now an exclusive OVITO Pro feature
-- :ref:`particles.modifiers.slice` and :ref:`particles.modifiers.affine_transformation` modifiers: Value increments used for step-wise parameter adjustment are now proportional to the simulation cell size instead of the current parameter value
-- Updated third-party components: OpenSSL, Qt, PySide6, Python, Qwt
-- Add update notification for future versions
-- |ovito-python| :py:class:`~ovito.modifiers.ConstructSurfaceModifier`: Option :py:attr:`~ovito.modifiers.ConstructSurfaceModifier.map_particles_to_regions` now outputs per-region particle membership lists
-- |ovito-python| :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` can now process an array of input points using all CPU cores.
-- |ovito-python| New method :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` to efficiently determine the closest particles around several spatial locations.
-- |ovito-python| New class attribute :py:attr:`ovito.pipeline.Pipeline.frames`
-- |ovito-python| New class attributes :py:attr:`ovito.pipeline.FileSource.playback_ratio`, :py:attr:`ovito.pipeline.FileSource.playback_start_time`, and :py:attr:`ovito.pipeline.FileSource.static_frame`
-- |ovito-python| New advanced methods :py:meth:`ovito.pipeline.Pipeline.make_vis_element_independent` and :py:meth:`ovito.pipeline.Pipeline.get_replacement_vis_element`
-- |ovito-python| Added the :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_pos`, :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_dir`, and :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_up` fields to the :py:class:`ViewportOverlayInterface.Canvas <ovito.vis.ViewportOverlayInterface.Canvas>` class
-- |ovito-python| New parameter trait types :py:class:`ovito.traits.DataObjectReference` and :py:class:`ovito.traits.PropertyReference`
-- |ovito-python| New class :py:class:`ovito.data.DataObject.Ref` and methods :py:meth:`ovito.data.DataCollection.get` and :py:meth:`ovito.data.PropertyContainer.get`
-- |ovito-python| :py:class:`~ovito.vis.ColorLegendOverlay`: Added :py:attr:`~ovito.vis.ColorLegendOverlay.pipeline` field
-- |ovito-python| :py:class:`~ovito.modifiers.GenerateTrajectoryLinesModifier`: Deprecated :py:meth:`!generate` method
-- |ovito-python| Added the :py:attr:`HistogramModifier.select_elements <ovito.modifiers.HistogramModifier.select_elements>` option
-- |ovito-python| Initialize global Qt application object on demand only to avoid conflicts with other Python packages that also use Qt framework
-- |ovito-python| Added support for Python's :py:mod:`!copy` module
-- |ovito-python| Added support for NumPy 2.x
-- |ovito-python| Full compatibility with Python 3.12
-- |ovito-pro| Extended the :ref:`Python code generator <python_code_generation>` to support scenes with multiple pipelines, including branched pipeline architectures and shared modifiers
-- |ovito-pro| :ref:`modifiers.render_lammps_regions` modifier: Fixed unexpected error occuring if the modifier is inserted more than once into the same pipeline
+- Added parser support for modern Aspherix *.vtm* files that contain a "Bodies" section. Bodies information from non-convex particle simulations is read in as a :ref:`data table <scene_objects.data_table>`.
+- Import of existing CA files (i.e. loading of precomputed :ref:`DXA results <particles.modifiers.dislocation_analysis.fileformat>`) is now an exclusive OVITO Pro program feature
+- :ref:`particles.modifiers.slice` and :ref:`particles.modifiers.affine_transformation` modifiers: Step-wise parameter increments are now proportional to the simulation box size instead of the current parameter value to improve usability during :ref:`interactive adjustments <usage.spinner_widgets>`
+- Trailing "_" in imported particle property names are now stripped to avoid possible conflicts with the :py:ref:`underscore notation <underscore_notation>` in the Python API
+- Updated third-party components to latest versions: Python, OpenSSL, Qt, PySide6, Qwt
 - |ovito-pro| :ref:`particles.modifiers.time_averaging` modifier: Added time-averaging of the simulation cell shape and new option to overwrite original values with average
-- |ovito-pro| :ref:`particles.modifiers.dislocation_analysis` modifier: :ref:`Identification of dislocation core atoms <particles.modifiers.dislocation_analysis.mark_core_atoms>`
 - |ovito-pro| :ref:`rendering.ospray_renderer`: Added support for pseudo-color mapping
-- |ovito-pro| :ref:`rendering.ospray_renderer`: Improved rendering quality for semi-transparent objects and fixed dark artifacts along object edges on light backgrounds
 - |ovito-pro| :ref:`rendering.visrtx_renderer`: Improved rendering performance for scenes with large numbers of cubic, ellipsoidal, or superquadric particles
 - |ovito-pro| Environment variable ``OVITO_SAFE_MODE=1`` effectively blocks execution of Python scripts embedded in .ovito session state files from untrusted sources
-- |ovito-pro| Fix: :ref:`particles.modifiers.time_averaging` modifier uses wrong divisor in average calculation if trajectory length is not an integer multiple of the sampling frequency
 - |ovito-pro| Updated the template in the :ref:`particles.modifiers.python_script` modifier to default to the :ref:`writing_custom_modifiers.advanced_interface`.
+
+.. rubric:: Python API additions and changes:
+
+- |ovito-python| Added support for NumPy 2.x
+- |ovito-python| Full compatibility with Python 3.12
+- |ovito-python| The OVITO module now initializes the global Qt application object only on demand to avoid conflicts with other Python packages that also use `PySide6 <https://doc.qt.io/qtforpython-6/>`
+- |ovito-python| :py:class:`~ovito.modifiers.ConstructSurfaceModifier`: Option :py:attr:`~ovito.modifiers.ConstructSurfaceModifier.map_particles_to_regions` now outputs per-region particle membership lists
+- |ovito-python| The :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` method has been vectorized and can now process an array of input points using all CPU cores
+
+  [illustration]
+
+- |ovito-python| New method :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` to efficiently determine the closest particles around several spatial locations at once
+- |ovito-python| New attribute :py:attr:`ovito.pipeline.Pipeline.num_frames`, which allows querying the number of (output) trajectory frames of a pipeline
+- |ovito-python| New attribute :py:attr:`ovito.pipeline.Pipeline.frames`, which allows iterating over the output data collections computed by a pipeline for all trajectory frames
+- |ovito-python| New attributes for file source objects:
+
+  - :py:attr:`FileSource.playback_ratio <ovito.pipeline.FileSource.playback_ratio>`
+  - :py:attr:`FileSource.playback_start_time <ovito.pipeline.FileSource.playback_start_time>`
+  - :py:attr:`FileSource.static_frame <ovito.pipeline.FileSource.static_frame>`
+
+- |ovito-python| New advanced methods:
+
+  - :py:meth:`Pipeline.make_vis_element_independent <ovito.pipeline.Pipeline.make_vis_element_independent>`
+  - :py:meth:`Pipeline.get_replacement_vis_element <ovito.pipeline.Pipeline.get_replacement_vis_element>`
+
+- |ovito-python| New attributes in class :py:class:`ViewportOverlayInterface.Canvas <ovito.vis.ViewportOverlayInterface.Canvas>`:
+
+  - :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_pos`
+  - :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_dir`
+  - :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_up`
+
+- |ovito-python| New parameter trait types:
+
+  - :py:class:`ovito.traits.DataObjectReference`
+  - :py:class:`ovito.traits.PropertyReference`
+
+- |ovito-python| New class :py:class:`ovito.data.DataObject.Ref` and methods :py:meth:`ovito.data.DataCollection.get` and :py:meth:`ovito.data.PropertyContainer.get`
+- |ovito-python| :py:class:`~ovito.vis.ColorLegendOverlay`: Added :py:attr:`~ovito.vis.ColorLegendOverlay.pipeline` field
+- |ovito-python| Added the :py:attr:`HistogramModifier.select_elements <ovito.modifiers.HistogramModifier.select_elements>` option
+- |ovito-python| Added support for Python's `copy <https://docs.python.org/3/library/copy.html>`__ module, which allows copying OVITO data objects
+- |ovito-python| Deprecated the :py:meth:`!GenerateTrajectoryLinesModifier.generate` method
+
+.. rubric:: Bug fixes:
+
+- :ref:`Data table plots <data_inspector.data_tables>`: Axis scales and labels are invisible (white on white) in exported plots if dark UI theme is active
+- :ref:`Data table plots <data_inspector.data_tables>`: Regression due to updated Qt framework: missing colors in plot legends
+- Mouse cursor wrapping in :ref:`spinner widgets <usage.spinner_widgets>` not working for vertical multi-screen setups
+- Mouse cursor wrapping requires accessibility access on macOS
+- |ovito-pro| :ref:`particles.modifiers.time_averaging` modifier uses wrong divisor in average calculation if trajectory length is not an integer multiple of the sampling frequency
+- |ovito-pro| :ref:`modifiers.render_lammps_regions` modifier: unexpected error if the modifier is inserted more than once into the same pipeline
 
 .. sidebar::
 
