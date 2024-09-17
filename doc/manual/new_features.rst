@@ -57,6 +57,7 @@ Version 3.11.0 (xx-xxx-2024)
 - |ovito-pro| :ref:`modifiers.render_lammps_regions` modifier: Fixed unexpected error occuring if the modifier is inserted more than once into the same pipeline
 - |ovito-pro| :ref:`particles.modifiers.time_averaging` modifier: Added time-averaging of the simulation cell shape and new option to overwrite original values with average
 - |ovito-pro| :ref:`particles.modifiers.dislocation_analysis` modifier: :ref:`Identification of dislocation core atoms <particles.modifiers.dislocation_analysis.mark_core_atoms>`
+- |ovito-pro| :ref:`particles.modifiers.bin_and_reduce` modifier can now be applied to dislocation networks to calculate a spatially resolved dislocation density
 - |ovito-pro| :ref:`rendering.ospray_renderer`: Added support for pseudo-color mapping
 - |ovito-pro| :ref:`rendering.ospray_renderer`: Improved rendering quality for semi-transparent objects and fixed dark artifacts along object edges on light backgrounds
 - |ovito-pro| :ref:`rendering.visrtx_renderer`: Improved rendering performance for scenes with large numbers of cubic, ellipsoidal, or superquadric particles
