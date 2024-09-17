@@ -33,6 +33,7 @@ the :ref:`particles.modifiers.dislocation_analysis` modifier.
   The modifier can calculate the dislocation density in each grid cell. The local dislocation density is expressed in
   units of 1/length\ :sup:`2`. When projecting to a 1- or 2-dimensional binning grid,
   the dislocation density is still calculated from the 3-dimensional cell volume and dislocation lines.
+  Note, this mode is restricted to orthogonal and axis-aligned simulation cells.
 
   The local dislocation density in each grid cell is calculated using the method described in section 2 of this paper:
 
