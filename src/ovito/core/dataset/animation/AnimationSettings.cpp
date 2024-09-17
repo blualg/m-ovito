@@ -146,7 +146,7 @@ void AnimationSettings::jumpToNextFrame()
 ******************************************************************************/
 RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr AnimationSettings::OOMetaClass::overrideFieldDeserialization(const SerializedClassInfo::PropertyFieldInfo& field) const
 {
-    // For backward compaibility with OVITO 3.7:
+    // For backward compatibility with OVITO 3.7:
 
     // The AnimationSettings classes used to store the animation interval in a single property field.
     if(field.definingClass == &AnimationSettings::OOClass() && field.identifier == "animationInterval") {
