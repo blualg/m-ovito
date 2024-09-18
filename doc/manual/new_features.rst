@@ -80,12 +80,12 @@ Extended the :ref:`Python code generator <python_code_generation>` to support sc
 
   .. figure:: /images/new_features/3-11-0_bodies-before.*
     :figwidth: 40%
-  
+
     Each body is originally composed of multiple particles.
 
   .. figure:: /images/new_features/3-11-0_bodies-after.*
     :figwidth: 40%
-       
+
     Particles coalesced into a single entity per body.
 
 - Import of existing CA files (i.e. loading of precomputed :ref:`DXA results <particles.modifiers.dislocation_analysis.fileformat>`) is now an exclusive OVITO Pro program feature
@@ -115,6 +115,7 @@ Extended the :ref:`Python code generator <python_code_generation>` to support sc
 |point-in-mesh-demo|
 
 - |ovito-python| New method :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` to efficiently determine the closest particles around several spatial locations at once
+- |ovito-python| New method :py:meth:`SimulationCell.wrap_point() <ovito.data.SimulationCell.wrap_point>`
 - |ovito-python| New attribute :py:attr:`ovito.pipeline.Pipeline.num_frames`, which allows querying the number of (output) trajectory frames of a pipeline
 - |ovito-python| New attribute :py:attr:`ovito.pipeline.Pipeline.frames`, which allows iterating over the output data collections computed by a pipeline for all trajectory frames
 - |ovito-python| New attributes for file source objects:
@@ -125,8 +126,8 @@ Extended the :ref:`Python code generator <python_code_generation>` to support sc
 
 - |ovito-python| New advanced methods:
 
-  - :py:meth:`Pipeline.make_vis_element_independent <ovito.pipeline.Pipeline.make_vis_element_independent>`
-  - :py:meth:`Pipeline.get_replacement_vis_element <ovito.pipeline.Pipeline.get_replacement_vis_element>`
+  - :py:meth:`Pipeline.make_vis_element_independent() <ovito.pipeline.Pipeline.make_vis_element_independent>`
+  - :py:meth:`Pipeline.get_replacement_vis_element() <ovito.pipeline.Pipeline.get_replacement_vis_element>`
 
 - |ovito-python| New attributes in class :py:class:`ViewportOverlayInterface.Canvas <ovito.vis.ViewportOverlayInterface.Canvas>`:
 
