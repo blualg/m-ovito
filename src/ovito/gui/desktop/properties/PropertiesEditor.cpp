@@ -88,6 +88,18 @@ void PropertiesEditor::initialize(PropertiesPanel* container, const RolloutInser
 }
 
 /******************************************************************************
+* This method is called when the reference counter of this OvitoObject
+* has reached zero.
+******************************************************************************/
+void PropertiesEditor::aboutToBeDeleted()
+{
+    // Detach from edited object. This is necessary to send the editingStopped signal to the edited object.
+    setEditObject(nullptr);
+
+    RefMaker::aboutToBeDeleted();
+}
+
+/******************************************************************************
 * Sets the object being edited in this editor.
 ******************************************************************************/
 void PropertiesEditor::setEditObject(RefTarget* newObject)
