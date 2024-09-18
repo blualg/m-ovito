@@ -335,12 +335,12 @@ private:
     /// Indicates that a delayed progress update is underway.
     bool _progressUpdateScheduled = false;
 
-    /// Stores the current screen ptr the window is on
+    /// The current screen the window is on (to detect screen changes).
     QScreen* _currentScreen = nullptr;
 };
 
 /**
- * \brief A RAII helper class that suspends the atomatic generation of animation keys while it exists.
+ * \brief A RAII helper class that suspends the automatic generation of animation keys while it exists.
  *
  * You typically create an instance of this class on the stack to temporarily suspend the
  * automatic generation of animation keys in an exception-safe way.
