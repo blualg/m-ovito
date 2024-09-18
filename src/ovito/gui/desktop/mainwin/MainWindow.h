@@ -218,6 +218,9 @@ protected:
     /// Called by the system when the drag is dropped on this window.
     virtual void dropEvent(QDropEvent* event) override;
 
+    /// Called by the system when the window is moved
+    virtual void moveEvent(QMoveEvent* event) override;
+
     /// Registers a task whose progress is to be displayed in the GUI.
     ProgressTaskInfo* registerProgressTask(Task& task);
 
@@ -331,6 +334,9 @@ private:
 
     /// Indicates that a delayed progress update is underway.
     bool _progressUpdateScheduled = false;
+
+    /// Stores the current screen ptr the window is on
+    QScreen* _currentScreen = nullptr;
 };
 
 /**
