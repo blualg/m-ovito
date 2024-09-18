@@ -115,6 +115,7 @@ Extended the :ref:`Python code generator <python_code_generation>` to support sc
 |point-in-mesh-demo|
 
 - |ovito-python| New method :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` to efficiently determine the closest particles around several spatial locations at once
+- |ovito-python| New method :py:meth:`SimulationCell.wrap_point() <ovito.data.SimulationCell.wrap_point>` to map one or more points into the primary simulation cell
 - |ovito-python| New attribute :py:attr:`ovito.pipeline.Pipeline.num_frames`, which allows querying the number of (output) trajectory frames of a pipeline
 - |ovito-python| New attribute :py:attr:`ovito.pipeline.Pipeline.frames`, which allows iterating over the output data collections computed by a pipeline for all trajectory frames
 - |ovito-python| New attributes for file source objects:
