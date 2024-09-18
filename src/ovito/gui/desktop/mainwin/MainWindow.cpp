@@ -252,6 +252,11 @@ MainWindow::MainWindow()
     connect(&datasetContainer(), &DataSetContainer::filePathChanged, this, [this](const QString& filePath) { setWindowFilePath(filePath); });
     connect(undoStack(), &UndoStack::cleanChanged, this, [this](bool isClean) { setWindowModified(!isClean); });
 
+    //
+    // connect(windowHandle(), &QWindow::screenChanged, this, [this](QScreen* screen) {
+    //     if(screen) qDebug() << "screen changed:" << screen->name();
+    // });
+
     // Accept files via drag & drop.
     setAcceptDrops(true);
 }
@@ -509,6 +514,23 @@ void MainWindow::closeEvent(QCloseEvent* event)
         event->accept();
     else
         event->ignore();
+}
+
+/******************************************************************************
+ * Called by the system when the window is moved. Redraws the viewports when the screen is changed
+ * Avoids some small visual glitches
+ ******************************************************************************/
+void MainWindow::moveEvent(QMoveEvent* event)
+{
+    // Get the window's center point
+    QScreen* newScreen = screen();
+
+    // If the screen changed - redraw the viewports
+    if(newScreen && newScreen != _currentScreen) {
+        // Update the current screen
+        _currentScreen = newScreen;
+        updateViewports();
+    }
 }
 
 /******************************************************************************
