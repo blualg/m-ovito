@@ -252,11 +252,6 @@ MainWindow::MainWindow()
     connect(&datasetContainer(), &DataSetContainer::filePathChanged, this, [this](const QString& filePath) { setWindowFilePath(filePath); });
     connect(undoStack(), &UndoStack::cleanChanged, this, [this](bool isClean) { setWindowModified(!isClean); });
 
-    //
-    // connect(windowHandle(), &QWindow::screenChanged, this, [this](QScreen* screen) {
-    //     if(screen) qDebug() << "screen changed:" << screen->name();
-    // });
-
     // Accept files via drag & drop.
     setAcceptDrops(true);
 }
