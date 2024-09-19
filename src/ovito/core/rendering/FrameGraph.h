@@ -78,6 +78,7 @@ public:
 			NoFlags             = 0,
 			ExcludeFromVisual   = (1<<0), // Skip the primitive in the visual rendering pass
 			ExcludeFromPicking  = (1<<1), // Skip the primitive in the object picking rendering pass
+			ExcludeFromLighting = (1<<2), // Exclude this primitive from global illumination and shadows
 		};
 		Q_DECLARE_FLAGS(Flags, Flag);
 
@@ -109,6 +110,12 @@ public:
 
 		/// Determines whether this command should be skipped in visual render mode.
 		bool skipInVisualPass() const { return _flags.testFlag(ExcludeFromVisual); }
+
+		/// Determines whether this the primitive drawn by this command should be excluded from global illumination and shadow calculations.
+		bool excludeFromLighting() const { return _flags.testFlag(ExcludeFromLighting); }
+
+		/// Controls whether this the primitive drawn by this command should be excluded from global illumination and shadow calculations.
+		void setExcludeFromLighting(bool exclude) { _flags.setFlag(ExcludeFromLighting, exclude); }
 
 	private:
 
@@ -151,27 +158,32 @@ public:
 		const Box3& boundingBox() const { return _boundingBox; }
 
 		/// Returns the sequence of rendering commands in this group.
-		const std::vector<RenderingCommand>& commands() const { return _commands; }
+		const auto& commands() const { return _commands; }
 
 		/// Returns the mutable sequence of rendering commands in this group.
-		std::vector<RenderingCommand>& commands() { return _commands; }
+		auto& commands() { return _commands; }
 
 		/// Appends a rendering command to the group.
 		template<typename... Args>
-		void addCommand(Args&&... args) {
-			_commands.emplace_back(std::forward<Args>(args)...);
+		RenderingCommand& addCommand(Args&&... args) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
+			return _commands.emplace_back(std::forward<Args>(args)...);
+#else
+			_commands.push_back(RenderingCommand{std::forward<Args>(args)...});
+			return _commands.back();
+#endif
 		}
 
 		/// Add a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
 		/// Automatically computes the bounding box of the primitive and the model-to-world transformation.
-		void addPrimitive(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box, OORef<const Pipeline> pickablePipeline, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0);
+		RenderingCommand& addPrimitive(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box, OORef<const Pipeline> pickablePipeline, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0);
 
 		/// Add a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
 		/// Automatically computes the bounding box of the primitive and the model-to-world transformation.
-		void addPrimitiveNonpickable(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box);
+		RenderingCommand& addPrimitiveNonpickable(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box);
 
 		/// Adds a primitive to the frame graph containing pre-projected coordinates.
-		void addPrimitivePreprojected(std::unique_ptr<RenderingPrimitive> primitive);
+		RenderingCommand& addPrimitivePreprojected(std::unique_ptr<RenderingPrimitive> primitive);
 
 		/// Renders a 2d polyline or polygon into an interactive viewport.
 		void render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed, const QSize& logicalViewportSize);
@@ -179,7 +191,7 @@ public:
 	private:
 
 		/// The rendering commands in this group.
-		std::vector<RenderingCommand> _commands;
+		QVarLengthArray<RenderingCommand, 2> _commands;
 
 		/// The world-space bounding box of the command group.
 		Box3 _boundingBox;
@@ -270,11 +282,11 @@ public:
 
 	/// Add a 3d rendering primitive to the current layer of the frame graph.
 	/// Automatically computes the bounding box of the primitive and the model-to-world transformation.
-	void addPrimitive(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, OORef<const Pipeline> pipeline, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0);
+	RenderingCommand& addPrimitive(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, OORef<const Pipeline> pipeline, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0);
 
 	/// Add a 3d rendering primitive to the current layer of the frame graph.
 	/// Automatically computes the bounding box of the primitive and the model-to-world transformation.
-	void addPrimitiveNonpickable(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, const Pipeline* pipeline);
+	RenderingCommand& addPrimitiveNonpickable(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, const Pipeline* pipeline);
 
 	/// Replaces all text primitives with (cached) image primitives.
 	void renderTextAsImagePrimitives();

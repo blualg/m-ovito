@@ -508,7 +508,8 @@ void PickOrbitCenterMode::renderOverlay(Viewport* vp, ViewportWindow* vpWin, Fra
     frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitiveNonpickable(
         std::make_unique<CylinderPrimitive>(orbitCenterMarker),
         AffineTransformation::translation(center - Point3::Origin()) * AffineTransformation::scaling(symbolSize),
-        Box3(Point3(-1), Point3(1)));
+        Box3(Point3(-1), Point3(1)))
+            .setExcludeFromLighting(true);
 }
 
 }   // End of namespace

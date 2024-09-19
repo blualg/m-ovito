@@ -18,9 +18,10 @@ A (nearly complete) list of the program features available only in *OVITO Pro* a
 - :ref:`Multiple pipelines <usage.import.multiple_datasets>` in the same visualization scene (comparative analysis)
 - Instant :ref:`Python code generation <python_code_generation>` to greatly simplify script development for the OVITO Python package
 - :ref:`User-defined modifier functions <particles.modifiers.python_script>` including GUI controls for user-defined parameters
+- :ref:`User-defined viewport layers <writing_custom_viewport_overlays>`
 - Option to develop :ref:`file parsers for custom file formats <writing_custom_file_readers>` in Python
 - LAMMPS integration via :ref:`data_source.lammps_script` pipeline source
-- :ref:`data_source.python_script` pipeline source to generate new particle structures via scripts
+- :ref:`data_source.python_script` pipeline source to generate particle models via scripts
 - :ref:`OpenSSH client integration <usage.import.remote.openssh_connection_method>` for remote file access (support for smartcards and 2FA authentication methods)
 - High-quality rendering engines:
 
@@ -28,6 +29,7 @@ A (nearly complete) list of the program features available only in *OVITO Pro* a
   - :ref:`OSPRay <rendering.ospray_renderer>`
   - :ref:`VisRTX <rendering.visrtx_renderer>`
 
+- Real-time rendering of interactive viewports with :ref:`VisRTX <rendering.visrtx_renderer>`
 - :ref:`Remote rendering function <usage.remote_rendering>`
 - :ref:`Multi-viewport layout rendering <viewport_layouts.rendering>`
 - Additional modifier functions:
@@ -41,10 +43,11 @@ A (nearly complete) list of the program features available only in *OVITO Pro* a
   - :ref:`modifiers.render_lammps_regions`
   - :ref:`modifiers.calculate_local_entropy`
   - :ref:`particles.modifiers.color_by_type`
+  - :ref:`Identification of dislocation core atoms <particles.modifiers.dislocation_analysis.mark_core_atoms>`
+  - Miller index based :ref:`particles.modifiers.slice` modifier
 
 - :ref:`file_formats.input.ase_database` and :ref:`file_formats.input.ase_trajectory`
 - :ref:`file_formats.output.gltf`
-- Use of Miller indices in the :ref:`particles.modifiers.slice` modifier
 
 Please visit `www.ovito.org <https://www.ovito.org/#proFeatures>`__ for further details on OVITO Pro, our support services, and pricing.
 By licensing OVITO Pro you support the development and maintenance of both editions our desktop software and the :ref:`OVITO Python module <scripting_manual>`.
