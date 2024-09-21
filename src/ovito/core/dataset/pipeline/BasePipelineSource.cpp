@@ -72,7 +72,7 @@ void BasePipelineSource::postprocessDataCollection(Future<PipelineFlowState>& st
                     // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
                     AnimationTime currentTime = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
                     if(state.stateValidity().contains(currentTime)) {
-                        setDataCollectionFrame(std::clamp(0, animationTimeToSourceFrame(currentTime), numberOfSourceFrames() - 1));
+                        setDataCollectionFrame(std::clamp(animationTimeToSourceFrame(currentTime), 0, numberOfSourceFrames() - 1));
                         setDataCollection(state.data());
                     }
                 }
@@ -131,7 +131,7 @@ PipelineEvaluationResult BasePipelineSource::postprocessCachedState(const Pipeli
         // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
         AnimationTime currentTime = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
         if(state.stateValidity().contains(currentTime)) {
-            setDataCollectionFrame(std::clamp(0, animationTimeToSourceFrame(currentTime), numberOfSourceFrames() - 1));
+            setDataCollectionFrame(std::clamp(animationTimeToSourceFrame(currentTime), 0, numberOfSourceFrames() - 1));
             setDataCollection(state.data());
         }
     }
