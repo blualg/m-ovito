@@ -203,7 +203,7 @@ public Q_SLOTS:
     virtual void releaseResources();
 
     /// Schedules a refresh for this window.
-    void requestUpdate(bool isPreliminaryUpdate);
+    virtual void requestUpdate(bool isPreliminaryUpdate);
 
     /// Zooms to the extents of the scene.
     void zoomToSceneExtents();

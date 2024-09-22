@@ -69,10 +69,10 @@ void ViewportWindow::setViewport(Viewport* vp, UserInterface& userInterface)
             _scenePreparation = OORef<ScenePreparation>::create(userInterface, vp->scene());
             // Automatically rerender window whenever the scene is changed.
             connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &ViewportWindow::requestUpdate);
-            _scenePreparation->setAutoRestart(isVisible());
+            scenePreparation().setAutoRestart(isVisible());
         }
         else {
-            _scenePreparation->setScene(vp->scene());
+            scenePreparation().setScene(vp->scene());
         }
     }
     else {
@@ -110,7 +110,7 @@ void ViewportWindow::releaseResources()
 }
 
 /******************************************************************************
-* Puts an update request event for this viewport on the event loop.
+* Requests a refresh of this viewport window.
 ******************************************************************************/
 void ViewportWindow::requestUpdate(bool isPreliminaryUpdate)
 {
