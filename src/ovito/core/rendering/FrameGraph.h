@@ -166,12 +166,7 @@ public:
 		/// Appends a rendering command to the group.
 		template<typename... Args>
 		RenderingCommand& addCommand(Args&&... args) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
 			return _commands.emplace_back(std::forward<Args>(args)...);
-#else
-			_commands.push_back(RenderingCommand{std::forward<Args>(args)...});
-			return _commands.back();
-#endif
 		}
 
 		/// Add a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
@@ -191,7 +186,11 @@ public:
 	private:
 
 		/// The rendering commands in this group.
+#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
 		QVarLengthArray<RenderingCommand, 2> _commands;
+#else
+		std::vector<RenderingCommand> _commands;
+#endif
 
 		/// The world-space bounding box of the command group.
 		Box3 _boundingBox;
