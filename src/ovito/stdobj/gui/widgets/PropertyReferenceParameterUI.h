@@ -122,10 +122,10 @@ private:
     /// Returns the value currently set for the property field.
     PropertyReference getPropertyReference();
 
-    /// Populates the combox box with items.
+    /// Populates the combo box with items.
     void addItemsToComboBox(const PipelineFlowState& state);
 
-    /// Populates the combox box with items.
+    /// Populates the combo box with items.
     void addItemsToComboBox(const PropertyContainer* container);
 
     /// Returns the type of property container from which the user can choose a property.
