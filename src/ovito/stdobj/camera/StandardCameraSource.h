@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/data/camera/AbstractCameraSource.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
+#include "StandardCameraObject.h"
 
 namespace Ovito {
 
@@ -77,6 +78,9 @@ protected:
     /// Asks the object for the result of the data pipeline.
     virtual SharedFuture<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override;
 
+    /// This method is called once for this object after it has been completely loaded from a stream.
+    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
 private:
 
     /// Determines if this camera uses a perspective projection.
@@ -87,6 +91,9 @@ private:
 
     /// This controller stores the field of view of the camera if it uses an orthogonal projection.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, zoomController, setZoomController);
+
+    /// The vis element for the camera.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<CameraVis>, cameraVis, setCameraVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether this camera is a target camera directed at a target object.
     DECLARE_VIRTUAL_PROPERTY_FIELD(bool, isTargetCamera);

@@ -128,7 +128,7 @@ private:
     QStringList _parameterNames;
 
     /// The brushes used to paint animation keys.
-    std::array<QBrush,7> _keyBrushes;
+    std::array<QBrush, 7> _keyBrushes;
 
     /// The pen used to paint animation keys.
     QPen _keyPen;

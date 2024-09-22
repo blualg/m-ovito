@@ -42,6 +42,7 @@ OVITO_CLASSINFO(StandardCameraSource, "DisplayName", "Camera");
 DEFINE_PROPERTY_FIELD(StandardCameraSource, isPerspective);
 DEFINE_REFERENCE_FIELD(StandardCameraSource, fovController);
 DEFINE_REFERENCE_FIELD(StandardCameraSource, zoomController);
+DEFINE_REFERENCE_FIELD(StandardCameraSource, cameraVis);
 DEFINE_VIRTUAL_PROPERTY_FIELD(StandardCameraSource, isTargetCamera, setIsTargetCamera);
 SET_PROPERTY_FIELD_LABEL(StandardCameraSource, isPerspective, "Perspective projection");
 SET_PROPERTY_FIELD_LABEL(StandardCameraSource, fovController, "FOV angle");
@@ -60,10 +61,12 @@ void StandardCameraSource::initializeObject(ObjectInitializationFlags flags)
 
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         setFovController(ControllerManager::createFloatController());
-        fovController()->setFloatValue(AnimationTime(0), FLOATTYPE_PI/4);
+        fovController()->setFloatValue(AnimationTime(0), FLOATTYPE_PI / 4);
 
         setZoomController(ControllerManager::createFloatController());
         zoomController()->setFloatValue(AnimationTime(0), 200);
+
+        setCameraVis(OORef<CameraVis>::create(flags));
 
         // Adopt the view parameters from the currently active Viewport.
         if(ExecutionContext::current().isInteractive()) {
@@ -79,13 +82,27 @@ void StandardCameraSource::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
+* This method is called once for this object after it has been completely
+* loaded from a stream.
+******************************************************************************/
+void StandardCameraSource::loadFromStreamComplete(ObjectLoadStream& stream)
+{
+    AbstractCameraSource::loadFromStreamComplete(stream);
+
+    // For backward compatibility with OVITO 3.10.6:
+    if(!cameraVis())
+        setCameraVis(OORef<CameraVis>::create());
+}
+
+/******************************************************************************
 * Lets the source generate a camera object for the given animation time.
 ******************************************************************************/
 DataOORef<const AbstractCameraObject> StandardCameraSource::cameraObject(AnimationTime time) const
 {
     // Set up the camera data object.
-    DataOORef<StandardCameraObject> camera = DataOORef<StandardCameraObject>::create();
+    DataOORef<StandardCameraObject> camera = DataOORef<StandardCameraObject>::create(ObjectInitializationFlag::DontCreateVisElement);
     camera->setCreatedByNode(this);
+    camera->setVisElement(cameraVis());
     camera->setIsPerspective(isPerspective());
     TimeInterval stateValidity = TimeInterval::infinite();
     if(fovController())
@@ -116,8 +133,9 @@ SharedFuture<PipelineFlowState> StandardCameraSource::evaluateInternal(const Pip
     DataOORef<DataCollection> data = DataOORef<DataCollection>::create();
 
     // Set up the camera data object.
-    DataOORef<StandardCameraObject> camera = DataOORef<StandardCameraObject>::create();
+    DataOORef<StandardCameraObject> camera = DataOORef<StandardCameraObject>::create(ObjectInitializationFlag::DontCreateVisElement);
     camera->setCreatedByNode(this);
+    camera->setVisElement(cameraVis());
     camera->setIsPerspective(isPerspective());
     TimeInterval stateValidity = TimeInterval::infinite();
     if(fovController())
