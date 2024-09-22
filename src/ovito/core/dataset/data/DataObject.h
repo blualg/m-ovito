@@ -202,7 +202,7 @@ public:
     ConstDataObjectPath exclusiveDataObjectPath() const;
 
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const;
+    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const;
 
 #ifdef OVITO_DEBUG
     /// Enables or disables reference tracking for this DataObject for debugging purposes.

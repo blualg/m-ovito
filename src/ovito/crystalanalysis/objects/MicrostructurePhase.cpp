@@ -137,9 +137,9 @@ Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructu
 /******************************************************************************
 * Creates an editable proxy object for this DataObject and synchronizes its parameters.
 ******************************************************************************/
-void MicrostructurePhase::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+void MicrostructurePhase::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
 {
-    ElementType::updateEditableProxies(state, dataPath);
+    ElementType::updateEditableProxies(state, dataPath, forceProxyReplacement);
 
     // Note: 'this' may no longer exist at this point, because the sub-class implementation of the method may
     // have already replaced it with a mutable copy.

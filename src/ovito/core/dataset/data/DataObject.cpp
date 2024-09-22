@@ -249,7 +249,7 @@ ConstDataObjectPath DataObject::exclusiveDataObjectPath() const
 /******************************************************************************
 * Creates an editable proxy object for this DataObject and synchronizes its parameters.
 ******************************************************************************/
-void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
 {
     // Note: 'this' may no longer exist at this point, because the sub-class implementation of the method may
     // have already replaced it with a mutable copy.
@@ -258,6 +258,7 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
     Q_DECL_UNUSED const OvitoClass& selfClass = self->getOOClass();
     OVITO_ASSERT(selfClass == this->getOOClass());
     OVITO_ASSERT(!self->isUndoRecording());
+    OVITO_ASSERT(!self->editableProxy() || !static_object_cast<DataObject>(self->editableProxy())->editableProxy());
 
     // Visit all sub-objects recursively.
     for(const PropertyFieldDescriptor* field : self->getOOMetaClass().propertyFields()) {
@@ -266,7 +267,7 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
                 if(const DataObject* subObject = static_object_cast<DataObject>(self->getReferenceFieldTarget(field))) {
                     OVITO_ASSERT(self->hasReferenceTo(subObject));
                     dataPath.push_back(subObject);
-                    subObject->updateEditableProxies(state, dataPath);
+                    subObject->updateEditableProxies(state, dataPath, forceProxyReplacement);
                     dataPath.pop_back();
                     OVITO_ASSERT(selfClass == dataPath.back()->getOOClass());
                     self = dataPath.back();
@@ -278,7 +279,7 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
                 for(int i = 0; i < count; i++) {
                     if(const DataObject* subObject = static_object_cast<DataObject>(self->getVectorReferenceFieldTarget(field, i))) {
                         dataPath.push_back(subObject);
-                        subObject->updateEditableProxies(state, dataPath);
+                        subObject->updateEditableProxies(state, dataPath, forceProxyReplacement);
                         dataPath.pop_back();
                         OVITO_ASSERT(selfClass == dataPath.back()->getOOClass());
                         self = dataPath.back();

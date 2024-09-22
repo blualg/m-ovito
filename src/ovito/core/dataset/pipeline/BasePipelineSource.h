@@ -42,6 +42,9 @@ public:
 
 protected:
 
+    /// Creates a copy of this object.
+    virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
+
     /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 

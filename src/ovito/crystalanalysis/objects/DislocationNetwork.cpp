@@ -131,15 +131,16 @@ void DislocationNetwork::referenceReplaced(const PropertyFieldDescriptor* field,
 /******************************************************************************
 * Creates an editable proxy object for this DataObject and synchronizes its parameters.
 ******************************************************************************/
-void DislocationNetwork::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+void DislocationNetwork::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
 {
-    PeriodicDomainObject::updateEditableProxies(state, dataPath);
+    PeriodicDomainObject::updateEditableProxies(state, dataPath, forceProxyReplacement);
 
     // Note: 'this' may no longer exist at this point, because the base method implementation may
     // have already replaced it with a mutable copy.
     const DislocationNetwork* self = static_object_cast<DislocationNetwork>(dataPath.back());
 
-    if(DislocationNetwork* proxy = static_object_cast<DislocationNetwork>(self->editableProxy())) {
+    if(self->editableProxy() && !forceProxyReplacement) {
+        DislocationNetwork* proxy = static_object_cast<DislocationNetwork>(self->editableProxy());
         // Synchronize the actual data object with the editable proxy object.
 
         // Add the proxies of newly created microstructure phases to the proxy object.
