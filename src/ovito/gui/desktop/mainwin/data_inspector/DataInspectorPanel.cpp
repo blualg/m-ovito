@@ -368,13 +368,6 @@ void DataInspectorPanel::onCurrentPageChanged(int index)
 ******************************************************************************/
 bool DataInspectorPanel::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
-    // Obtain the output of the currently selected pipeline.
-    if(!updatePipelineOutput())
-        return false;
-
-    // Update the list of displayed tabs.
-    updateTabsList();
-
     for(int appletIndex = 0; appletIndex < _applets.size(); appletIndex++) {
         if(_appletsToTabs[appletIndex] == -1) continue;
         DataInspectionApplet* applet = _applets[appletIndex];
