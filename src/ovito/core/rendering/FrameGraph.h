@@ -186,7 +186,7 @@ public:
 	private:
 
 		/// The rendering commands in this group.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
 		QVarLengthArray<RenderingCommand, 2> _commands;
 #else
 		std::vector<RenderingCommand> _commands;
