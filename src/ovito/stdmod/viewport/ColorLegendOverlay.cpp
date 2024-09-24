@@ -776,7 +776,11 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
             // Therefore we need to increase the num_ticks by 1 to get all required ticks drawn correctly.
             num_ticks += ((tickStart == mapping.minValue()) || (tickStart == mapping.maxValue()));
             for(int i{0}; i < num_ticks; i++) {
-                FloatType tick_value{tickStart + i * tickStep};
+                FloatType tick_value = tickStart + i * tickStep;
+                // Fix tick values close to 0 being formatted as 5.5e-17 instead of 0 with the
+                // default format specifier "%g".
+                tick_value = (std::abs(tick_value) < 1e-12) ? 0.0 : tick_value;
+
                 FloatType tick_position{(tick_value - mapping.minValue()) / (mapping.maxValue() - mapping.minValue())};
                 // omit labels to outside the range or too close to the color bar limit
                 if((tick_position <= 0) || (tick_position >= 1)) {
@@ -821,7 +825,11 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
                 tick_max.x() = colorBarImageRect.right() - (1 - innerTickHeight) * colorBarImageRect.width();
             }
             for(int i{0}; i < num_ticks; i++) {
-                FloatType tick_value{tickStart + i * tickStep};
+                FloatType tick_value = tickStart + i * tickStep;
+                // Fix tick values close to 0 being formatted as 5.5e-17 instead of 0 with the
+                // default format specifier "%g".
+                tick_value = (std::abs(tick_value) < 1e-12) ? 0.0 : tick_value;
+
                 FloatType tick_position{(tick_value - mapping.minValue()) / (mapping.maxValue() - mapping.minValue())};
                 // omit labels to outside the range or too close to the color bar limit
                 if((tick_position <= minTickDistanceFromEdge) || (tick_position >= (1 - minTickDistanceFromEdge))) {
