@@ -45,7 +45,7 @@ This allows you to explore your data interactively in the viewports with high-fi
 
 .. |visrtx-interactive-demo-video1| raw:: html
 
-  <video width="45%" controls autoplay muted loop playsinline>
+  <video width="48%" controls autoplay muted loop playsinline>
     <source src="https://www.ovito.org/download/data/documentation/container_visrtx_cut.mp4" type="video/mp4">
   </video>
 
@@ -60,7 +60,7 @@ This allows you to explore your data interactively in the viewports with high-fi
 
 .. rubric:: Demo versions of the high-fidelity rendering backends in OVITO Basic
 
-OVITO Basic now includes demo versions of the high-fidelity rendering backends :ref:`OSPRay <rendering.ospray_renderer>`,
+OVITO Basic now includes demo versions of the rendering backends :ref:`OSPRay <rendering.ospray_renderer>`,
 :ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`.
 
 .. image:: /images/modifiers/spatial_binning_example_dislocations.*
@@ -75,17 +75,22 @@ the Nye tensor field from the discrete dislocation lines.
 
 .. rubric:: Identification of dislocation core atoms |ovito-pro|
 
-:ref:`particles.modifiers.dislocation_analysis` modifier: :ref:`Identification of dislocation core atoms <particles.modifiers.dislocation_analysis.mark_core_atoms>`
+.. image:: /images/modifiers/dxa/dislocation_analysis_core_atoms_marked.*
+  :width: 30%
+  :align: right
 
-.. figure:: /images/modifiers/dxa/dislocation_analysis_core_atoms_marked.*
-  :figwidth: 35%
+We've developed a method for identifying atoms that are part of the defect core of individual dislocations.
+This pro feature is now available in the :ref:`particles.modifiers.dislocation_analysis` modifier as a new option,
+see :ref:`Identification of dislocation core atoms <particles.modifiers.dislocation_analysis.mark_core_atoms>`.
 
 .. rubric:: Python code generator for complex pipeline architectures |ovito-pro|
 
-Extended the :ref:`Python code generator <python_code_generation>` to support scenes with multiple pipelines, including branched pipeline architectures and shared modifiers
+The :ref:`Python code generator <python_code_generation>` now supports scenes containing multiple pipelines and can generate
+valid script code for the most complex pipeline architectures, including branched pipelines, shared modifiers, and shared visual elements created with the interactive OVITO GUI.
+It also got better at handling viewport layers in complex visualization setups.
 
-.. figure:: /images/new_features/3-11-0_code-generator-schematic.*
-  :figwidth: 100%
+.. image:: /images/new_features/3-11-0_code-generator-schematic.*
+  :width: 100%
 
 .. rubric:: Improved rendering quality for semi-transparent objects and antialiased edges |ovito-pro|
 
@@ -107,12 +112,12 @@ Extended the :ref:`Python code generator <python_code_generation>` to support sc
   .. figure:: /images/new_features/3-11-0_bodies-before.*
     :figwidth: 40%
 
-    Each body is originally composed of multiple particles.
+    Each Aspherix DEM body is originally composed of multiple convex sub-particles.
 
   .. figure:: /images/new_features/3-11-0_bodies-after.*
     :figwidth: 40%
 
-    Particles coalesced into a single entity per body.
+    A Python extension allows combining the sub-particles to non-convex body particles.
 
 - Import of existing CA files (i.e. loading of precomputed :ref:`DXA results <particles.modifiers.dislocation_analysis.fileformat>`) is now an exclusive OVITO Pro program feature
 - :ref:`particles.modifiers.slice` and :ref:`particles.modifiers.affine_transformation` modifiers: Step-wise parameter increments are now proportional to the simulation box size instead of the current parameter value to improve usability during :ref:`interactive adjustments <usage.spinner_widgets>`
