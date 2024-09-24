@@ -13,39 +13,65 @@ Changelog
 Version 3.11.0 (xx-xxx-2024)
 ----------------------------
 
+.. image:: /images/new_features/3-11-0_render-vectors.*
+  :width: 40%
+  :align: right
+
 .. rubric:: Visualization of vector information
 
-New data visualization option: Added the :ref:`Vectors <scene_objects.vectors>` object type to OVITO and the corresponding :py:class:`ovito.data.Vectors` Python class,
-which allow to visualize vectorial information and place arrows in the 3d scene (independently from particles)
+We've added the :ref:`Vectors <scene_objects.vectors>` object type to OVITO and the corresponding :py:class:`ovito.data.Vectors` Python class,
+which allow placing arrow glyphs at arbitrary locations in 3d space (independently from particles) to visualize vectorial information
+at specific base positions.
 
-.. figure:: /images/new_features/3-11-0_render-vectors.*
-  :figwidth: 40%
+.. image:: /images/new_features/3-11-0_symmetric-colormap.*
+  :width: 40%
+  :align: right
 
-.. rubric:: Symmetric range option added to the :ref:`particles.modifiers.color_coding` modifier
+.. rubric:: Symmetric range option for color mapping tools
 
-.. figure:: /images/new_features/3-11-0_symmetric-colormap.*
-  :figwidth: 50%
+The :ref:`particles.modifiers.color_coding` modifier and other color mapping tools can now maintain
+a symmetric value range, which is useful for visualizing scalar fields that can take both positive and negative values.
+If this option is enabled, the color mapping range is automatically centered around zero.
 
 .. rubric:: Template system for :ref:`viewport layers <viewport_layers>`
 
-The user can now save pre-configured templates for viewport layers and reuse them in other scenes
+Similar to :ref:`modifier templates <modifier_templates>`, you can now create pre-configured templates for :ref:`viewport layers <viewport_layers>` and reuse them in future program sessions.
+This feature is particularly useful for creating consistent overlays across multiple visualizations.
 
-...IMAGE (Conny)...
+.. rubric:: Interactive viewport rendering with VisRTX |ovito-pro|
 
-.. rubric:: New interactive viewport renderer: VisRTX |ovito-pro|
+On Windows and Linux machines with a CUDA-capable NVIDIA GPU, OVITO Pro now supports interactive rendering with the :ref:`high-performance VisRTX ray-tracing backend <rendering.visrtx_renderer>`.
+This allows you to explore your data interactively in the viewports with high-fidelity rendering quality.
 
-...VIDEO (Alex)...
+.. |visrtx-interactive-demo-video1| raw:: html
+
+  <video width="45%" controls autoplay muted loop playsinline>
+    <source src="https://www.ovito.org/download/data/documentation/container_visrtx_cut.mp4" type="video/mp4">
+  </video>
+
+.. |visrtx-interactive-demo-video2| raw:: html
+
+  <video width="45%" controls autoplay muted loop playsinline>
+    <source src="https://www.ovito.org/download/data/documentation/visrtx_large_system.mp4" type="video/mp4">
+  </video>
+
+|visrtx-interactive-demo-video1|
+|visrtx-interactive-demo-video2|
 
 .. rubric:: Demo versions of the high-fidelity rendering backends in OVITO Basic
 
-OVITO Basic now includes demo versions of the high-fidelity rendering backends :ref:`OSPRay <rendering.ospray_renderer>`, :ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`.
+OVITO Basic now includes demo versions of the high-fidelity rendering backends :ref:`OSPRay <rendering.ospray_renderer>`,
+:ref:`Tachyon <rendering.tachyon_renderer>`, and :ref:`VisRTX <rendering.visrtx_renderer>`.
 
-.. rubric:: Calculation of the dislocation density field from DXA output |ovito-pro|
+.. image:: /images/modifiers/spatial_binning_example_dislocations.*
+  :width: 40%
+  :align: right
 
-Spatial binning modifier: Added the capability to compute the dislocation density field from DXA output
+.. rubric:: Calculation of dislocation density and Nye tensor fields from DXA output |ovito-pro|
 
-.. figure:: /images/modifiers/spatial_binning_example_dislocations.*
-  :figwidth: 40%
+We've extended the :ref:`particles.modifiers.bin_and_reduce` modifier to compute the dislocation density field from the
+output of the :ref:`DXA analysis <particles.modifiers.dislocation_analysis>`. The new option also supports calculating
+the Nye tensor field from the discrete dislocation lines.
 
 .. rubric:: Identification of dislocation core atoms |ovito-pro|
 
@@ -100,20 +126,19 @@ Extended the :ref:`Python code generator <python_code_generation>` to support sc
 
 .. rubric:: Python API additions and changes:
 
+.. |point-in-mesh-demo-video| raw:: html
+
+  <div class="align-right">
+    <video width="300" height="300" controls autoplay muted loop playsinline>
+      <source src="https://www.ovito.org/download/data/documentation/3-11-0_point-inside-mesh-demo.mp4" type="video/mp4">
+    </video>
+  </div>
+
 - |ovito-python| Added support for NumPy 2.x
 - |ovito-python| Full compatibility with Python 3.12
 - |ovito-python| The OVITO module now initializes the global Qt application object only on demand to avoid conflicts with other Python packages that also use `PySide6 <https://doc.qt.io/qtforpython-6/>`__
 - |ovito-python| :py:class:`~ovito.modifiers.ConstructSurfaceModifier`: Option :py:attr:`~ovito.modifiers.ConstructSurfaceModifier.map_particles_to_regions` now outputs per-region particle membership lists
-- |ovito-python| The :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` method has been vectorized and can now process an array of input points using all CPU cores
-
-.. |point-in-mesh-demo| raw:: html
-
-  <video width="300" height="300" controls autoplay muted loop playsinline>
-    <source src="https://www.ovito.org/download/data/3-11-0_point-inside-mesh-demo.mp4" type="video/mp4">
-  </video>
-
-|point-in-mesh-demo|
-
+- |point-in-mesh-demo-video| |ovito-python| The :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` method has been vectorized and can now process an array of input points using all CPU cores
 - |ovito-python| New method :py:meth:`NearestNeighborFinder.find_all_at() <ovito.data.NearestNeighborFinder.find_all_at>` to efficiently determine the closest particles around several spatial locations at once
 - |ovito-python| New method :py:meth:`SimulationCell.wrap_point() <ovito.data.SimulationCell.wrap_point>` to map one or more points into the primary simulation cell
 - |ovito-python| New attribute :py:attr:`ovito.pipeline.Pipeline.num_frames`, which allows querying the number of (output) trajectory frames of a pipeline
@@ -311,7 +336,7 @@ in a fraction of a second -- even for complex datasets containing millions of ob
 .. |visrtx-video| raw:: html
 
   <video width="301" height="220" controls autoplay muted loop playsinline>
-    <source src="https://www.ovito.org/download/data/visrtx_render_demo.mp4" type="video/mp4">
+    <source src="https://www.ovito.org/download/data/documentation/visrtx_render_demo.mp4" type="video/mp4">
   </video>
 
 |visrtx-video|
