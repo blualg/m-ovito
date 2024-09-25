@@ -59,7 +59,7 @@ void ModifierGroup::modificationNodeStatusChanged()
 }
 
 /******************************************************************************
-* This is called whenever one of the group's member modapps changes.
+* This is called whenever one of the group's member nodes change.
 * It computes the combined status of the entire group.
 ******************************************************************************/
 void ModifierGroup::updateCombinedStatus()

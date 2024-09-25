@@ -67,7 +67,7 @@ public:
     /// cache with a data collection modified by the user.
     void overrideCache(const DataCollection* dataCollection, const TimeInterval& keepInterval);
 
-    /// Enables or disables the precomputation and caching of all frames of the animation.
+    /// Enables or disables the pre-computation and caching of all frames of the animation.
     void setPrecomputeAllFrames(bool enable);
 
     /// Returns whether caching is enabled or not.
@@ -83,6 +83,7 @@ private:
         bool throwOnError;
         PipelineEvaluationResult::EvaluationTypes evaluationTypes;
         TimeInterval validityInterval;
+        TimeIntervalUnion requestedIntervals;
         WeakSharedFuture<PipelineFlowState> future;
     };
 
@@ -113,22 +114,19 @@ private:
     /// Indicates whether the cached interactive state also represents the final pipeline output or not.
     bool _interactiveStateIsNotPreliminaryResult = false;
 
-    /// The animation time intervals for which this cache should keep pipeline results in memory.
-    TimeIntervalUnion _requestedIntervals;
-
     /// The set of activate pipeline evaluations.
     std::forward_list<EvaluationInProgress> _evaluationsInProgress;
 
     /// The object this cache belongs to (either a PipelineSceneNode or a CachingPipelineObject).
     RefTarget* _ownerObject;
 
-    /// Enables the precomputation of the pipeline output for all animation frames.
+    /// Enables the pre-computation of the pipeline output for all animation frames.
     bool _precomputeAllFrames = false;
 
-    /// Indicates that all frames of the trahectory have been precomputed.
+    /// Indicates that all frames of the trajectory have been precomputed.
     bool _allFramesPrecomputed = false;
 
-    /// The asynchronous task that precomputes the pipeline output for all animation frames.
+    /// The asynchronous task that pre-computes the pipeline output for all animation frames.
     Promise<void> _precomputeFramesOperation;
 
     /// The future for the next precompute frame.

@@ -72,7 +72,7 @@ public:
     const TimeIntervalUnion& cachingIntervals() const { return _cachingIntervals; }
 
     /// Returns a non-const reference to the animation time intervals over which the pipeline should pre-cache the state.
-    TimeIntervalUnion& modifiableCachingIntervals() { return _cachingIntervals; }
+    TimeIntervalUnion& mutableCachingIntervals() { return _cachingIntervals; }
 
 private:
 

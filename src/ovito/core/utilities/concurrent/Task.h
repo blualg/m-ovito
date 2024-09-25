@@ -30,13 +30,6 @@
 
 namespace Ovito {
 
-namespace detail {
-    class TaskDependency; // Forward declaration
-    class TaskCallbackBase;
-    template<typename Derived> class TaskCallback;
-    template<typename R> class ContinuationTask;
-}
-
 /// Exception type thrown by a task in case it got canceled.
 struct OVITO_CORE_EXPORT OperationCanceled {};
 
@@ -45,6 +38,8 @@ struct OVITO_CORE_EXPORT OperationCanceled {};
  */
 class OVITO_CORE_EXPORT Task : public std::enable_shared_from_this<Task>
 {
+    Q_DISABLE_COPY_MOVE(Task)
+
 public:
 
     using Mutex = std::mutex;
@@ -243,7 +238,7 @@ protected:
     template<typename R, typename R2>
     void setResult(R2&& value) {
 #ifdef OVITO_DEBUG
-        OVITO_ASSERT(_hasResultsStored.exchange(true) == false);
+        OVITO_ASSERT(_hasResultsStored.exchange(true) == false); // May assign result only once to the task's storage.
 #endif
         OVITO_ASSERT(_resultsStorage != nullptr);
         *static_cast<R*>(_resultsStorage) = std::forward<R2>(value);
@@ -357,8 +352,9 @@ protected:
     friend class AsynchronousTaskBase;
     friend class detail::TaskDependency;
     friend class detail::TaskCallbackBase;
+    friend class detail::TaskAwaiter;
     template<typename Derived> friend class detail::TaskCallback;
-    template<typename tuple_type> friend class detail::ContinuationTask;
+    template<typename R, typename TaskBase> friend class detail::ContinuationTask;
     template<typename R2> friend class Future;
     template<typename R2> friend class SharedFuture;
     template<typename R2> friend class Promise;

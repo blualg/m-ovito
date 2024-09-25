@@ -233,7 +233,7 @@ public:
     }
 
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
+    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const override;
 
     /// Returns the display title of this property object in the user interface.
     virtual QString objectTitle() const override;

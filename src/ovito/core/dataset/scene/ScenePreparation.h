@@ -46,9 +46,6 @@ public:
     /// Constructor.
     void initializeObject(UserInterface& userInterface, Scene* scene = nullptr);
 
-    /// This method gets called by OORef<T>::create() right after the object has been fully initialized.
-    void completeObjectInitialization();
-
     /// Returns the abstract user interface in which this object operates.
     UserInterface& userInterface() const { return *_userInterface; }
 
@@ -75,7 +72,7 @@ Q_SIGNALS:
     void scenePreparationFinished();
 
     /// Is emitted whenever its time to repaint the viewports showing the active scene.
-    void viewportUpdateRequest();
+    void viewportUpdateRequest(bool isPreliminaryUpdate);
 
 protected:
 
@@ -117,12 +114,6 @@ private:
 
     /// The abstract user interface.
     UserInterface* _userInterface;
-
-    /// The animation frame at which the scene was made ready. This is used to detect time changes.
-    int _completedFrame;
-
-    /// The scene that was made ready recently. This is used to detect a change of the active scene.
-    Scene* _completedScene;
 
     /// The current pipeline evaluation that is in progress.
     SharedFuture<PipelineFlowState> _pipelineEvaluationFuture;

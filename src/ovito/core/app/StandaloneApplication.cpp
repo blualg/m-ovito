@@ -137,7 +137,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
 
         // Prepares the application to start running.
         MainThreadOperation operation = startupApplication();
-        if(!operation.isValid())
+        if(!operation)
             return false;
 
         // We now should have a valid execution context and a UserInterface object.

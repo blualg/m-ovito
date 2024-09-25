@@ -254,7 +254,7 @@ void AnimationTimeSlider::mouseMoveEvent(QMouseEvent* event)
     int newFrame = ((qint64)newPos * (qint64)(animSettings()->numberOfFrames()) / (qint64)(rectWidth - thumbSize)) + animSettings()->firstFrame();
 
     // Clamp new frame to animation interval.
-    newFrame = qBound(anim->firstFrame(), newFrame, anim->lastFrame());
+    newFrame = std::clamp(newFrame, anim->firstFrame(), anim->lastFrame());
 
     if(_dragPos >= 0) {
 
@@ -266,9 +266,7 @@ void AnimationTimeSlider::mouseMoveEvent(QMouseEvent* event)
             anim->setCurrentFrame(newFrame);
         });
 
-        // Force immediate viewport update.
-        _mainWindow.processViewportUpdateRequests();
-        repaint();
+        update();
     }
     else if(anim->lastFrame() > anim->firstFrame()) {
         if(thumbRectangle().contains(event->pos()) == false) {

@@ -256,15 +256,17 @@ bool RefTarget::isBeingEdited() const
 {
     // Look up the PropertiesEditor class, which is defined in the GUI plugin module.
     // That means it is not accessible at compile time here from the Core module.
+    // Note: The GUI module and the PropertiesEditor class may not be present if OVITO is built without GUI support.
     static const OvitoClassPtr propertiesEditorClass = PluginManager::instance().findClass("Gui", "PropertiesEditor");
-    OVITO_ASSERT(propertiesEditorClass != nullptr);
 
-    // Check if this object is referenced by any PropertiesEditor instance.
     bool result = false;
-    visitDependents([&](const RefMaker* dependent) {
-        if(propertiesEditorClass->isMember(dependent))
-            result = true;
-    });
+    if(propertiesEditorClass) {
+        // Check if this object is currently referenced by a PropertiesEditor instance.
+        visitDependents([&](const RefMaker* dependent) {
+            if(propertiesEditorClass->isMember(dependent))
+                result = true;
+        });
+    }
     return result;
 }
 

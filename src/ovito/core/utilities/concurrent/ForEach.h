@@ -106,7 +106,7 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
         }
 
         /// Performs the next iteration of the mapping process.
-        void iteration_begin(Promise<task_result_type> promise) noexcept {
+        void iteration_begin(PromiseBase promise) noexcept {
             // Did we already reach the end of the input range?
             if(_iterator != std::end(_range) && !this->isCanceled()) {
                 output_future_type future;
@@ -130,11 +130,11 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
                     this->captureExceptionAndFinish();
                     return;
                 }
-                OVITO_ASSERT(future.isValid());
                 // Schedule next iteration upon completion of the future returned by the user function.
-                this->whenTaskFinishes(future.takeTaskDependency(), _executor, [promise = std::move(promise)]() mutable noexcept {
-                    static_cast<ForEachTask*>(promise.task().get())->iteration_complete(std::move(promise));
-                });
+                this->template whenTaskFinishes<ForEachTask, &ForEachTask::iteration_complete>(
+                    std::move(future),
+                    _executor,
+                    std::move(promise));
             }
             else {
                 // Inform caller that the task has finished and the result is available.
@@ -143,19 +143,9 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
         }
 
         // Is called at the end of each iteration, when user function has finished performing its work.
-        void iteration_complete(Promise<task_result_type> promise) noexcept {
-            // Lock access to this task object.
-            Task::MutexLock lock(*this);
-
+        void iteration_complete(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
             // Get the task that did just finish and wrap it in a future of the original type.
-            output_future_type future(this->takeAwaitedTask());
-
-            // Stop if the awaited future was canceled.
-            if(!future.isValid() || future.isCanceled()) {
-                this->cancelLocked(lock);
-                this->finishLocked(lock);
-                return;
-            }
+            output_future_type future(std::move(finishedTask));
 
             // Check if the awaited future completed with an error.
             if(future.task()->exceptionStore()) {

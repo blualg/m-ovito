@@ -83,7 +83,7 @@ protected Q_SLOTS:
     /// Is called whenever the scene became ready for rendering.
     void onScenePreparationFinished();
 
-    /// Updates the contents displayed in the data inpector.
+    /// Updates the contents displayed in the data inspector.
     void updateInspector();
 
     /// Is called when the user clicked on the tab bar.
@@ -97,7 +97,7 @@ protected Q_SLOTS:
 
 Q_SIGNALS:
 
-    /// Signal is emitted whenenver a different pipeline becomes the selected one.
+    /// Signal is emitted whenever a different pipeline becomes the selected one.
     void selectedPipelineChanged(Pipeline* newPipeline);
 
 protected:

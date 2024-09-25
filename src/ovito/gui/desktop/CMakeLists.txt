@@ -61,6 +61,7 @@ OVITO_STANDARD_PLUGIN(Gui
         dialogs/CopyPipelineItemDialog.cpp
         dialogs/FontSelectionDialog.cpp
         dialogs/ModalPropertiesEditorDialog.cpp
+        dialogs/UpdateNotificationDialog.cpp
         actions/WidgetActionManager.cpp
         actions/FileActions.cpp
         actions/RenderActions.cpp
@@ -84,6 +85,7 @@ OVITO_STANDARD_PLUGIN(Gui
         widgets/general/MenuToolButton.cpp
         widgets/general/PopupUpdateComboBox.cpp
         widgets/general/CopyableTableView.cpp
+        widgets/general/StableComboBox.cpp
         widgets/animation/AnimationTimeSpinner.cpp
         widgets/animation/AnimationTimeSlider.cpp
         widgets/animation/AnimationTrackBar.cpp

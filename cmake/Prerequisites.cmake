@@ -236,7 +236,17 @@ FUNCTION(OVITO_DEPLOY_QT_FRAMEWORK_FILES)
         # Install Qt plugins.
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/libqminimal.so" DESTINATION "./plugins_qt/platforms")
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/libqwayland-generic.so" DESTINATION "./plugins_qt/platforms" OPTIONAL)
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/libqwayland-egl.so" DESTINATION "./plugins_qt/platforms" OPTIONAL)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/platforms/libqxcb.so" DESTINATION "./plugins_qt/platforms")
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/wayland-shell-integration/libqt-shell.so" DESTINATION "./plugins_qt/wayland-shell-integration" OPTIONAL)
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/wayland-shell-integration/libwl-shell-plugin.so" DESTINATION "./plugins_qt/wayland-shell-integration" OPTIONAL)
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/wayland-shell-integration/libxdg-shell.so" DESTINATION "./plugins_qt/wayland-shell-integration" OPTIONAL)
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/wayland-shell-integration/libivi-shell.so" DESTINATION "./plugins_qt/wayland-shell-integration" OPTIONAL)
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/wayland-graphics-integration-client/libqt-plugin-wayland-egl.so" DESTINATION "./plugins_qt/wayland-graphics-integration-client" OPTIONAL)
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/wayland-graphics-integration-client/libdmabuf-server.so" DESTINATION "./plugins_qt/wayland-graphics-integration-client" OPTIONAL)
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/wayland-graphics-integration-client/libdrm-egl-server.so" DESTINATION "./plugins_qt/wayland-graphics-integration-client" OPTIONAL)
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/wayland-graphics-integration-client/libshm-emulation-server.so" DESTINATION "./plugins_qt/wayland-graphics-integration-client" OPTIONAL)
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/wayland-decoration-client/libbradient.so" DESTINATION "./plugins_qt/wayland-decoration-client" OPTIONAL)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/libqgif.so" DESTINATION "./plugins_qt/imageformats")
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/libqico.so" DESTINATION "./plugins_qt/imageformats" OPTIONAL)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/imageformats/libqicns.so" DESTINATION "./plugins_qt/imageformats" OPTIONAL)
@@ -249,10 +259,14 @@ FUNCTION(OVITO_DEPLOY_QT_FRAMEWORK_FILES)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/networkinformation/libqglib.so" DESTINATION "./plugins_qt/networkinformation" OPTIONAL)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/libqcertonlybackend.so" DESTINATION "./plugins_qt/tls" OPTIONAL)
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/../plugins/tls/libqopensslbackend.so" DESTINATION "./plugins_qt/tls")
-        # The XcbQpa library is required by the Qt Gui module.
+        # libQt6XcbQpa.so is required by the Qt Gui module and XCB platform plugin.
         OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/libQt6XcbQpa.so" DESTINATION "./lib")
+        # libQt6WaylandClient.so and others are required by the Qt platform plugin libqwayland-generic.so and its sub-plugins.
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/libQt6WaylandClient.so" DESTINATION "./lib")
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/libQt6WlShellIntegration.so" DESTINATION "./lib")
+        OVITO_INSTALL_SHARED_LIB("${QtBinaryPath}/libQt6WaylandEglClientHwIntegration.so" DESTINATION "./lib")
 
-        # Distribute libxkbcommon.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
+        # Distribute libxkbcommon.so with OVITO, which is a dependency of the Qt XCB plugin that might not be present on all systems.
         FIND_LIBRARY(OVITO_XKBCOMMON_DEP NAMES libxkbcommon.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH REQUIRED)
         OVITO_INSTALL_SHARED_LIB("${OVITO_XKBCOMMON_DEP}" DESTINATION "./lib")
         UNSET(OVITO_XKBCOMMON_DEP CACHE)
@@ -260,12 +274,12 @@ FUNCTION(OVITO_DEPLOY_QT_FRAMEWORK_FILES)
         EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "lib/libxkbcommon.so.0" "${OVITO_LIBRARY_DIRECTORY}/libxkbcommon.so.0" COMMAND_ERROR_IS_FATAL ANY)
         INSTALL(FILES "${OVITO_LIBRARY_DIRECTORY}/libxkbcommon.so.0" DESTINATION "${OVITO_RELATIVE_LIBRARY_DIRECTORY}/")
 
-        # Distribute libxkbcommon-x11.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
+        # Distribute libxkbcommon-x11.so with OVITO, which is a dependency of the Qt XCB plugin that might not be present on all systems.
         FIND_LIBRARY(OVITO_XKBCOMMONX11_DEP NAMES libxkbcommon-x11.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH REQUIRED)
         OVITO_INSTALL_SHARED_LIB("${OVITO_XKBCOMMONX11_DEP}" DESTINATION "./lib")
         UNSET(OVITO_XKBCOMMONX11_DEP CACHE)
 
-        # Distribute libxcb-xinerama.so with Ovito, which is a dependency of the Qt XCB plugin that might not be present on all systems.
+        # Distribute libxcb-xinerama.so with OVITO, which is a dependency of the Qt XCB plugin that might not be present on all systems.
         FIND_LIBRARY(OVITO_XINERAMA_DEP NAMES libxcb-xinerama.so.0 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu /usr/lib64 NO_DEFAULT_PATH REQUIRED)
         OVITO_INSTALL_SHARED_LIB("${OVITO_XINERAMA_DEP}" DESTINATION "./lib")
         UNSET(OVITO_XINERAMA_DEP CACHE)

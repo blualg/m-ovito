@@ -300,8 +300,9 @@ bool Application::initialize(int& argc, char** argv)
     format.setMinorVersion(0);
 #endif
 
-    // Enable this line to display debug log messages from the OpenGL driver.
-    // format.setOption(QSurfaceFormat::DebugContext);
+    // Enable this to display debug log messages from the OpenGL driver.
+    if(qEnvironmentVariableIntValue("OVITO_OPENGL_DEBUG_CONTEXT") )
+        format.setOption(QSurfaceFormat::DebugContext);
 
     QSurfaceFormat::setDefaultFormat(format);
 
@@ -318,7 +319,7 @@ void Application::createQtApplication(bool supportGui)
 {
     // Let the user override the application type with the OVITO_GUI_MODE environment variable.
     if(qEnvironmentVariableIsSet("OVITO_GUI_MODE")) {
-        if(qgetenv("OVITO_GUI_MODE") != "0") {
+        if(qEnvironmentVariableIntValue("OVITO_GUI_MODE")) {
             supportGui = true;
         }
         else if(supportGui) {
@@ -375,7 +376,7 @@ void Application::createQtApplication(bool supportGui)
 QNetworkAccessManager* Application::networkAccessManager()
 {
     if(!_networkAccessManager) {
-        if(qEnvironmentVariableIsSet("OVITO_ENABLE_SYSTEM_PROXY")) {
+        if(qEnvironmentVariableIntValue("OVITO_ENABLE_SYSTEM_PROXY")) {
             QNetworkProxyFactory::setUseSystemConfiguration(true);
         }
         _networkAccessManager = new QNetworkAccessManager(this);

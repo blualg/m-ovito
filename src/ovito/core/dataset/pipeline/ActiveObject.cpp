@@ -22,7 +22,10 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/utilities/concurrent/Future.h>
+#include <ovito/core/utilities/concurrent/ExecutionContext.h>
+#include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
 #include "ActiveObject.h"
 
 namespace Ovito {
@@ -85,12 +88,32 @@ void ActiveObject::decrementNumberOfActiveTasks()
 ******************************************************************************/
 void ActiveObject::registerActiveFuture(const FutureBase& future)
 {
-    OVITO_ASSERT(future.isValid());
+    OVITO_ASSERT(future);
     if(!future.task()->isFinished() && Application::guiMode()) {
         incrementNumberOfActiveTasks();
         // Reset the pending status after the Future is fulfilled.
         future.finally(*this, [this]() noexcept { decrementNumberOfActiveTasks(); });
     }
+}
+
+/******************************************************************************
+* Displays the given status information in the GUI for this object.
+* The status is only displayed if the current frame of the pipeline matches the frame
+* for which the status was generated.
+******************************************************************************/
+void ActiveObject::setStatusIfCurrentFrame(const PipelineStatus& status, const PipelineEvaluationRequest& request)
+{
+    // Don't show outcome of preliminary (interactive) pipeline evaluations or results for animation times other than the current one.
+    if(request.interactiveMode())
+        return;
+
+    if(!Application::instance()->guiMode())
+        return;
+
+    if(request.time() != ExecutionContext::current().ui().datasetContainer().currentAnimationTime())
+        return;
+
+    setStatus(status);
 }
 
 /******************************************************************************

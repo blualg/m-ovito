@@ -68,7 +68,7 @@ void PropertyReferenceParameterUI::setContainerRef(const PropertyContainerRefere
         _containerRef = containerRef;
         _comboBox->setContainerClass(_containerRef.dataClass());
 
-        // Refresh list of available properies.
+        // Refresh list of available properties.
         updateUI();
 
         // Update the list whenever the pipeline input changes.
@@ -137,62 +137,62 @@ void PropertyReferenceParameterUI::updateUI()
         setContainerRef(objectReference);
     }
 
-    if(comboBox() && editObject() && (containerRef() || container())) {
-        PropertyReference pref = getPropertyReference();
+    if(comboBox()) {
+        if(editObject() && (containerRef() || container())) {
+            PropertyReference pref = getPropertyReference();
 
-        if(_isInputProperty) {
-            _comboBox->clear();
+            if(_isInputProperty) {
+                _comboBox->beginListUpdate();
 
-            // Build the list of available input properties.
-            if(container()) {
-                // Populate combo box with items from the input container.
-                addItemsToComboBox(container());
+                // Build the list of available input properties.
+                if(container()) {
+                    // Populate combo box with items from the input container.
+                    addItemsToComboBox(container());
+                }
+                else {
+                    // Populate combo box with items from the upstream pipeline.
+                    for(const PipelineFlowState& state : editor()->getPipelineInputs()) {
+                        addItemsToComboBox(state);
+                    }
+                }
+
+                // Select the right item in the list box.
+                int selIndex = _comboBox->propertyIndexDuringUpdate(pref);
+                if(selIndex < 0) {
+                    if(pref) {
+                        // Add a place-holder item if the selected property does not exist anymore.
+                        _comboBox->addItem(pref, tr("%1 (not available)").arg(pref.nameWithComponent()), false, true);
+                    }
+                    else if(_comboBox->itemCountDuringUpdate() != 0) {
+                        _comboBox->addItem({}, tr("‹Please select›"));
+                    }
+                    selIndex = _comboBox->itemCountDuringUpdate() - 1;
+                }
+                if(_comboBox->itemCountDuringUpdate() == 0) {
+                    _comboBox->addItem(PropertyReference(), tr("‹No available properties›"), false, true);
+                    selIndex = 0;
+                }
+                _comboBox->endListUpdate();
+                _comboBox->setCurrentIndex(selIndex);
             }
             else {
-                // Populate combo box with items from the upstream pipeline.
-                for(const PipelineFlowState& state : editor()->getPipelineInputs()) {
-                    addItemsToComboBox(state);
+                if(_comboBox->count() == 0 && containerClass()) {
+                    _comboBox->beginListUpdate();
+                    for(const auto& [propertyName, typeId] : containerClass()->standardPropertyIds())
+                        _comboBox->addItem(PropertyReference(propertyName));
+                    _comboBox->endListUpdate();
                 }
+                _comboBox->setCurrentProperty(pref);
             }
-
-            // Select the right item in the list box.
-            int selIndex = _comboBox->propertyIndex(pref);
-            static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.png"));
-            if(selIndex < 0) {
-                if(pref) {
-                    // Add a place-holder item if the selected property does not exist anymore.
-                    _comboBox->addItem(pref, tr("%1 (not available)").arg(pref.nameWithComponent()));
-                    QStandardItem* item = static_cast<QStandardItemModel*>(_comboBox->model())->item(_comboBox->count()-1);
-                    item->setIcon(warningIcon);
-                }
-                else if(_comboBox->count() != 0) {
-                    _comboBox->addItem({}, tr("‹Please select›"));
-                }
-                selIndex = _comboBox->count() - 1;
-            }
-            if(_comboBox->count() == 0) {
-                _comboBox->addItem(PropertyReference(), tr("‹No available properties›"));
-                QStandardItem* item = static_cast<QStandardItemModel*>(_comboBox->model())->item(0);
-                item->setIcon(warningIcon);
-                selIndex = 0;
-            }
-            _comboBox->setCurrentIndex(selIndex);
         }
         else {
-            if(_comboBox->count() == 0 && containerClass()) {
-                for(const auto& [propertyName, typeId] : containerClass()->standardPropertyIds())
-                    _comboBox->addItem(PropertyReference(propertyName));
-            }
-            _comboBox->setCurrentProperty(pref);
+            comboBox()->clear();
         }
-    }
-    else if(comboBox()) {
-        comboBox()->clear();
     }
 }
 
 /******************************************************************************
-* Populates the combox box with items.
+* Populates the combobox with items.
 ******************************************************************************/
 void PropertyReferenceParameterUI::addItemsToComboBox(const PipelineFlowState& state)
 {
@@ -203,7 +203,7 @@ void PropertyReferenceParameterUI::addItemsToComboBox(const PipelineFlowState& s
 }
 
 /******************************************************************************
-* Populates the combox box with items.
+* Populates the combobox with items.
 ******************************************************************************/
 void PropertyReferenceParameterUI::addItemsToComboBox(const PropertyContainer* container)
 {

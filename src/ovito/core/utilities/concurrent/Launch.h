@@ -26,10 +26,79 @@
 #include <ovito/core/Core.h>
 #include "AsynchronousTask.h"
 #include "detail/Latch.h"
+#include "detail/TaskWithStorage.h"
+#include "detail/ContinuationTask.h"
 #include "Future.h"
 #include "LaunchTask.h"
 
 namespace Ovito {
+
+/// Runs the given function using the given executor and returns its results as a Future.
+/// Note: The function may never execute if the future gets canceled before execution begins.
+template<typename Executor, typename Function>
+[[nodiscard]] auto launchAsync(Executor&& executor, Function&& function) {
+
+    // Infer the future to create. If the function returns a future, use it as is. Otherwise, wrap the result in a Future.
+    using result_future_type = std::conditional_t<detail::is_future_v<std::invoke_result_t<Function>>,
+                                                std::invoke_result_t<Function>,
+                                                Future<std::invoke_result_t<Function>>>;
+
+    // Determine the type of task object to use.
+    using base_task_type = std::conditional_t<detail::is_future_v<std::invoke_result_t<Function>>,
+                detail::ContinuationTask<typename result_future_type::result_type, typename Executor::base_task_type>,
+                detail::TaskWithStorage<std::invoke_result_t<Function>, typename Executor::base_task_type>>;
+
+    class LaunchTask : public base_task_type
+    {
+    public:
+        /// The type of future associated with this task type. This is used by the launchTask() function.
+        using future_type = result_future_type;
+
+        /// Constructor.
+        explicit LaunchTask(Function&& function) :
+            base_task_type(Task::NoState),
+            _function(std::forward<Function>(function)) {}
+
+        /// Starts execution of the task.
+        void operator()(Executor&& executor) {
+            std::forward<Executor>(executor).execute([promise = typename result_future_type::promise_type(this->shared_from_this())]() mutable noexcept {
+                static_cast<LaunchTask*>(promise.task().get())->invokeFunction(std::move(promise));
+            });
+        }
+
+        /// Runs the user function.
+        void invokeFunction(typename result_future_type::promise_type promise) noexcept {
+            if(promise.isCanceled())
+                return;
+            try {
+                Task::Scope taskScope(this);
+                if constexpr(!detail::is_future_v<std::invoke_result_t<Function>>) {
+                    if constexpr(!std::is_void_v<std::invoke_result_t<Function>>)
+                        promise.setResult(std::invoke(std::move(_function)));
+                    else
+                        std::invoke(std::move(_function));
+                    promise.setFinished();
+                }
+                else {
+                    this->handleUnwrappedFuture(std::move(promise), std::invoke(std::move(_function)));
+                }
+            }
+            catch(const OperationCanceled&) {}
+            catch(...) {
+                OVITO_ASSERT(!promise.isFinished());
+                promise.captureExceptionAndFinish();
+            }
+        }
+
+    private:
+        /// The function to be executed.
+        std::decay_t<Function> _function;
+    };
+
+    return launchTask(
+        std::make_shared<LaunchTask>(std::forward<Function>(function)),
+        std::forward<Executor>(executor));
+}
 
 /// Schedules the given function for execution in a worker thread.
 template<typename Function>

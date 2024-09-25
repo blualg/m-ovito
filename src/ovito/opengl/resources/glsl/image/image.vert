@@ -25,6 +25,7 @@ uniform vec4 image_rect;
 
 // Outputs:
 out vec2 texcoord_fs;
+
 void main()
 {
     // Draw a textured quad:

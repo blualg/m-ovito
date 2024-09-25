@@ -86,7 +86,7 @@ public:
     }
 
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
+    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const override;
 
 protected:
 

@@ -39,9 +39,7 @@
 #include <QOpenGLFunctions_3_0>
 #include <QOpenGLVersionFunctionsFactory>
 #include <QOpenGLTexture>
-#ifdef OVITO_DEBUG
 #include <QOpenGLDebugLogger>
-#endif
 
 namespace Ovito {
 
@@ -200,25 +198,28 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     // Get the OpenGL version.
     _glversion = QT_VERSION_CHECK(glformat().majorVersion(), glformat().minorVersion(), 0);
 
-#ifdef OVITO_DEBUG
     //  _glversion = QT_VERSION_CHECK(4, 1, 0);
     //  _glversion = QT_VERSION_CHECK(3, 2, 0);
     //  _glversion = QT_VERSION_CHECK(3, 1, 0);
     //  _glversion = QT_VERSION_CHECK(2, 1, 0);
 
-    // Initialize debug logger.
+    // Initialize OpenGL debug logger if requested (see OVITO_OPENGL_DEBUG_CONTEXT environment variable).
     if(glformat().testOption(QSurfaceFormat::DebugContext)) {
         QOpenGLDebugLogger* logger = glcontext()->findChild<QOpenGLDebugLogger*>();
         if(!logger) {
             logger = new QOpenGLDebugLogger(glcontext());
             QObject::connect(logger, &QOpenGLDebugLogger::messageLogged,
-                             [](const QOpenGLDebugMessage& debugMessage) { qDebug() << debugMessage; });
+                             [](const QOpenGLDebugMessage& debugMessage) {
+#ifndef OVITO_DEBUG
+                if(debugMessage.type() == QOpenGLDebugMessage::PerformanceType)
+                    return;
+#endif
+                qInfo() << debugMessage;
+            });
         }
         logger->initialize();
-        logger->startLogging(QOpenGLDebugLogger::SynchronousLogging);
-        logger->enableMessages();
+        logger->startLogging();
     }
-#endif
 
     // Get optional function pointers.
     glMultiDrawArrays = reinterpret_cast<void(QOPENGLF_APIENTRY*)(GLenum, const GLint*, const GLsizei*, GLsizei)>(
@@ -339,14 +340,12 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     // for subsequent frames.
     glFrameBuffer->storePreviousResourceFrame(std::move(_currentResourceFrame));
 
-    // Flush the contents to the FBO before extracting image.
-    if(glFrameBuffer->framebufferObject()) {
-        glcontext()->swapBuffers(glcontext()->surface());
-    }
-
     // Read the rendered image from the OpenGL framebuffer and paint it into to the output frame buffer.
     if(glFrameBuffer->outputFrameBuffer() && glFrameBuffer->framebufferObject()) {
         const QRect& viewportRect = glFrameBuffer->outputViewportRect();
+
+        // Flush the contents to the FBO before extracting the image.
+        glcontext()->swapBuffers(glcontext()->surface());
 
         // Clear destination area in the framebuffer (only necessary if OpenGL image is not fully opaque).
         FrameBuffer& outputFrameBuffer = *glFrameBuffer->outputFrameBuffer();
@@ -372,12 +371,12 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
         outputFrameBuffer.commitChanges();
     }
 
-#ifdef OVITO_DEBUG
     // Stop debug logger.
-    if(QOpenGLDebugLogger* logger = glcontext()->findChild<QOpenGLDebugLogger*>()) {
-        logger->stopLogging();
+    if(glformat().testOption(QSurfaceFormat::DebugContext)) {
+        if(QOpenGLDebugLogger* logger = glcontext()->findChild<QOpenGLDebugLogger*>())
+            logger->stopLogging();
     }
-#endif
+
     _glcontext = nullptr;
 
     return Future<void>::createImmediateEmpty();
@@ -1020,7 +1019,7 @@ void OpenGLRenderingJob::checkOpenGLErrorStatus(const char* command, const char*
 /******************************************************************************
  * Create an OpenGL texture object for a QImage.
  ******************************************************************************/
-const OpenGLTexture& OpenGLRenderingJob::uploadImage(const QImage& image, QOpenGLTexture::MipMapGeneration genMipMaps)
+const OpenGLTexture& OpenGLRenderingJob::uploadImage(const QImage& image)
 {
     OVITO_ASSERT(!image.isNull());
 
@@ -1028,10 +1027,8 @@ const OpenGLTexture& OpenGLRenderingJob::uploadImage(const QImage& image, QOpenG
     return currentResourceFrame().lookup<OpenGLTexture>(
         RendererResourceKey<struct ImageCache, quint64, const QOpenGLContextGroup*>{image.cacheKey(), QOpenGLContextGroup::currentContextGroup()},
         [&](OpenGLTexture& texture) {
-            texture.create(image, genMipMaps);
-            if(genMipMaps == QOpenGLTexture::DontGenerateMipMaps) {
-                texture.get().setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
-            }
+            texture.create(image);
+            texture.setMinMagFilters(QOpenGLTexture::Nearest, QOpenGLTexture::Nearest);
         });
 }
 
@@ -1064,15 +1061,14 @@ const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradien
             }
 
             // Create the 1-d texture object.
-            texture.create(QOpenGLTexture::Target1D);
-            texture.get().setFormat(QOpenGLTexture::RGB8_UNorm);
-            texture.get().setSize(resolution);
-            texture.get().allocateStorage(QOpenGLTexture::RGB, QOpenGLTexture::UInt8);
-            texture.get().setAutoMipMapGenerationEnabled(true);
-            texture.get().setWrapMode(QOpenGLTexture::ClampToEdge);
-            texture.get().setData(QOpenGLTexture::RGB, QOpenGLTexture::UInt8, pixelData.data());
-            if(!texture.isRendererResourceValid())
-                throw RendererException("Failed to create OpenGL texture for color map.");
+            texture.create(QOpenGLTexture::Target2D);
+            texture.setWrapMode(QOpenGLTexture::ClampToEdge);
+            texture.setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear); // Note: Other modes may cause artifacts, e.g., at cylinder ends.
+            texture.setData(
+                QOpenGLTexture::RGB8_UNorm, QOpenGLTexture::RGB, QOpenGLTexture::UInt8,
+                resolution, 1,
+                pixelData.data(),
+                false);
         });
 }
 

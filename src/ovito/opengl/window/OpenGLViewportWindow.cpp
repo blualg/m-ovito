@@ -33,9 +33,9 @@ namespace Ovito {
 IMPLEMENT_CREATABLE_OVITO_CLASS(OpenGLViewportWindow);
 
 /******************************************************************************
-* Creates the UI widget that is associated with this viewport window.
+* Creates the Qt widget that is associated with this viewport window.
 ******************************************************************************/
-QWidget* OpenGLViewportWindow::createWidget(QWidget* parent)
+QWidget* OpenGLViewportWindow::createQtWidget(QWidget* parent)
 {
     /// A custom QOpenGLWidget subclass that forwards paint events to the viewport window.
     class OpenGLViewportWidget : public QOpenGLWidget
@@ -60,6 +60,10 @@ QWidget* OpenGLViewportWindow::createWidget(QWidget* parent)
             _owner->paint();
         }
 
+        /// This override is here as a workaround for a Qt bug on the Windows platform (as of Qt 6.7.2).
+        /// The viewport context menu does not close properly when the user clicks next to the menu into the same viewport window.
+        virtual void mousePressEvent(QMouseEvent* event) override {}
+
     private:
         OpenGLViewportWindow* _owner;
     };
@@ -83,7 +87,7 @@ OORef<RenderingJob> OpenGLViewportWindow::createRenderingJob()
 
     // Create the window's viewport renderer implementation.
     return OORef<WidgetOpenGLRenderingJob>::create(
-        widget(),
+        glwin(),
         userInterface().datasetContainer().visCache(), // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
         1, // multi-sampling level
         useOrderIndependentTransparency);
@@ -101,21 +105,27 @@ void OpenGLViewportWindow::releaseResources()
     // Release picking data.
     _objectPickingMap->reset();
 
+    // Release frame graph.
+    _frameGraph.reset();
+
     // This also releases the rendering job and the OpenGL resources it holds.
     WidgetViewportWindow::releaseResources();
 }
 
 /******************************************************************************
-* Newly renders the window contents after the frame graph has been regenerated.
+* Renders the window contents after the frame graph has been regenerated.
 ******************************************************************************/
-void OpenGLViewportWindow::rerender()
+Future<void> OpenGLViewportWindow::renderFrameGraph(OORef<FrameGraph> frameGraph)
 {
-    if(widget())
-        widget()->update();
+    // Hold on to the frame graph.
+    _frameGraph = std::move(frameGraph);
+
+    // Return immediately, because the OpenGL window performs all rendering in the paint() routine.
+    return Future<void>::createImmediateEmpty();
 }
 
 /******************************************************************************
-* Is called whenever the widget needs to be painted.
+* Is called by Qt whenever the widget needs to be painted.
 ******************************************************************************/
 void OpenGLViewportWindow::paint()
 {
@@ -134,11 +144,11 @@ void OpenGLViewportWindow::paint()
         // Recreate/resize abstract frame buffer for rendering into the widget if necessary.
         const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
         if(!_visualFrameBuffer || _visualFrameBuffer->outputViewportRect() != viewportRect)
-            _visualFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(static_object_cast<OpenGLRenderingJob>(renderingJob()), viewportRect, widget()->defaultFramebufferObject());
+            _visualFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(static_object_cast<OpenGLRenderingJob>(renderingJob()), viewportRect, glwin()->defaultFramebufferObject());
 
         // Render the viewport contents. This requires an active GL context.
         auto future = renderingJob()->renderFrame(frameGraph(), _visualFrameBuffer);
-        OVITO_ASSERT(future.isValid() && future.isFinished() && !future.isCanceled());
+        OVITO_ASSERT(future && future.isFinished() && !future.isCanceled());
 
         // Emit signal to inform listeners (e.g. SceneAnimationPlayback) that a full frame has been rendered and presented on screen.
         if(frameGraph()->isPreliminaryState() == false)
@@ -155,7 +165,7 @@ void OpenGLViewportWindow::paint()
         stream << "OpenGL shading language: " << QString::fromUtf8(OpenGLRenderer::openGLSLVersion()) << "\n";
         stream << "OpenGL shader programs: " << QOpenGLShaderProgram::hasOpenGLShaderPrograms() << "\n";
         ex.appendDetailMessage(openGLReport);
-        setFrameGraph({});
+        releaseResources();
         Q_EMIT fatalError(ex);
     }
 }
@@ -166,7 +176,7 @@ void OpenGLViewportWindow::paint()
 std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPointF& pos)
 {
     // Cannot perform picking while viewport is not visible or when updates are disabled.
-    if(isVisible() && !userInterface().exitingDueToFatalError() && widget()->isValid() && widget()->isEnabled() && widget()->defaultFramebufferObject() != 0) {
+    if(isVisible() && !userInterface().exitingDueToFatalError() && glwin()->isValid() && widget()->isEnabled() && glwin()->defaultFramebufferObject() != 0) {
 
         // Is the picking buffer still valid? If not, we need to render a new frame.
         if(!_objectPickingMap->isValid() && frameGraph()) {

@@ -25,6 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertyParameterUI.h>
+#include <ovito/gui/desktop/widgets/general/StableComboBox.h>
 
 namespace Ovito {
 
@@ -45,7 +46,7 @@ public:
     virtual ~DataObjectReferenceParameterUI();
 
     /// This returns the combobox widget managed by this ParameterUI.
-    QComboBox* comboBox() const { return _comboBox; }
+    StableComboBox* comboBox() const { return _comboBox; }
 
     /// Sets the enabled state of the UI.
     virtual void setEnabled(bool enabled) override;
@@ -88,7 +89,7 @@ public:
 
 public:
 
-    Q_PROPERTY(QComboBox comboBox READ comboBox)
+    Q_PROPERTY(StableComboBox comboBox READ comboBox)
 
 public Q_SLOTS:
 
@@ -99,7 +100,7 @@ public Q_SLOTS:
 protected:
 
     /// The combo-box widget.
-    QPointer<QComboBox> _comboBox;
+    QPointer<StableComboBox> _comboBox;
 
     /// The type of data object that can be selected.
     DataObjectClassPtr _dataObjectClass;

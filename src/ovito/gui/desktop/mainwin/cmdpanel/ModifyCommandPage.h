@@ -62,6 +62,9 @@ public:
     /// Saves the layout of the widgets to the settings store.
     void saveLayout();
 
+    /// Displays the given HTML page content in the About pane.
+    void showProgramNotice(const QString& htmlPage);
+
 protected Q_SLOTS:
 
     /// Is called when the user has selected a modifier from drop-down list of available modifiers.
@@ -74,16 +77,10 @@ protected Q_SLOTS:
     /// This called when the user double clicks on an item in the modifier stack.
     void onModifierStackDoubleClicked(const QModelIndex& index);
 
-    /// Is called by the system when fetching the news web page from the server is completed.
-    void onWebRequestFinished();
-
 private:
 
     /// Creates the rollout panel that shows information about the application whenever no object is selected.
     void createAboutPanel();
-
-    /// Displays the given HTML page content in the About pane.
-    void showProgramNotice(const QString& htmlPage);
 
 private:
 

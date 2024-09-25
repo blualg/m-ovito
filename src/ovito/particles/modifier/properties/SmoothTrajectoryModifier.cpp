@@ -90,7 +90,7 @@ void SmoothTrajectoryModifier::inputCachingHints(ModifierEvaluationRequest& requ
         AnimationTime newEndTime = request.modificationNode()->sourceFrameToAnimationTime(endFrame);
         OVITO_ASSERT(newStartTime <= iv.start());
         OVITO_ASSERT(newEndTime >= iv.end());
-        request.modifiableCachingIntervals().add(TimeInterval(newStartTime, newEndTime));
+        request.mutableCachingIntervals().add(TimeInterval(newStartTime, newEndTime));
     }
 
     Modifier::inputCachingHints(request);

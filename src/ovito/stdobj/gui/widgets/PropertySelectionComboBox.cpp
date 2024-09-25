@@ -31,6 +31,7 @@ namespace Ovito {
 ******************************************************************************/
 PropertyReference PropertySelectionComboBox::currentProperty() const
 {
+    OVITO_ASSERT(_newItems.empty());
     if(!isEditable()) {
         int index = currentIndex();
         if(index < 0)
@@ -47,6 +48,7 @@ PropertyReference PropertySelectionComboBox::currentProperty() const
 ******************************************************************************/
 void PropertySelectionComboBox::setCurrentProperty(const PropertyReference& property)
 {
+    OVITO_ASSERT(_newItems.empty());
     int index = findData(QVariant::fromValue(property));
     if(index >= 0) {
         setCurrentIndex(index);

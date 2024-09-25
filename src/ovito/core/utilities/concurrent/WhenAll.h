@@ -83,16 +83,13 @@ template<typename InputRange, class Executor, typename... ResultType>
         }
 
         /// Performs the next iteration.
-        void iteration_begin(Promise<task_result_type> promise) noexcept {
+        void iteration_begin(PromiseBase promise) noexcept {
             // Did we already reach the end of the input range?
             if(!this->isCanceled()) {
                 if(_iterator != std::end(_range)) {
-                    auto& future = *_iterator;
-                    OVITO_ASSERT(future.isValid());
                     // Schedule next iteration upon completion of the future.
-                    this->whenTaskFinishes(future.takeTaskDependency(), _executor, [promise = std::move(promise)]() mutable noexcept {
-                        static_cast<WhenAllFuturesTask*>(promise.task().get())->iteration_complete(std::move(promise));
-                    });
+                    this->template whenTaskFinishes<WhenAllFuturesTask, &WhenAllFuturesTask::iteration_complete>(
+                        std::move(*_iterator), _executor, std::move(promise));
                 }
                 else {
                     // Inform caller we are done.
@@ -103,13 +100,9 @@ template<typename InputRange, class Executor, typename... ResultType>
         }
 
         // Is called at the end of each iteration, when another future has finished.
-        void iteration_complete(Promise<task_result_type> promise) noexcept {
-            // Lock access to this task object.
-            Task::MutexLock lock(*this);
-
-            // Get the task that did just finish and wrap it in a future of the original type.
-            *_iterator = std::decay_t<decltype(*_iterator)>(this->takeAwaitedTask());
-
+        void iteration_complete(PromiseBase promise, detail::TaskDependency finishedTask, Task::MutexLock& lock) noexcept {
+            // Wrap the task that just finished in a future of the original type.
+            *_iterator = std::decay_t<decltype(*_iterator)>(std::move(finishedTask));
             lock.unlock();
 
             // Continue with next iteration.

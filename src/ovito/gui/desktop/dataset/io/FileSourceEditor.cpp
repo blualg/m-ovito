@@ -441,7 +441,7 @@ void FileSourceEditor::updateDisplayedInformation()
 
     if(_timeSeriesLabel) {
         if(!fileSource->frames().empty())
-            _timeSeriesLabel->setText(tr("Showing frame %1 of %2").arg(fileSource->dataCollectionFrame()+1).arg(fileSource->frames().count()));
+            _timeSeriesLabel->setText(tr("Showing frame %1 of %2").arg(fileSource->dataCollectionFrame() + 1).arg(fileSource->frames().count()));
         else
             _timeSeriesLabel->setText(tr("No frames available"));
     }

@@ -23,7 +23,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportWindow.h>
-#include <ovito/core/viewport/ViewportSuspender.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/rendering/SceneRenderer.h>
@@ -53,17 +52,27 @@ void ViewportWindow::setViewport(Viewport* vp, UserInterface& userInterface)
 {
     OVITO_ASSERT(vp);
 
+    // First, release resources associated with the previous viewport.
+    releaseResources();
+
+    // Unregister window from previous user interface.
+    if(_userInterface)
+        _userInterface->unregisterViewportWindow(this);
+
+    // Register window with new user interface.
     _userInterface = &userInterface;
+    userInterface.registerViewportWindow(this);
+
     _viewport.set(this, PROPERTY_FIELD(viewport), vp);
     if(vp) {
         if(!_scenePreparation) {
             _scenePreparation = OORef<ScenePreparation>::create(userInterface, vp->scene());
             // Automatically rerender window whenever the scene is changed.
             connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &ViewportWindow::requestUpdate);
-            _scenePreparation->setAutoRestart(isVisible());
+            scenePreparation().setAutoRestart(isVisible());
         }
         else {
-            _scenePreparation->setScene(vp->scene());
+            scenePreparation().setScene(vp->scene());
         }
     }
     else {
@@ -72,54 +81,52 @@ void ViewportWindow::setViewport(Viewport* vp, UserInterface& userInterface)
 }
 
 /******************************************************************************
+* This method is called after the reference counter of this object has reached zero
+* and before the object is being finally deleted.
+******************************************************************************/
+void ViewportWindow::aboutToBeDeleted()
+{
+    // Unregister window from user interface.
+    if(_userInterface)
+        _userInterface->unregisterViewportWindow(this);
+
+    RefMaker::aboutToBeDeleted();
+}
+
+/******************************************************************************
 * Releases the renderer resources held by the viewport window and the renderer.
 ******************************************************************************/
 void ViewportWindow::releaseResources()
 {
-    // Stop building a new frame graph.
-    _frameGraphFuture.reset();
+    // Reset state.
+    _updateNeeded = _readyForPresentation = false;
+    _presentTimer.stop();
 
-    // Release current frame graph and rendering job.
-    setFrameGraph({});
+    // Stop building and rendering a frame graph.
+    _frameFuture.reset();
+
+    // Release rendering job.
     setRenderingJob({});
 }
 
 /******************************************************************************
-* Puts an update request event for this viewport on the event loop.
+* Requests a refresh of this viewport window.
 ******************************************************************************/
-void ViewportWindow::requestUpdate()
+void ViewportWindow::requestUpdate(bool isPreliminaryUpdate)
 {
     OVITO_ASSERT(ExecutionContext::isMainThread());
 
-    if(!_updateRequested && viewport()) {
-        _updateRequested = true;
-        if(!userInterface().areViewportUpdatesSuspended()) {
-            resumeViewportUpdates();
-        }
-    }
-}
+    _updateNeeded = true;
 
-/******************************************************************************
-* If an update request is pending for this viewport window, immediately
-* processes it and redraw the window contents.
-******************************************************************************/
-void ViewportWindow::processViewportUpdate()
-{
-    if(!viewport())
-        return;
-
-    if(QCoreApplication::instance()) {
-        if(_updateRequested && _updateTimer.isActive()) {
-            _updateTimer.stop();
-            // Calling handleUpdateRequest() asynchronously because it is a long-running
-            // operation that may start a local event loop. We can't allow user changes to the
-            // list of viewports while processViewportUpdate() is being executed.
-            QMetaObject::invokeMethod(this, "handleUpdateRequest", Qt::QueuedConnection);
-        }
+    // Refresh the viewport immediately or after a short waiting period?
+    if(!isPreliminaryUpdate || QThread::currentThread()->loopLevel() == 0) {
+        _preliminaryUpdateTimer.stop();
+        resumeViewportUpdates();
     }
     else {
-        if(_updateRequested)
-            handleUpdateRequest();
+        // This reduces excessive repaints when a full scene state arrives shortly after a preliminary state.
+        if(!_preliminaryUpdateTimer.isActive())
+            _preliminaryUpdateTimer.start(20, this);
     }
 }
 
@@ -129,14 +136,214 @@ void ViewportWindow::processViewportUpdate()
 ******************************************************************************/
 void ViewportWindow::resumeViewportUpdates()
 {
-    if(!viewport())
-        return;
-    OVITO_ASSERT(!userInterface().areViewportUpdatesSuspended());
+    if(_updateNeeded && !_frameFuture && viewport() && !userInterface().areViewportUpdatesSuspended() && isVisible()) {
+        ExecutionContext::Scope contextScope(ExecutionContext::Type::Interactive, userInterface().shared_from_this());
 
-    if(QCoreApplication::instance()) {
-        if(_updateRequested && !_updateTimer.isActive() && isVisible()) {
-            _updateTimer.start(10, Qt::CoarseTimer, this); // Refresh viewport window after a 10 ms delay to avoid excessive repaints.
+        // Run buildAndRenderFrameGraph() as soon as control returns to the main event loop.
+        _frameFuture = launchAsync(ObjectExecutor(this, true), std::bind_front(&ViewportWindow::buildAndRenderFrameGraph, this));
+
+        // Afterwards, run frameGraphRenderingFinished().
+        _frameFuture.finally(*this, std::bind_front(&ViewportWindow::frameGraphRenderingFinished, this));
+    }
+}
+
+/******************************************************************************
+* Is called once the frame has been rendered by the window's RenderingJob.
+******************************************************************************/
+void ViewportWindow::frameGraphRenderingFinished(Task& task) noexcept
+{
+    // Error handling and image presentation.
+    if(auto future = std::move(_frameFuture)) {
+        OVITO_ASSERT(future.task().get() == &task);
+        OVITO_ASSERT(future.isFinished());
+        try {
+            if(!future.isCanceled()) {
+                future.task()->throwPossibleException();
+                _readyForPresentation = true;
+                becameReadyForPresentation();
+            }
         }
+        catch(OperationCanceled) {}
+        catch(Exception& ex) {
+            // Automatically switch back to the standard OpenGL renderer if there is a problem with
+            // the non-standard renderer.
+            fatalError(ex);
+        }
+    }
+    OVITO_ASSERT(!_frameFuture);
+
+    // If another update was requested while the current one was being processed, restart the process.
+    resumeViewportUpdates();
+}
+
+/******************************************************************************
+* Generates the frame graph for this viewport window and calls the attached
+* RenderingJob to render the frame.
+******************************************************************************/
+Future<void> ViewportWindow::buildAndRenderFrameGraph()
+{
+    OVITO_ASSERT(viewport());
+
+    // Skip if the viewport is currently hidden but keep the update request pending.
+    if(!isVisible() || !viewport())
+        this_task::cancelAndThrow();
+
+    // Do nothing if viewport updates are currently suspended.
+    // The UserInterface will issue a new update request once updates are resumed.
+    if(userInterface().areViewportUpdatesSuspended())
+        this_task::cancelAndThrow();
+
+    // Reset update request flag.
+    _updateNeeded = false;
+
+    // The dataset to be rendered.
+    DataSet* dataset = userInterface().datasetContainer().currentSet();
+    if(!dataset || !dataset->renderSettings())
+        this_task::cancelAndThrow();
+
+    // The size of the viewport window.
+    QSize windowSize = viewportWindowDeviceSize();
+    if(windowSize.isEmpty())
+        this_task::cancelAndThrow();
+
+    // Interactive viewport rendering is performed with a higher priority than other tasks.
+    this_task::get()->setHighPriorityTask();
+
+    // Set up preliminary projection without knowing the scene bounding box yet.
+    AnimationTime time = viewport()->scene()->animationSettings()->currentTime();
+    FloatType aspectRatio = (FloatType)windowSize.height() / windowSize.width();
+    ViewProjectionParameters projParams = viewport()->computeProjectionParameters(time, aspectRatio);
+
+    // Adjust projection if preview frame is enabled.
+    ViewProjectionParameters noninteractiveProjParams = projParams;
+    if(viewport()->renderPreviewMode()) {
+        adjustProjectionForRenderPreviewFrame(dataset, projParams, windowSize);
+        noninteractiveProjParams = viewport()->computeProjectionParameters(time, viewport()->renderAspectRatio(dataset));
+    }
+
+    // Initialize the window's rendering job. Job may be null, e.g., in a JupyterViewportWindow.
+    OORef<RenderingJob> renderingJob = this->renderingJob();
+
+    // Create a new fresh frame graph.
+    OORef<FrameGraph> frameGraph = OORef<FrameGraph>::create(
+        userInterface().datasetContainer().visCache()->acquireResourceFrame(),
+        time,
+        projParams,
+        viewportWindowDeviceIndependentSize(),
+        true, // isInteractive
+        viewport()->renderPreviewMode(),
+        false, // stopOnPipelineError
+        renderingJob ? renderingJob->preferredImageFormat() : QImage::Format_ARGB32_Premultiplied,
+        devicePixelRatio());
+
+    // Set viewport background color.
+    frameGraph->setClearColor(viewport()->renderPreviewMode()
+        ? dataset->renderSettings()->backgroundColorAt(time)
+        : Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
+
+    // Render construction grid.
+    if(viewport()->isGridVisible())
+        renderConstructionGrid(*frameGraph);
+
+    // Render visual representations of the modifiers.
+    viewport()->scene()->visitPipelines([&](Pipeline* pipeline) {
+        renderPipelineModifiers(pipeline, *frameGraph);
+        return true;
+    });
+
+    // Render interactive viewport gizmos.
+    for(ViewportGizmo* gizmo : viewportGizmos()) {
+        gizmo->renderOverlay(viewport(), this, *frameGraph, dataset);
+    }
+
+    QRect logicalViewportRect;
+    QRect physicalViewportRect;
+    if(viewport()->renderPreviewMode()) {
+        logicalViewportRect = dataset->renderSettings()->viewportFramebufferArea(viewport(), dataset->viewportConfig());
+        physicalViewportRect = previewFrameGeometry(dataset, windowSize);
+    }
+
+    // Let the FrameGraphBuilder class do the heavy lifting and generate the frame graph for the current scene.
+    Future<OORef<FrameGraph>> frameGraphFuture = FrameGraphBuilder::build(std::move(frameGraph), viewport()->scene(), viewport(), logicalViewportRect, physicalViewportRect, noninteractiveProjParams);
+
+    // After the frame graph has been built for the scene, finish and then render it.
+    return frameGraphFuture.then(*this, [this](OORef<FrameGraph> frameGraph) {
+
+        DataSet* dataset = userInterface().datasetContainer().currentSet();
+        QSize windowSize = viewportWindowDeviceSize();
+        if(!viewport() || !dataset || !dataset->renderSettings() || windowSize.isEmpty())
+            this_task::cancelAndThrow();
+
+        // Create a command group for the UI element rendering commands.
+        FrameGraph::RenderingCommandGroup& uiCommandGroup = frameGraph->addCommandGroup(FrameGraph::OverLayer);
+
+        // Render UI elements on top (e.g. viewport caption).
+        if(viewport()->renderPreviewMode()) {
+            renderPreviewFrame(*frameGraph, uiCommandGroup, dataset, windowSize);
+        }
+        else {
+            if(isOrientationIndicatorVisible())
+                renderOrientationIndicator(*frameGraph, uiCommandGroup, windowSize);
+        }
+
+        // Render viewport caption.
+        if(isViewportTitleVisible())
+            _contextMenuArea = renderViewportTitle(*frameGraph, uiCommandGroup);
+        else
+            _contextMenuArea = QRectF();
+
+        // Let the renderer implementation post-process the frame graph.
+        if(this->renderingJob())
+            this->renderingJob()->postprocessFrameGraph(*frameGraph);
+
+        // Compute final projection based on the now known bounding box.
+        _projParams = viewport()->computeProjectionParameters(frameGraph->time(), (FloatType)windowSize.height() / windowSize.width(), frameGraph->sceneBoundingBox());
+
+        // Adjust projection if render frame is enabled.
+        if(viewport()->renderPreviewMode())
+            adjustProjectionForRenderPreviewFrame(dataset, _projParams, windowSize);
+        frameGraph->setProjectionParams(_projParams);
+
+        // If the current scene represents only a preliminary pipeline state, we need to render the scene again
+        // as soon as all pipelines are ready.
+        if(frameGraph->isPreliminaryState()) {
+            // This restarts the evaluation of all pipelines in the scene and triggers
+            // a viewport refresh once all pipelines are ready.
+            (void)scenePreparation().future();
+        }
+
+        // After the frame graph has been built, let window implementation render an image.
+        return renderFrameGraph(std::move(frameGraph));
+    });
+}
+
+/******************************************************************************
+* Is called when a rendered frame needs to be presented on screen.
+******************************************************************************/
+void ViewportWindow::becameReadyForPresentation()
+{
+    // This viewport window must have been registered with a user interface.
+    OVITO_ASSERT(boost::find(userInterface().viewportWindows(), this) != userInterface().viewportWindows().end());
+    OVITO_ASSERT(_readyForPresentation);
+
+    // Check whether all windows in the current user interface are ready for presentation (or are not being rendered at all).
+    bool allReady = boost::algorithm::all_of(userInterface().viewportWindows(), [](const ViewportWindow* window) {
+        return window->_readyForPresentation || !window->_frameFuture || !window->viewport() || !window->isVisible();
+    });
+
+    // If all windows are ready, present the rendered frames all at once.
+    if(allReady) {
+        for(ViewportWindow* window : userInterface().viewportWindows()) {
+            if(window->_readyForPresentation) {
+                window->_readyForPresentation = false;
+                window->_presentTimer.stop();
+                window->presentFrame();
+            }
+        }
+    }
+    else if(QCoreApplication::instance()) {
+        // If not all windows are ready yet, wait for some more time before presenting just our frame.
+        _presentTimer.start(200, this);
     }
 }
 
@@ -145,148 +352,19 @@ void ViewportWindow::resumeViewportUpdates()
 ******************************************************************************/
 void ViewportWindow::timerEvent(QTimerEvent* event)
 {
-    if(event->timerId() == _updateTimer.timerId()) {
-         _updateTimer.stop();
-        handleUpdateRequest();
+    if(event->timerId() == _preliminaryUpdateTimer.timerId()) {
+        _preliminaryUpdateTimer.stop();
+        resumeViewportUpdates();
     }
-}
-
-/******************************************************************************
-* Is called when the viewport's scene has changed and a rerendering is required.
-******************************************************************************/
-void ViewportWindow::handleUpdateRequest()
-{
-    OVITO_ASSERT(viewport());
-
-    // Skip if the viewport is currently hidden but keep the update request pending.
-    if(!isVisible() || !viewport())
-        return;
-
-    // Do nothing if viewport updates are currently suspended.
-    // The UserInterface will issue a new update request once updates are resumed.
-    if(userInterface().areViewportUpdatesSuspended())
-        return;
-
-    // Reset update request flag.
-    _updateRequested = false;
-
-    // The dataset to be rendered.
-    DataSet* dataset = userInterface().datasetContainer().currentSet();
-    if(!dataset || !dataset->renderSettings())
-        return;
-
-    // The size of the viewport window.
-    QSize windowSize = viewportWindowDeviceSize();
-    if(windowSize.isEmpty())
-        return;
-
-    userInterface().handleExceptions<true>([&]() {
-
-        // Interactive viewport rendering is performed with a higher priority than other tasks.
-        this_task::get()->setHighPriorityTask();
-
-        // Set up preliminary projection without knowing the scene bounding box yet.
-        AnimationTime time = viewport()->scene()->animationSettings()->currentTime();
-        FloatType aspectRatio = (FloatType)windowSize.height() / windowSize.width();
-        ViewProjectionParameters projParams = viewport()->computeProjectionParameters(time, aspectRatio);
-
-        // Adjust projection if preview frame is enabled.
-        ViewProjectionParameters noninteractiveProjParams = projParams;
-        if(viewport()->renderPreviewMode()) {
-            adjustProjectionForRenderPreviewFrame(dataset, projParams, windowSize);
-            noninteractiveProjParams = viewport()->computeProjectionParameters(time, viewport()->renderAspectRatio(dataset));
+    else if(event->timerId() == _presentTimer.timerId()) {
+        _presentTimer.stop();
+        if(_readyForPresentation) {
+            _readyForPresentation = false;
+            if(isVisible())
+                presentFrame();
         }
-
-        // Initialize the window's rendering job. Job may be null, e.g., in a JupyterViewportWindow.
-        OORef<RenderingJob> renderingJob = this->renderingJob();
-
-        // Create a new fresh frame graph.
-        OORef<FrameGraph> frameGraph = OORef<FrameGraph>::create(
-            userInterface().datasetContainer().visCache()->acquireResourceFrame(),
-            time,
-            projParams,
-            viewportWindowDeviceIndependentSize(),
-            true, // isInteractive
-            viewport()->renderPreviewMode(),
-            false, // stopOnPipelineError
-            renderingJob ? renderingJob->preferredImageFormat() : QImage::Format_ARGB32_Premultiplied,
-            devicePixelRatio());
-
-        // Set viewport background color.
-        frameGraph->setClearColor(viewport()->renderPreviewMode()
-            ? dataset->renderSettings()->backgroundColorAt(time)
-            : Viewport::viewportColor(ViewportSettings::COLOR_VIEWPORT_BKG));
-
-        // Render construction grid.
-        if(viewport()->isGridVisible())
-            renderConstructionGrid(*frameGraph);
-
-        // Render visual representations of the modifiers.
-        viewport()->scene()->visitPipelines([&](Pipeline* pipeline) {
-            renderPipelineModifiers(pipeline, *frameGraph);
-            return true;
-        });
-
-        // Render interactive viewport gizmos.
-        for(ViewportGizmo* gizmo : viewportGizmos()) {
-            gizmo->renderOverlay(viewport(), this, *frameGraph, dataset);
-        }
-
-        QRect logicalViewportRect;
-        QRect physicalViewportRect;
-        if(viewport()->renderPreviewMode()) {
-            logicalViewportRect = dataset->renderSettings()->viewportFramebufferArea(viewport(), dataset->viewportConfig());
-            physicalViewportRect = previewFrameGeometry(dataset, windowSize);
-        }
-
-        // Let the FrameGraphBuilder class do the heavy lifting and generate the frame graph for the current scene.
-        Future<OORef<FrameGraph>> frameGraphFuture = FrameGraphBuilder::build(std::move(frameGraph), viewport()->scene(), viewport(), logicalViewportRect, physicalViewportRect, noninteractiveProjParams);
-
-        // After the frame graph has been built for the scene, finish and then render it.
-        // Note: Temporarily suspending viewport updates while building the frame graph to prevent recursive updates.
-        _frameGraphFuture = frameGraphFuture.then(*this, [this, suspendUpdates=ViewportSuspender(userInterface())](OORef<FrameGraph> frameGraph) mutable {
-
-            DataSet* dataset = userInterface().datasetContainer().currentSet();
-            QSize windowSize = viewportWindowDeviceSize();
-            if(!viewport() || !dataset || !dataset->renderSettings() || windowSize.isEmpty())
-                return;
-
-            // Create a command group for the UI element rendering commands.
-            FrameGraph::RenderingCommandGroup& uiCommandGroup = frameGraph->addCommandGroup(FrameGraph::OverLayer);
-
-            // Render UI elements on top (e.g. viewport caption).
-            if(viewport()->renderPreviewMode()) {
-                renderPreviewFrame(*frameGraph, uiCommandGroup, dataset, windowSize);
-            }
-            else {
-                if(isOrientationIndicatorVisible())
-                    renderOrientationIndicator(*frameGraph, uiCommandGroup, windowSize);
-            }
-
-            // Render viewport caption.
-            if(isViewportTitleVisible())
-                _contextMenuArea = renderViewportTitle(*frameGraph, uiCommandGroup);
-            else
-                _contextMenuArea = QRectF();
-
-            // Let the renderer implementation post-process the frame graph.
-            this->renderingJob()->postprocessFrameGraph(*frameGraph);
-
-            // Compute final projection based on the now known bounding box.
-            _projParams = viewport()->computeProjectionParameters(frameGraph->time(), (FloatType)windowSize.height() / windowSize.width(), frameGraph->sceneBoundingBox());
-
-            // Adjust projection if render frame is enabled.
-            if(viewport()->renderPreviewMode())
-                adjustProjectionForRenderPreviewFrame(dataset, _projParams, windowSize);
-            frameGraph->setProjectionParams(_projParams);
-
-            // Adopt newly generated frame graph for this window.
-            setFrameGraph(std::move(frameGraph));
-
-            // After the frame graph has been rebuilt, let window implementation render and image and update the on-screen display.
-            rerender();
-        });
-    });
+    }
+    QObject::timerEvent(event);
 }
 
 /******************************************************************************
@@ -296,13 +374,10 @@ bool ViewportWindow::referenceEvent(RefTarget* source, const ReferenceEvent& eve
 {
     if(source == viewport()) {
         if(event.type() == Viewport::ViewportWindowUpdateRequested) {
-            requestUpdate();
+            requestUpdate(false);
         }
         else if(event.type() == Viewport::ViewportWindowResumeUpdatesRequested) {
             resumeViewportUpdates();
-        }
-        else if(event.type() == Viewport::ViewportWindowHandleUpdatesRequested) {
-            processViewportUpdate();
         }
         else if(event.type() == Viewport::ZoomToSceneExtentsRequested) {
             zoomToSceneExtents();

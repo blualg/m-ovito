@@ -91,7 +91,7 @@ public:
     static Color getBurgersVectorColor(ParticleType::PredefinedStructureType structureType, const Vector3& b);
 
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
+    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const override;
 
 private:
 

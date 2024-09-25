@@ -46,11 +46,19 @@ template<class TaskType, typename... Args>
     if(this_task::get() && this_task::get()->isHighPriorityTask())
         task->setHighPriorityTask();
 
-    // Make the task the active one.
-    Task::Scope taskScope(task);
+    // Check at compile-time whether the task's call operator is defined.
+    if constexpr(std::is_invocable_v<TaskType, Args...>) {
 
-    // Launch the task.
-    (*task)(std::forward<Args>(args)...);
+        // Make the task the active one.
+        Task::Scope taskScope(task);
+
+        // Launch the task by invoking its call operator.
+        (*task)(std::forward<Args>(args)...);
+    }
+    else {
+        // Make sure no args have been provided by the caller.
+        static_assert(sizeof...(Args) == 0, "The task does not accept any arguments.");
+    }
 
     // Return the future to the caller.
     return future_type::createFromTask(std::move(task));

@@ -33,7 +33,6 @@
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/app/PluginManager.h>
-#include <ovito/core/viewport/ViewportSuspender.h>
 #include <ovito/core/oo/OvitoClass.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "ColorCodingModifierEditor.h"
@@ -405,7 +404,6 @@ void ColorCodingModifierEditor::onAdjustRangeGlobal()
 
     if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
         performTransaction(tr("Adjust range"), [this, mod, firstFrame=anim->firstFrame(), lastFrame=anim->lastFrame()]() {
-            ViewportSuspender noVPUpdates;
             ProgressDialog progressDialog(mainWindow(), container(), tr("Determining property value range"));
             mod->adjustRangeGlobal(firstFrame, lastFrame);
         });

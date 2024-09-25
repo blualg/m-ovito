@@ -121,6 +121,7 @@ void SceneAnimationPlayback::continuePlaybackAtFrame(int frame)
                         if(ViewportWindow* window = dynamic_object_cast<ViewportWindow>(dependent)) {
                             if(window->viewport() == viewport && window->isVisible()) {
                                 _numPendingViewportWindows++;
+                                // Request a callback once the viewport window has been repainted and is displaying the current animation frame on screen.
                                 connect(window, &ViewportWindow::frameRenderComplete, this, &SceneAnimationPlayback::viewportWindowComplete);
                                 connect(window, &ViewportWindow::viewportWindowHidden, this, &SceneAnimationPlayback::viewportWindowComplete);
                             }

@@ -189,9 +189,6 @@ void XFormMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
                 doXForm();
             });
         }
-
-        // Force immediate viewport repaints.
-        inputManager()->userInterface().processViewportUpdateRequests();
     }
     else {
         // Change mouse cursor while hovering over an object.

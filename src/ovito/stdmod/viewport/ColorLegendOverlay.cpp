@@ -372,14 +372,15 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
     }
 }
 
+namespace {
 /******************************************************************************
  * Estimates the order of magnitude of a given value
  * estimate since this approach has no mathematical proof
  * might not behave well for all edge cases
  ******************************************************************************/
-static int estimateOrderOfMagnitude(const FloatType value)
+[[nodiscard]] inline int estimateOrderOfMagnitude(const FloatType value)
 {
-    FloatType result{std::abs(value)};
+    FloatType result = std::abs(value);
     constexpr FloatType eps{1e-18};
     if(result < eps) {
         return 0;
@@ -394,7 +395,7 @@ static int estimateOrderOfMagnitude(const FloatType value)
  * estimate since this approach has no mathematical proof
  * might not behave well for all edge cases
  ******************************************************************************/
-[[nodiscard]] static FloatType getFirstTickValidValue(const FloatType start, const FloatType tickSpacing)
+[[nodiscard]] inline FloatType getFirstTickValidValue(const FloatType start, const FloatType tickSpacing)
 {
     return tickSpacing * std::ceil(start / tickSpacing);
 }
@@ -403,11 +404,10 @@ static int estimateOrderOfMagnitude(const FloatType value)
  * Returns the starting value and the tick spacing as function of a control parameter N. Increment (decrement) N to increase
  * (decrease) the tick spacing. Ideally N should start at 0.
  ******************************************************************************/
-[[nodiscard]] static std::tuple<FloatType, FloatType> getTickPositionsFromN(FloatType lowerLimit, FloatType upperLimit,
-                                                                            const int N)
+[[nodiscard]] inline std::tuple<FloatType, FloatType> getTickPositionsFromN(FloatType lowerLimit, FloatType upperLimit, const int N)
 {
-    constexpr FloatType steps[]{2, 4, 5, 10};
-    constexpr int num_steps{std::size(steps)};
+    constexpr std::array<FloatType, 4> steps{{2, 4, 5, 10}};
+    constexpr int num_steps = std::size(steps);
 
     // a % b = (b + (a % b)) % b <- correct for negative values of a
     // Selects a valid multiple (step width) from the steps array (based on N)
@@ -415,19 +415,20 @@ static int estimateOrderOfMagnitude(const FloatType value)
     // guarantees flooring division (even for negative numbers)
     // first scaling factor for step width
     // N==-5 gives index==1 and pow==-2 (if steps[][2,5,10}])
-    const int pow{static_cast<int>(std::floor(N / static_cast<FloatType>(num_steps)))};
+    const int pow = static_cast<int>(std::floor(N / static_cast<FloatType>(num_steps)));
 
-    const int oom{estimateOrderOfMagnitude(upperLimit - lowerLimit)};
+    const int oom = estimateOrderOfMagnitude(upperLimit - lowerLimit);
     // inter * 10^pow * 10^(oom-1) = inter * 10^(pow+oom-1)
     // const FloatType inter{steps[index] * std::pow(10, pow) * std::pow(10, oom - 1)};
-    const FloatType inter{steps[index] * std::pow(10, pow + oom - 1)};
+    const FloatType inter = steps[index] * std::pow(10, pow + oom - 1);
     return {getFirstTickValidValue(lowerLimit, inter), inter};
 }
 
-[[nodiscard]] static int get_number_of_ticks(FloatType lowerLimit, FloatType upperLimit, FloatType inter)
+[[nodiscard]] inline int get_number_of_ticks(FloatType lowerLimit, FloatType upperLimit, FloatType inter)
 {
     return static_cast<int>(std::round(std::abs(upperLimit - lowerLimit) / inter));
 }
+}  // namespace
 
 /******************************************************************************
  * Determine the starting value and the tick spacing for a given color bar length and character size. Ticks should be estimate
@@ -708,8 +709,7 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
         // the correct label size after downsampling the image back to 1x.
         labelFont.setPointSizeF(labelFontSize * devicePixelRatio);
         const QFontMetricsF fontMetrics{labelFont};
-        const FloatType colorbarLength{(orientation() == Qt::Horizontal) ? colorBarImageRect.width()
-                                                                         : colorBarImageRect.height()};
+        const FloatType colorbarLength = (orientation() == Qt::Horizontal) ? colorBarImageRect.width() : colorBarImageRect.height();
 
         // Look up tick configuration in the cache
         const auto& [tickStart, tickStep] = frameGraph.visCache().lookup<std::tuple<FloatType, FloatType>>(
@@ -731,25 +731,24 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
                 }
             });
 
-        int num_ticks{get_number_of_ticks(mapping.minValue(), mapping.maxValue(), tickStep)};
+        int numTicks = get_number_of_ticks(mapping.minValue(), mapping.maxValue(), tickStep);
         // Check against the hard coded limit for the number of ticks. Prevents crash in the case of too many ticks
         {
-            const int max_ticks{100};
-            if(num_ticks > max_ticks) {
+            constexpr int maxTicks = 100;
+            if(numTicks > maxTicks) {
                 // Set warning status to be displayed in the GUI.
-                setStatus(
-                    PipelineStatus(PipelineStatus::Warning, tr("Tried to generate %1 tick marks. Currently, no more than %2 "
-                                                               "ticks may be generated. Please increase the tick spacing.")
-                                                                .arg(num_ticks)
-                                                                .arg(max_ticks)));
+                setStatus(PipelineStatus(PipelineStatus::Warning, tr("Tried to generate %1 tick marks. Currently, no more than %2 "
+                                                                     "ticks may be generated. Please increase the tick spacing.")
+                                                                      .arg(numTicks)
+                                                                      .arg(maxTicks)));
 
                 // Escalate to an error state if in terminal mode.
                 if(!Application::guiMode())
                     throw Exception(tr("Tried to generate %1 tick marks. Currently, no more than %2 "
                                        "ticks may be generated. Please increase the tick spacing.")
-                                        .arg(num_ticks)
-                                        .arg(max_ticks));
-                num_ticks = 0;
+                                        .arg(numTicks)
+                                        .arg(maxTicks));
+                numTicks = 0;
             }
         }
 
@@ -766,91 +765,99 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
             Point2 label_pos;
             label_pos.y() = colorBarImageRect.bottom() + outerTickHeight * colorBarImageRect.height() + fontMetrics.ascent() / 2;
             // ticks
-            Point2 tick_min;
-            Point2 tick_max;
-            tick_min.y() = colorBarImageRect.top() + (1 - innerTickHeight) * colorBarImageRect.height();
-            tick_max.y() = colorBarImageRect.top() + (1 + outerTickHeight) * colorBarImageRect.height() + borderWidth;
-            boundingBox |= QRectF(QPointF(colorBarImageRect.left(), tick_min.y()), QPointF(colorBarImageRect.right(), tick_max.y()));
+            Point2 tickMin;
+            Point2 tickMax;
+            tickMin.y() = colorBarImageRect.top() + (1 - innerTickHeight) * colorBarImageRect.height();
+            tickMax.y() = colorBarImageRect.top() + (1 + outerTickHeight) * colorBarImageRect.height() + borderWidth;
+            boundingBox |= QRectF(QPointF(colorBarImageRect.left(), tickMin.y()), QPointF(colorBarImageRect.right(), tickMax.y()));
 
             // If the first tick is in the position of the minValue or maxValue it will be hidden.
             // Therefore we need to increase the num_ticks by 1 to get all required ticks drawn correctly.
-            num_ticks += ((tickStart == mapping.minValue()) || (tickStart == mapping.maxValue()));
-            for(int i{0}; i < num_ticks; i++) {
-                FloatType tick_value{tickStart + i * tickStep};
-                FloatType tick_position{(tick_value - mapping.minValue()) / (mapping.maxValue() - mapping.minValue())};
+            numTicks += ((tickStart == mapping.minValue()) || (tickStart == mapping.maxValue()));
+            for(int i{0}; i < numTicks; i++) {
+                FloatType tickValue = tickStart + i * tickStep;
+                // Fix tick values close to 0 being formatted as 5.5e-17 instead of 0 with the
+                // default format specifier "%g".
+                tickValue = (std::abs(tickValue) < 1e-12) ? 0.0 : tickValue;
+
+                const FloatType tickPosition = (tickValue - mapping.minValue()) / (mapping.maxValue() - mapping.minValue());
                 // omit labels to outside the range or too close to the color bar limit
-                if((tick_position <= 0) || (tick_position >= 1)) {
+                if((tickPosition <= 0) || (tickPosition >= 1)) {
                     continue;
                 }
                 // Label
-                labelPrimitive.setText(QString::asprintf(format.constData(), tick_value));
-                label_pos.x() = colorBarImageRect.left() + colorBarImageRect.width() * tick_position;
+                labelPrimitive.setText(QString::asprintf(format.constData(), tickValue));
+                label_pos.x() = colorBarImageRect.left() + colorBarImageRect.width() * tickPosition;
                 labelPrimitive.setPositionWindow(label_pos);
                 boundingBox |= labelPrimitive.computeBounds(devicePixelRatio);
                 tickLabels.push_back(std::make_unique<TextPrimitive>(labelPrimitive));
 
                 // Tick.
-                tick_min.x() = colorBarImageRect.left() + tick_position * colorBarImageRect.width() - tickWidth / 2;
-                tick_max.x() = colorBarImageRect.left() + tick_position * colorBarImageRect.width() + tickWidth / 2;
-                tickRects.emplace_back(tick_min, tick_max);
+                tickMin.x() = colorBarImageRect.left() + tickPosition * colorBarImageRect.width() - (FloatType)tickWidth / 2.0;
+                tickMax.x() = colorBarImageRect.left() + tickPosition * colorBarImageRect.width() + (FloatType)tickWidth / 2.0;
+                tickRects.emplace_back(tickMin, tickMax);
             }
         }
         else { // orientation() == Qt::Vertical
             // labels
-            Point2 label_pos;
+            Point2 labelPos;
 
             // ticks
-            Point2 tick_min;
-            Point2 tick_max;
+            Point2 tickMin;
+            Point2 tickMax;
             if((alignment() & Qt::AlignLeft) || (alignment() & Qt::AlignHCenter)) {
                 // labels
                 labelPrimitive.setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-                label_pos.x() = colorBarImageRect.right() + textMargin + outerTickHeight * colorBarImageRect.width();
+                labelPos.x() = colorBarImageRect.right() + textMargin + outerTickHeight * colorBarImageRect.width();
 
                 // ticks
-                tick_min.x() = colorBarImageRect.left() + (1 - innerTickHeight) * colorBarImageRect.width();
-                tick_max.x() = colorBarImageRect.left() + (1 + outerTickHeight) * colorBarImageRect.width() + borderWidth;
+                tickMin.x() = colorBarImageRect.left() + (1 - innerTickHeight) * colorBarImageRect.width();
+                tickMax.x() = colorBarImageRect.left() + (1 + outerTickHeight) * colorBarImageRect.width() + borderWidth;
             }
             else {
                 // labels
                 labelPrimitive.setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-                label_pos.x() = colorBarImageRect.left() - textMargin - outerTickHeight * colorBarImageRect.width();
+                labelPos.x() = colorBarImageRect.left() - textMargin - outerTickHeight * colorBarImageRect.width();
 
                 // ticks
-                tick_min.x() = colorBarImageRect.right() - (1 + outerTickHeight) * colorBarImageRect.width();
-                tick_max.x() = colorBarImageRect.right() - (1 - innerTickHeight) * colorBarImageRect.width();
+                tickMin.x() = colorBarImageRect.right() - (1 + outerTickHeight) * colorBarImageRect.width();
+                tickMax.x() = colorBarImageRect.right() - (1 - innerTickHeight) * colorBarImageRect.width();
             }
-            for(int i{0}; i < num_ticks; i++) {
-                FloatType tick_value{tickStart + i * tickStep};
-                FloatType tick_position{(tick_value - mapping.minValue()) / (mapping.maxValue() - mapping.minValue())};
+            for(int i{0}; i < numTicks; i++) {
+                FloatType tickValue = tickStart + i * tickStep;
+                // Fix tick values close to 0 being formatted as 5.5e-17 instead of 0 with the
+                // default format specifier "%g".
+                tickValue = (std::abs(tickValue) < 1e-12) ? 0.0 : tickValue;
+
+                FloatType tickPosition = (tickValue - mapping.minValue()) / (mapping.maxValue() - mapping.minValue());
                 // omit labels to outside the range or too close to the color bar limit
-                if((tick_position <= minTickDistanceFromEdge) || (tick_position >= (1 - minTickDistanceFromEdge))) {
+                if((tickPosition <= minTickDistanceFromEdge) || (tickPosition >= (1 - minTickDistanceFromEdge))) {
                     continue;
                 }
                 // labels
-                labelPrimitive.setText(QString::asprintf(format.constData(), tick_value));
-                label_pos.y() = colorBarImageRect.bottom() - colorBarImageRect.height() * tick_position;
+                labelPrimitive.setText(QString::asprintf(format.constData(), tickValue));
+                labelPos.y() = colorBarImageRect.bottom() - colorBarImageRect.height() * tickPosition;
 
                 // Hide the first and last tick mark and label if they overlap with the limit labels
-                if(((i == 0) || (i == (num_ticks - 1))) &&
-                   ((label_pos.y() > (colorBarImageRect.bottom() - tickOverlapFactor * fontMetrics.height())) ||
-                    (label_pos.y() < (colorBarImageRect.top() + tickOverlapFactor * fontMetrics.height()))))
+                if(((i == 0) || (i == (numTicks - 1))) &&
+                   ((labelPos.y() > (colorBarImageRect.bottom() - tickOverlapFactor * fontMetrics.height())) ||
+                    (labelPos.y() < (colorBarImageRect.top() + tickOverlapFactor * fontMetrics.height()))))
                     continue;
-                labelPrimitive.setPositionWindow(label_pos);
+                labelPrimitive.setPositionWindow(labelPos);
                 boundingBox |= labelPrimitive.computeBounds(devicePixelRatio);
                 tickLabels.push_back(std::make_unique<TextPrimitive>(labelPrimitive));
 
                 // Tick
-                tick_min.y() = colorBarImageRect.bottom() - tick_position * colorBarImageRect.height() - tickWidth / 2;
-                tick_max.y() = colorBarImageRect.bottom() - tick_position * colorBarImageRect.height() + tickWidth / 2;
-                tickRects.emplace_back(tick_min, tick_max);
-                boundingBox |= QRectF(QPointF(tick_min.x(), tick_min.y()), QPointF(tick_max.x(), tick_max.y()));
+                tickMin.y() = colorBarImageRect.bottom() - tickPosition * colorBarImageRect.height() - (FloatType)tickWidth / 2.0;
+                tickMax.y() = colorBarImageRect.bottom() - tickPosition * colorBarImageRect.height() + (FloatType)tickWidth / 2.0;
+                tickRects.emplace_back(tickMin, tickMax);
+                boundingBox |= QRectF(QPointF(tickMin.x(), tickMin.y()), QPointF(tickMax.x(), tickMax.y()));
             }
 
             // Manually add the tick marks at the ends of the color bar for the limit labels
-            tickRects.emplace_back(tick_min.x(), colorBarImageRect.bottom() - tickWidth, tick_max.x(), colorBarImageRect.bottom());
-            tickRects.emplace_back(tick_min.x(), colorBarImageRect.top(), tick_max.x(), colorBarImageRect.top() + tickWidth);
-            boundingBox |= QRectF(QPointF(tick_min.x(), colorBarImageRect.bottom()), QPointF(tick_max.x(), colorBarImageRect.top()));
+            tickRects.emplace_back(tickMin.x(), colorBarImageRect.bottom() - tickWidth, tickMax.x(), colorBarImageRect.bottom());
+            tickRects.emplace_back(tickMin.x(), colorBarImageRect.top(), tickMax.x(), colorBarImageRect.top() + tickWidth);
+            boundingBox |= QRectF(QPointF(tickMin.x(), colorBarImageRect.bottom()), QPointF(tickMax.x(), colorBarImageRect.top()));
         }
     }
 

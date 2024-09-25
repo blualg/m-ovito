@@ -144,6 +144,9 @@ protected:
     /// Asks the object for the result of the data pipeline.
     virtual SharedFuture<PipelineFlowState> evaluateInternal(const PipelineEvaluationRequest& request) override;
 
+    /// Launches an asynchronous task to evaluate the node's modifier.
+    virtual SharedFuture<PipelineFlowState> launchModifierEvaluation(ModifierEvaluationRequest&& request, SharedFuture<PipelineFlowState> inputFuture);
+
     /// Decides whether a preliminary viewport update is performed after this pipeline object has been
     /// evaluated but before the rest of the pipeline is complete.
     virtual bool shouldRefreshViewportsAfterEvaluation() override;
@@ -171,6 +174,8 @@ private:
     /// Cache for partial results computed by the modifier.
     /// This can be used by the modifier to enable fast interactive updates after parameter changes that do not invalidate the entire result.
     FutureCache<DataOORef<const DataCollection>> _partialResultsCache;
+
+    template<typename ModifierClass, typename... AuxiliaryArgs> friend class ModifierEvaluationTask;
 };
 
 /// This macro registers some ModificationNode-derived class as the pipeline node type of some Modifier-derived class.

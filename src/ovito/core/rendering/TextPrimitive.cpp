@@ -88,6 +88,9 @@ QRectF TextPrimitive::queryLocalBounds(qreal devicePixelRatio, Qt::TextFormat te
         textBounds.moveTo(devicePixelRatio * textBounds.x(), devicePixelRatio * textBounds.y());
         textBounds.setWidth(devicePixelRatio * textBounds.width());
         textBounds.setHeight(devicePixelRatio * textBounds.height());
+        // Add 1 pixel of horizontal padding as text bounds to not account for anti aliasing
+        // From testing the vertical text bounds seem to be sufficient
+        textBounds.adjust(-1, 0, 0, 1);
     }
     else {
         QTextDocument doc;

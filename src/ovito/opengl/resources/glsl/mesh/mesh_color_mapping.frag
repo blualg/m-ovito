@@ -24,7 +24,7 @@
 #include <shading.frag>
 
 // Uniforms:
-uniform sampler1D color_map;
+uniform sampler2D color_map;
 uniform float opacity;
 uniform vec4 selection_color;
 
@@ -36,7 +36,7 @@ in vec3 normal_fs;
 void main()
 {
     if(selected_face_fs == 0.0) {
-        vec3 color = <texture1D>(color_map, pseudocolor_fs).xyz;
+        vec3 color = <texture2D>(color_map, vec2(pseudocolor_fs, 0.0)).xyz;
         outputShaded(vec4(color, opacity), normalize(normal_fs));
     }
     else {

@@ -512,6 +512,25 @@ void MainWindow::closeEvent(QCloseEvent* event)
 }
 
 /******************************************************************************
+ * Called by the system when the window is moved. Redraws the viewports when the screen is changed
+ * Avoids some small visual glitches
+ ******************************************************************************/
+void MainWindow::moveEvent(QMoveEvent* event)
+{
+    // Get the current screen the window is located on.
+    QScreen* newScreen = screen();
+
+    // If the screen changed - redraw the viewports to account for possible changes in DPI scaling.
+    if(newScreen && newScreen != _currentScreen) {
+        // Remember the current screen.
+        _currentScreen = newScreen;
+        updateViewports();
+    }
+
+    QMainWindow::moveEvent(event);
+}
+
+/******************************************************************************
 * Closes the user interface and shuts down the entire application after displaying an error message.
 ******************************************************************************/
 void MainWindow::exitWithFatalError(const Exception& ex)

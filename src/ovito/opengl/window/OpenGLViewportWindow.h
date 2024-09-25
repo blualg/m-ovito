@@ -49,24 +49,30 @@ public:
     /// Releases the renderer resources held by the viewport's surface and picking renderers.
     virtual void releaseResources() override;
 
+    /// Returns the current frame graph being rendered by OpenGL.
+    const OORef<FrameGraph>& frameGraph() const { return _frameGraph; }
+
 protected:
 
-    /// Creates the UI widget that is associated with this viewport window.
-    virtual QWidget* createWidget(QWidget* parent) override;
+    /// Creates the Qt widget that is associated with this viewport window.
+    virtual QWidget* createQtWidget(QWidget* parent) override;
 
     /// Creates the rendering job that renders the contents of the viewport window.
     virtual OORef<RenderingJob> createRenderingJob() override;
 
-    /// Newly renders the window contents after the frame graph has been regenerated.
-    virtual void rerender() override;
+    /// Renders the window contents after the frame graph has been regenerated.
+    virtual Future<void> renderFrameGraph(OORef<FrameGraph> frameGraph) override;
 
     /// Returns the QOpenGLWidget that is associated with this viewport window.
-    QOpenGLWidget* widget() const { return static_cast<QOpenGLWidget*>(WidgetViewportWindow::widget()); }
+    QOpenGLWidget* glwin() const { return static_cast<QOpenGLWidget*>(widget()); }
 
-    /// Is called whenever the widget needs to be painted.
+    /// Is called by Qt whenever the widget needs to be painted.
     void paint();
 
 private:
+
+    /// The frame graph to be rendered by OpenGL.
+    OORef<FrameGraph> _frameGraph;
 
     /// The abstract frame buffer for on-screen rendering into the QOpenGLWidget.
     OORef<AbstractRenderingFrameBuffer> _visualFrameBuffer;

@@ -79,10 +79,14 @@ StructureAnalysis::StructureAnalysis(
     _preferredCrystalOrientations(std::move(preferredCrystalOrientations)),
     _identifyPlanarDefects(identifyPlanarDefects)
 {
-    static bool initialized = false;
-    if(!initialized) {
-        initializeListOfStructures();
-        initialized = true;
+    // One-time initialization of precomputed structure information.
+    static std::mutex mutex;
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        if(!latticeStructure(LATTICE_FCC).coordStructure) {
+            initializeListOfStructures();
+            OVITO_ASSERT(latticeStructure(LATTICE_FCC).coordStructure);
+        }
     }
 
     if(_positions->size() > std::numeric_limits<int>::max())
@@ -136,7 +140,7 @@ void StructureAnalysis::initializeListOfStructures()
     for(int ni1 = 0; ni1 < 12; ni1++) {
         _coordinationStructures[COORD_FCC].neighborArray.setNeighborBond(ni1, ni1, false);
         for(int ni2 = ni1 + 1; ni2 < 12; ni2++) {
-            bool bonded = (fccVec[ni1] - fccVec[ni2]).length() < (sqrt(0.5f)+1.0)*0.5;
+            bool bonded = (fccVec[ni1] - fccVec[ni2]).length() < (std::sqrt(0.5f)+1.0)*0.5;
             _coordinationStructures[COORD_FCC].neighborArray.setNeighborBond(ni1, ni2, bonded);
         }
         _coordinationStructures[COORD_FCC].cnaSignatures[ni1] = 0;
@@ -175,7 +179,7 @@ void StructureAnalysis::initializeListOfStructures()
     for(int ni1 = 0; ni1 < 12; ni1++) {
         _coordinationStructures[COORD_HCP].neighborArray.setNeighborBond(ni1, ni1, false);
         for(int ni2 = ni1 + 1; ni2 < 12; ni2++) {
-            bool bonded = (hcpVec[ni1] - hcpVec[ni2]).length() < (sqrt(0.5)+1.0)*0.5;
+            bool bonded = (hcpVec[ni1] - hcpVec[ni2]).length() < (std::sqrt(0.5)+1.0)*0.5;
             _coordinationStructures[COORD_HCP].neighborArray.setNeighborBond(ni1, ni2, bonded);
         }
         _coordinationStructures[COORD_HCP].cnaSignatures[ni1] = (hcpVec[ni1].z() == 0) ? 1 : 0;

@@ -97,11 +97,13 @@ void SimulationCell::propertyChanged(const PropertyFieldDescriptor* field)
 /******************************************************************************
 * Creates an editable proxy object for this DataObject and synchronizes its parameters.
 ******************************************************************************/
-void SimulationCell::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+void SimulationCell::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
 {
     OVITO_ASSERT(this == dataPath.back());
 
-    if(SimulationCell* proxy = static_object_cast<SimulationCell>(editableProxy())) {
+    if(editableProxy() && !forceProxyReplacement) {
+        SimulationCell* proxy = static_object_cast<SimulationCell>(editableProxy());
+
         // Synchronize the actual data object with the editable proxy object.
 
         // Box size changes of the actual simulation cell are adopted by the proxy cell object.
@@ -127,7 +129,7 @@ void SimulationCell::updateEditableProxies(PipelineFlowState& state, ConstDataOb
         state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
     }
 
-    DataObject::updateEditableProxies(state, dataPath);
+    DataObject::updateEditableProxies(state, dataPath, forceProxyReplacement);
 }
 
 /******************************************************************************

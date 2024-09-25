@@ -32,31 +32,34 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(ObjectPickInfo);
 IMPLEMENT_ABSTRACT_OVITO_CLASS(FrameGraph);
 
 /******************************************************************************
-* Adds a 3d rendering primitive to the current layer of the frame graph.
-* Automatically computes the bounding box of the primitive and the model-to-world transformation.
-******************************************************************************/
-void FrameGraph::addPrimitive(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, OORef<const Pipeline> pipeline,
-                              OORef<ObjectPickInfo> pickInfo, uint32_t pickElementOffset, RenderingCommand::Flags flags)
+ * Adds a 3d rendering primitive to the current layer of the frame graph.
+ * Automatically computes the bounding box of the primitive and the model-to-world transformation.
+ * Optional: A FrameGraph::RenderingCommand::Flag can be give, default is "NoFlags"
+ ******************************************************************************/
+FrameGraph::RenderingCommand& FrameGraph::addPrimitive(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive,
+                                                       OORef<const Pipeline> pipeline, OORef<ObjectPickInfo> pickInfo,
+                                                       uint32_t pickElementOffset, RenderingCommand::Flags flags)
 {
     OVITO_ASSERT(pipeline);
-    OVITO_ASSERT(ExecutionContext::isMainThread()); // Must be called from main thread, because we are accessing the pipeline.
+    OVITO_ASSERT(ExecutionContext::isMainThread());  // Must be called from main thread, because we are accessing the pipeline.
 
     const AffineTransformation& tm = pipeline->getWorldTransform(time());
     Box3 boundingBox = primitive->computeBoundingBox(visCache());
-    group.addPrimitive(std::move(primitive), tm, boundingBox, std::move(pipeline), std::move(pickInfo), pickElementOffset, flags);
+    return group.addPrimitive(std::move(primitive), tm, boundingBox, std::move(pipeline), std::move(pickInfo), pickElementOffset, flags);
 }
 
 /******************************************************************************
-* Adds a 3d rendering primitive to the current layer of the frame graph.
-* Automatically computes the bounding box of the primitive and the model-to-world transformation.
-******************************************************************************/
-void FrameGraph::addPrimitiveNonpickable(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive, const Pipeline* pipeline)
+ * Adds a 3d rendering primitive to the current layer of the frame graph.
+ * Automatically computes the bounding box of the primitive and the model-to-world transformation.
+ ******************************************************************************/
+FrameGraph::RenderingCommand& FrameGraph::addPrimitiveNonpickable(RenderingCommandGroup& group,
+                                                                  std::unique_ptr<RenderingPrimitive> primitive, const Pipeline* pipeline)
 {
     OVITO_ASSERT(pipeline);
-    OVITO_ASSERT(ExecutionContext::isMainThread()); // Must be called from main thread, because we are accessing the pipeline.
+    OVITO_ASSERT(ExecutionContext::isMainThread());  // Must be called from main thread, because we are accessing the pipeline.
 
     Box3 boundingBox = primitive->computeBoundingBox(visCache());
-    group.addPrimitiveNonpickable(std::move(primitive), pipeline->getWorldTransform(time()), boundingBox);
+    return group.addPrimitiveNonpickable(std::move(primitive), pipeline->getWorldTransform(time()), boundingBox);
 }
 
 /******************************************************************************
@@ -64,40 +67,43 @@ void FrameGraph::addPrimitiveNonpickable(RenderingCommandGroup& group, std::uniq
  * Automatically computes the bounding box of the primitive and the model-to-world transformation.\
  * Optional: A FrameGraph::RenderingCommand::Flag can be give, default is "NoFlags"
  ******************************************************************************/
-void FrameGraph::RenderingCommandGroup::addPrimitive(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm,
-                                                     const Box3& box, OORef<const Pipeline> pickablePipeline,
-                                                     OORef<ObjectPickInfo> pickInfo, uint32_t pickElementOffset,
-                                                     RenderingCommand::Flags flags)
+FrameGraph::RenderingCommand& FrameGraph::RenderingCommandGroup::addPrimitive(std::unique_ptr<RenderingPrimitive> primitive,
+                                                                              const AffineTransformation& tm, const Box3& box,
+                                                                              OORef<const Pipeline> pickablePipeline,
+                                                                              OORef<ObjectPickInfo> pickInfo, uint32_t pickElementOffset,
+                                                                              RenderingCommand::Flags flags)
 {
     // Add the world-space bounding box of the primitive to the group's bounding box.
     _boundingBox.addBox(box.transformed(tm));
 
-    addCommand(flags, std::move(primitive), tm, std::move(pickablePipeline), std::move(pickInfo), pickElementOffset);
+    return addCommand(RenderingCommand::NoFlags, std::move(primitive), tm, std::move(pickablePipeline), std::move(pickInfo),
+                      pickElementOffset);
 }
 
 /******************************************************************************
-* Adds a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
-* Automatically computes the bounding box of the primitive and the model-to-world transformation.
-******************************************************************************/
-void FrameGraph::RenderingCommandGroup::addPrimitiveNonpickable(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box)
+ * Adds a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
+ * Automatically computes the bounding box of the primitive and the model-to-world transformation.
+ ******************************************************************************/
+FrameGraph::RenderingCommand& FrameGraph::RenderingCommandGroup::addPrimitiveNonpickable(std::unique_ptr<RenderingPrimitive> primitive,
+                                                                                         const AffineTransformation& tm, const Box3& box)
 {
     // Add the world-space bounding box of the primitive to the group's bounding box.
     _boundingBox.addBox(box.transformed(tm));
 
-    addCommand(RenderingCommand::ExcludeFromPicking, std::move(primitive), tm);
+    return addCommand(RenderingCommand::ExcludeFromPicking, std::move(primitive), tm);
 }
 
 /******************************************************************************
-* Adds a primitive to the frame graph containing pre-projected coordinates.
-******************************************************************************/
-void FrameGraph::RenderingCommandGroup::addPrimitivePreprojected(std::unique_ptr<RenderingPrimitive> primitive)
+ * Adds a primitive to the frame graph containing pre-projected coordinates.
+ ******************************************************************************/
+FrameGraph::RenderingCommand& FrameGraph::RenderingCommandGroup::addPrimitivePreprojected(std::unique_ptr<RenderingPrimitive> primitive)
 {
-    addCommand(RenderingCommand::ExcludeFromPicking, std::move(primitive), AffineTransformation::Zero());
+    return addCommand(RenderingCommand::ExcludeFromPicking, std::move(primitive), AffineTransformation::Zero());
 }
 
 /******************************************************************************
-* Computes the combined scene bounding box from all command groups.
-******************************************************************************/
+ * Computes the combined scene bounding box from all command groups.
+ ******************************************************************************/
 void FrameGraph::computeSceneBoundingBox()
 {
     for(const RenderingCommandGroup& group : _commandGroups) {
@@ -106,27 +112,26 @@ void FrameGraph::computeSceneBoundingBox()
 }
 
 /******************************************************************************
-* Renders a 2d polyline in the viewport.
-******************************************************************************/
-void FrameGraph::RenderingCommandGroup::render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed, const QSize& logicalViewportSize)
+ * Renders a 2d polyline in the viewport.
+ ******************************************************************************/
+void FrameGraph::RenderingCommandGroup::render2DPolyline(const Point2* points, int count, const ColorA& color, bool closed,
+                                                         const QSize& logicalViewportSize)
 {
     OVITO_ASSERT(count >= 2);
     OVITO_ASSERT(layerType() == OverLayer || layerType() == UnderLayer);
 
     FloatType w = logicalViewportSize.width();
     FloatType h = logicalViewportSize.height();
-    auto projectPoint = [&](const Point2& p) {
-        return Point3G(2 * p.x() / w - 1, 1 - 2 * p.y() / h, 0.0);
-    };
+    auto projectPoint = [&](const Point2& p) { return Point3G(2 * p.x() / w - 1, 1 - 2 * p.y() / h, 0.0); };
 
     BufferFactory<Point3G> vertices((closed ? count : count - 1) * 2);
     Point3G* lineSegment = vertices.begin();
     for(int i = 0; i < count - 1; i++, lineSegment += 2) {
         lineSegment[0] = projectPoint(points[i]);
-        lineSegment[1] = projectPoint(points[i+1]);
+        lineSegment[1] = projectPoint(points[i + 1]);
     }
     if(closed) {
-        lineSegment[0] = projectPoint(points[count-1]);
+        lineSegment[0] = projectPoint(points[count - 1]);
         lineSegment[1] = projectPoint(points[0]);
         lineSegment += 2;
     }
@@ -150,11 +155,11 @@ void FrameGraph::renderTextAsImagePrimitives()
                 if(!primitive->text().isEmpty()) {
                     // Look up the Qt image for the text in the cache.
                     const auto& [image, offset] = visCache().lookup<std::tuple<QImage, QPointF>>(
-                        RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, FloatType, FloatType, qreal, QString, bool, int, Qt::TextFormat>{
-                                                                primitive->text(), primitive->color(),
-                                                                primitive->outlineColor(), primitive->outlineWidth(), primitive->rotation(),
-                                                                devicePixelRatio(), primitive->font().key(), primitive->useTightBox(),
-                                                                primitive->alignment(), primitive->textFormat()},
+                        RendererResourceKey<struct TextImageCache, QString, ColorA, ColorA, FloatType, FloatType, qreal, QString, bool, int,
+                                            Qt::TextFormat>{primitive->text(), primitive->color(), primitive->outlineColor(),
+                                                            primitive->outlineWidth(), primitive->rotation(), devicePixelRatio(),
+                                                            primitive->font().key(), primitive->useTightBox(), primitive->alignment(),
+                                                            primitive->textFormat()},
                         [&](QImage& image, QPointF& offset) {
                             Qt::TextFormat resolvedTextFormat = primitive->resolvedTextFormat();
 
@@ -174,9 +179,8 @@ void FrameGraph::renderTextAsImagePrimitives()
                             painter.setRenderHint(QPainter::Antialiasing);
                             painter.setRenderHint(QPainter::TextAntialiasing);
 
-                            painter.translate(
-                                (primitive->position().x() - boundingBox.left()) / devicePixelRatio(),
-                                (primitive->position().y() - boundingBox.top()) / devicePixelRatio());
+                            painter.translate((primitive->position().x() - boundingBox.left()) / devicePixelRatio(),
+                                              (primitive->position().y() - boundingBox.top()) / devicePixelRatio());
 
                             // Start with top-left alignment.
                             QPointF textOffset(-textBounds.left(), -textBounds.top());
@@ -195,8 +199,10 @@ void FrameGraph::renderTextAsImagePrimitives()
 
                             if(primitive->rotation() != 0) {
                                 // Rotate around point given by the primitive's position.
-                                qreal x = textOffset.x() * std::cos(primitive->rotation()) - textOffset.y() * std::sin(primitive->rotation());
-                                qreal y = textOffset.x() * std::sin(primitive->rotation()) + textOffset.y() * std::cos(primitive->rotation());
+                                qreal x =
+                                    textOffset.x() * std::cos(primitive->rotation()) - textOffset.y() * std::sin(primitive->rotation());
+                                qreal y =
+                                    textOffset.x() * std::sin(primitive->rotation()) + textOffset.y() * std::cos(primitive->rotation());
                                 painter.translate(x / devicePixelRatio(), y / devicePixelRatio());
                                 painter.rotate(qRadiansToDegrees(primitive->rotation()));
                             }
@@ -231,8 +237,8 @@ void FrameGraph::renderTextAsImagePrimitives()
 }
 
 /******************************************************************************
-* Adjust wireframe line widths to match device pixel ratio.
-******************************************************************************/
+ * Adjust wireframe line widths to match device pixel ratio.
+ ******************************************************************************/
 void FrameGraph::adjustWireframeLineWidths()
 {
     for(RenderingCommandGroup& commandGroup : _commandGroups) {
@@ -251,11 +257,8 @@ void FrameGraph::adjustWireframeLineWidths()
 }
 
 /******************************************************************************
-* Returns the line rendering width to use in object picking mode.
-******************************************************************************/
-FloatType FrameGraph::defaultLinePickingWidth() const
-{
-    return FloatType(6) * devicePixelRatio();
-}
+ * Returns the line rendering width to use in object picking mode.
+ ******************************************************************************/
+FloatType FrameGraph::defaultLinePickingWidth() const { return FloatType(6) * devicePixelRatio(); }
 
-}   // End of namespace
+}  // namespace Ovito

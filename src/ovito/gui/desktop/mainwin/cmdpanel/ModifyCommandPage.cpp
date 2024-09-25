@@ -40,8 +40,6 @@
 #include "CommandPanel.h"
 #include "ModifyCommandPage.h"
 
-#include <QtNetwork>
-
 namespace Ovito {
 
 /******************************************************************************
@@ -329,63 +327,9 @@ void ModifyCommandPage::createAboutPanel()
     newsPage = QByteArray((const char *)res.data(), (int)res.size());
 #endif
 
+    // Display cached newsPage
     _aboutRollout = _propertiesPanel->addRollout(rollout, Application::applicationName());
     showProgramNotice(QString::fromUtf8(newsPage.constData()));
-
-#if !defined(OVITO_BUILD_APPSTORE_VERSION)
-    if(settings.value("updates/check_for_updates", true).toBool()) {
-        QString operatingSystemString;
-#if defined(Q_OS_MACOS)
-        operatingSystemString = QStringLiteral("macosx");
-#elif defined(Q_OS_WIN) || defined(Q_OS_CYGWIN)
-        operatingSystemString = QStringLiteral("win");
-#elif defined(Q_OS_LINUX) || defined(Q_OS_UNIX)
-        operatingSystemString = QStringLiteral("linux");
-#else
-        operatingSystemString = QStringLiteral("other");
-#endif
-
-        QString programEdition;
-#if defined(OVITO_BUILD_BASIC)
-        programEdition = QStringLiteral("basic/");
-#elif defined(OVITO_BUILD_PRO)
-        programEdition = QStringLiteral("pro/");
-#endif
-
-        // Fetch newest web page from web server.
-        QString urlString = QString("https://www.ovito.org/appnews/v%1.%2.%3/%4?ovito=000000000000000000&OS=%5%6")
-                .arg(Application::applicationVersionMajor())
-                .arg(Application::applicationVersionMinor())
-                .arg(Application::applicationVersionRevision())
-                .arg(programEdition)
-                .arg(operatingSystemString)
-                .arg(QT_POINTER_SIZE*8);
-        QNetworkAccessManager* networkAccessManager = Application::instance()->networkAccessManager();
-        QNetworkReply* networkReply = networkAccessManager->get(QNetworkRequest(QUrl(urlString)));
-        connect(networkReply, &QNetworkReply::finished, this, &ModifyCommandPage::onWebRequestFinished);
-    }
-#endif
-}
-
-/******************************************************************************
-* Is called by the system when fetching the news web page from the server is
-* completed.
-******************************************************************************/
-void ModifyCommandPage::onWebRequestFinished()
-{
-    QNetworkReply* reply = qobject_cast<QNetworkReply*>(QObject::sender());
-    if(reply->error() == QNetworkReply::NoError) {
-        QByteArray page = reply->readAll();
-        reply->close();
-        if(page.startsWith("<html><!--OVITO-->")) {
-
-            showProgramNotice(QString::fromUtf8(page.constData()));
-
-            QSettings settings;
-            settings.setValue("news/cached_webpage", page);
-        }
-    }
-    reply->deleteLater();
 }
 
 /******************************************************************************
@@ -396,10 +340,13 @@ void ModifyCommandPage::showProgramNotice(const QString& htmlPage)
     QString finalText = htmlPage;
 
 #if defined(OVITO_DEVELOPMENT_BUILD_DATE)
-    QString previewNotice = tr("<h4>Preview version notice</h4><p style=\"background-color: rgb(230,180,180); color: black;\">You are using an early development build of %1, which was created on %2.</p> "
-            "<p style=\"background-color: rgb(230,180,180); color: black;\">Remember to install the final release of %1 as soon as it becomes available on our website <a href=\"https://www.ovito.org/\">www.ovito.org</a>.</p>")
-        .arg(Application::applicationName())
-        .arg(QStringLiteral(OVITO_DEVELOPMENT_BUILD_DATE));
+    const QString previewNotice =
+        tr("<h4>Preview version notice</h4><p style=\"background-color: rgb(230,180,180); color: black;\">You are using an early "
+           "development build of %1, which was created on %2.</p> "
+           "<p style=\"background-color: rgb(230,180,180); color: black;\">Remember to install the final release of %1 as soon as it "
+           "becomes available on our website <a href=\"https://www.ovito.org/\">www.ovito.org</a>.</p>")
+            .arg(Application::applicationName())
+            .arg(QStringLiteral(OVITO_DEVELOPMENT_BUILD_DATE));
     finalText.replace(QStringLiteral("<p>&nbsp;</p>"), previewNotice);
 #endif
 

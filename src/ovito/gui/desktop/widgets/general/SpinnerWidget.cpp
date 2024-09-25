@@ -23,7 +23,6 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
-#include <ovito/core/viewport/ViewportSuspender.h>
 #include "SpinnerWidget.h"
 
 namespace Ovito {
@@ -411,14 +410,8 @@ void SpinnerWidget::mouseMoveEvent(QMouseEvent* event)
 
                 if(newVal != floatValue()) {
                     setFloatValue(newVal, true);
-
-                    // Repaint viewports for immediate visual feedback when changing a parameter.
-                    if(MainWindow* mainWindow = qobject_cast<MainWindow*>(window()))
-                        mainWindow->processViewportUpdateRequests();
-
-                    // Also repaint text box for immediate visual updates.
                     if(textBox())
-                        textBox()->repaint();
+                        textBox()->update();
                 }
             }
         }
@@ -453,8 +446,6 @@ void SpinnerWidget::focusOutEvent(QFocusEvent* event)
 void SpinnerWidget::spinnerValueChanged()
 {
     if(_userInterface) {
-        ViewportSuspender noVPUpdate(*_userInterface);
-
         // Create an undoable transaction to record the change or
         // use the existing transaction if the user is dragging the spinner.
         std::optional<UndoableTransaction> transaction;

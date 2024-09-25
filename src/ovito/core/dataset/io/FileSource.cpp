@@ -465,7 +465,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
         return Future<QVector<FileSourceImporter::Frame>>::createImmediateEmplace();
 
     // Return the active future when the frame loading process is currently in progress.
-    if(_framesListFuture.isValid()) {
+    if(_framesListFuture) {
         if(!forceRescan || !_framesListFuture.isFinished())
             return _framesListFuture;
         _framesListFuture.reset();

@@ -152,4 +152,12 @@ namespace Ovito
 
     class ViewportInputManager;   // Note: This class is defined in another plugin module (GuiBase).
     class ActionManager;          // Note: This class is defined in another plugin module (GuiBase).
+
+    namespace detail {
+        class TaskDependency;
+        class TaskCallbackBase;
+        class TaskAwaiter;
+        template<typename Derived> class TaskCallback;
+        template<typename R, typename TaskBase> class ContinuationTask;
+    }
 }

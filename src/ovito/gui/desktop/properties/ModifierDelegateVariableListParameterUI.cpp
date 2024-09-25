@@ -143,7 +143,7 @@ void ModifierDelegateVariableListParameterUI::referenceInserted(const PropertyFi
         QHBoxLayout* sublayout = new QHBoxLayout();
         sublayout->setContentsMargins(0,0,0,0);
         sublayout->setSpacing(2);
-        QComboBox* comboBox = new QComboBox();
+        StableComboBox* comboBox = new StableComboBox();
         connect(comboBox, qOverload<int>(&QComboBox::activated), this, &ModifierDelegateVariableListParameterUI::onDelegateSelected);
         sublayout->addWidget(comboBox, 1);
         QToolBar* toolbar = new QToolBar();
@@ -191,7 +191,7 @@ void ModifierDelegateVariableListParameterUI::referenceRemoved(const PropertyFie
 void ModifierDelegateVariableListParameterUI::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget* oldTarget, RefTarget* newTarget, int listIndex)
 {
     if(field == PROPERTY_FIELD(delegates) && containerWidget()) {
-        QComboBox* comboBox = _delegateBoxes[listIndex];
+        StableComboBox* comboBox = _delegateBoxes[listIndex];
         ModifierDelegateParameterUI::populateComboBox(comboBox, editor(), static_object_cast<MultiDelegatingModifier>(editObject()), newTarget,
             newTarget ? static_object_cast<ModifierDelegate>(newTarget)->inputDataObject() : DataObjectReference(), *_delegateType);
     }
@@ -250,7 +250,7 @@ void ModifierDelegateVariableListParameterUI::onRemoveDelegate()
 void ModifierDelegateVariableListParameterUI::onDelegateSelected(int index)
 {
     // Get the QComboBox from which the signal originated.
-    QComboBox* comboBox = qobject_cast<QComboBox*>(sender());
+    StableComboBox* comboBox = qobject_cast<StableComboBox*>(sender());
     OVITO_ASSERT(comboBox);
     if(!comboBox || !editObject()) return;
 

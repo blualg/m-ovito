@@ -1321,9 +1321,7 @@ size_t DislocationTracer::joinSegments(int maxCircuitLength)
     }
 
     // Clean up list of dangling nodes. Remove joined nodes.
-    _danglingNodes.erase(
-        std::remove_if(_danglingNodes.begin(), _danglingNodes.end(), [](DislocationNode* node) { return !node->isDangling(); }),
-        _danglingNodes.end());
+    std::erase_if(_danglingNodes, [](DislocationNode* node) { return !node->isDangling(); });
 
     return numJunctions;
 }

@@ -340,15 +340,17 @@ void Property::sortElementTypesById()
 /******************************************************************************
 * Creates an editable proxy object for this DataObject and synchronizes its parameters.
 ******************************************************************************/
-void Property::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+void Property::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
 {
-    DataBuffer::updateEditableProxies(state, dataPath);
+    DataBuffer::updateEditableProxies(state, dataPath, forceProxyReplacement);
 
     // Note: 'this' may no longer exist at this point, because the base method implementation may
     // have already replaced it with a mutable copy.
     const Property* self = static_object_cast<Property>(dataPath.back());
 
-    if(Property* proxy = static_object_cast<Property>(self->editableProxy())) {
+    if(self->editableProxy() && !forceProxyReplacement) {
+        Property* proxy = static_object_cast<Property>(self->editableProxy());
+
         // Synchronize the actual data object with the editable proxy object.
         OVITO_ASSERT(proxy->typeId() == self->typeId());
         OVITO_ASSERT(proxy->dataType() == self->dataType());
