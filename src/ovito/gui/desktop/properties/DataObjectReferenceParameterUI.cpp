@@ -36,7 +36,7 @@ void DataObjectReferenceParameterUI::initializeObject(PropertiesEditor* parentEd
 {
     PropertyParameterUI::initializeObject(parentEditor, propField);
 
-    _comboBox = new QComboBox();
+    _comboBox = new StableComboBox();
     _dataObjectClass = &dataObjectClass;
 
     connect(comboBox(), &QComboBox::textActivated, this, &DataObjectReferenceParameterUI::updatePropertyValue);
@@ -81,7 +81,8 @@ void DataObjectReferenceParameterUI::updateUI()
         DataObjectReference selectedObjectReference = val.value<DataObjectReference>();
 
         // Update list of data objects available in the pipeline's output.
-        comboBox()->clear();
+        std::vector<std::unique_ptr<QStandardItem>> items;
+
         int selectedIndex = -1;
         bool currentObjectFilteredOut = false;
         for(const PipelineFlowState& state : editor()->getPipelineInputs()) {
@@ -99,17 +100,19 @@ void DataObjectReferenceParameterUI::updateUI()
                 }
 
                 // Do not add the same container to the list more than once.
-                if(comboBox()->findData(QVariant::fromValue(ref)) != -1)
+                if(boost::algorithm::any_of(items, [&ref](const std::unique_ptr<QStandardItem>& item) {
+                    return item->data(Qt::UserRole).value<DataObjectReference>() == ref;
+                }))
                     continue;
 
                 if(ref == selectedObjectReference)
-                    selectedIndex = comboBox()->count();
+                    selectedIndex = items.size();
 
-                comboBox()->addItem(ref.dataTitle(), QVariant::fromValue(ref));
+                items.push_back(std::make_unique<QStandardItem>(ref.dataTitle()));
+                items.back()->setData(QVariant::fromValue(ref), Qt::UserRole);
             }
         }
 
-        static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.png"));
         if(selectedIndex < 0) {
             if(selectedObjectReference) {
                 // Add a place-holder item if the selected object does not exist anymore.
@@ -118,25 +121,24 @@ void DataObjectReferenceParameterUI::updateUI()
                     title = selectedObjectReference.dataClass()->displayName();
                 if(!currentObjectFilteredOut)
                     title += tr(" (not available)");
-                comboBox()->addItem(title, QVariant::fromValue(selectedObjectReference));
-                QStandardItem* item = static_cast<QStandardItemModel*>(comboBox()->model())->item(comboBox()->count()-1);
-                item->setIcon(warningIcon);
+                items.push_back(std::make_unique<QStandardItem>(std::move(title)));
+                items.back()->setData(QVariant::fromValue(selectedObjectReference), Qt::UserRole);
+                items.back()->setIcon(StableComboBox::warningIcon());
             }
-            else if(comboBox()->count() != 0) {
-                comboBox()->addItem(tr("‹Please select›"));
-                QStandardItem* item = static_cast<QStandardItemModel*>(comboBox()->model())->item(comboBox()->count()-1);
-                item->setIcon(warningIcon);
+            else if(!items.empty()) {
+                items.push_back(std::make_unique<QStandardItem>(tr("‹Please select›")));
+                items.back()->setIcon(StableComboBox::warningIcon());
             }
-            selectedIndex = comboBox()->count() - 1;
+            selectedIndex = (int)items.size() - 1;
         }
 
-        if(comboBox()->count() == 0) {
-            comboBox()->addItem(tr("‹No available objects›"));
-            QStandardItem* item = static_cast<QStandardItemModel*>(comboBox()->model())->item(0);
-            item->setIcon(warningIcon);
+        if(items.empty()) {
+            items.push_back(std::make_unique<QStandardItem>(tr("‹No available objects›")));
+            items.back()->setIcon(StableComboBox::warningIcon());
             selectedIndex = 0;
         }
 
+        comboBox()->setItems(std::move(items));
         comboBox()->setCurrentIndex(selectedIndex);
 
         // Sort list entries alphabetically.

@@ -218,6 +218,9 @@ protected:
     /// Called by the system when the drag is dropped on this window.
     virtual void dropEvent(QDropEvent* event) override;
 
+    /// Called by the system when the window is moved
+    virtual void moveEvent(QMoveEvent* event) override;
+
     /// Registers a task whose progress is to be displayed in the GUI.
     ProgressTaskInfo* registerProgressTask(Task& task);
 
@@ -331,10 +334,13 @@ private:
 
     /// Indicates that a delayed progress update is underway.
     bool _progressUpdateScheduled = false;
+
+    /// The current screen the window is on (to detect screen changes).
+    QScreen* _currentScreen = nullptr;
 };
 
 /**
- * \brief A RAII helper class that suspends the atomatic generation of animation keys while it exists.
+ * \brief A RAII helper class that suspends the automatic generation of animation keys while it exists.
  *
  * You typically create an instance of this class on the stack to temporarily suspend the
  * automatic generation of animation keys in an exception-safe way.

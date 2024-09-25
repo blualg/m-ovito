@@ -36,11 +36,11 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondType, radius, WorldParameterUnit, 0);
 /******************************************************************************
 * Creates an editable proxy object for this DataObject and synchronizes its parameters.
 ******************************************************************************/
-void BondType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+void BondType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
 {
-    ElementType::updateEditableProxies(state, dataPath);
+    ElementType::updateEditableProxies(state, dataPath, forceProxyReplacement);
 
-    // Note: 'this' may no longer exist at this point, because the base method implementationmay
+    // Note: 'this' may no longer exist at this point, because the base method implementation may
     // have already replaced it with a mutable copy.
     const BondType* self = static_object_cast<BondType>(dataPath.back());
 

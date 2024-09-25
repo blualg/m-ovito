@@ -24,6 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/widgets/general/StableComboBox.h>
 #include "ParameterUI.h"
 
 namespace Ovito {
@@ -45,7 +46,7 @@ public:
     virtual ~ModifierDelegateParameterUI();
 
     /// This returns the combo box managed by this ParameterUI.
-    QComboBox* comboBox() const { return _comboBox; }
+    StableComboBox* comboBox() const { return _comboBox; }
 
     /// Sets the enabled state of the UI.
     virtual void setEnabled(bool enabled) override;
@@ -68,11 +69,11 @@ public:
     }
 
     /// This method populates the combobox widget.
-    static void populateComboBox(QComboBox* comboBox, PropertiesEditor* editor, Modifier* modifier, RefTarget* delegate, const DataObjectReference& inputDataObject, const OvitoClass& delegateType);
+    static void populateComboBox(StableComboBox* comboBox, PropertiesEditor* editor, Modifier* modifier, RefTarget* delegate, const DataObjectReference& inputDataObject, const OvitoClass& delegateType);
 
 public:
 
-    Q_PROPERTY(QComboBox comboBox READ comboBox)
+    Q_PROPERTY(StableComboBox comboBox READ comboBox)
 
 public Q_SLOTS:
 
@@ -86,7 +87,7 @@ protected:
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// The combo box of the UI component.
-    QPointer<QComboBox> _comboBox;
+    QPointer<StableComboBox> _comboBox;
 
     /// The type of modifier delegates, which the user can choose from.
     OvitoClassPtr _delegateType;

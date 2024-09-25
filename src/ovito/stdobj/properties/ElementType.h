@@ -46,7 +46,7 @@ public:
     virtual void initializeType(const OwnerPropertyRef& property, bool loadUserDefaults = this_task::isInteractive());
 
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const override;
+    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const override;
 
     /// Returns the name of this type, or a dynamically generated string representing the
     /// numeric ID if the type has no assigned name.

@@ -83,6 +83,10 @@ public:
     /// This method is called by the PropertiesPanel class to initialize the editor and to create the UI.
     void initialize(PropertiesPanel* container, const RolloutInsertionParameters& rolloutParams, PropertiesEditor* parentEditor);
 
+    /// This method is called after the reference counter of this object has reached zero
+    /// and before the object is being deleted.
+    virtual void aboutToBeDeleted() override;
+
     /// \brief Returns the rollout container widget this editor is placed in.
     PropertiesPanel* container() const { return _container; }
 

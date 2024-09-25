@@ -30,11 +30,12 @@ the :ref:`particles.modifiers.dislocation_analysis` modifier.
     :width: 50%
 
 :ref:`Dislocations <scene_objects.dislocations>`
-  The modifier can calculate the dislocation density in each grid cell. The local dislocation density is expressed in
+  The modifier can calculate the dislocation density and Nye tensor in each grid cell. The local dislocation density is expressed in
   units of 1/length\ :sup:`2`. When projecting to a 1- or 2-dimensional binning grid,
-  the dislocation density is still calculated from the 3-dimensional cell volume and dislocation lines.
+  the dislocation density and Nye tensor are still calculated from the 3-dimensional cell volume and dislocation lines.
+  Note, this mode is restricted to orthogonal and axis-aligned simulation cells.
 
-  The local dislocation density in each grid cell is calculated using the method described in section 2 of this paper:
+  The calculation follows the method described in section 2 of:
 
     | `N. Bertin, Connecting discrete and continuum dislocation mechanics: A non-singular spectral framework <https://doi.org/10.1016/j.ijplas.2018.12.006>`__
     | `Int. J. Plast. 122, (2019) [doi:10.1016/j.ijplas.2018.12.006] <https://doi.org/10.1016/j.ijplas.2018.12.006>`__

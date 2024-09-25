@@ -255,34 +255,6 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
     // The visualization data cache used for building the frame graph.
     std::shared_ptr<RendererResourceCache> visCache = this_task::ui()->datasetContainer().visCache();
 
-    Future<void> renderFuture;
-    QString lastOutputFilename;
-    auto finishRenderingAndSaveToFile = [&](bool frameCompleted) {
-        // Before rendering the next frame, wait for the previous one to complete.
-        if(renderFuture)
-            renderFuture.waitForFinished();
-        renderFuture.reset();
-
-        // Write rendered image or video frame to disk.
-        if(frameCompleted && saveToFile()) {
-            if(!videoEncoder) {
-                OVITO_ASSERT(!lastOutputFilename.isEmpty());
-
-                // The QImage.save() function requires a Qt application object in order to load the Qt file format plugins.
-                Application::instance()->createQtApplication(false);
-
-                // Use the QImage.save() function to save the rendered image to disk.
-                if(!outputFrameBuffer->image().save(lastOutputFilename, imageInfo().format()))
-                    throw Exception(tr("Failed to save rendered image to output file '%1'.").arg(lastOutputFilename));
-            }
-            else {
-#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
-                videoEncoder->writeFrame(outputFrameBuffer->image());
-#endif
-            }
-        }
-    };
-
     // Render frames one by one.
     for(int frameIndex = 0; frameIndex < numberOfFrames && !this_task::isCanceled(); frameIndex++) {
         int frameNumber = firstFrameNumber + frameIndex * everyNthFrame() + fileNumberBase();
@@ -363,22 +335,33 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
             // Get the cache frame back from the frame graph to keep resources alive until we start the next frame.
             vpData.inactiveCacheFrame = frameGraph->takeCacheFrame();
 
-            // Before rendering the next frame, wait for the previous one to complete.
-            finishRenderingAndSaveToFile(&vpData == &viewportRenderingData.front() && frameIndex != 0);
-
             // Pass the frame graph to the scene renderer to produce the rendering in the framebuffer.
             outputFrameBuffer->discardChanges();
-            renderFuture = renderingJob->renderFrame(frameGraph, vpData.renderingFrameBuffer);
+            renderingJob->renderFrame(frameGraph, vpData.renderingFrameBuffer).waitForFinished();
 
             this_task::nextProgressSubStep();
         }
         this_task::endProgressSubSteps();
 
-        lastOutputFilename = outputFilename;
-    }
+        // Write rendered image or video frame to disk.
+        if(saveToFile()) {
+            if(!videoEncoder) {
+                OVITO_ASSERT(!outputFilename.isEmpty());
 
-    // Wait for the last frame to complete.
-    finishRenderingAndSaveToFile(true);
+                // The QImage.save() function requires a Qt application object in order to load the Qt file format plugins.
+                Application::instance()->createQtApplication(false);
+
+                // Use the QImage.save() function to save the rendered image to disk.
+                if(!outputFrameBuffer->image().save(outputFilename, imageInfo().format()))
+                    throw Exception(tr("Failed to save rendered image to output file '%1'.").arg(outputFilename));
+            }
+            else {
+#ifdef OVITO_VIDEO_OUTPUT_SUPPORT
+                videoEncoder->writeFrame(outputFrameBuffer->image());
+#endif
+            }
+        }
+    }
 
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
     // Finalize movie file.

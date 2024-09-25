@@ -39,7 +39,7 @@ void ModifierDelegateParameterUI::initializeObject(PropertiesEditor* parentEdito
     ParameterUI::initializeObject(parentEditor);
 
     _delegateType = &delegateType;
-    _comboBox = new QComboBox();
+    _comboBox = new StableComboBox();
 
     connect(comboBox(), &QComboBox::textActivated, this, &ModifierDelegateParameterUI::updatePropertyValue);
 
@@ -96,22 +96,22 @@ void ModifierDelegateParameterUI::updateUI()
 /******************************************************************************
 * This method populates the combobox widget.
 ******************************************************************************/
-void ModifierDelegateParameterUI::populateComboBox(QComboBox* comboBox, PropertiesEditor* editor, Modifier* modifier, RefTarget* delegate, const DataObjectReference& inputDataObject, const OvitoClass& delegateType)
+void ModifierDelegateParameterUI::populateComboBox(StableComboBox* comboBox, PropertiesEditor* editor, Modifier* modifier, RefTarget* delegate, const DataObjectReference& inputDataObject, const OvitoClass& delegateType)
 {
     OVITO_ASSERT(!delegate || delegateType.isMember(delegate));
 
+    if(!comboBox)
+        return;
+
     if(modifier) {
-        comboBox->clear();
-#ifdef Q_OS_WIN
-        comboBox->setIconSize(QSize(16,16));
-#endif
+        // The new list of combo-box items.
+        std::vector<std::unique_ptr<QStandardItem>> items;
 
         // Obtain pipeline inputs.
         std::vector<PipelineFlowState> pipelineInputs = editor->getPipelineInputs();
 
         // Add list items for the registered delegate classes.
         int indexToBeSelected = -1;
-        const QStandardItemModel* model = qobject_cast<const QStandardItemModel*>(comboBox->model());
         for(const OvitoClassPtr& clazz : PluginManager::instance().listClasses(delegateType)) {
 
             // Collect the set of data objects in the modifier's pipeline input this delegate can handle.
@@ -140,24 +140,25 @@ void ModifierDelegateParameterUI::populateComboBox(QComboBox* comboBox, Properti
             if(!applicableObjects.empty()) {
                 // Add an extra item to the list box for every data object that the delegate can handle.
                 for(const DataObjectReference& ref : applicableObjects) {
-                    comboBox->addItem(ref.dataTitle().isEmpty() ? clazz->displayName() : ref.dataTitle(), QVariant::fromValue(clazz));
-                    comboBox->setItemData(comboBox->count() - 1, QVariant::fromValue(ref), Qt::UserRole + 1);
+                    items.push_back(std::make_unique<QStandardItem>(ref.dataTitle().isEmpty() ? clazz->displayName() : ref.dataTitle()));
+                    items.back()->setData(QVariant::fromValue(clazz), Qt::UserRole);
+                    items.back()->setData(QVariant::fromValue(ref), Qt::UserRole + 1);
                     if(delegate && &delegate->getOOClass() == clazz && (inputDataObject == ref || !inputDataObject)) {
-                        indexToBeSelected = comboBox->count() - 1;
+                        indexToBeSelected = (int)items.size() - 1;
                     }
                 }
             }
             else {
                 // Even if this delegate cannot handle the input data, still show it in the list box as a disabled item.
-                comboBox->addItem(clazz->displayName(), QVariant::fromValue(clazz));
+                items.push_back(std::make_unique<QStandardItem>(clazz->displayName()));
+                items.back()->setData(QVariant::fromValue(clazz), Qt::UserRole);
+                items.back()->setEnabled(false);
                 if(delegate && &delegate->getOOClass() == clazz)
-                    indexToBeSelected = comboBox->count() - 1;
-                model->item(comboBox->count() - 1)->setEnabled(false);
+                    indexToBeSelected = (int)items.size() - 1;
             }
         }
 
         // Select the right item in the list box.
-        static QIcon warningIcon(QStringLiteral(":/guibase/mainwin/status/status_warning.png"));
         if(delegate) {
             if(indexToBeSelected < 0) {
                 if(delegate && inputDataObject) {
@@ -166,34 +167,33 @@ void ModifierDelegateParameterUI::populateComboBox(QComboBox* comboBox, Properti
                     if(title.isEmpty() && inputDataObject.dataClass())
                         title = inputDataObject.dataClass()->displayName();
                     title += tr(" (not available)");
-                    comboBox->addItem(title, QVariant::fromValue(QVariant::fromValue(&delegate->getOOClass())));
-                    QStandardItem* item = static_cast<QStandardItemModel*>(comboBox->model())->item(comboBox->count()-1);
-                    item->setIcon(warningIcon);
+                    items.push_back(std::make_unique<QStandardItem>(title));
+                    items.back()->setData(QVariant::fromValue(&delegate->getOOClass()), Qt::UserRole);
+                    items.back()->setIcon(StableComboBox::warningIcon());
                 }
                 else if(comboBox->count() != 0) {
-                    comboBox->addItem(tr("<Please select a data object>"));
+                    items.push_back(std::make_unique<QStandardItem>(tr("‹Please select a data object›")));
                 }
-                indexToBeSelected = comboBox->count() - 1;
+                indexToBeSelected = (int)items.size() - 1;
             }
-            if(comboBox->count() == 0) {
-                comboBox->addItem(tr("<No inputs available>"));
-                QStandardItem* item = static_cast<QStandardItemModel*>(comboBox->model())->item(0);
-                item->setIcon(warningIcon);
+            if(items.empty()) {
+                items.push_back(std::make_unique<QStandardItem>(tr("‹No inputs available›")));
+                items.back()->setIcon(StableComboBox::warningIcon());
                 indexToBeSelected = 0;
             }
         }
         else {
-            if(comboBox->count() != 0)
-                comboBox->addItem(tr("<Please select a data object>"));
+            if(!items.empty())
+                items.push_back(std::make_unique<QStandardItem>(tr("‹Please select a data object›")));
             else
-                comboBox->addItem(tr("<None>"));
-            indexToBeSelected = comboBox->count() - 1;
-            QStandardItem* item = static_cast<QStandardItemModel*>(comboBox->model())->item(indexToBeSelected);
-            item->setIcon(warningIcon);
+                items.push_back(std::make_unique<QStandardItem>(tr("‹None›")));
+            indexToBeSelected = (int)items.size() - 1;
+            items.back()->setIcon(StableComboBox::warningIcon());
         }
+        comboBox->setItems(std::move(items));
         comboBox->setCurrentIndex(indexToBeSelected);
     }
-    else if(comboBox) {
+    else {
         comboBox->clear();
     }
 }

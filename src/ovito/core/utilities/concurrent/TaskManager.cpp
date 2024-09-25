@@ -130,16 +130,23 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
     _syclQueue.wait();
 #endif
 
-#ifdef OVITO_DEBUG
     lock.lock();
+
     OVITO_ASSERT(_threadPool.activeThreadCount() == 0);
     OVITO_ASSERT(_threadPoolUI.activeThreadCount() == 0);
     OVITO_ASSERT(_threadPoolSerial.activeThreadCount() == 0);
+
+    // After the thread pools have been shut down, more work items may have been added to the main thread's queue.
+    // First, execute these items before proceeding with the shutdown process.
+    if(!_pendingWork.empty()) {
+        executePendingWorkLocked(lock);
+        return;
+    }
+
+    _shutdownCompleted = true;
     lock.unlock();
-#endif
 
     // Notify abstract user interface that shutdown is complete.
-    _shutdownCompleted = true;
     _ui->shutdownComplete();
 }
 

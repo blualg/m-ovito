@@ -258,7 +258,7 @@ void AnimationTrackBar::onObjectNotificationEvent(RefTarget* source, const Refer
 {
     // Rebuild the complete controller list whenever the reference object changes.
     if(event.type() == ReferenceEvent::ReferenceChanged || event.type() == ReferenceEvent::ReferenceAdded || event.type() == ReferenceEvent::ReferenceRemoved) {
-        if(!_objects.targets().empty() && !static_cast<const PropertyFieldEvent&>(event).field()->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
+        if(!_isDragging && !_objects.targets().empty() && !static_cast<const PropertyFieldEvent&>(event).field()->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
             _objects.clear();
             if(!_deferredUpdateScheduled) {
                 _deferredUpdateScheduled = true;

@@ -24,6 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/widgets/general/StableComboBox.h>
 #include "ParameterUI.h"
 
 namespace Ovito {
@@ -96,7 +97,7 @@ private:
     QVector<QAction*> _removeDelegateActions;
 
     /// The QComboBox for each delegate.
-    QVector<QComboBox*> _delegateBoxes;
+    QVector<StableComboBox*> _delegateBoxes;
 
     /// The current list of delegates.
     DECLARE_VECTOR_REFERENCE_FIELD(OORef<ModifierDelegate>, delegates);

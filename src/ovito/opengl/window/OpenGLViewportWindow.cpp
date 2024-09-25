@@ -60,6 +60,10 @@ QWidget* OpenGLViewportWindow::createQtWidget(QWidget* parent)
             _owner->paint();
         }
 
+        /// This override is here as a workaround for a Qt bug on the Windows platform (as of Qt 6.7.2).
+        /// The viewport context menu does not close properly when the user clicks next to the menu into the same viewport window.
+        virtual void mousePressEvent(QMouseEvent* event) override {}
+
     private:
         OpenGLViewportWindow* _owner;
     };

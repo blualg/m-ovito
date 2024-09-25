@@ -1116,8 +1116,8 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* part
             asphericalShapeBuffer = BufferFactory<Vector3G>(1);
             asphericalShapeBufferHighlight = BufferFactory<Vector3G>(1);
             const Vector3G shape = BufferReadAccess<Vector3G>(shapeProperty)[particleIndex];
-            asphericalShapeBuffer[0] = shape;
-            asphericalShapeBufferHighlight[0] = shape + Vector3G(padding);
+            asphericalShapeBuffer[0] = shape * radiusScaleFactor();
+            asphericalShapeBufferHighlight[0] = shape * radiusScaleFactor() + Vector3G(padding);
         }
         BufferFactory<QuaternionG> orientationBuffer;
         if(orientationProperty) {
@@ -1155,12 +1155,12 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* part
     else if(shape == Cylinder || shape == Spherocylinder) {
         GraphicsFloatType radius, length;
         if(shapeProperty) {
-            Vector3G shape = BufferReadAccess<Vector3G>(shapeProperty)[particleIndex];
+            Vector3G shape = BufferReadAccess<Vector3G>(shapeProperty)[particleIndex] * radiusScaleFactor();
             radius = std::abs(shape.x());
             length = shape.z();
         }
         else {
-            radius = defaultParticleRadius();
+            radius = defaultParticleRadius() * radiusScaleFactor();
             length = radius * 2;
         }
         Vector3G dir(0, 0, length);

@@ -72,13 +72,10 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     _restartTimer.stop();
 
     // Create a promise, which remains in the unfinished state as long as we are preparing the scene.
-    if(!_promise || _promise.isCanceled()) {
+    if(!_promise || _promise.isCanceled() || _promise.isFinished()) {
         _promise = Promise<void>(std::make_shared<Task>(userInterface().shared_from_this(), Task::NoState));
         _future = _promise.sharedFuture();
-        _completedScene = scene();
         if(scene()) {
-            _completedFrame = scene()->animationSettings()->currentFrame();
-
             // Emit signal to indicate we are preparing the scene.
             Q_EMIT scenePreparationStarted();
         }
@@ -86,23 +83,16 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
     if(!scene()) {
         // Set the promise to the fulfilled state if there is no scene to prepare.
-        _completedScene = nullptr;
         _promise.setFinished();
         _pipelineEvaluationFuture.reset();
         _currentPipeline = {};
         return;
     }
 
-    // Abort if application is about to shutdown.
+    // Abort if application is about to shut down.
     if(userInterface().isShuttingDown()) {
-        _completedScene = nullptr;
         _pipelineEvaluationFuture.reset();
         _promise.cancel();
-        return;
-    }
-
-    // If scene is already ready, we are done.
-    if(!forceReevaluation && _promise.isFinished() && _completedScene == scene() && (!scene() || _completedFrame == scene()->animationSettings()->currentFrame())) {
         return;
     }
 
@@ -126,8 +116,6 @@ void ScenePreparation::makeReady(bool forceReevaluation)
     // wait until its evaluation completes.
     _currentPipeline.reset();
     _pipelineEvaluationFuture.reset();
-    _completedFrame = scene()->animationSettings()->currentFrame();
-    _completedScene = scene();
     PipelineEvaluationRequest request(scene()->animationSettings()->currentTime());
 
     // Pipeline evaluation must be done in a valid execution context and with an active task object.
@@ -168,7 +156,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
         _promise.setFinished();
 
         // Update the viewports to reflect the final pipeline state.
-        Q_EMIT viewportUpdateRequest();
+        Q_EMIT viewportUpdateRequest(false);
 
         // Also emit a Qt signal to indicate we've finished preparing the scene.
         // Note: This must come AFTER refreshing the viewports to make animation playback work correctly.
@@ -230,17 +218,17 @@ bool ScenePreparation::referenceEvent(RefTarget* source, const ReferenceEvent& e
     }
     else if(event.type() == ReferenceEvent::TargetChanged && source == renderSettings()) {
         // Repaint viewports whenever the user changes the current render settings.
-        Q_EMIT viewportUpdateRequest();
+        Q_EMIT viewportUpdateRequest(false);
     }
     else if(event.type() == ReferenceEvent::TargetChanged && source == selectionSet()) {
         // Repaint viewports whenever the user selects a different object in the scene.
-        Q_EMIT viewportUpdateRequest();
+        Q_EMIT viewportUpdateRequest(false);
     }
     else if(event.type() == ReferenceEvent::InteractiveStateAvailable && source == scene()) {
         // Update viewport window when a new interactive state from one of the data pipelines in the scene
         // becomes available (unless we are playing an animation).
         if(!userInterface().arePreliminaryViewportUpdatesSuspended()) {
-            Q_EMIT viewportUpdateRequest();
+            Q_EMIT viewportUpdateRequest(true);
         }
     }
     return RefMaker::referenceEvent(source, event);
@@ -265,7 +253,7 @@ void ScenePreparation::renderSettingsReplaced(RenderSettings* newRenderSettings)
 {
     _renderSettings.set(this, PROPERTY_FIELD(renderSettings), newRenderSettings);
     // Repaint viewports.
-    Q_EMIT viewportUpdateRequest();
+    Q_EMIT viewportUpdateRequest(false);
 }
 
 /******************************************************************************
@@ -280,7 +268,6 @@ void ScenePreparation::restartPreparation(bool restartImmediately)
     }
     // Note: Not resetting pipelineEvaluationFuture here, because we want to keep the in-flight evaluation request going until a new request has been made.
     _currentPipeline.reset();
-    _completedScene = nullptr;
     if(scene() && autoRestart() && !isBeingInitializedOrDeleted()) {
         // Force an immediate restart if there is no Qt event loop running.
         if(!QCoreApplication::instance()) {

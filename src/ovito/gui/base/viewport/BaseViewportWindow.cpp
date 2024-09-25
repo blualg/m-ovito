@@ -222,7 +222,7 @@ void BaseViewportWindow::focusOutEvent(QFocusEvent* event)
 ******************************************************************************/
 void BaseViewportWindow::resizeEvent(QResizeEvent* event)
 {
-    requestUpdate();
+    requestUpdate(false);
 }
 
 /******************************************************************************

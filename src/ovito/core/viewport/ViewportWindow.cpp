@@ -69,10 +69,10 @@ void ViewportWindow::setViewport(Viewport* vp, UserInterface& userInterface)
             _scenePreparation = OORef<ScenePreparation>::create(userInterface, vp->scene());
             // Automatically rerender window whenever the scene is changed.
             connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &ViewportWindow::requestUpdate);
-            _scenePreparation->setAutoRestart(isVisible());
+            scenePreparation().setAutoRestart(isVisible());
         }
         else {
-            _scenePreparation->setScene(vp->scene());
+            scenePreparation().setScene(vp->scene());
         }
     }
     else {
@@ -110,15 +110,23 @@ void ViewportWindow::releaseResources()
 }
 
 /******************************************************************************
-* Puts an update request event for this viewport on the event loop.
+* Requests a refresh of this viewport window.
 ******************************************************************************/
-void ViewportWindow::requestUpdate()
+void ViewportWindow::requestUpdate(bool isPreliminaryUpdate)
 {
     OVITO_ASSERT(this_task::isMainThread());
 
-    if(!_updateNeeded && viewport()) {
-        _updateNeeded = true;
+    _updateNeeded = true;
+
+    // Refresh the viewport immediately or after a short waiting period?
+    if(!isPreliminaryUpdate || QThread::currentThread()->loopLevel() == 0) {
+        _preliminaryUpdateTimer.stop();
         resumeViewportUpdates();
+    }
+    else {
+        // This reduces excessive repaints when a full scene state arrives shortly after a preliminary state.
+        if(!_preliminaryUpdateTimer.isActive())
+            _preliminaryUpdateTimer.start(20, this);
     }
 }
 
@@ -297,6 +305,14 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
             adjustProjectionForRenderPreviewFrame(dataset, _projParams, windowSize);
         frameGraph->setProjectionParams(_projParams);
 
+        // If the current scene represents only a preliminary pipeline state, we need to render the scene again
+        // as soon as all pipelines are ready.
+        if(frameGraph->isPreliminaryState()) {
+            // This restarts the evaluation of all pipelines in the scene and triggers
+            // a viewport refresh once all pipelines are ready.
+            (void)scenePreparation().future();
+        }
+
         // After the frame graph has been built, let window implementation render an image.
         return renderFrameGraph(std::move(frameGraph));
     });
@@ -337,7 +353,11 @@ void ViewportWindow::becameReadyForPresentation()
 ******************************************************************************/
 void ViewportWindow::timerEvent(QTimerEvent* event)
 {
-    if(event->timerId() == _presentTimer.timerId()) {
+    if(event->timerId() == _preliminaryUpdateTimer.timerId()) {
+        _preliminaryUpdateTimer.stop();
+        resumeViewportUpdates();
+    }
+    else if(event->timerId() == _presentTimer.timerId()) {
         _presentTimer.stop();
         if(_readyForPresentation) {
             _readyForPresentation = false;
@@ -355,7 +375,7 @@ bool ViewportWindow::referenceEvent(RefTarget* source, const ReferenceEvent& eve
 {
     if(source == viewport()) {
         if(event.type() == Viewport::ViewportWindowUpdateRequested) {
-            requestUpdate();
+            requestUpdate(false);
         }
         else if(event.type() == Viewport::ViewportWindowResumeUpdatesRequested) {
             resumeViewportUpdates();

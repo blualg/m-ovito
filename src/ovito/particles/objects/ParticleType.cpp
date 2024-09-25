@@ -88,9 +88,9 @@ void ParticleType::initializeType(const OwnerPropertyRef& property, bool loadUse
 /******************************************************************************
 * Creates an editable proxy object for this DataObject and synchronizes its parameters.
 ******************************************************************************/
-void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath) const
+void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
 {
-    ElementType::updateEditableProxies(state, dataPath);
+    ElementType::updateEditableProxies(state, dataPath, forceProxyReplacement);
 
     // Note: 'this' may no longer exist at this point, because the base method implementation may
     // have already replaced it with a mutable copy.
