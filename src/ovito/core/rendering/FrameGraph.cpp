@@ -76,8 +76,7 @@ FrameGraph::RenderingCommand& FrameGraph::RenderingCommandGroup::addPrimitive(st
     // Add the world-space bounding box of the primitive to the group's bounding box.
     _boundingBox.addBox(box.transformed(tm));
 
-    return addCommand(RenderingCommand::NoFlags, std::move(primitive), tm, std::move(pickablePipeline), std::move(pickInfo),
-                      pickElementOffset);
+    return addCommand(flags, std::move(primitive), tm, std::move(pickablePipeline), std::move(pickInfo), pickElementOffset);
 }
 
 /******************************************************************************
