@@ -140,18 +140,19 @@ PipelineEvaluationResult BasePipelineSource::postprocessCachedState(const Pipeli
 
     if(state.data() && state.status().type() != PipelineStatus::Error) {
 
-        // In GUI mode, create editable proxy objects for the data objects in the generated collection.
-        if(Application::guiMode()) {
-            UndoSuspender noUndo;
-            _updatingEditableProxies = true;
-            ConstDataObjectPath dataPath = { state.data() };
-            state.data()->updateEditableProxies(state, dataPath, false);
-            _updatingEditableProxies = false;
-        }
-
         // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
         AnimationTime currentTime = this_task::ui()->datasetContainer().currentAnimationTime();
         if(state.stateValidity().contains(currentTime)) {
+
+            // In GUI mode, create editable proxy objects for the data objects in the generated collection.
+            if(Application::guiMode()) {
+                UndoSuspender noUndo;
+                _updatingEditableProxies = true;
+                ConstDataObjectPath dataPath = { state.data() };
+                state.data()->updateEditableProxies(state, dataPath, false);
+                _updatingEditableProxies = false;
+            }
+
             setDataCollectionFrame(std::clamp(animationTimeToSourceFrame(currentTime), 0, numberOfSourceFrames() - 1));
             setDataCollection(state.data());
         }
