@@ -247,7 +247,7 @@ public:
     /// Replicates existing data N times.
     void replicateFrom(size_t n, const DataBuffer& original);
 
-    /// Reduces the size of the storage array, deleting elements for are marked in the boolean selection array.
+    /// Reduces the size of the storage array, deleting elements that are marked in the boolean selection array.
     void filterResizeCopyFrom(size_t newSize, const DataBuffer& selection, const DataBuffer& original);
 
     /// Copies the contents from the given source buffer into this buffer using an index mapping.
@@ -295,7 +295,7 @@ public:
     /// Size, component count, and data type of source and destination buffers must match exactly.
     void copyFrom(const DataBuffer& source);
 
-    /// Copies the data elements from the given source buffer into this buffer while performing a nuermic data type conversion.
+    /// Copies the data elements from the given source buffer into this buffer while performing a numeric data type conversion.
     /// Array size and component count of source and destination must match but data type can be different.
     void copyFromAndConvert(const DataBuffer& source);
 

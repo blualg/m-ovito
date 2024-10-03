@@ -49,6 +49,7 @@ private:
     IntegerRadioButtonParameterUI* _coloringModeUI;
     ColorParameterUI* _lineColorUI;
     SubObjectParameterUI* _colorMappingParamUI;
+    BooleanParameterUI* _showUpToCurrentTimeUI;
 };
 
 }  // namespace Ovito
