@@ -23,11 +23,14 @@ We've added the :ref:`Vectors <scene_objects.vectors>` object type to OVITO and 
 which allow placing arrow glyphs at arbitrary locations in 3d space (independently from particles) to visualize vectorial information
 at specific base positions.
 
+.. image:: /images/scene_objects/vectors_ellipsoids_example.*
+  :width: 30%
+
+.. rubric:: Symmetric range option for color mapping tools
+
 .. image:: /images/new_features/3-11-0_symmetric-colormap.*
   :width: 40%
   :align: right
-
-.. rubric:: Symmetric range option for color mapping tools
 
 The :ref:`particles.modifiers.color_coding` modifier and other color mapping tools can now maintain
 a symmetric value range, which is useful for visualizing scalar fields that can take both positive and negative values.
@@ -95,6 +98,16 @@ It also got better at handling viewport layers in complex visualization setups.
 .. rubric:: Improved rendering quality for semi-transparent objects and antialiased edges |ovito-pro|
 
 :ref:`rendering.ospray_renderer`: Improved rendering quality for semi-transparent objects and fixed dark artifacts along object edges on light backgrounds
+
+.. figure:: /images/new_features/ospray_transparency_old.*
+  :figwidth: 28%
+
+  Old
+
+.. figure:: /images/new_features/ospray_transparency_new.*
+  :figwidth: 28%
+
+  New
 
 .. rubric:: Further improvements in this program release:
 

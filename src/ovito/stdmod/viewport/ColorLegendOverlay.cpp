@@ -89,7 +89,7 @@ SET_PROPERTY_FIELD_UNITS(ColorLegendOverlay, offsetX, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS(ColorLegendOverlay, offsetY, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ColorLegendOverlay, legendSize, FloatParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ColorLegendOverlay, aspectRatio, FloatParameterUnit, 1);
-SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ColorLegendOverlay, fontSize, FloatParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(ColorLegendOverlay, fontSize, FloatParameterUnit, 0, 1);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ColorLegendOverlay, relLabelFontSize, PercentParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ColorLegendOverlay, tickSpacing, FloatParameterUnit, 0);
 

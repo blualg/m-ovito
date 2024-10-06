@@ -24,30 +24,29 @@
 
 
 #include <ovito/particles/Particles.h>
-#include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/mesh/io/ParaViewVTMImporter.h>
+#include <ovito/core/dataset/io/FileSourceImporter.h>
 
 #include <QXmlStreamReader>
 
 namespace Ovito {
 
 /**
- * \brief File reader for contact network data in ParaView VTP (vtkPolyData) files written by the Aspherix simulation code.
+ * \brief File reader for particle-wall contact network data in ParaView VTP (vtkPolyData) files written by the Aspherix simulation code.
  */
-class OVITO_PARTICLES_EXPORT ParaViewVTPBondsImporter : public ParticleImporter
+class OVITO_PARTICLES_EXPORT ParaViewVTPParticleWallContactsImporter : public FileSourceImporter
 {
     /// Defines a metaclass specialization for this importer type.
-    class OOMetaClass : public ParticleImporter::OOMetaClass
+    class OOMetaClass : public FileSourceImporter::OOMetaClass
     {
     public:
         /// Inherit standard constructor from base meta class.
-        using ParticleImporter::OOMetaClass::OOMetaClass;
+        using FileSourceImporter::OOMetaClass::OOMetaClass;
 
         /// Checks if the given file has format that can be read by this importer.
         virtual bool checkFileFormat(const FileHandle& file) const override;
     };
 
-    OVITO_CLASS_META(ParaViewVTPBondsImporter, OOMetaClass)
+    OVITO_CLASS_META(ParaViewVTPParticleWallContactsImporter, OOMetaClass)
 
 public:
 
@@ -59,12 +58,12 @@ public:
 private:
 
     /// The format-specific task object that is responsible for reading an input file in a separate thread.
-    class FrameLoader : public ParticleImporter::FrameLoader
+    class FrameLoader : public FileSourceImporter::FrameLoader
     {
     public:
 
         /// Constructor.
-        using ParticleImporter::FrameLoader::FrameLoader;
+        using FileSourceImporter::FrameLoader::FrameLoader;
 
     protected:
 
@@ -72,22 +71,8 @@ private:
         virtual void loadFile() override;
 
         /// Creates the right kind of OVITO property object that will receive the data read from a <DataArray> element.
-        Property* createBondPropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, bool preserveExistingData);
+        Property* createLinesPropertyForDataArray(QXmlStreamReader& xml, int& vectorComponent, Lines* lines, DataBuffer::BufferInitialization propertyAccessMode);
     };
-};
-
-
-/**
- * \brief Plugin filter used to customize the loading of VTM files referencing a ParaView VTP file
- */
-class OVITO_PARTICLES_EXPORT BondsParaViewVTMFileFilter : public ParaViewVTMFileFilter
-{
-    OVITO_CLASS(BondsParaViewVTMFileFilter)
-
-public:
-
-    /// \brief Is called after all datasets referenced in a multi-block VTM file have been loaded.
-    virtual void postprocessDatasets(FileSourceImporter::LoadOperationRequest& request) override;
 };
 
 }   // End of namespace

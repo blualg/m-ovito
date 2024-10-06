@@ -421,7 +421,7 @@ static inline void tokenizeString(const QString& str, F&& f)
 /******************************************************************************
 * Reads a <DataArray> element and stores it in the given OVITO data buffer.
 ******************************************************************************/
-bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamReader& xml, int vectorComponent, size_t destBaseIndex)
+bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamReader& xml, int vectorComponent, size_t destBaseIndex, size_t replication)
 {
     // Make sure it is really an <DataArray>.
     if(xml.name().compare(QStringLiteral("DataArray")) != 0) {
@@ -565,8 +565,8 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
     }
 
     // Check if VTK data array size fits to the size of the target buffer provided by the caller.
-    if(buffer->size() != 0 && buffer->size() != elementCount + destBaseIndex) {
-        xml.raiseError(tr("Data array size mismatch: Expected %1 data tuples, but <DataArray> element contains %2 tuples.").arg(buffer->size() - destBaseIndex).arg(elementCount));
+    if(buffer->size() != 0 && buffer->size() != elementCount * replication + destBaseIndex) {
+        xml.raiseError(tr("Data array size mismatch: Expected %1 data tuples, but <DataArray> element contains %2 tuples.").arg((buffer->size() - destBaseIndex) / replication).arg(elementCount));
         return false;
     }
     if(vectorComponent == -1) {
@@ -585,11 +585,11 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
     // Allocate destination buffer (if not already done).
     if(buffer->size() == 0) {
         OVITO_ASSERT(destBaseIndex == 0);
-        buffer->resize(elementCount, false);
+        buffer->resize(elementCount * replication, false);
     }
 
     // Verify parameters.
-    if(destBaseIndex + elementCount > buffer->size()) {
+    if(destBaseIndex + elementCount * replication > buffer->size()) {
         xml.raiseError(tr("Data array size mismatch: Number of elements in the <DataArray> exceeds expected range."));
         return false;
     }
@@ -601,10 +601,34 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
 
         buffer->forAnyType([&](auto _) {
             using T = decltype(_);
-            if(vectorComponent == -1)
-                std::copy(begin, end, std::next(BufferWriteAccess<T*, access_mode::write>(buffer, existingDataAccessMode).begin(), destBaseIndex * buffer->componentCount()));
-            else
-                std::copy(begin, end, std::next(std::begin(BufferWriteAccess<T*, access_mode::write>(buffer, existingDataAccessMode).componentRange(vectorComponent)), destBaseIndex));
+            if(replication == 1) {
+                if(vectorComponent == -1)
+                    std::copy(begin, end, std::next(BufferWriteAccess<T*, access_mode::write>(buffer, existingDataAccessMode).begin(), destBaseIndex * buffer->componentCount()));
+                else
+                    std::copy(begin, end, std::next(std::begin(BufferWriteAccess<T*, access_mode::write>(buffer, existingDataAccessMode).componentRange(vectorComponent)), destBaseIndex));
+            }
+            else {
+                BufferWriteAccess<T*, access_mode::write> dstAccess(buffer, existingDataAccessMode);
+                if(vectorComponent == -1) {
+                    auto dst = std::next(dstAccess.begin(), destBaseIndex * buffer->componentCount());
+                    for(auto i = begin; i != end; i += numComponents) {
+                        for(size_t j = 0; j < replication; ++j) {
+                            auto i2 = i;
+                            for(size_t c = 0; c < numComponents; ++c, ++i2) {
+                                *dst++ = *i2;
+                            }
+                        }
+                    }
+                    OVITO_ASSERT(dst == dstAccess.end());
+                }
+                else {
+                    auto dst = std::next(std::begin(BufferWriteAccess<T*, access_mode::write>(buffer, existingDataAccessMode).componentRange(vectorComponent)), destBaseIndex);
+                    for(auto i = begin; i != end; ++i) {
+                        for(size_t j = 0; j < replication; ++j)
+                            *dst++ = *i;
+                    }
+                }
+            }
         });
     };
 
