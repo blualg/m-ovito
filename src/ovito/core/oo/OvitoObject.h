@@ -115,41 +115,6 @@ public:
     /// Returns the class descriptor for this object.
     const OvitoClass& getOOMetaClass() const { return OOClass(); }
 
-    ///////////////////////////////// Executor interface //////////////////////////////////////
-
-    /// Creates some work that can be submitted for execution later and which will be executed in the context of this object (typically in the main thread).
-    /// If the object gets destroyed before the work is executed, the scheduled work will be discarded.
-    template<typename Function>
-    [[nodiscard]] auto schedule(Function&& f, std::shared_ptr<UserInterface> ui = this_task::ui()) const {
-        OVITO_CHECK_OBJECT_POINTER(this);
-        OVITO_ASSERT(!isBeingConstructed()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed yet.
-        OVITO_ASSERT(!isBeingDeleted());     // Note: Cannot create a OOWeakRef<> if the object is already being destructed.
-
-        return [weakRef = weak_from_this(), ui = std::move(ui), f = std::forward<Function>(f)]<typename... Args>(Args&&... args) mutable noexcept {
-            if(auto self = weakRef.lock()) {
-                static_assert(std::is_invocable_v<Function, Args...>, "The function must be invocable with the right arguments.");
-                static_assert(std::is_invocable_r_v<void, Function, Args...>, "The function must return void.");
-                static_assert(std::is_nothrow_invocable_r_v<void, Function, Args...>, "The function must be noexcept.");
-
-                // If we are in the main thread already, we can immediately execute the work.
-                // Otherwise, schedule its execution in the main thread.
-                if(this_task::isMainThread()) {
-                    std::invoke(std::move(f), std::forward<Args>(args)...);
-                }
-                else {
-                    self->executeDeferred(std::move(weakRef), std::move(ui), std::move(f), std::forward<Args>(args)...);
-                }
-            }
-        };
-    }
-
-    /// Executes some work in the context of this object (typically the main thread).
-    template<typename Function, typename... Args>
-    void execute(Function&& f, Args&&... args) const;
-
-    /// Returns the abstract user interface object that is used to submit work to the main thread.
-    //static const std::shared_ptr<UserInterface>& userInterface() { return this_task::ui(); }
-
 protected:
 
     /// This method gets called by OORef<T>::create() right after the object has been constructed by std::make_shared<>.
@@ -420,39 +385,4 @@ Q_DECLARE_SMART_POINTER_METATYPE(Ovito::OORef);
 #include <ovito/core/utilities/io/ObjectSaveStream.h>
 #include <ovito/core/utilities/io/ObjectLoadStream.h>
 #include <ovito/core/oo/ObjectExecutor.h>
-
-namespace Ovito {
-
-/// Executes some work in the context of this object as soon as control returns to the event loop.
-template<typename Function, typename... Args>
-void OvitoObject::executeDeferred(std::weak_ptr<const OvitoObject> contextObject, std::shared_ptr<UserInterface> ui, Function&& f, Args&&... args)
-{
-    static_assert(std::is_invocable_v<Function, Args...>, "The function must be invocable with the right arguments.");
-    static_assert(std::is_invocable_r_v<void, Function, Args...>, "The function must return void.");
-    static_assert(std::is_nothrow_invocable_r_v<void, Function, Args...>, "The function must be noexcept.");
-    ObjectExecutor(std::move(contextObject), std::move(ui)).execute(std::forward<Function>(f), std::forward<Args>(args)...);
-}
-
-/// Executes some work in the context of this object (typically the main thread).
-template<typename Function, typename... Args>
-void OvitoObject::execute(Function&& f, Args&&... args) const
-{
-    static_assert(std::is_invocable_v<Function, Args...>, "The function must be invocable with the right arguments.");
-    static_assert(std::is_invocable_r_v<void, Function, Args...>, "The function must return void.");
-    static_assert(std::is_nothrow_invocable_r_v<void, Function, Args...>, "The function must be noexcept.");
-
-    OVITO_CHECK_OBJECT_POINTER(this);
-    OVITO_ASSERT(!isBeingConstructed()); // Note: Cannot create a OOWeakRef<> if the object is not fully constructed yet.
-    OVITO_ASSERT(!isBeingDeleted());     // Note: Cannot create a OOWeakRef<> if the object is already being destructed.
-
-    // If we are in the main thread already, we can immediately execute the work.
-    // Otherwise, schedule its execution in the main thread.
-    if(this_task::isMainThread()) {
-        std::invoke(std::forward<Function>(f), std::forward<Args>(args)...);
-    }
-    else {
-        ObjectExecutor(this).execute(std::forward<Function>(f), std::forward<Args>(args)...);
-    }
-}
-
-}   // End of namespace
+#include <ovito/core/oo/DeferredObjectExecutor.h>

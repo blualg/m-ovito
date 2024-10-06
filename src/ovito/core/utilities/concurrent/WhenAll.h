@@ -48,7 +48,7 @@ template<typename InputRange, typename... ResultType>
         /// Constructor.
         WhenAllFuturesTask(
             InputRange&& inputRange) :
-                detail::ContinuationTask<task_result_type>(this_task::ui(), Task::NoState, std::forward<InputRange>(inputRange)),
+                detail::ContinuationTask<task_result_type>(Task::NoState, std::forward<InputRange>(inputRange)),
                 _taskCallback(*this, &taskStateChangedCallback),
                 _iterator(std::begin(this->resultStorage()))
         {

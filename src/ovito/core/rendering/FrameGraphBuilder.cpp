@@ -100,7 +100,7 @@ Future<std::unique_ptr<FrameGraphBuilder>> FrameGraphBuilder::gatherPipelineResu
 {
     return for_each_sequential<false>(
         _visiblePipelines,
-        ObjectExecutor(_fg),
+        DeferredObjectExecutor(_fg),
 
         // Called for each pipeline.
         [this](Pipeline* pipeline) {
@@ -129,7 +129,7 @@ Future<std::unique_ptr<FrameGraphBuilder>> FrameGraphBuilder::gatherPipelineResu
 ******************************************************************************/
 Future<std::unique_ptr<FrameGraphBuilder>> FrameGraphBuilder::renderVisElements(FrameGraph& frameGraph, Future<std::unique_ptr<FrameGraphBuilder>> future)
 {
-    return future.then(frameGraph, [](std::unique_ptr<FrameGraphBuilder> builder) {
+    return future.then(ObjectExecutor(&frameGraph), [](std::unique_ptr<FrameGraphBuilder> builder) {
         OVITO_ASSERT(builder->_pipelineResults.size() == builder->_visiblePipelines.size());
         auto pipeline = builder->_visiblePipelines.begin();
         ConstDataObjectPath dataObjectPath;
@@ -218,8 +218,8 @@ Future<std::unique_ptr<FrameGraphBuilder>> FrameGraphBuilder::waitForVisElements
         auto future = when_all_futures(std::move(builder->_asyncVisElementFutures));
 
         // Once all future results are available, handle them one by one.
-        const FrameGraph& fg = *builder->_fg;
-        return future.then(fg, [builder=std::move(builder)](std::vector<Future<PipelineStatus>> asyncVisElementFutures) mutable -> std::unique_ptr<FrameGraphBuilder> {
+        const FrameGraph* fg = builder->_fg;
+        return future.then(ObjectExecutor(fg), [builder=std::move(builder)](std::vector<Future<PipelineStatus>> asyncVisElementFutures) mutable -> std::unique_ptr<FrameGraphBuilder> {
             OVITO_ASSERT(asyncVisElementFutures.size() == builder->_asyncVisElements.size());
             for(size_t i = 0; i < asyncVisElementFutures.size(); ++i) {
                 DataVis* vis = builder->_asyncVisElements[i];
@@ -249,8 +249,8 @@ Future<std::unique_ptr<FrameGraphBuilder>> FrameGraphBuilder::waitForViewportLay
         auto future = when_all_futures(std::move(builder->_asyncViewportLayersFutures));
 
         // Once all future results are available, handle them one by one.
-        const FrameGraph& fg = *builder->_fg;
-        return future.then(fg, [builder=std::move(builder)](std::vector<Future<PipelineStatus>> asyncViewportLayersFutures) mutable -> std::unique_ptr<FrameGraphBuilder> {
+        const FrameGraph* fg = builder->_fg;
+        return future.then(ObjectExecutor(fg), [builder=std::move(builder)](std::vector<Future<PipelineStatus>> asyncViewportLayersFutures) mutable -> std::unique_ptr<FrameGraphBuilder> {
             OVITO_ASSERT(asyncViewportLayersFutures.size() == builder->_asyncViewportLayers.size());
             for(size_t i = 0; i < asyncViewportLayersFutures.size(); ++i) {
                 ViewportOverlay* overlay = builder->_asyncViewportLayers[i];

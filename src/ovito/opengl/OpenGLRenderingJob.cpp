@@ -609,8 +609,7 @@ QOpenGLShaderProgram* OpenGLRenderingJob::loadShaderProgram(const QString& id, c
         program->moveToThread(contextGroup->thread());
         // Make the program object a child of the context group object in the main thread to follow the thread-affinity rules of Qt.
         detail::Latch latch(1);
-        OVITO_ASSERT(!this_task::ui()->taskManager().isShuttingDown()); // Note: During late-phase shutdown the main thread may not be able to process tasks.
-        this_task::ui()->taskManager().submitWork([&]() noexcept {
+        Application::instance()->taskManager().submitWork([&]() noexcept {
             program->setParent(contextGroup);
             latch.count_down();
         });

@@ -202,7 +202,7 @@ Future<PipelineFlowState> MultiDelegatingModifier::applyDelegates(const Modifier
             continue;
 
         // Call the delegate function.
-        future.postprocess(*delegate, [delegate, request, input, additionalInputs](PipelineFlowState&& state) {
+        future.postprocess(ObjectExecutor(delegate), [delegate, request, input, additionalInputs](PipelineFlowState&& state) {
             return delegate->apply(request, std::move(state), input, additionalInputs);
         });
     }

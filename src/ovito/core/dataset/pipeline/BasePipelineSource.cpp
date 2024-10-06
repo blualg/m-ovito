@@ -70,7 +70,7 @@ void BasePipelineSource::postprocessDataCollection(Future<PipelineFlowState>& st
     if(!request.interactiveMode())
         registerActiveFuture(stateFuture);
 
-    stateFuture.postprocess(*this, [this, request](Future<PipelineFlowState> future) -> PipelineFlowState {
+    stateFuture.postprocess(ObjectExecutor(this), [this, request](Future<PipelineFlowState> future) -> PipelineFlowState {
         OVITO_ASSERT(future.isFinished() && !future.isCanceled());
 
         try {
@@ -199,7 +199,7 @@ bool BasePipelineSource::referenceEvent(RefTarget* source, const ReferenceEvent&
         }
     }
     else if(event.type() == DataObject::VisualElementModified && source == dataCollection()) {
-        // Set dirty flag when user modifies on of the visual elements associated with the current data collection.
+        // Set dirty flag when user modifies one of the visual elements associated with the current data collection.
         _userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), true);
     }
     return PipelineNode::referenceEvent(source, event);

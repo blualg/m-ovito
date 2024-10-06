@@ -364,7 +364,7 @@ void FileSourceEditor::onReloadAnimation()
             // Let the FileSource update the list of source animation frames.
             // After the update is complete, jump to the last one of the newly added animation frames.
             int oldFrameCount = fileSource->frames().size();
-            fileSource->updateListOfFrames(true).finally(*fileSource, [fileSource, oldFrameCount, anim=OORef<AnimationSettings>(mainWindow().datasetContainer().activeAnimationSettings())](Task& task) noexcept {
+            fileSource->updateListOfFrames(true).finally(ObjectExecutor(fileSource), [fileSource, oldFrameCount, anim=OORef<AnimationSettings>(mainWindow().datasetContainer().activeAnimationSettings())](Task& task) noexcept {
                 if(!task.isCanceled() && fileSource->frames().size() > oldFrameCount && anim) {
                     AnimationTime time = fileSource->sourceFrameToAnimationTime(fileSource->frames().size() - 1);
                     anim->setCurrentFrame(time.frame());

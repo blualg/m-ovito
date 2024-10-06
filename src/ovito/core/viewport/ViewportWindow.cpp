@@ -138,10 +138,10 @@ void ViewportWindow::resumeViewportUpdates()
 {
     if(_updateNeeded && !_frameFuture && viewport() && !userInterface().areViewportUpdatesSuspended() && isVisible()) {
         // Run buildAndRenderFrameGraph() as soon as control returns to the main event loop.
-        _frameFuture = launchAsync(ObjectExecutor(this, userInterface().shared_from_this()), std::bind_front(&ViewportWindow::buildAndRenderFrameGraph, this));
+        _frameFuture = launchAsync(DeferredObjectExecutor(this), std::bind_front(&ViewportWindow::buildAndRenderFrameGraph, this));
 
         // Afterwards, run frameGraphRenderingFinished().
-        _frameFuture.finally(*this, std::bind_front(&ViewportWindow::frameGraphRenderingFinished, this));
+        _frameFuture.finally(ObjectExecutor(this), std::bind_front(&ViewportWindow::frameGraphRenderingFinished, this));
     }
 }
 
@@ -210,6 +210,9 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
     // Interactive viewport rendering always is an interactive task.
     this_task::get()->setIsInteractive();
 
+    // Associate the task with the user interface.
+    this_task::get()->setUserInterface(userInterface().shared_from_this());
+
     // Set up preliminary projection without knowing the scene bounding box yet.
     AnimationTime time = viewport()->scene()->animationSettings()->currentTime();
     FloatType aspectRatio = (FloatType)windowSize.height() / windowSize.width();
@@ -268,7 +271,7 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
     Future<OORef<FrameGraph>> frameGraphFuture = FrameGraphBuilder::build(std::move(frameGraph), viewport()->scene(), viewport(), logicalViewportRect, physicalViewportRect, noninteractiveProjParams);
 
     // After the frame graph has been built for the scene, finish and then render it.
-    return frameGraphFuture.then(*this, [this](OORef<FrameGraph> frameGraph) {
+    return frameGraphFuture.then(ObjectExecutor(this), [this](OORef<FrameGraph> frameGraph) {
 
         DataSet* dataset = userInterface().datasetContainer().currentSet();
         QSize windowSize = viewportWindowDeviceSize();

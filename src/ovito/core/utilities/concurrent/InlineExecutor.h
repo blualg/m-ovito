@@ -29,7 +29,7 @@ namespace Ovito {
 
 /// The simplest implementation of the Executor concept.
 /// The inline executor runs a work function immediately and in place.
-/// See ObjectExecutor for another implementation of the executor concept.
+/// See DeferredObjectExecutor for another implementation of the executor concept.
 struct InlineExecutor
 {
     template<typename Function, typename... Args>
@@ -46,9 +46,6 @@ struct InlineExecutor
             InlineExecutor::execute(std::move(f), std::forward<Args>(args)...);
         };
     }
-
-    /// Returns the abstract user interface object associated with this executor.
-    static const std::shared_ptr<UserInterface>& userInterface() { return this_task::ui(); }
 };
 
 } // End of namespace

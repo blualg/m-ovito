@@ -76,7 +76,7 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
             StartIterFunc&& startFunc,
             CompleteIterFunc&& completeFunc,
             ResultType&&... initialResult) :
-                detail::ContinuationTask<task_result_type>(this_task::ui(), Task::NoState, std::forward<ResultType>(initialResult)...),
+                detail::ContinuationTask<task_result_type>(Task::NoState, std::forward<ResultType>(initialResult)...),
                 _range(std::forward<InputRange>(inputRange)),
                 _executor(std::forward<Executor>(executor)),
                 _startFunc(std::forward<StartIterFunc>(startFunc)),

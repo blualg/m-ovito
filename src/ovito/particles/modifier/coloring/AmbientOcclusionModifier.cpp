@@ -261,7 +261,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
     });
 
     // Phase II: Modulate input particle colors with the computed brightness values.
-    return brightnessFuture.then(*this, [this, state = std::move(state)](ConstDataBufferPtr brightness) {
+    return brightnessFuture.then(ObjectExecutor(this), [this, state = std::move(state)](ConstDataBufferPtr brightness) {
 
         // Perform work in a separate thread.
         return asyncLaunch([state = std::move(state), brightness = std::move(brightness), intensity = intensity()]() mutable {

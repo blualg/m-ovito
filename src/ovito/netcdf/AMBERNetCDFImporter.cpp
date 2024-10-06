@@ -712,7 +712,7 @@ Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const 
 {
     // Retrieve file.
     return Application::instance()->fileManager().fetchUrl(frame.sourceFile)
-        .then(*this, [](const FileHandle& fileHandle) {
+        .then(ObjectExecutor(this), [](const FileHandle& fileHandle) {
             QString filename = QDir::toNativeSeparators(fileHandle.localFilePath());
             if(filename.isEmpty())
                 throw Exception(tr("The NetCDF file reader supports reading only from physical files. Cannot read data from an in-memory buffer."));

@@ -56,9 +56,6 @@ public:
 
     /// \brief Is called by the system after the standalone application has been completely initialized.
     virtual void applicationStarted() {}
-
-    /// \brief Callback method which may return true to signal the application to cancel a long-running operation in the main thread.
-    virtual bool shouldCancelMainThreadOperation() { return false; }
 };
 
 }   // End of namespace

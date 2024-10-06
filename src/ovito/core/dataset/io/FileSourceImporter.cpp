@@ -331,7 +331,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
     // into one big list that is returned to the caller.
     return for_each_sequential<false>(
         sourceUrls,
-        ObjectExecutor(this),
+        DeferredObjectExecutor(this),
         [this](const QUrl& url) {
             return discoverFrames(url);
         },
@@ -356,14 +356,14 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
         // If yes, find all matching files and scan each one of them.
         if(isWildcardPattern(sourceUrl)) {
             return findWildcardMatches(sourceUrl)
-                .then(*this, [this](const std::vector<QUrl>& fileList) {
+                .then(ObjectExecutor(this), [this](const std::vector<QUrl>& fileList) {
                     return discoverFrames(fileList);
                 });
         }
 
         // Fetch file, then scan it.
         return Application::instance()->fileManager().fetchUrl(sourceUrl)
-            .then(*this, [this](const FileHandle& fileHandle) {
+            .then(ObjectExecutor(this), [this](const FileHandle& fileHandle) {
                 return discoverFrames(fileHandle);
             });
     }
@@ -371,7 +371,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
         if(isWildcardPattern(sourceUrl)) {
             // Find all files matching the file pattern.
             return findWildcardMatches(sourceUrl)
-                .then(*this, [](const std::vector<QUrl>& fileList) {
+                .then(ObjectExecutor(this), [](const std::vector<QUrl>& fileList) {
                     // Turn the file list into a frame list.
                     QVector<Frame> frames;
                     frames.reserve(fileList.size());
@@ -431,11 +431,12 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
     // Only automatically turn scanning on if the file is being newly imported, i.e. if the file source has not loaded a data collection yet.
     if(request.isNewlyImportedFile) {
         // Note: Changing a parameter of the file importer must be done in the correct thread.
-        future.finally(*this, [this](Task& task) noexcept {
+        future.finally(ObjectExecutor(this), [this](Task& task) noexcept {
+            OVITO_ASSERT(task.userInterface());
             if(!task.isCanceled()) {
                 FrameLoader& frameLoader = static_cast<FrameLoader&>(task);
                 if(frameLoader.additionalFramesDetected() && !isMultiTimestepFile()) {
-                    task.ui()->handleExceptions([&] {
+                    task.userInterface()->handleExceptions([&] {
                         setMultiTimestepFile(true);
                     });
                 }

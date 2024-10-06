@@ -299,7 +299,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
                 PipelineEvaluationResult pipelineEvaluationResult = modNode->evaluate(PipelineEvaluationRequest(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive()));
 
                 // Wait for the modifier results.
-                return pipelineEvaluationResult.then(*this, [this, frameGraph=OORef<FrameGraph>(&frameGraph), &commandGroup, modNode, colorBarRect, legendSize](const PipelineFlowState& state) -> PipelineStatus {
+                return pipelineEvaluationResult.then(ObjectExecutor(this), [this, frameGraph=OORef<FrameGraph>(&frameGraph), &commandGroup, modNode, colorBarRect, legendSize](const PipelineFlowState& state) -> PipelineStatus {
                     FloatType startValue = std::numeric_limits<FloatType>::quiet_NaN();
                     FloatType endValue = std::numeric_limits<FloatType>::quiet_NaN();
                     QVariant minValue = state.getAttributeValue(modNode, QStringLiteral("ColorCoding.RangeMin"));
@@ -328,7 +328,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
             PipelineEvaluationResult pipelineEvaluationResult = sourcePipeline->evaluatePipeline(PipelineEvaluationRequest(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive()));
 
             // Wait for the pipeline results.
-            return pipelineEvaluationResult.then(*this, [this, frameGraph=OORef<FrameGraph>(&frameGraph), &commandGroup, colorBarRect, legendSize](const PipelineFlowState& state) -> PipelineStatus {
+            return pipelineEvaluationResult.then(ObjectExecutor(this), [this, frameGraph=OORef<FrameGraph>(&frameGraph), &commandGroup, colorBarRect, legendSize](const PipelineFlowState& state) -> PipelineStatus {
 
                 // Look up the typed property.
                 DataOORef<const Property> typedProperty = state.getLeafObject(sourceProperty());

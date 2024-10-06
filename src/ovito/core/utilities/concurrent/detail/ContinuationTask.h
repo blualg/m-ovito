@@ -40,12 +40,12 @@ class ContinuationTask : public TaskWithStorage<R, TaskBase>, public TaskAwaiter
 public:
 
     /// Delegating constructor.
-    explicit ContinuationTask(std::shared_ptr<UserInterface> ui, Task::State initialState) noexcept : ContinuationTask(std::move(ui), initialState, std::nullopt) {}
+    explicit ContinuationTask(Task::State initialState = Task::NoState) noexcept : ContinuationTask(initialState, std::nullopt) {}
 
     /// Constructor initializing the results storage.
     template<typename InitialValue>
-    explicit ContinuationTask(std::shared_ptr<UserInterface> ui, Task::State initialState, InitialValue&& initialResult) noexcept :
-            TaskWithStorage<R, TaskBase>(std::move(ui), initialState, std::forward<InitialValue>(initialResult)),
+    explicit ContinuationTask(Task::State initialState, InitialValue&& initialResult) noexcept :
+            TaskWithStorage<R, TaskBase>(initialState, std::forward<InitialValue>(initialResult)),
             TaskAwaiter(static_cast<Task&>(*this))
     {
         OVITO_ASSERT(!(initialState & (Task::Canceled | Task::Finished)));
@@ -55,9 +55,13 @@ public:
     template<typename Function, typename FutureType>
     void fulfillWith(PromiseBase&& promise, Function&& f, FutureType&& future) noexcept {
         OVITO_ASSERT(!awaitedTask());
-        OVITO_ASSERT(!this->isFinished());
         OVITO_ASSERT(promise.task().get() == this);
         OVITO_ASSERT(future.isFinished());
+
+        // Skip the continuation if the task has been canceled.
+        if(this->isCanceled())
+            return;
+
         try {
             // Execute the continuation function in the scope of this task object.
             Task::Scope taskScope(this);

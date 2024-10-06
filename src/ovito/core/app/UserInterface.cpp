@@ -37,7 +37,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(UserInterface);
 /******************************************************************************
 * Constructor
 ******************************************************************************/
-UserInterface::UserInterface() : _taskManager(this), _datasetContainer(OORef<DataSetContainer>::create(_taskManager, *this))
+UserInterface::UserInterface() : _datasetContainer(OORef<DataSetContainer>::create(*this))
 {
 }
 
@@ -71,7 +71,7 @@ void UserInterface::exitWithFatalError(const Exception& ex)
 }
 
 /******************************************************************************
-* Aborts all running tasks and closes the user interface as soon as possible
+* Cancels all running tasks and closes the user interface as soon as possible
 * (without asking user to save changes).
 ******************************************************************************/
 void UserInterface::shutdown()
@@ -90,35 +90,6 @@ void UserInterface::shutdown()
         qWarning() << "Warning: Exception caught during shutdown";
         reportError(ex, true);
     }
-
-    // Wait for all running tasks to stop, empty the deferred work queue, and leave all nested event loops.
-    // Once this is done, shutdownComplete() will be invoked to finalize the shutdown process.
-    taskManager().requestShutdown();
-}
-
-/******************************************************************************
-* Is called by the TaskManager class after all tasks have terminated and
-* all nested event loops have been exited.
-******************************************************************************/
-void UserInterface::shutdownComplete()
-{
-    // Self-destruction.
-    if(_selfGuard) {
-        if(QThread::currentThread()->loopLevel() != 0) {
-            // Move the self-guard into a lambda function, which gets processed when control returns to the Qt event loop.
-            // The lambda's destructor will free the self-guard object and stop the event loop.
-            OVITO_ASSERT(Application::instance()->isShuttingDown() == false);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
-            Application::instance()->taskManager().submitWork([s = std::move(_selfGuard), locker = QEventLoopLocker()]() noexcept {});
-#else
-            Application::instance()->taskManager().submitWork([s = std::move(_selfGuard), locker = std::make_unique<QEventLoopLocker>()]() noexcept {});
-#endif
-        }
-        else {
-            // Release object immediately.
-            _selfGuard.reset();
-        }
-    }
 }
 
 /******************************************************************************
@@ -131,24 +102,6 @@ void UserInterface::reportError(const Exception& ex, bool blocking)
     for(auto msg = ex.messages().crbegin(); msg != ex.messages().crend(); ++msg) {
         qInfo().noquote() << "ERROR:" << *msg;
     }
-}
-
-/******************************************************************************
-* Tells the UI to process any pending events in the event queue and return immediately.
-* The function can return true to indicate that the running operation should be canceled.
-******************************************************************************/
-bool UserInterface::processUIEvents()
-{
-    // Process Qt events (only if the main Qt event loop is running).
-    if(QCoreApplication::instance() != nullptr && QThread::currentThread()->loopLevel() != 0) {
-        QCoreApplication::sendPostedEvents(); // Process events sent by the application
-        QCoreApplication::processEvents();    // Process events sent by the OS
-    }
-
-    // Process pending work waiting in our internal queue.
-    taskManager().executePendingWork();
-
-    return isShuttingDown();
 }
 
 /******************************************************************************

@@ -55,8 +55,8 @@ template<typename Executor, typename Function>
         using future_type = result_future_type;
 
         /// Constructor.
-        explicit LaunchTask(std::shared_ptr<UserInterface> ui, Function&& function) :
-            base_task_type(std::move(ui), Task::NoState),
+        explicit LaunchTask(Function&& function) :
+            base_task_type(Task::NoState, std::nullopt),
             _function(std::forward<Function>(function)) {}
 
         /// Starts execution of the task.
@@ -95,10 +95,8 @@ template<typename Executor, typename Function>
         std::decay_t<Function> _function;
     };
 
-    std::shared_ptr<UserInterface> ui = executor.userInterface();
-
     return launchTask(
-        std::make_shared<LaunchTask>(std::move(ui), std::forward<Function>(function)),
+        std::make_shared<LaunchTask>(std::forward<Function>(function)),
         std::forward<Executor>(executor));
 }
 
@@ -108,10 +106,19 @@ void launchDetached(Executor&& executor, Function&& function)
 {
     static_assert(std::is_invocable_r_v<void, Function>, "The function must be callable with no arguments and should return no value.");
 
-    std::shared_ptr<UserInterface> ui = executor.userInterface();
+    auto task = std::make_shared<Task>();
+
+    // Inherit the priority status, interactive flag, and user interface from the current task.
+    if(const Task* parentTask = this_task::get()) {
+        if(parentTask->isHighPriorityTask())
+            task->setHighPriorityTask();
+        if(parentTask->isInteractive())
+            task->setIsInteractive();
+        task->setUserInterface(parentTask->userInterface());
+    }
 
     executor.execute(
-        [promise = PromiseBase(std::make_shared<Task>(std::move(ui))), function=std::forward<Function>(function)]() mutable noexcept {
+        [promise = PromiseBase(std::move(task)), function=std::forward<Function>(function)]() mutable noexcept {
             OVITO_ASSERT(!promise.isCanceled() && !promise.isFinished());
             try {
                 Task::Scope taskScope(promise.task().get());
@@ -121,8 +128,8 @@ void launchDetached(Executor&& executor, Function&& function)
             catch(const OperationCanceled&) {}
             catch(const Exception& ex) {
                 OVITO_ASSERT(!promise.isFinished());
-                if(this_task::isMainThread())
-                    promise.task()->ui()->reportError(ex);
+                if(this_task::isMainThread() && promise.task()->userInterface())
+                    promise.task()->userInterface()->reportError(ex);
                 promise.captureExceptionAndFinish();
             }
             catch(...) {

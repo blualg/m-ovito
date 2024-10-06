@@ -118,7 +118,7 @@ Future<PipelineFlowState> FreezePropertyModifier::evaluateModifier(const Modifie
 
     // Request the frozen state from the upstream pipeline.
     return request.modificationNode()->evaluateInput(upstreamRequest)
-        .then(*this, [this, request, state = std::move(state)](const PipelineFlowState& frozenState) mutable {
+        .then(ObjectExecutor(this), [this, request, state = std::move(state)](const PipelineFlowState& frozenState) mutable {
 
             // Extract the property to freeze.
             if(FreezePropertyModificationNode* modNode = dynamic_object_cast<FreezePropertyModificationNode>(request.modificationNode())) {

@@ -173,7 +173,7 @@ void FrameBufferWindow::showRenderingProgress()
     onTaskProgressUpdate();
 
     // Start watching the rendering task. Re-enable the window after rendering is done.
-    _renderingFuture.finally(_mainWindow, [self = QPointer<FrameBufferWindow>(this)]() noexcept {
+    _renderingFuture.finally(ObjectExecutor(&_mainWindow), [self = QPointer<FrameBufferWindow>(this)]() noexcept {
         if(!self.isNull()) {
             self->_renderingFuture.reset();
             self->onRenderingFinished();

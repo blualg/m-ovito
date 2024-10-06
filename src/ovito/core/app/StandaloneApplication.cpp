@@ -141,7 +141,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         }
 
         // Complete the startup process by calling postStartupInitialization() once the main event loop is running.
-        ObjectExecutor(this).execute([startupOperation = PromiseBase(std::move(startupOperation))]() noexcept {
+        DeferredObjectExecutor(this).execute([startupOperation = PromiseBase(std::move(startupOperation))]() noexcept {
             Task::Scope taskScope(startupOperation.task());
             try {
                 try {
@@ -293,23 +293,6 @@ bool StandaloneApplication::processCommandLineParameters()
     }
 
     return true;
-}
-
-/******************************************************************************
-* Tells the UI to process any pending events in the event queue and return immediately.
-* The function can return true to indicate that the running operation should be canceled.
-******************************************************************************/
-bool StandaloneApplication::processUIEvents()
-{
-    if(Application::processUIEvents())
-        return true;
-
-    // Let the application services interrupt the currently running main-thread operation.
-    for(const auto& service : applicationServices())
-        if(service->shouldCancelMainThreadOperation())
-            return true;
-
-    return false;
 }
 
 }   // End of namespace

@@ -96,7 +96,8 @@ OORef<Controller> ControllerManager::createTransformationController()
 bool ControllerManager::isAutoGenerateAnimationKeysEnabled()
 {
     if(Task* task = this_task::get()) {
-        return task->ui()->isAutoGenerateAnimationKeysEnabled();
+        OVITO_ASSERT(task->userInterface());
+        return task->userInterface()->isAutoGenerateAnimationKeysEnabled();
     }
     return false;
 }

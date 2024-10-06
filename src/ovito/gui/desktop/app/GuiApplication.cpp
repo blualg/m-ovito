@@ -275,10 +275,6 @@ MainThreadOperation GuiApplication::startupApplication()
         OORef<MainWindow> mainWin = OORef<MainWindow>::create();
         mainWin->keepAliveUntilShutdown();
 
-        // Do not let the application shut down automatically when the last main window gets closed, because
-        // the TaskManager might still have some nested event loops running to process background tasks.
-        QGuiApplication::setQuitOnLastWindowClosed(false);
-
         // Show the main window.
         mainWin->setUpdatesEnabled(false);
         mainWin->restoreMainWindowGeometry();

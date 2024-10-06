@@ -537,7 +537,7 @@ Future<PipelineFlowState> SliceModifier::evaluateModifier(const ModifierEvaluati
     Future<PipelineFlowState> future = MultiDelegatingModifier::evaluateModifier(request, std::move(state));
 
     if(enablePlaneVisualization()) {
-        future.postprocess(*this, [this, request](PipelineFlowState&& state) {
+        future.postprocess(ObjectExecutor(this), [this, request](PipelineFlowState&& state) {
             Plane3 plane;
             FloatType slabWidth;
             TimeInterval interval;

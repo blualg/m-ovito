@@ -73,7 +73,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
     // Create a promise, which remains in the unfinished state as long as we are preparing the scene.
     if(!_promise || _promise.isCanceled() || _promise.isFinished()) {
-        _promise = Promise<void>(std::make_shared<Task>(userInterface().shared_from_this(), Task::NoState));
+        _promise = Promise<void>(std::make_shared<Task>(Task::NoState));
         _future = _promise.sharedFuture();
         if(scene()) {
             // Emit signal to indicate we are preparing the scene.
@@ -86,13 +86,6 @@ void ScenePreparation::makeReady(bool forceReevaluation)
         _promise.setFinished();
         _pipelineEvaluationFuture.reset();
         _currentPipeline = {};
-        return;
-    }
-
-    // Abort if application is about to shut down.
-    if(userInterface().isShuttingDown()) {
-        _pipelineEvaluationFuture.reset();
-        _promise.cancel();
         return;
     }
 
@@ -167,7 +160,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
         // If one of the pipelines is not complete yet, wait until it is.
         // Then start over to see if there are more pipelines that need to be evaluated.
-        _pipelineEvaluationFuture.finally(ObjectExecutor(this), [this](Task& task) noexcept {
+        _pipelineEvaluationFuture.finally(DeferredObjectExecutor(this), [this](Task& task) noexcept {
             // Make sure we are still waiting for the same future that just reached the completed state.
             if(_pipelineEvaluationFuture && _pipelineEvaluationFuture.task().get() == &task && _currentPipeline) {
                 pipelineEvaluationFinished();

@@ -36,10 +36,10 @@ class TaskWithStorage : public TaskBase
 {
 public:
 
-    /// \brief Constructor assigning the task's results storage.
+    /// Constructor assigning the task's results storage.
     template<typename... Args>
-    explicit TaskWithStorage(std::shared_ptr<UserInterface> ui, Task::State initialState, Args&&... args)
-        : TaskBase(std::move(ui), initialState, &_result), _result{std::forward<Args>(args)...}
+    explicit TaskWithStorage(Task::State initialState, Args&&... args)
+        : TaskBase(initialState, &_result), _result{std::forward<Args>(args)...}
     {
 #ifdef OVITO_DEBUG
         // This is used in debug builds to detect programming errors and explicitly keep track of whether a result has been assigned to the task.
@@ -47,8 +47,8 @@ public:
 #endif
     }
 
-    /// \brief Constructor which leaves results storage uninitialized.
-    explicit TaskWithStorage(std::shared_ptr<UserInterface> ui, Task::State initialState, std::nullopt_t) : TaskBase(std::move(ui), initialState, &_result) {}
+    /// Constructor which leaves results storage uninitialized.
+    explicit TaskWithStorage(Task::State initialState, std::nullopt_t) : TaskBase(initialState, &_result) {}
 
     /// Assigns a value to the internal result storage of the task.
     template<typename R2>
@@ -75,10 +75,10 @@ class TaskWithStorage<void, TaskBase> : public TaskBase
 public:
 
     /// \brief Constructor which leaves results storage uninitialized.
-    explicit TaskWithStorage(std::shared_ptr<UserInterface> ui, Task::State initialState) : TaskBase(std::move(ui), initialState, nullptr) {}
+    explicit TaskWithStorage(Task::State initialState) : TaskBase(initialState, nullptr) {}
 
     /// \brief Constructor which leaves results storage uninitialized.
-    explicit TaskWithStorage(std::shared_ptr<UserInterface> ui, Task::State initialState, std::nullopt_t) : TaskBase(std::move(ui), initialState, nullptr) {}
+    explicit TaskWithStorage(Task::State initialState, std::nullopt_t) : TaskBase(initialState, nullptr) {}
 };
 
 }   // End of namespace

@@ -35,32 +35,21 @@ bool TaskManager::_nativeDialogActive = false;
 /******************************************************************************
 * Initializes the task manager.
 ******************************************************************************/
-TaskManager::TaskManager(UserInterface* ui) : _ui(ui)
+TaskManager::TaskManager()
 #ifdef OVITO_USE_SYCL
     , _syclQueue{sycl::default_selector_v}
 #endif
 {
-    qRegisterMetaType<TaskPtr>("TaskPtr");
-
     // Run regular work tasks with reduced priority to avoid slowing down the user interface.
     _threadPool.setThreadPriority(QThread::LowPriority);
 
     // This thread pool is used for tasks that cannot run concurrently.
     _threadPoolSerial.setMaxThreadCount(1);
 
-    if(Application::instance()) {
-        // Inherit max thread count from root TaskManager.
-        setMaxThreadCount(Application::instance()->taskManager().maxThreadCount());
-    }
-    else {
-        // Use all available processor cores by default -- or the user-specified
-        // number given by the OVITO_THREAD_COUNT environment variable.
-        if(int threadCount = qEnvironmentVariableIntValue("OVITO_THREAD_COUNT"))
-            setMaxThreadCount(std::max(1, threadCount));
-    }
-
-    // Execute pending work in the main thread when control returns to the Qt event loop.
-    connect(this, &TaskManager::pendingWorkArrived, this, &TaskManager::executePendingWork, Qt::QueuedConnection);
+    // Use all available processor cores by default -- or the user-specified
+    // number given by the OVITO_THREAD_COUNT environment variable.
+    if(int threadCount = qEnvironmentVariableIntValue("OVITO_THREAD_COUNT"))
+        setMaxThreadCount(std::max(1, threadCount));
 }
 
 #ifdef OVITO_DEBUG
@@ -71,6 +60,7 @@ TaskManager::~TaskManager()
 {
     OVITO_ASSERT(isShuttingDown());
     OVITO_ASSERT(_shutdownCompleted);
+    OVITO_ASSERT(!_eventLoopLocker.has_value());
 
     // Check if the mutex is currently locked.
     // This should never be the case while destroying the TaskManager.
@@ -95,7 +85,7 @@ void TaskManager::requestShutdown()
 
     // Wait for all remaining tasks to finish and proceed with shutdown as soon as control has returned to main event loop.
     if(QCoreApplication::instance() && QThread::currentThread()->loopLevel() != 0)
-        Q_EMIT pendingWorkArrived();
+        notifyWorkArrived();
     else
         executePendingWork();
 }
@@ -111,8 +101,11 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
 
     // Work item queue must be empty by now.
     OVITO_ASSERT(_pendingWork.empty());
-
     lock.unlock();
+
+    // Remove obsolete notification events from Qt event queue.
+    if(QCoreApplication::instance())
+        QCoreApplication::sendPostedEvents(Application::instance());
 
     // Wait until all threads did terminate. That's because canceled asynchronous tasks
     // may still be running in threads until they notice they have been canceled.
@@ -144,10 +137,8 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
     }
 
     _shutdownCompleted = true;
+    _eventLoopLocker.reset();
     lock.unlock();
-
-    // Notify abstract user interface that shutdown is complete.
-    _ui->shutdownComplete();
 }
 
 /******************************************************************************
@@ -167,10 +158,29 @@ void TaskManager::submitWork(work_function_type&& function)
     // If the queue became non-empty, notify listeners that work is waiting.
     if(numPendingWork == 1) {
         _pendingWorkCondition.notify_one();
+        notifyWorkArrived();
+    }
+}
 
-        if(QCoreApplication::instance()) {
-            Q_EMIT pendingWorkArrived();
-        }
+/******************************************************************************
+* Is called when the pending work queue becomes non-empty
+******************************************************************************/
+void TaskManager::notifyWorkArrived()
+{
+    if(QCoreApplication::instance()) {
+
+        // Keep the Qt main event loop running while the task manager's work queue is non-empty.
+        if(!_eventLoopLocker.has_value())
+            _eventLoopLocker.emplace();
+
+        // Place a custom event in the Qt event queue to trigger work processing as soon as control
+        // returns to the event loop.
+        // The custom event type's destructor runs the work processing function.
+        struct Event : public QEvent {
+            Event() : QEvent(QEvent::None) {}
+            ~Event() { Application::instance()->taskManager().executePendingWork(); }
+        };
+        QCoreApplication::postEvent(Application::instance(), new Event());
     }
 }
 
@@ -179,8 +189,6 @@ void TaskManager::submitWork(work_function_type&& function)
 ******************************************************************************/
 void TaskManager::executePendingWork()
 {
-    OORef<UserInterface> guard(_ui); // To keep the task manager alive while processing work.
-
     std::unique_lock<std::mutex> lock{_mutex};
     executePendingWorkLocked(lock);
 }
@@ -221,6 +229,9 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
         // wait for all remaining tasks (in other threads) to finish.
         shutdownImplementation(lock);
     }
+
+    // Discard QEventLoopLocker after all waiting work items have been processed.
+    _eventLoopLocker.reset();
 }
 
 /******************************************************************************
@@ -327,7 +338,7 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
     // as control has returned to main event loop.
     if(isShuttingDown() && !_waitingForTask) {
         if(QCoreApplication::instance() && QThread::currentThread()->loopLevel() != 0)
-            Q_EMIT pendingWorkArrived();
+            notifyWorkArrived();
         else
             executePendingWorkLocked(lock);
     }

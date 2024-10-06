@@ -43,15 +43,12 @@ class OVITO_CORE_EXPORT DataSetContainer final : public QObject, public RefMaker
 public:
 
     /// Constructor.
-    void initializeObject(TaskManager& taskManager, UserInterface& userInterface);
+    void initializeObject(UserInterface& userInterface);
 
 #ifdef OVITO_DEBUG
     /// Destructor.
     ~DataSetContainer();
 #endif
-
-    /// Returns the manager of asynchronous tasks associated with this container.
-    TaskManager& taskManager() { return *_taskManager; }
 
     /// Returns the abstract user interface this container is part of.
     UserInterface& userInterface() { return *_userInterface; }
@@ -65,7 +62,7 @@ public:
     /// Returns whether the animation is currently being played back in the interactive viewports.
     bool isPlaybackActive() const { return _animationPlayback && _animationPlayback->isPlaybackActive(); }
 
-    /// Returns the data cache used by visualzation elements to store rendering primitives.
+    /// Returns the data cache used by visualization elements to store rendering primitives.
     const std::shared_ptr<RendererResourceCache>& visCache() { return _visCache; }
 
 public Q_SLOTS:
@@ -180,9 +177,6 @@ private:
 
     /// The active animation settings object.
     DECLARE_REFERENCE_FIELD(OORef<AnimationSettings>, activeAnimationSettings);
-
-    /// The manager of asynchronous tasks associated with this container.
-    TaskManager* _taskManager;
 
     /// The abstract user interface this container is part of.
     UserInterface* _userInterface;

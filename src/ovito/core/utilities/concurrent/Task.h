@@ -50,14 +50,12 @@ public:
         Finished       = (1<<0),
         Canceled       = (1<<1),
         IsAsynchronous = (1<<2), // The task is derived from AsynchronousTaskBase and runs in a worker thread.
-        YieldUI        = (1<<3), // The task runs in the main thread should yield control to the event loop when its progress functions are called.
-        HighPriority   = (1<<4), // The task should be executed with higher priority, because it is responsible for real-time GUI updates.
-        IsInteractive  = (1<<5), // The task is doing actions initiated by the user in the GUI - in contrast to automated actions performed by a script.
+        HighPriority   = (1<<3), // The task should be executed with higher priority, because it is responsible for real-time GUI updates.
+        IsInteractive  = (1<<4), // The task is doing actions initiated by the user in the GUI - in contrast to automated actions performed by a script.
     };
 
     /// Constructor.
-    explicit Task(std::shared_ptr<UserInterface> ui, State initialState = NoState, void* resultsStorage = nullptr) noexcept : _ui(std::move(ui)), _state(initialState), _resultsStorage(resultsStorage) {
-        OVITO_ASSERT(_ui);
+    explicit Task(State initialState = NoState, void* resultsStorage = nullptr) noexcept : _state(initialState), _resultsStorage(resultsStorage) {
 #ifdef OVITO_DEBUG
         // In debug builds we keep track of how many task objects exist to check whether they all get destroyed correctly
         // at program termination.
@@ -99,8 +97,11 @@ public:
             return _state.fetch_and(~IsInteractive, std::memory_order_relaxed) & IsInteractive;
     }
 
-    /// Returns the abstract user interface this task is associated with.
-    const std::shared_ptr<UserInterface>& ui() const noexcept { OVITO_ASSERT(_ui); return _ui; }
+    /// Associates this task with an abstract user interface.
+    void setUserInterface(std::shared_ptr<UserInterface> ui) noexcept { _userInterface = std::move(ui); }
+
+    /// Returns the abstract user interface this task is associated with (if any).
+    const std::shared_ptr<UserInterface>& userInterface() const noexcept { return _userInterface; }
 
     /// \brief Requests cancellation of the task.
     void cancel() noexcept;
@@ -328,8 +329,8 @@ protected:
     /// For managing concurrent access to this task's state.
     mutable std::mutex _mutex;
 
-    /// The abstract user interface object this task is associated with.
-    std::shared_ptr<UserInterface> _ui;
+    /// The abstract user interface object this task is associated with. May be null.
+    std::shared_ptr<UserInterface> _userInterface;
 
     /// List of continuation functions that will be invoked when this task finishes (successfully or not).
     QVarLengthArray<continuation_function, 2> _continuations;
@@ -378,7 +379,8 @@ OVITO_CORE_EXPORT Task*& get() noexcept;
 /// Returns the abstract user interface associated with the current task.
 OVITO_CORE_EXPORT inline const std::shared_ptr<UserInterface>& ui() noexcept {
     OVITO_ASSERT(get() != nullptr);
-    return get()->ui();
+    OVITO_ASSERT(get()->userInterface());
+    return get()->userInterface();
 }
 
 /// Returns whether the current task is doing actions initiated by the user in the GUI - in contrast to automated actions performed by a script.

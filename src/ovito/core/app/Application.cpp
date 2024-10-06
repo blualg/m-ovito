@@ -167,7 +167,7 @@ Application::Application()
 ******************************************************************************/
 Application::~Application()
 {
-    OVITO_ASSERT(isShuttingDown()); // Make sure this UserInterface was properly shutdown before being deleted.
+    OVITO_ASSERT(taskManager().isShuttingDown()); // Make sure this UserInterface was properly shut down before being deleted.
     _instance = nullptr;
 }
 
@@ -356,10 +356,23 @@ void Application::createQtApplication(bool supportGui)
     else {
         // If called from a worker thread, we need to perform the creation of the Qt app in the main thread
         // and block the worker thread until the Qt app has been created.
-        launchAsync(ObjectExecutor(Application::instance()), [supportGui]() noexcept {
+        launchAsync(DeferredObjectExecutor(Application::instance()), [supportGui]() noexcept {
             Application::instance()->createQtApplication(supportGui);
         }).waitForFinished();
     }
+}
+
+/******************************************************************************
+* Cancels all running tasks and closes the user interface as soon as possible
+* (without asking user to save changes).
+******************************************************************************/
+void Application::shutdown()
+{
+    // Close the user interface.
+    UserInterface::shutdown();
+
+    // Wait for all running tasks to stop, empty the deferred work queue, and leave all nested event loops.
+    taskManager().requestShutdown();
 }
 
 #ifndef Q_OS_WASM
@@ -377,6 +390,18 @@ QNetworkAccessManager* Application::networkAccessManager()
     return _networkAccessManager;
 }
 #endif
+
+/******************************************************************************
+* Gets called by a running task to report its progress status (from any thread).
+******************************************************************************/
+void Application::taskProgressText(Task& task, const QString& text)
+{
+    OVITO_ASSERT(!task.isFinished());
+
+    // Print task messages to the console if task logging is enabled (via Python method ovito.enable_logging()).
+    if(taskConsoleLoggingEnabled() && !text.isEmpty())
+        qInfo().noquote() << "OVITO:" << text;
+}
 
 /******************************************************************************
 * Similar to QCoreApplication::applicationDirPath() but doesn't require a Qt application.

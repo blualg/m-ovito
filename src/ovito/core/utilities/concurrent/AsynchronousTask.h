@@ -34,7 +34,7 @@ class OVITO_CORE_EXPORT AsynchronousTaskBase : public Task, public QRunnable
 public:
 
     /// Constructor.
-    AsynchronousTaskBase(std::shared_ptr<UserInterface> ui, State initialState, void* resultsStorage) noexcept;
+    AsynchronousTaskBase(State initialState, void* resultsStorage) noexcept;
 
     /// Destructor.
     ~AsynchronousTaskBase();
@@ -74,7 +74,6 @@ public:
 
     /// Constructor
     AsynchronousTask() : detail::TaskWithStorage<R, AsynchronousTaskBase>(
-        this_task::ui(),
         this_task::get()->isHighPriorityTask() ? Task::HighPriority : Task::NoState,
         std::nullopt) {}
 };

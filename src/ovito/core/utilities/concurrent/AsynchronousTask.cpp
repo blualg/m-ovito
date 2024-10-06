@@ -33,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AsynchronousTaskBase::AsynchronousTaskBase(std::shared_ptr<UserInterface> ui, State initialState, void* resultsStorage) noexcept : Task(std::move(ui), State(initialState | Task::IsAsynchronous), resultsStorage)
+AsynchronousTaskBase::AsynchronousTaskBase(State initialState, void* resultsStorage) noexcept : Task(State(initialState | Task::IsAsynchronous), resultsStorage)
 {
     QRunnable::setAutoDelete(false);
 }
@@ -60,7 +60,7 @@ void AsynchronousTaskBase::operator()()
     _thisTask = this->shared_from_this();
 
     // Determine the thread pool to use for this task.
-    _threadPool = this_task::ui()->taskManager().chooseThreadPool(*this);
+    _threadPool = Application::instance()->taskManager().chooseThreadPool(*this);
 
 #ifdef QT_BUILDING_UNDER_TSAN
     // Workaround for a false positive error by TSAN, which doesn't know the internals of the QThreadPool implementation (unless Qt itself was built with TSAN support).

@@ -50,7 +50,7 @@ public:
         // Schedule callback upon completion of the future that yields the auxiliary input data.
         _auxiliaryAwaiter.whenTaskFinishes<ComplexModifierEvaluationTask, &ComplexModifierEvaluationTask::auxiliaryInputAvailable>(
             std::move(auxiliaryFuture),
-            *modificationNode(),
+            ObjectExecutor(modificationNode()),
             shared_from_this());
     }
 
@@ -73,10 +73,10 @@ private:
     /// Performs the actual modifier computation if all necessary inputs (upstream pipeline data and auxiliary data) are available.
     void evaluateModifierIfReady(PromiseBase promise) noexcept {
         if(_auxiliaryFuture && resultStorage()) {
+            Task::Scope taskScope(this);
 
             Future<PipelineFlowState> modifierFuture;
             handleModifierExceptions([&]() {
-                Task::Scope taskScope(this);
                 modifierFuture = static_object_cast<ModifierClass>(modifier())->evaluateComplexModifier(request(), PipelineFlowState{resultStorage()}, std::move(_auxiliaryFuture).result());
                 OVITO_ASSERT(modifierFuture);
 
@@ -89,7 +89,7 @@ private:
             if(modifierFuture) {
                 whenTaskFinishes<ModifierEvaluationTask, &ComplexModifierEvaluationTask::modifierResultsAvailable>(
                     std::move(modifierFuture),
-                    *modificationNode(),
+                    ObjectExecutor(modificationNode()),
                     std::move(promise));
             }
         }

@@ -91,7 +91,7 @@ void ActiveObject::registerActiveFuture(const FutureBase& future)
     if(!future.task()->isFinished() && Application::guiMode()) {
         incrementNumberOfActiveTasks();
         // Reset the pending status after the Future is fulfilled.
-        future.finally(*this, [this]() noexcept { decrementNumberOfActiveTasks(); });
+        future.finally(ObjectExecutor(this), [this]() noexcept { decrementNumberOfActiveTasks(); });
     }
 }
 

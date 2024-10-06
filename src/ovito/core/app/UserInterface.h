@@ -25,7 +25,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/utilities/concurrent/TaskManager.h>
 #include <ovito/core/utilities/concurrent/Task.h>
 #include <ovito/core/oo/OORef.h>
 #include <ovito/core/oo/OvitoObject.h>
@@ -39,7 +38,7 @@ namespace Ovito {
  * Furthermore, the global Application object is also a UserInterface implementation, which
  * is used while running in console mode or during application startup, when no main window exists yet.
  *
- * Typically, you can access the current UserInterface object via the ExecutionContext::current().ui() method.
+ * Typically, you can access the current UserInterface object via the this_task::ui() method.
  */
 class OVITO_CORE_EXPORT UserInterface : public OvitoObject
 {
@@ -87,9 +86,6 @@ public:
     /// Returns the viewport input manager of the user interface.
     ViewportInputManager* viewportInputManager() const { return _viewportInputManager; }
 
-    /// Returns the manager of asynchronous tasks belonging to this user interface.
-    TaskManager& taskManager() { return _taskManager; }
-
     /// Returns the manager of ParameterUnit objects.
     UnitsManager& unitsManager() { return _unitsManager; }
 
@@ -122,11 +118,8 @@ public:
     /// Indicates that exitWithFatalError() has been called and the application is shutting down.
     bool exitingDueToFatalError() const { return _exitingDueToFatalError; }
 
-    /// Aborts all running tasks and closes the user interface as soon as possible (without asking user to save changes).
-    void shutdown();
-
-    /// Indicates whether the session is in the process of being closed and all ongoing tasks should be canceled.
-    bool isShuttingDown() const { return _taskManager.isShuttingDown(); }
+    /// Cancels all running tasks associated with this user interface and closes the user interface as soon as possible (without asking user to save changes).
+    virtual void shutdown();
 
     /// Call this to keep the UI object alive until shutdown() is called on it.
     void keepAliveUntilShutdown() { _selfGuard = this; }
@@ -135,10 +128,6 @@ public:
     std::shared_ptr<UserInterface> shared_from_this() {
         return std::static_pointer_cast<UserInterface>(OvitoObject::shared_from_this());
     }
-
-    /// Tells the UI to process any pending events in the event queue and return immediately.
-    /// The function can return true to indicate that the running operation should be canceled.
-    virtual bool processUIEvents();
 
     /// Returns the manager of the user interface actions.
     ActionManager* actionManager() const { return _actionManager; }
@@ -240,11 +229,8 @@ protected:
     /// Assigns an UndoStack.
     void setUndoStack(UndoStack* undoStack) { _undoStack = undoStack; }
 
-    /// Is called by the TaskManager class after all tasks have been terminated and all nested event loops have been exited.
-    void shutdownComplete();
-
     /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressText(Task& task, const QString& text);
+    virtual void taskProgressText(Task& task, const QString& text) = 0;
 
     /// Gets called by a running task to report its progress status (from any thread).
     virtual void taskProgressMaximum(Task& task, qlonglong maximum, bool autoReset) {}
@@ -275,9 +261,6 @@ protected:
     /// Actions of the user interface.
     ActionManager* _actionManager = nullptr;
 
-    /// Manages the running asynchronous tasks that belong to this user interface.
-    TaskManager _taskManager;
-
     /// The undo stack keeping track of changes made by the user to the current dataset.
     UndoStack* _undoStack = nullptr;
 
@@ -299,7 +282,6 @@ protected:
     /// This keeps the UI object itself alive until shutdown() is called.
     OORef<UserInterface> _selfGuard;
 
-    friend class TaskManager; // TaskManager needs to call shutdownComplete()
     friend class Task; // Tasks need to call taskProgressText() etc.
 };
 

@@ -288,7 +288,7 @@ std::vector<int64_t> VoroTopModifier::VoroTopAnalysisAlgorithm::computeStructure
     // Cache loaded filter definition in modifier for future use.
     if(auto node = createdByNode.lock()) {
         const ModificationNode* modNode = static_object_cast<ModificationNode>(node.get());
-        launchDetached(*modNode, [modNode, filter = filter()]() mutable {
+        launchDetached(ObjectExecutor(modNode), [modNode, filter = filter()]() mutable {
             if(VoroTopModifier* modifier = dynamic_object_cast<VoroTopModifier>(modNode->modifier()))
                 modifier->_filter = std::move(filter);
         });

@@ -91,7 +91,7 @@ class OVITO_CORE_EXPORT FileManager : public QObject
 public:
 
     /// Constructor.
-    explicit FileManager(UserInterface& ui);
+    explicit FileManager();
 
     /// Destructor.
     ~FileManager();
@@ -202,9 +202,6 @@ private:
     static QString getFilenameFromDevice(QIODevice* device);
 
 private:
-
-    /// The abstract user interface this file manager belongs to.
-    UserInterface& _ui;
 
     /// The remote files that are currently being fetched.
     std::map<QUrl, WeakSharedFuture<FileHandle>> _pendingFiles;

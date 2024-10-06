@@ -44,12 +44,13 @@ template<class TaskType, typename... Args>
     // The task class must define a type named 'future_type', which specifies what kind of return value the task produces.
     using future_type = typename TaskType::future_type;
 
-    // Inherit the priority status and interactive flag from the current task.
+    // Inherit the priority status, interactive flag, and user interface from the current task.
     if(const Task* parentTask = this_task::get()) {
         if(parentTask->isHighPriorityTask())
             task->setHighPriorityTask();
         if(parentTask->isInteractive())
             task->setIsInteractive();
+        task->setUserInterface(parentTask->userInterface());
     }
 
     // Check at compile-time whether the task's call operator is defined.

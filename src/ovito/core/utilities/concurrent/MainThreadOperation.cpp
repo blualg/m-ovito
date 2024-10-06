@@ -36,7 +36,8 @@ class MainThreadTask : public Task, public detail::TaskCallback<MainThreadTask>
 {
 public:
 
-    MainThreadTask(std::shared_ptr<UserInterface> ui, Task* parentTask, bool isInteractive) noexcept : Task(std::move(ui), isInteractive ? Task::State(Task::YieldUI | Task::IsInteractive) : Task::YieldUI) {
+    MainThreadTask(std::shared_ptr<UserInterface> ui, Task* parentTask, bool isInteractive) noexcept : Task(isInteractive ? Task::IsInteractive : Task::NoState) {
+        setUserInterface(std::move(ui));
         if(parentTask) {
             // Sanity check: The parent cannot be in the finished state yet when the child task is being created.
             OVITO_ASSERT(!parentTask->isFinished());

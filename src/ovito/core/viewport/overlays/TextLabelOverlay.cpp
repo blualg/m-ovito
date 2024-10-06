@@ -93,7 +93,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> TextLabelOverlay::render(Fr
 
     if(pipeline()) {
         PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
-        return pipeline()->evaluatePipeline(request).then(*this, [this, frameGraph=OORef<FrameGraph>(&frameGraph), &commandGroup, physicalViewportRect](const PipelineFlowState& state) {
+        return pipeline()->evaluatePipeline(request).then(ObjectExecutor(this), [this, frameGraph=OORef<FrameGraph>(&frameGraph), &commandGroup, physicalViewportRect](const PipelineFlowState& state) {
             return renderImplementation(*frameGraph, commandGroup, physicalViewportRect, state);
         });
     }

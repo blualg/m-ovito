@@ -216,11 +216,13 @@ void Task::removeCallback(detail::TaskCallbackBase* cb) noexcept
 ******************************************************************************/
 void Task::setProgressText(const QString& progressText)
 {
+    OVITO_ASSERT(userInterface());
+
     MutexLock lock(*this);
     auto flags = _state.load(std::memory_order_relaxed);
     if(!(flags & (Finished | Canceled))) {
         // Notify UI about progress status change.
-        ui()->taskProgressText(*this, progressText);
+        userInterface()->taskProgressText(*this, progressText);
     }
 
     // Note: setProgressText() should not yield control to the UI event loop,
@@ -233,10 +235,12 @@ void Task::setProgressText(const QString& progressText)
 ******************************************************************************/
 void Task::setProgressMaximum(qlonglong maximum, bool autoReset)
 {
+    OVITO_ASSERT(userInterface());
+
     MutexLock lock(*this);
     if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
-        ui()->taskProgressMaximum(*this, maximum, autoReset);
+        userInterface()->taskProgressMaximum(*this, maximum, autoReset);
     }
 }
 
@@ -245,22 +249,15 @@ void Task::setProgressMaximum(qlonglong maximum, bool autoReset)
 ******************************************************************************/
 void Task::setProgressValue(qlonglong value)
 {
+    OVITO_ASSERT(userInterface());
+
     MutexLock lock(*this);
     auto flags = _state.load(std::memory_order_relaxed);
     if(flags & Canceled)
         throw OperationCanceled();
     if(!(flags & (Finished | Canceled))) {
         // Notify UI about progress status change.
-        ui()->taskProgressValue(*this, value);
-    }
-
-    // When in the main thread, temporarily yield control back to the event loop to process UI events and
-    // keep the UI responsive during long-running tasks.
-    if((flags & YieldUI) && !(flags & IsAsynchronous) && this_task::isMainThread()) {
-        lock.unlock();
-        if(ui()->processUIEvents()) {
-            cancel();
-        }
+        userInterface()->taskProgressValue(*this, value);
     }
 }
 
@@ -269,22 +266,15 @@ void Task::setProgressValue(qlonglong value)
 ******************************************************************************/
 void Task::incrementProgressValue(qlonglong increment)
 {
+    OVITO_ASSERT(userInterface());
+
     MutexLock lock(*this);
     auto flags = _state.load(std::memory_order_relaxed);
     if(flags & Canceled)
         throw OperationCanceled();
     if(!(flags & (Finished | Canceled))) {
         // Notify UI about progress status change.
-        ui()->taskProgressIncrementValue(*this, increment);
-    }
-
-    // When in the main thread, temporarily yield control back to the event loop to process UI events and
-    // keep the UI responsive during long-running tasks.
-    if((flags & YieldUI) && !(flags & IsAsynchronous) && this_task::isMainThread()) {
-        lock.unlock();
-        if(ui()->processUIEvents()) {
-            cancel();
-        }
+        userInterface()->taskProgressIncrementValue(*this, increment);
     }
 }
 
@@ -304,12 +294,13 @@ void Task::setProgressValueIntermittent(qlonglong progressValue, int updateEvery
 ******************************************************************************/
 void Task::beginProgressSubStepsWithWeights(std::vector<int> weights)
 {
+    OVITO_ASSERT(userInterface());
     OVITO_ASSERT(std::accumulate(weights.cbegin(), weights.cend(), 0) > 0);
 
     MutexLock lock(*this);
     if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
-        ui()->taskProgressBeginSubStepsWithWeights(*this, std::move(weights));
+        userInterface()->taskProgressBeginSubStepsWithWeights(*this, std::move(weights));
     }
 }
 
@@ -319,10 +310,12 @@ void Task::beginProgressSubStepsWithWeights(std::vector<int> weights)
 ******************************************************************************/
 void Task::nextProgressSubStep()
 {
+    OVITO_ASSERT(userInterface());
+
     MutexLock lock(*this);
     if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
-        ui()->taskProgressNextSubStep(*this);
+        userInterface()->taskProgressNextSubStep(*this);
     }
 }
 
@@ -332,10 +325,12 @@ void Task::nextProgressSubStep()
 ******************************************************************************/
 void Task::endProgressSubSteps()
 {
+    OVITO_ASSERT(userInterface());
+
     MutexLock lock(*this);
     if(!(_state.load(std::memory_order_relaxed) & Finished)) {
         // Notify UI about progress status change.
-        ui()->taskProgressEndSubSteps(*this);
+        userInterface()->taskProgressEndSubSteps(*this);
     }
 }
 
@@ -456,7 +451,7 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
     }
     else {
         // Process all pending work items while waiting for the task to finish.
-        awaitedTask->ui()->taskManager().processWorkWhileWaiting(waitingTask, awaitedTask, returnEarlyIfCanceled);
+        Application::instance()->taskManager().processWorkWhileWaiting(waitingTask, awaitedTask, returnEarlyIfCanceled);
     }
 
     // Check if the waiting task has been canceled.

@@ -37,18 +37,18 @@ class SshConnection;
 /**
  * \brief Base class for asynchronous tasks that fetch remote files and directory contents via SSH or HTTPS.
  */
-class RemoteFileJob : public QObject
+class RemoteFileJob : public QObject, public Task
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    RemoteFileJob(const QUrl& url, Task& task);
+    RemoteFileJob(const QUrl& url, void* resultsStorage);
 
 #ifdef OVITO_DEBUG
     ~RemoteFileJob() {
-        OVITO_ASSERT(_isActive == false);
+        OVITO_ASSERT(!_promise);
         OVITO_ASSERT(_connection == nullptr);
     }
 #endif
@@ -62,7 +62,7 @@ public:
 protected:
 
     /// Opens the network connection.
-    void start() noexcept;
+    void start(PromiseBase promise) noexcept;
 
     /// Closes the network connection.
     virtual void shutdown(bool success);
@@ -100,14 +100,11 @@ protected:
     QNetworkReply* _networkReply = nullptr;
 #endif
 
-    /// The task object belonging to this job.
-    Task& _task;
-
-    /// Indicates whether this job is currently active or pending to be processed later.
-    bool _isActive = false;
+    /// Promise referencing this task while it is active.
+    PromiseBase _promise;
 
     /// Queue of jobs that are waiting to be executed.
-    static QQueue<RemoteFileJob*> _queuedJobs;
+    static std::queue<PromiseBase> _queuedJobs;
 
     /// Keeps track of how many jobs are currently active.
     static int _numActiveJobs;
@@ -116,7 +113,7 @@ protected:
 /**
  * \brief An asynchronous task that downloads a file stored on a remote host to the local computer.
  */
-class DownloadRemoteFileJob : public RemoteFileJob, public detail::TaskWithStorage<FileHandle>
+class DownloadRemoteFileJob : public RemoteFileJob
 {
     Q_OBJECT
 
@@ -126,9 +123,7 @@ public:
     using future_type = SharedFuture<FileHandle>;
 
     /// Constructor.
-    explicit DownloadRemoteFileJob(const QUrl& url, UserInterface& ui) :
-        RemoteFileJob(url, *this),
-        TaskWithStorage<FileHandle>(ui.shared_from_this(), Task::NoState, std::nullopt) {}
+    explicit DownloadRemoteFileJob(const QUrl& url) : RemoteFileJob(url, &_fileHandle) {}
 
 protected:
 
@@ -163,6 +158,9 @@ protected Q_SLOTS:
 
 private:
 
+    /// The result variable of this job.
+    FileHandle _fileHandle;
+
     /// The local copy of the file.
     std::unique_ptr<QTemporaryFile> _localFile;
 };
@@ -170,7 +168,7 @@ private:
 /**
  * \brief An asynchronous task that lists the files in a directory on a remote host.
  */
-class ListRemoteDirectoryJob : public RemoteFileJob, public detail::TaskWithStorage<QStringList>
+class ListRemoteDirectoryJob : public RemoteFileJob
 {
     Q_OBJECT
 
@@ -180,9 +178,7 @@ public:
     using future_type = Future<QStringList>;
 
     /// Constructor.
-    explicit ListRemoteDirectoryJob(const QUrl& url, UserInterface& ui) :
-        RemoteFileJob(url, *this),
-        TaskWithStorage<QStringList>(ui.shared_from_this(), Task::NoState, std::nullopt) {}
+    explicit ListRemoteDirectoryJob(const QUrl& url) : RemoteFileJob(url, &_fileList) {}
 
 protected:
 
@@ -202,6 +198,11 @@ protected Q_SLOTS:
 
     /// Handles closing of the SSH channel.
     void channelClosed();
+
+private:
+
+    /// The result variable of this job.
+    QStringList _fileList;
 };
 
 }   // End of namespace

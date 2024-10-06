@@ -112,7 +112,7 @@ Future<PipelineFlowState> UnwrapTrajectoriesModifier::evaluateModifier(const Mod
     if(!request.interactiveMode()) {
         // Without the periodic image flags information, we have to scan the particle trajectories
         // from beginning to end before making them continuous.
-        return modNode->detectPeriodicCrossings(request, std::move(unwrapFuture)).then(*modNode, [state = std::move(state), request]() mutable {
+        return modNode->detectPeriodicCrossings(request, std::move(unwrapFuture)).then(ObjectExecutor(modNode), [state = std::move(state), request]() mutable {
             static_object_cast<UnwrapTrajectoriesModificationNode>(request.modificationNode())->unwrapParticleCoordinates(request, state);
             return std::move(state);
         });
@@ -144,7 +144,7 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
         // Iterate over all frames of the input range in sequential order.
         unwrapFuture = for_each_sequential(
             std::move(inputFrameRange),
-            ObjectExecutor(this), // Require deferred execution
+            DeferredObjectExecutor(this), // Require deferred execution
             // Requests the next frame from the upstream pipeline.
             [request = request](int frame) mutable -> SharedFuture<PipelineFlowState> {
                 request.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));

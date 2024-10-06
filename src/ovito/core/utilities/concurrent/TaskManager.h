@@ -30,13 +30,11 @@
 namespace Ovito {
 
 /**
- * \brief Manages execution of asynchronous tasks in a thread pool and
+ * \brief This class manages execution of asynchronous tasks in a thread pool and
  *        a queue of pending work items to be executed in the main thread.
  */
-class OVITO_CORE_EXPORT TaskManager : public QObject
+class OVITO_CORE_EXPORT TaskManager
 {
-    Q_OBJECT
-
 public:
 
     /// The type-erased function object type to be used for work queue items.
@@ -51,11 +49,11 @@ public:
 public:
 
     /// Constructor.
-    explicit TaskManager(UserInterface* ui);
+    explicit TaskManager();
 
 #ifdef OVITO_DEBUG
     /// Destructor.
-    virtual ~TaskManager();
+    ~TaskManager();
 #endif
 
     /// Indicates whether the program session is in the process of shutting down.
@@ -93,20 +91,16 @@ public:
     static void setNativeDialogActive(bool) {}
 #endif
 
-public Q_SLOTS:
-
     /// Executes pending work items waiting in the deferred execution queue.
     void executePendingWork();
 
     /// Tells the task manager to interrupt the task it is currently waiting for.
     bool requestInterruption();
 
-Q_SIGNALS:
-
-    /// This signal is emitted by submitWork() when the pending work queue becomes non-empty.
-    void pendingWorkArrived();
-
 private:
+
+    /// Is called when the pending work queue becomes non-empty.
+    void notifyWorkArrived();
 
     /// Executes pending work items waiting in the deferred execution queue.
     void executePendingWorkLocked(std::unique_lock<std::mutex>& lock);
@@ -122,11 +116,11 @@ private:
 
 private:
 
-    /// The abstract user interface object this task manager belongs to.
-    UserInterface* _ui;
-
-    /// Indicates whether the session is in the process of shutting down.
+    /// Indicates whether the task manager is in the process of shutting down.
     bool _isShuttingDown = false;
+
+    /// Used to keep the Qt main event loop running while the task manager is active.
+    std::optional<QEventLoopLocker> _eventLoopLocker;
 
 #ifdef OVITO_USE_SYCL
     /// The main SYCL out-of-order queue for work on the compute device.
@@ -148,7 +142,7 @@ private:
     /// Indicates that this task manager has completed its shutdown procedure.
     bool _shutdownCompleted = false;
 
-    /// Manages thread-safe concurrent access to the work queue and task list.
+    /// Manages thread-safe concurrent access to the work queue.
     std::mutex _mutex;
 
     /// Pool of threads for executing worker tasks.

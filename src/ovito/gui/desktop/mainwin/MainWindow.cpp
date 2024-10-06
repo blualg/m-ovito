@@ -261,7 +261,6 @@ MainWindow::MainWindow()
 ******************************************************************************/
 MainWindow::~MainWindow()
 {
-    OVITO_ASSERT(isShuttingDown()); // Make sure this UserInterface was properly shutdown before being deleted.
     OVITO_ASSERT(datasetContainer().currentSet() == nullptr);
     OVITO_ASSERT(_progressTaskList.empty());
 }
@@ -474,9 +473,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 ******************************************************************************/
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    OVITO_ASSERT(!isShuttingDown());
-
-    handleExceptions([&] {
+    bool successfulShutdown = handleExceptions([&] {
         // Let the user save changes made to the current dataset.
         if(isVisible())
             askForSaveChanges();
@@ -502,10 +499,12 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
         if(_frameBufferWindow)
             _frameBufferWindow->close();
+
+        event->accept();
     });
 
     // Swallow close event if the user chose to cancel the shutdown.
-    if(isShuttingDown())
+    if(successfulShutdown)
         event->accept();
     else
         event->ignore();

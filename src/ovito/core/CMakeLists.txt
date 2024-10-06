@@ -111,7 +111,7 @@ SET(SourceFiles
     utilities/io/ObjectSaveStream.cpp
     utilities/io/ObjectLoadStream.cpp
     utilities/io/FileManager.cpp
-#    utilities/io/RemoteFileJob.cpp
+    utilities/io/RemoteFileJob.cpp
     utilities/io/CompressedTextReader.cpp
     utilities/io/CompressedTextWriter.cpp
     utilities/concurrent/Task.cpp

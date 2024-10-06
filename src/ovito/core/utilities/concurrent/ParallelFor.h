@@ -60,7 +60,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel, Task
     size_t workerCount = std::min({maxWorkers, builtinMaxWorkers, (size_t)detail::Latch::max()});
 
     // If the application is running in single-threaded mode, we don't use additional worker threads.
-    QThreadPool* pool = this_task::ui()->taskManager().chooseThreadPool(*task);
+    QThreadPool* pool = Application::instance()->taskManager().chooseThreadPool(*task);
     if(pool->maxThreadCount() == 1)
         workerCount = 1;
 

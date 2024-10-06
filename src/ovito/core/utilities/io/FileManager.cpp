@@ -33,7 +33,7 @@
     #include <ovito/core/utilities/io/gzdevice/GzipIODevice.h>
 #endif
 #include "FileManager.h"
-//#include "RemoteFileJob.h"
+#include "RemoteFileJob.h"
 
 namespace Ovito {
 
@@ -56,7 +56,7 @@ std::unique_ptr<QIODevice> FileHandle::createIODevice() const
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-FileManager::FileManager(UserInterface& ui) : _ui(ui)
+FileManager::FileManager()
 {
 }
 
@@ -78,7 +78,6 @@ FileManager::~FileManager()
 SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 {
     OVITO_ASSERT(this_task::get());
-    OVITO_ASSERT(this_task::get());
 
     if(url.isLocalFile()) {
         // Nothing to do to fetch local files. Simply return a finished Future object.
@@ -90,7 +89,6 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 
         return FileHandle(url, std::move(filePath));
     }
-#if 0
     else if(url.scheme() == QStringLiteral("sftp") || url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
         QUrl normalizedUrl = normalizeUrl(url);
         QMutexLocker lock(&mutex());
@@ -109,11 +107,10 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
         }
 
         // Start the background download job.
-        auto future = launchTask(std::make_shared<DownloadRemoteFileJob>(url, _ui));
+        auto future = launchTask(std::make_shared<DownloadRemoteFileJob>(url));
         _pendingFiles.emplace(normalizedUrl, future);
         return future;
     }
-#endif
     else {
         return Future<FileHandle>::createFailed(Exception(tr("URL scheme '%1' not supported. The program supports only the sftp and http(s) URLs as well as local file paths.").arg(url.scheme())));
     }
@@ -125,15 +122,11 @@ SharedFuture<FileHandle> FileManager::fetchUrl(const QUrl& url)
 Future<QStringList> FileManager::listDirectoryContents(const QUrl& url)
 {
     OVITO_ASSERT(this_task::get());
-    OVITO_ASSERT(this_task::get());
 
-#if 0
     if(url.scheme() == QStringLiteral("sftp")) {
-        return launchTask(std::make_shared<ListRemoteDirectoryJob>(url, _ui));
+        return launchTask(std::make_shared<ListRemoteDirectoryJob>(url));
     }
-    else
-#endif
-    if(url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
+    else if(url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https")) {
 #ifndef Q_OS_WASM
         QUrl normalizedUrl = normalizeUrl(url);
         QMutexLocker lock(&mutex());

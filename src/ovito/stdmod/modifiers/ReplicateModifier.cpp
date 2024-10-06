@@ -305,7 +305,7 @@ Future<PipelineFlowState> ReplicateModifier::evaluateModifier(const ModifierEval
 
     // Additionally, resize the simulation cell if enabled.
     if(adjustBoxSize()) {
-        future.postprocess(*this, [newImages = replicaRange()](PipelineFlowState state) {
+        future.postprocess(ObjectExecutor(this), [newImages = replicaRange()](PipelineFlowState state) {
             SimulationCell* cellObj = state.expectMutableObject<SimulationCell>();
             AffineTransformation simCell = cellObj->cellMatrix();
             simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);

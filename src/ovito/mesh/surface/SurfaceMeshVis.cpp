@@ -176,7 +176,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> SurfaceMeshVis::render(cons
         });
 
     // Wait for the renderable mesh to be generated.
-    return renderableMeshFuture.then(*this, [this, frameGraph=OORef<FrameGraph>(&frameGraph), surfaceMesh, pipeline=OORef<const Pipeline>(pipeline)](std::shared_ptr<const RenderableSurfaceMesh> renderableMesh) {
+    return renderableMeshFuture.then(ObjectExecutor(this), [this, frameGraph=OORef<FrameGraph>(&frameGraph), surfaceMesh, pipeline=OORef<const Pipeline>(pipeline)](std::shared_ptr<const RenderableSurfaceMesh> renderableMesh) {
 
         // Get the rendering colors for the surface and cap meshes.
         FloatType surface_alpha = 1;

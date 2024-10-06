@@ -53,7 +53,7 @@ public:
     /// Constructor.
     template<typename... AuxiliaryArgs2>
     explicit ModifierEvaluationTask(ModifierEvaluationRequest&& request, AuxiliaryArgs2&&... auxiliaryArgs) :
-        detail::ContinuationTask<PipelineFlowState>(this_task::ui(), Task::NoState, PipelineFlowState{}),
+        detail::ContinuationTask<PipelineFlowState>(Task::NoState, PipelineFlowState{}),
         std::tuple<AuxiliaryArgs...>(std::forward<AuxiliaryArgs2>(auxiliaryArgs)...),
         _request(std::move(request)) { OVITO_ASSERT(_request.modificationNode() && _request.modifier()); }
 
@@ -75,7 +75,7 @@ public:
         // Schedule callback upon completion of the future that yields the input pipeline state.
         whenTaskFinishes<ModifierEvaluationTask, &ModifierEvaluationTask::inputStateAvailable>(
             std::move(inputFuture),
-            *modificationNode(),
+            ObjectExecutor(modificationNode()),
             shared_from_this());
     }
 
@@ -118,10 +118,10 @@ protected:
     /// Asks the modifier to compute its results based on the now available upstream pipeline data.
     virtual void evaluateModifier(PromiseBase promise) noexcept {
         OVITO_ASSERT(resultStorage()); // Upstream data must be stored in this task's results storage.
+        Task::Scope taskScope(this);
 
         Future<PipelineFlowState> modifierFuture;
         handleModifierExceptions([&]() {
-            Task::Scope taskScope(this);
             modifierFuture = static_object_cast<ModifierClass>(modifier())->evaluateModifier(request(), PipelineFlowState{resultStorage()}, std::move(std::get<AuxiliaryArgs>(static_cast<std::tuple<AuxiliaryArgs...>&>(*this)))...);
             OVITO_ASSERT(modifierFuture);
 
@@ -134,13 +134,14 @@ protected:
         if(modifierFuture) {
             whenTaskFinishes<ModifierEvaluationTask, &ModifierEvaluationTask::modifierResultsAvailable>(
                 std::move(modifierFuture),
-                *modificationNode(),
+                ObjectExecutor(modificationNode()),
                 std::move(promise));
         }
     }
 
     /// This callback gets invoked once the modifier has computed its results.
     void modifierResultsAvailable(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
+        Task::Scope taskScope(this);
 
         // Check if the awaited task completed with an error.
         if(finishedTask->exceptionStore()) {
@@ -157,7 +158,8 @@ protected:
 
     /// Sets the final output of this evaluation task.
     void setEvaluationResults(PipelineFlowState&& state) noexcept {
-        OVITO_ASSERT(!isFinished());
+        OVITO_ASSERT(!isFinished() || isCanceled());
+        OVITO_ASSERT(this_task::get() == this);
 
         // Move the output pipeline state into the task.
         resultStorage() = std::move(state);
@@ -172,6 +174,7 @@ protected:
     /// Helper function that takes care of handling (and converting) various exception types that may be thrown by a modifier function.
     template<typename Function>
     void handleModifierExceptions(Function&& func) noexcept {
+        OVITO_ASSERT(this_task::get() == this);
         try {
             try {
                 func();

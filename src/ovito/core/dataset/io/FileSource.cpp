@@ -182,7 +182,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(
     SharedFuture<QVector<FileSourceImporter::Frame>> framesFuture = requestFrameList(true);
 
     // Display any errors that occurred during scan operation to the user.
-    framesFuture.finally(*this, [](Task& task) noexcept {
+    framesFuture.finally(ObjectExecutor(this), [](Task& task) noexcept {
         try { if(!task.isCanceled()) task.throwPossibleException(); }
         catch(const Exception& ex) { this_task::ui()->reportError(ex); }
         catch(...) {}
@@ -390,7 +390,7 @@ SharedFuture<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvalu
     SharedFuture<QVector<FileSourceImporter::Frame>> framesListFuture = requestFrameList(false);
 
     // Then continue by loading the file that contains the requested frame.
-    Future<PipelineFlowState> stateFuture = framesListFuture.then(*this, [this, frame](const QVector<FileSourceImporter::Frame>& sourceFrames) -> Future<PipelineFlowState> {
+    Future<PipelineFlowState> stateFuture = framesListFuture.then(ObjectExecutor(this), [this, frame](const QVector<FileSourceImporter::Frame>& sourceFrames) -> Future<PipelineFlowState> {
 
         // Is the requested frame number out of range?
         if(frame >= sourceFrames.size()) {
@@ -411,7 +411,7 @@ SharedFuture<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvalu
         SharedFuture<FileHandle> fileFuture = Application::instance()->fileManager().fetchUrl(sourceFrames[frame].sourceFile);
 
         // Pass the file to the file importer.
-        return fileFuture.then(*this, [this, frame](const FileHandle& fileHandle) -> Future<PipelineFlowState> {
+        return fileFuture.then(ObjectExecutor(this), [this, frame](const FileHandle& fileHandle) -> Future<PipelineFlowState> {
 
             // Without an importer object we have to give up immediately.
             if(!importer()) {
@@ -482,7 +482,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
         // Note that storing the frames list in this FileSource is explicitly deferred to some later time,
         // because setListOfFrames() generates a TargetChanged event, which is not allowed during
         // a synchronous call to the pipeline evaluation function.
-        .then(ObjectExecutor(this), [this](QVector<FileSourceImporter::Frame>&& frameList) {
+        .then(DeferredObjectExecutor(this), [this](QVector<FileSourceImporter::Frame>&& frameList) {
             // Store the new list of frames in the FileSource.
             setListOfFrames(frameList);
             // Pass the frame list on to the caller.

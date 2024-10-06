@@ -48,11 +48,10 @@ DEFINE_REFERENCE_FIELD(DataSetContainer, activeAnimationSettings);
 /******************************************************************************
 * Initializes the dataset manager.
 ******************************************************************************/
-void DataSetContainer::initializeObject(TaskManager& taskManager, UserInterface& userInterface)
+void DataSetContainer::initializeObject(UserInterface& userInterface)
 {
     RefMaker::initializeObject();
 
-    _taskManager = &taskManager;
     _userInterface = &userInterface;
 }
 

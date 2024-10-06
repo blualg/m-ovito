@@ -219,7 +219,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
 
     // Load each dataset referenced by the VTM file.
     Future<ExtendedLoadRequest> future = reduce_sequential(
-        std::move(modifiedRequest), std::move(blockDatasets), ObjectExecutor(request.pipelineNode),
+        std::move(modifiedRequest), std::move(blockDatasets), DeferredObjectExecutor(request.pipelineNode),
         [](const ParaViewVTMBlockInfo& blockInfo, ExtendedLoadRequest& request) {
             // We can skip empty datasets which are not associated with a VTK file.
             if(blockInfo.location.isEmpty()) return Future<void>::createImmediateEmpty();
@@ -238,7 +238,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
             // Note: FileImporter::autodetectFileFormat() may only be called from the main thread.
             return Application::instance()->fileManager()
                 .fetchUrl(blockInfo.location)
-                .then(*fileSource, [&request](const SharedFuture<FileHandle>& fileFuture) mutable -> Future<void> {
+                .then(ObjectExecutor(fileSource), [&request](const SharedFuture<FileHandle>& fileFuture) mutable -> Future<void> {
                     OVITO_ASSERT(this_task::get());
 
                     try {

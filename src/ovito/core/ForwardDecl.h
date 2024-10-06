@@ -76,6 +76,7 @@ namespace Ovito
     template<typename T> class ReferenceField;
     template<typename T> class VectorReferenceField;
     class ObjectExecutor;
+    class DeferredObjectExecutor;
     class DataSet;
     class DataSetContainer;
     class ParameterUnit;

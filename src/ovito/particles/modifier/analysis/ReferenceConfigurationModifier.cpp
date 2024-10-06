@@ -210,7 +210,7 @@ Future<PipelineFlowState> ReferenceConfigurationModifier::evaluateModifier(const
     }
 
     // Wait for the reference configuration to become available.
-    return refState.then(*this, [this, request, state = std::move(state), referenceFrame](const PipelineFlowState& referenceInput) mutable {
+    return refState.then(ObjectExecutor(this), [this, request, state = std::move(state), referenceFrame](const PipelineFlowState& referenceInput) mutable {
 
         // Make sure the obtained reference configuration is valid and ready to use.
         if(referenceInput.status().type() == PipelineStatus::Error)

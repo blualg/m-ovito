@@ -53,6 +53,7 @@ void PipelineCache::preevaluatePipeline(const PipelineEvaluationRequest& request
 {
     OVITO_ASSERT(this_task::isMainThread());
     OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(this_task::get()->userInterface());
 
     PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());
 
@@ -248,7 +249,7 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
     auto evaluationInProgress = _evaluationsInProgress.begin();
 
     // Store the results in this cache after the evaluation completes.
-    evalResult.postprocess(*ownerObject(), [this, evaluationInProgress](PipelineFlowState state) {
+    evalResult.postprocess(ObjectExecutor(ownerObject()), [this, evaluationInProgress](PipelineFlowState state) {
         OVITO_ASSERT(!ownerObject()->isUndoRecording());
 
         // If requested, turn upstream pipeline errors into hard exceptions, which abort the pipeline evaluation.
@@ -494,6 +495,9 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
     if(_precomputeAllFrames && !_precomputeFramesOperation && !_allFramesPrecomputed) {
         // Create the async operation object that manages the frame precomputation.
         _precomputeFramesOperation = Promise<void>::create();
+        if(this_task::isInteractive())
+            _precomputeFramesOperation.task()->setIsInteractive();
+        _precomputeFramesOperation.task()->setUserInterface(this_task::ui());
 
         // Determine the number of frames that need to be precomputed.
         PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());
@@ -504,7 +508,7 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
 
         // Automatically reset the async operation object and the current frame precomputation when the
         // task gets canceled by the system.
-        _precomputeFramesOperation.task()->finally(*ownerObject(), [this]() noexcept {
+        _precomputeFramesOperation.task()->finally(ObjectExecutor(ownerObject()), [this]() noexcept {
             _precomputeFrameFuture.reset();
             _precomputeFramesOperation.reset();
         });
@@ -554,7 +558,7 @@ void PipelineCache::precomputeNextAnimationFrame()
     _precomputeFrameFuture = evaluatePipeline(PipelineEvaluationRequest(nextFrameTime));
 
     // Wait until input frame is ready.
-    _precomputeFrameFuture.finally(*ownerObject(), [this](Task& task) noexcept {
+    _precomputeFrameFuture.finally(ObjectExecutor(ownerObject()), [this](Task& task) noexcept {
         try {
             // If the pipeline evaluation has been canceled for some reason, we interrupt the precomputation process.
             if(ownerObject()->isBeingDeleted() || !_precomputeFramesOperation || _precomputeFramesOperation.isFinished() || task.isCanceled()) {

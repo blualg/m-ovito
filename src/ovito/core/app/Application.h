@@ -26,6 +26,8 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/utilities/Exception.h>
 #include <ovito/core/utilities/io/FileManager.h>
+#include <ovito/core/utilities/concurrent/TaskManager.h>
+#include <ovito/core/app/UserInterface.h>
 
 namespace Ovito {
 
@@ -54,6 +56,9 @@ public:
     ///         \c false if an error occurred and the program should be terminated.
     bool initialize(int& argc, char** argv);
 
+    /// Cancels all running tasks associated with this user interface and closes the user interface as soon as possible (without asking user to save changes).
+    virtual void shutdown() override;
+
     /// \brief Handler method for Qt error messages.
     ///
     /// This can be used to set a debugger breakpoint for the OVITO_ASSERT macros.
@@ -75,6 +80,9 @@ public:
 
     /// Returns the global FileManager class instance.
     FileManager& fileManager() { return _fileManager; }
+
+    /// Returns the manager of asynchronous tasks.
+    TaskManager& taskManager() { return _taskManager; }
 
     /// Similar to QCoreApplication::applicationDirPath() but doesn't require a Qt application.
     QString applicationDirPath() const;
@@ -110,6 +118,9 @@ protected:
     /// Creates the global instance of the right QCoreApplication derived class.
     virtual QCoreApplication* createQtApplicationImpl(bool supportGui, int& argc, char** argv) = 0;
 
+    /// Gets called by a running task to report its progress status (from any thread).
+    virtual void taskProgressText(Task& task, const QString& text) override;
+
     /// The number of original command line arguments.
     int* _argc;
 
@@ -120,7 +131,10 @@ protected:
     bool _taskConsoleLoggingEnabled = false;
 
     /// The global file manager instance.
-    FileManager _fileManager{*this};
+    FileManager _fileManager;
+
+    /// The global task manager instance.
+    TaskManager _taskManager;
 
 #ifndef Q_OS_WASM
     /// The application-wide network manager object.

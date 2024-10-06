@@ -152,7 +152,7 @@ Future<PipelineFlowState> StructureIdentificationModifier::evaluateModifier(cons
     });
 
     // Phase II: Compute structure statistics.
-    return identificationFuture.then(*this, [this, state = std::move(state),
+    return identificationFuture.then(ObjectExecutor(this), [this, state = std::move(state),
                                              createdByNode = request.modificationNodeWeak()](std::shared_ptr<const Algorithm> algorithm) {
         auto modifierParameters = algorithm->getModifierParameters(this);
         // Perform the structure identification in a separate thread.

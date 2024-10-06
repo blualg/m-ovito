@@ -390,7 +390,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
         if(bonds->elementCount() > 2000000 && autoDisableBondDisplay && this_task::isInteractive()) {
             if(BondsVis* vis = bonds->visElement<BondsVis>()) {
                 // Modifying the vis element must be done in the main thread.
-                launchDetached(*vis, [vis]() {
+                launchDetached(ObjectExecutor(vis), [vis]() {
                     this_task::ui()->performTransaction(tr("Disable bonds display"), [&]() {
                         vis->setEnabled(false);
                     });

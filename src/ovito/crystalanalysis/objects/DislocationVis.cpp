@@ -148,7 +148,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(cons
         });
 
     // Wait for the renderable lines to be generated.
-    return renderableLinesFuture.then(*this, [this, &commandGroup=frameGraph.addCommandGroup(FrameGraph::SceneLayer), frameGraph=OORef<FrameGraph>(&frameGraph), dislocations, pipeline=OORef<const Pipeline>(pipeline)](std::shared_ptr<const RenderableDislocationLines> renderableLines) -> PipelineStatus {
+    return renderableLinesFuture.then(ObjectExecutor(this), [this, &commandGroup=frameGraph.addCommandGroup(FrameGraph::SceneLayer), frameGraph=OORef<FrameGraph>(&frameGraph), dislocations, pipeline=OORef<const Pipeline>(pipeline)](std::shared_ptr<const RenderableDislocationLines> renderableLines) -> PipelineStatus {
 
         // Make sure we don't exceed our internal limits.
         if(renderableLines->lineSegments().size() > (size_t)std::numeric_limits<int>::max())

@@ -432,7 +432,7 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(cons
         // Loop over all input animation frames and gather particle position data.
         Future<std::shared_ptr<TrajectoryGenerator>> future = for_each_sequential(
             boost::irange(startFrame, endFrame, everyNthFrame()),
-            ObjectExecutor(modNode), // Request deferred execution
+            DeferredObjectExecutor(modNode), // Request deferred execution
             [request = request](int frame) mutable -> SharedFuture<PipelineFlowState> {
                 this_task::setProgressText(tr("Generating trajectory lines"));
                 // Evaluate upstream pipeline at current frame.
@@ -461,7 +461,7 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(cons
     }
 
     // Pass generated trajectory lines to the pipeline.
-    return samplingOperation.then(*modNode, [state = std::move(state)](const DataOORef<const Lines>& trajectoryLines) mutable {
+    return samplingOperation.then(ObjectExecutor(modNode), [state = std::move(state)](const DataOORef<const Lines>& trajectoryLines) mutable {
         state.addObject(trajectoryLines);
         return std::move(state);
     });

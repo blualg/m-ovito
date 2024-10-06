@@ -98,7 +98,7 @@ Future<PipelineFlowState> LoadTrajectoryModifier::evaluateModifier(const Modifie
     PipelineEvaluationResult trajStateFuture = trajectorySource()->evaluate(request);
 
     // Wait for the data to become available.
-    return trajStateFuture.then(*request.modificationNode(), [state = std::move(state), request](const PipelineFlowState& trajState) mutable -> Future<PipelineFlowState> {
+    return trajStateFuture.then(ObjectExecutor(request.modificationNode()), [state = std::move(state), request](const PipelineFlowState& trajState) mutable -> Future<PipelineFlowState> {
         if(LoadTrajectoryModifier* trajModifier = dynamic_object_cast<LoadTrajectoryModifier>(request.modifier())) {
             // Make sure the obtained configuration is valid and ready to use.
             if(trajState.status().type() == PipelineStatus::Error) {

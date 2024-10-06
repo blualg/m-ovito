@@ -73,7 +73,7 @@ Future<PipelineFlowState> CombineDatasetsModifier::evaluateModifier(const Modifi
     PipelineEvaluationResult secondaryStateFuture = secondaryDataSource()->evaluate(request);
 
     // Wait for the data to become available.
-    return secondaryStateFuture.then(*this, [this, state = std::move(state), request](const PipelineFlowState& secondaryState) mutable -> Future<PipelineFlowState> {
+    return secondaryStateFuture.then(ObjectExecutor(this), [this, state = std::move(state), request](const PipelineFlowState& secondaryState) mutable -> Future<PipelineFlowState> {
 
         // Make sure the obtained dataset is valid and ready to use.
         if(secondaryState.status().type() == PipelineStatus::Error) {

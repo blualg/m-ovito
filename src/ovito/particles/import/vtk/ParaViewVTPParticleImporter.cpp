@@ -417,7 +417,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
         Application::instance()
             ->fileManager()
             .fetchUrl(geometryFileUrl)
-            .then(*particleType, [pipelineNode = pipelineNode()](const FileHandle& fileHandle) {
+            .then(ObjectExecutor(particleType), [pipelineNode = pipelineNode()](const FileHandle& fileHandle) {
                 // Detect geometry file format and create an importer for it.
                 // Note: For loading particle shape geometries we only accept FileSourceImporters.
                 OORef<FileSourceImporter> importer =
