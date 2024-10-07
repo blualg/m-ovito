@@ -164,7 +164,7 @@ Future<PipelineFlowState> VectorsSliceModifierDelegate::apply(
                 inputVectors->verifyIntegrity();
 
                 // Create mask array to be computed.
-                DataOORef<DataBuffer> maskBuffer = DataOORef<DataBuffer>::create(
+                DataOORef<DataBuffer> maskBuffer = DataBufferPtr::create(
                     ObjectInitializationFlag::NoFlags, DataBuffer::Uninitialized, inputVectors->elementCount(), DataBuffer::IntSelection);
 
                 // Get the input basis points.

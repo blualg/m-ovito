@@ -91,5 +91,3 @@ as a new attribute named ``bcc_fraction``, making it available for inclusion in 
 .. seealso::
 
   :py:class:`ovito.vis.TextLabelOverlay` (Python API)
-
-

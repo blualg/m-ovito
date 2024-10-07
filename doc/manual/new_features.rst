@@ -10,7 +10,7 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.11.0>`__
 
 ----------------------------
-Version 3.11.0 (xx-xxx-2024)
+Version 3.11.0 (08-Oct-2024)
 ----------------------------
 
 .. image:: /images/new_features/3-11-0_render-vectors.*
@@ -20,14 +20,16 @@ Version 3.11.0 (xx-xxx-2024)
 .. rubric:: Visualization of vector information
 
 We've added the :ref:`Vectors <scene_objects.vectors>` object type to OVITO and the corresponding :py:class:`ovito.data.Vectors` Python class,
-which allow placing arrow glyphs at arbitrary locations in 3d space (independently from particles) to visualize vectorial information
-at specific base positions.
+which allow placing arrow glyphs at arbitrary locations in 3d space (independent from particles) to visualize vectorial information anywhere.
+
+.. image:: /images/scene_objects/vectors_ellipsoids_example.*
+  :width: 30%
+
+.. rubric:: Symmetric range option for color mapping tools
 
 .. image:: /images/new_features/3-11-0_symmetric-colormap.*
   :width: 40%
   :align: right
-
-.. rubric:: Symmetric range option for color mapping tools
 
 The :ref:`particles.modifiers.color_coding` modifier and other color mapping tools can now maintain
 a symmetric value range, which is useful for visualizing scalar fields that can take both positive and negative values.
@@ -96,6 +98,16 @@ It also got better at handling viewport layers in complex visualization setups.
 
 :ref:`rendering.ospray_renderer`: Improved rendering quality for semi-transparent objects and fixed dark artifacts along object edges on light backgrounds
 
+.. figure:: /images/new_features/ospray_transparency_old.*
+  :figwidth: 28%
+
+  Old
+
+.. figure:: /images/new_features/ospray_transparency_new.*
+  :figwidth: 28%
+
+  New
+
 .. rubric:: Further improvements in this program release:
 
 - Major code refactoring to improve performance and maintainability; elimination of unnecessary data copies in the pipeline system
@@ -107,7 +119,8 @@ It also got better at handling viewport layers in complex visualization setups.
 - :ref:`particles.modifiers.unwrap_trajectories` modifier: Performance optimizations
 - Added a notification dialog that is shown on application startup when new program updates become available
 - Simulation file import: Updated mass of *Zn* in internal table of elements from 65.409 (pre 2007 value) to 65.38 (see https://www.ciaaw.org/zinc.htm) - old value is still recognized for compatibility reasons
-- Added parser support for modern Aspherix *.vtm* files that contain a "Bodies" section. Bodies information from non-convex particle simulations is read in as a :ref:`data table <scene_objects.data_table>`.
+- The Aspherix file reader can now load both *particle-particle* and *particle-wall* contact networks
+- Added parser support for modern Aspherix *.vtm* files containing a "Bodies" section. Bodies information from non-convex particle simulations is read in as a :ref:`data table <scene_objects.data_table>`.
 
   .. figure:: /images/new_features/3-11-0_bodies-before.*
     :figwidth: 40%

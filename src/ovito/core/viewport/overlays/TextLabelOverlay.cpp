@@ -53,7 +53,7 @@ SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, outlineEnabled, "Enable outline");
 SET_PROPERTY_FIELD_LABEL(TextLabelOverlay, valueFormatString, "Number format");
 SET_PROPERTY_FIELD_UNITS(TextLabelOverlay, offsetX, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS(TextLabelOverlay, offsetY, PercentParameterUnit);
-SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(TextLabelOverlay, fontSize, FloatParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(TextLabelOverlay, fontSize, FloatParameterUnit, 0, 1);
 
 /******************************************************************************
 * Is called when the value of a property of this object has changed.

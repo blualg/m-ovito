@@ -72,9 +72,9 @@ SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, outlineEnabled, "Enable outlin
 SET_PROPERTY_FIELD_LABEL(CoordinateTripodOverlay, perspectiveDistortion, "Perspective distortion");
 SET_PROPERTY_FIELD_UNITS(CoordinateTripodOverlay, offsetX, PercentParameterUnit);
 SET_PROPERTY_FIELD_UNITS(CoordinateTripodOverlay, offsetY, PercentParameterUnit);
-SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinateTripodOverlay, tripodSize, FloatParameterUnit, 1e-4);
-SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinateTripodOverlay, lineWidth, FloatParameterUnit, 1e-4);
-SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(CoordinateTripodOverlay, fontSize, FloatParameterUnit, 0);
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(CoordinateTripodOverlay, tripodSize, FloatParameterUnit, 1e-4, 1);
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(CoordinateTripodOverlay, lineWidth, FloatParameterUnit, 1e-4, 1);
+SET_PROPERTY_FIELD_UNITS_AND_RANGE(CoordinateTripodOverlay, fontSize, FloatParameterUnit, 0, 1);
 
 /******************************************************************************
 * Is called when the value of a property of this object has changed.

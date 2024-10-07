@@ -84,8 +84,8 @@ void LinesVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     layout->addWidget(wrappedLinesUI->checkBox(), row++, 0, 1, 3);
 
     // Up to current time.
-    BooleanParameterUI* showUpToCurrentTimeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(LinesVis::showUpToCurrentTime));
-    layout->addWidget(showUpToCurrentTimeUI->checkBox(), row++, 0, 1, 3);
+    _showUpToCurrentTimeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(LinesVis::showUpToCurrentTime));
+    layout->addWidget(_showUpToCurrentTimeUI->checkBox(), row++, 0, 1, 3);
 
     // Open a sub-editor for the property color mapping.
     _colorMappingParamUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(LinesVis::colorMapping), rolloutParams.after(rollout));
@@ -103,19 +103,19 @@ void LinesVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
  ******************************************************************************/
 void LinesVisEditor::updateColoringOptions()
 {
-    // Retrieve the (Trajectory)Lines this vis element is associated with.
-    DataOORef<const Lines> trajectoryObject = dynamic_object_cast<const Lines>(getVisDataObject());
+    // Retrieve the Lines data object this vis element is associated with.
+    DataOORef<const Lines> linesObject = dynamic_object_cast<const Lines>(getVisDataObject());
 
     // Do lines have explicit RGB colors assigned ("Color" property exists)?
-    bool hasExplicitColors = (trajectoryObject && trajectoryObject->getProperty(Lines::ColorProperty));
+    bool hasExplicitColors = (linesObject && linesObject->getProperty(Lines::ColorProperty));
 
     LinesVis::ColoringMode coloringMode =
         editObject() ? static_object_cast<LinesVis>(editObject())->coloringMode() : LinesVis::UniformColoring;
-    if(trajectoryObject && coloringMode == LinesVis::PseudoColoring && !hasExplicitColors) {
+    if(linesObject && coloringMode == LinesVis::PseudoColoring && !hasExplicitColors) {
         _colorMappingParamUI->setEnabled(true);
         _lineColorUI->setEnabled(false);
         // Set trajectory lines as property container containing the available properties the user can choose from.
-        static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor())->setPropertyContainer(trajectoryObject);
+        static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor())->setPropertyContainer(linesObject);
     }
     else {
         _colorMappingParamUI->setEnabled(false);
@@ -124,8 +124,11 @@ void LinesVisEditor::updateColoringOptions()
 
     _coloringModeUI->buttonGroup()
         ->button(LinesVis::PseudoColoring)
-        ->setEnabled(trajectoryObject && !trajectoryObject->properties().isEmpty() && !hasExplicitColors);
-    _coloringModeUI->buttonGroup()->button(LinesVis::UniformColoring)->setEnabled(trajectoryObject && !hasExplicitColors);
+        ->setEnabled(linesObject && !linesObject->properties().isEmpty() && !hasExplicitColors);
+    _coloringModeUI->buttonGroup()->button(LinesVis::UniformColoring)->setEnabled(linesObject && !hasExplicitColors);
+
+    // Enable "Show up to current time only" option only if the lines have the "Time" property.
+    _showUpToCurrentTimeUI->setEnabled(linesObject && linesObject->getProperty(Lines::SampleTimeProperty));
 }
 
 }  // namespace Ovito

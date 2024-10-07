@@ -1279,6 +1279,10 @@ void MainWindow::visitRunningTasks(std::function<void(Task&,const QString&,int,i
             percentage = (float)info.progressValue / info.progressMaximum;
             totalProgressMaximum = 1000;
         }
+        else if(!info.subProgressStack.empty()) {
+            percentage = 0;
+            totalProgressMaximum = 1000;
+        }
         else {
             percentage = 0;
             totalProgressMaximum = 0;
