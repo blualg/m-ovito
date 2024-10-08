@@ -210,6 +210,8 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
 
             // Provide a clean task environment for the work.
             Task::Scope taskScope(nullptr);
+            // Temporarily disable undo recording while in the event loop.
+            UndoSuspender noUndo;
 
             // Execute the work function.
             std::move(work)();
@@ -285,6 +287,8 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
 
         // Temporarily switch back to a null context while in the event loop.
         Task::Scope taskScope(nullptr);
+        // Temporarily disable undo recording while in the event loop.
+        UndoSuspender noUndo;
 
         // Is the Qt main event loop running? If yes, start a local Qt event loop, which processes both Qt events and pending work items.
         // Otherwise, in a non-GUI environment, enter into our own processing loop, which only processes pending work items of this task manager.

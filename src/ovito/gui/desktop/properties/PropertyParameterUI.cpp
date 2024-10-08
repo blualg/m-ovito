@@ -180,14 +180,15 @@ QAction* PropertyParameterUI::createResetAction()
         if(!editObject()) {
             return;
         }
-        // Create new instance of the same class as the edited object. Filled with its default parameters.
-        OORef<RefTarget> tempInstance = static_object_cast<RefTarget>(editObject()->getOOClass().createInstance());
-        // update tempInstance with defaults from the current object instance
-        editObject()->copyInitialParametersToObject(tempInstance);
-        // updated the editObject with defaults from tempInstance
-        performTransaction(tr("Reset %1 to its default value").arg(propertyField()->displayName()),
-                           [&]() { editObject()->copyPropertyFieldValue(propertyField(), *tempInstance); });
-        memorizeDefaultParameterValue();
+        performTransaction(tr("Reset %1 to its default value").arg(propertyField()->displayName()), [&]() {
+            // Create new instance of the same class as the edited object. Filled with its default parameters.
+            OORef<RefTarget> tempInstance = static_object_cast<RefTarget>(editObject()->getOOClass().createInstance());
+            // Update tempInstance with defaults from the current object instance.
+            editObject()->copyInitialParametersToObject(tempInstance);
+            // Update the editObject with defaults from tempInstance.
+            editObject()->copyPropertyFieldValue(propertyField(), *tempInstance);
+            memorizeDefaultParameterValue();
+        });
     });
     return resetAction;
 }

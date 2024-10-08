@@ -1570,17 +1570,17 @@ void PipelineListModel::toggleModifierGroup()
         // But first make sure the modifier nodes aren't already part of an existing group.
         existingGroup = modNode->modifierGroup();
         if(!existingGroup) {
-            // Create a new group.
-            OORef<ModifierGroup> group = OORef<ModifierGroup>::create();
             _userInterface.performTransaction(tr("Create modifier group"), [&]() {
+                // Create a new group.
+                OORef<ModifierGroup> group = OORef<ModifierGroup>::create();
                 for(RefTarget* obj : objects) {
                     if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(obj)) {
                         modNode->setModifierGroup(group);
                     }
                 }
+                setNextObjectToSelect(group);
+                refreshList();
             });
-            setNextObjectToSelect(group);
-            refreshList();
             return;
         }
     }
