@@ -9,10 +9,10 @@ In accordance with the requirements of this license, this page provides instruct
 Windows
 """""""
 
-OVITO for Windows includes binaries that have been built from the unmodified sources of ffmpeg 6.1.1.
+OVITO for Windows includes binaries that have been built from the unmodified sources of ffmpeg 6.1.2.
 The following commands have been used to generate them::
 
-  # Compiler: Microsoft Visual C++ 2019 (command line tools) + MSYS2 environment
+  # Compiler: Microsoft Visual C++ 2022 (command line tools) + MSYS2 environment
   # zlib version: 1.3.1
   ./configure \
     --toolchain=msvc \
@@ -42,7 +42,7 @@ The following commands have been used to generate them::
 Linux
 """""
 
-OVITO for Linux includes shared libraries that have been built from the unmodified sources of ffmpeg 6.1.1.
+OVITO for Linux includes shared libraries that have been built from the unmodified sources of ffmpeg 6.1.2.
 The following commands have been used to generate them::
 
   # Build platform: CentOS 7
@@ -65,12 +65,12 @@ The following commands have been used to generate them::
 macOS
 """""
 
-OVITO for macOS includes shared libraries that have been built from the unmodified sources of ffmpeg 6.1.1.
+OVITO for macOS includes shared libraries that have been built from the unmodified sources of ffmpeg 6.1.2.
 The following commands have been used to generate them::
 
   git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg_source
   cd ffmpeg_source
-  git checkout n6.1.1
+  git checkout n6.1.2
   ./configure \
     --disable-network \
     --disable-programs \

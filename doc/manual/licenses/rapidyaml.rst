@@ -1,3 +1,5 @@
+.. copied from https://github.com/biojppm/rapidyaml/blob/master/LICENSE.txt
+
 .. _appendix.license.rapidyaml:
 
 rapidyaml license

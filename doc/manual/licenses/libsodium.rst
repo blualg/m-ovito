@@ -1,3 +1,5 @@
+.. copied from https://github.com/jedisct1/libsodium/blob/master/LICENSE
+
 .. _appendix.license.libsodium:
 
 Sodium license
@@ -5,7 +7,7 @@ Sodium license
 
 ISC License
 
-Copyright (c) 2013-2019
+Copyright (c) 2013-2024
 Frank Denis <j at pureftpd dot org>
 
 Permission to use, copy, modify, and/or distribute this software for any

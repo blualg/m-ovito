@@ -1,9 +1,11 @@
+.. copied from https://github.com/numpy/numpy/blob/main/LICENSE.txt
+
 .. _appendix.license.numpy:
 
 Numpy License
 -------------
 
-Copyright (c) 2005-2023, NumPy Developers.
+Copyright (c) 2005-2024, NumPy Developers.
 
 All rights reserved.
 
