@@ -102,6 +102,9 @@ public:
         /// The FileSource that initiated the load operation.
         OOWeakRef<const PipelineNode> pipelineNode;
 
+        /// The importer object this load operation was initiated for.
+        OORef<FileSourceImporter> importer;
+
         /// If a loaded data collection consists of sub-collections, this string specifies the
         /// prefix to be prepended to the identifiers of data objects loaded by the file reader.
         QString dataBlockPrefix;
@@ -137,15 +140,15 @@ public:
         /// Returns the FileSource that owns the file importer.
         const OOWeakRef<const PipelineNode>& pipelineNode() const { return _loadRequest.pipelineNode; }
 
+        /// Returns the importer object this load operation was initiated for.
+        const OORef<FileSourceImporter>& importer() const { return _loadRequest.importer; };
+
         /// Returns a data structure describing the current load operation.
         const LoadOperationRequest& loadRequest() const { return _loadRequest; }
 
         /// File parser implementations call this method to indicate that the input file contains
         /// additional frames stored back to back with the currently loaded one.
         void signalAdditionalFrames() { _additionalFramesDetected = true; }
-
-        /// Flag that is set by the parser to indicate that the input file contains more than one animation frame.
-        bool additionalFramesDetected() const { return _additionalFramesDetected; }
 
         /// Calls loadFile() and sets the loaded data collection as result of the asynchronous task.
         virtual void perform() override;
@@ -166,36 +169,6 @@ public:
 
     /// A managed pointer to a FrameLoader instance.
     using FrameLoaderPtr = std::shared_ptr<FrameLoader>;
-
-    /**
-     * Base class for frame discovery routines.
-     */
-    class OVITO_CORE_EXPORT FrameFinder : public AsynchronousTask<QVector<Frame>>
-    {
-    public:
-
-        /// Constructor.
-        explicit FrameFinder(const FileHandle& file) : _file(file) {}
-
-        /// Returns the data file to scan.
-        const FileHandle& fileHandle() const { return _file; }
-
-        /// Scans the source URL for input frames.
-        virtual void perform() override;
-
-    protected:
-
-        /// Scans the data file and builds a list of source frames.
-        virtual void discoverFramesInFile(QVector<Frame>& frames) = 0;
-
-    private:
-
-        /// The data file to scan.
-        FileHandle _file;
-    };
-
-    /// A managed pointer to a FrameFinder instance.
-    using FrameFinderPtr = std::shared_ptr<FrameFinder>;
 
 public:
 
@@ -265,9 +238,6 @@ public:
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) { return {}; }
 
-    /// Creates an asynchronous frame discovery object that scans a file for contained animation frames.
-    virtual FrameFinderPtr createFrameFinder(const FileHandle& file) { return {}; }
-
     /// Returns the FileSource that manages this importer object (if any).
     FileSource* fileSource() const;
 
@@ -299,6 +269,10 @@ protected:
     /// Determines whether the input file should be scanned to discover all contained frames.
     /// The default implementation returns the value of isMultiTimestepFile().
     virtual bool shouldScanFileForFrames(const QUrl& sourceUrl) const { return isMultiTimestepFile(); }
+
+    /// Scans a given file and builds a list of trajectory frames.
+    /// This method is called by the system from a worker thread.
+    virtual void discoverFramesInFile(const FileHandle& fileHandle, QVector<Frame>& frames) const {}
 
     /// Is called when importing multiple files of different formats.
     virtual void importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline);

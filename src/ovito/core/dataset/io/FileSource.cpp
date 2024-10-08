@@ -428,6 +428,7 @@ SharedFuture<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvalu
             // Set up the load request to be submitted to the FileSourceImporter.
             FileSourceImporter::LoadOperationRequest loadRequest;
             loadRequest.pipelineNode = this;
+            loadRequest.importer = importer();
             loadRequest.fileHandle = fileHandle;
             loadRequest.frame = frameInfo;
             loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);

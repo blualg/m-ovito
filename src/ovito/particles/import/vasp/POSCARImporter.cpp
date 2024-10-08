@@ -93,20 +93,20 @@ bool POSCARImporter::shouldScanFileForFrames(const QUrl& sourceUrl) const
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void POSCARImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void POSCARImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning file %1").arg(fileHandle().toString()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     int frameNumber = 0;
     QStringList atomTypeNames;
     QVector<int> atomCounts;
-    QString filename = fileHandle().sourceUrl().fileName();
+    QString filename = fileHandle.sourceUrl().fileName();
 
     // Read frames.
-    Frame frame(fileHandle());
-    while(!stream.eof() && !isCanceled()) {
+    Frame frame(fileHandle);
+    while(!stream.eof() && !this_task::isCanceled()) {
         frame.byteOffset = stream.byteOffset();
         frame.lineNumber = stream.lineNumber();
         frame.parserData = QVariant::fromValue(true);
@@ -169,7 +169,7 @@ void POSCARImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporte
         frames.push_back(frame);
 
         // Update progress bar and check for user cancellation.
-        setProgressValueIntermittent(stream.underlyingByteOffset());
+        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 }
 

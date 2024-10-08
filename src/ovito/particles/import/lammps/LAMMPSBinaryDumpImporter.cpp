@@ -153,18 +153,18 @@ bool LAMMPSBinaryDumpImporter::OOMetaClass::checkFileFormat(const FileHandle& fi
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void LAMMPSBinaryDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void LAMMPSBinaryDumpImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     // Open input file in binary mode for reading.
-    std::unique_ptr<QIODevice> file = fileHandle().createIODevice();
+    std::unique_ptr<QIODevice> file = fileHandle.createIODevice();
     if(!file->open(QIODevice::ReadOnly))
         throw Exception(tr("Failed to open binary LAMMPS dump file: %1.").arg(file->errorString()));
 
-    setProgressText(tr("Scanning binary LAMMPS dump file %1").arg(fileHandle().toString()));
-    setProgressMaximum(file->size());
+    this_task::setProgressText(tr("Scanning binary LAMMPS dump file %1").arg(fileHandle.toString()));
+    this_task::setProgressMaximum(file->size());
 
-    Frame frame(fileHandle());
-    while(!file->atEnd() && !isCanceled()) {
+    Frame frame(fileHandle);
+    while(!file->atEnd() && !this_task::isCanceled()) {
         frame.byteOffset = file->pos();
 
         // Parse file header.
@@ -187,7 +187,7 @@ void LAMMPSBinaryDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSou
                 throw Exception(tr("Unexpected end of file."));
 
             // Update progress bar and check for user cancellation.
-            setProgressValue(filePos);
+            this_task::setProgressValue(filePos);
         }
 
         // Create a new record for the timestep.

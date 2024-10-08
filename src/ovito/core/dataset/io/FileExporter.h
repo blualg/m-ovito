@@ -90,10 +90,6 @@ public:
     /// \brief Exports the scene data to the output file(s).
     virtual void doExport();
 
-    /// Helper function that is called by sub-classes prior to file output in order to
-    /// activate the default "C" locale.
-    static void activateCLocale();
-
     /// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
     virtual bool supportsMultiFrameFiles() const { return false; }
 

@@ -60,17 +60,17 @@ bool LAMMPSGridDumpImporter::OOMetaClass::checkFileFormat(const FileHandle& file
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void LAMMPSGridDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void LAMMPSGridDumpImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning LAMMPS grid dump file %1").arg(fileHandle().toString()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning LAMMPS grid dump file %1").arg(fileHandle.toString()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     unsigned long long timestep = 0;
     size_t numVoxels = 0;
-    Frame frame(fileHandle());
+    Frame frame(fileHandle);
 
-    while(!stream.eof() && !isCanceled()) {
+    while(!stream.eof() && !this_task::isCanceled()) {
         qint64 byteOffset = stream.byteOffset();
         int lineNumber = stream.lineNumber();
 
@@ -106,7 +106,7 @@ void LAMMPSGridDumpImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
                 for(size_t i = 0; i < numVoxels; i++) {
                     stream.readLine();
                     // Update progress bar and check for cancellation.
-                    setProgressValueIntermittent(stream.underlyingByteOffset());
+                    this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
                 }
                 break;
             }

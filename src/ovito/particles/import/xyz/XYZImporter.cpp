@@ -82,20 +82,20 @@ bool XYZImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void XYZImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void XYZImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning file %1").arg(fileHandle().toString()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     // Regular expression for whitespace characters.
     QRegularExpression ws_re(QStringLiteral("\\s+"));
 
     int frameNumber = 0;
-    QString filename = fileHandle().sourceUrl().fileName();
-    Frame frame(fileHandle());
+    QString filename = fileHandle.sourceUrl().fileName();
+    Frame frame(fileHandle);
 
-    while(!stream.eof() && !isCanceled()) {
+    while(!stream.eof() && !this_task::isCanceled()) {
         // Note: For first frame, always use byte offset/line number 0, because otherwise a reload of frame 0 is triggered by the FileSource.
         if(!frames.empty()) {
             frame.byteOffset = stream.byteOffset();
@@ -132,7 +132,7 @@ void XYZImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
         for(unsigned long long i = 0; i < numParticlesLong; i++) {
             stream.readLine();
             // Update progress bar and check for user cancellation.
-            setProgressValueIntermittent(stream.underlyingByteOffset());
+            this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
         }
 
         // Skip simulation cell section if this is a .exyz file written by OpenBabel.
@@ -583,10 +583,6 @@ Future<ParticleInputColumnMapping> XYZImporter::inspectFileHeader(const Frame& f
     // Retrieve file.
     return Application::instance()->fileManager().fetchUrl(frame.sourceFile)
         .then([](const FileHandle& fileHandle) {
-
-            // Parse the file header to determine the number of data columns.
-            activateCLocale();
-
             // Open file for reading.
             CompressedTextReader stream(fileHandle);
 

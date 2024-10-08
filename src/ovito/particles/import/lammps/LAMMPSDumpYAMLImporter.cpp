@@ -58,16 +58,16 @@ bool LAMMPSDumpYAMLImporter::OOMetaClass::checkFileFormat(const FileHandle& file
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void LAMMPSDumpYAMLImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void LAMMPSDumpYAMLImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning LAMMPS dump yaml file %1").arg(fileHandle().toString()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning LAMMPS dump yaml file %1").arg(fileHandle.toString()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     unsigned long long timestep = 0;
-    Frame frame(fileHandle());
+    Frame frame(fileHandle);
 
-    while(!stream.eof() && !isCanceled()) {
+    while(!stream.eof() && !this_task::isCanceled()) {
         qint64 byteOffset = stream.byteOffset();
         int lineNumber = stream.lineNumber() + 1;
 

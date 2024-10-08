@@ -266,11 +266,11 @@ bool DCDImporter::OOMetaClass::checkFileFormat(const FileHandle &file) const
 /******************************************************************************
  * Scans the data file and builds a list of source frames.
  ******************************************************************************/
-void DCDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame> &frames)
+void DCDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    setProgressText(tr("Scanning file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
 
-    std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
+    std::unique_ptr<QIODevice> device = fileHandle.createIODevice();
     if(!device->open(QIODevice::ReadOnly))
         throw Exception(tr("Failed to open file: %1").arg(device->errorString()));
 
@@ -292,7 +292,7 @@ void DCDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
             nframes = header.nsets;
     }
 
-    Frame frame(fileHandle());
+    Frame frame(fileHandle);
     for(int i = 0; i < nframes; i++) {
         frame.byteOffset = i;
         frame.label = tr("Timestep %1").arg(header.istart + i * header.nsavc);

@@ -65,11 +65,6 @@ public:
         return std::make_shared<FrameLoader>(request, sortParticles(), columnMapping());
     }
 
-    /// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
-    virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
-        return std::make_shared<FrameFinder>(file);
-    }
-
     /// Inspects the header of the given file and returns the number of file columns.
     [[nodiscard]] Future<ParticleInputColumnMapping> inspectFileHeader(const Frame& frame);
 
@@ -95,29 +90,18 @@ private:
         ParticleInputColumnMapping _columnMapping;
     };
 
-    /// The format-specific task object that is responsible for scanning the input file for animation frames.
-    class FrameFinder : public FileSourceImporter::FrameFinder
-    {
-    public:
-
-        /// Inherit constructor from base class.
-        using FileSourceImporter::FrameFinder::FrameFinder;
-
-    protected:
-
-        /// Scans the data file and builds a list of source frames.
-        virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
-    };
-
 protected:
 
-    /// \brief Is called when the value of a non-animatable property field of this RefMaker has changed.
+    /// Scans the data file and builds a list of source frames.
+    virtual void discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const override;
+
+    /// Is called when the value of a non-animatable property field of this RefMaker has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
-    /// \brief Saves the class' contents to the given stream.
+    /// Saves the class' contents to the given stream.
     virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
-    /// \brief Loads the class' contents from the given stream.
+    /// Loads the class' contents from the given stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
 
 private:

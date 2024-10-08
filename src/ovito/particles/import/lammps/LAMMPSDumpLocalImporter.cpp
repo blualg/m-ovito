@@ -65,17 +65,17 @@ bool LAMMPSDumpLocalImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void LAMMPSDumpLocalImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void LAMMPSDumpLocalImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning LAMMPS dump local file %1").arg(fileHandle().toString()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning LAMMPS dump local file %1").arg(fileHandle.toString()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     unsigned long long timestep = 0;
     size_t numElements = 0;
-    Frame frame(fileHandle());
+    Frame frame(fileHandle);
 
-    while(!stream.eof() && !isCanceled()) {
+    while(!stream.eof() && !this_task::isCanceled()) {
         qint64 byteOffset = stream.byteOffset();
         int lineNumber = stream.lineNumber();
 
@@ -114,7 +114,7 @@ void LAMMPSDumpLocalImporter::FrameFinder::discoverFramesInFile(QVector<FileSour
                 for(size_t i = 0; i < numElements; i++) {
                     stream.readLine();
                     // Update progress bar and check for user cancellation.
-                    setProgressValueIntermittent(stream.underlyingByteOffset());
+                    this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
                 }
                 break;
             }
@@ -338,8 +338,6 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 ******************************************************************************/
 Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const Frame& frame)
 {
-    activateCLocale();
-
     // Retrieve file.
     return Application::instance()->fileManager().fetchUrl(frame.sourceFile)
         .then([](const FileHandle& fileHandle) {

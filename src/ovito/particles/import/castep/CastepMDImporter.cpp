@@ -58,11 +58,11 @@ bool CastepMDImporter::OOMetaClass::checkFileFormat(const FileHandle& file) cons
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void CastepMDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void CastepMDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning CASTEP file %1").arg(stream.filename()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning CASTEP file %1").arg(stream.filename()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     // Look for string 'BEGIN header' to occur on first line.
     if(!boost::algorithm::istarts_with(stream.readLineTrimLeft(32), "BEGIN header"))
@@ -75,11 +75,11 @@ void CastepMDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImpor
         if(boost::algorithm::istarts_with(stream.readLineTrimLeft(), "END header"))
             break;
         // Update progress bar and check for user cancellation.
-        setProgressValueIntermittent(stream.underlyingByteOffset());
+        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 
-    Frame frame(fileHandle());
-    QString filename = fileHandle().sourceUrl().fileName();
+    Frame frame(fileHandle);
+    QString filename = fileHandle.sourceUrl().fileName();
     int frameNumber = 0;
 
     while(!stream.eof()) {
@@ -96,7 +96,7 @@ void CastepMDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImpor
         }
 
         // Update progress bar and check for user cancellation.
-        setProgressValueIntermittent(stream.underlyingByteOffset());
+        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 }
 

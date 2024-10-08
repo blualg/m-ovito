@@ -107,12 +107,12 @@ DataOORef<const TriangleMesh> GSDImporter::lookupParticleShapeInCache(const QByt
 /******************************************************************************
 * Scans the input file for simulation timesteps.
 ******************************************************************************/
-void GSDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void GSDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    setProgressText(tr("Scanning file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
 
     // First close text stream, we don't need it here.
-    QString filename = QDir::toNativeSeparators(fileHandle().localFilePath());
+    QString filename = QDir::toNativeSeparators(fileHandle.localFilePath());
     if(filename.isEmpty())
         throw Exception(tr("The GSD file reader supports reading only from physical files. Cannot read data from an in-memory buffer."));
 
@@ -124,7 +124,7 @@ void GSDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
 #endif
     uint64_t nFrames = gsd.numerOfFrames();
 
-    Frame frame(fileHandle());
+    Frame frame(fileHandle);
     for(uint64_t i = 0; i < nFrames; i++) {
         uint64_t simulationStep = gsd.readOptionalScalar<uint64_t>("configuration/step", i, std::numeric_limits<uint64_t>::max());
         if(simulationStep != std::numeric_limits<uint64_t>::max())

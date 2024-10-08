@@ -148,10 +148,6 @@ public:
     /// \return The importer class that can handle the given file. If the file format could not be recognized then NULL is returned.
     static OORef<FileImporter> autodetectFileFormat(const FileHandle& file, FileImporter* existingImporterHint = nullptr);
 
-    /// Helper function that is called by sub-classes prior to file parsing in order to
-    /// activate the default "C" locale.
-    static void activateCLocale();
-
     /// Utility method which splits a string at whitespace separators into tokens.
     static QStringList splitString(const QString& str);
 

@@ -427,6 +427,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
                 // Set up a file load request to be passed to the importer.
                 LoadOperationRequest loadRequest;
                 loadRequest.pipelineNode = pipelineNode;
+                loadRequest.importer = importer;
                 loadRequest.fileHandle = fileHandle;
                 loadRequest.frame = Frame(fileHandle);
                 loadRequest.state = PipelineFlowState(DataOORef<const DataCollection>::create(), PipelineStatus::Success);

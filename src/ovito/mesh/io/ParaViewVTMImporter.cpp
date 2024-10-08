@@ -268,6 +268,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
                         // Set up the load request submitted to the FileSourceImporter.
                         request.frame = Frame(file);
                         request.fileHandle = file;
+                        request.importer = importer;
                         request.state.setStatus(PipelineStatus::Success);
 
                         // Give plugin filter objects the possibility to pass additional information to the specific FileSourceImporter.

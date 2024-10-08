@@ -92,11 +92,11 @@ bool DLPOLYImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void DLPOLYImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void DLPOLYImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning DL_POLY file %1").arg(stream.filename()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning DL_POLY file %1").arg(stream.filename()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     // Skip first comment line (record 1).
     stream.readLine();
@@ -109,8 +109,8 @@ void DLPOLYImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporte
     if(stream.eof() || sscanf(stream.readLine(), "%u %u %llu %u", &levcfg, &imcon, &expectedAtomCount, &frame_count) < 2 || levcfg < 0 || levcfg > 2 || imcon < 0 || imcon > 6)
         throw Exception(tr("Invalid record line %1 in DL_POLY file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
-    Frame frame(fileHandle());
-    QString filename = fileHandle().sourceUrl().fileName();
+    Frame frame(fileHandle);
+    QString filename = fileHandle.sourceUrl().fileName();
     frame.byteOffset = stream.byteOffset();
     frame.lineNumber = stream.lineNumber();
 
@@ -156,13 +156,13 @@ void DLPOLYImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporte
                 }
                 // Update progress bar and check for user cancellation.
                 if((i % 1024) == 0)
-                    setProgressValue(stream.underlyingByteOffset());
+                    this_task::setProgressValue(stream.underlyingByteOffset());
             }
         }
     }
     else {
         // It's not a trajectory file. Report just a single frame.
-        frames.push_back(Frame(fileHandle()));
+        frames.push_back(Frame(fileHandle));
     }
 }
 

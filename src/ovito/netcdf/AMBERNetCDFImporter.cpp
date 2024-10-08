@@ -123,9 +123,9 @@ bool AMBERNetCDFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) c
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void AMBERNetCDFImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void AMBERNetCDFImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    QString filename = QDir::toNativeSeparators(fileHandle().localFilePath());
+    QString filename = QDir::toNativeSeparators(fileHandle.localFilePath());
     if(filename.isEmpty())
         throw Exception(tr("The NetCDF file reader supports reading only from physical files. Cannot read data from an in-memory buffer."));
 
@@ -153,7 +153,7 @@ void AMBERNetCDFImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceIm
     NCERR( nc_inq_dimlen(ncid, frame_dim, &nFrames) );
     NCERR( nc_close(root_ncid) );
 
-    Frame frame(fileHandle());
+    Frame frame(fileHandle);
     for(size_t i = 0; i < nFrames; i++) {
         frame.lineNumber = i;
         frame.label = tr("Frame %1").arg(i);

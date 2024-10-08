@@ -119,17 +119,17 @@ bool GroImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void GroImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void GroImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning file %1").arg(fileHandle().toString()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     int frameNumber = 0;
-    QString filename = fileHandle().sourceUrl().fileName();
-    Frame frame(fileHandle());
+    QString filename = fileHandle.sourceUrl().fileName();
+    Frame frame(fileHandle);
 
-    while(!stream.eof() && !isCanceled()) {
+    while(!stream.eof() && !this_task::isCanceled()) {
         frame.byteOffset = stream.byteOffset();
         frame.lineNumber = stream.lineNumber();
         stream.recordSeekPoint();
@@ -162,7 +162,7 @@ void GroImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
             stream.readLine();
             // Update progress bar and check for user cancellation.
             if((i % 4096) == 0)
-                setProgressValue(stream.underlyingByteOffset());
+                this_task::setProgressValue(stream.underlyingByteOffset());
         }
 
         // Skip cell geometry line.

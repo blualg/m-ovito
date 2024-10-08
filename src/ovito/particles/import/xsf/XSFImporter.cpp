@@ -69,14 +69,14 @@ bool XSFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void XSFImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void XSFImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning XSF file %1").arg(stream.filename()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning XSF file %1").arg(stream.filename()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     int nFrames = 1;
-    while(!stream.eof() && !isCanceled()) {
+    while(!stream.eof() && !this_task::isCanceled()) {
         const char* line = stream.readLineTrimLeft(1024);
         if(boost::algorithm::starts_with(line, "ANIMSTEPS")) {
             if(sscanf(line, "ANIMSTEPS %i", &nFrames) != 1 || nFrames < 1)
@@ -86,11 +86,11 @@ void XSFImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
         else if(line[0] != '#') {
             break;
         }
-        setProgressValueIntermittent(stream.underlyingByteOffset());
+        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 
-    Frame frame(fileHandle());
-    QString filename = fileHandle().sourceUrl().fileName();
+    Frame frame(fileHandle);
+    QString filename = fileHandle.sourceUrl().fileName();
     for(int i = 0; i < nFrames; i++) {
         frame.lineNumber = i;
         frame.label = tr("%1 (Frame %2)").arg(filename).arg(i);

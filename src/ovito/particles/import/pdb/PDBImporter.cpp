@@ -122,23 +122,21 @@ bool PDBImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void PDBImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void PDBImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning PDB file %1").arg(stream.filename()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning PDB file %1").arg(stream.filename()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
-    Frame frame(fileHandle());
+    Frame frame(fileHandle);
     bool endOnPreviousLine = false;
     while(!stream.eof()) {
-
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
 
         stream.readLine();
 
         // Update progress bar and check for user cancellation.
-        setProgressValueIntermittent(stream.underlyingByteOffset());
+        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
 
         if(stream.lineStartsWithToken("ENDMDL")) {
             frames.push_back(frame);
@@ -165,11 +163,6 @@ void PDBImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::
             frames.push_back(frame);
             endOnPreviousLine = false;
         }
-    }
-
-    if(frames.empty()) {
-        // It's not a trajectory file. Report just a single frame.
-        frames.push_back(Frame(fileHandle()));
     }
 }
 

@@ -297,17 +297,6 @@ void FileExporter::doExport()
 }
 
 /******************************************************************************
-* Helper function that is called by sub-classes prior to file output in order to
-* activate the default "C" locale.
-******************************************************************************/
-void FileExporter::activateCLocale()
-{
-    // The setlocale() function is not thread-safe and should only be called from the main thread.
-    if(this_task::isMainThread())
-        std::setlocale(LC_ALL, "C");
-}
-
-/******************************************************************************
 * Returns a string with the list of available data objects of the given type.
 ******************************************************************************/
 QString FileExporter::getAvailableDataObjectList(const PipelineFlowState& state, const DataObject::OOMetaClass& objectType) const

@@ -67,19 +67,19 @@ bool OXDNAImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void OXDNAImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void OXDNAImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning file %1").arg(fileHandle().toString()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
-    Frame frame(fileHandle());
-    QString filename = fileHandle().sourceUrl().fileName();
+    Frame frame(fileHandle);
+    QString filename = fileHandle.sourceUrl().fileName();
     int frameNumber = 0;
 
     frame.byteOffset = stream.byteOffset();
     frame.lineNumber = stream.lineNumber();
-    while(!stream.eof() && !isCanceled()) {
+    while(!stream.eof() && !this_task::isCanceled()) {
 
         // Check for a valid "t = ..." line.
         FloatType t;
@@ -108,7 +108,7 @@ void OXDNAImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter
             stream.readLine();
             if(stream.lineStartsWith("t", true))
                 break;
-            setProgressValueIntermittent(stream.underlyingByteOffset());
+            this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
         }
     }
 }

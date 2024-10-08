@@ -111,17 +111,17 @@ bool ReaxFFBondImporter::OOMetaClass::checkFileFormat(const FileHandle& file) co
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void ReaxFFBondImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void ReaxFFBondImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning ReaxFF bond file %1").arg(fileHandle().toString()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning ReaxFF bond file %1").arg(fileHandle.toString()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
-    Frame frame(fileHandle());
-    QString filename = fileHandle().sourceUrl().fileName();
+    Frame frame(fileHandle);
+    QString filename = fileHandle.sourceUrl().fileName();
 
     bool inCommentSection = true;
-    while(!stream.eof() && !isCanceled()) {
+    while(!stream.eof() && !this_task::isCanceled()) {
         const char* line = stream.readLineTrimLeft();
 
         if(line[0] == '#') {
@@ -135,7 +135,7 @@ void ReaxFFBondImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImp
             frames.push_back(frame);
             stream.recordSeekPoint();
             inCommentSection = false;
-            setProgressValueIntermittent(stream.underlyingByteOffset());
+            this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
         }
     }
 }

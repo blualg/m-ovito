@@ -71,11 +71,6 @@ public:
         return std::make_shared<FrameLoader>(request, this, std::max(roundingResolution(), 1));
     }
 
-    /// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
-    virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
-        return std::make_shared<FrameFinder>(file);
-    }
-
     /// Stores the particle shape geometry generated from a JSON string in the internal cache.
     void storeParticleShapeInCache(const QByteArray& jsonString, const DataOORef<const TriangleMesh>& mesh);
 
@@ -85,7 +80,10 @@ public:
 
 protected:
 
-    /// \brief Is called when the value of a property of this object has changed.
+    /// Scans the data file and builds a list of source frames.
+    virtual void discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const override;
+
+    /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
 private:
@@ -146,20 +144,6 @@ private:
 
         OORef<GSDImporter> _importer;
         int _roundingResolution;
-    };
-
-    /// The format-specific task object that is responsible for scanning the input file for animation frames.
-    class FrameFinder : public FileSourceImporter::FrameFinder
-    {
-    public:
-
-        /// Inherit constructor from base class.
-        using FileSourceImporter::FrameFinder::FrameFinder;
-
-    protected:
-
-        /// Scans the data file and builds a list of source frames.
-        virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
     };
 };
 

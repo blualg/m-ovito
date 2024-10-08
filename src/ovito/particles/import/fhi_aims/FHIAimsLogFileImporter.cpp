@@ -56,20 +56,20 @@ bool FHIAimsLogFileImporter::OOMetaClass::checkFileFormat(const FileHandle& file
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void FHIAimsLogFileImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void FHIAimsLogFileImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Scanning file %1").arg(fileHandle().toString()));
-    setProgressMaximum(stream.underlyingSize());
+    CompressedTextReader stream(fileHandle);
+    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     // Regular expression for whitespace characters.
     QRegularExpression ws_re(QStringLiteral("\\s+"));
 
-    Frame frame(fileHandle());
-    QString filename = fileHandle().sourceUrl().fileName();
+    Frame frame(fileHandle);
+    QString filename = fileHandle.sourceUrl().fileName();
     int frameNumber = 0;
 
-    while(!stream.eof() && !isCanceled()) {
+    while(!stream.eof() && !this_task::isCanceled()) {
         const char* line = stream.readLineTrimLeft();
         if(boost::algorithm::starts_with(line, "Updated atomic structure:")) {
             stream.readLine();
@@ -80,7 +80,7 @@ void FHIAimsLogFileImporter::FrameFinder::discoverFramesInFile(QVector<FileSourc
             stream.recordSeekPoint();
         }
 
-        setProgressValueIntermittent(stream.underlyingByteOffset());
+        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 }
 

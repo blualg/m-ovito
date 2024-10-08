@@ -138,17 +138,6 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
 }
 
 /******************************************************************************
-* Helper function that is called by sub-classes prior to file parsing in order to
-* activate the default "C" locale.
-******************************************************************************/
-void FileImporter::activateCLocale()
-{
-    // The setlocale() function is not thread-safe and should only be called from the main thread.
-    if(this_task::isMainThread())
-        std::setlocale(LC_ALL, "C");
-}
-
-/******************************************************************************
 * Utility method which splits a string at whitespace separators into tokens.
 ******************************************************************************/
 QStringList FileImporter::splitString(const QString& str)

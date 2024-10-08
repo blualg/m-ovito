@@ -61,12 +61,12 @@ bool ParaViewPVDImporter::OOMetaClass::checkFileFormat(const FileHandle& file) c
 /******************************************************************************
 * Scans the input file for simulation timesteps.
 ******************************************************************************/
-void ParaViewPVDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void ParaViewPVDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    setProgressText(tr("Scanning file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
 
     // Initialize XML reader and open input file.
-    std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
+    std::unique_ptr<QIODevice> device = fileHandle.createIODevice();
     if(!device->open(QIODevice::ReadOnly | QIODevice::Text))
         throw Exception(tr("Failed to open PVD file: %1").arg(device->errorString()));
     QXmlStreamReader xml(device.get());
@@ -87,7 +87,7 @@ void ParaViewPVDImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceIm
             QString file = xml.attributes().value("file").toString();
             if(!file.isEmpty()) {
                 // Resolve file path.
-                QUrl url = fileHandle().sourceUrl().resolved(QUrl(file));
+                QUrl url = fileHandle.sourceUrl().resolved(QUrl(file));
                 // Parse 'timestep' attribute.
                 double timestep = xml.attributes().value("timestep").toDouble();
 

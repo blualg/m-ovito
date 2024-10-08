@@ -68,26 +68,8 @@ public:
     /// Loads the data for the given frame from the external file.
     virtual Future<PipelineFlowState> loadFrame(const LoadOperationRequest& request) override;
 
-    /// Creates an asynchronous task for scanning the input file for animation frames.
-    virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
-        return std::make_shared<FrameFinder>(file);
-    }
-
-private:
-
-    /// The asynchronous task that scans the input file for animation frames.
-    class FrameFinder : public FileSourceImporter::FrameFinder
-    {
-    public:
-
-        /// Inherit constructor from base class.
-        using FileSourceImporter::FrameFinder::FrameFinder;
-
-    protected:
-
-        /// Scans the data file and builds a list of source frames.
-        virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
-    };
+    /// Scans the data file and builds a list of source frames.
+    virtual void discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const override;
 
 private:
 

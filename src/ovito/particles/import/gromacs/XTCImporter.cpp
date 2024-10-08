@@ -115,21 +115,21 @@ bool XTCImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 /******************************************************************************
 * Scans the data file and builds a list of source frames.
 ******************************************************************************/
-void XTCImporter::FrameFinder::discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames)
+void XTCImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    setProgressText(tr("Scanning file %1").arg(fileHandle().toString()));
-    setProgressMaximum(QFileInfo(fileHandle().localFilePath()).size());
+    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    this_task::setProgressMaximum(QFileInfo(fileHandle.localFilePath()).size());
 
     // Open XTC file for reading.
     XTCFile file;
-    file.open(QFile::encodeName(QDir::toNativeSeparators(fileHandle().localFilePath())).constData());
+    file.open(QFile::encodeName(QDir::toNativeSeparators(fileHandle.localFilePath())).constData());
 
-    Frame frame(fileHandle());
-    while(!file.eof() && !isCanceled()) {
+    Frame frame(fileHandle);
+    while(!file.eof() && !this_task::isCanceled()) {
         frame.byteOffset = file.byteOffset();
 
         // Update progress bar and check for user cancellation.
-        setProgressValue(frame.byteOffset);
+        this_task::setProgressValue(frame.byteOffset);
 
         // Parse trajectory frame.
         XTCFile::Frame xtcFrame = file.read();

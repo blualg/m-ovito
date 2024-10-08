@@ -57,22 +57,18 @@ public:
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-        activateCLocale();
         return std::make_shared<FrameLoader>(request, recenterCell(), generateBonds());
-    }
-
-    /// Creates an asynchronous frame discovery object that scans the input file for contained animation frames.
-    virtual std::shared_ptr<FileSourceImporter::FrameFinder> createFrameFinder(const FileHandle& file) override {
-        activateCLocale();
-        return std::make_shared<FrameFinder>(file);
     }
 
 protected:
 
-    /// \brief Determines whether the input file should be scanned to discover all contained frames.
+    /// Determines whether the input file should be scanned to discover all contained frames.
     virtual bool shouldScanFileForFrames(const QUrl& sourceUrl) const override;
 
-    /// \brief Parses the list of atom types from the POSCAR file.
+    /// Scans the data file and builds a list of source frames.
+    virtual void discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const override;
+
+    /// Parses the list of atom types from the POSCAR file.
     static void parseAtomTypeNamesAndCounts(CompressedTextReader& stream, QStringList& atomTypeNames, QVector<int>& atomCounts);
 
 private:
@@ -97,20 +93,6 @@ private:
 
         /// Controls the generation of ad-hoc bonds during data import.
         bool _generateBonds;
-    };
-
-    /// The format-specific task object that is responsible for scanning the input file for animation frames.
-    class FrameFinder : public FileSourceImporter::FrameFinder
-    {
-    public:
-
-        /// Inherit constructor from base class.
-        using FileSourceImporter::FrameFinder::FrameFinder;
-
-    protected:
-
-        /// Scans the data file and builds a list of source frames.
-        virtual void discoverFramesInFile(QVector<FileSourceImporter::Frame>& frames) override;
     };
 };
 

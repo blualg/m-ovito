@@ -398,14 +398,26 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 ******************************************************************************/
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const FileHandle& fileHandle)
 {
-    OVITO_ASSERT_MSG(this_task::isMainThread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
-    OVITO_ASSERT(this_task::get());
+    return asyncLaunch([fileHandle, self=OORef<const FileSourceImporter>(this)]() {
+        QVector<Frame> framesList;
+        try {
+            self->discoverFramesInFile(fileHandle, framesList);
+        }
+        catch(const Exception&) {
+            // Silently ignore parsing and I/O errors if at least two frames have been read.
+            // Keep all frames read up to where the error occurred.
+            if(framesList.size() <= 1)
+                throw;
+            else
+                framesList.pop_back();       // Remove last discovered frame because it may be corrupted or only partially written.
+        }
 
-    // Scan file.
-    if(FrameFinderPtr frameFinder = createFrameFinder(fileHandle))
-        return launchTask(std::move(frameFinder));
-    else
-        return QVector<Frame>{{ Frame(fileHandle) }};
+        // If it's not a trajectory file, report a single frame.
+        if(framesList.empty())
+            framesList.emplace_back(fileHandle);
+
+        return framesList;
+    });
 }
 
 /******************************************************************************
@@ -415,6 +427,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
 {
     OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::loadFrame", "This function may only be called from the main thread.");
     OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(request.importer == this);
 
     // Note: FileSourceImporter::loadFrame() may not be called while undo recording is active.
     OVITO_ASSERT(!isUndoRecording());
@@ -424,47 +437,7 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
     OVITO_ASSERT(frameLoader);
 
     // Execute the loader in a background thread.
-    Future<PipelineFlowState> future = launchTask(std::move(frameLoader));
-
-    // If the parser has detects additional frames following the first frame in the
-    // input file being loaded, automatically turn on scanning of the input file.
-    // Only automatically turn scanning on if the file is being newly imported, i.e. if the file source has not loaded a data collection yet.
-    if(request.isNewlyImportedFile) {
-        // Note: Changing a parameter of the file importer must be done in the correct thread.
-        future.finally(ObjectExecutor(this), [this](Task& task) noexcept {
-            OVITO_ASSERT(task.userInterface());
-            if(!task.isCanceled()) {
-                FrameLoader& frameLoader = static_cast<FrameLoader&>(task);
-                if(frameLoader.additionalFramesDetected() && !isMultiTimestepFile()) {
-                    task.userInterface()->handleExceptions([&] {
-                        setMultiTimestepFile(true);
-                    });
-                }
-            }
-        });
-    }
-
-    return future;
-}
-
-/******************************************************************************
-* Scans the source URL for input frames.
-******************************************************************************/
-void FileSourceImporter::FrameFinder::perform()
-{
-    QVector<Frame> frameList;
-    try {
-        discoverFramesInFile(frameList);
-    }
-    catch(const Exception&) {
-        // Silently ignore parsing and I/O errors if at least two frames have been read.
-        // Keep all frames read up to where the error occurred.
-        if(frameList.size() <= 1)
-            throw;
-        else
-            frameList.pop_back();       // Remove last discovered frame because it may be corrupted or only partially written.
-    }
-    setResult(std::move(frameList));
+    return launchTask(std::move(frameLoader));
 }
 
 /******************************************************************************
@@ -629,11 +602,27 @@ LoadStream& operator>>(LoadStream& stream, FileSourceImporter::Frame& frame)
 ******************************************************************************/
 void FileSourceImporter::FrameLoader::perform()
 {
+    OVITO_ASSERT(importer());
+
     // Let the subclass implementation parse the file.
     loadFile();
 
+    // Stop the task if it has been canceled.
+    if(isCanceled())
+        return;
+
     // Pass the constructed pipeline state back to the caller.
     setResult(std::move(_loadRequest.state));
+
+    // If the parser has detected additional frames following the first frame in the
+    // input file, automatically turn on scanning of the input file.
+    // Only do this if the file is being newly imported by the user.
+    if(_additionalFramesDetected && loadRequest().isNewlyImportedFile && !importer()->isMultiTimestepFile()) {
+        // Note: Changing a parameter of the file importer must be done in the main thread.
+        launchDetached(ObjectExecutor(importer()), [importer=importer()]() {
+            importer->setMultiTimestepFile(true);
+        });
+    }
 }
 
 }   // End of namespace
