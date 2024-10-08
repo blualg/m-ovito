@@ -1,3 +1,5 @@
+.. Copied from https://github.com/enthought/traits/blob/main/LICENSE.txt
+
 .. _appendix.license.traits:
 
 Traits license
@@ -6,7 +8,7 @@ Traits license
 This software is OSI Certified Open Source Software.
 OSI Certified is a certification mark of the Open Source Initiative.
 
-(C) Copyright 2005-2022 Enthought, Inc., Austin, TX
+(C) Copyright 2005-2024 Enthought, Inc., Austin, TX
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
