@@ -115,7 +115,6 @@ SET(SourceFiles
     utilities/io/CompressedTextReader.cpp
     utilities/io/CompressedTextWriter.cpp
     utilities/concurrent/Task.cpp
-    utilities/concurrent/AsynchronousTask.cpp
     utilities/concurrent/TaskManager.cpp
     utilities/concurrent/MainThreadOperation.cpp
     utilities/io/ssh/SshConnection.cpp

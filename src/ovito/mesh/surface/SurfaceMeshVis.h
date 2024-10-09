@@ -33,7 +33,6 @@
 #include <ovito/core/dataset/animation/controller/Controller.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 
 namespace Ovito {
 

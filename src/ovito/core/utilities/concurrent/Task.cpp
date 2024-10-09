@@ -25,7 +25,6 @@
 #include <ovito/core/app/Application.h>
 #include "Task.h"
 #include "Future.h"
-#include "AsynchronousTask.h"
 #include "detail/TaskCallback.h"
 
 namespace Ovito {
@@ -106,12 +105,6 @@ void Task::cancel() noexcept
     if(!isFinished()) {
         MutexLock lock(*this);
         cancelLocked(lock);
-
-        // If this is a synchronous task, finish it right away.
-        // If it is an asynchronous task, it will be finished automatically once the task worker function returns.
-        if(!isAsynchronousTask()) {
-            finishLocked(lock);
-        }
     }
 }
 
@@ -381,73 +374,50 @@ bool Task::waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool r
     waitingTaskLock.unlock();
     awaitedTaskLock.unlock();
 
-    // Is the waiting task running in a thread pool?
-    if(waitingTask->isAsynchronousTask()) {
-        // Are we really in a worker thread?
-        OVITO_ASSERT(!this_task::isMainThread());
-        OVITO_ASSERT(static_cast<AsynchronousTaskBase*>(waitingTask)->threadPool());
+    // Are we running in a thread pool?
+    if(!this_task::isMainThread()) {
+        // TODO: Implement work-stealing mechanism to avoid deadlock when running out of threads in this thread pool.
 
-        // Work-stealing mechanism to avoid deadlock when running out of threads in this thread pool.
-        AsynchronousTaskBase* asyncTask = awaitedTask->isAsynchronousTask() ? static_cast<AsynchronousTaskBase*>(awaitedTask.get().get()) : nullptr;
-        if(asyncTask && asyncTask->threadPool() == static_cast<AsynchronousTaskBase*>(waitingTask)->threadPool() && asyncTask->threadPool()->tryTake(asyncTask)) {
-            // The task was taken from the current pool. Run it right away in the current thread.
+        std::condition_variable cv;
+        std::mutex waitMutex;
+        bool done = false;
 
-            // Attach a temporary callback to the waiting task.
-            detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) noexcept {
-                if(state & (Task::Canceled | Task::Finished)) {
-                    // When the parent task gets canceled, discard the task dependency which keeps the awaited task running.
-                    awaitedTask.reset();
-                }
-            });
-
-            // Execute awaited task now.
-            asyncTask->run();
-
-            waitingTaskCallback.unregisterCallback();
-        }
-        else {
-            // The task is already executing or scheduled to run in a different thread pool. Wait for it to finish or get canceled.
-            std::condition_variable cv;
-            std::mutex waitMutex;
-            bool done = false;
-
-            // Attach a temporary callback to the waiting task, which sets the wait condition in case the waiting task gets canceled.
-            detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) noexcept {
-                if(state & (Task::Canceled | Task::Finished)) {
-                    // When the parent task gets canceled, discard the task dependency which keeps the awaited task running.
-                    awaitedTask.reset();
-                    // Wake up the waiting thread - but only if we shouldn't wait for the task to completely finish.
-                    if(returnEarlyIfCanceled) {
-                        {
-                            std::lock_guard lock(waitMutex);
-                            done = true;
-                        }
-                        cv.notify_one();
-                    }
-                }
-                return true;
-            });
-
-            // Attach a temporary callback function to the awaited task, which sets the wait condition when the task finishes or gets canceled.
-            detail::FunctionTaskCallback awaitedTaskCallback(awaitedTaskPtr.get(), [&](int state) noexcept {
-                if(state & (returnEarlyIfCanceled ? (Task::Finished | Task::Canceled) : Task::Finished)) {
+        // Attach a temporary callback to the waiting task, which sets the wait condition in case the waiting task gets canceled.
+        detail::FunctionTaskCallback waitingTaskCallback(waitingTask, [&](int state) noexcept {
+            if(state & (Task::Canceled | Task::Finished)) {
+                // When the parent task gets canceled, discard the task dependency which keeps the awaited task running.
+                awaitedTask.reset();
+                // Wake up the waiting thread - but only if we shouldn't wait for the task to completely finish.
+                if(returnEarlyIfCanceled) {
                     {
                         std::lock_guard lock(waitMutex);
                         done = true;
                     }
                     cv.notify_one();
                 }
-                return true;
-            });
-
-            {
-                std::unique_lock lock(waitMutex);
-                cv.wait(lock, [&]{ return done; });
             }
+            return true;
+        });
 
-            waitingTaskCallback.unregisterCallback();
-            awaitedTaskCallback.unregisterCallback();
+        // Attach a temporary callback function to the awaited task, which sets the wait condition when the task finishes or gets canceled.
+        detail::FunctionTaskCallback awaitedTaskCallback(awaitedTaskPtr.get(), [&](int state) noexcept {
+            if(state & (returnEarlyIfCanceled ? (Task::Finished | Task::Canceled) : Task::Finished)) {
+                {
+                    std::lock_guard lock(waitMutex);
+                    done = true;
+                }
+                cv.notify_one();
+            }
+            return true;
+        });
+
+        {
+            std::unique_lock lock(waitMutex);
+            cv.wait(lock, [&]{ return done; });
         }
+
+        waitingTaskCallback.unregisterCallback();
+        awaitedTaskCallback.unregisterCallback();
     }
     else {
         // Process all pending work items while waiting for the task to finish.

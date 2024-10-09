@@ -26,10 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/io/FileImporter.h>
 #include <ovito/core/dataset/pipeline/PipelineStatus.h>
-#include <ovito/core/utilities/concurrent/Future.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/io/FileManager.h>
-#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
@@ -87,6 +84,8 @@ public:
                     (parserData != other.parserData);
         }
     };
+    static_assert(std::is_move_constructible<Frame>::value, "Frame class must be move-constructible");
+    static_assert(std::is_move_assignable<Frame>::value, "Frame class must be move-constructible");
 
     struct LoadOperationRequest {
 

@@ -164,7 +164,7 @@ SharedFuture<R>::then(Executor&& executor, Function&& f) const
             Task::MutexLock lock(*this);
 
             OVITO_ASSERT(finishedTask->isFinished());
-            OVITO_ASSERT(!this->isFinished() && !this->isCanceled());
+            OVITO_ASSERT(!this->isFinished() || this->isCanceled());
 
             // Don't execute continuation function in case an error occurred in the preceding task and unless the continuation function takes a Future.
             // Forward any preceding exception state directly to the continuation task.

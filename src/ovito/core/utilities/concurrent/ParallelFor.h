@@ -60,7 +60,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel, Task
     size_t workerCount = std::min({maxWorkers, builtinMaxWorkers, (size_t)detail::Latch::max()});
 
     // If the application is running in single-threaded mode, we don't use additional worker threads.
-    QThreadPool* pool = Application::instance()->taskManager().chooseThreadPool(*task);
+    QThreadPool* pool = Application::instance()->taskManager().getThreadPool(task->isHighPriorityTask());
     if(pool->maxThreadCount() == 1)
         workerCount = 1;
 
@@ -126,7 +126,7 @@ void parallelCancellable(size_t maxWorkers, Setup&& setup, Kernel&& kernel, Task
         }
 
         // Submit workers to the thread pool.
-        // Note: This needs to happen in a separate step, because a possible vector reallocation would lead to a race condition otherwise.
+        // Note: This needs to happen in a separate step, because a possible std::vector reallocation would lead to a race condition otherwise.
         for(Worker& worker : workers) {
 #ifdef QT_BUILDING_UNDER_TSAN
             // Workaround for a false positive error by TSAN, which doesn't know the internals of the QThreadPool implementation (unless Qt itself was built with TSAN support).

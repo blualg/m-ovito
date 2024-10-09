@@ -70,8 +70,10 @@ public:
     /// Executes the given function at some later time.
     void submitWork(work_function_type&& function);
 
-    /// Determines the thread pool for executing the given asynchronous task.
-    QThreadPool* chooseThreadPool(Task& task);
+    /// Returns the thread pool for executing an asynchronous task.
+    QThreadPool* getThreadPool(bool isHighPriorityTask) {
+        return isHighPriorityTask ? &_threadPoolUI : &_threadPool;
+    }
 
     /// Changes the maximum number of threads used by the task manager's thread pools.
     void setMaxThreadCount(int maxThreadCount) {

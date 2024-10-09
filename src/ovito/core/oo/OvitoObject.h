@@ -26,7 +26,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/oo/OORef.h>
 #include <ovito/core/oo/OvitoClass.h>
-#include <ovito/core/utilities/concurrent/Promise.h>
 
 namespace Ovito {
 
@@ -197,10 +196,6 @@ private:
     /// Returns the identifier of the plugin module this object belongs to.
     /// This method is an implementation detail required by the Q_PROPERTY macro above.
     QString pluginId() const { return QString::fromLatin1(getOOClass().pluginId()); }
-
-    /// Executes some work in the context of this object as soon as control returns to the event loop.
-    template<typename Function, typename... Args>
-    static void executeDeferred(std::weak_ptr<const OvitoObject> contextObject, std::shared_ptr<UserInterface> ui, Function&& f, Args&&... args);
 
     /// Bit-wise flags.
     ObjectFlags _flags = ObjectFlags(BeingConstructed | BeingInitialized);
@@ -384,5 +379,5 @@ Q_DECLARE_SMART_POINTER_METATYPE(Ovito::OORef);
 
 #include <ovito/core/utilities/io/ObjectSaveStream.h>
 #include <ovito/core/utilities/io/ObjectLoadStream.h>
-#include <ovito/core/oo/ObjectExecutor.h>
-#include <ovito/core/oo/DeferredObjectExecutor.h>
+#include <ovito/core/utilities/concurrent/ObjectExecutor.h>
+#include <ovito/core/utilities/concurrent/DeferredObjectExecutor.h>

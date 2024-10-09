@@ -236,14 +236,7 @@ public:
         *this = then(std::forward<Executor>(executor), std::forward<Function>(f));
     }
 
-#ifndef Q_CC_GNU
 protected:
-#else
-// This is a workaround for what is likely a bug in the GCC compiler, which doesn't respect the
-// template friend class declarations made below. The AsynchronousTask<void> template specialization
-// doesn't seem to get access to the Future constructor.
-public:
-#endif
 
     /// Move constructor taking the promise state pointer from a r-value Promise.
     Future(promise_type&& promise) : FutureBase(std::move(promise._task)) {}
@@ -251,8 +244,6 @@ public:
     template<typename R2> friend class Future;
     template<typename R2> friend class Promise;
     template<typename R2> friend class SharedFuture;
-    template<typename R2> friend class AsynchronousTask;
-    friend class AsynchronousTaskBase;
 };
 
 /// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.

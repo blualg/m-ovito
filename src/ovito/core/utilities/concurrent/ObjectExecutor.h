@@ -24,52 +24,46 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/concurrent/Task.h>
 
 namespace Ovito {
 
 /**
  * \brief An executor that runs the closure routine in the main thread and in the context of a given OvitoObject.
  *        The closure routine won't be executed in case the object gets deleted before the work could be started.
- *        Execution always happens deferred, i.e., when controls returns to the event loop.
+ *        Execution may happen immediately when the executor is invoked from the main thread.
  */
-class OVITO_CORE_EXPORT DeferredObjectExecutor
+class OVITO_CORE_EXPORT ObjectExecutor
 {
 public:
 
-    /// This typedef is used by the launchAsync() function to determine the base task type of the executor.
-    using base_task_type = Task;
-
     /// Constructor.
-    explicit DeferredObjectExecutor(OOWeakRef<const OvitoObject> contextObject) noexcept : _contextObject(std::move(contextObject)) {}
+    explicit ObjectExecutor(OOWeakRef<const OvitoObject> contextObject) noexcept : _contextObject(std::move(contextObject)) {}
 
     /// Creates some work that can be submitted for execution later.
     template<typename Function>
-    [[nodiscard]] auto schedule(Function&& f) const& {
+    [[nodiscard]] auto schedule(Function&& f) const& noexcept {
         // Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
         return [f = std::forward<Function>(f), executor = *this]<typename... Args>(Args&&... args) mutable noexcept {
-            if(!executor.contextObject().expired())
-                std::move(executor).execute(std::move(f), std::forward<Args>(args)...);
+            std::move(executor).execute(std::move(f), std::forward<Args>(args)...);
         };
     }
 
     /// Creates some work that can be submitted for execution later.
     template<typename Function>
-    [[nodiscard]] auto schedule(Function&& f) && {
+    [[nodiscard]] auto schedule(Function&& f) && noexcept {
         // Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
         return [f = std::forward<Function>(f), executor = std::move(*this)]<typename... Args>(Args&&... args) mutable noexcept {
-            if(!executor.contextObject().expired())
-                std::move(executor).execute(std::move(f), std::forward<Args>(args)...);
+            std::move(executor).execute(std::move(f), std::forward<Args>(args)...);
         };
     }
 
     /// Executes some work.
     template<typename Function, typename... Args>
-    void execute(Function&& f, Args&&... args) const&;
+    void execute(Function&& f, Args&&... args) const& noexcept;
 
     /// Executes some work.
     template<typename Function, typename... Args>
-    void execute(Function&& f, Args&&... args) &&;
+    void execute(Function&& f, Args&&... args) && noexcept;
 
     /// Returns the object this executor is associated with.
     /// Work submitted to this executor will be executed in the context of the object.
@@ -90,29 +84,45 @@ private:
 namespace Ovito {
 
 template<typename Function, typename... Args>
-inline void DeferredObjectExecutor::execute(Function&& f, Args&&... args) const&
+inline void ObjectExecutor::execute(Function&& f, Args&&... args) const& noexcept
 {
     static_assert(std::is_invocable_v<Function, Args...>, "The function must be invocable with the right arguments.");
     static_assert(std::is_invocable_r_v<void, Function, Args...>, "The function must return void.");
     static_assert(std::is_nothrow_invocable_r_v<void, Function, Args...>, "The function must be noexcept.");
 
-    Application::instance()->taskManager().submitWork([contextObject = contextObject(), f = std::forward<Function>(f), ...args = std::forward<Args>(args)]() mutable noexcept {
-        if(OORef<const OvitoObject> target = contextObject.lock())
-            std::invoke(std::move(f), std::move(args)...);
-    });
+    // If we are in the main thread already, we can immediately execute the work.
+    // Otherwise, schedule its execution in the main thread.
+    if(this_task::isMainThread()) {
+        if(OORef<const OvitoObject> target = contextObject().lock())
+            std::invoke(std::forward<Function>(f), std::forward<Args>(args)...);
+    }
+    else if(!contextObject().expired()) {
+        Application::instance()->taskManager().submitWork([contextObject = contextObject(), f = std::forward<Function>(f), ...args = std::forward<Args>(args)]() mutable noexcept {
+            if(OORef<const OvitoObject> target = contextObject.lock())
+                std::invoke(std::move(f), std::move(args)...);
+        });
+    }
 }
 
 template<typename Function, typename... Args>
-inline void DeferredObjectExecutor::execute(Function&& f, Args&&... args) &&
+inline void ObjectExecutor::execute(Function&& f, Args&&... args) && noexcept
 {
     static_assert(std::is_invocable_v<Function, Args...>, "The function must be invocable with the right arguments.");
     static_assert(std::is_invocable_r_v<void, Function, Args...>, "The function must return void.");
     static_assert(std::is_nothrow_invocable_r_v<void, Function, Args...>, "The function must be noexcept.");
 
-    Application::instance()->taskManager().submitWork([contextObject = std::move(_contextObject), f = std::forward<Function>(f), ...args = std::forward<Args>(args)]() mutable noexcept {
-        if(OORef<const OvitoObject> target = contextObject.lock())
-            std::invoke(std::move(f), std::move(args)...);
-    });
+    // If we are in the main thread already, we can immediately execute the work.
+    // Otherwise, schedule its execution in the main thread.
+    if(this_task::isMainThread()) {
+        if(OORef<const OvitoObject> target = contextObject().lock())
+            std::invoke(std::forward<Function>(f), std::forward<Args>(args)...);
+    }
+    else if(!contextObject().expired()) {
+        Application::instance()->taskManager().submitWork([contextObject = std::move(_contextObject), f = std::forward<Function>(f), ...args = std::forward<Args>(args)]() mutable noexcept {
+            if(OORef<const OvitoObject> target = contextObject.lock())
+                std::invoke(std::move(f), std::move(args)...);
+        });
+    }
 }
 
 }   // End of namespace

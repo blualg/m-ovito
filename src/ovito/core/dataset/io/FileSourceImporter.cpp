@@ -65,7 +65,7 @@ void FileSourceImporter::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 void FileSourceImporter::requestReload(bool refetchFiles, int frame)
 {
-    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
+    OVITO_ASSERT_MSG(this_task::isMainThread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
     OVITO_ASSERT(this_task::get());
 
     // Retrieve the FileSource that owns this importer by looking it up in the list of dependents.
@@ -88,7 +88,7 @@ void FileSourceImporter::requestReload(bool refetchFiles, int frame)
 ******************************************************************************/
 void FileSourceImporter::requestFramesUpdate(bool refetchCurrentFile)
 {
-    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
+    OVITO_ASSERT_MSG(this_task::isMainThread(), "FileSourceImporter::requestReload", "This function may only be called from the main thread.");
     OVITO_ASSERT(this_task::get());
 
     // Retrieve the FileSource that owns this importer by looking it up in the list of dependents.
@@ -316,7 +316,7 @@ QString FileSourceImporter::deriveWildcardPatternFromFilename(const QString& fil
 ******************************************************************************/
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const std::vector<QUrl>& sourceUrls)
 {
-    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
+    OVITO_ASSERT_MSG(this_task::isMainThread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
     OVITO_ASSERT(this_task::get());
 
     // No output if there is no input.
@@ -348,7 +348,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 ******************************************************************************/
 Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(const QUrl& sourceUrl)
 {
-    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
+    OVITO_ASSERT_MSG(this_task::isMainThread(), "FileSourceImporter::discoverFrames", "This function may only be called from the main thread.");
     OVITO_ASSERT(this_task::get());
 
     if(shouldScanFileForFrames(sourceUrl)) {

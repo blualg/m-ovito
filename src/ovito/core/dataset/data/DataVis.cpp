@@ -34,7 +34,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(DataVis);
 ******************************************************************************/
 QSet<Pipeline*> DataVis::pipelines(bool onlyScenePipelines) const
 {
-    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "DataVis::pipelines", "This function may only be called from the main thread.");
+    OVITO_ASSERT_MSG(this_task::isMainThread(), "DataVis::pipelines", "This function may only be called from the main thread.");
 
     QSet<Pipeline*> pipelinesList;
     visitDependents([&](RefMaker* dependent) {

@@ -26,7 +26,6 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ScatterPlotModifier.h"
 
 namespace Ovito {

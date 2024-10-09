@@ -28,7 +28,6 @@
 #include <ovito/crystalanalysis/objects/RenderableDislocationLines.h>
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 
 namespace Ovito {

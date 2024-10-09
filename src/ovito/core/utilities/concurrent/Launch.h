@@ -25,11 +25,11 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/app/UserInterface.h>
-#include "AsynchronousTask.h"
 #include "detail/TaskWithStorage.h"
 #include "detail/ContinuationTask.h"
 #include "Future.h"
 #include "LaunchTask.h"
+#include "ThreadPoolExecutor.h"
 
 namespace Ovito {
 
@@ -45,8 +45,8 @@ template<typename Executor, typename Function>
 
     // Determine the type of task object to use.
     using base_task_type = std::conditional_t<detail::is_future_v<std::invoke_result_t<Function>>,
-                detail::ContinuationTask<typename result_future_type::result_type, typename Executor::base_task_type>,
-                detail::TaskWithStorage<std::invoke_result_t<Function>, typename Executor::base_task_type>>;
+                detail::ContinuationTask<typename result_future_type::result_type, Task>,
+                detail::TaskWithStorage<std::invoke_result_t<Function>, Task>>;
 
     class LaunchTask : public base_task_type
     {
@@ -144,21 +144,11 @@ void launchDetached(Executor&& executor, Function&& function)
 template<typename Function>
 [[nodiscard]] inline auto asyncLaunch(Function&& f)
 {
-    using R = std::invoke_result_t<Function>;
-    class PackagedTask : public AsynchronousTask<R>
-    {
-    public:
-        explicit PackagedTask(Function&& f) : _func(std::forward<Function>(f)) {}
-        virtual void perform() override {
-            if constexpr(!std::is_void_v<R>)
-                this->setResult(std::invoke(std::move(_func)));
-            else
-                std::invoke(std::move(_func));
-        }
-    private:
-        std::decay_t<Function> _func;
-    };
-    return launchTask(std::make_shared<PackagedTask>(std::forward<Function>(f)));
+    bool highPriority = false;
+    if(const Task* parentTask = this_task::get())
+        highPriority = parentTask->isHighPriorityTask();
+
+    return launchAsync(ThreadPoolExecutor(highPriority), std::forward<Function>(f));
 }
 
 /// Executes the given worker function in a worker thread and waits for the result.

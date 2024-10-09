@@ -25,7 +25,6 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "DislocationSliceModifierDelegate.h"
 
 namespace Ovito {

@@ -31,7 +31,6 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include "ClusterAnalysisModifier.h"
 
 #include <boost/range/combine.hpp>

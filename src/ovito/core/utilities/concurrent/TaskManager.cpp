@@ -379,12 +379,4 @@ bool TaskManager::requestInterruption()
     return false;
 }
 
-/******************************************************************************
-* Determines the thread pool for executing the given asynchronous task.
-******************************************************************************/
-QThreadPool* TaskManager::chooseThreadPool(Task& task)
-{
-    return task.isHighPriorityTask() ? &_threadPoolUI : &_threadPool;
-}
-
 }   // End of namespace

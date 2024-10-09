@@ -29,7 +29,6 @@
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/utilities/concurrent/AsynchronousTask.h>
 #include <ovito/core/utilities/concurrent/ForEach.h>
 #include "GenerateTrajectoryLinesModifier.h"
 
@@ -113,7 +112,7 @@ void GenerateTrajectoryLinesModifier::preevaluateModifier(const ModifierEvaluati
 /**
  * Helper class that builds up the trajectory lines by sampling the particle positions.
 */
-class TrajectoryGenerator : public AsynchronousTask<DataOORef<const Lines>>
+class TrajectoryGenerator
 {
 public:
 
@@ -242,7 +241,7 @@ public:
     }
 
     /// Builds the trajectory lines from the collected data.
-    virtual void perform() override {
+    DataOORef<const Lines> buildLines() {
 
         // Sort vertex data to obtain continuous trajectory lines.
         this_task::setProgressMaximum(0);
@@ -360,19 +359,8 @@ public:
 
         // Assign the visual element, which renders the trajectory lines.
         trajectoryLines->setVisElement(std::move(_trajectoryVis));
-        // Pass generated trajectory lines to the main thread.
-        setResult(std::move(trajectoryLines));
 
-        // Release working data at the end of the operation.
-        _firstState.reset();
-        decltype(_sampleFrames)().swap(_sampleFrames);
-        decltype(_selectedIndices)().swap(_selectedIndices);
-        decltype(_selectedIdentifiers)().swap(_selectedIdentifiers);
-        decltype(_pointData)().swap(_pointData);
-        decltype(_timeData)().swap(_timeData);
-        decltype(_idData)().swap(_idData);
-        decltype(_samplingPropertyData)().swap(_samplingPropertyData);
-        decltype(_cells)().swap(_cells);
+        return trajectoryLines;
     }
 
 private:
@@ -430,7 +418,7 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(cons
             throw Exception(tr("Trajectory range contains zero frames. Cannot generate trajectory lines over this time interval."));
 
         // Loop over all input animation frames and gather particle position data.
-        Future<std::shared_ptr<TrajectoryGenerator>> future = for_each_sequential(
+        Future<TrajectoryGenerator> future = for_each_sequential(
             boost::irange(startFrame, endFrame, everyNthFrame()),
             DeferredObjectExecutor(modNode), // Request deferred execution
             [request = request](int frame) mutable -> SharedFuture<PipelineFlowState> {
@@ -440,20 +428,20 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(cons
                 return request.modificationNode()->evaluateInput(request).asFuture();
             },
             [](int frame, const PipelineFlowState& state, auto& generator) {
-                generator->addFrame(frame, state);
+                generator.addFrame(frame, state);
             },
-            std::make_shared<TrajectoryGenerator>(
+            TrajectoryGenerator{
                 transferParticleProperties(),
                 onlySelectedParticles(),
                 unwrapTrajectories(),
                 particleProperty(),
                 trajectoryVis(),
                 modNode
-            ));
+            });
 
         // After each frame of the input trajectory has been processed, build the final lines.
-        samplingOperation = std::move(future).then([](std::shared_ptr<TrajectoryGenerator>&& generator) {
-            return launchTask(std::move(generator));
+        samplingOperation = std::move(future).then(ThreadPoolExecutor(), [](TrajectoryGenerator&& generator) {
+            return generator.buildLines();
         });
 
         // Let the modification node indicate its activity in the UI.

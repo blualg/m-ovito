@@ -49,9 +49,8 @@ public:
         NoState        = 0,
         Finished       = (1<<0),
         Canceled       = (1<<1),
-        IsAsynchronous = (1<<2), // The task is derived from AsynchronousTaskBase and runs in a worker thread.
-        HighPriority   = (1<<3), // The task should be executed with higher priority, because it is responsible for real-time GUI updates.
-        IsInteractive  = (1<<4), // The task is doing actions initiated by the user in the GUI - in contrast to automated actions performed by a script.
+        HighPriority   = (1<<2), // The task should be executed with higher priority, because it is responsible for real-time GUI updates.
+        IsInteractive  = (1<<3), // The task is doing actions initiated by the user in the GUI - in contrast to automated actions performed by a script.
     };
 
     /// Constructor.
@@ -76,9 +75,6 @@ public:
 
     /// Returns true if the promise is in the 'finished' state.
     bool isFinished() const noexcept { OVITO_ASSERT(this); return (_state.load(std::memory_order_acquire) & Finished); }
-
-    /// Indicates whether this task's class is derived from the AsynchronousTaskBase class.
-    bool isAsynchronousTask() const noexcept { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & IsAsynchronous); }
 
     /// Indicates whether this task runs with elevated priority, because it is responsible for real-time GUI updates.
     bool isHighPriorityTask() const noexcept { OVITO_ASSERT(this); return (_state.load(std::memory_order_relaxed) & HighPriority); }
@@ -221,7 +217,7 @@ public:
     /// \return false if the waiting task got canceled (which may happen due to the awaited task getting canceled).
     [[nodiscard]] static bool waitFor(detail::TaskDependency awaitedTask, bool throwOnError, bool returnEarlyIfCanceled, bool cancelWaitingIfAwaitedCanceled);
 
-    /// Runs the given continuation function once this task has reached either the 'finished' state.
+    /// Runs the given continuation function once this task has reached the 'finished' state.
     /// Note that the continuation function will always be executed, even if the task was canceled or set to an error state.
     /// The callable can accept one parameter: a reference to the Task object.
     template<typename Executor, typename Function>
@@ -355,7 +351,6 @@ protected:
     friend class FutureBase;
     friend class PromiseBase;
     friend class MainThreadOperation;
-    friend class AsynchronousTaskBase;
     friend class detail::TaskDependency;
     friend class detail::TaskCallbackBase;
     friend class detail::TaskAwaiter;
