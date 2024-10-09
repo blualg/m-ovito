@@ -141,7 +141,7 @@ void GSDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
 ******************************************************************************/
 void GSDImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading GSD file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading GSD file %1").arg(fileHandle().toString()));
 
     // Open GSD file for reading.
     QString filename = QDir::toNativeSeparators(fileHandle().localFilePath());
@@ -199,7 +199,7 @@ void GSDImporter::FrameLoader::loadFile()
             gsd.readFloatArray("particles/position", frameNumber, posProperty.begin(), numParticles, posProperty.componentCount());
         else
             posProperty.take()->fill<Point3>(Point3::Origin());
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
     }
 
     {
@@ -213,14 +213,14 @@ void GSDImporter::FrameLoader::loadFile()
             gsd.readIntArray("particles/typeid", frameNumber, BufferWriteAccess<int32_t, access_mode::discard_write>(typeProperty).begin(), numParticles);
         else
             typeProperty->fill<int32_t>(0);
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
     }
 
     // Parse particle shape information.
     QByteArrayList particleTypeShapes = gsd.readStringTable("particles/type_shapes", frameNumber);
     if(particleTypeShapes.size() == particleTypeNames.size()) {
         for(int i = 0; i < particleTypeShapes.size(); i++) {
-            if(isCanceled()) return;
+            this_task::throwIfCanceled();
             parseParticleShape(i, particleTypeShapes[i]);
         }
     }
@@ -264,12 +264,12 @@ void GSDImporter::FrameLoader::loadFile()
     const Vector3 defaultMomentInertia(0,0,0);
     readOptionalProperty(gsd, "particles/moment_inertia", frameNumber, Particles::UserProperty, particles(), &defaultMomentInertia, sizeof(defaultMomentInertia));
 
-    if(isCanceled()) return;
+    this_task::throwIfCanceled();
 
     // Read any user-defined particle properties.
     const char* chunkName = gsd.findMatchingChunkName("log/particles/", nullptr);
     while(chunkName) {
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
         readOptionalProperty(gsd, chunkName, frameNumber, Particles::UserProperty, particles(), nullptr, 0);
         chunkName = gsd.findMatchingChunkName("log/particles/", chunkName);
     }
@@ -289,7 +289,7 @@ void GSDImporter::FrameLoader::loadFile()
         // Read bonds list.
         std::vector<uint32_t> bondList(numBonds * 2);
         gsd.readIntArray("bonds/group", frameNumber, bondList.data(), numBonds, 2);
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Convert to OVITO format.
         BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyProperty = bonds()->createProperty(Bonds::TopologyProperty);
@@ -304,7 +304,7 @@ void GSDImporter::FrameLoader::loadFile()
         }
         bondTopologyProperty.reset();
         generateBondPeriodicImageProperty();
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Read types.
         if(gsd.hasChunk("bonds/types", frameNumber)) {
@@ -326,13 +326,13 @@ void GSDImporter::FrameLoader::loadFile()
             else {
                 bondTypeProperty->fill<int32_t>(0);
             }
-            if(isCanceled()) return;
+            this_task::throwIfCanceled();
         }
 
         // Read any user-defined properties.
         const char* chunkName = gsd.findMatchingChunkName("log/bonds/", nullptr);
         while(chunkName) {
-            if(isCanceled()) return;
+            this_task::throwIfCanceled();
             readOptionalProperty(gsd, chunkName, frameNumber, Bonds::UserProperty, bonds(), nullptr, 0);
             chunkName = gsd.findMatchingChunkName("log/bonds/", chunkName);
         }
@@ -345,7 +345,7 @@ void GSDImporter::FrameLoader::loadFile()
         // Read angles list.
         std::vector<uint32_t> groupList(numAngles * 3);
         gsd.readIntArray("angles/group", frameNumber, groupList.data(), numAngles, 3);
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Convert to OVITO format.
         BufferWriteAccess<ParticleIndexTriplet, access_mode::discard_write> topologyProperty = angles()->createProperty(Angles::TopologyProperty);
@@ -358,7 +358,7 @@ void GSDImporter::FrameLoader::loadFile()
             }
         }
         topologyProperty.reset();
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Read types.
         if(gsd.hasChunk("angles/types", frameNumber)) {
@@ -380,13 +380,13 @@ void GSDImporter::FrameLoader::loadFile()
             else {
                 typeProperty->fill<int32_t>(0);
             }
-            if(isCanceled()) return;
+            this_task::throwIfCanceled();
         }
 
         // Read any user-defined properties.
         const char* chunkName = gsd.findMatchingChunkName("log/angles/", nullptr);
         while(chunkName) {
-            if(isCanceled()) return;
+            this_task::throwIfCanceled();
             readOptionalProperty(gsd, chunkName, frameNumber, Angles::UserProperty, angles(), nullptr, 0);
             chunkName = gsd.findMatchingChunkName("log/angles/", chunkName);
         }
@@ -399,7 +399,7 @@ void GSDImporter::FrameLoader::loadFile()
         // Read dihedrals list.
         std::vector<uint32_t> groupList(numDihedrals * 4);
         gsd.readIntArray("dihedrals/group", frameNumber, groupList.data(), numDihedrals, 4);
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Convert to OVITO format.
         BufferWriteAccess<ParticleIndexQuadruplet, access_mode::discard_write> topologyProperty = dihedrals()->createProperty(Dihedrals::TopologyProperty);
@@ -412,7 +412,7 @@ void GSDImporter::FrameLoader::loadFile()
             }
         }
         topologyProperty.reset();
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Read types.
         if(gsd.hasChunk("dihedrals/types", frameNumber)) {
@@ -434,13 +434,13 @@ void GSDImporter::FrameLoader::loadFile()
             else {
                 typeProperty->fill<int32_t>(0);
             }
-            if(isCanceled()) return;
+            this_task::throwIfCanceled();
         }
 
         // Read any user-defined properties.
         const char* chunkName = gsd.findMatchingChunkName("log/dihedrals/", nullptr);
         while(chunkName) {
-            if(isCanceled()) return;
+            this_task::throwIfCanceled();
             readOptionalProperty(gsd, chunkName, frameNumber, Dihedrals::UserProperty, dihedrals(), nullptr, 0);
             chunkName = gsd.findMatchingChunkName("log/dihedrals/", chunkName);
         }
@@ -453,7 +453,7 @@ void GSDImporter::FrameLoader::loadFile()
         // Read impropers list.
         std::vector<uint32_t> groupList(numImpropers * 4);
         gsd.readIntArray("impropers/group", frameNumber, groupList.data(), numImpropers, 4);
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Convert to OVITO format.
         BufferWriteAccess<ParticleIndexQuadruplet, access_mode::discard_write> topologyProperty = impropers()->createProperty(Impropers::TopologyProperty);
@@ -466,7 +466,7 @@ void GSDImporter::FrameLoader::loadFile()
             }
         }
         topologyProperty.reset();
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Read types.
         if(gsd.hasChunk("impropers/types", frameNumber)) {
@@ -488,13 +488,13 @@ void GSDImporter::FrameLoader::loadFile()
             else {
                 typeProperty->fill<int32_t>(0);
             }
-            if(isCanceled()) return;
+            this_task::throwIfCanceled();
         }
 
         // Read any user-defined properties.
         const char* chunkName = gsd.findMatchingChunkName("log/impropers/", nullptr);
         while(chunkName) {
-            if(isCanceled()) return;
+            this_task::throwIfCanceled();
             readOptionalProperty(gsd, chunkName, frameNumber, Impropers::UserProperty, impropers(), nullptr, 0);
             chunkName = gsd.findMatchingChunkName("log/impropers/", chunkName);
         }

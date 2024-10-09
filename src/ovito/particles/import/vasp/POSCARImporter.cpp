@@ -178,7 +178,7 @@ void POSCARImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
 ******************************************************************************/
 void POSCARImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading VASP file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading VASP file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -434,7 +434,7 @@ Property* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& s
     BufferWriteAccess<FloatType*, access_mode::discard_read_write> fieldAccess(fieldProperty);
     const char* s = stream.readLine();
     auto* data = fieldAccess.begin();
-    setProgressMaximum(fieldProperty->size());
+    this_task::setProgressMaximum(fieldProperty->size());
     FloatType cellVolume = std::abs(simulationCell()->cellMatrix().determinant());
     for(size_t i = 0; i < fieldProperty->size(); i++, ++data) {
         const char* token;
@@ -452,7 +452,7 @@ Property* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& s
             s++;
 
         // Update progress bar and check for user cancellation.
-        setProgressValueIntermittent(i);
+        this_task::setProgressValueIntermittent(i);
     }
     return fieldProperty;
 }

@@ -171,11 +171,11 @@ void DLPOLYImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
 ******************************************************************************/
 void DLPOLYImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading DL_POLY file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading DL_POLY file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle());
-    setProgressMaximum(stream.underlyingSize());
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     // Read first comment line (record 1).
     stream.readLine(1024);
@@ -241,9 +241,9 @@ void DLPOLYImporter::FrameLoader::loadFile()
     // Parse atoms.
     do {
         // Report progress.
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
         if((positions.size() % 1024) == 0)
-            setProgressValueIntermittent(stream.underlyingByteOffset());
+            this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
 
         // Parse first line of atom record.
         if(!positions.empty()) stream.readLine();

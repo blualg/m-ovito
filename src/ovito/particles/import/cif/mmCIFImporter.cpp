@@ -92,7 +92,7 @@ bool mmCIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 ******************************************************************************/
 void mmCIFImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading mmCIF file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading mmCIF file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -116,12 +116,12 @@ void mmCIFImporter::FrameLoader::loadFile()
         // Unmap the input file from memory.
         if(fileContents.isEmpty())
             stream.munmap();
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Parse the mmCIF data into an molecular structure representation.
         gemmi::Structure structure = gemmi::make_structure(doc);
         structure.merge_chain_parts();
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Import metadata fields as global attributes.
         for(const auto& m : structure.info)
@@ -160,7 +160,7 @@ void mmCIFImporter::FrameLoader::loadFile()
         bool hasOccupancy = false;
         for(const gemmi::Chain& chain : model.chains) {
             for(const gemmi::Residue& residue : chain.residues) {
-                if(isCanceled()) return;
+                this_task::throwIfCanceled();
                 int residueTypeId = (residue.name.empty() == false) ? addNamedType(Particles::OOClass(), residueTypeProperty, QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
                 for(const gemmi::Atom& atom : residue.atoms) {
                     // Atomic position.
@@ -181,8 +181,7 @@ void mmCIFImporter::FrameLoader::loadFile()
                 }
             }
         }
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
         typeAccess.reset();
         atomNameAccess.reset();
         residueTypeAccess.reset();

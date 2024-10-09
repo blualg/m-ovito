@@ -142,7 +142,7 @@ void LAMMPSTextDumpImporter::discoverFramesInFile(const FileHandle& fileHandle, 
 ******************************************************************************/
 void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading LAMMPS dump file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading LAMMPS dump file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -179,7 +179,7 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
 
                 numParticles = (size_t)u;
                 setParticleCount(numParticles);
-                setProgressMaximum(u);
+                this_task::setProgressMaximum(u);
                 break;
             }
             else if(stream.lineStartsWith("ITEM: BOX BOUNDS xy xz yz")) {
@@ -288,7 +288,7 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
                 try {
                     for(size_t i = 0; i < numParticles; i++, lineNumber++) {
                         // Update progress bar and check for user cancellation.
-                        setProgressValueIntermittent(i);
+                        this_task::setProgressValueIntermittent(i);
                         if(!s)
                             columnParser.readElement(i, stream.readLine());
                         else
@@ -327,7 +327,7 @@ void LAMMPSTextDumpImporter::FrameLoader::loadFile()
             else if(stream.lineStartsWith("ITEM:")) {
                 // For the sake of forward compatibility, we ignore unknown ITEM sections.
                 // Skip lines until the next "ITEM:" is reached.
-                while(!stream.eof() && !isCanceled()) {
+                while(!stream.eof() && !this_task::isCanceled()) {
                     stream.readLine();
                     if(stream.lineStartsWith("ITEM:"))
                         break;

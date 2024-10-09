@@ -175,7 +175,7 @@ void GroImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
 ******************************************************************************/
 void GroImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading Gromacs file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading Gromacs file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -197,7 +197,7 @@ void GroImporter::FrameLoader::loadFile()
     }
     if(numParticles > (unsigned long long)std::numeric_limits<int>::max())
         throw Exception(tr("Too many atoms in Gromacs file. This program version can read files with up to %1 atoms only.").arg(std::numeric_limits<int>::max()));
-    setProgressMaximum(numParticles);
+    this_task::setProgressMaximum(numParticles);
     setParticleCount(numParticles);
 
     // Create particle properties.
@@ -223,7 +223,7 @@ void GroImporter::FrameLoader::loadFile()
     int residueBaseNumber = 0;
     for(size_t i = 0; i < numParticles; i++) {
         // Update progress bar and check for user cancellation.
-        setProgressValueIntermittent(i);
+        this_task::setProgressValueIntermittent(i);
         const char* token = stream.readLine();
 
         // Parse residue number (5 characters).

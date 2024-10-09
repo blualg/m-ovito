@@ -66,7 +66,7 @@ bool ParaViewVTIGridImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 ******************************************************************************/
 void ParaViewVTIGridImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading ParaView VTI ImageData file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading ParaView VTI ImageData file %1").arg(fileHandle().toString()));
 
     // Create the destination voxel grid.
     QString gridIdentifier = loadRequest().dataBlockPrefix;
@@ -95,8 +95,7 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
 
         if(xml.name().compare(QStringLiteral("VTKFile")) == 0) {
             if(xml.attributes().value("type").compare(QStringLiteral("ImageData")) != 0)
@@ -180,7 +179,7 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
         }
         else if(xml.name().compare(QStringLiteral("CellData")) == 0) {
             // Parse <DataArray> child elements.
-            while(xml.readNextStartElement() && !isCanceled()) {
+            while(xml.readNextStartElement() && !this_task::isCanceled()) {
                 if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
                     int vectorComponent = -1;
                     if(Property* property = createGridPropertyForDataArray(gridObj, xml)) {

@@ -171,7 +171,7 @@ void PDBImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
 ******************************************************************************/
 void PDBImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading PDB file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading PDB file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -179,7 +179,7 @@ void PDBImporter::FrameLoader::loadFile()
     try {
         // Parse the PDB file's contents.
         gemmi::Structure structure = gemmi::pdb_impl::read_pdb_from_stream(stream, qPrintable(frame().sourceFile.path()), gemmi::PdbReadOptions());
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Import PDB metadata fields as global attributes.
         for(const auto& m : structure.info) {
@@ -219,7 +219,7 @@ void PDBImporter::FrameLoader::loadFile()
         }
 
         structure.merge_chain_parts();
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         if(structure.models.empty())
             throw Exception(tr("PDB parsing error: No structural models."));
@@ -256,7 +256,7 @@ void PDBImporter::FrameLoader::loadFile()
         bool hasOccupancy = false;
         for(const gemmi::Chain& chain : model.chains) {
             for(const gemmi::Residue& residue : chain.residues) {
-                if(isCanceled()) return;
+                this_task::throwIfCanceled();
                 int residueTypeId = (residue.name.empty() == false) ? addNamedType(Particles::OOClass(), residueTypeProperty, QLatin1String(residue.name.c_str(), residue.name.size()))->numericId() : 0;
                 for(const gemmi::Atom& atom : residue.atoms) {
                     // Atomic position.
@@ -277,8 +277,7 @@ void PDBImporter::FrameLoader::loadFile()
                 }
             }
         }
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
         typeAccess.reset();
         atomNameAccess.reset();
         residueTypeAccess.reset();

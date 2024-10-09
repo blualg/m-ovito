@@ -96,7 +96,7 @@ bool ParaViewVTPParticleWallContactsImporter::OOMetaClass::checkFileFormat(const
 ******************************************************************************/
 void ParaViewVTPParticleWallContactsImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading ParaView VTP particle-wall contact network file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading ParaView VTP particle-wall contact network file %1").arg(fileHandle().toString()));
 
     // Initialize XML reader and open input file.
     std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
@@ -134,8 +134,7 @@ void ParaViewVTPParticleWallContactsImporter::FrameLoader::loadFile()
 
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
 
         if(xml.name().compare(QLatin1String("VTKFile")) == 0) {
             if(xml.attributes().value("type").compare(QLatin1String("PolyData")) != 0)
@@ -170,13 +169,13 @@ void ParaViewVTPParticleWallContactsImporter::FrameLoader::loadFile()
         }
         else if(xml.name().compare(QLatin1String("CellData")) == 0) {
             // Parse child elements.
-            while(xml.readNextStartElement() && !isCanceled()) {
+            while(xml.readNextStartElement() && !this_task::isCanceled()) {
                 if(xml.name().compare(QLatin1String("DataArray")) == 0) {
                     int vectorComponent = -1;
                     if(Property* property = createLinesPropertyForDataArray(xml, vectorComponent, lines, propertyAccessMode)) {
                         if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml, vectorComponent, baseLineIndex, 2))
                             break;
-                        if(xml.hasError() || isCanceled())
+                        if(xml.hasError() || this_task::isCanceled())
                             break;
                     }
                     if(xml.tokenType() != QXmlStreamReader::EndElement)
@@ -196,7 +195,7 @@ void ParaViewVTPParticleWallContactsImporter::FrameLoader::loadFile()
             if(Property* property = createLinesPropertyForDataArray(xml, vectorComponent, lines, propertyAccessMode)) {
                 if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml, vectorComponent, baseLineIndex))
                     break;
-                if(xml.hasError() || isCanceled())
+                if(xml.hasError() || this_task::isCanceled())
                     break;
             }
             xml.skipCurrentElement();
@@ -215,8 +214,7 @@ void ParaViewVTPParticleWallContactsImporter::FrameLoader::loadFile()
         throw Exception(tr("VTP file parsing error on line %1, column %2: %3")
             .arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
     }
-    if(isCanceled())
-        return;
+    this_task::throwIfCanceled();
 
     // Create section property to mark connected pairs of points.
     Property* sectionProperty = lines->createProperty(propertyAccessMode, Lines::SectionProperty);
@@ -230,8 +228,7 @@ void ParaViewVTPParticleWallContactsImporter::FrameLoader::loadFile()
     // Compute magnitudes for some vector properties.
     for(const QString& propertyName : { QStringLiteral("Force"), QStringLiteral("Force Normal"), QStringLiteral("Force Tangential"), QStringLiteral("Velocity 1"), QStringLiteral("Velocity 2") }) {
         if(const Property* vectorProperty = lines->getProperty(propertyName)) {
-            if(isCanceled())
-                return;
+            this_task::throwIfCanceled();
             if(vectorProperty->dataType() == DataBuffer::FloatDefault && vectorProperty->componentCount() == 3) {
                 Property* magnitudeProperty = lines->createProperty(propertyAccessMode, vectorProperty->name() + QStringLiteral(" Magnitude"), Property::FloatDefault, 1);
                 BufferReadAccess<Vector3> vectorAccess{vectorProperty};

@@ -147,7 +147,7 @@ void XTCImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
 void XTCImporter::FrameLoader::loadFile()
 {
     // Open file for reading.
-    setProgressText(tr("Reading XTC file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading XTC file %1").arg(fileHandle().toString()));
 
     // Open XTC file for reading.
     XTCFile file;

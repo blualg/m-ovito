@@ -175,7 +175,7 @@ private:
 ******************************************************************************/
 void LAMMPSDumpYAMLImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading LAMMPS dump yaml file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading LAMMPS dump yaml file %1").arg(fileHandle().toString()));
 
     // Parse YAML structure.
     YAMLParser parser;
@@ -287,7 +287,7 @@ void LAMMPSDumpYAMLImporter::FrameLoader::loadFile()
         auto line_node = dataNode.begin();
         for(size_t i = 0; i < (size_t)natoms; i++) {
             // Update progress bar and check for user cancellation.
-            setProgressValueIntermittent(i);
+            this_task::setProgressValueIntermittent(i);
             if(line_node == dataNode.end())
                 throw Exception(tr("LAMMPS dump yaml file parsing error. Too few lines in 'data' section."));
             size_t col = 0;

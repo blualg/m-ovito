@@ -105,7 +105,7 @@ void CastepMDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVecto
 ******************************************************************************/
 void CastepMDImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading CASTEP file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading CASTEP file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -157,7 +157,7 @@ void CastepMDImporter::FrameLoader::loadFile()
             forces.push_back(f);
         }
 
-        if(isCanceled())
+        if(this_task::isCanceled())
             return;
     }
     simulationCell()->setCellMatrix(cell);

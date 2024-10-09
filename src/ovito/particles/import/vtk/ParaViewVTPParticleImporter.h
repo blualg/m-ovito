@@ -59,7 +59,7 @@ public:
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-        return std::make_shared<FrameLoader>(request, std::move(_particleShapeFiles), isBodiesFile());
+        return std::make_unique<FrameLoader>(request, std::move(_particleShapeFiles), isBodiesFile());
     }
 
     /// Stores the list of particle type names and corresponding shape file URLs to be loaded.

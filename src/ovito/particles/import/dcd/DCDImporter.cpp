@@ -306,7 +306,7 @@ void DCDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
 void DCDImporter::FrameLoader::loadFile()
 {
     // Open file for reading.
-    setProgressText(tr("Reading DCD file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading DCD file %1").arg(fileHandle().toString()));
 
     std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
     if(!device->open(QIODevice::ReadOnly))

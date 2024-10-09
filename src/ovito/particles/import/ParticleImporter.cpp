@@ -315,7 +315,7 @@ void ParticleImporter::FrameLoader::generateBonds()
     if(maxCutoff == 0.0)
         return;
     FloatType minCutoffSquared = 1e-10 * maxCutoff * maxCutoff;
-    setProgressText(tr("Generating bonds"));
+    this_task::setProgressText(tr("Generating bonds"));
 
     // Prepare the neighbor list.
     CutoffNeighborFinder neighborFinder;
@@ -372,7 +372,7 @@ void ParticleImporter::FrameLoader::generateBonds()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::computeVelocityMagnitude()
 {
-    if(!_particles || isCanceled())
+    if(!_particles || this_task::isCanceled())
         return;
 
     if(BufferReadAccess<Vector3> velocityVectors = _particles->getProperty(Particles::VelocityProperty)) {
@@ -391,7 +391,7 @@ void ParticleImporter::FrameLoader::computeVelocityMagnitude()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::correctOffcenterCell()
 {
-    if(isCanceled())
+    if(this_task::isCanceled())
         return;
 
     // Check if a simulation cell has been defined. It must be periodic in all directions.
@@ -440,7 +440,7 @@ void ParticleImporter::FrameLoader::correctOffcenterCell()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::recenterSimulationCell()
 {
-    if(isCanceled())
+    if(this_task::isCanceled())
         return;
 
     SimulationCell* simulationCell = state().getMutableObject<SimulationCell>();
@@ -466,7 +466,7 @@ void ParticleImporter::FrameLoader::recenterSimulationCell()
 ******************************************************************************/
 void ParticleImporter::FrameLoader::loadFile()
 {
-    if(isCanceled())
+    if(this_task::isCanceled())
         return;
 
     StandardFrameLoader::loadFile();

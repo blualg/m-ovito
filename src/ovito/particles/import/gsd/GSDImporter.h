@@ -68,7 +68,7 @@ public:
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-        return std::make_shared<FrameLoader>(request, this, std::max(roundingResolution(), 1));
+        return std::make_unique<FrameLoader>(request, this, std::max(roundingResolution(), 1));
     }
 
     /// Stores the particle shape geometry generated from a JSON string in the internal cache.

@@ -85,7 +85,7 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
 {
     // Open file for reading.
     CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Reading Quantum Espresso file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading Quantum Espresso file %1").arg(fileHandle().toString()));
 
     // For converting Bohr radii to Angstrom units:
     constexpr FloatType bohr2angstrom = 0.529177;
@@ -101,7 +101,7 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
     bool convertToAbsoluteCoordinates = false;
     BufferWriteAccess<Point3, access_mode::discard_read_write> posAccess;
 
-    while(!stream.eof() && !isCanceled()) {
+    while(!stream.eof() && !this_task::isCanceled()) {
         const char* line = stream.readLineTrimLeft();
 
         // Skip comment lines, which start with a '!' or a '#'.
@@ -111,7 +111,7 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
 
         // Read parameter blocks, which start with a '&'.
         if(line[0] == '&' && isalpha_ascii(line[1])) {
-            while(!stream.eof() && !isCanceled()) {
+            while(!stream.eof() && !this_task::isCanceled()) {
                 line = stream.readLineTrimLeft();
                 if(line[0] == '/') {
                     break;
@@ -274,8 +274,7 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
             hasCellVectors = true;
         }
     }
-    if(isCanceled())
-        return;
+    this_task::throwIfCanceled();
 
     // Make sure some atoms have been defined in the file.
     if(natoms <= 0 || ntypes <= 0)

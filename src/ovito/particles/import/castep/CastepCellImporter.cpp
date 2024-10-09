@@ -58,7 +58,7 @@ void CastepCellImporter::FrameLoader::loadFile()
 {
     // Open file for reading.
     CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Reading CASTEP file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading CASTEP file %1").arg(fileHandle().toString()));
 
     // Helper function that reads and returns the next line from the .cell file
     // that is not a comment line:
@@ -72,7 +72,7 @@ void CastepCellImporter::FrameLoader::loadFile()
         return "";
     };
 
-    while(!isCanceled()) {
+    while(!this_task::isCanceled()) {
 
         // Parse line by line.
         const char* line = readNonCommentLine();
@@ -141,7 +141,7 @@ void CastepCellImporter::FrameLoader::loadFile()
             line = readNonCommentLine();
             std::vector<Point3> coords;
             std::vector<QString> types;
-            while(!boost::algorithm::istarts_with(line, "%ENDBLOCK") && !isCanceled() && !stream.eof()) {
+            while(!boost::algorithm::istarts_with(line, "%ENDBLOCK") && !this_task::isCanceled() && !stream.eof()) {
                 Point3 pos;
                 int atomicNumber;
                 if(sscanf(line, "%u " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &atomicNumber, &pos.x(), &pos.y(), &pos.z()) == 4) {
@@ -184,7 +184,7 @@ void CastepCellImporter::FrameLoader::loadFile()
         else if(boost::algorithm::istarts_with(line, "%BLOCK IONIC_VELOCITIES")) {
             line = readNonCommentLine();
             std::vector<Vector3> velocities;
-            while(!boost::algorithm::istarts_with(line, "%ENDBLOCK") && !isCanceled() && !stream.eof()) {
+            while(!boost::algorithm::istarts_with(line, "%ENDBLOCK") && !this_task::isCanceled() && !stream.eof()) {
                 Vector3 v;
                 if(sscanf(line, FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &v.x(), &v.y(), &v.z()) == 3)
                     velocities.push_back(v);

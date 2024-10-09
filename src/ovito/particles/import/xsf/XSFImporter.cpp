@@ -105,7 +105,7 @@ void XSFImporter::FrameLoader::loadFile()
 {
     // Open file for reading.
     CompressedTextReader stream(fileHandle());
-    setProgressText(tr("Reading XSF file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading XSF file %1").arg(fileHandle().toString()));
 
     // The animation frame number to load from the XSF file.
     int frameNumber = frame().lineNumber + 1;
@@ -114,7 +114,7 @@ void XSFImporter::FrameLoader::loadFile()
     VoxelGridVis* newVoxelGridVis = nullptr;
 
     while(!stream.eof()) {
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
         const char* line = stream.readLineTrimLeft(1024);
         if(boost::algorithm::starts_with(line, "ATOMS")) {
 
@@ -144,7 +144,7 @@ void XSFImporter::FrameLoader::loadFile()
                     forces.resize(coords.size(), Vector3::Zero());
                     forces.back() = f;
                 }
-                if(isCanceled()) return;
+                this_task::throwIfCanceled();
             }
             if(coords.empty())
                 throw Exception(tr("Invalid ATOMS section in line %1 of XSF file.").arg(stream.lineNumber()));
@@ -250,7 +250,7 @@ void XSFImporter::FrameLoader::loadFile()
 
             // Parse atoms data.
             InputColumnReader columnParser(*this, columnMapping, particles());
-            setProgressMaximum(natoms);
+            this_task::setProgressMaximum(natoms);
             for(size_t i = 0; i < natoms; i++) {
                 try {
                     columnParser.readElement(i, stream.readLine());
@@ -259,7 +259,7 @@ void XSFImporter::FrameLoader::loadFile()
                     throw ex.prependGeneralMessage(tr("Parsing error in line %1 of XSF file.").arg(atomsLineNumber + i));
                 }
                 // Update progress bar and check for user cancellation.
-                setProgressValueIntermittent(i);
+                this_task::setProgressValueIntermittent(i);
             }
             columnParser.sortElementTypes();
             columnParser.reset();
@@ -332,7 +332,7 @@ void XSFImporter::FrameLoader::loadFile()
 
             BufferWriteAccess<FloatType, access_mode::discard_read_write> fieldQuantity = voxelGrid->createProperty(name, DataBuffer::FloatDefault);
             FloatType* data = fieldQuantity.begin();
-            setProgressMaximum(fieldQuantity.size());
+            this_task::setProgressMaximum(fieldQuantity.size());
             const char* s = "";
             for(size_t i = 0; i < fieldQuantity.size(); i++, ++data) {
                 const char* token;
@@ -349,7 +349,7 @@ void XSFImporter::FrameLoader::loadFile()
                     s++;
 
                 // Update progress bar and check for user cancellation.
-                setProgressValueIntermittent(i);
+                this_task::setProgressValueIntermittent(i);
             }
 
             // Automatically select the property for pseudo-coloring of the grid and adjust the value range.

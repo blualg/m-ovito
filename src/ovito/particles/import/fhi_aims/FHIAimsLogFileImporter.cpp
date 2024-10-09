@@ -89,7 +89,7 @@ void FHIAimsLogFileImporter::discoverFramesInFile(const FileHandle& fileHandle, 
 ******************************************************************************/
 void FHIAimsLogFileImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading FHI-aims log file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading FHI-aims log file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);

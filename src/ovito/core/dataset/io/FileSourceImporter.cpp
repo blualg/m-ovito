@@ -425,19 +425,35 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 ******************************************************************************/
 Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationRequest& request)
 {
-    OVITO_ASSERT_MSG(!QCoreApplication::instance() || QThread::currentThread() == QCoreApplication::instance()->thread(), "FileSourceImporter::loadFrame", "This function may only be called from the main thread.");
-    OVITO_ASSERT(this_task::get());
-    OVITO_ASSERT(request.importer == this);
-
-    // Note: FileSourceImporter::loadFrame() may not be called while undo recording is active.
-    OVITO_ASSERT(!isUndoRecording());
+    OVITO_ASSERT_MSG(this_task::isMainThread(), "FileSourceImporter::loadFrame", "This function may only be called from the main thread.");
 
     // Create the frame loader for the requested frame.
     FrameLoaderPtr frameLoader = createFrameLoader(request);
-    OVITO_ASSERT(frameLoader);
+    if(!frameLoader)
+        throw Exception(tr("Failed to create frame loader for file format '%1'.").arg(objectTitle()));
 
-    // Execute the loader in a background thread.
-    return launchTask(std::move(frameLoader));
+    // Execute the loader in a worker thread.
+    return asyncLaunch([frameLoader=std::move(frameLoader), self=OORef<FileSourceImporter>(this)]() {
+
+        // Let the subclass implementation parse the file.
+        frameLoader->loadFile();
+
+        // Stop the task if it has been canceled.
+        this_task::throwIfCanceled();
+
+        // If the parser has detected additional frames following the first frame in the
+        // input file, automatically turn on scanning of the input file.
+        // Only do this if the file is being newly imported by the user.
+        if(frameLoader->additionalFramesDetected() && frameLoader->loadRequest().isNewlyImportedFile && !self->isMultiTimestepFile()) {
+            // Note: Changing a parameter of the file importer must be done in the main thread.
+            launchDetached(ObjectExecutor(self), [self]() {
+                self->setMultiTimestepFile(true);
+            });
+        }
+
+        // Pass the constructed pipeline state back to the caller.
+        return std::move(frameLoader->state());
+    });
 }
 
 /******************************************************************************
@@ -594,35 +610,6 @@ LoadStream& operator>>(LoadStream& stream, FileSourceImporter::Frame& frame)
 
     stream.closeChunk();
     return stream;
-}
-
-/******************************************************************************
-* Calls loadFile() and sets the returned frame data as result of the
-* asynchronous task.
-******************************************************************************/
-void FileSourceImporter::FrameLoader::perform()
-{
-    OVITO_ASSERT(importer());
-
-    // Let the subclass implementation parse the file.
-    loadFile();
-
-    // Stop the task if it has been canceled.
-    if(isCanceled())
-        return;
-
-    // Pass the constructed pipeline state back to the caller.
-    setResult(std::move(_loadRequest.state));
-
-    // If the parser has detected additional frames following the first frame in the
-    // input file, automatically turn on scanning of the input file.
-    // Only do this if the file is being newly imported by the user.
-    if(_additionalFramesDetected && loadRequest().isNewlyImportedFile && !importer()->isMultiTimestepFile()) {
-        // Note: Changing a parameter of the file importer must be done in the main thread.
-        launchDetached(ObjectExecutor(importer()), [importer=importer()]() {
-            importer->setMultiTimestepFile(true);
-        });
-    }
 }
 
 }   // End of namespace

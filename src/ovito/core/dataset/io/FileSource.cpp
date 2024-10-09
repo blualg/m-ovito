@@ -421,14 +421,13 @@ SharedFuture<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvalu
             if(frame >= frames().size())
                 throw Exception(tr("Requested source frame index is out of range."));
 
-            // Compute the validity interval of the returned pipeline state.
+            // Compute the validity interval of the returned pipeline s tate.
             TimeInterval interval = frameTimeInterval(frame);
             const FileSourceImporter::Frame& frameInfo = frames()[frame];
 
             // Set up the load request to be submitted to the FileSourceImporter.
             FileSourceImporter::LoadOperationRequest loadRequest;
             loadRequest.pipelineNode = this;
-            loadRequest.importer = importer();
             loadRequest.fileHandle = fileHandle;
             loadRequest.frame = frameInfo;
             loadRequest.isNewlyImportedFile = (dataCollection() == nullptr);
@@ -444,7 +443,7 @@ SharedFuture<PipelineFlowState> FileSource::evaluateInternal(const PipelineEvalu
             loadRequest.state.setStateValidity(interval);
 
             // Load the frame data and return results to the caller.
-            return importer()->loadFrame(loadRequest);
+            return importer()->loadFrame(std::move(loadRequest));
         });
     });
 

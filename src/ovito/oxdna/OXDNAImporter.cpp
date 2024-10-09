@@ -149,8 +149,8 @@ void OXDNAImporter::FrameLoader::loadFile()
 
     // Open oxDNA topology file for reading.
     CompressedTextReader topoStream(localTopologyFileFuture.result());
-    beginProgressSubSteps(2);
-    setProgressText(tr("Reading oxDNA topology file %1").arg(localTopologyFileFuture.result().toString()));
+    this_task::beginProgressSubSteps(2);
+    this_task::setProgressText(tr("Reading oxDNA topology file %1").arg(localTopologyFileFuture.result().toString()));
 
     // Parse number of nucleotides and number of strands.
     unsigned long long numNucleotidesLong;
@@ -183,11 +183,11 @@ void OXDNAImporter::FrameLoader::loadFile()
     bonds.reserve(numNucleotidesLong);
 
     // Parse the nucleotides list in the topology file.
-    setProgressMaximum(numNucleotidesLong);
+    this_task::setProgressMaximum(numNucleotidesLong);
     auto* baseTypeIter = baseAccess.begin();
     auto* strandId = strandsAccess.begin();
     for(size_t i = 0; i < numNucleotidesLong; i++, ++strandId) {
-        setProgressValueIntermittent(i);
+        this_task::setProgressValueIntermittent(i);
 
         char baseName[32];
         qlonglong neighbor1, neighbor2;
@@ -216,8 +216,8 @@ void OXDNAImporter::FrameLoader::loadFile()
     BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyAccess = this->bonds()->createProperty(Bonds::TopologyProperty);
     boost::copy(bonds, bondTopologyAccess.begin());
 
-    nextProgressSubStep();
-    setProgressText(tr("Reading oxDNA file %1").arg(fileHandle().toString()));
+    this_task::nextProgressSubStep();
+    this_task::setProgressText(tr("Reading oxDNA file %1").arg(fileHandle().toString()));
     // Open oxDNA configuration file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
@@ -264,7 +264,7 @@ void OXDNAImporter::FrameLoader::loadFile()
     // Parse data table.
     InputColumnReader columnParser(*this, columnMapping, particles(), false);
     for(size_t i = 0; i < numNucleotidesLong; i++) {
-        setProgressValueIntermittent(i);
+        this_task::setProgressValueIntermittent(i);
         try {
             columnParser.readElement(i, stream.readLine());
         }
@@ -291,7 +291,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 
     state().setStatus(tr("%1 nucleotides\n%2 strands").arg(numNucleotidesLong).arg(numStrands));
 
-    endProgressSubSteps();
+    this_task::endProgressSubSteps();
 
     // Call base implementation to finalize the loaded particle data.
     ParticleImporter::FrameLoader::loadFile();

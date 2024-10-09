@@ -129,7 +129,7 @@ bool ParcasFileImporter::OOMetaClass::checkFileFormat(const FileHandle& file) co
 ******************************************************************************/
 void ParcasFileImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading Parcas file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading Parcas file %1").arg(fileHandle().toString()));
 
     // Open input file for reading.
     std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
@@ -232,7 +232,7 @@ void ParcasFileImporter::FrameLoader::loadFile()
     if(!device->seek((qint64)atom_off))
         throw Exception(tr("PARCAS file parsing error: Seek error: %1").arg(device->errorString()));
 
-    setProgressMaximum(numAtoms);
+    this_task::setProgressMaximum(numAtoms);
 
     // Parse atoms.
     BufferWriteAccess<int32_t, access_mode::discard_write> typeAccess(typeProperty);
@@ -268,7 +268,7 @@ void ParcasFileImporter::FrameLoader::loadFile()
         }
 
         // Update progress bar and check for user cancellation.
-        setProgressValueIntermittent(i);
+        this_task::setProgressValueIntermittent(i);
     }
     posProperty.reset();
     typeAccess.reset();

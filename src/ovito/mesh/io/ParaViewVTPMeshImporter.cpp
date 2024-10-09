@@ -71,7 +71,7 @@ bool ParaViewVTPMeshImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 ******************************************************************************/
 void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading ParaView VTP PolyData file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading ParaView VTP PolyData file %1").arg(fileHandle().toString()));
 
     // Create the destination mesh object.
     QString meshIdentifier = loadRequest().dataBlockPrefix;
@@ -124,8 +124,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
 
         if(xml.name().compare(QStringLiteral("VTKFile")) == 0) {
             if(xml.attributes().value("type").compare(QStringLiteral("PolyData")) != 0)
@@ -217,7 +216,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
         }
         else if(xml.name().compare(QStringLiteral("CellData")) == 0) {
             // Parse <DataArray> child elements.
-            while(xml.readNextStartElement() && !isCanceled()) {
+            while(xml.readNextStartElement() && !this_task::isCanceled()) {
                 if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
                     if(PropertyPtr property = parseDataArray(xml))
                         cellDataArrays.push_back(std::move(property));
@@ -231,7 +230,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
         }
         else if(xml.name().compare(QStringLiteral("PointData")) == 0) {
             // Parse child elements.
-            while(xml.readNextStartElement() && !isCanceled()) {
+            while(xml.readNextStartElement() && !this_task::isCanceled()) {
                 if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
                     if(PropertyPtr property = parseDataArray(xml))
                         pointDataArrays.push_back(std::move(property));
@@ -257,8 +256,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
         throw Exception(tr("VTP file parsing error on line %1, column %2: %3")
             .arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
     }
-    if(isCanceled())
-        return;
+    this_task::throwIfCanceled();
 
     // Add cell data arrays to the mesh.
     if(numberOfPolys == numberOfCells) {

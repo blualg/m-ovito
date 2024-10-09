@@ -145,7 +145,7 @@ void ReaxFFBondImporter::discoverFramesInFile(const FileHandle& fileHandle, QVec
 ******************************************************************************/
 void ReaxFFBondImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading ReaxFF bond file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading ReaxFF bond file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -170,7 +170,7 @@ void ReaxFFBondImporter::FrameLoader::loadFile()
     std::vector<ReaxFFBond> reaxBonds;
 
     bool inCommentSection = true;
-    while(!stream.eof() && !isCanceled()) {
+    while(!stream.eof() && !this_task::isCanceled()) {
         const char* line = stream.readLineTrimLeft();
 
         if(line[0] == '#') {

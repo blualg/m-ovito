@@ -64,7 +64,7 @@ bool GALAMOSTImporter::OOMetaClass::checkFileFormat(const FileHandle& file) cons
 ******************************************************************************/
 void GALAMOSTImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading GALAMOST file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading GALAMOST file %1").arg(fileHandle().toString()));
 
     // Initialize XML reader and open input file.
     std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
@@ -121,8 +121,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
 
             // Parse the child elements.
             while(xml.readNextStartElement()) {
-                if(isCanceled())
-                    return;
+                this_task::throwIfCanceled();
 
                 if(xml.name().compare(QStringLiteral("box")) == 0) {
                     // Parse box dimensions.

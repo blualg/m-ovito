@@ -347,7 +347,7 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
 ******************************************************************************/
 void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading binary LAMMPS dump file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading binary LAMMPS dump file %1").arg(fileHandle().toString()));
 
     // Open input file for reading.
     std::unique_ptr<QIODevice> file = fileHandle().createIODevice();
@@ -367,7 +367,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
     if(header.simulationTime != std::numeric_limits<double>::lowest())
         state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(header.simulationTime), pipelineNode());
 
-    setProgressMaximum(header.natoms);
+    this_task::setProgressMaximum(header.natoms);
     setParticleCount(header.natoms);
 
     // LAMMPS only stores the outer bounding box dimensions of the simulation cell in the dump file.
@@ -427,7 +427,7 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
             for(int nChunkAtoms = n / header.size_one; nChunkAtoms--; ++i, iter += header.size_one) {
 
                 // Update progress bar and check for user cancellation.
-                setProgressValueIntermittent(i);
+                this_task::setProgressValueIntermittent(i);
 
                 try {
                     columnParser.readElement(i, iter, header.size_one);

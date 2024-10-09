@@ -80,7 +80,7 @@ bool LAMMPSDataImporter::OOMetaClass::checkFileFormat(const FileHandle& file) co
 void LAMMPSDataImporter::FrameLoader::loadFile()
 {
     using namespace std;
-    setProgressText(tr("Reading LAMMPS data file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading LAMMPS data file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -164,7 +164,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
         else if(line.find("atoms") != string::npos) {
             if(sscanf(line.c_str(), "%llu", &natoms) != 1)
                 throw Exception(tr("Invalid number of atoms (line %1): %2").arg(stream.lineNumber()).arg(line.c_str()));
-            setProgressMaximum(natoms);
+            this_task::setProgressMaximum(natoms);
         }
         else if(line.find("atom") != string::npos && line.find("types") != string::npos) {
             if(sscanf(line.c_str(), "%u", &natomtypes) != 1)
@@ -328,7 +328,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
                 try {
                     for(size_t i = 0; i < (size_t)natoms; i++) {
                         // Update progress bar and check for user cancellation.
-                        setProgressValueIntermittent(i);
+                        this_task::setProgressValueIntermittent(i);
                         if(i != 0) stream.readLine();
                         columnParser.readElement(i, stream.line());
                     }
@@ -381,7 +381,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             try {
                 for(size_t i = 0; i < (size_t)natoms; i++) {
                     // Update progress bar and check for user cancellation.
-                    setProgressValueIntermittent(i);
+                    this_task::setProgressValueIntermittent(i);
                     const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                     // Parse the atom ID at the beginning of the line to perform remapping to
@@ -509,13 +509,13 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             for(int i = 1; i <= nbondtypes; i++)
                 addNumericType(Bonds::OOClass(), typeProperty, i, {});
 
-            setProgressMaximum(nbonds);
+            this_task::setProgressMaximum(nbonds);
             BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);
             auto* bondType = typePropertyAccess.begin();
             ParticleIndexPair* bond = bondTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)nbonds; i++, ++bond, ++bondType) {
                 // Update progress bar and check for user cancellation.
-                setProgressValueIntermittent(i);
+                this_task::setProgressValueIntermittent(i);
                 const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong bondId;
@@ -585,13 +585,13 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             for(int i = 1; i <= nangletypes; i++)
                 addNumericType(Angles::OOClass(), typeProperty, i, {});
 
-            setProgressMaximum(nangles);
+            this_task::setProgressMaximum(nangles);
             BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);
             auto* angleType = typePropertyAccess.begin();
             ParticleIndexTriplet* angle = angleTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)nangles; i++, ++angle, ++angleType) {
                 // Update progress bar and check for user cancellation.
-                setProgressValueIntermittent(i);
+                this_task::setProgressValueIntermittent(i);
                 const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong angleId;
@@ -648,13 +648,13 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             for(int i = 1; i <= ndihedraltypes; i++)
                 addNumericType(Dihedrals::OOClass(), typeProperty, i, {});
 
-            setProgressMaximum(ndihedrals);
+            this_task::setProgressMaximum(ndihedrals);
             BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);
             auto* dihedralType = typePropertyAccess.begin();
             ParticleIndexQuadruplet* dihedral = dihedralTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)ndihedrals; i++, ++dihedral, ++dihedralType) {
                 // Update progress bar and check for user cancellation.
-                setProgressValueIntermittent(i);
+                this_task::setProgressValueIntermittent(i);
                 const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong dihedralId;
@@ -711,13 +711,13 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             for(int i = 1; i <= nimpropertypes; i++)
                 addNumericType(Impropers::OOClass(), typeProperty, i, {});
 
-            setProgressMaximum(nimpropers);
+            this_task::setProgressMaximum(nimpropers);
             BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);
             auto* improperType = typePropertyAccess.begin();
             ParticleIndexQuadruplet* improper = improperTopologyProperty.begin();
             for(size_t i = 0; i < (size_t)nimpropers; i++, ++improper, ++improperType) {
                 // Update progress bar and check for user cancellation.
-                setProgressValueIntermittent(i);
+                this_task::setProgressValueIntermittent(i);
                 const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong improperId;
@@ -770,10 +770,10 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
             parsedParticleProperties.insert(static_object_cast<Property>(asphericalShapeProperty.buffer()));
             parsedParticleProperties.insert(static_object_cast<Property>(orientationProperty.buffer()));
 
-            setProgressMaximum(nellipsoids);
+            this_task::setProgressMaximum(nellipsoids);
             for(size_t i = 0; i < (size_t)nellipsoids; i++) {
                 // Update progress bar and check for user cancellation.
-                setProgressValueIntermittent(i);
+                this_task::setProgressValueIntermittent(i);
                 const char* line = (i == 0) ? stream.readNonEmptyLine() : stream.readLine();
 
                 qlonglong atomId;

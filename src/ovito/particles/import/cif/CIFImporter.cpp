@@ -92,7 +92,7 @@ bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 ******************************************************************************/
 void CIFImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading CIF file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading CIF file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -116,12 +116,12 @@ void CIFImporter::FrameLoader::loadFile()
         // Unmap the input file from memory.
         if(fileContents.isEmpty())
             stream.munmap();
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Parse the CIF data into an atomic structure representation.
         const cif::Block& block = doc.sole_block();
         gemmi::SmallStructure structure = gemmi::make_small_structure_from_block(block);
-        if(isCanceled()) return;
+        this_task::throwIfCanceled();
 
         // Parse list of atomic sites.
         std::vector<gemmi::SmallStructure::Site> sites = structure.get_all_unit_cell_sites();
@@ -142,8 +142,7 @@ void CIFImporter::FrameLoader::loadFile()
             if(site.occ != 1)
                 hasOccupancy = true;
         }
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
         typePropertyAccess.reset();
 
         // Parse the optional site occupancy information.

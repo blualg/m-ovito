@@ -58,7 +58,7 @@ public:
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-        return std::make_shared<FrameLoader>(request, recenterCell(), generateBonds(), gridType());
+        return std::make_unique<FrameLoader>(request, recenterCell(), generateBonds(), gridType());
     }
 
 protected:

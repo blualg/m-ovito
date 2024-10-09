@@ -67,7 +67,7 @@ bool ParaViewVTSGridImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 ******************************************************************************/
 void ParaViewVTSGridImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading ParaView VTS StructuredGrid file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading ParaView VTS StructuredGrid file %1").arg(fileHandle().toString()));
 
     // Create the VoxelGrid object.
     QString gridIdentifier = loadRequest().dataBlockPrefix;
@@ -98,8 +98,7 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
 
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {
-        if(isCanceled())
-            return;
+        this_task::throwIfCanceled();
 
         if(xml.name().compare(QStringLiteral("VTKFile")) == 0) {
             if(xml.attributes().value("type").compare(QStringLiteral("StructuredGrid")) != 0)
@@ -164,7 +163,7 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
         }
         else if(xml.name().compare(QStringLiteral("CellData")) == 0) {
             // Parse <DataArray> child elements.
-            while(xml.readNextStartElement() && !isCanceled()) {
+            while(xml.readNextStartElement() && !this_task::isCanceled()) {
                 if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
 
                     // Use the 'type' attribute to decide which data type to use for the OVITO property array.

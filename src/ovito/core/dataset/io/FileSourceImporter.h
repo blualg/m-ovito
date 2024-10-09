@@ -75,7 +75,7 @@ public:
         /// The name or label of the source frame.
         QString label;
 
-        /// Auxialiary field that can be used by the file parser to store additional info about the frame.
+        /// Auxiliary field that can be used by the file parser to store additional info about the frame.
         QVariant parserData;
 
         /// Compares two frame descriptors.
@@ -102,9 +102,6 @@ public:
         /// The FileSource that initiated the load operation.
         OOWeakRef<const PipelineNode> pipelineNode;
 
-        /// The importer object this load operation was initiated for.
-        OORef<FileSourceImporter> importer;
-
         /// If a loaded data collection consists of sub-collections, this string specifies the
         /// prefix to be prepended to the identifiers of data objects loaded by the file reader.
         QString dataBlockPrefix;
@@ -119,14 +116,17 @@ public:
     };
 
     /**
-     * Base class for frame data loader routines.
+     * Abstract base class for frame loader implementations that run in a worker thread.
      */
-    class OVITO_CORE_EXPORT FrameLoader : public AsynchronousTask<PipelineFlowState>
+    class OVITO_CORE_EXPORT FrameLoader
     {
     public:
 
         /// Constructor.
         explicit FrameLoader(const LoadOperationRequest& request) : _loadRequest(request) {}
+
+        /// Destructor.
+        virtual ~FrameLoader() = default;
 
         /// Returns the source file information.
         const Frame& frame() const { return loadRequest().frame; }
@@ -140,9 +140,6 @@ public:
         /// Returns the FileSource that owns the file importer.
         const OOWeakRef<const PipelineNode>& pipelineNode() const { return _loadRequest.pipelineNode; }
 
-        /// Returns the importer object this load operation was initiated for.
-        const OORef<FileSourceImporter>& importer() const { return _loadRequest.importer; };
-
         /// Returns a data structure describing the current load operation.
         const LoadOperationRequest& loadRequest() const { return _loadRequest; }
 
@@ -150,12 +147,10 @@ public:
         /// additional frames stored back to back with the currently loaded one.
         void signalAdditionalFrames() { _additionalFramesDetected = true; }
 
-        /// Calls loadFile() and sets the loaded data collection as result of the asynchronous task.
-        virtual void perform() override;
+        /// Indicate whether the input file contains more than one animation frame.
+        bool additionalFramesDetected() const { return _additionalFramesDetected; }
 
-    protected:
-
-        /// Reads the frame data from the external file.
+        /// Reads the frame data from the file. This method must be implemented by subclasses.
         virtual void loadFile() = 0;
 
     private:
@@ -168,7 +163,7 @@ public:
     };
 
     /// A managed pointer to a FrameLoader instance.
-    using FrameLoaderPtr = std::shared_ptr<FrameLoader>;
+    using FrameLoaderPtr = std::unique_ptr<FrameLoader>;
 
 public:
 
@@ -235,9 +230,6 @@ public:
     /// Loads the data for the given frame from the external file.
     virtual Future<PipelineFlowState> loadFrame(const LoadOperationRequest& request);
 
-    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
-    virtual FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) { return {}; }
-
     /// Returns the FileSource that manages this importer object (if any).
     FileSource* fileSource() const;
 
@@ -273,6 +265,9 @@ protected:
     /// Scans a given file and builds a list of trajectory frames.
     /// This method is called by the system from a worker thread.
     virtual void discoverFramesInFile(const FileHandle& fileHandle, QVector<Frame>& frames) const {}
+
+    /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
+    virtual FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) { return {}; }
 
     /// Is called when importing multiple files of different formats.
     virtual void importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline);

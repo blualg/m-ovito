@@ -132,7 +132,7 @@ void LAMMPSGridDumpImporter::discoverFramesInFile(const FileHandle& fileHandle, 
 ******************************************************************************/
 void LAMMPSGridDumpImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading LAMMPS grid dump file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading LAMMPS grid dump file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -225,7 +225,7 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
                     throw Exception(tr("LAMMPS grid dump file parsing error. Invalid grid size in line %1:\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
                 numVoxels = (size_t)nx * (size_t)ny * (size_t)nz;
                 gridDims = {nx, ny, nz};
-                setProgressMaximum(numVoxels);
+                this_task::setProgressMaximum(numVoxels);
                 break;
             }
             else if(stream.lineStartsWith("ITEM: GRID CELLS")) {
@@ -298,7 +298,7 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
                 try {
                     for(size_t i = 0; i < numVoxels; i++, lineNumber++) {
                         // Update progress bar and check for cancellation.
-                        setProgressValueIntermittent(i);
+                        this_task::setProgressValueIntermittent(i);
                         if(!s)
                             columnParser.readElement(i, stream.readLine());
                         else
@@ -331,7 +331,7 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
             else if(stream.lineStartsWith("ITEM:")) {
                 // For the sake of forward compatibility, we ignore unknown ITEM sections.
                 // Skip lines until the next "ITEM:" is reached.
-                while(!stream.eof() && !isCanceled()) {
+                while(!stream.eof() && !this_task::isCanceled()) {
                     stream.readLine();
                     if(stream.lineStartsWith("ITEM:"))
                         break;

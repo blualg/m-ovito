@@ -83,11 +83,11 @@ bool WavefrontOBJImporter::OOMetaClass::checkFileFormat(const FileHandle& file) 
 ******************************************************************************/
 void WavefrontOBJImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading OBJ file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading OBJ file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
-    setProgressMaximum(stream.underlyingSize());
+    this_task::setProgressMaximum(stream.underlyingSize());
 
     // Add mesh to the data collection.
     TriangleMesh* mesh = state().getMutableObject<TriangleMesh>();
@@ -217,7 +217,7 @@ void WavefrontOBJImporter::FrameLoader::loadFile()
             throw Exception(tr("Invalid or unsupported OBJ file format. Encountered unknown token in line %1.").arg(stream.lineNumber()));
 
         // Update progress bar and check for user cancellation.
-        setProgressValueIntermittent(stream.underlyingByteOffset());
+        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
     }
     mesh->invalidateVertices();
 

@@ -80,7 +80,7 @@ bool ParaViewVTPParticleImporter::OOMetaClass::checkFileFormat(const FileHandle&
 ******************************************************************************/
 void ParaViewVTPParticleImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading ParaView VTP particles file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading ParaView VTP particles file %1").arg(fileHandle().toString()));
 
     // Initialize XML reader and open input file.
     std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
@@ -155,13 +155,13 @@ void ParaViewVTPParticleImporter::FrameLoader::loadFile()
         }
         else if(xml.name().compare(QLatin1String("PointData")) == 0 || xml.name().compare(QLatin1String("Points")) == 0 || xml.name().compare(QLatin1String("Verts")) == 0) {
             // Parse child elements.
-            while(xml.readNextStartElement() && !isCanceled()) {
+            while(xml.readNextStartElement() && !this_task::isCanceled()) {
                 if(xml.name().compare(QLatin1String("DataArray")) == 0) {
                     int vectorComponent = -1;
                     if(Property* property = createPropertyForDataArray(xml, container, vectorComponent, preserveExistingData)) {
                         if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml, vectorComponent, baseParticleIndex))
                             break;
-                        if(xml.hasError() || isCanceled())
+                        if(xml.hasError() || this_task::isCanceled())
                             break;
 
                         if(!_isBodiesFile) {
@@ -427,13 +427,12 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
                 // Set up a file load request to be passed to the importer.
                 LoadOperationRequest loadRequest;
                 loadRequest.pipelineNode = pipelineNode;
-                loadRequest.importer = importer;
                 loadRequest.fileHandle = fileHandle;
                 loadRequest.frame = Frame(fileHandle);
                 loadRequest.state = PipelineFlowState(DataOORef<const DataCollection>::create(), PipelineStatus::Success);
 
                 // Let the importer parse the geometry file.
-                return importer->loadFrame(loadRequest);
+                return importer->loadFrame(std::move(loadRequest));
             });
 
     // Check if the importer has loaded any data.

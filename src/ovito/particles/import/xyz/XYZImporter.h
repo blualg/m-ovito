@@ -65,7 +65,7 @@ public:
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-        return std::make_shared<FrameLoader>(request, recenterCell(), sortParticles(), columnMapping(), autoRescaleCoordinates());
+        return std::make_unique<FrameLoader>(request, recenterCell(), sortParticles(), columnMapping(), autoRescaleCoordinates());
     }
 
     /// Inspects the header of the given file and returns the number of file columns.

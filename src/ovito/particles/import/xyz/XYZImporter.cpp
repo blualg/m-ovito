@@ -221,7 +221,7 @@ inline bool parseBool(const char* s, int& d)
 ******************************************************************************/
 void XYZImporter::FrameLoader::loadFile()
 {
-    setProgressText(tr("Reading XYZ file %1").arg(fileHandle().toString()));
+    this_task::setProgressText(tr("Reading XYZ file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -241,7 +241,7 @@ void XYZImporter::FrameLoader::loadFile()
         throw Exception(tr("Too many particles in XYZ file. This program version can read XYZ files with up to %1 particles only.").arg(std::numeric_limits<int>::max()));
 
     setParticleCount(numParticlesLong);
-    setProgressMaximum(numParticlesLong);
+    this_task::setProgressMaximum(numParticlesLong);
 
     // Extract some useful information from the comment line.
     const char* commentLine_cstr = stream.readLine();
@@ -426,7 +426,7 @@ void XYZImporter::FrameLoader::loadFile()
     try {
         for(size_t i = 0; i < numParticlesLong; i++) {
             // Update progress bar and check for user cancellation.
-            setProgressValueIntermittent(i);
+            this_task::setProgressValueIntermittent(i);
             stream.readLine();
             columnParser.readElement(i, stream.line());
         }
