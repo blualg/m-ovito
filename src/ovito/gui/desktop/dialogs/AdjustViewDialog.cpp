@@ -41,7 +41,8 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
     setAllowedAreas(Qt::NoDockWidgetArea);
     setFloating(true);
-    setAttribute(Qt::WA_DeleteOnClose);
+    setAttribute(Qt::WA_DeleteOnClose); // Make sure AdjustViewDialog instance gets deleted when the dialog is closed.
+
     QWidget* widget = new QWidget();
     setWidget(widget);
 

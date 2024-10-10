@@ -40,7 +40,7 @@ class OVITO_GUI_EXPORT PropertiesPanel : public RolloutContainer
 public:
 
     /// Constructs the panel.
-    PropertiesPanel(MainWindow& mainWindow, QWidget* parent = nullptr);
+    explicit PropertiesPanel(MainWindow& mainWindow, QWidget* parent = nullptr);
 
     /// Destructs the panel.
     virtual ~PropertiesPanel();
@@ -56,6 +56,11 @@ public:
 
     /// Returns the main window this properties panel is associated with.
     MainWindow& mainWindow() const { return _mainWindow; }
+
+public Q_SLOTS:
+
+    /// Close the editor that is currently open.
+    void close() { setEditObject(nullptr); }
 
 protected:
 

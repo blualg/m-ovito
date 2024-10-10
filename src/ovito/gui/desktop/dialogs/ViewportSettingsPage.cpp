@@ -24,8 +24,8 @@
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
+#include <ovito/gui/desktop/dialogs/ConfigureViewportGraphicsDialog.h>
 #include <ovito/core/app/PluginManager.h>
-#include <ovito/core/viewport/ViewportWindow.h>
 #include "ViewportSettingsPage.h"
 
 namespace Ovito {
@@ -95,31 +95,15 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     else
         lightColorScheme->setChecked(true);
 
-    // Group "3D graphics system":
-    QGroupBox* graphicsGroupBox = new QGroupBox(tr("Interactive 3D graphics"), page);
+    QGroupBox* graphicsGroupBox = new QGroupBox(tr("Viewport graphics"), page);
     layout1->addWidget(graphicsGroupBox);
     layout2 = new QGridLayout(graphicsGroupBox);
-    layout2->setColumnStretch(2, 1);
+    layout2->setColumnStretch(1, 1);
+    QPushButton* configureGraphicsBtn = new QPushButton(tr("Configure..."), graphicsGroupBox);
+    layout2->addWidget(configureGraphicsBtn, 0, 0);
+    connect(configureGraphicsBtn, &QPushButton::clicked, this, &ViewportSettingsPage::showConfigureViewportGraphicsDialog);
 
-    layout2->addWidget(new QLabel(tr("Rendering backend:")), 0, 0);
-    _graphicsSystem = new QButtonGroup(page);
-    int index = 0;
-    QString selectedGraphicsApi = ViewportWindow::getInteractiveWindowImplementationName();
-    for(const auto& [id, label, windowClass] : ViewportWindow::listInteractiveWindowImplementations()) {
-        QRadioButton* option = new QRadioButton(label, graphicsGroupBox);
-        option->setEnabled(windowClass);
-        option->setProperty("graphics_api", id);
-        layout2->addWidget(option, index, 1);
-        _graphicsSystem->addButton(option, index);
-        if(windowClass && selectedGraphicsApi.compare(id, Qt::CaseInsensitive) == 0)
-            option->setChecked(true);
-        index++;
-    }
-
-    // Automatically switch back to OpenGL if the currently selected renderer is not available anymore.
-    if(_graphicsSystem->checkedId() == -1)
-        _graphicsSystem->button(0)->setChecked(true);
-
+#if 0
     // Transparency rendering method.
     _transparencyRenderingMethod = new QComboBox();
     _transparencyRenderingMethod->addItem(tr("Back-to-Front Ordered (default)"), QVariant::fromValue(1));
@@ -129,10 +113,22 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     layout2->addWidget(new QLabel(tr("Transparency rendering method:")), 3, 0);
     layout2->addWidget(_transparencyRenderingMethod, 3, 1, 1, 2);
 
-    //_transparencyRenderingMethod->setEnabled(openglOption->isChecked());
-    //connect(openglOption, &QAbstractButton::toggled, _transparencyRenderingMethod, &QComboBox::setEnabled);
+    _transparencyRenderingMethod->setEnabled(openglOption->isChecked());
+    connect(openglOption, &QAbstractButton::toggled, _transparencyRenderingMethod, &QComboBox::setEnabled);
+#endif
 
     layout1->addStretch();
+}
+
+/******************************************************************************
+* Shows a sub-dialog that allows the user to configure the graphics system used by the viewport.
+******************************************************************************/
+void ViewportSettingsPage::showConfigureViewportGraphicsDialog()
+{
+    if(!_configureViewportGraphicsDialog)
+        _configureViewportGraphicsDialog = new ConfigureViewportGraphicsDialog(mainWindow(), settingsDialog());
+    _configureViewportGraphicsDialog->show();
+    _configureViewportGraphicsDialog->raise();
 }
 
 /******************************************************************************
@@ -143,6 +139,7 @@ void ViewportSettingsPage::saveValues(QTabWidget* tabWidget)
     // Check if user has selected a different 3D graphics API than before.
     bool recreateViewportWindows = false;
 
+#if 0
     // Save new viewport graphics selection in the application settings store.
     QString newGraphicsApi;
     if(QAbstractButton* selectedButton = _graphicsSystem->checkedButton())
@@ -156,6 +153,7 @@ void ViewportSettingsPage::saveValues(QTabWidget* tabWidget)
         settings.setValue("rendering/transparency_method", _transparencyRenderingMethod->currentData().toInt());
         recreateViewportWindows = true;
     }
+#endif
 
     // Recreate all interactive viewport windows in all program windows after a different graphics API has been activated.
     // No restart of the software is required.

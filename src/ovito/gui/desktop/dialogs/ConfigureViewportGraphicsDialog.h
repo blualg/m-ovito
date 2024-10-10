@@ -20,21 +20,50 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/core/Core.h>
-#include "WidgetOpenGLRenderingJob.h"
+#pragma once
+
+
+#include <ovito/gui/desktop/GUI.h>
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(WidgetOpenGLRenderingJob);
-
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-void WidgetOpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, QOpenGLWidget* glwin, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer)
+/**
+ * This dialog box lets the user configure the settings of the interactive viewport rendering backend.
+ */
+class ConfigureViewportGraphicsDialog : public QDockWidget
 {
-    OpenGLRenderingJob::initializeObject(flags, std::move(visCache), std::move(sceneRenderer));
+    Q_OBJECT
 
-    _glwin = glwin;
-}
+public:
+
+    /// Constructor.
+    explicit ConfigureViewportGraphicsDialog(MainWindow& mainWindow, QWidget* parentWindow);
+
+private Q_SLOTS:
+
+    /// Updates the values displayed in the dialog.
+    void updateGUI();
+
+    /// Is called when the user selects a different rendering backend.
+    void backendSelectionChanged(QAbstractButton* option, bool checked);
+
+protected:
+
+    /// Is called when the dialog window is being closed by the user.
+    virtual void closeEvent(QCloseEvent* event) override;
+
+private:
+
+    /// Recreates all viewport windows in the application. This should
+    /// be called whenever a different rendering backend has been activated.
+    void recreateViewportWindows();
+
+private:
+
+    MainWindow& _mainWindow;
+    QButtonGroup* _backendSelectionGroup;
+    QStackedWidget* _backendSettingsStack;
+    std::map<QString, int> _backendSettingsMap;
+};
 
 }   // End of namespace

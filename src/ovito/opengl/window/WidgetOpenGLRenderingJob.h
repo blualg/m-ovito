@@ -39,7 +39,7 @@ class OVITO_OPENGLRENDERERWINDOW_EXPORT WidgetOpenGLRenderingJob : public OpenGL
 public:
 
     /// Constructor.
-    void initializeObject(ObjectInitializationFlags flags, QOpenGLWidget* glwin, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency);
+    void initializeObject(ObjectInitializationFlags flags, QOpenGLWidget* glwin, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer);
 
     /// Requests the rendering job to make its OpenGL context current, e.g. for releasing OpenGL resources that require an active context.
     [[nodiscard]] virtual OpenGLContextRestore activateContext() override {
@@ -49,6 +49,10 @@ public:
             _glwin->makeCurrent();
         return restore;
     }
+
+	/// Returns the multi-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
+    /// Note: Overwritten to return 1, because the interactive viewport renderer does not support multi-sampling yet.
+	virtual int multisamplingLevel() const override { return 1; }
 
 private:
 

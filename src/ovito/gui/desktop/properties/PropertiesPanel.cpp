@@ -89,8 +89,7 @@ void PropertiesPanel::setEditObject(RefTarget* newEditObject, OORef<PropertiesEd
 ******************************************************************************/
 RefTarget* PropertiesPanel::editObject() const
 {
-    if(!editor()) return nullptr;
-    return editor()->editObject();
+    return editor() ? editor()->editObject() : nullptr;
 }
 
 }   // End of namespace
