@@ -25,6 +25,7 @@
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include "ViewportSettingsPage.h"
 
 namespace Ovito {
@@ -102,29 +103,22 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 
     layout2->addWidget(new QLabel(tr("Rendering backend:")), 0, 0);
     _graphicsSystem = new QButtonGroup(page);
-    QRadioButton* openglOption = new QRadioButton(tr("OpenGL"), graphicsGroupBox);
-    QRadioButton* anariOption = new QRadioButton(tr("VisRTX (experimental, requires CUDA-capable GPU)"), graphicsGroupBox);
-    layout2->addWidget(openglOption, 0, 1);
-    layout2->addWidget(anariOption, 1, 1);
-    _graphicsSystem->addButton(openglOption, 0);
-    _graphicsSystem->addButton(anariOption, 1);
-
-    if(settings.value("rendering/selected_graphics_api").toString() == "Anari")
-        anariOption->setChecked(true);
-    else
-        openglOption->setChecked(true);
-
-    // Disable ANARI option in macOS release builds, because VisRTX is not available on this platform.
-#if !defined(Q_OS_MACOS) || defined(OVITO_DEBUG)
-    if(!PluginManager::instance().findClass("AnariRendererWindow", "OpenGLAnariViewportWindow"))
-#endif
-    {
-        anariOption->setEnabled(false);
+    int index = 0;
+    QString selectedGraphicsApi = ViewportWindow::getInteractiveWindowImplementationName();
+    for(const auto& [id, label, windowClass] : ViewportWindow::listInteractiveWindowImplementations()) {
+        QRadioButton* option = new QRadioButton(label, graphicsGroupBox);
+        option->setEnabled(windowClass);
+        option->setProperty("graphics_api", id);
+        layout2->addWidget(option, index, 1);
+        _graphicsSystem->addButton(option, index);
+        if(windowClass && selectedGraphicsApi.compare(id, Qt::CaseInsensitive) == 0)
+            option->setChecked(true);
+        index++;
     }
 
     // Automatically switch back to OpenGL if the currently selected renderer is not available anymore.
-    if(!anariOption->isEnabled() && anariOption->isChecked())
-        openglOption->setChecked(true);
+    if(_graphicsSystem->checkedId() == -1)
+        _graphicsSystem->button(0)->setChecked(true);
 
     // Transparency rendering method.
     _transparencyRenderingMethod = new QComboBox();
@@ -135,8 +129,8 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     layout2->addWidget(new QLabel(tr("Transparency rendering method:")), 3, 0);
     layout2->addWidget(_transparencyRenderingMethod, 3, 1, 1, 2);
 
-    _transparencyRenderingMethod->setEnabled(openglOption->isChecked());
-    connect(openglOption, &QAbstractButton::toggled, _transparencyRenderingMethod, &QComboBox::setEnabled);
+    //_transparencyRenderingMethod->setEnabled(openglOption->isChecked());
+    //connect(openglOption, &QAbstractButton::toggled, _transparencyRenderingMethod, &QComboBox::setEnabled);
 
     layout1->addStretch();
 }
@@ -146,24 +140,18 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 ******************************************************************************/
 void ViewportSettingsPage::saveValues(QTabWidget* tabWidget)
 {
-    QSettings settings;
-
     // Check if user has selected a different 3D graphics API than before.
     bool recreateViewportWindows = false;
 
-    QString oldGraphicsApi = settings.value("rendering/selected_graphics_api").toString();
+    // Save new viewport graphics selection in the application settings store.
     QString newGraphicsApi;
-    if(_graphicsSystem->checkedId() == 1) newGraphicsApi = "Anari";
-    if(newGraphicsApi != oldGraphicsApi) {
-        // Save new API selection in the application settings store.
-        if(!newGraphicsApi.isEmpty())
-            settings.setValue("rendering/selected_graphics_api", newGraphicsApi);
-        else
-            settings.remove("rendering/selected_graphics_api");
+    if(QAbstractButton* selectedButton = _graphicsSystem->checkedButton())
+        newGraphicsApi = selectedButton->property("graphics_api").toString();
+    if(ViewportWindow::setInteractiveWindowImplementationName(newGraphicsApi))
         recreateViewportWindows = true;
-    }
 
     // Check if a different transparency rendering method was selected by the user.
+    QSettings settings;
     if(settings.value("rendering/transparency_method", 1).toInt() != _transparencyRenderingMethod->currentData().toInt()) {
         settings.setValue("rendering/transparency_method", _transparencyRenderingMethod->currentData().toInt());
         recreateViewportWindows = true;

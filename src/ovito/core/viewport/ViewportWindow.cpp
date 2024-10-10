@@ -24,7 +24,6 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
-#include <ovito/core/app/Application.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/FrameGraphBuilder.h>
@@ -36,6 +35,8 @@
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/UserInterface.h>
+#include <ovito/core/app/PluginManager.h>
+#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
@@ -86,7 +87,7 @@ void ViewportWindow::setViewport(Viewport* vp, UserInterface& userInterface)
 ******************************************************************************/
 void ViewportWindow::aboutToBeDeleted()
 {
-    // Unregister window from user interface.
+    // Unregister window from the user interface.
     if(_userInterface)
         _userInterface->unregisterViewportWindow(this);
 
@@ -898,6 +899,82 @@ bool ViewportWindow::computeConstructionPlaneIntersection(const Point2& viewport
     intersectionPoint.z() = 0;
 
     return true;
+}
+
+/******************************************************************************
+* Returns the list of available interactive viewport window implementations.
+******************************************************************************/
+std::vector<std::tuple<QString, QString, OvitoClassPtr>> ViewportWindow::listInteractiveWindowImplementations()
+{
+    std::vector<std::tuple<QString, QString, OvitoClassPtr>> list;
+    list.emplace_back(QStringLiteral("opengl"), QStringLiteral("OpenGL"), PluginManager::instance().findClass("OpenGLRendererWindow", "OpenGLViewportWindow"));
+    list.emplace_back(QStringLiteral("anari"), QStringLiteral("VisRTX (experimental, requires CUDA-capable GPU)"), PluginManager::instance().findClass("AnariRendererWindow", "OpenGLAnariViewportWindow"));
+#if defined(Q_OS_MACOS) && !defined(OVITO_DEBUG)
+    // Disable ANARI option in macOS release builds, because VisRTX is not available on this platform (even if the window class is present).
+    std::get<2>(list.back()) = nullptr;
+#endif
+
+    return list;
+}
+
+/******************************************************************************
+* Returns a string identifying the interactive viewport window implementation currently selected by the user.
+******************************************************************************/
+QString ViewportWindow::getInteractiveWindowImplementationName()
+{
+    return qEnvironmentVariable("OVITO_VIEWPORT_RENDERER",
+        QSettings().value("rendering/selected_graphics_api",
+            QStringLiteral("opengl")).toString());
+}
+
+/******************************************************************************
+* Returns a pointer to the runtime class to be used for creating interactive viewport windows.
+******************************************************************************/
+OvitoClassPtr ViewportWindow::getInteractiveWindowImplementationClass()
+{
+    QString selectedGraphicsApi = getInteractiveWindowImplementationName();
+
+    OvitoClassPtr windowClass = PluginManager::instance().findClass("OpenGLRendererWindow", "OpenGLViewportWindow");
+    if(selectedGraphicsApi.compare("anari", Qt::CaseInsensitive) == 0) {
+        windowClass = PluginManager::instance().findClass("AnariRendererWindow", "OpenGLAnariViewportWindow");
+    }
+    else if(!selectedGraphicsApi.isEmpty() && selectedGraphicsApi.compare("opengl", Qt::CaseInsensitive) != 0) {
+        qWarning() << "Unknown OVITO_VIEWPORT_RENDERER value: " << selectedGraphicsApi;
+    }
+
+    return windowClass;
+}
+
+/******************************************************************************
+* Sets the interactive viewport window implementation currently selected by the user.
+******************************************************************************/
+bool ViewportWindow::setInteractiveWindowImplementationName(const QString& name)
+{
+    QString oldGraphicsApi = ViewportWindow::getInteractiveWindowImplementationName();
+
+    if(name.compare(oldGraphicsApi, Qt::CaseInsensitive) != 0) {
+        // Save new API selection in the application settings store.
+        QSettings settings;
+        if(!name.isEmpty())
+            settings.setValue("rendering/selected_graphics_api", name);
+        else
+            settings.remove("rendering/selected_graphics_api");
+        return true;
+    }
+    return false;
+}
+
+/******************************************************************************
+* Switches back to the default renderer for the interactive viewport windows.
+******************************************************************************/
+bool ViewportWindow::revertToDefaultInteractiveWindowImplementation()
+{
+    QSettings settings;
+    if(qgetenv("OVITO_VIEWPORT_RENDERER").isEmpty() && settings.value("rendering/selected_graphics_api").isValid()) {
+        settings.remove("rendering/selected_graphics_api");
+        return true;
+    }
+    return false;
 }
 
 }   // End of namespace
