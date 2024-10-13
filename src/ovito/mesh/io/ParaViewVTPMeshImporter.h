@@ -67,7 +67,7 @@ public:
     }
 
     /// Reads a <DataArray> element from a VTK file and stores it in the given OVITO data buffer.
-    static bool parseVTKDataArray(DataBuffer* buffer, QXmlStreamReader& xml, int vectorComponent = -1, size_t destBaseIndex = 0, size_t replication = 1);
+    static bool parseVTKDataArray(DataBuffer* buffer, int vtkHeaderType, QXmlStreamReader& xml, int vectorComponent = -1, size_t destBaseIndex = 0, size_t replication = 1);
 
 private:
 
@@ -85,7 +85,7 @@ private:
         virtual void loadFile() override;
 
         /// Reads a <DataArray> element and returns it as an OVITO property.
-        PropertyPtr parseDataArray(QXmlStreamReader& xml, int convertToDataType = 0);
+        PropertyPtr parseDataArray(QXmlStreamReader& xml, int vtkHeaderType, int convertToDataType = 0);
     };
 };
 

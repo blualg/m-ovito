@@ -322,7 +322,7 @@ void PipelineListModel::refreshList()
 
 /******************************************************************************
 * Create the pipeline editor entries for the subjects of the given
-* object (and their subobjects).
+* object (and their sub-objects).
 ******************************************************************************/
 void PipelineListModel::createListItemsForSubobjects(const DataObject* dataObj, PipelineListItem* parentItem)
 {

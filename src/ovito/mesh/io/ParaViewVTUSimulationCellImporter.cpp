@@ -71,6 +71,7 @@ void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
     QXmlStreamReader xml(device.get());
 
     size_t numberOfPoints = 0;
+    int vtkHeaderType = 8; // Assume UInt64 by default
 
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {
@@ -82,6 +83,8 @@ void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
                 xml.raiseError(tr("VTU file is not of type UnstructuredGrid."));
             else if(xml.attributes().value("byte_order").compare(QStringLiteral("LittleEndian")) != 0)
                 xml.raiseError(tr("Byte order must be 'LittleEndian'. Please contact the OVITO developers to request an extension of the file parser."));
+            if(xml.attributes().value("header_type").compare(QStringLiteral("UInt32")) == 0)
+                vtkHeaderType = 4;
         }
         else if(xml.name().compare(QStringLiteral("UnstructuredGrid")) == 0) {
             // Do nothing. Parse child elements.
@@ -99,7 +102,7 @@ void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
 
             // Load the VTK data array into a Nx3 buffer of floats.
             DataBufferPtr buffer = DataBufferPtr::create(numberOfPoints, DataBuffer::FloatDefault, 3);
-            if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, xml))
+            if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, vtkHeaderType, xml))
                 break;
 
             // Compute bounding box of points.

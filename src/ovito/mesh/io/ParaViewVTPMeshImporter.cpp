@@ -121,6 +121,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
     SurfaceMesh::face_index faceBaseIndex = SurfaceMesh::InvalidIndex;
     std::vector<PropertyPtr> cellDataArrays;
     std::vector<PropertyPtr> pointDataArrays;
+    int vtkHeaderType = 8; // Assume UInt64 by default
 
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {
@@ -134,6 +135,8 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
                 xml.raiseError(tr("Byte order must be 'LittleEndian'. Please ask the OVITO developers to extend the capabilities of the file parser."));
             else if(!xml.attributes().value("compressor").isEmpty())
                 xml.raiseError(tr("Current implementation does not support compressed data arrays. Please ask the OVITO developers to extend the capabilities of the file parser."));
+            if(xml.attributes().value("header_type").compare(QStringLiteral("UInt32")) == 0)
+                vtkHeaderType = 4;
         }
         else if(xml.name().compare(QStringLiteral("PolyData")) == 0) {
             // Do nothing. Parse child elements.
@@ -154,7 +157,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             // Parse child <DataArray> element containing the point coordinates.
             if(!xml.readNextStartElement())
                 break;
-            PropertyPtr property = parseDataArray(xml, Property::FloatDefault);
+            PropertyPtr property = parseDataArray(xml, vtkHeaderType, Property::FloatDefault);
             if(!property)
                 break;
 
@@ -172,7 +175,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             // Parse child <DataArray> element containing the connectivity information.
             if(!xml.readNextStartElement())
                 break;
-            PropertyPtr connectivityArray = parseDataArray(xml, DataBufferPrimitiveType<SurfaceMesh::vertex_index>::value);
+            PropertyPtr connectivityArray = parseDataArray(xml, vtkHeaderType, DataBufferPrimitiveType<SurfaceMesh::vertex_index>::value);
             if(!connectivityArray)
                 break;
             // Make sure the data array has the expected data layout.
@@ -185,7 +188,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             // Parse child <DataArray> element containing the offset information.
             if(!xml.readNextStartElement())
                 break;
-            PropertyPtr offsetsArray = parseDataArray(xml, Property::Int32);
+            PropertyPtr offsetsArray = parseDataArray(xml, vtkHeaderType, Property::Int32);
             if(!offsetsArray)
                 break;
             // Make sure the data array has the expected data layout.
@@ -219,7 +222,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             // Parse <DataArray> child elements.
             while(xml.readNextStartElement() && !isCanceled()) {
                 if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
-                    if(PropertyPtr property = parseDataArray(xml))
+                    if(PropertyPtr property = parseDataArray(xml, vtkHeaderType))
                         cellDataArrays.push_back(std::move(property));
                     else
                         break;
@@ -233,7 +236,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
             // Parse child elements.
             while(xml.readNextStartElement() && !isCanceled()) {
                 if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
-                    if(PropertyPtr property = parseDataArray(xml))
+                    if(PropertyPtr property = parseDataArray(xml, vtkHeaderType))
                         pointDataArrays.push_back(std::move(property));
                     else
                         break;
@@ -349,7 +352,7 @@ void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 /******************************************************************************
 * Reads a <DataArray> element and returns it as an OVITO property.
 ******************************************************************************/
-PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReader& xml, int convertToDataType)
+PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReader& xml, int vtkHeaderType, int convertToDataType)
 {
     // Make sure it is really an <DataArray>.
     if(xml.name().compare(QStringLiteral("DataArray")) != 0) {
@@ -389,7 +392,7 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
     PropertyPtr property = DataOORef<Property>::create(DataBuffer::Uninitialized, 0, convertToDataType, numComponents, Property::makePropertyNameValid(name));
 
     // Delegate parsing of payload to sub-routine.
-    if(!parseVTKDataArray(property.get(), xml))
+    if(!parseVTKDataArray(property.get(), vtkHeaderType, xml))
         return {};
 
     return property;
@@ -421,7 +424,7 @@ static inline void tokenizeString(const QString& str, F&& f)
 /******************************************************************************
 * Reads a <DataArray> element and stores it in the given OVITO data buffer.
 ******************************************************************************/
-bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamReader& xml, int vectorComponent, size_t destBaseIndex, size_t replication)
+bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, int vtkHeaderType, QXmlStreamReader& xml, int vectorComponent, size_t destBaseIndex, size_t replication)
 {
     // Make sure it is really an <DataArray>.
     if(xml.name().compare(QStringLiteral("DataArray")) != 0) {
@@ -495,10 +498,13 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
         byteArray = QByteArray::fromBase64(text.toLatin1());
 
         // Note: Decoded binary data is prepended with array size information.
-        qint64 dataArraySize = (byteArray.size() >= sizeof(qint64)) ? *reinterpret_cast<const qint64*>(byteArray.constData()) : -1;
-        if(dataArraySize + sizeof(qint64) != byteArray.size()) {
+        qint64 dataArraySize =
+            vtkHeaderType == 8 ?
+                ((byteArray.size() >= sizeof(qint64)) ? *reinterpret_cast<const qint64*>(byteArray.constData()) : -1) :
+                ((byteArray.size() >= sizeof(qint32)) ? *reinterpret_cast<const qint32*>(byteArray.constData()) : -1);
+        if(dataArraySize + vtkHeaderType != byteArray.size()) {
             xml.raiseError(tr("Data array size mismatch: Expected %1 bytes of base64 encoded data, but XML element contains %2 bytes.")
-                .arg(dataArraySize + sizeof(qint64))
+                .arg(dataArraySize + vtkHeaderType)
                 .arg(byteArray.size()));
             return false;
         }
@@ -510,7 +516,7 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, QXmlStreamRe
             return false;
         }
 
-        rawDataPtr = byteArray.constData() + sizeof(qint64);
+        rawDataPtr = byteArray.constData() + vtkHeaderType;
     }
     else {
         // Tokenize the XML element contents.
