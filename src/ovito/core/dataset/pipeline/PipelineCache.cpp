@@ -147,6 +147,8 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
     for(const PipelineFlowState& state : _cachedStates) {
         if(state.stateValidity().contains(request.time())) {
             startFramePrecomputation(request);
+            if(request.throwOnError() && state.status().type() == PipelineStatus::Error)
+                throw Exception(state.status().text());
             if(pipelineNode) {
                 // Give pipeline node the opportunity to postprocess the cached state before it is returned to the caller.
                 return pipelineNode->postprocessCachedState(request, state);
@@ -159,6 +161,8 @@ PipelineEvaluationResult PipelineCache::evaluatePipeline(const PipelineEvaluatio
 
     // Check if cache contains a valid state for interactive rendering.
     if(request.interactiveMode() && _interactiveState.stateValidity().contains(request.time())) {
+        if(request.throwOnError() && _interactiveState.status().type() == PipelineStatus::Error)
+            throw Exception(_interactiveState.status().text());
         return PipelineEvaluationResult(_interactiveState,
             _interactiveStateIsNotPreliminaryResult // Tagging this output state as preliminary if necessary.
                 ? PipelineEvaluationResult::EvaluationType::Both

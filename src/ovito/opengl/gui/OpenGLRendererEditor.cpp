@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
+#include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/opengl/OpenGLRenderer.h>
 #include "OpenGLRendererEditor.h"
 
@@ -37,7 +38,7 @@ SET_OVITO_OBJECT_EDITOR(OpenGLRenderer, OpenGLRendererEditor);
 void OpenGLRendererEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create the rollout.
-    QWidget* rollout = createRollout(tr("OpenGL renderer settings"), rolloutParams, "manual:rendering.opengl_renderer");
+    QWidget* rollout = createRollout(tr("OpenGL settings"), rolloutParams, "manual:rendering.opengl_renderer");
 
     // Create the rollout contents.
     QVBoxLayout* rootLayout = new QVBoxLayout(rollout);
@@ -66,6 +67,13 @@ void OpenGLRendererEditor::createUI(const RolloutInsertionParameters& rolloutPar
     transparencyMethodUI->comboBox()->addItem(tr("Back-to-Front Ordered (default)"), QVariant::fromValue(false));
     transparencyMethodUI->comboBox()->addItem(tr("Weighted Blended Order-Independent"), QVariant::fromValue(true));
     boxLayout->addWidget(transparencyMethodUI->comboBox());
+
+    // Conditionally hide the "Quality" group box if this editor is for the interactive viewport renderer and not the final frame renderer.
+    connect(this, &PropertiesEditor::contentsReplaced, qualityBox, [qualityBox, this](RefTarget* editObject) {
+        handleExceptions([&]() {
+            qualityBox->setVisible(editObject != ViewportWindow::getInteractiveWindowRenderer("opengl"));
+        });
+    });
 }
 
 }   // End of namespace

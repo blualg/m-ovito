@@ -142,8 +142,7 @@ OORef<RenderingJob> OpenGLRenderer::createOffscreenRenderingJob()
 {
     return OORef<OffscreenOpenGLRenderingJob>::create(
         this_task::ui()->datasetContainer().visCache(), // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
-        std::max(1, antialiasingLevel()),
-        orderIndependentTransparency());
+        this);
 }
 
 /******************************************************************************

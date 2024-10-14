@@ -84,11 +84,11 @@ void OpenGLPickingMap::acquire(const OORef<AbstractRenderingFrameBuffer>& frameB
 /******************************************************************************
 * Returns the frame buffer object ID at the given frame buffer location.
 ******************************************************************************/
-uint32_t OpenGLPickingMap::objectIdentifierAt(const QPoint& pos) const
+uint32_t OpenGLPickingMap::objectIdentifierAt(const QPoint& frameBufferLocation) const
 {
     if(!_image.isNull()) {
-        if(pos.x() >= 0 && pos.x() < _image.width() && pos.y() >= 0 && pos.y() < _image.height()) {
-            QPoint mirroredPos(pos.x(), _image.height() - 1 - pos.y());
+        if(frameBufferLocation.x() >= 0 && frameBufferLocation.x() < _image.width() && frameBufferLocation.y() >= 0 && frameBufferLocation.y() < _image.height()) {
+            QPoint mirroredPos(frameBufferLocation.x(), _image.height() - 1 - frameBufferLocation.y());
             QRgb pixel = _image.pixel(mirroredPos);
             uint32_t red = qRed(pixel);
             uint32_t green = qGreen(pixel);
@@ -104,7 +104,7 @@ uint32_t OpenGLPickingMap::objectIdentifierAt(const QPoint& pos) const
 /******************************************************************************
 * Returns the z-value at the given window position.
 ******************************************************************************/
-FloatType OpenGLPickingMap::depthAt(const QPoint& frameBufferLocation) const
+FloatType OpenGLPickingMap::depthAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const
 {
     if(!_image.isNull() && _depthBuffer) {
         int w = _image.width();

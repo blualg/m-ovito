@@ -77,20 +77,16 @@ QWidget* OpenGLViewportWindow::createQtWidget(QWidget* parent)
 ******************************************************************************/
 OORef<RenderingJob> OpenGLViewportWindow::createRenderingJob()
 {
-    // Check which transparency rendering method has been selected by the user in the application settings dialog.
-    bool useOrderIndependentTransparency = false;
-#ifndef OVITO_DISABLE_QSETTINGS
-    QSettings applicationSettings;
-    if(applicationSettings.value("rendering/transparency_method").toInt() == 2)
-        useOrderIndependentTransparency = true;
-#endif
+    // Obtain the renderer instance that provides the interactive rendering settings.
+    OORef<OpenGLRenderer> renderer = dynamic_object_cast<OpenGLRenderer>(ViewportWindow::getInteractiveWindowRenderer("opengl"));
+    if(!renderer)
+        throw Exception(tr("Settings for OpenGL interactive viewport renderer could not be initialized."));
 
     // Create the window's viewport renderer implementation.
     return OORef<WidgetOpenGLRenderingJob>::create(
         glwin(),
         userInterface().datasetContainer().visCache(), // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
-        1, // multi-sampling level
-        useOrderIndependentTransparency);
+        std::move(renderer));
 }
 
 /******************************************************************************

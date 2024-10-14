@@ -29,10 +29,10 @@ Local setup
 
 To follow this tutorial, you will need two sample trajectories from LAMMPS MD simulations, which can be
 downloaded from a Git repository:
-`RDX.reax.dump <https://gitlab.com/ovito-org/ovito-sample-data/-/raw/master/LAMMPS/RDX.reax.dump?ref_type=tags&inline=false>`__,
+`RDX.reax.dump <https://gitlab.com/ovito-org/ovito-sample-data/-/raw/master/LAMMPS/RDX.reax.dump?inline=false>`__,
 and
 `water.unwrapped.lammpstrj.gz
-<https://gitlab.com/ovito-org/ovito-sample-data/-/raw/master/LAMMPS/water.unwrapped.lammpstrj.gz?ref_type=heads&inline=false>`__.
+<https://gitlab.com/ovito-org/ovito-sample-data/-/raw/master/LAMMPS/water.unwrapped.lammpstrj.gz?inline=false>`__.
 
 Place the first file, ``RDX.reax.dump``, in a directory on your local desktop computer. In the following tutorial,
 we'll assume the file is located at ``C:\Users\daniel\Downloads\RDX.reax.dump``.

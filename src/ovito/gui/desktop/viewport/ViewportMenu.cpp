@@ -31,6 +31,7 @@
 #include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/gui/desktop/dialogs/AdjustViewDialog.h>
+#include <ovito/gui/desktop/dialogs/ConfigureViewportGraphicsDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "ViewportMenu.h"
 
@@ -137,6 +138,10 @@ ViewportMenu::ViewportMenu(MainWindow& mainWindow, ViewportWindow* viewportWindo
         connect(action, &QAction::toggled, this, &ViewportMenu::onPipelineVisibility);
     }
     visibilityMenu->setEnabled(!visibilityMenu->isEmpty());
+
+    addSeparator();
+
+    addAction(tr("Configure graphics..."), this, &ViewportMenu::onConfigureViewportGraphics);
 }
 
 /******************************************************************************
@@ -159,7 +164,7 @@ void ViewportMenu::onShowViewTypeMenu()
     QActionGroup* viewNodeGroup = new QActionGroup(this);
     connect(viewNodeGroup, &QActionGroup::triggered, this, &ViewportMenu::onViewNode);
 
-    // Pipeline evaulation performed in the following requires a valid execution context.
+    // Pipeline evaluation performed in the following requires a valid execution context.
     _mainWindow.handleExceptions([&] {
         // Find all cameras in the scene.
         viewport()->scene()->visitPipelines([this, viewNodeGroup](Pipeline* pipeline) -> bool {
@@ -239,6 +244,15 @@ void ViewportMenu::onViewType(QAction* action)
 void ViewportMenu::onAdjustView()
 {
     AdjustViewDialog* dialog = new AdjustViewDialog(_mainWindow, viewport(), _viewportWidget);
+    dialog->show();
+}
+
+/******************************************************************************
+* Handles the menu item event.
+******************************************************************************/
+void ViewportMenu::onConfigureViewportGraphics()
+{
+    ConfigureViewportGraphicsDialog* dialog = new ConfigureViewportGraphicsDialog(_mainWindow, &_mainWindow);
     dialog->show();
 }
 

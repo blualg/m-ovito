@@ -133,6 +133,7 @@ void ParaViewVTPParticleParticleContactsImporter::FrameLoader::loadFile()
     DataBuffer::BufferInitialization propertyAccessMode = preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized;
     size_t numLines = 0;
     size_t pointsPerLine = 0;
+    int vtkHeaderType = 8; // Assume UInt64 by default
 
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {
@@ -145,6 +146,8 @@ void ParaViewVTPParticleParticleContactsImporter::FrameLoader::loadFile()
                 xml.raiseError(tr("Byte order must be 'LittleEndian'. Please contact the OVITO developers to request an extension of the file parser."));
             else if(xml.attributes().value("compressor").compare(QLatin1String("")) != 0)
                 xml.raiseError(tr("The parser does not support compressed data arrays. Please contact the OVITO developers to request an extension of the file parser."));
+            if(xml.attributes().value("header_type").compare(QStringLiteral("UInt32")) == 0)
+                vtkHeaderType = 4;
         }
         else if(xml.name().compare(QLatin1String("PolyData")) == 0) {
             // Do nothing. Parse child elements.
@@ -179,7 +182,7 @@ void ParaViewVTPParticleParticleContactsImporter::FrameLoader::loadFile()
                 if(xml.name().compare(QLatin1String("DataArray")) == 0) {
                     int vectorComponent = -1;
                     if(Property* property = createLinesPropertyForDataArray(xml, vectorComponent, lines, propertyAccessMode)) {
-                        if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml, vectorComponent, baseLineIndex, pointsPerLine))
+                        if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, vtkHeaderType, xml, vectorComponent, baseLineIndex, pointsPerLine))
                             break;
                         if(xml.hasError() || this_task::isCanceled())
                             break;
@@ -199,7 +202,7 @@ void ParaViewVTPParticleParticleContactsImporter::FrameLoader::loadFile()
 
             int vectorComponent = -1;
             if(Property* property = createLinesPropertyForDataArray(xml, vectorComponent, lines, propertyAccessMode)) {
-                if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml, vectorComponent, baseLineIndex))
+                if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, vtkHeaderType, xml, vectorComponent, baseLineIndex))
                     break;
                 if(xml.hasError() || this_task::isCanceled())
                     break;

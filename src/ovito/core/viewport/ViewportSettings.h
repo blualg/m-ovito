@@ -108,7 +108,7 @@ public:
         }
     }
 
-    /// Returns the font to be used for rendering text in the viewports.
+    /// Returns the font to be used for rendering UI text in the viewport windows.
     const QFont& viewportFont() const { return _viewportFont; }
 
     /// Returns the type of viewport that should initially be in the maximized state.
@@ -135,7 +135,7 @@ public:
     /// Saves the settings to the default application settings store.
     void save() const;
 
-    /// Assignment.
+    /// Copying/assignment.
     void assign(const ViewportSettings& other);
 
     /// Returns a (read-only) reference to the current global settings object.

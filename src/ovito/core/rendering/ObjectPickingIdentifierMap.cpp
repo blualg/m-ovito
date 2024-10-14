@@ -106,7 +106,7 @@ const ObjectPickingIdentifierMap::PickingRecord* ObjectPickingIdentifierMap::loo
 Point3 ObjectPickingIdentifierMap::worldPositionAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const
 {
     if(!framebufferSize.isEmpty()) {
-        FloatType zvalue = depthAt(frameBufferLocation);
+        FloatType zvalue = depthAt(frameBufferLocation, projectionParams, framebufferSize);
         if(zvalue != 0) {
             Point3 ndc(
                     (FloatType)frameBufferLocation.x() / framebufferSize.width() * 2 - 1,

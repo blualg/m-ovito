@@ -197,6 +197,30 @@ public:
     /// \brief Zooms to the extents of the given bounding box.
     void zoomToBox(const Box3& box);
 
+public:
+
+    /// Returns the list of available interactive viewport window implementations.
+    static std::vector<std::tuple<QString, QString, OvitoClassPtr, OvitoClassPtr>> listInteractiveWindowImplementations();
+
+    /// Returns a string identifying the interactive viewport window implementation currently selected by the user.
+    static QString getInteractiveWindowImplementationName();
+
+    /// Sets the interactive viewport window implementation currently selected by the user.
+    static bool setInteractiveWindowImplementationName(const QString& name);
+
+    /// Returns a pointer to the runtime class to be used for creating interactive viewport windows.
+    static OvitoClassPtr getInteractiveWindowImplementationClass();
+
+    /// Switches back to the default renderer for the interactive viewport windows.
+    static bool revertToDefaultInteractiveWindowImplementation();
+
+    /// Returns the instance of the renderer used for the interactive windows.
+    /// This instance does not perform the actual rendering, but it manages the settings that can be configured by the user.
+    static OORef<SceneRenderer> getInteractiveWindowRenderer(const QString& implementationName = {});
+
+    /// Saves the current settings of the interactive viewport renderers to the application settings store.
+    static void saveInteractiveWindowRendererSettings();
+
 public Q_SLOTS:
 
     /// Releases the renderer resources held by the viewport window and the renderer.

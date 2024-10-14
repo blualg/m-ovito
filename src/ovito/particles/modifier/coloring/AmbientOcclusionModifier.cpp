@@ -103,7 +103,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
     auto brightnessFuture = request.modificationNode()->partialResultsCache().getOrCompute(state.data(), [&]() {
 
         // Create the OpenGL offscreen rendering job. This needs to be done in the main thread.
-        OORef<OffscreenOpenGLRenderingJob> renderingJob = OORef<OffscreenOpenGLRenderingJob>::create(std::make_shared<RendererResourceCache>(), 1, false);
+        OORef<OffscreenOpenGLRenderingJob> renderingJob = OORef<OffscreenOpenGLRenderingJob>::create(std::make_shared<RendererResourceCache>(), nullptr);
 
         // Perform the AO computation in a separate thread.
         return asyncLaunch(

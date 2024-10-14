@@ -27,6 +27,7 @@
 #include <ovito/core/rendering/RenderingJob.h>
 #include "OpenGLHelpers.h"
 #include "OpenGLTexture.h"
+#include "OpenGLRenderer.h"
 
 #include <QOpenGLContext>
 #include <QOpenGLExtraFunctions>
@@ -81,7 +82,7 @@ class OVITO_OPENGLRENDERER_EXPORT OpenGLRenderingJob : public RenderingJob, publ
 public:
 
     /// Constructor.
-    void initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency);
+    void initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer);
 
     /// Called when this object is being destroyed.
     virtual void aboutToBeDeleted() override;
@@ -230,6 +231,9 @@ protected:
 	const QSize& framebufferSize() const { return _framebufferSize; }
 
 private:
+
+    /// Reference to the renderer instance holding the rendering parameters.
+    OORef<const OpenGLRenderer> _sceneRenderer;
 
     /// Controls the level of multisampling used to reduce antialiasing effects.
     int _multisamplingLevel = 1;

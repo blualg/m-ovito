@@ -49,13 +49,12 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLRenderingJob);
 /******************************************************************************
  * Constructor.
  ******************************************************************************/
-void OpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, int multisamplingLevel, bool orderIndependentTransparency)
+void OpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer)
 {
     RenderingJob::initializeObject(flags);
 
     _visCache = std::move(visCache);
-    _multisamplingLevel = multisamplingLevel;
-    _orderIndependentTransparency = orderIndependentTransparency;
+    _sceneRenderer = std::move(sceneRenderer);
 }
 
 /******************************************************************************
@@ -82,6 +81,12 @@ OORef<AbstractRenderingFrameBuffer> OpenGLRenderingJob::createOffscreenFrameBuff
     // Creating an OpenGL framebuffer requires an active OpenGL context.
     OpenGLContextRestore contextRestore = activateContext();
 
+    // Adopt settings from scene renderer instance.
+    if(_sceneRenderer) {
+        _multisamplingLevel = std::max(1, _sceneRenderer->antialiasingLevel());
+        _orderIndependentTransparency = _sceneRenderer->orderIndependentTransparency();
+    }
+
     return OORef<OpenGLRenderingFrameBuffer>::create(this, viewportRect, frameBuffer);
 }
 
@@ -99,6 +104,12 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
                "Please use a different rendering backend or see "
                "https://docs.ovito.org/python/modules/ovito_vis.html#ovito.vis.OpenGLRenderer for instructions "
                "on how to enable OpenGL rendering in Python scripts."));
+    }
+
+    // Adopt settings from scene renderer instance.
+    if(_sceneRenderer) {
+        _multisamplingLevel = std::max(1, _sceneRenderer->antialiasingLevel());
+        _orderIndependentTransparency = _sceneRenderer->orderIndependentTransparency();
     }
 
     // Rendering requires an active GL context.

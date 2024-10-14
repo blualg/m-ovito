@@ -30,7 +30,7 @@ namespace Ovito {
 Q_GLOBAL_STATIC(ViewportSettings, _currentViewportSettings);
 
 /******************************************************************************
-* Assignment.
+* Assignment/copying.
 ******************************************************************************/
 void ViewportSettings::assign(const ViewportSettings& other)
 {
