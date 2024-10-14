@@ -80,7 +80,8 @@ template<typename Executor, typename Function>
                     promise.setFinished();
                 }
                 else {
-                    this->handleUnwrappedFuture(std::move(promise), std::invoke(std::move(_function)));
+                    auto future = std::invoke(std::move(_function)); // This may throw
+                    this->handleUnwrappedFuture(std::move(promise), std::move(future)); // This cannot throw
                 }
             }
             catch(const OperationCanceled&) {}
