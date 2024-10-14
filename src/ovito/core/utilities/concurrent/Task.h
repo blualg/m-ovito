@@ -225,16 +225,18 @@ public:
         static_assert(std::is_nothrow_invocable_r_v<void, Function> || std::is_nothrow_invocable_r_v<void, Function, Task&>, "The function must be noexcept and parameter-free or accept a Task reference.");
 
         if constexpr(std::is_invocable_v<Function, Task&>) {
-            addContinuation(
-                std::forward<Executor>(executor).schedule(
-                    [f = std::forward<Function>(f), task = shared_from_this()]() mutable noexcept {
-                        std::invoke(std::move(f), *task);
-                    }));
+            addContinuation([executor = std::forward<Executor>(executor), f = std::forward<Function>(f), task = shared_from_this()]() mutable noexcept {
+                std::move(executor).execute([f = std::move(f), task = std::move(task)]() mutable noexcept {
+                    std::invoke(std::move(f), *task);
+                });
+            });
         }
         else {
-            addContinuation(
-                std::forward<Executor>(executor).schedule(
-                    std::forward<Function>(f)));
+            addContinuation([executor = std::forward<Executor>(executor), f = std::forward<Function>(f)]() mutable noexcept {
+                std::move(executor).execute([f = std::move(f)]() mutable noexcept {
+                    std::invoke(std::move(f));
+                });
+            });
         }
     }
 

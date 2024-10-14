@@ -39,24 +39,6 @@ public:
     /// Constructor.
     explicit ObjectExecutor(OOWeakRef<const OvitoObject> contextObject) noexcept : _contextObject(std::move(contextObject)) {}
 
-    /// Creates some work that can be submitted for execution later.
-    template<typename Function>
-    [[nodiscard]] auto schedule(Function&& f) const& noexcept {
-        // Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
-        return [f = std::forward<Function>(f), executor = *this]<typename... Args>(Args&&... args) mutable noexcept {
-            std::move(executor).execute(std::move(f), std::forward<Args>(args)...);
-        };
-    }
-
-    /// Creates some work that can be submitted for execution later.
-    template<typename Function>
-    [[nodiscard]] auto schedule(Function&& f) && noexcept {
-        // Note: Avoiding the use of C++17 capture this-by-copy here, because it is not fully supported by the MSVC 2017 compiler.
-        return [f = std::forward<Function>(f), executor = std::move(*this)]<typename... Args>(Args&&... args) mutable noexcept {
-            std::move(executor).execute(std::move(f), std::forward<Args>(args)...);
-        };
-    }
-
     /// Executes some work.
     template<typename Function, typename... Args>
     void execute(Function&& f, Args&&... args) const& noexcept;

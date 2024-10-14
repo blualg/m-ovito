@@ -78,11 +78,9 @@ public:
 
         // Run the waiting task's callback method once the awaited task finishes.
         t->addContinuation([
-                f = std::forward<Executor>(executor).schedule([](PromiseBase promise, TaskDependency finishedTask) noexcept {
-                    (static_cast<TaskClass*>(promise.task().get())->*ContinuationMethod)(std::move(promise), std::move(finishedTask));
-                }),
                 this,
-                promise = std::move(promise)]() mutable noexcept
+                promise = std::move(promise),
+                executor = std::forward<Executor>(executor)]() mutable noexcept
             {
             // Lock access to the waiting task.
             Task::MutexLock lock(*promise.task());
@@ -97,7 +95,9 @@ public:
             lock.unlock();
 
             // Invoke the callback method which processes the awaited task's result.
-            std::invoke(std::move(f), std::move(promise), std::move(finishedTask));
+            std::move(executor).execute([promise = std::move(promise), finishedTask = std::move(finishedTask)]() mutable noexcept {
+                (static_cast<TaskClass*>(promise.task().get())->*ContinuationMethod)(std::move(promise), std::move(finishedTask));
+            });
         });
     }
 

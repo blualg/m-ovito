@@ -39,13 +39,6 @@ struct InlineExecutor
         static_assert(std::is_nothrow_invocable_r_v<void, Function, Args...>, "The function must be noexcept.");
         std::invoke(std::forward<Function>(f), std::forward<Args>(args)...);
     }
-
-    template<typename Function>
-    [[nodiscard]] static auto schedule(Function&& f) noexcept {
-        return [f = std::forward<Function>(f)]<typename... Args>(Args&&... args) mutable noexcept {
-            InlineExecutor::execute(std::move(f), std::forward<Args>(args)...);
-        };
-    }
 };
 
 } // End of namespace
