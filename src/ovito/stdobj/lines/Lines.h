@@ -58,8 +58,10 @@ public:
     {
         ColorProperty = Property::GenericColorProperty,
         PositionProperty = Property::FirstSpecificProperty,
-        SampleTimeProperty, // Is used by the GenerateTrajectoryLinesModifier
-        SectionProperty
+        SampleTimeProperty,  // Is used by the GenerateTrajectoryLinesModifier
+        SectionProperty,
+        Position1Property,
+        Position2Property
     };
 
     /// Constructor.
@@ -73,12 +75,7 @@ private:
 
     /// Tests whether the given spatial point is culled by the cutting planes set for this object.
     bool isPointCulled(const Point3& p) const {
-        for(const Plane3& plane : cuttingPlanes()) {
-            if(plane.classifyPoint(p) > 0) {
-                return true;
-            }
-        }
-        return false;
+        return std::any_of(cuttingPlanes().begin(), cuttingPlanes().end(), [&](const Plane3& plane) { return plane.classifyPoint(p) > 0; });
     }
 
     /// The planar cuts to be applied to geometry after its has been transformed into a non-periodic representation.

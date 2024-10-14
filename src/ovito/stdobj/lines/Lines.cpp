@@ -54,6 +54,8 @@ void Lines::OOMetaClass::initialize()
                                               << "B";
     registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList);
     registerStandardProperty(PositionProperty, tr("Position"), Property::FloatDefault, xyzList);
+    registerStandardProperty(Position1Property, tr("Position1"), Property::FloatDefault, xyzList);
+    registerStandardProperty(Position2Property, tr("Position2"), Property::FloatDefault, xyzList);
     registerStandardProperty(SampleTimeProperty, tr("Time"), Property::Int32, emptyList);
     registerStandardProperty(SectionProperty, tr("Section"), Property::Int64, emptyList);
 }
@@ -68,7 +70,9 @@ PropertyPtr Lines::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buffe
     size_t componentCount;
 
     switch(type) {
-        case PositionProperty:
+        case PositionProperty: [[fallthrough]];
+        case Position1Property: [[fallthrough]];
+        case Position2Property:
             dataType = Property::FloatDefault;
             componentCount = 3;
             OVITO_ASSERT(componentCount * sizeof(FloatType) == sizeof(Point3));
