@@ -491,6 +491,9 @@ void MainWindow::closeEvent(QCloseEvent* event)
         });
 #endif
 
+        // Inform listeners that this window is being closed.
+        Q_EMIT closingWindow();
+
         // Stop all running tasks in this window and release program session objects.
         shutdown();
 
@@ -544,7 +547,7 @@ void MainWindow::exitWithFatalError(const Exception& ex)
     // Set flag.
     _exitingDueToFatalError = true;
 
-    // Disable all further viewport updates, because they may have beeen the reason for this fatal error.
+    // Disable all further viewport updates, because they may have been the reason for this fatal error.
     suspendViewportUpdates();
 
     // Display fatal error message to the user.
@@ -554,8 +557,11 @@ void MainWindow::exitWithFatalError(const Exception& ex)
     // once we enter the event loop - similar to a queued signal/slot connection.
     QTimer::singleShot(0, [weakPtr = OOWeakRef<MainWindow>(this)]() {
         if(auto self = weakPtr.lock()) {
-            if(!self->close()) // Ask user if closing the window is ok. If not...
-                self->shutdown(); // ... forcibly close the window anyway.
+            if(!self->close()) { // Ask user if closing the window is ok. If not...
+                // ... forcibly close the window anyway.
+                Q_EMIT self->closingWindow();
+                self->shutdown();
+            }
         }
         QCoreApplication::exit(1);
     });

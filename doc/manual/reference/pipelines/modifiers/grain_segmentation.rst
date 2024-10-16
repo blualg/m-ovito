@@ -120,7 +120,7 @@ Output bonds
 Example
 """""""
 
-The panel below illustrates the effect of varying the merge threshold in a `polycrystalline graphene sample <https://gitlab.com/stuko/ovito/-/blob/master/tests/files/POSCAR/Voronoi1.POSCAR.gz>`__, using the *Graph Clustering* algorithm.
+The panel below illustrates the effect of varying the merge threshold in a `polycrystalline graphene sample <https://gitlab.com/ovito-org/ovito-sample-data/-/raw/master/POSCAR/Voronoi1.POSCAR.gz?inline=false>`__, using the *Graph Clustering* algorithm.
 A good segmentation into 6 grains is achieved using a merge threshold of 14 (left).
 Reducing the threshold to 13.5 reveals a subgrain structure in the largest grain (middle). A further reduction of the threshold to 12.5 splits the largest grain into three subgrains (right).
 

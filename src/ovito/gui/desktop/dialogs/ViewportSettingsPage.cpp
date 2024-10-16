@@ -24,6 +24,7 @@
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
+#include <ovito/gui/desktop/dialogs/ConfigureViewportGraphicsDialog.h>
 #include <ovito/core/app/PluginManager.h>
 #include "ViewportSettingsPage.h"
 
@@ -94,38 +95,15 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     else
         lightColorScheme->setChecked(true);
 
-    // Group "3D graphics system":
-    QGroupBox* graphicsGroupBox = new QGroupBox(tr("Interactive 3D graphics"), page);
+    QGroupBox* graphicsGroupBox = new QGroupBox(tr("Viewport graphics"), page);
     layout1->addWidget(graphicsGroupBox);
     layout2 = new QGridLayout(graphicsGroupBox);
-    layout2->setColumnStretch(2, 1);
+    layout2->setColumnStretch(1, 1);
+    QPushButton* configureGraphicsBtn = new QPushButton(tr("Configure..."), graphicsGroupBox);
+    layout2->addWidget(configureGraphicsBtn, 0, 0);
+    connect(configureGraphicsBtn, &QPushButton::clicked, this, &ViewportSettingsPage::showConfigureViewportGraphicsDialog);
 
-    layout2->addWidget(new QLabel(tr("Rendering backend:")), 0, 0);
-    _graphicsSystem = new QButtonGroup(page);
-    QRadioButton* openglOption = new QRadioButton(tr("OpenGL"), graphicsGroupBox);
-    QRadioButton* anariOption = new QRadioButton(tr("VisRTX (experimental, requires CUDA-capable GPU)"), graphicsGroupBox);
-    layout2->addWidget(openglOption, 0, 1);
-    layout2->addWidget(anariOption, 1, 1);
-    _graphicsSystem->addButton(openglOption, 0);
-    _graphicsSystem->addButton(anariOption, 1);
-
-    if(settings.value("rendering/selected_graphics_api").toString() == "Anari")
-        anariOption->setChecked(true);
-    else
-        openglOption->setChecked(true);
-
-    // Disable ANARI option in macOS release builds, because VisRTX is not available on this platform.
-#if !defined(Q_OS_MACOS) || defined(OVITO_DEBUG)
-    if(!PluginManager::instance().findClass("AnariRendererWindow", "OpenGLAnariViewportWindow"))
-#endif
-    {
-        anariOption->setEnabled(false);
-    }
-
-    // Automatically switch back to OpenGL if the currently selected renderer is not available anymore.
-    if(!anariOption->isEnabled() && anariOption->isChecked())
-        openglOption->setChecked(true);
-
+#if 0
     // Transparency rendering method.
     _transparencyRenderingMethod = new QComboBox();
     _transparencyRenderingMethod->addItem(tr("Back-to-Front Ordered (default)"), QVariant::fromValue(1));
@@ -137,8 +115,20 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 
     _transparencyRenderingMethod->setEnabled(openglOption->isChecked());
     connect(openglOption, &QAbstractButton::toggled, _transparencyRenderingMethod, &QComboBox::setEnabled);
+#endif
 
     layout1->addStretch();
+}
+
+/******************************************************************************
+* Shows a sub-dialog that allows the user to configure the graphics system used by the viewport.
+******************************************************************************/
+void ViewportSettingsPage::showConfigureViewportGraphicsDialog()
+{
+    if(!_configureViewportGraphicsDialog)
+        _configureViewportGraphicsDialog = new ConfigureViewportGraphicsDialog(mainWindow(), settingsDialog());
+    _configureViewportGraphicsDialog->show();
+    _configureViewportGraphicsDialog->raise();
 }
 
 /******************************************************************************
@@ -146,28 +136,24 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 ******************************************************************************/
 void ViewportSettingsPage::saveValues(QTabWidget* tabWidget)
 {
-    QSettings settings;
-
     // Check if user has selected a different 3D graphics API than before.
     bool recreateViewportWindows = false;
 
-    QString oldGraphicsApi = settings.value("rendering/selected_graphics_api").toString();
+#if 0
+    // Save new viewport graphics selection in the application settings store.
     QString newGraphicsApi;
-    if(_graphicsSystem->checkedId() == 1) newGraphicsApi = "Anari";
-    if(newGraphicsApi != oldGraphicsApi) {
-        // Save new API selection in the application settings store.
-        if(!newGraphicsApi.isEmpty())
-            settings.setValue("rendering/selected_graphics_api", newGraphicsApi);
-        else
-            settings.remove("rendering/selected_graphics_api");
+    if(QAbstractButton* selectedButton = _graphicsSystem->checkedButton())
+        newGraphicsApi = selectedButton->property("graphics_api").toString();
+    if(ViewportWindow::setInteractiveWindowImplementationName(newGraphicsApi))
         recreateViewportWindows = true;
-    }
 
     // Check if a different transparency rendering method was selected by the user.
+    QSettings settings;
     if(settings.value("rendering/transparency_method", 1).toInt() != _transparencyRenderingMethod->currentData().toInt()) {
         settings.setValue("rendering/transparency_method", _transparencyRenderingMethod->currentData().toInt());
         recreateViewportWindows = true;
     }
+#endif
 
     // Recreate all interactive viewport windows in all program windows after a different graphics API has been activated.
     // No restart of the software is required.

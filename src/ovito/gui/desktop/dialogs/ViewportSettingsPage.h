@@ -52,6 +52,11 @@ public:
     /// \brief Returns an integer value that is used to sort the dialog pages in ascending order.
     virtual int pageSortingKey() const override { return 2; }
 
+private Q_SLOTS:
+
+    /// Shows a sub-dialog that allows the user to configure the graphics system used by the viewport.
+    void showConfigureViewportGraphicsDialog();
+
 private:
 
     /// The settings object being modified.
@@ -60,8 +65,7 @@ private:
     QButtonGroup* _upDirectionGroup;
     QCheckBox* _constrainCameraRotationBox;
     QButtonGroup* _colorScheme;
-    QButtonGroup* _graphicsSystem;
-    QComboBox* _transparencyRenderingMethod;
+    QPointer<ConfigureViewportGraphicsDialog> _configureViewportGraphicsDialog;
 };
 
 }   // End of namespace

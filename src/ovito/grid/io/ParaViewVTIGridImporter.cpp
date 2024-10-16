@@ -70,6 +70,8 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 
     // Create the destination voxel grid.
     QString gridIdentifier = loadRequest().dataBlockPrefix;
+    if(gridIdentifier.isEmpty())
+        gridIdentifier = QStringLiteral("vtk-grid");
     VoxelGrid* gridObj = state().getMutableLeafObject<VoxelGrid>(VoxelGrid::OOClass(), gridIdentifier);
     if(!gridObj) {
         gridObj = state().createObject<VoxelGrid>(pipelineNode());
@@ -92,6 +94,8 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
     QXmlStreamReader xml(device.get());
 
     std::vector<PropertyPtr> cellDataArrays;
+    int vtkHeaderType = 8; // Assume UInt64 by default
+    std::optional<VoxelGrid::GridType> gridType;
 
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {
@@ -105,6 +109,8 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
                 xml.raiseError(tr("Byte order must be 'LittleEndian'. Please ask the OVITO developers to extend the capabilities of the file parser."));
             else if(!xml.attributes().value("compressor").isEmpty())
                 xml.raiseError(tr("Current implementation does not support compressed data arrays. Please ask the OVITO developers to extend the capabilities of the file parser."));
+            if(xml.attributes().value("header_type").compare(QStringLiteral("UInt32")) == 0)
+                vtkHeaderType = 4;
         }
         else if(xml.name().compare(QStringLiteral("ImageData")) == 0) {
             // Parse grid dimensions.
@@ -178,13 +184,32 @@ void ParaViewVTIGridImporter::FrameLoader::loadFile()
 
             // Continue with parsing child elements.
         }
-        else if(xml.name().compare(QStringLiteral("CellData")) == 0) {
+        else if(xml.name().compare(QStringLiteral("CellData")) == 0 || xml.name().compare(QStringLiteral("PointData")) == 0) {
+            VoxelGrid::GridType parsingType = (xml.name().compare(QStringLiteral("CellData")) == 0) ? VoxelGrid::GridType::CellData : VoxelGrid::GridType::PointData;
             // Parse <DataArray> child elements.
             while(xml.readNextStartElement() && !isCanceled()) {
                 if(xml.name().compare(QStringLiteral("DataArray")) == 0) {
+                    if(!gridType.has_value()) {
+                        gridType = parsingType;
+                        gridObj->setGridType(parsingType);
+
+                        if(parsingType == VoxelGrid::GridType::PointData) {
+                            VoxelGrid::GridDimensions shape = gridObj->shape();
+                            shape[0]++;
+                            shape[1]++;
+                            shape[2]++;
+                            gridObj->setShape(shape);
+                            gridObj->setElementCount(shape[0] * shape[1] * shape[2]);
+                        }
+                    }
+                    else if(gridType.value() != parsingType) {
+                        xml.raiseError(tr("OVITO can only load VTK ImageData files that contain either point data or cell data, but not both."));
+                        break;
+                    }
+
                     int vectorComponent = -1;
                     if(Property* property = createGridPropertyForDataArray(gridObj, xml)) {
-                        if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml, vectorComponent))
+                        if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, vtkHeaderType, xml, vectorComponent))
                             break;
                     }
                     if(xml.tokenType() != QXmlStreamReader::EndElement)

@@ -32,7 +32,6 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/core/app/PluginManager.h>
 #include "ViewportsPanel.h"
 
 namespace Ovito {
@@ -87,19 +86,7 @@ OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, Q
         return {};
 
     // Select the viewport window implementation to use.
-    QByteArray selectedGraphicsApi = qgetenv("OVITO_VIEWPORT_RENDERER");
-    QSettings settings;
-    if(selectedGraphicsApi.isEmpty())
-        selectedGraphicsApi = settings.value("rendering/selected_graphics_api").toString().toUtf8();
-
-    // Select the viewport window implementation to use.
-    OvitoClassPtr windowClass = PluginManager::instance().findClass("OpenGLRendererWindow", "OpenGLViewportWindow");
-    if(selectedGraphicsApi.compare("anari", Qt::CaseInsensitive) == 0) {
-        windowClass = PluginManager::instance().findClass("AnariRendererWindow", "OpenGLAnariViewportWindow");
-    }
-    else if(!selectedGraphicsApi.isEmpty() && selectedGraphicsApi.compare("opengl", Qt::CaseInsensitive) != 0) {
-        qWarning() << "Unknown OVITO_VIEWPORT_RENDERER value: " << selectedGraphicsApi;
-    }
+    OvitoClassPtr windowClass = ViewportWindow::getInteractiveWindowImplementationClass();
 
     // Instantiate the selected viewport window implementation.
     if(windowClass) {
@@ -111,13 +98,9 @@ OORef<WidgetViewportWindow> ViewportsPanel::createViewportWindow(Viewport& vp, Q
             if(_windowCreationErrorOccurred)
                 return;
             _windowCreationErrorOccurred = true;
-            QSettings settings;
-            if(qgetenv("OVITO_VIEWPORT_RENDERER").isEmpty() && settings.value("rendering/selected_graphics_api").toString().isEmpty() == false) {
-                // Automatically switch back to the default OpenGL backend if there is a problem with the current backend.
-                QSettings().remove("rendering/selected_graphics_api");
-            }
-            else {
-                // When using the standard OpenGL backend, do not try to use it again for the current program session.
+            // Automatically switch back to the default OpenGL backend if there is a problem with the current backend.
+            if(!ViewportWindow::revertToDefaultInteractiveWindowImplementation()) {
+                // When already using the default OpenGL backend, do not try to use it again for the current program session.
                 ex.prependGeneralMessage(tr("There is a critical problem with the interactive viewport windows."));
                 _windowCreationIsBroken = true;
             }

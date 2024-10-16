@@ -95,6 +95,7 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
     std::vector<PropertyPtr> cellDataArrays;
     Box_3<qlonglong> wholeExtent;
     Box_3<qlonglong> pieceExtent;
+    int vtkHeaderType = 8; // Assume UInt64 by default
 
     // Parse the elements of the XML file.
     while(xml.readNextStartElement()) {
@@ -108,6 +109,8 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
                 xml.raiseError(tr("Byte order must be 'LittleEndian'. Please ask the OVITO developers to extend the capabilities of the file parser."));
             else if(!xml.attributes().value("compressor").isEmpty())
                 xml.raiseError(tr("Current implementation does not support compressed data arrays. Please ask the OVITO developers to extend the capabilities of the file parser."));
+            if(xml.attributes().value("header_type").compare(QStringLiteral("UInt32")) == 0)
+                vtkHeaderType = 4;
         }
         else if(xml.name().compare(QStringLiteral("StructuredGrid")) == 0) {
             // Parse grid dimensions.
@@ -193,7 +196,7 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
                     Property* property = gridObj->createProperty(Property::makePropertyNameValid(name.toString()), dataType, numComponents);
 
                     // Parse values from XML file.
-                    if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, xml))
+                    if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, vtkHeaderType, xml))
                         break;
 
                     if(xml.tokenType() != QXmlStreamReader::EndElement)
@@ -212,7 +215,7 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
             // Load the VTK point coordinates into a Nx3 buffer of floats.
             size_t numberOfPoints = (pieceExtent.size(0) + 1) * (pieceExtent.size(1) + 1) * (pieceExtent.size(2) + 1);
             DataBufferPtr buffer = DataBufferPtr::create(numberOfPoints, DataBuffer::FloatDefault, 3);
-            if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, xml))
+            if(!ParaViewVTPMeshImporter::parseVTKDataArray(buffer, vtkHeaderType, xml))
                 break;
 
             // Derive domain geometry from spacing between grid points.

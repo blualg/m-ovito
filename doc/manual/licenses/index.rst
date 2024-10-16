@@ -61,7 +61,7 @@ The table lists the licenses of the included components and, if they are used un
     - :ref:`Info <appendix.license.libssh.instructions>`
 
   * - `OpenSSL <https://openssl.org>`__
-    - :ref:`license <appendix.license.openssl>`
+    -  Apache 2.0
     -
 
   * - OVITO legacy code
@@ -140,10 +140,6 @@ The table lists the licenses of the included components and, if they are used un
     - Apache 2.0
     -
 
-  * - `ISPC <https://ispc.github.io>`__
-    - :ref:`license <appendix.license.ispc>`
-    -
-
   * - `GEMMI (GEneral MacroMolecular I/O) <https://github.com/project-gemmi/gemmi>`__
     - MPL v2
     -
@@ -209,7 +205,6 @@ The table lists the licenses of the included components and, if they are used un
   voroplusplus
   boost
   qwt
-  openssl
   libssh.instructions
   ffmpeg.instructions
   pegtl
@@ -219,5 +214,4 @@ The table lists the licenses of the included components and, if they are used un
   libsodium
   visrtx
   glm
-  ispc
   rapidyaml

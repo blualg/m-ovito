@@ -24,7 +24,6 @@
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/viewport/ViewportGizmo.h>
-#include <ovito/core/app/Application.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/FrameGraphBuilder.h>
@@ -36,6 +35,8 @@
 #include <ovito/core/dataset/pipeline/Modifier.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/UserInterface.h>
+#include <ovito/core/app/PluginManager.h>
+#include <ovito/core/app/Application.h>
 
 namespace Ovito {
 
@@ -86,7 +87,7 @@ void ViewportWindow::setViewport(Viewport* vp, UserInterface& userInterface)
 ******************************************************************************/
 void ViewportWindow::aboutToBeDeleted()
 {
-    // Unregister window from user interface.
+    // Unregister window from the user interface.
     if(_userInterface)
         _userInterface->unregisterViewportWindow(this);
 
@@ -898,6 +899,180 @@ bool ViewportWindow::computeConstructionPlaneIntersection(const Point2& viewport
     intersectionPoint.z() = 0;
 
     return true;
+}
+
+/******************************************************************************
+* Returns the list of available interactive viewport window implementations.
+******************************************************************************/
+std::vector<std::tuple<QString, QString, OvitoClassPtr, OvitoClassPtr>> ViewportWindow::listInteractiveWindowImplementations()
+{
+    std::vector<std::tuple<QString, QString, OvitoClassPtr, OvitoClassPtr>> list;
+
+    // OpenGL:
+    list.emplace_back(
+        QStringLiteral("opengl"),
+        QStringLiteral("OpenGL (default)"),
+        PluginManager::instance().findClass("OpenGLRendererWindow", "OpenGLViewportWindow"),
+        PluginManager::instance().findClass("OpenGLRenderer", "OpenGLRenderer")
+    );
+
+    // ANARI:
+    list.emplace_back(
+        QStringLiteral("anari"),
+        QStringLiteral("VisRTX (experimental, requires CUDA-capable GPU)"),
+        PluginManager::instance().findClass("AnariRendererWindow", "OpenGLAnariViewportWindow"),
+        PluginManager::instance().findClass("AnariRenderer", "AnariRenderer")
+    );
+#if defined(Q_OS_MACOS) && !defined(OVITO_DEBUG)
+    // Disable ANARI option in macOS release builds, because VisRTX is not available on this platform (even if the window class is present).
+    std::get<2>(list.back()) = nullptr;
+    std::get<3>(list.back()) = nullptr;
+#endif
+
+    return list;
+}
+
+/******************************************************************************
+* Returns a string identifying the interactive viewport window implementation currently selected by the user.
+******************************************************************************/
+QString ViewportWindow::getInteractiveWindowImplementationName()
+{
+    return qEnvironmentVariable("OVITO_VIEWPORT_RENDERER",
+        QSettings().value("rendering/selected_graphics_api",
+            QStringLiteral("opengl")).toString());
+}
+
+/******************************************************************************
+* Returns a pointer to the runtime class to be used for creating interactive viewport windows.
+******************************************************************************/
+OvitoClassPtr ViewportWindow::getInteractiveWindowImplementationClass()
+{
+    QString selectedGraphicsApi = getInteractiveWindowImplementationName();
+
+    // Look up the window class for the currently selected graphics backend.
+    for(const auto& [apiName, apiDisplayName, windowClass, rendererClass] : listInteractiveWindowImplementations()) {
+        if(selectedGraphicsApi.compare(apiName, Qt::CaseInsensitive) == 0)
+            return windowClass;
+    }
+
+    // Warn user if they specified an unknown backend.
+    if(!selectedGraphicsApi.isEmpty() && selectedGraphicsApi.compare("opengl", Qt::CaseInsensitive) != 0) {
+        qWarning() << "Unknown OVITO_VIEWPORT_RENDERER value: " << selectedGraphicsApi;
+    }
+
+    // Fall back to OpenGL.
+    return PluginManager::instance().findClass("OpenGLRendererWindow", "OpenGLViewportWindow");
+}
+
+/******************************************************************************
+* Sets the interactive viewport window implementation currently selected by the user.
+******************************************************************************/
+bool ViewportWindow::setInteractiveWindowImplementationName(const QString& name)
+{
+    QString oldGraphicsApi = ViewportWindow::getInteractiveWindowImplementationName();
+
+    if(name.compare(oldGraphicsApi, Qt::CaseInsensitive) != 0) {
+        // Save new API selection in the application settings store.
+        QSettings settings;
+        if(!name.isEmpty())
+            settings.setValue(QStringLiteral("rendering/selected_graphics_api"), name);
+        else
+            settings.remove(QStringLiteral("rendering/selected_graphics_api"));
+        return true;
+    }
+    return false;
+}
+
+/******************************************************************************
+* Switches back to the default renderer for the interactive viewport windows.
+******************************************************************************/
+bool ViewportWindow::revertToDefaultInteractiveWindowImplementation()
+{
+    QSettings settings;
+    if(qgetenv("OVITO_VIEWPORT_RENDERER").isEmpty() && settings.value(QStringLiteral("rendering/selected_graphics_api")).isValid()) {
+        settings.remove(QStringLiteral("rendering/selected_graphics_api"));
+        return true;
+    }
+    return false;
+}
+
+/******************************************************************************
+* Saves the current settings of the interactive viewport renderers to the application settings store.
+******************************************************************************/
+void ViewportWindow::saveInteractiveWindowRendererSettings()
+{
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+
+    QSettings settings;
+    settings.beginGroup(QStringLiteral("rendering/interactive_window_renderers"));
+    for(const auto& [apiName, apiDisplayName, windowClass, rendererClass] : listInteractiveWindowImplementations()) {
+        if(auto rendererInstance = getInteractiveWindowRenderer(apiName)) {
+            QByteArray buffer;
+            QDataStream dstream(&buffer, QIODevice::WriteOnly);
+            ObjectSaveStream stream(dstream);
+            stream.saveObject(rendererInstance);
+            stream.close();
+            settings.setValue(apiName, std::move(buffer));
+        }
+    }
+}
+
+/******************************************************************************
+* Returns the instance of the renderer used for the interactive windows.
+* This instance does not perform the actual rendering, but it manages the settings that can be configured by the user.
+******************************************************************************/
+OORef<SceneRenderer> ViewportWindow::getInteractiveWindowRenderer(const QString& implementationName)
+{
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+    OVITO_ASSERT(ExecutionContext::current().isValid());
+
+    // Global list of renderer instances that have been created by this method so far.
+    static std::map<QString, OORef<SceneRenderer>> rendererInstances;
+
+    // Check if we have already created an instance of the requested renderer.
+    if(auto it = rendererInstances.find(implementationName); it != rendererInstances.end())
+        return it->second;
+
+    // Temporarily establish a non-interactive context to always initialize
+    // the renders' parameters to factory default settings.
+    ExecutionContext::Scope noninteractiveContext(ExecutionContext::Type::Scripting, ExecutionContext::current().ui().shared_from_this());
+
+    // Load or create a new instance for the requested renderer implementation.
+    for(const auto& [apiName, apiDisplayName, windowClass, rendererClass] : listInteractiveWindowImplementations()) {
+        if(apiName.compare(implementationName.isEmpty() ? getInteractiveWindowImplementationName() : implementationName, Qt::CaseInsensitive) == 0) {
+            if(rendererClass) {
+
+                // First, try to load the renderer instance from the user settings store.
+                OORef<SceneRenderer> rendererInstance;
+                QSettings settings;
+                settings.beginGroup(QStringLiteral("rendering/interactive_window_renderers"));
+                try {
+                    QByteArray buffer = settings.value(apiName).toByteArray();
+                    if(!buffer.isEmpty()) {
+                        QDataStream dstream(buffer);
+                        ObjectLoadStream stream(dstream);
+                        rendererInstance = stream.loadObject<SceneRenderer>();
+                        if(!rendererClass->isMember(rendererInstance))
+                            rendererInstance.reset();
+                        stream.close();
+                    }
+                }
+                catch(const Exception& ex) {
+                    qWarning() << "Failed to load interactive window renderer settings for" << apiName << ":";
+                    ex.logError();
+                    settings.remove(apiName);
+                }
+
+                // If no instance was found in the settings store, create a new instance with factory default settings.
+                if(!rendererInstance)
+                    rendererInstance = dynamic_object_cast<SceneRenderer>(rendererClass->createInstance());
+                rendererInstances.emplace(apiName, rendererInstance);
+                return rendererInstance;
+            }
+        }
+    }
+
+    return {};
 }
 
 }   // End of namespace

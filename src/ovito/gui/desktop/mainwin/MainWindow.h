@@ -201,6 +201,9 @@ Q_SIGNALS:
     /// Emitted whenever the progress state of the published tasks changed.
     void taskProgressUpdate();
 
+    /// This signal is sent when the main window is being closed (typically by the user).
+    void closingWindow();
+
 protected:
 
     /// Is called by the system when the user tries to close the window.
