@@ -30,7 +30,7 @@ ENDIF(WIN32)
 
 IF(CMAKE_BUILD_TYPE STREQUAL "Release")
     # This will create a GUI application on Windows platform.
-    SET(OVITO_WIN32_EXECUTABLE "WIN32")
+    SET(OVITO_WIN32_EXECUTABLE "")
 ELSE()
     # This will create a console application on Windows platform.
     SET(OVITO_WIN32_EXECUTABLE "")

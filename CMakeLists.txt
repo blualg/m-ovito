@@ -50,6 +50,7 @@ LIST(APPEND CMAKE_MODULE_PATH "${OVITO_SOURCE_BASE_DIR}/cmake")
 INCLUDE(cmake/Version.cmake)
 INCLUDE(cmake/Plugins.cmake)
 INCLUDE(cmake/SYCL.cmake)
+INCLUDE(cmake/Cuda.cmake)
 
 # Define build options.
 OPTION(OVITO_DOUBLE_PRECISION_FP "Use double-precision floating-point numbers." "ON")
@@ -69,6 +70,7 @@ OPTION(OVITO_LIBSSH_RUNTIME_LINKING "Load libssh at runtime" "OFF")
 OPTION(OVITO_USE_SYCL "Build with SYCL support" "OFF")
 SET(OVITO_USE_SYCL None CACHE STRING "SYCL implementation to use")
 SET_PROPERTY(CACHE OVITO_USE_SYCL PROPERTY STRINGS OFF AdaptiveCpp DPC++)
+OPTION(OVITO_USE_CUDA "Build with native Cuda support" "OFF")
 
 # Ovito needs Qt>=6.2.
 SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
@@ -88,6 +90,16 @@ IF(OVITO_USE_SYCL STREQUAL DPC++)
     IF(NOT WIN32)
         FIND_PACKAGE(IntelSYCL REQUIRED)
     ENDIF()
+ENDIF()
+
+# Look for cuda
+IF(OVITO_USE_CUDA)
+    enable_language("CUDA")
+    find_package(CUDAToolkit)
+    # TODO: Do we need c++ 20?
+    set(CMAKE_CUDA_STANDARD 20)
+    set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+    
 ENDIF()
 
 # Define user options that control the building of OVITO's standard plugins.
