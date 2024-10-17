@@ -67,7 +67,7 @@ template<typename Executor, typename Function>
         }
 
         /// Runs the user function.
-        void invokeFunction(typename result_future_type::promise_type promise) noexcept {
+        void invokeFunction(Promise<typename result_future_type::result_type> promise) noexcept {
             if(promise.isCanceled())
                 return;
             try {

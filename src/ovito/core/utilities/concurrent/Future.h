@@ -137,7 +137,6 @@ public:
 
     using this_type = Future<R>;
     using result_type = R;
-    using promise_type = Promise<R>;
 
     /// Default constructor that constructs an invalid Future that is not associated with any shared state.
     Future() noexcept = default;
@@ -159,7 +158,7 @@ public:
         typename = std::enable_if_t<!std::is_void_v<R2>
             && !std::is_same_v<std::decay_t<R2>, Future<R>>
             && !std::is_same_v<std::decay_t<R2>, TaskPtr>>>
-    Future(R2&& val) : FutureBase(std::move(promise_type::createImmediate(std::forward<R2>(val))._task)) {}
+    Future(R2&& val) : FutureBase(std::move(Promise<R>::createImmediate(std::forward<R2>(val))._task)) {}
 
     /// A future is moveable.
     Future& operator=(Future&& other) noexcept = default;
@@ -169,34 +168,34 @@ public:
 
     /// Create a future that is in the 'fulfilled' state and holds an immediate default-constructed result.
     [[nodiscard]] static Future createImmediateEmpty() {
-        return promise_type::createImmediateEmpty();
+        return Promise<R>::createImmediateEmpty();
     }
 
     /// Create a future that is in the 'fulfilled' state and holds an immediate result.
     template<typename V>
     [[nodiscard]] static Future createImmediate(V&& result) {
-        return promise_type::createImmediate(std::forward<V>(result));
+        return Promise<R>::createImmediate(std::forward<V>(result));
     }
 
     /// Create a future that is in the 'fulfilled' state and holds an immediate result.
     template<typename... Args>
     [[nodiscard]] static Future createImmediateEmplace(Args&&... args) {
-        return promise_type::createImmediateEmplace(std::forward<Args>(args)...);
+        return Promise<R>::createImmediateEmplace(std::forward<Args>(args)...);
     }
 
     /// Creates a future that is in the 'exception' state.
     [[nodiscard]] static Future createFailed(const Exception& ex) {
-        return promise_type::createFailed(ex);
+        return Promise<R>::createFailed(ex);
     }
 
     /// Creates a future that is in the 'exception' state.
     [[nodiscard]] static Future createFailed(Exception&& ex) {
-        return promise_type::createFailed(std::move(ex));
+        return Promise<R>::createFailed(std::move(ex));
     }
 
     /// Creates a future that is in the 'exception' state.
     [[nodiscard]] static Future createFailed(std::exception_ptr ex_ptr) {
-        return promise_type::createFailed(std::move(ex_ptr));
+        return Promise<R>::createFailed(std::move(ex_ptr));
     }
 
     /// Create a new Future that is associated with the given task object.
@@ -239,7 +238,7 @@ public:
 protected:
 
     /// Move constructor taking the promise state pointer from a r-value Promise.
-    Future(promise_type&& promise) : FutureBase(std::move(promise._task)) {}
+    Future(Promise<R>&& promise) : FutureBase(std::move(promise._task)) {}
 
     template<typename R2> friend class Future;
     template<typename R2> friend class Promise;

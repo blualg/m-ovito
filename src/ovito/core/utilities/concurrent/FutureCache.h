@@ -49,7 +49,7 @@ public:
     [[nodiscard]] auto getOrCompute(const Key& key, F&& f) {
 
         using FutureType = decltype(f());
-        using SharedFutureType = typename FutureType::promise_type::shared_future_type;
+        using SharedFutureType = SharedFuture<typename FutureType::result_type>;
 
         if(!_task || _key != key || _task->isCanceled()) {
             _task.reset();

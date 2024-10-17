@@ -41,7 +41,6 @@ public:
 
     using this_type = SharedFuture<R>;
     using result_type = R;
-    using promise_type = typename Future<R>::promise_type;
 
     /// Default constructor that constructs an invalid SharedFuture that is not associated with any shared state.
     SharedFuture() noexcept = default;
@@ -67,7 +66,7 @@ public:
             && !std::is_same_v<std::decay_t<R2>, SharedFuture<R>>
             && !std::is_same_v<std::decay_t<R2>, Future<R>>
             && !std::is_same_v<std::decay_t<R2>, TaskPtr>>>
-    SharedFuture(R2&& val) : FutureBase(std::move(promise_type::createImmediate(std::forward<R2>(val))._task)) {}
+    SharedFuture(R2&& val) : FutureBase(std::move(Promise<R>::createImmediate(std::forward<R2>(val))._task)) {}
 
     /// Create a new SharedFuture that is associated with the given task object.
     [[nodiscard]] static SharedFuture createFromTask(TaskPtr task) {
