@@ -217,9 +217,6 @@ void Task::setProgressText(const QString& progressText)
         // Notify UI about progress status change.
         userInterface()->taskProgressText(*this, progressText);
     }
-
-    // Note: setProgressText() should not yield control to the UI event loop,
-    // because it is called in places that cannot tolerate a context switch.
 }
 
 /******************************************************************************

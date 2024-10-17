@@ -43,9 +43,6 @@ TaskManager::TaskManager()
     // Run regular work tasks with reduced priority to avoid slowing down the user interface.
     _threadPool.setThreadPriority(QThread::LowPriority);
 
-    // This thread pool is used for tasks that cannot run concurrently.
-    _threadPoolSerial.setMaxThreadCount(1);
-
     // Use all available processor cores by default -- or the user-specified
     // number given by the OVITO_THREAD_COUNT environment variable.
     if(int threadCount = qEnvironmentVariableIntValue("OVITO_THREAD_COUNT"))
@@ -109,7 +106,7 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
 
     // Wait until all threads did terminate. That's because canceled asynchronous tasks
     // may still be running in threads until they notice they have been canceled.
-    Q_DECL_UNUSED bool result = _threadPool.waitForDone() && _threadPoolUI.waitForDone() && _threadPoolSerial.waitForDone();
+    Q_DECL_UNUSED bool result = _threadPool.waitForDone() && _threadPoolUI.waitForDone();
     OVITO_ASSERT(result);
 
     // Shuts down the SYCL queue.
@@ -127,7 +124,6 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
 
     OVITO_ASSERT(_threadPool.activeThreadCount() == 0);
     OVITO_ASSERT(_threadPoolUI.activeThreadCount() == 0);
-    OVITO_ASSERT(_threadPoolSerial.activeThreadCount() == 0);
 
     // After the thread pools have been shut down, more work items may have been added to the main thread's queue.
     // First, execute these items before proceeding with the shutdown process.

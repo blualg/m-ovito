@@ -89,7 +89,7 @@ void ParticleExporter::closeOutputFile(bool exportCompleted)
  *****************************************************************************/
 void ParticleExporter::exportFrame(int frameNumber, const QString& filePath)
 {
-    // Retreive the particle data to be exported.
+    // Retrieve the particle data to be exported.
     const PipelineFlowState& state = getParticleData(frameNumber);
     if(this_task::isCanceled() || !state)
         return;

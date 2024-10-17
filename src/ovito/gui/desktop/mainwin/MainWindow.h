@@ -336,7 +336,7 @@ private:
     std::mutex _progressTaskListMutex;
 
     /// Indicates that a delayed progress update is underway.
-    bool _progressUpdateScheduled = false;
+    std::atomic_bool _progressUpdateScheduled{false};
 
     /// The current screen the window is on (to detect screen changes).
     QScreen* _currentScreen = nullptr;

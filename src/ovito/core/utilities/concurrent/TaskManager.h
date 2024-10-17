@@ -49,7 +49,7 @@ public:
 public:
 
     /// Constructor.
-    explicit TaskManager();
+    TaskManager();
 
 #ifdef OVITO_DEBUG
     /// Destructor.
@@ -121,6 +121,9 @@ private:
     /// Indicates whether the task manager is in the process of shutting down.
     bool _isShuttingDown = false;
 
+    /// Indicates that this task manager has completed its shutdown procedure.
+    bool _shutdownCompleted = false;
+
     /// Used to keep the Qt main event loop running while the task manager is active.
     std::optional<QEventLoopLocker> _eventLoopLocker;
 
@@ -132,17 +135,14 @@ private:
     RegisteredBufferAccess* _registeredBufferAccessors = nullptr;
 #endif
 
-    /// The queue of all pending work items that have been submitted for deferred execution in the main thread.
+    /// The queue of all pending work items that have been submitted for execution in the main thread.
     std::queue<work_function_type> _pendingWork;
 
-    /// Used to signal the arrival of new work items in the queue.
+    /// Used to signal the arrival of new work items in the main thread queue.
     std::condition_variable _pendingWorkCondition;
 
     /// Indicates that we are currently waiting for some task to finish in processWorkWhileWaiting().
     TaskPtr _waitingForTask;
-
-    /// Indicates that this task manager has completed its shutdown procedure.
-    bool _shutdownCompleted = false;
 
     /// Manages thread-safe concurrent access to the work queue.
     std::mutex _mutex;
@@ -153,9 +153,6 @@ private:
     /// Pool of threads for executing UI-related tasks, which require a higher priority.
     QThreadPool _threadPoolUI;
 
-    /// Single-thread pool for executing worker tasks that cannot run concurrently.
-    QThreadPool _threadPoolSerial;
-
 #ifdef Q_OS_MACOS
     /// Indicates that a native UI dialog (e.g. a QFileDialog) is currently open.
     /// During this time, the task manager should not enter a local event loop with
@@ -165,7 +162,7 @@ private:
 #endif
 
     friend class RegisteredBufferAccess;
-    friend class Task;
+    friend class Task; // to call TaskManager::processWorkWhileWaiting() from Task::waitFor()
 };
 
 }   // End of namespace

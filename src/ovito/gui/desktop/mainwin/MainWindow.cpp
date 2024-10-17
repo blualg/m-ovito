@@ -1257,13 +1257,9 @@ void MainWindow::notifyProgressTasksChanged()
     // The following timer code ensures that the GUI task display is updated only once every 100 ms.
     // It also ensures that the UI update is done in the main thread and that short-lived
     // tasks doesn't show up in the GUI at all.
-    if(!_progressUpdateScheduled) {
-        _progressUpdateScheduled = true;
+    if(!_progressUpdateScheduled.exchange(true)) {
         QTimer::singleShot(100, this, [this]() {
-            {
-                std::lock_guard<std::mutex> lock(_progressTaskListMutex);
-                _progressUpdateScheduled = false;
-            }
+            _progressUpdateScheduled.store(false);
             Q_EMIT taskProgressUpdate();
         });
     }
