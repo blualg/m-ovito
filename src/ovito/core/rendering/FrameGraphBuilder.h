@@ -34,7 +34,7 @@ namespace Ovito {
 */
 class OVITO_CORE_EXPORT FrameGraphBuilder
 {
-    Q_DISABLE_COPY(FrameGraphBuilder)
+    Q_DISABLE_COPY_MOVE(FrameGraphBuilder)
 
 public:
 

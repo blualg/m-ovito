@@ -37,6 +37,8 @@ namespace Ovito::detail {
 template<typename R, class TaskBase = Task>
 class ContinuationTask : public TaskWithStorage<R, TaskBase>, public TaskAwaiter
 {
+    Q_DISABLE_COPY_MOVE(ContinuationTask)
+
 public:
 
     /// Delegating constructor.

@@ -34,6 +34,8 @@ namespace Ovito::detail {
 template<class R, class TaskBase = Task>
 class TaskWithStorage : public TaskBase
 {
+    Q_DISABLE_COPY_MOVE(TaskWithStorage)
+
 public:
 
     /// Constructor assigning the task's results storage.
@@ -72,6 +74,8 @@ private:
 template<class TaskBase>
 class TaskWithStorage<void, TaskBase> : public TaskBase
 {
+    Q_DISABLE_COPY_MOVE(TaskWithStorage)
+
 public:
 
     /// \brief Constructor which leaves results storage uninitialized.

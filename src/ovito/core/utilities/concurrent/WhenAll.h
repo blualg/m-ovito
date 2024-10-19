@@ -40,13 +40,15 @@ template<typename InputRange, typename... ResultType>
 
     class WhenAllFuturesTask : public detail::ContinuationTask<task_result_type>
     {
+        Q_DISABLE_COPY_MOVE(WhenAllFuturesTask)
+
     public:
 
         /// The type of future associated with this task type. This is used by the launchTask() function.
         using future_type = Future<task_result_type>;
 
         /// Constructor.
-        WhenAllFuturesTask(
+        explicit WhenAllFuturesTask(
             InputRange&& inputRange) :
                 detail::ContinuationTask<task_result_type>(Task::NoState, std::forward<InputRange>(inputRange)),
                 _taskCallback(*this, &taskStateChangedCallback),
