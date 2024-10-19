@@ -156,7 +156,7 @@ void ColorCodingModifier::initializeModifier(const ModifierInitializationRequest
 
     // When the modifier is inserted, automatically select the most recently added property from the input.
     if(!sourceProperty() && delegate() && this_task::isInteractive()) {
-        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).blockForResult();
         if(const PropertyContainer* container = input.getLeafObject(delegate()->inputContainerRef())) {
             PropertyReference bestProperty;
             for(const Property* property : container->properties()) {
@@ -420,7 +420,7 @@ bool ColorCodingModifier::adjustRange(AnimationTime time)
     // Loop over all input data.
     bool success = false;
     for(ModificationNode* node : nodes()) {
-        const PipelineFlowState& inputState = node->evaluateInput(PipelineEvaluationRequest(time, false, false)).result();
+        const PipelineFlowState& inputState = node->evaluateInput(PipelineEvaluationRequest(time, false, false)).blockForResult();
 
         // Determine the minimum and maximum values of the selected property.
         success |= determinePropertyValueRange(inputState, minValue, maxValue);
@@ -464,7 +464,7 @@ void ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
             PipelineEvaluationResult stateFuture = node->evaluateInput(PipelineEvaluationRequest(AnimationTime::fromFrame(frame)));
 
             // Determine min/max value of the selected property.
-            determinePropertyValueRange(stateFuture.result(), minValue, maxValue);
+            determinePropertyValueRange(stateFuture.blockForResult(), minValue, maxValue);
         }
         this_task::incrementProgressValue(1);
         this_task::throwIfCanceled();

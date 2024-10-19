@@ -39,7 +39,7 @@ class OVITO_CORE_EXPORT FrameGraphBuilder
 public:
 
 	/// Generates the frame graph contents for a scene.
-	static Future<OORef<FrameGraph>> build(OORef<FrameGraph> frameGraph, Scene* scene, Viewport* viewport, const QRect& logicalViewportRect = {}, const QRect& physicalViewportRect = {}, const ViewProjectionParameters& noninteractiveProjParams = {});
+	static Future<void> build(OORef<FrameGraph> frameGraph, Scene* scene, Viewport* viewport, const QRect& logicalViewportRect = {}, const QRect& physicalViewportRect = {}, const ViewProjectionParameters& noninteractiveProjParams = {});
 
 	/// Constructor (for internal use only).
 	FrameGraphBuilder(OORef<FrameGraph> frameGraph, Scene* scene, Viewport* viewport) :
@@ -53,19 +53,19 @@ private:
 	void compilePipelinesList();
 
 	/// Evaluates all visible pipelines in the scene to obtain their output data.
-	Future<std::unique_ptr<FrameGraphBuilder>> gatherPipelineResults(std::unique_ptr<FrameGraphBuilder> self);
+	Future<void> gatherPipelineResults();
 
 	/// Asks all visual elements to render.
-	static Future<std::unique_ptr<FrameGraphBuilder>> renderVisElements(FrameGraph& frameGraph, Future<std::unique_ptr<FrameGraphBuilder>> future);
+	void renderVisElements();
 
 	/// Visits all vis elements of all data objects in the collection and lets them populate the frame graph.
 	void gatherVisElements(const DataObject* dataObj, const Pipeline* pipeline, const PipelineFlowState& state, ConstDataObjectPath& dataObjectPath);
 
 	/// Waits for all visual elements to finish rendering.
-	static Future<std::unique_ptr<FrameGraphBuilder>> waitForVisElements(Future<std::unique_ptr<FrameGraphBuilder>> future);
+	Future<void> waitForVisElements();
 
 	/// Waits for all viewport overlays to finish rendering.
-	static Future<std::unique_ptr<FrameGraphBuilder>> waitForViewportLayers(Future<std::unique_ptr<FrameGraphBuilder>> future);
+	Future<void> waitForViewportLayers();
 
 	/// Handles the status returned by a vis element's or overlay's render() method.
 	void handleRenderResult(ActiveObject* object, PipelineStatus&& status);

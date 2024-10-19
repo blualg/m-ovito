@@ -230,7 +230,7 @@ void DislocationInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewp
         return;
 
     PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
-    const PipelineFlowState flowState = _applet->currentPipeline()->evaluatePipeline(request).result();
+    const PipelineFlowState flowState = _applet->currentPipeline()->evaluatePipeline(request).blockForResult();
     const DislocationNetwork* dislocations = flowState.getObject<DislocationNetwork>();
     if(!dislocations)
         return;

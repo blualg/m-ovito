@@ -81,7 +81,7 @@ void VTKTriangleMeshExporter::exportFrame(int frameNumber, const QString& filePa
         surfaceVis = OORef<SurfaceMeshVis>::create();
 
     // Convert the SurfaceMesh to a triangle mesh.
-    std::shared_ptr<const RenderableSurfaceMesh> meshObj = surfaceVis->transformSurfaceMesh(surfaceObj).result();
+    std::shared_ptr<const RenderableSurfaceMesh> meshObj = surfaceVis->transformSurfaceMesh(surfaceObj).blockForResult();
 
     const TriangleMesh* surfaceMesh = meshObj->surface();
     const TriangleMesh* capPolygonsMesh = exportCapPolygons() ? meshObj->capPolygons() : nullptr;

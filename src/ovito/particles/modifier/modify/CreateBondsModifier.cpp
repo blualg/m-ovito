@@ -139,7 +139,7 @@ void CreateBondsModifier::initializeModifier(const ModifierInitializationRequest
     Modifier::initializeModifier(request);
 
     int bondTypeId = 1;
-    const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
+    const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).blockForResult();
     if(const Particles* particles = input.getObject<Particles>()) {
         // Adopt the upstream BondsVis object if there already is one.
         // Also choose a unique numeric bond type ID, which does not conflict with any existing bond type.

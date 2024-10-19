@@ -141,7 +141,7 @@ void ParticleType::loadShapeMesh(const QUrl& sourceUrl, const FileImporterClass*
 
             // Inspect input file to detect its format.
             Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(sourceUrl);
-            importer = dynamic_object_cast<FileSourceImporter>(importerFuture.result());
+            importer = dynamic_object_cast<FileSourceImporter>(importerFuture.blockForResult());
         }
         else {
             importer = dynamic_object_cast<FileSourceImporter>(importerClass->createInstance());
@@ -156,7 +156,7 @@ void ParticleType::loadShapeMesh(const QUrl& sourceUrl, const FileImporterClass*
         fileSource->setSource({sourceUrl}, importer, false);
 
         // Check if the FileSource has provided some useful data.
-        PipelineFlowState state = fileSource->evaluate(PipelineEvaluationRequest(AnimationTime(0), true)).result();
+        PipelineFlowState state = fileSource->evaluate(PipelineEvaluationRequest(AnimationTime(0), true)).blockForResult();
         if(state.status().type() == PipelineStatus::Error)
             return;
         if(!state)

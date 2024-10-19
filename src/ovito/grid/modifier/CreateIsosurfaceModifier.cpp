@@ -115,7 +115,7 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 
     // Use the first available voxel grid from the input state as data source when the modifier is newly created.
     if(!sourceProperty() && subject().dataPath().isEmpty() && this_task::isInteractive()) {
-        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).blockForResult();
         if(const VoxelGrid* grid = input.getObject<VoxelGrid>()) {
             setSubject(PropertyContainerReference(&grid->getOOMetaClass(), grid->identifier()));
         }
@@ -123,7 +123,7 @@ void CreateIsosurfaceModifier::initializeModifier(const ModifierInitializationRe
 
     // Use the first available property from the input grid as data source when the modifier is newly created.
     if(!sourceProperty() && subject() && this_task::isInteractive()) {
-        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).blockForResult();
         if(const VoxelGrid* grid = dynamic_object_cast<VoxelGrid>(input.getLeafObject(subject()))) {
             for(const Property* property : grid->properties()) {
                 setSourceProperty(PropertyReference(property, (property->componentCount() > 1) ? 0 : -1));

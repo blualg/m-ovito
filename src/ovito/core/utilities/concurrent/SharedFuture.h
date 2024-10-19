@@ -42,6 +42,9 @@ public:
     using this_type = SharedFuture<R>;
     using result_type = R;
 
+    /// The promise type for C++ coroutines returning a Future.
+    using promise_type = CoroutinePromise<R>;
+
     /// Default constructor that constructs an invalid SharedFuture that is not associated with any shared state.
     SharedFuture() noexcept = default;
 
@@ -82,21 +85,43 @@ public:
     SharedFuture& operator=(const SharedFuture& other) noexcept = default;
 
     /// Returns a const reference to the results computed by the associated Promise.
-    /// The function blocks until the result become available.
+    /// This function may only be called if the future is in the 'fulfilled' state.
     template<typename R2 = R>
     [[nodiscard]] std::enable_if_t<!std::is_void_v<R2>, std::add_lvalue_reference_t<std::add_const_t<R>>> result() const& {
         OVITO_ASSERT_MSG(*this, "SharedFuture::results()", "Future must be valid.");
-        waitForFinished();
         OVITO_ASSERT_MSG(isFinished(), "SharedFuture::results()", "Future must be in fulfilled state.");
         OVITO_ASSERT_MSG(!isCanceled(), "SharedFuture::results()", "Future must not be canceled.");
+        task()->throwPossibleException();
         return task()->template getResult<R>();
     }
 
     /// Returns a copy to the results computed by the associated Promise.
-    /// The function blocks until the result become available.
+    /// This function may only be called if the future is in the 'fulfilled' state.
     template<typename R2 = R>
     [[nodiscard]] std::enable_if_t<!std::is_void_v<R2>, R> result() && {
+        OVITO_ASSERT_MSG(*this, "SharedFuture::results()", "Future must be valid.");
+        OVITO_ASSERT_MSG(isFinished(), "SharedFuture::results()", "Future must be in fulfilled state.");
+        OVITO_ASSERT_MSG(!isCanceled(), "SharedFuture::results()", "Future must not be canceled.");
+        auto taskDep = takeTaskDependency();
+        OVITO_ASSERT(!*this);
+        taskDep->throwPossibleException();
+        return taskDep->template getResult<R>();
+    }
+
+    /// Blocks until the results of this future become available and returns them.
+    template<typename R2 = R>
+    [[nodiscard]] std::enable_if_t<!std::is_void_v<R2>, std::add_lvalue_reference_t<std::add_const_t<R>>> blockForResult() const& {
+        OVITO_ASSERT_MSG(*this, "SharedFuture::blockForResult()", "Future must be valid.");
+        waitForFinished();
         return result();
+    }
+
+    /// Blocks until the results of this future become available and returns them.
+    template<typename R2 = R>
+    [[nodiscard]] std::enable_if_t<!std::is_void_v<R2>, R> blockForResult() && {
+        OVITO_ASSERT_MSG(*this, "SharedFuture::blockForResult()", "Future must be valid.");
+        waitForFinished();
+        return std::move(*this).result();
     }
 
     /// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
@@ -159,9 +184,6 @@ SharedFuture<R>::then(Executor&& executor, Function&& f) const
 
         /// Callback to be invoked when the awaited task has finished.
         void awaitedTaskFinished(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
-            // Lock access to this task.
-            Task::MutexLock lock(*this);
-
             OVITO_ASSERT(finishedTask->isFinished());
             OVITO_ASSERT(!this->isFinished() || this->isCanceled());
 
@@ -169,12 +191,15 @@ SharedFuture<R>::then(Executor&& executor, Function&& f) const
             // Forward any preceding exception state directly to the continuation task.
             if constexpr(!std::is_invocable_v<Function, SharedFuture<R>>) {
                 if(finishedTask->exceptionStore()) {
-                    this->exceptionLocked(finishedTask->exceptionStore());
-                    this->finishLocked(lock);
+                    {
+                        Task::MutexLock lock(*this);
+                        this->exceptionLocked(finishedTask->exceptionStore());
+                        this->finishLocked(lock);
+                    }
+                    promise.takeTask();
                     return;
                 }
             }
-            lock.unlock();
 
             // Now it's time to execute the continuation function supplied by the user.
             // This assigns the function's return value as result of this continuation task.

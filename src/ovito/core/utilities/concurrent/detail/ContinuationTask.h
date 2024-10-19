@@ -54,7 +54,6 @@ public:
     /// Sets the result of this task upon completion of the preceding task.
     template<typename Function, typename FutureType>
     void fulfillWith(PromiseBase&& promise, Function&& f, FutureType&& future) noexcept {
-        OVITO_ASSERT(!awaitedTask());
         OVITO_ASSERT(promise.task().get() == this);
         OVITO_ASSERT(future.isFinished());
 

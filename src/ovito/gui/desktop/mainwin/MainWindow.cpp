@@ -1091,7 +1091,7 @@ void MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterCl
 
             // Detect file format.
             Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(url);
-            importer = importerFuture.result();
+            importer = importerFuture.blockForResult();
             if(!importer)
                 throw Exception(tr("Could not auto-detect the format of the file %1. The file format might not be supported.").arg(url.fileName()));
         }

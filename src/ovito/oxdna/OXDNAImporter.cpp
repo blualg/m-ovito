@@ -148,7 +148,7 @@ void OXDNAImporter::FrameLoader::loadFile()
     SharedFuture<FileHandle> localTopologyFileFuture = Application::instance()->fileManager().fetchUrl(topoFileUrl);
 
     // Open oxDNA topology file for reading.
-    CompressedTextReader topoStream(localTopologyFileFuture.result());
+    CompressedTextReader topoStream(localTopologyFileFuture.blockForResult());
     this_task::beginProgressSubSteps(2);
     this_task::setProgressText(tr("Reading oxDNA topology file %1").arg(localTopologyFileFuture.result().toString()));
 

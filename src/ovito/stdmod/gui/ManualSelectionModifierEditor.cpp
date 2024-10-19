@@ -288,7 +288,7 @@ void ManualSelectionModifierEditor::resetSelection()
     performTransaction(tr("Reset selection"), [this,mod]() {
         PipelineEvaluationRequest request(currentAnimationTime(), false, true);
         for(ModificationNode* node : modificationNodes()) {
-            mod->resetSelection(node, node->evaluateInput(request).result());
+            mod->resetSelection(node, node->evaluateInput(request).blockForResult());
         }
     });
 }
@@ -304,7 +304,7 @@ void ManualSelectionModifierEditor::selectAll()
     performTransaction(tr("Select all"), [this,mod]() {
         PipelineEvaluationRequest request(currentAnimationTime(), false, true);
         for(ModificationNode* node : modificationNodes()) {
-            mod->selectAll(node, node->evaluateInput(request).result());
+            mod->selectAll(node, node->evaluateInput(request).blockForResult());
         }
     });
 }
@@ -320,7 +320,7 @@ void ManualSelectionModifierEditor::clearSelection()
     performTransaction(tr("Clear selection"), [this,mod]() {
         PipelineEvaluationRequest request(currentAnimationTime(), false, true);
         for(ModificationNode* node : modificationNodes()) {
-            mod->clearSelection(node, node->evaluateInput(request).result());
+            mod->clearSelection(node, node->evaluateInput(request).blockForResult());
         }
     });
 }
@@ -336,7 +336,7 @@ void ManualSelectionModifierEditor::invertSelection()
     performTransaction(tr("Invert selection"), [this,mod]() {
         PipelineEvaluationRequest request(currentAnimationTime(), false, true);
         for(ModificationNode* node : modificationNodes()) {
-            mod->invertSelection(node, node->evaluateInput(request).result());
+            mod->invertSelection(node, node->evaluateInput(request).blockForResult());
         }
     });
 }
@@ -358,7 +358,7 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportWindow::PickRe
                 continue;
 
             // Get the modifier's input data.
-            const PipelineFlowState& modInput = node->evaluateInput(request).result();
+            const PipelineFlowState& modInput = node->evaluateInput(request).blockForResult();
             const ConstDataObjectPath& inputObjectPath = modInput.expectObject(mod->subject());
 
             // Look up the right element in the modifier's input.
@@ -390,7 +390,7 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
         for(ModificationNode* node : modificationNodes()) {
 
             // Get the modifier's input data.
-            const PipelineFlowState& modInput = node->evaluateInput(request).result();
+            const PipelineFlowState& modInput = node->evaluateInput(request).blockForResult();
             const ConstDataObjectPath& inputObjectPath = modInput.expectObject(mod->subject());
 
             // Iterate over the pipelines.

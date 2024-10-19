@@ -38,6 +38,7 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/concurrent/NoninteractiveContext.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 
 namespace Ovito {
 
@@ -270,57 +271,55 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
     }
 
     // Let the FrameGraphBuilder class do the heavy lifting and generate the frame graph for the current scene.
-    Future<OORef<FrameGraph>> frameGraphFuture = FrameGraphBuilder::build(std::move(frameGraph), viewport()->scene(), viewport(), logicalViewportRect, physicalViewportRect, noninteractiveProjParams);
+    co_await FutureAwaiter(ObjectExecutor(this),
+        FrameGraphBuilder::build(frameGraph, viewport()->scene(), viewport(), logicalViewportRect, physicalViewportRect, noninteractiveProjParams));
 
     // After the frame graph has been built for the scene, finish and then render it.
-    return frameGraphFuture.then(ObjectExecutor(this), [this](OORef<FrameGraph> frameGraph) {
+    dataset = userInterface().datasetContainer().currentSet();
+    windowSize = viewportWindowDeviceSize();
+    if(!viewport() || !dataset || !dataset->renderSettings() || windowSize.isEmpty())
+        this_task::cancelAndThrow();
 
-        DataSet* dataset = userInterface().datasetContainer().currentSet();
-        QSize windowSize = viewportWindowDeviceSize();
-        if(!viewport() || !dataset || !dataset->renderSettings() || windowSize.isEmpty())
-            this_task::cancelAndThrow();
+    // Create a command group for the UI element rendering commands.
+    FrameGraph::RenderingCommandGroup& uiCommandGroup = frameGraph->addCommandGroup(FrameGraph::OverLayer);
 
-        // Create a command group for the UI element rendering commands.
-        FrameGraph::RenderingCommandGroup& uiCommandGroup = frameGraph->addCommandGroup(FrameGraph::OverLayer);
+    // Render UI elements on top (e.g. viewport caption).
+    if(viewport()->renderPreviewMode()) {
+        renderPreviewFrame(*frameGraph, uiCommandGroup, dataset, windowSize);
+    }
+    else {
+        if(isOrientationIndicatorVisible())
+            renderOrientationIndicator(*frameGraph, uiCommandGroup, windowSize);
+    }
 
-        // Render UI elements on top (e.g. viewport caption).
-        if(viewport()->renderPreviewMode()) {
-            renderPreviewFrame(*frameGraph, uiCommandGroup, dataset, windowSize);
-        }
-        else {
-            if(isOrientationIndicatorVisible())
-                renderOrientationIndicator(*frameGraph, uiCommandGroup, windowSize);
-        }
+    // Render viewport caption.
+    if(isViewportTitleVisible())
+        _contextMenuArea = renderViewportTitle(*frameGraph, uiCommandGroup);
+    else
+        _contextMenuArea = QRectF();
 
-        // Render viewport caption.
-        if(isViewportTitleVisible())
-            _contextMenuArea = renderViewportTitle(*frameGraph, uiCommandGroup);
-        else
-            _contextMenuArea = QRectF();
+    // Let the renderer implementation post-process the frame graph.
+    if(this->renderingJob())
+        this->renderingJob()->postprocessFrameGraph(*frameGraph);
 
-        // Let the renderer implementation post-process the frame graph.
-        if(this->renderingJob())
-            this->renderingJob()->postprocessFrameGraph(*frameGraph);
+    // Compute final projection based on the now known bounding box.
+    _projParams = viewport()->computeProjectionParameters(frameGraph->time(), (FloatType)windowSize.height() / windowSize.width(), frameGraph->sceneBoundingBox());
 
-        // Compute final projection based on the now known bounding box.
-        _projParams = viewport()->computeProjectionParameters(frameGraph->time(), (FloatType)windowSize.height() / windowSize.width(), frameGraph->sceneBoundingBox());
+    // Adjust projection if render frame is enabled.
+    if(viewport()->renderPreviewMode())
+        adjustProjectionForRenderPreviewFrame(dataset, _projParams, windowSize);
+    frameGraph->setProjectionParams(_projParams);
 
-        // Adjust projection if render frame is enabled.
-        if(viewport()->renderPreviewMode())
-            adjustProjectionForRenderPreviewFrame(dataset, _projParams, windowSize);
-        frameGraph->setProjectionParams(_projParams);
+    // If the current scene represents only a preliminary pipeline state, we need to render the scene again
+    // as soon as all pipelines are ready.
+    if(frameGraph->isPreliminaryState()) {
+        // This restarts the evaluation of all pipelines in the scene and triggers
+        // a viewport refresh once all pipelines are ready.
+        (void)scenePreparation().future();
+    }
 
-        // If the current scene represents only a preliminary pipeline state, we need to render the scene again
-        // as soon as all pipelines are ready.
-        if(frameGraph->isPreliminaryState()) {
-            // This restarts the evaluation of all pipelines in the scene and triggers
-            // a viewport refresh once all pipelines are ready.
-            (void)scenePreparation().future();
-        }
-
-        // After the frame graph has been built, let window implementation render an image.
-        return renderFrameGraph(std::move(frameGraph));
-    });
+    // After the frame graph has been built, let the window implementation render an image.
+    co_await renderFrameGraph(std::move(frameGraph));
 }
 
 /******************************************************************************

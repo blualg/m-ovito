@@ -46,12 +46,12 @@ public:
 
     /// Initialization constructor.
     TaskDependency(TaskPtr task) noexcept : _task(std::move(task)) {
-        if(_task) _task->_dependentsCount.fetch_add(1);
+        if(_task) _task->_dependentsCount.fetch_add(1, std::memory_order_relaxed);
     }
 
     /// Copy constructor.
     TaskDependency(const TaskDependency& other) noexcept : _task(other._task) {
-        if(_task) _task->_dependentsCount.fetch_add(1);
+        if(_task) _task->_dependentsCount.fetch_add(1, std::memory_order_relaxed);
     }
 
     /// Move constructor.
@@ -61,7 +61,7 @@ public:
     ~TaskDependency() noexcept {
         if(_task) {
             // Automatically cancel the task when there are no one left depending on its results.
-            if(_task->_dependentsCount.fetch_sub(1) == 1)
+            if(_task->_dependentsCount.fetch_sub(1, std::memory_order_acq_rel) == 1)
                 _task->cancel();
         }
     }
@@ -109,7 +109,7 @@ public:
 
 private:
 
-    /// A std::shared_task to the Task object, which keeps the C++ object alive.
+    /// A std::shared_ptr to the Task object, which keeps the C++ object alive.
     TaskPtr _task;
 };
 

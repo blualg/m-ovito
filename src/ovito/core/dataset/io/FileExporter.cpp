@@ -145,7 +145,7 @@ bool FileExporter::isSuitableSceneNode(SceneNode* node) const
     if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
         if(sceneToExport()) {
             AnimationTime time = sceneToExport()->animationSettings()->currentTime();
-            return isSuitablePipelineOutput(pipeline->evaluatePipeline(PipelineEvaluationRequest(time)).result());
+            return isSuitablePipelineOutput(pipeline->evaluatePipeline(PipelineEvaluationRequest(time)).blockForResult());
         }
     }
     return false;
@@ -187,7 +187,7 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame) const
         // Evaluate pipeline.
         PipelineEvaluationRequest request(AnimationTime::fromFrame(frame), this_task::isScripting());
         PipelineEvaluationResult result = pipeline->evaluatePipeline(request);
-        const PipelineFlowState& state = result.result();
+        const PipelineFlowState& state = result.blockForResult();
 
         if(this_task::isScripting() && state.status().type() == PipelineStatus::Error)
             throw Exception(state.status().text());

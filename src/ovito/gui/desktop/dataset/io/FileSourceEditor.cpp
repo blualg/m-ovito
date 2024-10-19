@@ -279,7 +279,7 @@ void FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
 
         // Detect file format.
         Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(url, fileSource->importer());
-        importer = importerFuture.result();
+        importer = importerFuture.blockForResult();
         if(!importer)
             throw Exception(tr("Could not detect the format of the file to be imported. The format might not be supported."));
     }

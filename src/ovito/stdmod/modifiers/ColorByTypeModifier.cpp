@@ -70,7 +70,7 @@ void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest
 
         // When the modifier is first inserted, automatically select the most recently added
         // typed property (in GUI mode) or the canonical type property (in script mode).
-        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).blockForResult();
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             PropertyReference bestProperty;
             for(const Property* property : container->properties()) {

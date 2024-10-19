@@ -37,7 +37,6 @@ namespace Ovito
     class CompressedTextReader;
     class CompressedTextWriter;
     class VideoEncoder;
-    class SftpJob;
     class PromiseBase;
     class FutureBase;
     class Task;
@@ -45,6 +44,7 @@ namespace Ovito
     template<typename R> class Future;
     template<typename R> class SharedFuture;
     template<typename R> class Promise;
+    template<typename R> class CoroutinePromise;
     template<class R, class TaskBase> class TaskWithStorage;
     using TaskPtr = std::shared_ptr<Task>;
     struct InlineExecutor;

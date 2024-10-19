@@ -412,7 +412,7 @@ void SliceModifier::renderModifierVisual(ModificationNode* modNode, Pipeline* pi
 
         // Obtain modifier parameter values.
         PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
-        const PipelineFlowState& state = modNode->evaluateInput(request).result();
+        const PipelineFlowState& state = modNode->evaluateInput(request).blockForResult();
         Plane3 plane;
         FloatType slabWidth;
         TimeInterval interval;
@@ -519,7 +519,7 @@ void SliceModifier::initializeModifier(const ModifierInitializationRequest& requ
 
     // Initially place the cutting plane in the center of the simulation cell.
     if(this_task::isInteractive() && distanceController() && distanceController()->getFloatValue(AnimationTime(0)) == 0) {
-        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).blockForResult();
         if(const SimulationCell* cell = input.getObject<SimulationCell>()) {
             Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
             FloatType centerDistance = normal().dot(centerPoint - Point3::Origin());
@@ -614,7 +614,7 @@ void SliceModifier::centerPlaneInSimulationCell(ModificationNode* node, Animatio
 
     // Get the simulation cell from the input object to center the slicing plane in
     // the center of the simulation cell.
-    const PipelineFlowState& input = node->evaluateInput(PipelineEvaluationRequest(time, false, true)).result();
+    const PipelineFlowState& input = node->evaluateInput(PipelineEvaluationRequest(time, false, true)).blockForResult();
     if(const SimulationCell* cell = input.getObject<SimulationCell>()) {
 
         FloatType centerDistance;

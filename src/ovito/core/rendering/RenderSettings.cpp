@@ -321,9 +321,9 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
             const QRect& physicalOverlayRect = vpData.renderingFrameBuffer->renderingViewportRect();
 
             // Let the FrameGraphBuilder class do the heavy lifting and generate the frame graph for the current scene.
-            frameGraph = FrameGraphBuilder::build(std::move(frameGraph),
+            FrameGraphBuilder::build(frameGraph,
                 vpData.viewport->scene(), vpData.viewport,
-                logicalOverlayRect, physicalOverlayRect, projParams).result();
+                logicalOverlayRect, physicalOverlayRect, projParams).waitForFinished();
 
             // Let the scene renderer implementation post-process the frame graph.
             renderingJob->postprocessFrameGraph(*frameGraph);

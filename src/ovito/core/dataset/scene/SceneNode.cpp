@@ -556,7 +556,7 @@ void SceneNode::setPerViewportVisibility(Viewport* vp, bool visible)
 * Returns whether this scene node (or one of its parents in the node hierarchy) has been hidden
 * specifically in the given viewport.
 ******************************************************************************/
-bool SceneNode::isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) const
+bool SceneNode::isHiddenInViewport(const Viewport* vp, bool includeHierarchyParent) const
 {
     OVITO_ASSERT(vp);
     OVITO_ASSERT(this_task::isMainThread());

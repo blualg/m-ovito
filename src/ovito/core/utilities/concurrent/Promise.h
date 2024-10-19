@@ -236,7 +236,7 @@ protected:
     }
 
     /// Creates a promise that is in the 'exception' state.
-   [[nodiscard]]  static Promise createFailed(std::exception_ptr ex_ptr) {
+   [[nodiscard]] static Promise createFailed(std::exception_ptr ex_ptr) {
         Promise promise(std::make_shared<Task>(Task::Finished));
         promise.task()->_exceptionStore = std::move(ex_ptr);
         return promise;

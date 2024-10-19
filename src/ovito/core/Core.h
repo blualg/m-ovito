@@ -59,6 +59,7 @@
 #include <span>
 #include <version>
 #include <typeinfo>
+#include <coroutine>
 
 /******************************************************************************
 * Qt framework

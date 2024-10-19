@@ -83,7 +83,7 @@ void HistogramModifier::initializeModifier(const ModifierInitializationRequest& 
 
     // Use the first available property from the input state as data source when the modifier is newly created.
     if(!sourceProperty() && subject() && this_task::isInteractive()) {
-        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).result();
+        const PipelineFlowState& input = request.modificationNode()->evaluateInput(request).blockForResult();
         if(const PropertyContainer* container = input.getLeafObject(subject())) {
             PropertyReference bestProperty;
             for(const Property* property : container->properties()) {

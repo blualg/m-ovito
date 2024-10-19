@@ -62,7 +62,7 @@ void ManualSelectionModifier::initializeModifier(const ModifierInitializationReq
 
     // Take a snapshot of the existing selection state at the time the modifier is created.
     if(!getSelectionSet(request.modificationNode(), false)) {
-        resetSelection(request.modificationNode(), request.modificationNode()->evaluateInput(request).result());
+        resetSelection(request.modificationNode(), request.modificationNode()->evaluateInput(request).blockForResult());
     }
 }
 
@@ -76,7 +76,7 @@ void ManualSelectionModifier::propertyChanged(const PropertyFieldDescriptor* fie
         PipelineEvaluationRequest request(this_task::ui()->datasetContainer().currentAnimationTime());
         for(ModificationNode* node : nodes()) {
             try {
-                resetSelection(node, node->evaluateInput(request).result());
+                resetSelection(node, node->evaluateInput(request).blockForResult());
             }
             catch(...) {
                 // Ignore exceptions that occur during upstream pipeline evaluation.

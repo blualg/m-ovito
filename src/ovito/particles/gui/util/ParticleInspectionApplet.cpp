@@ -290,7 +290,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
         auto outVertex = vertices.begin();
         for(auto& element : _pickedElements) {
             PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
-            const PipelineFlowState flowState = element.pipeline->evaluatePipeline(request).result();
+            const PipelineFlowState flowState = element.pipeline->evaluatePipeline(request).blockForResult();
             if(const Particles* particles = flowState.getObject<Particles>()) {
                 // If particle selection is based on ID, find particle with the given ID.
                 size_t particleIndex = element.particleIndex;

@@ -138,6 +138,9 @@ public:
     using this_type = Future<R>;
     using result_type = R;
 
+    /// The promise type for C++ coroutines returning a Future.
+    using promise_type = CoroutinePromise<R>;
+
     /// Default constructor that constructs an invalid Future that is not associated with any shared state.
     Future() noexcept = default;
 
@@ -206,14 +209,24 @@ public:
     }
 
     /// Returns the results computed by the associated Promise.
-    /// The function blocks until the result become available.
+    /// This function may only be called if the future is in the 'fulfilled' state.
     template<typename R2 = R>
     [[nodiscard]] std::enable_if_t<!std::is_void_v<R2>, R> result() {
         OVITO_ASSERT_MSG(*this, "Future::results()", "Future must be valid.");
-        waitForFinished();
         OVITO_ASSERT_MSG(isFinished(), "Future::results()", "Future must be in fulfilled state.");
         OVITO_ASSERT_MSG(!isCanceled(), "Future::results()", "Future must not be canceled.");
-        return takeTaskDependency()->template takeResult<R>();
+        auto taskDep = takeTaskDependency();
+        OVITO_ASSERT(!*this);
+        taskDep->throwPossibleException();
+        return taskDep->template takeResult<R>();
+    }
+
+    /// Blocks until the results of this future become available and returns them.
+    template<typename R2 = R>
+    [[nodiscard]] std::enable_if_t<!std::is_void_v<R2>, R> blockForResult() {
+        OVITO_ASSERT_MSG(*this, "Future::blockForResult()", "Future must be valid.");
+        waitForFinished();
+        return result();
     }
 
     /// Returns a new future that, upon the fulfillment of this future, will be fulfilled by running the given continuation function.
@@ -280,9 +293,6 @@ Future<R>::then(Executor&& executor, Function&& f)
 
         /// Callback to be invoked when the awaited task has finished.
         void awaitedTaskFinished(PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
-            // Lock access to this task.
-            Task::MutexLock lock(*this);
-
             OVITO_ASSERT(finishedTask->isFinished());
             OVITO_ASSERT(!this->isFinished() || this->isCanceled());
 
@@ -290,12 +300,15 @@ Future<R>::then(Executor&& executor, Function&& f)
             // Forward any preceding exception state directly to the continuation task.
             if constexpr(!std::is_invocable_v<Function, Future<R>>) {
                 if(finishedTask->exceptionStore()) {
-                    this->exceptionLocked(finishedTask->exceptionStore());
-                    this->finishLocked(lock);
+                    {
+                        Task::MutexLock lock(*this);
+                        this->exceptionLocked(finishedTask->exceptionStore());
+                        this->finishLocked(lock);
+                    }
+                    promise.takeTask();
                     return;
                 }
             }
-            lock.unlock();
 
             // Now it's time to execute the continuation function supplied by the user.
             // This assigns the function's return value as result of this continuation task.

@@ -81,7 +81,7 @@ void VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePa
         dislocationVis = OORef<DislocationVis>::create();
 
     // Generate non-periodic version of the dislocation line network.
-    std::shared_ptr<const RenderableDislocationLines> renderableLines = dislocationVis->transformDislocations(dislocations).result();
+    std::shared_ptr<const RenderableDislocationLines> renderableLines = dislocationVis->transformDislocations(dislocations).blockForResult();
 
     // Count dislocation polylines and output vertices.
     std::vector<size_t> polyVertexCounts;

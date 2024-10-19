@@ -228,7 +228,7 @@ public:
 
     /// Returns whether this scene node (or one of its parents in the node hierarchy) has been hidden
     /// specifically in the given viewport.
-    bool isHiddenInViewport(Viewport* vp, bool includeHierarchyParent) const;
+    bool isHiddenInViewport(const Viewport* vp, bool includeHierarchyParent) const;
 
 protected:
 

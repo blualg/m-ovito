@@ -439,7 +439,7 @@ void ParaViewVTPParticleImporter::FrameLoader::loadParticleShape(ParticleType* p
             });
 
     // Check if the importer has loaded any data.
-    PipelineFlowState state = stateFuture.result();
+    PipelineFlowState state = stateFuture.blockForResult();
     if(!state || state.status().type() == PipelineStatus::Error)
         return;
 

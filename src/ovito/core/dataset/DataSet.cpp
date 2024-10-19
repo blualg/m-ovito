@@ -28,6 +28,7 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/StandaloneApplication.h>
+#include <ovito/core/utilities/concurrent/NoninteractiveContext.h>
 
 namespace Ovito {
 
@@ -197,6 +198,12 @@ void DataSet::loadFromFile(const QString& filePath)
     if(!fileStream.open(QIODevice::ReadOnly))
         throw Exception(tr("Failed to open file '%1' for reading: %2").arg(absolutePath).arg(fileStream.errorString()));
 
+    // Temporarily establish a non-interactive context to always initialize
+    // object parameters to factory default settings. This is necessary to
+    // ensure that the loaded objects are in a consistent state even if parameters have
+    // been added to the objects in newer OVITO versions since the session state file was written.
+    NoninteractiveContext noninteractiveContext;
+
     QDataStream dataStream(&fileStream);
     ObjectLoadStream stream(dataStream);
 
@@ -226,6 +233,12 @@ OORef<DataSet> DataSet::createFromFile(const QString& filename)
     QFile fileStream(absoluteFilepath);
     if(!fileStream.open(QIODevice::ReadOnly))
         throw Exception(tr("Failed to open session state file '%1' for reading: %2").arg(absoluteFilepath).arg(fileStream.errorString()));
+
+    // Temporarily establish a non-interactive context to always initialize
+    // object parameters to factory default settings. This is necessary to
+    // ensure that the loaded objects are in a consistent state even if parameters have
+    // been added to the objects in newer OVITO versions since the session state file was written.
+    NoninteractiveContext noninteractiveContext;
 
     QDataStream dataStream(&fileStream);
     ObjectLoadStream stream(dataStream);

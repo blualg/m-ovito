@@ -44,7 +44,7 @@ public:
     /// Starts the execution of this task. This gets called by the launchTask() helper function.
     void operator()(SharedFuture<PipelineFlowState> inputFuture, AuxiliaryFutureType auxiliaryFuture) noexcept {
 
-        // Schedule callback upon completion of the future that yields the input pipeline state.
+        // Schedule callback upon completion of the future that yields the input state from the upstream pipeline.
         ModifierEvaluationTask::operator()(std::move(inputFuture));
 
         // Schedule callback upon completion of the future that yields the auxiliary input data.
@@ -58,7 +58,7 @@ protected:
 
     /// Asks the modifier to compute its results based on the now available upstream pipeline data.
     virtual void evaluateModifier(PromiseBase promise) noexcept override {
-        OVITO_ASSERT(resultStorage()); // Upstream data must be stored in this task's results storage.
+        OVITO_ASSERT(resultStorage()); // Upstream data must already be stored in this task's results storage.
         evaluateModifierIfReady(std::move(promise));
     }
 

@@ -42,46 +42,25 @@ public:
     /// Constructor.
     explicit TaskAwaiter(Task& owner) noexcept : TaskCallbackBase(owner, &taskStateChangedCallback) {}
 
-    /// Moves the dependency on the awaited task out of this object.
-    /// Note: Make sure this owning task's mutex is locked while calling this function.
-    TaskDependency takeAwaitedTask() noexcept {
-        return std::move(_awaitedTask);
-    }
-
-    /// Returns the task we are currently waiting for.
-    const TaskDependency& awaitedTask() noexcept {
-        return _awaitedTask;
-    }
-
-    /// Runs a continuation method once the given task reaches the 'finished' state.
-    template<
-        typename TaskClass,
-        void(TaskClass::*ContinuationMethod)(PromiseBase, detail::TaskDependency) noexcept,
-        typename Executor
-    >
-    void whenTaskFinishes(TaskDependency awaitedTask, Executor&& executor, PromiseBase promise) noexcept {
-        OVITO_ASSERT(awaitedTask);
+    /// Runs a continuation function once the given task reaches the 'finished' state.
+    template<typename Executor, typename Function>
+    void whenTaskFinishes(TaskDependency awaitedTask, Executor&& executor, PromiseBase promise, Function&& function) noexcept {
         OVITO_ASSERT(promise);
-        Task& waitingTask = *promise.task();
+
+        // Make a copy of the task pointer for later.
+        TaskPtr awt = awaitedTask.get();
 
         // Attach to the task to be waited on.
-        Task::MutexLock lock(waitingTask);
-        OVITO_ASSERT(!_awaitedTask);
-        if(waitingTask.isCanceled()) {
-            // Bail out and do not attach to the input task if this continuation task is already canceled.
-            return;
-        }
-        OVITO_ASSERT(!waitingTask.isFinished());
-        _awaitedTask = std::move(awaitedTask);
-        TaskPtr t = _awaitedTask.get(); // Keep a reference to the awaited task, because after unlocking our mutex, we might loose _awaitedTask.
-        lock.unlock();
+        if(!setAwaitedTask(*promise.task(), std::move(awaitedTask)))
+            return; // The waiting task has been canceled.
 
         // Run the waiting task's callback method once the awaited task finishes.
-        t->addContinuation([
-                this,
-                promise = std::move(promise),
-                executor = std::forward<Executor>(executor)]() mutable noexcept
-            {
+        awt->addContinuation([
+            this,
+            promise = std::move(promise),
+            executor = std::forward<Executor>(executor),
+            function = std::forward<Function>(function)]() mutable noexcept
+        {
             // Lock access to the waiting task.
             Task::MutexLock lock(*promise.task());
 
@@ -94,14 +73,48 @@ public:
             }
             lock.unlock();
 
-            // Invoke the callback method which processes the awaited task's result.
-            std::move(executor).execute([promise = std::move(promise), finishedTask = std::move(finishedTask)]() mutable noexcept {
-                (static_cast<TaskClass*>(promise.task().get())->*ContinuationMethod)(std::move(promise), std::move(finishedTask));
+            // Run the callback method that processes the awaited task's result.
+            std::move(executor).execute([function = std::move(function), promise = std::move(promise), finishedTask = std::move(finishedTask)]() mutable noexcept {
+                std::invoke(std::move(function), std::move(promise), std::move(finishedTask));
             });
         });
     }
 
+    /// Runs a continuation method of the waiting task class once the given awaited task reaches the 'finished' state.
+    template<
+        typename TaskClass,
+        void(TaskClass::*ContinuationMethod)(PromiseBase, detail::TaskDependency) noexcept,
+        typename Executor
+    >
+    void whenTaskFinishes(TaskDependency awaitedTask, Executor&& executor, PromiseBase promise) noexcept {
+        whenTaskFinishes(std::move(awaitedTask), std::forward<Executor>(executor), std::move(promise),
+            [](PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
+                (static_cast<TaskClass*>(promise.task().get())->*ContinuationMethod)(std::move(promise), std::move(finishedTask));
+            }
+        );
+    }
+
 private:
+
+    /// Moves the dependency on the awaited task out of this object.
+    /// Note: Make sure this owning task's mutex is locked while calling this function.
+    TaskDependency takeAwaitedTask() noexcept {
+        return std::move(_awaitedTask);
+    }
+
+    /// Attaches to a task to be waited on.
+    bool setAwaitedTask(Task& waitingTask, TaskDependency awaitedTask) noexcept {
+        OVITO_ASSERT(awaitedTask);
+        Task::MutexLock lock(waitingTask);
+        OVITO_ASSERT(!_awaitedTask);
+        if(waitingTask.isCanceled()) {
+            // Bail out and do not attach to the awaited task if the waiting task is already canceled.
+            return false;
+        }
+        OVITO_ASSERT(!waitingTask.isFinished());
+        _awaitedTask = std::move(awaitedTask);
+        return true;
+    }
 
     /// This function gets invoked when the state of the waiting task changes.
     /// The waiting task's mutex is locked when this function is called.

@@ -25,8 +25,8 @@
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/viewport/Viewport.h>
-#include <ovito/core/utilities/concurrent/ForEach.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include <ovito/core/app/Application.h>
 
 namespace Ovito {
@@ -34,40 +34,36 @@ namespace Ovito {
 /******************************************************************************
 * Generates the frame graph contents for a scene.
 ******************************************************************************/
-Future<OORef<FrameGraph>> FrameGraphBuilder::build(OORef<FrameGraph> frameGraph, Scene* scene, Viewport* viewport, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams)
+Future<void> FrameGraphBuilder::build(OORef<FrameGraph> frameGraph, Scene* scene, Viewport* viewport, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams)
 {
-    std::unique_ptr<FrameGraphBuilder> builder = std::make_unique<FrameGraphBuilder>(frameGraph, scene, viewport);
+    FrameGraphBuilder builder(frameGraph, scene, viewport);
 
     // Gather list of pipelines to render.
-    builder->compilePipelinesList();
+    builder.compilePipelinesList();
 
     // Render viewport underlays and overlays.
     bool hasAsyncOverlays = false;
     if(!logicalViewportRect.isEmpty() && !physicalViewportRect.isEmpty()) {
-        builder->renderOverlays(viewport->underlays(), FrameGraph::UnderLayer, logicalViewportRect, physicalViewportRect, noninteractiveProjParams);
-        builder->renderOverlays(viewport->overlays(), FrameGraph::OverLayer, logicalViewportRect, physicalViewportRect, noninteractiveProjParams);
-        hasAsyncOverlays = !builder->_asyncViewportLayersFutures.empty();
+        builder.renderOverlays(viewport->underlays(), FrameGraph::UnderLayer, logicalViewportRect, physicalViewportRect, noninteractiveProjParams);
+        builder.renderOverlays(viewport->overlays(), FrameGraph::OverLayer, logicalViewportRect, physicalViewportRect, noninteractiveProjParams);
+        hasAsyncOverlays = !builder._asyncViewportLayersFutures.empty();
     }
 
     // Obtain the output of all visible scene pipelines.
-    Future<std::unique_ptr<FrameGraphBuilder>> future = builder->gatherPipelineResults(std::move(builder));
+    co_await FutureAwaiter(ObjectExecutor(frameGraph), builder.gatherPipelineResults());
 
     // Visit all vis elements and let them populate the frame graph.
-    future = renderVisElements(*frameGraph, std::move(future));
+    builder.renderVisElements();
 
     // Wait for all visual elements to finish rendering.
-    future = waitForVisElements(std::move(future));
+    co_await FutureAwaiter(ObjectExecutor(frameGraph), builder.waitForVisElements());
 
     // Wait for all viewport overlays to finish rendering.
     if(hasAsyncOverlays)
-        future = waitForViewportLayers(std::move(future));
+        co_await FutureAwaiter(ObjectExecutor(frameGraph), builder.waitForViewportLayers());
 
-    // Return the populated frame graph back to the caller.
-    return future.then([](std::unique_ptr<FrameGraphBuilder> builder) {
-        // Compute combined scene bounding box.
-        builder->_fg->computeSceneBoundingBox();
-        return std::move(builder->_fg);
-    });
+    // Compute combined scene bounding box.
+    builder._fg->computeSceneBoundingBox();
 }
 
 /******************************************************************************
@@ -96,52 +92,35 @@ void FrameGraphBuilder::compilePipelinesList()
 /******************************************************************************
 * Evaluates all visible pipelines in the scene to obtain their output data.
 ******************************************************************************/
-Future<std::unique_ptr<FrameGraphBuilder>> FrameGraphBuilder::gatherPipelineResults(std::unique_ptr<FrameGraphBuilder> self)
+Future<void> FrameGraphBuilder::gatherPipelineResults()
 {
-    return for_each_sequential<false>(
-        _visiblePipelines,
-        DeferredObjectExecutor(_fg),
+    for(const auto& pipeline : _visiblePipelines) {
+        // Request pipeline result.
+        PipelineEvaluationResult pipelineResult = pipeline->evaluatePipeline(PipelineEvaluationRequest(_fg->time(), _fg->stopOnPipelineError(), _fg->isInteractive()));
 
-        // Called for each pipeline.
-        [this](Pipeline* pipeline) {
-            // Request pipeline result.
-            PipelineEvaluationResult pipelineResult = pipeline->evaluatePipeline(PipelineEvaluationRequest(_fg->time(), _fg->stopOnPipelineError(), _fg->isInteractive()));
+        // Flag the entire frame graph as preliminary if the pipeline output is preliminary.
+        if(pipelineResult.evaluationTypes().testFlag(PipelineEvaluationResult::EvaluationType::Noninteractive) == false)
+            _fg->setIsPreliminaryState(true);
 
-            // Flag the entire frame graph as preliminary if the pipeline output is preliminary.
-            if(pipelineResult.evaluationTypes().testFlag(PipelineEvaluationResult::EvaluationType::Noninteractive) == false)
-                _fg->setIsPreliminaryState(true);
-
-            return std::move(pipelineResult).asFuture();
-        },
-
-        // Called for each pipeline result.
-        [this](Pipeline* pipeline, const PipelineFlowState& state) {
-            _pipelineResults.push_back(state);
-        },
-
-        // The task result (future return value).
-        std::move(self)
-    );
+        _pipelineResults.push_back(co_await FutureAwaiter(DeferredObjectExecutor(_fg), std::move(pipelineResult).asFuture()));
+    }
 }
 
 /******************************************************************************
 * Asks all visual elements to render.
 ******************************************************************************/
-Future<std::unique_ptr<FrameGraphBuilder>> FrameGraphBuilder::renderVisElements(FrameGraph& frameGraph, Future<std::unique_ptr<FrameGraphBuilder>> future)
+void FrameGraphBuilder::renderVisElements()
 {
-    return future.then(ObjectExecutor(&frameGraph), [](std::unique_ptr<FrameGraphBuilder> builder) {
-        OVITO_ASSERT(builder->_pipelineResults.size() == builder->_visiblePipelines.size());
-        auto pipeline = builder->_visiblePipelines.begin();
-        ConstDataObjectPath dataObjectPath;
-        for(const PipelineFlowState& state : builder->_pipelineResults) {
-            // Visit all vis elements of all data objects in the pipeline state.
-            if(state)
-                builder->gatherVisElements(state.data(), *pipeline, state, dataObjectPath);
-            OVITO_ASSERT(dataObjectPath.empty());
-            ++pipeline;
-        }
-        return builder;
-    });
+    OVITO_ASSERT(_pipelineResults.size() == _visiblePipelines.size());
+    auto pipeline = _visiblePipelines.begin();
+    ConstDataObjectPath dataObjectPath;
+    for(const PipelineFlowState& state : _pipelineResults) {
+        // Visit all vis elements of all data objects in the pipeline state.
+        if(state)
+            gatherVisElements(state.data(), *pipeline, state, dataObjectPath);
+        OVITO_ASSERT(dataObjectPath.empty());
+        ++pipeline;
+    }
 }
 
 /******************************************************************************
@@ -206,65 +185,51 @@ void FrameGraphBuilder::gatherVisElements(const DataObject* dataObj, const Pipel
 /******************************************************************************
 * Waits for all visual elements to finish rendering.
 ******************************************************************************/
-Future<std::unique_ptr<FrameGraphBuilder>> FrameGraphBuilder::waitForVisElements(Future<std::unique_ptr<FrameGraphBuilder>> future)
+Future<void> FrameGraphBuilder::waitForVisElements()
 {
-    return future.then([](std::unique_ptr<FrameGraphBuilder> builder) {
+    // Can return immediately if there are no asynchronous visual elements.
+    if(_asyncVisElementFutures.empty())
+        co_return;
 
-        // Can return immediately if there are no asynchronous visual elements.
-        if(builder->_asyncVisElementFutures.empty())
-            return Future<std::unique_ptr<FrameGraphBuilder>>::createImmediate(std::move(builder));
+    // Wait for all asynchronous visual elements to finish rendering.
+    std::vector<Future<PipelineStatus>> asyncVisElementFutures = co_await FutureAwaiter(ObjectExecutor(_fg), when_all_futures(std::move(_asyncVisElementFutures)));
 
-        // Wait for all asynchronous visual elements to finish rendering.
-        auto future = when_all_futures(std::move(builder->_asyncVisElementFutures));
-
-        // Once all future results are available, handle them one by one.
-        const FrameGraph* fg = builder->_fg;
-        return future.then(ObjectExecutor(fg), [builder=std::move(builder)](std::vector<Future<PipelineStatus>> asyncVisElementFutures) mutable -> std::unique_ptr<FrameGraphBuilder> {
-            OVITO_ASSERT(asyncVisElementFutures.size() == builder->_asyncVisElements.size());
-            for(size_t i = 0; i < asyncVisElementFutures.size(); ++i) {
-                DataVis* vis = builder->_asyncVisElements[i];
-                try {
-                    if(!asyncVisElementFutures[i].isCanceled())
-                        builder->handleRenderResult(vis, asyncVisElementFutures[i].result());
-                }
-                catch(Exception& ex) {
-                    builder->handleRenderException(vis, ex);
-                }
-            }
-            return std::move(builder);
-        });
-    });
+    // Once all future results are available, handle them one by one.
+    OVITO_ASSERT(asyncVisElementFutures.size() == _asyncVisElements.size());
+    for(size_t i = 0; i < asyncVisElementFutures.size(); ++i) {
+        DataVis* vis = _asyncVisElements[i];
+        try {
+            if(!asyncVisElementFutures[i].isCanceled())
+                handleRenderResult(vis, asyncVisElementFutures[i].result());
+        }
+        catch(Exception& ex) {
+            handleRenderException(vis, ex);
+        }
+    }
 }
 
 /******************************************************************************
 * Waits for all viewport overlays to finish rendering.
 ******************************************************************************/
-Future<std::unique_ptr<FrameGraphBuilder>> FrameGraphBuilder::waitForViewportLayers(Future<std::unique_ptr<FrameGraphBuilder>> future)
+Future<void> FrameGraphBuilder::waitForViewportLayers()
 {
-    return future.then([](std::unique_ptr<FrameGraphBuilder> builder) {
+    OVITO_ASSERT(!_asyncViewportLayersFutures.empty());
 
-        OVITO_ASSERT(!builder->_asyncViewportLayersFutures.empty());
+    // Wait for all asynchronous viewport layers to finish rendering.
+    std::vector<Future<PipelineStatus>> asyncViewportLayersFutures = co_await FutureAwaiter(ObjectExecutor(_fg), when_all_futures(std::move(_asyncViewportLayersFutures)));
 
-        // Wait for all asynchronous viewport layers to finish rendering.
-        auto future = when_all_futures(std::move(builder->_asyncViewportLayersFutures));
-
-        // Once all future results are available, handle them one by one.
-        const FrameGraph* fg = builder->_fg;
-        return future.then(ObjectExecutor(fg), [builder=std::move(builder)](std::vector<Future<PipelineStatus>> asyncViewportLayersFutures) mutable -> std::unique_ptr<FrameGraphBuilder> {
-            OVITO_ASSERT(asyncViewportLayersFutures.size() == builder->_asyncViewportLayers.size());
-            for(size_t i = 0; i < asyncViewportLayersFutures.size(); ++i) {
-                ViewportOverlay* overlay = builder->_asyncViewportLayers[i];
-                try {
-                    if(!asyncViewportLayersFutures[i].isCanceled())
-                        builder->handleRenderResult(overlay, asyncViewportLayersFutures[i].result());
-                }
-                catch(Exception& ex) {
-                    builder->handleRenderException(overlay, ex);
-                }
-            }
-            return std::move(builder);
-        });
-    });
+    // Once all future results are available, handle them one by one.
+    OVITO_ASSERT(asyncViewportLayersFutures.size() == _asyncViewportLayers.size());
+    for(size_t i = 0; i < asyncViewportLayersFutures.size(); ++i) {
+        ViewportOverlay* overlay = _asyncViewportLayers[i];
+        try {
+            if(!asyncViewportLayersFutures[i].isCanceled())
+                handleRenderResult(overlay, asyncViewportLayersFutures[i].result());
+        }
+        catch(Exception& ex) {
+            handleRenderException(overlay, ex);
+        }
+    }
 }
 
 /******************************************************************************
