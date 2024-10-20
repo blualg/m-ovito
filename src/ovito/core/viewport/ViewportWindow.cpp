@@ -26,7 +26,6 @@
 #include <ovito/core/viewport/ViewportGizmo.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/RenderSettings.h>
-#include <ovito/core/rendering/FrameGraphBuilder.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/data/BufferAccess.h>
@@ -270,9 +269,8 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
         physicalViewportRect = previewFrameGeometry(dataset, windowSize);
     }
 
-    // Let the FrameGraphBuilder class do the heavy lifting and generate the frame graph for the current scene.
-    co_await FutureAwaiter(ObjectExecutor(this),
-        FrameGraphBuilder::build(frameGraph, viewport()->scene(), viewport(), logicalViewportRect, physicalViewportRect, noninteractiveProjParams));
+    // Let the FrameGraph class do the heavy lifting and generate the drawing commands for the current scene.
+    co_await FutureAwaiter(ObjectExecutor(this), frameGraph->buildFromScene(viewport()->scene(), viewport(), logicalViewportRect, physicalViewportRect, noninteractiveProjParams));
 
     // After the frame graph has been built for the scene, finish and then render it.
     dataset = userInterface().datasetContainer().currentSet();

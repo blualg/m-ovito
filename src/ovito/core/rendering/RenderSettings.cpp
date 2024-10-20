@@ -24,7 +24,6 @@
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/rendering/FrameBuffer.h>
 #include <ovito/core/rendering/FrameGraph.h>
-#include <ovito/core/rendering/FrameGraphBuilder.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -320,10 +319,8 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
             const QRect& logicalOverlayRect = vpData.renderingFrameBuffer->outputViewportRect();
             const QRect& physicalOverlayRect = vpData.renderingFrameBuffer->renderingViewportRect();
 
-            // Let the FrameGraphBuilder class do the heavy lifting and generate the frame graph for the current scene.
-            FrameGraphBuilder::build(frameGraph,
-                vpData.viewport->scene(), vpData.viewport,
-                logicalOverlayRect, physicalOverlayRect, projParams).waitForFinished();
+            // Let the FrameGraph class do the heavy lifting and generate the drawing commands for the current scene.
+            frameGraph->buildFromScene(vpData.viewport->scene(), vpData.viewport, logicalOverlayRect, physicalOverlayRect, projParams).waitForFinished();
 
             // Let the scene renderer implementation post-process the frame graph.
             renderingJob->postprocessFrameGraph(*frameGraph);

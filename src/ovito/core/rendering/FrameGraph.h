@@ -301,6 +301,9 @@ public:
 		return projectionParams().nonScalingSize(worldPosition, viewportDeviceIndependentSize());
 	}
 
+	/// Generates the frame graph contents for a scene.
+	Future<void> buildFromScene(OORef<Scene> scene, OORef<Viewport> viewport, const QRect& logicalViewportRect = {}, const QRect& physicalViewportRect = {}, const ViewProjectionParameters& noninteractiveProjParams = {});
+
 private:
 
 	/// The data cache to be used by visualization elements.
