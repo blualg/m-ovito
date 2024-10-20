@@ -37,16 +37,14 @@ namespace Ovito::detail {
 template<typename R, class TaskBase = Task>
 class ContinuationTask : public TaskWithStorage<R, TaskBase>, public TaskAwaiter
 {
-    Q_DISABLE_COPY_MOVE(ContinuationTask)
-
 public:
 
     /// Delegating constructor.
-    explicit ContinuationTask(Task::State initialState = Task::NoState) noexcept : ContinuationTask(initialState, std::nullopt) {}
+    explicit ContinuationTask(Task::State initialState = Task::NoState) : ContinuationTask(initialState, std::nullopt) {}
 
     /// Constructor initializing the results storage.
     template<typename InitialValue>
-    explicit ContinuationTask(Task::State initialState, InitialValue&& initialResult) noexcept :
+    explicit ContinuationTask(Task::State initialState, InitialValue&& initialResult) :
             TaskWithStorage<R, TaskBase>(initialState, std::forward<InitialValue>(initialResult)),
             TaskAwaiter(static_cast<Task&>(*this))
     {

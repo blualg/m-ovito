@@ -34,23 +34,27 @@ namespace Ovito::detail {
 template<class R, class TaskBase = Task>
 class TaskWithStorage : public TaskBase
 {
-    Q_DISABLE_COPY_MOVE(TaskWithStorage)
-
 public:
 
-    /// Constructor assigning the task's results storage.
-    template<typename... Args>
-    explicit TaskWithStorage(Task::State initialState, Args&&... args)
-        : TaskBase(initialState, &_result), _result{std::forward<Args>(args)...}
-    {
+    /// Constructor which leaves results storage uninitialized.
+    explicit TaskWithStorage(Task::State initialState, std::nullopt_t) : TaskBase(initialState, &_result) {}
+
+    /// Constructor default-constructing the task's results storage.
+    explicit TaskWithStorage(Task::State initialState) : TaskBase(initialState, &_result) {
 #ifdef OVITO_DEBUG
         // This is used in debug builds to detect programming errors and explicitly keep track of whether a result has been assigned to the task.
         this->_hasResultsStored = true;
 #endif
     }
 
-    /// Constructor which leaves results storage uninitialized.
-    explicit TaskWithStorage(Task::State initialState, std::nullopt_t) : TaskBase(initialState, &_result) {}
+    /// Constructor initializing the task's results storage with a value.
+    template<typename InitialValue>
+    explicit TaskWithStorage(Task::State initialState, InitialValue&& initialResult) : TaskBase(initialState, &_result), _result(std::forward<InitialValue>(initialResult)) {
+#ifdef OVITO_DEBUG
+        // This is used in debug builds to detect programming errors and explicitly keep track of whether a result has been assigned to the task.
+        this->_hasResultsStored = true;
+#endif
+    }
 
     /// Assigns a value to the internal result storage of the task.
     template<typename R2>
@@ -74,15 +78,13 @@ private:
 template<class TaskBase>
 class TaskWithStorage<void, TaskBase> : public TaskBase
 {
-    Q_DISABLE_COPY_MOVE(TaskWithStorage)
-
 public:
 
-    /// \brief Constructor which leaves results storage uninitialized.
-    explicit TaskWithStorage(Task::State initialState) : TaskBase(initialState, nullptr) {}
+    /// Constructor which leaves results storage uninitialized.
+    explicit TaskWithStorage(Task::State initialState) : TaskBase(initialState) {}
 
-    /// \brief Constructor which leaves results storage uninitialized.
-    explicit TaskWithStorage(Task::State initialState, std::nullopt_t) : TaskBase(initialState, nullptr) {}
+    /// Constructor which leaves results storage uninitialized.
+    explicit TaskWithStorage(Task::State initialState, std::nullopt_t) : TaskBase(initialState) {}
 };
 
 }   // End of namespace
