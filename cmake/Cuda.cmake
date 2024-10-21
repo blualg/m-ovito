@@ -29,11 +29,12 @@ MACRO(OVITO_ADD_CUDA_TO_TARGET target_name)
 
         # target_include_directories(${target_name} PUBLIC ${CUDAToolkit_INCLUDE_DIRS})
         target_link_libraries(${target_name} PRIVATE CUDA::cudart)
+        
         # TODO: Do we need seperable compilation?
         set_target_properties(${target_name} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-
+        
         set_target_properties(${target_name} PROPERTIES CUDA_ARCHITECTURES ${OVITO_USE_CUDA})
-
+        
         TARGET_COMPILE_DEFINITIONS(${target_name} PRIVATE "$<$<CONFIG:Debug>:OVITO_DEBUG>")
 
         # Turn off certain Microsoft compiler warnings.
