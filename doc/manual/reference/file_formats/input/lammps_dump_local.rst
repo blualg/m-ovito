@@ -21,7 +21,7 @@ Since such files only store per-bond information but no particle data, the file 
 in conjunction with a :ref:`particles.modifiers.load_trajectory` modifier to amend an already loaded
 particle model with varying bonds, e.g. from a reactive MD simulation.
 
-The reader can parse gzipped files (".gz" suffix) directly. Binary files (".bin" suffix) are *not* supported.
+The reader can parse gzipped files (".gz" suffix) and zstd compressed files (".zst" suffix) directly. Binary files (".bin" suffix) are *not* supported.
 
 .. _file_formats.input.lammps_dump_local.property_mapping:
 

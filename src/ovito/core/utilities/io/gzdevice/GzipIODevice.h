@@ -24,9 +24,14 @@
 #pragma once
 
 #include <ovito/core/Core.h>
-#include <zlib.h>
 #include <boost/container/stable_vector.hpp>
 #include <QReadWriteLock>
+
+#ifdef OVITO_ZSTD_SUPPORT
+    #include <zstd_zlibwrapper.h>
+#else
+    #include <zlib.h>
+#endif
 
 namespace Ovito {
 

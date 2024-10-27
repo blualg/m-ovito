@@ -40,7 +40,7 @@ Each of the following atom lines consist of the species name and the atom's Cart
     If possible, use the :ref:`extended XYZ file format <file_formats.input.xyz.extended_format>` to import
     the true cell geometry into OVITO.
 
-This reader is able to load gzipped XYZ files (".gz" suffix).
+This reader is able to load gzipped XYZ files (".gz" suffix) and zstd compressed files (".zst" suffix).
 
 XYZ files may store simulation trajectories. Multiple frames are simply stored back-to-back in one file,
 i.e., the next two-line header directly follows after the atoms list of the preceding frame. OVITO automatically

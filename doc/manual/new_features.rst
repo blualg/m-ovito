@@ -16,6 +16,10 @@ Version 3.11.1 (xx-xxx-2024)
 
   * `Download this version <https://www.ovito.org/download_history/#3.11.0>`__
 
+- Added I/O support for zstandard (*.zst) compressed files
+- Added support for VTK files with UInt32 header type
+- Fix: :ref:`particles.modifiers.identify_diamond_structure` modifier reported all atoms as "OTHER"
+
 ----------------------------
 Version 3.11.0 (08-Oct-2024)
 ----------------------------

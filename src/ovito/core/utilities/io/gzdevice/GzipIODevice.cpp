@@ -396,7 +396,7 @@ qint64 GzipIODevice::readData(char* data, qint64 maxSize)
 
         // Unget any data left in the read buffer.
         for(int i = _zlibStream.avail_in;  i >= 0; --i)
-            _device->ungetChar(*reinterpret_cast<char*>(_zlibStream.next_in + i));
+            _device->ungetChar(*reinterpret_cast<const char*>(_zlibStream.next_in + i));
     }
 
     return maxSize - _zlibStream.avail_out;

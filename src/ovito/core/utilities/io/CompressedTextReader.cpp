@@ -43,8 +43,12 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input, qint64 byteO
     else if(QFileDevice* fileDevice = qobject_cast<QFileDevice*>(_device.get()))
         _filename = fileDevice->fileName();
 
-    // Check if file is compressed (i.e. filename ends with .gz).
-    if(_filename.endsWith(".gz", Qt::CaseInsensitive)) {
+    // Check if file is compressed (i.e. filename ends with .gz or .zstd).
+    if(_filename.endsWith(".gz", Qt::CaseInsensitive) || _filename.endsWith(".zst", Qt::CaseInsensitive)) {
+#ifndef OVITO_ZSTD_SUPPORT
+        if(_filename.endsWith(".zst", Qt::CaseInsensitive))
+            throw Exception(tr("Cannot open file '%1' for reading. This version of OVITO was built without I/O support for zstandard compressed files (*.zst)."));
+#endif
 #ifdef OVITO_ZLIB_SUPPORT
         // When reading consecutive frames from the same compressed trajectory file, try to re-use an existing open file stream.
         if(byteOffset != 0) {
