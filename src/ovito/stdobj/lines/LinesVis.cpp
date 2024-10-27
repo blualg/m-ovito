@@ -244,32 +244,86 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                 lines->verifyIntegrity();
 
                 // Retrieve the line position data stored in the Lines.
+                // Long lines
                 BufferReadAccess<Point3> posProperty = lines->getProperty(Lines::PositionProperty);
+                // Special case for A-B lines stored in a single line
+                BufferReadAccess<Point3> pos1Property = lines->getProperty(Lines::Position1Property);
+                BufferReadAccess<Point3> pos2Property = lines->getProperty(Lines::Position2Property);
+
                 BufferReadAccess<int64_t> secProperty = lines->getProperty(Lines::SectionProperty);
                 BufferReadAccess<int32_t> timeProperty = lines->getProperty(Lines::SampleTimeProperty);
 
                 BufferReadAccess<ColorG> colorProperty = lines->getProperty(Lines::ColorProperty);
                 RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
-                if(posProperty.valid() && posProperty.size() >= 2) {
-                    subobjToSegmentMap.reserve(posProperty.size());
-                    // Determine the number of line segments and corner points to render.
-                    BufferFactory<Point3G> cornerPoints(0);
-                    BufferFactory<Point3G> baseSegmentPoints(0);
-                    BufferFactory<Point3G> headSegmentPoints(0);
-                    BufferFactory<ColorG> cornerColors = colorProperty ? BufferFactory<ColorG>(0) : BufferFactory<ColorG>{};
-                    BufferFactory<ColorG> segmentColors = colorProperty ? BufferFactory<ColorG>(0) : BufferFactory<ColorG>{};
-                    BufferFactory<GraphicsFloatType> cornerPseudoColors =
-                        pseudoColorArray ? BufferFactory<GraphicsFloatType>(0) : BufferFactory<GraphicsFloatType>{};
-                    BufferFactory<GraphicsFloatType> segmentPseudoColors =
-                        pseudoColorArray ? BufferFactory<GraphicsFloatType>(0) : BufferFactory<GraphicsFloatType>{};
+
+                // Determine the number of line segments and corner points to render.
+                BufferFactory<Point3G> cornerPoints(0);
+                BufferFactory<Point3G> baseSegmentPoints(0);
+                BufferFactory<Point3G> headSegmentPoints(0);
+                BufferFactory<ColorG> cornerColors = colorProperty ? BufferFactory<ColorG>(0) : BufferFactory<ColorG>{};
+                BufferFactory<ColorG> segmentColors = colorProperty ? BufferFactory<ColorG>(0) : BufferFactory<ColorG>{};
+                BufferFactory<GraphicsFloatType> cornerPseudoColors =
+                    pseudoColorArray ? BufferFactory<GraphicsFloatType>(0) : BufferFactory<GraphicsFloatType>{};
+                BufferFactory<GraphicsFloatType> segmentPseudoColors =
+                    pseudoColorArray ? BufferFactory<GraphicsFloatType>(0) : BufferFactory<GraphicsFloatType>{};
+
+                // subObject index map to allow picking in the viewport
+                int subobjIndex = 0;
+
+                if(pos1Property.valid() && pos2Property.valid()) {
+                    OVITO_ASSERT(pos1Property.size() == pos2Property.size());
+                    subobjToSegmentMap.reserve(pos1Property.size());
+
+                    const int32_t* sampleTime = (timeProperty) ? timeProperty.cbegin() : nullptr;
+
+                    // segment callback used by the "clipLines" function
+                    const auto clipPointCallback = [&](const Point3& p1, size_t row) {
+                        cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
+                        if(colorProperty) {
+                            cornerColors.push_back(colorProperty[row]);
+                        }
+                        else if(pseudoColorArray) {
+                            cornerPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(row, pseudoColorPropertyComponent));
+                        }
+                    };
+
+                    // Loop over all rows
+                    for(size_t row = 0; row < pos1Property.size(); ++row) {
+                        if(sampleTime && sampleTime[row] > endFrame) {
+                            continue;
+                        }
+                        clipLine(pos1Property[row], pos2Property[row], simulationCell, lines->cuttingPlanes(),
+                                 [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
+                                     baseSegmentPoints.push_back(p1.toDataType<GraphicsFloatType>());
+                                     headSegmentPoints.push_back(p2.toDataType<GraphicsFloatType>());
+                                     if(colorProperty) {
+                                         segmentColors.push_back(colorProperty[row]);
+                                         segmentColors.push_back(colorProperty[row]);
+                                     }
+                                     else if(pseudoColorArray) {
+                                         GraphicsFloatType pseudoColor =
+                                             pseudoColorArray.get<GraphicsFloatType>(row, pseudoColorPropertyComponent);
+                                         segmentPseudoColors.push_back(pseudoColor);
+                                         segmentPseudoColors.push_back(pseudoColor);
+                                     }
+                                 });
+                        if(roundedCaps()) {
+                            clipPoint(pos1Property[row], simulationCell, lines->cuttingPlanes(),
+                                      [&clipPointCallback, row](const Point3& p) { clipPointCallback(p, row); });
+                            clipPoint(pos2Property[row], simulationCell, lines->cuttingPlanes(),
+                                      [&clipPointCallback, row](const Point3& p) { clipPointCallback(p, row); });
+                        }
+                        subobjIndex++;
+                    }
+                }
+                else if(posProperty.valid() && posProperty.size() >= 2) {
+                    subobjToSegmentMap.reserve(subobjToSegmentMap.size() + posProperty.size());
+
                     const Point3* pos = posProperty.cbegin();
                     // Lines does not have sample time. It's only valid for TrajectoryLines
                     const int32_t* sampleTime = (timeProperty) ? timeProperty.cbegin() : nullptr;
                     const int64_t* id = (secProperty) ? secProperty.cbegin() : nullptr;
                     size_t inputColorIndex = 0;
-
-                    // subObject index map to allow picking in the viewport
-                    int subobjIndex = 0;
 
                     // segment callback used by the "clipLines" function
                     // TODO: this can be a templated lambda with (colorOffset) in c++20
@@ -280,41 +334,46 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                             cornerColors.push_back(colorProperty[inputColorIndex + colorOffset]);
                         }
                         else if(pseudoColorArray) {
-                            cornerPseudoColors.push_back(pseudoColorArray.get<GraphicsFloatType>(inputColorIndex + colorOffset, pseudoColorPropertyComponent));
+                            cornerPseudoColors.push_back(
+                                pseudoColorArray.get<GraphicsFloatType>(inputColorIndex + colorOffset, pseudoColorPropertyComponent));
                         }
                     };
 
                     // Don't increment sampleTime if timeProperty is not present
-                    for(auto pos_end = pos + posProperty.size() - 1; pos != pos_end;
+                    for(const auto* pos_end = pos + posProperty.size() - 1; pos != pos_end;
                         ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
                         // Use short circuit to avoid dereferencing nullptr
                         if((!id || id[0] == id[1]) && (!sampleTime || sampleTime[1] <= endFrame)) {
                             clipLine(pos[0], pos[1], simulationCell, lines->cuttingPlanes(),
-                                        [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
-                                            baseSegmentPoints.push_back(p1.toDataType<GraphicsFloatType>());
-                                            headSegmentPoints.push_back(p2.toDataType<GraphicsFloatType>());
-                                            if(colorProperty) {
-                                                segmentColors.push_back((GraphicsFloatType(1) - t1) * colorProperty[inputColorIndex] + t1 * colorProperty[inputColorIndex + 1]);
-                                                segmentColors.push_back((GraphicsFloatType(1) - t2) * colorProperty[inputColorIndex] + t2 * colorProperty[inputColorIndex + 1]);
-                                            }
-                                            else if(pseudoColorArray) {
-                                                GraphicsFloatType ps1 = pseudoColorArray.get<GraphicsFloatType>(inputColorIndex + 0, pseudoColorPropertyComponent);
-                                                GraphicsFloatType ps2 = pseudoColorArray.get<GraphicsFloatType>(inputColorIndex + 1, pseudoColorPropertyComponent);
-                                                segmentPseudoColors.push_back((GraphicsFloatType(1) - t1) * ps1 + t1 * ps2);
-                                                segmentPseudoColors.push_back((GraphicsFloatType(1) - t2) * ps1 + t2 * ps2);
-                                            }
-                                        });
+                                     [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
+                                         baseSegmentPoints.push_back(p1.toDataType<GraphicsFloatType>());
+                                         headSegmentPoints.push_back(p2.toDataType<GraphicsFloatType>());
+                                         if(colorProperty) {
+                                             segmentColors.push_back((GraphicsFloatType(1) - t1) * colorProperty[inputColorIndex] +
+                                                                     t1 * colorProperty[inputColorIndex + 1]);
+                                             segmentColors.push_back((GraphicsFloatType(1) - t2) * colorProperty[inputColorIndex] +
+                                                                     t2 * colorProperty[inputColorIndex + 1]);
+                                         }
+                                         else if(pseudoColorArray) {
+                                             GraphicsFloatType ps1 =
+                                                 pseudoColorArray.get<GraphicsFloatType>(inputColorIndex + 0, pseudoColorPropertyComponent);
+                                             GraphicsFloatType ps2 =
+                                                 pseudoColorArray.get<GraphicsFloatType>(inputColorIndex + 1, pseudoColorPropertyComponent);
+                                             segmentPseudoColors.push_back((GraphicsFloatType(1) - t1) * ps1 + t1 * ps2);
+                                             segmentPseudoColors.push_back((GraphicsFloatType(1) - t2) * ps1 + t2 * ps2);
+                                         }
+                                     });
                             if(!roundedCaps() && (pos + 1 != pos_end) && (!id || id[1] == (id + 1)[1]) &&
-                            (!sampleTime || sampleTime[1] != endFrame)) {
+                               (!sampleTime || sampleTime[1] != endFrame)) {
                                 clipPoint(pos[1], simulationCell, lines->cuttingPlanes(),
-                                        std::bind(clipPointCallback, std::placeholders::_1, 1));
+                                          [&clipPointCallback](const Point3& p) { clipPointCallback(p, 1); });
                             }
                             else if(roundedCaps()) {
                                 clipPoint(pos[0], simulationCell, lines->cuttingPlanes(),
-                                        std::bind(clipPointCallback, std::placeholders::_1, 0));
+                                          [&clipPointCallback](const Point3& p) { clipPointCallback(p, 0); });
                                 if((pos + 1 == pos_end) || (!id || id[1] != (id + 1)[1])) {
                                     clipPoint(pos[1], simulationCell, lines->cuttingPlanes(),
-                                            std::bind(clipPointCallback, std::placeholders::_1, 1));
+                                              [&clipPointCallback](const Point3& p) { clipPointCallback(p, 1); });
                                 }
                             }
                             subobjToSegmentMap.push_back(subobjIndex);
@@ -322,27 +381,27 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                         subobjIndex++;
                         inputColorIndex++;
                     }
-
-                    // Create rendering primitive for the line segments.
-                    segments.setShape(CylinderPrimitive::CylinderShape);
-                    segments.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
-                    segments.setColors(segmentColors ? segmentColors.take() : segmentPseudoColors.take());
-                    segments.setUniformColor(lineColor());
-                    segments.setUniformWidth(lineDiameter);
-                    segments.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
-
-                    // Create rendering primitive for the corner points.
-                    corners.setParticleShape(ParticlePrimitive::SphericalShape);
-                    corners.setShadingMode(cornerShadingMode);
-                    corners.setRenderingQuality(ParticlePrimitive::HighQuality);
-                    corners.setPositions(cornerPoints.take());
-                    corners.setUniformColor(lineColor());
-                    corners.setColors(cornerColors.take());
-                    corners.setUniformRadius(0.5 * lineDiameter);
-
-                    // Save the pseudo-colors of the corner spheres. They will be converted to RGB colors below.
-                    cornerPseudoColorsCached = cornerPseudoColors.take();
                 }
+
+                // Create rendering primitive for the line segments.
+                segments.setShape(CylinderPrimitive::CylinderShape);
+                segments.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
+                segments.setColors(segmentColors ? segmentColors.take() : segmentPseudoColors.take());
+                segments.setUniformColor(lineColor());
+                segments.setUniformWidth(lineDiameter);
+                segments.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
+
+                // Create rendering primitive for the corner points.
+                corners.setParticleShape(ParticlePrimitive::SphericalShape);
+                corners.setShadingMode(cornerShadingMode);
+                corners.setRenderingQuality(ParticlePrimitive::HighQuality);
+                corners.setPositions(cornerPoints.take());
+                corners.setUniformColor(lineColor());
+                corners.setColors(cornerColors.take());
+                corners.setUniformRadius(0.5 * lineDiameter);
+
+                // Save the pseudo-colors of the corner spheres. They will be converted to RGB colors below.
+                cornerPseudoColorsCached = cornerPseudoColors.take();
             }
             pickInfo = OORef<LinesPickInfo>::create(lines, std::move(subobjToSegmentMap));
         });

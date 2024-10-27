@@ -104,8 +104,7 @@ void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures
         structureAcc[index] = OTHER;
 
         // Skip particles that are not included in the analysis.
-        if(structureAcc && structureAcc[index] == 0)
-            return;
+        if(selectionAcc && selectionAcc[index] == 0) return;
 
         const std::array<NeighborInfo, 4>& nlist = neighLists[index];
 
@@ -182,7 +181,7 @@ void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures
     for(size_t index = 0; index < structureAcc.size(); index++) {
         int ctype = structureAcc[index];
         if(ctype != CUBIC_DIAMOND && ctype != HEX_DIAMOND) continue;
-        if(structureAcc && structureAcc[index] == 0) continue;
+        if(selectionAcc && selectionAcc[index] == 0) continue;
 
         const std::array<NeighborInfo, 4>& nlist = neighLists[index];
         for(size_t i = 0; i < 4; i++) {
@@ -200,7 +199,7 @@ void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures
     for(size_t index = 0; index < structureAcc.size(); index++) {
         int ctype = structureAcc[index];
         if(ctype != CUBIC_DIAMOND_FIRST_NEIGH && ctype != HEX_DIAMOND_FIRST_NEIGH) continue;
-        if(structureAcc && structureAcc[index] == 0) continue;
+        if(selectionAcc && selectionAcc[index] == 0) continue;
 
         const std::array<NeighborInfo, 4>& nlist = neighLists[index];
         for(size_t i = 0; i < 4; i++) {
