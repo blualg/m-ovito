@@ -126,23 +126,6 @@ void UserInterface::updateViewports()
 }
 
 /******************************************************************************
-* This will resume redrawing of the viewports after a call to suspendViewportUpdates().
-******************************************************************************/
-void UserInterface::resumeViewportUpdates()
-{
-    OVITO_ASSERT(this_task::isMainThread());
-    OVITO_ASSERT(areViewportUpdatesSuspended());
-
-    if(--_viewportSuspendCount == 0) {
-        if(ViewportConfiguration* viewportConfig = datasetContainer().activeViewportConfig()) {
-            for(Viewport* vp : viewportConfig->viewports()) {
-                vp->notifyDependents(Viewport::ViewportWindowResumeUpdatesRequested);
-            }
-        }
-    }
-}
-
-/******************************************************************************
 * Zooms all visible viewports to the extents of the scene when all scene
 * pipelines have been fully evaluated and the extents are known.
 ******************************************************************************/

@@ -63,9 +63,6 @@ public:
         /// Sent by the Viewport to its associated UI windows to request a refresh.
         ViewportWindowUpdateRequested = RefTarget::NEXT_AVAILABLE_EVENT_ID,
 
-        /// Sent by the Viewport to its associated UI windows to resume handling of pending refresh requests again.
-        ViewportWindowResumeUpdatesRequested,
-
         /// Sent by the Viewport to its associated UI window(s) to request an adjustment of the view such that all scene contents become fully visible in the window.
         ZoomToSceneExtentsRequested,
 

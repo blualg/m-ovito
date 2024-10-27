@@ -546,9 +546,6 @@ void MainWindow::exitWithFatalError(const Exception& ex)
     // Set flag.
     _exitingDueToFatalError = true;
 
-    // Disable all further viewport updates, because they may have been the reason for this fatal error.
-    suspendViewportUpdates();
-
     // Display fatal error message to the user.
     reportError(ex, true);
 

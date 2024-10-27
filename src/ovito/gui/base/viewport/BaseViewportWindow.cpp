@@ -82,7 +82,7 @@ void BaseViewportWindow::showEvent(QShowEvent* event)
     scenePreparation().setAutoRestart(true);
 
     // Schedule a rendering pass if the window becomes visible and an update request has been scheduled while it was hidden.
-    if(!event->spontaneous() && !userInterface().areViewportUpdatesSuspended())
+    if(!event->spontaneous())
         resumeViewportUpdates();
 }
 

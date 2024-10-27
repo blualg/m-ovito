@@ -146,16 +146,6 @@ public:
     /// generate new animation keys whenever their current value is changed by the user.
     virtual bool isAutoGenerateAnimationKeysEnabled() const { return false; }
 
-    /// Temporarily suspends repainting of the viewports.
-    /// To resume redrawing of viewports call resumeViewportUpdates().
-    void suspendViewportUpdates() { _viewportSuspendCount++; }
-
-    /// Resumes redrawing of the viewports after a call to suspendViewportUpdates().
-    void resumeViewportUpdates();
-
-    /// Returns whether viewport updates are currently suspended.
-    bool areViewportUpdatesSuspended() const { return _viewportSuspendCount > 0; }
-
     /// Suspends updates of the viewports whenever preliminary data pipeline results are available.
     void suspendPreliminaryViewportUpdates() { _preliminaryViewportUpdatesSuspendCount++; }
 
@@ -270,9 +260,6 @@ protected:
     /// List of all viewport windows associated with this abstract user interface.
     std::vector<ViewportWindow*> _viewportWindows;
 
-    /// This counter tracks temporary suspension of viewport updates.
-    int _viewportSuspendCount = 0;
-
     /// Counts the number of times preliminary viewport updates have been suspended.
     int _preliminaryViewportUpdatesSuspendCount = 0;
 
@@ -308,7 +295,7 @@ bool UserInterface::handleExceptions(Function&& func) noexcept
     MainThreadOperation operation(*this, Isolated ? MainThreadOperation::Kind::Isolated : MainThreadOperation::Kind::Bound);
 
     try {
-        std::forward<Function>(func)();
+        std::invoke(std::forward<Function>(func));
         return !operation.isCanceled();
     }
     catch(OperationCanceled) {

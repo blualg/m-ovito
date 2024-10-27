@@ -138,7 +138,7 @@ void ViewportWindow::requestUpdate(bool isPreliminaryUpdate)
 ******************************************************************************/
 void ViewportWindow::resumeViewportUpdates()
 {
-    if(_updateNeeded && !_frameFuture && viewport() && !userInterface().areViewportUpdatesSuspended() && isVisible()) {
+    if(_updateNeeded && !_frameFuture && viewport() && isVisible()) {
         // Run buildAndRenderFrameGraph() as soon as control returns to the main event loop.
         _frameFuture = launchAsync(DeferredObjectExecutor(this), std::bind_front(&ViewportWindow::buildAndRenderFrameGraph, this));
 
@@ -188,9 +188,8 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
     if(!isVisible() || !viewport())
         this_task::cancelAndThrow();
 
-    // Do nothing if viewport updates are currently suspended.
-    // The UserInterface will issue a new update request once updates are resumed.
-    if(userInterface().areViewportUpdatesSuspended())
+    // Abort if UserInterface is shutting down due to a fatal error.
+    if(userInterface().exitingDueToFatalError())
         this_task::cancelAndThrow();
 
     // Reset update request flag.
@@ -378,9 +377,6 @@ bool ViewportWindow::referenceEvent(RefTarget* source, const ReferenceEvent& eve
     if(source == viewport()) {
         if(event.type() == Viewport::ViewportWindowUpdateRequested) {
             requestUpdate(false);
-        }
-        else if(event.type() == Viewport::ViewportWindowResumeUpdatesRequested) {
-            resumeViewportUpdates();
         }
         else if(event.type() == Viewport::ZoomToSceneExtentsRequested) {
             zoomToSceneExtents();
