@@ -119,6 +119,35 @@ private:
     std::decay_t<Executor> _executor;
 };
 
+template<typename Executor>
+class ExecutorAwaiter
+{
+    Q_DISABLE_COPY_MOVE(ExecutorAwaiter)
+
+public:
+
+    explicit ExecutorAwaiter(Executor&& executor) noexcept : _executor(std::forward<Executor>(executor)) {}
+
+    bool await_ready() const noexcept { return false; }
+
+    template<typename R>
+    void await_suspend(std::coroutine_handle<CoroutinePromise<R>> handle) {
+        auto coroTask = handle.promise().coroTask();
+        OVITO_ASSERT(coroTask);
+        std::move(_executor).execute([promise = std::move(handle.promise())]() mutable noexcept {
+            auto coroTask = static_cast<CoroutineTask<R>*>(promise.task().get());
+            if(!coroTask->isCanceled())
+                coroTask->resumeCoroutine(std::move(promise));
+        });
+    }
+
+    void await_resume() {}
+
+private:
+
+    std::decay_t<Executor> _executor;
+};
+
 template<typename R>
 class CoroutinePromiseBase : public PromiseBase
 {

@@ -87,8 +87,6 @@ bool AMBERNetCDFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) c
 
     // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
     NetCDFExclusiveAccess locker;
-    if(!locker.isLocked())
-        return false;
 
     // Check if we can open the input file for reading.
     int tmp_ncid;
@@ -131,8 +129,6 @@ void AMBERNetCDFImporter::discoverFramesInFile(const FileHandle& fileHandle, QVe
 
     // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
     NetCDFExclusiveAccess locker;
-    if(!locker.isLocked())
-        return;
 
     // Open the input NetCDF file.
     int ncid;
@@ -363,8 +359,6 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 
     // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
     NetCDFExclusiveAccess locker;
-    if(!locker.isLocked())
-        return;
 
     // Open the NetCDF file for reading.
     NetCDFFile ncFile;
@@ -718,8 +712,6 @@ Future<ParticleInputColumnMapping> AMBERNetCDFImporter::inspectFileHeader(const 
 
             // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
             NetCDFExclusiveAccess locker;
-            if(!locker.isLocked())
-                return ParticleInputColumnMapping();
 
             // Open the NetCDF file for reading.
             NetCDFFile ncFile;

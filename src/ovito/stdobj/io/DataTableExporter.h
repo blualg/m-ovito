@@ -26,7 +26,6 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/io/FileExporter.h>
-#include <ovito/core/utilities/io/CompressedTextWriter.h>
 
 namespace Ovito {
 
@@ -53,35 +52,15 @@ class OVITO_STDOBJ_EXPORT DataTableExporter : public FileExporter
 
 public:
 
-    /// \brief Returns the type(s) of data objects that this exporter service can export.
+    /// Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
         return { &DataTable::OOClass() };
     }
 
 protected:
 
-    /// \brief This is called once for every output file to be written and before exportData() is called.
-    virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
-
-    /// \brief This is called once for every output file written after exportData() has been called.
-    virtual void closeOutputFile(bool exportCompleted) override;
-
-    /// \brief Exports a single animation frame to the current output file.
-    virtual void exportFrame(int frameNumber, const QString& filePath) override;
-
-    /// Returns the current file this exporter is writing to.
-    QFile& outputFile() { return _outputFile; }
-
-    /// Returns the text stream used to write into the current output file.
-    CompressedTextWriter& textStream() { return *_outputStream; }
-
-private:
-
-    /// The output file stream.
-    QFile _outputFile;
-
-    /// The stream object used to write into the output file.
-    std::unique_ptr<CompressedTextWriter> _outputStream;
+    /// Creates a worker performing the actual data export.
+    virtual OORef<FileExportJob> createExportJob(const QString& filePath, int numberOfFrames) override;
 };
 
 }   // End of namespace

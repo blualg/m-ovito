@@ -54,30 +54,13 @@ class OVITO_PARTICLES_EXPORT GSDExporter : public ParticleExporter
 
 public:
 
-    /// Constructor (needed because GSDFile is forward-declared).
-    GSDExporter();
-
-    /// Destructor (needed because GSDFile is forward-declared).
-    ~GSDExporter();
-
-    /// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
+    /// Indicates whether this file exporter can write more than one animation frame into a single output file.
     virtual bool supportsMultiFrameFiles() const override { return true; }
 
 protected:
 
-    /// \brief This is called once for every output file to be written and before exportFrame() is called.
-    virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
-
-    /// \brief This is called once for every output file written after exportFrame() has been called.
-    virtual void closeOutputFile(bool exportCompleted) override;
-
-    /// \brief Writes the particles of one animation frame to the current output file.
-    virtual void exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath) override;
-
-private:
-
-    /// The file object.
-    std::unique_ptr<GSDFile> _gsdFile;
+    /// Creates a worker performing the actual data export.
+    virtual OORef<FileExportJob> createExportJob(const QString& filePath, int numberOfFrames) override;
 };
 
 }   // End of namespace

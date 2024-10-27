@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "FHIAimsExporter.h"
 
 namespace Ovito {
@@ -31,52 +32,67 @@ namespace Ovito {
 IMPLEMENT_CREATABLE_OVITO_CLASS(FHIAimsExporter);
 
 /******************************************************************************
-* Writes the particles of one animation frame to the current output file.
-******************************************************************************/
-void FHIAimsExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath)
+* Creates a worker performing the actual data export.
+*****************************************************************************/
+OORef<FileExportJob> FHIAimsExporter::createExportJob(const QString& filePath, int numberOfFrames)
 {
-    // Get particle positions and types.
-    const Particles* particles = state.expectObject<Particles>();
-    particles->verifyIntegrity();
-    BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
-    const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
-    BufferReadAccess<int32_t> particleTypeArray(particleTypeProperty);
+    class Job : public FileExportJob
+    {
+    public:
 
-    textStream() << "# FHI-aims file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+        /// Writes the exportable data of a single trajectory frame to the output file.
+        virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+            // The exportable frame data.
+            const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
-    // Output simulation cell.
-    Point3 origin = Point3::Origin();
-    const SimulationCell* simulationCell = state.getObject<SimulationCell>();
-    if(simulationCell) {
-        origin = simulationCell->cellOrigin();
-        if(simulationCell->pbcX() || simulationCell->pbcY() || simulationCell->pbcZ()) {
-            const AffineTransformation& cell = simulationCell->cellMatrix();
-            for(size_t i = 0; i < 3; i++)
-                textStream() << "lattice_vector " << cell(0, i) << ' ' << cell(1, i) << ' ' << cell(2, i) << '\n';
+            // Perform the following in a worker thread.
+            co_await ExecutorAwaiter(ThreadPoolExecutor());
+
+            // Get particle positions and types.
+            const Particles* particles = state.expectObject<Particles>();
+            BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
+            const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
+            BufferReadAccess<int32_t> particleTypeArray(particleTypeProperty);
+
+            textStream() << "# FHI-aims file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+
+            // Output simulation cell.
+            Point3 origin = Point3::Origin();
+            const SimulationCell* simulationCell = state.getObject<SimulationCell>();
+            if(simulationCell) {
+                origin = simulationCell->cellOrigin();
+                if(simulationCell->pbcX() || simulationCell->pbcY() || simulationCell->pbcZ()) {
+                    const AffineTransformation& cell = simulationCell->cellMatrix();
+                    for(size_t i = 0; i < 3; i++)
+                        textStream() << "lattice_vector " << cell(0, i) << ' ' << cell(1, i) << ' ' << cell(2, i) << '\n';
+                }
+            }
+
+            // Output atoms.
+            this_task::setProgressMaximum(posProperty.size());
+            for(size_t i = 0; i < posProperty.size(); i++) {
+                const Point3& p = posProperty[i];
+                const ElementType* type = particleTypeArray ? particleTypeProperty->elementType(particleTypeArray[i]) : nullptr;
+
+                textStream() << "atom " << (p.x() - origin.x()) << ' ' << (p.y() - origin.y()) << ' ' << (p.z() - origin.z());
+                if(type && !type->name().isEmpty()) {
+                    QString s = type->name();
+                    textStream() << ' ' << s.replace(QChar(' '), QChar('_')) << '\n';
+                }
+                else if(particleTypeArray) {
+                    textStream() << ' ' << particleTypeArray[i] << '\n';
+                }
+                else {
+                    textStream() << " 1\n";
+                }
+
+                // Update progress bar and check for user cancellation.
+                this_task::setProgressValueIntermittent(i);
+            }
         }
-    }
+    };
 
-    // Output atoms.
-    this_task::setProgressMaximum(posProperty.size());
-    for(size_t i = 0; i < posProperty.size(); i++) {
-        const Point3& p = posProperty[i];
-        const ElementType* type = particleTypeArray ? particleTypeProperty->elementType(particleTypeArray[i]) : nullptr;
-
-        textStream() << "atom " << (p.x() - origin.x()) << ' ' << (p.y() - origin.y()) << ' ' << (p.z() - origin.z());
-        if(type && !type->name().isEmpty()) {
-            QString s = type->name();
-            textStream() << ' ' << s.replace(QChar(' '), QChar('_')) << '\n';
-        }
-        else if(particleTypeArray) {
-            textStream() << ' ' << particleTypeArray[i] << '\n';
-        }
-        else {
-            textStream() << " 1\n";
-        }
-
-        // Update progress bar and check for user cancellation.
-        this_task::setProgressValueIntermittent(i);
-    }
+    return OORef<Job>::create(this, filePath, true);
 }
 
 }   // End of namespace

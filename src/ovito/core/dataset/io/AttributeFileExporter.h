@@ -25,7 +25,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/io/FileExporter.h>
-#include <ovito/core/utilities/io/CompressedTextWriter.h>
 
 namespace Ovito {
 
@@ -52,39 +51,21 @@ class OVITO_CORE_EXPORT AttributeFileExporter : public FileExporter
 
 public:
 
-    /// \brief Constructor.
+    /// Constructor.
     void initializeObject(ObjectInitializationFlags flags);
 
-    /// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
+    /// Indicates whether this file exporter can write more than one animation frame into a single output file.
     virtual bool supportsMultiFrameFiles() const override { return true; }
 
-    /// \brief Evaluates the pipeline of the PipelineSceneNode to be exported and returns the attributes list.
-    QVariantMap getAttributesMap(int frame);
+    /// Evaluates the pipeline of the PipelineSceneNode to be exported and returns the attributes list.
+    Future<QVariantMap> getAttributesMap(int frame) const;
 
 protected:
 
-    /// \brief This is called once for every output file to be written and before exportData() is called.
-    virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
-
-    /// \brief This is called once for every output file written after exportData() has been called.
-    virtual void closeOutputFile(bool exportCompleted) override;
-
-    /// \brief Exports a single animation frame to the current output file.
-    virtual void exportFrame(int frameNumber, const QString& filePath) override;
-
-    /// Returns the current file this exporter is writing to.
-    QFile& outputFile() { return _outputFile; }
-
-    /// Returns the text stream used to write into the current output file.
-    CompressedTextWriter& textStream() { return *_outputStream; }
+    /// Creates a worker performing the actual data export.
+    virtual OORef<FileExportJob> createExportJob(const QString& filePath, int numberOfFrames) override;
 
 private:
-
-    /// The output file stream.
-    QFile _outputFile;
-
-    /// The stream object used to write into the output file.
-    std::unique_ptr<CompressedTextWriter> _outputStream;
 
     /// The list of global attributes to export.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QStringList{}, attributesToExport, setAttributesToExport);

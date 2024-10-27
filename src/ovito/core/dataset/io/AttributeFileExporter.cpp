@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "AttributeFileExporter.h"
 
 namespace Ovito {
@@ -45,7 +46,7 @@ void AttributeFileExporter::initializeObject(ObjectInitializationFlags flags)
         // This exporter is typically used to export attributes as functions of time.
         if(AnimationSettings* anim = this_task::ui()->datasetContainer().activeAnimationSettings()) {
             if(!anim->isSingleFrame())
-                setExportAnimation(true);
+                setExportTrajectory(true);
         }
 
 #ifndef OVITO_DISABLE_QSETTINGS
@@ -59,75 +60,72 @@ void AttributeFileExporter::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
- * This is called once for every output file to be written and before
- * exportData() is called.
+* Creates a worker performing the actual data export.
 *****************************************************************************/
-void AttributeFileExporter::openOutputFile(const QString& filePath, int numberOfFrames)
+OORef<FileExportJob> AttributeFileExporter::createExportJob(const QString& filePath, int numberOfFrames)
 {
-    OVITO_ASSERT(!_outputFile.isOpen());
-    OVITO_ASSERT(!_outputStream);
+    class Job : public FileExportJob
+    {
+    public:
 
-    _outputFile.setFileName(filePath);
-    _outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
+        /// Constructor.
+        void initializeObject(const AttributeFileExporter* exporter, const QString& filePath) {
+            FileExportJob::initializeObject(exporter, filePath, true);
 
-    textStream() << "#";
-    for(const QString& attrName : attributesToExport()) {
-        textStream() << " \"" << attrName << "\"";
-    }
-    textStream() << "\n";
-}
+            // Write file header.
+            textStream() << "#";
+            for(const QString& attrName : exporter->attributesToExport()) {
+                textStream() << " \"" << attrName << "\"";
+            }
+            textStream() << "\n";
+        }
 
-/******************************************************************************
- * This is called once for every output file written after exportData()
- * has been called.
-*****************************************************************************/
-void AttributeFileExporter::closeOutputFile(bool exportCompleted)
-{
-    _outputStream.reset();
-    if(_outputFile.isOpen())
-        _outputFile.close();
+        /// Produces the data to be exported for a trajectory frame.
+        virtual Future<any_moveonly> getExportableFrameData(OORef<FileExportJob> self, int frameNumber) override {
+            co_return co_await static_cast<const AttributeFileExporter*>(exporter())->getAttributesMap(frameNumber);
+        }
 
-    if(!exportCompleted)
-        _outputFile.remove();
+        /// Writes the exportable data of a single trajectory frame to the output file.
+        virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+            // The exportable frame data.
+            QVariantMap attrMap = any_cast<QVariantMap>(std::move(frameData));
+
+            // Write the values of all attributes marked for export to the output file.
+            for(const QString& attrName : static_cast<const AttributeFileExporter*>(exporter())->attributesToExport()) {
+                if(!attrMap.contains(attrName))
+                    throw Exception(tr("The global attribute '%1' to be exported is not available at trajectory frame %2.").arg(attrName).arg(frameNumber));
+                QString str = attrMap.value(attrName).toString();
+
+                // Put string in quotes if it contains whitespace.
+                if(!str.contains(QChar(' ')))
+                    textStream() << str << " ";
+                else
+                    textStream() << "\"" << str << "\" ";
+            }
+            textStream() << "\n";
+
+            return Future<void>::createImmediateEmplace();
+        }
+    };
+
+    return OORef<Job>::create(this, filePath);
 }
 
 /******************************************************************************
 * Evaluates the pipeline of the PipelineSceneNode to be exported and returns
 * the attributes list.
 ******************************************************************************/
-QVariantMap AttributeFileExporter::getAttributesMap(int frame)
+Future<QVariantMap> AttributeFileExporter::getAttributesMap(int frameNumber) const
 {
-    const PipelineFlowState& state = getPipelineDataToBeExported(frame);
+    const PipelineFlowState state = co_await getPipelineDataToBeExported(frameNumber);
 
     // Build list of attributes.
     QVariantMap attributes = state.data()->buildAttributesMap();
 
     // Add the implicit animation frame attribute.
-    attributes.insert(QStringLiteral("Frame"), frame);
+    attributes.insert(QStringLiteral("Frame"), frameNumber);
 
-    return attributes;
-}
-
-/******************************************************************************
- * Exports a single animation frame to the current output file.
- *****************************************************************************/
-void AttributeFileExporter::exportFrame(int frameNumber, const QString& filePath)
-{
-    QVariantMap attrMap = getAttributesMap(frameNumber);
-
-    // Write the values of all attributes marked for export to the output file.
-    for(const QString& attrName : attributesToExport()) {
-        if(!attrMap.contains(attrName))
-            throw Exception(tr("The global attribute '%1' to be exported is not available at animation frame %2.").arg(attrName).arg(frameNumber));
-        QString str = attrMap.value(attrName).toString();
-
-        // Put string in quotes if it contains whitespace.
-        if(!str.contains(QChar(' ')))
-            textStream() << str << " ";
-        else
-            textStream() << "\"" << str << "\" ";
-    }
-    textStream() << "\n";
+    co_return attributes;
 }
 
 }   // End of namespace

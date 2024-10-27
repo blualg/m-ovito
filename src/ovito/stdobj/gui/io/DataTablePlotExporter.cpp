@@ -22,6 +22,7 @@
 
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "DataTablePlotExporter.h"
 
 #include <qwt/qwt_plot_renderer.h>
@@ -40,58 +41,56 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DataTablePlotExporter, plotHeight, FloatPar
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DataTablePlotExporter, plotDPI, IntegerParameterUnit, 1);
 
 /******************************************************************************
- * This is called once for every output file to be written.
- *****************************************************************************/
-void DataTablePlotExporter::openOutputFile(const QString& filePath, int numberOfFrames)
+* Creates a worker performing the actual data export.
+*****************************************************************************/
+OORef<FileExportJob> DataTablePlotExporter::createExportJob(const QString& filePath, int numberOfFrames)
 {
-    OVITO_ASSERT(!_outputFile.isOpen());
-    _outputFile.setFileName(filePath);
-}
+    class Job : public FileExportJob
+    {
+    public:
 
-/******************************************************************************
- * This is called once for every output file written .
- *****************************************************************************/
-void DataTablePlotExporter::closeOutputFile(bool exportCompleted)
-{
-    if(!exportCompleted)
-        _outputFile.remove();
-}
+        /// Writes the exportable data of a single trajectory frame to the output file.
+        virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+            // The exportable frame data.
+            const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
-/******************************************************************************
- * Exports a single animation frame to the current output file.
- *****************************************************************************/
-void DataTablePlotExporter::exportFrame(int frameNumber, const QString& filePath)
-{
-    // Evaluate pipeline.
-    const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
+            // Look up the DataTable to be exported in the pipeline state.
+            DataObjectReference objectRef(&DataTable::OOClass(), dataObjectToExport().dataPath());
+            const DataTable* table = static_object_cast<DataTable>(state.getLeafObject(objectRef));
+            if(!table) {
+                throw Exception(tr("The pipeline output does not contain the data table to be exported (animation frame: %1; object key: %2). Available data tables: (%3)")
+                    .arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, DataTable::OOClass())));
+            }
+            table->verifyIntegrity();
 
-    // Look up the DataTable to be exported in the pipeline state.
-    DataObjectReference objectRef(&DataTable::OOClass(), dataObjectToExport().dataPath());
-    const DataTable* table = static_object_cast<DataTable>(state.getLeafObject(objectRef));
-    if(!table) {
-        throw Exception(tr("The pipeline output does not contain the data table to be exported (animation frame: %1; object key: %2). Available data tables: (%3)")
-            .arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, DataTable::OOClass())));
-    }
-    table->verifyIntegrity();
+            QPalette palette;
+            palette.setCurrentColorGroup(QPalette::Active);
+            palette.setColor(QPalette::Text, Qt::black);
+            palette.setColor(QPalette::WindowText, Qt::black);
+            palette.setColor(QPalette::ButtonText, Qt::black);
+            palette.setColor(QPalette::Window, Qt::white);
+            palette.setColor(QPalette::Base, Qt::white);
 
-    QPalette palette;
-    palette.setCurrentColorGroup(QPalette::Active);
-    palette.setColor(QPalette::Text, Qt::black);
-    palette.setColor(QPalette::WindowText, Qt::black);
-    palette.setColor(QPalette::ButtonText, Qt::black);
-    palette.setColor(QPalette::Window, Qt::white);
-    palette.setColor(QPalette::Base, Qt::white);
+            const auto plotWidth = static_cast<const DataTablePlotExporter*>(exporter())->plotWidth();
+            const auto plotHeight = static_cast<const DataTablePlotExporter*>(exporter())->plotHeight();
+            const auto plotDPI = static_cast<const DataTablePlotExporter*>(exporter())->plotDPI();
 
-    DataTablePlotWidget plotWidget;
-    plotWidget.setPalette(std::move(palette));
-    plotWidget.setTable(table);
-    plotWidget.axisScaleDraw(QwtPlot::yLeft)->setPenWidthF(1);
-    plotWidget.axisScaleDraw(QwtPlot::xBottom)->setPenWidthF(1);
-    QwtPlotRenderer plotRenderer;
-    plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardBackground);
-    plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardCanvasBackground);
-    plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardCanvasFrame);
-    plotRenderer.renderDocument(&plotWidget, outputFile().fileName(), QSizeF(plotWidth(), plotHeight()), plotDPI());
+            DataTablePlotWidget plotWidget;
+            plotWidget.setPalette(std::move(palette));
+            plotWidget.setTable(table);
+            plotWidget.axisScaleDraw(QwtPlot::yLeft)->setPenWidthF(1);
+            plotWidget.axisScaleDraw(QwtPlot::xBottom)->setPenWidthF(1);
+            QwtPlotRenderer plotRenderer;
+            plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardBackground);
+            plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardCanvasBackground);
+            plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardFlag::DiscardCanvasFrame);
+            plotRenderer.renderDocument(&plotWidget, filePath, QSizeF(plotWidth, plotHeight), plotDPI);
+
+            co_return;
+        }
+    };
+
+    return OORef<Job>::create(this, filePath, false);
 }
 
 }   // End of namespace

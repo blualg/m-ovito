@@ -46,7 +46,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
     QGroupBox* groupBox;
     QGridLayout* groupLayout;
 
-    // Create "Export sequence" group box, which lets the user select the animation interval to be exported.
+    // Create "Export sequence" group box, which lets the user select the trajectory interval to be exported.
     groupBox = new QGroupBox(tr("Export frame sequence"), this);
     _mainLayout->addWidget(groupBox);
 
@@ -55,15 +55,15 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
     groupLayout->setColumnStretch(1, 95);
     _rangeButtonGroup = new QButtonGroup(this);
 
-    bool exportAnim = _exporter->exportAnimation();
-    if(!exportAnim && scene.animationSettings()->lastFrame() <= scene.animationSettings()->firstFrame())
+    bool exportTrajectory = _exporter->exportTrajectory();
+    if(!exportTrajectory && scene.animationSettings()->lastFrame() <= scene.animationSettings()->firstFrame())
         groupBox->setEnabled(false);
     else
         _skipDialog = false;
     QRadioButton* singleFrameBtn = new QRadioButton(tr("Current frame only"));
     _rangeButtonGroup->addButton(singleFrameBtn, 0);
     groupLayout->addWidget(singleFrameBtn, 0, 0, 1, 2);
-    singleFrameBtn->setChecked(!exportAnim);
+    singleFrameBtn->setChecked(!exportTrajectory);
 
     QHBoxLayout* frameRangeLayout = new QHBoxLayout();
     frameRangeLayout->setSpacing(0);
@@ -73,7 +73,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
     _rangeButtonGroup->addButton(frameSequenceBtn, 1);
     frameRangeLayout->addWidget(frameSequenceBtn);
     frameRangeLayout->addSpacing(10);
-    frameSequenceBtn->setChecked(exportAnim);
+    frameSequenceBtn->setChecked(exportTrajectory);
     frameSequenceBtn->setEnabled(scene.animationSettings()->lastFrame() > scene.animationSettings()->firstFrame());
 
     class ShortLineEdit : public QLineEdit {
@@ -272,8 +272,8 @@ void FileExporterSettingsDialog::onOk()
     setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 
     _mainWindow.handleExceptions([&] {
-        _exporter->setExportAnimation(_rangeButtonGroup->checkedId() == 1);
-        _exporter->setUseWildcardFilename(_fileGroupButtonGroup ? (_fileGroupButtonGroup->checkedId() == 1) : _exporter->exportAnimation());
+        _exporter->setExportTrajectory(_rangeButtonGroup->checkedId() == 1);
+        _exporter->setUseWildcardFilename(_fileGroupButtonGroup ? (_fileGroupButtonGroup->checkedId() == 1) : _exporter->exportTrajectory());
         _exporter->setWildcardFilename(_wildcardTextbox->text());
         _exporter->setStartFrame(_startTimeSpinner->intValue());
         _exporter->setEndFrame(std::max(_endTimeSpinner->intValue(), _startTimeSpinner->intValue()));

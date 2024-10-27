@@ -36,12 +36,10 @@ QRecursiveMutex NetCDFExclusiveAccess::_netcdfMutex;
 ******************************************************************************/
 NetCDFExclusiveAccess::NetCDFExclusiveAccess()
 {
-    while(!this_task::isCanceled()) {
-        if(_netcdfMutex.tryLock(10)) {
-            _isLocked = true;
-            break;
-        }
+    while(!_netcdfMutex.tryLock(10)) {
+        this_task::throwIfCanceled();
     }
+    _isLocked = true;
 }
 
 /******************************************************************************
@@ -52,7 +50,6 @@ NetCDFExclusiveAccess::~NetCDFExclusiveAccess()
     if(_isLocked)
         _netcdfMutex.unlock();
 }
-
 
 /******************************************************************************
 * Check for NetCDF error and throw exception

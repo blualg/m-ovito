@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "VTKDislocationsExporter.h"
 
 namespace Ovito {
@@ -34,132 +35,113 @@ namespace Ovito {
 IMPLEMENT_CREATABLE_OVITO_CLASS(VTKDislocationsExporter);
 
 /******************************************************************************
- * This is called once for every output file to be written and before
- * exportFrame() is called.
- *****************************************************************************/
-void VTKDislocationsExporter::openOutputFile(const QString& filePath, int numberOfFrames)
+* Creates a worker performing the actual data export.
+*****************************************************************************/
+OORef<FileExportJob> VTKDislocationsExporter::createExportJob(const QString& filePath, int numberOfFrames)
 {
-    OVITO_ASSERT(!_outputFile.isOpen());
-    OVITO_ASSERT(!_outputStream);
+    class Job : public FileExportJob
+    {
+    public:
 
-    _outputFile.setFileName(filePath);
-    _outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
-}
+        /// Writes the exportable data of a single trajectory frame to the output file.
+        virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+            // The exportable frame data.
+            const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
-/******************************************************************************
- * This is called once for every output file written after exportFrame()
- * has been called.
- *****************************************************************************/
-void VTKDislocationsExporter::closeOutputFile(bool exportCompleted)
-{
-    _outputStream.reset();
-    if(_outputFile.isOpen())
-        _outputFile.close();
+            // Look up the dislocation network object in the pipeline state.
+            const DislocationNetwork* dislocations = state.getObject<DislocationNetwork>();
+            if(!dislocations)
+                throw Exception(tr("The object to be exported does not contain any exportable dislocation line data."));
 
-    if(!exportCompleted)
-        _outputFile.remove();
-}
+            // Get the visual element associated with the dislocation network.
+            OORef<DislocationVis> dislocationVis = dislocations->visElement<DislocationVis>();
+            if(!dislocationVis)
+                dislocationVis = OORef<DislocationVis>::create(); // Create an ad-hoc vis element if necessary
 
-/******************************************************************************
- * Exports a single animation frame to the current output file.
- *****************************************************************************/
-void VTKDislocationsExporter::exportFrame(int frameNumber, const QString& filePath)
-{
-    // Evaluate data pipeline.
-    // Note: We are requesting the renderable flow state from the pipeline,
-    // because we are interested in clipped (post-processed) dislocation lines.
-    const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
+            // Generate non-periodic version of the dislocation line network.
+            std::shared_ptr<const RenderableDislocationLines> renderableLines = co_await FutureAwaiter(ObjectExecutor(exporter()), dislocationVis->transformDislocations(dislocations));
 
-    // Look up the dislocation network object in the pipeline state.
-    const DislocationNetwork* dislocations = state.getObject<DislocationNetwork>();
-    if(!dislocations)
-        throw Exception(tr("The object to be exported does not contain any exportable dislocation line data."));
+            // Count dislocation polylines and output vertices.
+            std::vector<size_t> polyVertexCounts;
+            for(size_t i = 0; i < renderableLines->lineSegments().size(); i++) {
+                if(renderableLines->lineSegments()[i].dislocationIndex >= dislocations->segments().size())
+                    throw Exception(tr("Inconsistent data: Dislocation index out of range."));
+                if(i != 0) {
+                    const auto& s1 = renderableLines->lineSegments()[i-1];
+                    const auto& s2 = renderableLines->lineSegments()[i];
+                    if(s1.verts[1] != s2.verts[0])
+                        polyVertexCounts.push_back(2);
+                    else
+                        polyVertexCounts.back()++;
+                }
+                else polyVertexCounts.push_back(2);
+            }
+            size_t vertexCount = std::accumulate(polyVertexCounts.begin(), polyVertexCounts.end(), (size_t)0);
 
-    // Get the visual element associated with the dislocation network.
-    OORef<DislocationVis> dislocationVis = dislocations->visElement<DislocationVis>();
-    if(!dislocationVis)
-        dislocationVis = OORef<DislocationVis>::create();
+            textStream() << "# vtk DataFile Version 3.0\n";
+            textStream() << "# Dislocation lines written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+            textStream() << "ASCII\n";
+            textStream() << "DATASET UNSTRUCTURED_GRID\n";
+            textStream() << "POINTS " << vertexCount << " double\n";
+            for(size_t i = 0; i < renderableLines->lineSegments().size(); i++) {
+                const auto& s2 = renderableLines->lineSegments()[i];
+                if(i != 0) {
+                    const auto& s1 = renderableLines->lineSegments()[i-1];
+                    if(s1.verts[1] != s2.verts[0])
+                        textStream() << s2.verts[0].x() << " " << s2.verts[0].y() << " " << s2.verts[0].z() << "\n";
+                }
+                else {
+                    textStream() << s2.verts[0].x() << " " << s2.verts[0].y() << " " << s2.verts[0].z() << "\n";
+                }
+                textStream() << s2.verts[1].x() << " " << s2.verts[1].y() << " " << s2.verts[1].z() << "\n";
+            }
 
-    // Generate non-periodic version of the dislocation line network.
-    std::shared_ptr<const RenderableDislocationLines> renderableLines = dislocationVis->transformDislocations(dislocations).blockForResult();
+            textStream() << "\nCELLS " << polyVertexCounts.size() << " " << (polyVertexCounts.size() + vertexCount) << "\n";
+            size_t index = 0;
+            for(auto c : polyVertexCounts) {
+                textStream() << c;
+                for(size_t i = 0; i < c; i++) {
+                    textStream() << " " << (index++);
+                }
+                textStream() << "\n";
+            }
 
-    // Count dislocation polylines and output vertices.
-    std::vector<size_t> polyVertexCounts;
-    for(size_t i = 0; i < renderableLines->lineSegments().size(); i++) {
-        if(renderableLines->lineSegments()[i].dislocationIndex >= dislocations->segments().size())
-            throw Exception(tr("Inconsistent data: Dislocation index out of range."));
-        if(i != 0) {
-            const auto& s1 = renderableLines->lineSegments()[i-1];
-            const auto& s2 = renderableLines->lineSegments()[i];
-            if(s1.verts[1] != s2.verts[0])
-                polyVertexCounts.push_back(2);
-            else
-                polyVertexCounts.back()++;
+            textStream() << "\nCELL_TYPES " << polyVertexCounts.size() << "\n";
+            for(size_t i = 0; i < polyVertexCounts.size(); i++)
+                textStream() << "4\n";  // VTK Polyline
+
+            textStream() << "\nCELL_DATA " << polyVertexCounts.size() << "\n";
+            textStream() << "SCALARS dislocation_index int\n";
+            textStream() << "LOOKUP_TABLE default\n";
+            auto segment = renderableLines->lineSegments().begin();
+            for(auto c : polyVertexCounts) {
+                textStream() << segment->dislocationIndex << "\n";
+                segment += c - 1;
+            }
+            OVITO_ASSERT(segment == renderableLines->lineSegments().end());
+
+            textStream() << "\nVECTORS burgers_vector_local double\n";
+            segment = renderableLines->lineSegments().begin();
+            for(auto c : polyVertexCounts) {
+                const DislocationSegment* dislocation = dislocations->segments()[segment->dislocationIndex];
+                textStream() << dislocation->burgersVector.localVec().x() << " " << dislocation->burgersVector.localVec().y() << " " << dislocation->burgersVector.localVec().z() << "\n";
+                segment += c - 1;
+            }
+            OVITO_ASSERT(segment == renderableLines->lineSegments().end());
+
+            textStream() << "\nVECTORS burgers_vector_world double\n";
+            segment = renderableLines->lineSegments().begin();
+            for(auto c : polyVertexCounts) {
+                const DislocationSegment* dislocation = dislocations->segments()[segment->dislocationIndex];
+                Vector3 transformedVector = dislocation->burgersVector.toSpatialVector();
+                textStream() << transformedVector.x() << " " << transformedVector.y() << " " << transformedVector.z() << "\n";
+                segment += c - 1;
+            }
+            OVITO_ASSERT(segment == renderableLines->lineSegments().end());
         }
-        else polyVertexCounts.push_back(2);
-    }
-    size_t vertexCount = std::accumulate(polyVertexCounts.begin(), polyVertexCounts.end(), (size_t)0);
+    };
 
-    textStream() << "# vtk DataFile Version 3.0\n";
-    textStream() << "# Dislocation lines written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
-    textStream() << "ASCII\n";
-    textStream() << "DATASET UNSTRUCTURED_GRID\n";
-    textStream() << "POINTS " << vertexCount << " double\n";
-    for(size_t i = 0; i < renderableLines->lineSegments().size(); i++) {
-        const auto& s2 = renderableLines->lineSegments()[i];
-        if(i != 0) {
-            const auto& s1 = renderableLines->lineSegments()[i-1];
-            if(s1.verts[1] != s2.verts[0])
-                textStream() << s2.verts[0].x() << " " << s2.verts[0].y() << " " << s2.verts[0].z() << "\n";
-        }
-        else {
-            textStream() << s2.verts[0].x() << " " << s2.verts[0].y() << " " << s2.verts[0].z() << "\n";
-        }
-        textStream() << s2.verts[1].x() << " " << s2.verts[1].y() << " " << s2.verts[1].z() << "\n";
-    }
-
-    textStream() << "\nCELLS " << polyVertexCounts.size() << " " << (polyVertexCounts.size() + vertexCount) << "\n";
-    size_t index = 0;
-    for(auto c : polyVertexCounts) {
-        textStream() << c;
-        for(size_t i = 0; i < c; i++) {
-            textStream() << " " << (index++);
-        }
-        textStream() << "\n";
-    }
-
-    textStream() << "\nCELL_TYPES " << polyVertexCounts.size() << "\n";
-    for(size_t i = 0; i < polyVertexCounts.size(); i++)
-        textStream() << "4\n";  // VTK Polyline
-
-    textStream() << "\nCELL_DATA " << polyVertexCounts.size() << "\n";
-    textStream() << "SCALARS dislocation_index int\n";
-    textStream() << "LOOKUP_TABLE default\n";
-    auto segment = renderableLines->lineSegments().begin();
-    for(auto c : polyVertexCounts) {
-        textStream() << segment->dislocationIndex << "\n";
-        segment += c - 1;
-    }
-    OVITO_ASSERT(segment == renderableLines->lineSegments().end());
-
-    textStream() << "\nVECTORS burgers_vector_local double\n";
-    segment = renderableLines->lineSegments().begin();
-    for(auto c : polyVertexCounts) {
-        const DislocationSegment* dislocation = dislocations->segments()[segment->dislocationIndex];
-        textStream() << dislocation->burgersVector.localVec().x() << " " << dislocation->burgersVector.localVec().y() << " " << dislocation->burgersVector.localVec().z() << "\n";
-        segment += c - 1;
-    }
-    OVITO_ASSERT(segment == renderableLines->lineSegments().end());
-
-    textStream() << "\nVECTORS burgers_vector_world double\n";
-    segment = renderableLines->lineSegments().begin();
-    for(auto c : polyVertexCounts) {
-        const DislocationSegment* dislocation = dislocations->segments()[segment->dislocationIndex];
-        Vector3 transformedVector = dislocation->burgersVector.toSpatialVector();
-        textStream() << transformedVector.x() << " " << transformedVector.y() << " " << transformedVector.z() << "\n";
-        segment += c - 1;
-    }
-    OVITO_ASSERT(segment == renderableLines->lineSegments().end());
+    return OORef<Job>::create(this, filePath, true);
 }
 
 }   // End of namespace

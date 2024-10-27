@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "POSCARExporter.h"
 
 namespace Ovito {
@@ -33,112 +34,129 @@ DEFINE_PROPERTY_FIELD(POSCARExporter, writeReducedCoordinates);
 SET_PROPERTY_FIELD_LABEL(POSCARExporter, writeReducedCoordinates, "Output reduced coordinates");
 
 /******************************************************************************
-* Writes the particles of one animation frame to the current output file.
-******************************************************************************/
-void POSCARExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath)
+* Creates a worker performing the actual data export.
+*****************************************************************************/
+OORef<FileExportJob> POSCARExporter::createExportJob(const QString& filePath, int numberOfFrames)
 {
-    // Get particle positions and velocities.
-    const Particles* particles = state.expectObject<Particles>();
-    particles->verifyIntegrity();
-    BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
-    BufferReadAccess<Vector3> velocityProperty = particles->getProperty(Particles::VelocityProperty);
-    size_t particleCount = particles->elementCount();
+    class Job : public FileExportJob
+    {
+    public:
 
-    // Get simulation cell info.
-    const SimulationCell* simulationCell = state.getObject<SimulationCell>();
-    if(!simulationCell)
-        throw Exception(tr("No simulation cell available. Cannot write POSCAR file."));
+        /// Writes the exportable data of a single trajectory frame to the output file.
+        virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+            // The exportable frame data.
+            const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
-    // Write POSCAR header including the simulation cell geometry.
-    textStream() << "POSCAR file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
-    textStream() << "1\n";
-    for(size_t i = 0; i < 3; i++)
-        textStream() << simulationCell->matrix()(0, i) << ' ' << simulationCell->matrix()(1, i) << ' ' << simulationCell->matrix()(2, i) << '\n';
-    const Vector3& origin = simulationCell->matrix().translation();
+            // Perform the following in a worker thread.
+            co_await ExecutorAwaiter(ThreadPoolExecutor());
 
-    // Count number of particles per particle type.
-    QMap<int,int> particleCounts;
-    const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
-    BufferReadAccess<int32_t> particleTypeArray(particleTypeProperty);
-    if(particleTypeProperty) {
-        for(int ptype : particleTypeArray)
-            particleCounts[ptype]++;
+            // Get particle positions and velocities.
+            const Particles* particles = state.expectObject<Particles>();
+            BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
+            BufferReadAccess<Vector3> velocityProperty = particles->getProperty(Particles::VelocityProperty);
+            size_t particleCount = particles->elementCount();
 
-        // Write line with particle type names.
-        for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
-            const ElementType* particleType = particleTypeProperty->elementType(c.key());
-            if(particleType) {
-                QString typeName = particleType->nameOrNumericId();
-                typeName.replace(' ', '_');
-                textStream() << typeName << ' ';
-            }
-            else textStream() << "Type" << c.key() << ' ';
-        }
-        textStream() << '\n';
+            // Get simulation cell info.
+            const SimulationCell* simulationCell = state.getObject<SimulationCell>();
+            if(!simulationCell)
+                throw Exception(tr("No simulation cell available. Cannot write POSCAR file."));
 
-        // Write line with particle counts per type.
-        for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
-            textStream() << c.value() << ' ';
-        }
-        textStream() << '\n';
-    }
-    else {
-        // Write line with particle type name.
-        textStream() << "A\n";
-        // Write line with particle count.
-        textStream() << particleCount << '\n';
-        particleCounts[0] = particleCount;
-    }
+            // Write POSCAR header including the simulation cell geometry.
+            textStream() << "POSCAR file written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+            textStream() << "1\n";
+            for(size_t i = 0; i < 3; i++)
+                textStream() << simulationCell->matrix()(0, i) << ' ' << simulationCell->matrix()(1, i) << ' ' << simulationCell->matrix()(2, i) << '\n';
+            const Vector3& origin = simulationCell->matrix().translation();
 
-    qlonglong totalProgressCount = particleCount;
-    if(velocityProperty) totalProgressCount += particleCount;
-    qlonglong currentProgress = 0;
-    this_task::setProgressMaximum(totalProgressCount);
+            // Count number of particles per particle type.
+            QMap<int,int> particleCounts;
+            const Property* particleTypeProperty = particles->getProperty(Particles::TypeProperty);
+            BufferReadAccess<int32_t> particleTypeArray(particleTypeProperty);
+            if(particleTypeProperty) {
+                for(int ptype : particleTypeArray)
+                    particleCounts[ptype]++;
 
-    // Write atomic positions.
-    textStream() << (writeReducedCoordinates() ? "Direct\n" : "Cartesian\n");
-    for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
-        int ptype = c.key();
-        const Point3* p = posProperty.cbegin();
-        for(size_t i = 0; i < particleCount; i++, ++p) {
-            if(particleTypeArray && particleTypeArray[i] != ptype)
-                continue;
-            if(writeReducedCoordinates()) {
-                Point3 rp = simulationCell->absoluteToReduced(*p);
-                textStream() << rp.x() << ' ' << rp.y() << ' ' << rp.z() << '\n';
+                // Write line with particle type names.
+                for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
+                    const ElementType* particleType = particleTypeProperty->elementType(c.key());
+                    if(particleType) {
+                        QString typeName = particleType->nameOrNumericId();
+                        typeName.replace(' ', '_');
+                        textStream() << typeName << ' ';
+                    }
+                    else textStream() << "Type" << c.key() << ' ';
+                }
+                textStream() << '\n';
+
+                // Write line with particle counts per type.
+                for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
+                    textStream() << c.value() << ' ';
+                }
+                textStream() << '\n';
             }
             else {
-                textStream() << (p->x() - origin.x()) << ' ' << (p->y() - origin.y()) << ' ' << (p->z() - origin.z()) << '\n';
+                // Write line with particle type name.
+                textStream() << "A\n";
+                // Write line with particle count.
+                textStream() << particleCount << '\n';
+                particleCounts[0] = particleCount;
             }
 
-            // Update progress bar and check for user cancellation.
-            this_task::setProgressValueIntermittent(currentProgress++);
-        }
-    }
+            qlonglong totalProgressCount = particleCount;
+            if(velocityProperty) totalProgressCount += particleCount;
+            qlonglong currentProgress = 0;
+            this_task::setProgressMaximum(totalProgressCount);
 
-    // Write atomic velocities.
-    if(velocityProperty) {
-        textStream() << (writeReducedCoordinates() ? "Direct\n" : "Cartesian\n");
-        for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
-            int ptype = c.key();
-            const Vector3* v = velocityProperty.cbegin();
-            for(size_t i = 0; i < particleCount; i++, ++v) {
-                if(particleTypeArray && particleTypeArray[i] != ptype)
-                    continue;
+            bool writeReducedCoordinates = static_cast<const POSCARExporter*>(this->exporter())->writeReducedCoordinates();
 
-                if(writeReducedCoordinates()) {
-                    Vector3 rv = simulationCell->absoluteToReduced(*v);
-                    textStream() << rv.x() << ' ' << rv.y() << ' ' << rv.z() << '\n';
+            // Write atomic positions.
+            textStream() << (writeReducedCoordinates ? "Direct\n" : "Cartesian\n");
+            for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
+                int ptype = c.key();
+                const Point3* p = posProperty.cbegin();
+                for(size_t i = 0; i < particleCount; i++, ++p) {
+                    if(particleTypeArray && particleTypeArray[i] != ptype)
+                        continue;
+                    if(writeReducedCoordinates) {
+                        Point3 rp = simulationCell->absoluteToReduced(*p);
+                        textStream() << rp.x() << ' ' << rp.y() << ' ' << rp.z() << '\n';
+                    }
+                    else {
+                        textStream() << (p->x() - origin.x()) << ' ' << (p->y() - origin.y()) << ' ' << (p->z() - origin.z()) << '\n';
+                    }
+
+                    // Update progress bar and check for user cancellation.
+                    this_task::setProgressValueIntermittent(currentProgress++);
                 }
-                else {
-                    textStream() << v->x() << ' ' << v->y() << ' ' << v->z() << '\n';
-                }
+            }
 
-                // Update progress bar and check for user cancellation.
-                this_task::setProgressValueIntermittent(currentProgress++);
+            // Write atomic velocities.
+            if(velocityProperty) {
+                textStream() << (writeReducedCoordinates ? "Direct\n" : "Cartesian\n");
+                for(auto c = particleCounts.begin(); c != particleCounts.end(); ++c) {
+                    int ptype = c.key();
+                    const Vector3* v = velocityProperty.cbegin();
+                    for(size_t i = 0; i < particleCount; i++, ++v) {
+                        if(particleTypeArray && particleTypeArray[i] != ptype)
+                            continue;
+
+                        if(writeReducedCoordinates) {
+                            Vector3 rv = simulationCell->absoluteToReduced(*v);
+                            textStream() << rv.x() << ' ' << rv.y() << ' ' << rv.z() << '\n';
+                        }
+                        else {
+                            textStream() << v->x() << ' ' << v->y() << ' ' << v->z() << '\n';
+                        }
+
+                        // Update progress bar and check for user cancellation.
+                        this_task::setProgressValueIntermittent(currentProgress++);
+                    }
+                }
             }
         }
-    }
+    };
+
+    return OORef<Job>::create(this, filePath, true);
 }
 
 }   // End of namespace

@@ -44,9 +44,6 @@ public:
     /// Destructor, which releases exclusive access to the NetCDF functions.
     ~NetCDFExclusiveAccess();
 
-    /// Returns whether this object currently has obtained exclusive access to the NetCDF functions.
-    bool isLocked() const { return _isLocked; }
-
 private:
 
     /// Indicates that this object currently has exclusive access to the NetCDF functions.

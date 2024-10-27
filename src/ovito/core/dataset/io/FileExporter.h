@@ -28,6 +28,8 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/scene/SceneNode.h>
 #include <ovito/core/dataset/data/DataObjectReference.h>
+#include <ovito/core/utilities/io/CompressedTextWriter.h>
+#include <ovito/core/utilities/MoveOnlyAny.h>
 
 namespace Ovito {
 
@@ -65,7 +67,7 @@ class OVITO_CORE_EXPORT FileExporter : public RefTarget
 
 public:
 
-    /// \brief Selects the default scene node to be exported by this exporter.
+    /// Selects the default scene node to be exported by this exporter.
     virtual void selectDefaultExportableData(DataSet* dataset, Scene* scene);
 
     /// Determines whether the given scene node is suitable for this file exporter service.
@@ -73,50 +75,44 @@ public:
     /// suitable data objects of the type specified by the FileExporter::exportableDataObjectClass() method.
     virtual bool isSuitableSceneNode(SceneNode* node) const;
 
-    /// \brief Determines whether the given pipeline output is suitable for exporting with this exporter service.
+    /// Determines whether the given pipeline output is suitable for exporting with this exporter service.
     /// By default, all data collections are considered suitable that contain suitable data objects
     /// of the type(s) specified by the FileExporter::exportableDataObjectClass() method.
     /// Subclasses can refine this behavior as needed.
     virtual bool isSuitablePipelineOutput(const PipelineFlowState& state) const;
 
-    /// \brief Returns the specific type(s) of data objects that this exporter service can export.
+    /// Returns the specific type(s) of data objects that this exporter service can export.
     /// The default implementation returns an empty list to indicate that the exporter is not restricted to
-    /// a specfic class of data objects. Subclasses should override this behavior.
+    /// a specific class of data objects. Subclasses should override this behavior.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const { return {}; }
 
-    /// \brief Sets the name of the output file that should be written by this exporter.
+    /// Sets the name of the output file that should be written by this exporter.
     virtual void setOutputFilename(const QString& filename);
 
-    /// \brief Exports the scene data to the output file(s).
-    virtual void doExport();
+    /// Exports the scene data to the output file(s).
+    Future<void> doExport();
 
-    /// \brief Indicates whether this file exporter can write more than one animation frame into a single output file.
+    /// Indicates whether this file exporter can write more than one animation frame into a single output file.
     virtual bool supportsMultiFrameFiles() const { return false; }
 
-    /// \brief Evaluates the pipeline whose data is to be exported.
-    PipelineFlowState getPipelineDataToBeExported(int frame) const;
+    /// Evaluates the pipeline whose data is to be exported.
+    virtual Future<PipelineFlowState> getPipelineDataToBeExported(int frameNumber) const;
 
-    /// \brief Returns a string with the list of available data objects of the given type.
-    QString getAvailableDataObjectList(const PipelineFlowState& state, const DataObject::OOMetaClass& objectType) const;
+    /// Returns a string with the list of available data objects of the given type.
+    static QString getAvailableDataObjectList(const PipelineFlowState& state, const DataObject::OOMetaClass& objectType);
 
 protected:
 
-    /// \brief This is called once for every output file to be written and before exportFrame() is called.
-    virtual void openOutputFile(const QString& filePath, int numberOfFrames) = 0;
-
-    /// \brief This is called once for every output file written after exportFrame() has been called.
-    virtual void closeOutputFile(bool exportCompleted) = 0;
-
-    /// \brief Exports a single animation frame to the current output file.
-    virtual void exportFrame(int frameNumber, const QString& filePath) {}
+    /// Creates a worker performing the actual data export.
+    virtual OORef<FileExportJob> createExportJob(const QString& filePath, int numberOfFrames) = 0;
 
 private:
 
     /// The output file path.
     DECLARE_PROPERTY_FIELD(QString{}, outputFilename);
 
-    /// Controls whether only the current animation frame or an entire animation interval should be exported.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, exportAnimation, setExportAnimation);
+    /// Controls whether only the current trajectory frame or an entire trajectory interval should be exported.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, exportTrajectory, setExportTrajectory);
 
     /// Indicates that the exporter should produce a separate file for each timestep.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useWildcardFilename, setUseWildcardFilename);
@@ -147,6 +143,55 @@ private:
 
     /// The specific data object from the pipeline output to be exported.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(DataObjectReference{}, dataObjectToExport, setDataObjectToExport);
+};
+
+/**
+ * Abstract base class for file export implementations.
+ */
+class OVITO_CORE_EXPORT FileExportJob : public OvitoObject
+{
+    OVITO_CLASS(FileExportJob)
+
+public:
+
+    /// Constructor.
+    void initializeObject(const FileExporter* exporter, const QString& filePath, bool openTextStream);
+
+    /// This method is called after the reference counter of this object has reached zero
+    /// and before the object is being finally deleted.
+    virtual void aboutToBeDeleted() override;
+
+    /// This is called after an output file has been successfully written and before the worker is destroyed.
+    virtual void close(bool exportCompleted = true);
+
+    /// Produces the data to be exported for a trajectory frame.
+    virtual Future<any_moveonly> getExportableFrameData(OORef<FileExportJob> self, int frameNumber);
+
+    /// Writes the exportable data of a single trajectory frame to the output file.
+    virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) = 0;
+
+    /// Returns a pointer to the exporter to which this worker belongs.
+    const FileExporter* exporter() const { return _exporter; }
+
+    /// Returns the current file this exporter is writing to.
+    QFile& outputFile() { return _outputFile; }
+
+    /// Returns the text stream used to write into the current output file.
+    CompressedTextWriter& textStream() { OVITO_ASSERT(_textStream.has_value()); return *_textStream; }
+
+    /// Returns a reference to the specific data object to be exported.
+    const DataObjectReference& dataObjectToExport() const { return exporter()->dataObjectToExport(); }
+
+private:
+
+    /// The exporter object this job belongs to.
+    OORef<const FileExporter> _exporter;
+
+    /// The output file.
+    QFile _outputFile;
+
+    /// The stream object used to write into the output file.
+    std::optional<CompressedTextWriter> _textStream;
 };
 
 }   // End of namespace

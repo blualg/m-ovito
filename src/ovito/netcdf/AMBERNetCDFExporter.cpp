@@ -24,6 +24,7 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "AMBERNetCDFExporter.h"
 
 #include <3rdparty/netcdf_integration/NetCDFIntegration.h>
@@ -32,345 +33,384 @@
 
 namespace Ovito {
 
-const char NC_FRAME_STR[]         = "frame";
-const char NC_SPATIAL_STR[]       = "spatial";
-const char NC_VOIGT_STR[]         = "Voigt";
-const char NC_ATOM_STR[]          = "atom";
-const char NC_CELL_SPATIAL_STR[]  = "cell_spatial";
-const char NC_CELL_ANGULAR_STR[]  = "cell_angular";
-const char NC_LABEL_STR[]         = "label";
+constexpr char NC_FRAME_STR[]         = "frame";
+constexpr char NC_SPATIAL_STR[]       = "spatial";
+constexpr char NC_VOIGT_STR[]         = "Voigt";
+constexpr char NC_ATOM_STR[]          = "atom";
+constexpr char NC_CELL_SPATIAL_STR[]  = "cell_spatial";
+constexpr char NC_CELL_ANGULAR_STR[]  = "cell_angular";
+constexpr char NC_LABEL_STR[]         = "label";
 
-const char NC_TIME_STR[]          = "time";
-const char NC_CELL_ORIGIN_STR[]   = "cell_origin";
-const char NC_CELL_LENGTHS_STR[]  = "cell_lengths";
-const char NC_CELL_ANGLES_STR[]   = "cell_angles";
+constexpr char NC_TIME_STR[]          = "time";
+constexpr char NC_CELL_ORIGIN_STR[]   = "cell_origin";
+constexpr char NC_CELL_LENGTHS_STR[]  = "cell_lengths";
+constexpr char NC_CELL_ANGLES_STR[]   = "cell_angles";
 
-const char NC_UNITS_STR[]         = "units";
-const char NC_SCALE_FACTOR_STR[]  = "scale_factor";
+constexpr char NC_UNITS_STR[]         = "units";
+constexpr char NC_SCALE_FACTOR_STR[]  = "scale_factor";
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(AMBERNetCDFExporter);
 
 /******************************************************************************
- * This is called once for every output file to be written and before
- * exportFrame() is called.
- *****************************************************************************/
-void AMBERNetCDFExporter::openOutputFile(const QString& filePath, int numberOfFrames)
+* Creates a worker performing the actual data export.
+*****************************************************************************/
+OORef<FileExportJob> AMBERNetCDFExporter::createExportJob(const QString& filePath, int numberOfFrames)
 {
-    // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
-    NetCDFExclusiveAccess locker;
-    if(!locker.isLocked())
-        return;
+    class Job : public FileExportJob
+    {
+    private:
+        /// The NetCDF file handle.
+        int _ncid = -1;
 
-    OVITO_ASSERT(!outputFile().isOpen());
-    outputFile().setFileName(filePath);
+        // NetCDF file dimensions:
+        int _frame_dim;
+        int _spatial_dim;
+        int _Voigt_dim;
+        int _atom_dim = -1;
+        int _cell_spatial_dim;
+        int _cell_angular_dim;
+        int _label_dim;
 
-    // Open the input file for writing.
-    NCERR(nc_create(QFile::encodeName(QDir::toNativeSeparators(filePath)).constData(), NC_64BIT_DATA, &_ncid));
+        // NetCDF file variables:
+        int _spatial_var;
+        int _cell_spatial_var;
+        int _cell_angular_var;
+        int _time_var;
+        int _cell_origin_var;
+        int _cell_lengths_var;
+        int _cell_angles_var;
+        int _coords_var;
 
-    // Define dimensions.
-    NCERR(nc_def_dim(_ncid, NC_FRAME_STR, NC_UNLIMITED, &_frame_dim));
-    NCERR(nc_def_dim(_ncid, NC_SPATIAL_STR, 3, &_spatial_dim));
-    NCERR(nc_def_dim(_ncid, NC_VOIGT_STR, 6, &_Voigt_dim));
-    NCERR(nc_def_dim(_ncid, NC_CELL_SPATIAL_STR, 3, &_cell_spatial_dim));
-    NCERR(nc_def_dim(_ncid, NC_CELL_ANGULAR_STR, 3, &_cell_angular_dim));
-    NCERR(nc_def_dim(_ncid, NC_LABEL_STR, 10, &_label_dim));
+        /// NetCDF file variables for global attributes.
+        QMap<QString, int> _attributes_vars;
 
-    // Default variables.
-    int dims[NC_MAX_VAR_DIMS];
-    dims[0] = _spatial_dim;
-    NCERR(nc_def_var(_ncid, NC_SPATIAL_STR, NC_CHAR, 1, dims, &_spatial_var));
-    NCERR(nc_def_var(_ncid, NC_CELL_SPATIAL_STR, NC_CHAR, 1, dims, &_cell_spatial_var));
-    dims[0] = _spatial_dim;
-    dims[1] = _label_dim;
-    NCERR(nc_def_var(_ncid, NC_CELL_ANGULAR_STR, NC_CHAR, 2, dims, &_cell_angular_var));
-    dims[0] = _frame_dim;
-    NCERR(nc_def_var(_ncid, NC_TIME_STR, NC_DOUBLE, 1, dims, &_time_var));
-    dims[0] = _frame_dim;
-    dims[1] = _cell_spatial_dim;
-    NCERR(nc_def_var(_ncid, NC_CELL_ORIGIN_STR, NC_DOUBLE, 2, dims, &_cell_origin_var));
-    NCERR(nc_def_var(_ncid, NC_CELL_LENGTHS_STR, NC_DOUBLE, 2, dims, &_cell_lengths_var));
-    dims[0] = _frame_dim;
-    dims[1] = _cell_angular_dim;
-    NCERR(nc_def_var(_ncid, NC_CELL_ANGLES_STR, NC_DOUBLE, 2, dims, &_cell_angles_var));
+        /// Describes a data array to be written.
+        struct NCOutputColumn {
+            NCOutputColumn(const PropertyReference& p, int dt, size_t cc, int ncv) :
+                property(p), dataType(dt), componentCount(cc), ncvar(ncv) {}
 
-    // Global attributes.
-    NCERR(nc_put_att_text(_ncid, NC_GLOBAL, "Conventions", 5, "AMBER"));
-    NCERR(nc_put_att_text(_ncid, NC_GLOBAL, "ConventionVersion", 3, "1.0"));
-    NCERR(nc_put_att_text(_ncid, NC_GLOBAL, "program", 5, "OVITO"));
-    QByteArray programVersion = Application::applicationVersionString().toLocal8Bit();
-    NCERR(nc_put_att_text(_ncid, NC_GLOBAL, "programVersion", programVersion.length(), programVersion.constData()));
-
-    NCERR(nc_put_att_text(_ncid, _cell_angles_var, NC_UNITS_STR, 6, "degree"));
-
-    // Done with definitions.
-    NCERR(nc_enddef(_ncid));
-
-    // Write label variables.
-    size_t index[NC_MAX_VAR_DIMS], count[NC_MAX_VAR_DIMS];
-    NCERR(nc_put_var_text(_ncid, _spatial_var, "xyz"));
-    NCERR(nc_put_var_text(_ncid, _cell_spatial_var, "abc"));
-    index[0] = 0;
-    index[1] = 0;
-    count[0] = 1;
-    count[1] = 5;
-    NCERR(nc_put_vara_text(_ncid, _cell_angular_var, index, count, "alpha"));
-    index[0] = 1;
-    count[1] = 4;
-    NCERR(nc_put_vara_text(_ncid, _cell_angular_var, index, count, "beta"));
-    index[0] = 2;
-    count[1] = 5;
-    NCERR(nc_put_vara_text(_ncid, _cell_angular_var, index, count, "gamma"));
-
-    // Number of simulation frames written so far.
-    _frameCounter = 0;
-}
-
-/******************************************************************************
- * This is called once for every output file written after exportFrame()
- * has been called.
- *****************************************************************************/
-void AMBERNetCDFExporter::closeOutputFile(bool exportCompleted)
-{
-    // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
-    NetCDFExclusiveAccess locker;
-    if(!locker.isLocked())
-        return;
-
-    OVITO_ASSERT(!outputFile().isOpen());
-
-    if(_ncid != -1) {
-        NCERR(nc_close(_ncid));
-        _ncid = -1;
-    }
-    _atom_dim = -1;
-
-    if(!exportCompleted)
-        outputFile().remove();
-}
-
-/******************************************************************************
-* Writes the particles of one animation frame to the current output file.
-******************************************************************************/
-void AMBERNetCDFExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath)
-{
-    // Get particles and their positions.
-    const Particles* particles = state.expectObject<Particles>();
-    particles->verifyIntegrity();
-    const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
-
-    // Get simulation cell info.
-    const SimulationCell* simulationCell = state.getObject<SimulationCell>();
-    const AffineTransformation simCell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
-    size_t atomsCount = particles->elementCount();
-
-    // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
-    NetCDFExclusiveAccess locker;
-    if(!locker.isLocked())
-        return;
-
-    // Define the "atom" dimension when writing first frame and the number of atoms is known.
-    if(_atom_dim == -1) {
-        NCERR(nc_redef(_ncid));
-        NCERR(nc_def_dim(_ncid, NC_ATOM_STR, atomsCount, &_atom_dim));
-
-        // Define NetCDF variables for global attributes.
-        const QVariantMap& attributes = state.buildAttributesMap();
-        for(auto entry = attributes.constBegin(); entry != attributes.constEnd(); ++entry) {
-            int var;
-            if(entry.key() == NC_TIME_STR || entry.key() == QStringLiteral("SourceFrame"))
-                continue;
-            else if(entry.value().typeId() == QMetaType::Double || entry.value().typeId() == QMetaType::Float)
-                NCERR(nc_def_var(_ncid, qUtf8Printable(entry.key()), NC_DOUBLE, 1, &_frame_dim, &var));
-            else if(entry.value().canConvert<int>())
-                NCERR(nc_def_var(_ncid, qUtf8Printable(entry.key()), NC_INT, 1, &_frame_dim, &var));
-            else
-                continue;
-            _attributes_vars.insert(entry.key(), var);
-        }
-
-        // Define NetCDF variable for atomic positions.
-        int dims[3] = { _frame_dim, _atom_dim, _spatial_dim };
-        NCERR(nc_def_var(_ncid, "coordinates", (posProperty->dataType() == DataBuffer::Float32) ? NC_FLOAT : NC_DOUBLE, 3, dims, &_coords_var));
-
-        // Define a NetCDF variable for every per-particle property to be exported.
-        for(auto c = columnMapping().begin(); c != columnMapping().end(); ++c) {
-
-            // Skip the particle position property. It has already been emitted above.
-            if(c->isStandardProperty(&Particles::OOClass(), Particles::PositionProperty))
-                continue;
-
-            // We can export a particle property only as a whole to a NetCDF file, not individual components.
-            // Skip this column if we have already emitted an entry for the same particle property before.
-            if(std::find_if(columnMapping().begin(), c, [&](const PropertyReference& pr) { return pr.name() == c->name(); }) != c)
-                continue;
-
-            const Property* prop = c->findInContainer(particles);
-            if(!prop) {
-                // Skip the identifier property if it doesn't exist.
-                if(c->isStandardProperty(&Particles::OOClass(), Particles::IdentifierProperty))
-                    continue;
-                throw Exception(tr("Invalid list of particle properties to be exported. The property '%1' does not exist.").arg(c->name()));
-            }
-            if((int)prop->componentCount() <= std::max(0, c->componentIndex(&Particles::OOClass())))
-                throw Exception(tr("The output vector component selected for column %1 is out of range. The particle property '%2' has only %3 component(s).").arg(c - columnMapping().begin() + 1).arg(c->name()).arg(prop->componentCount()));
-
-            // For certain standard properties we need to use NetCDF variables according to the AMBER convention.
-            // All other properties are output as NetCDF variables under their normal name.
-            const char* mangledName = nullptr;
-            dims[2] = 0;
-            if(prop->isStandardProperty()) {
-                if(prop->typeId() == Particles::ForceProperty) {
-                    mangledName = "forces";
-                    dims[2] = _spatial_dim;
-                }
-                else if(prop->typeId() == Particles::VelocityProperty) {
-                    mangledName = "velocities";
-                    dims[2] = _spatial_dim;
-                }
-                else if(prop->typeId() == Particles::TypeProperty) {
-                    mangledName = "atom_types";
-                }
-                else if(prop->typeId() == Particles::IdentifierProperty) {
-                    mangledName = "identifier";
-                }
-            }
-
-            // Create the dimension for the NetCDF variable if the property is a vector property.
-            if(dims[2] == 0 && prop->componentCount() > 1) {
-                NCERR(nc_def_dim(_ncid, qPrintable(QStringLiteral("dim_") + prop->name()), prop->componentCount(), &dims[2]));
-            }
-
-            // Create the NetCDF variable for the property.
-            nc_type ncDataType;
-            if(prop->dataType() == DataBuffer::Int8) ncDataType = NC_BYTE;
-            else if(prop->dataType() == DataBuffer::Int32) ncDataType = NC_INT;
-            else if(prop->dataType() == DataBuffer::Int64) ncDataType = NC_INT64;
-            else if(prop->dataType() == DataBuffer::Float32) ncDataType = NC_FLOAT;
-            else if(prop->dataType() == DataBuffer::Float64) ncDataType = NC_DOUBLE;
-            else continue;
-            // For scalar OVITO properties, we define a NetCDF variable with 2 dimensions.
-            // For vector OVITO properties, we define a NetCDF variable with 3 dimensions.
+            PropertyReference property;
+            int dataType;
+            size_t componentCount; // Number of values per particle.
             int ncvar;
-            NCERR(nc_def_var(_ncid, mangledName ? mangledName : qPrintable(c->name().toString()), ncDataType, (prop->componentCount() > 1) ? 3 : 2, dims, &ncvar));
-            _columns.emplace_back(*c, prop->dataType(), prop->componentCount(), ncvar);
+        };
+
+        std::vector<NCOutputColumn> _columns;
+
+        /// The number of frames written.
+        size_t _frameCounter = 0;
+
+    public:
+
+        /// Constructor.
+        void initializeObject(const FileExporter* exporter, const QString& filePath) {
+            FileExportJob::initializeObject(exporter, filePath, false);
+
+            // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
+            NetCDFExclusiveAccess locker;
+
+            // Open the input file for writing.
+            NCERR(nc_create(QFile::encodeName(QDir::toNativeSeparators(filePath)).constData(), NC_64BIT_DATA, &_ncid));
+
+            // Define dimensions.
+            NCERR(nc_def_dim(_ncid, NC_FRAME_STR, NC_UNLIMITED, &_frame_dim));
+            NCERR(nc_def_dim(_ncid, NC_SPATIAL_STR, 3, &_spatial_dim));
+            NCERR(nc_def_dim(_ncid, NC_VOIGT_STR, 6, &_Voigt_dim));
+            NCERR(nc_def_dim(_ncid, NC_CELL_SPATIAL_STR, 3, &_cell_spatial_dim));
+            NCERR(nc_def_dim(_ncid, NC_CELL_ANGULAR_STR, 3, &_cell_angular_dim));
+            NCERR(nc_def_dim(_ncid, NC_LABEL_STR, 10, &_label_dim));
+
+            // Default variables.
+            int dims[NC_MAX_VAR_DIMS];
+            dims[0] = _spatial_dim;
+            NCERR(nc_def_var(_ncid, NC_SPATIAL_STR, NC_CHAR, 1, dims, &_spatial_var));
+            NCERR(nc_def_var(_ncid, NC_CELL_SPATIAL_STR, NC_CHAR, 1, dims, &_cell_spatial_var));
+            dims[0] = _spatial_dim;
+            dims[1] = _label_dim;
+            NCERR(nc_def_var(_ncid, NC_CELL_ANGULAR_STR, NC_CHAR, 2, dims, &_cell_angular_var));
+            dims[0] = _frame_dim;
+            NCERR(nc_def_var(_ncid, NC_TIME_STR, NC_DOUBLE, 1, dims, &_time_var));
+            dims[0] = _frame_dim;
+            dims[1] = _cell_spatial_dim;
+            NCERR(nc_def_var(_ncid, NC_CELL_ORIGIN_STR, NC_DOUBLE, 2, dims, &_cell_origin_var));
+            NCERR(nc_def_var(_ncid, NC_CELL_LENGTHS_STR, NC_DOUBLE, 2, dims, &_cell_lengths_var));
+            dims[0] = _frame_dim;
+            dims[1] = _cell_angular_dim;
+            NCERR(nc_def_var(_ncid, NC_CELL_ANGLES_STR, NC_DOUBLE, 2, dims, &_cell_angles_var));
+
+            // Global attributes.
+            NCERR(nc_put_att_text(_ncid, NC_GLOBAL, "Conventions", 5, "AMBER"));
+            NCERR(nc_put_att_text(_ncid, NC_GLOBAL, "ConventionVersion", 3, "1.0"));
+            NCERR(nc_put_att_text(_ncid, NC_GLOBAL, "program", 5, "OVITO"));
+            QByteArray programVersion = Application::applicationVersionString().toLocal8Bit();
+            NCERR(nc_put_att_text(_ncid, NC_GLOBAL, "programVersion", programVersion.length(), programVersion.constData()));
+
+            NCERR(nc_put_att_text(_ncid, _cell_angles_var, NC_UNITS_STR, 6, "degree"));
+
+            // Done with definitions.
+            NCERR(nc_enddef(_ncid));
+
+            // Write label variables.
+            size_t index[NC_MAX_VAR_DIMS], count[NC_MAX_VAR_DIMS];
+            NCERR(nc_put_var_text(_ncid, _spatial_var, "xyz"));
+            NCERR(nc_put_var_text(_ncid, _cell_spatial_var, "abc"));
+            index[0] = 0;
+            index[1] = 0;
+            count[0] = 1;
+            count[1] = 5;
+            NCERR(nc_put_vara_text(_ncid, _cell_angular_var, index, count, "alpha"));
+            index[0] = 1;
+            count[1] = 4;
+            NCERR(nc_put_vara_text(_ncid, _cell_angular_var, index, count, "beta"));
+            index[0] = 2;
+            count[1] = 5;
+            NCERR(nc_put_vara_text(_ncid, _cell_angular_var, index, count, "gamma"));
         }
 
-        NCERR(nc_enddef(_ncid));
-    }
-    else {
-        // If this is not the first frame we are writing, make sure the number of atoms remained the same.
-        size_t na;
-        NCERR(nc_inq_dimlen(_ncid, _atom_dim, &na));
-        if(na != atomsCount)
-            throw Exception(tr("Number of particles did change between animation frames. Writing a NetCDF trajectory file with "
-                "a varying number of atoms is not supported by the AMBER format convention."));
-    }
+        /// This is called after an output file has been successfully written and before the worker is destroyed.
+        virtual void close(bool exportCompleted) override {
 
-    // Write global attributes to the NetCDF file.
-    const QVariantMap& attributes = state.buildAttributesMap();
-    for(auto entry = _attributes_vars.constBegin(); entry != _attributes_vars.constEnd(); ++entry) {
-        QVariant val = attributes.value(entry.key());
-        if(val.typeId() == (int)QMetaType::Double || val.typeId() == (int)QMetaType::Float) {
-            double d = val.toDouble();
-            NCERR(nc_put_var1_double(_ncid, entry.value(), &_frameCounter, &d));
-        }
-        else if(val.canConvert<int>()) {
-            int i = val.toInt();
-            NCERR(nc_put_var1_int(_ncid, entry.value(), &_frameCounter, &i));
-        }
-    }
+            if(_ncid != -1) {
+                // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
+                NetCDFExclusiveAccess locker;
+                NCERR(nc_close(_ncid));
+                _ncid = -1;
+            }
+            _atom_dim = -1;
 
-    // Write "time" variable.
-    double t = _frameCounter;
-    if(attributes.contains(NC_TIME_STR)) t = attributes.value(NC_TIME_STR).toDouble();
-    else if(state.data() && state.data()->sourceFrame() >= 0) t = state.data()->sourceFrame();
-    NCERR(nc_put_var1_double(_ncid, _time_var, &_frameCounter, &t));
-
-    // Write simulation cell.
-    double cell_origin[3], cell_lengths[3], cell_angles[3];
-
-    cell_origin[0] = simCell.translation().x();
-    cell_origin[1] = simCell.translation().y();
-    cell_origin[2] = simCell.translation().z();
-
-    cell_lengths[0] = simCell.column(0).length();
-    cell_lengths[1] = simCell.column(1).length();
-    cell_lengths[2] = simCell.column(2).length();
-
-    double h[6] = { simCell(0,0), simCell(1,1), simCell(2,2), simCell(0,1), simCell(0,2), simCell(1,2) };
-    double cosalpha = (h[5]*h[4]+h[1]*h[3])/sqrt((h[1]*h[1]+h[5]*h[5])*(h[2]*h[2]+h[3]*h[3]+h[4]*h[4]));
-    double cosbeta = h[4]/sqrt(h[2]*h[2]+h[3]*h[3]+h[4]*h[4]);
-    double cosgamma = h[5]/sqrt(h[1]*h[1]+h[5]*h[5]);
-
-    if(simCell(2,1) != 0 || simCell(2,0) != 0 || simCell(1,0) != 0)
-        qWarning() << "Warning: Simulation cell vectors are not compatible with the AMBER file specification. Generated NetCDF file may be invalid.";
-
-    cell_angles[0] = qRadiansToDegrees(acos(cosalpha));
-    cell_angles[1] = qRadiansToDegrees(acos(cosbeta));
-    cell_angles[2] = qRadiansToDegrees(acos(cosgamma));
-
-    // AMBER convention says that non-periodic boundaries should have 'cell_lengths' set to zero.
-    if(!simulationCell->pbcX()) cell_lengths[0] = 0;
-    if(!simulationCell->pbcY()) cell_lengths[1] = 0;
-    if(!simulationCell->pbcZ()) cell_lengths[2] = 0;
-
-    size_t start[3] = { _frameCounter, 0, 0 };
-    size_t count[3] = { 1, 3, 0 };
-    NCERR(nc_put_vara_double(_ncid, _cell_origin_var, start, count, cell_origin));
-    NCERR(nc_put_vara_double(_ncid, _cell_lengths_var, start, count, cell_lengths));
-    NCERR(nc_put_vara_double(_ncid, _cell_angles_var, start, count, cell_angles));
-
-    // Write atomic coordinates.
-    count[1] = atomsCount;
-    count[2] = 3;
-    if(posProperty->dataType() == DataBuffer::Float32) {
-        NCERR(nc_put_vara_float(_ncid, _coords_var, start, count, BufferReadAccess<float*>(posProperty).cbegin()));
-    }
-    else if(posProperty->dataType() == DataBuffer::Float64) {
-        NCERR(nc_put_vara_double(_ncid, _coords_var, start, count, BufferReadAccess<double*>(posProperty).cbegin()));
-    }
-    else {
-        OVITO_ASSERT(false);
-    }
-
-    // Write out other particle properties.
-    this_task::setProgressMaximum(_columns.size());
-    for(const NCOutputColumn& outColumn : _columns) {
-
-        // Look up the property to be exported.
-        const Property* prop = outColumn.property.findInContainer(particles);
-        if(!prop)
-            throw Exception(tr("The property '%1' cannot be exported, because it does not exist at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
-        if((int)prop->componentCount() != outColumn.componentCount)
-            throw Exception(tr("Particle property '%1' cannot be exported, because its number of components has changed at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
-        if(prop->dataType() != outColumn.dataType)
-            throw Exception(tr("Particle property '%1' cannot be exported, because its data type has changed at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
-
-        // Write property data to file.
-        count[2] = outColumn.componentCount;
-        if(outColumn.dataType == DataBuffer::Int8) {
-            OVITO_STATIC_ASSERT(sizeof(int8_t) == sizeof(signed char));
-            NCERR(nc_put_vara_schar(_ncid, outColumn.ncvar, start, count, BufferReadAccess<int8_t*>(prop).cbegin()));
-        }
-        else if(outColumn.dataType == DataBuffer::Int32) {
-            OVITO_STATIC_ASSERT(sizeof(int32_t) == sizeof(int));
-            NCERR(nc_put_vara_int(_ncid, outColumn.ncvar, start, count, BufferReadAccess<int32_t*>(prop).cbegin()));
-        }
-        else if(outColumn.dataType == DataBuffer::Int64) {
-            OVITO_STATIC_ASSERT(sizeof(long long int) == sizeof(int64_t));
-            NCERR(nc_put_vara_longlong(_ncid, outColumn.ncvar, start, count, reinterpret_cast<const qlonglong*>(BufferReadAccess<int64_t*>(prop).cbegin())));
-        }
-        else if(outColumn.dataType == DataBuffer::Float32) {
-            NCERR(nc_put_vara_float(_ncid, outColumn.ncvar, start, count, BufferReadAccess<float*>(prop).cbegin()));
-        }
-        else if(outColumn.dataType == DataBuffer::Float64) {
-            NCERR(nc_put_vara_double(_ncid, outColumn.ncvar, start, count, BufferReadAccess<double*>(prop).cbegin()));
+            FileExportJob::close(exportCompleted);
         }
 
-        this_task::incrementProgressValue();
-    }
+        /// Writes the exportable data of a single trajectory frame to the output file.
+        virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+            // The exportable frame data.
+            const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
-    _frameCounter++;
+            // Perform the following in a worker thread.
+            co_await ExecutorAwaiter(ThreadPoolExecutor());
+
+            // The exporter, which manages the export settings.
+            const AMBERNetCDFExporter* exporter = static_cast<const AMBERNetCDFExporter*>(this->exporter());
+
+            // Get particles and their positions.
+            const Particles* particles = state.expectObject<Particles>();
+            const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
+
+            // Get simulation cell info.
+            const SimulationCell* simulationCell = state.getObject<SimulationCell>();
+            const AffineTransformation simCell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
+            size_t atomsCount = particles->elementCount();
+
+            // Only serial access to NetCDF functions is allowed, because they are not thread-safe.
+            NetCDFExclusiveAccess locker;
+
+            // Define the "atom" dimension when writing first frame and the number of atoms is known.
+            if(_atom_dim == -1) {
+                NCERR(nc_redef(_ncid));
+                NCERR(nc_def_dim(_ncid, NC_ATOM_STR, atomsCount, &_atom_dim));
+
+                // Define NetCDF variables for global attributes.
+                const QVariantMap& attributes = state.buildAttributesMap();
+                for(auto entry = attributes.constBegin(); entry != attributes.constEnd(); ++entry) {
+                    int var;
+                    if(entry.key() == NC_TIME_STR || entry.key() == QStringLiteral("SourceFrame"))
+                        continue;
+                    else if(entry.value().typeId() == QMetaType::Double || entry.value().typeId() == QMetaType::Float)
+                        NCERR(nc_def_var(_ncid, qUtf8Printable(entry.key()), NC_DOUBLE, 1, &_frame_dim, &var));
+                    else if(entry.value().canConvert<int>())
+                        NCERR(nc_def_var(_ncid, qUtf8Printable(entry.key()), NC_INT, 1, &_frame_dim, &var));
+                    else
+                        continue;
+                    _attributes_vars.insert(entry.key(), var);
+                }
+
+                // Define NetCDF variable for atomic positions.
+                int dims[3] = { _frame_dim, _atom_dim, _spatial_dim };
+                NCERR(nc_def_var(_ncid, "coordinates", (posProperty->dataType() == DataBuffer::Float32) ? NC_FLOAT : NC_DOUBLE, 3, dims, &_coords_var));
+
+                // Define a NetCDF variable for every per-particle property to be exported.
+                for(auto c = exporter->columnMapping().begin(); c != exporter->columnMapping().end(); ++c) {
+
+                    // Skip the particle position property. It has already been emitted above.
+                    if(c->isStandardProperty(&Particles::OOClass(), Particles::PositionProperty))
+                        continue;
+
+                    // We can export a particle property only as a whole to a NetCDF file, not individual components.
+                    // Skip this column if we have already emitted an entry for the same particle property before.
+                    if(std::find_if(exporter->columnMapping().begin(), c, [&](const PropertyReference& pr) { return pr.name() == c->name(); }) != c)
+                        continue;
+
+                    const Property* prop = c->findInContainer(particles);
+                    if(!prop) {
+                        // Skip the identifier property if it doesn't exist.
+                        if(c->isStandardProperty(&Particles::OOClass(), Particles::IdentifierProperty))
+                            continue;
+                        throw Exception(tr("Invalid list of particle properties to be exported. The property '%1' does not exist.").arg(c->name()));
+                    }
+                    if((int)prop->componentCount() <= std::max(0, c->componentIndex(&Particles::OOClass())))
+                        throw Exception(tr("The output vector component selected for column %1 is out of range. The particle property '%2' has only %3 component(s).").arg(c - exporter->columnMapping().begin() + 1).arg(c->name()).arg(prop->componentCount()));
+
+                    // For certain standard properties we need to use NetCDF variables according to the AMBER convention.
+                    // All other properties are output as NetCDF variables under their normal name.
+                    const char* mangledName = nullptr;
+                    dims[2] = 0;
+                    if(prop->isStandardProperty()) {
+                        if(prop->typeId() == Particles::ForceProperty) {
+                            mangledName = "forces";
+                            dims[2] = _spatial_dim;
+                        }
+                        else if(prop->typeId() == Particles::VelocityProperty) {
+                            mangledName = "velocities";
+                            dims[2] = _spatial_dim;
+                        }
+                        else if(prop->typeId() == Particles::TypeProperty) {
+                            mangledName = "atom_types";
+                        }
+                        else if(prop->typeId() == Particles::IdentifierProperty) {
+                            mangledName = "identifier";
+                        }
+                    }
+
+                    // Create the dimension for the NetCDF variable if the property is a vector property.
+                    if(dims[2] == 0 && prop->componentCount() > 1) {
+                        NCERR(nc_def_dim(_ncid, qPrintable(QStringLiteral("dim_") + prop->name()), prop->componentCount(), &dims[2]));
+                    }
+
+                    // Create the NetCDF variable for the property.
+                    nc_type ncDataType;
+                    if(prop->dataType() == DataBuffer::Int8) ncDataType = NC_BYTE;
+                    else if(prop->dataType() == DataBuffer::Int32) ncDataType = NC_INT;
+                    else if(prop->dataType() == DataBuffer::Int64) ncDataType = NC_INT64;
+                    else if(prop->dataType() == DataBuffer::Float32) ncDataType = NC_FLOAT;
+                    else if(prop->dataType() == DataBuffer::Float64) ncDataType = NC_DOUBLE;
+                    else continue;
+                    // For scalar OVITO properties, we define a NetCDF variable with 2 dimensions.
+                    // For vector OVITO properties, we define a NetCDF variable with 3 dimensions.
+                    int ncvar;
+                    NCERR(nc_def_var(_ncid, mangledName ? mangledName : qPrintable(c->name().toString()), ncDataType, (prop->componentCount() > 1) ? 3 : 2, dims, &ncvar));
+                    _columns.emplace_back(*c, prop->dataType(), prop->componentCount(), ncvar);
+                }
+
+                NCERR(nc_enddef(_ncid));
+            }
+            else {
+                // If this is not the first frame we are writing, make sure the number of atoms remained the same.
+                size_t na;
+                NCERR(nc_inq_dimlen(_ncid, _atom_dim, &na));
+                if(na != atomsCount)
+                    throw Exception(tr("Number of particles did change between animation frames. Writing a NetCDF trajectory file with "
+                        "a varying number of atoms is not supported by the AMBER format convention."));
+            }
+
+            // Write global attributes to the NetCDF file.
+            const QVariantMap& attributes = state.buildAttributesMap();
+            for(auto entry = _attributes_vars.constBegin(); entry != _attributes_vars.constEnd(); ++entry) {
+                QVariant val = attributes.value(entry.key());
+                if(val.typeId() == (int)QMetaType::Double || val.typeId() == (int)QMetaType::Float) {
+                    double d = val.toDouble();
+                    NCERR(nc_put_var1_double(_ncid, entry.value(), &_frameCounter, &d));
+                }
+                else if(val.canConvert<int>()) {
+                    int i = val.toInt();
+                    NCERR(nc_put_var1_int(_ncid, entry.value(), &_frameCounter, &i));
+                }
+            }
+
+            // Write "time" variable.
+            double t = _frameCounter;
+            if(attributes.contains(NC_TIME_STR)) t = attributes.value(NC_TIME_STR).toDouble();
+            else if(state.data() && state.data()->sourceFrame() >= 0) t = state.data()->sourceFrame();
+            NCERR(nc_put_var1_double(_ncid, _time_var, &_frameCounter, &t));
+
+            // Write simulation cell.
+            double cell_origin[3], cell_lengths[3], cell_angles[3];
+
+            cell_origin[0] = simCell.translation().x();
+            cell_origin[1] = simCell.translation().y();
+            cell_origin[2] = simCell.translation().z();
+
+            cell_lengths[0] = simCell.column(0).length();
+            cell_lengths[1] = simCell.column(1).length();
+            cell_lengths[2] = simCell.column(2).length();
+
+            double h[6] = { simCell(0,0), simCell(1,1), simCell(2,2), simCell(0,1), simCell(0,2), simCell(1,2) };
+            double cosalpha = (h[5]*h[4]+h[1]*h[3])/sqrt((h[1]*h[1]+h[5]*h[5])*(h[2]*h[2]+h[3]*h[3]+h[4]*h[4]));
+            double cosbeta = h[4]/sqrt(h[2]*h[2]+h[3]*h[3]+h[4]*h[4]);
+            double cosgamma = h[5]/sqrt(h[1]*h[1]+h[5]*h[5]);
+
+            if(simCell(2,1) != 0 || simCell(2,0) != 0 || simCell(1,0) != 0)
+                qWarning() << "Warning: Simulation cell vectors are not compatible with the AMBER file specification. Generated NetCDF file may be invalid.";
+
+            cell_angles[0] = qRadiansToDegrees(acos(cosalpha));
+            cell_angles[1] = qRadiansToDegrees(acos(cosbeta));
+            cell_angles[2] = qRadiansToDegrees(acos(cosgamma));
+
+            // AMBER convention says that non-periodic boundaries should have 'cell_lengths' set to zero.
+            if(!simulationCell->pbcX()) cell_lengths[0] = 0;
+            if(!simulationCell->pbcY()) cell_lengths[1] = 0;
+            if(!simulationCell->pbcZ()) cell_lengths[2] = 0;
+
+            size_t start[3] = { _frameCounter, 0, 0 };
+            size_t count[3] = { 1, 3, 0 };
+            NCERR(nc_put_vara_double(_ncid, _cell_origin_var, start, count, cell_origin));
+            NCERR(nc_put_vara_double(_ncid, _cell_lengths_var, start, count, cell_lengths));
+            NCERR(nc_put_vara_double(_ncid, _cell_angles_var, start, count, cell_angles));
+
+            // Write atomic coordinates.
+            count[1] = atomsCount;
+            count[2] = 3;
+            if(posProperty->dataType() == DataBuffer::Float32) {
+                NCERR(nc_put_vara_float(_ncid, _coords_var, start, count, BufferReadAccess<float*>(posProperty).cbegin()));
+            }
+            else if(posProperty->dataType() == DataBuffer::Float64) {
+                NCERR(nc_put_vara_double(_ncid, _coords_var, start, count, BufferReadAccess<double*>(posProperty).cbegin()));
+            }
+            else {
+                OVITO_ASSERT(false);
+            }
+
+            // Write out other particle properties.
+            this_task::setProgressMaximum(_columns.size());
+            for(const NCOutputColumn& outColumn : _columns) {
+
+                // Look up the property to be exported.
+                const Property* prop = outColumn.property.findInContainer(particles);
+                if(!prop)
+                    throw Exception(tr("The property '%1' cannot be exported, because it does not exist at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
+                if((int)prop->componentCount() != outColumn.componentCount)
+                    throw Exception(tr("Particle property '%1' cannot be exported, because its number of components has changed at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
+                if(prop->dataType() != outColumn.dataType)
+                    throw Exception(tr("Particle property '%1' cannot be exported, because its data type has changed at frame %2.").arg(outColumn.property.name()).arg(frameNumber));
+
+                // Write property data to file.
+                count[2] = outColumn.componentCount;
+                if(outColumn.dataType == DataBuffer::Int8) {
+                    OVITO_STATIC_ASSERT(sizeof(int8_t) == sizeof(signed char));
+                    NCERR(nc_put_vara_schar(_ncid, outColumn.ncvar, start, count, BufferReadAccess<int8_t*>(prop).cbegin()));
+                }
+                else if(outColumn.dataType == DataBuffer::Int32) {
+                    OVITO_STATIC_ASSERT(sizeof(int32_t) == sizeof(int));
+                    NCERR(nc_put_vara_int(_ncid, outColumn.ncvar, start, count, BufferReadAccess<int32_t*>(prop).cbegin()));
+                }
+                else if(outColumn.dataType == DataBuffer::Int64) {
+                    OVITO_STATIC_ASSERT(sizeof(long long int) == sizeof(int64_t));
+                    NCERR(nc_put_vara_longlong(_ncid, outColumn.ncvar, start, count, reinterpret_cast<const qlonglong*>(BufferReadAccess<int64_t*>(prop).cbegin())));
+                }
+                else if(outColumn.dataType == DataBuffer::Float32) {
+                    NCERR(nc_put_vara_float(_ncid, outColumn.ncvar, start, count, BufferReadAccess<float*>(prop).cbegin()));
+                }
+                else if(outColumn.dataType == DataBuffer::Float64) {
+                    NCERR(nc_put_vara_double(_ncid, outColumn.ncvar, start, count, BufferReadAccess<double*>(prop).cbegin()));
+                }
+
+                this_task::incrementProgressValue();
+            }
+
+            _frameCounter++;
+        }
+    };
+
+    return OORef<Job>::create(this, filePath);
 }
 
 }   // End of namespace

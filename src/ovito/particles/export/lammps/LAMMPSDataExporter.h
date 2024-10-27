@@ -52,8 +52,8 @@ class OVITO_PARTICLES_EXPORT LAMMPSDataExporter : public ParticleExporter
 
 protected:
 
-    /// Writes the particles of one animation frame to the current output file.
-    virtual void exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath) override;
+    /// Creates a worker performing the actual data export.
+    virtual OORef<FileExportJob> createExportJob(const QString& filePath, int numberOfFrames) override;
 
 private:
 

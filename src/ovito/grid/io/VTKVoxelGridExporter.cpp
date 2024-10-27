@@ -22,6 +22,7 @@
 
 #include <ovito/grid/Grid.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "VTKVoxelGridExporter.h"
 
 namespace Ovito {
@@ -29,159 +30,140 @@ namespace Ovito {
 IMPLEMENT_CREATABLE_OVITO_CLASS(VTKVoxelGridExporter);
 
 /******************************************************************************
- * This is called once for every output file to be written and before
- * exportData() is called.
- *****************************************************************************/
-void VTKVoxelGridExporter::openOutputFile(const QString& filePath, int numberOfFrames)
+* Creates a worker performing the actual data export.
+*****************************************************************************/
+OORef<FileExportJob> VTKVoxelGridExporter::createExportJob(const QString& filePath, int numberOfFrames)
 {
-    OVITO_ASSERT(!_outputFile.isOpen());
-    OVITO_ASSERT(!_outputStream);
+    class Job : public FileExportJob
+    {
+    public:
 
-    _outputFile.setFileName(filePath);
-    _outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
-}
+        /// Writes the exportable data of a single trajectory frame to the output file.
+        virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+            // The exportable frame data.
+            const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
-/******************************************************************************
- * This is called once for every output file written after exportData()
- * has been called.
- *****************************************************************************/
-void VTKVoxelGridExporter::closeOutputFile(bool exportCompleted)
-{
-    _outputStream.reset();
-    if(_outputFile.isOpen())
-        _outputFile.close();
+            // Perform the following in a worker thread.
+            co_await ExecutorAwaiter(ThreadPoolExecutor());
 
-    if(!exportCompleted)
-        _outputFile.remove();
-}
-
-/******************************************************************************
- * Exports a single animation frame to the current output file.
- *****************************************************************************/
-void VTKVoxelGridExporter::exportFrame(int frameNumber, const QString& filePath)
-{
-    // Evaluate pipeline.
-    const PipelineFlowState& state = getPipelineDataToBeExported(frameNumber);
-
-    // Look up the VoxelGrid to be exported in the pipeline state.
-    DataObjectReference objectRef(&VoxelGrid::OOClass(), dataObjectToExport().dataPath());
-    const VoxelGrid* voxelGrid = static_object_cast<VoxelGrid>(state.getLeafObject(objectRef));
-    if(!voxelGrid) {
-        throw Exception(tr("The pipeline output does not contain the voxel grid to be exported (animation frame: %1; object key: %2). Available grid keys: (%3)")
-            .arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, VoxelGrid::OOClass())));
-    }
-
-    // Make sure the data structure to be exported is consistent.
-    voxelGrid->verifyIntegrity();
-
-    auto dims = voxelGrid->shape();
-    textStream() << "# vtk DataFile Version 3.0\n";
-    textStream() << "# Voxel grid data written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
-    textStream() << "ASCII\n";
-    textStream() << "DATASET STRUCTURED_POINTS\n";
-    textStream() << "DIMENSIONS " << dims[0] << " " << dims[1] << " " << dims[2] << "\n";
-    if(const SimulationCell* domain = voxelGrid->domain()) {
-        textStream() << "ORIGIN " << domain->cellOrigin().x() << " " << domain->cellOrigin().y() << " " << domain->cellOrigin().z() << "\n";
-        textStream() << "SPACING";
-        textStream() << " " << domain->cellVector1().length() / std::max(dims[0], (size_t)1);
-        textStream() << " " << domain->cellVector2().length() / std::max(dims[1], (size_t)1);
-        textStream() << " " << domain->cellVector3().length() / std::max(dims[2], (size_t)1);
-        textStream() << "\n";
-    }
-    else {
-        textStream() << "ORIGIN 0 0 0\n";
-        textStream() << "SPACING 1 1 1\n";
-    }
-    textStream() << "POINT_DATA " << voxelGrid->elementCount() << "\n";
-
-    for(const Property* prop : voxelGrid->properties()) {
-        if(prop->dataType() == Property::Int8 || prop->dataType() == Property::Int32 || prop->dataType() == Property::Int64 || prop->dataType() == Property::Float32 || prop->dataType() == Property::Float64) {
-
-            // Write header of data field.
-            QString dataName = prop->name();
-            dataName.remove(QChar(' '));
-            if((prop->dataType() == Property::Float32 || prop->dataType() == Property::Float64) && prop->componentCount() == 3) {
-                textStream() << "\nVECTORS " << dataName << " double\n";
+            // Look up the VoxelGrid to be exported in the pipeline state.
+            DataObjectReference objectRef(&VoxelGrid::OOClass(), dataObjectToExport().dataPath());
+            const VoxelGrid* voxelGrid = static_object_cast<VoxelGrid>(state.getLeafObject(objectRef));
+            if(!voxelGrid) {
+                throw Exception(tr("The pipeline output does not contain the voxel grid to be exported (animation frame: %1; object key: %2). Available grid keys: (%3)")
+                    .arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, VoxelGrid::OOClass())));
             }
-            else if(prop->componentCount() <= 4) {
-                if(prop->dataType() == Property::Int32 || prop->dataType() == Property::Int8)
-                    textStream() << "\nSCALARS " << dataName << " int " << prop->componentCount() << "\n";
-                else if(prop->dataType() == Property::Int64)
-                    textStream() << "\nSCALARS " << dataName << " long " << prop->componentCount() << "\n";
-                else
-                    textStream() << "\nSCALARS " << dataName << " double " << prop->componentCount() << "\n";
-                textStream() << "LOOKUP_TABLE default\n";
-            }
-            else continue; // VTK format supports only between 1 and 4 vector components. Skipping properties with more components during export.
 
-            // Write payload data.
-            size_t cmpnts = prop->componentCount();
-            OVITO_ASSERT(prop->stride() == prop->dataTypeSize() * cmpnts);
-            if(prop->dataType() == Property::Float32) {
-                BufferReadAccess<float*> data(prop);
-                for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
-                    if(this_task::isCanceled())
-                        return;
-                    for(size_t col = 0; col < dims[0]; col++, index++) {
-                        for(size_t c = 0; c < cmpnts; c++)
-                            textStream() << data.get(index, c) << " ";
-                    }
-                    textStream() << "\n";
-                }
-            }
-            else if(prop->dataType() == Property::Float64) {
-                BufferReadAccess<double*> data(prop);
-                for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
-                    if(this_task::isCanceled())
-                        return;
-                    for(size_t col = 0; col < dims[0]; col++, index++) {
-                        for(size_t c = 0; c < cmpnts; c++)
-                            textStream() << data.get(index, c) << " ";
-                    }
-                    textStream() << "\n";
-                }
-            }
-            else if(prop->dataType() == Property::Int8) {
-                BufferReadAccess<int8_t*> data(prop);
-                for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
-                    if(this_task::isCanceled())
-                        return;
-                    for(size_t col = 0; col < dims[0]; col++, index++) {
-                        for(size_t c = 0; c < cmpnts; c++)
-                            textStream() << static_cast<qint32>(data.get(index, c)) << " ";
-                    }
-                    textStream() << "\n";
-                }
-            }
-            else if(prop->dataType() == Property::Int32) {
-                BufferReadAccess<int32_t*> data(prop);
-                for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
-                    if(this_task::isCanceled())
-                        return;
-                    for(size_t col = 0; col < dims[0]; col++, index++) {
-                        for(size_t c = 0; c < cmpnts; c++)
-                            textStream() << static_cast<qint32>(data.get(index, c)) << " ";
-                    }
-                    textStream() << "\n";
-                }
-            }
-            else if(prop->dataType() == Property::Int64) {
-                BufferReadAccess<int64_t*> data(prop);
-                for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
-                    if(this_task::isCanceled())
-                        return;
-                    for(size_t col = 0; col < dims[0]; col++, index++) {
-                        for(size_t c = 0; c < cmpnts; c++)
-                            textStream() << static_cast<qlonglong>(data.get(index, c)) << " ";
-                    }
-                    textStream() << "\n";
-                }
+            // Make sure the data structure to be exported is consistent.
+            voxelGrid->verifyIntegrity();
+
+            auto dims = voxelGrid->shape();
+            textStream() << "# vtk DataFile Version 3.0\n";
+            textStream() << "# Voxel grid data written by " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
+            textStream() << "ASCII\n";
+            textStream() << "DATASET STRUCTURED_POINTS\n";
+            textStream() << "DIMENSIONS " << dims[0] << " " << dims[1] << " " << dims[2] << "\n";
+            if(const SimulationCell* domain = voxelGrid->domain()) {
+                textStream() << "ORIGIN " << domain->cellOrigin().x() << " " << domain->cellOrigin().y() << " " << domain->cellOrigin().z() << "\n";
+                textStream() << "SPACING";
+                textStream() << " " << domain->cellVector1().length() / std::max(dims[0], (size_t)1);
+                textStream() << " " << domain->cellVector2().length() / std::max(dims[1], (size_t)1);
+                textStream() << " " << domain->cellVector3().length() / std::max(dims[2], (size_t)1);
+                textStream() << "\n";
             }
             else {
-                throw Exception(tr("Grid property '%1' has a non-standard data type that cannot be exported.").arg(prop->name()));
+                textStream() << "ORIGIN 0 0 0\n";
+                textStream() << "SPACING 1 1 1\n";
+            }
+            textStream() << "POINT_DATA " << voxelGrid->elementCount() << "\n";
+
+            for(const Property* prop : voxelGrid->properties()) {
+                if(prop->dataType() == Property::Int8 || prop->dataType() == Property::Int32 || prop->dataType() == Property::Int64 || prop->dataType() == Property::Float32 || prop->dataType() == Property::Float64) {
+
+                    // Write header of data field.
+                    QString dataName = prop->name();
+                    dataName.remove(QChar(' '));
+                    if((prop->dataType() == Property::Float32 || prop->dataType() == Property::Float64) && prop->componentCount() == 3) {
+                        textStream() << "\nVECTORS " << dataName << " double\n";
+                    }
+                    else if(prop->componentCount() <= 4) {
+                        if(prop->dataType() == Property::Int32 || prop->dataType() == Property::Int8)
+                            textStream() << "\nSCALARS " << dataName << " int " << prop->componentCount() << "\n";
+                        else if(prop->dataType() == Property::Int64)
+                            textStream() << "\nSCALARS " << dataName << " long " << prop->componentCount() << "\n";
+                        else
+                            textStream() << "\nSCALARS " << dataName << " double " << prop->componentCount() << "\n";
+                        textStream() << "LOOKUP_TABLE default\n";
+                    }
+                    else continue; // VTK format supports only between 1 and 4 vector components. Skipping properties with more components during export.
+
+                    // Write payload data.
+                    size_t cmpnts = prop->componentCount();
+                    OVITO_ASSERT(prop->stride() == prop->dataTypeSize() * cmpnts);
+                    if(prop->dataType() == Property::Float32) {
+                        BufferReadAccess<float*> data(prop);
+                        for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
+                            this_task::throwIfCanceled();
+                            for(size_t col = 0; col < dims[0]; col++, index++) {
+                                for(size_t c = 0; c < cmpnts; c++)
+                                    textStream() << data.get(index, c) << " ";
+                            }
+                            textStream() << "\n";
+                        }
+                    }
+                    else if(prop->dataType() == Property::Float64) {
+                        BufferReadAccess<double*> data(prop);
+                        for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
+                            this_task::throwIfCanceled();
+                            for(size_t col = 0; col < dims[0]; col++, index++) {
+                                for(size_t c = 0; c < cmpnts; c++)
+                                    textStream() << data.get(index, c) << " ";
+                            }
+                            textStream() << "\n";
+                        }
+                    }
+                    else if(prop->dataType() == Property::Int8) {
+                        BufferReadAccess<int8_t*> data(prop);
+                        for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
+                            this_task::throwIfCanceled();
+                            for(size_t col = 0; col < dims[0]; col++, index++) {
+                                for(size_t c = 0; c < cmpnts; c++)
+                                    textStream() << static_cast<qint32>(data.get(index, c)) << " ";
+                            }
+                            textStream() << "\n";
+                        }
+                    }
+                    else if(prop->dataType() == Property::Int32) {
+                        BufferReadAccess<int32_t*> data(prop);
+                        for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
+                            this_task::throwIfCanceled();
+                            for(size_t col = 0; col < dims[0]; col++, index++) {
+                                for(size_t c = 0; c < cmpnts; c++)
+                                    textStream() << static_cast<qint32>(data.get(index, c)) << " ";
+                            }
+                            textStream() << "\n";
+                        }
+                    }
+                    else if(prop->dataType() == Property::Int64) {
+                        BufferReadAccess<int64_t*> data(prop);
+                        for(size_t row = 0, index = 0; row < dims[1]*dims[2]; row++) {
+                            this_task::throwIfCanceled();
+                            for(size_t col = 0; col < dims[0]; col++, index++) {
+                                for(size_t c = 0; c < cmpnts; c++)
+                                    textStream() << static_cast<qlonglong>(data.get(index, c)) << " ";
+                            }
+                            textStream() << "\n";
+                        }
+                    }
+                    else {
+                        throw Exception(tr("Grid property '%1' has a non-standard data type that cannot be exported.").arg(prop->name()));
+                    }
+                }
             }
         }
-    }
+    };
+
+    return OORef<Job>::create(this, filePath, true);
 }
 
 }   // End of namespace

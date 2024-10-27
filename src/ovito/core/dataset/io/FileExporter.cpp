@@ -24,6 +24,7 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/FileManager.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
@@ -35,7 +36,7 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(FileExporter);
 DEFINE_PROPERTY_FIELD(FileExporter, outputFilename);
-DEFINE_PROPERTY_FIELD(FileExporter, exportAnimation);
+DEFINE_PROPERTY_FIELD(FileExporter, exportTrajectory);
 DEFINE_PROPERTY_FIELD(FileExporter, useWildcardFilename);
 DEFINE_PROPERTY_FIELD(FileExporter, wildcardFilename);
 DEFINE_PROPERTY_FIELD(FileExporter, startFrame);
@@ -47,7 +48,7 @@ DEFINE_REFERENCE_FIELD(FileExporter, sceneToExport);
 DEFINE_REFERENCE_FIELD(FileExporter, sceneNodeToExport);
 DEFINE_PROPERTY_FIELD(FileExporter, dataObjectToExport);
 SET_PROPERTY_FIELD_LABEL(FileExporter, outputFilename, "Output filename");
-SET_PROPERTY_FIELD_LABEL(FileExporter, exportAnimation, "Export animation");
+SET_PROPERTY_FIELD_LABEL(FileExporter, exportTrajectory, "Export trajectory");
 SET_PROPERTY_FIELD_LABEL(FileExporter, useWildcardFilename, "Use wildcard filename");
 SET_PROPERTY_FIELD_LABEL(FileExporter, wildcardFilename, "Wildcard filename");
 SET_PROPERTY_FIELD_LABEL(FileExporter, startFrame, "Start frame");
@@ -56,6 +57,8 @@ SET_PROPERTY_FIELD_LABEL(FileExporter, everyNthFrame, "Every Nth frame");
 SET_PROPERTY_FIELD_LABEL(FileExporter, floatOutputPrecision, "Numeric output precision");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(FileExporter, floatOutputPrecision, IntegerParameterUnit, 1, std::numeric_limits<FloatType>::max_digits10);
 SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(FileExporter, sceneNodeToExport, "nodeToExport"); // For backward compatibility with OVITO 3.9.2
+
+IMPLEMENT_ABSTRACT_OVITO_CLASS(FileExportJob);
 
 /******************************************************************************
 * Sets the name of the output file that should be written by this exporter.
@@ -174,7 +177,7 @@ bool FileExporter::isSuitablePipelineOutput(const PipelineFlowState& state) cons
 /******************************************************************************
 * Evaluates the pipeline whose data is to be exported.
 ******************************************************************************/
-PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame) const
+Future<PipelineFlowState> FileExporter::getPipelineDataToBeExported(int frameNumber) const
 {
     if(!sceneToExport())
         throw Exception(tr("No scene has been specified for file export."));
@@ -185,9 +188,8 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame) const
 
     try {
         // Evaluate pipeline.
-        PipelineEvaluationRequest request(AnimationTime::fromFrame(frame), this_task::isScripting());
-        PipelineEvaluationResult result = pipeline->evaluatePipeline(request);
-        const PipelineFlowState& state = result.blockForResult();
+        PipelineEvaluationRequest request(AnimationTime::fromFrame(frameNumber), this_task::isScripting());
+        PipelineFlowState state = co_await pipeline->evaluatePipeline(request).asFuture();
 
         if(this_task::isScripting() && state.status().type() == PipelineStatus::Error)
             throw Exception(state.status().text());
@@ -195,23 +197,23 @@ PipelineFlowState FileExporter::getPipelineDataToBeExported(int frame) const
         if(!state)
             throw Exception(tr("The data collection returned by the pipeline is empty."));
 
-        return state;
+        co_return state;
     }
     catch(Exception& ex) {
-        throw ex.prependGeneralMessage(tr("Export of frame %1 failed, because data pipeline evaluation has failed.").arg(frame));
+        throw ex.prependGeneralMessage(tr("Export of frame %1 failed, because data pipeline evaluation has failed.").arg(frameNumber));
     }
 }
 
 /******************************************************************************
  * Exports the scene data to the output file(s).
  *****************************************************************************/
-void FileExporter::doExport()
+Future<void> FileExporter::doExport()
 {
     if(outputFilename().isEmpty())
         throw Exception(tr("The output filename not been set for the file exporter."));
 
     if(startFrame() > endFrame())
-        throw Exception(tr("The animation interval to be exported is empty or has not been set."));
+        throw Exception(tr("The trajectory interval to be exported is empty or has not been set."));
 
     if(!sceneToExport())
         throw Exception(tr("No scene has been specified for file export."));
@@ -229,11 +231,11 @@ void FileExporter::doExport()
 
     // Compute the number of frames that need to be exported.
     int firstFrameNumber, numberOfFrames;
-    if(exportAnimation()) {
+    if(exportTrajectory()) {
         firstFrameNumber = startFrame();
         numberOfFrames = (endFrame() - startFrame() + everyNthFrame()) / everyNthFrame();
         if(numberOfFrames < 1 || everyNthFrame() < 1)
-            throw Exception(tr("Invalid export animation range: Frame %1 to %2").arg(startFrame()).arg(endFrame()));
+            throw Exception(tr("Invalid export trajectory range: Frame %1 to %2").arg(startFrame()).arg(endFrame()));
     }
     else {
         firstFrameNumber = sceneToExport()->animationSettings()->currentFrame();
@@ -241,65 +243,69 @@ void FileExporter::doExport()
     }
 
     // Validate export settings.
-    if(exportAnimation() && useWildcardFilename()) {
+    if(exportTrajectory() && useWildcardFilename()) {
         if(wildcardFilename().isEmpty())
-            throw Exception(tr("Cannot write animation frame to separate files. Wildcard pattern has not been specified."));
+            throw Exception(tr("Cannot export trajectory frames to separate files. Wildcard pattern has not been specified."));
         if(!wildcardFilename().contains(QChar('*')))
-            throw Exception(tr("Cannot write animation frames to separate files. The filename must contain the '*' wildcard character, which gets replaced by the frame number."));
+            throw Exception(tr("Cannot export trajectory frames to separate files. The filename must contain the '*' wildcard character, which gets replaced by the frame number."));
     }
+
+    // Note: This is to perform a context switch to the coroutine's task, which is needed for proper progress reporting.
+    co_await ExecutorAwaiter(InlineExecutor());
 
     QDir dir = QFileInfo(outputFilename()).dir();
     QString filename = outputFilename();
 
     // Open output file for writing.
-    if(!exportAnimation() || !useWildcardFilename()) {
-        openOutputFile(filename, numberOfFrames);
+    OORef<FileExportJob> exportJob;
+    if(!exportTrajectory() || !useWildcardFilename()) {
+        exportJob = createExportJob(filename, numberOfFrames);
     }
 
-    try {
-        // Export animation frames.
-        this_task::beginProgressSubSteps(numberOfFrames);
-        for(int frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
-            if(frameIndex != 0)
-                this_task::nextProgressSubStep();
+    // Export animation frames.
+    this_task::beginProgressSubSteps(numberOfFrames);
+    for(int frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
+        if(frameIndex != 0)
+            this_task::nextProgressSubStep();
 
-            int frameNumber = firstFrameNumber + frameIndex * everyNthFrame();
+        int frameNumber = firstFrameNumber + frameIndex * everyNthFrame();
 
-            // Open per-frame output file.
-            if(exportAnimation() && useWildcardFilename()) {
-                // Generate an output filename based on the wildcard pattern.
-                filename = dir.absoluteFilePath(QFileInfo(wildcardFilename()).fileName());
-                filename.replace(QChar('*'), QString::number(frameNumber));
-                openOutputFile(filename, 1);
-            }
-
-            this_task::setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
-
-            exportFrame(frameNumber, filename);
-
-            // Close per-frame output file.
-            if(exportAnimation() && useWildcardFilename())
-                closeOutputFile(!this_task::isCanceled());
-
-            this_task::throwIfCanceled();
+        // Open per-frame output file.
+        if(exportTrajectory() && useWildcardFilename()) {
+            // Generate an output filename based on the wildcard pattern.
+            filename = dir.absoluteFilePath(QFileInfo(wildcardFilename()).fileName());
+            filename.replace(QChar('*'), QString::number(frameNumber));
+            exportJob = createExportJob(filename, 1);
         }
-        this_task::endProgressSubSteps();
+
+        this_task::setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
+        qDebug() << "Getting data for frame" << frameNumber;
+
+        // Obtain the data to be exported.
+        Future<any_moveonly> frameData = co_await FutureAwaiter(DeferredObjectExecutor(this), exportJob->getExportableFrameData(exportJob, frameNumber));
+        qDebug() << "Got data for frame" << frameNumber;
+
+        // Write the exportable data to the output file.
+        co_await FutureAwaiter(DeferredObjectExecutor(this), exportJob->exportFrameData(exportJob, frameData.result(), frameNumber, filename));
+        qDebug() << "Wrote data for frame" << frameNumber;
+
+        // Close per-frame output file.
+        if(exportTrajectory() && useWildcardFilename()) {
+            exportJob->close();
+            exportJob.reset();
+        }
     }
-    catch(...) {
-        closeOutputFile(false);
-        throw;
-    }
+    this_task::endProgressSubSteps();
 
     // Close output file.
-    if(!exportAnimation() || !useWildcardFilename()) {
-        closeOutputFile(true);
-    }
+    if(!exportTrajectory() || !useWildcardFilename())
+        exportJob->close();
 }
 
 /******************************************************************************
 * Returns a string with the list of available data objects of the given type.
 ******************************************************************************/
-QString FileExporter::getAvailableDataObjectList(const PipelineFlowState& state, const DataObject::OOMetaClass& objectType) const
+QString FileExporter::getAvailableDataObjectList(const PipelineFlowState& state, const DataObject::OOMetaClass& objectType)
 {
     QString str;
     if(state) {
@@ -314,6 +320,55 @@ QString FileExporter::getAvailableDataObjectList(const PipelineFlowState& state,
     if(str.isEmpty())
         str = tr("<none>");
     return str;
+}
+
+/******************************************************************************
+* Produces the data to be exported for a trajectory frame.
+******************************************************************************/
+Future<any_moveonly> FileExportJob::getExportableFrameData(OORef<FileExportJob> self, int frameNumber)
+{
+    co_return co_await exporter()->getPipelineDataToBeExported(frameNumber);
+}
+
+/******************************************************************************
+* Constructor.
+******************************************************************************/
+void FileExportJob::initializeObject(const FileExporter* exporter, const QString& filePath, bool openTextStream)
+{
+    OvitoObject::initializeObject();
+    _exporter = exporter;
+    _outputFile.setFileName(filePath);
+    if(openTextStream) {
+        _textStream.emplace(_outputFile);
+        _textStream->setFloatPrecision(exporter->floatOutputPrecision());
+    }
+}
+
+/******************************************************************************
+* Destructor.
+******************************************************************************/
+void FileExportJob::aboutToBeDeleted()
+{
+    close(false);
+    OvitoObject::aboutToBeDeleted();
+}
+
+/******************************************************************************
+* Called after an output file has been successfully written and before the worker is destroyed.
+******************************************************************************/
+void FileExportJob::close(bool exportCompleted)
+{
+    // Close text stream.
+    _textStream.reset();
+
+    // Close underlying file.
+    if(_outputFile.isOpen()) {
+        _outputFile.close();
+
+        // Delete incomplete file from disk if it is still open.
+        if(!exportCompleted)
+            _outputFile.remove();
+    }
 }
 
 }   // End of namespace

@@ -145,6 +145,7 @@ namespace Ovito
     class FileImporterClass;
     class FileExporter;
     class FileExporterClass;
+    class FileExportJob;
     class FileSource;
     class FileSourceImporter;
     class RegisteredBufferAccess;

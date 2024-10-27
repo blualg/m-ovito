@@ -23,8 +23,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/Bonds.h>
-#include <ovito/core/dataset/scene/Pipeline.h>
-#include <ovito/core/dataset/scene/SelectionSet.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "ParticleExporter.h"
 
 namespace Ovito {
@@ -32,12 +31,11 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ParticleExporter);
 
 /******************************************************************************
-* Evaluates the pipeline of an PipelineSceneNode and makes sure that the data to be
-* exported contains particles and throws an exception if not.
+* Evaluates the pipeline whose data is to be exported.
 ******************************************************************************/
-PipelineFlowState ParticleExporter::getParticleData(int frame) const
+Future<PipelineFlowState> ParticleExporter::getPipelineDataToBeExported(int frameNumber) const
 {
-    PipelineFlowState state = getPipelineDataToBeExported(frame);
+    const PipelineFlowState state = co_await FileExporter::getPipelineDataToBeExported(frameNumber);
 
     const Particles* particles = state.getObject<Particles>();
     if(!particles)
@@ -45,57 +43,20 @@ PipelineFlowState ParticleExporter::getParticleData(int frame) const
     if(!particles->getProperty(Particles::PositionProperty))
         throw Exception(tr("The particles to be exported do not have any coordinates ('Position' property is missing)."));
 
-    // Verify data, make sure array length is consistent for all particle properties.
+    // Verify per-particle data, make sure array lengths are consistent.
     particles->verifyIntegrity();
 
-    // Verify data, make sure array length is consistent for all bond properties.
-    if(particles->bonds()) {
+    // Verify topological data, make sure array lengths are consistent.
+    if(particles->bonds())
         particles->bonds()->verifyIntegrity();
-    }
+    if(particles->angles())
+        particles->angles()->verifyIntegrity();
+    if(particles->dihedrals())
+        particles->dihedrals()->verifyIntegrity();
+    if(particles->impropers())
+        particles->impropers()->verifyIntegrity();
 
-    return state;
-}
-
-/******************************************************************************
- * This is called once for every output file to be written and before
- * exportFrame() is called.
- *****************************************************************************/
-void ParticleExporter::openOutputFile(const QString& filePath, int numberOfFrames)
-{
-    OVITO_ASSERT(!_outputFile.isOpen());
-    OVITO_ASSERT(!_outputStream);
-
-    _outputFile.setFileName(filePath);
-    _outputStream = std::make_unique<CompressedTextWriter>(_outputFile);
-    _outputStream->setFloatPrecision(floatOutputPrecision());
-}
-
-/******************************************************************************
- * This is called once for every output file written after exportFrame()
- * has been called.
- *****************************************************************************/
-void ParticleExporter::closeOutputFile(bool exportCompleted)
-{
-    _outputStream.reset();
-    if(_outputFile.isOpen())
-        _outputFile.close();
-
-    if(!exportCompleted)
-        _outputFile.remove();
-}
-
-/******************************************************************************
- * Exports a single animation frame to the current output file.
- *****************************************************************************/
-void ParticleExporter::exportFrame(int frameNumber, const QString& filePath)
-{
-    // Retrieve the particle data to be exported.
-    const PipelineFlowState& state = getParticleData(frameNumber);
-    if(this_task::isCanceled() || !state)
-        return;
-
-    // Let the subclass do the work.
-    exportData(state, frameNumber, filePath);
+    co_return state;
 }
 
 }   // End of namespace

@@ -25,6 +25,7 @@
 #include <ovito/particles/export/FileColumnParticleExporter.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "IMDExporter.h"
 
 namespace Ovito {
@@ -32,134 +33,152 @@ namespace Ovito {
 IMPLEMENT_CREATABLE_OVITO_CLASS(IMDExporter);
 
 /******************************************************************************
-* Writes the particles of one animation frame to the current output file.
-******************************************************************************/
-void IMDExporter::exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath)
+* Creates a worker performing the actual data export.
+*****************************************************************************/
+OORef<FileExportJob> IMDExporter::createExportJob(const QString& filePath, int numberOfFrames)
 {
-    const Particles* particles = state.expectObject<Particles>();
-    particles->verifyIntegrity();
+    class Job : public FileExportJob
+    {
+    public:
 
-    // Get simulation cell info.
-    const SimulationCell* simulationCell = state.expectObject<SimulationCell>();
+        /// Writes the exportable data of a single trajectory frame to the output file.
+        virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+            // The exportable frame data.
+            const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
-    const AffineTransformation& simCell = simulationCell->cellMatrix();
-    size_t atomsCount = particles->elementCount();
+            // Perform the following in a worker thread.
+            co_await ExecutorAwaiter(ThreadPoolExecutor());
 
-    OutputColumnMapping colMapping;
-    OutputColumnMapping filteredMapping;
-    bool exportIdentifiers = false;
-    const Property* posProperty = nullptr;
-    const Property* typeProperty = nullptr;
-    const Property* identifierProperty = nullptr;
-    const Property* velocityProperty = nullptr;
-    const Property* massProperty = nullptr;
-    for(const PropertyReference& pref : columnMapping()) {
-        switch(Particles::OOClass().standardPropertyTypeId(pref.name())) {
-        case Particles::PositionProperty:
-            posProperty = particles->expectProperty(Particles::PositionProperty);
-            break;
-        case Particles::TypeProperty:
-            typeProperty = particles->expectProperty(Particles::TypeProperty);
-            break;
-        case Particles::IdentifierProperty:
-            identifierProperty = particles->getProperty(Particles::IdentifierProperty);
-            exportIdentifiers = true;
-            break;
-        case Particles::VelocityProperty:
-            velocityProperty = particles->expectProperty(Particles::VelocityProperty);
-            break;
-        case Particles::MassProperty:
-            massProperty = particles->expectProperty(Particles::MassProperty);
-            break;
-        default:
-            filteredMapping.push_back(pref);
+            // The IMD exporter, which manages the export settings.
+            const IMDExporter* exporter = static_cast<const IMDExporter*>(this->exporter());
+
+            const Particles* particles = state.expectObject<Particles>();
+
+            // Get simulation cell info.
+            const SimulationCell* simulationCell = state.expectObject<SimulationCell>();
+
+            const AffineTransformation& simCell = simulationCell->cellMatrix();
+            size_t atomsCount = particles->elementCount();
+
+            OutputColumnMapping colMapping;
+            OutputColumnMapping filteredMapping;
+            bool exportIdentifiers = false;
+            const Property* posProperty = nullptr;
+            const Property* typeProperty = nullptr;
+            const Property* identifierProperty = nullptr;
+            const Property* velocityProperty = nullptr;
+            const Property* massProperty = nullptr;
+            for(const PropertyReference& pref : exporter->columnMapping()) {
+                switch(Particles::OOClass().standardPropertyTypeId(pref.name())) {
+                case Particles::PositionProperty:
+                    posProperty = particles->expectProperty(Particles::PositionProperty);
+                    break;
+                case Particles::TypeProperty:
+                    typeProperty = particles->expectProperty(Particles::TypeProperty);
+                    break;
+                case Particles::IdentifierProperty:
+                    identifierProperty = particles->getProperty(Particles::IdentifierProperty);
+                    exportIdentifiers = true;
+                    break;
+                case Particles::VelocityProperty:
+                    velocityProperty = particles->expectProperty(Particles::VelocityProperty);
+                    break;
+                case Particles::MassProperty:
+                    massProperty = particles->expectProperty(Particles::MassProperty);
+                    break;
+                default:
+                    filteredMapping.push_back(pref);
+                }
+            }
+
+            QVector<QString> columnNames;
+            textStream() << "#F A ";
+            if(exportIdentifiers) {
+                if(identifierProperty) {
+                    textStream() << "1 ";
+                    colMapping.emplace_back(identifierProperty);
+                    columnNames.push_back("number");
+                }
+                else {
+                    textStream() << "1 ";
+                    colMapping.emplace_back(Particles::OOClass().standardPropertyName(Particles::IdentifierProperty));
+                    columnNames.push_back("number");
+                }
+            }
+            else textStream() << "0 ";
+            if(typeProperty) {
+                textStream() << "1 ";
+                colMapping.emplace_back(typeProperty);
+                columnNames.push_back("type");
+            }
+            else textStream() << "0 ";
+            if(massProperty) {
+                textStream() << "1 ";
+                colMapping.emplace_back(massProperty);
+                columnNames.push_back("mass");
+            }
+            else textStream() << "0 ";
+            if(posProperty) {
+                textStream() << "3 ";
+                colMapping.emplace_back(posProperty, 0);
+                colMapping.emplace_back(posProperty, 1);
+                colMapping.emplace_back(posProperty, 2);
+                columnNames.push_back("x");
+                columnNames.push_back("y");
+                columnNames.push_back("z");
+            }
+            else textStream() << "0 ";
+            if(velocityProperty) {
+                textStream() << "3 ";
+                colMapping.emplace_back(velocityProperty, 0);
+                colMapping.emplace_back(velocityProperty, 1);
+                colMapping.emplace_back(velocityProperty, 2);
+                columnNames.push_back("vx");
+                columnNames.push_back("vy");
+                columnNames.push_back("vz");
+            }
+            else textStream() << "0 ";
+
+            for(size_t i = 0; i < filteredMapping.size(); i++) {
+                colMapping.push_back(filteredMapping[i]);
+            }
+
+            PropertyOutputWriter columnWriter(colMapping, particles, PropertyOutputWriter::WriteNumericIds);
+
+            textStream() << (columnWriter.columnCount() - columnNames.size()) << "\n";
+
+            textStream() << "#C";
+            for(size_t i = 0; i < columnWriter.columnCount(); i++) {
+                QString columnName;
+                if(i < (size_t)columnNames.size())
+                    columnName = columnNames[i];
+                else {
+                    columnName = columnWriter.columnName(i);
+                    columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_.]")));
+                }
+                textStream() << " " << columnName;
+            }
+            textStream() << "\n";
+
+            textStream() << "#X " << simCell.column(0)[0] << " " << simCell.column(0)[1] << " " << simCell.column(0)[2] << "\n";
+            textStream() << "#Y " << simCell.column(1)[0] << " " << simCell.column(1)[1] << " " << simCell.column(1)[2] << "\n";
+            textStream() << "#Z " << simCell.column(2)[0] << " " << simCell.column(2)[1] << " " << simCell.column(2)[2] << "\n";
+
+            textStream() << "## Generated on " << QDateTime::currentDateTime().toString() << "\n";
+            textStream() << "## IMD file written by " << Application::applicationName() << "\n";
+            textStream() << "#E\n";
+
+            this_task::setProgressMaximum(atomsCount);
+            for(size_t i = 0; i < atomsCount; i++) {
+                columnWriter.writeElement(i, textStream());
+
+                // Update progress bar and check for user cancellation.
+                this_task::setProgressValueIntermittent(i);
+            }
         }
-    }
+    };
 
-    QVector<QString> columnNames;
-    textStream() << "#F A ";
-    if(exportIdentifiers) {
-        if(identifierProperty) {
-            textStream() << "1 ";
-            colMapping.emplace_back(identifierProperty);
-            columnNames.push_back("number");
-        }
-        else {
-            textStream() << "1 ";
-            colMapping.emplace_back(Particles::OOClass().standardPropertyName(Particles::IdentifierProperty));
-            columnNames.push_back("number");
-        }
-    }
-    else textStream() << "0 ";
-    if(typeProperty) {
-        textStream() << "1 ";
-        colMapping.emplace_back(typeProperty);
-        columnNames.push_back("type");
-    }
-    else textStream() << "0 ";
-    if(massProperty) {
-        textStream() << "1 ";
-        colMapping.emplace_back(massProperty);
-        columnNames.push_back("mass");
-    }
-    else textStream() << "0 ";
-    if(posProperty) {
-        textStream() << "3 ";
-        colMapping.emplace_back(posProperty, 0);
-        colMapping.emplace_back(posProperty, 1);
-        colMapping.emplace_back(posProperty, 2);
-        columnNames.push_back("x");
-        columnNames.push_back("y");
-        columnNames.push_back("z");
-    }
-    else textStream() << "0 ";
-    if(velocityProperty) {
-        textStream() << "3 ";
-        colMapping.emplace_back(velocityProperty, 0);
-        colMapping.emplace_back(velocityProperty, 1);
-        colMapping.emplace_back(velocityProperty, 2);
-        columnNames.push_back("vx");
-        columnNames.push_back("vy");
-        columnNames.push_back("vz");
-    }
-    else textStream() << "0 ";
-
-    for(size_t i = 0; i < filteredMapping.size(); i++) {
-        colMapping.push_back(filteredMapping[i]);
-    }
-
-    PropertyOutputWriter columnWriter(colMapping, particles, PropertyOutputWriter::WriteNumericIds);
-
-    textStream() << (columnWriter.columnCount() - columnNames.size()) << "\n";
-
-    textStream() << "#C";
-    for(size_t i = 0; i < columnWriter.columnCount(); i++) {
-        QString columnName;
-        if(i < (size_t)columnNames.size())
-            columnName = columnNames[i];
-        else {
-            columnName = columnWriter.columnName(i);
-            columnName.remove(QRegularExpression(QStringLiteral("[^A-Za-z\\d_.]")));
-        }
-        textStream() << " " << columnName;
-    }
-    textStream() << "\n";
-
-    textStream() << "#X " << simCell.column(0)[0] << " " << simCell.column(0)[1] << " " << simCell.column(0)[2] << "\n";
-    textStream() << "#Y " << simCell.column(1)[0] << " " << simCell.column(1)[1] << " " << simCell.column(1)[2] << "\n";
-    textStream() << "#Z " << simCell.column(2)[0] << " " << simCell.column(2)[1] << " " << simCell.column(2)[2] << "\n";
-
-    textStream() << "## Generated on " << QDateTime::currentDateTime().toString() << "\n";
-    textStream() << "## IMD file written by " << Application::applicationName() << "\n";
-    textStream() << "#E\n";
-
-    this_task::setProgressMaximum(atomsCount);
-    for(size_t i = 0; i < atomsCount; i++) {
-        columnWriter.writeElement(i, textStream());
-
-        // Update progress bar and check for user cancellation.
-        this_task::setProgressValueIntermittent(i);
-    }
+    return OORef<Job>::create(this, filePath, true);
 }
 
 }   // End of namespace

@@ -59,22 +59,10 @@ public:
 
 protected:
 
-    /// Called once for every output file to be written and before exportData() is called.
-    virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
-
-    /// Called once for every output file written after exportData() has been called.
-    virtual void closeOutputFile(bool exportCompleted) override;
-
-    /// Exports a single animation frame to the current output file.
-    virtual void exportFrame(int frameNumber, const QString& filePath) override;
-
-    /// Returns the current file this exporter is writing to.
-    QFile& outputFile() { return _outputFile; }
+    /// Creates a worker performing the actual data export.
+    virtual OORef<FileExportJob> createExportJob(const QString& filePath, int numberOfFrames) override;
 
 private:
-
-    /// The output file stream.
-    QFile _outputFile;
 
     /// The width of the plot in millimeters.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{150}, plotWidth, setPlotWidth, PROPERTY_FIELD_MEMORIZE);

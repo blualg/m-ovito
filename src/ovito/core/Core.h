@@ -64,6 +64,7 @@
 /******************************************************************************
 * Qt framework
 ******************************************************************************/
+#define QT_EXPLICIT_QFILE_CONSTRUCTION_FROM_PATH    // Force QFile(const QString&) class constructor to be explicit.
 #include <QCoreApplication>
 #include <QStringList>
 #include <QUrl>

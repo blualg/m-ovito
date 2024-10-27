@@ -27,7 +27,6 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/core/dataset/pipeline/PipelineFlowState.h>
 #include <ovito/core/dataset/io/FileExporter.h>
-#include <ovito/core/utilities/io/CompressedTextWriter.h>
 
 namespace Ovito {
 
@@ -40,46 +39,13 @@ class OVITO_PARTICLES_EXPORT ParticleExporter : public FileExporter
 
 public:
 
-    /// \brief Evaluates the pipeline of an PipelineSceneNode and makes sure that the data to be
-    ///        exported contains particles and throws an exception if not.
-    PipelineFlowState getParticleData(int frame) const;
-
-    /// \brief Returns the type(s) of data objects that this exporter service can export.
+    /// Returns the type(s) of data objects that this exporter service can export.
     virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
         return { &Particles::OOClass() };
     }
 
-protected:
-
-    /// \brief This is called once for every output file to be written and before exportFrame() is called.
-    virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
-
-    /// \brief This is called once for every output file written after exportFrame() has been called.
-    virtual void closeOutputFile(bool exportCompleted) override;
-
-    /// Returns the current file this exporter is writing to.
-    QFile& outputFile() { return _outputFile; }
-
-    /// Returns the text stream used to write into the current output file.
-    CompressedTextWriter& textStream() { return *_outputStream; }
-
-    /// \brief Exports a single animation frame to the current output file.
-    virtual void exportFrame(int frameNumber, const QString& filePath) override;
-
-    /// \brief Writes the particle data of one animation frame to the current output file.
-    /// \param state The data to be exported.
-    /// \param frameNumber The animation frame to be written to the output file.
-    /// \param filePath The path of the output file.
-    /// \throws Exception on error.
-    virtual void exportData(const PipelineFlowState& state, int frameNumber, const QString& filePath) = 0;
-
-private:
-
-    /// The output file stream.
-    QFile _outputFile;
-
-    /// The stream object used to write into the output file.
-    std::unique_ptr<CompressedTextWriter> _outputStream;
+    /// Evaluates the pipeline whose data is to be exported.
+    virtual Future<PipelineFlowState> getPipelineDataToBeExported(int frameNumber) const override;
 };
 
 }   // End of namespace

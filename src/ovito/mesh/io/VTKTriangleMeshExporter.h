@@ -27,7 +27,6 @@
 #include <ovito/mesh/surface/RenderableSurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/core/dataset/io/FileExporter.h>
-#include <ovito/core/utilities/io/CompressedTextWriter.h>
 
 namespace Ovito {
 
@@ -61,28 +60,10 @@ public:
 
 protected:
 
-    /// \brief This is called once for every output file to be written and before exportData() is called.
-    virtual void openOutputFile(const QString& filePath, int numberOfFrames) override;
-
-    /// \brief This is called once for every output file written after exportData() has been called.
-    virtual void closeOutputFile(bool exportCompleted) override;
-
-    /// \brief Exports a single animation frame to the current output file.
-    virtual void exportFrame(int frameNumber, const QString& filePath) override;
-
-    /// Returns the current file this exporter is writing to.
-    QFile& outputFile() { return _outputFile; }
-
-    /// Returns the text stream used to write into the current output file.
-    CompressedTextWriter& textStream() { return *_outputStream; }
+    /// Creates a worker performing the actual data export.
+    virtual OORef<FileExportJob> createExportJob(const QString& filePath, int numberOfFrames) override;
 
 private:
-
-    /// The output file stream.
-    QFile _outputFile;
-
-    /// The stream object used to write into the output file.
-    std::unique_ptr<CompressedTextWriter> _outputStream;
 
     /// Controls whether the cap polygons of a closed surface mesh should be exported.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, exportCapPolygons, setExportCapPolygons);
