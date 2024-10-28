@@ -19,7 +19,7 @@ Supported format variants
 The file reader can load files conforming to the format specification of the LAMMPS `read_data command <https://docs.lammps.org/read_data.html#format-of-a-data-file>`__.
 Such files may be produced by LAMMPS' own `write_data command <https://docs.lammps.org/write_data.html>`__ or external structure building tools.
 
-OVITO's data file reader can directly parse gzipped files (".gz" suffix).
+OVITO's data file reader can directly parse gzipped files (".gz" suffix) and zstd compressed files (".zst" suffix).
 
 The reader loads a complete :ref:`particles <scene_objects.particles>` model including topological information (:ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers)
 if present.

@@ -10,7 +10,7 @@ e.g. the particles and their properties, the bonds, other computed quantities, e
 Furthermore, you can choose which animation frame(s) should be exported (just the current frame or a range) and whether the
 datasets are saved to a single output file or to a sequence of files, one per frame.
 
-OVITO will ask you for a destination filename. Note that, if you append the :file:`.gz` suffix, the output file(s) will automatically be
+OVITO will ask you for a destination filename. Note that, if you append a :file:`.gz` or :file:`.zst` suffix, the output file(s) will automatically be
 compressed for text-based file formats.
 
 .. _usage.global_attributes:

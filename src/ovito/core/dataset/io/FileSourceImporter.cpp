@@ -403,13 +403,15 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
         try {
             self->discoverFramesInFile(fileHandle, framesList);
         }
-        catch(const Exception&) {
+        catch(const Exception& ex) {
             // Silently ignore parsing and I/O errors if at least two frames have been read.
             // Keep all frames read up to where the error occurred.
             if(framesList.size() <= 1)
                 throw;
-            else
+            else {
+                qWarning() << "WARNING: Scanning of the trajectory file" << fileHandle.localFilePath() << "aborted prematurely after" << framesList.size() << "frames due to an error:" << ex.messages().join(' ');
                 framesList.pop_back();       // Remove last discovered frame because it may be corrupted or only partially written.
+            }
         }
 
         // If it's not a trajectory file, report a single frame.

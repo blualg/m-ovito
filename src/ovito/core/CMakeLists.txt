@@ -25,9 +25,10 @@ IF(NOT EMSCRIPTEN)
     FIND_PACKAGE(FFMPEG)
 ENDIF()
 
-# Find the zlib library, needed for reading/writing compressed data files.
+# Find the zlib and zstd libraries, needed for reading/writing compressed data files.
 IF(NOT EMSCRIPTEN)
     FIND_PACKAGE(ZLIB)
+    FIND_PACKAGE(zstd)
 ENDIF()
 
 # Locate the libssh library, needed for the built-in SSH client.
@@ -142,25 +143,6 @@ SET(SourceFiles
     viewport/overlays/TextLabelOverlay.cpp
 )
 
-# Include video encoder interface code.
-IF(FFMPEG_FOUND)
-    LIST(APPEND SourceFiles utilities/io/video/VideoEncoder.cpp)
-ELSE()
-    MESSAGE("ffmpeg video encoding library not found. OVITO will be built without support for video output.")
-ENDIF()
-
-# Include optional SSH client code.
-IF(OVITO_BUILD_SSH_CLIENT)
-    LIST(APPEND SourceFiles
-        utilities/io/ssh/libssh/LibsshConnection.cpp
-        utilities/io/ssh/libssh/SshChannel.cpp
-        utilities/io/ssh/libssh/ProcessChannel.cpp
-        utilities/io/ssh/libssh/ScpChannel.cpp
-        utilities/io/ssh/libssh/LsChannel.cpp
-        utilities/io/ssh/libssh/LibsshWrapper.cpp
-    )
-ENDIF()
-
 # Build the askpass utility, which is needed for the external OpenSSH-based client.
 IF(OVITO_BUILD_APP AND NOT EMSCRIPTEN)
     ADD_SUBDIRECTORY(utilities/io/ssh/openssh/askpass)
@@ -172,15 +154,6 @@ IF(EMSCRIPTEN)
     ADD_LIBRARY(ZLIB::ZLIB INTERFACE IMPORTED)
     TARGET_COMPILE_OPTIONS(ZLIB::ZLIB INTERFACE "SHELL:-s USE_ZLIB=1")
     SET(ZLIB_FOUND TRUE)
-ENDIF()
-
-# Include optional Gzip file support.
-IF(ZLIB_FOUND)
-    LIST(APPEND SourceFiles
-        utilities/io/gzdevice/GzipIODevice.cpp
-    )
-ELSE()
-    MESSAGE("zlib library not found. OVITO will be built without I/O support for gzip compressed data files.")
 ENDIF()
 
 # Define library target.
@@ -201,14 +174,40 @@ IF(NOT EMSCRIPTEN)
     TARGET_LINK_LIBRARIES(Core PUBLIC Qt6::Network)
 ENDIF()
 
-# Link to zlib.
+# Use zlib library if available.
 IF(ZLIB_FOUND)
+    TARGET_SOURCES(Core PRIVATE utilities/io/gzdevice/GzipIODevice.cpp)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZLIB_SUPPORT)
     TARGET_LINK_LIBRARIES(Core PUBLIC ZLIB::ZLIB)
+    # Use zstd library if available.
+    IF(zstd_FOUND)
+        TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZSTD_SUPPORT)
+        TARGET_INCLUDE_DIRECTORIES(Core PUBLIC "$<BUILD_INTERFACE:${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper>")
+        TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd_static)
+        TARGET_SOURCES(Core PRIVATE
+            "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/zstd_zlibwrapper.c"
+            "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzclose.c"
+            "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzlib.c"
+            "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzread.c"
+            "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzwrite.c"
+        )
+    ELSE()
+        MESSAGE(WARNING "zstd library not found. OVITO will be built without I/O support for zstandard compressed files.")
+    ENDIF()
+ELSE()
+    MESSAGE(WARNING "zlib library not found. OVITO will be built without I/O support for gzip compressed files.")
 ENDIF()
 
 # Link to Libssh.
 IF(OVITO_BUILD_SSH_CLIENT)
+    TARGET_SOURCES(Core PRIVATE
+        utilities/io/ssh/libssh/LibsshConnection.cpp
+        utilities/io/ssh/libssh/SshChannel.cpp
+        utilities/io/ssh/libssh/ProcessChannel.cpp
+        utilities/io/ssh/libssh/ScpChannel.cpp
+        utilities/io/ssh/libssh/LsChannel.cpp
+        utilities/io/ssh/libssh/LibsshWrapper.cpp
+    )
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_SSH_CLIENT)
     IF(OVITO_LIBSSH_RUNTIME_LINKING)
         TARGET_COMPILE_DEFINITIONS(Core PRIVATE OVITO_LIBSSH_RUNTIME_LINKING)
@@ -222,10 +221,13 @@ ENDIF()
 
 # Link to video encoding lib.
 IF(FFMPEG_FOUND)
+    TARGET_SOURCES(Core PRIVATE utilities/io/video/VideoEncoder.cpp)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_VIDEO_OUTPUT_SUPPORT)
     TARGET_COMPILE_DEFINITIONS(Core PRIVATE __STDC_CONSTANT_MACROS __STDC_LIMIT_MACROS)
     TARGET_LINK_LIBRARIES(Core PRIVATE "${FFMPEG_LIBRARIES}")
     TARGET_INCLUDE_DIRECTORIES(Core BEFORE PRIVATE "${FFMPEG_INCLUDE_DIRS}")
+ELSE()
+    MESSAGE(WARNING "ffmpeg video encoding library not found. OVITO will be built without support for video output.")
 ENDIF()
 
 # Define the OVITO_DEBUG macro in debug builds.

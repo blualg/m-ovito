@@ -41,8 +41,17 @@ CompressedTextWriter::CompressedTextWriter(QFileDevice& output) :
 {
     _filename = output.fileName();
 
-    // Check if file should be compressed (i.e. filename ends with .gz).
-    if(_filename.endsWith(".gz", Qt::CaseInsensitive)) {
+    // Check if file should be compressed (i.e. filename ends with .gz or .zst).
+    if(_filename.endsWith(".gz", Qt::CaseInsensitive) || _filename.endsWith(".zst", Qt::CaseInsensitive)) {
+#ifdef OVITO_ZSTD_SUPPORT
+        // Select between gzip and zstd compression.
+        // Note: Using this global function is not thread-safe and may lead to a race condition, but the zstdWrapper library don't provide
+        // a better method for controlling the compression format on per stream basis.
+        ::ZWRAP_useZSTDcompression(_filename.endsWith(".zst", Qt::CaseInsensitive));
+#else
+        if(_filename.endsWith(".zst", Qt::CaseInsensitive))
+            throw Exception(FileManager::tr("Cannot open file '%1' for writing. This version of OVITO was built without I/O support for zstandard compressed files (*.zst).").arg(_filename));
+#endif
 #ifdef OVITO_ZLIB_SUPPORT
         // Open file for writing.
         _compressor = std::make_unique<GzipIODevice>(&output);
@@ -50,7 +59,7 @@ CompressedTextWriter::CompressedTextWriter(QFileDevice& output) :
             throw Exception(FileManager::tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(_compressor->errorString()));
         _stream = _compressor.get();
 #else
-        throw Exception(tr("Cannot open file '%1' for writing. This version of OVITO was built without I/O support for gzip compressed files.").arg(_filename));
+        throw Exception(FileManager::tr("Cannot open file '%1' for writing. This version of OVITO was built without I/O support for gzip compressed files.").arg(_filename));
 #endif
     }
     else {

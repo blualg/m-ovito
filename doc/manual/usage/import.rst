@@ -11,7 +11,7 @@ Data import
 
 To load a simulation file from your local computer, select :menuselection:`File --> Load File` from the menu or use the corresponding button in the toolbar.
 OVITO detects the format of the file automatically (see :ref:`list of supported formats <file_formats.input>`).
-Compressed files with a :file:`.gz` suffix can be opened directly if the underlying text-based format is supported by OVITO.
+Compressed files with a :file:`.gz` or :file:`.zst` suffix can be opened directly if the underlying text-based format is supported by OVITO.
 To import files in a custom format, you can write your own :ref:`file reader in Python <writing_custom_file_readers>` |ovito-pro|.
 
 After import, the dataset appears in the 3d viewport(s) as a visual object
