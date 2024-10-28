@@ -176,13 +176,13 @@ IF(NOT EMSCRIPTEN)
     TARGET_LINK_LIBRARIES(Core PUBLIC Qt6::Network)
 ENDIF()
 
-# Link to zlib.
+# Use zlib library if available.
 IF(ZLIB_FOUND)
     TARGET_SOURCES(Core PRIVATE utilities/io/gzdevice/GzipIODevice.cpp)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZLIB_SUPPORT)
     TARGET_LINK_LIBRARIES(Core PUBLIC ZLIB::ZLIB)
-    # Link to zstd.
-    IF(ZSTD_FOUND)
+    # Use zstd library if available.
+    IF(zstd_FOUND)
         TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZSTD_SUPPORT)
         TARGET_INCLUDE_DIRECTORIES(Core PUBLIC "$<BUILD_INTERFACE:${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper>")
         TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd_static)
