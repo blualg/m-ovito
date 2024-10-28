@@ -9,7 +9,7 @@ In accordance with the requirements of this license, this section gives instruct
 Windows
 """""""
 
-OVITO for Windows includes an unmodified copy of the Qt shared libraries (version 6.5.3, MSVC 2019 64-bit) distributed by the Qt Company.
+OVITO for Windows includes an unmodified copy of the Qt shared libraries (version 6.7.3, MSVC 2022 64-bit) distributed by the Qt Company.
 
 Linux
 """""

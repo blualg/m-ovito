@@ -88,6 +88,10 @@ The table lists the licenses of the included components and, if they are used un
     - `license <https://www.zlib.net/zlib_license.html>`__
     -
 
+  * - `Zstandard <https://github.com/facebook/zstd/>`__
+    - :ref:`license <appendix.license.zstandard>`
+    -
+
   * - `Polyhedral Template Matching library <https://github.com/pmla/polyhedral-template-matching>`__ by Peter Mahler Larsen
     - :ref:`license <appendix.license.ptm>`
     -
@@ -215,3 +219,4 @@ The table lists the licenses of the included components and, if they are used un
   visrtx
   glm
   rapidyaml
+  zstandard
