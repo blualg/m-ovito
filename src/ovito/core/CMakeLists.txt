@@ -28,7 +28,7 @@ ENDIF()
 # Find the zlib and zstd libraries, needed for reading/writing compressed data files.
 IF(NOT EMSCRIPTEN)
     FIND_PACKAGE(ZLIB)
-    FIND_PACKAGE(ZSTD)
+    FIND_PACKAGE(zstd)
 ENDIF()
 
 # Locate the libssh library, needed for the built-in SSH client.
@@ -193,9 +193,11 @@ IF(ZLIB_FOUND)
             "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzread.c"
             "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzwrite.c"
         )
+    ELSE()
+        MESSAGE(WARNING "zstd library not found. OVITO will be built without I/O support for zstandard compressed files.")
     ENDIF()
 ELSE()
-    MESSAGE("zlib library not found. OVITO will be built without I/O support for gzip compressed data files.")
+    MESSAGE(WARNING "zlib library not found. OVITO will be built without I/O support for gzip compressed files.")
 ENDIF()
 
 # Link to Libssh.
@@ -227,7 +229,7 @@ IF(FFMPEG_FOUND)
     TARGET_LINK_LIBRARIES(Core PRIVATE "${FFMPEG_LIBRARIES}")
     TARGET_INCLUDE_DIRECTORIES(Core BEFORE PRIVATE "${FFMPEG_INCLUDE_DIRS}")
 ELSE()
-    MESSAGE("ffmpeg video encoding library not found. OVITO will be built without support for video output.")
+    MESSAGE(WARNING "ffmpeg video encoding library not found. OVITO will be built without support for video output.")
 ENDIF()
 
 # Define the OVITO_DEBUG macro in debug builds.
