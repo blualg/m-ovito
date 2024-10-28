@@ -47,7 +47,7 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input, qint64 byteO
     if(_filename.endsWith(".gz", Qt::CaseInsensitive) || _filename.endsWith(".zst", Qt::CaseInsensitive)) {
 #ifndef OVITO_ZSTD_SUPPORT
         if(_filename.endsWith(".zst", Qt::CaseInsensitive))
-            throw Exception(tr("Cannot open file '%1' for reading. This version of OVITO was built without I/O support for zstandard compressed files (*.zst)."));
+            throw Exception(FileManager::tr("Cannot open file '%1' for reading. This version of OVITO was built without I/O support for zstandard compressed files (*.zst)."));
 #endif
 #ifdef OVITO_ZLIB_SUPPORT
         // When reading consecutive frames from the same compressed trajectory file, try to re-use an existing open file stream.
@@ -69,7 +69,7 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input, qint64 byteO
         // Enable seek index for .gz files, disable it for .zst files (because the zlibWrapper library does not support the inflateCopy() function).
         _uncompressor->setSeekIndexEnabled(_filename.endsWith(".zst", Qt::CaseInsensitive) == false);
 #else
-        throw Exception(tr("Cannot open file '%1' for reading. This version of OVITO was built without I/O support for gzip compressed files."));
+        throw Exception(FileManager::tr("Cannot open file '%1' for reading. This version of OVITO was built without I/O support for gzip compressed files."));
 #endif
     }
     else {

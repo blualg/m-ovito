@@ -50,7 +50,7 @@ CompressedTextWriter::CompressedTextWriter(QFileDevice& output) :
         ::ZWRAP_useZSTDcompression(_filename.endsWith(".zst", Qt::CaseInsensitive));
 #else
         if(_filename.endsWith(".zst", Qt::CaseInsensitive))
-            throw Exception(tr("Cannot open file '%1' for writing. This version of OVITO was built without I/O support for zstandard compressed files (*.zst).").arg(_filename));
+            throw Exception(FileManager::tr("Cannot open file '%1' for writing. This version of OVITO was built without I/O support for zstandard compressed files (*.zst).").arg(_filename));
 #endif
 #ifdef OVITO_ZLIB_SUPPORT
         // Open file for writing.
@@ -59,7 +59,7 @@ CompressedTextWriter::CompressedTextWriter(QFileDevice& output) :
             throw Exception(FileManager::tr("Failed to open output file '%1' for writing: %2").arg(_filename).arg(_compressor->errorString()));
         _stream = _compressor.get();
 #else
-        throw Exception(tr("Cannot open file '%1' for writing. This version of OVITO was built without I/O support for gzip compressed files.").arg(_filename));
+        throw Exception(FileManager::tr("Cannot open file '%1' for writing. This version of OVITO was built without I/O support for gzip compressed files.").arg(_filename));
 #endif
     }
     else {
