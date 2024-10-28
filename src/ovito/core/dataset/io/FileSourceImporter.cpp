@@ -461,13 +461,15 @@ void FileSourceImporter::FrameFinder::perform()
     try {
         discoverFramesInFile(frameList);
     }
-    catch(const Exception&) {
+    catch(const Exception& ex) {
         // Silently ignore parsing and I/O errors if at least two frames have been read.
         // Keep all frames read up to where the error occurred.
         if(frameList.size() <= 1)
             throw;
-        else
+        else {
+            qWarning() << "WARNING: Scanning of the trajectory file" << fileHandle().localFilePath() << "aborted prematurely after" << frameList.size() << "frames due to an error:" << ex.messages().join(' ');
             frameList.pop_back();       // Remove last discovered frame because it may be corrupted or only partially written.
+        }
     }
     setResult(std::move(frameList));
 }

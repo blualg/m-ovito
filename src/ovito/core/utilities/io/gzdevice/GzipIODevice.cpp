@@ -49,7 +49,8 @@ GzipIODevice::~GzipIODevice()
 void GzipIODevice::lookupGzipIndex(bool createIfNeeded)
 {
     OVITO_ASSERT(!_index);
-    _index = Application::instance()->fileManager().lookupGzipIndex(_device, createIfNeeded);
+    if(_enableSeekIndex)
+        _index = Application::instance()->fileManager().lookupGzipIndex(_device, createIfNeeded);
 }
 
 /// Makes the device generate an index, which will enable random access to the

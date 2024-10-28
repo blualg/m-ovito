@@ -66,6 +66,8 @@ CompressedTextReader::CompressedTextReader(const FileHandle& input, qint64 byteO
         if(!_uncompressor->isOpen() && !_uncompressor->open(QIODevice::ReadOnly))
             throw Exception(FileManager::tr("Failed to open input file: %1").arg(_uncompressor->errorString()));
         _stream = _uncompressor.get();
+        // Enable seek index for .gz files, disable it for .zst files (because the zlibWrapper library does not support the inflateCopy() function).
+        _uncompressor->setSeekIndexEnabled(_filename.endsWith(".zst", Qt::CaseInsensitive) == false);
 #else
         throw Exception(tr("Cannot open file '%1' for reading. This version of OVITO was built without I/O support for gzip compressed files."));
 #endif
@@ -102,6 +104,11 @@ CompressedTextReader::~CompressedTextReader()
 const char* CompressedTextReader::readLine(int maxSize)
 {
     _lineNumber++;
+
+#ifdef OVITO_ZLIB_SUPPORT
+    if(_uncompressor && _uncompressor->isError())
+        throw Exception(_uncompressor->errorString());
+#endif
 
     if(_stream->atEnd())
         throw Exception(FileManager::tr("File parsing error. Unexpected end of file after line %1.").arg(_lineNumber));
