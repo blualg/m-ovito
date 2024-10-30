@@ -41,7 +41,7 @@ protected:
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-    /// Copies the settings of one renderers to another (which can either be an interactive or a final-frame renderer).
+    /// Copies the settings of one renderer to another (which can either be an interactive or a final-frame renderer).
     virtual void transferSettingsBetweenRenderers(SceneRenderer* source, SceneRenderer* target, bool isInteractive2final) override;
 };
 

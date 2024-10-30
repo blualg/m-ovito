@@ -50,7 +50,7 @@ public:
         return &source->getOOClass() == &target->getOOClass();
     }
 
-    /// Copies the settings of one renderers to another (which can either be an interactive or a final-frame renderer).
+    /// Copies the settings of one renderer to another (which can either be an interactive or a final-frame renderer).
     virtual void transferSettingsBetweenRenderers(SceneRenderer* source, SceneRenderer* target, bool isInteractive2final) {}
 
 public Q_SLOTS:

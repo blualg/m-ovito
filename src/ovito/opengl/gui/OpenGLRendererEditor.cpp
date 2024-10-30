@@ -77,7 +77,7 @@ void OpenGLRendererEditor::createUI(const RolloutInsertionParameters& rolloutPar
 }
 
 /******************************************************************************
-* Copies the settings of one renderers to another (which can either be an interactive or a final-frame renderer).
+* Copies the settings of one renderer to another (which can either be an interactive or a final-frame renderer).
 ******************************************************************************/
 void OpenGLRendererEditor::transferSettingsBetweenRenderers(SceneRenderer* source, SceneRenderer* target, bool isInteractive2final)
 {
