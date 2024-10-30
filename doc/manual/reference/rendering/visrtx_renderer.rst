@@ -13,7 +13,7 @@ this renderer can achieve near real-time performance on modern GPU hardware.
 
 **VisRTX requires NVIDIA hardware with CUDA support and a current NVIDIA graphics driver (CUDA 12.0+).**
 The renderer is not available on the macOS platform and doesn't work on *Windows Subsystem for Linux* (WSL),
-because this environment lacks the NVIDIA OptiX driver components required by VisRTX.
+because this environment lacks the NVIDIA OptiX™ driver components required by VisRTX.
 
 .. caution::
 
@@ -32,6 +32,13 @@ because this environment lacks the NVIDIA OptiX driver components required by Vi
   On first use of the VisRTX renderer, it will compile RTX shader programs for your GPU architecture.
   This process can take up to several minutes, but happens only once. The compiled shader programs get cached
   on disk and are reused in subsequent OVITO sessions.
+
+.. tip::
+
+  The VisRTX renderer can also be used in the interactive viewports of OVITO to visualize the scene
+  in real-time with high-quality ray-tracing effects. To enable the VisRTX renderer in the viewports,
+  open the :ref:`viewport graphics configuration <viewports.configure_graphics_dialog>` dialog and select the
+  "NVIDIA VisRTX" renderer.
 
 Parameters
 ----------

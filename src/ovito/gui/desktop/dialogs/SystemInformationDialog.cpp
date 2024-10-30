@@ -20,29 +20,30 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/rendering/BaseSceneRendererEditor.h>
-#include <ovito/core/oo/RefTarget.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include "SystemInformationDialog.h"
 
 namespace Ovito {
 
 /******************************************************************************
-* The editor component for the OpenGLRenderer class.
+* Constructor.
 ******************************************************************************/
-class OpenGLRendererEditor : public BaseSceneRendererEditor
+SystemInformationDialog::SystemInformationDialog(MainWindow& mainWindow, QWidget* parent) : QDialog(parent)
 {
-    OVITO_CLASS(OpenGLRendererEditor)
-
-protected:
-
-    /// Creates the user interface controls for the editor.
-    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-
-    /// Copies the settings of one renderers to another (which can either be an interactive or a final-frame renderer).
-    virtual void transferSettingsBetweenRenderers(SceneRenderer* source, SceneRenderer* target, bool isInteractive2final) override;
-};
+    setWindowTitle(tr("System Information"));
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    QTextEdit* textEdit = new QTextEdit(this);
+    textEdit->setReadOnly(true);
+    textEdit->setPlainText(mainWindow.generateSystemReport());
+    textEdit->setMinimumSize(QSize(600, 400));
+    layout->addWidget(textEdit);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, Qt::Horizontal, this);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::accept);
+    connect(buttonBox->addButton(tr("Copy to clipboard"), QDialogButtonBox::ActionRole), &QPushButton::clicked, [textEdit]() {
+        QApplication::clipboard()->setText(textEdit->toPlainText());
+    });
+    layout->addWidget(buttonBox);
+}
 
 }   // End of namespace

@@ -95,27 +95,13 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     else
         lightColorScheme->setChecked(true);
 
-    QGroupBox* graphicsGroupBox = new QGroupBox(tr("Viewport graphics"), page);
+    QGroupBox* graphicsGroupBox = new QGroupBox(tr("Viewport 3D graphics"), page);
     layout1->addWidget(graphicsGroupBox);
     layout2 = new QGridLayout(graphicsGroupBox);
     layout2->setColumnStretch(1, 1);
     QPushButton* configureGraphicsBtn = new QPushButton(tr("Configure..."), graphicsGroupBox);
     layout2->addWidget(configureGraphicsBtn, 0, 0);
     connect(configureGraphicsBtn, &QPushButton::clicked, this, &ViewportSettingsPage::showConfigureViewportGraphicsDialog);
-
-#if 0
-    // Transparency rendering method.
-    _transparencyRenderingMethod = new QComboBox();
-    _transparencyRenderingMethod->addItem(tr("Back-to-Front Ordered (default)"), QVariant::fromValue(1));
-    _transparencyRenderingMethod->addItem(tr("Weighted Blended Order-Independent"), QVariant::fromValue(2));
-    _transparencyRenderingMethod->setCurrentIndex(
-        _transparencyRenderingMethod->findData(settings.value("rendering/transparency_method", 1)));
-    layout2->addWidget(new QLabel(tr("Transparency rendering method:")), 3, 0);
-    layout2->addWidget(_transparencyRenderingMethod, 3, 1, 1, 2);
-
-    _transparencyRenderingMethod->setEnabled(openglOption->isChecked());
-    connect(openglOption, &QAbstractButton::toggled, _transparencyRenderingMethod, &QComboBox::setEnabled);
-#endif
 
     layout1->addStretch();
 }
@@ -138,22 +124,6 @@ void ViewportSettingsPage::saveValues(QTabWidget* tabWidget)
 {
     // Check if user has selected a different 3D graphics API than before.
     bool recreateViewportWindows = false;
-
-#if 0
-    // Save new viewport graphics selection in the application settings store.
-    QString newGraphicsApi;
-    if(QAbstractButton* selectedButton = _graphicsSystem->checkedButton())
-        newGraphicsApi = selectedButton->property("graphics_api").toString();
-    if(ViewportWindow::setInteractiveWindowImplementationName(newGraphicsApi))
-        recreateViewportWindows = true;
-
-    // Check if a different transparency rendering method was selected by the user.
-    QSettings settings;
-    if(settings.value("rendering/transparency_method", 1).toInt() != _transparencyRenderingMethod->currentData().toInt()) {
-        settings.setValue("rendering/transparency_method", _transparencyRenderingMethod->currentData().toInt());
-        recreateViewportWindows = true;
-    }
-#endif
 
     // Recreate all interactive viewport windows in all program windows after a different graphics API has been activated.
     // No restart of the software is required.

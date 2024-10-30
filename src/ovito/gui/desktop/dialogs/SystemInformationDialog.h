@@ -24,25 +24,20 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/rendering/BaseSceneRendererEditor.h>
-#include <ovito/core/oo/RefTarget.h>
 
 namespace Ovito {
 
-/******************************************************************************
-* The editor component for the OpenGLRenderer class.
-******************************************************************************/
-class OpenGLRendererEditor : public BaseSceneRendererEditor
+/**
+ * This dialog box shows information about the user's system, e.g., which OpenGL graphics implementation is available.
+ */
+class SystemInformationDialog : public QDialog
 {
-    OVITO_CLASS(OpenGLRendererEditor)
+    Q_OBJECT
 
-protected:
+public:
 
-    /// Creates the user interface controls for the editor.
-    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
-
-    /// Copies the settings of one renderers to another (which can either be an interactive or a final-frame renderer).
-    virtual void transferSettingsBetweenRenderers(SceneRenderer* source, SceneRenderer* target, bool isInteractive2final) override;
+    /// Constructor.
+    explicit SystemInformationDialog(MainWindow& mainWindow, QWidget* parentWindow = nullptr);
 };
 
 }   // End of namespace

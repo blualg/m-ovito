@@ -89,12 +89,14 @@ namespace Ovito {
 #define ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS_ALL      "ViewportZoomSceneExtentsAll"
 /// This zooms all viewports to the selection extents
 #define ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS_ALL  "ViewportZoomSelectionExtentsAll"
+/// Opens the viewport graphics configuration dialog.
+#define ACTION_CONFIGURE_VIEWPORT_GRAPHICS          "ConfigureViewportGraphics"
 
 /// This action deletes the currently selected modifier from the modifier stack.
 #define ACTION_MODIFIER_DELETE              "ModifierDelete"
-/// This action moves the currently selected modifer up one entry in the modifier stack.
+/// This action moves the currently selected modifier up one entry in the modifier stack.
 #define ACTION_MODIFIER_MOVE_UP             "ModifierMoveUp"
-/// This action moves the currently selected modifer down one entry in the modifier stack.
+/// This action moves the currently selected modifier down one entry in the modifier stack.
 #define ACTION_MODIFIER_MOVE_DOWN           "ModifierMoveDown"
 /// This action opens the dialog box for managing modifier templates.
 #define ACTION_MODIFIER_MANAGE_MODIFIER_TEMPLATES    "ModifierManageTemplates"

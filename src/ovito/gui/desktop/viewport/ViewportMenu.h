@@ -56,7 +56,6 @@ private Q_SLOTS:
     void onShowViewTypeMenu();
     void onViewType(QAction* action);
     void onAdjustView();
-    void onConfigureViewportGraphics();
     void onViewNode(QAction* action);
     void onCreateCamera();
     void onDeleteViewport();

@@ -919,7 +919,7 @@ std::vector<std::tuple<QString, QString, OvitoClassPtr, OvitoClassPtr>> Viewport
     // ANARI:
     list.emplace_back(
         QStringLiteral("anari"),
-        QStringLiteral("VisRTX (experimental, requires CUDA-capable GPU)"),
+        QStringLiteral("NVIDIA VisRTX (requires CUDA-capable device)"),
         PluginManager::instance().findClass("AnariRendererWindow", "OpenGLAnariViewportWindow"),
         PluginManager::instance().findClass("AnariRenderer", "AnariRenderer")
     );

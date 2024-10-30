@@ -8,3 +8,4 @@ Viewports
 
   layers/index
   adjust_view_dialog
+  viewport_graphics_config
