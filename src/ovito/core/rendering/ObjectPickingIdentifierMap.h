@@ -52,7 +52,7 @@ public:
     virtual uint32_t objectIdentifierAt(const QPoint& frameBufferLocation) const { return 0; }
 
     /// Returns the z-value at the given frame buffer location.
-    virtual FloatType depthAt(const QPoint& frameBufferLocation) const { return 0; }
+    virtual FloatType depthAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const { return 0; }
 
     /// Computes the 3d world-space location corresponding to the given 2d window position.
     Point3 worldPositionAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const;

@@ -63,12 +63,7 @@ RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
     copy->setIsBeingCopied(false);
 
     // Keep track of the objects that have been cloned so far.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
     return _cloneTable.emplace_back(obj, std::move(copy)).second;
-#else
-    _cloneTable.push_back(std::make_pair(obj, std::move(copy)));
-    return _cloneTable.back().second;
-#endif
 }
 
 /******************************************************************************

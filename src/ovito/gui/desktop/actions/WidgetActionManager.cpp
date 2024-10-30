@@ -65,6 +65,7 @@ WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow& mainWindow
     connect(getAction(ACTION_EDIT_CLONE_PIPELINE), &QAction::triggered, this, &WidgetActionManager::on_ClonePipeline_triggered);
     connect(getAction(ACTION_EDIT_RENAME_PIPELINE), &QAction::triggered, this, &WidgetActionManager::on_RenamePipeline_triggered);
     connect(getAction(ACTION_NEW_PIPELINE_FILESOURCE), &QAction::triggered, this, &WidgetActionManager::on_NewPipelineFileSource_triggered);
+    connect(getAction(ACTION_CONFIGURE_VIEWPORT_GRAPHICS), &QAction::triggered, this, &WidgetActionManager::on_ConfigureViewportGraphics_triggered);
 
     setupCommandSearch();
 }

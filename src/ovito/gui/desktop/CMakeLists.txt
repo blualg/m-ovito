@@ -63,6 +63,7 @@ OVITO_STANDARD_PLUGIN(Gui
         dialogs/FontSelectionDialog.cpp
         dialogs/ModalPropertiesEditorDialog.cpp
         dialogs/UpdateNotificationDialog.cpp
+        dialogs/SystemInformationDialog.cpp
         actions/WidgetActionManager.cpp
         actions/FileActions.cpp
         actions/RenderActions.cpp
@@ -129,6 +130,7 @@ OVITO_STANDARD_PLUGIN(Gui
         properties/PipelineSelectionParameterUI.cpp
         properties/DataObjectReferenceParameterUI.cpp
         rendering/RenderSettingsEditor.cpp
+        rendering/BaseSceneRendererEditor.cpp
         viewport/ViewportMenu.cpp
         viewport/input/XFormModes.cpp
         viewport/overlays/CoordinateTripodOverlayEditor.cpp

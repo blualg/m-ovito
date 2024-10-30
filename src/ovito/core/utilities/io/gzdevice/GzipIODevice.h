@@ -24,9 +24,14 @@
 #pragma once
 
 #include <ovito/core/Core.h>
-#include <zlib.h>
 #include <boost/container/stable_vector.hpp>
 #include <QReadWriteLock>
+
+#ifdef OVITO_ZSTD_SUPPORT
+    #include <zstd_zlibwrapper.h>
+#else
+    #include <zlib.h>
+#endif
 
 namespace Ovito {
 
@@ -55,8 +60,8 @@ public:
     /// Destructor.
     ~GzipIndex() {
         for(Entry& entry : _entries) {
-            int status = ::inflateEnd(&entry.zlibStream);
-            OVITO_ASSERT(status == Z_OK); Q_UNUSED(status);
+            Q_DECL_UNUSED int status = ::inflateEnd(&entry.zlibStream);
+            OVITO_ASSERT(status == Z_OK);
         }
     }
 
@@ -79,6 +84,8 @@ public:
         entry.uncompressedOffset = uncompressedOffset;
         entry.compressedOffset = compressedOffset - zlibStream.avail_in;
         int status = ::inflateCopy(&entry.zlibStream, &zlibStream);
+        if(status != Z_OK)
+            _entries.pop_back();
         _lock.unlock();
         return status;
     }
@@ -168,6 +175,12 @@ public:
 
     bool setUnderlyingDevice(QIODevice* device);
 
+    /// Indicates if a compression/decompression error has occurred.
+    bool isError() const { return _state == Error; }
+
+    /// Enables/disables the Gzip seek index.
+    void setSeekIndexEnabled(bool enabled) { _enableSeekIndex = enabled; }
+
 protected:
 
     qint64 readData(char * data, qint64 maxSize) override;
@@ -195,7 +208,7 @@ private:
     /// Flushes the zlib stream.
     void flushZlib(int flushMode);
 
-    /// Writes outputSize bytes from buffer to the inderlying device.
+    /// Writes outputSize bytes from buffer to the underlying device.
     bool writeBytes(qint64 outputSize);
 
     /// Looks up the cached index for the current file being uncompressed.
@@ -210,6 +223,7 @@ private:
     qint64 _bufferSize;
     std::unique_ptr<ZlibByte[]> _buffer;
     std::shared_ptr<GzipIndex> _index;
+    bool _enableSeekIndex = true;
 };
 
 }   // End of namespace

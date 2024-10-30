@@ -75,7 +75,7 @@ public:
         /// The name or label of the source frame.
         QString label;
 
-        /// Auxialiary field that can be used by the file parser to store additional info about the frame.
+        /// Auxiliary field that can be used by the file parser to store additional info about the frame.
         QVariant parserData;
 
         /// Compares two frame descriptors.

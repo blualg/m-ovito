@@ -31,8 +31,8 @@
 #include <ovito/core/viewport/ViewportWindow.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/gui/desktop/dialogs/AdjustViewDialog.h>
-#include <ovito/gui/desktop/dialogs/ConfigureViewportGraphicsDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include "ViewportMenu.h"
 
 namespace Ovito {
@@ -141,7 +141,7 @@ ViewportMenu::ViewportMenu(MainWindow& mainWindow, ViewportWindow* viewportWindo
 
     addSeparator();
 
-    addAction(tr("Configure graphics..."), this, &ViewportMenu::onConfigureViewportGraphics);
+    addAction(mainWindow.actionManager()->getAction(ACTION_CONFIGURE_VIEWPORT_GRAPHICS));
 }
 
 /******************************************************************************
@@ -244,15 +244,6 @@ void ViewportMenu::onViewType(QAction* action)
 void ViewportMenu::onAdjustView()
 {
     AdjustViewDialog* dialog = new AdjustViewDialog(_mainWindow, viewport(), _viewportWidget);
-    dialog->show();
-}
-
-/******************************************************************************
-* Handles the menu item event.
-******************************************************************************/
-void ViewportMenu::onConfigureViewportGraphics()
-{
-    ConfigureViewportGraphicsDialog* dialog = new ConfigureViewportGraphicsDialog(_mainWindow, &_mainWindow);
     dialog->show();
 }
 

@@ -18,15 +18,16 @@ Supported format variants
 
 The reader handles files written by the following LAMMPS dump styles:
 
-  - ``custom``, ``custom/gz``, ``custom/mpiio``
-  - ``atom``, ``atom/gz``, ``atom/mpiio``
+  - ``custom``, ``custom/gz``, ``custom/zstd``, ``custom/mpiio``
+  - ``atom``, ``atom/gz``, ``atom/zstd``, ``atom/mpiio``
   - ``yaml``
 
 .. note::
 
   Dump styles ``cfg``, ``xyz``, ``local``, ``xtc`` and ``netcdf`` are handled by :ref:`different file format readers <file_formats.input>` of OVITO.
 
-In addition to text dump files, *binary* dump files (".bin" suffix) and *gzipped* dump files (".gz" suffix) can be read.
+The reader can parse gzipped dump files (".gz" suffix) and zstd compressed dump files (".zst" suffix) directly.
+In addition to the text-based format, *binary* dump files (".bin" suffix) can be read.
 
 OVITO can process trajectories from a single large dump file or from a sequence of smaller dump files
 (written by LAMMPS when the output filename contains a "*" wildcard character).

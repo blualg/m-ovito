@@ -13,4 +13,4 @@ In addition to the time-dependent :ref:`bond connectivity <scene_objects.bonds>`
 ``Charge``, ``Atom Bond Order``, and ``Lone Pairs`` from the selected file and attaches them to the existing atomic model.
 Furthermore, the property ``Bond Order`` is assigned to the :ref:`bonds <scene_objects.bonds>` as a new bond attribute.
 
-This reader can load gzipped ReaxFF files (".gz" suffix).
+This reader can load gzipped files (".gz" suffix) and zstd compressed files (".zst" suffix).
