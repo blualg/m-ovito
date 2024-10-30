@@ -26,6 +26,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
 
+#include <complex>
 #include <boost/math/special_functions/spherical_harmonic.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 
