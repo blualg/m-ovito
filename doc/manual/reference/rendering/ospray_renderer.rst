@@ -16,7 +16,7 @@ For more information on the capabilities of the OSPRay engine and its technical 
 please visit the website https://www.ospray.org.
 The OSPRay documentation contains more in-depth information on this rendering engine's various parameters.
 
-The "More Options" (vertical ellipsis) button next to each nummerical parameter opens a context menu with
+The "More Options" (vertical ellipsis) button next to each numerical parameter opens a context menu with
 the option to reset each parameter to its default value.
 
 Quality settings

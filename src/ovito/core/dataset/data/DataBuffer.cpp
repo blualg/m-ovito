@@ -1130,28 +1130,15 @@ DataBuffer::Checksum DataBuffer::checksum() const
         QCryptographicHash hash(QCryptographicHash::Md5);
 #ifdef OVITO_USE_SYCL
         sycl::host_accessor readAccessor(*this->_data, sycl::read_only);
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         hash.addData(QByteArrayView(readAccessor.get_pointer(), this->size() * this->stride()));
-    #else
-        hash.addData(reinterpret_cast<const char*>(readAccessor.get_pointer()), this->size() * this->stride());
-    #endif
 #else
-    #if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         hash.addData(QByteArrayView(this->cdata(), this->size() * this->stride()));
-    #else
-        hash.addData(reinterpret_cast<const char*>(this->cdata()), this->size() * this->stride());
-    #endif
 #endif
         OVITO_ASSERT(hash.result().size() == sizeof(Checksum));
 
         // Cache checksum in the DataBuffer object for future use.
         // The cached checksum will be invalidated by the invalidateCachedInfo() method when the buffer's data is modified.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         auto c = reinterpret_cast<const Checksum::value_type*>(hash.resultView().constData());
-#else
-        auto hashResult = hash.result();
-        auto c = reinterpret_cast<const Checksum::value_type*>(hashResult.constData());
-#endif
         for(size_t i = 0; i < _checksum.size(); i++, c++)
             const_cast<DataBuffer*>(this)->_checksum[i].store(*c, std::memory_order_relaxed);
 

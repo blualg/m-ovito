@@ -801,11 +801,7 @@ UserInterface::MessageBoxButton MainWindow::showMessageBoxImpl(QWidget* window, 
     if(window && window->isVisible()) {
         // If there currently is floating window being shown (e.g. the FrameBufferWindow),
         // make the error message dialog a child of this floating window to show it in front.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         for(QMainWindow* floatingChildWindow : window->findChildren<QMainWindow*>(Qt::FindDirectChildrenOnly)) {
-#else
-        for(QMainWindow* floatingChildWindow : window->findChildren<QMainWindow*>(QString{}, Qt::FindDirectChildrenOnly)) {
-#endif
             if(floatingChildWindow->isVisible() && floatingChildWindow->isActiveWindow()) {
                 window = floatingChildWindow;
                 break;
@@ -814,11 +810,7 @@ UserInterface::MessageBoxButton MainWindow::showMessageBoxImpl(QWidget* window, 
 
         // If there currently is a modal dialog box being shown,
         // make the error message dialog a child of this dialog to prevent a UI dead-lock.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         for(QDialog* dialog : window->findChildren<QDialog*>(Qt::FindChildrenRecursively)) {
-#else
-        for(QDialog* dialog : window->findChildren<QDialog*>(QString{}, Qt::FindChildrenRecursively)) {
-#endif
             if(dialog->isModal()) {
                 window = dialog;
                 dialog->show();

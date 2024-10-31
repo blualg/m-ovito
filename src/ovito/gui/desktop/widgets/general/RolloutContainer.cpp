@@ -109,15 +109,27 @@ void RolloutContainer::updateRolloutsLater()
 ******************************************************************************/
 Rollout* RolloutContainer::findRolloutFromWidget(QWidget* content) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
     for(Rollout* rollout : widget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly)) {
-#else
-    for(Rollout* rollout : widget()->findChildren<Rollout*>(QString{}, Qt::FindDirectChildrenOnly)) {
-#endif
         if(rollout->content() == content)
             return rollout;
     }
     return nullptr;
+}
+
+QSize RolloutContainer::minimumSizeHint() const
+{
+    return QSize(QFrame::minimumSizeHint().width(), 10);
+}
+
+QSize RolloutContainer::sizeHint() const
+{
+    if(widget()) {
+        int f = 2 * frameWidth();
+        QSize sz(f, f);
+        sz += widget()->sizeHint();
+        return sz;
+    }
+    return QScrollArea::sizeHint();
 }
 
 /******************************************************************************
@@ -240,19 +252,11 @@ QSize Rollout::sizeHint() const
     }
     if(_useAvailableSpace) {
         int occupiedSpace = 0;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         for(Rollout* rollout : parentWidget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly)) {
-#else
-        for(Rollout* rollout : parentWidget()->findChildren<Rollout*>(QString{}, Qt::FindDirectChildrenOnly)) {
-#endif
             if(rollout->_useAvailableSpace) continue;
             occupiedSpace += rollout->sizeHint().height();
         }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly).size() - 1);
-#else
-        occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>(QString{}, Qt::FindDirectChildrenOnly).size() - 1);
-#endif
         int totalSpace = parentWidget()->parentWidget()->height();
         int availSpace = totalSpace - occupiedSpace;
         availSpace -= titleSize.height();
@@ -278,19 +282,11 @@ int Rollout::heightForWidth(int w) const
         contentSize += _noticeWidget->heightForWidth(w);
     if(_useAvailableSpace) {
         int occupiedSpace = 0;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         for(Rollout* rollout : parentWidget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly)) {
-#else
-        for(Rollout* rollout : parentWidget()->findChildren<Rollout*>(QString{}, Qt::FindDirectChildrenOnly)) {
-#endif
             if(rollout->_useAvailableSpace) continue;
             occupiedSpace += rollout->sizeHint().height();
         }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly).size() - 1);
-#else
-        occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>(QString{}, Qt::FindDirectChildrenOnly).size() - 1);
-#endif
         int totalSpace = parentWidget()->parentWidget()->height();
         int availSpace = totalSpace - occupiedSpace;
         availSpace -= titleSize;
@@ -317,19 +313,11 @@ void Rollout::resizeEvent(QResizeEvent* event)
     }
     if(_useAvailableSpace) {
         int occupiedSpace = 0;
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         for(Rollout* rollout : parentWidget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly)) {
-#else
-        for(Rollout* rollout : parentWidget()->findChildren<Rollout*>(QString{}, Qt::FindDirectChildrenOnly)) {
-#endif
             if(rollout->_useAvailableSpace) continue;
             occupiedSpace += rollout->sizeHint().height();
         }
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>(Qt::FindDirectChildrenOnly).size() - 1);
-#else
-        occupiedSpace += parentWidget()->layout()->spacing() * (parentWidget()->findChildren<Rollout*>(QString{}, Qt::FindDirectChildrenOnly).size() - 1);
-#endif
         int totalSpace = parentWidget()->parentWidget()->height();
         int availSpace = totalSpace - occupiedSpace;
         availSpace -= titleHeight;

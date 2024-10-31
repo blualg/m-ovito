@@ -28,6 +28,7 @@
 #include <ovito/gui/desktop/dialogs/ImportRemoteFileDialog.h>
 #include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
+#include <ovito/gui/desktop/dialogs/SystemInformationDialog.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/Application.h>
@@ -94,18 +95,7 @@ void WidgetActionManager::on_HelpShowScriptingReference_triggered()
 void WidgetActionManager::on_HelpSystemInfo_triggered()
 {
     userInterface().handleExceptions([&] {
-        QDialog dlg(&mainWindow());
-        dlg.setWindowTitle(tr("System Information"));
-        QVBoxLayout* layout = new QVBoxLayout(&dlg);
-        QTextEdit* textEdit = new QTextEdit(&dlg);
-        textEdit->setReadOnly(true);
-        textEdit->setPlainText(mainWindow().generateSystemReport());
-        textEdit->setMinimumSize(QSize(600, 400));
-        layout->addWidget(textEdit);
-        QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, Qt::Horizontal, &dlg);
-        connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::accept);
-        connect(buttonBox->addButton(tr("Copy to clipboard"), QDialogButtonBox::ActionRole), &QPushButton::clicked, [textEdit]() { QApplication::clipboard()->setText(textEdit->toPlainText()); });
-        layout->addWidget(buttonBox);
+        SystemInformationDialog dlg(mainWindow(), &mainWindow());
         dlg.exec();
     });
 }

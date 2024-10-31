@@ -291,11 +291,7 @@ protected:
     void registerContinuation(Function&& f) {
         OVITO_ASSERT(!isFinished());
         // Insert into list. Will run continuation function once the task finishes.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
         _continuations.emplace_back(std::forward<Function>(f));
-#else
-        _continuations.push_back(continuation_function{std::forward<Function>(f)});
-#endif
     }
 
     /// Puts this task into the 'canceled' state (without newly locking the task).

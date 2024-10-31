@@ -37,6 +37,13 @@ class OVITO_CORE_EXPORT MarkerPrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 
+#ifndef OVITO_BUILD_MONOLITHIC
+    // Give this exported c++ class a "key function" to work around dynamic_cast problems (observed on macOS platform).
+    // This function is not actually used but ensures that the class' vtable ends up in the core module.
+    // See also http://itanium-cxx-abi.github.io/cxx-abi/abi.html#vague-vtable
+    virtual void __key_function() override;
+#endif
+
 public:
 
     enum MarkerShape {
@@ -48,14 +55,14 @@ public:
     /// Constructor.
     explicit MarkerPrimitive(MarkerShape shape = DotShape) : _shape(shape) {}
 
-    /// \brief Sets the coordinates of the markers.
+    /// Sets the coordinates of the markers.
     void setPositions(ConstDataBufferPtr coordinates) {
         OVITO_ASSERT(coordinates);
         OVITO_ASSERT(coordinates->componentCount() == 3);
         _positions = std::move(coordinates);
     }
 
-    /// \brief Sets the coordinates of the markers.
+    /// Sets the coordinates of the markers.
     template<typename InputIterator>
     void makePositions(InputIterator begin, InputIterator end) {
         using PointType = typename std::iterator_traits<InputIterator>::value_type;
@@ -64,7 +71,7 @@ public:
         setPositions(BufferFactory<PointType>(begin, end).take());
     }
 
-    /// \brief Sets the coordinates of the markers.
+    /// Sets the coordinates of the markers.
     template<typename Range>
     void makePositions(const Range& range) {
         makePositions(std::begin(range), std::end(range));
@@ -73,13 +80,13 @@ public:
     /// Returns the buffer storing the marker positions.
     const ConstDataBufferPtr& positions() const { return _positions; }
 
-    /// \brief Sets the color of all markers to the given value.
+    /// Sets the color of all markers to the given value.
     void setColor(const ColorA& color) { _color = color; }
 
-    /// \brief Returns the color of the markers.
+    /// Returns the color of the markers.
     const ColorA& color() const { return _color; }
 
-    /// \brief Returns the display shape of markers.
+    /// Returns the display shape of markers.
     MarkerShape shape() const { return _shape; }
 
 	/// Computes the 3d bounding box of the primitive in local coordinate space.

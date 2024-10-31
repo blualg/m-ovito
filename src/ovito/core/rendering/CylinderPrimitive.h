@@ -37,6 +37,13 @@ class OVITO_CORE_EXPORT CylinderPrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 
+#ifndef OVITO_BUILD_MONOLITHIC
+    // Give this exported c++ class a "key function" to work around dynamic_cast problems (observed on macOS platform).
+    // This function is not actually used but ensures that the class' vtable ends up in the core module.
+    // See also http://itanium-cxx-abi.github.io/cxx-abi/abi.html#vague-vtable
+    virtual void __key_function() override;
+#endif
+
 public:
 
     enum ShadingMode {
@@ -51,16 +58,16 @@ public:
     };
     Q_ENUM(Shape);
 
-    /// \brief Returns the shading mode for elements.
+    /// Returns the shading mode for elements.
     ShadingMode shadingMode() const { return _shadingMode; }
 
-    /// \brief Changes the shading mode for elements.
+    /// Changes the shading mode for elements.
     void setShadingMode(ShadingMode mode) { _shadingMode = mode; }
 
-    /// \brief Returns the selected element shape.
+    /// Returns the selected element shape.
     Shape shape() const { return _shape; }
 
-    /// \brief Changes the element shape.
+    /// Changes the element shape.
     void setShape(Shape shape) { _shape = shape; }
 
     /// Returns the cylinder diameter assigned to all primtives.
@@ -116,7 +123,7 @@ public:
         _transparencies = std::move(transparencies);
     }
 
-    /// Returns the buffer storing the transparancy values.
+    /// Returns the buffer storing the transparency values.
     const ConstDataBufferPtr& transparencies() const { return _transparencies; }
 
     /// Sets the diameters of the primitives.

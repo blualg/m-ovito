@@ -20,43 +20,30 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-
-#include <ovito/core/Core.h>
-#include "RendererResourceCache.h"
+#include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include "SystemInformationDialog.h"
 
 namespace Ovito {
 
-/**
- * Abstract base class for all rendering primitives in OVITO:
- *
- *   - ParticlePrimitive
- *   - CylinderPrimitive
- *   - LinePrimitive
- *   - MeshPrimitive
- *   - TextPrimitive
- *   - ImagePrimitive
- *   - MarkerPrimitive
- */
-class OVITO_CORE_EXPORT RenderingPrimitive
+/******************************************************************************
+* Constructor.
+******************************************************************************/
+SystemInformationDialog::SystemInformationDialog(MainWindow& mainWindow, QWidget* parent) : QDialog(parent)
 {
-public:
-
-	/// Virtual destructor.
-	virtual ~RenderingPrimitive() = default;
-
-	/// Computes the 3d bounding box of the primitive in local coordinate space.
-	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const { return Box3(); }
-
-protected:
-
-#ifndef OVITO_BUILD_MONOLITHIC
-    // Give this exported c++ class a "key function" to work around dynamic_cast problems (observed on macOS platform).
-    // This function is not actually used but ensures that the class' vtable ends up in the core module.
-    // See also http://itanium-cxx-abi.github.io/cxx-abi/abi.html#vague-vtable
-    virtual void __key_function();
-#endif
-};
+    setWindowTitle(tr("System Information"));
+    QVBoxLayout* layout = new QVBoxLayout(this);
+    QTextEdit* textEdit = new QTextEdit(this);
+    textEdit->setReadOnly(true);
+    textEdit->setPlainText(mainWindow.generateSystemReport());
+    textEdit->setMinimumSize(QSize(600, 400));
+    layout->addWidget(textEdit);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, Qt::Horizontal, this);
+    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::accept);
+    connect(buttonBox->addButton(tr("Copy to clipboard"), QDialogButtonBox::ActionRole), &QPushButton::clicked, [textEdit]() {
+        QApplication::clipboard()->setText(textEdit->toPlainText());
+    });
+    layout->addWidget(buttonBox);
+}
 
 }   // End of namespace

@@ -58,8 +58,8 @@ OPTION(OVITO_BUILD_MONOLITHIC "Build the application as a monolithic executable,
 OPTION(OVITO_REDISTRIBUTABLE_PACKAGE "Create a redistributable program package that includes third-party libraries." "OFF")
 OPTION(OVITO_BUILD_APPSTORE_VERSION "Build binaries for the Apple App Store and Windows Store." "OFF")
 OPTION(OVITO_RUN_CLANG_TIDY "Run the clang-tidy tool to check code." "OFF")
-OPTION(OVITO_USE_ADDRESS_SANITIZER "Builds the code with AddressSanitizer support to detect memory errors." "OFF")
-OPTION(OVITO_USE_THREAD_SANITIZER "Builds the code with ThreadSanitizer support to detect race condition errors." "OFF")
+OPTION(OVITO_USE_ADDRESS_SANITIZER "Builds the code with AddressSanitizer support to detect memory errors (only in debug builds)." "OFF")
+OPTION(OVITO_USE_THREAD_SANITIZER "Builds the code with ThreadSanitizer support to detect race condition errors (only in debug builds)." "OFF")
 OPTION(OVITO_USE_PRECOMPILED_HEADERS "Use precompiled C++ headers to speed up build." "ON")
 OPTION(OVITO_USE_UNITY_BUILD "Use unity builds to speed up compilation." "OFF")
 OPTION(OVITO_DISABLE_THREADING "Disable multi-threading code (meant only for development purposes)." "OFF")
@@ -70,8 +70,8 @@ OPTION(OVITO_USE_SYCL "Build with SYCL support" "OFF")
 SET(OVITO_USE_SYCL None CACHE STRING "SYCL implementation to use")
 SET_PROPERTY(CACHE OVITO_USE_SYCL PROPERTY STRINGS OFF AdaptiveCpp DPC++)
 
-# Ovito needs Qt>=6.2.
-SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.2)
+# Ovito needs Qt>=6.3.
+SET(OVITO_MINIMUM_REQUIRED_QT_VERSION 6.3)
 FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS Core REQUIRED)
 
 # Look for DPC++ SYCL implementation.

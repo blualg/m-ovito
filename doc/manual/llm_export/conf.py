@@ -14,9 +14,6 @@
 import sys
 import os
 
-# Use the Read-The-Docs theme.
-import sphinx_rtd_theme
-
 # Needed for PreferSectionTarget:
 from docutils import nodes
 from docutils.transforms import Transform
@@ -25,6 +22,15 @@ from docutils.transforms import Transform
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
+
+exclude_patterns = [
+    'new_features.rst',
+    'index_ovito.rst',
+    'licenses/*'
+]
+
+# The master toctree document.
+root_doc = "index_llm"
 
 # -- General configuration ------------------------------------------------
 
@@ -37,7 +43,6 @@ needs_sphinx = '2.0'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
-    'sphinx_rtd_theme'
 ]
 
 autodoc_default_options = {
@@ -56,9 +61,6 @@ source_suffix = '.rst'
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
 
-# The master toctree document.
-master_doc = 'index'
-
 # General information about the project.
 project = 'OVITO User Manual'
 
@@ -75,12 +77,6 @@ project = 'OVITO User Manual'
 #today = ''
 # Else, today_fmt is used as the format for a strftime call.
 #today_fmt = '%B %d, %Y'
-
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-exclude_patterns = [
-    'index_llm.rst',
-]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -149,14 +145,12 @@ intersphinx_mapping['scipy'] = ('https://docs.scipy.org/doc/scipy/', None)
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'basic'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    # Only display the logo image, do not display the project name at the top of the sidebar
-    'logo_only': True
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -171,17 +165,17 @@ html_theme_options = {
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "_static/ovito_logo.png"
+html_logo = "../_static/ovito_logo.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = "ovito.ico"
+html_favicon = "../ovito.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ['../_static']
 
 # These paths are either relative to html_static_path
 # or fully qualified paths (eg. https://...)
@@ -204,8 +198,8 @@ html_baseurl = "https://docs.ovito.org/"
 #html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-html_sidebars = {
-   '**': ['globaltoc.html', 'sourcelink.html', 'searchbox.html']
+singlehtml_sidebars = {
+   '**': []
 }
 
 # Additional templates that should be rendered to pages, maps page names to
@@ -241,103 +235,6 @@ html_show_sphinx = False
 # This is the file name suffix for HTML files (e.g. ".xhtml").
 html_file_suffix = ".html"
 
-# Configure optional spelling extension if present.
-# See https://sphinxcontrib-spelling.readthedocs.io/en/latest/
-try:
-    import enchant
-    import importlib.util
-    if importlib.util.find_spec("sphinxcontrib.spelling"):
-        extensions.append('sphinxcontrib.spelling')
-
-        # String specifying the language, as understood by PyEnchant and enchant.
-        #spelling_lang='en_US'
-
-        # String specifying a file containing a list of words known to be spelled correctly but that do not appear in the language
-        # dictionary selected by 'spelling_lang'. The file should contain one word per line.
-        #spelling_word_list_filename='spelling_wordlist.txt'
-
-        # Boolean controlling whether suggestions for misspelled words are printed.
-        #spelling_show_suggestions = False
-
-        # Boolean controlling whether the contents of the line containing each misspelled word is printed, for more context about the location of each word.
-        #spelling_show_whole_line = True
-
-        # Boolean controlling whether a misspelling is emitted as a sphinx warning or as an info message.
-        spelling_warning = True
-
-        # A list of glob-style patterns that should be ignored when checking spelling. They are matched against the
-        # source file names relative to the source directory, using slashes as directory separators on all platforms.
-        spelling_exclude_patterns=['licenses/*']
-except:
-    pass
-
-class PreferSectionTarget(Transform):
-    """Prefer target IDs over the section's own
-
-    Given this input text:
-
-        .. _a:
-        .. _b:
-        .. _c:
-
-        Section Title
-        -------------
-
-        A paragraph.
-
-    This parses into:
-
-            <target refid="a">
-            <target refid="b">
-            <target refid="c">
-            <section ids="section-title a b c">
-                ...
-
-    Transforming it gives:
-
-            <target refid="a">
-            <target refid="b">
-            <target refid="c">
-            <section ids="c section-title a b">
-                ...
-
-    Note that the other IDs are all preserved; only the order is modified.
-    Nested subsections are also checked.
-
-    """
-    # Post processing priority from
-    # https://www.sphinx-doc.org/en/master/extdev/appapi.html?highlight=transform#sphinx.application.Sphinx.add_transform
-    default_priority = 700
-
-    def apply(self):
-        """Docutils transform entry point"""
-        # `.findall` is new in docutils 0.18. Fallback to `.traverse`.
-        try:
-            findall = self.document.findall
-        except AttributeError:
-            findall = self.document.traverse
-
-        for node in findall(nodes.section):
-            # Get node directly preceding the section
-            index = node.parent.index(node)
-            if index == 0:
-                continue
-            last = node.parent[index - 1]
-            # Targets are part of the previous section so we should look deeper
-            while isinstance(last, nodes.Node) and last.children:
-                last = last[-1]
-            # Filter away nodes that aren't targets
-            if not isinstance(last, nodes.target):
-                continue
-            # Internal hyperlink targets have refid (external ones have refuri)
-            if "refid" not in last:
-                continue
-            refid = last["refid"]
-            assert refid in node["ids"]
-            # Prefer the target's ID
-            node["ids"].remove(refid)
-            node["ids"].insert(0, refid)
-
 # This hook replaces {{OVITO_VERSION_STRING}} in codeblocks and other contexts with the current OVITO release number.
 # See https://stackoverflow.com/a/56328457
 def ovitoVersionReplace(app, docname, source):
@@ -345,4 +242,3 @@ def ovitoVersionReplace(app, docname, source):
 
 def setup(app):
     app.connect('source-read', ovitoVersionReplace)
-    app.add_transform(PreferSectionTarget)

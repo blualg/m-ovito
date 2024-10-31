@@ -113,6 +113,7 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
     createCommandAction(ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS_ALL, tr("Zoom Scene Extents All"), nullptr, tr("Zoom all viewports to show everything."));
     createCommandAction(ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS, tr("Zoom Selection Extents"), nullptr, tr("Zoom active viewport to show the selected objects."));
     createCommandAction(ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS_ALL, tr("Zoom Selection Extents All"), nullptr, tr("Zoom all viewports to show the selected objects."));
+    createCommandAction(ACTION_CONFIGURE_VIEWPORT_GRAPHICS, tr("Configure Graphics..."), nullptr, tr("Change graphics settings for real-time interactive viewports."));
 
     if(ViewportInputManager* vpInputManager = userInterface.viewportInputManager()) {
         createViewportModeAction(ACTION_VIEWPORT_ZOOM, vpInputManager->zoomMode(), tr("Zoom"), "viewport_mode_zoom", tr("Activate zoom mode."));

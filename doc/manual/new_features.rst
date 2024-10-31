@@ -12,9 +12,10 @@ Changelog
 Version 3.11.1 (xx-xxx-2024)
 ----------------------------
 
-- Added I/O support for zstandard (`*.zst`) compressed files
+- Added read/write support for zstandard (`*.zst`) compressed files
+- New :ref:`Viewport Graphics Configuration <viewports.configure_graphics_dialog>` dialog
 - Added support for VTK files with UInt32 header type
-- Fix: :ref:`particles.modifiers.identify_diamond_structure` modifier reported all atoms as "OTHER"
+- Fixed: :ref:`particles.modifiers.identify_diamond_structure` modifier always reports *all* atoms as "OTHER"
 - |ovito-python| Added support for Python 3.13
 
 .. sidebar::
@@ -524,7 +525,7 @@ OVITO Pro and the OVITO Python module can additionally read :ref:`ASE trajectory
 * Search patterns for trajectory file series: Avoid asterisk in file extensions containing digits, e.g. :file:`snapshot0000.h5` → :file:`snapshot*.h5`
 * Data table file exporter does not require a :py:attr:`~ovito.data.DataTable.y`-property anymore
 * Automatic name mangling of atom attributes imported from LAMMPS dump, GSD, and XYZ files in case they do not conform to OVITO's property naming rules
-* The :ref:`Vulkan viewport renderer <application_settings.viewports.graphics_implementation>` has been removed
+* The :ref:`Vulkan viewport renderer <viewports.configure_graphics_dialog>` has been removed
 * |ovito-python| New Python methods :py:meth:`Property.add_type_id <ovito.data.Property.add_type_id>` and :py:meth:`Property.add_type_name <ovito.data.Property.add_type_name>`
 * |ovito-python| New Python method :py:meth:`VoxelGrid.view <ovito.data.VoxelGrid.view>`
 * |ovito-python| Performance optimizations for property data access from Python code

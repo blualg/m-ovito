@@ -29,7 +29,7 @@ A (nearly complete) list of the program features available only in *OVITO Pro* a
   - :ref:`OSPRay <rendering.ospray_renderer>`
   - :ref:`VisRTX <rendering.visrtx_renderer>`
 
-- Real-time rendering of interactive viewports with :ref:`VisRTX <rendering.visrtx_renderer>`
+- :ref:`Real-time rendering of interactive viewports <viewports.configure_graphics_dialog>` with :ref:`NVIDIA VisRTX <rendering.visrtx_renderer>`
 - :ref:`Remote rendering function <usage.remote_rendering>`
 - :ref:`Multi-viewport layout rendering <viewport_layouts.rendering>`
 - Additional modifier functions:

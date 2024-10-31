@@ -35,33 +35,40 @@ class OVITO_CORE_EXPORT TextPrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 
+#ifndef OVITO_BUILD_MONOLITHIC
+    // Give this exported c++ class a "key function" to work around dynamic_cast problems (observed on macOS platform).
+    // This function is not actually used but ensures that the class' vtable ends up in the core module.
+    // See also http://itanium-cxx-abi.github.io/cxx-abi/abi.html#vague-vtable
+    virtual void __key_function() override;
+#endif
+
 public:
 
-    /// \brief Sets the text to be rendered.
+    /// Sets the text to be rendered.
     void setText(const QString& text) { _text = text; }
 
-    /// \brief Returns the number of vertices stored in the buffer.
+    /// Returns the number of vertices stored in the buffer.
     const QString& text() const { return _text; }
 
-    /// \brief Sets the text color.
+    /// Sets the text color.
     void setColor(const ColorA& color) { _color = color; }
 
-    /// \brief Returns the text color.
+    /// Returns the text color.
     const ColorA& color() const { return _color; }
 
-    /// \brief Sets the text outline color.
+    /// Sets the text outline color.
     void setOutlineColor(const ColorA& color) { _outlineColor = color; }
 
-    /// \brief Returns the text outline color.
+    /// Returns the text outline color.
     const ColorA& outlineColor() const { return _outlineColor; }
 
-    /// \brief Sets the width of the text outline.
+    /// Sets the width of the text outline.
     void setOutlineWidth(FloatType width) { _outlineWidth = std::max(width, FloatType(0)); }
 
-    /// \brief Returns the width of the text outline.
+    /// Returns the width of the text outline.
     FloatType outlineWidth() const { return _outlineWidth; }
 
-    /// \brief Returns the width of the text outline multiplied with the device pixel ratio - or 0 if no outline color has been set.
+    /// Returns the width of the text outline multiplied with the device pixel ratio - or 0 if no outline color has been set.
     qreal effectiveOutlineWidth(qreal devicePixelRatio = 1) const { return outlineColor().a() > 0.0 ? (qreal)outlineWidth() * devicePixelRatio : 0.0; }
 
     /// Sets the text font.
@@ -76,13 +83,13 @@ public:
     /// Sets the alignment of the text.
     void setAlignment(int alignment) { _alignment = alignment; }
 
-    /// \brief Sets the text position in window coordinates.
+    /// Sets the text position in window coordinates.
     void setPositionWindow(const Point2& pos) { _position = pos; }
 
-    /// \brief Sets the text position in window coordinates.
+    /// Sets the text position in window coordinates.
     void setPositionWindow(const QPointF& pos) { _position = Point2(pos.x(), pos.y()); }
 
-    /// \brief Returns the text position in window coordinates.
+    /// Returns the text position in window coordinates.
     const Point2& position() const { return _position; }
 
     /// Returns whether the tight bounding box of the text is used for alignment.

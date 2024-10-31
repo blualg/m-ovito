@@ -60,10 +60,10 @@ private:
 
 private:
 
-    MainWindow& _mainWindow;
-    QButtonGroup* _backendSelectionGroup;
-    QStackedWidget* _backendSettingsStack;
-    std::map<QString, int> _backendSettingsMap;
+    MainWindow& _mainWindow; /// The main application window.
+    QButtonGroup* _backendSelectionGroup; /// Group of radio buttons for selecting the rendering backend.
+    QStackedWidget* _backendSettingsStack; /// Hosts the settings widgets for the different rendering backends.
+    std::map<QString, int> _backendSettingsMap; /// Maps backend identifiers to the stack index of the corresponding settings widget.
 };
 
 }   // End of namespace

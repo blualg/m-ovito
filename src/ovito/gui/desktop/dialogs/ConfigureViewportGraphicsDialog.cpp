@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/viewport/ViewportWindow.h>
+#include <ovito/gui/desktop/dialogs/SystemInformationDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/ViewportsPanel.h>
 #include <ovito/gui/desktop/properties/PropertiesPanel.h>
@@ -34,20 +35,20 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 ConfigureViewportGraphicsDialog::ConfigureViewportGraphicsDialog(MainWindow& mainWindow, QWidget* parent) :
-    QDockWidget(tr("Configure Viewport Graphics"), parent),
+    QDockWidget(tr("Viewport Graphics Configuration"), parent),
     _mainWindow(mainWindow)
 {
     setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
     setAllowedAreas(Qt::NoDockWidgetArea);
     setFloating(true);
-    setAttribute(Qt::WA_DeleteOnClose); // Make sure the ConfigureViewportGraphicsDialog instance gets deleted when the dialog is closed.
+    setAttribute(Qt::WA_DeleteOnClose); // Make sure this object gets deleted when the dialog window is closed by the user.
 
     QWidget* widget = new QWidget();
     setWidget(widget);
 
     QVBoxLayout* mainLayout = new QVBoxLayout(widget);
 
-    QGroupBox* backendSelectionBox = new QGroupBox(tr("Real-time rendering method"));
+    QGroupBox* backendSelectionBox = new QGroupBox(tr("Real-time rendering method"), widget);
     mainLayout->addWidget(backendSelectionBox);
 
     QGridLayout* gridLayout = new QGridLayout(backendSelectionBox);
@@ -56,6 +57,7 @@ ConfigureViewportGraphicsDialog::ConfigureViewportGraphicsDialog(MainWindow& mai
     _backendSettingsStack = new QStackedWidget(this);
     mainLayout->addWidget(_backendSettingsStack, 1);
 
+    // Create a radio button for each available rendering backend.
     _backendSelectionGroup = new QButtonGroup(this);
     int index = 0;
     for(const auto& [id, label, windowClass, rendererClass] : ViewportWindow::listInteractiveWindowImplementations()) {
@@ -66,6 +68,7 @@ ConfigureViewportGraphicsDialog::ConfigureViewportGraphicsDialog(MainWindow& mai
         _backendSelectionGroup->addButton(option, index);
 
         mainWindow.handleExceptions([&]() {
+            // Create a settings panel for the rendering backend.
             if(OORef<SceneRenderer> rendererInstance = ViewportWindow::getInteractiveWindowRenderer(id)) {
                 PropertiesPanel* propertiesPanel = new PropertiesPanel(mainWindow);
                 propertiesPanel->setEditObject(rendererInstance);
@@ -91,10 +94,16 @@ ConfigureViewportGraphicsDialog::ConfigureViewportGraphicsDialog(MainWindow& mai
     connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
         mainWindow.actionManager()->openHelpTopic(QStringLiteral("manual:viewports.configure_graphics_dialog"));
     });
+    connect(buttonBox->addButton(tr("System information..."), QDialogButtonBox::ActionRole), &QPushButton::clicked, this, [this]() {
+        _mainWindow.handleExceptions([&] {
+            SystemInformationDialog(_mainWindow, this).exec();
+        });
+    });
     mainLayout->addWidget(buttonBox);
 
     updateGUI();
 
+    connect(mainWindow.viewportsPanel(), &ViewportsPanel::interactiveWindowImplementationChanged, this, &ConfigureViewportGraphicsDialog::updateGUI);
     connect(_backendSelectionGroup, &QButtonGroup::buttonToggled, this, &ConfigureViewportGraphicsDialog::backendSelectionChanged);
     connect(&mainWindow, &MainWindow::closingWindow, this, &QWidget::close);
 }

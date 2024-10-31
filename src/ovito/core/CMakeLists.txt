@@ -182,8 +182,14 @@ IF(ZLIB_FOUND)
     # Use zstd library if available.
     IF(zstd_FOUND)
         TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZSTD_SUPPORT)
+        # Use shared library version of zstd when building the Conda package. Otherwise, use the static library to avoid an extra deployment step.
+        IF(OVITO_BUILD_CONDA)
+            TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd)
+        ELSE()
+            TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd_static)
+        ENDIF()
+        # Build the zstd zlib-wrapper source files.
         TARGET_INCLUDE_DIRECTORIES(Core PUBLIC "$<BUILD_INTERFACE:${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper>")
-        TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd_static)
         TARGET_SOURCES(Core PRIVATE
             "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/zstd_zlibwrapper.c"
             "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzclose.c"

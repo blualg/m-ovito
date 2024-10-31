@@ -37,6 +37,13 @@ class OVITO_CORE_EXPORT LinePrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 
+#ifndef OVITO_BUILD_MONOLITHIC
+    // Give this exported c++ class a "key function" to work around dynamic_cast problems (observed on macOS platform).
+    // This function is not actually used but ensures that the class' vtable ends up in the core module.
+    // See also http://itanium-cxx-abi.github.io/cxx-abi/abi.html#vague-vtable
+    virtual void __key_function() override;
+#endif
+
 public:
 
     /// Sets the coordinates of the line vertices.
@@ -100,7 +107,7 @@ public:
     /// Sets the line width in device pixels.
     void setLineWidth(FloatType width) { _lineWidth = width; }
 
-    /// Returns the pikcing line width in device pixels.
+    /// Returns the picking line width in device pixels.
     FloatType pickingLineWidth() const { return _pickingLineWidth; }
 
     /// Sets the picking line width in device pixels.

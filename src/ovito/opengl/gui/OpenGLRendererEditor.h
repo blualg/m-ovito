@@ -24,7 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/gui/desktop/rendering/BaseSceneRendererEditor.h>
 #include <ovito/core/oo/RefTarget.h>
 
 namespace Ovito {
@@ -32,7 +32,7 @@ namespace Ovito {
 /******************************************************************************
 * The editor component for the OpenGLRenderer class.
 ******************************************************************************/
-class OpenGLRendererEditor : public PropertiesEditor
+class OpenGLRendererEditor : public BaseSceneRendererEditor
 {
     OVITO_CLASS(OpenGLRendererEditor)
 
@@ -40,6 +40,9 @@ protected:
 
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+
+    /// Copies the settings of one renderer to another (which can either be an interactive or a final-frame renderer).
+    virtual void transferSettingsBetweenRenderers(SceneRenderer* source, SceneRenderer* target, bool isInteractive2final) override;
 };
 
 }   // End of namespace

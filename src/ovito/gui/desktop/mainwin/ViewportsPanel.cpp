@@ -179,14 +179,13 @@ void ViewportsPanel::recreateViewportWindows()
     _viewportWindows.clear();
 
     // Now all child widgets should be gone.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 3, 0)
     OVITO_ASSERT(findChildren<QWidget*>(Qt::FindDirectChildrenOnly).empty());
-#else
-    OVITO_ASSERT(findChildren<QWidget*>(QString{}, Qt::FindDirectChildrenOnly).empty());
-#endif
 
     // Reset error flag.
     _windowCreationErrorOccurred = false;
+
+    // Inform listeners.
+    Q_EMIT interactiveWindowImplementationChanged();
 
     // This implicitly creates the new windows for the viewports by calling createViewportWindows().
     layoutViewports();

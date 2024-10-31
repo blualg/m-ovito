@@ -67,6 +67,7 @@ private Q_SLOTS:
     void on_ClonePipeline_triggered();
     void on_RenamePipeline_triggered();
     void on_NewPipelineFileSource_triggered();
+    void on_ConfigureViewportGraphics_triggered();
 
 private:
 

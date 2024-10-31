@@ -58,6 +58,7 @@ void OpenGLRendererEditor::createUI(const RolloutInsertionParameters& rolloutPar
     gridLayout->addWidget(antialiasingLevelUI->label(), 0, 0);
     gridLayout->addLayout(antialiasingLevelUI->createFieldLayout(), 0, 1);
 
+    // Transparency rendering method
     QGroupBox* transparencyBox = new QGroupBox(tr("Transparency rendering method"), rollout);
     rootLayout->addWidget(transparencyBox);
     QHBoxLayout* boxLayout = new QHBoxLayout(transparencyBox);
@@ -68,12 +69,23 @@ void OpenGLRendererEditor::createUI(const RolloutInsertionParameters& rolloutPar
     transparencyMethodUI->comboBox()->addItem(tr("Weighted Blended Order-Independent"), QVariant::fromValue(true));
     boxLayout->addWidget(transparencyMethodUI->comboBox());
 
+    // Settings management functions.
+    rootLayout->addWidget(createCopySettingsBetweenRenderersWidget());
+
     // Conditionally hide the "Quality" group box if this editor is for the interactive viewport renderer and not the final frame renderer.
-    connect(this, &PropertiesEditor::contentsReplaced, qualityBox, [qualityBox, this](RefTarget* editObject) {
-        handleExceptions([&]() {
-            qualityBox->setVisible(editObject != ViewportWindow::getInteractiveWindowRenderer("opengl"));
-        });
-    });
+    connect(this, &BaseSceneRendererEditor::editingInteractiveRenderer, qualityBox, &QWidget::hide);
+}
+
+/******************************************************************************
+* Copies the settings of one renderer to another (which can either be an interactive or a final-frame renderer).
+******************************************************************************/
+void OpenGLRendererEditor::transferSettingsBetweenRenderers(SceneRenderer* source, SceneRenderer* target, bool isInteractive2final)
+{
+    OpenGLRenderer* sourceRenderer = dynamic_object_cast<OpenGLRenderer>(source);
+    OpenGLRenderer* targetRenderer = dynamic_object_cast<OpenGLRenderer>(target);
+    if(sourceRenderer && targetRenderer) {
+        targetRenderer->setOrderIndependentTransparency(sourceRenderer->orderIndependentTransparency());
+    }
 }
 
 }   // End of namespace

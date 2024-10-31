@@ -13,14 +13,14 @@ is slightly better than the one provided by the :ref:`OSPRay renderer <rendering
 but it requires more memory. Both rendering engines offer higher visual quality than the :ref:`OpenGL renderer <rendering.opengl_renderer>`
 but are typically considerably slower.
 
-The "More Options" (vertical ellipsis) button next to each nummerical parameter opens a context menu with 
-the option to reset each paramter to its default value.
+The "More Options" (vertical ellipsis) button next to each numerical parameter opens a context menu with
+the option to reset each parameter to its default value.
 
 Parameters
 """"""""""
 
 Anti-aliasing samples
-  To reduce `aliasing effects <https://en.wikipedia.org/wiki/Aliasing>`__, 
+  To reduce `aliasing effects <https://en.wikipedia.org/wiki/Aliasing>`__,
   the Tachyon ray-tracer can perform *supersampling* by
   computing multiple rays per output pixel. This parameter controls the number of rays.
 
@@ -34,7 +34,7 @@ Shadows
 Ambient occlusion
   Enabling this lighting technique mimics some of the effects that occur under conditions of omnidirectional diffuse illumination,
   e.g., outdoors on an overcast day.
-  
+
 Sample count
   Ambient occlusion is implemented using a Monte Carlo technique. This parameter controls the number of samples to compute.
   A higher sample number leads to a more even shading but requires more computation time.
