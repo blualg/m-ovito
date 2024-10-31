@@ -184,6 +184,9 @@ void ViewportsPanel::recreateViewportWindows()
     // Reset error flag.
     _windowCreationErrorOccurred = false;
 
+    // Inform listeners.
+    Q_EMIT interactiveWindowImplementationChanged();
+
     // This implicitly creates the new windows for the viewports by calling createViewportWindows().
     layoutViewports();
 }

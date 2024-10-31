@@ -939,7 +939,7 @@ QString ViewportWindow::getInteractiveWindowImplementationName()
 {
     return qEnvironmentVariable("OVITO_VIEWPORT_RENDERER",
         QSettings().value("rendering/selected_graphics_api",
-            QStringLiteral("opengl")).toString());
+            QStringLiteral("opengl")).toString().toLower());
 }
 
 /******************************************************************************
