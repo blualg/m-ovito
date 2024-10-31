@@ -22,8 +22,16 @@ Anti-aliasing level
   resolution is. A factor of 1 turns anti-aliasing off. Higher values lead to better quality.
 
 Transparency rendering method
-  Selects the method for rendering semi-transparent objects when they overlap with each other.
-  See :ref:`viewports.configure_graphics_dialog` for more information on the available choices.
+  This option controls how the effect of two or more semi-transparent scene objects overlapping with each other should be computed by the renderer.
+  Both available methods represent different approximations of how a true rendition of
+  semi-transparent objects would look like - which is not achievable in real-time visualization using OpenGL.
+
+  Back-to-front ordered rendering (default) gives correct results if there is only one kind of semi-transparent object in the scene,
+  e.g. just particles, but likely fails to render a mixture of different semi-transparent objects correctly, e.g. semi-transparent
+  particles combined with semi-transparent :ref:`surface meshes <visual_elements.surface_mesh>`.
+
+  `Weighted Blended Order-Independent Transparency <https://jcgt.org/published/0002/02/09/>`__ is an alternative method more suitable
+  for overlapping semi-transparent objects of different kinds. But it can deliver only a rough approximation of translucency.
 
 .. seealso::
 

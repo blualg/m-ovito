@@ -57,7 +57,7 @@ source_suffix = '.rst'
 #source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index_ovito'
+master_doc = 'index'
 
 # General information about the project.
 project = 'OVITO User Manual'
@@ -78,7 +78,9 @@ project = 'OVITO User Manual'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+exclude_patterns = [
+    'index_llm.rst',
+]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
