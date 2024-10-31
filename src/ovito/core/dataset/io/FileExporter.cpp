@@ -279,15 +279,12 @@ Future<void> FileExporter::doExport()
         }
 
         this_task::setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
-        qDebug() << "Getting data for frame" << frameNumber;
 
         // Obtain the data to be exported.
         Future<any_moveonly> frameData = co_await FutureAwaiter(DeferredObjectExecutor(this), exportJob->getExportableFrameData(exportJob, frameNumber));
-        qDebug() << "Got data for frame" << frameNumber;
 
         // Write the exportable data to the output file.
         co_await FutureAwaiter(DeferredObjectExecutor(this), exportJob->exportFrameData(exportJob, frameData.result(), frameNumber, filename));
-        qDebug() << "Wrote data for frame" << frameNumber;
 
         // Close per-frame output file.
         if(exportTrajectory() && useWildcardFilename()) {

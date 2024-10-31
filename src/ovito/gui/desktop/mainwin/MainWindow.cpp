@@ -36,6 +36,7 @@
 #include <ovito/gui/desktop/actions/WidgetActionManager.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
+#include <ovito/gui/desktop/utilities/concurrent/AsyncProgressDialog.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -1384,9 +1385,32 @@ void MainWindow::taskProgressEndSubSteps(Task& task)
 }
 
 /******************************************************************************
- * Checks if the current application has accessability access. This is required on macOS to move the cursor using QCursor::setPos().
- * This method will prompt the user the first time it is called (for each ovito version). Returns true on non macOS.
- ******************************************************************************/
+* Waits for the pipelines in the current scene to be fully evaluated, then executes the given operation.
+* A progress dialog may be displayed while waiting for the scene preparation to complete.
+******************************************************************************/
+void MainWindow::scheduleOperationAfterScenePreparation(Scene* scene, const QString& waitingMessage, operation_function&& operation)
+{
+    // Create a temporary scene preparation object that takes care of evaluating the scene pipelines.
+    OORef<ScenePreparation> sceneProp = OORef<ScenePreparation>::create(*this, scene);
+
+    // Show a progress dialog while waiting. The dialog will self-destruct afterwards.
+    AsyncProgressDialog* progressDialog = new AsyncProgressDialog(sceneProp->future(), *this, waitingMessage);
+
+    // Keep the scene preparation object alive until it has done its job.
+    sceneProp->future().finally([sceneProp]() noexcept {});
+
+    // Schedule execution of the operation upon completion of the scene preparation.
+    connect(progressDialog, &AsyncProgressDialog::accepted, this, [this, operation=std::move(operation)]() mutable {
+        handleExceptions([&] {
+            operation();
+        });
+    });
+}
+
+/******************************************************************************
+* Checks if the current application has accessability access. This is required on macOS to move the cursor using QCursor::setPos().
+* This method will prompt the user the first time it is called (for each ovito version). Returns true on non macOS.
+******************************************************************************/
 bool MainWindow::checkAccessibilityAccess(QWidget* parent) const
 {
 #ifdef Q_OS_MAC

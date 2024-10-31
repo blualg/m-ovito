@@ -139,6 +139,7 @@ OVITO_STANDARD_PLUGIN(Gui
         app/GuiApplication.cpp
         app/GuiApplicationService.cpp
         utilities/concurrent/ProgressDialog.cpp
+        utilities/concurrent/AsyncProgressDialog.cpp
         resources/gui.qrc
     PLUGIN_DEPENDENCIES
         GuiBase

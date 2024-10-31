@@ -90,13 +90,13 @@ public:
     virtual void setOutputFilename(const QString& filename);
 
     /// Exports the scene data to the output file(s).
-    Future<void> doExport();
+    [[nodiscard]] Future<void> doExport();
 
     /// Indicates whether this file exporter can write more than one animation frame into a single output file.
     virtual bool supportsMultiFrameFiles() const { return false; }
 
     /// Evaluates the pipeline whose data is to be exported.
-    virtual Future<PipelineFlowState> getPipelineDataToBeExported(int frameNumber) const;
+    [[nodiscard]] virtual Future<PipelineFlowState> getPipelineDataToBeExported(int frameNumber) const;
 
     /// Returns a string with the list of available data objects of the given type.
     static QString getAvailableDataObjectList(const PipelineFlowState& state, const DataObject::OOMetaClass& objectType);
@@ -165,10 +165,10 @@ public:
     virtual void close(bool exportCompleted = true);
 
     /// Produces the data to be exported for a trajectory frame.
-    virtual Future<any_moveonly> getExportableFrameData(OORef<FileExportJob> self, int frameNumber);
+    [[nodiscard]] virtual Future<any_moveonly> getExportableFrameData(OORef<FileExportJob> self, int frameNumber);
 
     /// Writes the exportable data of a single trajectory frame to the output file.
-    virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) = 0;
+    [[nodiscard]] virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) = 0;
 
     /// Returns a pointer to the exporter to which this worker belongs.
     const FileExporter* exporter() const { return _exporter; }

@@ -29,7 +29,7 @@
 #include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/gui/desktop/dialogs/SystemInformationDialog.h>
-#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
+#include <ovito/gui/desktop/utilities/concurrent/AsyncProgressDialog.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -268,76 +268,72 @@ void WidgetActionManager::on_FileRemoteImport_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_FileExport_triggered()
 {
-    // Get the scene from which data is to be exported.
-    OORef<Scene> scene = userInterface().datasetContainer().activeScene();
-    if(!scene) {
-        userInterface().reportError(tr("There currently is no active scene that can be exported."));
-        return;
-    }
-
-    // Set focus to main window to process any pending user inputs in QLineEdit widgets.
-    mainWindow().setFocus();
-
-    // Build filter string.
-    QStringList filterStrings;
-    QVector<const FileExporterClass*> exporterTypes = PluginManager::instance().metaclassMembers<FileExporter>();
-    if(exporterTypes.empty()) {
-        userInterface().reportError(tr("This function is disabled, because no file exporter plugins have been installed."));
-        return;
-    }
-    std::sort(exporterTypes.begin(), exporterTypes.end(), [](const FileExporterClass* a, const FileExporterClass* b) {
-        return a->fileFilterDescription().compare(b->fileFilterDescription(), Qt::CaseInsensitive) < 0;
-    });
-    for(const FileExporterClass* exporterClass : exporterTypes) {
-        // Skip exporters that want to remain hidden from the user.
-        if(exporterClass->fileFilterDescription().isEmpty())
-            continue;
-#ifndef Q_OS_WIN
-        filterStrings << QStringLiteral("%1 (%2)").arg(exporterClass->fileFilterDescription(), exporterClass->fileFilter());
-#else
-        // Workaround for bug in Windows file selection dialog (https://bugreports.qt.io/browse/QTBUG-45759)
-        filterStrings << QStringLiteral("%1 (*)").arg(exporterClass->fileFilterDescription());
-#endif
-    }
-
-    QSettings settings;
-    settings.beginGroup("file/export");
-
-    // Let the user select a destination file.
-    HistoryFileDialog dialog("export", &mainWindow(), tr("Export Data"));
-    dialog.setNameFilters(filterStrings);
-    dialog.setAcceptMode(QFileDialog::AcceptSave);
-    dialog.setFileMode(QFileDialog::AnyFile);
-
-    // Go to the last directory used.
-    if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
-        QString lastExportDirectory = settings.value("last_export_dir").toString();
-        if(!lastExportDirectory.isEmpty())
-            dialog.setDirectory(lastExportDirectory);
-    }
-    // Select the last export filter being used ...
-    QString lastExportFilter = settings.value("last_export_filter").toString();
-    if(!lastExportFilter.isEmpty())
-        dialog.selectNameFilter(lastExportFilter);
-
-    if(!dialog.exec())
-        return;
-
-    QStringList files = dialog.selectedFiles();
-    if(files.isEmpty())
-        return;
-
-    QString exportFile = files.front();
-
-    if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
-        // Remember directory for the next time...
-        settings.setValue("last_export_dir", dialog.directory().absolutePath());
-    }
-    // Remember export filter for the next time...
-    settings.setValue("last_export_filter", dialog.selectedNameFilter());
-
-    // Export to selected file.
     mainWindow().handleExceptions([&]() {
+        // Get the scene from which data is to be exported.
+        OORef<Scene> scene = userInterface().datasetContainer().activeScene();
+        if(!scene)
+            throw Exception(tr("There currently is no active scene that can be exported."));
+
+        // Set focus to main window to process any pending user inputs in QLineEdit widgets.
+        mainWindow().setFocus();
+
+        // Build filter string.
+        QStringList filterStrings;
+        QVector<const FileExporterClass*> exporterTypes = PluginManager::instance().metaclassMembers<FileExporter>();
+        if(exporterTypes.empty())
+            throw Exception(tr("This function is disabled, because no file exporter plugins have been installed."));
+        std::sort(exporterTypes.begin(), exporterTypes.end(), [](const FileExporterClass* a, const FileExporterClass* b) {
+            return a->fileFilterDescription().compare(b->fileFilterDescription(), Qt::CaseInsensitive) < 0;
+        });
+        for(const FileExporterClass* exporterClass : exporterTypes) {
+            // Skip exporters that want to remain hidden from the user.
+            if(exporterClass->fileFilterDescription().isEmpty())
+                continue;
+#ifndef Q_OS_WIN
+            filterStrings << QStringLiteral("%1 (%2)").arg(exporterClass->fileFilterDescription(), exporterClass->fileFilter());
+#else
+            // Workaround for bug in Windows file selection dialog (https://bugreports.qt.io/browse/QTBUG-45759)
+            filterStrings << QStringLiteral("%1 (*)").arg(exporterClass->fileFilterDescription());
+#endif
+        }
+
+        QSettings settings;
+        settings.beginGroup("file/export");
+
+        // Let the user select a destination file.
+        HistoryFileDialog dialog("export", &mainWindow(), tr("Export Data"));
+        dialog.setNameFilters(filterStrings);
+        dialog.setAcceptMode(QFileDialog::AcceptSave);
+        dialog.setFileMode(QFileDialog::AnyFile);
+
+        // Go to the last directory used.
+        if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
+            QString lastExportDirectory = settings.value("last_export_dir").toString();
+            if(!lastExportDirectory.isEmpty())
+                dialog.setDirectory(lastExportDirectory);
+        }
+        // Select the last export filter being used ...
+        QString lastExportFilter = settings.value("last_export_filter").toString();
+        if(!lastExportFilter.isEmpty())
+            dialog.selectNameFilter(lastExportFilter);
+
+        if(!dialog.exec())
+            return;
+
+        QStringList files = dialog.selectedFiles();
+        if(files.isEmpty())
+            return;
+
+        QString exportFile = files.front();
+
+        if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
+            // Remember directory for the next time...
+            settings.setValue("last_export_dir", dialog.directory().absolutePath());
+        }
+        // Remember export filter for the next time...
+        settings.setValue("last_export_filter", dialog.selectedNameFilter());
+
+        // Export to selected file.
         int exportFilterIndex = filterStrings.indexOf(dialog.selectedNameFilter());
         OVITO_ASSERT(exportFilterIndex >= 0 && exportFilterIndex < exporterTypes.size());
 
@@ -347,25 +343,22 @@ void WidgetActionManager::on_FileExport_triggered()
         // Pass output filename to exporter.
         exporter->setOutputFilename(exportFile);
 
-        // Block until all output data is available for the exporter to inspect it and pick a good default export set.
-        {
-            ProgressDialog progressDialog(mainWindow(), tr("Waiting for pipeline computations to complete"));
-            OORef<ScenePreparation>::create(mainWindow(), scene)->future().waitForFinished();
-        }
+        // Wait until all output data is available for the exporter to inspect it and pick a good default export set.
+        mainWindow().scheduleOperationAfterScenePreparation(scene, tr("Waiting for pipeline computations to complete"), [this, exporter=std::move(exporter), scene=scene.get()]() {
+            // If the exporter supports it, automatically choose the pipeline(s) and data object(s) to be exported.
+            exporter->selectDefaultExportableData(dataset(), scene);
 
-        // If the exporter supports it, automatically choose the pipeline(s) and data object(s) to be exported.
-        exporter->selectDefaultExportableData(dataset(), scene);
+            // Let the user adjust the settings of the exporter.
+            FileExporterSettingsDialog settingsDialog(mainWindow(), *scene, exporter, &mainWindow());
+            if(settingsDialog.exec() != QDialog::Accepted)
+                return;
 
-        // Let the user adjust the settings of the exporter.
-        FileExporterSettingsDialog settingsDialog(mainWindow(), *scene, exporter, &mainWindow());
-        if(settingsDialog.exec() != QDialog::Accepted)
-            return;
+            // Let the exporter do its work.
+            Future<void> future = exporter->doExport();
 
-        // Show progress dialog.
-        ProgressDialog progressDialog(mainWindow(), tr("Exporting to file"));
-
-        // Let the exporter do its work.
-        exporter->doExport();
+            // Show a progress dialog while the operation is in progress. The dialog will self-destruct when the operation is done.
+            new AsyncProgressDialog(std::move(future), mainWindow(), tr("Exporting to file"));
+        });
     });
 }
 

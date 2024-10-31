@@ -196,6 +196,19 @@ public:
     /// This method will prompt the user the first time it is called (for each ovito version). Returns true on non macOS.
     bool checkAccessibilityAccess(QWidget* parent = nullptr) const;
 
+    /// The type-erased function object type to be passed to scheduleOperationAfterScenePreparation().
+    using operation_function = fu2::function_base<
+        true, // IsOwning = true: The function object owns the callable object and is responsible for its destruction.
+        false, // IsCopyable = false: The function object is not copyable.
+        fu2::capacity_fixed<3 * sizeof(std::shared_ptr<OvitoObject>)>, // Capacity: Defines the internal capacity of the function for small functor optimization.
+        false, // IsThrowing = false: Do not throw an exception on empty function call, call `std::abort` instead.
+        true, // HasStrongExceptGuarantee = true: All objects satisfy the strong exception guarantee
+        void()>;
+
+    /// Waits for the pipelines in the current scene to be fully evaluated, then executes the given operation.
+    /// A progress dialog may be displayed while waiting for the scene preparation to complete.
+    void scheduleOperationAfterScenePreparation(Scene* scene, const QString& waitingMessage, operation_function&& operation);
+
 Q_SIGNALS:
 
     /// Emitted whenever the progress state of the published tasks changed.

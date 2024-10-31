@@ -45,7 +45,7 @@ void SceneAnimationPlayback::initializeObject(UserInterface& userInterface)
 
     _userInterface = &userInterface;
 
-    // This facility requires a Qt event loop.
+    // This facility requires a Qt event loop, because it works with a timer.
     Application::instance()->createQtApplication(false);
 }
 
