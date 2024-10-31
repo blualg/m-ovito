@@ -48,6 +48,15 @@ public:
 
 	/// Computes the 3d bounding box of the primitive in local coordinate space.
 	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const { return Box3(); }
+
+protected:
+
+#ifndef OVITO_BUILD_MONOLITHIC
+    // Give this exported c++ class a "key function" to work around dynamic_cast problems (observed on macOS platform).
+    // This function is not actually used but ensures that the class' vtable ends up in the core module.
+    // See also http://itanium-cxx-abi.github.io/cxx-abi/abi.html#vague-vtable
+    virtual void __key_function();
+#endif
 };
 
 }   // End of namespace

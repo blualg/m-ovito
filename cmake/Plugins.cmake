@@ -87,23 +87,23 @@ MACRO(OVITO_ADD_STANDARD_COMPILE_OPTIONS target_name)
         ENDIF()
     ENDIF()
 
-    # Enable build with AddressSanitizer support if requested.
+    # Enable build with AddressSanitizer support if requested (only in debug builds).
     IF(OVITO_USE_ADDRESS_SANITIZER)
         IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "/fsanitize=address")
+            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "$<$<CONFIG:Debug>:/fsanitize=address>")
         ELSE()
-            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-fsanitize=address")
-            TARGET_LINK_OPTIONS(${target_name} PUBLIC "-fsanitize=address")
+            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "$<$<CONFIG:Debug>:/-fsanitize=address>")
+            TARGET_LINK_OPTIONS(${target_name} PUBLIC "$<$<CONFIG:Debug>:-fsanitize=address>")
         ENDIF()
     ENDIF()
 
-    # Enable build with ThreadSanitizer support if requested.
+    # Enable build with ThreadSanitizer support if requested (only in debug builds).
     IF(OVITO_USE_THREAD_SANITIZER)
         IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "/fsanitize=thread")
+            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "$<$<CONFIG:Debug>:/fsanitize=thread>")
         ELSE()
-            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "-fsanitize=thread" "-fno-omit-frame-pointer")
-            TARGET_LINK_OPTIONS(${target_name} PUBLIC "-fsanitize=thread" "-fno-omit-frame-pointer")
+            TARGET_COMPILE_OPTIONS(${target_name} PUBLIC "$<$<CONFIG:Debug>:-fsanitize=thread>" "$<$<CONFIG:Debug>:-fno-omit-frame-pointer>")
+            TARGET_LINK_OPTIONS(${target_name} PUBLIC "$<$<CONFIG:Debug>:-fsanitize=thread>" "$<$<CONFIG:Debug>:-fno-omit-frame-pointer>")
         ENDIF()
     ENDIF()
 

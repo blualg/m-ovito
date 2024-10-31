@@ -36,6 +36,13 @@ class OVITO_CORE_EXPORT ParticlePrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 
+#ifndef OVITO_BUILD_MONOLITHIC
+    // Give this exported c++ class a "key function" to work around dynamic_cast problems (observed on macOS platform).
+    // This function is not actually used but ensures that the class' vtable ends up in the core module.
+    // See also http://itanium-cxx-abi.github.io/cxx-abi/abi.html#vague-vtable
+    virtual void __key_function() override;
+#endif
+
 public:
 
     enum ShadingMode {
@@ -61,91 +68,91 @@ public:
     };
     Q_ENUM(ParticleShape);
 
-    /// \brief Sets the array of particle indices to render.
+    /// Sets the array of particle indices to render.
     void setIndices(ConstDataBufferPtr indices) {
         OVITO_ASSERT(!indices || (indices->dataType() == DataBuffer::Int32 && indices->componentCount() == 1));
         _indices = std::move(indices);
     }
 
-    /// \brief Sets the coordinates of the particles.
+    /// Sets the coordinates of the particles.
     void setPositions(ConstDataBufferPtr coordinates) {
         OVITO_ASSERT(!coordinates || coordinates->componentCount() == 3);
         _positions = std::move(coordinates);
     }
 
-    /// \brief Sets the radii of the particles.
+    /// Sets the radii of the particles.
     void setRadii(ConstDataBufferPtr radii) {
         OVITO_ASSERT(!radii || radii->componentCount() == 1);
         _radii = std::move(radii);
     }
 
-    /// \brief Sets the radius of all particles to the given value.
+    /// Sets the radius of all particles to the given value.
     void setUniformRadius(FloatType radius) {
         _uniformParticleRadius = radius;
     }
 
-    /// \brief Sets the colors of the particles.
+    /// Sets the colors of the particles.
     void setColors(ConstDataBufferPtr colors) {
         OVITO_ASSERT(!colors || colors->componentCount() == 3);
         _colors = std::move(colors);
     }
 
-    /// \brief Sets the color of all particles to the given value.
+    /// Sets the color of all particles to the given value.
     void setUniformColor(const Color& color) {
         _uniformParticleColor = color;
     }
 
-    /// \brief Sets the selection flags of the particles.
+    /// Sets the selection flags of the particles.
     void setSelection(ConstDataBufferPtr selection) {
         OVITO_ASSERT(!selection || (selection->dataType() == DataBuffer::IntSelection && selection->componentCount() == 1));
         _selection = std::move(selection);
     }
 
-    /// \brief Sets the color to be used for rendering the selected particles.
+    /// Sets the color to be used for rendering the selected particles.
     void setSelectionColor(const Color& color) {
         _selectionParticleColor = color;
     }
 
-    /// \brief Sets the transparency values of the particles.
+    /// Sets the transparency values of the particles.
     void setTransparencies(ConstDataBufferPtr transparencies) {
         OVITO_ASSERT(!transparencies || transparencies->componentCount() == 1);
         _transparencies = std::move(transparencies);
     }
 
-    /// \brief Sets the aspherical shape of the particles.
+    /// Sets the aspherical shape of the particles.
     void setAsphericalShapes(ConstDataBufferPtr shapes) {
         OVITO_ASSERT(!shapes || shapes->componentCount() == 3);
         _asphericalShapes = std::move(shapes);
     }
 
-    /// \brief Sets the aspherical shape of the particles.
+    /// Sets the aspherical shape of the particles.
     void setOrientations(ConstDataBufferPtr orientations) {
         OVITO_ASSERT(!orientations || orientations->componentCount() == 4);
         _orientations = std::move(orientations);
     }
 
-    /// \brief Sets the superquadric roundness values of the particles.
+    /// Sets the superquadric roundness values of the particles.
     void setRoundness(ConstDataBufferPtr roundness) {
         OVITO_ASSERT(!roundness || roundness->componentCount() == 2);
         _roundness = std::move(roundness);
     }
 
-    /// \brief Returns the shading mode for particles.
+    /// Returns the shading mode for particles.
     ShadingMode shadingMode() const { return _shadingMode; }
 
-    /// \brief Changes the shading mode for particles.
+    /// Changes the shading mode for particles.
     void setShadingMode(ShadingMode mode) { _shadingMode = mode; }
 
-    /// \brief Returns the rendering quality of particles.
+    /// Returns the rendering quality of particles.
     RenderingQuality renderingQuality() const { return _renderingQuality; }
 
-    /// \brief Changes the rendering quality of particles.
+    /// Changes the rendering quality of particles.
     void setRenderingQuality(RenderingQuality quality) { _renderingQuality = quality; }
 
-    /// \brief Returns the display shape of particles.
+    /// Returns the display shape of particles.
     ParticleShape particleShape() const { return _particleShape; }
 
-    /// \brief Changes the display shape of particles.
+    /// Changes the display shape of particles.
     void setParticleShape(ParticleShape shape) { _particleShape = shape; }
 
     /// Returns the buffer storing the array of particle indices to render.

@@ -35,6 +35,13 @@ class OVITO_CORE_EXPORT ImagePrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 
+#ifndef OVITO_BUILD_MONOLITHIC
+    // Give this exported c++ class a "key function" to work around dynamic_cast problems (observed on macOS platform).
+    // This function is not actually used but ensures that the class' vtable ends up in the core module.
+    // See also http://itanium-cxx-abi.github.io/cxx-abi/abi.html#vague-vtable
+    virtual void __key_function() override;
+#endif
+
 public:
 
     /// Default constructor.
@@ -46,22 +53,22 @@ public:
     /// Constructor taking an image and a window rectangle.
     ImagePrimitive(const QImage& image, const QRectF& windowRect) : _image(image) { setRectWindow(windowRect); }
 
-    /// \brief Sets the mage to be rendered.
+    /// Sets the mage to be rendered.
     void setImage(const QImage& image) { _image = image; }
 
-    /// \brief Sets the mage to be rendered.
+    /// Sets the mage to be rendered.
     void setImage(QImage&& image) { _image = std::move(image); }
 
-    /// \brief Returns the image stored in the buffer.
+    /// Returns the image stored in the buffer.
     const QImage& image() const { return _image; }
 
-    /// \brief Sets the destination rectangle for rendering the image in window coordinates.
+    /// Sets the destination rectangle for rendering the image in window coordinates.
     void setRectWindow(const Box2& rect) { _windowRect = rect; }
 
-    /// \brief Sets the destination rectangle for rendering the image in window coordinates.
+    /// Sets the destination rectangle for rendering the image in window coordinates.
     void setRectWindow(const QRectF& rect) { _windowRect.minc = Point2(rect.left(), rect.top()); _windowRect.maxc = Point2(rect.right(), rect.bottom()); }
 
-    /// \brief Returns the destination rectangle in window coordinates.
+    /// Returns the destination rectangle in window coordinates.
     const Box2& windowRect() const { return _windowRect; }
 
 private:

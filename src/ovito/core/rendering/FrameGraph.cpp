@@ -31,6 +31,17 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(ObjectPickInfo);
 IMPLEMENT_ABSTRACT_OVITO_CLASS(FrameGraph);
 
+#ifndef OVITO_BUILD_MONOLITHIC
+void RenderingPrimitive::__key_function() {}
+void ParticlePrimitive::__key_function() {}
+void CylinderPrimitive::__key_function() {}
+void MeshPrimitive::__key_function() {}
+void LinePrimitive::__key_function() {}
+void TextPrimitive::__key_function() {}
+void MarkerPrimitive::__key_function() {}
+void ImagePrimitive::__key_function() {}
+#endif
+
 /******************************************************************************
 * Adds a 3d rendering primitive to the current layer of the frame graph.
 * Automatically computes the bounding box of the primitive and the model-to-world transformation.

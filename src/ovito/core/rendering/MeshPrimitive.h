@@ -38,6 +38,13 @@ class OVITO_CORE_EXPORT MeshPrimitive final : public RenderingPrimitive
 {
     Q_GADGET
 
+#ifndef OVITO_BUILD_MONOLITHIC
+    // Give this exported c++ class a "key function" to work around dynamic_cast problems (observed on macOS platform).
+    // This function is not actually used but ensures that the class' vtable ends up in the core module.
+    // See also http://itanium-cxx-abi.github.io/cxx-abi/abi.html#vague-vtable
+    virtual void __key_function() override;
+#endif
+
 public:
 
     enum DepthSortingMode {
@@ -53,19 +60,19 @@ public:
         _depthSortingMode = depthSortingMode;
     }
 
-    /// \brief Returns the number of triangle faces stored in the buffer.
+    /// Returns the number of triangle faces stored in the buffer.
     int faceCount() const { return _mesh ? _mesh->faceCount() : 0; }
 
-    /// \brief Returns the number of mesh vertices stored in the buffer.
+    /// Returns the number of mesh vertices stored in the buffer.
     int vertexCount() const { return _mesh ? _mesh->vertexCount() : 0; }
 
     /// Returns the triangle mesh stored in this geometry buffer.
     const DataOORef<const TriangleMesh>& mesh() const { return _mesh; }
 
-    /// \brief Enables or disables the culling of triangles not facing the viewer.
+    /// Enables or disables the culling of triangles not facing the viewer.
     void setCullFaces(bool enable) { _cullFaces = enable; }
 
-    /// \brief Returns whether the culling of triangles not facing the viewer is enabled.
+    /// Returns whether the culling of triangles not facing the viewer is enabled.
     bool cullFaces() const { return _cullFaces; }
 
     /// Indicates whether mesh edges are rendered as wireframe.
@@ -129,7 +136,7 @@ public:
     /// Returns the color used for rendering all selected faces.
     const Color& faceSelectionColor() const { return _faceSelectionColor; }
 
-    /// \brief Sets the color to be used for rendering the selected mesh faces.
+    /// Sets the color to be used for rendering the selected mesh faces.
     void setFaceSelectionColor(const Color& color) {
         _faceSelectionColor = color;
     }
