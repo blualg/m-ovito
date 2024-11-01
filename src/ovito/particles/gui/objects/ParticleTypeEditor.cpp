@@ -31,7 +31,7 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
-#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
+#include <ovito/gui/desktop/utilities/concurrent/AsyncProgressDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
@@ -184,38 +184,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     });
 
     // Shape load button.
-    connect(loadShapeBtn, &QPushButton::clicked, this, [this]() {
-        if(OORef<ParticleType> ptype = static_object_cast<ParticleType>(editObject())) {
-
-            performTransaction(tr("Load particle shape"), [&]() {
-                QUrl selectedFile;
-                const FileImporterClass* fileImporterClass = nullptr;
-                QString fileImporterFormat;
-
-                // Put code in a block: Need to release dialog before loading the input file.
-                {
-                    // Build list of file importers that can import triangle meshes.
-                    QVector<const FileImporterClass*> meshImporters;
-                    for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileSourceImporter>()) {
-                        if(importerClass->importsDataType(TriangleMesh::OOClass()))
-                            meshImporters.push_back(importerClass);
-                    }
-
-                    // Let the user select a geometry file to import.
-                    ImportFileDialog fileDialog(meshImporters, &mainWindow(), tr("Load geometry file"), false, QStringLiteral("particle_shape_mesh"));
-                    if(fileDialog.exec() != QDialog::Accepted)
-                        return;
-
-                    selectedFile = fileDialog.urlToImport();
-                    std::tie(fileImporterClass, fileImporterFormat) = fileDialog.selectedFileImporter();
-                }
-
-                // Load the geometry from the selected file.
-                ProgressDialog progressDialog(mainWindow(), container(), tr("Loading geometry file"));
-                ptype->loadShapeMesh(selectedFile, fileImporterClass, fileImporterFormat);
-            });
-        }
-    });
+    connect(loadShapeBtn, &QPushButton::clicked, this, &ParticleTypeEditor::onLoadParticleShape);
 
     // Physical properties group.
     QGroupBox* physicalBox = new QGroupBox(tr("Physical properties"), rollout);
@@ -228,7 +197,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     FloatParameterUI* massPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticleType::mass));
     gridLayout->addWidget(massPUI->label(), 0, 0);
     gridLayout->addLayout(massPUI->createFieldLayout(), 0, 1);
-    // Reset mass paramter - can't use createPresetsMenuButton because we only
+    // Reset mass parameter - can't use createPresetsMenuButton because we only
     // offer reset but not the other options
     // Don't use PROPERTY_FIELD_RESETTABLE to give custom (better) tooltip
     MenuToolButton* presetsMenuButton = new MenuToolButton();
@@ -323,6 +292,51 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
     });
 
     return presetsMenuButton;
+}
+
+/******************************************************************************
+* Called when the user wants to pick and load a mesh-based particle shape from disk.
+******************************************************************************/
+void ParticleTypeEditor::onLoadParticleShape()
+{
+    OORef<ParticleType> ptype = static_object_cast<ParticleType>(editObject());
+    if(!ptype)
+        return;
+
+    handleExceptions([&]() {
+        // Build list of file importers that can import triangle meshes.
+        QVector<const FileImporterClass*> meshImporters;
+        for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileSourceImporter>()) {
+            if(importerClass->importsDataType(TriangleMesh::OOClass()))
+                meshImporters.push_back(importerClass);
+        }
+
+        // Let the user select a geometry file to import.
+        ImportFileDialog fileDialog(meshImporters, &mainWindow(), tr("Load geometry file"), false, QStringLiteral("particle_shape_mesh"));
+        if(fileDialog.exec() != QDialog::Accepted)
+            return;
+
+        auto [fileImporterClass, fileImporterFormat] = fileDialog.selectedFileImporter();
+
+        // Asynchronously load the geometry from the selected file.
+        auto future = ptype->loadShapeMesh(fileDialog.urlToImport(), fileImporterClass, fileImporterFormat).then(ObjectExecutor(ptype), [this, ptype](DataOORef<TriangleMesh> shapeMesh) {
+            performTransaction(tr("Load particle shape"), [&]() {
+                // Assign the mesh-based shape to the particle type.
+                ptype->setShapeMesh(std::move(shapeMesh));
+
+                // Also switch the particle type's visualization mode to mesh-based.
+                ptype->setShape(ParticlesVis::Mesh);
+
+                // Determine whether the mesh is a closed manifold.
+                // If not, we should turn off back-face culling.
+                if(ptype->shapeMesh() && !ptype->shapeMesh()->isClosed())
+                    ptype->setShapeBackfaceCullingEnabled(false);
+            });
+        });
+
+        // Show a progress dialog while performing the whole operation. The dialog will self-destruct afterwards.
+        AsyncProgressDialog* progressDialog = new AsyncProgressDialog(std::move(future), mainWindow(), parentWindow(), tr("Loading geometry file"));
+    });
 }
 
 }   // End of namespace

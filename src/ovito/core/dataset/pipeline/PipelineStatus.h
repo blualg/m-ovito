@@ -37,7 +37,7 @@ class OVITO_CORE_EXPORT PipelineStatus
 public:
 
     enum StatusType {
-        Success,        //< Indicates that the evaluation was successfull.
+        Success,        //< Indicates that the evaluation was successful.
         Warning,        //< Indicates that a modifier has issued a warning.
         Error           //< Indicates that the evaluation failed.
     };

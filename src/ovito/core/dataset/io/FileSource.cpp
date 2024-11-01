@@ -80,6 +80,7 @@ static int countNumberOfFiles(const QVector<FileSourceImporter::Frame>& frames)
 void FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection)
 {
     OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(this_task::isMainThread());
 
     // Make relative file paths absolute.
     for(QUrl& url : sourceUrls) {

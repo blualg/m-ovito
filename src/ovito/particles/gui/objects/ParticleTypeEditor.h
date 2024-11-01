@@ -44,6 +44,11 @@ private:
 
     /// Creates a button that opens a menu for managing the presets for a particle type parameter.
     QToolButton* createPresetsMenuButton(const QString& parameterName, std::function<void(ParticleType*)> resetFunc, std::function<void(const ParticleType*)> setDefaultFunc, std::function<bool(const ParticleType*)> isUnchangedFunc);
+
+private Q_SLOTS:
+
+    /// Called when the user wants to pick and load a mesh-based particle shape from disk.
+    void onLoadParticleShape();
 };
 
 }   // End of namespace

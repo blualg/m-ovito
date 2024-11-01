@@ -117,7 +117,7 @@ public:
     Exception& prependGeneralMessage(const QString& message);
 
     /// Prepends some text to the first message string of the exception.
-    /// \param message The text to preprend.
+    /// \param message The text to prepend.
     /// \return A reference to this Exception object.
     Exception& prependToMessage(const QString& text);
 

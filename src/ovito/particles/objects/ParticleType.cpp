@@ -23,6 +23,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "ParticleType.h"
 
 namespace Ovito {
@@ -125,61 +126,58 @@ void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObje
 }
 
 /******************************************************************************
- * Loads a user-defined display shape from a geometry file and assigns it to this particle type.
- ******************************************************************************/
-void ParticleType::loadShapeMesh(const QUrl& sourceUrl, const FileImporterClass* importerClass, const QString& importerFormat)
+* Loads a mesh-based shape from a geometry file (but doesn't yet assign it to the ParticleType).
+******************************************************************************/
+Future<DataOORef<TriangleMesh>> ParticleType::loadShapeMesh(const QUrl sourceUrl, const FileImporterClass* importerClass, const QString& importerFormat) const
 {
-    this_task::setProgressText(tr("Loading mesh geometry file %1").arg(sourceUrl.fileName()));
+    OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(this_task::isMainThread());
 
-    // Temporarily disable undo recording while loading the geometry data.
-    DataOORef<TriangleMesh> meshObj;
-    {
-        UndoSuspender noUndo;
-
-        OORef<FileSourceImporter> importer;
-        if(!importerClass) {
-
-            // Inspect input file to detect its format.
-            Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(sourceUrl);
-            importer = dynamic_object_cast<FileSourceImporter>(importerFuture.blockForResult());
-        }
-        else {
-            importer = dynamic_object_cast<FileSourceImporter>(importerClass->createInstance());
-            if(importer)
-                importer->setSelectedFileFormat(importerFormat);
-        }
-        if(!importer)
-            throw Exception(tr("Could not detect the format of the geometry file. The format might not be supported."));
-
-        // Create a temporary FileSource for loading the geometry data from the file.
-        OORef<FileSource> fileSource = OORef<FileSource>::create();
-        fileSource->setSource({sourceUrl}, importer, false);
-
-        // Check if the FileSource has provided some useful data.
-        PipelineFlowState state = fileSource->evaluate(PipelineEvaluationRequest(AnimationTime(0), true)).blockForResult();
-        if(state.status().type() == PipelineStatus::Error)
-            return;
-        if(!state)
-            throw Exception(tr("The loaded geometry file does not provide any valid mesh data."));
-        meshObj = DataOORef<TriangleMesh>::makeCopy(state.expectObject<TriangleMesh>());
-
-        // Throw away any visual elements attached to the mesh object.
-        meshObj->setVisElement(nullptr);
-
-        // Show sharp edges of the mesh.
-        meshObj->determineEdgeVisibility();
-
-        // Turn on undo recording again. The final shape assignment should be recorded on the undo stack.
+    // Create the right importer for the file. May need to inspect input file to detect its format.
+    Future<OORef<FileImporter>> importerFuture;
+    if(!importerClass) {
+        importerFuture = FileImporter::autodetectFileFormat(sourceUrl);
     }
-    setShapeMesh(std::move(meshObj));
+    else {
+        OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(importerClass->createInstance());
+        if(importer)
+            importer->setSelectedFileFormat(importerFormat);
+        importerFuture = std::move(importer);
+    }
 
-    // Also switch the particle type's visualization shape to mesh-based.
-    setShape(ParticlesVis::Mesh);
+    // Wait for format detection to complete.
+    OORef<FileSourceImporter> importer = dynamic_object_cast<FileSourceImporter>(co_await FutureAwaiter(ObjectExecutor(this), std::move(importerFuture)));
+    if(!importer)
+        throw Exception(tr("Could not detect the format of the geometry file. The format might not be supported."));
 
-    // Determine whether the mesh is a closed manifold.
-    // If not, we should turn off back-face culling.
-    if(shapeMesh() && !shapeMesh()->isClosed())
-        setShapeBackfaceCullingEnabled(false);
+    OVITO_ASSERT(!CompoundOperation::isUndoRecording()); // Be sure that our actions are not recorded on the undo stack.
+
+    // Create a temporary FileSource for loading the geometry data from the file.
+    OORef<FileSource> fileSource = OORef<FileSource>::create();
+    fileSource->setSource({std::move(sourceUrl)}, std::move(importer), false);
+
+    // Evaluate the FileSource to load the data and obtain a data collection.
+    PipelineFlowState state = co_await FutureAwaiter(ObjectExecutor(this), fileSource->evaluate(PipelineEvaluationRequest(AnimationTime(0), true)).asFuture());
+
+    // Some error checking.
+    if(state.status().type() == PipelineStatus::Error)
+        throw Exception(state.status().text());
+    if(!state)
+        throw Exception(tr("The loaded geometry file does not contain any valid mesh."));
+
+    // Extract the TriangleMesh object from the data collection.
+    // Then discard the rest of the data collection and make the mesh mutable.
+    DataOORef<const TriangleMesh> meshObjConst = state.expectObject<TriangleMesh>();
+    state.reset();
+    DataOORef<TriangleMesh> meshObj = std::move(meshObjConst).makeMutable();
+
+    // Throw away any visual elements attached to the mesh object.
+    meshObj->setVisElement(nullptr);
+
+    // Show sharp edges of the mesh.
+    meshObj->determineEdgeVisibility();
+
+    co_return meshObj;
 }
 
 /******************************************************************************

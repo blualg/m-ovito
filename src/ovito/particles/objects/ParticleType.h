@@ -69,7 +69,7 @@ public:
         HEX_DIAMOND_FIRST_NEIGH,    //< First neighbor of a hexagonal diamond atom
         HEX_DIAMOND_SECOND_NEIGH,   //< Second neighbor of a hexagonal diamond atom
         SC,                         //< Simple cubic structure
-        GRAPHENE,                       //< Graphene structure
+        GRAPHENE,                   //< Graphene structure
         HEXAGONAL_ICE,
         CUBIC_ICE,
         INTERFACIAL_ICE,
@@ -113,8 +113,8 @@ public:
         return m;
     }
 
-    /// Loads a user-defined display shape from a geometry file and assigns it to this particle type.
-    void loadShapeMesh(const QUrl& sourceUrl, const FileImporterClass* importerClass = nullptr, const QString& importerFormat = {});
+    /// Loads a mesh-based shape from a geometry file (but doesn't yet assign it to the ParticleType).
+    [[nodiscard]] Future<DataOORef<TriangleMesh>> loadShapeMesh(const QUrl sourceUrl, const FileImporterClass* importerClass = nullptr, const QString& importerFormat = {}) const;
 
     //////////////////////////////////// Default parameters ////////////////////////////////
 
@@ -201,7 +201,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, shapeBackfaceCullingEnabled, setShapeBackfaceCullingEnabled, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(shapeBackfaceCullingEnabled);
 
-    /// Use the mesh colors intead of particle colors when rendering the user-defined shape.
+    /// Use the mesh colors instead of particle colors when rendering the user-defined shape.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, shapeUseMeshColor, setShapeUseMeshColor);
     DECLARE_SHADOW_PROPERTY_FIELD(shapeUseMeshColor);
 
