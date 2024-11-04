@@ -106,12 +106,12 @@ const std::shared_ptr<FrameBuffer>& FrameBufferWindow::createFrameBuffer(int w, 
     frameBuffer()->clear();
 
     // Adjust window size to frame buffer size.
-    // Temporarily turn off the scrollbars, because they should not be included in the size hint calculation.
+    // Temporarily turn off the scroll bars, because they should not be included in the size hint calculation.
     _frameBufferWidget->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     _frameBufferWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     centralWidget()->updateGeometry();
     adjustSize();
-    // Reenable the scrollbars, but only after a short delay, because otherwise
+    // Reenable the scroll bars, but only after a short delay, because otherwise
     // they interfere with the resizing of the viewport widget.
     QTimer::singleShot(0, _frameBufferWidget, [w = _frameBufferWidget]() {
         w->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -143,15 +143,13 @@ void FrameBufferWindow::showAndActivateWindow()
 }
 
 /******************************************************************************
-* Makes the framebuffer modal while a rendering operation is in progress and
-* displays the progress in the window.
+* Makes the framebuffer modal while a rendering operation is in progress
+* and displays a progress indicator in the window.
 ******************************************************************************/
-void FrameBufferWindow::showRenderingProgress()
+void FrameBufferWindow::showRenderingProgress(SharedFuture<void> renderingFuture)
 {
-    OVITO_ASSERT(this_task::get());
-
-    // Attached to the current rendering task.
-    _renderingFuture = SharedFuture<void>(this_task::get()->shared_from_this());
+    // Attached to the rendering task.
+    _renderingFuture = std::move(renderingFuture);
 
     // Update UI whenever the progress of the rendering task changes.
     _taskProgressUpdateConnection = connect(&_mainWindow, &MainWindow::taskProgressUpdate, this, &FrameBufferWindow::onTaskProgressUpdate);

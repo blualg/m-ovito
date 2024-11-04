@@ -685,9 +685,22 @@ std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int
 
     std::shared_ptr<FrameBuffer> fb = _frameBufferWindow->createFrameBuffer(width, height);
     _frameBufferWindow->showAndActivateWindow();
-    _frameBufferWindow->showRenderingProgress();
 
     return fb;
+}
+
+/******************************************************************************
+* Shows a progress bar or a similar UI to indicate the current rendering progress
+* and let the user cancel the operation if necessary.
+******************************************************************************/
+void MainWindow::showRenderingProgress(const std::shared_ptr<FrameBuffer>& frameBuffer, SharedFuture<void> renderingFuture)
+{
+    // Assuming that the frame buffer window is already showing the same frame buffer provided by the caller.
+    OVITO_ASSERT(_frameBufferWindow && _frameBufferWindow->frameBuffer() == frameBuffer);
+    if(!_frameBufferWindow)
+        return;
+
+    _frameBufferWindow->showRenderingProgress(std::move(renderingFuture));
 }
 
 /******************************************************************************
@@ -1400,7 +1413,7 @@ void MainWindow::scheduleOperationAfterScenePreparation(Scene* scene, const QStr
     sceneProp->future().finally([sceneProp]() noexcept {});
 
     // Schedule execution of the operation upon completion of the scene preparation.
-    progressDialog->whenDone([this, operation=std::move(operation)]() mutable {
+    progressDialog->whenDone([this, operation=std::move(operation)]() mutable noexcept {
         handleExceptions([&] {
             operation();
         });

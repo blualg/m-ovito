@@ -356,7 +356,7 @@ void WidgetActionManager::on_FileExport_triggered()
             // Let the exporter do its work.
             Future<void> future = exporter->doExport();
 
-            // Show a progress dialog while the operation is in progress. The dialog will self-destruct when the operation is done.
+            // Show a progress dialog while the operation is in progress.
             ProgressDialog::showForFuture(std::move(future), mainWindow(), tr("Exporting to file"));
         });
     });

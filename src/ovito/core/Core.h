@@ -174,6 +174,7 @@
 #include <ovito/core/utilities/concurrent/SharedFuture.h>
 #include <ovito/core/utilities/concurrent/WeakSharedFuture.h>
 #include <ovito/core/utilities/concurrent/Promise.h>
+#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include <ovito/core/utilities/concurrent/MainThreadOperation.h>
 #include <ovito/core/oo/OvitoObject.h>
 #include <ovito/core/oo/RefTarget.h>

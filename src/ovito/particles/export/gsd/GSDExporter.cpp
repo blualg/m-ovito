@@ -27,7 +27,6 @@
 #include <ovito/particles/objects/Impropers.h>
 #include <ovito/particles/import/gsd/GSDFile.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "GSDExporter.h"
 
 namespace Ovito {

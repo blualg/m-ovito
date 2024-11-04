@@ -22,7 +22,6 @@
 
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "DataTablePlotExporter.h"
 
 #include <qwt/qwt_plot_renderer.h>

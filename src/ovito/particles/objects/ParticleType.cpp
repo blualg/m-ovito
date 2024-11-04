@@ -23,7 +23,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "ParticleType.h"
 
 namespace Ovito {

@@ -45,8 +45,8 @@ MenuToolButton::MenuToolButton(QWidget* parent) : QToolButton(parent), _menu(new
 QAction* MenuToolButton::createAction(const QIcon& icon, const QString& label) { return _menu->addAction(icon, label); }
 
 /******************************************************************************
- * Creates a new seperator in the menu.
+ * Creates a new separator in the menu.
  ******************************************************************************/
-void MenuToolButton::createMenuSeperator() { _menu->addSeparator(); }
+void MenuToolButton::createMenuSeparator() { _menu->addSeparator(); }
 
 }  // namespace Ovito

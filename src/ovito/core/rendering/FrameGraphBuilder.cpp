@@ -26,7 +26,6 @@
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/viewport/Viewport.h>
 #include <ovito/core/utilities/concurrent/WhenAll.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include <ovito/core/app/Application.h>
 
 namespace Ovito {

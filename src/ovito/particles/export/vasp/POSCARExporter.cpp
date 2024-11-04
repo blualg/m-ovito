@@ -24,7 +24,6 @@
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "POSCARExporter.h"
 
 namespace Ovito {

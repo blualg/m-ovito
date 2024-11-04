@@ -215,7 +215,7 @@ public:
         if(!editObject())
             return;
         ProgressDialog* progressDialog = new ProgressDialog(future.task(), {}, mainWindow(), parentWindow());
-        progressDialog->whenDone([self=QPointer<PropertiesEditor>(this), editObject=OOWeakRef<RefTarget>(editObject()), future=std::move(future), function=std::forward<Function>(function)]() mutable {
+        progressDialog->whenDone([self=QPointer<PropertiesEditor>(this), editObject=OOWeakRef<RefTarget>(editObject()), future=std::move(future), function=std::forward<Function>(function)]() mutable noexcept {
             if(!self.isNull() && self->editObject() == editObject.lock()) {
                 self->mainWindow().handleExceptions([&]() {
                     std::invoke(std::move(function), std::move(future).result());

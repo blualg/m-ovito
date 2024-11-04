@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/stdobj/StdObj.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "DataTableExporter.h"
 
 namespace Ovito {

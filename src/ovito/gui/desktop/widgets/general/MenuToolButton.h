@@ -45,8 +45,8 @@ public:
     /// \return The pointer to the QAction that was added to the menu.
     QAction* createAction(const QIcon& icon, const QString& label);
 
-    /// \brief Creates a new seperator in the menu.
-    void createMenuSeperator();
+    /// \brief Creates a new separator in the menu.
+    void createMenuSeparator();
 
 private:
     QPointer<QMenu> _menu = nullptr;

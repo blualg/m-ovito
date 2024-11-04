@@ -25,7 +25,6 @@
 #include <ovito/particles/export/FileColumnParticleExporter.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "IMDExporter.h"
 
 namespace Ovito {

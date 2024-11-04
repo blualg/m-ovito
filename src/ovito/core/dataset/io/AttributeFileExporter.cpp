@@ -27,7 +27,6 @@
 #include <ovito/core/dataset/scene/SelectionSet.h>
 #include <ovito/core/dataset/data/AttributeDataObject.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "AttributeFileExporter.h"
 
 namespace Ovito {

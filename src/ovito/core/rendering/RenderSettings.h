@@ -77,10 +77,10 @@ public:
     void setStopOnPipelineError(bool stopOnPipelineError) { _stopOnPipelineError = stopOnPipelineError; }
 
     /// High-level rendering function that invokes the renderer to generate one or more output images of the scene.
-    void render(const ViewportConfiguration& viewportConfiguration, const std::shared_ptr<FrameBuffer>& outputFrameBuffer);
+    [[nodiscard]] Future<void> render(const ViewportConfiguration& viewportConfiguration, const std::shared_ptr<FrameBuffer>& outputFrameBuffer);
 
     /// High-level rendering function that invokes the renderer to generate one or more output images of the scene.
-    void render(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, const std::shared_ptr<FrameBuffer>& outputFrameBuffer);
+    [[nodiscard]] Future<void> render(const std::vector<std::pair<Viewport*, QRectF>> viewportLayout, OORef<const AnimationSettings> animationSettings, const std::shared_ptr<FrameBuffer> outputFrameBuffer);
 
     /// Computes a viewport's area in the rendered output image.
     QRect viewportFramebufferArea(const Viewport* viewport, const ViewportConfiguration* viewportConfig) const;

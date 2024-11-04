@@ -124,7 +124,7 @@ void RenderSettings::setImageFilename(const QString& filename)
 * This is the high-level rendering function, which invokes the renderer to
 * generate one or more output images of the scene.
 ******************************************************************************/
-void RenderSettings::render(const ViewportConfiguration& viewportConfiguration, const std::shared_ptr<FrameBuffer>& outputFrameBuffer)
+Future<void> RenderSettings::render(const ViewportConfiguration& viewportConfiguration, const std::shared_ptr<FrameBuffer>& outputFrameBuffer)
 {
     std::vector<std::pair<Viewport*, QRectF>> viewportLayout;
     if(renderAllViewports()) {
@@ -149,24 +149,28 @@ void RenderSettings::render(const ViewportConfiguration& viewportConfiguration, 
             animationSettings = vp->scene()->animationSettings();
     }
 
-    render(viewportLayout, animationSettings, outputFrameBuffer);
+    return render(std::move(viewportLayout), animationSettings, outputFrameBuffer);
 }
 
 /******************************************************************************
 * This is the high-level rendering function, which invokes the renderer to
 * generate one or more output images of the scene.
 ******************************************************************************/
-void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& viewportLayout, AnimationSettings* animationSettings, const std::shared_ptr<FrameBuffer>& outputFrameBuffer)
+Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>> viewportLayout, OORef<const AnimationSettings> animationSettings, const std::shared_ptr<FrameBuffer> outputFrameBuffer)
 {
+    OVITO_ASSERT(this_task::isMainThread());
+    OVITO_ASSERT(this_task::get());
+
     // Get the selected scene renderer.
-    // Note: Using ref-counted pointer here, because the renderer may potentially be deleted before the current function returns.
     OORef<SceneRenderer> renderer = this->renderer();
     if(!renderer)
         throw Exception(tr("No rendering backend has been selected."));
 
-    // Create a ref-counted pointer to ourself to keep the RenderSettings alive even if the application
-    // is shutting down while we are still in this function.
+    // Create a ref to ourself to keep this RenderSettings object alive while the coroutine is running.
     OORef<RenderSettings> self(this);
+
+    // Note: This is to perform a context switch to the coroutine's task, which is needed for proper progress reporting.
+    co_await ExecutorAwaiter(InlineExecutor());
 
     // Resize output frame buffer.
     if(outputFrameBuffer->size() != QSize(outputImageWidth(), outputImageHeight())) {
@@ -215,10 +219,8 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
     };
 
     // Create the rendering frame buffers, one for each viewport to be rendered.
-    std::vector<ViewportRenderingData> viewportRenderingData;
-    viewportRenderingData.reserve(viewportLayout.size());
-    std::vector<int> viewportProgressWeights;
-    viewportProgressWeights.reserve(viewportLayout.size());
+    std::vector<ViewportRenderingData> viewportList;
+    viewportList.reserve(viewportLayout.size());
     for(const auto& r : viewportLayout) {
         // Compute the rectangular area covered by the viewport in the output frame buffer.
         // For this, convert viewport layout rect from relative coordinates to frame buffer pixel coordinates and round to nearest integers.
@@ -226,12 +228,10 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
         QRect destinationRect = pixelRect.toRect();
         if(destinationRect.isEmpty())
             continue;
-        ViewportRenderingData& vpData = viewportRenderingData.emplace_back();
-        // Request a rendering frame buffer of the right size from the rendering job.
+        ViewportRenderingData& vpData = viewportList.emplace_back();
+        // Request a frame buffer of the right size from the rendering job.
         vpData.renderingFrameBuffer = renderingJob->createOffscreenFrameBuffer(destinationRect, outputFrameBuffer);
         vpData.viewport = r.first;
-        // When rendering multiple viewports, compute relative weights of the viewport rectangles for the progress display.
-        viewportProgressWeights.push_back(r.second.width() * r.second.height() * outputFrameBuffer->width() * outputFrameBuffer->height());
     }
 
     VideoEncoder* videoEncoder = nullptr;
@@ -254,7 +254,7 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
     // The visualization data cache used for building the frame graph.
     std::shared_ptr<RendererResourceCache> visCache = this_task::ui()->datasetContainer().visCache();
 
-    // Render frames one by one.
+    // Render the animation frames, one by one.
     for(int frameIndex = 0; frameIndex < numberOfFrames && !this_task::isCanceled(); frameIndex++) {
         int frameNumber = firstFrameNumber + frameIndex * everyNthFrame() + fileNumberBase();
         AnimationTime renderTime = AnimationTime::fromFrame(frameNumber);
@@ -269,7 +269,7 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
         MainThreadOperation frameTask;
 
         if(numberOfFrames == 1)
-            this_task::setProgressText(tr("Rendering frame %1").arg(frameNumber));
+            frameTask.setProgressText(tr("Rendering frame %1").arg(frameNumber));
 
         // Determine output filename for this frame.
         QString outputFilename;
@@ -290,10 +290,10 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
         }
 
         // Subdivide progress range into sub-steps for each viewport when rendering a multi-viewport layout.
-        this_task::beginProgressSubStepsWithWeights(viewportProgressWeights);
+        frameTask.beginProgressSubSteps(viewportList.size());
 
         // Render each viewport of the layout one after the other.
-        for(ViewportRenderingData& vpData : viewportRenderingData) {
+        for(ViewportRenderingData& vpData : viewportList) {
 
             // Set up preliminary projection.
             FloatType viewportAspectRatio = (FloatType)vpData.renderingFrameBuffer->outputViewportRect().height() / vpData.renderingFrameBuffer->outputViewportRect().width();
@@ -320,25 +320,25 @@ void RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>>& vie
             const QRect& physicalOverlayRect = vpData.renderingFrameBuffer->renderingViewportRect();
 
             // Let the FrameGraph class do the heavy lifting and generate the drawing commands for the current scene.
-            frameGraph->buildFromScene(vpData.viewport->scene(), vpData.viewport, logicalOverlayRect, physicalOverlayRect, projParams).waitForFinished();
+            co_await FutureAwaiter(ObjectExecutor(this), frameGraph->buildFromScene(vpData.viewport->scene(), vpData.viewport, logicalOverlayRect, physicalOverlayRect, projParams));
 
             // Let the scene renderer implementation post-process the frame graph.
             renderingJob->postprocessFrameGraph(*frameGraph);
 
             // Compute final projection based on the now known bounding box.
             frameGraph->setProjectionParams(vpData.viewport->computeProjectionParameters(renderTime, viewportAspectRatio, frameGraph->sceneBoundingBox()));
-            this_task::throwIfCanceled();
 
             // Get the cache frame back from the frame graph to keep resources alive until we start the next frame.
             vpData.inactiveCacheFrame = frameGraph->takeCacheFrame();
 
-            // Pass the frame graph to the scene renderer to produce the rendering in the framebuffer.
+            // Let the scene renderer produce the rendering in the framebuffer.
             outputFrameBuffer->discardChanges();
-            renderingJob->renderFrame(frameGraph, vpData.renderingFrameBuffer).waitForFinished();
+            Task::Scope taskScope(frameTask.task());
+            co_await FutureAwaiter(ObjectExecutor(this), renderingJob->renderFrame(frameGraph, vpData.renderingFrameBuffer));
 
-            this_task::nextProgressSubStep();
+            frameTask.nextProgressSubStep();
         }
-        this_task::endProgressSubSteps();
+        frameTask.endProgressSubSteps();
 
         // Write rendered image or video frame to disk.
         if(saveToFile()) {

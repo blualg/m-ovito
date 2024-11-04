@@ -23,7 +23,6 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/particles/objects/Bonds.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "ParticleExporter.h"
 
 namespace Ovito {

@@ -53,15 +53,18 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
             throw Exception(tr("Cannot render without an active RenderSettings object."));
 
         // Get the current viewport configuration.
-        ViewportConfiguration* viewportConfig = dataset()->viewportConfig();
+        OORef<const ViewportConfiguration> viewportConfig = dataset()->viewportConfig();
         if(!viewportConfig)
             throw Exception(tr("Cannot render without an active ViewportConfiguration object."));
 
-        // Allocate and resize frame buffer and display the frame buffer window.
+        // Allocate new frame buffer (or resize existing one) and display it in a window.
         std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
 
         // Call high-level rendering function, which will take care of the rest.
-        renderSettings->render(*viewportConfig, frameBuffer);
+        Future<void> future = renderSettings->render(*viewportConfig, frameBuffer);
+
+        // Display a progress indicator in the UI while the rendering operation is in progress.
+        mainWindow().showRenderingProgress(frameBuffer, std::move(future));
     });
 }
 

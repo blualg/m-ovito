@@ -190,7 +190,7 @@ private:
     /// The output file.
     QFile _outputFile;
 
-    /// The stream object used to write into the output file.
+    /// The stream for writing text into the output file (optional).
     std::optional<CompressedTextWriter> _textStream;
 };
 

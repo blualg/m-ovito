@@ -67,7 +67,10 @@ public:
     template<typename FutureType>
     static auto blockForFuture(FutureType&& future, MainWindow& mainWindow, const QString& dialogTitle = QString()) {
         new ProgressDialog(future.task(), {}, mainWindow, &mainWindow, dialogTitle);
-        return std::move(future).blockForResult();
+        if constexpr(!std::is_same_v<typename FutureType::result_type, void>)
+            return std::move(future).blockForResult();
+        else
+            std::move(future).blockForResult();
     }
 
 public:
@@ -76,6 +79,8 @@ public:
     /// This may be immediately if the task has already completed.
     template<typename Function>
     void whenDone(Function&& function) {
+        static_assert(std::is_invocable_r_v<void, Function>, "Function must be callable with no arguments.");
+        static_assert(std::is_nothrow_invocable_r_v<void, Function>, "The function must be noexcept.");
         if(_isDone) {
             function();
         }

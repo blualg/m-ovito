@@ -138,6 +138,9 @@ public:
     /// Creates a frame buffer of the requested size for rendering into and displays it in the user interface.
     virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height);
 
+    /// Shows a progress bar or a similar UI to indicate the current rendering progress and let the user cancel the operation if necessary.
+    virtual void showRenderingProgress(const std::shared_ptr<FrameBuffer>& frameBuffer, SharedFuture<void> renderingFuture) {}
+
     /// Returns the undo stack, which keeps track of changes made by the user to the current dataset.
     /// It may be none if not running as a desktop application.
     UndoStack* undoStack() const { return _undoStack; }

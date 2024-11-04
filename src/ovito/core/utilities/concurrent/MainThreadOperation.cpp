@@ -82,7 +82,6 @@ MainThreadOperation::MainThreadOperation(UserInterface& userInterface, Kind kind
 MainThreadOperation::~MainThreadOperation()
 {
     if(TaskPtr task = std::move(_task)) {
-        OVITO_ASSERT(this_task::get() == task.get());
         task->setFinished();
     }
 }

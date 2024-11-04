@@ -27,7 +27,6 @@
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "VTKDislocationsExporter.h"
 
 namespace Ovito {

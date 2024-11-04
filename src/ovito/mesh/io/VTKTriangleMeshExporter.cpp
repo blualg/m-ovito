@@ -24,7 +24,6 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/mesh/surface/SurfaceMeshVis.h>
 #include <ovito/mesh/surface/RenderableSurfaceMesh.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include <ovito/core/app/Application.h>
 #include "VTKTriangleMeshExporter.h"
 

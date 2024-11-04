@@ -22,7 +22,6 @@
 
 #include <ovito/grid/Grid.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "VTKVoxelGridExporter.h"
 
 namespace Ovito {

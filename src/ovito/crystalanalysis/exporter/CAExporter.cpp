@@ -26,7 +26,6 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "CAExporter.h"
 
 namespace Ovito {

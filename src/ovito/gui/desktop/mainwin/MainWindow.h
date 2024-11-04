@@ -76,6 +76,9 @@ public:
     /// Creates a frame buffer of the requested size for rendering and displays it in a window in the user interface.
     virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height) override;
 
+    /// Shows a progress bar or a similar UI to indicate the current rendering progress and let the user cancel the operation if necessary.
+    virtual void showRenderingProgress(const std::shared_ptr<FrameBuffer>& frameBuffer, SharedFuture<void> renderingFuture) override;
+
     /// Returns the frame buffer window for displaying the rendered image (may be null).
     FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }
 

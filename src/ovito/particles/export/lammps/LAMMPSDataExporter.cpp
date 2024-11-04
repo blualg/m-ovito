@@ -27,7 +27,6 @@
 #include <ovito/stdobj/io/PropertyOutputWriter.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/utilities/concurrent/CoroutinePromise.h>
 #include "LAMMPSDataExporter.h"
 
 namespace Ovito {

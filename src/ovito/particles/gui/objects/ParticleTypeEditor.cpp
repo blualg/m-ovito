@@ -268,7 +268,7 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
             mainWindow().showStatusBarMessage(tr("Stored current %1 as default for particle type '%2'.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
         }
     });
-    presetsMenuButton->createMenuSeperator();
+    presetsMenuButton->createMenuSeparator();
     QAction* editPresetAction = presetsMenuButton->createAction(QIcon::fromTheme("application_preferences"), tr("Edit presets..."));
     connect(editPresetAction, &QAction::triggered, this, [this]() {
         ApplicationSettingsDialog dlg(mainWindow(), &ParticleSettingsPage::OOClass());
