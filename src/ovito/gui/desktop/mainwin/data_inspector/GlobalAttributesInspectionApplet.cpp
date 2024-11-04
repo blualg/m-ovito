@@ -28,7 +28,7 @@
 #include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
 #include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
-#include <ovito/gui/desktop/utilities/concurrent/AsyncProgressDialog.h>
+#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "GlobalAttributesInspectionApplet.h"
 
@@ -163,7 +163,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
         Future<void> future = exporter->doExport();
 
         // Show a progress dialog while the operation is in progress. The dialog will self-destruct when the operation is done.
-        new AsyncProgressDialog(std::move(future), mainWindow(), tr("File export"));
+        ProgressDialog::showForFuture(std::move(future), mainWindow(), tr("File export"));
     });
 }
 

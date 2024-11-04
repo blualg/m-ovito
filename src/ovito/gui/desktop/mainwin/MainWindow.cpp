@@ -36,7 +36,7 @@
 #include <ovito/gui/desktop/actions/WidgetActionManager.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/desktop/dataset/io/FileImporterEditor.h>
-#include <ovito/gui/desktop/utilities/concurrent/AsyncProgressDialog.h>
+#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/base/viewport/ViewportInputManager.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -812,7 +812,7 @@ UserInterface::MessageBoxButton MainWindow::showMessageBoxImpl(QWidget* window, 
         // If there currently is a modal dialog box being shown,
         // make the error message dialog a child of this dialog to prevent a UI dead-lock.
         for(QDialog* dialog : window->findChildren<QDialog*>(Qt::FindChildrenRecursively)) {
-            if(dialog->isModal()) {
+            if(dialog->isVisible() && dialog->isModal() && !qobject_cast<ProgressDialog*>(dialog)) {
                 window = dialog;
                 dialog->show();
                 break;
@@ -1394,13 +1394,13 @@ void MainWindow::scheduleOperationAfterScenePreparation(Scene* scene, const QStr
     OORef<ScenePreparation> sceneProp = OORef<ScenePreparation>::create(*this, scene);
 
     // Show a progress dialog while waiting. The dialog will self-destruct afterwards.
-    AsyncProgressDialog* progressDialog = new AsyncProgressDialog(sceneProp->future(), *this, waitingMessage);
+    ProgressDialog* progressDialog = new ProgressDialog(sceneProp->future(), *this, waitingMessage);
 
     // Keep the scene preparation object alive until it has done its job.
     sceneProp->future().finally([sceneProp]() noexcept {});
 
     // Schedule execution of the operation upon completion of the scene preparation.
-    connect(progressDialog, &AsyncProgressDialog::accepted, this, [this, operation=std::move(operation)]() mutable {
+    progressDialog->whenDone([this, operation=std::move(operation)]() mutable {
         handleExceptions([&] {
             operation();
         });

@@ -100,12 +100,15 @@ public:
     /// Writes a Qt string string to the text-based output file.
     CompressedTextWriter& operator<<(const QString& s) { return *this << qPrintable(s); }
 
+    /// The maximum number of digits to be written for floating-point numbers.
+    constexpr static unsigned int MaxFloatPrecision = std::numeric_limits<double>::max_digits10;
+
     /// Returns the current output precision for floating-point numbers.
     unsigned int floatPrecision() const { return _floatPrecision; }
 
     /// Changes the output precision for floating-point numbers.
     void setFloatPrecision(unsigned int precision) {
-        _floatPrecision = std::min(precision, (unsigned int)std::numeric_limits<FloatType>::max_digits10);
+        _floatPrecision = std::min(precision, MaxFloatPrecision);
     }
 
 private:

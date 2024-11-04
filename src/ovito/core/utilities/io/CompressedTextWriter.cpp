@@ -170,7 +170,7 @@ CompressedTextWriter& CompressedTextWriter::operator<<(size_t i)
 CompressedTextWriter& CompressedTextWriter::operator<<(float f)
 {
     using FType = decltype(f);
-    char buffer[std::numeric_limits<FType>::max_digits10 + 8];
+    char buffer[MaxFloatPrecision + 8];
     char *s = buffer;
 
     // Workaround for Boost bug #5983 (https://svn.boost.org/trac/boost/ticket/5983)
@@ -211,7 +211,7 @@ CompressedTextWriter& CompressedTextWriter::operator<<(float f)
 CompressedTextWriter& CompressedTextWriter::operator<<(double f)
 {
     using FType = decltype(f);
-    char buffer[std::numeric_limits<FType>::max_digits10 + 8];
+    char buffer[MaxFloatPrecision + 8];
     char *s = buffer;
 
     // Workaround for Boost bug #5983 (https://svn.boost.org/trac/boost/ticket/5983)

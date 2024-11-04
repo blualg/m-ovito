@@ -30,7 +30,6 @@
 #include <ovito/gui/desktop/properties/CustomParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateParameterUI.h>
 #include <ovito/gui/desktop/dialogs/SaveImageFileDialog.h>
-#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/oo/OvitoClass.h>
@@ -389,7 +388,7 @@ void ColorCodingModifierEditor::onAdjustRange()
     OVITO_CHECK_OBJECT_POINTER(mod);
 
     performTransaction(tr("Adjust range"), [&]() {
-        ProgressDialog progressDialog(mainWindow(), container(), tr("Determining property value range"));
+        ProgressDialog::showForCurrentTask(mainWindow(), container(), tr("Determining property value range"));
         mod->adjustRange(currentAnimationTime());
     });
 }
@@ -404,7 +403,7 @@ void ColorCodingModifierEditor::onAdjustRangeGlobal()
 
     if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
         performTransaction(tr("Adjust range"), [this, mod, firstFrame=anim->firstFrame(), lastFrame=anim->lastFrame()]() {
-            ProgressDialog progressDialog(mainWindow(), container(), tr("Determining property value range"));
+            ProgressDialog::showForCurrentTask(mainWindow(), container(), tr("Determining property value range"));
             mod->adjustRangeGlobal(firstFrame, lastFrame);
         });
     }

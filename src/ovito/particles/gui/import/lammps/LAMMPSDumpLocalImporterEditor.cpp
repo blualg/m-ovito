@@ -25,7 +25,6 @@
 #include <ovito/stdobj/gui/properties/InputColumnMappingDialog.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
@@ -43,15 +42,7 @@ void LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
 {
     // Retrieve column information of input file.
     LAMMPSDumpLocalImporter* lammpsImporter = static_object_cast<LAMMPSDumpLocalImporter>(importer);
-    Future<BondInputColumnMapping> inspectFuture = lammpsImporter->inspectFileHeader(FileSourceImporter::Frame(sourceFile));
-
-    {
-        // Block UI until reading is done.
-        ProgressDialog progressDialog(mainWindow, &mainWindow, inspectFuture, tr("Inspecting file header"));
-        inspectFuture.waitForFinished();
-    }
-
-    InputColumnMapping mapping = inspectFuture.result();
+    InputColumnMapping mapping = ProgressDialog::blockForFuture(lammpsImporter->inspectFileHeader(sourceFile), mainWindow, tr("Inspecting file header"));
 
     // If this is a newly created file importer, load old mapping from application settings store.
     if(lammpsImporter->columnMapping().empty()) {
@@ -90,43 +81,6 @@ void LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
     if(dialog.exec() == QDialog::Accepted) {
         lammpsImporter->setColumnMapping(dialog.mapping());
 
-        // Remember the user-defined mapping for the next time.
-        QSettings settings;
-        settings.beginGroup("viz/importer/lammps_dump_local/");
-        settings.setValue("colmapping", dialog.mapping().toByteArray());
-        settings.endGroup();
-    }
-    else {
-        this_task::cancelAndThrow();
-    }
-}
-
-/******************************************************************************
- * Displays a dialog box that allows the user to edit the file column to property mapping.
- *****************************************************************************/
-void LAMMPSDumpLocalImporterEditor::showEditColumnMappingDialog(LAMMPSDumpLocalImporter* importer, const FileSourceImporter::Frame& frame)
-{
-    Future<BondInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
-
-    {
-        // Block UI until reading is done.
-        ProgressDialog progressDialog(mainWindow(), parentWindow(), inspectFuture, tr("Inspecting file header"));
-        inspectFuture.waitForFinished();
-    }
-
-    InputColumnMapping mapping = inspectFuture.result();
-
-    if(!importer->columnMapping().empty()) {
-        InputColumnMapping newMapping = importer->columnMapping();
-        newMapping.resize(mapping.size());
-        for(size_t i = 0; i < newMapping.size(); i++)
-            newMapping[i].columnName = mapping[i].columnName;
-        mapping = std::move(newMapping);
-    }
-
-    InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
-    if(dialog.exec() == QDialog::Accepted) {
-        importer->setColumnMapping(dialog.mapping());
         // Remember the user-defined mapping for the next time.
         QSettings settings;
         settings.beginGroup("viz/importer/lammps_dump_local/");
@@ -186,19 +140,45 @@ bool LAMMPSDumpLocalImporterEditor::referenceEvent(RefTarget* source, const Refe
 ******************************************************************************/
 void LAMMPSDumpLocalImporterEditor::onEditColumnMapping()
 {
-    if(LAMMPSDumpLocalImporter* importer = static_object_cast<LAMMPSDumpLocalImporter>(editObject())) {
-        performTransaction(tr("Change file column mapping"), [this, importer]() {
+    OORef<LAMMPSDumpLocalImporter> importer = static_object_cast<LAMMPSDumpLocalImporter>(editObject());
+    if(!importer)
+        return;
 
-            // Determine the currently loaded data file of the FileSource.
-            FileSource* fileSource = importer->fileSource();
-            if(!fileSource || fileSource->frames().empty())
-                return;
-            int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
+    handleExceptions([&]() {
 
-            // Show the dialog box, which lets the user modify the file column mapping.
-            showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex]);
+        // Determine the currently loaded data file of the FileSource.
+        FileSource* fileSource = importer->fileSource();
+        if(!fileSource || fileSource->frames().empty())
+            return;
+        int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
+
+        // Show the dialog box, which lets the user modify the file column mapping.
+        Future<BondInputColumnMapping> future = importer->inspectFileHeader(fileSource->frames()[frameIndex]);
+
+        // Show a progress dialog while performing the whole operation.
+        scheduleOperationAfter(std::move(future), [this, importer=std::move(importer)](BondInputColumnMapping&& mapping) {
+
+            if(!importer->columnMapping().empty()) {
+                InputColumnMapping newMapping = importer->columnMapping();
+                newMapping.resize(mapping.size());
+                for(size_t i = 0; i < newMapping.size(); i++)
+                    newMapping[i].columnName = mapping[i].columnName;
+                mapping = std::move(newMapping);
+            }
+
+            InputColumnMappingDialog dialog(mainWindow(), std::move(mapping), parentWindow());
+            if(dialog.exec() == QDialog::Accepted) {
+                performTransaction(tr("Change file column mapping"), [&]() {
+                    importer->setColumnMapping(dialog.mapping());
+                    // Remember the user-defined mapping for the next time.
+                    QSettings settings;
+                    settings.beginGroup("viz/importer/lammps_dump_local/");
+                    settings.setValue("colmapping", dialog.mapping().toByteArray());
+                    settings.endGroup();
+                });
+            }
         });
-    }
+    });
 }
 
 }   // End of namespace

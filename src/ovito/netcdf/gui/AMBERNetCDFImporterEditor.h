@@ -42,9 +42,6 @@ protected:
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 
-    /// Displays a dialog box that allows the user to edit the custom file column to particle property mapping.
-    void showEditColumnMappingDialog(AMBERNetCDFImporter* importer, const FileSourceImporter::Frame& frame);
-
 protected Q_SLOTS:
 
     /// Is called when the user pressed the "Edit column mapping" button.

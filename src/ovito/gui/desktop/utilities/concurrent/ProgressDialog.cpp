@@ -27,18 +27,65 @@
 namespace Ovito {
 
 /******************************************************************************
+* Creates a progress dialog for the currently running task.
+******************************************************************************/
+void ProgressDialog::showForCurrentTask(MainWindow& mainWindow, QWidget* parent, const QString& dialogTitle)
+{
+    OVITO_ASSERT(this_task::isMainThread());
+    OVITO_ASSERT(this_task::get());
+    new ProgressDialog(this_task::get()->shared_from_this(), {}, mainWindow, parent, dialogTitle);
+}
+
+/******************************************************************************
 * Initializes the dialog window.
 ******************************************************************************/
-ProgressDialog::ProgressDialog(MainWindow& mainWindow, QWidget* parent, TaskPtr task, const QString& dialogTitle) : QDialog(parent), _mainWindow(mainWindow), _task(std::move(task))
+ProgressDialog::ProgressDialog(TaskPtr task, detail::TaskDependency taskDependency, MainWindow& mainWindow, QWidget* parent, const QString& dialogTitle) : QDialog(parent), _mainWindow(mainWindow), _task(std::move(task)), _taskDependency(std::move(taskDependency))
 {
-    OVITO_ASSERT(_task);
+    OVITO_ASSERT(_task || _taskDependency);
+    OVITO_ASSERT(!_task || !_taskDependency);
 
+    setAttribute(Qt::WA_DeleteOnClose);
     setWindowModality(Qt::WindowModal);
     setWindowTitle(dialogTitle);
 
-    // Show the dialog with a short delay.
-    // This prevents the dialog from showing up for short tasks that terminate very quickly.
-    QTimer::singleShot(200, this, &QDialog::open);
+    // If the main window is closing down, cancel the operation being in progress (by dropping the dependency on it).
+    connect(&mainWindow, &MainWindow::closingWindow, this, &ProgressDialog::reject);
+
+    // Display the dialog only after a short waiting period.
+    // This is to prevent the dialog from showing up at all for short tasks that terminate very quickly.
+    QTimer::singleShot(200, this, [this]() {
+        if((_task && !_task->isFinished()) || (_taskDependency && !_taskDependency->isFinished()))
+            open();
+    });
+
+    // Close dialog as soon as the operation completes.
+    (_task ? _task : _taskDependency.get())->finally(ObjectExecutor(&mainWindow), [self=QPointer<ProgressDialog>(this)](Task& task) noexcept {
+        if(!self.isNull()) {
+            // Check for errors that may have occurred during the operation and show them to the user.
+            if(!task.isCanceled()) {
+                try {
+                    task.throwPossibleException();
+                }
+                catch(const Exception& ex) {
+                    MainWindow& mainWindow = self->_mainWindow; // Capture the main window reference, because "self" may be destroyed when the dialog is closed.
+                    self->reject(); // Close the dialog.
+                    mainWindow.reportError(ex);
+                    return;
+                }
+            }
+
+            // Close the dialog.
+            self->_isDone = !task.isCanceled();
+            self->done(task.isCanceled() ? QDialog::Rejected : QDialog::Accepted);
+        }
+    });
+}
+
+/******************************************************************************
+* Destructor.
+******************************************************************************/
+ProgressDialog::~ProgressDialog()
+{
 }
 
 /******************************************************************************
@@ -141,24 +188,17 @@ void ProgressDialog::updateTaskList()
 /******************************************************************************
 * Is called when the user tries to close the dialog.
 ******************************************************************************/
-void ProgressDialog::closeEvent(QCloseEvent* event)
-{
-    // Cancel the root operation associated with this dialog.
-    _task->cancel();
-
-    if(event->spontaneous())
-        event->ignore();
-
-    QDialog::closeEvent(event);
-}
-
-/******************************************************************************
-* Is called when the user tries to close the dialog.
-******************************************************************************/
 void ProgressDialog::reject()
 {
-    // Cancel the root operation associated with this dialog.
-    _task->cancel();
+    // Cancel the task associated with this dialog either by dropping the dependency
+    // or by directly canceling the tracked task.
+    if(_taskDependency)
+        _taskDependency.reset();
+    else if(_task)
+        _task->cancel();
+
+    // Close the dialog.
+    QDialog::reject();
 }
 
 }   // End of namespace

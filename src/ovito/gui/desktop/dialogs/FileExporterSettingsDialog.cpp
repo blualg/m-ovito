@@ -208,6 +208,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
     if(OORef<PropertiesEditor> editor = PropertiesEditor::create(mainWindow, exporter)) {
         if(editor->getOOMetaClass() != DefaultPropertiesEditor::OOClass()) {
             PropertiesPanel* propPanel = new PropertiesPanel(mainWindow, this);
+            propPanel->setFrameStyle(QFrame::NoFrame);
             _mainLayout->addWidget(propPanel);
             propPanel->setEditObject(exporter);
             _skipDialog = false;

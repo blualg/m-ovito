@@ -31,7 +31,6 @@
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
-#include <ovito/gui/desktop/utilities/concurrent/AsyncProgressDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
@@ -335,7 +334,7 @@ void ParticleTypeEditor::onLoadParticleShape()
         });
 
         // Show a progress dialog while performing the whole operation. The dialog will self-destruct afterwards.
-        AsyncProgressDialog* progressDialog = new AsyncProgressDialog(std::move(future), mainWindow(), parentWindow(), tr("Loading geometry file"));
+        ProgressDialog::showForFuture(std::move(future), mainWindow(), parentWindow(), tr("Loading geometry file"));
     });
 }
 

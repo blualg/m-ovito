@@ -23,7 +23,6 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/FilenameParameterUI.h>
 #include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
-#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 
 namespace Ovito {
 
@@ -116,7 +115,7 @@ void FilenameParameterUI::onPickFilename()
         if(fileDialog.exec()) {
             QStringList selectedFiles = fileDialog.selectedFiles();
             if(!selectedFiles.empty()) {
-                ProgressDialog progressDialog(mainWindow(), editor()->container());
+                ProgressDialog::showForCurrentTask(mainWindow(), editor()->parentWindow());
                 if(isPropertyFieldUI() && editObject()) {
                     editObject()->setPropertyFieldValue(propertyField(), selectedFiles.join(QDir::listSeparator()));
                 }

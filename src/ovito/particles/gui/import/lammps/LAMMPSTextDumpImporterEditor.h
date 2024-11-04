@@ -45,9 +45,6 @@ protected:
     /// This method is called when a reference target changes.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
-    /// Displays a dialog box that allows the user to edit the custom file column to particle property mapping.
-    void showEditColumnMappingDialog(LAMMPSTextDumpImporter* importer, const FileSourceImporter::Frame& frame);
-
 protected Q_SLOTS:
 
     /// Is called when the user pressed the "Edit column mapping" button.

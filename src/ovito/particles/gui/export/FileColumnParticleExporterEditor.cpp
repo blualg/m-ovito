@@ -24,7 +24,6 @@
 #include <ovito/particles/export/FileColumnParticleExporter.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/DataSetContainer.h>
-#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include "FileColumnParticleExporterEditor.h"
 
 namespace Ovito {
@@ -116,40 +115,36 @@ void FileColumnParticleExporterEditor::updateParticlePropertiesList()
         return;
 
     handleExceptions([&]() {
-        try {
-            // Determine the data that is available for export.
-            ProgressDialog progressDialog(mainWindow(), container());
-            const PipelineFlowState state = exporter->getPipelineDataToBeExported(currentAnimationTime().frame()).blockForResult();
-            if(!state)
-                throw Exception(tr("Operation has been canceled by the user."));
-
-            bool hasParticleIdentifiers = false;
-            const Particles* particles = state.expectObject<Particles>();
-            for(const Property* property : particles->properties()) {
-                if(property->componentCount() == 1) {
-                    insertPropertyItem(property, property->name(), exporter->columnMapping());
-                    if(property->typeId() == Particles::IdentifierProperty)
-                        hasParticleIdentifiers = true;
-                }
-                else {
-                    for(int vectorComponent = 0; vectorComponent < (int)property->componentCount(); vectorComponent++) {
-                        QString propertyName = property->nameWithComponent(vectorComponent);
-                        PropertyReference propRef(property, vectorComponent);
-                        insertPropertyItem(propRef, propertyName, exporter->columnMapping());
+        // Determine which data of the selected pipeline is available for export.
+        scheduleOperationAfter(exporter->getPipelineDataToBeExported(currentAnimationTime().frame()), [this, exporter](const PipelineFlowState state) {
+            try {
+                bool hasParticleIdentifiers = false;
+                const Particles* particles = state.expectObject<Particles>();
+                for(const Property* property : particles->properties()) {
+                    if(property->componentCount() == 1) {
+                        insertPropertyItem(property, property->name(), exporter->columnMapping());
+                        if(property->typeId() == Particles::IdentifierProperty)
+                            hasParticleIdentifiers = true;
+                    }
+                    else {
+                        for(int vectorComponent = 0; vectorComponent < (int)property->componentCount(); vectorComponent++) {
+                            QString propertyName = property->nameWithComponent(vectorComponent);
+                            PropertyReference propRef(property, vectorComponent);
+                            insertPropertyItem(propRef, propertyName, exporter->columnMapping());
+                        }
                     }
                 }
+                if(!hasParticleIdentifiers)
+                    insertPropertyItem(PropertyReference(&Particles::OOClass(), Particles::IdentifierProperty), tr("Particle index"), exporter->columnMapping());
             }
-            if(!hasParticleIdentifiers)
-                insertPropertyItem(PropertyReference(&Particles::OOClass(), Particles::IdentifierProperty), tr("Particle index"), exporter->columnMapping());
-        }
-        catch(const Exception& ex) {
-            // Ignore errors, but display a message in the UI widget to inform user.
-            _columnMappingWidget->addItems(ex.messages());
-        }
+            catch(const Exception& ex) {
+                // Ignore errors, but display a message in the UI widget to inform user.
+                _columnMappingWidget->addItems(ex.messages());
+            }
+            // Update the settings stored in the exporter to match the current settings in the UI.
+            saveChanges(exporter);
+        });
     });
-
-    // Update the settings stored in the exporter to match the current settings in the UI.
-    saveChanges(exporter);
 }
 
 /******************************************************************************

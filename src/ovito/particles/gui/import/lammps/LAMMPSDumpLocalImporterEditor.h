@@ -44,9 +44,6 @@ public:
 
 protected:
 
-    /// Displays a dialog box that allows the user to edit the file column to property mapping.
-    void showEditColumnMappingDialog(LAMMPSDumpLocalImporter* importer, const FileSourceImporter::Frame& frame);
-
     /// Creates the user interface controls for the editor.
     virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
 

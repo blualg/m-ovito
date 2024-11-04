@@ -27,6 +27,7 @@
 #include <ovito/gui/desktop/widgets/general/RolloutContainer.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/utilities/DeferredMethodInvocation.h>
+#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "PropertiesPanel.h"
@@ -205,6 +206,24 @@ public:
         return nullptr;
     }
 
+    /// Shows a progress dialog while waiting for the given future to complete.
+    /// Then runs the given continuation function in the GUI thread, which receives the results of the future.
+    /// The continuation function is only executed if the future completes successfully, the editor
+    /// is still open, and the original object is still being loaded in the editor.
+    template<typename FutureType, typename Function>
+    void scheduleOperationAfter(FutureType&& future, Function&& function) {
+        if(!editObject())
+            return;
+        ProgressDialog* progressDialog = new ProgressDialog(future.task(), {}, mainWindow(), parentWindow());
+        progressDialog->whenDone([self=QPointer<PropertiesEditor>(this), editObject=OOWeakRef<RefTarget>(editObject()), future=std::move(future), function=std::forward<Function>(function)]() mutable {
+            if(!self.isNull() && self->editObject() == editObject.lock()) {
+                self->mainWindow().handleExceptions([&]() {
+                    std::invoke(std::move(function), std::move(future).result());
+                });
+            }
+        });
+    }
+
 public Q_SLOTS:
 
     /// \brief Sets the object being edited in this editor.
@@ -248,6 +267,9 @@ protected:
 
 private:
 
+    /// The object being edited in this editor.
+    DECLARE_REFERENCE_FIELD(OORef<RefTarget>, editObject);
+
     /// The container widget the editor is shown in.
     PropertiesPanel* _container = nullptr;
 
@@ -256,9 +278,6 @@ private:
 
     /// Pointer to the parent editor which opened this editor for a sub-component.
     PropertiesEditor* _parentEditor = nullptr;
-
-    /// The object being edited in this editor.
-    DECLARE_REFERENCE_FIELD(OORef<RefTarget>, editObject);
 
     /// The list of ParameterUI components created by the editor.
     std::vector<OORef<ParameterUI>> _parameterUIs;

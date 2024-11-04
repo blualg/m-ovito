@@ -25,7 +25,6 @@
 #include <ovito/stdobj/gui/properties/InputColumnMappingDialog.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
-#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "LAMMPSTextDumpImporterEditor.h"
@@ -34,41 +33,6 @@ namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LAMMPSTextDumpImporterEditor);
 SET_OVITO_OBJECT_EDITOR(LAMMPSTextDumpImporter, LAMMPSTextDumpImporterEditor);
-
-/******************************************************************************
- * Displays a dialog box that allows the user to edit the custom file column to particle
- * property mapping.
- *****************************************************************************/
-void LAMMPSTextDumpImporterEditor::showEditColumnMappingDialog(LAMMPSTextDumpImporter* importer, const FileSourceImporter::Frame& frame)
-{
-    // Read the list of columns from the file's header.
-    Future<ParticleInputColumnMapping> inspectFuture = importer->inspectFileHeader(frame);
-
-    // Block UI until reading is done.
-    {
-        ProgressDialog progressDialog(mainWindow(), parentWindow(), inspectFuture, tr("Inspecting file header"));
-        inspectFuture.waitForFinished();
-    }
-
-    ParticleInputColumnMapping mapping = inspectFuture.result();
-
-    if(!importer->customColumnMapping().empty()) {
-        ParticleInputColumnMapping customMapping = importer->customColumnMapping();
-        customMapping.resize(mapping.size());
-        for(size_t i = 0; i < customMapping.size(); i++)
-            customMapping[i].columnName = mapping[i].columnName;
-        mapping = std::move(customMapping);
-    }
-
-    InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
-    if(dialog.exec() == QDialog::Accepted) {
-        importer->setCustomColumnMapping(dialog.mapping());
-        importer->setUseCustomColumnMapping(true);
-    }
-    else {
-        this_task::cancelAndThrow();
-    }
-}
 
 /******************************************************************************
 * Sets up the UI widgets of the editor.
@@ -128,19 +92,41 @@ bool LAMMPSTextDumpImporterEditor::referenceEvent(RefTarget* source, const Refer
 ******************************************************************************/
 void LAMMPSTextDumpImporterEditor::onEditColumnMapping()
 {
-    if(LAMMPSTextDumpImporter* importer = static_object_cast<LAMMPSTextDumpImporter>(editObject())) {
-        performTransaction(tr("Change file column mapping"), [this, importer]() {
+    OORef<LAMMPSTextDumpImporter> importer = static_object_cast<LAMMPSTextDumpImporter>(editObject());
+    if(!importer)
+        return;
 
-            // Determine the currently loaded data file of the FileSource.
-            FileSource* fileSource = importer->fileSource();
-            if(!fileSource || fileSource->frames().empty())
-                return;
-            int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size() - 1);
+    handleExceptions([&]() {
 
-            // Show the dialog box, which lets the user modify the file column mapping.
-            showEditColumnMappingDialog(importer, fileSource->frames()[frameIndex]);
+        // Determine the currently loaded data file of the FileSource.
+        FileSource* fileSource = importer->fileSource();
+        if(!fileSource || fileSource->frames().empty())
+            return;
+        int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size() - 1);
+
+        // Read the list of columns from the file's header.
+        Future<ParticleInputColumnMapping> future = importer->inspectFileHeader(fileSource->frames()[frameIndex]);
+
+        // Show a progress dialog while performing the whole operation.
+        scheduleOperationAfter(std::move(future), [this, importer=std::move(importer)](ParticleInputColumnMapping&& mapping) {
+
+            if(!importer->customColumnMapping().empty()) {
+                ParticleInputColumnMapping customMapping = importer->customColumnMapping();
+                customMapping.resize(mapping.size());
+                for(size_t i = 0; i < customMapping.size(); i++)
+                    customMapping[i].columnName = mapping[i].columnName;
+                mapping = std::move(customMapping);
+            }
+
+            InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
+            if(dialog.exec() == QDialog::Accepted) {
+                performTransaction(tr("Change file column mapping"), [&]() {
+                    importer->setCustomColumnMapping(dialog.mapping());
+                    importer->setUseCustomColumnMapping(true);
+                });
+            }
         });
-    }
+    });
 }
 
 }   // End of namespace

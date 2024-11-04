@@ -30,7 +30,6 @@
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
-#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include "GenerateTrajectoryLinesModifierEditor.h"
 

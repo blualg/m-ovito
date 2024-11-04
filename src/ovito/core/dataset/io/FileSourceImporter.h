@@ -45,15 +45,15 @@ public:
         /// Default constructor.
         Frame() = default;
 
-        /// Initialization constructor.
-        explicit Frame(const FileHandle& fileHandle, qint64 offset = 0, int linenum = 1, const QString& name = QString()) :
+        /// Constructor.
+        Frame(const FileHandle& fileHandle, qint64 offset = 0, int linenum = 1, const QString& name = QString()) :
                 sourceFile(fileHandle.sourceUrl()), byteOffset(offset), lineNumber(linenum), label(name.isEmpty() ? fileHandle.sourceUrl().fileName() : name) {
             if(!fileHandle.localFilePath().isEmpty())
                 lastModificationTime = QFileInfo(fileHandle.localFilePath()).lastModified();
         }
 
-        /// Initialization constructor.
-        explicit Frame(const QUrl& url, qint64 offset = 0, int linenum = 1, const QDateTime& modTime = QDateTime(), const QString& name = QString()) :
+        /// Constructor.
+        Frame(const QUrl& url, qint64 offset = 0, int linenum = 1, const QDateTime& modTime = QDateTime(), const QString& name = QString()) :
             sourceFile(url), byteOffset(offset), lineNumber(linenum), lastModificationTime(modTime), label(name) {}
 
         /// The source file that contains the data of the animation frame.

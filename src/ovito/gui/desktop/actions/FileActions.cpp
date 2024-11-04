@@ -29,7 +29,7 @@
 #include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/gui/desktop/dialogs/SystemInformationDialog.h>
-#include <ovito/gui/desktop/utilities/concurrent/AsyncProgressDialog.h>
+#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -357,7 +357,7 @@ void WidgetActionManager::on_FileExport_triggered()
             Future<void> future = exporter->doExport();
 
             // Show a progress dialog while the operation is in progress. The dialog will self-destruct when the operation is done.
-            new AsyncProgressDialog(std::move(future), mainWindow(), tr("Exporting to file"));
+            ProgressDialog::showForFuture(std::move(future), mainWindow(), tr("Exporting to file"));
         });
     });
 }
