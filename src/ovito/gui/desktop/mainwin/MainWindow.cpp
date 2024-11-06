@@ -46,6 +46,7 @@
 #include <ovito/core/app/StandaloneApplication.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/viewport/ViewportWindow.h>
+#include <ovito/core/utilities/concurrent/TaskProgress.h>
 #include "MainWindow.h"
 #include "ViewportsPanel.h"
 #include "TaskDisplayWidget.h"
@@ -1212,6 +1213,50 @@ void MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterCl
 }
 
 /******************************************************************************
+* Registers a new task progress record with this user interface.
+* This method gets called when a new TaskProgress instance is created from a running task.
+******************************************************************************/
+std::mutex* MainWindow::taskProgressBegin(TaskProgress* progress)
+{
+    std::lock_guard<std::mutex> lock(_progressTaskListMutex);
+    if(!_progressTasksHead)
+        _progressTasksHead = progress;
+    progress->setPrevInList(_progressTasksTail);
+    progress->setNextInList(nullptr);
+    if(_progressTasksTail)
+        _progressTasksTail->setNextInList(progress);
+    _progressTasksTail = progress;
+    return &_progressTaskListMutex;
+}
+
+/******************************************************************************
+* Unregisters a task progress record from this user interface.
+* This method gets called when a previously registered task finishes.
+******************************************************************************/
+void MainWindow::taskProgressEnd(TaskProgress* progress)
+{
+    // Note: Mutex is already locked by the TaskProgress class.
+    if(_progressTasksHead == progress)
+        _progressTasksHead = progress->nextInList();
+    if(_progressTasksTail == progress)
+        _progressTasksTail = progress->prevInList();
+    if(TaskProgress* prev = progress->prevInList())
+        prev->setNextInList(progress->nextInList());
+    if(TaskProgress* next = progress->nextInList())
+        next->setPrevInList(progress->prevInList());
+    notifyProgressTasksChanged();
+}
+
+/******************************************************************************
+* Informs the user interface that a task's progress state has changed.
+******************************************************************************/
+void MainWindow::taskProgressChanged(TaskProgress* progress)
+{
+    // Note: Mutex is already locked by the TaskProgress class.
+    notifyProgressTasksChanged();
+}
+
+/******************************************************************************
 * Registers a new task for progress display in the UI.
 ******************************************************************************/
 MainWindow::ProgressTaskInfo* MainWindow::registerProgressTask(Task& task)
@@ -1259,7 +1304,7 @@ void MainWindow::notifyProgressTasksChanged()
 {
     // The following timer code ensures that the GUI task display is updated only once every 100 ms.
     // It also ensures that the UI update is done in the main thread and that short-lived
-    // tasks doesn't show up in the GUI at all.
+    // tasks don't show up in the GUI at all.
     if(!_progressUpdateScheduled.exchange(true)) {
         QTimer::singleShot(100, this, [this]() {
             _progressUpdateScheduled.store(false);
@@ -1271,9 +1316,10 @@ void MainWindow::notifyProgressTasksChanged()
 /******************************************************************************
 * Lets the caller visit all registered worker tasks that are in progress.
 ******************************************************************************/
-void MainWindow::visitRunningTasks(std::function<void(Task&,const QString&,int,int)> visitor)
+void MainWindow::visitRunningTasks(std::function<void(const QString&,int,int)> visitor)
 {
     std::lock_guard<std::mutex> lock(_progressTaskListMutex);
+
     for(ProgressTaskInfo& info : _progressTaskList) {
 
         // Compute overall progress, taking into account nested sub-steps of the task.
@@ -1300,7 +1346,14 @@ void MainWindow::visitRunningTasks(std::function<void(Task&,const QString&,int,i
         int totalProgressValue = static_cast<int>(percentage * totalProgressMaximum);
 
         // Call visitor function.
-        visitor(*info.task, info.text, totalProgressValue, totalProgressMaximum);
+        visitor(info.text, totalProgressValue, totalProgressMaximum);
+    }
+
+    for(TaskProgress* taskProgress = _progressTasksHead; taskProgress != nullptr; taskProgress = taskProgress->nextInList()) {
+        // Compute overall progress, taking into account nested sub-steps of the task.
+        auto [totalProgressValue, totalProgressMaximum] = taskProgress->computeTotalProgress();
+        // Call visitor function.
+        visitor(taskProgress->text(), totalProgressValue, totalProgressMaximum);
     }
 }
 

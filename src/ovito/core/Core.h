@@ -171,6 +171,7 @@
 #include <ovito/core/utilities/linalg/LinAlg.h>
 #include <ovito/core/utilities/Color.h>
 #include <ovito/core/utilities/concurrent/Future.h>
+#include <ovito/core/utilities/concurrent/SCFuture.h>
 #include <ovito/core/utilities/concurrent/SharedFuture.h>
 #include <ovito/core/utilities/concurrent/WeakSharedFuture.h>
 #include <ovito/core/utilities/concurrent/Promise.h>
@@ -179,5 +180,6 @@
 #include <ovito/core/oo/OvitoObject.h>
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/utilities/concurrent/Launch.h>
+#include <ovito/core/utilities/concurrent/TaskProgress.h>
 
 #endif // __OVITO_CORE_

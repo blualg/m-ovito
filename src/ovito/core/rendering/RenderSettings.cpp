@@ -169,9 +169,6 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
     // Create a ref to ourself to keep this RenderSettings object alive while the coroutine is running.
     OORef<RenderSettings> self(this);
 
-    // Note: This is to perform a context switch to the coroutine's task, which is needed for proper progress reporting.
-    co_await ExecutorAwaiter(InlineExecutor());
-
     // Resize output frame buffer.
     if(outputFrameBuffer->size() != QSize(outputImageWidth(), outputImageHeight())) {
         outputFrameBuffer->setSize(QSize(outputImageWidth(), outputImageHeight()));
@@ -254,22 +251,27 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
     // The visualization data cache used for building the frame graph.
     std::shared_ptr<RendererResourceCache> visCache = this_task::ui()->datasetContainer().visCache();
 
+    // Progress reporting when rendering an entire animation.
+    std::optional<TaskProgress> animationProgress;
+    if(numberOfFrames > 1) {
+        animationProgress.emplace(this_task::ui());
+        animationProgress->setProgressMaximum(numberOfFrames);
+    }
+
     // Render the animation frames, one by one.
     for(int frameIndex = 0; frameIndex < numberOfFrames && !this_task::isCanceled(); frameIndex++) {
         int frameNumber = firstFrameNumber + frameIndex * everyNthFrame() + fileNumberBase();
         AnimationTime renderTime = AnimationTime::fromFrame(frameNumber);
 
-        if(numberOfFrames > 1) {
-            this_task::setProgressMaximum(numberOfFrames, false);
-            this_task::setProgressValue(frameIndex);
-            this_task::setProgressText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
+        if(animationProgress) {
+            animationProgress->setProgressValue(frameIndex);
+            animationProgress->setProgressText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
         }
 
-        // Create a sub-task to display a second progress bar in the UI.
-        MainThreadOperation frameTask;
-
+        // Progress reporting for the current frame.
+        TaskProgress frameProgress(this_task::ui());
         if(numberOfFrames == 1)
-            frameTask.setProgressText(tr("Rendering frame %1").arg(frameNumber));
+            frameProgress.setProgressText(tr("Rendering frame %1").arg(frameNumber));
 
         // Determine output filename for this frame.
         QString outputFilename;
@@ -290,7 +292,7 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
         }
 
         // Subdivide progress range into sub-steps for each viewport when rendering a multi-viewport layout.
-        frameTask.beginProgressSubSteps(viewportList.size());
+        frameProgress.beginProgressSubSteps(viewportList.size());
 
         // Render each viewport of the layout one after the other.
         for(ViewportRenderingData& vpData : viewportList) {
@@ -333,12 +335,11 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
 
             // Let the scene renderer produce the rendering in the framebuffer.
             outputFrameBuffer->discardChanges();
-            Task::Scope taskScope(frameTask.task());
-            co_await FutureAwaiter(ObjectExecutor(this), renderingJob->renderFrame(frameGraph, vpData.renderingFrameBuffer));
+            co_await FutureAwaiter(ObjectExecutor(this), renderingJob->renderFrame(frameGraph, vpData.renderingFrameBuffer, frameProgress));
 
-            frameTask.nextProgressSubStep();
+            frameProgress.nextProgressSubStep();
         }
-        frameTask.endProgressSubSteps();
+        frameProgress.endProgressSubSteps();
 
         // Write rendered image or video frame to disk.
         if(saveToFile()) {

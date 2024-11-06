@@ -90,7 +90,7 @@ public:
 	virtual int multisamplingLevel() const { return 1; }
 
 	/// Renders an image of the given frame graph into the given target frame buffer.
-	[[nodiscard]] virtual Future<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap = {}) = 0;
+	[[nodiscard]] virtual SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, TaskProgress& progress, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap = {}) = 0;
 
     /// Perform post-processing of a newly generated frame graph, which is to be rendered by this rendering job.
     virtual void postprocessFrameGraph(FrameGraph& frameGraph) {}

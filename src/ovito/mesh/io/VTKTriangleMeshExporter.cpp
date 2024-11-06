@@ -42,7 +42,7 @@ OORef<FileExportJob> VTKTriangleMeshExporter::createExportJob(const QString& fil
     public:
 
         /// Writes the exportable data of a single trajectory frame to the output file.
-        virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
             // The exportable frame data.
             const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
@@ -60,7 +60,7 @@ OORef<FileExportJob> VTKTriangleMeshExporter::createExportJob(const QString& fil
                 surfaceVis = OORef<SurfaceMeshVis>::create(); // Create an ad-hoc vis element if necessary
 
             // Let the vis element convert the SurfaceMesh to a triangle mesh.
-            std::shared_ptr<const RenderableSurfaceMesh> meshObj = co_await FutureAwaiter(ObjectExecutor(exporter()), surfaceVis->transformSurfaceMesh(surfaceObj));
+            std::shared_ptr<const RenderableSurfaceMesh> meshObj = co_await FutureAwaiter(ObjectExecutor(this), surfaceVis->transformSurfaceMesh(surfaceObj));
 
             const TriangleMesh* surfaceMesh = meshObj->surface();
             const TriangleMesh* capPolygonsMesh = static_cast<const VTKTriangleMeshExporter*>(exporter())->exportCapPolygons() ? meshObj->capPolygons() : nullptr;

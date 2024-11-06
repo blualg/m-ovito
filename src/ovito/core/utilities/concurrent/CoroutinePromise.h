@@ -28,19 +28,20 @@
 #include "InlineExecutor.h"
 #include "LaunchTask.h"
 #include "detail/ContinuationTask.h"
+#include "detail/FutureDetail.h"
 
 namespace Ovito {
 
-template<typename R>
+template<typename R, bool StructuredConcurrency>
 class CoroutineTask : public detail::ContinuationTask<R>
 {
 public:
 
     /// This is used by the launchTask() utility function.
-    using future_type = Future<R>;
+    using future_type = std::conditional_t<StructuredConcurrency, SCFuture<R>, Future<R>>;
 
     /// Constructor.
-    CoroutineTask(std::coroutine_handle<CoroutinePromise<R>> handle) : _handle(handle) {}
+    CoroutineTask(std::coroutine_handle<CoroutinePromise<R, StructuredConcurrency>> handle) : _handle(handle) {}
 
     /// Destructor.
     ~CoroutineTask() {
@@ -69,7 +70,7 @@ public:
 private:
 
     /// The handle to the coroutine associated with this task.
-    std::coroutine_handle<CoroutinePromise<R>> _handle;
+    std::coroutine_handle<CoroutinePromise<R, StructuredConcurrency>> _handle;
 };
 
 template<typename Executor, typename FutureType>
@@ -79,7 +80,10 @@ class FutureAwaiter
 
 public:
 
-    explicit FutureAwaiter(Executor&& executor, FutureType&& future) noexcept : _executor(std::forward<Executor>(executor)), _future(std::forward<FutureType>(future)) {
+    /// Enable structured concurrency mode if the future type is a SCFuture.
+    static constexpr bool UsingStructuredConcurrency = detail::is_structured_future_v<FutureType>;
+
+    explicit FutureAwaiter(Executor&& executor, FutureType future) noexcept : _executor(std::forward<Executor>(executor)), _future(std::move(future)) {
         OVITO_ASSERT(_future);
     }
 
@@ -92,14 +96,14 @@ public:
         }
     }
 
-    template<typename R>
-    void await_suspend(std::coroutine_handle<CoroutinePromise<R>> handle) {
+    template<typename R, bool SC>
+    void await_suspend(std::coroutine_handle<CoroutinePromise<R, SC>> handle) {
         OVITO_ASSERT(_future);
         auto coroTask = handle.promise().coroTask();
         OVITO_ASSERT(coroTask);
-        coroTask->whenTaskFinishes(_future.takeTaskDependency(), std::move(_executor), std::move(handle.promise()), [this](PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
-            _future = std::decay_t<FutureType>(std::move(finishedTask));
-            auto coroTask = static_cast<CoroutineTask<R>*>(promise.task().get());
+        coroTask->template whenTaskFinishes<UsingStructuredConcurrency>(_future.takeTaskDependency(), std::move(_executor), std::move(handle.promise()), [this](PromiseBase promise, detail::TaskDependency finishedTask) noexcept {
+            _future = FutureType{std::move(finishedTask)};
+            auto coroTask = static_cast<CoroutineTask<R, SC>*>(promise.task().get());
             if(!coroTask->isCanceled())
                 coroTask->resumeCoroutine(std::move(promise));
         });
@@ -115,7 +119,7 @@ public:
 
 private:
 
-    std::decay_t<FutureType> _future;
+    FutureType _future;
     std::decay_t<Executor> _executor;
 };
 
@@ -130,12 +134,12 @@ public:
 
     bool await_ready() const noexcept { return false; }
 
-    template<typename R>
-    void await_suspend(std::coroutine_handle<CoroutinePromise<R>> handle) {
+    template<typename R, bool SC>
+    void await_suspend(std::coroutine_handle<CoroutinePromise<R, SC>> handle) {
         auto coroTask = handle.promise().coroTask();
         OVITO_ASSERT(coroTask);
         std::move(_executor).execute([promise = std::move(handle.promise())]() mutable noexcept {
-            auto coroTask = static_cast<CoroutineTask<R>*>(promise.task().get());
+            auto coroTask = static_cast<CoroutineTask<R, SC>*>(promise.task().get());
             if(!coroTask->isCanceled())
                 coroTask->resumeCoroutine(std::move(promise));
         });
@@ -148,21 +152,21 @@ private:
     std::decay_t<Executor> _executor;
 };
 
-template<typename R>
+template<typename R, bool StructuredConcurrency>
 class CoroutinePromiseBase : public PromiseBase
 {
 public:
 
     /// Returns the coroutine task associated with this promise.
-    CoroutineTask<R>* coroTask() noexcept {
+    CoroutineTask<R, StructuredConcurrency>* coroTask() noexcept {
         OVITO_ASSERT(*this);
-        return static_cast<CoroutineTask<R>*>(PromiseBase::task().get());
+        return static_cast<CoroutineTask<R, StructuredConcurrency>*>(PromiseBase::task().get());
     }
 
     /// Creates the object that will be returned to the caller of the coroutine.
-    Future<R> get_return_object() {
+    std::conditional_t<StructuredConcurrency, SCFuture<R>, Future<R>> get_return_object() {
         // Create the task object associated with the coroutine.
-        auto coroTask = std::make_shared<CoroutineTask<R>>(std::coroutine_handle<CoroutinePromise<R>>::from_promise(static_cast<CoroutinePromise<R>&>(*this)));
+        auto coroTask = std::make_shared<CoroutineTask<R, StructuredConcurrency>>(std::coroutine_handle<CoroutinePromise<R, StructuredConcurrency>>::from_promise(static_cast<CoroutinePromise<R, StructuredConcurrency>&>(*this)));
         this->_task = coroTask;
         return launchTask(std::move(coroTask));
     }
@@ -183,8 +187,8 @@ public:
     }
 };
 
-template<typename R>
-class CoroutinePromise : public CoroutinePromiseBase<R>
+template<typename R, bool StructuredConcurrency>
+class CoroutinePromise : public CoroutinePromiseBase<R, StructuredConcurrency>
 {
 public:
     /// Sets the result value of the coroutine.
@@ -195,8 +199,8 @@ public:
     }
 };
 
-template<>
-class CoroutinePromise<void> : public CoroutinePromiseBase<void>
+template<bool StructuredConcurrency>
+class CoroutinePromise<void, StructuredConcurrency> : public CoroutinePromiseBase<void, StructuredConcurrency>
 {
 public:
     /// Completes the coroutine.
@@ -209,6 +213,12 @@ template<typename T>
 auto operator co_await(Future<T>&& future) noexcept
 {
     return FutureAwaiter<InlineExecutor, Future<T>>(InlineExecutor{}, std::move(future));
+}
+
+template<typename T>
+auto operator co_await(SCFuture<T>&& future) noexcept
+{
+    return FutureAwaiter<InlineExecutor, SCFuture<T>>(InlineExecutor{}, std::move(future));
 }
 
 template<typename T>

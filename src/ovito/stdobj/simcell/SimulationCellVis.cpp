@@ -152,7 +152,7 @@ void SimulationCellVis::renderSolid(const SimulationCell* cell, const PipelineFl
             edges.setUniformWidth(2 * cellLineWidth());
 
             // Create a data buffer for the box corner coordinates.
-            BufferFactory<Point3G> cornersAccesor(cell->is2D() ? 4 : 8);
+            BufferFactory<Point3G> cornersAccessor(cell->is2D() ? 4 : 8);
 
             // Create a data buffer for the cylinder base points.
             BufferFactory<Point3G> basePoints(cell->is2D() ? 4 : 12);
@@ -160,41 +160,41 @@ void SimulationCellVis::renderSolid(const SimulationCell* cell, const PipelineFl
             // Create a data buffer for the cylinder head points.
             BufferFactory<Point3G> headPoints(cell->is2D() ? 4 : 12);
 
-            cornersAccesor[0] = cell->cellOrigin().toDataType<GraphicsFloatType>();
+            cornersAccessor[0] = cell->cellOrigin().toDataType<GraphicsFloatType>();
             if(cell->is2D())
-                cornersAccesor[0].z() = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.
-            cornersAccesor[1] = cornersAccesor[0] + cell->cellVector1().toDataType<GraphicsFloatType>();
-            cornersAccesor[2] = cornersAccesor[1] + cell->cellVector2().toDataType<GraphicsFloatType>();
-            cornersAccesor[3] = cornersAccesor[0] + cell->cellVector2().toDataType<GraphicsFloatType>();
-            basePoints[0] = cornersAccesor[0];
-            basePoints[1] = cornersAccesor[1];
-            basePoints[2] = cornersAccesor[2];
-            basePoints[3] = cornersAccesor[3];
-            headPoints[0] = cornersAccesor[1];
-            headPoints[1] = cornersAccesor[2];
-            headPoints[2] = cornersAccesor[3];
-            headPoints[3] = cornersAccesor[0];
+                cornersAccessor[0].z() = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.
+            cornersAccessor[1] = cornersAccessor[0] + cell->cellVector1().toDataType<GraphicsFloatType>();
+            cornersAccessor[2] = cornersAccessor[1] + cell->cellVector2().toDataType<GraphicsFloatType>();
+            cornersAccessor[3] = cornersAccessor[0] + cell->cellVector2().toDataType<GraphicsFloatType>();
+            basePoints[0] = cornersAccessor[0];
+            basePoints[1] = cornersAccessor[1];
+            basePoints[2] = cornersAccessor[2];
+            basePoints[3] = cornersAccessor[3];
+            headPoints[0] = cornersAccessor[1];
+            headPoints[1] = cornersAccessor[2];
+            headPoints[2] = cornersAccessor[3];
+            headPoints[3] = cornersAccessor[0];
             if(cell->is2D() == false) {
-                cornersAccesor[4] = cornersAccesor[0] + cell->cellVector3().toDataType<GraphicsFloatType>();
-                cornersAccesor[5] = cornersAccesor[1] + cell->cellVector3().toDataType<GraphicsFloatType>();
-                cornersAccesor[6] = cornersAccesor[2] + cell->cellVector3().toDataType<GraphicsFloatType>();
-                cornersAccesor[7] = cornersAccesor[3] + cell->cellVector3().toDataType<GraphicsFloatType>();
-                basePoints[4] = cornersAccesor[4];
-                basePoints[5] = cornersAccesor[5];
-                basePoints[6] = cornersAccesor[6];
-                basePoints[7] = cornersAccesor[7];
-                basePoints[8] = cornersAccesor[0];
-                basePoints[9] = cornersAccesor[1];
-                basePoints[10] = cornersAccesor[2];
-                basePoints[11] = cornersAccesor[3];
-                headPoints[4] = cornersAccesor[5];
-                headPoints[5] = cornersAccesor[6];
-                headPoints[6] = cornersAccesor[7];
-                headPoints[7] = cornersAccesor[4];
-                headPoints[8] = cornersAccesor[4];
-                headPoints[9] = cornersAccesor[5];
-                headPoints[10] = cornersAccesor[6];
-                headPoints[11] = cornersAccesor[7];
+                cornersAccessor[4] = cornersAccessor[0] + cell->cellVector3().toDataType<GraphicsFloatType>();
+                cornersAccessor[5] = cornersAccessor[1] + cell->cellVector3().toDataType<GraphicsFloatType>();
+                cornersAccessor[6] = cornersAccessor[2] + cell->cellVector3().toDataType<GraphicsFloatType>();
+                cornersAccessor[7] = cornersAccessor[3] + cell->cellVector3().toDataType<GraphicsFloatType>();
+                basePoints[4] = cornersAccessor[4];
+                basePoints[5] = cornersAccessor[5];
+                basePoints[6] = cornersAccessor[6];
+                basePoints[7] = cornersAccessor[7];
+                basePoints[8] = cornersAccessor[0];
+                basePoints[9] = cornersAccessor[1];
+                basePoints[10] = cornersAccessor[2];
+                basePoints[11] = cornersAccessor[3];
+                headPoints[4] = cornersAccessor[5];
+                headPoints[5] = cornersAccessor[6];
+                headPoints[6] = cornersAccessor[7];
+                headPoints[7] = cornersAccessor[4];
+                headPoints[8] = cornersAccessor[4];
+                headPoints[9] = cornersAccessor[5];
+                headPoints[10] = cornersAccessor[6];
+                headPoints[11] = cornersAccessor[7];
             }
             edges.setPositions(basePoints.take(), headPoints.take());
 
@@ -202,7 +202,7 @@ void SimulationCellVis::renderSolid(const SimulationCell* cell, const PipelineFl
             corners.setParticleShape(ParticlePrimitive::SphericalShape);
             corners.setShadingMode(ParticlePrimitive::NormalShading);
             corners.setRenderingQuality(ParticlePrimitive::HighQuality);
-            corners.setPositions(cornersAccesor.take());
+            corners.setPositions(cornersAccessor.take());
             corners.setUniformRadius(cellLineWidth());
             corners.setUniformColor(cellColor());
         });

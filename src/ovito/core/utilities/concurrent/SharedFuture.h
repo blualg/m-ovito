@@ -43,7 +43,7 @@ public:
     using result_type = R;
 
     /// The promise type for C++ coroutines returning a Future.
-    using promise_type = CoroutinePromise<R>;
+    using promise_type = CoroutinePromise<R, false>;
 
     /// Default constructor that constructs an invalid SharedFuture that is not associated with any shared state.
     SharedFuture() noexcept = default;

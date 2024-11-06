@@ -165,10 +165,10 @@ public:
     virtual void close(bool exportCompleted = true);
 
     /// Produces the data to be exported for a trajectory frame.
-    [[nodiscard]] virtual Future<any_moveonly> getExportableFrameData(OORef<FileExportJob> self, int frameNumber);
+    [[nodiscard]] virtual SCFuture<any_moveonly> getExportableFrameData(int frameNumber);
 
     /// Writes the exportable data of a single trajectory frame to the output file.
-    [[nodiscard]] virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) = 0;
+    [[nodiscard]] virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath) = 0;
 
     /// Returns a pointer to the exporter to which this worker belongs.
     const FileExporter* exporter() const { return _exporter; }

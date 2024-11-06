@@ -193,7 +193,7 @@ public:
     void askForSaveChanges();
 
     /// \brief Lets the caller visit all registered worker tasks that are in progress.
-    void visitRunningTasks(std::function<void(Task&,const QString&,int,int)> visitor);
+    void visitRunningTasks(std::function<void(const QString&,int,int)> visitor);
 
     /// Checks if the current application has accessability access. This is required on macOS to move the cursor using QCursor::setPos().
     /// This method will prompt the user the first time it is called (for each ovito version). Returns true on non macOS.
@@ -248,6 +248,17 @@ protected:
 
     /// Notifies all registered listeners that the progress state of the registered tasks has changed.
     void notifyProgressTasksChanged();
+
+    /// Registers a new task progress record with this user interface.
+    /// This method gets called when a new TaskProgress instance is created from a running task.
+    virtual std::mutex* taskProgressBegin(TaskProgress* progress) override;
+
+    /// Unregisters a task progress record from this user interface.
+    /// This method gets called when a previously registered task finishes.
+    virtual void taskProgressEnd(TaskProgress* progress) override;
+
+    /// Informs the user interface that a task's progress state has changed.
+    virtual void taskProgressChanged(TaskProgress* progress) override;
 
     /// Gets called by a running task to report its progress status (from any thread).
     virtual void taskProgressText(Task& task, const QString& text) override;
@@ -348,10 +359,16 @@ private:
     /// The list of active tasks that are visible in the UI.
     std::vector<ProgressTaskInfo> _progressTaskList;
 
+    /// Head of doubly-linked list of all registered task progress records.
+    TaskProgress* _progressTasksHead = nullptr;
+
+    /// Tail of doubly-linked list of all registered task progress records.
+    TaskProgress* _progressTasksTail = nullptr;
+
     /// Guards thread-safe access to the task list.
     std::mutex _progressTaskListMutex;
 
-    /// Indicates that a delayed progress update is underway.
+    /// Indicates that a delayed task progress update is underway.
     std::atomic_bool _progressUpdateScheduled{false};
 
     /// The current screen the window is on (to detect screen changes).

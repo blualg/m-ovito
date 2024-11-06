@@ -287,7 +287,7 @@ void FrameBufferWindow::onTaskProgressUpdate()
 {
     size_t index = 0;
 
-    _mainWindow.visitRunningTasks([&](Task& task, const QString& text, int progressValue, int progressMaximum) {
+    _mainWindow.visitRunningTasks([&](const QString& text, int progressValue, int progressMaximum) {
         if(text.isEmpty())
             return;
         QLabel* statusLabel;

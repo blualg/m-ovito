@@ -133,19 +133,18 @@ private:
 template<typename R>
 class Future : public FutureBase
 {
+    Q_DISABLE_COPY(Future)
+
 public:
 
     using this_type = Future<R>;
     using result_type = R;
 
     /// The promise type for C++ coroutines returning a Future.
-    using promise_type = CoroutinePromise<R>;
+    using promise_type = CoroutinePromise<R, false>;
 
     /// Default constructor that constructs an invalid Future that is not associated with any shared state.
     Future() noexcept = default;
-
-    /// A future is not copy-constructible.
-    Future(const Future& other) = delete;
 
     /// A future is move-constructible.
     Future(Future&& other) noexcept = default;
@@ -165,9 +164,6 @@ public:
 
     /// A future is moveable.
     Future& operator=(Future&& other) noexcept = default;
-
-    /// A future is not copy assignable.
-    Future& operator=(const Future& other) = delete;
 
     /// Create a future that is in the 'fulfilled' state and holds an immediate default-constructed result.
     [[nodiscard]] static Future createImmediateEmpty() {

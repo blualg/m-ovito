@@ -43,7 +43,7 @@ public:
     explicit TaskAwaiter(Task& owner) noexcept : TaskCallbackBase(owner, &taskStateChangedCallback) {}
 
     /// Runs a continuation function once the given task reaches the 'finished' state.
-    template<typename Executor, typename Function>
+    template<bool StructuredConcurrency = false, typename Executor, typename Function>
     void whenTaskFinishes(TaskDependency awaitedTask, Executor&& executor, PromiseBase promise, Function&& function) noexcept {
         OVITO_ASSERT(promise);
 
@@ -51,8 +51,16 @@ public:
         TaskPtr awt = awaitedTask.get();
 
         // Attach to the task to be waited on.
-        if(!setAwaitedTask(*promise.task(), std::move(awaitedTask)))
-            return; // The waiting task has been canceled.
+        if(!setAwaitedTask(*promise.task(), std::move(awaitedTask))) {
+            // The waiting task has been canceled.
+            // Normally, we can now bail out immediately and do not need to wait for the awaited task to finish.
+            // In structured concurrency mode, however, we still register a continuation function
+            // with the child task just to keep the parent task alive as long as the child task is running.
+            if constexpr(StructuredConcurrency) {
+                awt->addContinuation([promise = std::move(promise)]() noexcept {});
+            }
+            return;
+        }
 
         // Run the waiting task's callback method once the awaited task finishes.
         awt->addContinuation([
@@ -133,6 +141,15 @@ private:
             lock.unlock();
             awaitedTask.reset();
             lock.lock();
+
+            // If the waiting task got canceled while it was waiting, put the task into the finished
+            // state immediately. This is to run all continuations as soon as possible without waiting
+            // for the awaited task to finish (which would eventually release the promise object referring to the waiting task).
+            if(!task.isFinished()) {
+                task.finishLocked(lock);
+                OVITO_ASSERT(!lock); // Note: Task::finishLocked() does not relock the mutex after running the continuations.
+                lock.lock();
+            }
         }
     }
 

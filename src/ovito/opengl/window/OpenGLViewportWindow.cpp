@@ -143,7 +143,7 @@ void OpenGLViewportWindow::paint()
             _visualFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(static_object_cast<OpenGLRenderingJob>(renderingJob()), viewportRect, glwin()->defaultFramebufferObject());
 
         // Render the viewport contents. This requires an active GL context.
-        auto future = renderingJob()->renderFrame(frameGraph(), _visualFrameBuffer);
+        auto future = renderingJob()->renderFrame(frameGraph(), _visualFrameBuffer, TaskProgress::Ignore);
         OVITO_ASSERT(future && future.isFinished() && !future.isCanceled());
 
         // Emit signal to inform listeners (e.g. SceneAnimationPlayback) that a full frame has been rendered and presented on screen.
@@ -187,7 +187,7 @@ std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPoin
 
                 // Render into the OpenGL framebuffer.
                 _objectPickingMap->reset();
-                renderingJob()->renderFrame(frameGraph(), _pickingFrameBuffer, _objectPickingMap).waitForFinished();
+                renderingJob()->renderFrame(frameGraph(), _pickingFrameBuffer, TaskProgress::Ignore, _objectPickingMap).waitForFinished();
 
                 // Read out the contents of the OpenGL framebuffer.
                 _objectPickingMap->acquire(_pickingFrameBuffer);

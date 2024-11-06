@@ -40,11 +40,13 @@ namespace Ovito
     class PromiseBase;
     class FutureBase;
     class Task;
+    class TaskProgress;
     class TaskManager;
     template<typename R> class Future;
+    template<typename R> class SCFuture;
     template<typename R> class SharedFuture;
     template<typename R> class Promise;
-    template<typename R> class CoroutinePromise;
+    template<typename R, bool StructureConcurrency> class CoroutinePromise;
     template<class R, class TaskBase> class TaskWithStorage;
     using TaskPtr = std::shared_ptr<Task>;
     struct InlineExecutor;

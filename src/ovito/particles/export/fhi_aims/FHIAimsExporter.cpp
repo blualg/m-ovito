@@ -40,7 +40,7 @@ OORef<FileExportJob> FHIAimsExporter::createExportJob(const QString& filePath, i
     public:
 
         /// Writes the exportable data of a single trajectory frame to the output file.
-        virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
             // The exportable frame data.
             const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 

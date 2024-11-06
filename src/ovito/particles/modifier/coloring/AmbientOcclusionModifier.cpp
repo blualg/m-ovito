@@ -208,7 +208,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
 
                 // Render the current view to the frame buffer
                 objectIdentifierMap->reset();
-                auto future = renderingJob->renderFrame(frameGraph, renderBuffer, objectIdentifierMap);
+                auto future = renderingJob->renderFrame(frameGraph, renderBuffer, TaskProgress::Ignore, objectIdentifierMap);
                 OVITO_ASSERT(future && future.isFinished() && !future.isCanceled());
 
                 // Extract brightness values from rendered image.

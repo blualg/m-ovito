@@ -249,9 +249,6 @@ Future<void> FileExporter::doExport()
             throw Exception(tr("Cannot export trajectory frames to separate files. The filename must contain the '*' wildcard character, which gets replaced by the frame number."));
     }
 
-    // Note: This is to perform a context switch to the coroutine's task, which is needed for proper progress reporting.
-    co_await ExecutorAwaiter(InlineExecutor());
-
     QDir dir = QFileInfo(outputFilename()).dir();
     QString filename = outputFilename();
 
@@ -261,12 +258,12 @@ Future<void> FileExporter::doExport()
         exportJob = createExportJob(filename, numberOfFrames);
     }
 
-    // Export animation frames.
-    this_task::beginProgressSubSteps(numberOfFrames);
-    for(int frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
-        if(frameIndex != 0)
-            this_task::nextProgressSubStep();
+    // Set up progress reporting.
+    TaskProgress progress(this_task::ui());
+    progress.beginProgressSubSteps(numberOfFrames);
 
+    // Export animation frames.
+    for(int frameIndex = 0; frameIndex < numberOfFrames; frameIndex++, progress.nextProgressSubStep()) {
         int frameNumber = firstFrameNumber + frameIndex * everyNthFrame();
 
         // Open per-frame output file.
@@ -277,13 +274,13 @@ Future<void> FileExporter::doExport()
             exportJob = createExportJob(filename, 1);
         }
 
-        this_task::setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
+        progress.setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
 
         // Obtain the data to be exported.
-        Future<any_moveonly> frameData = co_await FutureAwaiter(DeferredObjectExecutor(this), exportJob->getExportableFrameData(exportJob, frameNumber));
+        any_moveonly frameData = co_await FutureAwaiter(DeferredObjectExecutor(this), exportJob->getExportableFrameData(frameNumber));
 
         // Write the exportable data to the output file.
-        co_await FutureAwaiter(DeferredObjectExecutor(this), exportJob->exportFrameData(exportJob, frameData.result(), frameNumber, filename));
+        co_await FutureAwaiter(DeferredObjectExecutor(this), exportJob->exportFrameData(std::move(frameData), frameNumber, filename));
 
         // Close per-frame output file.
         if(exportTrajectory() && useWildcardFilename()) {
@@ -291,7 +288,7 @@ Future<void> FileExporter::doExport()
             exportJob.reset();
         }
     }
-    this_task::endProgressSubSteps();
+    progress.endProgressSubSteps();
 
     // Close output file.
     if(!exportTrajectory() || !useWildcardFilename())
@@ -321,7 +318,7 @@ QString FileExporter::getAvailableDataObjectList(const PipelineFlowState& state,
 /******************************************************************************
 * Produces the data to be exported for a trajectory frame.
 ******************************************************************************/
-Future<any_moveonly> FileExportJob::getExportableFrameData(OORef<FileExportJob> self, int frameNumber)
+SCFuture<any_moveonly> FileExportJob::getExportableFrameData(int frameNumber)
 {
     co_return co_await exporter()->getPipelineDataToBeExported(frameNumber);
 }
@@ -332,6 +329,7 @@ Future<any_moveonly> FileExportJob::getExportableFrameData(OORef<FileExportJob> 
 void FileExportJob::initializeObject(const FileExporter* exporter, const QString& filePath, bool openTextStream)
 {
     OvitoObject::initializeObject();
+
     _exporter = exporter;
     _outputFile.setFileName(filePath);
     if(openTextStream) {

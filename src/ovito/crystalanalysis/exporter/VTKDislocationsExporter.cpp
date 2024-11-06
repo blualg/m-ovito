@@ -43,7 +43,7 @@ OORef<FileExportJob> VTKDislocationsExporter::createExportJob(const QString& fil
     public:
 
         /// Writes the exportable data of a single trajectory frame to the output file.
-        virtual Future<void> exportFrameData(OORef<FileExportJob> self, any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
             // The exportable frame data.
             const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
@@ -58,7 +58,7 @@ OORef<FileExportJob> VTKDislocationsExporter::createExportJob(const QString& fil
                 dislocationVis = OORef<DislocationVis>::create(); // Create an ad-hoc vis element if necessary
 
             // Generate non-periodic version of the dislocation line network.
-            std::shared_ptr<const RenderableDislocationLines> renderableLines = co_await FutureAwaiter(ObjectExecutor(exporter()), dislocationVis->transformDislocations(dislocations));
+            std::shared_ptr<const RenderableDislocationLines> renderableLines = co_await FutureAwaiter(ObjectExecutor(this), dislocationVis->transformDislocations(dislocations));
 
             // Count dislocation polylines and output vertices.
             std::vector<size_t> polyVertexCounts;

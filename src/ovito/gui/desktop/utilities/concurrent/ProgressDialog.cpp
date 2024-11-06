@@ -154,7 +154,7 @@ void ProgressDialog::updateTaskList()
     size_t index = 0;
     QVBoxLayout* layout = qobject_cast<QVBoxLayout*>(this->layout());
 
-    _mainWindow.visitRunningTasks([&](Task& task, const QString& text, int progressValue, int progressMaximum) {
+    _mainWindow.visitRunningTasks([&](const QString& text, int progressValue, int progressMaximum) {
         if(text.isEmpty())
             return;
         QLabel* statusLabel;

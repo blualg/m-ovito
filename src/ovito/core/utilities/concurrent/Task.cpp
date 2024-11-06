@@ -33,6 +33,9 @@ namespace Ovito {
 std::atomic_size_t Task::_globalTaskCounter{0};
 #endif
 
+/// A null progress state that ignores all progress reporting calls.
+TaskProgress TaskProgress::Ignore{std::nullopt};
+
 #ifdef OVITO_DEBUG
 /*******************************************************x***********************
 * Destructor.
@@ -73,6 +76,8 @@ void Task::setFinished() noexcept
 ******************************************************************************/
 void Task::finishLocked(MutexLock& lock) noexcept
 {
+    OVITO_ASSERT(lock);
+
     // Put this task into the 'finished' state.
     auto state = _state.fetch_or(Finished, std::memory_order_seq_cst);
 
@@ -84,6 +89,7 @@ void Task::finishLocked(MutexLock& lock) noexcept
     if(!(state & Finished)) {
         // Inform the registered callbacks.
         callCallbacks(Finished, lock);
+        OVITO_ASSERT(lock);
 
         // Note: Move the functions into a new local list first so that we can unlock the mutex.
         decltype(_continuations) continuations = std::move(_continuations);
@@ -125,6 +131,8 @@ void Task::cancelAndFinish() noexcept
 ******************************************************************************/
 void Task::cancelLocked(MutexLock& lock) noexcept
 {
+    OVITO_ASSERT(lock);
+
     // Make sure the task isn't already finished.
     if(_state.load(std::memory_order_relaxed) & Finished)
         return;

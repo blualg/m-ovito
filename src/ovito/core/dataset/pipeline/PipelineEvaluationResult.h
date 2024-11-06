@@ -72,9 +72,7 @@ public:
     void setEvaluationTypes(EvaluationTypes evaluationTypes) { _evaluationTypes = evaluationTypes; }
 
     /// Turns this result object into a regular future.
-    SharedFuture<PipelineFlowState>&& asFuture() && {
-        return std::move(*this);
-    }
+    SharedFuture<PipelineFlowState>&& asFuture() && { return std::move(*this); }
 
 private:
 

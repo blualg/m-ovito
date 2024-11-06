@@ -44,6 +44,9 @@ template<typename T>
 struct is_future<SharedFuture<T>> : std::true_type {};
 
 template<typename T>
+struct is_future<SCFuture<T>> : std::true_type {};
+
+template<typename T>
 inline constexpr bool is_future_v = is_future<std::decay_t<T>>::value;
 
 /*
@@ -61,6 +64,22 @@ struct is_shared_future<SharedFuture<T>> : std::true_type {};
 
 template<typename T>
 inline constexpr bool is_shared_future_v = is_shared_future<std::decay_t<T>>::value;
+
+/*
+* is_structured_future<T>
+*
+* Determines whether T is some specialization of the SCFuture class template.
+*/
+
+/// Determines whether a type T is some specialization of the SCFuture class template.
+template<typename T>
+struct is_structured_future : std::false_type {};
+
+template<typename T>
+struct is_structured_future<SCFuture<T>> : std::true_type {};
+
+template<typename T>
+inline constexpr bool is_structured_future_v = is_structured_future<std::decay_t<T>>::value;
 
 /*
 * callable_result<F,FutureType>

@@ -222,6 +222,17 @@ protected:
     /// Assigns an UndoStack.
     void setUndoStack(UndoStack* undoStack) { _undoStack = undoStack; }
 
+    /// Registers a new task progress record with this user interface.
+    /// This virtual method gets called when a new TaskProgress instance is created from a running task.
+    virtual std::mutex* taskProgressBegin(TaskProgress* progress) { return nullptr; }
+
+    /// Unregisters a task progress record from this user interface.
+    /// This virtual method gets called when a previously registered task finishes.
+    virtual void taskProgressEnd(TaskProgress* progress) {}
+
+    /// Informs the user interface that a task's progress state has changed.
+    virtual void taskProgressChanged(TaskProgress* progress) {}
+
     /// Gets called by a running task to report its progress status (from any thread).
     virtual void taskProgressText(Task& task, const QString& text) = 0;
 
@@ -273,6 +284,7 @@ protected:
     OORef<UserInterface> _selfGuard;
 
     friend class Task; // Tasks need to call taskProgressText() etc.
+    friend class TaskProgress; // Needs access to the taskProgressBegin(), taskProgressEnd(), and taskProgressUpdate() methods.
 };
 
 }   // End of namespace
