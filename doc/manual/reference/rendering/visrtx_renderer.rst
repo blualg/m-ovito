@@ -92,6 +92,33 @@ Latitude & Longitude
 Brightness
   Irradiance of the direct light source (default value: 0.5).
 
+Outlines
+    Enables depth-aware outlines. They can be used either in the interactive viewport or 
+    VisRTX final frame rendering.
+
+  .. figure:: /images/rendering/visrtx_viewport_outlines.*
+    :figwidth: 49%
+
+    Outlines in the interactive viewport.
+
+  .. figure:: /images/rendering/visrtx_render_outlines.*
+    :figwidth: 49%
+
+    Outlines in the rendered image.
+
+Depth Difference & Outline Width
+    Controls the depth range for which outlines are drawn. Outline width increases linearly from
+    the minimum to maximum width as the depth difference between adjacent objects ranges from
+    the minimum to maximum depth difference.
+
+    Outlines will still be drawn with reduced opacity and minimum line width
+    when the depth difference is below the minimum threshold.
+
+Custom Color
+    When disabled, the outline color is automatically set based on the background color:
+    white outlines for dark backgrounds and black outlines for light backgrounds. When enabled,
+    the manually selected color is used instead.
+
 .. seealso::
 
   :py:class:`~ovito.vis.AnariRenderer` (Python API)
