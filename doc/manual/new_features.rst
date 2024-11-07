@@ -9,7 +9,7 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.11.1>`__
 
 ----------------------------
-Version 3.11.1 (xx-xxx-2024)
+Version 3.11.1 (11-Nov-2024)
 ----------------------------
 
 - Added read/write support for zstandard (`*.zst`) compressed files
@@ -17,6 +17,7 @@ Version 3.11.1 (xx-xxx-2024)
 - Added support for VTK files with UInt32 header type
 - Fixed: :ref:`particles.modifiers.identify_diamond_structure` modifier always reports *all* atoms as "OTHER"
 - |ovito-python| Added support for Python 3.13
+- |ovito-python| Windows: Measures taken to ensure that DLLs are always loaded from the package directory and not other locations in the Windows search path
 
 .. sidebar::
 
