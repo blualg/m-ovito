@@ -12,12 +12,12 @@ Changelog
 Version 3.11.1 (11-Nov-2024)
 ----------------------------
 
-- Added read/write support for zstandard (`*.zst`) compressed files
+- Added read/write support for zstandard (`*.zst`) compressed files (e.g. `custom/zstd` `LAMMPS dump style <https://docs.lammps.org/dump.html>`__)
 - New :ref:`Viewport Graphics Configuration <viewports.configure_graphics_dialog>` dialog
-- Added support for VTK files with UInt32 header type
-- Fixed: :ref:`particles.modifiers.identify_diamond_structure` modifier always reports *all* atoms as "OTHER"
+- Added support for VTK files with header type `UInt32`
+- Fixed regression: :ref:`particles.modifiers.identify_diamond_structure` modifier reports *all* atoms as "OTHER"
 - |ovito-python| Added support for Python 3.13
-- |ovito-python| Windows: Measures taken to ensure that DLLs are always loaded from the package directory and not other locations in the Windows search path
+- |ovito-python| Windows: Ensure that DLLs are always loaded from the package directory and never from other locations in the Windows search path
 
 .. sidebar::
 
