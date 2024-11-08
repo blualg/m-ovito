@@ -102,6 +102,7 @@ QWidget* DataTableInspectionApplet::createWidget()
 ******************************************************************************/
 ConstPropertyPtr DataTableInspectionApplet::createHeaderColumnProperty(const PropertyContainer* container)
 {
+    OVITO_ASSERT(this_task::get());
     const DataTable* table = static_object_cast<DataTable>(container);
     if(!table->x())
         return table->getXValues();

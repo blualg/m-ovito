@@ -100,6 +100,7 @@ void DataTable::setY(const Property* property)
 ******************************************************************************/
 ConstPropertyPtr DataTable::getXValues() const
 {
+    OVITO_ASSERT(this_task::get());
     if(const Property* xProperty = x()) {
         return xProperty;
     }

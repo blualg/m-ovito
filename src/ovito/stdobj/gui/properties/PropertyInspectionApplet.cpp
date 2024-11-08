@@ -67,22 +67,24 @@ void PropertyInspectionApplet::createBaseWidgets()
 ******************************************************************************/
 void PropertyInspectionApplet::onCurrentContainerChanged()
 {
-    _tableModel->setContents(selectedContainerObject());
-    _filterModel->setContentsBegin();
-    _filterModel->setContentsEnd();
+    mainWindow().handleExceptions([&]() {
+        _tableModel->setContents(selectedContainerObject());
+        _filterModel->setContentsBegin();
+        _filterModel->setContentsEnd();
 
-    // Update the list of variables that can be referenced in the filter expression.
-    if(selectedContainerObject() && currentState()) {
-        try {
-            auto evaluator = createExpressionEvaluator();
-            evaluator->initialize(QStringList(), currentState(), selectedDataObjectPath());
-            _filterExpressionEdit->setWordList(evaluator->inputVariableNames());
+        // Update the list of variables that can be referenced in the filter expression.
+        if(selectedContainerObject() && currentState()) {
+            try {
+                auto evaluator = createExpressionEvaluator();
+                evaluator->initialize(QStringList(), currentState(), selectedDataObjectPath());
+                _filterExpressionEdit->setWordList(evaluator->inputVariableNames());
+            }
+            catch(const Exception&) {}
         }
-        catch(const Exception&) {}
-    }
-    else {
-        _filterExpressionEdit->setWordList({});
-    }
+        else {
+            _filterExpressionEdit->setWordList({});
+        }
+    });
 }
 
 /******************************************************************************
@@ -112,6 +114,8 @@ bool PropertyInspectionApplet::selectDataObject(const PipelineNode* createdByNod
 ******************************************************************************/
 void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyContainer* container)
 {
+    OVITO_ASSERT(this_task::get());
+
     // Generate the new list of properties.
     std::vector<ConstPropertyPtr> newProperties;
     if(container) {
