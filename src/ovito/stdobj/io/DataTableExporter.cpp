@@ -37,7 +37,7 @@ OORef<FileExportJob> DataTableExporter::createExportJob(const QString& filePath,
     public:
 
         /// Writes the exportable data of a single trajectory frame to the output file.
-        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath, TaskProgress& progress) override {
             // The exportable frame data.
             const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 

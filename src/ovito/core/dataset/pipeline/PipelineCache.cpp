@@ -372,7 +372,8 @@ void PipelineCache::invalidate(TimeInterval keepInterval)
         return;
 
     // Interrupt frame precomputation, which might be in progress.
-    _precomputeFramesOperation.reset();
+    _precomputeFramesProgress.reset();
+    _precomputeFrameFuture.reset();
     _allFramesPrecomputed = false;
 
     // Reduce the validity of in-flight evaluations.
@@ -406,7 +407,8 @@ void PipelineCache::reset()
     }
 
     // Interrupt frame precomputation, which might be in progress.
-    _precomputeFramesOperation.reset();
+    _precomputeFramesProgress.reset();
+    _precomputeFrameFuture.reset();
     _allFramesPrecomputed = false;
 
     // Reduce the validity of in-flight evaluations.
@@ -434,7 +436,8 @@ void PipelineCache::overrideCache(const DataCollection* dataCollection, const Ti
     OVITO_ASSERT(!keepInterval.isEmpty());
 
     // Interrupt frame precomputation, which might be in progress.
-    _precomputeFramesOperation.reset();
+    _precomputeFramesProgress.reset();
+    _precomputeFrameFuture.reset();
     _allFramesPrecomputed = false;
 
     // Reduce the validity of the cached states to the current animation time.
@@ -480,7 +483,8 @@ void PipelineCache::setPrecomputeAllFrames(bool enable)
         _precomputeAllFrames = enable;
         if(!_precomputeAllFrames) {
             // Interrupt the precomputation process if it is currently in progress.
-            _precomputeFramesOperation.reset();
+            _precomputeFramesProgress.reset();
+            _precomputeFrameFuture.reset();
 
             // Throw away all precomputed data (except frame currently shown in the GUI) to reduce memory footprint.
             invalidate(TimeInterval(this_task::ui()->datasetContainer().currentAnimationTime()));
@@ -496,26 +500,16 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
     OVITO_ASSERT(this_task::get());
 
     // Start the animation frame precomputation process if it has been activated.
-    if(_precomputeAllFrames && !_precomputeFramesOperation && !_allFramesPrecomputed) {
-        // Create the async operation object that manages the frame precomputation.
-        _precomputeFramesOperation = Promise<void>::create();
-        if(this_task::isInteractive())
-            _precomputeFramesOperation.task()->setIsInteractive();
-        _precomputeFramesOperation.task()->setUserInterface(this_task::ui());
+    if(_precomputeAllFrames && !_precomputeFramesProgress && !_allFramesPrecomputed) {
+        // Create a progress reporting object for the frame precomputation.
+        _precomputeFramesProgress = std::make_unique<TaskProgress>(this_task::ui());
 
         // Determine the number of frames that need to be precomputed.
         PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());
         if(!pipelineNode)
             pipelineNode = static_object_cast<Pipeline>(ownerObject())->head();
         if(pipelineNode)
-            _precomputeFramesOperation.setProgressMaximum(pipelineNode->numberOfSourceFrames());
-
-        // Automatically reset the async operation object and the current frame precomputation when the
-        // task gets canceled by the system.
-        _precomputeFramesOperation.task()->finally(ObjectExecutor(ownerObject()), [this]() noexcept {
-            _precomputeFrameFuture.reset();
-            _precomputeFramesOperation.reset();
-        });
+            _precomputeFramesProgress->setProgressMaximum(pipelineNode->numberOfSourceFrames());
 
         // Compute the first frame of the trajectory.
         precomputeNextAnimationFrame();
@@ -527,8 +521,7 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
 ******************************************************************************/
 void PipelineCache::precomputeNextAnimationFrame()
 {
-    OVITO_ASSERT(_precomputeFramesOperation);
-    OVITO_ASSERT(!_precomputeFramesOperation.isCanceled());
+    OVITO_ASSERT(_precomputeFramesProgress);
 
     // Determine the total number of animation frames.
     PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(ownerObject());
@@ -548,15 +541,15 @@ void PipelineCache::precomputeNextAnimationFrame()
         }
         while(state.stateValidity().contains(nextFrameTime) && nextFrame < numSourceFrames);
     }
-    _precomputeFramesOperation.setProgressValue(nextFrame);
-    _precomputeFramesOperation.setProgressText(Pipeline::tr("Caching trajectory (%1 frames remaining)").arg(numSourceFrames - nextFrame));
     if(nextFrame >= numSourceFrames) {
         // Precomputation of trajectory frames is complete.
-        _precomputeFramesOperation.setFinished();
-        OVITO_ASSERT(!_precomputeFrameFuture);
+        _precomputeFramesProgress.reset();
+        _precomputeFrameFuture.reset();
         _allFramesPrecomputed = true;
         return;
     }
+    _precomputeFramesProgress->setProgressValue(nextFrame);
+    _precomputeFramesProgress->setProgressText(Pipeline::tr("Caching trajectory (%1 frames remaining)").arg(numSourceFrames - nextFrame));
 
     // Request the next frame from the input trajectory.
     _precomputeFrameFuture = evaluatePipeline(PipelineEvaluationRequest(nextFrameTime));
@@ -565,9 +558,9 @@ void PipelineCache::precomputeNextAnimationFrame()
     _precomputeFrameFuture.finally(ObjectExecutor(ownerObject()), [this](Task& task) noexcept {
         try {
             // If the pipeline evaluation has been canceled for some reason, we interrupt the precomputation process.
-            if(ownerObject()->isBeingDeleted() || !_precomputeFramesOperation || _precomputeFramesOperation.isFinished() || task.isCanceled()) {
-                _precomputeFramesOperation.reset();
-                OVITO_ASSERT(!_precomputeFrameFuture);
+            if(ownerObject()->isBeingDeleted() || !_precomputeFramesProgress || task.isCanceled()) {
+                _precomputeFramesProgress.reset();
+                _precomputeFrameFuture.reset();
                 return;
             }
             OVITO_ASSERT(_precomputeFrameFuture);
@@ -578,7 +571,8 @@ void PipelineCache::precomputeNextAnimationFrame()
         catch(const Exception&) {
             // In case of an error during pipeline evaluation or the unwrapping calculation,
             // abort the operation.
-            _precomputeFramesOperation.setFinished();
+            _precomputeFramesProgress.reset();
+            _precomputeFrameFuture.reset();
         }
     });
 }

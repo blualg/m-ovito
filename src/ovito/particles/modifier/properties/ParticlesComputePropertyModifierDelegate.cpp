@@ -181,7 +181,8 @@ Future<PipelineFlowState> ParticlesComputePropertyModifierDelegate::performCompu
             neighborMode,
             cutoff = cutoff()]() mutable
     {
-        this_task::setProgressText(tr("Computing property '%1'").arg(outputProperty->name()));
+        TaskProgress progress(this_task::ui());
+        progress.setProgressText(tr("Computing property '%1'").arg(outputProperty->name()));
 
         // Prepare the neighbor finder (only used when neighbor mode is active).
         CutoffNeighborFinder neighborFinder;
@@ -220,7 +221,7 @@ Future<PipelineFlowState> ParticlesComputePropertyModifierDelegate::performCompu
         EnumerableThreadSpecific<WorkerData> workerData;
         size_t componentCount = outputAccessor.componentCount();
 
-        parallelForInnerOuter(outputProperty->size(), 4096, [&](auto&& iterate) {
+        parallelForInnerOuter(outputProperty->size(), 4096, progress, [&](auto&& iterate) {
             WorkerData& wd = workerData.create(*evaluator, *neighborEvaluator, neighborMode);
             iterate([&](size_t i) {
 

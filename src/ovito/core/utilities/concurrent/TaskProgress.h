@@ -86,11 +86,13 @@ public:
             _text = progressText;
             notifyUserInterface();
         }
+        // Print task messages to the console if task logging is enabled (via Python method ovito.enable_logging()).
+        Application::instance()->logTaskActivity(progressText);
     }
 
     /// Sets the current maximum value for progress reporting.
     /// The current progress value is reset to zero unless autoReset is false.
-    void setProgressMaximum(qlonglong maximum, bool autoReset = true) {
+    void setProgressMaximum(qlonglong maximum, bool autoReset = true) noexcept {
         if(autoReset || _progressMaximum != maximum) {
             if(_mutex) {
                 std::lock_guard<std::mutex> lock(*_mutex);
@@ -102,8 +104,7 @@ public:
     }
 
     /// Sets the current progress value of the task.
-    void setProgressValue(qlonglong progressValue) {
-        this_task::throwIfCanceled();
+    void setProgressValueNoThrow(qlonglong progressValue) noexcept {
         if(_mutex && progressValue != _progressValue) {
             std::lock_guard<std::mutex> lock(*_mutex);
             _progressValue = progressValue;
@@ -111,14 +112,25 @@ public:
         }
     }
 
-    /// Increments the progress value of the task.
-    void incrementProgressValue(qlonglong increment = 1) {
+    /// Sets the current progress value of the task.
+    void setProgressValue(qlonglong progressValue) {
         this_task::throwIfCanceled();
+        setProgressValueNoThrow(progressValue);
+    }
+
+    /// Increments the progress value of the task.
+    void incrementProgressValueNoThrow(qlonglong increment = 1) noexcept {
         if(_mutex) {
             std::lock_guard<std::mutex> lock(*_mutex);
             _progressValue += increment;
             notifyUserInterface();
         }
+    }
+
+    /// Increments the progress value of the task.
+    void incrementProgressValue(qlonglong increment = 1) {
+        this_task::throwIfCanceled();
+        incrementProgressValueNoThrow(increment);
     }
 
     /// Sets the current progress value of the task, generating update events only occasionally.
@@ -135,6 +147,7 @@ public:
     /// the total progress as sub-steps are completed.
     void beginProgressSubStepsWithWeights(std::vector<int> weights) {
         OVITO_ASSERT(std::accumulate(weights.cbegin(), weights.cend(), 0) > 0);
+        this_task::throwIfCanceled();
         if(_mutex) {
             std::lock_guard<std::mutex> lock(*_mutex);
             _subProgressStack.emplace_back(0, std::move(weights));
@@ -150,6 +163,7 @@ public:
     /// Completes the current sub-step in the sequence started with beginProgressSubSteps() or
     /// beginProgressSubStepsWithWeights() and moves to the next one.
     void nextProgressSubStep() {
+        this_task::throwIfCanceled();
         if(_mutex) {
             std::lock_guard<std::mutex> lock(*_mutex);
             OVITO_ASSERT(!_subProgressStack.empty());
@@ -163,6 +177,7 @@ public:
 
     /// Completes a sub-step sequence started with beginProgressSubSteps() or beginProgressSubStepsWithWeights().
     void endProgressSubSteps() {
+        this_task::throwIfCanceled();
         if(_mutex) {
             std::lock_guard<std::mutex> lock(*_mutex);
             OVITO_ASSERT(!_subProgressStack.empty());
@@ -241,7 +256,7 @@ private:
     }
 
     /// Notifies the abstract user interface that this task's progress information has changed.
-    void notifyUserInterface() {
+    void notifyUserInterface() noexcept {
         OVITO_ASSERT(_mutex);
         if(_userInterface)
             _userInterface->taskProgressChanged(this);

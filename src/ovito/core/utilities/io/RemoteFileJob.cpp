@@ -113,6 +113,9 @@ void RemoteFileJob::start(PromiseBase promise) noexcept
             shutdown(false);
     });
 
+    // Show progress in the GUI.
+    _progress.emplace(this);
+
     if(_url.scheme() == QStringLiteral("sftp")) {
         // Handle sftp URLs.
 
@@ -121,7 +124,7 @@ void RemoteFileJob::start(PromiseBase promise) noexcept
         connectionParams.userName = _url.userName();
         connectionParams.password = _url.password();
         connectionParams.port = _url.port(0);
-        setProgressText(tr("Connecting to remote host %1").arg(connectionParams.host));
+        _progress->setProgressText(tr("Connecting to remote host %1").arg(connectionParams.host));
 
         // Open connection.
         _connection = Application::instance()->fileManager().acquireSshConnection(connectionParams);
@@ -148,7 +151,7 @@ void RemoteFileJob::start(PromiseBase promise) noexcept
     else {
         // Handle http(s) URLs.
 #ifndef Q_OS_WASM
-        setProgressText(tr("Downloading file %1 from %2").arg(_url.fileName()).arg(_url.host()));
+        _progress->setProgressText(tr("Downloading file %1 from %2").arg(_url.fileName()).arg(_url.host()));
         QNetworkAccessManager* networkAccessManager = Application::instance()->networkAccessManager();
         _networkReply = networkAccessManager->get(QNetworkRequest(_url));
 
@@ -178,6 +181,7 @@ void RemoteFileJob::shutdown(bool success)
         _networkReply = nullptr;
     }
 #endif
+    _progress.reset();
     PromiseBase promise = std::move(_promise); // Extend lifetime to the end of this function. Otherwise, task may be destroyed by the setFinished() call.
     setFinished();
 
@@ -288,7 +292,7 @@ void DownloadRemoteFileJob::connectionEstablished()
 
 #ifdef OVITO_SSH_CLIENT
     if(LibsshConnection* libsshConnection = qobject_cast<LibsshConnection*>(_connection)) {
-        setProgressText(tr("Opening SCP channel to remote host %1").arg(libsshConnection->hostname()));
+        _progress->setProgressText(tr("Opening SCP channel to remote host %1").arg(libsshConnection->hostname()));
         ScpChannel* scpChannel = new ScpChannel(libsshConnection, _url.path());
         connect(scpChannel, &ScpChannel::receivingFile, this, &DownloadRemoteFileJob::receivingFile);
         connect(scpChannel, &ScpChannel::receivedData, this, &DownloadRemoteFileJob::receivedData);
@@ -301,7 +305,7 @@ void DownloadRemoteFileJob::connectionEstablished()
     }
 #endif
     if(OpensshConnection* opensshConnection = qobject_cast<OpensshConnection*>(_connection)) {
-        setProgressText(tr("Opening download channel to remote host %1").arg(opensshConnection->hostname()));
+        _progress->setProgressText(tr("Opening download channel to remote host %1").arg(opensshConnection->hostname()));
         DownloadRequest* downloadRequest = new DownloadRequest(opensshConnection, _url.path());
         connect(downloadRequest, &DownloadRequest::receivingFile, this, &DownloadRemoteFileJob::receivingFile);
         connect(downloadRequest, &DownloadRequest::receivedData, this, &DownloadRemoteFileJob::receivedData);
@@ -345,7 +349,6 @@ void DownloadRemoteFileJob::shutdown(bool success)
     else {
         _localFile.reset();
     }
-
     TaskPtr self = shared_from_this(); // Keep alive until the end of this function. Otherwise, task may be destroyed by the shutdown() call.
 
     // Close network connection.
@@ -364,8 +367,8 @@ void DownloadRemoteFileJob::receivingFile(qint64 fileSize)
         shutdown(false);
         return;
     }
-    setProgressMaximum(fileSize);
-    setProgressText(tr("Fetching remote file %1").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)));
+    _progress->setProgressMaximum(fileSize);
+    _progress->setProgressText(tr("Fetching remote file %1").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)));
 }
 
 /******************************************************************************
@@ -390,7 +393,7 @@ void DownloadRemoteFileJob::receivedData(qint64 totalReceivedBytes)
         shutdown(false);
         return;
     }
-    setProgressValue(totalReceivedBytes);
+    _progress->setProgressValueNoThrow(totalReceivedBytes);
 }
 
 /******************************************************************************
@@ -403,8 +406,8 @@ void DownloadRemoteFileJob::networkReplyDownloadProgress(qint64 bytesReceived, q
         return;
     }
     if(bytesTotal > 0) {
-        setProgressMaximum(bytesTotal);
-        setProgressValue(bytesReceived);
+        _progress->setProgressMaximum(bytesTotal);
+        _progress->setProgressValueNoThrow(bytesReceived);
     }
     storeReceivedData();
 }
@@ -459,7 +462,7 @@ void ListRemoteDirectoryJob::connectionEstablished()
 #ifdef OVITO_SSH_CLIENT
     if(LibsshConnection* libsshConnection = qobject_cast<LibsshConnection*>(_connection)) {
         // Open the LS channel.
-        setProgressText(tr("Opening channel to remote host %1").arg(libsshConnection->hostname()));
+        _progress->setProgressText(tr("Opening channel to remote host %1").arg(libsshConnection->hostname()));
         LsChannel* lsChannel = new LsChannel(libsshConnection, _url.path());
         connect(lsChannel, &LsChannel::error, this, &ListRemoteDirectoryJob::channelError);
         connect(lsChannel, &LsChannel::receivingDirectory, this, &ListRemoteDirectoryJob::receivingDirectory);
@@ -471,7 +474,7 @@ void ListRemoteDirectoryJob::connectionEstablished()
     }
 #endif
     if(OpensshConnection* opensshConnection = qobject_cast<OpensshConnection*>(_connection)) {
-        setProgressText(tr("Opening channel to remote host %1").arg(opensshConnection->hostname()));
+        _progress->setProgressText(tr("Opening channel to remote host %1").arg(opensshConnection->hostname()));
         FileListingRequest* listingRequest = new FileListingRequest(opensshConnection, _url.path());
         connect(listingRequest, &FileListingRequest::error, this, &ListRemoteDirectoryJob::channelError);
         connect(listingRequest, &FileListingRequest::receivingDirectory, this, &ListRemoteDirectoryJob::receivingDirectory);
@@ -495,7 +498,7 @@ void ListRemoteDirectoryJob::receivingDirectory()
         return;
     }
 
-    setProgressText(tr("Listing remote directory %1").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)));
+    _progress->setProgressText(tr("Listing remote directory %1").arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded)));
 }
 
 /******************************************************************************

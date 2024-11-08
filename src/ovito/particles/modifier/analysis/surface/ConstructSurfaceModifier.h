@@ -134,7 +134,7 @@ private:
     protected:
 
         /// Compute the distance of each input particle from the constructed surface.
-        void computeSurfaceDistances(const SurfaceMeshBuilder& mesh);
+        void computeSurfaceDistances(const SurfaceMeshBuilder& mesh, TaskProgress& progress);
 
         /// Controls the identification of disconnected spatial regions (filled and empty).
         const bool _identifyRegions;

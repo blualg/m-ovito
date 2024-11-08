@@ -88,8 +88,8 @@ private:
 
     private:
 
-        QString readDensityGrid(CompressedTextReader& stream);
-        Property* readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name);
+        QString readDensityGrid(CompressedTextReader& stream, TaskProgress& progress);
+        Property* readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name, TaskProgress& progress);
 
         /// Controls the generation of ad-hoc bonds during data import.
         bool _generateBonds;

@@ -134,8 +134,7 @@ Future<PipelineFlowState> VoxelGridSliceModifierDelegate::apply(const ModifierEv
                 // Run the marching cubes algorithm to generate the mesh for the cross-section.
                 {
                     MarchingCubes mc(mesh, gridShape[0]*resolution, gridShape[1]*resolution, gridShape[2]*resolution, false, std::move(getFieldValue), true, true);
-                    mc.generateIsosurface(0.0);
-                    this_task::throwIfCanceled();
+                    mc.generateIsosurface(0.0, TaskProgress::Ignore);
 
                     // Take output data.
                     if(meshFaceVoxelCoordinates.empty())
@@ -225,7 +224,7 @@ Future<PipelineFlowState> VoxelGridSliceModifierDelegate::apply(const ModifierEv
                 this_task::throwIfCanceled();
 
                 // Copy field values from voxel grid to surface mesh vertices.
-                CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(mesh, fieldProperties, *voxelGrid->domain(), voxelGrid->shape(), voxelGrid->gridType());
+                CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(mesh, fieldProperties, *voxelGrid->domain(), voxelGrid->shape(), voxelGrid->gridType(), TaskProgress::Ignore);
                 this_task::throwIfCanceled();
 
                 // Transform mesh vertices from orthogonal grid space to world space.

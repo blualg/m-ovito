@@ -233,7 +233,8 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
             histogram = std::move(histogram),
             createdByNode = request.modificationNodeWeak()]() mutable
     {
-        this_task::setProgressText(tr("Constructing isosurface"));
+        TaskProgress progress(this_task::ui());
+        progress.setProgressText(tr("Constructing isosurface"));
 
         // Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
         BufferReadAccess<FloatType*> data(property);
@@ -280,11 +281,10 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
 
         // Invoke marching cubes algorithm.
         MarchingCubes mc(meshBuilder, gridShape[0], gridShape[1], gridShape[2], false, std::move(getFieldValue));
-        mc.generateIsosurface(isolevel);
-        this_task::throwIfCanceled();
+        mc.generateIsosurface(isolevel, progress);
 
         // Copy field values from voxel grid to surface mesh vertices.
-        transferPropertiesFromGridToMesh(meshBuilder, auxiliaryProperties, *meshBuilder.domain(), gridShape, gridType);
+        transferPropertiesFromGridToMesh(meshBuilder, auxiliaryProperties, *meshBuilder.domain(), gridShape, gridType, progress);
         this_task::throwIfCanceled();
 
         // Adjust for non-periodic point-based grids.
@@ -320,7 +320,7 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
             throw Exception(tr("Something went wrong. Isosurface mesh is not closed."));
         this_task::throwIfCanceled();
 
-        meshBuilder.smoothMesh(smoothingLevel);
+        meshBuilder.smoothMesh(smoothingLevel, progress);
         this_task::throwIfCanceled();
 
         FloatType totalSurfaceArea;
@@ -416,7 +416,7 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
 /******************************************************************************
 * Transfers voxel grid properties to the vertices of a surfaces mesh.
 ******************************************************************************/
-void CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCell& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType)
+void CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties, const SimulationCell& gridDomain, VoxelGrid::GridDimensions gridShape, VoxelGrid::GridType gridType, TaskProgress& progress)
 {
     OVITO_ASSERT(this_task::get());
 
@@ -450,7 +450,7 @@ void CreateIsosurfaceModifier::transferPropertiesFromGridToMesh(SurfaceMeshBuild
         std::array<bool,3> pbcFlags = gridDomain.pbcFlagsCorrected();
         BufferReadAccess<Point3> vertexPositions = mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
 
-        parallelFor(mesh.vertexCount(), 4096, [&](size_t vertexIndex) {
+        parallelFor(mesh.vertexCount(), 4096, progress, [&](size_t vertexIndex) {
             // Trilinear interpolation scheme.
             size_t cornerIndices[8];
             FloatType cornerWeights[8];

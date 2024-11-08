@@ -33,7 +33,7 @@
 
 // bPointCell cannot be defined inside of DelaunayTessellationSpatialQuery
 // since BOOST_GEOMETRY_REGISTER_POINT_3D needs to be placed before bBox but also be in
-// globale namespace
+// global namespace
 namespace Ovito::DelaunayTessellationSpatialQueryImpl {
 struct bPointCell {
     Point3 point;

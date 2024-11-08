@@ -147,7 +147,8 @@ std::unique_ptr<ReferenceConfigurationModifier::Engine> WignerSeitzAnalysisModif
 ******************************************************************************/
 void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform(PipelineFlowState& state)
 {
-    this_task::setProgressText(tr("Performing Wigner-Seitz cell analysis"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Performing Wigner-Seitz cell analysis"));
 
     if(affineMapping() == TO_CURRENT_CELL)
         throw Exception(tr("Remapping coordinates to the current cell is not supported by the Wigner-Seitz analysis routine. Only remapping to the reference cell or no mapping at all are supported options."));
@@ -194,7 +195,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform(PipelineFlo
     BufferReadAccess<Point3> positionsArray(positions());
     if(ncomponents == 1) {
         // Without per-type occupancies:
-        parallelFor(positions()->size(), 1024, [&](size_t index) {
+        parallelFor(positions()->size(), 1024, progress, [&](size_t index) {
             const Point3& p = positionsArray[index];
             FloatType closestDistanceSq;
             size_t closestIndex = neighborTree.findClosestParticle((affineMapping() == TO_REFERENCE_CELL) ? (tm * p) : p, closestDistanceSq);
@@ -207,7 +208,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform(PipelineFlo
     else {
         // With per-type occupancies:
         BufferReadAccess<int32_t> particleTypesArray(particleTypes());
-        parallelFor(positions()->size(), 1024, [&](size_t index) {
+        parallelFor(positions()->size(), 1024, progress, [&](size_t index) {
             const Point3& p = positionsArray[index];
             FloatType closestDistanceSq;
             size_t closestIndex = neighborTree.findClosestParticle((affineMapping() == TO_REFERENCE_CELL) ? (tm * p) : p, closestDistanceSq);

@@ -92,7 +92,8 @@ bool mmCIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 ******************************************************************************/
 void mmCIFImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading mmCIF file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading mmCIF file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -259,7 +260,7 @@ void mmCIFImporter::FrameLoader::loadFile()
 
     // Generate ad-hoc bonds between atoms based on their van der Waals radii.
     if(_generateBonds)
-        generateBonds();
+        generateBonds(progress);
     else
         setBondCount(0);
 

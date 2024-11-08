@@ -74,6 +74,9 @@ protected:
     /// This method is called once for this object after it has been completely loaded from a stream.
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
+    /// Main function generating the trajectory lines.
+    [[nodiscard]] Future<DataOORef<const Lines>> generateTrajectoryLines(ModifierEvaluationRequest request) const;
+
 private:
 
     /// Controls which particles trajectories are created for.

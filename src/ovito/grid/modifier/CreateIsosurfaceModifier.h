@@ -82,7 +82,7 @@ public:
     /// Transfers voxel grid properties to the vertices of a surfaces mesh.
     static void transferPropertiesFromGridToMesh(SurfaceMeshBuilder& mesh, const std::vector<ConstPropertyPtr>& fieldProperties,
                                                  const SimulationCell& gridDomain, VoxelGrid::GridDimensions gridShape,
-                                                 VoxelGrid::GridType gridType);
+                                                 VoxelGrid::GridType gridType, TaskProgress& progress);
 
 protected:
 

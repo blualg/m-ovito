@@ -63,8 +63,10 @@ bool LAMMPSGridDumpImporter::OOMetaClass::checkFileFormat(const FileHandle& file
 void LAMMPSGridDumpImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     CompressedTextReader stream(fileHandle);
-    this_task::setProgressText(tr("Scanning LAMMPS grid dump file %1").arg(fileHandle.toString()));
-    this_task::setProgressMaximum(stream.underlyingSize());
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Scanning LAMMPS grid dump file %1").arg(fileHandle.toString()));
+    progress.setProgressMaximum(stream.underlyingSize());
 
     unsigned long long timestep = 0;
     size_t numVoxels = 0;
@@ -106,7 +108,7 @@ void LAMMPSGridDumpImporter::discoverFramesInFile(const FileHandle& fileHandle, 
                 for(size_t i = 0; i < numVoxels; i++) {
                     stream.readLine();
                     // Update progress bar and check for cancellation.
-                    this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
+                    progress.setProgressValueIntermittent(stream.underlyingByteOffset());
                 }
                 break;
             }
@@ -132,7 +134,8 @@ void LAMMPSGridDumpImporter::discoverFramesInFile(const FileHandle& fileHandle, 
 ******************************************************************************/
 void LAMMPSGridDumpImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading LAMMPS grid dump file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading LAMMPS grid dump file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -225,7 +228,7 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
                     throw Exception(tr("LAMMPS grid dump file parsing error. Invalid grid size in line %1:\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
                 numVoxels = (size_t)nx * (size_t)ny * (size_t)nz;
                 gridDims = {nx, ny, nz};
-                this_task::setProgressMaximum(numVoxels);
+                progress.setProgressMaximum(numVoxels);
                 break;
             }
             else if(stream.lineStartsWith("ITEM: GRID CELLS")) {
@@ -298,7 +301,7 @@ void LAMMPSGridDumpImporter::FrameLoader::loadFile()
                 try {
                     for(size_t i = 0; i < numVoxels; i++, lineNumber++) {
                         // Update progress bar and check for cancellation.
-                        this_task::setProgressValueIntermittent(i);
+                        progress.setProgressValueIntermittent(i);
                         if(!s)
                             columnParser.readElement(i, stream.readLine());
                         else

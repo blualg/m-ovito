@@ -40,13 +40,13 @@ class OVITO_CORE_EXPORT Application : public QObject, public UserInterface
 
 public:
 
-    /// \brief Returns the one and only instance of this class.
+    /// Returns the one and only instance of this class.
     static Application* instance() { return _instance; }
 
-    /// \brief Constructor.
+    /// Constructor.
     explicit Application();
 
-    /// \brief Destructor.
+    /// Destructor.
     virtual ~Application();
 
     /// \brief Initializes the application.
@@ -69,14 +69,17 @@ public:
     ///         \c false if the application has been started in terminal mode.
     static bool guiMode() { return _guiMode; }
 
-    /// \brief Switches between graphical and terminal mode.
+    /// Switches between graphical and terminal mode.
     static void setGuiMode(bool enabled) { _guiMode = enabled; }
 
-    /// \brief Returns whether printing of task status messages to the console is currently enabled.
+    /// Returns whether printing of task status messages to the console is currently enabled.
     bool taskConsoleLoggingEnabled() const { return _taskConsoleLoggingEnabled; }
 
-    /// \brief Enables or disables printing of task status messages to the console.
+    /// Enables or disables printing of task status messages to the console.
     void setTaskConsoleLoggingEnabled(bool enabled) { _taskConsoleLoggingEnabled = enabled; }
+
+    /// Reports task progress on the console (from any thread).
+    void logTaskActivity(const QString& text);
 
     /// Returns the global FileManager class instance.
     FileManager& fileManager() { return _fileManager; }
@@ -117,9 +120,6 @@ protected:
 
     /// Creates the global instance of the right QCoreApplication derived class.
     virtual QCoreApplication* createQtApplicationImpl(bool supportGui, int& argc, char** argv) = 0;
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressText(Task& task, const QString& text) override;
 
     /// The number of original command line arguments.
     int* _argc;

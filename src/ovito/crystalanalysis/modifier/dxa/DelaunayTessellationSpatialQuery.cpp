@@ -43,14 +43,14 @@ DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(DelaunayTesse
 
         // Skip cells that are outside the solid region based on alpha criterion
         if(alpha.has_value()) {
-            bool isFilledTetrehedron = tessellation.alphaTest(cell, alpha.value()).value_or(false);
-            if(!isFilledTetrehedron) {
+            bool isFilledTetrahedron = tessellation.alphaTest(cell, alpha.value()).value_or(false);
+            if(!isFilledTetrahedron) {
                 tessellation.setUserField(cell, -1);
                 continue;
             }
         }
 
-        // Add bbounding box to tree
+        // Add bounding box to tree
         Box3 bbox;
         for(size_t vert = 0; vert < 4; ++vert) {
             bbox.addPoint(tessellation.vertexPosition(tessellation.cellVertex(cell, vert)));
@@ -70,7 +70,7 @@ DelaunayTessellationSpatialQuery::DelaunayTessellationSpatialQuery(DelaunayTesse
 void DelaunayTessellationSpatialQuery::getOverlappingCells(const Box3& bbox, std::vector<bBox>& cells) const
 {
     namespace bgi = boost::geometry::index;
-    cells.clear(); // Recylcing the existing vector avoids memory allocation overhead
+    cells.clear(); // Recycling the existing vector avoids memory allocation overhead
     _rtree.query(bgi::intersects(bBox({bbox.minc, 0}, {bbox.maxc, 0})), std::back_inserter(cells));
 }
 

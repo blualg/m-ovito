@@ -52,7 +52,8 @@ bool IMDImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 ******************************************************************************/
 void IMDImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading IMD file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading IMD file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -150,7 +151,7 @@ void IMDImporter::FrameLoader::loadFile()
             return;
     }
     setParticleCount(numAtoms);
-    this_task::setProgressMaximum(numAtoms);
+    progress.setProgressMaximum(numAtoms);
 
     // Jump back to beginning of atom list.
     stream.seek(headerOffset, headerLineNumber);
@@ -159,7 +160,7 @@ void IMDImporter::FrameLoader::loadFile()
     InputColumnReader columnParser(*this, columnMapping, particles());
     for(size_t i = 0; i < numAtoms; i++) {
         // Update progress bar and check for user cancellation.
-        this_task::setProgressValueIntermittent(i);
+        progress.setProgressValueIntermittent(i);
         try {
             columnParser.readElement(i, stream.readLine());
         }

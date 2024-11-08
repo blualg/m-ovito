@@ -183,9 +183,9 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(
     SharedFuture<QVector<FileSourceImporter::Frame>> framesFuture = requestFrameList(true);
 
     // Display any errors that occurred during scan operation to the user.
-    framesFuture.finally(ObjectExecutor(this), [](Task& task) noexcept {
+    framesFuture.finally(ObjectExecutor(this), [ui=this_task::ui()](Task& task) noexcept {
         try { if(!task.isCanceled()) task.throwPossibleException(); }
-        catch(const Exception& ex) { this_task::ui()->reportError(ex); }
+        catch(const Exception& ex) { ui->reportError(ex); }
         catch(...) {}
     });
 

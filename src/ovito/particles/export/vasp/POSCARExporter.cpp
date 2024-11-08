@@ -42,7 +42,7 @@ OORef<FileExportJob> POSCARExporter::createExportJob(const QString& filePath, in
     public:
 
         /// Writes the exportable data of a single trajectory frame to the output file.
-        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath, TaskProgress& progress) override {
             // The exportable frame data.
             const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
@@ -102,9 +102,10 @@ OORef<FileExportJob> POSCARExporter::createExportJob(const QString& filePath, in
             }
 
             qlonglong totalProgressCount = particleCount;
-            if(velocityProperty) totalProgressCount += particleCount;
+            if(velocityProperty)
+                totalProgressCount += particleCount;
             qlonglong currentProgress = 0;
-            this_task::setProgressMaximum(totalProgressCount);
+            progress.setProgressMaximum(totalProgressCount);
 
             bool writeReducedCoordinates = static_cast<const POSCARExporter*>(this->exporter())->writeReducedCoordinates();
 
@@ -125,7 +126,7 @@ OORef<FileExportJob> POSCARExporter::createExportJob(const QString& filePath, in
                     }
 
                     // Update progress bar and check for user cancellation.
-                    this_task::setProgressValueIntermittent(currentProgress++);
+                    progress.setProgressValueIntermittent(currentProgress++);
                 }
             }
 
@@ -148,7 +149,7 @@ OORef<FileExportJob> POSCARExporter::createExportJob(const QString& filePath, in
                         }
 
                         // Update progress bar and check for user cancellation.
-                        this_task::setProgressValueIntermittent(currentProgress++);
+                        progress.setProgressValueIntermittent(currentProgress++);
                     }
                 }
             }

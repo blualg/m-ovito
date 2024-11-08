@@ -59,8 +59,10 @@ bool FHIAimsLogFileImporter::OOMetaClass::checkFileFormat(const FileHandle& file
 void FHIAimsLogFileImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     CompressedTextReader stream(fileHandle);
-    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
-    this_task::setProgressMaximum(stream.underlyingSize());
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    progress.setProgressMaximum(stream.underlyingSize());
 
     // Regular expression for whitespace characters.
     QRegularExpression ws_re(QStringLiteral("\\s+"));
@@ -80,7 +82,7 @@ void FHIAimsLogFileImporter::discoverFramesInFile(const FileHandle& fileHandle, 
             stream.recordSeekPoint();
         }
 
-        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
+        progress.setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 }
 
@@ -89,7 +91,8 @@ void FHIAimsLogFileImporter::discoverFramesInFile(const FileHandle& fileHandle, 
 ******************************************************************************/
 void FHIAimsLogFileImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading FHI-aims log file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading FHI-aims log file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);

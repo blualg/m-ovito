@@ -72,11 +72,13 @@ bool XSFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 void XSFImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     CompressedTextReader stream(fileHandle);
-    this_task::setProgressText(tr("Scanning XSF file %1").arg(stream.filename()));
-    this_task::setProgressMaximum(stream.underlyingSize());
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Scanning XSF file %1").arg(stream.filename()));
+    progress.setProgressMaximum(stream.underlyingSize());
 
     int nFrames = 1;
-    while(!stream.eof() && !this_task::isCanceled()) {
+    while(!stream.eof()) {
         const char* line = stream.readLineTrimLeft(1024);
         if(boost::algorithm::starts_with(line, "ANIMSTEPS")) {
             if(sscanf(line, "ANIMSTEPS %i", &nFrames) != 1 || nFrames < 1)
@@ -86,7 +88,7 @@ void XSFImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
         else if(line[0] != '#') {
             break;
         }
-        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
+        progress.setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 
     Frame frame(fileHandle);
@@ -105,7 +107,9 @@ void XSFImporter::FrameLoader::loadFile()
 {
     // Open file for reading.
     CompressedTextReader stream(fileHandle());
-    this_task::setProgressText(tr("Reading XSF file %1").arg(fileHandle().toString()));
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading XSF file %1").arg(fileHandle().toString()));
 
     // The animation frame number to load from the XSF file.
     int frameNumber = frame().lineNumber + 1;
@@ -250,7 +254,7 @@ void XSFImporter::FrameLoader::loadFile()
 
             // Parse atoms data.
             InputColumnReader columnParser(*this, columnMapping, particles());
-            this_task::setProgressMaximum(natoms);
+            progress.setProgressMaximum(natoms);
             for(size_t i = 0; i < natoms; i++) {
                 try {
                     columnParser.readElement(i, stream.readLine());
@@ -259,7 +263,7 @@ void XSFImporter::FrameLoader::loadFile()
                     throw ex.prependGeneralMessage(tr("Parsing error in line %1 of XSF file.").arg(atomsLineNumber + i));
                 }
                 // Update progress bar and check for user cancellation.
-                this_task::setProgressValueIntermittent(i);
+                progress.setProgressValueIntermittent(i);
             }
             columnParser.sortElementTypes();
             columnParser.reset();
@@ -332,7 +336,7 @@ void XSFImporter::FrameLoader::loadFile()
 
             BufferWriteAccess<FloatType, access_mode::discard_read_write> fieldQuantity = voxelGrid->createProperty(name, DataBuffer::FloatDefault);
             FloatType* data = fieldQuantity.begin();
-            this_task::setProgressMaximum(fieldQuantity.size());
+            progress.setProgressMaximum(fieldQuantity.size());
             const char* s = "";
             for(size_t i = 0; i < fieldQuantity.size(); i++, ++data) {
                 const char* token;
@@ -349,7 +353,7 @@ void XSFImporter::FrameLoader::loadFile()
                     s++;
 
                 // Update progress bar and check for user cancellation.
-                this_task::setProgressValueIntermittent(i);
+                progress.setProgressValueIntermittent(i);
             }
 
             // Automatically select the property for pseudo-coloring of the grid and adjust the value range.

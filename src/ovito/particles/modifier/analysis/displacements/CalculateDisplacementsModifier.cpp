@@ -139,7 +139,7 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform(PipelineFlowSta
     // Compute displacement vectors.
     if(affineMapping() != NO_MAPPING) {
         const AffineTransformation reduced_to_absolute = (affineMapping() == TO_REFERENCE_CELL) ? refCellMatrix : cell()->matrix();
-        parallelFor(displacements()->size(), 1024, [&](size_t i) {
+        parallelFor(displacements()->size(), 1024, TaskProgress::Ignore, [&](size_t i) {
             const Point3& p = positionsAcc[i];
             auto index = currentToRefIndexMap()[i];
             Point3 reduced_current_pos = cell()->inverseMatrix() * p;
@@ -157,7 +157,7 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform(PipelineFlowSta
         });
     }
     else {
-        parallelFor(displacements()->size(), 1024, [&](size_t i) {
+        parallelFor(displacements()->size(), 1024, TaskProgress::Ignore, [&](size_t i) {
             const Point3& p = positionsAcc[i];
             auto index = currentToRefIndexMap()[i];
             Vector3 u = p - refPositionsArray[index];

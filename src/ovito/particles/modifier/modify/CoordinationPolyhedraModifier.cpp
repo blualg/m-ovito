@@ -119,7 +119,8 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
             mesh = std::move(mesh),
             particleProperties = std::move(particleProperties)]() mutable
     {
-        this_task::setProgressText(tr("Generating coordination polyhedra"));
+        TaskProgress progress(this_task::ui());
+        progress.setProgressText(tr("Generating coordination polyhedra"));
 
         SurfaceMeshBuilder meshBuilder(mesh);
 
@@ -130,7 +131,7 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
         // Determine number of selected particles.
         BufferReadAccess<SelectionIntType> selectionArray(selection);
         size_t npoly = boost::count_if(selectionArray, [](auto s) { return s != 0; });
-        this_task::setProgressMaximum(npoly);
+        progress.setProgressMaximum(npoly);
 
         ParticleBondMap bondMap(bondTopology, bondPeriodicImages);
 
@@ -151,7 +152,7 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
 
         // Iterate over all input particles.
         for(size_t i = 0; i < positionsArray.size(); i++) {
-            // Construct corodination polyhedron only for selected particles.
+            // Construct coordination polyhedron only for selected particles.
             if(selectionArray[i] == 0) continue;
 
             // Collect the bonds that are part of the coordination polyhedron.
@@ -209,7 +210,7 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
             neighborPositions.clear();
             neighborIndices.clear();
 
-            this_task::incrementProgressValue();
+            progress.incrementProgressValue();
         }
         regionGrower.commit();
         OVITO_ASSERT(regionToParticleMap.size() == meshBuilder.regionCount());

@@ -98,7 +98,7 @@ private:
         virtual void perform();
 
         /// Performs one iteration of the expansion.
-        virtual void expandSelection() = 0;
+        virtual void expandSelection(TaskProgress& progress) = 0;
 
         /// Injects the computed results into the data pipeline.
         void applyResults(PipelineFlowState& state);
@@ -146,7 +146,7 @@ private:
             _numNearestNeighbors(numNearestNeighbors) {}
 
         /// Expands the selection by one step.
-        virtual void expandSelection() override;
+        virtual void expandSelection(TaskProgress& progress) override;
 
     private:
 
@@ -164,7 +164,7 @@ private:
             _cutoffRange(cutoff) {}
 
         /// Expands the selection by one step.
-        virtual void expandSelection() override;
+        virtual void expandSelection(TaskProgress& progress) override;
 
     private:
 
@@ -182,7 +182,7 @@ private:
             _bondTopology(std::move(bondTopology)) {}
 
         /// Expands the selection by one step.
-        virtual void expandSelection() override;
+        virtual void expandSelection(TaskProgress& progress) override;
 
     private:
 

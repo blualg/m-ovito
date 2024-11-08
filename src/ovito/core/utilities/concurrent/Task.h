@@ -166,48 +166,6 @@ public:
     /// Returns the internal exception store, which contains an exception object in case the task has failed.
     const std::exception_ptr& exceptionStore() const noexcept { return _exceptionStore; }
 
-    /// \brief Sets the description of this task's work to be displayed in the GUI.
-    /// \param progressText The text string that will be displayed in the user interface to describe the current operation performed by task.
-    void setProgressText(const QString& progressText);
-
-    /// \brief Sets the current maximum value for progress reporting. The current progress value is reset to zero unless autoReset is false.
-    void setProgressMaximum(qlonglong maximum, bool autoReset = true);
-
-    /// \brief Sets the current progress value of the task.
-    /// \param progressValue The new value, which must be in the range 0 to progressMaximum().
-    void setProgressValue(qlonglong progressValue);
-
-    /// \brief Increments the progress value of the task.
-    /// \param increment The number of progress units to add to the current progress value.
-    void incrementProgressValue(qlonglong increment = 1);
-
-    /// \brief Sets the current progress value of the task, generating update events only occasionally.
-    /// \param progressValue The new value, which must be in the range 0 to progressMaximum().
-    /// \param updateEvery Generate an update event only after the method has been called this many times.
-    void setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000);
-
-    /// \brief Starts a sequence of sub-steps in the progress range of this task.
-    ///
-    /// This is used for long and complex operation, which consist of several logical sub-steps, each with a separate
-    /// duration.
-    ///
-    /// \param weights A vector of relative weights, one for each sub-step, which will be used to calculate the
-    ///                the total progress as sub-steps are completed.
-    void beginProgressSubStepsWithWeights(std::vector<int> weights);
-
-    /// \brief Convenience version of the function above, which creates *N* substeps, all with the same weight.
-    /// \param nsteps The number of sub-steps in the sequence.
-    void beginProgressSubSteps(int nsteps) { beginProgressSubStepsWithWeights(std::vector<int>(nsteps, 1)); }
-
-    /// \brief Completes the current sub-step in the sequence started with beginProgressSubSteps() or
-    ///        beginProgressSubStepsWithWeights() and moves to the next one.
-    void nextProgressSubStep();
-
-    /// \brief Completes a sub-step sequence started with beginProgressSubSteps() or beginProgressSubStepsWithWeights().
-    ///
-    /// Call this method after the last sub-step has been completed.
-    void endProgressSubSteps();
-
     /// \brief Suspends execution until the given task has reached the 'finished' or 'canceled' state.
     ///        If the awaited task gets canceled while waiting, the task waiting for it gets canceled too.
     /// \param awaitedTask The task to wait for.
@@ -324,6 +282,7 @@ protected:
     mutable std::mutex _mutex;
 
     /// The abstract user interface object this task is associated with. May be null.
+    /// Note: Using a std::shared_ptr instead of a OORef, because including OORef.h would introduce a circular header dependency.
     std::shared_ptr<UserInterface> _userInterface;
 
     /// List of continuation functions that will be invoked when this task finishes (successfully or not).
@@ -357,7 +316,6 @@ protected:
     template<typename R2> friend class Future;
     template<typename R2> friend class SharedFuture;
     template<typename R2> friend class Promise;
-    friend class MainWindow; // MainWindow::registerProgressTask() needs to access registerContinuation().
 };
 
 namespace this_task
@@ -388,36 +346,6 @@ OVITO_CORE_EXPORT inline bool isScripting() noexcept {
     return !get()->isInteractive();
 }
 
-/// Changes the UI description string of the current operation.
-OVITO_CORE_EXPORT inline void setProgressText(const QString& progressText) {
-    OVITO_ASSERT(get() != nullptr);
-    get()->setProgressText(progressText);
-}
-
-/// Sets the maximum value of the current task.
-OVITO_CORE_EXPORT inline void setProgressMaximum(qlonglong maximum, bool autoReset = true) {
-    OVITO_ASSERT(get() != nullptr);
-    get()->setProgressMaximum(maximum, autoReset);
-}
-
-/// Sets the progress value of the current task.
-OVITO_CORE_EXPORT inline void setProgressValue(qlonglong progressValue) {
-    OVITO_ASSERT(get() != nullptr);
-    get()->setProgressValue(progressValue);
-}
-
-/// Increments the progress value of the task.
-OVITO_CORE_EXPORT inline void incrementProgressValue(qlonglong increment = 1) {
-    OVITO_ASSERT(get() != nullptr);
-    get()->incrementProgressValue(increment);
-}
-
-/// Sets the current progress value of the task, generating update events only occasionally.
-OVITO_CORE_EXPORT inline void setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000) {
-    OVITO_ASSERT(get() != nullptr);
-    get()->setProgressValueIntermittent(progressValue, updateEvery);
-}
-
 /// Returns whether the current task has been canceled.
 OVITO_CORE_EXPORT inline bool isCanceled() noexcept {
     OVITO_ASSERT(get() != nullptr);
@@ -435,30 +363,6 @@ OVITO_CORE_EXPORT inline void cancelAndThrow() {
     OVITO_ASSERT(get() != nullptr);
     get()->cancel();
     throw OperationCanceled();
-}
-
-/// Starts a sequence of sub-steps in the progress range of this task.
-OVITO_CORE_EXPORT inline void beginProgressSubStepsWithWeights(std::vector<int> weights) {
-    OVITO_ASSERT(get() != nullptr);
-    get()->beginProgressSubStepsWithWeights(std::move(weights));
-}
-
-/// Convenience version of the function above, which creates *N* substeps, all with the same weight.
-OVITO_CORE_EXPORT inline void beginProgressSubSteps(int nsteps) {
-    beginProgressSubStepsWithWeights(std::vector<int>(nsteps, 1));
-}
-
-/// Completes the current sub-step in the sequence started with beginProgressSubSteps() or
-/// beginProgressSubStepsWithWeights() and moves to the next one.
-OVITO_CORE_EXPORT inline void nextProgressSubStep() {
-    OVITO_ASSERT(get() != nullptr);
-    get()->nextProgressSubStep();
-}
-
-/// Completes a sub-step sequence started with beginProgressSubSteps() or beginProgressSubStepsWithWeights().
-OVITO_CORE_EXPORT inline void endProgressSubSteps() {
-    OVITO_ASSERT(get() != nullptr);
-    get()->endProgressSubSteps();
 }
 
 }   // End of namespace this_task

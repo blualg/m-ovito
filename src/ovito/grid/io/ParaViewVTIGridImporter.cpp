@@ -66,7 +66,8 @@ bool ParaViewVTIGridImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 ******************************************************************************/
 void ParaViewVTIGridImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading ParaView VTI ImageData file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading ParaView VTI ImageData file %1").arg(fileHandle().toString()));
 
     // Create the destination voxel grid.
     QString gridIdentifier = loadRequest().dataBlockPrefix;

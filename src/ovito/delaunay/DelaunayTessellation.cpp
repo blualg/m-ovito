@@ -29,9 +29,9 @@ namespace Ovito {
 /******************************************************************************
 * Generates the tessellation.
 ******************************************************************************/
-void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints)
+void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, TaskProgress& progress)
 {
-    this_task::setProgressMaximum(0);
+    progress.setProgressMaximum(0);
 
     // Initialize the Geogram library (in a thread-safe way).
     static std::mutex geogramMutex;
@@ -160,12 +160,13 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
     _dt = GEO::Delaunay::create(3, "BDEL");
     _dt->set_keeps_infinite(true);
     _dt->set_reorder(true);
+    _dt->set_progress_callback([&progress](GEO::index_t value, GEO::index_t maxProgress) {
+        progress.setProgressMaximum(maxProgress, false);
+        progress.setProgressValueIntermittent(value);
+    });
 
     // Construct Delaunay tessellation.
-    _dt->set_vertices(_pointData.size(), reinterpret_cast<const double*>(_pointData.data()), [](GEO::index_t value, GEO::index_t maxProgress) {
-        this_task::setProgressMaximum(maxProgress, false);
-        this_task::setProgressValueIntermittent(value);
-    });
+    _dt->set_vertices(_pointData.size(), reinterpret_cast<const double*>(_pointData.data()));
     this_task::throwIfCanceled();
 
     // Classify tessellation cells as ghost or local cells.
@@ -209,7 +210,7 @@ bool DelaunayTessellation::classifyGhostCell(CellHandle cell) const
 }
 
 /******************************************************************************
-* Computes the dterminant of a 3x3 matrix.
+* Computes the determinant of a 3x3 matrix.
 ******************************************************************************/
 static inline double determinant(double a00, double a01, double a02,
                                  double a10, double a11, double a12,

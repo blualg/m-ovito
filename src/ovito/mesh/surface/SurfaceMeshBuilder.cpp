@@ -324,7 +324,7 @@ void SurfaceMeshBuilder::deleteIsolatedVertices()
 /******************************************************************************
 * Fairs a closed triangle mesh.
 ******************************************************************************/
-void SurfaceMeshBuilder::smoothMesh(int numIterations, FloatType k_PB, FloatType lambda)
+void SurfaceMeshBuilder::smoothMesh(int numIterations, TaskProgress& progress, FloatType k_PB, FloatType lambda)
 {
     if(numIterations <= 0)
         return;
@@ -336,13 +336,13 @@ void SurfaceMeshBuilder::smoothMesh(int numIterations, FloatType k_PB, FloatType
     // In SIGGRAPH 95 Conference Proceedings, pages 351-358 (1995)
 
     // Performs one iteration of the smoothing algorithm.
-    auto smoothMeshIteration = [this](FloatType prefactor) {
+    auto smoothMeshIteration = [&](FloatType prefactor) {
 
         BufferReadAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
 
         // Compute displacement for each vertex.
         std::vector<Vector3> displacements(vertexCount());
-        parallelFor(vertexCount(), 4096, [&](vertex_index vertex) {
+        parallelFor(vertexCount(), 4096, progress, [&](vertex_index vertex) {
             Vector3 d = Vector3::Zero();
 
             // Go in positive direction around vertex, facet by facet.
@@ -372,14 +372,14 @@ void SurfaceMeshBuilder::smoothMesh(int numIterations, FloatType k_PB, FloatType
 
     FloatType mu = FloatType(1) / (k_PB - FloatType(1)/lambda);
 
-    this_task::beginProgressSubSteps(2 * numIterations);
+    progress.beginProgressSubSteps(2 * numIterations);
     for(int iteration = 0; iteration < numIterations; iteration++) {
         smoothMeshIteration(lambda);
-        this_task::nextProgressSubStep();
+        progress.nextProgressSubStep();
         smoothMeshIteration(mu);
-        this_task::nextProgressSubStep();
+        progress.nextProgressSubStep();
     }
-    this_task::endProgressSubSteps();
+    progress.endProgressSubSteps();
 }
 
 /******************************************************************************

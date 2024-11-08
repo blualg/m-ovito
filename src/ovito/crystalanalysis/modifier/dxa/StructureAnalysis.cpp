@@ -460,7 +460,7 @@ void StructureAnalysis::initializeListOfStructures()
 /******************************************************************************
 * Identifies the atomic structures.
 ******************************************************************************/
-void StructureAnalysis::identifyStructures()
+void StructureAnalysis::identifyStructures(TaskProgress& progress)
 {
     // Prepare the neighbor list.
     int maxNeighborListSize = std::min((int)_neighborListsSize + 1, (int)MAX_NEIGHBORS);
@@ -470,7 +470,7 @@ void StructureAnalysis::identifyStructures()
     // Identify local structure around each particle.
     _maximumNeighborDistance = 0;
 
-    parallelFor(positions()->size(), 1024, [this, &neighFinder](size_t index) {
+    parallelFor(positions()->size(), 1024, progress, [this, &neighFinder](size_t index) {
         determineLocalStructure(neighFinder, index);
     });
 }
@@ -769,9 +769,10 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
 /******************************************************************************
 * Combines adjacent atoms to clusters.
 ******************************************************************************/
-void StructureAnalysis::buildClusters()
+void StructureAnalysis::buildClusters(TaskProgress& progress)
 {
-    this_task::setProgressMaximum(positions()->size());
+    progress.setProgressMaximum(positions()->size());
+
     qlonglong progressCounter = 0;
     BufferReadAccess<Point3> positionsArray(positions());
 
@@ -806,7 +807,7 @@ void StructureAnalysis::buildClusters()
             atomsToVisit.pop_front();
 
             // Update progress indicator.
-            this_task::setProgressValueIntermittent(++progressCounter);
+            progress.setProgressValueIntermittent(++progressCounter);
 
             // Look up symmetry permutation of current atom.
             int symmetryPermutationIndex = _atomSymmetryPermutations[currentAtomIndex];
@@ -937,18 +938,19 @@ void StructureAnalysis::buildClusters()
 /******************************************************************************
 * Determines the transition matrices between clusters.
 ******************************************************************************/
-void StructureAnalysis::connectClusters()
+void StructureAnalysis::connectClusters(TaskProgress& progress)
 {
-    this_task::setProgressMaximum(positions()->size());
+    progress.setProgressMaximum(positions()->size());
 
     for(size_t atomIndex = 0; atomIndex < positions()->size(); atomIndex++) {
         int clusterId = _atomClustersArray[atomIndex];
-        if(clusterId == 0) continue;
+        if(clusterId == 0)
+            continue;
         Cluster* cluster1 = clusterGraph()->findCluster(clusterId);
         OVITO_ASSERT(cluster1);
 
         // Update progress indicator.
-        this_task::setProgressValueIntermittent(atomIndex);
+        progress.setProgressValueIntermittent(atomIndex);
 
         // Look up symmetry permutation of current atom.
         int structureType = _structureTypesArray[atomIndex];

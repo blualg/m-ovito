@@ -233,27 +233,6 @@ protected:
     /// Informs the user interface that a task's progress state has changed.
     virtual void taskProgressChanged(TaskProgress* progress) {}
 
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressText(Task& task, const QString& text) = 0;
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressMaximum(Task& task, qlonglong maximum, bool autoReset) {}
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressValue(Task& task, qlonglong value) {}
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressIncrementValue(Task& task, qlonglong increment) {}
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressBeginSubStepsWithWeights(Task& task, std::vector<int>&& weights) {}
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressNextSubStep(Task& task) {}
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressEndSubSteps(Task& task) {}
-
 protected:
 
     /// Hosts the dataset that is currently being edited in this user interface.
@@ -283,7 +262,6 @@ protected:
     /// This keeps the UI object itself alive until shutdown() is called.
     OORef<UserInterface> _selfGuard;
 
-    friend class Task; // Tasks need to call taskProgressText() etc.
     friend class TaskProgress; // Needs access to the taskProgressBegin(), taskProgressEnd(), and taskProgressUpdate() methods.
 };
 

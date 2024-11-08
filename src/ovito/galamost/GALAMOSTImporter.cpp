@@ -64,7 +64,8 @@ bool GALAMOSTImporter::OOMetaClass::checkFileFormat(const FileHandle& file) cons
 ******************************************************************************/
 void GALAMOSTImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading GALAMOST file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading GALAMOST file %1").arg(fileHandle().toString()));
 
     // Initialize XML reader and open input file.
     std::unique_ptr<QIODevice> device = fileHandle().createIODevice();

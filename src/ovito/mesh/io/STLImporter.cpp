@@ -89,7 +89,8 @@ bool STLImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 ******************************************************************************/
 void STLImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading STL file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading STL file %1").arg(fileHandle().toString()));
 
     // Add mesh to the data collection.
     TriangleMesh* mesh = state().getMutableObject<TriangleMesh>();
@@ -105,7 +106,7 @@ void STLImporter::FrameLoader::loadFile()
     // Read first line and check if it begins with the mandatory "solid" keyword.
     stream.readLine(1024);
     if(stream.lineStartsWithToken("solid", true)) {
-        this_task::setProgressMaximum(stream.underlyingSize());
+        progress.setProgressMaximum(stream.underlyingSize());
 
         // Parse file line by line.
         int nVertices = -1;
@@ -157,7 +158,7 @@ void STLImporter::FrameLoader::loadFile()
             }
 
             // Update progress bar and check for user cancellation.
-            this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
+            progress.setProgressValueIntermittent(stream.underlyingByteOffset());
         }
     }
     else {
@@ -179,11 +180,11 @@ void STLImporter::FrameLoader::loadFile()
         if(nfaces >= 10000000)
             throw Exception(tr("Binary STL file header indicates invalid number of faces: %1").arg(nfaces));
 
-        this_task::setProgressMaximum(nfaces);
+        progress.setProgressMaximum(nfaces);
         for(quint32 i = 0; i < nfaces; i++) {
 
             // Update progress bar and check for user cancellation.
-            this_task::setProgressValueIntermittent(i);
+            progress.setProgressValueIntermittent(i);
 
             Vector_3<float> normal;
             Point_3<float> coordinates[3];

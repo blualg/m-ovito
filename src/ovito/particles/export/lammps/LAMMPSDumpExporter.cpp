@@ -41,7 +41,7 @@ OORef<FileExportJob> LAMMPSDumpExporter::createExportJob(const QString& filePath
     public:
 
         /// Writes the exportable data of a single trajectory frame to the output file.
-        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath, TaskProgress& progress) override {
             // The exportable frame data.
             const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
@@ -192,12 +192,12 @@ OORef<FileExportJob> LAMMPSDumpExporter::createExportJob(const QString& filePath
             }
             textStream() << '\n';
 
-            this_task::setProgressMaximum(atomsCount);
+            progress.setProgressMaximum(atomsCount);
             for(size_t i = 0; i < atomsCount; i++) {
                 columnWriter.writeElement(i, textStream());
 
                 // Update progress bar and check for user cancellation.
-                this_task::setProgressValueIntermittent(i);
+                progress.setProgressValueIntermittent(i);
             }
         }
     };

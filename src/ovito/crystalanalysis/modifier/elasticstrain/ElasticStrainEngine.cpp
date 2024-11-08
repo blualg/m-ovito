@@ -71,36 +71,33 @@ void ElasticStrainEngine::identifyStructures(const Particles* particles, const S
     if(!simulationCell || simulationCell->is2D())
         throw Exception(ElasticStrainModifier::tr("The elastic strain calculation requires a 3d simulation cell."));
 
-    this_task::setProgressText(ElasticStrainModifier::tr("Calculating elastic strain tensors"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(ElasticStrainModifier::tr("Calculating elastic strain tensors"));
 
     const Property* positions = particles->expectProperty(Particles::PositionProperty);
     _structureAnalysis.emplace(positions, simulationCell, (StructureAnalysis::LatticeStructureType)_inputCrystalStructure, selection, clusterGraph(), structures(), std::move(_preferredCrystalOrientations));
     setAtomClusters(_structureAnalysis->atomClusters());
 
-    this_task::beginProgressSubStepsWithWeights({ 35, 6, 1, 1, 20 });
-    _structureAnalysis->identifyStructures();
+    progress.beginProgressSubStepsWithWeights({ 35, 6, 1, 1, 20 });
+    _structureAnalysis->identifyStructures(progress);
 
-    this_task::nextProgressSubStep();
-    this_task::throwIfCanceled();
-    _structureAnalysis->buildClusters();
+    progress.nextProgressSubStep();
+    _structureAnalysis->buildClusters(progress);
 
-    this_task::nextProgressSubStep();
-    this_task::throwIfCanceled();
-    _structureAnalysis->connectClusters();
+    progress.nextProgressSubStep();
+    _structureAnalysis->connectClusters(progress);
 
-    this_task::nextProgressSubStep();
-    this_task::throwIfCanceled();
+    progress.nextProgressSubStep();
     _structureAnalysis->formSuperClusters();
 
-    this_task::nextProgressSubStep();
-    this_task::throwIfCanceled();
+    progress.nextProgressSubStep();
 
     BufferReadAccess<Point3> positionsArray(positions);
     BufferWriteAccess<Matrix3, access_mode::discard_write> deformationGradientsArray(deformationGradients());
     BufferWriteAccess<SymmetricTensor2, access_mode::discard_write> strainTensorsArray(strainTensors());
     BufferWriteAccess<FloatType, access_mode::discard_write> volumetricStrainsArray(volumetricStrains());
 
-    parallelFor(positions->size(), 1024, [&](size_t particleIndex) {
+    parallelFor(positions->size(), 1024, progress, [&](size_t particleIndex) {
 
         Cluster* localCluster = _structureAnalysis->atomCluster(particleIndex);
         if(localCluster->id != 0) {
@@ -183,7 +180,7 @@ void ElasticStrainEngine::identifyStructures(const Particles* particles, const S
             deformationGradientsArray[particleIndex] = Matrix3::Zero();
     });
 
-    this_task::endProgressSubSteps();
+    progress.endProgressSubSteps();
 
     // Release data that is no longer needed.
     _structureAnalysis.reset();

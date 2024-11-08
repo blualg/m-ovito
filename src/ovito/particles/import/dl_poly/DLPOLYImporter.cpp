@@ -95,8 +95,10 @@ bool DLPOLYImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 void DLPOLYImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     CompressedTextReader stream(fileHandle);
-    this_task::setProgressText(tr("Scanning DL_POLY file %1").arg(stream.filename()));
-    this_task::setProgressMaximum(stream.underlyingSize());
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Scanning DL_POLY file %1").arg(stream.filename()));
+    progress.setProgressMaximum(stream.underlyingSize());
 
     // Skip first comment line (record 1).
     stream.readLine();
@@ -155,8 +157,8 @@ void DLPOLYImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
                     stream.readLine();
                 }
                 // Update progress bar and check for user cancellation.
-                if((i % 1024) == 0)
-                    this_task::setProgressValue(stream.underlyingByteOffset());
+                if((i % 4096) == 0)
+                    progress.setProgressValue(stream.underlyingByteOffset());
             }
         }
     }
@@ -171,11 +173,12 @@ void DLPOLYImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
 ******************************************************************************/
 void DLPOLYImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading DL_POLY file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading DL_POLY file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle());
-    this_task::setProgressMaximum(stream.underlyingSize());
+    progress.setProgressMaximum(stream.underlyingSize());
 
     // Read first comment line (record 1).
     stream.readLine(1024);
@@ -241,9 +244,8 @@ void DLPOLYImporter::FrameLoader::loadFile()
     // Parse atoms.
     do {
         // Report progress.
-        this_task::throwIfCanceled();
-        if((positions.size() % 1024) == 0)
-            this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
+        if((positions.size() % 4096) == 0)
+            progress.setProgressValueIntermittent(stream.underlyingByteOffset());
 
         // Parse first line of atom record.
         if(!positions.empty()) stream.readLine();

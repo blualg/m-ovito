@@ -392,16 +392,16 @@ private:
     const std::vector<NeighborBond>& neighborBonds() const { return _neighborBonds; }
 
     /// Creates neighbor bonds from stored PTM data.
-    void createNeighborBonds();
+    void createNeighborBonds(TaskProgress& progress);
 
     /// Rotates hexagonal atoms (HCP and hex-diamond) to an equivalent cubic orientation.
-    void rotateInterfaceAtoms();
+    void rotateInterfaceAtoms(TaskProgress& progress);
 
     /// Calculates the disorientation angle for each graph edge (i.e. bond).
-    void computeDisorientationAngles();
+    void computeDisorientationAngles(TaskProgress& progress);
 
     /// Builds grains by iterative region merging.
-    void determineMergeSequence();
+    void determineMergeSequence(TaskProgress& progress);
 
     /// Computes the disorientation angle between two crystal clusters of the given lattice type.
     /// Furthermore, the function computes the weighted average of the two cluster orientations.
@@ -409,8 +409,8 @@ private:
     static FloatType calculate_disorientation(int structureType, Quaternion& qa, const Quaternion& qb);
 
     // Algorithm types:
-    void minimum_spanning_tree_clustering(std::vector<Quaternion>& qsum, DisjointSet& uf);
-    void node_pair_sampling_clustering(Graph& graph, std::vector<Quaternion>& qsum);
+    void minimum_spanning_tree_clustering(std::vector<Quaternion>& qsum, DisjointSet& uf, TaskProgress& progress);
+    void node_pair_sampling_clustering(Graph& graph, std::vector<Quaternion>& qsum, TaskProgress& progress);
 
     // Selects a threshold for Node Pair Sampling algorithm
     FloatType calculate_threshold_suggestion();
@@ -557,7 +557,7 @@ public:
 private:
 
     /// Merges any orphan atoms into the closest cluster.
-    void mergeOrphanAtoms();
+    void mergeOrphanAtoms(TaskProgress& progress);
 
     struct PQCompareLength
     {

@@ -75,7 +75,8 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     if(!simulationCell) throw Exception(DislocationAnalysisModifier::tr("DXA requires a simulation cell to be defined."));
     if(simulationCell->is2D()) throw Exception(DislocationAnalysisModifier::tr("DXA does not support 2d simulations."));
 
-    this_task::setProgressText(DislocationAnalysisModifier::tr("Dislocation analysis (DXA)"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(DislocationAnalysisModifier::tr("Dislocation analysis (DXA)"));
 
     const Property* positions = particles->expectProperty(Particles::PositionProperty);
     _simCellVolume = simulationCell->volume3D();
@@ -88,21 +89,18 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     _dislocationTracer.emplace(*_interfaceMesh, _maxTrialCircuitSize, _maxCircuitElongation, dislocationNetwork(), _markCoreAtoms);
     setAtomClusters(_structureAnalysis->atomClusters());
     if(_markCoreAtoms) {
-        this_task::beginProgressSubStepsWithWeights({35, 6, 1, 220, 60, 1, 53, 190, 146 * 5, 20, 4, 4});
+        progress.beginProgressSubStepsWithWeights({35, 6, 1, 220, 60, 1, 53, 190, 146 * 5, 20, 4, 4});
     }
     else {
-        this_task::beginProgressSubStepsWithWeights({35, 6, 1, 220, 60, 1, 53, 190, 146, 20, 4, 4});
+        progress.beginProgressSubStepsWithWeights({35, 6, 1, 220, 60, 1, 53, 190, 146, 20, 4, 4});
     }
-    _structureAnalysis->identifyStructures();
-    this_task::throwIfCanceled();
+    _structureAnalysis->identifyStructures(progress);
 
-    this_task::nextProgressSubStep();
-    _structureAnalysis->buildClusters();
-    this_task::throwIfCanceled();
+    progress.nextProgressSubStep();
+    _structureAnalysis->buildClusters(progress);
 
-    this_task::nextProgressSubStep();
-    _structureAnalysis->connectClusters();
-    this_task::throwIfCanceled();
+    progress.nextProgressSubStep();
+    _structureAnalysis->connectClusters(progress);
 
 #if 0
     Point3 corners[8];
@@ -131,43 +129,37 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     stream << "12" << std::endl;  // Hexahedron
 #endif
 
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
     FloatType ghostLayerSize = FloatType(3.5) * _structureAnalysis->maximumNeighborDistance();
     _tessellation->generateTessellation(_structureAnalysis->cell(), BufferReadAccess<Point3>(positions).cbegin(),
                                         _structureAnalysis->atomCount(), ghostLayerSize,
                                         false,  // flag coverDomainWithFiniteTets
-                                        selection ? BufferReadAccess<SelectionIntType>(selection).cbegin() : nullptr);
-    this_task::throwIfCanceled();
+                                        selection ? BufferReadAccess<SelectionIntType>(selection).cbegin() : nullptr,
+                                        progress);
 
     // Build list of edges in the tessellation.
-    this_task::nextProgressSubStep();
-    _elasticMapping->generateTessellationEdges();
-    this_task::throwIfCanceled();
+    progress.nextProgressSubStep();
+    _elasticMapping->generateTessellationEdges(progress);
 
     // Assign each vertex to a cluster.
-    this_task::nextProgressSubStep();
-    _elasticMapping->assignVerticesToClusters();
-    this_task::throwIfCanceled();
+    progress.nextProgressSubStep();
+    _elasticMapping->assignVerticesToClusters(progress);
 
     // Determine the ideal vector corresponding to each edge of the tessellation.
-    this_task::nextProgressSubStep();
-    _elasticMapping->assignIdealVectorsToEdges(4);
-    this_task::throwIfCanceled();
+    progress.nextProgressSubStep();
+    _elasticMapping->assignIdealVectorsToEdges(4, progress);
 
     // Free some memory that is no longer needed.
     _structureAnalysis->freeNeighborLists();
-    this_task::throwIfCanceled();
 
     // Create the mesh facets.
-    this_task::nextProgressSubStep();
-    _interfaceMesh->createMesh(_structureAnalysis->maximumNeighborDistance(), crystalClusters());
-    this_task::throwIfCanceled();
+    progress.nextProgressSubStep();
+    _interfaceMesh->createMesh(_structureAnalysis->maximumNeighborDistance(), crystalClusters(), progress);
 
     // Trace dislocation lines.
-    this_task::nextProgressSubStep();
-    _dislocationTracer->traceDislocationSegments();
+    progress.nextProgressSubStep();
+    _dislocationTracer->traceDislocationSegments(progress);
     _dislocationTracer->finishDislocationSegments(_inputCrystalStructure);
-    this_task::throwIfCanceled();
 
     if(_markCoreAtoms) {
         assignCoreAtomDislocationIDs(particles->elementCount());
@@ -248,32 +240,31 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
 #endif
 
     // Generate the defect mesh.
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
     SurfaceMeshBuilder defectMeshBuilder(_defectMesh);
     _interfaceMesh->generateDefectMesh(*_dislocationTracer, defectMeshBuilder);
 #ifdef OVITO_DEBUG
     _defectMesh->verifyMeshIntegrity();
 #endif
-    this_task::throwIfCanceled();
 
 #if 0
     _tessellation.dumpToVTKFile("tessellation.vtk");
 #endif
 
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     // Post-process surface mesh.
-    if(_defectMeshSmoothingLevel > 0) defectMeshBuilder.smoothMesh(_defectMeshSmoothingLevel);
+    if(_defectMeshSmoothingLevel > 0)
+        defectMeshBuilder.smoothMesh(_defectMeshSmoothingLevel, progress);
 
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     // Post-process dislocation lines.
     if(_lineSmoothingLevel > 0 || _linePointInterval > 0) {
-        dislocationNetwork()->smoothDislocationLines(_lineSmoothingLevel, _linePointInterval);
-        this_task::throwIfCanceled();
+        dislocationNetwork()->smoothDislocationLines(_lineSmoothingLevel, _linePointInterval, progress);
     }
 
-    this_task::endProgressSubSteps();
+    progress.endProgressSubSteps();
 
     // Return the results of the compute engine.
     if(_outputInterfaceMesh) {

@@ -61,8 +61,10 @@ bool CastepMDImporter::OOMetaClass::checkFileFormat(const FileHandle& file) cons
 void CastepMDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     CompressedTextReader stream(fileHandle);
-    this_task::setProgressText(tr("Scanning CASTEP file %1").arg(stream.filename()));
-    this_task::setProgressMaximum(stream.underlyingSize());
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Scanning CASTEP file %1").arg(stream.filename()));
+    progress.setProgressMaximum(stream.underlyingSize());
 
     // Look for string 'BEGIN header' to occur on first line.
     if(!boost::algorithm::istarts_with(stream.readLineTrimLeft(32), "BEGIN header"))
@@ -75,7 +77,7 @@ void CastepMDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVecto
         if(boost::algorithm::istarts_with(stream.readLineTrimLeft(), "END header"))
             break;
         // Update progress bar and check for user cancellation.
-        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
+        progress.setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 
     Frame frame(fileHandle);
@@ -96,7 +98,7 @@ void CastepMDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVecto
         }
 
         // Update progress bar and check for user cancellation.
-        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
+        progress.setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 }
 
@@ -105,7 +107,8 @@ void CastepMDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVecto
 ******************************************************************************/
 void CastepMDImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading CASTEP file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading CASTEP file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);

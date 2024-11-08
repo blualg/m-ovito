@@ -40,7 +40,7 @@ public:
                   bool outputCellCoordinates = false);
 
     /// The main algorithm routine.
-    void generateIsosurface(FloatType iso);
+    void generateIsosurface(FloatType iso, TaskProgress& progress);
 
     /// Returns the generated surface mesh.
     const SurfaceMeshBuilder& mesh() const { return _outputMesh; }
@@ -75,7 +75,7 @@ private:
     bool testInterior(signed char s);
 
     /// Computes almost all the vertices of the mesh by interpolation along the cubes edges.
-    void computeIntersectionPoints();
+    void computeIntersectionPoints(TaskProgress& progress);
 
     /// Adds triangles to the mesh.
     void addTriangle(int i, int j, int k, const signed char* triangles, signed char numTriangles,

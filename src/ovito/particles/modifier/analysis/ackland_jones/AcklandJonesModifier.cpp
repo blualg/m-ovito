@@ -60,7 +60,8 @@ void AcklandJonesModifier::AcklandJonesAnalysisAlgorithm::identifyStructures(con
     if(simulationCell && simulationCell->is2D())
         throw Exception(tr("The Ackland-Jones analysis algorithm does not support 2d simulation cells."));
 
-    this_task::setProgressText(tr("Performing Ackland-Jones analysis"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Performing Ackland-Jones analysis"));
 
     // Prepare the neighbor finder.
     NearestNeighborFinder neighborFinder(14);
@@ -69,7 +70,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisAlgorithm::identifyStructures(con
     // Perform analysis on each particle.
     BufferReadAccess<SelectionIntType> selectionAcc(selection);
     BufferWriteAccess<int32_t, access_mode::discard_write> structureAcc(structures());
-    parallelFor(particles->elementCount(), 1024, [&](size_t index) {
+    parallelFor(particles->elementCount(), 1024, progress, [&](size_t index) {
         structureAcc[index] =
             (!selectionAcc || selectionAcc[index]) // Skip particles that are not included in the analysis.
                 ? determineStructure(neighborFinder, index)

@@ -104,13 +104,13 @@ public:
             bool identifyPlanarDefects = true);
 
     /// Identifies the atomic structures.
-    void identifyStructures();
+    void identifyStructures(TaskProgress& progress);
 
     /// Combines adjacent atoms to clusters.
-    void buildClusters();
+    void buildClusters(TaskProgress& progress);
 
     /// Determines the transition matrices between clusters.
-    void connectClusters();
+    void connectClusters(TaskProgress& progress);
 
     /// Combines clusters to super clusters.
     void formSuperClusters();

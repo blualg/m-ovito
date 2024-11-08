@@ -142,6 +142,9 @@ PipelineStatus TextLabelOverlay::renderImplementation(FrameGraph& frameGraph, Fr
     textPrimitive->setText(std::move(textString));
     textPrimitive->setTextFormat(Qt::AutoText);
 
+    if(this->fontSize() > 1.0)
+        return PipelineStatus(PipelineStatus::Error, tr("Text label font size is too large."));
+
     // Resolve the font used by the label.
     FloatType fontSize = this->fontSize() * viewportRect.height();
     if(fontSize <= 0)

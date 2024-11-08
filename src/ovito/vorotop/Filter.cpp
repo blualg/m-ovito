@@ -30,7 +30,7 @@ namespace Ovito::VoroTop {
 /******************************************************************************
 * Loads the filter definition from the given input stream.
 ******************************************************************************/
-void Filter::load(CompressedTextReader& stream, bool readHeaderOnly)
+void Filter::load(CompressedTextReader& stream, bool readHeaderOnly, TaskProgress& progress)
 {
     // Parse comment lines starting with '#':
     _filterDescription.clear();
@@ -72,7 +72,7 @@ void Filter::load(CompressedTextReader& stream, bool readHeaderOnly)
     if(readHeaderOnly)
         return;
 
-    this_task::setProgressMaximum(stream.underlyingSize());
+    progress.setProgressMaximum(stream.underlyingSize());
 
     // Parse Weinberg vector list.
     for(;;) {
@@ -108,7 +108,7 @@ void Filter::load(CompressedTextReader& stream, bool readHeaderOnly)
         line = stream.readNonEmptyLine();
 
         // Update progress indicator.
-        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
+        progress.setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 }
 

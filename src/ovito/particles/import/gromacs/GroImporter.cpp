@@ -122,8 +122,10 @@ bool GroImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 void GroImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     CompressedTextReader stream(fileHandle);
-    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
-    this_task::setProgressMaximum(stream.underlyingSize());
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    progress.setProgressMaximum(stream.underlyingSize());
 
     int frameNumber = 0;
     QString filename = fileHandle.sourceUrl().fileName();
@@ -161,8 +163,8 @@ void GroImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
         for(unsigned long long i = 0; i < numParticlesLong; i++) {
             stream.readLine();
             // Update progress bar and check for user cancellation.
-            if((i % 4096) == 0)
-                this_task::setProgressValue(stream.underlyingByteOffset());
+            if((i % 0x10000) == 0)
+                progress.setProgressValue(stream.underlyingByteOffset());
         }
 
         // Skip cell geometry line.
@@ -175,7 +177,8 @@ void GroImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
 ******************************************************************************/
 void GroImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading Gromacs file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading Gromacs file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -197,7 +200,7 @@ void GroImporter::FrameLoader::loadFile()
     }
     if(numParticles > (unsigned long long)std::numeric_limits<int>::max())
         throw Exception(tr("Too many atoms in Gromacs file. This program version can read files with up to %1 atoms only.").arg(std::numeric_limits<int>::max()));
-    this_task::setProgressMaximum(numParticles);
+    progress.setProgressMaximum(numParticles);
     setParticleCount(numParticles);
 
     // Create particle properties.
@@ -223,7 +226,7 @@ void GroImporter::FrameLoader::loadFile()
     int residueBaseNumber = 0;
     for(size_t i = 0; i < numParticles; i++) {
         // Update progress bar and check for user cancellation.
-        this_task::setProgressValueIntermittent(i);
+        progress.setProgressValueIntermittent(i);
         const char* token = stream.readLine();
 
         // Parse residue number (5 characters).
@@ -446,7 +449,7 @@ void GroImporter::FrameLoader::loadFile()
 
     // Generate ad-hoc bonds between atoms based on their van der Waals radii.
     if(_generateBonds)
-        generateBonds();
+        generateBonds(progress);
     else
         setBondCount(0);
 

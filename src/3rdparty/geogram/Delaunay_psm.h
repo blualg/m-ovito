@@ -6439,7 +6439,7 @@ namespace GEO {
         }
 
         virtual void set_vertices(
-            index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
+            index_t nb_vertices, const double* vertices
         );
 
 
@@ -6631,6 +6631,11 @@ namespace GEO {
 
         void random_reset() const;
 
+        template<typename Function>
+        void set_progress_callback(Function&& progress_callback) {
+            progress_callback_ = std::forward<Function>(progress_callback);
+        }
+
     protected:
         Delaunay(coord_index_t dimension);
 
@@ -6710,6 +6715,7 @@ namespace GEO {
         bool keep_regions_;
 
         mutable std::mt19937 rng_{1};
+        std::function<void(GEO::index_t, GEO::index_t)> progress_callback_;
     };
 
     typedef SmartPointer<Delaunay> Delaunay_var;
@@ -6739,7 +6745,7 @@ namespace GEO {
         Delaunay2d(coord_index_t dimension = 2);
 
         virtual void set_vertices(
-            index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
+            index_t nb_vertices, const double* vertices
         );
 
         virtual index_t nearest_vertex(const double* p) const;
@@ -7267,7 +7273,7 @@ namespace GEO {
         PeriodicDelaunay3d(bool periodic, double period=1.0);
 
         virtual void set_vertices(
-            index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
+            index_t nb_vertices, const double* vertices
         );
 
     void set_weights(const double* weights);

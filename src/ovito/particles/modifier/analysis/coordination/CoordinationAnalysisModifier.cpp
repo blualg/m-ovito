@@ -147,7 +147,8 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
             uniqueTypes = std::move(uniqueTypes),
             createdByNode = request.modificationNodeWeak()]() mutable
     {
-        this_task::setProgressText(tr("Coordination analysis"));
+        TaskProgress progress(this_task::ui());
+        progress.setProgressText(tr("Coordination analysis"));
 
         boost::container::flat_set<int> uniqueTypeIds;
         uniqueTypeIds.reserve(uniqueTypes.size());
@@ -269,7 +270,7 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
 
         // Parallel calculation loop:
         EnumerableThreadSpecific<std::vector<size_t>> threadLocalRDFs;
-        parallelForInnerOuter(particleCount, 4096, [&](auto&& iterate) {
+        parallelForInnerOuter(particleCount, 4096, progress, [&](auto&& iterate) {
             std::vector<size_t>& threadLocalRDF = threadLocalRDFs.create(binCount * rdfCount, 0);
             iterate([&](size_t i) {
                 int coordination = 0;

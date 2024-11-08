@@ -392,12 +392,10 @@ QNetworkAccessManager* Application::networkAccessManager()
 #endif
 
 /******************************************************************************
-* Gets called by a running task to report its progress status (from any thread).
+* Reports task progress on the console (from any thread).
 ******************************************************************************/
-void Application::taskProgressText(Task& task, const QString& text)
+void Application::logTaskActivity(const QString& text)
 {
-    OVITO_ASSERT(!task.isFinished());
-
     // Print task messages to the console if task logging is enabled (via Python method ovito.enable_logging()).
     if(taskConsoleLoggingEnabled() && !text.isEmpty())
         qInfo().noquote() << "OVITO:" << text;

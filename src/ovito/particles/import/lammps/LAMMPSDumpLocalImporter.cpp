@@ -68,8 +68,10 @@ bool LAMMPSDumpLocalImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 void LAMMPSDumpLocalImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     CompressedTextReader stream(fileHandle);
-    this_task::setProgressText(tr("Scanning LAMMPS dump local file %1").arg(fileHandle.toString()));
-    this_task::setProgressMaximum(stream.underlyingSize());
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Scanning LAMMPS dump local file %1").arg(fileHandle.toString()));
+    progress.setProgressMaximum(stream.underlyingSize());
 
     unsigned long long timestep = 0;
     size_t numElements = 0;
@@ -114,7 +116,7 @@ void LAMMPSDumpLocalImporter::discoverFramesInFile(const FileHandle& fileHandle,
                 for(size_t i = 0; i < numElements; i++) {
                     stream.readLine();
                     // Update progress bar and check for user cancellation.
-                    this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
+                    progress.setProgressValueIntermittent(stream.underlyingByteOffset());
                 }
                 break;
             }
@@ -140,7 +142,8 @@ void LAMMPSDumpLocalImporter::discoverFramesInFile(const FileHandle& fileHandle,
 ******************************************************************************/
 void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading LAMMPS dump local file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading LAMMPS dump local file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -178,7 +181,7 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 
                 numElements = (size_t)u;
                 setBondCount(numElements);
-                this_task::setProgressMaximum(u);
+                progress.setProgressMaximum(u);
                 break;
             }
             else if(stream.lineStartsWith("ITEM: BOX BOUNDS xy xz yz")) {
@@ -271,7 +274,7 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
                 try {
                     for(size_t i = 0; i < numElements; i++, lineNumber++) {
                         // Update progress bar and check for user cancellation.
-                        this_task::setProgressValueIntermittent(i);
+                        progress.setProgressValueIntermittent(i);
                         if(!s)
                             columnParser.readElement(i, stream.readLine());
                         else

@@ -331,7 +331,7 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
         property->forAnyType([&](auto _) {
             using T = decltype(_);
             BufferReadAccess<T*> valueAcc(property);
-            parallelFor<false>(colors->size(), 4096, [&](size_t i) {
+            parallelFor(colors->size(), 4096, TaskProgress::Ignore, [&](size_t i) {
                 if(selectionAcc && !selectionAcc[i])
                     return;
                 auto value = valueAcc.get(i, vectorComponent);
@@ -448,7 +448,8 @@ bool ColorCodingModifier::adjustRange(AnimationTime time)
 ******************************************************************************/
 void ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
 {
-    this_task::setProgressMaximum(endFrame - startFrame + 1);
+    TaskProgress progress(this_task::ui());
+    progress.setProgressMaximum(endFrame - startFrame + 1);
 
     FloatType minValue = std::numeric_limits<FloatType>::max();
     FloatType maxValue = std::numeric_limits<FloatType>::lowest();
@@ -456,7 +457,7 @@ void ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
     // Loop over all animation frames, evaluate data pipeline, and determine
     // minimum and maximum values.
     for(int frame = startFrame; frame <= endFrame; frame++) {
-        this_task::setProgressText(tr("Analyzing frame %1").arg(frame));
+        progress.setProgressText(tr("Analyzing frame %1").arg(frame));
 
         for(ModificationNode* node : nodes()) {
 
@@ -466,8 +467,7 @@ void ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
             // Determine min/max value of the selected property.
             determinePropertyValueRange(stateFuture.blockForResult(), minValue, maxValue);
         }
-        this_task::incrementProgressValue(1);
-        this_task::throwIfCanceled();
+        progress.incrementProgressValue(1);
     }
 
     // Symmetrize range.

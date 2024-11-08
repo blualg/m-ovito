@@ -98,6 +98,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> CoordinateTripodOverlay::re
     if(!frameGraph.isInteractive())
         checkAlignmentParameterValue(alignment());
 
+    if(this->tripodSize() > 1.0)
+        return PipelineStatus(PipelineStatus::Error, tr("Coordinate tripod size is too large. Maximum size factor is 1."));
+
     FloatType tripodSize = this->tripodSize() * physicalViewportRect.height();
     if(tripodSize <= 0) return {};
 
@@ -149,6 +152,10 @@ std::variant<PipelineStatus, Future<PipelineStatus>> CoordinateTripodOverlay::re
             axis3Label(),
             axis4Label()
     };
+
+    if(this->fontSize() > 1.0)
+        return PipelineStatus(PipelineStatus::Error, tr("Coordinate label font size is too large."));
+
     QFont font = this->font();
     qreal fontSize = tripodSize * std::max(0.0, (double)this->fontSize());
     if(fontSize != 0)

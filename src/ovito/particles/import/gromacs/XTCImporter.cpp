@@ -117,8 +117,9 @@ bool XTCImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 ******************************************************************************/
 void XTCImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
-    this_task::setProgressMaximum(QFileInfo(fileHandle.localFilePath()).size());
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    progress.setProgressMaximum(QFileInfo(fileHandle.localFilePath()).size());
 
     // Open XTC file for reading.
     XTCFile file;
@@ -129,11 +130,12 @@ void XTCImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
         frame.byteOffset = file.byteOffset();
 
         // Update progress bar and check for user cancellation.
-        this_task::setProgressValue(frame.byteOffset);
+        progress.setProgressValue(frame.byteOffset);
 
         // Parse trajectory frame.
         XTCFile::Frame xtcFrame = file.read();
-        if(file.eof()) break;
+        if(file.eof())
+            break;
 
         // Create a new record for the timestep.
         frame.label = tr("Timestep %1").arg(xtcFrame.step);
@@ -146,8 +148,8 @@ void XTCImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
 ******************************************************************************/
 void XTCImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    this_task::setProgressText(tr("Reading XTC file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading XTC file %1").arg(fileHandle().toString()));
 
     // Open XTC file for reading.
     XTCFile file;

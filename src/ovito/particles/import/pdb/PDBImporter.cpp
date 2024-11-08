@@ -125,18 +125,18 @@ bool PDBImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 void PDBImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     CompressedTextReader stream(fileHandle);
-    this_task::setProgressText(tr("Scanning PDB file %1").arg(stream.filename()));
-    this_task::setProgressMaximum(stream.underlyingSize());
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Scanning PDB file %1").arg(stream.filename()));
+    progress.setProgressMaximum(stream.underlyingSize());
 
     Frame frame(fileHandle);
     bool endOnPreviousLine = false;
     while(!stream.eof()) {
-        this_task::throwIfCanceled();
-
         stream.readLine();
 
         // Update progress bar and check for user cancellation.
-        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
+        progress.setProgressValueIntermittent(stream.underlyingByteOffset());
 
         if(stream.lineStartsWithToken("ENDMDL")) {
             frames.push_back(frame);
@@ -171,7 +171,8 @@ void PDBImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
 ******************************************************************************/
 void PDBImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading PDB file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading PDB file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -305,9 +306,9 @@ void PDBImporter::FrameLoader::loadFile()
 
         // Parse unit cell if available.
         //
-        // Gemmi provides the UnitCell::is_crystal() method to determin whether (periodic) cell information
+        // Gemmi provides the UnitCell::is_crystal() method to determine whether (periodic) cell information
         // is available. But it turned out to be too strict. Atomsk writes PDB files containing unity
-        // SCALEn records, which make Gemmi intrept these files as non-periodic. We replace the check
+        // SCALEn records, which make Gemmi interpret these files as non-periodic. We replace the check
         // with a simpler criterion.
         // See https://www.ovito.org/forum/topic/polyhedral-visualazation/#postid-4244.
         if(structure.cell.a != 1.0 || structure.cell.b != 1.0 || structure.cell.c != 1.0 || structure.cell.alpha != 90.0 || structure.cell.beta != 90.0 || structure.cell.gamma != 90.0) {
@@ -376,7 +377,7 @@ void PDBImporter::FrameLoader::loadFile()
 
     // Generate ad-hoc bonds between atoms based on their van der Waals radii.
     if(_generateBonds)
-        generateBonds();
+        generateBonds(progress);
     else
         setBondCount(0);
 

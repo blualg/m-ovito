@@ -97,7 +97,8 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAAlgorithm::identifyStructures(co
     if(simulationCell && simulationCell->is2D())
         throw Exception(tr("The common neighbor analysis algorithm does not support 2d simulation cells."));
 
-    this_task::setProgressText(tr("Performing adaptive common neighbor analysis"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Performing adaptive common neighbor analysis"));
 
     // Prepare the neighbor finder.
     NearestNeighborFinder neighFinder(MAX_NEIGHBORS);
@@ -106,7 +107,7 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAAlgorithm::identifyStructures(co
     // Perform analysis on each particle.
     BufferReadAccess<SelectionIntType> selectionAcc(selection);
     BufferWriteAccess<int32_t, access_mode::discard_write> structureAcc(structures());
-    parallelFor(particles->elementCount(), 4096, [&](size_t index) {
+    parallelFor(particles->elementCount(), 4096, progress, [&](size_t index) {
         structureAcc[index] =
             (!selectionAcc || selectionAcc[index]) // Skip particles that are not included in the analysis.
                 ? determineStructureAdaptive(neighFinder, index)
@@ -122,7 +123,8 @@ void CommonNeighborAnalysisModifier::IntervalCNAAlgorithm::identifyStructures(co
     if(simulationCell && simulationCell->is2D())
         throw Exception(tr("The common neighbor analysis algorithm does not support 2d simulation cells."));
 
-    this_task::setProgressText(tr("Performing interval common neighbor analysis"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Performing interval common neighbor analysis"));
 
     // Prepare the neighbor finder.
     NearestNeighborFinder neighFinder(MAX_NEIGHBORS);
@@ -131,7 +133,7 @@ void CommonNeighborAnalysisModifier::IntervalCNAAlgorithm::identifyStructures(co
     // Perform analysis on each particle.
     BufferReadAccess<SelectionIntType> selectionAcc(selection);
     BufferWriteAccess<int32_t, access_mode::discard_write> structureAcc(structures());
-    parallelFor(particles->elementCount(), 4096, [&](size_t index) {
+    parallelFor(particles->elementCount(), 4096, progress, [&](size_t index) {
         structureAcc[index] =
             (!selectionAcc || selectionAcc[index]) // Skip particles that are not included in the analysis.
                 ? determineStructureInterval(neighFinder, index)
@@ -147,7 +149,8 @@ void CommonNeighborAnalysisModifier::FixedCNAAlgorithm::identifyStructures(const
     if(simulationCell && simulationCell->is2D())
         throw Exception(tr("The common neighbor analysis algorithm does not support 2d simulation cells."));
 
-    this_task::setProgressText(tr("Performing common neighbor analysis"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Performing common neighbor analysis"));
 
     const auto typesToIdentify = this->typesToIdentify<NUM_STRUCTURE_TYPES>();
 
@@ -181,7 +184,7 @@ void CommonNeighborAnalysisModifier::FixedCNAAlgorithm::identifyStructures(const
     // Perform analysis on each particle.
     BufferReadAccess<SelectionIntType> selectionAcc(selection);
     BufferWriteAccess<int32_t, access_mode::discard_write> structureAcc(structures());
-    parallelFor(particles->elementCount(), 4096, [&](size_t index) {
+    parallelFor(particles->elementCount(), 4096, progress, [&](size_t index) {
         structureAcc[index] =
             (!selectionAcc || selectionAcc[index]) // Skip particles that are not included in the analysis.
                 ? determineStructureFixed(index, neighborFinder, typesToIdentify)
@@ -195,7 +198,8 @@ void CommonNeighborAnalysisModifier::FixedCNAAlgorithm::identifyStructures(const
 ******************************************************************************/
 void CommonNeighborAnalysisModifier::BondCNAAlgorithm::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
 {
-    this_task::setProgressText(tr("Performing common neighbor analysis"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Performing common neighbor analysis"));
 
     // Prepare particle bond map.
     ParticleBondMap bondMap(bondTopology(), bondPeriodicImages());
@@ -207,7 +211,7 @@ void CommonNeighborAnalysisModifier::BondCNAAlgorithm::identifyStructures(const 
     BufferReadAccess<ParticleIndexPair> bonds(bondTopology());
     BufferReadAccess<Vector3I> bondPeriodicImagesData(bondPeriodicImages());
     BufferWriteAccess<Vector3I, access_mode::discard_read_write> cnaIndicesData(cnaIndices());
-    parallelFor(bonds.size(), 4096, [&](size_t bondIndex) {
+    parallelFor(bonds.size(), 4096, progress, [&](size_t bondIndex) {
         cnaIndicesData[bondIndex][0] = 0;
         cnaIndicesData[bondIndex][1] = 0;
         cnaIndicesData[bondIndex][2] = 0;
@@ -271,7 +275,7 @@ void CommonNeighborAnalysisModifier::BondCNAAlgorithm::identifyStructures(const 
     // Classify particles.
     BufferReadAccess<SelectionIntType> selectionAcc(selection);
     BufferWriteAccess<int32_t, access_mode::discard_write> structureAcc(structures());
-    parallelFor(particles->elementCount(), 1024, [&](size_t particleIndex) {
+    parallelFor(particles->elementCount(), 1024, progress, [&](size_t particleIndex) {
         int n421 = 0;
         int n422 = 0;
         int n444 = 0;

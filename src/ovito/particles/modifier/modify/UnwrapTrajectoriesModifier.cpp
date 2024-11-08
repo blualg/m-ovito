@@ -153,8 +153,8 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
             // This object processes each frame's data.
             WorkingData{this});
 
-        // Display progress in the UI.
-        unwrapFuture.task()->setProgressText(tr("Unwrapping particle trajectories"));
+        // TODO: Display progress in the UI.
+        //unwrapFuture.task()->setProgressText(tr("Unwrapping particle trajectories"));
 
         // Keep a weak reference to the task.
         _unwrapWeakFuture = unwrapFuture;

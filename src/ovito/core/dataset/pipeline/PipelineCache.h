@@ -126,8 +126,8 @@ private:
     /// Indicates that all frames of the trajectory have been precomputed.
     bool _allFramesPrecomputed = false;
 
-    /// The asynchronous task that pre-computes the pipeline output for all animation frames.
-    Promise<void> _precomputeFramesOperation;
+    /// For reporting progress when the node is pre-computing the pipeline output for all animation frames.
+    std::unique_ptr<TaskProgress> _precomputeFramesProgress;
 
     /// The future for the next precompute frame.
     SharedFuture<PipelineFlowState> _precomputeFrameFuture;

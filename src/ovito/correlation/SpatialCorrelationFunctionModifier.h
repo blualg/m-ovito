@@ -117,7 +117,7 @@ protected:
 private:
 
     /// Computes the modifier's results.
-    class CorrelationAnalysisEngine
+    class CorrelationAnalysisEngine : private TaskProgress
     {
     public:
 
@@ -134,6 +134,7 @@ private:
                                   FloatType neighCutoff,
                                   int numberOfNeighBins,
                                   AveragingDirectionType averagingDirection) :
+            TaskProgress(this_task::ui()),
             _positions(std::move(positions)),
             _sourceProperty1(std::move(sourceProperty1)), _vecComponent1(vecComponent1),
             _sourceProperty2(std::move(sourceProperty2)), _vecComponent2(vecComponent2),
@@ -184,7 +185,7 @@ private:
         /// Returns the short-ranged real-space correlation function.
         const PropertyPtr& neighCorrelation() const { return _neighCorrelation; }
 
-        /// Returns the RDF evalauted from a direct sum over neighbor shells.
+        /// Returns the RDF evaluated from a direct sum over neighbor shells.
         const PropertyPtr& neighRDF() const { return _neighRDF; }
 
         /// Returns the reciprocal-space correlation function.

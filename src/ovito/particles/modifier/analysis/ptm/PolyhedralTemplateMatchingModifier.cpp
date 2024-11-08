@@ -155,13 +155,14 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::identifyStructures(const Par
     // Get access to the particle selection flags.
     BufferReadAccess<SelectionIntType> selectionAcc(selection);
 
-    this_task::setProgressText(tr("Pre-calculating neighbor ordering"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Pre-calculating neighbor ordering"));
 
     // Pre-order neighbors of each particle.
     std::vector<uint64_t> cachedNeighbors(particles->elementCount());
 
     EnumerableThreadSpecific<PTMAlgorithm::Kernel> ptmKernels;
-    parallelForInnerOuter(particles->elementCount(), 1024, [&](auto&& iterate) {
+    parallelForInnerOuter(particles->elementCount(), 1024, progress, [&](auto&& iterate) {
         // Create a thread-local kernel for the PTM algorithm.
         PTMAlgorithm::Kernel& kernel = ptmKernels.create(*_algorithm);
         iterate([&](size_t index) {
@@ -174,7 +175,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::identifyStructures(const Par
         });
     });
 
-    this_task::setProgressText(tr("Performing polyhedral template matching"));
+    progress.setProgressText(tr("Performing polyhedral template matching"));
 
     // Get access to the output buffers that will receive the identified particle types and other data.
     BufferWriteAccess<int32_t, access_mode::discard_read_write> outputStructureArray(structures());
@@ -186,7 +187,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::identifyStructures(const Par
     BufferWriteAccess<int64_t, access_mode::write> correspondencesArray(correspondences());
 
     // Perform analysis on each particle.
-    parallelForInnerOuter(particles->elementCount(), 1024, [&](auto&& iterate) {
+    parallelForInnerOuter(particles->elementCount(), 1024, progress, [&](auto&& iterate) {
         PTMAlgorithm::Kernel& kernel = ptmKernels.create(*_algorithm);
         iterate([&](size_t index) {
             // Skip particles that are not included in the analysis.

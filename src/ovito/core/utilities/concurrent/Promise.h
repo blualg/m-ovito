@@ -69,55 +69,6 @@ public:
     /// Returns true if the promise is in the 'finished' state.
     bool isFinished() const { return task()->isFinished(); }
 
-    /// Sets the current maximum value for progress reporting.
-    void setProgressMaximum(qlonglong maximum, bool autoReset = true) const {
-        task()->setProgressMaximum(maximum, autoReset);
-    }
-
-    /// Sets the current progress value (must be in the range 0 to progressMaximum()).
-    void setProgressValue(qlonglong progressValue) const {
-        task()->setProgressValue(progressValue);
-    }
-
-    /// Increments the progress value by 1.
-    void incrementProgressValue(qlonglong increment = 1) const {
-        task()->incrementProgressValue(increment);
-    }
-
-    /// Sets the progress value of the promise but generates an update event only occasionally.
-    void setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000) const {
-        task()->setProgressValueIntermittent(progressValue, updateEvery);
-    }
-
-    // Progress reporting for tasks with sub-steps:
-
-    /// Begins a sequence of sub-steps in the progress range of this promise.
-    /// This is used for long and complex computations, which consist of several logical sub-steps, each with
-    /// a separate progress range.
-    void beginProgressSubStepsWithWeights(std::vector<int> weights) const {
-        task()->beginProgressSubStepsWithWeights(std::move(weights));
-    }
-
-    /// Convenience version of the function above, which creates N substeps, all with the same weight.
-    void beginProgressSubSteps(int nsteps) const {
-        task()->beginProgressSubSteps(nsteps);
-    }
-
-    /// Changes to the next sub-step in the sequence started with beginProgressSubSteps().
-    void nextProgressSubStep() const {
-        task()->nextProgressSubStep();
-    }
-
-    /// Must be called at the end of a sub-step sequence started with beginProgressSubSteps().
-    void endProgressSubSteps() const {
-        task()->endProgressSubSteps();
-    }
-
-    /// Changes the status text of this promise.
-    void setProgressText(const QString& progressText) const {
-        task()->setProgressText(progressText);
-    }
-
     /// Cancels this promise.
     void cancel() const { task()->cancel(); }
 

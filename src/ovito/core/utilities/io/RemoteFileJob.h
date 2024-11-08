@@ -103,6 +103,9 @@ protected:
     /// Promise referencing this task while it is active.
     PromiseBase _promise;
 
+    /// For progress reporting.
+    std::optional<TaskProgress> _progress;
+
     /// Queue of jobs that are waiting to be executed.
     static std::queue<PromiseBase> _queuedJobs;
 

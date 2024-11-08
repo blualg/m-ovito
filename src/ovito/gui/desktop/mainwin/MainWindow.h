@@ -240,12 +240,6 @@ protected:
     /// Called by the system when the window is moved
     virtual void moveEvent(QMoveEvent* event) override;
 
-    /// Registers a task whose progress is to be displayed in the GUI.
-    ProgressTaskInfo* registerProgressTask(Task& task);
-
-    /// Removes a registered task from the list again.
-    void unregisterProgressTask(Task& task);
-
     /// Notifies all registered listeners that the progress state of the registered tasks has changed.
     void notifyProgressTasksChanged();
 
@@ -259,27 +253,6 @@ protected:
 
     /// Informs the user interface that a task's progress state has changed.
     virtual void taskProgressChanged(TaskProgress* progress) override;
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressText(Task& task, const QString& text) override;
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressMaximum(Task& task, qlonglong maximum, bool autoReset) override;
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressValue(Task& task, qlonglong value) override;
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressIncrementValue(Task& task, qlonglong increment) override;
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressBeginSubStepsWithWeights(Task& task, std::vector<int>&& weights) override;
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressNextSubStep(Task& task) override;
-
-    /// Gets called by a running task to report its progress status (from any thread).
-    virtual void taskProgressEndSubSteps(Task& task) override;
 
 private Q_SLOTS:
 
@@ -340,24 +313,6 @@ private:
 
     /// List of errors to be displayed by showErrorMessages().
     std::deque<Exception> _errorList;
-
-    /// Progress information associated with each task being displayed in the UI.
-    struct ProgressTaskInfo
-    {
-        /// The task object whose progress is being displayed.
-        Task* task;
-        /// A text describing the current activity of the task.
-        QString text;
-        /// Progress value (of the current sub-step).
-        qlonglong progressValue = 0;
-        /// Maximum progress value (of the current sub-step).
-        qlonglong progressMaximum = 0;
-        /// Nested progress sub-steps.
-        std::vector<std::pair<int, std::vector<int>>> subProgressStack;
-    };
-
-    /// The list of active tasks that are visible in the UI.
-    std::vector<ProgressTaskInfo> _progressTaskList;
 
     /// Head of doubly-linked list of all registered task progress records.
     TaskProgress* _progressTasksHead = nullptr;

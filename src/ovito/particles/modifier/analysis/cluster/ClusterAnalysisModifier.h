@@ -124,7 +124,7 @@ private:
         void setLargestClusterSize(size_t size) { _largestClusterSize = size; }
 
         /// Performs the actual clustering algorithm.
-        virtual void doClustering(std::vector<Point3>& centersOfMass) = 0;
+        virtual void doClustering(std::vector<Point3>& centersOfMass, TaskProgress& progress) = 0;
 
         /// Returns the property storage that contains the input particle positions.
         const ConstPropertyPtr& positions() const { return _positions; }
@@ -175,7 +175,7 @@ private:
             _cutoff(cutoff) {}
 
         /// Performs the actual clustering algorithm.
-        virtual void doClustering(std::vector<Point3>& centersOfMass) override;
+        virtual void doClustering(std::vector<Point3>& centersOfMass, TaskProgress& progress) override;
 
         /// Returns the cutoff radius.
         FloatType cutoff() const { return _cutoff; }
@@ -195,7 +195,7 @@ private:
             ClusterAnalysisEngine(std::move(createdByNode), std::move(positions), std::move(masses), simCell, sortBySize, unwrapParticleCoordinates, colorParticlesByCluster, computeCentersOfMass, computeRadiusOfGyration, std::move(selection), std::move(periodicImageBondProperty), std::move(bondTopology)) {}
 
         /// Performs the actual clustering algorithm.
-        virtual void doClustering(std::vector<Point3>& centersOfMass) override;
+        virtual void doClustering(std::vector<Point3>& centersOfMass, TaskProgress& progress) override;
     };
 
     /// The neighbor mode.

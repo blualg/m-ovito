@@ -127,7 +127,8 @@ std::unique_ptr<ReferenceConfigurationModifier::Engine> AtomicStrainModifier::cr
 ******************************************************************************/
 void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
 {
-    this_task::setProgressText(tr("Computing atomic displacements"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Computing atomic displacements"));
 
     // First determine the mapping from particles of the reference config to particles
     // of the current config.
@@ -141,7 +142,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
     const auto refCellMatrix = refCell()->matrix();
     const auto refCellInverseMatrix = refCell()->inverseMatrix();
     const auto cellInverseMatrix = cell()->inverseMatrix();
-    parallelFor(displacements()->size(), 1024, [&](size_t i) {
+    parallelFor(displacements()->size(), 1024, progress, [&](size_t i) {
         auto index = refToCurrentIndexMap()[i];
         if(index == std::numeric_limits<size_t>::max()) {
             displacementsArray[i].setZero();
@@ -160,7 +161,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
         displacementsArray[i] = refCellMatrix * delta;
     });
 
-    this_task::setProgressText(tr("Computing atomic strain tensors"));
+    progress.setProgressText(tr("Computing atomic strain tensors"));
 
     // Prepare the neighbor list for the reference configuration.
     CutoffNeighborFinder neighborFinder;
@@ -177,7 +178,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
     BufferWriteAccess<SymmetricTensor2, access_mode::discard_write> stretchTensorsArray(stretchTensors());
 
     // Perform individual strain calculation for each particle.
-    parallelFor(positions()->size(), 1024, [&](size_t particleIndex) {
+    parallelFor(positions()->size(), 1024, progress, [&](size_t particleIndex) {
 
         // Note: We do the following calculations using double precision numbers to
         // minimize numerical errors. Final results will be converted back to

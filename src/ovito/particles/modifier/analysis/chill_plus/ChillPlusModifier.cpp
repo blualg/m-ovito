@@ -65,7 +65,8 @@ void ChillPlusModifier::ChillPlusAlgorithm::identifyStructures(const Particles* 
     if(simulationCell && simulationCell->is2D())
         throw Exception(tr("The Chill+ algorithm does not support 2d simulation cells."));
 
-    this_task::setProgressText(tr("Computing q_lm values in Chill+ analysis"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Computing q_lm values in Chill+ analysis"));
 
     // Prepare the neighbor list.
     CutoffNeighborFinder neighborFinder;
@@ -92,15 +93,15 @@ void ChillPlusModifier::ChillPlusAlgorithm::identifyStructures(const Particles* 
     };
 
     // Parallel calculation loop:
-    parallelFor(particleCount, 1024, [&](size_t index) {
+    parallelFor(particleCount, 1024, progress, [&](size_t index) {
         for(int m = -3; m <= 3; m++) {
             q_values(index, m+3) = compute_q_lm(index, 3, m);
         }
     });
 
     // For each particle, count the bonds and determine structure
-    this_task::setProgressText(tr("Computing c_ij values of Chill+"));
-    parallelFor(particleCount, 4096, [&](size_t index) {
+    progress.setProgressText(tr("Computing c_ij values of Chill+"));
+    parallelFor(particleCount, 4096, progress, [&](size_t index) {
         structureAcc[index] =
             (!selectionAcc || selectionAcc[index]) // Skip particles that are not included in the analysis.
                 ? determineStructure(neighborFinder, index, q_values)

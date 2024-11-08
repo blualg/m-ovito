@@ -50,7 +50,8 @@ SET_PROPERTY_FIELD_LABEL(VoroTopModifier, filterFile, "Filter file");
  ******************************************************************************/
 void VoroTopModifier::loadFilterDefinition(const QString& filepath)
 {
-    this_task::setProgressText(tr("Loading VoroTop filter %1").arg(filepath));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Loading VoroTop filter %1").arg(filepath));
 
     // Open filter file for reading.
     FileHandle fileHandle(QUrl::fromLocalFile(filepath), filepath);
@@ -58,7 +59,7 @@ void VoroTopModifier::loadFilterDefinition(const QString& filepath)
 
     // Load filter file header (i.e. list of structure types).
     std::shared_ptr<Filter> filter = std::make_shared<Filter>();
-    filter->load(stream, true);
+    filter->load(stream, true, progress);
 
     // Rebuild structure types list.
     setStructureTypes({});
@@ -88,10 +89,11 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
     if(particles->elementCount() > std::numeric_limits<int>::max())
         throw Exception(tr("VoroTop analysis modifier is limited to a maximum of %1 particles in the current program version.").arg(std::numeric_limits<int>::max()));
 
+    TaskProgress progress(this_task::ui());
     if(!filter()) {
         if(_filterFile.isEmpty())
             throw Exception(tr("No filter file selected"));
-        this_task::setProgressText(tr("Loading VoroTop filter file: %1").arg(_filterFile));
+        progress.setProgressText(tr("Loading VoroTop filter file: %1").arg(_filterFile));
 
         // Open filter file for reading.
         FileHandle fileHandle(QUrl::fromLocalFile(_filterFile), _filterFile);
@@ -99,13 +101,13 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
 
         // Parse filter definition.
         _filter = std::make_shared<Filter>();
-        _filter->load(stream, false);
+        _filter->load(stream, false, progress);
     }
 
     if(positions->size() == 0)
         return; // Nothing to do when there are zero particles.
 
-    this_task::setProgressText(tr("Performing VoroTop analysis"));
+    progress.setProgressText(tr("Performing VoroTop analysis"));
 
     BufferReadAccess<Point3> positionsArray(positions);
     BufferReadAccess<SelectionIntType> selectionArray(selection);
@@ -148,12 +150,12 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
             }
             if(!count) return;
 
-            this_task::setProgressMaximum(count);
+            progress.setProgressMaximum(count);
             voro::c_loop_all cl(voroContainer);
             voro::voronoicell_neighbor v;
             if(cl.start()) {
                 do {
-                    this_task::incrementProgressValue();
+                    progress.incrementProgressValue();
                     if(!voroContainer.compute_cell(v,cl))
                         continue;
                     structuresArray[cl.pid()] = processCell(v);
@@ -181,13 +183,14 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
                 count++;
             }
 
-            if(!count) return;
-            this_task::setProgressMaximum(count);
+            if(!count)
+                return;
+            progress.setProgressMaximum(count);
             voro::c_loop_all cl(voroContainer);
             voro::voronoicell_neighbor v;
             if(cl.start()) {
                 do {
-                    this_task::incrementProgressValue();
+                    progress.incrementProgressValue();
                     if(!voroContainer.compute_cell(v,cl))
                         continue;
                     structuresArray[cl.pid()] = processCell(v);
@@ -220,7 +223,7 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
         Point3 corner2 = corner1 + simulationCell->matrix().column(0) + simulationCell->matrix().column(1) + simulationCell->matrix().column(2);
 
         // Perform analysis, particle-wise parallel.
-        parallelFor(positions->size(), 1024, [&](size_t index) {
+        parallelFor(positions->size(), 1024, progress, [&](size_t index) {
 
             // Reset structure type.
             structuresArray[index] = 0;

@@ -290,7 +290,8 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::performComputation(
             selectionProperty = std::move(selectionProperty),
             evaluator = std::move(evaluator)]() mutable
     {
-        this_task::setProgressText(tr("Computing property '%1'").arg(outputProperty->name()));
+        TaskProgress progress(this_task::ui());
+        progress.setProgressText(tr("Computing property '%1'").arg(outputProperty->name()));
 
         RawBufferAccess<access_mode::write> outputAccessor(outputProperty, selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized);
         BufferReadAccess<SelectionIntType> selectionAccessor(selectionProperty);
@@ -298,7 +299,7 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::performComputation(
         EnumerableThreadSpecific<PropertyExpressionEvaluator::Worker> expressionWorkers;
         size_t componentCount = outputAccessor.componentCount();
 
-        parallelForInnerOuter(outputProperty->size(), 10000, [&](auto&& iterate) {
+        parallelForInnerOuter(outputProperty->size(), 10000, progress, [&](auto&& iterate) {
             PropertyExpressionEvaluator::Worker& worker = expressionWorkers.create(*evaluator);
             iterate([&](size_t i) {
 

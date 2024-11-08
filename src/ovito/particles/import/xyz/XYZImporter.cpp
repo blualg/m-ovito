@@ -85,8 +85,10 @@ bool XYZImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 void XYZImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     CompressedTextReader stream(fileHandle);
-    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
-    this_task::setProgressMaximum(stream.underlyingSize());
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    progress.setProgressMaximum(stream.underlyingSize());
 
     // Regular expression for whitespace characters.
     QRegularExpression ws_re(QStringLiteral("\\s+"));
@@ -132,7 +134,7 @@ void XYZImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
         for(unsigned long long i = 0; i < numParticlesLong; i++) {
             stream.readLine();
             // Update progress bar and check for user cancellation.
-            this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
+            progress.setProgressValueIntermittent(stream.underlyingByteOffset());
         }
 
         // Skip simulation cell section if this is a .exyz file written by OpenBabel.
@@ -221,7 +223,8 @@ inline bool parseBool(const char* s, int& d)
 ******************************************************************************/
 void XYZImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading XYZ file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading XYZ file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -241,7 +244,7 @@ void XYZImporter::FrameLoader::loadFile()
         throw Exception(tr("Too many particles in XYZ file. This program version can read XYZ files with up to %1 particles only.").arg(std::numeric_limits<int>::max()));
 
     setParticleCount(numParticlesLong);
-    this_task::setProgressMaximum(numParticlesLong);
+    progress.setProgressMaximum(numParticlesLong);
 
     // Extract some useful information from the comment line.
     const char* commentLine_cstr = stream.readLine();
@@ -426,7 +429,7 @@ void XYZImporter::FrameLoader::loadFile()
     try {
         for(size_t i = 0; i < numParticlesLong; i++) {
             // Update progress bar and check for user cancellation.
-            this_task::setProgressValueIntermittent(i);
+            progress.setProgressValueIntermittent(i);
             stream.readLine();
             columnParser.readElement(i, stream.line());
         }

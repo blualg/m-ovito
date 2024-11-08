@@ -37,7 +37,7 @@ template<typename ResultType, typename InputRange, class Executor, typename Func
         // Iteration start function:
         std::forward<Function>(f),
         // Iteration completed function (a no-op):
-        [](typename InputRange::const_reference iterValue) {},
+        [](typename InputRange::const_reference iterValue) noexcept {},
         std::forward<ResultType>(initialResultValue));
 }
 

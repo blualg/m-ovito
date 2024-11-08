@@ -1042,7 +1042,7 @@ ConstPropertyPtr Particles::OOMetaClass::viewportFenceSelection(const QVector<Po
         PropertyPtr selection = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, posProperty.size(), Particles::SelectionProperty, objectPath);
 
         BufferWriteAccess<SelectionIntType, access_mode::discard_write> selectionAcc{selection};
-        parallelFor<false>(posProperty.size(), 16000, [&](size_t index) {
+        parallelFor(posProperty.size(), 16000, TaskProgress::Ignore, [&](size_t index) {
             selectionAcc[index] = 0;
 
             // Project particle center to screen coordinates.

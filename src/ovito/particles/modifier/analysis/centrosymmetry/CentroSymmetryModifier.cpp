@@ -111,7 +111,8 @@ Future<PipelineFlowState> CentroSymmetryModifier::evaluateModifier(const Modifie
             nneighbors = numNeighbors(),
             createdByNode = request.modificationNodeWeak()]() mutable
     {
-        this_task::setProgressText(tr("Computing centrosymmetry parameters"));
+        TaskProgress progress(this_task::ui());
+        progress.setProgressText(tr("Computing centrosymmetry parameters"));
 
         // Prepare the neighbor list.
         NearestNeighborFinder neighFinder(nneighbors);
@@ -123,7 +124,7 @@ Future<PipelineFlowState> CentroSymmetryModifier::evaluateModifier(const Modifie
 
         // Perform analysis on each particle.
         BufferReadAccess<SelectionIntType> selectionData(selection);
-        parallelFor(particles->elementCount(), 4096, [&](size_t index) {
+        parallelFor(particles->elementCount(), 4096, progress, [&](size_t index) {
             if(!selectionData || selectionData[index])
                 cspArray[index] = computeCSP(neighFinder, index, mode);
             else

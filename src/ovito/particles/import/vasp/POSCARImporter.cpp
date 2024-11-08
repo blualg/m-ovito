@@ -96,8 +96,10 @@ bool POSCARImporter::shouldScanFileForFrames(const QUrl& sourceUrl) const
 void POSCARImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     CompressedTextReader stream(fileHandle);
-    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
-    this_task::setProgressMaximum(stream.underlyingSize());
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    progress.setProgressMaximum(stream.underlyingSize());
 
     int frameNumber = 0;
     QStringList atomTypeNames;
@@ -169,7 +171,7 @@ void POSCARImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
         frames.push_back(frame);
 
         // Update progress bar and check for user cancellation.
-        this_task::setProgressValueIntermittent(stream.underlyingByteOffset());
+        progress.setProgressValueIntermittent(stream.underlyingByteOffset());
     }
 }
 
@@ -178,7 +180,8 @@ void POSCARImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
 ******************************************************************************/
 void POSCARImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading VASP file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading VASP file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -304,7 +307,7 @@ void POSCARImporter::FrameLoader::loadFile()
         }
         else if(!stream.eof()) {
             // Parse charge density grid.
-            statusString += readDensityGrid(stream);
+            statusString += readDensityGrid(stream, progress);
         }
     }
     posAccess.reset();
@@ -314,7 +317,7 @@ void POSCARImporter::FrameLoader::loadFile()
 
     // Generate ad-hoc bonds between atoms based on their van der Waals radii.
     if(_generateBonds)
-        generateBonds();
+        generateBonds(progress);
     else
         setBondCount(0);
 
@@ -352,7 +355,7 @@ void POSCARImporter::parseAtomTypeNamesAndCounts(CompressedTextReader& stream, Q
 /******************************************************************************
 * Parses a charge density grid.
 ******************************************************************************/
-QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& stream)
+QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& stream, TaskProgress& progress)
 {
     QString statusString;
 
@@ -375,7 +378,7 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
     voxelGrid->setContent(gridSize[0] * gridSize[1] * gridSize[2], {});
 
     // Parse spin up + spin down density.
-    if(!readFieldQuantity(stream, voxelGrid, tr("Charge density")))
+    if(!readFieldQuantity(stream, voxelGrid, QStringLiteral("Charge Density"), progress))
         return {};
     statusString += tr("\nCharge density grid: %1 x %2 x %3").arg(gridSize[0]).arg(gridSize[1]).arg(gridSize[2]);
 
@@ -385,7 +388,7 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
         if(sscanf(stream.readLine(), "%zu %zu %zu", &gridSize[0], &gridSize[1], &gridSize[2]) == 3) {
             if(gridSize != voxelGrid->shape())
                 throw Exception(tr("Inconsistent voxel grid dimensions in line %1").arg(stream.lineNumber()));
-            magnetizationDensityX = readFieldQuantity(stream, voxelGrid, tr("Magnetization density"));
+            magnetizationDensityX = readFieldQuantity(stream, voxelGrid, QStringLiteral("Magnetization Density"), progress);
             if(!magnetizationDensityX) return {};
             statusString += tr("\nMagnetization density grid: %1 x %2 x %3").arg(gridSize[0]).arg(gridSize[1]).arg(gridSize[2]);
             break;
@@ -399,7 +402,7 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
         if(sscanf(stream.readLine(), "%zu %zu %zu", &gridSize[0], &gridSize[1], &gridSize[2]) == 3) {
             if(gridSize != voxelGrid->shape())
                 throw Exception(tr("Inconsistent voxel grid dimensions in line %1").arg(stream.lineNumber()));
-            magnetizationDensityY = readFieldQuantity(stream, voxelGrid, tr("Magnetization density"));
+            magnetizationDensityY = readFieldQuantity(stream, voxelGrid, QStringLiteral("Magnetization Density"), progress);
             if(!magnetizationDensityY) return {};
             break;
         }
@@ -408,14 +411,14 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
         if(sscanf(stream.readLine(), "%zu %zu %zu", &gridSize[0], &gridSize[1], &gridSize[2]) == 3) {
             if(gridSize != voxelGrid->shape())
                 throw Exception(tr("Inconsistent voxel grid dimensions in line %1").arg(stream.lineNumber()));
-            magnetizationDensityZ = readFieldQuantity(stream, voxelGrid, tr("Magnetization density"));
+            magnetizationDensityZ = readFieldQuantity(stream, voxelGrid, QStringLiteral("Magnetization Density"), progress);
             if(!magnetizationDensityZ) return {};
             break;
         }
     }
 
     if(magnetizationDensityX && magnetizationDensityY && magnetizationDensityZ) {
-        BufferWriteAccess<FloatType*, access_mode::discard_write> vectorMagnetization = voxelGrid->createProperty(tr("Magnetization density"), DataBuffer::FloatDefault, 3, QStringList() << "X" << "Y" << "Z");
+        BufferWriteAccess<FloatType*, access_mode::discard_write> vectorMagnetization = voxelGrid->createProperty(QStringLiteral("Magnetization Density"), DataBuffer::FloatDefault, 3, QStringList() << "X" << "Y" << "Z");
         boost::copy(BufferReadAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
         boost::copy(BufferReadAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
         boost::copy(BufferReadAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
@@ -428,13 +431,13 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
 /******************************************************************************
 * Parses the values of one field quantity.
 ******************************************************************************/
-Property* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name)
+Property* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& stream, VoxelGrid* grid, const QString& name, TaskProgress& progress)
 {
     Property* fieldProperty = grid->createProperty(name, DataBuffer::FloatDefault);
     BufferWriteAccess<FloatType*, access_mode::discard_read_write> fieldAccess(fieldProperty);
     const char* s = stream.readLine();
     auto* data = fieldAccess.begin();
-    this_task::setProgressMaximum(fieldProperty->size());
+    progress.setProgressMaximum(fieldProperty->size());
     FloatType cellVolume = std::abs(simulationCell()->cellMatrix().determinant());
     for(size_t i = 0; i < fieldProperty->size(); i++, ++data) {
         const char* token;
@@ -452,7 +455,7 @@ Property* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& s
             s++;
 
         // Update progress bar and check for user cancellation.
-        this_task::setProgressValueIntermittent(i);
+        progress.setProgressValueIntermittent(i);
     }
     return fieldProperty;
 }

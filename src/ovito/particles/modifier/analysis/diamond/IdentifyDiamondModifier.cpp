@@ -62,7 +62,8 @@ void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures
     if(simulationCell && simulationCell->is2D())
         throw Exception(tr("The algorithm does not support 2d simulation cells."));
 
-    this_task::setProgressText(tr("Finding nearest neighbors"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Finding nearest neighbors"));
 
     // Prepare the neighbor list builder.
     NearestNeighborFinder neighborFinder(4);
@@ -78,7 +79,7 @@ void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures
 
     // Determine four nearest neighbors of each atom and store vectors in the working array.
     BufferReadAccess<SelectionIntType> selectionAcc(selection);
-    parallelFor(particles->elementCount(), 1024, [&](size_t index) {
+    parallelFor(particles->elementCount(), 1024, progress, [&](size_t index) {
         // Skip particles that are not included in the analysis.
         if(selectionAcc && !selectionAcc[index])
             return;
@@ -96,10 +97,10 @@ void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures
     });
 
     // Perform structure identification.
-    this_task::setProgressText(tr("Identifying diamond structures"));
+    progress.setProgressText(tr("Identifying diamond structures"));
 
     BufferWriteAccess<int32_t, access_mode::discard_read_write> structureAcc(structures());
-    parallelFor(particles->elementCount(), 1024, [&](size_t index) {
+    parallelFor(particles->elementCount(), 1024, progress, [&](size_t index) {
         // Mark atom as 'other' by default.
         structureAcc[index] = OTHER;
 

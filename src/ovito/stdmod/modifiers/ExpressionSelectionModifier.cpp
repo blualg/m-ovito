@@ -148,7 +148,7 @@ Future<PipelineFlowState> ExpressionSelectionModifierDelegate::apply(const Modif
 
         // Evaluate Boolean expression for every input data element.
         EnumerableThreadSpecific<PropertyExpressionEvaluator::Worker> expressionWorkers;
-        parallelForInnerOuter(selection->size(), 4096, [&](auto&& iterate) {
+        parallelForInnerOuter(selection->size(), 4096, TaskProgress::Ignore, [&](auto&& iterate) {
             PropertyExpressionEvaluator::Worker& worker = expressionWorkers.create(*evaluator);
             size_t nselectedLocal = 0;
             iterate([&](size_t i) {

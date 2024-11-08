@@ -98,7 +98,7 @@ protected:
         void generateBondPeriodicImageProperty();
 
         /// Generates ad-hoc bonds between atoms based on their van der Waals radii.
-        void generateBonds();
+        void generateBonds(TaskProgress& progress);
 
         /// If the particles are centered on the coordinate origin but the current simulation cell corner is positioned at (0,0,0),
         /// the this method centers the cell at (0,0,0), leaving the particle coordinates unchanged.

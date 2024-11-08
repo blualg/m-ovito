@@ -57,7 +57,7 @@ void DislocationTracer::discardCircuit(BurgersCircuit* circuit)
 * trial Burgers circuits. Identified dislocation segments are converted to
 * a continuous line representation.
 ******************************************************************************/
-void DislocationTracer::traceDislocationSegments()
+void DislocationTracer::traceDislocationSegments(TaskProgress& progress)
 {
     if(_maxBurgersCircuitSize < 3 || _maxBurgersCircuitSize > _maxExtendedBurgersCircuitSize)
         throw Exception("Invalid maximum circuit size parameter(s).");
@@ -67,7 +67,7 @@ void DislocationTracer::traceDislocationSegments()
     std::vector<int> subStepWeights(_maxExtendedBurgersCircuitSize - 2);
     for(int i = 0; i < subStepWeights.size(); i++)
         subStepWeights[i] = (i+3)*(i+3);
-    this_task::beginProgressSubStepsWithWeights(subStepWeights);
+    progress.beginProgressSubStepsWithWeights(std::move(subStepWeights));
 
     mesh().clearFaceFlag(0);
 
@@ -87,7 +87,7 @@ void DislocationTracer::traceDislocationSegments()
         // Find dislocation segments by generating trial Burgers circuits on the interface mesh
         // and then moving them in both directions along the dislocation segment.
         if(circuitLength <= _maxBurgersCircuitSize && (circuitLength % 2) != 0) {
-            findPrimarySegments(circuitLength);
+            findPrimarySegments(circuitLength, progress);
         }
 
         // Join segments forming dislocation junctions.
@@ -106,10 +106,10 @@ void DislocationTracer::traceDislocationSegments()
         }
 
         if(circuitLength < _maxExtendedBurgersCircuitSize)
-            this_task::nextProgressSubStep();
+            progress.nextProgressSubStep();
     }
 
-    this_task::endProgressSubSteps();
+    progress.endProgressSubSteps();
 }
 
 /******************************************************************************
@@ -246,14 +246,14 @@ struct BurgersCircuitSearchStruct
 * Then moves the Burgers circuit in both directions along the dislocation
 * segment until the maximum circuit size has been reached.
 ******************************************************************************/
-void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize)
+void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize, TaskProgress& progress)
 {
     int searchDepth =  (maxBurgersCircuitSize - 1) / 2;
     OVITO_ASSERT(searchDepth >= 1);
 
     MemoryPool<BurgersCircuitSearchStruct> structPool;
 
-    this_task::setProgressMaximum(mesh().vertexCount());
+    progress.setProgressMaximum(mesh().vertexCount());
     int progressCounter = 0;
 
     // Find an appropriate start node for the recursive search.
@@ -262,7 +262,7 @@ void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize)
         OVITO_ASSERT(startNode.burgersSearchStruct == nullptr);
 
         // Update progress indicator.
-        this_task::setProgressValueIntermittent(progressCounter++);
+        progress.setProgressValueIntermittent(progressCounter++);
 
         // The first node is the seed of our recursive walk.
         // It is mapped to the origin of the reference lattice.
@@ -999,7 +999,7 @@ void DislocationTracer::appendLinePoint(DislocationNode& node)
     // Work chunk size of 256 is used as threshold for parallelization and has been determined from initial testing.
     // Parallel loop over tetrahedrons to be tested for intersection with the cap polygon.
     // Inner loop over each triangle until an intersection is detected.
-    parallelFor<false>(_ranges.size(), 256, [&](size_t idx) {
+    parallelFor(_ranges.size(), 256, TaskProgress::Ignore, [&](size_t idx) {
 
         // Grab bbox and cell
         const bBox& bbox = _ranges[idx];

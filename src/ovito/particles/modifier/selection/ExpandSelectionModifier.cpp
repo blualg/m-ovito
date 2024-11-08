@@ -152,21 +152,21 @@ Future<PipelineFlowState> ExpandSelectionModifier::evaluateModifier(const Modifi
 ******************************************************************************/
 void ExpandSelectionModifier::ExpandSelectionEngine::perform()
 {
-    this_task::setProgressText(tr("Expanding particle selection"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Expanding particle selection"));
 
     setNumSelectedParticlesInput(_inputSelection->nonzeroCount());
 
-    this_task::beginProgressSubSteps(_numIterations);
+    progress.beginProgressSubSteps(_numIterations);
     for(int i = 0; i < _numIterations; i++) {
         if(i != 0) {
             _inputSelection = outputSelection();
             setOutputSelection(_inputSelection.makeCopy());
-            this_task::nextProgressSubStep();
+            progress.nextProgressSubStep();
         }
-        expandSelection();
-        this_task::throwIfCanceled();
+        expandSelection(progress);
     }
-    this_task::endProgressSubSteps();
+    progress.endProgressSubSteps();
 
     setNumSelectedParticlesOutput(outputSelection()->nonzeroCount());
 }
@@ -174,7 +174,7 @@ void ExpandSelectionModifier::ExpandSelectionEngine::perform()
 /******************************************************************************
 * Performs one iteration of the selection expansion.
 ******************************************************************************/
-void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection()
+void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection(TaskProgress& progress)
 {
     if(_numNearestNeighbors > MAX_NEAREST_NEIGHBORS)
         throw Exception(tr("Invalid parameter. The expand selection modifier can expand the selection only to the %1 nearest neighbors of particles. This limit is set at compile time.").arg(MAX_NEAREST_NEIGHBORS));
@@ -186,7 +186,7 @@ void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection()
     OVITO_ASSERT(inputSelection() != outputSelection());
     BufferReadAccess<SelectionIntType> inputSelectionArray(inputSelection());
     BufferWriteAccess<SelectionIntType, access_mode::write> outputSelectionArray(outputSelection());
-    parallelFor(positions()->size(), 4096, [&](size_t index) {
+    parallelFor(positions()->size(), 4096, progress, [&](size_t index) {
         if(!inputSelectionArray[index])
             return;
 
@@ -203,14 +203,14 @@ void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection()
 /******************************************************************************
 * Performs one iteration of the selection expansion.
 ******************************************************************************/
-void ExpandSelectionModifier::ExpandSelectionBondedEngine::expandSelection()
+void ExpandSelectionModifier::ExpandSelectionBondedEngine::expandSelection(TaskProgress& progress)
 {
     BufferWriteAccess<SelectionIntType, access_mode::write> outputSelectionArray(outputSelection());
     BufferReadAccess<SelectionIntType> inputSelectionArray(inputSelection());
     BufferReadAccess<ParticleIndexPair> bondTopologyArray(_bondTopology);
 
     size_t particleCount = inputSelection()->size();
-    parallelFor(_bondTopology->size(), 4096, [&](size_t index) {
+    parallelFor(_bondTopology->size(), 4096, progress, [&](size_t index) {
         size_t index1 = bondTopologyArray[index][0];
         size_t index2 = bondTopologyArray[index][1];
         if(index1 >= particleCount || index2 >= particleCount)
@@ -244,7 +244,7 @@ void ExpandSelectionModifier::ExpandSelectionBondedEngine::expandSelection()
 /******************************************************************************
 * Performs one iteration of the selection expansion.
 ******************************************************************************/
-void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection()
+void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection(TaskProgress& progress)
 {
     // Prepare the neighbor list.
     CutoffNeighborFinder neighborListBuilder;
@@ -253,7 +253,7 @@ void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection()
     BufferWriteAccess<SelectionIntType, access_mode::write> outputSelectionArray(outputSelection());
     BufferReadAccess<SelectionIntType> inputSelectionArray(inputSelection());
 
-    parallelFor(positions()->size(), 4096, [&](size_t index) {
+    parallelFor(positions()->size(), 4096, progress, [&](size_t index) {
         if(!inputSelectionArray[index])
             return;
 

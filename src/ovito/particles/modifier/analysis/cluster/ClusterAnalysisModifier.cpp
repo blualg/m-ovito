@@ -226,14 +226,15 @@ Future<PipelineFlowState> ClusterAnalysisModifier::evaluateModifier(const Modifi
 ******************************************************************************/
 void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 {
-    this_task::setProgressText(tr("Performing cluster analysis"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Performing cluster analysis"));
 
     // Initialize.
     particleClusters()->fill<int64_t>(-1);
     std::vector<Point3> centersOfMass;
 
     // Perform the actual clustering.
-    doClustering(centersOfMass);
+    doClustering(centersOfMass, progress);
     this_task::throwIfCanceled();
 
     // Copy center-of-mass coordinates from local array to output property storage.
@@ -256,7 +257,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 
         // Visit all input particles again.
         size_t particleCount = positions()->size();
-        this_task::setProgressMaximum(particleCount);
+        progress.setProgressMaximum(particleCount);
         for(size_t particleIndex = 0; particleIndex < particleCount; particleIndex++) {
 
             // Skip particles that do not belong to any cluster.
@@ -264,7 +265,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
                 continue;
 
             // Update progress indicator.
-            this_task::setProgressValueIntermittent(particleIndex);
+            progress.setProgressValueIntermittent(particleIndex);
 
             size_t clusterIndex = particleClusters[particleIndex] - 1;
 
@@ -382,15 +383,15 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 /******************************************************************************
 * Performs the actual clustering algorithm.
 ******************************************************************************/
-void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vector<Point3>& centersOfMass)
+void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vector<Point3>& centersOfMass, TaskProgress& progress)
 {
     // Prepare the neighbor finder.
     CutoffNeighborFinder neighborFinder;
     neighborFinder.prepare(cutoff(), positions(), cell(), selection());
 
     size_t particleCount = positions()->size();
-    this_task::setProgressMaximum(particleCount);
-    size_t progress = 0;
+    progress.setProgressMaximum(particleCount);
+    size_t progressVal = 0;
 
     BufferWriteAccess<int64_t, access_mode::read_write> particleClusters(this->particleClusters());
     BufferReadAccess<SelectionIntType> selectionData(selection());
@@ -403,7 +404,7 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
         // Skip unselected particles that are not included in the analysis.
         if(selectionData && !selectionData[seedParticleIndex]) {
             particleClusters[seedParticleIndex] = 0;
-            progress++;
+            progressVal++;
             continue;
         }
 
@@ -423,7 +424,7 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
         toProcess.push_back(seedParticleIndex);
 
         do {
-            this_task::setProgressValueIntermittent(progress++);
+            progress.setProgressValueIntermittent(progressVal++);
 
             size_t currentParticle = toProcess.front();
             toProcess.pop_front();
@@ -461,11 +462,11 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
 /******************************************************************************
 * Performs the actual clustering algorithm.
 ******************************************************************************/
-void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vector<Point3>& centersOfMass)
+void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vector<Point3>& centersOfMass, TaskProgress& progress)
 {
     size_t particleCount = positions()->size();
-    this_task::setProgressMaximum(particleCount);
-    size_t progress = 0;
+    progress.setProgressMaximum(particleCount);
+    size_t progressVal = 0;
 
     // Prepare particle bond map.
     ParticleBondMap bondMap(bondTopology());
@@ -482,7 +483,7 @@ void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vecto
         // Skip unselected particles that are not included in the analysis.
         if(selectionData && !selectionData[seedParticleIndex]) {
             particleClusters[seedParticleIndex] = 0;
-            progress++;
+            progressVal++;
             continue;
         }
 
@@ -502,7 +503,7 @@ void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vecto
         toProcess.push_back(seedParticleIndex);
 
         do {
-            this_task::setProgressValueIntermittent(progress++);
+            progress.setProgressValueIntermittent(progressVal++);
 
             size_t currentParticle = toProcess.front();
             toProcess.pop_front();

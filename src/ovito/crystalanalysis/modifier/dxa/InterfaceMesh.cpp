@@ -60,9 +60,9 @@ ForwardIterator most_common(ForwardIterator first, ForwardIterator last)
 /******************************************************************************
 * Creates the mesh facets separating good and bad tetrahedra.
 ******************************************************************************/
-void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAccess<int64_t> crystalClusters)
+void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAccess<int64_t> crystalClusters, TaskProgress& progress)
 {
-    this_task::beginProgressSubSteps(2);
+    progress.beginProgressSubSteps(2);
 
     // Determines if a tetrahedron belongs to the good or bad crystal region.
     auto tetrahedronRegion = [this,&crystalClusters](DelaunayTessellation::CellHandle cell) {
@@ -120,10 +120,10 @@ void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
     }
 
     // Construct a one-sided surface mesh.
-    ManifoldConstructionHelper manifoldConstructor(tessellation(), *this, alpha, false, structureAnalysis().positions());
+    ManifoldConstructionHelper manifoldConstructor(tessellation(), *this, alpha, false, structureAnalysis().positions(), progress);
     manifoldConstructor.construct(tetrahedronRegion, prepareMeshFace);
 
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     // Make sure each vertex is only part of a single manifold.
     makeManifold();
@@ -186,8 +186,7 @@ void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
     }
 #endif
 
-    this_task::throwIfCanceled();
-    this_task::endProgressSubSteps();
+    progress.endProgressSubSteps();
 }
 
 /******************************************************************************

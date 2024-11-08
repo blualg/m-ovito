@@ -181,7 +181,7 @@ OORef<FileExportJob> AMBERNetCDFExporter::createExportJob(const QString& filePat
         }
 
         /// Writes the exportable data of a single trajectory frame to the output file.
-        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath, TaskProgress& progress) override {
             // The exportable frame data.
             const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
@@ -369,7 +369,7 @@ OORef<FileExportJob> AMBERNetCDFExporter::createExportJob(const QString& filePat
             }
 
             // Write out other particle properties.
-            this_task::setProgressMaximum(_columns.size());
+            progress.setProgressMaximum(_columns.size());
             for(const NCOutputColumn& outColumn : _columns) {
 
                 // Look up the property to be exported.
@@ -402,7 +402,7 @@ OORef<FileExportJob> AMBERNetCDFExporter::createExportJob(const QString& filePat
                     NCERR(nc_put_vara_double(_ncid, outColumn.ncvar, start, count, BufferReadAccess<double*>(prop).cbegin()));
                 }
 
-                this_task::incrementProgressValue();
+                progress.incrementProgressValue();
             }
 
             _frameCounter++;

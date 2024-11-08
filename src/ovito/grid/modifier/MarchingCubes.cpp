@@ -57,15 +57,15 @@ MarchingCubes::MarchingCubes(SurfaceMeshBuilder& outputMesh, int size_x, int siz
 /******************************************************************************
  * Main method that constructs the isosurface mesh.
  ******************************************************************************/
-void MarchingCubes::generateIsosurface(FloatType isolevel)
+void MarchingCubes::generateIsosurface(FloatType isolevel, TaskProgress& progress)
 {
     _isolevel = isolevel;
     int size_x = _infiniteDomain ? (_size_x - 1) : _size_x;
     int size_y = _infiniteDomain ? (_size_y - 1) : _size_y;
     int size_z = _infiniteDomain ? (_size_z - 1) : _size_z;
 
-    this_task::setProgressMaximum(size_z * 2);
-    computeIntersectionPoints();
+    progress.setProgressMaximum(size_z * 2);
+    computeIntersectionPoints(progress);
 
     this_task::throwIfCanceled();
 
@@ -82,7 +82,7 @@ void MarchingCubes::generateIsosurface(FloatType isolevel)
         _maxRegionIndex = 0;
     }
 
-    for(int k = 0; k < size_z; k++, this_task::incrementProgressValue()) {
+    for(int k = 0; k < size_z; k++, progress.incrementProgressValue()) {
         for(int j = 0; j < size_y; j++) {
             for(int i = 0; i < size_x; i++) {
                 _lut_entry = 0;
@@ -96,7 +96,6 @@ void MarchingCubes::generateIsosurface(FloatType isolevel)
                 processCube(i, j, k);
             }
         }
-        this_task::throwIfCanceled();
     }
 
     if(identifyRegions()) {
@@ -120,13 +119,12 @@ void MarchingCubes::generateIsosurface(FloatType isolevel)
 /******************************************************************************
  * Compute the intersection points with the isosurface along the cube edges.
  ******************************************************************************/
-void MarchingCubes::computeIntersectionPoints()
+void MarchingCubes::computeIntersectionPoints(TaskProgress& progress)
 {
     if(_pbcFlags[0] && _pbcFlags[1] && _pbcFlags[2])
         _outputMesh.setSpaceFillingRegion(0);
 
-    for(int k = 0; k < _size_z; k++, this_task::incrementProgressValue()) {
-        this_task::throwIfCanceled();
+    for(int k = 0; k < _size_z; k++, progress.incrementProgressValue()) {
         for(int j = 0; j < _size_y; j++) {
             for(int i = 0; i < _size_x; i++) {
                 FloatType cube[8];
@@ -205,7 +203,7 @@ bool MarchingCubes::testFace(signed char face)
         C = _cube[6];
         D = _cube[5];
         break;
-    default: 
+    default:
         OVITO_ASSERT_MSG(false, "Marching cubes", "Invalid face code");
         return false;
     }

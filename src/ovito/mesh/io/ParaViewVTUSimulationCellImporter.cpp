@@ -62,7 +62,8 @@ bool ParaViewVTUSimulationCellImporter::OOMetaClass::checkFileFormat(const FileH
 ******************************************************************************/
 void ParaViewVTUSimulationCellImporter::FrameLoader::loadFile()
 {
-    this_task::setProgressText(tr("Reading ParaView VTU UnstructuredGrid file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading ParaView VTU UnstructuredGrid file %1").arg(fileHandle().toString()));
 
     // Initialize XML reader and open input file.
     std::unique_ptr<QIODevice> device = fileHandle().createIODevice();

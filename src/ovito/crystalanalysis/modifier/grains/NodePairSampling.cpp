@@ -29,11 +29,11 @@ namespace Ovito {
 /******************************************************************************
 * Clustering using pair sampling algorithm.
 ******************************************************************************/
-void GrainSegmentationEngine1::node_pair_sampling_clustering(GrainSegmentationEngine1::Graph& graph, std::vector<Quaternion>& qsum)
+void GrainSegmentationEngine1::node_pair_sampling_clustering(GrainSegmentationEngine1::Graph& graph, std::vector<Quaternion>& qsum, TaskProgress& progress)
 {
     FloatType totalWeight = 1;
 
-    size_t progress = 0;
+    size_t progressVal = 0;
     std::vector<size_t> chain;
     while(graph.num_nodes()) {
 
@@ -66,8 +66,8 @@ void GrainSegmentationEngine1::node_pair_sampling_clustering(GrainSegmentationEn
                     _dendrogram.emplace_back(parent, child, d / totalWeight, disorientation, 1, qsum[parent]);
 
                     // Update progress indicator.
-                    if((progress++ % 1024) == 0) {
-                        this_task::incrementProgressValue(1024);
+                    if((progressVal++ % 1024) == 0) {
+                        progress.incrementProgressValue(1024);
                     }
                 }
                 else {

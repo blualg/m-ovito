@@ -56,7 +56,7 @@ public:
     void discardSegment(DislocationSegment* segment);
 
     /// Smoothens and coarsens the dislocation lines.
-    void smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval);
+    void smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval, TaskProgress& progress);
 
     /// Adds a new crystal structures to the list.
     void addCrystalStructure(const MicrostructurePhase* structure) { _crystalStructures.push_back(this, PROPERTY_FIELD(crystalStructures), structure); }

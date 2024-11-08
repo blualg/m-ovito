@@ -180,7 +180,7 @@ public:
     const StructureAnalysis& structureAnalysis() const { return elasticMapping().structureAnalysis(); }
 
     /// Creates the mesh facets separating good and bad tetrahedra.
-    void createMesh(FloatType maximumNeighborDistance, BufferReadAccess<int64_t> crystalClusters);
+    void createMesh(FloatType maximumNeighborDistance, BufferReadAccess<int64_t> crystalClusters, TaskProgress& progress);
 
     /// Generates the nodes and facets of the defect mesh based on the interface mesh.
     void generateDefectMesh(const DislocationTracer& tracer, SurfaceMeshBuilder& defectMesh);

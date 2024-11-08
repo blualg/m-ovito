@@ -98,7 +98,9 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 {
     // Open file for reading.
     CompressedTextReader stream(fileHandle());
-    this_task::setProgressText(tr("Reading Gaussian Cube file %1").arg(fileHandle().toString()));
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading Gaussian Cube file %1").arg(fileHandle().toString()));
 
     // Ignore two comment lines.
     stream.readLine();
@@ -146,11 +148,11 @@ void GaussianCubeImporter::FrameLoader::loadFile()
     Point3* p = posProperty.begin();
     BufferWriteAccess<int32_t, access_mode::discard_read_write> typePropertyAccess(typeProperty);
     auto* a = typePropertyAccess.begin();
-    this_task::setProgressMaximum(numAtoms + gridSize[0]*gridSize[1]*gridSize[2]);
+    progress.setProgressMaximum(numAtoms + gridSize[0]*gridSize[1]*gridSize[2]);
     qlonglong progressValue = 0;
     for(qlonglong i = 0; i < numAtoms; i++, ++p, ++a) {
         // Update progress bar and check for user cancellation.
-        this_task::setProgressValueIntermittent(progressValue++);
+        progress.setProgressValueIntermittent(progressValue++);
         FloatType secondColumn;
         if(sscanf(stream.readLine(), "%i " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
                 a, &secondColumn, &p->x(), &p->y(), &p->z()) != 5)
@@ -249,7 +251,7 @@ void GaussianCubeImporter::FrameLoader::loadFile()
                         s++;
                 }
                 // Update progress bar and check for user cancellation.
-                this_task::setProgressValueIntermittent(progressValue);
+                progress.setProgressValueIntermittent(progressValue);
             }
         }
     }
@@ -269,7 +271,7 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 
     // Generate ad-hoc bonds between atoms based on their van der Waals radii.
     if(_generateBonds)
-        generateBonds();
+        generateBonds(progress);
     else
         setBondCount(0);
 

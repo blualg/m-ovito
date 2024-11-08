@@ -85,7 +85,9 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
 {
     // Open file for reading.
     CompressedTextReader stream(fileHandle());
-    this_task::setProgressText(tr("Reading Quantum Espresso file %1").arg(fileHandle().toString()));
+
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading Quantum Espresso file %1").arg(fileHandle().toString()));
 
     // For converting Bohr radii to Angstrom units:
     constexpr FloatType bohr2angstrom = 0.529177;

@@ -48,7 +48,7 @@ struct first_type { using type = std::tuple_element_t<0, Tuple>; };
 template<>
 struct first_type<std::tuple<>> { using type = void; };
 
-template<bool ShowProgress = true, typename InputRange, class Executor, typename StartIterFunc, typename CompleteIterFunc, typename... ResultType>
+template<typename InputRange, class Executor, typename StartIterFunc, typename CompleteIterFunc, typename... ResultType>
 [[nodiscard]] auto for_each_sequential(
     InputRange&& inputRange,
     Executor&& executor,
@@ -61,6 +61,7 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
 
     // The type of future returned by the start function.
     using output_future_type = return_type<std::decay_t<StartIterFunc>>;
+    static_assert(!detail::is_structured_future_v<output_future_type>, "Structured futures are not yet supported by for_each_sequential().");
 
     class ForEachTask : public detail::ContinuationTask<task_result_type>
     {
@@ -90,11 +91,6 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
             OVITO_ASSERT(_iterator == std::begin(_range));
             // Begin execution of first iteration.
             if(_iterator != std::end(_range)) {
-
-                // Determine the number of iterations we are going to perform.
-                if constexpr(ShowProgress)
-                    this->setProgressMaximum(std::distance(_iterator, std::end(_range)));
-
                 _executor.execute([promise = PromiseBase(this->shared_from_this())]() mutable noexcept {
                     static_cast<ForEachTask*>(promise.task().get())->iteration_begin(std::move(promise));
                 });
@@ -113,10 +109,6 @@ template<bool ShowProgress = true, typename InputRange, class Executor, typename
                 output_future_type future;
                 try {
                     Task::Scope taskScope(this);
-
-                    // Report the number of iterations we have performed so far.
-                    if constexpr(ShowProgress)
-                        this->setProgressValue(std::distance(std::begin(_range), _iterator));
 
                     // Call the user-provided function with the current loop value and, optionally, the task's result storage
                     if constexpr(!std::is_void_v<task_result_type>) {

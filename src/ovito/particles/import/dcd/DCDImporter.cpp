@@ -268,7 +268,8 @@ bool DCDImporter::OOMetaClass::checkFileFormat(const FileHandle &file) const
  ******************************************************************************/
 void DCDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
-    this_task::setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
 
     std::unique_ptr<QIODevice> device = fileHandle.createIODevice();
     if(!device->open(QIODevice::ReadOnly))
@@ -305,9 +306,10 @@ void DCDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
 ******************************************************************************/
 void DCDImporter::FrameLoader::loadFile()
 {
-    // Open file for reading.
-    this_task::setProgressText(tr("Reading DCD file %1").arg(fileHandle().toString()));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Reading DCD file %1").arg(fileHandle().toString()));
 
+    // Open file for reading.
     std::unique_ptr<QIODevice> device = fileHandle().createIODevice();
     if(!device->open(QIODevice::ReadOnly))
         throw Exception(tr("Failed to open DCD file: %1").arg(device->errorString()));

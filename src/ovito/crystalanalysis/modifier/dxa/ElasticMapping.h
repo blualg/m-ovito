@@ -103,13 +103,13 @@ public:
     const DataOORef<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
 
     /// Builds the list of edges in the tetrahedral tessellation.
-    void generateTessellationEdges();
+    void generateTessellationEdges(TaskProgress& progress);
 
     /// Assigns each tessellation vertex to a cluster.
-    void assignVerticesToClusters();
+    void assignVerticesToClusters(TaskProgress& progress);
 
     /// Determines the ideal vector corresponding to each edge of the tessellation.
-    void assignIdealVectorsToEdges(int crystalPathSteps);
+    void assignIdealVectorsToEdges(int crystalPathSteps, TaskProgress& progress);
 
     /// Determines whether the elastic mapping from the physical configuration
     /// of the crystal to the imaginary, stress-free configuration is compatible

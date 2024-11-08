@@ -329,7 +329,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
 
     // Sequentially invoke single-path routine for each input path and compile results
     // into one big list that is returned to the caller.
-    return for_each_sequential<false>(
+    return for_each_sequential(
         sourceUrls,
         DeferredObjectExecutor(this),
         [this](const QUrl& url) {

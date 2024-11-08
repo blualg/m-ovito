@@ -40,7 +40,7 @@ OORef<FileExportJob> FHIAimsExporter::createExportJob(const QString& filePath, i
     public:
 
         /// Writes the exportable data of a single trajectory frame to the output file.
-        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath) override {
+        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath, TaskProgress& progress) override {
             // The exportable frame data.
             const PipelineFlowState state = any_cast<PipelineFlowState>(std::move(frameData));
 
@@ -68,7 +68,6 @@ OORef<FileExportJob> FHIAimsExporter::createExportJob(const QString& filePath, i
             }
 
             // Output atoms.
-            this_task::setProgressMaximum(posProperty.size());
             for(size_t i = 0; i < posProperty.size(); i++) {
                 const Point3& p = posProperty[i];
                 const ElementType* type = particleTypeArray ? particleTypeProperty->elementType(particleTypeArray[i]) : nullptr;
@@ -85,8 +84,8 @@ OORef<FileExportJob> FHIAimsExporter::createExportJob(const QString& filePath, i
                     textStream() << " 1\n";
                 }
 
-                // Update progress bar and check for user cancellation.
-                this_task::setProgressValueIntermittent(i);
+                // Check for user cancellation.
+                this_task::throwIfCanceled();
             }
         }
     };

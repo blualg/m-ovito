@@ -275,7 +275,7 @@ void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
 /******************************************************************************
 * Generates ad-hoc bonds between atoms based on their van der Waals radii.
 ******************************************************************************/
-void ParticleImporter::FrameLoader::generateBonds()
+void ParticleImporter::FrameLoader::generateBonds(TaskProgress& progress)
 {
     this_task::throwIfCanceled();
     if(!_particles)
@@ -315,7 +315,7 @@ void ParticleImporter::FrameLoader::generateBonds()
     if(maxCutoff == 0.0)
         return;
     FloatType minCutoffSquared = 1e-10 * maxCutoff * maxCutoff;
-    this_task::setProgressText(tr("Generating bonds"));
+    progress.setProgressText(tr("Generating bonds"));
 
     // Prepare the neighbor list.
     CutoffNeighborFinder neighborFinder;
@@ -325,7 +325,7 @@ void ParticleImporter::FrameLoader::generateBonds()
 
     // Multi-threaded loop over all particles, each thread producing a partial bonds list.
     size_t particleCount = positionProperty->size();
-    auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, 4096, [&](size_t particleIndex, std::vector<Bond>& bondList) {
+    auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, 4096, progress, [&](size_t particleIndex, std::vector<Bond>& bondList) {
         // Kernel called for each particle: Iterate over the particle's neighbors within the cutoff range.
         for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
             int type1 = particleTypesArray[particleIndex];

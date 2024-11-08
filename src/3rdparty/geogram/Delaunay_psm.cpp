@@ -8564,8 +8564,8 @@ namespace GEO {
 
     void GEOGRAM_API compute_BRIO_order(
         index_t nb_vertices, const double* vertices,
+        std::function<void(GEO::index_t, GEO::index_t)>& progress_callback,
         vector<index_t>& sorted_indices,
-        void (*progressCallback)(index_t,index_t),
         index_t dimension,
         index_t stride = 3,
         index_t threshold = 64,
@@ -9152,7 +9152,7 @@ namespace {
 
     void compute_BRIO_order_recursive(
         index_t nb_vertices, const double* vertices,
-        void (*progressCallback)(index_t,index_t),
+        std::function<void(GEO::index_t, GEO::index_t)>& progress_callback,
         index_t dimension, index_t stride,
         vector<index_t>& sorted_indices,
         vector<index_t>::iterator b,
@@ -9170,8 +9170,8 @@ namespace {
             m = b + int(double(e - b) * ratio);
             compute_BRIO_order_recursive(
                 nb_vertices, vertices,
-                progressCallback,
-        dimension, stride,
+                progress_callback,
+                dimension, stride,
                 sorted_indices, b, m,
                 threshold, ratio, depth,
                 levels
@@ -9194,8 +9194,8 @@ namespace {
         if(levels != nullptr) {
             levels->push_back(index_t(e - sorted_indices.begin()));
         }
-        if(progressCallback)
-            progressCallback(0,0);
+        if(progress_callback)
+            progress_callback(0,0);
     }
 }
 
@@ -9297,9 +9297,9 @@ namespace GEO {
 
     void compute_BRIO_order(
         index_t nb_vertices, const double* vertices,
+        std::function<void(GEO::index_t, GEO::index_t)>& progress_callback,
         vector<index_t>& sorted_indices,
-        void (*progressCallback)(index_t,index_t),
-    index_t dimension,
+        index_t dimension,
         index_t stride,
         index_t threshold,
         double ratio,
@@ -9324,7 +9324,7 @@ namespace GEO {
 
         compute_BRIO_order_recursive(
             nb_vertices, vertices,
-            progressCallback,
+            progress_callback,
             dimension, stride,
             sorted_indices,
             sorted_indices.begin(), sorted_indices.end(),
@@ -21585,7 +21585,7 @@ namespace GEO {
         Delaunay3d(coord_index_t dimension = 3);
 
         virtual void set_vertices(
-            index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
+            index_t nb_vertices, const double* vertices
         );
 
         virtual index_t nearest_vertex(const double* p) const;
@@ -22195,7 +22195,7 @@ namespace GEO {
         ParallelDelaunay3d(coord_index_t dimension = 3);
 
         virtual void set_vertices(
-            index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
+            index_t nb_vertices, const double* vertices
         );
 
         virtual index_t nearest_vertex(const double* p) const;
@@ -22386,7 +22386,7 @@ namespace GEO {
     }
 
     void Delaunay::set_vertices(
-        index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
+        index_t nb_vertices, const double* vertices
     ) {
         nb_vertices_ = nb_vertices;
         vertices_ = vertices;
@@ -22742,7 +22742,7 @@ namespace GEO {
     }
 
     void Delaunay2d::set_vertices(
-        index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
+        index_t nb_vertices, const double* vertices
     ) {
         Stopwatch* W = nullptr;
         if(benchmark_mode_) {
@@ -22766,7 +22766,7 @@ namespace GEO {
             }
         }
 
-        Delaunay::set_vertices(nb_vertices, vertices, progressCallback);
+        Delaunay::set_vertices(nb_vertices, vertices);
 
         index_t expected_triangles = nb_vertices * 2;
 
@@ -22783,7 +22783,7 @@ namespace GEO {
         // faster.
         if(do_reorder_) {
             compute_BRIO_order(
-                nb_vertices, vertex_ptr(0), reorder_, progressCallback, 2, dimension_
+                nb_vertices, vertex_ptr(0), progress_callback_, reorder_, 2, dimension_
             );
     } else {
             reorder_.resize(nb_vertices);
@@ -23802,7 +23802,7 @@ namespace GEO {
     }
 
     void Delaunay3d::set_vertices(
-        index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
+        index_t nb_vertices, const double* vertices
     ) {
         Stopwatch* W = nullptr;
         if(benchmark_mode_) {
@@ -23827,7 +23827,7 @@ namespace GEO {
             }
         }
 
-        Delaunay::set_vertices(nb_vertices, vertices, progressCallback);
+        Delaunay::set_vertices(nb_vertices, vertices);
 
         index_t expected_tetra = nb_vertices * 7;
 
@@ -23844,7 +23844,7 @@ namespace GEO {
         // faster.
         if(do_reorder_) {
             compute_BRIO_order(
-                nb_vertices, vertex_ptr(0), reorder_, progressCallback, 3, dimension_
+                nb_vertices, vertex_ptr(0), progress_callback_, reorder_, 3, dimension_
             );
         } else {
             reorder_.resize(nb_vertices);
@@ -23852,8 +23852,8 @@ namespace GEO {
                 reorder_[i] = i;
             }
         }
-        if(progressCallback)
-            progressCallback(0,0);
+        if(progress_callback_)
+            progress_callback_(0,0);
 
         double sorting_time = 0;
         if(benchmark_mode_) {
@@ -23874,8 +23874,8 @@ namespace GEO {
         index_t hint = NO_TETRAHEDRON;
         // Insert all the vertices incrementally.
         for(index_t i = 0; i < nb_vertices; ++i) {
-            if(progressCallback)
-                progressCallback(i,nb_vertices);
+            if(progress_callback_)
+                progress_callback_(i,nb_vertices);
             index_t v = reorder_[i];
             // Do not re-insert the first four vertices.
             if(v != v0 && v != v1 && v != v2 && v != v3) {
@@ -26865,7 +26865,7 @@ namespace GEO {
     }
 
     void ParallelDelaunay3d::set_vertices(
-        index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
+        index_t nb_vertices, const double* vertices
     ) {
         Stopwatch* W = nullptr ;
         if(benchmark_mode_) {
@@ -26889,7 +26889,7 @@ namespace GEO {
                     geo_sqr(vertices[4 * i + 2]);
             }
         }
-        Delaunay::set_vertices(nb_vertices, vertices, progressCallback);
+        Delaunay::set_vertices(nb_vertices, vertices);
 
         index_t expected_tetra = nb_vertices * 7;
 
@@ -26902,7 +26902,7 @@ namespace GEO {
         // Reorder the points
         if(do_reorder_) {
             compute_BRIO_order(
-                nb_vertices, vertex_ptr(0), reorder_, progressCallback,
+                nb_vertices, vertex_ptr(0), progress_callback_, reorder_,
         3, dimension(),
                 64, 0.125,
                 &levels_
@@ -30706,7 +30706,7 @@ namespace GEO {
 
 
     void PeriodicDelaunay3d::set_vertices(
-        index_t nb_vertices, const double* vertices, void (*progressCallback)(index_t,index_t)
+        index_t nb_vertices, const double* vertices
     ) {
     has_empty_cells_ = false;
 
@@ -30737,11 +30737,11 @@ namespace GEO {
         }
         nb_vertices_non_periodic_ = nb_vertices;
 
-        Delaunay::set_vertices(nb_vertices, vertices, progressCallback);
+        Delaunay::set_vertices(nb_vertices, vertices);
         // Reorder the points
         if(do_reorder_) {
             compute_BRIO_order(
-                nb_vertices, vertex_ptr(0), reorder_, progressCallback,
+                nb_vertices, vertex_ptr(0), progress_callback_, reorder_,
         3, dimension(),
                 64, 0.125,
                 &levels_

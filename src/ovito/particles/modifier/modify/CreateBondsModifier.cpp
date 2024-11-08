@@ -302,7 +302,8 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
             autoDisableBondDisplay = autoDisableBondDisplay(),
             createdByNode = request.modificationNodeWeak()]() mutable
     {
-        this_task::setProgressText(tr("Generating bonds"));
+        TaskProgress progress(this_task::ui());
+        progress.setProgressText(tr("Generating bonds"));
 
         OVITO_ASSERT(state.data()->dataReferenceCount() == 1);
         OVITO_ASSERT(state.data()->isSafeToModify());
@@ -323,7 +324,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
         // Generate bonds.
         size_t particleCount = particles->elementCount();
         // Multi-threaded loop over all particles, each thread producing a partial bonds list.
-        auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, 4096, [&](size_t particleIndex, std::vector<Bond>& bondList) {
+        auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, 4096, progress, [&](size_t particleIndex, std::vector<Bond>& bondList) {
 
             // Get the type of the central particles.
             int type1;

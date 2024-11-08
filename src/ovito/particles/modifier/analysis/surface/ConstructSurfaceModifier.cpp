@@ -211,7 +211,9 @@ Future<PipelineFlowState> ConstructSurfaceModifier::evaluateModifier(const Modif
 ******************************************************************************/
 void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 {
-    this_task::setProgressText(tr("Constructing surface mesh"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Constructing surface mesh"));
+
     OVITO_ASSERT(mesh()->domain());
 
     if(probeSphereRadius() <= 0)
@@ -234,7 +236,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
     // Algorithm is divided into several sub-steps.
     // Assign weights to sub-steps according to estimated runtime.
-    this_task::beginProgressSubStepsWithWeights({ 10, 30, 2, 2, 2, surfaceDistances() ? 1000 : 1 });
+    progress.beginProgressSubStepsWithWeights({ 10, 30, 2, 2, 2, surfaceDistances() ? 1000 : 1 });
 
     // Generate Delaunay tessellation.
     DelaunayTessellation tessellation;
@@ -251,10 +253,11 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             positions()->size(),
             ghostLayerSize,
             coverDomainWithFiniteTets,
-            selection() ? BufferReadAccess<SelectionIntType>(selection()).cbegin() : nullptr);
+            selection() ? BufferReadAccess<SelectionIntType>(selection()).cbegin() : nullptr,
+            progress);
     OVITO_ASSERT(tessellation.simCell());
 
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     SurfaceMeshBuilder meshBuilder(this->mesh());
 
@@ -323,24 +326,23 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         meshBuilder.mutableRegions()->setElementCount(1);
 
         // Just construct a one-sided surface mesh without caring about spatial regions.
-        ManifoldConstructionHelper manifoldConstructor(tessellation, meshBuilder, alpha, false, positions());
+        ManifoldConstructionHelper manifoldConstructor(tessellation, meshBuilder, alpha, false, positions(), progress);
         manifoldConstructor.construct(tetrahedronRegion, std::move(prepareMeshFace), std::move(prepareMeshVertex));
     }
     else {
         if(!particleRegionIds())
-            this_task::beginProgressSubStepsWithWeights({ 2, 1 });
+            progress.beginProgressSubStepsWithWeights({ 2, 1 });
         else
-            this_task::beginProgressSubStepsWithWeights({ 2, 1, 1 });
+            progress.beginProgressSubStepsWithWeights({ 2, 1, 1 });
 
         // Construct a two-sided surface mesh with mesh faces associated with spatial regions (filled or solid).
-        ManifoldConstructionHelper manifoldConstructor(tessellation, meshBuilder, alpha, true, positions());
+        ManifoldConstructionHelper manifoldConstructor(tessellation, meshBuilder, alpha, true, positions(), progress);
         manifoldConstructor.construct(tetrahedronRegion, std::move(prepareMeshFace), std::move(prepareMeshVertex));
 
-        this_task::nextProgressSubStep();
+        progress.nextProgressSubStep();
 
         // After construct() has identified the filled regions, identify the empty regions.
         manifoldConstructor.formEmptyRegions();
-        this_task::throwIfCanceled();
 
         // Reference to filledRegionCount for convenience.
         SurfaceMesh::size_type& filledRegionCount = _aggregateVolumes.filledRegionCount;
@@ -351,8 +353,8 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 
         // Transfer the region ID information to the output particles.
         if(_mapParticlesToRegions) {
-            this_task::nextProgressSubStep();
-            this_task::setProgressMaximum(positions()->size());
+            progress.nextProgressSubStep();
+            progress.setProgressMaximum(positions()->size());
             size_t numVisitedParticles = 0;
 
             // Initially, mark all particles as not assigned to any region (special region ID -1).
@@ -381,7 +383,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
                         if(particleIndex != std::numeric_limits<size_t>::max()) {
                             // Keep track of the number of particles visited so far.
                             if(regionIds[particleIndex] == -1)
-                                this_task::setProgressValueIntermittent(++numVisitedParticles);
+                                progress.setProgressValueIntermittent(++numVisitedParticles);
 
                             // Give precedence to filled regions. Particles on the boundary are always assigned to the filled region, not the empty region.
                             if(regionId < filledRegionCount || regionIds[particleIndex] == -1)
@@ -401,7 +403,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             for(const Point3& pos : BufferReadAccess<Point3>(positions())) {
                 auto& particleRegionId = regionIds[particleIndex];
                 if(particleRegionId == -1) {
-                    this_task::setProgressValueIntermittent(++numVisitedParticles);
+                    progress.setProgressValueIntermittent(++numVisitedParticles);
 
                     DelaunayTessellation::CellHandle cell = tessellation.locate(tessellation.simCell()->wrapPoint(pos), queryHint);
                     OVITO_ASSERT(cell >= 0 && cell < tessellation.numberOfTetrahedra());
@@ -430,8 +432,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         std::fill(filledProperty.begin(), filledProperty.begin() + filledRegionCount, 1);
         std::fill(filledProperty.begin() + filledRegionCount, filledProperty.end(), 0);
 
-        this_task::endProgressSubSteps();
-        this_task::throwIfCanceled();
+        progress.endProgressSubSteps();
     }
 
     // Create mesh vertex properties.
@@ -458,16 +459,14 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         this_task::throwIfCanceled();
     }
 
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     // Make sure every mesh vertex is only part of one surface manifold.
     meshBuilder.makeManifold();
-    this_task::throwIfCanceled();
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
-    meshBuilder.smoothMesh(_smoothingLevel);
-    this_task::throwIfCanceled();
-    this_task::nextProgressSubStep();
+    meshBuilder.smoothMesh(_smoothingLevel, progress);
+    progress.nextProgressSubStep();
 
     if(identifyRegions()) {
         meshBuilder.nonPBCexternalVolume();
@@ -477,13 +476,11 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     else {
         _totalSurfaceArea = meshBuilder.computeTotalSurfaceArea();
     }
-    this_task::throwIfCanceled();
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     // Compute the distance of each input particle from the constructed surface.
-    computeSurfaceDistances(meshBuilder);
-    this_task::throwIfCanceled();
-    this_task::endProgressSubSteps();
+    computeSurfaceDistances(meshBuilder, progress);
+    progress.endProgressSubSteps();
 }
 
 /******************************************************************************
@@ -491,7 +488,9 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
 ******************************************************************************/
 void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 {
-    this_task::setProgressText(tr("Constructing surface mesh"));
+    TaskProgress progress(this_task::ui());
+    progress.setProgressText(tr("Constructing surface mesh"));
+
     OVITO_ASSERT(mesh()->domain());
 
     // Check input data.
@@ -522,7 +521,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 
     // Algorithm is divided into several sub-steps.
     // Assign weights to sub-steps according to estimated runtime.
-    this_task::beginProgressSubStepsWithWeights({ 1, 30, 1600, 1500, 30, 500, 100, 300, surfaceDistances() ? 10000 : 1 });
+    progress.beginProgressSubStepsWithWeights({ 1, 30, 1600, 1500, 30, 500, 100, 300, surfaceDistances() ? 10000 : 1 });
 
     // Access the atomic radii.
     BufferReadAccess<GraphicsFloatType> particleRadii(_particleRadii);
@@ -566,8 +565,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     gridDims[1] = std::max((size_t)2, (size_t)(gridBoundaries.column(1).length() / voxelSize));
     gridDims[2] = std::max((size_t)2, (size_t)(gridBoundaries.column(2).length() / voxelSize));
 
-    this_task::throwIfCanceled();
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     // Allocate storage for the density grid values.
     std::vector<FloatType> densityData(gridDims[0] * gridDims[1] * gridDims[2], FloatType(0));
@@ -575,7 +573,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     // Set up a particle neighbor finder to speed up density field computation.
     CutoffNeighborFinder neighFinder;
     neighFinder.prepare(cutoffSize, positions(), mesh()->domain(), selection());
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     // Set up a matrix that converts grid coordinates to spatial coordinates.
     AffineTransformation gridToCartesian = gridBoundaries;
@@ -584,7 +582,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     gridToCartesian.column(2) /= gridDims[2] - (mesh()->domain()->hasPbc(2)?0:1);
 
     // Compute the accumulated density at each grid point.
-    parallelFor(densityData.size(), 4096, [&](size_t voxelIndex) {
+    parallelFor(densityData.size(), 4096, progress, [&](size_t voxelIndex) {
 
         // Determine the center coordinates of the current grid cell.
         size_t ix = voxelIndex % gridDims[0];
@@ -599,7 +597,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
             density += std::exp(-neighQuery.distanceSquared() / (FloatType(2) * alpha * alpha));
         }
     });
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     // Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
     auto getFieldValue = [
@@ -651,10 +649,9 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
 
     {  // limit lifetime of mc to free up resources
         MarchingCubes mc(meshBuilder, gridDims[0], gridDims[1], gridDims[2], false, std::move(getFieldValue));
-        mc.generateIsosurface(_isoLevel);
+        mc.generateIsosurface(_isoLevel, progress);
     }
-    this_task::throwIfCanceled();
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     // Transform mesh vertices from orthogonal grid space to world space.
     meshBuilder.transformVertices(gridToCartesian);
@@ -668,8 +665,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     }
     regionVolumes.reset();
 
-    this_task::throwIfCanceled();
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     // Create mesh vertex properties for transferring particle property values to the surface.
     std::vector<std::pair<BufferReadAccess<float*>, BufferWriteAccess<float*, access_mode::read_write>>> propertyMapping32;
@@ -706,7 +702,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     if(!propertyMapping32.empty() || !propertyMapping64.empty()) {
         // Compute the accumulated density at each grid point.
         BufferReadAccess<Point3> vertexPositions = meshBuilder.expectVertexProperty(SurfaceMeshVertices::PositionProperty);
-        parallelFor(meshBuilder.vertexCount(), 4096, [&](size_t vertexIndex) {
+        parallelFor(meshBuilder.vertexCount(), 4096, progress, [&](size_t vertexIndex) {
             // Visit all particles in the vicinity of the vertex.
             FloatType weightSum = 0;
             for(CutoffNeighborFinder::Query neighQuery(neighFinder, vertexPositions[vertexIndex]); !neighQuery.atEnd(); neighQuery.next()) {
@@ -748,14 +744,12 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     // Restore original mesh domain.
     meshBuilder.setDomain(std::move(originalDomain));
 
-    this_task::throwIfCanceled();
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     if(!meshBuilder.connectOppositeHalfedges())
         throw Exception(tr("Something went wrong. Isosurface mesh is not closed."));
 
-    this_task::throwIfCanceled();
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     if(_identifyRegions) {
         meshBuilder.nonPBCexternalVolume();
@@ -766,24 +760,22 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
         _totalSurfaceArea = meshBuilder.computeTotalSurfaceArea();
     }
 
-    this_task::throwIfCanceled();
-    this_task::nextProgressSubStep();
+    progress.nextProgressSubStep();
 
     // Compute the distance of each input particle from the constructed surface.
-    computeSurfaceDistances(meshBuilder);
+    computeSurfaceDistances(meshBuilder, progress);
 
-    this_task::throwIfCanceled();
-    this_task::endProgressSubSteps();
+    progress.endProgressSubSteps();
 }
 
 /******************************************************************************
 * Compute the distance of each input particle from the constructed surface.
 ******************************************************************************/
-void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceDistances(const SurfaceMeshBuilder& mesh)
+void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceDistances(const SurfaceMeshBuilder& mesh, TaskProgress& progress)
 {
     if(!surfaceDistances())
         return;
-    this_task::setProgressText(tr("Computing surface distances"));
+    progress.setProgressText(tr("Computing surface distances"));
 
     // Access output array.
     BufferWriteAccess<FloatType, access_mode::discard_write> distanceArray(surfaceDistances());
@@ -791,7 +783,7 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::computeSurfaceDistanc
     BufferReadAccess<Point3> positionArray(positions());
 
     // Perform computation for each particle.
-    parallelFor(positions()->size(), 256, [&](size_t index) {
+    parallelFor(positions()->size(), 256, progress, [&](size_t index) {
         auto result = mesh.locatePoint(positionArray[index], 0.0);
         distanceArray[index] = result ? result->second : 0.0;
     });

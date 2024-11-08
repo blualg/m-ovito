@@ -35,9 +35,9 @@ static const int edgeVertices[6][2] = {{0,1},{0,2},{0,3},{1,2},{1,3},{2,3}};
 /******************************************************************************
 * Builds the list of edges in the tetrahedral tessellation.
 ******************************************************************************/
-void ElasticMapping::generateTessellationEdges()
+void ElasticMapping::generateTessellationEdges(TaskProgress& progress)
 {
-    this_task::setProgressMaximum(tessellation().numberOfPrimaryTetrahedra());
+    progress.setProgressMaximum(tessellation().numberOfPrimaryTetrahedra());
 
     // Generate list of tessellation edges.
     for(DelaunayTessellation::CellHandle cell : tessellation().cells()) {
@@ -47,7 +47,7 @@ void ElasticMapping::generateTessellationEdges()
             continue;
 
         // Update progress indicator.
-        this_task::setProgressValueIntermittent(tessellation().getCellIndex(cell));
+        progress.setProgressValueIntermittent(tessellation().getCellIndex(cell));
 
         // Create edge data structure for each of the six edges of the cell.
         for(int edgeIndex = 0; edgeIndex < 6; edgeIndex++) {
@@ -76,10 +76,10 @@ void ElasticMapping::generateTessellationEdges()
 /******************************************************************************
 * Assigns each tessellation vertex to a cluster.
 ******************************************************************************/
-void ElasticMapping::assignVerticesToClusters()
+void ElasticMapping::assignVerticesToClusters(TaskProgress& progress)
 {
     // Unknown task length.
-    this_task::setProgressMaximum(0);
+    progress.setProgressMaximum(0);
 
     // Assign a cluster to each vertex of the tessellation, which will be used to express
     // reference vectors assigned to the edges leaving the vertex.
@@ -124,16 +124,16 @@ void ElasticMapping::assignVerticesToClusters()
 /******************************************************************************
 * Determines the ideal vector corresponding to each edge of the tessellation.
 ******************************************************************************/
-void ElasticMapping::assignIdealVectorsToEdges(int crystalPathSteps)
+void ElasticMapping::assignIdealVectorsToEdges(int crystalPathSteps, TaskProgress& progress)
 {
     CrystalPathFinder pathFinder(_structureAnalysis, crystalPathSteps);
 
     // Try to assign a reference vector to the tessellation edges.
-    this_task::setProgressMaximum(_vertexEdges.size());
+    progress.setProgressMaximum(_vertexEdges.size());
     size_t progressCounter = 0;
     for(const auto& firstEdge : _vertexEdges) {
 
-        this_task::setProgressValueIntermittent(progressCounter++);
+        progress.setProgressValueIntermittent(progressCounter++);
 
         for(TessellationEdge* edge = firstEdge.first; edge != nullptr; edge = edge->nextLeavingEdge) {
             // Check if the reference vector of this edge has already been determined.
