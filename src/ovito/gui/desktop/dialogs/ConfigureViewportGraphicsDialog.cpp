@@ -103,6 +103,7 @@ ConfigureViewportGraphicsDialog::ConfigureViewportGraphicsDialog(MainWindow& mai
 
     updateGUI();
 
+    connect(mainWindow.viewportsPanel(), &ViewportsPanel::interactiveWindowImplementationChanged, this, &ConfigureViewportGraphicsDialog::updateGUI);
     connect(_backendSelectionGroup, &QButtonGroup::buttonToggled, this, &ConfigureViewportGraphicsDialog::backendSelectionChanged);
     connect(&mainWindow, &MainWindow::closingWindow, this, &QWidget::close);
 }

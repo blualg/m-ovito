@@ -3,48 +3,48 @@
 Viewport graphics configuration
 ===============================
 
+.. image:: /images/graphics_config_dialog/graphics_config_dialog.*
+  :width: 35%
+  :align: right
+
 .. versionadded:: 3.11.1
 
-This page is a stub
+.. rubric:: How to open the configuration dialog:
 
+Select the :menuselection:`Configure Graphics..` command from the :ref:`viewport context menu <usage.viewports.menu>`.
 
-..
-  Graphics hardware interface
-    Selects the application programming interface used by OVITO for rendering the contents of the interactive
-    viewports. Currently, OVITO supports the graphics interfaces `OpenGL <https://www.opengl.org/>`__ and `Vulkan <https://www.vulkan.org/>`__ (latter only available on certain platforms).
-    The OpenGL-based viewport renderer is more mature and should work well on most systems.
-    Vulkan is a more modern programming interface, but some graphics drivers still exhibit compatibility problems.
-    Please inform the OVITO developers about any problems you encounter on your system.
+.. image:: /images/graphics_config_dialog/viewport_menu_graphics_config.*
+  :width: 25%
 
-    The Vulkan interface provides the advantage of letting you explicitly select the graphics
-    device OVITO should use if the system contains more than one GPU or integrated graphics unit. In contrast,
-    you have to make the device selection on the `operating system or graphics driver level <https://answers.microsoft.com/en-us/windows/forum/windows_10-hardware/select-gpu-to-use-by-specific-applications/eb671f52-5c24-428d-a7a0-02a36e91ee2f>`__
-    when using the OpenGL interface.
+Changes you make in this dialog will immediately take effect in *all* viewport windows of the application.
 
-    .. note::
+Real-time rendering method
+--------------------------
 
-      The Vulkan renderer option is *not* available on the macOS platform or in OVITO for Anaconda builds.
+This option selects the graphics backend for rendering the interactive 3d viewports.
+OVITO currently provides two options: the default :ref:`OpenGL renderer <rendering.opengl_renderer>`
+and the :ref:`VisRTX renderer <rendering.visrtx_renderer>`, which requires NVIDIA hardware with ray-tracing capability.
 
-    .. note::
+.. note::
 
-      The Vulkan renderer has been temporarily removed from OVITO in release 3.9.0, because major changes were made to the
-      internal scene rendering system. We intend to add Vulkan support back in once the Vulkan renderer code has been ported to the
-      new programming interfaces and all issues have been resolved. Please contact support@ovito.org if you have any questions.
+  The :ref:`VisRTX renderer <rendering.visrtx_renderer>` is included in :ref:`OVITO Pro <credits.ovito_pro>` for Windows and Linux.
+  OVITO Basic only provides a demo version.
 
-    Select :menuselection:`System Information` from the :menuselection:`Help` menu of OVITO to access further information
-    about the graphics hardware found in your system. Please attach this information in case you
-    report any graphics compatibility problems to the OVITO developers.
+Settings management
+-------------------
 
+OVITO manages two sets of render settings: one for the interactive viewports
+and one for :ref:`final-frame rendering <usage.rendering>` of high-quality output images and movies.
+The settings in this dialog apply to the interactive viewports only (real-time rendering). You can
+use the :guilabel:`Copy settings...` function to copy the current settings to the final-frame render settings
+and vice versa.
 
-..
-    Transparency rendering method
-    This option affects the rendering of semi-transparent objects when they occlude other objects
-    or overlap with each other. Both available rendering methods represent different approximations of how a true rendition of
-    semi-transparent objects would look like - which is not achievable in real-time visualization using OpenGL.
+Real-time render settings are shared between all viewport windows and get stored in the application's :ref:`configuration
+file <application_settings>`. :ref:`Final-frame render settings <core.render_settings>` get stored in
+:ref:`session state files <usage.saving_loading_scene>`.
 
-    Back-to-front ordered rendering (default) gives correct results if there is only one kind of semi-transparent object in the scene,
-    e.g. just particles, but likely fails to render a mixture of different semi-transparent objects correctly, e.g. semi-transparent particles combined with
-    semi-transparent surface meshes.
+For further information on the parameters of the available real-time viewport renderers,
+please see the respective documentation pages:
 
-    `Weighted Blended Order-Independent Transparency <https://jcgt.org/published/0002/02/09/>`__ is an alternative method more suitable
-    for overlapping semi-transparent objects of different kinds. But it delivers only a rough approximation of translucency.
+- :ref:`rendering.opengl_renderer`
+- :ref:`rendering.visrtx_renderer`

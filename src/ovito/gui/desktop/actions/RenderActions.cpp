@@ -71,7 +71,11 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 ******************************************************************************/
 void WidgetActionManager::on_ConfigureViewportGraphics_triggered()
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
     if(ConfigureViewportGraphicsDialog* dialog = mainWindow().findChild<ConfigureViewportGraphicsDialog*>(Qt::FindDirectChildrenOnly)) {
+#else
+    if(ConfigureViewportGraphicsDialog* dialog = mainWindow().findChild<ConfigureViewportGraphicsDialog*>(QString(), Qt::FindDirectChildrenOnly)) {
+#endif
         dialog->raise();
         dialog->activateWindow();
     }

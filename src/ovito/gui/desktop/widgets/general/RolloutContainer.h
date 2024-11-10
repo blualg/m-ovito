@@ -230,15 +230,14 @@ public:
     /// Adds a new rollout to the container.
     Rollout* addRollout(QWidget* content, const QString& title, const RolloutInsertionParameters& param = RolloutInsertionParameters(), const QString& helpPageUrl = {});
 
-    virtual QSize minimumSizeHint() const override {
-        return QSize(QFrame::minimumSizeHint().width(), 10);
-    }
-
     /// Returns the Rollout that hosts the given widget.
     Rollout* findRolloutFromWidget(QWidget* content) const;
 
     /// The main window that provides the context for this UI element.
     MainWindow& mainWindow() const { return _mainWindow; }
+
+    virtual QSize minimumSizeHint() const override;
+    virtual QSize sizeHint() const override;
 
 protected:
 

@@ -68,6 +68,11 @@ public Q_SLOTS:
     /// Destroys all viewport windows in the panel and recreates them.
     void recreateViewportWindows();
 
+Q_SIGNALS:
+
+    /// This signal is emitted when a different rendering backend for the interactive viewports has been activated.
+    void interactiveWindowImplementationChanged();
+
 protected:
 
     /// Renders the borders around the viewports.

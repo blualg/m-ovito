@@ -58,8 +58,8 @@ QWidget* BaseSceneRendererEditor::createCopySettingsBetweenRenderersWidget(QWidg
     label->setTextFormat(Qt::RichText);
     label->setTextInteractionFlags(Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
     label->setContextMenuPolicy(Qt::ActionsContextMenu);
-    QAction* i2fAction = label->addAction(tr("Interactive view → final image"));
-    QAction* f2iAction = label->addAction(tr("Final image → interactive view"));
+    QAction* i2fAction = label->addAction(tr("Interactive view → Final image"));
+    QAction* f2iAction = label->addAction(tr("Final image → Interactive view"));
     connect(label, &QLabel::linkActivated, label, [this, label, f2iAction]() {
 
         // Enable the action that copies settings from the final image to the interactive viewports
@@ -87,7 +87,7 @@ QWidget* BaseSceneRendererEditor::createCopySettingsBetweenRenderersWidget(QWidg
 void BaseSceneRendererEditor::copySettingsInteractiveToFinalFrame()
 {
     mainWindow().performTransaction(tr("Copy render settings"), [this]() {
-        if(RenderSettings* renderSettings = mainWindow().datasetContainer().currentSet()->renderSettings()) {
+        if(OORef<RenderSettings> renderSettings = mainWindow().datasetContainer().currentSet()->renderSettings()) {
             OORef<SceneRenderer> interactiveRenderer = dynamic_object_cast<SceneRenderer>(editObject());
             OORef<SceneRenderer> finalFrameRenderer = renderSettings->renderer();
             if(interactiveRenderer) {

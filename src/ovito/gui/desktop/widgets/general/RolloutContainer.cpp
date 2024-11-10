@@ -116,6 +116,22 @@ Rollout* RolloutContainer::findRolloutFromWidget(QWidget* content) const
     return nullptr;
 }
 
+QSize RolloutContainer::minimumSizeHint() const
+{
+    return QSize(QFrame::minimumSizeHint().width(), 10);
+}
+
+QSize RolloutContainer::sizeHint() const
+{
+    if(widget()) {
+        int f = 2 * frameWidth();
+        QSize sz(f, f);
+        sz += widget()->sizeHint();
+        return sz;
+    }
+    return QScrollArea::sizeHint();
+}
+
 /******************************************************************************
 * Constructs a rollout widget.
 ******************************************************************************/

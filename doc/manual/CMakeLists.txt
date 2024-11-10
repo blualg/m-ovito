@@ -34,14 +34,9 @@ IF(OVITO_BUILD_APP)
 
     # Locate a Python interpreter.
     # Note: Sphinx 4.x requires at least Python 3.6.
-    IF(CMAKE_VERSION VERSION_LESS 3.12)
-        FIND_PACKAGE(PythonInterp 3.6 REQUIRED)
-        SET(Python3_EXECUTABLE "${PYTHON_EXECUTABLE}")
-    ELSE()
-        FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
-    ENDIF()
+    FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
 
-    # Tell Interpshinx where to find the scripting reference manual files when building the user manual.
+    # Tell Intershinx where to find the scripting reference manual files when building the user manual.
     # Use the existing Sphinx output tree of the scripting reference manual for resolving cross-references if it exists
     # in the python/ sub-directory (only the case when building OVITO Pro).
     # Otherwise, fall back to using the online version of the scripting reference at https://ovito.org/docs/current/python/.
@@ -56,7 +51,7 @@ IF(OVITO_BUILD_APP)
         set(BUILD_DOCUMENTATION_STRICT "")
     endif()
 
-    # Build reStructuredText documentation using Sphinx.
+    # Build documentation using Sphinx.
     ADD_CUSTOM_TARGET(documentation
         # Create the destination directory for the generated HTML files:
         COMMAND "${CMAKE_COMMAND}" -E make_directory "${OVITO_SHARE_DIRECTORY}/doc/manual/html"
@@ -67,7 +62,7 @@ IF(OVITO_BUILD_APP)
             "${OVITO_SHARE_DIRECTORY}/doc/manual/html/"   # Destination directory
             -a -E                                         # Always write all output files. Don’t use a saved environment.
             -n                                            # Run in nit-picky mode
-             "${BUILD_DOCUMENTATION_STRICT}"               # Turn warnings into errors
+            "${BUILD_DOCUMENTATION_STRICT}"               # Turn warnings into errors
             # Additional config settings passed to Sphinx, which are added to the options found in conf.py:
             -D "version=${OVITO_VERSION_STRING}"
             -D "release=${OVITO_VERSION_STRING}"
@@ -82,6 +77,25 @@ IF(OVITO_BUILD_APP)
 
         WORKING_DIRECTORY "${Ovito_SOURCE_DIR}/doc/manual/"
         COMMENT "Generating user manual")
+
+    # Build a single-page version of the doc (to be used for LLM machine learning applications).
+    ADD_CUSTOM_TARGET(documentation_llmexport
+        COMMAND "${CMAKE_COMMAND}" -E make_directory "${OVITO_SHARE_DIRECTORY}/doc/manual/llm_export"
+        COMMAND "${CMAKE_COMMAND}" -E env "OVITO_PYDOC_INTERSPHINX_LOCATION=${OVITO_PYDOC_INTERSPHINX_LOCATION}"
+            "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/sphinx-build.py"  # Run the sphinx-build.py script through the system's Python interpreter
+            "."                                           # Sphinx source directory
+            "${OVITO_SHARE_DIRECTORY}/doc/manual/llm_export/"   # Destination directory
+            -c llm_export
+            -b singlehtml                                 # Build a single-page version of the documentation
+            -a -E                                         # Always write all output files. Don’t use a saved environment.
+            -n                                            # Run in nit-picky mode
+            "${BUILD_DOCUMENTATION_STRICT}"               # Turn warnings into errors
+            # Additional config settings passed to Sphinx, which are added to the options found in conf.py:
+            -D "version=${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}"
+            -D "release=${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}"
+            -D "copyright=${OVITO_CURRENT_YEAR} OVITO GmbH, Germany"
+        WORKING_DIRECTORY "${Ovito_SOURCE_DIR}/doc/manual/"
+        COMMENT "Generating user manual (single page)")
 
     # Are we building OVITO Pro?
     IF(TARGET scripting_documentation_prerun)
