@@ -191,7 +191,7 @@ IF(OVITO_BUILD_PLUGIN_PYSCRIPT AND NOT OVITO_BUILD_BASIC)
     # Python interpreter library. They rely on it already being loaded into the
     # process memory (as is the case if the OVITO Python modules are imported by an external interpreter).
     FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter Development)
-    TARGET_LINK_LIBRARIES(Ovito PRIVATE Python3::Python)
+    TARGET_LINK_LIBRARIES(Ovito PRIVATE pybind11::headers Python3::Python)
     TARGET_COMPILE_DEFINITIONS(Ovito PRIVATE "OVITO_BUILD_PLUGIN_PYSCRIPT=1")
     TARGET_INCLUDE_DIRECTORIES(Ovito PRIVATE "${CMAKE_SOURCE_DIR}/proprietary")
 
