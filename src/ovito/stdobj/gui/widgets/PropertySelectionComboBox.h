@@ -49,6 +49,7 @@ public:
     /// Completes a list update that was started with beginListUpdate().
     void endListUpdate() {
         StableComboBox::setItems(std::move(_newItems));
+        OVITO_ASSERT(_newItems.empty());
     }
 
     /// \brief Adds a property to the end of the list.
@@ -140,7 +141,7 @@ private:
     /// Specifies the class of properties that can be selected in this combo box.
     PropertyContainerClassPtr _containerClass;
 
-    /// The new list of combobox items (only used during preparation of an update).
+    /// The new list of combo-box items (only used during preparation of an update).
     std::vector<std::unique_ptr<QStandardItem>> _newItems;
 };
 
