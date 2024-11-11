@@ -27,7 +27,7 @@
 namespace Ovito {
 
 /******************************************************************************
-* Returns the particle property that is currently selected in the combo box.
+* Returns the property that is currently selected in the combo box.
 ******************************************************************************/
 PropertyReference PropertySelectionComboBox::currentProperty() const
 {
@@ -44,7 +44,7 @@ PropertyReference PropertySelectionComboBox::currentProperty() const
 }
 
 /******************************************************************************
-* Sets the selection of the combo box to the given particle property.
+* Sets the selection of the combo box to the given property.
 ******************************************************************************/
 void PropertySelectionComboBox::setCurrentProperty(const PropertyReference& property)
 {
@@ -71,7 +71,11 @@ void PropertySelectionComboBox::focusOutEvent(QFocusEvent* event)
     if(isEditable()) {
         int index = findText(currentText());
         if(index == -1 && currentText().isEmpty() == false) {
+            OVITO_ASSERT(_newItems.empty());
             addItem(PropertyReference(currentText()));
+            OVITO_ASSERT(_newItems.size() == 1);
+            qobject_cast<QStandardItemModel*>(this->model())->appendRow(_newItems.back().release());
+            _newItems.clear();
             index = count() - 1;
         }
         setCurrentIndex(index);

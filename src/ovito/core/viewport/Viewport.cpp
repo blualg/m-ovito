@@ -487,6 +487,15 @@ void Viewport::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
+* This method is called once for this object after it has been completely deserialized from a data stream.
+******************************************************************************/
+void Viewport::loadFromStreamComplete(ObjectLoadStream& stream)
+{
+    RefTarget::loadFromStreamComplete(stream);
+    updateViewportTitle();
+}
+
+/******************************************************************************
 * This is called when the global viewport settings have changed.
 ******************************************************************************/
 void Viewport::viewportSettingsChanged(ViewportSettings* newSettings)
