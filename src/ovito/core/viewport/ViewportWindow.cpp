@@ -951,8 +951,16 @@ OvitoClassPtr ViewportWindow::getInteractiveWindowImplementationClass()
 
     // Look up the window class for the currently selected graphics backend.
     for(const auto& [apiName, apiDisplayName, windowClass, rendererClass] : listInteractiveWindowImplementations()) {
-        if(selectedGraphicsApi.compare(apiName, Qt::CaseInsensitive) == 0)
+        if(selectedGraphicsApi.compare(apiName, Qt::CaseInsensitive) == 0) {
+            if(!windowClass) {
+                qWarning() << "The selected viewport renderer is not available on this system: " << selectedGraphicsApi;
+                qWarning() << "Falling back to default OpenGL renderer.";
+                selectedGraphicsApi.clear();
+                revertToDefaultInteractiveWindowImplementation();
+                break;
+            }
             return windowClass;
+        }
     }
 
     // Warn user if they specified an unknown backend.

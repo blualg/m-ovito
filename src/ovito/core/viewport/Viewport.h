@@ -216,6 +216,9 @@ protected:
     /// Is called when a RefTarget has been removed from a VectorReferenceField.
     virtual void referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex) override;
 
+    /// This method is called once for this object after it has been completely deserialized from a data stream.
+    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
+
 protected:
 
     /// Updates the title text of the viewport based on the current view type.
@@ -238,7 +241,7 @@ private:
     /// The orientation of the camera.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(AffineTransformation{AffineTransformation::Identity()}, cameraTransformation, setCameraTransformation, PROPERTY_FIELD_NO_UNDO);
 
-    /// Selectes the upward pointing direction of the virtual camera.
+    /// Selects the upward pointing direction of the virtual camera.
     /// If nonzero, this viewport parameter overrides the global user settings.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(Vector3{Vector3::Zero()}, cameraUpDirection, setCameraUpDirection, PROPERTY_FIELD_NO_UNDO);
 

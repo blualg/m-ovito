@@ -134,11 +134,11 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
 
     // Upload and bind base vertex positions.
     QOpenGLBuffer basePositionBuffer = shader.uploadDataBuffer(primitive.basePositions(), OpenGLShaderHelper::PerInstance);
-    shader.bindBuffer(basePositionBuffer, "base", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
+    shader.bindBuffer(basePositionBuffer, "base", GL_FLOAT, 3, sizeof(Point3F), 0, OpenGLShaderHelper::PerInstance);
 
     // Upload and bind head vertex positions.
     QOpenGLBuffer headPositionBuffer = shader.uploadDataBuffer(primitive.headPositions(), OpenGLShaderHelper::PerInstance);
-    shader.bindBuffer(headPositionBuffer, "head", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
+    shader.bindBuffer(headPositionBuffer, "head", GL_FLOAT, 3, sizeof(Point3F), 0, OpenGLShaderHelper::PerInstance);
 
     // Upload and bind cylinder diameters.
     if(primitive.widths()) {

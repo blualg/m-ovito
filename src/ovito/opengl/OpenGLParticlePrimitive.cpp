@@ -209,7 +209,7 @@ void OpenGLRenderingJob::renderParticlesImplementation(const ParticlePrimitive& 
         shader.enableSubsetRendering(primitive.indices());
 
     // Check VBO size limits.
-    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / sizeof(Vector_4<float>)) {
+    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / sizeof(Vector4F)) {
         qWarning() << "WARNING: OpenGL renderer - Trying to render too many particles at once, exceeding device limits.";
         return;
     }
@@ -227,7 +227,7 @@ void OpenGLRenderingJob::renderParticlesImplementation(const ParticlePrimitive& 
 
     // Upload particle coordinates.
     QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerInstance);
-    shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
+    shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point3F), 0, OpenGLShaderHelper::PerInstance);
 
     // Upload particle radii.
     if(primitive.radii()) {
@@ -243,7 +243,7 @@ void OpenGLRenderingJob::renderParticlesImplementation(const ParticlePrimitive& 
         // Upload particle colors.
         if(primitive.colors()) {
             QOpenGLBuffer colorsBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance);
-            shader.bindBuffer(colorsBuffer, "color", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
+            shader.bindBuffer(colorsBuffer, "color", GL_FLOAT, 3, sizeof(Point3F), 0, OpenGLShaderHelper::PerInstance);
         }
         else {
             shader.unbindBuffer("color");
@@ -277,7 +277,7 @@ void OpenGLRenderingJob::renderParticlesImplementation(const ParticlePrimitive& 
         // Upload aspherical shapes.
         if(primitive.asphericalShapes()) {
             QOpenGLBuffer asphericalShapesBuffer = shader.uploadDataBuffer(primitive.asphericalShapes(), OpenGLShaderHelper::PerInstance);
-            shader.bindBuffer(asphericalShapesBuffer, "aspherical_shape", GL_FLOAT, 3, sizeof(Vector_3<float>), 0, OpenGLShaderHelper::PerInstance);
+            shader.bindBuffer(asphericalShapesBuffer, "aspherical_shape", GL_FLOAT, 3, sizeof(Vector3F), 0, OpenGLShaderHelper::PerInstance);
         }
         else {
             shader.unbindBuffer("aspherical_shape");
@@ -287,7 +287,7 @@ void OpenGLRenderingJob::renderParticlesImplementation(const ParticlePrimitive& 
         // Upload orientations.
         if(primitive.orientations()) {
             QOpenGLBuffer orientationsBuffer = shader.uploadDataBuffer(primitive.orientations(), OpenGLShaderHelper::PerInstance);
-            shader.bindBuffer(orientationsBuffer, "orientation", GL_FLOAT, 4, sizeof(QuaternionT<float>), 0, OpenGLShaderHelper::PerInstance);
+            shader.bindBuffer(orientationsBuffer, "orientation", GL_FLOAT, 4, sizeof(QuaternionF), 0, OpenGLShaderHelper::PerInstance);
         }
         else {
             shader.unbindBuffer("orientation");
@@ -300,7 +300,7 @@ void OpenGLRenderingJob::renderParticlesImplementation(const ParticlePrimitive& 
         // Upload roundness values.
         if(primitive.roundness()) {
             QOpenGLBuffer roundnessBuffer = shader.uploadDataBuffer(primitive.roundness(), OpenGLShaderHelper::PerInstance);
-            shader.bindBuffer(roundnessBuffer, "roundness", GL_FLOAT, 2, sizeof(Vector_2<float>), 0, OpenGLShaderHelper::PerInstance);
+            shader.bindBuffer(roundnessBuffer, "roundness", GL_FLOAT, 2, sizeof(Vector2F), 0, OpenGLShaderHelper::PerInstance);
         }
         else {
             shader.unbindBuffer("roundness");
@@ -345,7 +345,7 @@ void OpenGLRenderingJob::renderParticlesImplementation(const ParticlePrimitive& 
                 });
             }
             else if(primitive.positions()->dataType() == DataBuffer::Float32) {
-                std::transform(sortedIndices.begin(), sortedIndices.end(), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferReadAccess<Vector_3<float>>(primitive.positions())](size_t i) {
+                std::transform(sortedIndices.begin(), sortedIndices.end(), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferReadAccess<Vector3F>(primitive.positions())](size_t i) {
                     return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
                 });
             }

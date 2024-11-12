@@ -335,7 +335,7 @@ public:
             [](Ovito::RefMaker* obj, const Ovito::PropertyFieldDescriptor*, Ovito::LoadStream& stream) {} /* propertyStorageLoadFunc */ \
         );
 
-/// Adds a property field to a class definition which is not serializble .
+/// Adds a property field to a class definition which is not serializable .
 /// The first parameter specifies the initial value of the property field and, implicitly, also its data type.
 /// The second parameter determines the name of the property field. It must be unique within the current class.
 /// The third parameter is the name of the setter method to be created for this property field.

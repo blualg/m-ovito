@@ -28,6 +28,7 @@ in vec4 position;
 
 // Outputs:
 out vec4 color_fs;
+
 void main()
 {
 	// Compute color from primitive index.

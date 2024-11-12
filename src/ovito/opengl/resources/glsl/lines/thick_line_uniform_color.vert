@@ -28,6 +28,7 @@ uniform float line_thickness; // Half line width in viewport space.
 // Inputs:
 in vec4 position_from;
 in vec4 position_to;
+
 void main()
 {
     // The index of the quad corner.

@@ -46,7 +46,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
 
     // Render wireframe lines.
     if(primitive.emphasizeEdges() && !isPickingPass())
-        renderMeshWireframeImplementation(primitive);
+        renderMeshWireframeImplementation(primitive, false);
 
     // The mesh object to be rendered.
     const TriangleMesh& mesh = *primitive.mesh();
@@ -56,7 +56,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
         qWarning() << "WARNING: OpenGL renderer - Mesh to be rendered has too many faces, exceeding device limits.";
         return;
     }
-    if(primitive.useInstancedRendering() && primitive.perInstanceTMs()->size() > std::numeric_limits<int32_t>::max() / (3 * sizeof(Vector_4<float>))) {
+    if(primitive.useInstancedRendering() && primitive.perInstanceTMs()->size() > std::numeric_limits<int32_t>::max() / (3 * sizeof(Vector4F))) {
         qWarning() << "WARNING: OpenGL renderer - Number of mesh instances to be rendered exceeds device limits.";
         return;
     }
@@ -171,9 +171,9 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
         QOpenGLBuffer instanceTMBuffer = getMeshInstanceTMBuffer(primitive, shader);
 
         // Bind buffer with the instance matrices.
-        shader.bindBuffer(instanceTMBuffer, "instance_tm_row1", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 0 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
-        shader.bindBuffer(instanceTMBuffer, "instance_tm_row2", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 1 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
-        shader.bindBuffer(instanceTMBuffer, "instance_tm_row3", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 2 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
+        shader.bindBuffer(instanceTMBuffer, "instance_tm_row1", GL_FLOAT, 4, 3 * sizeof(Vector4F), 0 * sizeof(Vector4F), OpenGLShaderHelper::PerInstance);
+        shader.bindBuffer(instanceTMBuffer, "instance_tm_row2", GL_FLOAT, 4, 3 * sizeof(Vector4F), 1 * sizeof(Vector4F), OpenGLShaderHelper::PerInstance);
+        shader.bindBuffer(instanceTMBuffer, "instance_tm_row3", GL_FLOAT, 4, 3 * sizeof(Vector4F), 2 * sizeof(Vector4F), OpenGLShaderHelper::PerInstance);
 
         if(primitive.perInstanceColors() && !isPickingPass()) {
             // Upload the per-instance colors to GPU memory.
@@ -230,7 +230,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
             OVITO_ASSERT(!subset);
 
             // Compute each face's center point.
-            std::vector<Vector_3<float>> faceCenters(mesh.faceCount());
+            std::vector<Vector3F> faceCenters(mesh.faceCount());
             auto tc = faceCenters.begin();
             for(auto face = mesh.faces().cbegin(); face != mesh.faces().cend(); ++face, ++tc) {
                 // Compute centroid of triangle.
@@ -244,7 +244,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
 
             // Next, compute distance of each face from the camera along the viewing direction (=camera z-axis).
             std::vector<FloatType> distances(mesh.faceCount());
-            boost::transform(faceCenters, distances.begin(), [direction = direction.toDataType<float>()](const Vector_3<float>& v) {
+            boost::transform(faceCenters, distances.begin(), [direction = direction.toDataType<float>()](const Vector3F& v) {
                 return direction.dot(v);
             });
 
@@ -300,7 +300,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
             // First, compute distance of each instance from the camera along the viewing direction (=camera z-axis).
             std::vector<GraphicsFloatType> distances(sortedIndices.size());
             if(primitive.perInstanceTMs()->dataType() == DataBuffer::Float32) {
-                const Vector_3<float> directionFloat = direction.toDataType<float>();
+                const Vector3F directionFloat = direction.toDataType<float>();
                 std::transform(sortedIndices.begin(), sortedIndices.end(), distances.begin(), [directionFloat, tmArray = BufferReadAccess<AffineTransformationT<float>>(primitive.perInstanceTMs())](size_t i) {
                     return directionFloat.dot(tmArray[i].translation());
                 });
@@ -341,9 +341,9 @@ QOpenGLBuffer OpenGLRenderingJob::getMeshInstanceTMBuffer(const MeshPrimitive& p
     RendererResourceKey<struct InstanceTMCache, ConstDataBufferPtr> cacheKey(primitive.perInstanceTMs());
 
     // Upload the per-instance TMs to GPU memory.
-    return shader.createCachedBuffer(std::move(cacheKey), 3 * sizeof(Vector_4<float>), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
+    return shader.createCachedBuffer(std::move(cacheKey), 3 * sizeof(Vector4F), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
         OVITO_ASSERT(!subset);
-        Vector_4<float>* row = reinterpret_cast<Vector_4<float>*>(buffer);
+        Vector4F* row = reinterpret_cast<Vector4F*>(buffer);
         if(primitive.perInstanceTMs()->dataType() == DataBuffer::Float32) {
             for(const AffineTransformationT<float>& tm : BufferReadAccess<AffineTransformationT<float>>(primitive.perInstanceTMs())) {
                 *row++ = tm.row(0);
@@ -380,28 +380,60 @@ ConstDataBufferPtr OpenGLRenderingJob::generateMeshWireframeLines(const MeshPrim
 /******************************************************************************
 * Renders just the edges of a triangle mesh as a wireframe model.
 ******************************************************************************/
-void OpenGLRenderingJob::renderMeshWireframeImplementation(const MeshPrimitive& primitive)
+void OpenGLRenderingJob::renderMeshWireframeImplementation(const MeshPrimitive& primitive, bool renderAsTriangles)
 {
     OVITO_ASSERT(!isPickingPass());
 
     OpenGLShaderHelper shader(this);
-    if(!primitive.useInstancedRendering())
-        shader.load("mesh_wireframe", "mesh/mesh_wireframe.vert", "mesh/mesh_wireframe.frag");
-    else
-        shader.load("mesh_wireframe_instanced", "mesh/mesh_wireframe_instanced.vert", "mesh/mesh_wireframe_instanced.frag");
+    if(!renderAsTriangles) {
+        if(!primitive.useInstancedRendering())
+            shader.load("mesh_wireframe", "mesh/mesh_wireframe.vert", "mesh/mesh_wireframe.frag");
+        else
+            shader.load("mesh_wireframe_instanced", "mesh/mesh_wireframe_instanced.vert", "mesh/mesh_wireframe_instanced.frag");
+    }
+    else {
+        if(!primitive.useInstancedRendering())
+            shader.load("mesh_wireframe_tri", "mesh/mesh_wireframe_tri.vert", "mesh/mesh_wireframe_tri.frag");
+        else
+            shader.load("mesh_wireframe_tri_instanced", "mesh/mesh_wireframe_tri_instanced.vert", "mesh/mesh_wireframe_tri_instanced.frag");
+    }
 
     bool useBlending = (primitive.uniformColor().a() < 1.0) && !orderIndependentTransparency();
-    if(useBlending) shader.enableBlending();
+    if(useBlending)
+        shader.enableBlending();
 
     // Pass uniform line color to fragment shader as a uniform value.
     ColorA wireframeColor(0.1, 0.1, 0.1, primitive.uniformColor().a());
     shader.setUniformValue("color", wireframeColor);
 
-    // Get the wireframe lines geometry.
+    // Get the wireframe lines geometry data.
     ConstDataBufferPtr wireframeLinesBuffer = generateMeshWireframeLines(primitive);
+    static_assert(std::is_same_v<Point3G, Point3F>);
+
+    // When rendering the lines as pairs of triangles, we need to replicate the line data 6 times,
+    // because each line segments is rendered using 6 triangle vertices.
+    if(renderAsTriangles) {
+        int orgCount = wireframeLinesBuffer->size();
+        wireframeLinesBuffer = currentResourceFrame().lookup<ConstDataBufferPtr>(
+            RendererResourceKey<struct WireframeTriangleDataCache, ConstDataBufferPtr>{ wireframeLinesBuffer },
+            [&](ConstDataBufferPtr& replicatedBuffer) {
+                BufferFactory<Point3G> replicatedAccess(6 * wireframeLinesBuffer->size());
+                BufferReadAccess<Point3G> originalAccess(wireframeLinesBuffer);
+                auto pout = replicatedAccess.begin();
+                for(auto pin = originalAccess.cbegin(); pin != originalAccess.cend(); pin += 2) {
+                    for(int i = 0; i < 6; i++) {
+                        *pout++ = pin[0];
+                        *pout++ = pin[1];
+                    }
+                }
+                replicatedBuffer = replicatedAccess.take();
+            });
+        qDebug() << "Rendering" << orgCount/2 << "lines using VBO of" << wireframeLinesBuffer->size() << "vertices";
+    }
+
+    // Configure shader.
     shader.setVerticesPerInstance(wireframeLinesBuffer->size());
     shader.setInstanceCount(primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : 1);
-
     if(shader.verticesPerInstance() > std::numeric_limits<int32_t>::max() / shader.instanceCount() / wireframeLinesBuffer->stride()) {
         qWarning() << "WARNING: OpenGL renderer - Wireframe mesh consists of too many lines, exceeding device limits (verts per instance:" << shader.verticesPerInstance() << ", instance count:" << shader.instanceCount() << ", stride:" << wireframeLinesBuffer->stride() << ").";
         return;
@@ -409,20 +441,32 @@ void OpenGLRenderingJob::renderMeshWireframeImplementation(const MeshPrimitive& 
 
     // Bind vertex buffer for wireframe vertex positions.
     QOpenGLBuffer buffer = shader.uploadDataBuffer(wireframeLinesBuffer, OpenGLShaderHelper::PerVertex);
-    shader.bindBuffer(buffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerVertex);
+    if(!renderAsTriangles) {
+        shader.bindBuffer(buffer, "position", GL_FLOAT, 3, sizeof(Point3F), 0, OpenGLShaderHelper::PerVertex);
+    }
+    else {
+        shader.bindBuffer(buffer, "position_from", GL_FLOAT, 3, 2 * sizeof(Point3F), 0, OpenGLShaderHelper::PerVertex);
+        shader.bindBuffer(buffer, "position_to", GL_FLOAT, 3, 2 * sizeof(Point3F), sizeof(Point3F), OpenGLShaderHelper::PerVertex);
+        // Compute line width in viewport space.
+        constexpr float lineWidth = 1.0f;
+        shader.setUniformValue("line_thickness", lineWidth / framebufferSize().height());
+    }
 
     // Bind vertex buffer for instance TMs.
     if(primitive.useInstancedRendering()) {
         // Upload the per-instance TMs to GPU memory.
         QOpenGLBuffer instanceTMBuffer = getMeshInstanceTMBuffer(primitive, shader);
         // Bind buffer with the instance matrices.
-        shader.bindBuffer(instanceTMBuffer, "instance_tm_row1", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 0 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
-        shader.bindBuffer(instanceTMBuffer, "instance_tm_row2", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 1 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
-        shader.bindBuffer(instanceTMBuffer, "instance_tm_row3", GL_FLOAT, 4, 3 * sizeof(Vector_4<float>), 2 * sizeof(Vector_4<float>), OpenGLShaderHelper::PerInstance);
+        shader.bindBuffer(instanceTMBuffer, "instance_tm_row1", GL_FLOAT, 4, 3 * sizeof(Vector4F), 0 * sizeof(Vector4F), OpenGLShaderHelper::PerInstance);
+        shader.bindBuffer(instanceTMBuffer, "instance_tm_row2", GL_FLOAT, 4, 3 * sizeof(Vector4F), 1 * sizeof(Vector4F), OpenGLShaderHelper::PerInstance);
+        shader.bindBuffer(instanceTMBuffer, "instance_tm_row3", GL_FLOAT, 4, 3 * sizeof(Vector4F), 2 * sizeof(Vector4F), OpenGLShaderHelper::PerInstance);
     }
 
     // Draw lines.
-    shader.draw(GL_LINES);
+    if(!renderAsTriangles)
+        shader.draw(GL_LINES);
+    else
+        shader.draw(GL_TRIANGLES);
 }
 
 }   // End of namespace

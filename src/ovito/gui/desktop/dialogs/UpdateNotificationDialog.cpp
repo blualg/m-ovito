@@ -201,10 +201,9 @@ void UpdateNotificationService::registerActions(ActionManager& actionManager, Ma
 }
 
 /******************************************************************************
- * Extracts the two version strings from the first line of the news webpage
- * Pattern of the version strings: <!--vX+.Y+.Z+|vA+.B+.C+-->
- * where X+.Y+.Z+ are the significant version even shown when "Skip this version" is pressed
- * and A+.B+.C+ are all program versions shown to every user
+ * Extracts two version strings from the first line of the news webpage
+ * Version string pattern: <!--vX.Y.Z|vA.B.C-->
+ * See createUpdateDialog for more details
  ******************************************************************************/
 QStringList UpdateNotificationService::extractVersion(const QString& input)
 {
@@ -232,9 +231,20 @@ int str_to_int(const QString& str)
 }  // namespace
 
 /******************************************************************************
- * Creates the update popup window.
- * Checks the newly available version and compares it against the current version
- * and validates against the "Skip this version" choice by the user.
+ * Creates the update popup window based on the version string read from the server:
+ *
+ * Version string pattern: <!--vX.Y.Z|vA.B.C-->
+ *
+ * X.Y.Z represents the last major update:
+ *  - Will be stored in the application settings
+ *  - Even users who clicked "Skip this version" before will get a notification when this number increases
+ *
+ * A.B.C represents the current minor update:
+ *  - Users won't see reminders if they previously selected "Skip this version"
+ *  - All other users will get a reminder when this number is greater than their version
+ *
+ * In any case, A.B.C should indicate the current version available for download (whether major or minor).
+ * X.Y.Z should be bumped up to A.B.C during a major program release. Otherwise, X.Y.Z < A.B.C .
  ******************************************************************************/
 void UpdateNotificationService::createUpdateDialog(const QStringList& versionMatch) const
 {
@@ -251,15 +261,15 @@ void UpdateNotificationService::createUpdateDialog(const QStringList& versionMat
     const int dontRemindVersion = settings.value("news/dontRemind", 0).toInt();
 
     // Read don't remind version
-    const int dontRemindMajor = str_to_int(versionMatch[1]);
-    const int dontRemindMinor = str_to_int(versionMatch[2]);
-    const int dontRemindPatch = str_to_int(versionMatch[3]);
+    const int dontRemindMajor = str_to_int(versionMatch[1]);  // X (from version string)
+    const int dontRemindMinor = str_to_int(versionMatch[2]);  // Y (from version string)
+    const int dontRemindPatch = str_to_int(versionMatch[3]);  // Z (from version string)
     const int dontRemindVersionUpdate = QT_VERSION_CHECK(dontRemindMajor, dontRemindMinor, dontRemindPatch);
 
     // Read always update version
-    const int remindMajor = str_to_int(versionMatch[4]);
-    const int remindMinor = str_to_int(versionMatch[5]);
-    const int remindPatch = str_to_int(versionMatch[6]);
+    const int remindMajor = str_to_int(versionMatch[4]);  // A (from version string)
+    const int remindMinor = str_to_int(versionMatch[5]);  // B (from version string)
+    const int remindPatch = str_to_int(versionMatch[6]);  // C (from version string)
 
     // Compare versions. Remind if "normal" remind version > current version.
     bool show = QT_VERSION_CHECK(remindMajor, remindMinor, remindPatch) > QT_VERSION_CHECK(Application::applicationVersionMajor(),
@@ -274,6 +284,7 @@ void UpdateNotificationService::createUpdateDialog(const QStringList& versionMat
 
     // Show update information dialog (non-blocking).
     UpdateDialog* updateDialog = new UpdateDialog(remindMajor, remindMinor, remindPatch, dontRemindVersionUpdate, _mainWindow);
+    updateDialog->setAttribute(Qt::WA_DeleteOnClose);
     updateDialog->show();
 }
 

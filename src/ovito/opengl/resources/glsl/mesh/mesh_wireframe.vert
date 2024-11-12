@@ -24,6 +24,7 @@
 
 // Inputs:
 in vec4 position;
+
 void main()
 {
 	// Apply model-view-projection matrix.

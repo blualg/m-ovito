@@ -28,13 +28,15 @@ namespace Ovito {
 /******************************************************************************
 * Registers a range of unique IDs for the current object picking group being rendered.
 ******************************************************************************/
-uint32_t ObjectPickingIdentifierMap::allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, const ConstDataBufferPtr& indices)
+uint32_t ObjectPickingIdentifierMap::allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, const ConstDataBufferPtr& indices, uint32_t rendererFlags)
 {
     OVITO_ASSERT(!command.skipInPickingPass());
+    OVITO_ASSERT(objectCount != 0);
+    OVITO_ASSERT(!indices || indices->size() != 0);
 
     auto baseObjectID = _nextAvailablePickingID;
-    _pickingRecords.emplace_back(baseObjectID, indices, command);
-    _nextAvailablePickingID += objectCount;
+    _pickingRecords.emplace_back(baseObjectID, indices, command, rendererFlags);
+    _nextAvailablePickingID += !indices ? objectCount : indices->size();
     return baseObjectID;
 }
 

@@ -43,7 +43,7 @@ public:
 	}
 
 	/// Registers a range of unique IDs for the current object picking group being rendered.
-	uint32_t allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, const ConstDataBufferPtr& indices = {});
+	uint32_t allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, const ConstDataBufferPtr& indices = {}, uint32_t rendererFlags = 0);
 
 	/// Finds the picked object at the given frame buffer pixel position.
 	std::optional<ViewportWindow::PickResult> pickAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const;
@@ -60,7 +60,7 @@ public:
 	/// Returns the informational text to be displayed in the status bar for a pickable scene object.
 	QString pickableObjectInformationText(uint32_t objectID) const;
 
-private:
+protected:
 
     /// Describes a pickable rendering primitive that has been encoded as a range of object IDs in the frame buffer.
 	class PickingRecord
@@ -68,8 +68,8 @@ private:
 	public:
 
 		/// Constructor.
-		explicit PickingRecord(uint32_t baseObjectID, const ConstDataBufferPtr& indices, const FrameGraph::RenderingCommand& command) :
-			_baseObjectID(baseObjectID), _indices(indices), _pipeline(command.pipeline()), _pickInfo(command.pickInfo()), _pickElementOffset(command.pickElementOffset()) {}
+		explicit PickingRecord(uint32_t baseObjectID, const ConstDataBufferPtr& indices, const FrameGraph::RenderingCommand& command, uint32_t rendererFlags) :
+			_baseObjectID(baseObjectID), _indices(indices), _pipeline(command.pipeline()), _pickInfo(command.pickInfo()), _pickElementOffset(command.pickElementOffset()), _rendererFlags(rendererFlags) {}
 
 		/// Returns the base object ID at which the rendering primitives start.
 		uint32_t baseObjectID() const { return _baseObjectID; }
@@ -79,6 +79,10 @@ private:
 
 		/// Returns an optional object that knows what high-level data was picked.
 		const OORef<ObjectPickInfo>& pickInfo() const { return _pickInfo; }
+
+		/// Returns the renderer-specific flags associated with this picking record.
+		/// This flags field may be set by the renderer and then interpreted by the ObjectPickingIdentifierMap sub-class.
+		uint32_t rendererFlags() const { return _rendererFlags; }
 
 		/// If the global object ID is within the range of this picking group, resolve it to the local object ID.
 		uint32_t resolveObjectID(uint32_t objectID) const {
@@ -110,6 +114,10 @@ private:
 		/// If this rendering command is part of a composite object that requires multiple rendering commands,
 		/// then this offset indicates where this command's primitive elements start in the composite range.
 		uint32_t _pickElementOffset;
+
+		/// Renderer-specific flags that may be used to store additional information from the renderer.
+		/// This flags field may be interpreted by a ObjectPickingIdentifierMap sub-class belonging to the renderer.
+		uint32_t _rendererFlags = 0;
 	};
 
 	/// Given an frame buffer object ID, looks up the corresponding picking record.
