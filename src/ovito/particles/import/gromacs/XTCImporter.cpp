@@ -118,8 +118,8 @@ bool XTCImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 void XTCImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
-    progress.setProgressMaximum(QFileInfo(fileHandle.localFilePath()).size());
+    progress.setText(tr("Scanning file %1").arg(fileHandle.toString()));
+    progress.setMaximum(QFileInfo(fileHandle.localFilePath()).size());
 
     // Open XTC file for reading.
     XTCFile file;
@@ -130,7 +130,7 @@ void XTCImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
         frame.byteOffset = file.byteOffset();
 
         // Update progress bar and check for user cancellation.
-        progress.setProgressValue(frame.byteOffset);
+        progress.setValue(frame.byteOffset);
 
         // Parse trajectory frame.
         XTCFile::Frame xtcFrame = file.read();
@@ -149,7 +149,7 @@ void XTCImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
 void XTCImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading XTC file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading XTC file %1").arg(fileHandle().toString()));
 
     // Open XTC file for reading.
     XTCFile file;

@@ -116,8 +116,8 @@ void ReaxFFBondImporter::discoverFramesInFile(const FileHandle& fileHandle, QVec
     CompressedTextReader stream(fileHandle);
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning ReaxFF bond file %1").arg(fileHandle.toString()));
-    progress.setProgressMaximum(stream.underlyingSize());
+    progress.setText(tr("Scanning ReaxFF bond file %1").arg(fileHandle.toString()));
+    progress.setMaximum(stream.underlyingSize());
 
     Frame frame(fileHandle);
     QString filename = fileHandle.sourceUrl().fileName();
@@ -137,7 +137,7 @@ void ReaxFFBondImporter::discoverFramesInFile(const FileHandle& fileHandle, QVec
             frames.push_back(frame);
             stream.recordSeekPoint();
             inCommentSection = false;
-            progress.setProgressValueIntermittent(stream.underlyingByteOffset());
+            progress.setValueIntermittent(stream.underlyingByteOffset());
         }
     }
 }
@@ -148,7 +148,7 @@ void ReaxFFBondImporter::discoverFramesInFile(const FileHandle& fileHandle, QVec
 void ReaxFFBondImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading ReaxFF bond file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading ReaxFF bond file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);

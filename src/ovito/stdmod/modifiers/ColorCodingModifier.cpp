@@ -449,7 +449,7 @@ bool ColorCodingModifier::adjustRange(AnimationTime time)
 void ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressMaximum(endFrame - startFrame + 1);
+    progress.setMaximum(endFrame - startFrame + 1);
 
     FloatType minValue = std::numeric_limits<FloatType>::max();
     FloatType maxValue = std::numeric_limits<FloatType>::lowest();
@@ -457,7 +457,7 @@ void ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
     // Loop over all animation frames, evaluate data pipeline, and determine
     // minimum and maximum values.
     for(int frame = startFrame; frame <= endFrame; frame++) {
-        progress.setProgressText(tr("Analyzing frame %1").arg(frame));
+        progress.setText(tr("Analyzing frame %1").arg(frame));
 
         for(ModificationNode* node : nodes()) {
 
@@ -467,7 +467,7 @@ void ColorCodingModifier::adjustRangeGlobal(int startFrame, int endFrame)
             // Determine min/max value of the selected property.
             determinePropertyValueRange(stateFuture.blockForResult(), minValue, maxValue);
         }
-        progress.incrementProgressValue(1);
+        progress.incrementValue(1);
     }
 
     // Symmetrize range.

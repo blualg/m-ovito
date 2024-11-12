@@ -148,7 +148,7 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
             createdByNode = request.modificationNodeWeak()]() mutable
     {
         TaskProgress progress(this_task::ui());
-        progress.setProgressText(tr("Coordination analysis"));
+        progress.setText(tr("Coordination analysis"));
 
         boost::container::flat_set<int> uniqueTypeIds;
         uniqueTypeIds.reserve(uniqueTypes.size());

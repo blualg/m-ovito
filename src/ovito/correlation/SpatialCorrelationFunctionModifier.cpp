@@ -401,21 +401,21 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
                      nX, nY, nZ,
                      _applyWindow);
 
-    nextProgressSubStep();
+    nextSubStep();
 
     std::vector<FloatType> gridProperty2 = mapToSpatialGrid(sourceProperty2().get(),
                      _vecComponent2,
                      reciprocalCellMatrix,
                      nX, nY, nZ,
                      _applyWindow);
-    nextProgressSubStep();
+    nextSubStep();
 
     std::vector<FloatType> gridDensity = mapToSpatialGrid(nullptr,
                      _vecComponent1,
                      reciprocalCellMatrix,
                      nX, nY, nZ,
                      _applyWindow);
-    nextProgressSubStep();
+    nextSubStep();
 
     // FIXME. Apply windowing function in non-periodic directions here.
 
@@ -423,13 +423,13 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
 
     // Compute Fourier transform of spatial grid.
     std::vector<std::complex<FloatType>> ftProperty1 = r2cFFT(nX, nY, nZ, gridProperty1);
-    nextProgressSubStep();
+    nextSubStep();
 
     std::vector<std::complex<FloatType>> ftProperty2 = r2cFFT(nX, nY, nZ, gridProperty2);
-    nextProgressSubStep();
+    nextSubStep();
 
     std::vector<std::complex<FloatType>> ftDensity = r2cFFT(nX, nY, nZ, gridDensity);
-    nextProgressSubStep();
+    nextSubStep();
 
     // Note: Reciprocal cell vectors are in rows. Those are 4-vectors.
     Vector4 recCell1 = reciprocalCellMatrix.row(0);
@@ -521,16 +521,16 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
         if(numberOfValues[wavevectorBinIndex] != 0)
             reciprocalSpaceCorrelationData[wavevectorBinIndex] *= normalizationFactor / numberOfValues[wavevectorBinIndex];
     }
-    nextProgressSubStep();
+    nextSubStep();
 
     // Compute long-ranged part of the real-space correlation function from the FFT convolution.
 
     // Computer inverse Fourier transform of correlation function.
     gridProperty1 = c2rFFT(nX, nY, nZ, ftProperty1);
-    nextProgressSubStep();
+    nextSubStep();
 
     gridDensity = c2rFFT(nX, nY, nZ, ftDensity);
-    nextProgressSubStep();
+    nextSubStep();
 
     // Determine number of grid points for reciprocal-space correlation function.
     int numberOfDistanceBins = minCellFaceDistance / (2 * fftGridSpacing());
@@ -585,7 +585,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
         }
     }
 
-    nextProgressSubStep();
+    nextSubStep();
 }
 
 /******************************************************************************
@@ -644,7 +644,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
             *iter += *bin++;
     });
 
-    nextProgressSubStep();
+    nextSubStep();
 
     // Normalize short-ranged real-space correlation function.
     if(!cell()->is2D()) {
@@ -666,7 +666,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
         }
     }
 
-    nextProgressSubStep();
+    nextSubStep();
 }
 
 /******************************************************************************
@@ -708,8 +708,8 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeLimit
 ******************************************************************************/
 void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::perform()
 {
-    setProgressText(tr("Computing correlation function"));
-    beginProgressSubSteps(neighCorrelation() ? 13 : 11);
+    setText(tr("Computing correlation function"));
+    beginSubSteps(neighCorrelation() ? 13 : 11);
 
     // Compute reciprocal space correlation function and long-ranged part of
     // the real-space correlation function from an FFT.
@@ -720,7 +720,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::perform()
         computeNeighCorrelation();
 
     computeLimits();
-    endProgressSubSteps();
+    endSubSteps();
 
     // Release data that is no longer needed.
     _positions.reset();

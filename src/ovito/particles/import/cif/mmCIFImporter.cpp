@@ -93,7 +93,7 @@ bool mmCIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 void mmCIFImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading mmCIF file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading mmCIF file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);

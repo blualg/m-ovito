@@ -68,7 +68,7 @@ bool ParaViewVTSGridImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 void ParaViewVTSGridImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading ParaView VTS StructuredGrid file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading ParaView VTS StructuredGrid file %1").arg(fileHandle().toString()));
 
     // Create the VoxelGrid object.
     QString gridIdentifier = loadRequest().dataBlockPrefix;

@@ -62,7 +62,7 @@ ForwardIterator most_common(ForwardIterator first, ForwardIterator last)
 ******************************************************************************/
 void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAccess<int64_t> crystalClusters, TaskProgress& progress)
 {
-    progress.beginProgressSubSteps(2);
+    progress.beginSubSteps(2);
 
     // Determines if a tetrahedron belongs to the good or bad crystal region.
     auto tetrahedronRegion = [this,&crystalClusters](DelaunayTessellation::CellHandle cell) {
@@ -123,7 +123,7 @@ void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
     ManifoldConstructionHelper manifoldConstructor(tessellation(), *this, alpha, false, structureAnalysis().positions(), progress);
     manifoldConstructor.construct(tetrahedronRegion, prepareMeshFace);
 
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
 
     // Make sure each vertex is only part of a single manifold.
     makeManifold();
@@ -186,7 +186,7 @@ void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
     }
 #endif
 
-    progress.endProgressSubSteps();
+    progress.endSubSteps();
 }
 
 /******************************************************************************

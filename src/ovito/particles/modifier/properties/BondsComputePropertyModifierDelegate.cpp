@@ -80,7 +80,7 @@ Future<PipelineFlowState> BondsComputePropertyModifierDelegate::performComputati
             evaluator = std::move(evaluator)]() mutable
     {
         TaskProgress progress(this_task::ui());
-        progress.setProgressText(tr("Computing property '%1'").arg(outputProperty->name()));
+        progress.setText(tr("Computing property '%1'").arg(outputProperty->name()));
 
         RawBufferAccess<access_mode::write> outputAccessor(outputProperty, selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized);
         BufferReadAccess<SelectionIntType> selectionAccessor(selectionProperty);

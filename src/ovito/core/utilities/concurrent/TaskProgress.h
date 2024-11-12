@@ -25,43 +25,26 @@
 
 #include <ovito/core/Core.h>
 #include "Task.h"
-#include "detail/TaskCallback.h"
 
 namespace Ovito {
 
 /**
- * Progress state information associated with a task that is being displayed in the UI.
+ * Progress state information associated with a long-running operation that is being shown in the GUI.
  *
- * Tasks who which to report progress in the UI should create an instance of this class.
- * It serves as a communication channel between the task and the UI.
+ * Operations that which to report progress in the UI should create an instance of this class while they are running.
+ * It serves as a communication channel between the task and the GUI.
  */
-class OVITO_CORE_EXPORT TaskProgress : public detail::TaskCallback<TaskProgress>
+class OVITO_CORE_EXPORT TaskProgress
 {
     Q_DISABLE_COPY_MOVE(TaskProgress)
 
 public:
 
     /// A null progress state that ignores all progress reporting calls.
-    /// It should be used in places where progress reporting is not needed.
-    OVITO_CORE_EXPORT static TaskProgress Ignore; // static variable defined in source file Task.cpp.
+    /// It can be used in places where progress reporting is not needed but some TaskProgress is expected.
+    OVITO_CORE_EXPORT static TaskProgress Ignore; // static variable is defined in source file Task.cpp.
 
 public:
-
-    /// Constructor for creating an object that ignores all progress reporting calls.
-    /// Note: This constructor is not meant to be used directly. Use the static member "Ignore" instead.
-    explicit TaskProgress(std::nullopt_t) noexcept {}
-
-    /// Constructor that attached to an existing task object.
-    /// The progress object is registered with the task's user interface
-    /// and will be closed automatically when the task is finished.
-    explicit TaskProgress(Task* task) noexcept {
-        OVITO_ASSERT(task);
-        OVITO_ASSERT(task->userInterface());
-        if(!task->isFinished()) {
-            registerProgress(task->userInterface().get());
-            registerCallback(task, true);
-        }
-    }
 
     /// Constructor that attaches to the given abstract user interface.
     /// The progress indicator will be shown in the user interface.
@@ -80,7 +63,7 @@ public:
     }
 
     /// Sets the description of operation to be displayed in the UI.
-    void setProgressText(const QString& progressText) {
+    void setText(const QString& progressText) {
         if(_mutex) {
             std::lock_guard<std::mutex> lock(*_mutex);
             _text = progressText;
@@ -92,7 +75,7 @@ public:
 
     /// Sets the current maximum value for progress reporting.
     /// The current progress value is reset to zero unless autoReset is false.
-    void setProgressMaximum(qlonglong maximum, bool autoReset = true) noexcept {
+    void setMaximum(qlonglong maximum, bool autoReset = true) noexcept {
         if(autoReset || _progressMaximum != maximum) {
             if(_mutex) {
                 std::lock_guard<std::mutex> lock(*_mutex);
@@ -104,7 +87,7 @@ public:
     }
 
     /// Sets the current progress value of the task.
-    void setProgressValueNoThrow(qlonglong progressValue) noexcept {
+    void setValueNoCancel(qlonglong progressValue) noexcept {
         if(_mutex && progressValue != _progressValue) {
             std::lock_guard<std::mutex> lock(*_mutex);
             _progressValue = progressValue;
@@ -112,14 +95,15 @@ public:
         }
     }
 
-    /// Sets the current progress value of the task.
-    void setProgressValue(qlonglong progressValue) {
+    /// Sets the current progress value of the task and additionally checks if
+    /// the current task has been canceled.
+    void setValue(qlonglong progressValue) {
         this_task::throwIfCanceled();
-        setProgressValueNoThrow(progressValue);
+        setValueNoCancel(progressValue);
     }
 
     /// Increments the progress value of the task.
-    void incrementProgressValueNoThrow(qlonglong increment = 1) noexcept {
+    void incrementValueNoCancel(qlonglong increment = 1) noexcept {
         if(_mutex) {
             std::lock_guard<std::mutex> lock(*_mutex);
             _progressValue += increment;
@@ -127,25 +111,42 @@ public:
         }
     }
 
-    /// Increments the progress value of the task.
-    void incrementProgressValue(qlonglong increment = 1) {
+    /// Increments the progress value of the task and additionally checks if
+    /// the current task has been canceled.
+    void incrementValue(qlonglong increment = 1) {
         this_task::throwIfCanceled();
-        incrementProgressValueNoThrow(increment);
+        incrementValueNoCancel(increment);
     }
 
     /// Sets the current progress value of the task, generating update events only occasionally.
-    void setProgressValueIntermittent(qlonglong progressValue, int updateEvery = 2000) {
+    /// Additionally checks if the current task has been canceled.
+    void setValueIntermittent(qlonglong progressValue, int updateEvery = 2000) {
         if(Q_UNLIKELY((progressValue % updateEvery) == 0))
-            setProgressValue(progressValue);
+            setValue(progressValue);
         else
             this_task::throwIfCanceled();
     }
 
     /// Starts a sequence of sub-steps in the progress range of this task.
-    /// This is used for long and complex operation, which consist of several logical sub-steps, each with a separate
-    /// duration. Expects a vector of relative weights, one for each sub-step, which will be used to calculate the
+    /// This is used for complex operations that consist of several logical sub-steps, all with approximately the same weight.
+    void beginSubSteps(int nsteps) {
+        OVITO_ASSERT(nsteps > 0);
+        this_task::throwIfCanceled();
+        if(_mutex) {
+            std::lock_guard<std::mutex> lock(*_mutex);
+            _subProgressStack.emplace_back(0, nsteps);
+            _progressMaximum = 0;
+            _progressValue = 0;
+            notifyUserInterface();
+        }
+    }
+
+    /// Starts a sequence of sub-steps in the progress range of this task.
+    /// This is used for complex operations that consist of several logical sub-steps, each with an individual
+    /// duration (weight).
+    /// This method expects a vector of relative weights, one for each sub-step, which will be used to calculate the
     /// the total progress as sub-steps are completed.
-    void beginProgressSubStepsWithWeights(std::vector<int> weights) {
+    void beginSubSteps(std::vector<int> weights) {
         OVITO_ASSERT(std::accumulate(weights.cbegin(), weights.cend(), 0) > 0);
         this_task::throwIfCanceled();
         if(_mutex) {
@@ -157,17 +158,19 @@ public:
         }
     }
 
-    /// Convenience version of the function above, which creates *N* substeps, all with the same weight.
-    void beginProgressSubSteps(int nsteps) { beginProgressSubStepsWithWeights(std::vector<int>(nsteps, 1)); }
-
-    /// Completes the current sub-step in the sequence started with beginProgressSubSteps() or
-    /// beginProgressSubStepsWithWeights() and moves to the next one.
-    void nextProgressSubStep() {
+    /// Completes the current sub-step in the sequence started with beginSubSteps() or
+    /// beginSubSteps() and moves to the next one.
+    void nextSubStep() {
         this_task::throwIfCanceled();
         if(_mutex) {
             std::lock_guard<std::mutex> lock(*_mutex);
             OVITO_ASSERT(!_subProgressStack.empty());
-            OVITO_ASSERT(_subProgressStack.back().first < _subProgressStack.back().second.size());
+            OVITO_ASSERT(
+                (std::holds_alternative<int>(_subProgressStack.back().second) &&
+                    _subProgressStack.back().first < std::get<int>(_subProgressStack.back().second)) ||
+                (std::holds_alternative<std::vector<int>>(_subProgressStack.back().second) &&
+                    _subProgressStack.back().first < std::get<std::vector<int>>(_subProgressStack.back().second).size())
+            );
             _subProgressStack.back().first++;
             _progressMaximum = 0;
             _progressValue = 0;
@@ -175,8 +178,8 @@ public:
         }
     }
 
-    /// Completes a sub-step sequence started with beginProgressSubSteps() or beginProgressSubStepsWithWeights().
-    void endProgressSubSteps() {
+    /// Completes a sub-step sequence started with beginSubSteps() or beginSubSteps().
+    void endSubSteps() {
         this_task::throwIfCanceled();
         if(_mutex) {
             std::lock_guard<std::mutex> lock(*_mutex);
@@ -189,6 +192,7 @@ public:
     }
 
     /// Computes overall progress of the task, taking into account nested sub-steps.
+    /// Returns a pair of the current total progress value and the total maximum value.
     std::pair<int, int> computeTotalProgress() const {
         float percentage;
         int totalProgressMaximum;
@@ -205,10 +209,20 @@ public:
             totalProgressMaximum = 0;
         }
         for(auto level = _subProgressStack.crbegin(); level != _subProgressStack.crend(); ++level) {
-            OVITO_ASSERT(level->first >= 0 && level->first <= level->second.size());
-            int weightSum1 = std::accumulate(level->second.cbegin(), level->second.cbegin() + level->first, 0);
-            int weightSum2 = std::accumulate(level->second.cbegin() + level->first, level->second.cend(), 0);
-            percentage = ((float)weightSum1 + percentage * (level->first < level->second.size() ? level->second[level->first] : 0)) / (weightSum1 + weightSum2);
+            int subProgress = level->first;
+            OVITO_ASSERT(subProgress >= 0);
+            if(std::holds_alternative<int>(level->second)) {
+                int nsteps = std::get<int>(level->second);
+                OVITO_ASSERT(subProgress <= nsteps);
+                percentage = (percentage + (float)subProgress) / nsteps;
+            }
+            else {
+                const auto& weights = std::get<std::vector<int>>(level->second);
+                OVITO_ASSERT(subProgress <= weights.size());
+                int weightSum1 = std::accumulate(weights.cbegin(), std::next(weights.cbegin(), subProgress), 0);
+                int weightSum2 = std::accumulate(std::next(weights.cbegin(), subProgress), weights.cend(), 0);
+                percentage = ((float)weightSum1 + percentage * (subProgress < weights.size() ? weights[subProgress] : 0)) / (weightSum1 + weightSum2);
+            }
         }
         int totalProgressValue = static_cast<int>(percentage * totalProgressMaximum);
         return std::make_pair(totalProgressValue, totalProgressMaximum);
@@ -231,11 +245,9 @@ public:
 
 private:
 
-    /// Task callback implementation.
-    void taskStateChangedCallback(int state, Task::MutexLock& lock) noexcept {
-        if(state & Task::Finished)
-            unregisterProgress();
-    }
+    /// Constructor for creating an object that ignores all progress reporting calls.
+    /// Note: This constructor is not meant to be used directly. Use the static member "Ignore" instead.
+    explicit TaskProgress(std::nullopt_t) noexcept {}
 
     /// Registers this progress object with the abstract user interface.
     void registerProgress(UserInterface* ui) noexcept {
@@ -284,10 +296,14 @@ private:
     /// Maximum progress value (of the current sub-step).
     qlonglong _progressMaximum = 0;
 
-    /// Nested progress sub-steps.
-    std::vector<std::pair<int, std::vector<int>>> _subProgressStack;
-
-    template<typename Derived> friend class detail::TaskCallback;
+    /// Nested sub-steps of the operation.
+    /// Each pair contains the current progress value and the number of sub-steps at that level.
+    /// Optionally, the sub-steps can have individual weights, in which case a std::vector<int> is used.
+    /// The total progress is computed as a weighted average of the progress values at each level.
+    QVarLengthArray<std::pair<
+            int,
+            std::variant<int, std::vector<int>>
+        >, 1> _subProgressStack;
 };
 
 }   // End of namespace

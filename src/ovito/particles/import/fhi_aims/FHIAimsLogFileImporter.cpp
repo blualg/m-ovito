@@ -61,8 +61,8 @@ void FHIAimsLogFileImporter::discoverFramesInFile(const FileHandle& fileHandle, 
     CompressedTextReader stream(fileHandle);
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
-    progress.setProgressMaximum(stream.underlyingSize());
+    progress.setText(tr("Scanning file %1").arg(fileHandle.toString()));
+    progress.setMaximum(stream.underlyingSize());
 
     // Regular expression for whitespace characters.
     QRegularExpression ws_re(QStringLiteral("\\s+"));
@@ -82,7 +82,7 @@ void FHIAimsLogFileImporter::discoverFramesInFile(const FileHandle& fileHandle, 
             stream.recordSeekPoint();
         }
 
-        progress.setProgressValueIntermittent(stream.underlyingByteOffset());
+        progress.setValueIntermittent(stream.underlyingByteOffset());
     }
 }
 
@@ -92,7 +92,7 @@ void FHIAimsLogFileImporter::discoverFramesInFile(const FileHandle& fileHandle, 
 void FHIAimsLogFileImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading FHI-aims log file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading FHI-aims log file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);

@@ -128,7 +128,7 @@ std::unique_ptr<ReferenceConfigurationModifier::Engine> AtomicStrainModifier::cr
 void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Computing atomic displacements"));
+    progress.setText(tr("Computing atomic displacements"));
 
     // First determine the mapping from particles of the reference config to particles
     // of the current config.
@@ -161,7 +161,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
         displacementsArray[i] = refCellMatrix * delta;
     });
 
-    progress.setProgressText(tr("Computing atomic strain tensors"));
+    progress.setText(tr("Computing atomic strain tensors"));
 
     // Prepare the neighbor list for the reference configuration.
     CutoffNeighborFinder neighborFinder;

@@ -234,7 +234,7 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
             createdByNode = request.modificationNodeWeak()]() mutable
     {
         TaskProgress progress(this_task::ui());
-        progress.setProgressText(tr("Constructing isosurface"));
+        progress.setText(tr("Constructing isosurface"));
 
         // Set up callback function returning the field value, which will be passed to the marching cubes algorithm.
         BufferReadAccess<FloatType*> data(property);

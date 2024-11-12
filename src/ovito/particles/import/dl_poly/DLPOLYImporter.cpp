@@ -97,8 +97,8 @@ void DLPOLYImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
     CompressedTextReader stream(fileHandle);
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning DL_POLY file %1").arg(stream.filename()));
-    progress.setProgressMaximum(stream.underlyingSize());
+    progress.setText(tr("Scanning DL_POLY file %1").arg(stream.filename()));
+    progress.setMaximum(stream.underlyingSize());
 
     // Skip first comment line (record 1).
     stream.readLine();
@@ -158,7 +158,7 @@ void DLPOLYImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
                 }
                 // Update progress bar and check for user cancellation.
                 if((i % 4096) == 0)
-                    progress.setProgressValue(stream.underlyingByteOffset());
+                    progress.setValue(stream.underlyingByteOffset());
             }
         }
     }
@@ -174,11 +174,11 @@ void DLPOLYImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
 void DLPOLYImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading DL_POLY file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading DL_POLY file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle());
-    progress.setProgressMaximum(stream.underlyingSize());
+    progress.setMaximum(stream.underlyingSize());
 
     // Read first comment line (record 1).
     stream.readLine(1024);
@@ -245,7 +245,7 @@ void DLPOLYImporter::FrameLoader::loadFile()
     do {
         // Report progress.
         if((positions.size() % 4096) == 0)
-            progress.setProgressValueIntermittent(stream.underlyingByteOffset());
+            progress.setValueIntermittent(stream.underlyingByteOffset());
 
         // Parse first line of atom record.
         if(!positions.empty()) stream.readLine();

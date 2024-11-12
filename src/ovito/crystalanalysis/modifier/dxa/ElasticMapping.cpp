@@ -37,7 +37,7 @@ static const int edgeVertices[6][2] = {{0,1},{0,2},{0,3},{1,2},{1,3},{2,3}};
 ******************************************************************************/
 void ElasticMapping::generateTessellationEdges(TaskProgress& progress)
 {
-    progress.setProgressMaximum(tessellation().numberOfPrimaryTetrahedra());
+    progress.setMaximum(tessellation().numberOfPrimaryTetrahedra());
 
     // Generate list of tessellation edges.
     for(DelaunayTessellation::CellHandle cell : tessellation().cells()) {
@@ -47,7 +47,7 @@ void ElasticMapping::generateTessellationEdges(TaskProgress& progress)
             continue;
 
         // Update progress indicator.
-        progress.setProgressValueIntermittent(tessellation().getCellIndex(cell));
+        progress.setValueIntermittent(tessellation().getCellIndex(cell));
 
         // Create edge data structure for each of the six edges of the cell.
         for(int edgeIndex = 0; edgeIndex < 6; edgeIndex++) {
@@ -79,7 +79,7 @@ void ElasticMapping::generateTessellationEdges(TaskProgress& progress)
 void ElasticMapping::assignVerticesToClusters(TaskProgress& progress)
 {
     // Unknown task length.
-    progress.setProgressMaximum(0);
+    progress.setMaximum(0);
 
     // Assign a cluster to each vertex of the tessellation, which will be used to express
     // reference vectors assigned to the edges leaving the vertex.
@@ -129,11 +129,11 @@ void ElasticMapping::assignIdealVectorsToEdges(int crystalPathSteps, TaskProgres
     CrystalPathFinder pathFinder(_structureAnalysis, crystalPathSteps);
 
     // Try to assign a reference vector to the tessellation edges.
-    progress.setProgressMaximum(_vertexEdges.size());
+    progress.setMaximum(_vertexEdges.size());
     size_t progressCounter = 0;
     for(const auto& firstEdge : _vertexEdges) {
 
-        progress.setProgressValueIntermittent(progressCounter++);
+        progress.setValueIntermittent(progressCounter++);
 
         for(TessellationEdge* edge = firstEdge.first; edge != nullptr; edge = edge->nextLeavingEdge) {
             // Check if the reference vector of this edge has already been determined.

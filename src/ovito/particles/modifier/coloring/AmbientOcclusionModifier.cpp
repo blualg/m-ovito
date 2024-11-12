@@ -113,7 +113,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                 particles = DataOORef<const Particles>(particles)]() mutable
         {
             TaskProgress progress(this_task::ui());
-            progress.setProgressText(tr("Ambient occlusion"));
+            progress.setText(tr("Ambient occlusion"));
 
             // Move this object into a function scope variable to make sure it gets destroyed in the current thread.
             // That's because the QOpenGLContext and other resources managed by the rendering job are tied to a specific thread.
@@ -169,9 +169,9 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             // Create an offscreen framebuffer for rendering.
             OORef<AbstractRenderingFrameBuffer> renderBuffer = renderingJob->createOffscreenFrameBuffer(frameBufferRect, frameBuffer);
 
-            progress.setProgressMaximum(samplingCount);
+            progress.setMaximum(samplingCount);
             for(int sample = 0; sample < samplingCount; sample++) {
-                progress.setProgressValue(sample);
+                progress.setValue(sample);
 
                 // Generate lighting direction on unit sphere using "Fibonacci sphere algorithm".
                 // https://stackoverflow.com/a/26127012
@@ -233,7 +233,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                 }
             }
 
-            progress.setProgressValue(samplingCount);
+            progress.setValue(samplingCount);
 
             // Normalize brightness values by particle area.
             BufferReadAccess<GraphicsFloatType> radiusArray(radii);

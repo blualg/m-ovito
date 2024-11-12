@@ -110,7 +110,7 @@ DataOORef<const TriangleMesh> GSDImporter::lookupParticleShapeInCache(const QByt
 void GSDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    progress.setText(tr("Scanning file %1").arg(fileHandle.toString()));
 
     // First close text stream, we don't need it here.
     QString filename = QDir::toNativeSeparators(fileHandle.localFilePath());
@@ -143,7 +143,7 @@ void GSDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
 void GSDImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading GSD file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading GSD file %1").arg(fileHandle().toString()));
 
     // Open GSD file for reading.
     QString filename = QDir::toNativeSeparators(fileHandle().localFilePath());

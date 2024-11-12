@@ -63,7 +63,7 @@ void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures
         throw Exception(tr("The algorithm does not support 2d simulation cells."));
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Finding nearest neighbors"));
+    progress.setText(tr("Finding nearest neighbors"));
 
     // Prepare the neighbor list builder.
     NearestNeighborFinder neighborFinder(4);
@@ -97,7 +97,7 @@ void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures
     });
 
     // Perform structure identification.
-    progress.setProgressText(tr("Identifying diamond structures"));
+    progress.setText(tr("Identifying diamond structures"));
 
     BufferWriteAccess<int32_t, access_mode::discard_read_write> structureAcc(structures());
     parallelFor(particles->elementCount(), 1024, progress, [&](size_t index) {

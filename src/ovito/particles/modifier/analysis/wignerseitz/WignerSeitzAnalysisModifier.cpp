@@ -148,7 +148,7 @@ std::unique_ptr<ReferenceConfigurationModifier::Engine> WignerSeitzAnalysisModif
 void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform(PipelineFlowState& state)
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Performing Wigner-Seitz cell analysis"));
+    progress.setText(tr("Performing Wigner-Seitz cell analysis"));
 
     if(affineMapping() == TO_CURRENT_CELL)
         throw Exception(tr("Remapping coordinates to the current cell is not supported by the Wigner-Seitz analysis routine. Only remapping to the reference cell or no mapping at all are supported options."));

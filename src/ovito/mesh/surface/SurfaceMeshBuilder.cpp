@@ -372,14 +372,14 @@ void SurfaceMeshBuilder::smoothMesh(int numIterations, TaskProgress& progress, F
 
     FloatType mu = FloatType(1) / (k_PB - FloatType(1)/lambda);
 
-    progress.beginProgressSubSteps(2 * numIterations);
+    progress.beginSubSteps(2 * numIterations);
     for(int iteration = 0; iteration < numIterations; iteration++) {
         smoothMeshIteration(lambda);
-        progress.nextProgressSubStep();
+        progress.nextSubStep();
         smoothMeshIteration(mu);
-        progress.nextProgressSubStep();
+        progress.nextSubStep();
     }
-    progress.endProgressSubSteps();
+    progress.endSubSteps();
 }
 
 /******************************************************************************

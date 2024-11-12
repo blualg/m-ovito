@@ -167,12 +167,12 @@ OORef<FileExportJob> IMDExporter::createExportJob(const QString& filePath, int n
             textStream() << "## IMD file written by " << Application::applicationName() << "\n";
             textStream() << "#E\n";
 
-            progress.setProgressMaximum(atomsCount);
+            progress.setMaximum(atomsCount);
             for(size_t i = 0; i < atomsCount; i++) {
                 columnWriter.writeElement(i, textStream());
 
                 // Update progress bar and check for user cancellation.
-                progress.setProgressValueIntermittent(i);
+                progress.setValueIntermittent(i);
             }
         }
     };

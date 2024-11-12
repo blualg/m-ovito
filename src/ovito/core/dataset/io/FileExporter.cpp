@@ -260,10 +260,10 @@ Future<void> FileExporter::doExport()
 
     // Set up progress reporting.
     TaskProgress progress(this_task::ui());
-    progress.beginProgressSubSteps(numberOfFrames);
+    progress.beginSubSteps(numberOfFrames);
 
     // Export animation frames.
-    for(int frameIndex = 0; frameIndex < numberOfFrames; frameIndex++, progress.nextProgressSubStep()) {
+    for(int frameIndex = 0; frameIndex < numberOfFrames; frameIndex++, progress.nextSubStep()) {
         int frameNumber = firstFrameNumber + frameIndex * everyNthFrame();
 
         // Open per-frame output file.
@@ -274,7 +274,7 @@ Future<void> FileExporter::doExport()
             exportJob = createExportJob(filename, 1);
         }
 
-        progress.setProgressText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
+        progress.setText(tr("Exporting frame %1 to file '%2'").arg(frameNumber).arg(filename));
 
         // Obtain the data to be exported.
         any_moveonly frameData = co_await FutureAwaiter(DeferredObjectExecutor(this), exportJob->getExportableFrameData(frameNumber, progress));
@@ -288,7 +288,7 @@ Future<void> FileExporter::doExport()
             exportJob.reset();
         }
     }
-    progress.endProgressSubSteps();
+    progress.endSubSteps();
 
     // Close output file.
     if(!exportTrajectory() || !useWildcardFilename())

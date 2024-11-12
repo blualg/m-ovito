@@ -192,12 +192,12 @@ OORef<FileExportJob> LAMMPSDumpExporter::createExportJob(const QString& filePath
             }
             textStream() << '\n';
 
-            progress.setProgressMaximum(atomsCount);
+            progress.setMaximum(atomsCount);
             for(size_t i = 0; i < atomsCount; i++) {
                 columnWriter.writeElement(i, textStream());
 
                 // Update progress bar and check for user cancellation.
-                progress.setProgressValueIntermittent(i);
+                progress.setValueIntermittent(i);
             }
         }
     };

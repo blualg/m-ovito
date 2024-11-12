@@ -230,8 +230,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
     OVITO_ASSERT(_simCell);
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Performing Voronoi analysis"));
-    progress.beginProgressSubSteps(_polyhedraMesh ? 2 : 1);
+    progress.setText(tr("Performing Voronoi analysis"));
+    progress.beginSubSteps(_polyhedraMesh ? 2 : 1);
 
     // Compute total simulation cell volume.
     _simulationBoxVolume = _simCell->volume3D();
@@ -538,13 +538,13 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
             }
             if(!count) return;
 
-            progress.setProgressMaximum(count);
+            progress.setMaximum(count);
 
             voro::c_loop_all cl(voroContainer);
             voro::voronoicell_neighbor v;
             if(cl.start()) {
                 do {
-                    progress.incrementProgressValue();
+                    progress.incrementValue();
                     if(!voroContainer.compute_cell(v,cl))
                         continue;
                     processCell(v, cl.pid(), voronoiBuffer, voronoiBufferIndex, nullptr);
@@ -577,13 +577,13 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
             if(!count)
                 return;
-            progress.setProgressMaximum(count);
+            progress.setMaximum(count);
 
             voro::c_loop_all cl(voroContainer);
             voro::voronoicell_neighbor v;
             if(cl.start()) {
                 do {
-                    progress.incrementProgressValue();
+                    progress.incrementValue();
                     if(!voroContainer.compute_cell(v,cl))
                         continue;
                     processCell(v, cl.pid(), voronoiBuffer, voronoiBufferIndex, nullptr);
@@ -714,16 +714,16 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
 
     // Finalize the polyhedral mesh.
     if(_polyhedraMesh) {
-        progress.nextProgressSubStep();
-        progress.beginProgressSubStepsWithWeights({1,12,1,1,1});
+        progress.nextSubStep();
+        progress.beginSubSteps({1,12,1,1,1});
 
         // First, connect adjacent faces from the same Voronoi cell.
         polyhedraMesh.connectOppositeHalfedges();
 
         // The polyhedral cells should now be closed manifolds.
         OVITO_ASSERT(polyhedraMesh.topology()->isClosed());
-        progress.nextProgressSubStep();
-        progress.setProgressMaximum(polyhedraMesh.faceCount());
+        progress.nextSubStep();
+        progress.setMaximum(polyhedraMesh.faceCount());
 
         // Merge mesh vertices that are shared by adjacent Voronoi polyhedra.
 
@@ -735,7 +735,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         // Iterate over all Voronoi faces.
         BufferReadAccess<int32_t> adjacentCellArray(adjacentCellProperty);
         for(SurfaceMesh::face_index face = 0; face < polyhedraMesh.faceCount(); face++) {
-            progress.setProgressValueIntermittent(face);
+            progress.setValueIntermittent(face);
             SurfaceMesh::region_index region = faceGrower->faceRegion(face);
 
             // We know for each Voronoi face which Voronoi polyhedron is on the other side.
@@ -817,7 +817,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
             }
             while(edge != ffe);
         }
-        progress.nextProgressSubStep();
+        progress.nextSubStep();
 
         // Transfer edges from vertices that are going to be deleted to remaining vertices.
         for(SurfaceMesh::edge_index edge = 0; edge < polyhedraMesh.edgeCount(); edge++) {
@@ -825,7 +825,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
             polyhedraMesh.transferFaceBoundaryToVertex(edge, new_vertex);
             this_task::throwIfCanceled();
         }
-        progress.nextProgressSubStep();
+        progress.nextSubStep();
 
         // Delete unused vertices.
         for(SurfaceMesh::vertex_index vertex = polyhedraMesh.vertexCount() - 1; vertex >= 0; vertex--) {
@@ -834,8 +834,8 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
                 this_task::throwIfCanceled();
             }
         }
-        progress.nextProgressSubStep();
-        progress.setProgressMaximum(polyhedraMesh.faceCount());
+        progress.nextSubStep();
+        progress.setMaximum(polyhedraMesh.faceCount());
 
         BufferWriteAccess<int64_t, access_mode::read_write> faceBondIndices(faceBondIndexProperty);
 
@@ -843,7 +843,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         for(SurfaceMesh::face_index face = 0; face < polyhedraMesh.faceCount(); face++) {
             if(polyhedraMesh.hasOppositeFace(face))
                 continue;
-            progress.setProgressValueIntermittent(face);
+            progress.setValueIntermittent(face);
 
             // We know for each Voronoi face which Voronoi polyhedron is on the other side.
             SurfaceMesh::region_index adjacentRegion = adjacentCellArray[face];
@@ -879,14 +879,14 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         vertexGrower.reset();
         faceGrower.reset();
 
-        progress.endProgressSubSteps();
+        progress.endSubSteps();
 
 #ifdef OVITO_DEBUG
         polyhedraMesh.mesh()->verifyMeshIntegrity();
 #endif
     }
 
-    progress.endProgressSubSteps();
+    progress.endSubSteps();
 }
 
 /******************************************************************************

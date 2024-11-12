@@ -349,7 +349,7 @@ bool AMBERNetCDFImporter::NetCDFFile::detectDims(int movieFrame, int particleCou
 void AMBERNetCDFImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading NetCDF file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading NetCDF file %1").arg(fileHandle().toString()));
 
     QString filename = QDir::toNativeSeparators(fileHandle().localFilePath());
     if(filename.isEmpty())
@@ -468,7 +468,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
     simulationCell()->setCellMatrix(AffineTransformation(va, vb, vc, Vector3(o[0], o[1], o[2])));
 
     // Report progress to user.
-    progress.beginProgressSubSteps(columnMapping.size());
+    progress.beginSubSteps(columnMapping.size());
 
     // We inspect the particle coordinate array in the NetCDF first before any properties are loaded
     // in order to determine the number of particles (which might actually be lower than the size of the "atoms" dimension).
@@ -497,7 +497,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
     for(const InputColumnInfo& column : columnMapping) {
         this_task::throwIfCanceled();
         if(&column != &columnMapping.front())
-            progress.nextProgressSubStep();
+            progress.nextSubStep();
 
         Property* property = nullptr;
         QString columnName = column.columnName;
@@ -562,14 +562,14 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
                 size_t totalCount = countp[particleCountDim];
                 size_t remaining = totalCount;
                 countp[particleCountDim] = 1000000;
-                progress.setProgressMaximum(totalCount / countp[particleCountDim] + 1);
+                progress.setMaximum(totalCount / countp[particleCountDim] + 1);
                 for(size_t chunk = 0; chunk < totalCount; chunk += countp[particleCountDim], startp[particleCountDim] += countp[particleCountDim]) {
                     countp[particleCountDim] = std::min(countp[particleCountDim], remaining);
                     remaining -= countp[particleCountDim];
                     OVITO_ASSERT(countp[particleCountDim] >= 1);
                     OVITO_STATIC_ASSERT(sizeof(T) == sizeof(U));
                     NCERRI( nc_get_vara(ncFile._ncid, varId, startp, countp, reinterpret_cast<U*>(propertyArray.begin() + chunk * property->componentCount())), tr("(While reading variable '%1'.)").arg(columnName) );
-                    progress.incrementProgressValue();
+                    progress.incrementValue();
                 }
                 OVITO_ASSERT(remaining == 0);
             }
@@ -623,7 +623,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
             particles()->removeProperty(property);
     }
 
-    progress.endProgressSubSteps();
+    progress.endSubSteps();
 
     // If the input file does not contain simulation cell size, use bounding box of particles as simulation cell.
     if(!pbc[0] || !pbc[1] || !pbc[2]) {

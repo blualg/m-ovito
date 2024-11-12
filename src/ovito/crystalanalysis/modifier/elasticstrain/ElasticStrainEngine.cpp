@@ -72,25 +72,25 @@ void ElasticStrainEngine::identifyStructures(const Particles* particles, const S
         throw Exception(ElasticStrainModifier::tr("The elastic strain calculation requires a 3d simulation cell."));
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(ElasticStrainModifier::tr("Calculating elastic strain tensors"));
+    progress.setText(ElasticStrainModifier::tr("Calculating elastic strain tensors"));
 
     const Property* positions = particles->expectProperty(Particles::PositionProperty);
     _structureAnalysis.emplace(positions, simulationCell, (StructureAnalysis::LatticeStructureType)_inputCrystalStructure, selection, clusterGraph(), structures(), std::move(_preferredCrystalOrientations));
     setAtomClusters(_structureAnalysis->atomClusters());
 
-    progress.beginProgressSubStepsWithWeights({ 35, 6, 1, 1, 20 });
+    progress.beginSubSteps({ 35, 6, 1, 1, 20 });
     _structureAnalysis->identifyStructures(progress);
 
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
     _structureAnalysis->buildClusters(progress);
 
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
     _structureAnalysis->connectClusters(progress);
 
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
     _structureAnalysis->formSuperClusters();
 
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
 
     BufferReadAccess<Point3> positionsArray(positions);
     BufferWriteAccess<Matrix3, access_mode::discard_write> deformationGradientsArray(deformationGradients());
@@ -180,7 +180,7 @@ void ElasticStrainEngine::identifyStructures(const Particles* particles, const S
             deformationGradientsArray[particleIndex] = Matrix3::Zero();
     });
 
-    progress.endProgressSubSteps();
+    progress.endSubSteps();
 
     // Release data that is no longer needed.
     _structureAnalysis.reset();

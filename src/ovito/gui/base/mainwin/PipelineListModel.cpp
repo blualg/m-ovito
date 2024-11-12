@@ -632,7 +632,7 @@ void PipelineListModel::multiData(const QModelIndex& index, QModelRoleDataSpan r
         else if(role == StatusInfoRole) {
             if(dynamic_object_cast<ActiveObject>(item->object())) {
                 if(Pipeline* pipeline = selectedPipeline()) {
-                    if(_userInterface.handleExceptions([&] {
+                    if(_userInterface.handleExceptions<true>([&] {
                         roleData.setData(item->shortInfo(pipeline));
                     })) continue;
                 }

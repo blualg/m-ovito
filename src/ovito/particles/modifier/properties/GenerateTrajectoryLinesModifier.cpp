@@ -141,8 +141,8 @@ Future<DataOORef<const Lines>> GenerateTrajectoryLinesModifier::generateTrajecto
 
     // Report progress in the GUI.
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Generating trajectory lines"));
-    progress.setProgressMaximum(frameCount);
+    progress.setText(tr("Generating trajectory lines"));
+    progress.setMaximum(frameCount);
 
     // Asynchronous loop over all input animation frames.
     for(int frame : frame_range) {
@@ -262,7 +262,7 @@ Future<DataOORef<const Lines>> GenerateTrajectoryLinesModifier::generateTrajecto
             }
         }
 
-        progress.incrementProgressValue();
+        progress.incrementValue();
     }
 
     // After each frame of the input trajectory has been processed, build the final lines.
@@ -270,8 +270,8 @@ Future<DataOORef<const Lines>> GenerateTrajectoryLinesModifier::generateTrajecto
     co_await ExecutorAwaiter(ThreadPoolExecutor());
 
     // Sort vertex data to obtain continuous trajectory lines.
-    progress.setProgressMaximum(0);
-    progress.setProgressText(tr("Sorting trajectory data"));
+    progress.setMaximum(0);
+    progress.setText(tr("Sorting trajectory data"));
     std::vector<size_t> permutation(pointData.size());
     std::iota(permutation.begin(), permutation.end(), (size_t)0);
     std::sort(permutation.begin(), permutation.end(), [&](size_t a, size_t b) {
@@ -351,13 +351,13 @@ Future<DataOORef<const Lines>> GenerateTrajectoryLinesModifier::generateTrajecto
 
     // Unwrap trajectory vertices at periodic boundaries of the simulation cell.
     if(unwrapTrajectories && pointData.size() >= 2 && !cells.empty() && cells.front() && cells.front()->hasPbcCorrected()) {
-        progress.setProgressText(tr("Unwrapping trajectory lines"));
-        progress.setProgressMaximum(trajPosProperty.size() - 1);
+        progress.setText(tr("Unwrapping trajectory lines"));
+        progress.setMaximum(trajPosProperty.size() - 1);
         Point3* pos = trajPosProperty.begin();
         piter = permutation.cbegin();
         const int64_t* id = trajIdProperty.cbegin();
         for(auto pos_end = pos + trajPosProperty.size() - 1; pos != pos_end; ++pos, ++piter, ++id) {
-            progress.incrementProgressValue();
+            progress.incrementValue();
             if(id[0] == id[1]) {
                 const SimulationCell* cell1 = cells[timeData[piter[0]]];
                 const SimulationCell* cell2 = cells[timeData[piter[1]]];

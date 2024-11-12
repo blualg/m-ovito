@@ -199,7 +199,7 @@ void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, TaskProgre
     OVITO_ASSERT(task);
 
     if(loopCount != 0) {
-        progress.setProgressMaximum(loopCount);
+        progress.setMaximum(loopCount);
     }
 
     parallelForChunks(loopCount, minimumChunkSize, std::forward<Setup>(setup), [&](size_t workerIndex, size_t fromIndex, size_t toIndex) {
@@ -217,7 +217,7 @@ void parallelForInnerOuter(size_t loopCount, size_t minimumChunkSize, TaskProgre
                 }
                 if(task->isCanceled())
                     break;
-                progress.incrementProgressValueNoThrow(count);
+                progress.incrementValueNoCancel(count);
             }
         });
     });

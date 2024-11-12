@@ -204,6 +204,9 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
     if(windowSize.isEmpty())
         this_task::cancelAndThrow();
 
+    // Perform a context switch to the coroutine task, so that we can manipulate the underlying task object.
+    co_await ExecutorAwaiter(InlineExecutor{});
+
     // Interactive viewport rendering is performed with a higher priority than other tasks.
     this_task::get()->setHighPriorityTask();
 
@@ -212,6 +215,7 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
 
     // Associate the task with the user interface.
     this_task::get()->setUserInterface(userInterface().shared_from_this());
+    OVITO_ASSERT(this_task::ui());
 
     // Set up preliminary projection without knowing the scene bounding box yet.
     AnimationTime time = viewport()->scene()->animationSettings()->currentTime();

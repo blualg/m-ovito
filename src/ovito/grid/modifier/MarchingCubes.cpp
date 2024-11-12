@@ -64,7 +64,7 @@ void MarchingCubes::generateIsosurface(FloatType isolevel, TaskProgress& progres
     int size_y = _infiniteDomain ? (_size_y - 1) : _size_y;
     int size_z = _infiniteDomain ? (_size_z - 1) : _size_z;
 
-    progress.setProgressMaximum(size_z * 2);
+    progress.setMaximum(size_z * 2);
     computeIntersectionPoints(progress);
 
     this_task::throwIfCanceled();
@@ -82,7 +82,7 @@ void MarchingCubes::generateIsosurface(FloatType isolevel, TaskProgress& progres
         _maxRegionIndex = 0;
     }
 
-    for(int k = 0; k < size_z; k++, progress.incrementProgressValue()) {
+    for(int k = 0; k < size_z; k++, progress.incrementValue()) {
         for(int j = 0; j < size_y; j++) {
             for(int i = 0; i < size_x; i++) {
                 _lut_entry = 0;
@@ -124,7 +124,7 @@ void MarchingCubes::computeIntersectionPoints(TaskProgress& progress)
     if(_pbcFlags[0] && _pbcFlags[1] && _pbcFlags[2])
         _outputMesh.setSpaceFillingRegion(0);
 
-    for(int k = 0; k < _size_z; k++, progress.incrementProgressValue()) {
+    for(int k = 0; k < _size_z; k++, progress.incrementValue()) {
         for(int j = 0; j < _size_y; j++) {
             for(int i = 0; i < _size_x; i++) {
                 FloatType cube[8];

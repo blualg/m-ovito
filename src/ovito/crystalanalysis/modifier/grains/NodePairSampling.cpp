@@ -67,7 +67,7 @@ void GrainSegmentationEngine1::node_pair_sampling_clustering(GrainSegmentationEn
 
                     // Update progress indicator.
                     if((progressVal++ % 1024) == 0) {
-                        progress.incrementProgressValue(1024);
+                        progress.incrementValue(1024);
                     }
                 }
                 else {

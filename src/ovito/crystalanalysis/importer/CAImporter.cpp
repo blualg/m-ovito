@@ -62,8 +62,8 @@ void CAImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<File
     CompressedTextReader stream(fileHandle);
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning CA file %1").arg(stream.filename()));
-    progress.setProgressMaximum(stream.underlyingSize());
+    progress.setText(tr("Scanning CA file %1").arg(stream.filename()));
+    progress.setMaximum(stream.underlyingSize());
 
     Frame frame(fileHandle);
     QString filename = fileHandle.sourceUrl().fileName();
@@ -93,7 +93,7 @@ void CAImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<File
             if(stream.lineStartsWith("CA_FILE_VERSION "))
                 break;
             if((stream.lineNumber() % 4096) == 0)
-                progress.setProgressValue(stream.underlyingByteOffset());
+                progress.setValue(stream.underlyingByteOffset());
         }
     }
 }
@@ -104,7 +104,7 @@ void CAImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<File
 void CAImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading CA file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading CA file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle());
@@ -251,10 +251,10 @@ void CAImporter::FrameLoader::loadFile()
             // Read cluster list.
             if(sscanf(stream.line(), "CLUSTERS %i", &numClusters) != 1)
                 throw Exception(tr("Failed to parse file. Invalid number of clusters in line %1.").arg(stream.lineNumber()));
-            progress.setProgressText(tr("Reading clusters"));
-            progress.setProgressMaximum(numClusters);
+            progress.setText(tr("Reading clusters"));
+            progress.setMaximum(numClusters);
             for(int index = 0; index < numClusters; index++) {
-                progress.setProgressValueIntermittent(index);
+                progress.setValueIntermittent(index);
                 if(fileFormatVersion <= 4) {
                     int patternId = 0, clusterId = 0, clusterProc = 0;
                     stream.readLine();
@@ -327,10 +327,10 @@ void CAImporter::FrameLoader::loadFile()
             // Read cluster transition list.
             if(sscanf(stream.line(), "CLUSTER_TRANSITIONS %i", &numClusterTransitions) != 1)
                 throw Exception(tr("Failed to parse file. Invalid number of cluster transitions in line %1.").arg(stream.lineNumber()));
-            progress.setProgressText(tr("Reading cluster transitions"));
-            progress.setProgressMaximum(numClusterTransitions);
+            progress.setText(tr("Reading cluster transitions"));
+            progress.setMaximum(numClusterTransitions);
             for(int index = 0; index < numClusterTransitions; index++) {
-                progress.setProgressValueIntermittent(index);
+                progress.setValueIntermittent(index);
                 int clusterIndex1, clusterIndex2;
                 if(sscanf(stream.readLine(), "TRANSITION %i %i", &clusterIndex1, &clusterIndex2) != 2 || clusterIndex1 >= numClusters || clusterIndex2 >= numClusters) {
                     throw Exception(tr("Failed to parse file. Invalid cluster transition in line %1.").arg(stream.lineNumber()));
@@ -350,8 +350,8 @@ void CAImporter::FrameLoader::loadFile()
             // Read dislocations list.
             if(sscanf(stream.line(), "DISLOCATIONS %i", &numDislocationSegments) != 1)
                 throw Exception(tr("Failed to parse file. Invalid number of dislocation segments in line %1.").arg(stream.lineNumber()));
-            progress.setProgressText(tr("Reading dislocations"));
-            progress.setProgressMaximum(numDislocationSegments);
+            progress.setText(tr("Reading dislocations"));
+            progress.setMaximum(numDislocationSegments);
             if(const DislocationNetwork* existingDislocationsObj = state().getObject<DislocationNetwork>()) {
                 dislocations = state().makeMutable(existingDislocationsObj);
             }
@@ -361,7 +361,7 @@ void CAImporter::FrameLoader::loadFile()
             dislocations->setClusterGraph(clusterGraph);
             dislocations->segments().clear();
             for(int index = 0; index < numDislocationSegments; index++) {
-                progress.setProgressValueIntermittent(index);
+                progress.setValueIntermittent(index);
                 int segmentId;
                 if(sscanf(stream.readLine(), "%i", &segmentId) != 1)
                     throw Exception(tr("Failed to parse file. Invalid segment ID in line %1.").arg(stream.lineNumber()));
@@ -450,12 +450,12 @@ void CAImporter::FrameLoader::loadFile()
             int numDefectMeshVertices;
             if(sscanf(stream.line(), "DEFECT_MESH_VERTICES %i", &numDefectMeshVertices) != 1 || numDefectMeshVertices < 0)
                 throw Exception(tr("Failed to parse file. Invalid number of defect mesh vertices in line %1.").arg(stream.lineNumber()));
-            progress.setProgressText(tr("Reading defect surface"));
-            progress.setProgressMaximum(numDefectMeshVertices);
+            progress.setText(tr("Reading defect surface"));
+            progress.setMaximum(numDefectMeshVertices);
             meshBuilder.createVertices(numDefectMeshVertices);
             BufferWriteAccess<Point3, access_mode::read_write> vertexPositions(meshBuilder.mutableVertexProperty(SurfaceMeshVertices::PositionProperty));
             for(int index = 0; index < numDefectMeshVertices; index++) {
-                progress.setProgressValueIntermittent(index);
+                progress.setValueIntermittent(index);
                 Point3 p;
                 if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &p.x(), &p.y(), &p.z()) != 3)
                     throw Exception(tr("Failed to parse file. Invalid point in line %1.").arg(stream.lineNumber()));
@@ -468,10 +468,10 @@ void CAImporter::FrameLoader::loadFile()
             int numDefectMeshFacets;
             if(sscanf(stream.line(), "DEFECT_MESH_FACETS %i", &numDefectMeshFacets) != 1 || numDefectMeshFacets < 0)
                 throw Exception(tr("Failed to parse file. Invalid number of defect mesh facets in line %1.").arg(stream.lineNumber()));
-            progress.setProgressMaximum(numDefectMeshFacets * 2);
+            progress.setMaximum(numDefectMeshFacets * 2);
             SurfaceMeshBuilder::FaceGrower faceGrower(meshBuilder);
             for(int index = 0; index < numDefectMeshFacets; index++) {
-                progress.setProgressValueIntermittent(index);
+                progress.setValueIntermittent(index);
                 int v[3];
                 if(sscanf(stream.readLine(), "%i %i %i", &v[0], &v[1], &v[2]) != 3
                         || v[0] < 0 || v[0] >= meshBuilder.vertexCount()
@@ -483,7 +483,7 @@ void CAImporter::FrameLoader::loadFile()
 
             // Read facet adjacency information.
             for(int index = 0; index < numDefectMeshFacets; index++) {
-                progress.setProgressValueIntermittent(index + numDefectMeshFacets);
+                progress.setValueIntermittent(index + numDefectMeshFacets);
                 int v[3];
                 if(sscanf(stream.readLine(), "%i %i %i", &v[0], &v[1], &v[2]) != 3)
                     throw Exception(tr("Failed to parse file. Invalid triangle adjacency info in line %1.").arg(stream.lineNumber()));

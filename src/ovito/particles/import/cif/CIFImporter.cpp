@@ -93,7 +93,7 @@ bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 void CIFImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading CIF file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading CIF file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);

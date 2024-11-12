@@ -98,8 +98,8 @@ void POSCARImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
     CompressedTextReader stream(fileHandle);
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
-    progress.setProgressMaximum(stream.underlyingSize());
+    progress.setText(tr("Scanning file %1").arg(fileHandle.toString()));
+    progress.setMaximum(stream.underlyingSize());
 
     int frameNumber = 0;
     QStringList atomTypeNames;
@@ -171,7 +171,7 @@ void POSCARImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
         frames.push_back(frame);
 
         // Update progress bar and check for user cancellation.
-        progress.setProgressValueIntermittent(stream.underlyingByteOffset());
+        progress.setValueIntermittent(stream.underlyingByteOffset());
     }
 }
 
@@ -181,7 +181,7 @@ void POSCARImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
 void POSCARImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading VASP file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading VASP file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -437,7 +437,7 @@ Property* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& s
     BufferWriteAccess<FloatType*, access_mode::discard_read_write> fieldAccess(fieldProperty);
     const char* s = stream.readLine();
     auto* data = fieldAccess.begin();
-    progress.setProgressMaximum(fieldProperty->size());
+    progress.setMaximum(fieldProperty->size());
     FloatType cellVolume = std::abs(simulationCell()->cellMatrix().determinant());
     for(size_t i = 0; i < fieldProperty->size(); i++, ++data) {
         const char* token;
@@ -455,7 +455,7 @@ Property* POSCARImporter::FrameLoader::readFieldQuantity(CompressedTextReader& s
             s++;
 
         // Update progress bar and check for user cancellation.
-        progress.setProgressValueIntermittent(i);
+        progress.setValueIntermittent(i);
     }
     return fieldProperty;
 }

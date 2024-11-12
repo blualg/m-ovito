@@ -315,7 +315,7 @@ void ParticleImporter::FrameLoader::generateBonds(TaskProgress& progress)
     if(maxCutoff == 0.0)
         return;
     FloatType minCutoffSquared = 1e-10 * maxCutoff * maxCutoff;
-    progress.setProgressText(tr("Generating bonds"));
+    progress.setText(tr("Generating bonds"));
 
     // Prepare the neighbor list.
     CutoffNeighborFinder neighborFinder;

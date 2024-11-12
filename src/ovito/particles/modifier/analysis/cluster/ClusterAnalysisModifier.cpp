@@ -227,7 +227,7 @@ Future<PipelineFlowState> ClusterAnalysisModifier::evaluateModifier(const Modifi
 void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Performing cluster analysis"));
+    progress.setText(tr("Performing cluster analysis"));
 
     // Initialize.
     particleClusters()->fill<int64_t>(-1);
@@ -257,7 +257,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 
         // Visit all input particles again.
         size_t particleCount = positions()->size();
-        progress.setProgressMaximum(particleCount);
+        progress.setMaximum(particleCount);
         for(size_t particleIndex = 0; particleIndex < particleCount; particleIndex++) {
 
             // Skip particles that do not belong to any cluster.
@@ -265,7 +265,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
                 continue;
 
             // Update progress indicator.
-            progress.setProgressValueIntermittent(particleIndex);
+            progress.setValueIntermittent(particleIndex);
 
             size_t clusterIndex = particleClusters[particleIndex] - 1;
 
@@ -390,7 +390,7 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
     neighborFinder.prepare(cutoff(), positions(), cell(), selection());
 
     size_t particleCount = positions()->size();
-    progress.setProgressMaximum(particleCount);
+    progress.setMaximum(particleCount);
     size_t progressVal = 0;
 
     BufferWriteAccess<int64_t, access_mode::read_write> particleClusters(this->particleClusters());
@@ -424,7 +424,7 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
         toProcess.push_back(seedParticleIndex);
 
         do {
-            progress.setProgressValueIntermittent(progressVal++);
+            progress.setValueIntermittent(progressVal++);
 
             size_t currentParticle = toProcess.front();
             toProcess.pop_front();
@@ -465,7 +465,7 @@ void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vec
 void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vector<Point3>& centersOfMass, TaskProgress& progress)
 {
     size_t particleCount = positions()->size();
-    progress.setProgressMaximum(particleCount);
+    progress.setMaximum(particleCount);
     size_t progressVal = 0;
 
     // Prepare particle bond map.
@@ -503,7 +503,7 @@ void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vecto
         toProcess.push_back(seedParticleIndex);
 
         do {
-            progress.setProgressValueIntermittent(progressVal++);
+            progress.setValueIntermittent(progressVal++);
 
             size_t currentParticle = toProcess.front();
             toProcess.pop_front();

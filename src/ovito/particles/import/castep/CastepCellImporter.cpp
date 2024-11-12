@@ -60,7 +60,7 @@ void CastepCellImporter::FrameLoader::loadFile()
     CompressedTextReader stream(fileHandle());
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading CASTEP file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading CASTEP file %1").arg(fileHandle().toString()));
 
     // Helper function that reads and returns the next line from the .cell file
     // that is not a comment line:

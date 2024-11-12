@@ -72,7 +72,7 @@ bool ParaViewVTPMeshImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 void ParaViewVTPMeshImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading ParaView VTP PolyData file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading ParaView VTP PolyData file %1").arg(fileHandle().toString()));
 
     // Create the destination mesh object.
     QString meshIdentifier = loadRequest().dataBlockPrefix;

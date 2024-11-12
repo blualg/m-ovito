@@ -167,7 +167,7 @@ void CFGHeader::parse(CompressedTextReader& stream)
 void CFGImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading CFG file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading CFG file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -201,7 +201,7 @@ void CFGImporter::FrameLoader::loadFile()
         generateAutomaticColumnMapping(cfgMapping, header.auxiliaryFields);
     }
 
-    progress.setProgressMaximum(header.numParticles);
+    progress.setMaximum(header.numParticles);
     setParticleCount(header.numParticles);
 
     // Prepare the mapping between input file columns and particle properties.
@@ -224,7 +224,7 @@ void CFGImporter::FrameLoader::loadFile()
     for(int64_t particleIndex = 0; particleIndex < header.numParticles; ) {
 
         // Update progress bar and check for user cancellation.
-        progress.setProgressValueIntermittent(particleIndex);
+        progress.setValueIntermittent(particleIndex);
 
         if(!isFirstLine)
             stream.readLine();

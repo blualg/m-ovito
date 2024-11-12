@@ -60,7 +60,7 @@ inline bool syclParallelForWithProgress(std::size_t total_problem_size, CGFuncti
     std::size_t progress_problem_size = total_problem_size;
     if(Application::guiMode()) {
         progress_problem_size = std::min(total_problem_size, std::max(min_progress_size, total_problem_size / 50));
-        this_task::setProgressMaximum(total_problem_size);
+        this_task::setMaximum(total_problem_size);
     }
 
     for(std::size_t progress_offset = 0; progress_offset < total_problem_size; progress_offset += progress_problem_size) {
@@ -82,7 +82,7 @@ inline bool syclParallelForWithProgress(std::size_t total_problem_size, CGFuncti
         }).wait();
 
         if(Application::guiMode()) {
-            this_task::setProgressValue(progress_offset + problem_size);
+            this_task::setValue(progress_offset + problem_size);
         }
     }
     taskCallback.unregisterCallback();

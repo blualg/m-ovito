@@ -97,7 +97,7 @@ void GrainSegmentationEngine1::perform()
 ******************************************************************************/
 void GrainSegmentationEngine1::createNeighborBonds(TaskProgress& progress)
 {
-    progress.setProgressText(GrainSegmentationModifier::tr("Grain segmentation - building neighbor lists"));
+    progress.setText(GrainSegmentationModifier::tr("Grain segmentation - building neighbor lists"));
 
     PTMNeighborFinder neighFinder(false);
     neighFinder.prepare(positions(), cell(), nullptr, structureTypes(), orientations(), correspondences());
@@ -187,7 +187,7 @@ void GrainSegmentationEngine1::rotateInterfaceAtoms(TaskProgress& progress)
     if(!_handleBoundaries)
         return;
 
-    progress.setProgressText(GrainSegmentationModifier::tr("Grain segmentation - rotating minority atoms"));
+    progress.setText(GrainSegmentationModifier::tr("Grain segmentation - rotating minority atoms"));
 
     // Construct local neighbor list builder.
     PTMNeighborFinder neighFinder(false);
@@ -242,7 +242,7 @@ void GrainSegmentationEngine1::rotateInterfaceAtoms(TaskProgress& progress)
 void GrainSegmentationEngine1::computeDisorientationAngles(TaskProgress& progress)
 {
     // Compute disorientation angles associated with the neighbor graph edges.
-    progress.setProgressText(GrainSegmentationModifier::tr("Grain segmentation - misorientation calculation"));
+    progress.setText(GrainSegmentationModifier::tr("Grain segmentation - misorientation calculation"));
 
     parallelFor(_neighborBonds.size(), 1024, progress, [&](size_t bondIndex) {
         NeighborBond& bond = _neighborBonds[bondIndex];
@@ -320,7 +320,7 @@ void GrainSegmentationEngine1::minimum_spanning_tree_clustering(std::vector<Quat
 
         // Update progress indicator.
         if((progressVal++ % 1024) == 0) {
-            progress.incrementProgressValue(1024);
+            progress.incrementValue(1024);
         }
     }
 }
@@ -336,8 +336,8 @@ void GrainSegmentationEngine1::determineMergeSequence(TaskProgress& progress)
     // Build graph.
     if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {
 
-        progress.setProgressText(GrainSegmentationModifier::tr("Grain segmentation - building graph"));
-        progress.setProgressMaximum(neighborBonds().size());
+        progress.setText(GrainSegmentationModifier::tr("Grain segmentation - building graph"));
+        progress.setMaximum(neighborBonds().size());
 
         size_t counter = 0;
         for(auto edge: neighborBonds()) {
@@ -347,7 +347,7 @@ void GrainSegmentationEngine1::determineMergeSequence(TaskProgress& progress)
             }
 
             if((counter++ % 1024) == 0) {
-                progress.incrementProgressValue(1024);
+                progress.incrementValue(1024);
             }
         }
     }
@@ -357,8 +357,8 @@ void GrainSegmentationEngine1::determineMergeSequence(TaskProgress& progress)
     DisjointSet uf(_numParticles);
     _dendrogram.resize(0);
 
-    progress.setProgressText(GrainSegmentationModifier::tr("Grain segmentation - region merging"));
-    progress.setProgressMaximum(_numParticles);  //TODO: make this num. crystalline particles
+    progress.setText(GrainSegmentationModifier::tr("Grain segmentation - region merging"));
+    progress.setMaximum(_numParticles);  //TODO: make this num. crystalline particles
 
     if(_algorithmType == GrainSegmentationModifier::GraphClusteringAutomatic || _algorithmType == GrainSegmentationModifier::GraphClusteringManual) {
         node_pair_sampling_clustering(graph, qsum, progress);
@@ -470,7 +470,7 @@ void GrainSegmentationEngine2::perform()
 {
     // Second phase: Execute merge steps up to the threshold set by the user or the adaptively determined threshold.
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(GrainSegmentationModifier::tr("Grain segmentation - merging clusters"));
+    progress.setText(GrainSegmentationModifier::tr("Grain segmentation - merging clusters"));
 
     // Either use user-defined merge threshold or automatically computed threshold.
     FloatType mergingThreshold = _mergingThreshold;
@@ -616,8 +616,8 @@ void GrainSegmentationEngine2::perform()
 ******************************************************************************/
 void GrainSegmentationEngine2::mergeOrphanAtoms(TaskProgress& progress)
 {
-    progress.setProgressText(GrainSegmentationModifier::tr("Grain segmentation - merging orphan atoms"));
-    progress.setProgressValue(0);
+    progress.setText(GrainSegmentationModifier::tr("Grain segmentation - merging orphan atoms"));
+    progress.setValue(0);
 
     BufferWriteAccess<int64_t, access_mode::read_write> atomClustersArray(atomClusters());
     BufferWriteAccess<int64_t, access_mode::read_write> grainSizeArray(_grainSizes);

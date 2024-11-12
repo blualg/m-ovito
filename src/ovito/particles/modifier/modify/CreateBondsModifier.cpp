@@ -303,7 +303,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
             createdByNode = request.modificationNodeWeak()]() mutable
     {
         TaskProgress progress(this_task::ui());
-        progress.setProgressText(tr("Generating bonds"));
+        progress.setText(tr("Generating bonds"));
 
         OVITO_ASSERT(state.data()->dataReferenceCount() == 1);
         OVITO_ASSERT(state.data()->isSafeToModify());

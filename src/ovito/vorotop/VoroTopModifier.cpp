@@ -51,7 +51,7 @@ SET_PROPERTY_FIELD_LABEL(VoroTopModifier, filterFile, "Filter file");
 void VoroTopModifier::loadFilterDefinition(const QString& filepath)
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Loading VoroTop filter %1").arg(filepath));
+    progress.setText(tr("Loading VoroTop filter %1").arg(filepath));
 
     // Open filter file for reading.
     FileHandle fileHandle(QUrl::fromLocalFile(filepath), filepath);
@@ -93,7 +93,7 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
     if(!filter()) {
         if(_filterFile.isEmpty())
             throw Exception(tr("No filter file selected"));
-        progress.setProgressText(tr("Loading VoroTop filter file: %1").arg(_filterFile));
+        progress.setText(tr("Loading VoroTop filter file: %1").arg(_filterFile));
 
         // Open filter file for reading.
         FileHandle fileHandle(QUrl::fromLocalFile(_filterFile), _filterFile);
@@ -107,7 +107,7 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
     if(positions->size() == 0)
         return; // Nothing to do when there are zero particles.
 
-    progress.setProgressText(tr("Performing VoroTop analysis"));
+    progress.setText(tr("Performing VoroTop analysis"));
 
     BufferReadAccess<Point3> positionsArray(positions);
     BufferReadAccess<SelectionIntType> selectionArray(selection);
@@ -150,12 +150,12 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
             }
             if(!count) return;
 
-            progress.setProgressMaximum(count);
+            progress.setMaximum(count);
             voro::c_loop_all cl(voroContainer);
             voro::voronoicell_neighbor v;
             if(cl.start()) {
                 do {
-                    progress.incrementProgressValue();
+                    progress.incrementValue();
                     if(!voroContainer.compute_cell(v,cl))
                         continue;
                     structuresArray[cl.pid()] = processCell(v);
@@ -185,12 +185,12 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
 
             if(!count)
                 return;
-            progress.setProgressMaximum(count);
+            progress.setMaximum(count);
             voro::c_loop_all cl(voroContainer);
             voro::voronoicell_neighbor v;
             if(cl.start()) {
                 do {
-                    progress.incrementProgressValue();
+                    progress.incrementValue();
                     if(!voroContainer.compute_cell(v,cl))
                         continue;
                     structuresArray[cl.pid()] = processCell(v);

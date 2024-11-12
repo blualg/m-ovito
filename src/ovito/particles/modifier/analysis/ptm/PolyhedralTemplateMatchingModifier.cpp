@@ -156,7 +156,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::identifyStructures(const Par
     BufferReadAccess<SelectionIntType> selectionAcc(selection);
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Pre-calculating neighbor ordering"));
+    progress.setText(tr("Pre-calculating neighbor ordering"));
 
     // Pre-order neighbors of each particle.
     std::vector<uint64_t> cachedNeighbors(particles->elementCount());
@@ -175,7 +175,7 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::identifyStructures(const Par
         });
     });
 
-    progress.setProgressText(tr("Performing polyhedral template matching"));
+    progress.setText(tr("Performing polyhedral template matching"));
 
     // Get access to the output buffers that will receive the identified particle types and other data.
     BufferWriteAccess<int32_t, access_mode::discard_read_write> outputStructureArray(structures());

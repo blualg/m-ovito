@@ -72,8 +72,8 @@ void OXDNAImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<F
     CompressedTextReader stream(fileHandle);
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
-    progress.setProgressMaximum(stream.underlyingSize());
+    progress.setText(tr("Scanning file %1").arg(fileHandle.toString()));
+    progress.setMaximum(stream.underlyingSize());
 
     Frame frame(fileHandle);
     QString filename = fileHandle.sourceUrl().fileName();
@@ -110,7 +110,7 @@ void OXDNAImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<F
             stream.readLine();
             if(stream.lineStartsWith("t", true))
                 break;
-            progress.setProgressValueIntermittent(stream.underlyingByteOffset());
+            progress.setValueIntermittent(stream.underlyingByteOffset());
         }
     }
 }
@@ -153,8 +153,8 @@ void OXDNAImporter::FrameLoader::loadFile()
     CompressedTextReader topoStream(localTopologyFileFuture.blockForResult());
 
     TaskProgress progress(this_task::ui());
-    progress.beginProgressSubSteps(2);
-    progress.setProgressText(tr("Reading oxDNA topology file %1").arg(localTopologyFileFuture.result().toString()));
+    progress.beginSubSteps(2);
+    progress.setText(tr("Reading oxDNA topology file %1").arg(localTopologyFileFuture.result().toString()));
 
     // Parse number of nucleotides and number of strands.
     unsigned long long numNucleotidesLong;
@@ -187,11 +187,11 @@ void OXDNAImporter::FrameLoader::loadFile()
     bonds.reserve(numNucleotidesLong);
 
     // Parse the nucleotides list in the topology file.
-    progress.setProgressMaximum(numNucleotidesLong);
+    progress.setMaximum(numNucleotidesLong);
     auto* baseTypeIter = baseAccess.begin();
     auto* strandId = strandsAccess.begin();
     for(size_t i = 0; i < numNucleotidesLong; i++, ++strandId) {
-        progress.setProgressValueIntermittent(i);
+        progress.setValueIntermittent(i);
 
         char baseName[32];
         qlonglong neighbor1, neighbor2;
@@ -220,8 +220,8 @@ void OXDNAImporter::FrameLoader::loadFile()
     BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyAccess = this->bonds()->createProperty(Bonds::TopologyProperty);
     boost::copy(bonds, bondTopologyAccess.begin());
 
-    progress.nextProgressSubStep();
-    progress.setProgressText(tr("Reading oxDNA file %1").arg(fileHandle().toString()));
+    progress.nextSubStep();
+    progress.setText(tr("Reading oxDNA file %1").arg(fileHandle().toString()));
     // Open oxDNA configuration file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
@@ -268,7 +268,7 @@ void OXDNAImporter::FrameLoader::loadFile()
     // Parse data table.
     InputColumnReader columnParser(*this, columnMapping, particles(), false);
     for(size_t i = 0; i < numNucleotidesLong; i++) {
-        progress.setProgressValueIntermittent(i);
+        progress.setValueIntermittent(i);
         try {
             columnParser.readElement(i, stream.readLine());
         }
@@ -295,7 +295,7 @@ void OXDNAImporter::FrameLoader::loadFile()
 
     state().setStatus(tr("%1 nucleotides\n%2 strands").arg(numNucleotidesLong).arg(numStrands));
 
-    progress.endProgressSubSteps();
+    progress.endSubSteps();
 
     // Call base implementation to finalize the loaded particle data.
     ParticleImporter::FrameLoader::loadFile();

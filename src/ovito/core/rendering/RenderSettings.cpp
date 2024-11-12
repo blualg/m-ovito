@@ -255,7 +255,7 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
     std::optional<TaskProgress> animationProgress;
     if(numberOfFrames > 1) {
         animationProgress.emplace(this_task::ui());
-        animationProgress->setProgressMaximum(numberOfFrames);
+        animationProgress->setMaximum(numberOfFrames);
     }
 
     // Render the animation frames, one by one.
@@ -264,14 +264,14 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
         AnimationTime renderTime = AnimationTime::fromFrame(frameNumber);
 
         if(animationProgress) {
-            animationProgress->setProgressValue(frameIndex);
-            animationProgress->setProgressText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
+            animationProgress->setValue(frameIndex);
+            animationProgress->setText(tr("Rendering animation (frame %1 of %2)").arg(frameIndex+1).arg(numberOfFrames));
         }
 
         // Progress reporting for the current frame.
         TaskProgress frameProgress(this_task::ui());
         if(numberOfFrames == 1)
-            frameProgress.setProgressText(tr("Rendering frame %1").arg(frameNumber));
+            frameProgress.setText(tr("Rendering frame %1").arg(frameNumber));
 
         // Determine output filename for this frame.
         QString outputFilename;
@@ -292,7 +292,7 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
         }
 
         // Subdivide progress range into sub-steps for each viewport when rendering a multi-viewport layout.
-        frameProgress.beginProgressSubSteps(viewportList.size());
+        frameProgress.beginSubSteps(viewportList.size());
 
         // Render each viewport of the layout one after the other.
         for(ViewportRenderingData& vpData : viewportList) {
@@ -337,9 +337,9 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
             outputFrameBuffer->discardChanges();
             co_await FutureAwaiter(ObjectExecutor(this), renderingJob->renderFrame(frameGraph, vpData.renderingFrameBuffer, frameProgress));
 
-            frameProgress.nextProgressSubStep();
+            frameProgress.nextSubStep();
         }
-        frameProgress.endProgressSubSteps();
+        frameProgress.endSubSteps();
 
         // Write rendered image or video frame to disk.
         if(saveToFile()) {

@@ -76,7 +76,7 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     if(simulationCell->is2D()) throw Exception(DislocationAnalysisModifier::tr("DXA does not support 2d simulations."));
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(DislocationAnalysisModifier::tr("Dislocation analysis (DXA)"));
+    progress.setText(DislocationAnalysisModifier::tr("Dislocation analysis (DXA)"));
 
     const Property* positions = particles->expectProperty(Particles::PositionProperty);
     _simCellVolume = simulationCell->volume3D();
@@ -89,17 +89,17 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     _dislocationTracer.emplace(*_interfaceMesh, _maxTrialCircuitSize, _maxCircuitElongation, dislocationNetwork(), _markCoreAtoms);
     setAtomClusters(_structureAnalysis->atomClusters());
     if(_markCoreAtoms) {
-        progress.beginProgressSubStepsWithWeights({35, 6, 1, 220, 60, 1, 53, 190, 146 * 5, 20, 4, 4});
+        progress.beginSubSteps({35, 6, 1, 220, 60, 1, 53, 190, 146 * 5, 20, 4, 4});
     }
     else {
-        progress.beginProgressSubStepsWithWeights({35, 6, 1, 220, 60, 1, 53, 190, 146, 20, 4, 4});
+        progress.beginSubSteps({35, 6, 1, 220, 60, 1, 53, 190, 146, 20, 4, 4});
     }
     _structureAnalysis->identifyStructures(progress);
 
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
     _structureAnalysis->buildClusters(progress);
 
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
     _structureAnalysis->connectClusters(progress);
 
 #if 0
@@ -129,7 +129,7 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     stream << "12" << std::endl;  // Hexahedron
 #endif
 
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
     FloatType ghostLayerSize = FloatType(3.5) * _structureAnalysis->maximumNeighborDistance();
     _tessellation->generateTessellation(_structureAnalysis->cell(), BufferReadAccess<Point3>(positions).cbegin(),
                                         _structureAnalysis->atomCount(), ghostLayerSize,
@@ -138,26 +138,26 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
                                         progress);
 
     // Build list of edges in the tessellation.
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
     _elasticMapping->generateTessellationEdges(progress);
 
     // Assign each vertex to a cluster.
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
     _elasticMapping->assignVerticesToClusters(progress);
 
     // Determine the ideal vector corresponding to each edge of the tessellation.
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
     _elasticMapping->assignIdealVectorsToEdges(4, progress);
 
     // Free some memory that is no longer needed.
     _structureAnalysis->freeNeighborLists();
 
     // Create the mesh facets.
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
     _interfaceMesh->createMesh(_structureAnalysis->maximumNeighborDistance(), crystalClusters(), progress);
 
     // Trace dislocation lines.
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
     _dislocationTracer->traceDislocationSegments(progress);
     _dislocationTracer->finishDislocationSegments(_inputCrystalStructure);
 
@@ -240,7 +240,7 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
 #endif
 
     // Generate the defect mesh.
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
     SurfaceMeshBuilder defectMeshBuilder(_defectMesh);
     _interfaceMesh->generateDefectMesh(*_dislocationTracer, defectMeshBuilder);
 #ifdef OVITO_DEBUG
@@ -251,20 +251,20 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     _tessellation.dumpToVTKFile("tessellation.vtk");
 #endif
 
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
 
     // Post-process surface mesh.
     if(_defectMeshSmoothingLevel > 0)
         defectMeshBuilder.smoothMesh(_defectMeshSmoothingLevel, progress);
 
-    progress.nextProgressSubStep();
+    progress.nextSubStep();
 
     // Post-process dislocation lines.
     if(_lineSmoothingLevel > 0 || _linePointInterval > 0) {
         dislocationNetwork()->smoothDislocationLines(_lineSmoothingLevel, _linePointInterval, progress);
     }
 
-    progress.endProgressSubSteps();
+    progress.endSubSteps();
 
     // Return the results of the compute engine.
     if(_outputInterfaceMesh) {

@@ -31,7 +31,7 @@ namespace Ovito {
 ******************************************************************************/
 void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, TaskProgress& progress)
 {
-    progress.setProgressMaximum(0);
+    progress.setMaximum(0);
 
     // Initialize the Geogram library (in a thread-safe way).
     static std::mutex geogramMutex;
@@ -161,8 +161,8 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
     _dt->set_keeps_infinite(true);
     _dt->set_reorder(true);
     _dt->set_progress_callback([&progress](GEO::index_t value, GEO::index_t maxProgress) {
-        progress.setProgressMaximum(maxProgress, false);
-        progress.setProgressValueIntermittent(value);
+        progress.setMaximum(maxProgress, false);
+        progress.setValueIntermittent(value);
     });
 
     // Construct Delaunay tessellation.

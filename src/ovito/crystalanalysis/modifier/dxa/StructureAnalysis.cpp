@@ -771,7 +771,7 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
 ******************************************************************************/
 void StructureAnalysis::buildClusters(TaskProgress& progress)
 {
-    progress.setProgressMaximum(positions()->size());
+    progress.setMaximum(positions()->size());
 
     qlonglong progressCounter = 0;
     BufferReadAccess<Point3> positionsArray(positions());
@@ -807,7 +807,7 @@ void StructureAnalysis::buildClusters(TaskProgress& progress)
             atomsToVisit.pop_front();
 
             // Update progress indicator.
-            progress.setProgressValueIntermittent(++progressCounter);
+            progress.setValueIntermittent(++progressCounter);
 
             // Look up symmetry permutation of current atom.
             int symmetryPermutationIndex = _atomSymmetryPermutations[currentAtomIndex];
@@ -940,7 +940,7 @@ void StructureAnalysis::buildClusters(TaskProgress& progress)
 ******************************************************************************/
 void StructureAnalysis::connectClusters(TaskProgress& progress)
 {
-    progress.setProgressMaximum(positions()->size());
+    progress.setMaximum(positions()->size());
 
     for(size_t atomIndex = 0; atomIndex < positions()->size(); atomIndex++) {
         int clusterId = _atomClustersArray[atomIndex];
@@ -950,7 +950,7 @@ void StructureAnalysis::connectClusters(TaskProgress& progress)
         OVITO_ASSERT(cluster1);
 
         // Update progress indicator.
-        progress.setProgressValueIntermittent(atomIndex);
+        progress.setValueIntermittent(atomIndex);
 
         // Look up symmetry permutation of current atom.
         int structureType = _structureTypesArray[atomIndex];

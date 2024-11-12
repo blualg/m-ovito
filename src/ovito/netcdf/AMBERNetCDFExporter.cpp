@@ -369,7 +369,7 @@ OORef<FileExportJob> AMBERNetCDFExporter::createExportJob(const QString& filePat
             }
 
             // Write out other particle properties.
-            progress.setProgressMaximum(_columns.size());
+            progress.setMaximum(_columns.size());
             for(const NCOutputColumn& outColumn : _columns) {
 
                 // Look up the property to be exported.
@@ -402,7 +402,7 @@ OORef<FileExportJob> AMBERNetCDFExporter::createExportJob(const QString& filePat
                     NCERR(nc_put_vara_double(_ncid, outColumn.ncvar, start, count, BufferReadAccess<double*>(prop).cbegin()));
                 }
 
-                progress.incrementProgressValue();
+                progress.incrementValue();
             }
 
             _frameCounter++;

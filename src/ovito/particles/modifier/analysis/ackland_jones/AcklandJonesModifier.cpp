@@ -61,7 +61,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisAlgorithm::identifyStructures(con
         throw Exception(tr("The Ackland-Jones analysis algorithm does not support 2d simulation cells."));
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Performing Ackland-Jones analysis"));
+    progress.setText(tr("Performing Ackland-Jones analysis"));
 
     // Prepare the neighbor finder.
     NearestNeighborFinder neighborFinder(14);

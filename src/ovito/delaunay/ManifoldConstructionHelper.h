@@ -70,23 +70,23 @@ public:
     {
         // Algorithm is divided into several sub-steps.
         if(_createRegions)
-            _progress.beginProgressSubStepsWithWeights({1,8,2,1});
+            _progress.beginSubSteps({1,8,2,1});
         else
-            _progress.beginProgressSubStepsWithWeights({1,1,2});
+            _progress.beginSubSteps({1,1,2});
 
         // Assign tetrahedra to spatial regions.
         classifyTetrahedra(std::move(determineCellRegion));
-        _progress.nextProgressSubStep();
+        _progress.nextSubStep();
 
         // Group connected tetrahedra into volumetric regions.
         if(_createRegions) {
             formFilledRegions();
-            _progress.nextProgressSubStep();
+            _progress.nextSubStep();
         }
 
         // Create triangle facets at interfaces between two different regions.
         createInterfaceFacets(std::move(prepareMeshFaceFunc), std::move(prepareMeshVertexFunc));
-        _progress.nextProgressSubStep();
+        _progress.nextSubStep();
 
         // Connect triangles with one another to form a closed manifold.
         linkHalfedges();
@@ -104,12 +104,12 @@ public:
         }
 #endif
 
-        _progress.endProgressSubSteps();
+        _progress.endSubSteps();
     }
 
     /// Finds disconnected empty regions and computes their volumes.
     void formEmptyRegions() {
-        _progress.beginProgressSubStepsWithWeights({1,1});
+        _progress.beginSubSteps({1,1});
 
         // Count number of identified regions.
         _emptyRegionCount = 0;
@@ -129,7 +129,7 @@ public:
         BufferReadAccess<Point3> vertexPositions(_mesh.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
 
         // Identify disconnected components of the surface mesh bordering to an empty region.
-        _progress.setProgressMaximum(_mesh.faceCount() / 2); // Note: Dividing by two, because only every other face is oriented towards the empty region.
+        _progress.setMaximum(_mesh.faceCount() / 2); // Note: Dividing by two, because only every other face is oriented towards the empty region.
         size_t progressValue = 0;
         for(SurfaceMesh::face_index face = 0; face < _mesh.faceCount(); face++) {
             // Look for mesh faces that are not adjacent to a filled region and which have not been visited yet.
@@ -146,7 +146,7 @@ public:
                 // Take next face from the stack.
                 SurfaceMesh::face_index currentFace = facesToProcess.front();
                 facesToProcess.pop_front();
-                _progress.setProgressValueIntermittent(progressValue++);
+                _progress.setValueIntermittent(progressValue++);
 
                 // Visit neighbors of current face.
                 SurfaceMesh::edge_index firstEdge = _mesh.firstFaceEdge(currentFace);
@@ -189,7 +189,7 @@ public:
             while(!facesToProcess.empty());
         }
 
-        _progress.nextProgressSubStep();
+        _progress.nextSubStep();
         std::deque<DelaunayTessellation::CellHandle> cellsToProcess;
 
         // Disjoint set data structure for merging empty regions:
@@ -237,7 +237,7 @@ public:
         SurfaceMesh::region_index splitPeriodicRegion = SurfaceMesh::InvalidIndex;
 
         // Loop over all cells to cluster them.
-        _progress.setProgressMaximum(_tessellation.numberOfTetrahedra() - _numFilledCells);
+        _progress.setMaximum(_tessellation.numberOfTetrahedra() - _numFilledCells);
         progressValue = 0;
         for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
 
@@ -277,7 +277,7 @@ public:
                 // Take next tetrahedron from the stack.
                 DelaunayTessellation::CellHandle currentCell = cellsToProcess.front();
                 cellsToProcess.pop_front();
-                _progress.setProgressValueIntermittent(progressValue++);
+                _progress.setValueIntermittent(progressValue++);
 
                 // Flags indicating whether the current tetrahedron crosses the cell boundaries.
                 std::array<bool,3> cellCrossesBoundaries = {false, false, false};
@@ -400,7 +400,7 @@ public:
             _emptyRegionCount = 1;
         }
 
-        _progress.endProgressSubSteps();
+        _progress.endSubSteps();
     }
 
 private:
@@ -409,7 +409,7 @@ private:
     template<typename CellRegionFunc>
     void classifyTetrahedra(CellRegionFunc&& determineCellRegion)
     {
-        _progress.setProgressMaximum(_tessellation.numberOfTetrahedra());
+        _progress.setMaximum(_tessellation.numberOfTetrahedra());
 
         _numFilledCells = 0;
         size_t progressCounter = 0;
@@ -419,7 +419,7 @@ private:
         for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
 
             // Update progress indicator.
-            _progress.setProgressValueIntermittent(progressCounter++);
+            _progress.setValueIntermittent(progressCounter++);
 
             // Alpha-shape criterion: This determines whether the Delaunay tetrahedron is part of a filled region.
             bool isFilledTetrehedron = false;
@@ -494,13 +494,13 @@ private:
     /// Aggregates Delaunay tetrahedra into connected regions.
     void formFilledRegions()
     {
-        _progress.beginProgressSubStepsWithWeights({2,3,1});
+        _progress.beginSubSteps({2,3,1});
 
         // Create a lookup map that allows retrieving the primary image of a Delaunay cell for a triangular face formed by three particles.
         createCellMap();
 
-        _progress.nextProgressSubStep();
-        _progress.setProgressMaximum(_tessellation.numberOfTetrahedra());
+        _progress.nextSubStep();
+        _progress.setMaximum(_tessellation.numberOfTetrahedra());
         size_t progressValue = 0;
 
         // Identify connected tetrahedra to create regions if no regions were previously defined.
@@ -533,7 +533,7 @@ private:
                 do {
                     DelaunayTessellation::CellHandle currentCell = toProcess.front();
                     toProcess.pop_front();
-                    _progress.setProgressValueIntermittent(progressValue++);
+                    _progress.setValueIntermittent(progressValue++);
 
                     // Add the volume of the current cell to the total region volume.
                     regionVolume += cellVolume(currentCell);
@@ -603,15 +603,15 @@ private:
             }
         }
 
-        _progress.nextProgressSubStep();
+        _progress.nextSubStep();
 
         _filledRegionCount = _mesh.regionCount();
         if(_filledRegionCount != 0) {
             // Copy assigned region IDs from primary tetrahedra to ghost tetrahedra.
-            _progress.setProgressMaximum(_tessellation.numberOfTetrahedra());
+            _progress.setMaximum(_tessellation.numberOfTetrahedra());
             for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
                 if(_tessellation.isGhostCell(cell) && _tessellation.getUserField(cell) != SurfaceMesh::InvalidIndex) {
-                    _progress.setProgressValueIntermittent(cell);
+                    _progress.setValueIntermittent(cell);
 
                     // Get the 3 vertices of the first face of the tet.
                     std::array<size_t, 3> vertices;
@@ -628,14 +628,14 @@ private:
                 }
             }
         }
-        _progress.endProgressSubSteps();
+        _progress.endSubSteps();
     }
 
     /// Creates a lookup map that allows to retrieve the primary Delaunay cell image that belongs to a
     /// triangular face formed by three particles.
     void createCellMap()
     {
-        _progress.setProgressMaximum(_tessellation.numberOfTetrahedra());
+        _progress.setMaximum(_tessellation.numberOfTetrahedra());
         for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
 
             // Skip cells that belong to the exterior region.
@@ -647,7 +647,7 @@ private:
                 continue;
 
             // Update progress indicator.
-            _progress.setProgressValueIntermittent(cell);
+            _progress.setValueIntermittent(cell);
 
             // Loop over the 4 facets of the cell.
             for(int f = 0; f < 4; f++) {
@@ -683,7 +683,7 @@ private:
         // Create the per-face region array, which will dynamically grow.
         BufferWriteAccessAndRef<SurfaceMesh::region_index, access_mode::discard_write> faceRegions = SurfaceMeshFaces::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshFaces::RegionProperty);
 
-        _progress.setProgressMaximum(_numFilledCells);
+        _progress.setMaximum(_numFilledCells);
         SurfaceMeshTopology* topo = _mesh.mutableTopology();
 
         for(DelaunayTessellation::CellHandle cell : _tessellation.cells()) {
@@ -695,7 +695,7 @@ private:
             OVITO_ASSERT(filledRegion != SurfaceMesh::InvalidIndex);
 
             // Update progress indicator.
-            _progress.setProgressValueIntermittent(_tessellation.getCellIndex(cell));
+            _progress.setValueIntermittent(_tessellation.getCellIndex(cell));
 
             Point3 unwrappedVerts[4];
             for(int i = 0; i < 4; i++)
@@ -840,7 +840,7 @@ private:
 
     void linkHalfedges()
     {
-        _progress.setProgressMaximum(_tetrahedraFaceList.size());
+        _progress.setMaximum(_tetrahedraFaceList.size());
 
 #ifdef OVITO_DEBUG
         BufferReadAccess<SurfaceMesh::region_index> faceRegions(_mesh.expectFaceProperty(SurfaceMeshFaces::RegionProperty));
@@ -855,7 +855,7 @@ private:
             OVITO_ASSERT(_tetrahedraFaceList.cbegin() + _tessellation.getCellIndex(cell) == tet);
 
             // Update progress indicator.
-            _progress.setProgressValueIntermittent(_tessellation.getCellIndex(cell));
+            _progress.setValueIntermittent(_tessellation.getCellIndex(cell));
 
             // Visit the mesh faces adjacent to the current cell.
             for(int f = 0; f < 4; f++) {

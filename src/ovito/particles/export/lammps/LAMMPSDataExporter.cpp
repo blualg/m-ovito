@@ -453,7 +453,7 @@ OORef<FileExportJob> LAMMPSDataExporter::createExportJob(const QString& filePath
             }
             textStream() << "\n\n";
 
-            progress.setProgressMaximum(totalProgressCount);
+            progress.setMaximum(totalProgressCount);
             qlonglong currentProgress = 0;
 
             // Write atoms list.
@@ -462,7 +462,7 @@ OORef<FileExportJob> LAMMPSDataExporter::createExportJob(const QString& filePath
             for(size_t i = 0; i < atomsCount; i++) {
                 columnWriter.writeElement(i, textStream());
                 // Update progress bar and check for user cancellation.
-                progress.setProgressValueIntermittent(currentProgress++);
+                progress.setValueIntermittent(currentProgress++);
             }
 
             // Write velocities.
@@ -490,7 +490,7 @@ OORef<FileExportJob> LAMMPSDataExporter::createExportJob(const QString& filePath
                 for(size_t i = 0; i < atomsCount; i++) {
                     columnWriter.writeElement(i, textStream());
                     // Update progress bar and check for user cancellation.
-                    progress.setProgressValueIntermittent(currentProgress++);
+                    progress.setValueIntermittent(currentProgress++);
                 }
             }
 
@@ -515,7 +515,7 @@ OORef<FileExportJob> LAMMPSDataExporter::createExportJob(const QString& filePath
                     textStream() << '\n';
 
                     // Update progress bar and check for user cancellation.
-                    progress.setProgressValueIntermittent(currentProgress++);
+                    progress.setValueIntermittent(currentProgress++);
                 }
                 OVITO_ASSERT(bondIndex == bondTopologyProperty.size() + 1);
             }
@@ -544,7 +544,7 @@ OORef<FileExportJob> LAMMPSDataExporter::createExportJob(const QString& filePath
                     textStream() << '\n';
 
                     // Update progress bar and check for user cancellation.
-                    progress.setProgressValueIntermittent(currentProgress++);
+                    progress.setValueIntermittent(currentProgress++);
                 }
                 OVITO_ASSERT(angleIndex == angleTopologyProperty.size() + 1);
             }
@@ -576,7 +576,7 @@ OORef<FileExportJob> LAMMPSDataExporter::createExportJob(const QString& filePath
                     textStream() << '\n';
 
                     // Update progress bar and check for user cancellation.
-                    progress.setProgressValueIntermittent(currentProgress++);
+                    progress.setValueIntermittent(currentProgress++);
                 }
                 OVITO_ASSERT(dihedralIndex == dihedralTopologyProperty.size() + 1);
             }
@@ -608,7 +608,7 @@ OORef<FileExportJob> LAMMPSDataExporter::createExportJob(const QString& filePath
                     textStream() << '\n';
 
                     // Update progress bar and check for user cancellation.
-                    progress.setProgressValueIntermittent(currentProgress++);
+                    progress.setValueIntermittent(currentProgress++);
                 }
                 OVITO_ASSERT(improperIndex == improperTopologyProperty.size() + 1);
             }
@@ -644,7 +644,7 @@ OORef<FileExportJob> LAMMPSDataExporter::createExportJob(const QString& filePath
                     textStream() << '\n';
 
                     // Update progress bar and check for user cancellation.
-                    progress.setProgressValueIntermittent(currentProgress++);
+                    progress.setValueIntermittent(currentProgress++);
                 }
             }
         }

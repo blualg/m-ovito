@@ -112,7 +112,7 @@ Future<PipelineFlowState> CentroSymmetryModifier::evaluateModifier(const Modifie
             createdByNode = request.modificationNodeWeak()]() mutable
     {
         TaskProgress progress(this_task::ui());
-        progress.setProgressText(tr("Computing centrosymmetry parameters"));
+        progress.setText(tr("Computing centrosymmetry parameters"));
 
         // Prepare the neighbor list.
         NearestNeighborFinder neighFinder(nneighbors);

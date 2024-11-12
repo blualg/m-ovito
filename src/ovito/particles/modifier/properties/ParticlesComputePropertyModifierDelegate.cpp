@@ -182,7 +182,7 @@ Future<PipelineFlowState> ParticlesComputePropertyModifierDelegate::performCompu
             cutoff = cutoff()]() mutable
     {
         TaskProgress progress(this_task::ui());
-        progress.setProgressText(tr("Computing property '%1'").arg(outputProperty->name()));
+        progress.setText(tr("Computing property '%1'").arg(outputProperty->name()));
 
         // Prepare the neighbor finder (only used when neighbor mode is active).
         CutoffNeighborFinder neighborFinder;

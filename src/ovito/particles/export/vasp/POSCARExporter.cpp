@@ -105,7 +105,7 @@ OORef<FileExportJob> POSCARExporter::createExportJob(const QString& filePath, in
             if(velocityProperty)
                 totalProgressCount += particleCount;
             qlonglong currentProgress = 0;
-            progress.setProgressMaximum(totalProgressCount);
+            progress.setMaximum(totalProgressCount);
 
             bool writeReducedCoordinates = static_cast<const POSCARExporter*>(this->exporter())->writeReducedCoordinates();
 
@@ -126,7 +126,7 @@ OORef<FileExportJob> POSCARExporter::createExportJob(const QString& filePath, in
                     }
 
                     // Update progress bar and check for user cancellation.
-                    progress.setProgressValueIntermittent(currentProgress++);
+                    progress.setValueIntermittent(currentProgress++);
                 }
             }
 
@@ -149,7 +149,7 @@ OORef<FileExportJob> POSCARExporter::createExportJob(const QString& filePath, in
                         }
 
                         // Update progress bar and check for user cancellation.
-                        progress.setProgressValueIntermittent(currentProgress++);
+                        progress.setValueIntermittent(currentProgress++);
                     }
                 }
             }

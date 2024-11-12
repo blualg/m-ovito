@@ -70,8 +70,8 @@ void LAMMPSDumpLocalImporter::discoverFramesInFile(const FileHandle& fileHandle,
     CompressedTextReader stream(fileHandle);
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning LAMMPS dump local file %1").arg(fileHandle.toString()));
-    progress.setProgressMaximum(stream.underlyingSize());
+    progress.setText(tr("Scanning LAMMPS dump local file %1").arg(fileHandle.toString()));
+    progress.setMaximum(stream.underlyingSize());
 
     unsigned long long timestep = 0;
     size_t numElements = 0;
@@ -116,7 +116,7 @@ void LAMMPSDumpLocalImporter::discoverFramesInFile(const FileHandle& fileHandle,
                 for(size_t i = 0; i < numElements; i++) {
                     stream.readLine();
                     // Update progress bar and check for user cancellation.
-                    progress.setProgressValueIntermittent(stream.underlyingByteOffset());
+                    progress.setValueIntermittent(stream.underlyingByteOffset());
                 }
                 break;
             }
@@ -143,7 +143,7 @@ void LAMMPSDumpLocalImporter::discoverFramesInFile(const FileHandle& fileHandle,
 void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading LAMMPS dump local file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading LAMMPS dump local file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -181,7 +181,7 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 
                 numElements = (size_t)u;
                 setBondCount(numElements);
-                progress.setProgressMaximum(u);
+                progress.setMaximum(u);
                 break;
             }
             else if(stream.lineStartsWith("ITEM: BOX BOUNDS xy xz yz")) {
@@ -274,7 +274,7 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
                 try {
                     for(size_t i = 0; i < numElements; i++, lineNumber++) {
                         // Update progress bar and check for user cancellation.
-                        progress.setProgressValueIntermittent(i);
+                        progress.setValueIntermittent(i);
                         if(!s)
                             columnParser.readElement(i, stream.readLine());
                         else

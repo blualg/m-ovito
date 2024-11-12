@@ -62,7 +62,7 @@ bool ParaViewVTRSimulationCellImporter::OOMetaClass::checkFileFormat(const FileH
 void ParaViewVTRSimulationCellImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading ParaView VTR RectilinearGrid file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading ParaView VTR RectilinearGrid file %1").arg(fileHandle().toString()));
 
     // Initialize XML reader and open input file.
     std::unique_ptr<QIODevice> device = fileHandle().createIODevice();

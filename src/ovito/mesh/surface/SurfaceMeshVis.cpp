@@ -399,7 +399,7 @@ Future<std::shared_ptr<const RenderableSurfaceMesh>> SurfaceMeshVis::transformSu
             surfaceIsClosed = surfaceIsClosed()]()
     {
         TaskProgress progress(this_task::ui());
-        progress.setProgressText(tr("Preparing mesh for display"));
+        progress.setText(tr("Preparing mesh for display"));
 
         // Determine which parts of the surface mesh to render.
         // The following method may return optionally return a bit array indicating which mesh faces are part of the render set.

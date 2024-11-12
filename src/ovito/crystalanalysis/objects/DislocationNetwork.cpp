@@ -211,10 +211,10 @@ void DislocationNetwork::discardSegment(DislocationSegment* segment)
 ******************************************************************************/
 void DislocationNetwork::smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval, TaskProgress& progress)
 {
-    progress.setProgressMaximum(segments().size());
+    progress.setMaximum(segments().size());
 
     for(DislocationSegment* segment : segments()) {
-        progress.incrementProgressValue();
+        progress.incrementValue();
         if(segment->coreSize.empty())
             continue;
         std::deque<Point3> line;

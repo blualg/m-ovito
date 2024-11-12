@@ -153,20 +153,20 @@ Future<PipelineFlowState> ExpandSelectionModifier::evaluateModifier(const Modifi
 void ExpandSelectionModifier::ExpandSelectionEngine::perform()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Expanding particle selection"));
+    progress.setText(tr("Expanding particle selection"));
 
     setNumSelectedParticlesInput(_inputSelection->nonzeroCount());
 
-    progress.beginProgressSubSteps(_numIterations);
+    progress.beginSubSteps(_numIterations);
     for(int i = 0; i < _numIterations; i++) {
         if(i != 0) {
             _inputSelection = outputSelection();
             setOutputSelection(_inputSelection.makeCopy());
-            progress.nextProgressSubStep();
+            progress.nextSubStep();
         }
         expandSelection(progress);
     }
-    progress.endProgressSubSteps();
+    progress.endSubSteps();
 
     setNumSelectedParticlesOutput(outputSelection()->nonzeroCount());
 }

@@ -87,8 +87,8 @@ void XYZImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
     CompressedTextReader stream(fileHandle);
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
-    progress.setProgressMaximum(stream.underlyingSize());
+    progress.setText(tr("Scanning file %1").arg(fileHandle.toString()));
+    progress.setMaximum(stream.underlyingSize());
 
     // Regular expression for whitespace characters.
     QRegularExpression ws_re(QStringLiteral("\\s+"));
@@ -134,7 +134,7 @@ void XYZImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
         for(unsigned long long i = 0; i < numParticlesLong; i++) {
             stream.readLine();
             // Update progress bar and check for user cancellation.
-            progress.setProgressValueIntermittent(stream.underlyingByteOffset());
+            progress.setValueIntermittent(stream.underlyingByteOffset());
         }
 
         // Skip simulation cell section if this is a .exyz file written by OpenBabel.
@@ -224,7 +224,7 @@ inline bool parseBool(const char* s, int& d)
 void XYZImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading XYZ file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading XYZ file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
@@ -244,7 +244,7 @@ void XYZImporter::FrameLoader::loadFile()
         throw Exception(tr("Too many particles in XYZ file. This program version can read XYZ files with up to %1 particles only.").arg(std::numeric_limits<int>::max()));
 
     setParticleCount(numParticlesLong);
-    progress.setProgressMaximum(numParticlesLong);
+    progress.setMaximum(numParticlesLong);
 
     // Extract some useful information from the comment line.
     const char* commentLine_cstr = stream.readLine();
@@ -429,7 +429,7 @@ void XYZImporter::FrameLoader::loadFile()
     try {
         for(size_t i = 0; i < numParticlesLong; i++) {
             // Update progress bar and check for user cancellation.
-            progress.setProgressValueIntermittent(i);
+            progress.setValueIntermittent(i);
             stream.readLine();
             columnParser.readElement(i, stream.line());
         }

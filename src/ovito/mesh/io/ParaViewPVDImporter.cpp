@@ -64,7 +64,7 @@ bool ParaViewPVDImporter::OOMetaClass::checkFileFormat(const FileHandle& file) c
 void ParaViewPVDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning file %1").arg(fileHandle.toString()));
+    progress.setText(tr("Scanning file %1").arg(fileHandle.toString()));
 
     // Initialize XML reader and open input file.
     std::unique_ptr<QIODevice> device = fileHandle.createIODevice();

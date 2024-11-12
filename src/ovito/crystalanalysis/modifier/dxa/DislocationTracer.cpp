@@ -67,7 +67,7 @@ void DislocationTracer::traceDislocationSegments(TaskProgress& progress)
     std::vector<int> subStepWeights(_maxExtendedBurgersCircuitSize - 2);
     for(int i = 0; i < subStepWeights.size(); i++)
         subStepWeights[i] = (i+3)*(i+3);
-    progress.beginProgressSubStepsWithWeights(std::move(subStepWeights));
+    progress.beginSubSteps(std::move(subStepWeights));
 
     mesh().clearFaceFlag(0);
 
@@ -106,10 +106,10 @@ void DislocationTracer::traceDislocationSegments(TaskProgress& progress)
         }
 
         if(circuitLength < _maxExtendedBurgersCircuitSize)
-            progress.nextProgressSubStep();
+            progress.nextSubStep();
     }
 
-    progress.endProgressSubSteps();
+    progress.endSubSteps();
 }
 
 /******************************************************************************
@@ -253,7 +253,7 @@ void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize, TaskProgr
 
     MemoryPool<BurgersCircuitSearchStruct> structPool;
 
-    progress.setProgressMaximum(mesh().vertexCount());
+    progress.setMaximum(mesh().vertexCount());
     int progressCounter = 0;
 
     // Find an appropriate start node for the recursive search.
@@ -262,7 +262,7 @@ void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize, TaskProgr
         OVITO_ASSERT(startNode.burgersSearchStruct == nullptr);
 
         // Update progress indicator.
-        progress.setProgressValueIntermittent(progressCounter++);
+        progress.setValueIntermittent(progressCounter++);
 
         // The first node is the seed of our recursive walk.
         // It is mapped to the origin of the reference lattice.

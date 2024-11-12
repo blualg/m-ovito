@@ -72,7 +72,7 @@ void Filter::load(CompressedTextReader& stream, bool readHeaderOnly, TaskProgres
     if(readHeaderOnly)
         return;
 
-    progress.setProgressMaximum(stream.underlyingSize());
+    progress.setMaximum(stream.underlyingSize());
 
     // Parse Weinberg vector list.
     for(;;) {
@@ -108,7 +108,7 @@ void Filter::load(CompressedTextReader& stream, bool readHeaderOnly, TaskProgres
         line = stream.readNonEmptyLine();
 
         // Update progress indicator.
-        progress.setProgressValueIntermittent(stream.underlyingByteOffset());
+        progress.setValueIntermittent(stream.underlyingByteOffset());
     }
 }
 

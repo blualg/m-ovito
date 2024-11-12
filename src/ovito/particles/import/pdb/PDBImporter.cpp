@@ -127,8 +127,8 @@ void PDBImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
     CompressedTextReader stream(fileHandle);
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning PDB file %1").arg(stream.filename()));
-    progress.setProgressMaximum(stream.underlyingSize());
+    progress.setText(tr("Scanning PDB file %1").arg(stream.filename()));
+    progress.setMaximum(stream.underlyingSize());
 
     Frame frame(fileHandle);
     bool endOnPreviousLine = false;
@@ -136,7 +136,7 @@ void PDBImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
         stream.readLine();
 
         // Update progress bar and check for user cancellation.
-        progress.setProgressValueIntermittent(stream.underlyingByteOffset());
+        progress.setValueIntermittent(stream.underlyingByteOffset());
 
         if(stream.lineStartsWithToken("ENDMDL")) {
             frames.push_back(frame);
@@ -172,7 +172,7 @@ void PDBImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
 void PDBImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading PDB file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading PDB file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);

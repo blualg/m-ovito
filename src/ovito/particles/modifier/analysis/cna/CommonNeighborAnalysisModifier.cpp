@@ -98,7 +98,7 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAAlgorithm::identifyStructures(co
         throw Exception(tr("The common neighbor analysis algorithm does not support 2d simulation cells."));
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Performing adaptive common neighbor analysis"));
+    progress.setText(tr("Performing adaptive common neighbor analysis"));
 
     // Prepare the neighbor finder.
     NearestNeighborFinder neighFinder(MAX_NEIGHBORS);
@@ -124,7 +124,7 @@ void CommonNeighborAnalysisModifier::IntervalCNAAlgorithm::identifyStructures(co
         throw Exception(tr("The common neighbor analysis algorithm does not support 2d simulation cells."));
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Performing interval common neighbor analysis"));
+    progress.setText(tr("Performing interval common neighbor analysis"));
 
     // Prepare the neighbor finder.
     NearestNeighborFinder neighFinder(MAX_NEIGHBORS);
@@ -150,7 +150,7 @@ void CommonNeighborAnalysisModifier::FixedCNAAlgorithm::identifyStructures(const
         throw Exception(tr("The common neighbor analysis algorithm does not support 2d simulation cells."));
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Performing common neighbor analysis"));
+    progress.setText(tr("Performing common neighbor analysis"));
 
     const auto typesToIdentify = this->typesToIdentify<NUM_STRUCTURE_TYPES>();
 
@@ -199,7 +199,7 @@ void CommonNeighborAnalysisModifier::FixedCNAAlgorithm::identifyStructures(const
 void CommonNeighborAnalysisModifier::BondCNAAlgorithm::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Performing common neighbor analysis"));
+    progress.setText(tr("Performing common neighbor analysis"));
 
     // Prepare particle bond map.
     ParticleBondMap bondMap(bondTopology(), bondPeriodicImages());

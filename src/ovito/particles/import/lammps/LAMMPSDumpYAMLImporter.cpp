@@ -63,8 +63,8 @@ void LAMMPSDumpYAMLImporter::discoverFramesInFile(const FileHandle& fileHandle, 
     CompressedTextReader stream(fileHandle);
 
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Scanning LAMMPS dump yaml file %1").arg(fileHandle.toString()));
-    progress.setProgressMaximum(stream.underlyingSize());
+    progress.setText(tr("Scanning LAMMPS dump yaml file %1").arg(fileHandle.toString()));
+    progress.setMaximum(stream.underlyingSize());
 
     unsigned long long timestep = 0;
     Frame frame(fileHandle);
@@ -178,7 +178,7 @@ private:
 void LAMMPSDumpYAMLImporter::FrameLoader::loadFile()
 {
     TaskProgress progress(this_task::ui());
-    progress.setProgressText(tr("Reading LAMMPS dump yaml file %1").arg(fileHandle().toString()));
+    progress.setText(tr("Reading LAMMPS dump yaml file %1").arg(fileHandle().toString()));
 
     // Parse YAML structure.
     YAMLParser parser;
@@ -290,7 +290,7 @@ void LAMMPSDumpYAMLImporter::FrameLoader::loadFile()
         auto line_node = dataNode.begin();
         for(size_t i = 0; i < (size_t)natoms; i++) {
             // Update progress bar and check for user cancellation.
-            progress.setProgressValueIntermittent(i);
+            progress.setValueIntermittent(i);
             if(line_node == dataNode.end())
                 throw Exception(tr("LAMMPS dump yaml file parsing error. Too few lines in 'data' section."));
             size_t col = 0;

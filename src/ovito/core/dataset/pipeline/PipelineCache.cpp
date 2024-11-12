@@ -509,7 +509,7 @@ void PipelineCache::startFramePrecomputation(const PipelineEvaluationRequest& re
         if(!pipelineNode)
             pipelineNode = static_object_cast<Pipeline>(ownerObject())->head();
         if(pipelineNode)
-            _precomputeFramesProgress->setProgressMaximum(pipelineNode->numberOfSourceFrames());
+            _precomputeFramesProgress->setMaximum(pipelineNode->numberOfSourceFrames());
 
         // Compute the first frame of the trajectory.
         precomputeNextAnimationFrame();
@@ -548,8 +548,8 @@ void PipelineCache::precomputeNextAnimationFrame()
         _allFramesPrecomputed = true;
         return;
     }
-    _precomputeFramesProgress->setProgressValue(nextFrame);
-    _precomputeFramesProgress->setProgressText(Pipeline::tr("Caching trajectory (%1 frames remaining)").arg(numSourceFrames - nextFrame));
+    _precomputeFramesProgress->setValue(nextFrame);
+    _precomputeFramesProgress->setText(Pipeline::tr("Caching trajectory (%1 frames remaining)").arg(numSourceFrames - nextFrame));
 
     // Request the next frame from the input trajectory.
     _precomputeFrameFuture = evaluatePipeline(PipelineEvaluationRequest(nextFrameTime));

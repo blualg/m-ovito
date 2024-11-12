@@ -95,6 +95,8 @@ OORef<AbstractRenderingFrameBuffer> OpenGLRenderingJob::createOffscreenFrameBuff
  ******************************************************************************/
 SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, TaskProgress& progress, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap)
 {
+    OVITO_ASSERT(this_task::ui());
+
     // OpenGL rendering requires a Qt GUI application.
     if(!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
         throw RendererException(
