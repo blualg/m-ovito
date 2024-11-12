@@ -137,6 +137,10 @@
 	<file>glsl/mesh/mesh_instanced_with_colors.vert</file>
 	<file>glsl/mesh/mesh_color_mapping.frag</file>
 	<file>glsl/mesh/mesh_color_mapping.vert</file>
+	<file>glsl/mesh/mesh_wireframe_tri.frag</file>
+	<file>glsl/mesh/mesh_wireframe_tri.vert</file>
+	<file>glsl/mesh/mesh_wireframe_tri_instanced.frag</file>
+	<file>glsl/mesh/mesh_wireframe_tri_instanced.vert</file>
 
 	<file>glsl/lines/line.vert</file>
 	<file>glsl/lines/line.frag</file>

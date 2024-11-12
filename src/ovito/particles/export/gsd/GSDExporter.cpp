@@ -142,7 +142,7 @@ void GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     // Output particle coordinates.
     BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);
     // Apply coordinate transformation matrix, wrapping a periodic box boundaries and data type conversion:
-    std::vector<Point_3<float>> posBuffer(posProperty.size());
+    std::vector<Point3F> posBuffer(posProperty.size());
     std::vector<Vector_3<int32_t>> imageBuffer(posProperty.size());
     for(size_t i = 0; i < ordering.size(); i++) {
         const Point3& p = posProperty[ordering[i]];
@@ -247,7 +247,7 @@ void GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
     if(BufferReadAccess<Vector3> velocityProperty = particles->getProperty(Particles::VelocityProperty)) {
         // Apply particle index mapping and data type conversion:
         // Also apply affine transform of simulation cell to velocity vectors.
-        std::vector<Vector_3<float>> velocityBuffer(velocityProperty.size());
+        std::vector<Vector3F> velocityBuffer(velocityProperty.size());
         boost::transform(ordering, velocityBuffer.begin(),
             [&](size_t i) { return (transformation * velocityProperty[i]).toDataType<float>(); });
         _gsdFile->writeChunk<float>("particles/velocity", velocityBuffer.size(), 3, velocityBuffer.data());
@@ -260,7 +260,7 @@ void GSDExporter::exportData(const PipelineFlowState& state, int frameNumber, co
         if(angularMomentumProperty->dataType() == Property::FloatDefault && angularMomentumProperty->componentCount() == 4) {
             BufferReadAccess<Quaternion> angularMomentumPropertyAccess(angularMomentumProperty);
             // Apply particle index mapping and data type conversion:
-            std::vector<QuaternionT<float>> angMomBuffer(angularMomentumProperty->size());
+            std::vector<QuaternionF> angMomBuffer(angularMomentumProperty->size());
             boost::transform(ordering, angMomBuffer.begin(),
                 [&](size_t i) { return angularMomentumPropertyAccess[i].toDataType<float>(); });
             _gsdFile->writeChunk<float>("particles/angmom", angMomBuffer.size(), 4, angMomBuffer.data());

@@ -76,14 +76,14 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
         quint32 allMask = 0;
 
         // Compute face normals.
-        std::vector<Vector_3<float>> faceNormals(faceCount());
+        std::vector<Vector3F> faceNormals(faceCount());
         auto faceNormal = faceNormals.begin();
         for(const auto& face : mesh()->faces()) {
             const Point3& p0 = vertices[face.vertex(0)];
             Vector3 d1 = vertices[face.vertex(1)] - p0;
             Vector3 d2 = vertices[face.vertex(2)] - p0;
             *faceNormal = d1.cross(d2).toDataType<float>();
-            if(*faceNormal != Vector_3<float>::Zero()) {
+            if(*faceNormal != Vector3F::Zero()) {
                 allMask |= face.smoothingGroups();
             }
             ++faceNormal;
@@ -95,7 +95,7 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
             // Initialize render vertices for this face.
             for(size_t v = 0; v < 3; v++, rv++) {
                 if(face.smoothingGroups())
-                    rv->normal = Vector_3<float>::Zero();
+                    rv->normal = Vector3F::Zero();
                 else
                     rv->normal = *faceNormal;
                 rv->position = vertices[face.vertex(v)].toDataType<float>();
@@ -143,14 +143,14 @@ void MeshPrimitive::generateRenderableVertices(RenderVertex* renderableVertices,
         OVITO_ASSERT(rv == renderableVertices + 3*faceCount());
 
         if(allMask) {
-            std::vector<Vector_3<float>> groupVertexNormals(vertexCount());
+            std::vector<Vector3F> groupVertexNormals(vertexCount());
             for(int group = 0; group < OVITO_MAX_NUM_SMOOTHING_GROUPS; group++) {
                 quint32 groupMask = quint32(1) << group;
                 if((allMask & groupMask) == 0)
                     continue;   // Group is not used.
 
                 // Reset work arrays.
-                std::fill(groupVertexNormals.begin(), groupVertexNormals.end(), Vector_3<float>::Zero());
+                std::fill(groupVertexNormals.begin(), groupVertexNormals.end(), Vector3F::Zero());
 
                 // Compute vertex normals at original vertices for current smoothing group.
                 faceNormal = faceNormals.begin();

@@ -43,7 +43,7 @@ public:
         float time;
         float prec;
         Matrix_3<float> cell;
-        std::vector<Point_3<float>> xyz;
+        std::vector<Point3F> xyz;
     };
 
     ~XTCFile() {
@@ -164,7 +164,7 @@ void XTCImporter::FrameLoader::loadFile()
     size_t numParticles = xtcFrame.xyz.size();
     setParticleCount(numParticles);
     BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(Particles::PositionProperty);
-    std::transform(xtcFrame.xyz.cbegin(), xtcFrame.xyz.cend(), posProperty.begin(), [](const Point_3<float>& p) {
+    std::transform(xtcFrame.xyz.cbegin(), xtcFrame.xyz.cend(), posProperty.begin(), [](const Point3F& p) {
         return (p * 10.0f).toDataType<FloatType>();
     });
     posProperty.reset();

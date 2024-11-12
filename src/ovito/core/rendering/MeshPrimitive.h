@@ -147,8 +147,8 @@ public:
     /// Vertex information emitted during rendering of a triangle mesh.
     struct RenderVertex
     {
-        Point_3<float> position;
-        Vector_3<float> normal;
+        Point3F position;
+        Vector3F normal;
         ColorAT<float> color;
     };
 
