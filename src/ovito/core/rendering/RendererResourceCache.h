@@ -57,6 +57,8 @@ struct RendererResourceKey : public std::tuple<TupleFields...>
  */
 class RendererResourceCache : public std::enable_shared_from_this<RendererResourceCache>
 {
+    Q_DISABLE_COPY_MOVE(RendererResourceCache)
+
 public:
 
     /// Data type used by the resource cache to refer to a frame being in flight.
@@ -124,12 +126,6 @@ public:
         OVITO_ASSERT(_entries.empty());
     }
 #endif
-
-    // A cache cannot be copied nor moved.
-    RendererResourceCache(const RendererResourceCache& other) = delete;
-    RendererResourceCache& operator=(const RendererResourceCache& other) = delete;
-    RendererResourceCache(RendererResourceCache&& other) = delete;
-    RendererResourceCache& operator=(RendererResourceCache&& other) = delete;
 
     /// Returns a reference to the value for the given key.
     /// Creates a new cache entry with a default-initialized value if the key doesn't exist.
@@ -257,7 +253,7 @@ private:
     /// lookup() returns references to elements stored in the cache, which must remain valid even when new objects are added.
     std::deque<CacheEntry> _entries;
 
-    /// Mutex to protect the cache from concurrent access.
+    /// Mutex to protect the cache from concurrent accesses.
     std::recursive_mutex _mutex;
 
     /// Counter that keeps track of how many resource frames have been acquired in total.

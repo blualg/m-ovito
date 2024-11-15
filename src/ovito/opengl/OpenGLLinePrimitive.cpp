@@ -22,7 +22,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/LinePrimitive.h>
-#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include "OpenGLRenderingJob.h"
 #include "OpenGLShaderHelper.h"
 
@@ -87,7 +86,7 @@ void OpenGLRenderingJob::renderThinLinesImplementation(const LinePrimitive& prim
     }
     else {
         // Pass picking base ID to shader.
-        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(command, primitive.positions()->size() / 2));
+        shader.setPickingBaseId(objectPickingMap()->allocateObjectPickingIDs(command, primitive.positions()->size() / 2));
     }
 
     // Issue line drawing command.
@@ -139,7 +138,7 @@ void OpenGLRenderingJob::renderThickLinesImplementation(const LinePrimitive& pri
     }
     else {
         // Pass picking base ID to shader.
-        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(command, primitive.positions()->size() / 2));
+        shader.setPickingBaseId(objectPickingMap()->allocateObjectPickingIDs(command, primitive.positions()->size() / 2));
     }
 
     // Compute line width in viewport space.

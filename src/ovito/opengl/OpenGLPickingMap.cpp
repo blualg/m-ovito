@@ -20,17 +20,50 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/gui/base/GUIBase.h>
-#include <ovito/opengl/OpenGLRenderer.h>
-#include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
+#include <ovito/core/Core.h>
+#include "OpenGLRenderer.h"
+#include "OpenGLRenderingFrameBuffer.h"
 #include "OpenGLPickingMap.h"
 
 namespace Ovito {
 
 /******************************************************************************
+* Registers a range of unique object IDs for a rendering command.
+******************************************************************************/
+uint32_t OpenGLPickingMap::allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, ConstDataBufferPtr indices)
+{
+    OVITO_ASSERT(!command.skipInPickingPass());
+    OVITO_ASSERT(objectCount != 0);
+
+    auto baseObjectID = _nextAvailablePickingID;
+    _pickingRecords.emplace(baseObjectID, PickingRecord(command, std::move(indices)));
+    _nextAvailablePickingID += objectCount;
+    return baseObjectID;
+}
+
+/******************************************************************************
+* Finds the picked object at the given frame buffer pixel position.
+******************************************************************************/
+std::optional<ViewportWindow::PickResult> OpenGLPickingMap::pickAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const
+{
+    if(uint32_t linearId = linearIdAt(frameBufferLocation)) {
+        auto [baseObjectID, pickingRecord] = lookupPickingRecordFromLinearId(linearId);
+        if(pickingRecord) {
+            OVITO_ASSERT(pickingRecord->pipeline());
+            return ViewportWindow::PickResult(
+                const_cast<Pipeline*>(pickingRecord->pipeline().get()),
+                pickingRecord->pickInfo(),
+                worldPositionAt(frameBufferLocation, projectionParams, framebufferSize),
+                pickingRecord->resolveSubObjectID(linearId - baseObjectID));
+        }
+    }
+    return std::nullopt;
+}
+
+/******************************************************************************
 * Reads out the contents of the OpenGL framebuffer.
 ******************************************************************************/
-void OpenGLPickingMap::acquire(const OORef<AbstractRenderingFrameBuffer>& frameBuffer)
+void OpenGLPickingMap::acquireFramebufferContents(const OORef<AbstractRenderingFrameBuffer>& frameBuffer)
 {
     OORef<OpenGLRenderingFrameBuffer> glFrameBuffer = static_object_cast<OpenGLRenderingFrameBuffer>(frameBuffer);
     OVITO_ASSERT(glFrameBuffer->framebufferObject());
@@ -82,9 +115,9 @@ void OpenGLPickingMap::acquire(const OORef<AbstractRenderingFrameBuffer>& frameB
 }
 
 /******************************************************************************
-* Returns the frame buffer object ID at the given frame buffer location.
+* Returns the linear object ID at the given frame buffer location.
 ******************************************************************************/
-uint32_t OpenGLPickingMap::objectIdentifierAt(const QPoint& frameBufferLocation) const
+uint32_t OpenGLPickingMap::linearIdAt(const QPoint& frameBufferLocation) const
 {
     if(!_image.isNull()) {
         if(frameBufferLocation.x() >= 0 && frameBufferLocation.x() < _image.width() && frameBufferLocation.y() >= 0 && frameBufferLocation.y() < _image.height()) {

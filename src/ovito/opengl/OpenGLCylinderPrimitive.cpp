@@ -22,7 +22,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
-#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include "OpenGLRenderingJob.h"
 #include "OpenGLShaderHelper.h"
 
@@ -113,7 +112,7 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
     // Pass picking base ID to shader.
     GLint pickingBaseId;
     if(isPickingPass()) {
-        pickingBaseId = objectPickingIdentifierMap()->allocateObjectPickingIDs(command, primitive.basePositions()->size());
+        pickingBaseId = objectPickingMap()->allocateObjectPickingIDs(command, primitive.basePositions()->size());
         shader.setPickingBaseId(pickingBaseId);
     }
     OVITO_REPORT_OPENGL_ERRORS(this);

@@ -22,7 +22,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
-#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include <ovito/core/utilities/SortZipped.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "OpenGLRenderingJob.h"
@@ -221,7 +220,7 @@ void OpenGLRenderingJob::renderParticlesImplementation(const ParticlePrimitive& 
 
     // Pass picking base ID to shader.
     if(isPickingPass()) {
-        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(command, primitive.positions()->size()));
+        shader.setPickingBaseId(objectPickingMap()->allocateObjectPickingIDs(command, primitive.positions()->size()));
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
 

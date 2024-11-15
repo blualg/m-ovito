@@ -36,6 +36,7 @@ OVITO_STANDARD_PLUGIN(OpenGLRenderer
         OpenGLRenderer.cpp
         OpenGLRenderingJob.cpp
         OpenGLRenderingFrameBuffer.cpp
+        OpenGLPickingMap.cpp
         OffscreenOpenGLRenderingJob.cpp
         resources/opengl.qrc
     LIB_DEPENDENCIES

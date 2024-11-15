@@ -77,7 +77,7 @@ public:
             ExcludeFromVisual = (1 << 0),    // Skip the primitive in the visual rendering pass
             ExcludeFromPicking = (1 << 1),   // Skip the primitive in the object picking rendering pass
             ExcludeFromLighting = (1 << 2),  // Exclude this primitive from global illumination and shadows
-            ExcludeFromOutline = (1 << 3),   // Skip the primitive in the outline calculation (when supported)
+            ExcludeFromOutline = (1 << 3),   // Do not draw an outline around the primitive (only for renderers that support outlines)
         };
         Q_DECLARE_FLAGS(Flags, Flag);
 
@@ -124,10 +124,11 @@ public:
         /// Controls whether this the primitive drawn by this command should be excluded from global illumination and shadow calculations.
         void setExcludeFromLighting(bool exclude) { _flags.setFlag(ExcludeFromLighting, exclude); }
 
-        /// Exclude this command from outline rendering
-        bool skipForOutline() const { return _flags.testFlag(ExcludeFromOutline); }
+        /// Exclude this drawing command from the outline rendering pass.
+        bool excludeFromOutline() const { return _flags.testFlag(ExcludeFromOutline); }
 
     private:
+
         /// The graphics primitive to be rendered.
         std::unique_ptr<RenderingPrimitive> _primitive;
 

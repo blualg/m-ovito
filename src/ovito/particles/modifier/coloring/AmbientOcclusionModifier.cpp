@@ -30,8 +30,8 @@
 #include <ovito/core/rendering/FrameBuffer.h>
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/SceneRenderer.h>
-#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include <ovito/opengl/OffscreenOpenGLRenderingJob.h>
+#include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
 #include "AmbientOcclusionModifier.h"
 
 namespace Ovito {
@@ -162,11 +162,11 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             renderingJob->postprocessFrameGraph(*frameGraph);
             this_task::throwIfCanceled();
 
-            // Create a special object picking map to extract the particle indices from the frame buffer.
-            std::shared_ptr<ObjectPickingIdentifierMap> objectIdentifierMap = std::make_shared<ObjectPickingIdentifierMap>();
+            // Create an (unused) object picking map, which is needed by the OpenGLRenderingJob for false color rendering.
+            std::shared_ptr<OpenGLPickingMap> objectIdentifierMap = std::make_shared<OpenGLPickingMap>();
 
             // Create an offscreen framebuffer for rendering.
-            OORef<AbstractRenderingFrameBuffer> renderBuffer = renderingJob->createOffscreenFrameBuffer(frameBufferRect, frameBuffer);
+            OORef<OpenGLRenderingFrameBuffer> renderBuffer = OORef<OpenGLRenderingFrameBuffer>::create(renderingJob, frameBufferRect, frameBuffer);
 
             this_task::setProgressMaximum(samplingCount);
             for(int sample = 0; sample < samplingCount; sample++) {

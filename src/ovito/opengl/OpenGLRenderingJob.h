@@ -28,6 +28,7 @@
 #include "OpenGLHelpers.h"
 #include "OpenGLTexture.h"
 #include "OpenGLRenderer.h"
+#include "OpenGLPickingMap.h"
 
 #include <QOpenGLContext>
 #include <QOpenGLExtraFunctions>
@@ -94,7 +95,10 @@ public:
 	virtual OORef<AbstractRenderingFrameBuffer> createOffscreenFrameBuffer(const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer) override;
 
 	/// Renders an image of the given frame graph into the given target frame buffer.
-	[[nodiscard]] virtual Future<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, std::shared_ptr<ObjectPickingIdentifierMap> pickingMap = {}) override;
+	[[nodiscard]] virtual Future<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer) override;
+
+	/// Renders an image of the given frame graph into the given target frame buffer.
+	[[nodiscard]] Future<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<OpenGLRenderingFrameBuffer> frameBuffer, std::shared_ptr<OpenGLPickingMap> pickingMap);
 
 	/// Returns the multi-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
 	virtual int multisamplingLevel() const override { return _multisamplingLevel; }
@@ -219,10 +223,10 @@ protected:
     bool orderIndependentTransparency() const { return _orderIndependentTransparency; }
 
     /// Returns the mapping of frame buffer object IDs to object picking groups.
-    ObjectPickingIdentifierMap* objectPickingIdentifierMap() const { return _objectPickingIdentifierMap; }
+    OpenGLPickingMap* objectPickingMap() const { return _objectPickingMap; }
 
     /// Indicates that we are currently rendering a false-color image for object picking.
-    bool isPickingPass() const { return objectPickingIdentifierMap() != nullptr; }
+    bool isPickingPass() const { return objectPickingMap() != nullptr; }
 
     /// Returns the model-view transformation matrix for the current graphics primitive being rendered.
     const AffineTransformation& modelViewTM() const { return _modelViewTM; }
@@ -266,7 +270,7 @@ private:
     void (QOPENGLF_APIENTRY *glMultiDrawArraysIndirect)(GLenum mode, const void* indirect, GLsizei drawcount, GLsizei stride) = nullptr;
 
     /// The mapping of frame buffer object IDs to object picking groups.
-    ObjectPickingIdentifierMap* _objectPickingIdentifierMap = nullptr;
+    OpenGLPickingMap* _objectPickingMap = nullptr;
 
     /// Indicates whether we are currently rendering semi-transparent geometry.
     bool _isTransparencyPass = false;

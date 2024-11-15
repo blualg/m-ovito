@@ -25,7 +25,6 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
 #include <ovito/core/rendering/FrameGraph.h>
-#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include "OpenGLRenderingJob.h"
 #include "OpenGLRenderingFrameBuffer.h"
 #include "OpenGLHelpers.h"
@@ -74,8 +73,7 @@ void OpenGLRenderingJob::aboutToBeDeleted()
 /******************************************************************************
  * Creates a new abstract target frame buffer for rendering into.
  ******************************************************************************/
-OORef<AbstractRenderingFrameBuffer> OpenGLRenderingJob::createOffscreenFrameBuffer(const QRect& viewportRect,
-                                                                                   const std::shared_ptr<FrameBuffer>& frameBuffer)
+OORef<AbstractRenderingFrameBuffer> OpenGLRenderingJob::createOffscreenFrameBuffer(const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer)
 {
     // Creating an OpenGL framebuffer requires an active OpenGL context.
     OpenGLContextRestore contextRestore = activateContext();
@@ -90,10 +88,17 @@ OORef<AbstractRenderingFrameBuffer> OpenGLRenderingJob::createOffscreenFrameBuff
 }
 
 /******************************************************************************
- * Renders an image of the given frame graph into the given target frame buffer.
- ******************************************************************************/
-Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer,
-                                             std::shared_ptr<ObjectPickingIdentifierMap> pickingMap)
+* Renders an image of the given frame graph into the given target frame buffer.
+******************************************************************************/
+Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer)
+{
+    return renderFrame(std::move(frameGraph), static_object_cast<OpenGLRenderingFrameBuffer>(std::move(frameBuffer)), nullptr);
+}
+
+/******************************************************************************
+* Renders an image of the given frame graph into the given target frame buffer.
+******************************************************************************/
+Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<OpenGLRenderingFrameBuffer> frameBuffer, std::shared_ptr<OpenGLPickingMap> pickingMap)
 {
     // OpenGL rendering requires a Qt GUI application.
     if(!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
@@ -122,16 +127,15 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     OVITO_REPORT_OPENGL_ERRORS(this);
 
     // Bind offscreen OpenGL framebuffer for rendering.
-    OORef<OpenGLRenderingFrameBuffer> glFrameBuffer = static_object_cast<OpenGLRenderingFrameBuffer>(std::move(frameBuffer));
-    if(glFrameBuffer->framebufferObject() && !glFrameBuffer->framebufferObject()->bind())
+    if(frameBuffer->framebufferObject() && !frameBuffer->framebufferObject()->bind())
         throw RendererException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
     // Store physical framebuffer size.
-    _framebufferSize = glFrameBuffer->framebufferSize();
+    _framebufferSize = frameBuffer->framebufferSize();
 
     // Store a pointer internally.
     _frameGraph = frameGraph.get();
-    _objectPickingIdentifierMap = pickingMap.get();
+    _objectPickingMap = pickingMap.get();
 
     // Obtain surface format.
     _glformat = _glcontext->format();
@@ -309,7 +313,7 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
 
     // Render translucent 3D geometry in a second pass.
     if(hasTransparentGeometry)
-        renderTransparentGeometry(*glFrameBuffer);
+        renderTransparentGeometry(*frameBuffer);
 
     // Render highlighted geometry in a third and fourth pass.
     if(!isPickingPass() && std::any_of(frameGraph->commandGroups().cbegin(), frameGraph->commandGroups().cend(),
@@ -349,22 +353,22 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
 
     // Store the resource cache frame in the target frame buffer object to keep OpenGL resources alive
     // for subsequent frames.
-    glFrameBuffer->storePreviousResourceFrame(std::move(_currentResourceFrame));
+    frameBuffer->storePreviousResourceFrame(std::move(_currentResourceFrame));
 
     // Read the rendered image from the OpenGL framebuffer and paint it into to the output frame buffer.
-    if(glFrameBuffer->outputFrameBuffer() && glFrameBuffer->framebufferObject()) {
-        const QRect& viewportRect = glFrameBuffer->outputViewportRect();
+    if(frameBuffer->outputFrameBuffer() && frameBuffer->framebufferObject()) {
+        const QRect& viewportRect = frameBuffer->outputViewportRect();
 
         // Flush the contents to the FBO before extracting the image.
         glcontext()->swapBuffers(glcontext()->surface());
 
         // Clear destination area in the framebuffer (only necessary if OpenGL image is not fully opaque).
-        FrameBuffer& outputFrameBuffer = *glFrameBuffer->outputFrameBuffer();
+        FrameBuffer& outputFrameBuffer = *frameBuffer->outputFrameBuffer();
         if(frameGraph->clearColor().a() != 1 && !outputFrameBuffer.image().isNull())
             outputFrameBuffer.clear(frameGraph->clearColor(), viewportRect);
 
         // Fetch rendered image from OpenGL framebuffer.
-        QImage renderedImage = glFrameBuffer->framebufferObject()->toImage();
+        QImage renderedImage = frameBuffer->framebufferObject()->toImage();
         OVITO_ASSERT(renderedImage.size() == framebufferSize());
         // Rescale supersampled image to output size.
         QImage scaledImage = renderedImage.scaled(viewportRect.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
@@ -389,6 +393,7 @@ Future<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> f
     }
 
     _glcontext = nullptr;
+    _objectPickingMap = nullptr;
 
     return Future<void>::createImmediateEmpty();
 }

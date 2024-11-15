@@ -27,7 +27,7 @@
 #include <ovito/gui/vpwidget/WidgetViewportWindow.h>
 #include <ovito/opengl/OpenGLRenderer.h>
 #include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
-#include "OpenGLPickingMap.h"
+#include <ovito/opengl/OpenGLPickingMap.h>
 
 #include <QOpenGLWidget>
 
@@ -42,6 +42,9 @@ class OVITO_OPENGLRENDERERWINDOW_EXPORT OpenGLViewportWindow : public WidgetView
     OVITO_CLASS(OpenGLViewportWindow)
 
 public:
+
+    /// Creates and returns the rendering job that renders the contents of the viewport window.
+    OpenGLRenderingJob* renderingJob() { return static_object_cast<OpenGLRenderingJob>(WidgetViewportWindow::renderingJob().get()); }
 
     /// Determines the object located under the given mouse cursor position.
     virtual std::optional<PickResult> pick(const QPointF& pos) override;
@@ -75,10 +78,10 @@ private:
     OORef<FrameGraph> _frameGraph;
 
     /// The abstract frame buffer for on-screen rendering into the QOpenGLWidget.
-    OORef<AbstractRenderingFrameBuffer> _visualFrameBuffer;
+    OORef<OpenGLRenderingFrameBuffer> _visualFrameBuffer;
 
     /// The abstract frame buffer for off-screen rendering into the object picking buffer.
-    OORef<AbstractRenderingFrameBuffer> _pickingFrameBuffer;
+    OORef<OpenGLRenderingFrameBuffer> _pickingFrameBuffer;
 
     /// Manages the information obtained from an object picking render pass.
     std::shared_ptr<OpenGLPickingMap> _objectPickingMap = std::make_shared<OpenGLPickingMap>();
