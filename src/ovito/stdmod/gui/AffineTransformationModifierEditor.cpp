@@ -25,6 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/AffineTransformationParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
+#include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 #include <ovito/stdmod/modifiers/AffineTransformationModifier.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include "AffineTransformationModifierEditor.h"
@@ -83,7 +84,7 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
         if(col < 2)
             layout->setColumnMinimumWidth(col*3 + 2, 4);
         for(int row = 0; row < 4; row++) {
-            QLineEdit* lineEdit = new QLineEdit(rollout);
+            QLineEdit* lineEdit = new EnterLineEdit(rollout);
             SpinnerWidget* spinner = new SpinnerWidget(rollout);
             lineEdit->setEnabled(false);
             spinner->setEnabled(false);
@@ -327,9 +328,9 @@ void AffineTransformationModifierEditor::onEnterRotation()
         layout->setColumnMinimumWidth(5, 4);
         layout->setVerticalSpacing(2);
         layout->setHorizontalSpacing(0);
-        QLineEdit* axisEditX = new QLineEdit();
-        QLineEdit* axisEditY = new QLineEdit();
-        QLineEdit* axisEditZ = new QLineEdit();
+        QLineEdit* axisEditX = new EnterLineEdit();
+        QLineEdit* axisEditY = new EnterLineEdit();
+        QLineEdit* axisEditZ = new EnterLineEdit();
         SpinnerWidget* axisSpinnerX = new SpinnerWidget();
         SpinnerWidget* axisSpinnerY = new SpinnerWidget();
         SpinnerWidget* axisSpinnerZ = new SpinnerWidget();
@@ -346,16 +347,16 @@ void AffineTransformationModifierEditor::onEnterRotation()
         layout->addWidget(axisEditZ, 1, 6);
         layout->addWidget(axisSpinnerZ, 1, 7);
         layout->addWidget(new QLabel(tr("Angle:")), 2, 0, 1, 8);
-        QLineEdit* angleEdit = new QLineEdit();
+        QLineEdit* angleEdit = new EnterLineEdit();
         SpinnerWidget* angleSpinner = new SpinnerWidget();
         angleSpinner->setTextBox(angleEdit);
         angleSpinner->setUnit(mainWindow().unitsManager().angleUnit());
         layout->addWidget(angleEdit, 3, 0);
         layout->addWidget(angleSpinner, 3, 1);
         layout->addWidget(new QLabel(tr("Center of rotation:")), 4, 0, 1, 8);
-        QLineEdit* centerEditX = new QLineEdit();
-        QLineEdit* centerEditY = new QLineEdit();
-        QLineEdit* centerEditZ = new QLineEdit();
+        QLineEdit* centerEditX = new EnterLineEdit();
+        QLineEdit* centerEditY = new EnterLineEdit();
+        QLineEdit* centerEditZ = new EnterLineEdit();
         SpinnerWidget* centerSpinnerX = new SpinnerWidget();
         SpinnerWidget* centerSpinnerY = new SpinnerWidget();
         SpinnerWidget* centerSpinnerZ = new SpinnerWidget();

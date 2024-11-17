@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -103,7 +104,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
     connect(playbackSpeedBox, qOverload<int>(&QComboBox::activated), this, &AnimationSettingsDialog::onPlaybackSpeedChanged);
 
     contentLayout->addWidget(new QLabel(tr("Every Nth frame:"), this), 1, 0);
-    QLineEdit* everyNthFrameBox = new QLineEdit(this);
+    QLineEdit* everyNthFrameBox = new EnterLineEdit(this);
     contentLayout->addWidget(everyNthFrameBox, 1, 2);
     everyNthFrameSpinner = new SpinnerWidget(this);
     everyNthFrameSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
@@ -134,7 +135,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
     contentLayout->setColumnStretch(1, 1);
 
     contentLayout->addWidget(new QLabel(tr("Start frame:"), this), 0, 0);
-    QLineEdit* animStartBox = new QLineEdit(this);
+    QLineEdit* animStartBox = new EnterLineEdit(this);
     contentLayout->addWidget(animStartBox, 0, 1);
     animStartSpinner = new SpinnerWidget(this);
     animStartSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
@@ -143,7 +144,7 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
     connect(animStartSpinner, &SpinnerWidget::valueChanged, this, &AnimationSettingsDialog::onAnimationIntervalChanged);
 
     contentLayout->addWidget(new QLabel(tr("End frame:"), this), 1, 0);
-    QLineEdit* animEndBox = new QLineEdit(this);
+    QLineEdit* animEndBox = new EnterLineEdit(this);
     contentLayout->addWidget(animEndBox, 1, 1);
     animEndSpinner = new SpinnerWidget(this);
     animEndSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());

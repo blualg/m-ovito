@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
@@ -80,8 +81,8 @@ ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, Pipeline* pipel
     mainLayout->addWidget(nameBox);
     sublayout2 = new QHBoxLayout(nameBox);
     sublayout2->setSpacing(2);
-    _originalNameEdit = new QLineEdit(nameBox);
-    _cloneNameEdit = new QLineEdit(nameBox);
+    _originalNameEdit = new EnterLineEdit(nameBox);
+    _cloneNameEdit = new EnterLineEdit(nameBox);
     sublayout2->addWidget(new QLabel(tr("Original:")));
     sublayout2->addWidget(_originalNameEdit, 1);
     sublayout2->addSpacing(10);
