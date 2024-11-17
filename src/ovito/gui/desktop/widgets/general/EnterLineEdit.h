@@ -20,57 +20,31 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-/**
- * \file AutocompleteLineEdit.h
- * \brief Contains the definition of the Ovito::AutocompleteLineEdit class.
- */
-
 #pragma once
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 
 namespace Ovito {
 
 /**
- * \brief A text editor widget that provides auto-completion of words.
+ * \brief A variant of the QLineEdit standard widget which intercepts 'Enter' key-press events instead of forwarding them to the parent widget.
+ *        This is used in places where the edit widget is a child of a checkable QGroupBox, in which
+ *        the enter key otherwise would toggle the group widget's checkbox.
  */
-class OVITO_GUI_EXPORT AutocompleteLineEdit : public EnterLineEdit
+class OVITO_GUI_EXPORT EnterLineEdit : public QLineEdit
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    explicit AutocompleteLineEdit(QWidget* parent = nullptr);
-
-    /// Sets the list of words that can be completed.
-    void setWordList(const QStringList& words) { _wordListModel->setStringList(words); }
-
-protected Q_SLOTS:
-
-    /// Inserts a complete word into the text field.
-    void onComplete(const QString& completion);
+    using QLineEdit::QLineEdit;
 
 protected:
 
     /// Handles key-press events.
     virtual void keyPressEvent(QKeyEvent* event) override;
-
-    /// Creates a list of tokens from the current text string.
-    QStringList getTokenList() const;
-
-protected:
-
-    /// The completer object used by the widget.
-    QCompleter* _completer;
-
-    /// The list model storing the words that can be completed.
-    QStringListModel* _wordListModel;
-
-    /// Regular expression used to split a text into words.
-    QRegularExpression _wordSplitter;
 };
 
 }   // End of namespace

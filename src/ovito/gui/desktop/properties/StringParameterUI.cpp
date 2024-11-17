@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
+#include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 
 namespace Ovito {
@@ -37,7 +38,7 @@ void StringParameterUI::initializeObject(PropertiesEditor* parentEditor, const P
     PropertyParameterUI::initializeObject(parentEditor, propField);
 
     // Create UI widget.
-    _textBox = new QLineEdit();
+    _textBox = new EnterLineEdit();
     connect(static_cast<QLineEdit*>(_textBox.data()), &QLineEdit::editingFinished, this, &StringParameterUI::updatePropertyValue);
 }
 

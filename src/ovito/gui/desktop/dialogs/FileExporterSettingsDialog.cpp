@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
+#include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/desktop/properties/PropertiesPanel.h>
 #include <ovito/gui/desktop/properties/DefaultPropertiesEditor.h>
@@ -136,7 +137,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
         fileGroupLayout->addWidget(multipleFilesBtn, 1, 0, 1, 1);
         multipleFilesBtn->setChecked(_exporter->useWildcardFilename());
 
-        _wildcardTextbox = new QLineEdit(_exporter->wildcardFilename());
+        _wildcardTextbox = new EnterLineEdit(_exporter->wildcardFilename());
         fileGroupLayout->addWidget(_wildcardTextbox, 1, 1, 1, 1);
         _wildcardTextbox->setEnabled(multipleFilesBtn->isChecked());
         connect(multipleFilesBtn, &QRadioButton::toggled, _wildcardTextbox, &QLineEdit::setEnabled);
@@ -147,7 +148,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
         connect(frameSequenceBtn, &QRadioButton::toggled, multipleFilesBtn, &QWidget::setEnabled);
     }
     else {
-        _wildcardTextbox = new QLineEdit(_exporter->wildcardFilename());
+        _wildcardTextbox = new EnterLineEdit(_exporter->wildcardFilename());
         fileGroupLayout->addWidget(new QLabel(tr("Filename pattern:")), 0, 0, 1, 1);
         fileGroupLayout->addWidget(_wildcardTextbox, 0, 1, 1, 1);
     }
