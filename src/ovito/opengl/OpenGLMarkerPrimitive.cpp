@@ -72,7 +72,7 @@ void OpenGLRenderingJob::renderMarkersImplementation(const MarkerPrimitive& prim
 
     // Upload marker positions.
     QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerInstance);
-    shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point_3<float>), 0, OpenGLShaderHelper::PerInstance);
+    shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point3F), 0, OpenGLShaderHelper::PerInstance);
 
     // Issue instance drawing command.
     shader.draw(GL_LINES);

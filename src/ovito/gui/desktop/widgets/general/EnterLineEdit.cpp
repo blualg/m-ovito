@@ -20,13 +20,20 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include "../global_uniforms.glsl"
+#include <ovito/gui/desktop/GUI.h>
+#include "EnterLineEdit.h"
 
-// Inputs
-in vec4 position;
+namespace Ovito {
 
-void main()
+/******************************************************************************
+* Handles key-press events.
+******************************************************************************/
+void EnterLineEdit::keyPressEvent(QKeyEvent* event)
 {
-	// Apply model-view-projection matrix.
-	gl_Position = modelview_projection_matrix * position;
+    QLineEdit::keyPressEvent(event);
+
+    if(event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return)
+        event->accept();
 }
+
+}   // End of namespace

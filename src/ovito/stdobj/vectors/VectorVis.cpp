@@ -155,15 +155,15 @@ Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuf
         }
     }
     else if(vectorProperty->dataType() == Property::Float32) {
-        BufferReadAccess<Vector_3<float>> vectorData(vectorProperty);
-        for(const Vector_3<float>& v : vectorData) {
-            if(v != Vector_3<float>::Zero())
+        BufferReadAccess<Vector3F> vectorData(vectorProperty);
+        for(const Vector3F& v : vectorData) {
+            if(v != Vector3F::Zero())
                 bbox.addPoint(*p);
             ++p;
         }
 
         // Find largest vector magnitude.
-        for(const Vector_3<float>& v : vectorData) {
+        for(const Vector3F& v : vectorData) {
             auto m = v.squaredLength();
             if(m > maxMagnitude) maxMagnitude = m;
         }
@@ -258,14 +258,14 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VectorVis::render(const Con
         [&](CylinderPrimitive& arrows) {
             // Determine number of non-zero vectors.
             int vectorCount = 0;
-            BufferReadAccess<Vector_3<float>> vectorData32(
+            BufferReadAccess<Vector3F> vectorData32(
                 vectorData.directions && vectorData.directions->dataType() == DataBuffer::Float32 ? vectorData.directions : nullptr);
             BufferReadAccess<Vector_3<double>> vectorData64(
                 vectorData.directions && vectorData.directions->dataType() == DataBuffer::Float64 ? vectorData.directions : nullptr);
             if(vectorData.positions) {
                 if(vectorData32) {
                     for(const auto& v : vectorData32) {
-                        if(v != Vector_3<float>::Zero())
+                        if(v != Vector3F::Zero())
                             vectorCount++;
                     }
                 }

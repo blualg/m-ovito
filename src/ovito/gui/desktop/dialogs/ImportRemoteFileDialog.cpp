@@ -23,6 +23,7 @@
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
+#include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/core/utilities/io/FileManager.h>
 #include <ovito/core/utilities/io/ssh/SshConnection.h>
@@ -129,7 +130,7 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const QVe
 #endif
     layout3->addWidget(_opensshMethod, 1, 0);
 #ifdef OVITO_BUILD_PROFESSIONAL
-    _sftpPath = new QLineEdit();
+    _sftpPath = new EnterLineEdit();
     _sftpPath->setText(OpensshConnection::getSftpPath());
     _sftpPath->setPlaceholderText(QStringLiteral("sftp"));
     _sftpPath->setEnabled(_opensshMethod->isChecked());

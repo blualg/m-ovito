@@ -21,12 +21,12 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../global_uniforms.glsl"
+#include <shading.frag>
 
-// Inputs
-in vec4 position;
+// Uniforms:
+uniform vec4 color;
 
 void main()
 {
-	// Apply model-view-projection matrix.
-	gl_Position = modelview_projection_matrix * position;
+    outputFlat(color);
 }

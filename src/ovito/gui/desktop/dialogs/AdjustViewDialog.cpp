@@ -25,6 +25,7 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/viewport/ViewportSettings.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
+#include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include "AdjustViewDialog.h"
@@ -84,7 +85,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
-    textBox = new QLineEdit();
+    textBox = new EnterLineEdit();
     _camPosXSpinner->setTextBox(textBox);
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_camPosXSpinner);
@@ -94,7 +95,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
-    textBox = new QLineEdit();
+    textBox = new EnterLineEdit();
     _camPosYSpinner->setTextBox(textBox);
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_camPosYSpinner);
@@ -104,7 +105,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
-    textBox = new QLineEdit();
+    textBox = new EnterLineEdit();
     _camPosZSpinner->setTextBox(textBox);
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_camPosZSpinner);
@@ -130,7 +131,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
-    textBox = new QLineEdit();
+    textBox = new EnterLineEdit();
     _camDirXSpinner->setTextBox(textBox);
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_camDirXSpinner);
@@ -140,7 +141,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
-    textBox = new QLineEdit();
+    textBox = new EnterLineEdit();
     _camDirYSpinner->setTextBox(textBox);
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_camDirYSpinner);
@@ -150,7 +151,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
-    textBox = new QLineEdit();
+    textBox = new EnterLineEdit();
     _camDirZSpinner->setTextBox(textBox);
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_camDirZSpinner);
@@ -185,7 +186,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
-    textBox = new QLineEdit();
+    textBox = new EnterLineEdit();
     _rollAngleSpinner->setTextBox(textBox);
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_rollAngleSpinner);
@@ -212,7 +213,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
-    textBox = new QLineEdit();
+    textBox = new EnterLineEdit();
     _upDirXSpinner->setTextBox(textBox);
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_upDirXSpinner);
@@ -227,7 +228,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
-    textBox = new QLineEdit();
+    textBox = new EnterLineEdit();
     _upDirYSpinner->setTextBox(textBox);
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_upDirYSpinner);
@@ -242,7 +243,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
-    textBox = new QLineEdit();
+    textBox = new EnterLineEdit();
     _upDirZSpinner->setTextBox(textBox);
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_upDirZSpinner);
@@ -277,7 +278,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
-    textBox = new QLineEdit();
+    textBox = new EnterLineEdit();
     _camFOVAngleSpinner->setTextBox(textBox);
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_camFOVAngleSpinner);
@@ -299,7 +300,7 @@ AdjustViewDialog::AdjustViewDialog(MainWindow& mainWindow, Viewport* viewport, Q
     fieldLayout = new QHBoxLayout();
     fieldLayout->setContentsMargins(0,0,0,0);
     fieldLayout->setSpacing(0);
-    textBox = new QLineEdit();
+    textBox = new EnterLineEdit();
     _camFOVSpinner->setTextBox(textBox);
     fieldLayout->addWidget(textBox);
     fieldLayout->addWidget(_camFOVSpinner);

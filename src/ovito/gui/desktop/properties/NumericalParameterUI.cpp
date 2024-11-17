@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/NumericalParameterUI.h>
+#include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 #include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
@@ -53,7 +54,7 @@ void NumericalParameterUI::initUIControls(const QString& labelText)
 {
     // Create UI widgets.
     _label = new QLabel(labelText);
-    _textBox = new QLineEdit();
+    _textBox = new EnterLineEdit();
     _spinner = new SpinnerWidget();
     connect(spinner(), &SpinnerWidget::valueChanged, this, &NumericalParameterUI::updatePropertyValue);
     spinner()->setTextBox(_textBox);

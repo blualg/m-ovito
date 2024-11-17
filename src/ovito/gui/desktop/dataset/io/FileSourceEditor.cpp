@@ -25,6 +25,7 @@
 #include <ovito/gui/desktop/properties/BooleanActionParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
+#include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 #include <ovito/gui/desktop/dialogs/ModalPropertiesEditorDialog.h>
 #include <ovito/gui/desktop/dialogs/ImportFileDialog.h>
 #include <ovito/gui/desktop/dialogs/ImportRemoteFileDialog.h>
@@ -98,7 +99,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     gridlayout2->setContentsMargins(4,4,4,4);
     gridlayout2->setVerticalSpacing(2);
     gridlayout2->setColumnStretch(1, 1);
-    _wildcardPatternTextbox = new QLineEdit();
+    _wildcardPatternTextbox = new EnterLineEdit();
     connect(_wildcardPatternTextbox, &QLineEdit::returnPressed, this, &FileSourceEditor::onWildcardPatternEntered);
 
     label = new QLabel(tr("Search pattern:"));

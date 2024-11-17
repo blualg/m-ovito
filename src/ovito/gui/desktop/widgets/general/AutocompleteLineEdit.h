@@ -29,20 +29,21 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 
 namespace Ovito {
 
 /**
  * \brief A text editor widget that provides auto-completion of words.
  */
-class OVITO_GUI_EXPORT AutocompleteLineEdit : public QLineEdit
+class OVITO_GUI_EXPORT AutocompleteLineEdit : public EnterLineEdit
 {
     Q_OBJECT
 
 public:
 
-    /// \brief Constructs the widget.
-    AutocompleteLineEdit(QWidget* parent = nullptr);
+    /// Constructor.
+    explicit AutocompleteLineEdit(QWidget* parent = nullptr);
 
     /// Sets the list of words that can be completed.
     void setWordList(const QStringList& words) { _wordListModel->setStringList(words); }

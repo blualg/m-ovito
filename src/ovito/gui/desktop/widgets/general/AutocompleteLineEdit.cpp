@@ -28,7 +28,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AutocompleteLineEdit::AutocompleteLineEdit(QWidget* parent) : QLineEdit(parent),
+AutocompleteLineEdit::AutocompleteLineEdit(QWidget* parent) : EnterLineEdit(parent),
         _wordSplitter("(?:(?<![\\w\\.@])(?=[\\w\\.@])|(?<=[\\w\\.@])(?![\\w\\.@]))")
 {
     _wordListModel = new QStringListModel(this);

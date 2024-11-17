@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../global_uniforms.glsl"
-#include "../picking.glsl"
 
 // Uniforms:
 uniform float line_thickness; // Half line width in viewport space.
@@ -30,13 +29,10 @@ uniform float line_thickness; // Half line width in viewport space.
 in vec4 position_from;
 in vec4 position_to;
 
-// Outputs:
-out vec4 color_fs;
-
 void main()
 {
-    // The index of the quad corner.
-    int corner = <VertexID>;
+    // The index of the vertex within the two triangles per line segment.
+    int corner = (<VertexID>) % 6;
 
 	// Apply model-view-projection matrix to line points.
 	vec4 proj_from = modelview_projection_matrix * position_from;
@@ -52,16 +48,13 @@ void main()
 	// Take into account aspect ratio of viewport:
 	delta.y *= inverse_viewport_size.x / inverse_viewport_size.y;
 
-	// Emit quad vertices.
+	// Emit vertices.
 	if(corner == 0)
 		gl_Position = proj_from - vec4(delta.y * proj_from.w, -delta.x * proj_from.w, 0.0, 0.0);
-	else if(corner == 1)
+	else if(corner == 1 || corner == 4)
 		gl_Position = proj_from + vec4(delta.y * proj_from.w, -delta.x * proj_from.w, 0.0, 0.0);
-	else if(corner == 2)
+	else if(corner == 2 || corner == 3)
 		gl_Position = proj_to - vec4(delta.y * proj_to.w, -delta.x * proj_to.w, 0.0, 0.0);
 	else
 		gl_Position = proj_to + vec4(delta.y * proj_to.w, -delta.x * proj_to.w, 0.0, 0.0);
-
-	// Compute color from primitive index.
-	color_fs = pickingModeColor(<InstanceID>);
 }

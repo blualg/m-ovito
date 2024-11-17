@@ -186,8 +186,8 @@ void STLImporter::FrameLoader::loadFile()
             // Update progress bar and check for user cancellation.
             progress.setValueIntermittent(i);
 
-            Vector_3<float> normal;
-            Point_3<float> coordinates[3];
+            Vector3F normal;
+            Point3F coordinates[3];
             quint16 attr;
             qint64 nread1 = device->read(reinterpret_cast<char*>(&normal), sizeof(normal));
             qint64 nread2 = device->read(reinterpret_cast<char*>(coordinates), sizeof(coordinates));
