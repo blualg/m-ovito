@@ -361,18 +361,4 @@ void TaskManager::quitWorkProcessingLoop(bool& quitFlag, std::optional<QEventLoo
     }
 }
 
-/******************************************************************************
-* Tells the task manager to interrupt the task it is currently waiting for.
-******************************************************************************/
-bool TaskManager::requestInterruption()
-{
-    std::unique_lock<std::mutex> lock(_mutex);
-    if(TaskPtr task = _waitingForTask) {
-        lock.unlock();
-        task->cancel(); // Note: cancel() triggers the registered callback function in processWorkWhileWaiting(), which needs to acquire our mutex.
-        return true;
-    }
-    return false;
-}
-
 }   // End of namespace

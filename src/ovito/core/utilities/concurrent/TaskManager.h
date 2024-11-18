@@ -96,9 +96,6 @@ public:
     /// Executes pending work items waiting in the deferred execution queue.
     void executePendingWork();
 
-    /// Tells the task manager to interrupt the task it is currently waiting for.
-    bool requestInterruption();
-
 private:
 
     /// Is called when the pending work queue becomes non-empty.
