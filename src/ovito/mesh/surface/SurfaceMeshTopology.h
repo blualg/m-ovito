@@ -39,7 +39,7 @@ namespace Ovito {
  * Each vertex has a pointer to the first half-edge originating from it.
  * Each face has a pointer to one of the half-edges adjacent to it.
  *
- * Note that this class stores only the topolgy of the mesh, i.e. the connectivty of vertices, half-edges
+ * Note that this class stores only the topology of the mesh, i.e. the connectivity of vertices, half-edges
  * and faces. The embedding of the mesh into three-dimensional space, i.e. the vertex coordinates,
  * are not managed by the class and must be kept in a separate data array.
  */
@@ -375,7 +375,7 @@ public:
         return faceEdgeCount(firstFaceEdge(face));
     }
 
-    /// Inserts a vertex in the midle of an existing edge.
+    /// Inserts a vertex in the middle of an existing edge.
     void splitEdge(edge_index edge, vertex_index vertex);
 
 protected:

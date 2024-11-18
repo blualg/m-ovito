@@ -469,7 +469,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     progress.nextSubStep();
 
     if(identifyRegions()) {
-        meshBuilder.nonPBCexternalVolume();
+        meshBuilder.setExternalRegionVolumeInfinityIfNonPeriodic();
         _totalSurfaceArea = meshBuilder.computeSurfaceAreaWithRegions();
         _aggregateVolumes = meshBuilder.computeAggregateVolumes();
     }
@@ -752,7 +752,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     progress.nextSubStep();
 
     if(_identifyRegions) {
-        meshBuilder.nonPBCexternalVolume();
+        meshBuilder.setExternalRegionVolumeInfinityIfNonPeriodic();
         _totalSurfaceArea = meshBuilder.computeSurfaceAreaWithRegions();
         _aggregateVolumes = meshBuilder.computeAggregateVolumes();
     }

@@ -29,7 +29,7 @@
 namespace Ovito {
 
 /**
- * \brief Stores all voluemtric region-related properties of a SurfaceMesh.
+ * \brief Stores all volumetric region-related properties of a SurfaceMesh.
  */
 class OVITO_MESH_EXPORT SurfaceMeshRegions : public PropertyContainer
 {

@@ -447,8 +447,8 @@ public:
     /// Computes the void, exterior, and total volumes from the per region volume properties.
     [[nodiscard]] AggregateVolumes computeAggregateVolumes() const;
 
-    /// Set the volume of external regions to infinity if the simulation cell is non-periodic.
-    void nonPBCexternalVolume();
+    /// Set the volume of the external region to infinity if the simulation cell is non-periodic in at least one spatial direction.
+    void setExternalRegionVolumeInfinityIfNonPeriodic();
 
 private:
 

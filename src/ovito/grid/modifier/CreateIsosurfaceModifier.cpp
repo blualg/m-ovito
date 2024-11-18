@@ -326,7 +326,7 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
         FloatType totalSurfaceArea;
         SurfaceMeshBuilder::AggregateVolumes aggregateVolumes;
         if(identifyRegions) {
-            meshBuilder.nonPBCexternalVolume();
+            meshBuilder.setExternalRegionVolumeInfinityIfNonPeriodic();
             totalSurfaceArea = meshBuilder.computeSurfaceAreaWithRegions();
             aggregateVolumes = meshBuilder.computeAggregateVolumes();
         }
