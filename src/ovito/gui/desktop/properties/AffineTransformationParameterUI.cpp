@@ -56,6 +56,13 @@ void AffineTransformationParameterUI::updatePropertyValue()
                     val(_row, _column) = spinner()->floatValue();
                     currentValue.setValue(val);
                 }
+                else if(currentValue.canConvert<Matrix3>()) {
+                    Matrix3 val = currentValue.value<Matrix3>();
+                    OVITO_ASSERT_MSG(_column >= 0 && _column < 3, "AffineTransformationParameterUI",
+                                     "The column must be in the range 0-2 when used with Matrix3.");
+                    val(_row, _column) = spinner()->floatValue();
+                    currentValue.setValue(val);
+                }
                 editObject()->setPropertyFieldValue(propertyField(), currentValue);
             }
             Q_EMIT valueEntered();
@@ -72,12 +79,18 @@ void AffineTransformationParameterUI::updateUI()
         QVariant val;
         if(isPropertyFieldUI()) {
             val = editObject()->getPropertyFieldValue(propertyField());
-            OVITO_ASSERT(val.isValid() && (val.canConvert<AffineTransformation>()));
+            OVITO_ASSERT(val.isValid() && (val.canConvert<AffineTransformation>() || val.canConvert<Matrix3>()));
         }
         else return;
 
-        if(val.canConvert<AffineTransformation>())
+        if(val.canConvert<AffineTransformation>()) {
             spinner()->setFloatValue(val.value<AffineTransformation>()(_row, _column));
+        }
+        else if(val.canConvert<Matrix3>()) {
+            OVITO_ASSERT_MSG(_column >= 0 && _column < 3, "AffineTransformationParameterUI",
+                             "The column must be in the range 0-2 when used with Matrix3.");
+            spinner()->setFloatValue(val.value<Matrix3>()(_row, _column));
+        }
     }
 }
 
