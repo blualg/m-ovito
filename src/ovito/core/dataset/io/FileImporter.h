@@ -139,12 +139,12 @@ public:
     virtual OORef<Pipeline> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) = 0;
 
     /// \brief Tries to detect the format of the given file.
-    /// \param existingImporterHint Optional existing importer object, which is tested first agains the file. Providing this importer can speed up the auto-detection.
+    /// \param existingImporterHint Optional existing importer object, which is tested first against the file. Providing this importer can speed up the auto-detection.
     /// \return The importer class that can handle the given file. If the file format could not be recognized then NULL is returned.
     static Future<OORef<FileImporter>> autodetectFileFormat(const QUrl& url, OORef<FileImporter> existingImporterHint = {});
 
     /// \brief Tries to detect the format of the given file.
-    /// \param existingImporterHint Optional existing importer object, which is tested first agains the file. Providing this importer can speed up the auto-detection.
+    /// \param existingImporterHint Optional existing importer object, which is tested first against the file. Providing this importer can speed up the auto-detection.
     /// \return The importer class that can handle the given file. If the file format could not be recognized then NULL is returned.
     static OORef<FileImporter> autodetectFileFormat(const FileHandle& file, FileImporter* existingImporterHint = nullptr);
 

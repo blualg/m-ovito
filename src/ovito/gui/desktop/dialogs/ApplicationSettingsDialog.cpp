@@ -61,10 +61,14 @@ ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindow& mainWindow, Ovi
     // Show pages in dialog.
     int defaultPage = 0;
     for(const auto& page : _pages) {
-        if(startPage && startPage->isMember(page)) defaultPage = _tabWidget->count();
-        page->insertSettingsDialogPage(_tabWidget);
+        if(startPage && startPage->isMember(page))
+            defaultPage = _tabWidget->count();
+        mainWindow.handleExceptions([&]() {
+            page->insertSettingsDialogPage(_tabWidget);
+        });
     }
-    _tabWidget->setCurrentIndex(defaultPage);
+    if(defaultPage >= 0 && defaultPage < _tabWidget->count())
+        _tabWidget->setCurrentIndex(defaultPage);
 
     // Add a label that displays the location of the application settings store on the computer.
     QLabel* configLocationLabel = new QLabel();
@@ -87,8 +91,9 @@ ApplicationSettingsDialog::ApplicationSettingsDialog(MainWindow& mainWindow, Ovi
 ******************************************************************************/
 void ApplicationSettingsDialog::onOk()
 {
-    try {
-        setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+    setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+
+    mainWindow().handleExceptions([&]() {
 
         // Let all pages validate the changes the user made to the settings.
         for(const OORef<ApplicationSettingsDialogPage>& page : _pages) {
@@ -104,10 +109,7 @@ void ApplicationSettingsDialog::onOk()
 
         // Close dialog box.
         accept();
-    }
-    catch(const Exception& ex) {
-        mainWindow().reportError(ex, this);
-    }
+    });
 }
 
 /******************************************************************************
@@ -115,16 +117,13 @@ void ApplicationSettingsDialog::onOk()
 ******************************************************************************/
 void ApplicationSettingsDialog::onCancel()
 {
-    try {
-        setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
+    setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 
+    mainWindow().handleExceptions([&]() {
         // Let all pages restore their settings to the old values.
         for(const OORef<ApplicationSettingsDialogPage>& page : _pages)
             page->restoreValues(_tabWidget);
-    }
-    catch(const Exception& ex) {
-        mainWindow().reportError(ex, this);
-    }
+    });
 }
 
 /******************************************************************************

@@ -69,7 +69,8 @@ ProgressDialog::ProgressDialog(TaskPtr task, detail::TaskDependency taskDependen
                 catch(const Exception& ex) {
                     MainWindow& mainWindow = self->_mainWindow; // Capture the main window reference, because "self" may be destroyed when the dialog is closed.
                     self->reject(); // Close the dialog.
-                    mainWindow.reportError(ex);
+                    if(self->_reportErrors)
+                        mainWindow.reportError(ex);
                     return;
                 }
             }

@@ -183,7 +183,7 @@ bool SceneNodeSelectionItemDelegate::editorEvent(QEvent* event, QAbstractItemMod
 }
 
 /******************************************************************************
-* Intercepts events of the combox view widget.
+* Intercepts events of the combo-box view widget.
 ******************************************************************************/
 bool SceneNodeSelectionItemDelegate::eventFilter(QObject* obj, QEvent* event)
 {

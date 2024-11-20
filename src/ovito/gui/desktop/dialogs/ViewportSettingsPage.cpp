@@ -33,7 +33,7 @@ namespace Ovito {
 IMPLEMENT_CREATABLE_OVITO_CLASS(ViewportSettingsPage);
 
 /******************************************************************************
-* Creates the widget that contains the plugin specific setting controls.
+* Creates the widgets of the settings page
 ******************************************************************************/
 void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 {

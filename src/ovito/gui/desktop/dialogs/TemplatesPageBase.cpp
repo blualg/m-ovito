@@ -31,7 +31,7 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(TemplatesPageBase);
 
 /******************************************************************************
-* Creates the widget that contains the plugin specific setting controls.
+* Creates the widgets of the settings page
 ******************************************************************************/
 void TemplatesPageBase::insertSettingsDialogPage(QTabWidget* tabWidget)
 {

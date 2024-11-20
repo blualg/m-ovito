@@ -65,12 +65,20 @@ public:
     /// Blocks the current thread (which must be the UI thread) until the given future completes.
     /// Returns the result of the future.
     template<typename FutureType>
-    static auto blockForFuture(FutureType&& future, MainWindow& mainWindow, const QString& dialogTitle = QString()) {
-        new ProgressDialog(future.task(), {}, mainWindow, &mainWindow, dialogTitle);
+    static auto blockForFuture(FutureType&& future, MainWindow& mainWindow, QWidget* parent, const QString& dialogTitle = QString()) {
+        ProgressDialog* dlg = new ProgressDialog(future.task(), {}, mainWindow, parent, dialogTitle);
+        dlg->setReportErrors(false);
         if constexpr(!std::is_same_v<typename FutureType::result_type, void>)
             return std::move(future).blockForResult();
         else
-            std::move(future).blockForResult();
+            std::move(future).waitForFinished();
+    }
+
+    /// Blocks the current thread (which must be the UI thread) until the given future completes.
+    /// Returns the result of the future.
+    template<typename FutureType>
+    static decltype(auto) blockForFuture(FutureType&& future, MainWindow& mainWindow, const QString& dialogTitle = QString()) {
+        return blockForFuture(std::forward<FutureType>(future), mainWindow, &mainWindow, dialogTitle);
     }
 
 public:
@@ -88,6 +96,9 @@ public:
             connect(this, &ProgressDialog::accepted, this, std::forward<Function>(function));
         }
     }
+
+    /// Controls whether task errors should be reported to the user.
+    void setReportErrors(bool enable) { _reportErrors = enable; }
 
 protected:
 
@@ -118,6 +129,9 @@ private:
 
     /// Indicates that the task has already completed successfully.
     bool _isDone = false;
+
+    /// Controls whether task errors should be reported to the user.
+    bool _reportErrors = true;
 };
 
 }   // End of namespace

@@ -66,7 +66,7 @@ protected:
 
 public:
 
-    /// \brief Creates the widget.
+    /// \brief Creates the widgets of the settings page.
     virtual void insertSettingsDialogPage(QTabWidget* tabWidget) override;
 
     /// \brief Lets the settings page to save all values entered by the user.

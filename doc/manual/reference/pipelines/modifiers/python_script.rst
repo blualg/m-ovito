@@ -183,7 +183,7 @@ it is defined in embedded source code or in an installed extension module.
 
   See also :ref:`registering_custom_python_classes` and the `OVITO Extensions Directory <https://www.ovito.org/extensions/>`__.
 
-The option :guilabel:`Edit embedded code with` only applies to embedded extension code developed within OVITO Pro and not imported from an external Python module.
+The option :guilabel:`Edit embedded source code with` only applies to embedded extension code developed within OVITO Pro and not imported from an external Python module.
 The option selects what the button :guilabel:`Edit code...` should do: OVITO Pro can open a simple integrated code editor, or you can
 let OVITO Pro start up an external text editor or Python IDE (e.g. *Visual Studio Code*), which provides a better coding experience. OVITO Pro will automatically
 re-run your source code whenever you save it in the external application and switch back to the OVITO Pro window.
