@@ -121,7 +121,7 @@ QT_WARNING_DISABLE_DEPRECATED
     connect(qGuiApp, &QGuiApplication::paletteChanged, this, &AvailableModifiersModel::updateColorPalette);
 QT_WARNING_POP
 
-    // Enumerate all built-in modifier classes.
+    // Enumerate all registered modifier classes.
     for(ModifierClassPtr clazz : PluginManager::instance().metaclassMembers<Modifier>()) {
 
         // Skip modifiers that want to be hidden from the user.
@@ -185,6 +185,9 @@ QT_WARNING_POP
     connect(ModifierTemplates::get(), &QAbstractItemModel::rowsRemoved, this, &AvailableModifiersModel::refreshTemplates);
     connect(ModifierTemplates::get(), &QAbstractItemModel::modelReset, this, &AvailableModifiersModel::refreshTemplates);
     connect(ModifierTemplates::get(), &QAbstractItemModel::dataChanged, this, &AvailableModifiersModel::refreshTemplates);
+
+    // Extend the list when a new Python extension is being registered at runtime.
+    connect(&PluginManager::instance(), &PluginManager::extensionClassAdded, this, &AvailableModifiersModel::extensionClassAdded);
 
     // Define fonts, colors, etc.
     _categoryFont = QGuiApplication::font();
@@ -505,6 +508,48 @@ void AvailableModifiersModel::setUseCategoriesGlobal(bool on)
     for(AvailableModifiersModel* model : _allModels)
         model->setUseCategories(on);
 #endif
+}
+
+/******************************************************************************
+* This handler is called whenever a new extension class has been registered at runtime.
+******************************************************************************/
+void AvailableModifiersModel::extensionClassAdded(OvitoClassPtr cls)
+{
+    // Skip classes that are not modifiers.
+    if(!cls->isDerivedFrom(Modifier::OOClass()))
+        return;
+    ModifierClassPtr clazz = static_cast<ModifierClassPtr>(cls);
+
+    // Skip modifiers that want to be hidden from the user.
+    // Do not add it to the list of available modifiers.
+    if(clazz->modifierCategory() == QStringLiteral("-"))
+        return;
+
+    // Create action for the modifier class.
+    ModifierAction* action = ModifierAction::createForClass(clazz);
+
+    // Register it with the global ActionManager.
+    _userInterface.actionManager()->addAction(action);
+
+    // Handle the insertion action.
+    connect(action, &QAction::triggered, this, &AvailableModifiersModel::insertModifier);
+
+    // Insert action into the list, which is sorted by name.
+    auto iter = std::lower_bound(_actions.begin(), _actions.end(), action,
+        [](const ModifierAction* a, const ModifierAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
+    _actions.insert(iter, action);
+
+    // Insert action into the right category. Or create a new category if necessary.
+    auto categoryIter = std::lower_bound(_categoryNames.begin(), _categoryNames.end(), action->category());
+    int categoryIndex = std::distance(_categoryNames.begin(), categoryIter);
+    if(categoryIter == _categoryNames.end() || *categoryIter != action->category()) {
+        _categoryNames.insert(categoryIter, action->category());
+        _actionsPerCategory.insert(_actionsPerCategory.begin() + categoryIndex, std::vector<ModifierAction*>{});
+    }
+    _actionsPerCategory[categoryIndex].push_back(action);
+
+    // Regenerate list model items.
+    updateModelLists();
 }
 
 }   // End of namespace

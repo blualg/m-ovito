@@ -171,8 +171,16 @@ public:
     /// The PluginMananger becomes the owner of the class object and will delete it on application shutdown.
     void addExtensionClass(std::unique_ptr<OvitoClass> clazz);
 
+    /// Looks up a registered extension class.
+    OvitoClass* getExtensionClass(const QString& name, OvitoClassPtr superClass) const;
+
     /// \brief Destructor that unloads all plugins.
     ~PluginManager();
+
+Q_SIGNALS:
+
+    /// This signal is emitted by the PluginManager whenever a new extension class has been registered.
+    void extensionClassAdded(OvitoClassPtr clazz);
 
 private:
 

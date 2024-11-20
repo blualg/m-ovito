@@ -202,8 +202,23 @@ void PluginManager::addExtensionClass(std::unique_ptr<OvitoClass> clazz)
 
     registerLoadedPluginClasses();
     OVITO_ASSERT(clazz->plugin() != nullptr);
+    OVITO_ASSERT_MSG(getExtensionClass(clazz->name(), clazz->superClass()) == nullptr, "PluginManager::addExtensionClass", "Extension class with the same name already exists.");
 
     _extensionClasses.push_back(std::move(clazz));
+
+    Q_EMIT extensionClassAdded(_extensionClasses.back().get());
+}
+
+/******************************************************************************
+* Looks up a registered extension class.
+******************************************************************************/
+OvitoClass* PluginManager::getExtensionClass(const QString& name, OvitoClassPtr superClass) const
+{
+    for(const auto& clazz : _extensionClasses) {
+        if(clazz->name() == name && clazz->isDerivedFrom(*superClass))
+            return clazz.get();
+    }
+    return nullptr;
 }
 
 /******************************************************************************

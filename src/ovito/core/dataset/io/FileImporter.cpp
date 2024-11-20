@@ -55,6 +55,24 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(const QUrl& url, 
 }
 
 /******************************************************************************
+* Returns the list of all available FileImporter classes, sorted by priority.
+******************************************************************************/
+auto getInstalledFileImporterClasses()
+{
+    static QVector<const FileImporter::OOMetaClass*> importers;
+    static QMutex mutex;
+    if(importers.empty()) {
+        QMutexLocker locker(&mutex);
+        if(importers.empty()) {
+            // Obtain a list of all installed file importer classes from the PluginManager at program startup.
+            importers = PluginManager::instance().metaclassMembers<FileImporter>();
+            boost::sort(importers, [](const FileImporterClass* a, const FileImporterClass* b) { return a->autodetectionPriority() > b->autodetectionPriority(); });
+        }
+    }
+    return std::span(importers);
+}
+
+/******************************************************************************
 * Tries to detect the format of the given file.
 ******************************************************************************/
 OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, FileImporter* existingImporterHint)
@@ -109,12 +127,28 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
         }
     }
 
-    // The list of all FileImporter implementations, sorted by priority.
-    const static auto installedFileImporterClasses = []() {
-        auto importers = PluginManager::instance().metaclassMembers<FileImporter>();
-        boost::sort(importers, [](const FileImporterClass* a, const FileImporterClass* b) { return a->autodetectionPriority() > b->autodetectionPriority(); });
-        return importers;
-    }();
+    // Prepare a permanent list of all available FileImporter classes, sorted by priority.
+    static QVector<const FileImporter::OOMetaClass*> installedFileImporterClasses;
+    static QMutex installedFileImporterClassesMutex;
+    QMutexLocker classesLocker(&installedFileImporterClassesMutex);
+    if(installedFileImporterClasses.empty()) {
+
+        // Obtain a list of all installed file importer classes from the PluginManager at program startup.
+        installedFileImporterClasses = PluginManager::instance().metaclassMembers<FileImporter>();
+        boost::sort(installedFileImporterClasses, [](const FileImporterClass* a, const FileImporterClass* b) { return a->autodetectionPriority() > b->autodetectionPriority(); });
+
+        // If a newly installed file importer class is being registered at runtime, we need to amend the list of installed classes.
+        QObject::connect(&PluginManager::instance(), &PluginManager::extensionClassAdded, [](OvitoClassPtr clazz) {
+            if(clazz->isDerivedFrom(FileImporter::OOClass())) {
+                QMutexLocker locker(&installedFileImporterClassesMutex);
+                const FileImporter::OOMetaClass* importerClass = static_cast<const FileImporter::OOMetaClass*>(clazz);
+                // Insert the new importer class into the list of installed classes, sorted by priority.
+                auto iter = std::lower_bound(installedFileImporterClasses.begin(), installedFileImporterClasses.end(), importerClass,
+                    [](const FileImporter::OOMetaClass* a, const FileImporter::OOMetaClass* b) { return a->autodetectionPriority() > b->autodetectionPriority(); });
+                installedFileImporterClasses.insert(iter, importerClass);
+            }
+        });
+    }
 
     // Test all installed importer types.
     for(const FileImporterClass* importerClass : installedFileImporterClasses) {

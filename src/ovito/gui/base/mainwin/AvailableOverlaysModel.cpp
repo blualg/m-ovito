@@ -161,6 +161,9 @@ QT_WARNING_POP
     connect(OverlayTemplates::get(), &QAbstractItemModel::modelReset, this, &AvailableOverlaysModel::refreshTemplates);
     connect(OverlayTemplates::get(), &QAbstractItemModel::dataChanged, this, &AvailableOverlaysModel::refreshTemplates);
 
+    // Extend the list when a new Python extension is being registered at runtime.
+    connect(&PluginManager::instance(), &PluginManager::extensionClassAdded, this, &AvailableOverlaysModel::extensionClassAdded);
+
     // Define fonts, colors, etc.
     _categoryFont = QGuiApplication::font();
     _categoryFont.setBold(true);
@@ -392,6 +395,48 @@ void AvailableOverlaysModel::insertViewportLayer()
         // Show the overlays tab of the command panel.
         _userInterface.actionManager()->getAction(ACTION_COMMAND_PANEL_OVERLAYS)->trigger();
     });
+}
+
+/******************************************************************************
+* This handler is called whenever a new extension class has been registered at runtime.
+******************************************************************************/
+void AvailableOverlaysModel::extensionClassAdded(OvitoClassPtr cls)
+{
+    // Skip classes that are not viewport layers.
+    if(!cls->isDerivedFrom(ViewportOverlay::OOClass()))
+        return;
+    const ViewportOverlay::OOMetaClass* clazz = static_cast<const ViewportOverlay::OOMetaClass*>(cls);
+
+    // Skip modifiers that want to be hidden from the user.
+    // Do not add it to the list of available modifiers.
+    if(clazz->viewportOverlayCategory() == QStringLiteral("-"))
+        return;
+
+    // Create action for the viewport layer class.
+    OverlayAction* action = OverlayAction::createForClass(clazz);
+
+    // Register it with the global ActionManager.
+    _userInterface.actionManager()->addAction(action);
+
+    // Handle the insertion action.
+    connect(action, &QAction::triggered, this, &AvailableOverlaysModel::insertViewportLayer);
+
+    // Insert action into the list, which is sorted by name.
+    auto iter = std::lower_bound(_actions.begin(), _actions.end(), action,
+        [](const OverlayAction* a, const OverlayAction* b) { return a->text().compare(b->text(), Qt::CaseInsensitive) < 0; });
+    _actions.insert(iter, action);
+
+    // Insert action into the right category. Or create a new category if necessary.
+    auto categoryIter = std::lower_bound(_categoryNames.begin(), _categoryNames.end(), action->category());
+    int categoryIndex = std::distance(_categoryNames.begin(), categoryIter);
+    if(categoryIter == _categoryNames.end() || *categoryIter != action->category()) {
+        _categoryNames.insert(categoryIter, action->category());
+        _actionsPerCategory.insert(_actionsPerCategory.begin() + categoryIndex, std::vector<OverlayAction*>{});
+    }
+    _actionsPerCategory[categoryIndex].push_back(action);
+
+    // Regenerate list model items.
+    updateModelLists();
 }
 
 }   // End of namespace

@@ -61,11 +61,22 @@ public:
     /// This is called from main() just before program exit.
     void cleanupBeforeExit();
 
-    /// \brief Returns the command line options passed to the program.
+    /// Returns the command line options passed to the program.
     const QCommandLineParser& cmdLineParser() const { return _cmdLineParser; }
 
     /// Returns the list of application services created at application startup.
     const std::vector<OORef<ApplicationService>>& applicationServices() const { return _applicationServices; }
+
+    /// Returns a particular application service by its type.
+    template<typename T>
+        requires std::is_base_of_v<ApplicationService, T>
+    OORef<T> getApplicationService() const {
+        for(const OORef<ApplicationService>& service : _applicationServices) {
+            if(OORef<T> t = dynamic_object_cast<T>(service))
+                return t;
+        }
+        return {};
+    }
 
 protected Q_SLOTS:
 

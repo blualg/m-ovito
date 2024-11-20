@@ -135,6 +135,9 @@ private Q_SLOTS:
     /// Updates the color brushes of the model.
     void updateColorPalette(const QPalette& palette);
 
+    /// This handler is called whenever a new extension class has been registered at runtime.
+    void extensionClassAdded(OvitoClassPtr clazz);
+
 private:
 
     /// Rebuilds the internal list of model items.

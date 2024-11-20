@@ -113,6 +113,9 @@ private Q_SLOTS:
     /// Signal handler that inserts the selected viewport layer into the active viewport.
     void insertViewportLayer();
 
+    /// This handler is called whenever a new extension class has been registered at runtime.
+    void extensionClassAdded(OvitoClassPtr clazz);
+
 private:
 
     /// Rebuilds the internal list of model items.
