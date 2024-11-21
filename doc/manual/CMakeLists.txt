@@ -36,7 +36,7 @@ IF(OVITO_BUILD_APP)
     # Note: Sphinx 4.x requires at least Python 3.6.
     FIND_PACKAGE(Python3 REQUIRED COMPONENTS Interpreter)
 
-    # Tell Intershinx where to find the scripting reference manual files when building the user manual.
+    # Tell Intersphinx where to find the scripting reference manual files when building the user manual.
     # Use the existing Sphinx output tree of the scripting reference manual for resolving cross-references if it exists
     # in the python/ sub-directory (only the case when building OVITO Pro).
     # Otherwise, fall back to using the online version of the scripting reference at https://ovito.org/docs/current/python/.
@@ -45,11 +45,11 @@ IF(OVITO_BUILD_APP)
         SET(OVITO_PYDOC_INTERSPHINX_LOCATION "${OVITO_SHARE_DIRECTORY}/doc/manual/html/python/objects.inv")
     ENDIF()
 
-    if(OVITO_BUILD_DOCUMENTATION_STRICT) # Turn warnings into errors
-        set(BUILD_DOCUMENTATION_STRICT "-W")
-    else()
-        set(BUILD_DOCUMENTATION_STRICT "")
-    endif()
+    IF(OVITO_BUILD_DOCUMENTATION_STRICT) # Turn warnings into errors
+        SET(BUILD_DOCUMENTATION_STRICT "-W")
+    ELSE()
+        SET(BUILD_DOCUMENTATION_STRICT "")
+    ENDIF()
 
     # Build documentation using Sphinx.
     ADD_CUSTOM_TARGET(documentation
