@@ -36,6 +36,14 @@ std::atomic_size_t Task::_globalTaskCounter{0};
 /// A null progress state that ignores all progress reporting calls.
 TaskProgress TaskProgress::Ignore{std::nullopt};
 
+/*******************************************************x***********************
+* Forwards task status messages to the application instance.
+******************************************************************************/
+void TaskProgress::logTaskActivity(const QString& progressText)
+{
+    Application::instance()->logTaskActivity(progressText);
+}
+
 #ifdef OVITO_DEBUG
 /*******************************************************x***********************
 * Destructor.

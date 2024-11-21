@@ -70,7 +70,7 @@ public:
             notifyUserInterface();
         }
         // Print task messages to the console if task logging is enabled (via Python method ovito.enable_logging()).
-        Application::instance()->logTaskActivity(progressText);
+        logTaskActivity(progressText);
     }
 
     /// Sets the current maximum value for progress reporting.
@@ -273,6 +273,9 @@ private:
         if(_userInterface)
             _userInterface->taskProgressChanged(this);
     }
+
+    /// Forwards task status messages to the application instance.
+    static void logTaskActivity(const QString& progressText);
 
 private:
 
