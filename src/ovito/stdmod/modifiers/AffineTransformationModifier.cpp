@@ -261,6 +261,71 @@ void AffineTransformationModifier::transformVectors(const AffineTransformation t
 }
 
 /******************************************************************************
+* Copies quaternions from one buffer to another while rotating them.
+* If enabled, the rotation is only applied to selected elements.
+******************************************************************************/
+void AffineTransformationModifier::transformOrientations(const Quaternion q, bool selectionOnly, const Property* input, Property* output, const Property* selection)
+{
+    OVITO_ASSERT(output != input);
+    OVITO_ASSERT(output->size() == input->size());
+
+    if(input->size() == 0)
+        return;
+
+    input->forTypes<DataBuffer::Float32, DataBuffer::Float64>([&](auto _) {
+        using T = decltype(_);
+        using Quat = QuaternionT<T>;
+
+        // Rotation.
+        const Quat q_typed = q.toDataType<T>();
+
+        if(selectionOnly) {
+            if(selection) {
+#ifdef OVITO_USE_SYCL
+                ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                    SyclBufferAccess<const Quat, access_mode::read> qIn(input, cgh);
+                    SyclBufferAccess<Quat, access_mode::discard_write> qOut(output, cgh);
+                    SyclBufferAccess<const SelectionIntType, access_mode::read> selectionIn(selection, cgh);
+                    OVITO_SYCL_PARALLEL_FOR(cgh, affine_quat_transformation_selection)(sycl::range(input->size()), [=](size_t i) {
+                        qOut[i] = selectionIn[i] ? (q_typed * qIn[i]) : qIn[i];
+                    });
+                });
+#else
+                BufferReadAccess<const Quat> qIn(input);
+                const auto* qin = qIn.cbegin();
+                BufferReadAccess<const SelectionIntType> selAccess(selection);
+                const auto* s = selAccess.cbegin();
+                for(Quat& qout : BufferWriteAccess<Quat, access_mode::discard_write>(output)) {
+                    qout = (*s++) ? (q_typed * (*qin)) : (*qin);
+                    ++qin;
+                }
+#endif
+            }
+            else {
+                // Without any selection property present, none of the elements get transformed.
+                output->copyFrom(*input);
+            }
+        }
+        else {
+#ifdef OVITO_USE_SYCL
+            ExecutionContext::current().ui().taskManager().syclQueue().submit([&](sycl::handler& cgh) {
+                SyclBufferAccess<const Quat, access_mode::read> qIn(input, cgh);
+                SyclBufferAccess<Quat, access_mode::discard_write> qOut(output, cgh);
+                OVITO_SYCL_PARALLEL_FOR(cgh, affine_quat_transformation_full)(sycl::range(input->size()), [=](size_t i) {
+                    qOut[i] = q_typed * qIn[i];
+                });
+            });
+#else
+            BufferReadAccess<const Quat> qIn(input);
+            const auto* qin = qIn.cbegin();
+            for(Quat& qout : BufferWriteAccess<Quat, access_mode::discard_write>(output))
+                qout = q_typed * (*qin++);
+#endif
+        }
+    });
+}
+
+/******************************************************************************
 * Asks the metaclass which data objects in the given input data collection the
 * modifier delegate can operate on.
 ******************************************************************************/

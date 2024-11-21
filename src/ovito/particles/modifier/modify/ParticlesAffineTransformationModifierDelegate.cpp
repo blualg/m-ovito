@@ -66,14 +66,46 @@ Future<PipelineFlowState> ParticlesAffineTransformationModifierDelegate::apply(c
             // Get the input particle coordinates (as strong reference to force creation of a mutable clone below).
             ConstPropertyPtr inputPositionProperty = inputParticles->expectProperty(Particles::PositionProperty);
 
+            // Get the optional input particle orientations (as strong reference to force creation of a mutable clone below).
+            ConstPropertyPtr inputOrientationProperty = inputParticles->getProperty(Particles::OrientationProperty);
+
+            // Get the optional input particle shapes (as strong reference to force creation of a mutable clone below).
+            ConstPropertyPtr inputShapeProperty = inputParticles->getProperty(Particles::AsphericalShapeProperty);
+
             // Make sure we can safely modify the particles object.
             Particles* outputParticles = state.makeMutable(inputParticles);
 
             // Create an uninitialized copy of the particle position property.
             Property* outputPositionProperty = outputParticles->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
 
+            // Get particle selection.
+            const Property* selectionProperty = inputParticles->getProperty(Particles::SelectionProperty);
+
             // Let the modifier class do the actual coordinate transformation work.
-            AffineTransformationModifier::transformCoordinates(tm, selectionOnly, inputPositionProperty, outputPositionProperty, inputParticles->getProperty(Particles::SelectionProperty));
+            AffineTransformationModifier::transformCoordinates(tm, selectionOnly, inputPositionProperty, outputPositionProperty, selectionProperty);
+
+            // Pure translations don't affect particle shapes and orientations and we can skip the following section.
+            if(!tm.isTranslationMatrix()) {
+                // Is the transformation a pure rotation or a rotation+stretch?
+                if(tm.isRotationMatrix()) {
+                    // Transform the particle orientations.
+                    if(inputOrientationProperty) {
+                        Quaternion q(tm.linear());
+
+                        // Create an uninitialized copy of the particle orientation property.
+                        Property* outputOrientationProperty = outputParticles->makePropertyMutable(inputOrientationProperty, DataBuffer::Uninitialized);
+
+                        // Let the modifier class do the actual orientation transformation work.
+                        AffineTransformationModifier::transformOrientations(q, selectionOnly, inputOrientationProperty, outputOrientationProperty, selectionProperty);
+                    }
+                }
+                else {
+                    if(inputOrientationProperty)
+                        throw Exception(tr("Cannot apply a non-rotation affine transformation to particles with orientations. This function is not implemented yet. Please contact the OVITO developers if you need this capability."));
+                    if(inputShapeProperty)
+                        throw Exception(tr("Cannot apply a non-rotation affine transformation to particles with aspherical shapes. This function is not implemented yet. Please contact the OVITO developers if you need this capability"));
+                }
+            }
         }
 
         return std::move(state);
