@@ -4,92 +4,91 @@
 Installation
 ============
 
-Binary program packages of *OVITO Basic* and *OVITO Pro* for Linux, Windows, and macOS can be downloaded from `www.ovito.org <https://www.ovito.org/>`_.
-
 .. _installation.requirements:
 
 System requirements
 ===================
 
-OVITO runs on processors with x86-64 or arm64 architecture. The desktop application requires an environment that has support for the `OpenGL <https://en.wikipedia.org/wiki/OpenGL>`_ 3d graphics interface (OpenGL 2.1 or newer).
-In general, it is recommended that you install the latest graphics driver provided by your hardware vendor, as some older drivers may not fully support modern OpenGL specifications.
+The *OVITO Basic* and *OVITO Pro* desktop applications require a system supporting the `OpenGL 3D graphics interface <https://en.wikipedia.org/wiki/OpenGL>`__ (version 2.1 or newer).
+For optimal performance, it is recommended to install the latest graphics driver from your hardware vendor, as older drivers may cause compatibility or stability issues.
 
-Operating system compatibility:
+Operating System Compatibility:
 
-  - 64-bit Windows 10 (21H2 or later), Windows 11 (21H2 or later) -- x86_64 processor architecture
-  - Linux: CentOS Linux 8.4+, openSUSE 15.3+, Ubuntu 20.04+, SUSE Linux Enterprise Server 15+, or any compatible distributions running on x86_64 processors
-  - macOS 11.0+ -- arm64 (Apple Silicon) and Intel processor architectures
+Windows:
+  64-bit Windows 10 (21H2 or later), Windows 11 (21H2 or later) on x86_64 processor architecture.
+Linux:
+  Ubuntu 21.04+, ALT Linux 10+, RHEL 9+, Debian 11+, Fedora 34+, or compatible distributions with glibc >= 2.28, running on x86_64 processors.
+macOS:
+  macOS 11.0 or newer, supporting both Apple Silicon (arm64) and Intel architectures.
 
 .. _installation.instructions:
 
 Installation instructions
 =========================
 
+Download a binary program package for *OVITO Basic* or *OVITO Pro* from `www.ovito.org <https://www.ovito.org/#download>`__.
+
 *Linux*:
-    Extract the downloaded :file:`.tar.xz` archive file using the tar utility: :command:`tar xJfv ovito-{{OVITO_VERSION_STRING}}-x86_64.tar.xz`.
-    This will create a new sub-directory containing the program files.
-    Change into that directory and start OVITO by running the executable :command:`./bin/ovito`.
+    Extract the downloaded `.tar.xz` archive using the tar utility: :command:`tar xJfv ovito-{{OVITO_VERSION_STRING}}-x86_64.tar.xz`.
+    This creates a subdirectory containing the program files. Change to that directory and run the application: :command:`./bin/ovito`.
 
 *Windows*:
     Run the installer program :file:`ovito-{{OVITO_VERSION_STRING}}-win64.exe` to install OVITO in a directory of your choice.
-    Note that Windows might ask whether you really want to launch the installer since it was downloaded from the web.
+    Follow the on-screen instructions to install OVITO. Note: Windows may prompt you to confirm before running an installer downloaded from a website.
 
 *macOS*:
-    Double-click the downloaded :file:`.dmg` disk image file to open it, agree to the program license, and drag the :program:`Ovito` application bundle into your :file:`Applications` folder.
-    Then start OVITO by double-clicking the application bundle.
+    Double-click the downloaded :file:`.dmg` disk image file to open it, agree to the license terms, and drag the :program:`Ovito` bundle into your :file:`Applications` folder.
+    You can then launch OVITO by double-clicking the application bundle.
 
-.. _installation.remote:
-
-Running on remote machines
-==========================
-
-Note that the OVITO desktop application cannot be run through an SSH connection using X11 forwarding mode, because the software requires direct
-access to the graphics hardware (OpenGL direct rendering mode). If you simply run :command:`ovito` in an SSH terminal, you will likely get failure messages
-during program startup or just a black application window.
-
-It is possible to run OVITO on a remote machine through an SSH connection using a VirtualGL + VNC remote desktop setup.
-For further information, please see the `www.virtualgl.org <https://www.virtualgl.org/>`_ website.
-In this mode, OVITO will make use of the graphics hardware of the remote machine, which must be set up to allow running
-applications in a desktop environment. Please contact your local computing center staff to find out whether
-this kind of remote visualization mode is supported by the HPC cluster you work on.
+Alternatively, you can install the software via the Anaconda package manager from
+the `conda-forge channel <https://anaconda.org/conda-forge/ovito>`__ (*OVITO Basic*) or :ref:`our own channel <pydoc:installation.anaconda>` (*OVITO Pro*).
 
 .. _installation.python:
 
-Python module installation
-==========================
+Installing the OVITO Python module
+==================================
 
-The *OVITO Pro* program package includes an :ref:`integrated Python interpreter <ovitos_interpreter>` (:command:`ovitos`) that gets installed alongside with the application,
-allowing you to run Python code written for OVITO and install third-party modules from the `OVITO Extensions Directory <https://www.ovito.org/extensions/>`__ for example.
-You can also install the standalone ``ovito`` Python module into an external Python interpreter on your system  (e.g. :program:`Anaconda` or the standard :program:`CPython` interpreter) in case you
-would like to make use of OVITO's functionality in script-based workflows. Please refer to :ref:`this section <pydoc:installation>` for further setup instructions.
+To use OVITO Pro's functionality in standalone Python scripts, install the *OVITO Python module* in your Python environment.
+It can be used for free and doesn't require a license key. Refer to :ref:`this section <pydoc:installation>` for detailed instructions.
+
+.. _installation.remote:
+
+Running OVITO remotely
+======================
+
+You may want to visualize simulation data stored on a high-performance computing (HPC) cluster.
+For remote use, consider the following options:
+
+1. Linux remote desktop with VirtualGL + VNC:
+
+  Use a VirtualGL + VNC setup to enable OVITO to leverage the remote machine's graphics hardware.
+  Consult the `VirtualGL <https://www.virtualgl.org/>`__ website for setup details.
+  Ensure the remote machine supports running desktop applications and ask your HPC cluster administrator about compatibility.
+
+2. Local installation with remote file access:
+
+  Install OVITO on your local computer and use its :ref:`integrated SSH file transfer feature <usage.import.remote>` to
+  open files stored on the remote machine.
+
+.. note::
+
+  The OVITO desktop application cannot function via SSH connections using X11 forwarding, as it requires direct
+  access to graphics hardware (OpenGL direct rendering mode).
+  Starting :command:`ovito` from an SSH terminal without further measures will likely result in errors or a blank application window.
 
 .. _installation.troubleshooting:
 
 Troubleshooting
 ===============
 
-If you run into any problems during the installation of OVITO, you can contact the developers through the `online user forum <https://matsci.org/c/ovito/>`__.
-The OVITO team will be happy to help you. The most commonly encountered installation issues on different platforms are addressed in the following:
+If you encounter issues during installation, assistance is available in the `OVITO user forum <https://matsci.org/c/ovito/>`__ on matsci.org.
+*OVITO Pro* users can also contact `customer support <https://www.ovito.org/contact/>`__ directly. The OVITO team will be happy to help you.
 
-  - :ref:`installation.troubleshooting.windows`
-  - :ref:`installation.troubleshooting.linux`
-  - :ref:`installation.troubleshooting.macos`
+Below are some common installation issues and solutions:
 
-.. _installation.troubleshooting.windows:
-
-Windows
--------
-
-Windows 7 no longer supported
-  .. error::
-
-    If you try to run OVITO 3.7 or later on a Windows 7 computer, it will fail with the error "*The procedure entry point CreateDXGIFactory2 could not be
-    located in the dynamic link library dxgi.dll*".
-
-  .. admonition:: Solution
-
-    Modern versions of OVITO are based on the Qt6 cross-platform framework, which `requires Windows 10 or later to run <https://doc.qt.io/qt-6/supported-platforms.html>`__.
-    Windows 7 has reached its end of life and is no longer supported. Please upgrade your Windows operating system.
+  - :ref:`Installation troubleshooting tips for Linux <installation.troubleshooting.linux>`
+  - :ref:`Installation troubleshooting tips for Windows <installation.troubleshooting.windows>`
+  - :ref:`Installation troubleshooting tips for macOS <installation.troubleshooting.macos>`
 
 .. _installation.troubleshooting.linux:
 
@@ -174,6 +173,22 @@ Missing OpenGL system libraries
 
     This should allow you to at least run Python scripts that import the OVITO Python module. The OVITO desktop application
     will still not work, however, because your system is lacking true OpenGL graphics support.
+
+.. _installation.troubleshooting.windows:
+
+Windows
+-------
+
+Windows 7 no longer supported
+  .. error::
+
+    If you try to run OVITO 3.7 or later on a Windows 7 computer, it will fail with the error "*The procedure entry point CreateDXGIFactory2 could not be
+    located in the dynamic link library dxgi.dll*".
+
+  .. admonition:: Solution
+
+    Modern versions of OVITO are based on the Qt6 cross-platform framework, which `requires Windows 10 or later to run <https://doc.qt.io/qt-6/supported-platforms.html>`__.
+    Windows 7 has reached its end of life and is no longer supported. Please upgrade your Windows operating system.
 
 .. _installation.troubleshooting.macos:
 

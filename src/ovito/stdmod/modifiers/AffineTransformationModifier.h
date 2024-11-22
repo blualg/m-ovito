@@ -182,6 +182,10 @@ public:
     /// If enabled, the transformation is only applied to selected elements.
     static void transformVectors(const AffineTransformation tm, bool selectionOnly, const Property* input, Property* output, const Property* selection);
 
+    /// Copies quaternions from one buffer to another while rotating them.
+    /// If enabled, the rotation is only applied to selected elements.
+    static void transformOrientations(const Quaternion q, bool selectionOnly, const Property* input, Property* output, const Property* selection);
+
 protected:
 
     /// This property fields stores the transformation matrix (used in 'relative' mode).

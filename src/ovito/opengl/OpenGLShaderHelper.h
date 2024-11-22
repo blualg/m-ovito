@@ -77,11 +77,16 @@ public:
     }
 
     /// Temporarily enables alpha blending.
-    void enableBlending() {
+    void enableBlending(bool usePremultipliedAlpha = false) {
         _disableBlendingWhenDone |= !_renderer->glIsEnabled(GL_BLEND);
         OVITO_CHECK_OPENGL(_renderer, _renderer->glEnable(GL_BLEND));
         OVITO_CHECK_OPENGL(_renderer, _renderer->glBlendEquation(GL_FUNC_ADD));
-        OVITO_CHECK_OPENGL(_renderer, _renderer->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE));
+        if(usePremultipliedAlpha == false) {
+            OVITO_CHECK_OPENGL(_renderer, _renderer->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE));
+        }
+        else {
+            OVITO_CHECK_OPENGL(_renderer, _renderer->glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
+        }
     }
 
     /// Binds an OpenGL buffer to a vertex attribute of the shader.
