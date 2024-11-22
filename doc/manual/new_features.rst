@@ -13,9 +13,10 @@ Version 3.11.2 (xx-Nov-2024)
 ----------------------------
 
 - Fixed GUI issue on Linux: Pressing enter key while focus is in a text field may toggle a parent group checkbox
-- :ref:`particles.modifiers.affine_transformation` modifier: Pure rotations are now applied to the ``Orientation`` property of particles
+- :ref:`particles.modifiers.affine_transformation` modifier: (pure) rotations are now applied to the ``Orientation`` property of particles
 - |ovito-python| Added the :py:class:`ovito.traits.Matrix3` parameter trait type
 - |ovito-pro| VisRTX: Fixed program crash when rendering multiple interactive viewports in parallel
+- |ovito-pro| VisRTX: Fixed color compositing of semi-transparent objects in interactive viewports
 - |ovito-pro| VisRTX: Reduced z-fighting artifacts along wireframe lines in interactive viewports
 - |ovito-pro| VisRTX: Improved object picking speed in interactive viewports for large particle datasets
 - |ovito-pro| VisRTX: Performance improvements for rendering particles with user-defined shapes
