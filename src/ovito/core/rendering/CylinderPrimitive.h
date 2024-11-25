@@ -70,7 +70,7 @@ public:
     /// Changes the element shape.
     void setShape(Shape shape) { _shape = shape; }
 
-    /// Returns the cylinder diameter assigned to all primtives.
+    /// Returns the cylinder diameter assigned to all primitives.
     FloatType uniformWidth() const { return _uniformWidth; }
 
     /// Sets the cylinder diameter of all primitives to the given value.
@@ -194,13 +194,13 @@ private:
     ConstDataBufferPtr _headPositions; // Array of Point3
 
     /// Buffer storing the colors of the arrows/cylinders.
-    ConstDataBufferPtr _colors; // Array of RGB colors or floats (pseudocolors)
+    ConstDataBufferPtr _colors; // Array of RGB ColorG or FloatType (pseudocolors)
 
     /// Buffer storing the semi-transparency values.
-    ConstDataBufferPtr _transparencies; // Array of floats
+    ConstDataBufferPtr _transparencies; // Array of GraphicsFloatType
 
     /// Buffer storing the per-primitive width values.
-    ConstDataBufferPtr _widths; // Array of floats
+    ConstDataBufferPtr _widths; // Array of GraphicsFloatType
 };
 
 }   // End of namespace

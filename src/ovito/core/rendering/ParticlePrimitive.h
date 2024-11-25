@@ -170,10 +170,10 @@ public:
     /// Returns the buffer storing the particle selection flags.
     const ConstDataBufferPtr& selection() const { return _selection; }
 
-    /// Returns the buffer storing the particle transparancy values.
+    /// Returns the buffer storing the particle transparency values.
     const ConstDataBufferPtr& transparencies() const { return _transparencies; }
 
-    /// Returns the buffer stroring the shapes of aspherical particles.
+    /// Returns the buffer storing the shapes of aspherical particles.
     const ConstDataBufferPtr& asphericalShapes() const { return _asphericalShapes; }
 
     /// Returns the buffer storing the orientations of aspherical particles.
@@ -232,31 +232,31 @@ private:
     ParticleShape _particleShape = SphericalShape;
 
     /// The internal buffer storing the array of particle indices to render.
-    ConstDataBufferPtr _indices; // Array of int
+    ConstDataBufferPtr _indices; // Array of int32_t
 
     /// The internal buffer storing the array of particle coordinates.
     ConstDataBufferPtr _positions; // Array of Vector3
 
     /// The internal buffer stores the array of particle radii.
-    ConstDataBufferPtr _radii; // Array of FloatType
+    ConstDataBufferPtr _radii; // Array of GraphicsFloatType
 
     /// The internal buffer storing the particle RGB colors.
-    ConstDataBufferPtr _colors; // Array of Color
+    ConstDataBufferPtr _colors; // Array of ColorG
 
     /// The internal buffer storing the array of particle selection flags.
-    ConstDataBufferPtr _selection; // Array of int
+    ConstDataBufferPtr _selection; // Array of SelectionIntType
 
     /// The internal buffer storing the particle semi-transparency values.
-    ConstDataBufferPtr _transparencies; // Array of FloatType
+    ConstDataBufferPtr _transparencies; // Array of GraphicsFloatType
 
     /// The internal buffer storing the shapes of aspherical particles.
-    ConstDataBufferPtr _asphericalShapes; // Array of Vector3
+    ConstDataBufferPtr _asphericalShapes; // Array of Vector3G
 
     /// The internal buffer storing the orientations of aspherical particles.
-    ConstDataBufferPtr _orientations; // Array of Quaternion
+    ConstDataBufferPtr _orientations; // Array of QuaternionG
 
     /// The internal buffer storing the roundness values of superquadric particles.
-    ConstDataBufferPtr _roundness; // Array of Vector2
+    ConstDataBufferPtr _roundness; // Array of Vector2G
 
     /// The radius value to be used if no per-particle radii have been specified.
     FloatType _uniformParticleRadius = 0;
