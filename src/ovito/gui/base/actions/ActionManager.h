@@ -164,6 +164,8 @@ namespace Ovito {
 #define ACTION_SCRIPTING_RUN_FILE           "ScriptingRunFile"
 /// This actions lets the user generate script code from the selected data pipeline.
 #define ACTION_SCRIPTING_GENERATE_CODE      "ScriptingGenerateCode"
+/// This actions shows the Python extensions gallery.
+#define ACTION_SCRIPTING_EXTENSIONS_GALLERY "ScriptingShowExtensionsGallery"
 
 /// Show the "Render on remote computer" dialog.
 #define ACTION_REMOTE_RENDERING             "RemoteRendering"
