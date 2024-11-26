@@ -107,12 +107,12 @@ Outlines
     Outlines in the rendered image.
 
 Depth Difference & Outline Width
-    Controls the depth range for which outlines are drawn. Outline width increases linearly from
-    the minimum to maximum width as the depth difference between adjacent objects ranges from
-    the minimum to maximum depth difference.
+  Uniform Width Mode
+    In this mode, a single value is used for both the depth difference and the outline width. An outline with a constant width is drawn for all objects with a depth difference greater than the specified value.
 
-    Outlines will still be drawn with reduced opacity and minimum line width
-    when the depth difference is below the minimum threshold.
+  Variable Width Mode
+    In this mode, the outline width increases linearly from the minimum width to the maximum width as the depth difference between adjacent objects varies from the minimum to the maximum depth difference. 
+    When switching from "Uniform Width Mode" to "Variable Width Mode", missing values for depth or line width will be automatically set to default values.
 
 Custom Color
     When disabled, the outline color is automatically set based on the background color:
