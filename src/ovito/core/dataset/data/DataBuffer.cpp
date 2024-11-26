@@ -856,11 +856,11 @@ void DataBuffer::copyFrom(const DataBuffer& source)
     OVITO_ASSERT(this->dataType() == source.dataType());
     OVITO_ASSERT(this->stride() == source.stride());
     OVITO_ASSERT(this->size() == source.size());
-    OVITO_ASSERT(source._isDataInitialized);
-#ifdef OVITO_DEBUG
-    _isDataInitialized = true;
-#endif
     if(&source != this && this->size() != 0) {
+        OVITO_ASSERT(source._isDataInitialized);
+#ifdef OVITO_DEBUG
+        _isDataInitialized = true;
+#endif
         WriteAccess writeAccess(*this);
         ReadAccess readAccess(source);
 #ifdef OVITO_USE_SYCL
