@@ -151,8 +151,30 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
 
         boost::container::flat_set<int> uniqueTypeIds;
         uniqueTypeIds.reserve(uniqueTypes.size());
-        for(const auto& t : uniqueTypes)
-            uniqueTypeIds.insert(t.first);
+
+        if(computePartialRDF && selection && particleTypes) {
+            // When computing particle RDFs only for selected particles, remove particle types from list that are not present in the subset of particles.
+            BufferReadAccess<SelectionIntType> selectionAcc(selection);
+            auto sel = selectionAcc.cbegin();
+            for(auto t : BufferReadAccess<int32_t>(particleTypes)) {
+                if(*sel++)
+                    uniqueTypeIds.insert(t);
+            }
+            // Remove elements from 'uniqueTypes' which are not present in 'uniqueTypeIds'.
+            for(auto iter = uniqueTypes.begin(); iter != uniqueTypes.end();) {
+                if(uniqueTypeIds.find(iter->first) == uniqueTypeIds.end())
+                    iter = uniqueTypes.erase(iter);
+                else
+                    ++iter;
+            }
+            OVITO_ASSERT(uniqueTypeIds.size() == uniqueTypes.size());
+        }
+        else {
+            for(const auto& t : uniqueTypes)
+                uniqueTypeIds.insert(t.first);
+        }
+        if(computePartialRDF && uniqueTypeIds.empty())
+            throw Exception(tr("Cannot compute partial RDFs, because input comprises zero particle types."));
 
         size_t componentCount = computePartialRDF ? (uniqueTypeIds.size() * (uniqueTypeIds.size()+1) / 2) : 1;
         QStringList componentNames;
