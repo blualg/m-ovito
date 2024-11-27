@@ -16,7 +16,7 @@ Coordination numbers
   the :ref:`particles.modifiers.expression_select` modifier or visualize the computed coordination numbers using the
   :ref:`particles.modifiers.color_coding` modifier.
 
-Radial pair distribution function  
+Radial pair distribution function
   The modifier also computes the radial pair distribution function (radial PDF, or simply RDF) for the particle system.
   The radial pair distribution function :math:`g(r)` measures the probability of finding a particle at distance :math:`r`
   given that there is a particle at position :math:`r=0`; it is essentially a histogram of pair-wise particle distances. The pair distribution function is
@@ -48,22 +48,22 @@ Only selected particles
 
 The option :guilabel:`Use only selected particles` restricts the calculation to the currently selected particles.
 This is useful if you want to calculate the RDF only for a specific part of a system. If this option is enabled, unselected particles
-will be treated as if they did not exist during the calculation. Their ``Coordination`` values will be set to zero, 
+will be treated as if they did not exist during the calculation. Their ``Coordination`` values will be set to zero,
 they will not be counted in the coordination numbers of other particles, and they are ignored in the normalization of the RDF.
 
 Time-averaged RDF
 """""""""""""""""
 
 Note that the modifier calculates the instantaneous RDF for the current
-simulation frame only and outputs it as a :ref:`data table <scene_objects.data_table>`, which varies with simulation time. 
-Subsequently, you can use the :ref:`particles.modifiers.time_averaging` modifier of OVITO to aggregate all per-frame 
+simulation frame only and outputs it as a :ref:`data table <scene_objects.data_table>`, which varies with simulation time.
+Subsequently, you can use the :ref:`particles.modifiers.time_averaging` modifier of OVITO to aggregate all per-frame
 RDFs into one mean RDF, averaging the distribution over all frames of the loaded trajectory.
 
 Bond length distribution
 """"""""""""""""""""""""
 
 Furthermore, OVITO provides another analysis tool for computing the bond length distribution specifically
-for *bonded* pairs of particles: the :ref:`particles.modifiers.bond_analysis` modifier. 
+for *bonded* pairs of particles: the :ref:`particles.modifiers.bond_analysis` modifier.
 This modifier can additionally compute the distribution of bond angles formed by triplets of particles.
 
 .. seealso::

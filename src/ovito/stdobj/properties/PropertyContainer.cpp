@@ -740,43 +740,22 @@ QString PropertyContainer::elementInfoString(size_t elementIndex, const ConstDat
         str += QStringLiteral("<key>");
         str += property->name().toHtmlEscaped();
         str += QStringLiteral(":</key> <val>");
-        if(property->dataType() == Property::Int32) {
-            BufferReadAccess<int*> data(property);
-            for(size_t component = 0; component < data.componentCount(); component++) {
+        property->forAnyType([&](auto _) {
+            using T = decltype(_);
+            BufferReadAccess<T*> data(property);
+            for(size_t component = 0; component < property->componentCount(); component++) {
                 if(component != 0) str += QStringLiteral(", ");
                 str += QString::number(data.get(elementIndex, component));
-                if(property->elementTypes().empty() == false) {
-                    if(const ElementType* ptype = property->elementType(data.get(elementIndex, component))) {
-                        if(!ptype->name().isEmpty())
-                            str += QString(" (%1)").arg(ptype->name().toHtmlEscaped());
+                if constexpr(std::is_same_v<T, int32_t>) {
+                    if(property->elementTypes().empty() == false) {
+                        if(const ElementType* ptype = property->elementType(data.get(elementIndex, component))) {
+                            if(!ptype->name().isEmpty())
+                                str += QStringLiteral(" (%1)").arg(ptype->name().toHtmlEscaped());
+                        }
                     }
                 }
             }
-        }
-        else if(property->dataType() == Property::Int64) {
-            BufferReadAccess<int64_t*> data(property);
-            for(size_t component = 0; component < property->componentCount(); component++) {
-                if(component != 0) str += QStringLiteral(", ");
-                str += QString::number(data.get(elementIndex, component));
-            }
-        }
-        else if(property->dataType() == Property::Float32) {
-            BufferReadAccess<float*> data(property);
-            for(size_t component = 0; component < property->componentCount(); component++) {
-                if(component != 0) str += QStringLiteral(", ");
-                str += QString::number(data.get(elementIndex, component));
-            }
-        }
-        else if(property->dataType() == Property::Float64) {
-            BufferReadAccess<double*> data(property);
-            for(size_t component = 0; component < property->componentCount(); component++) {
-                if(component != 0) str += QStringLiteral(", ");
-                str += QString::number(data.get(elementIndex, component));
-            }
-        }
-        else {
-            str += QStringLiteral("<%1>").arg(property->dataTypeName());
-        }
+        });
         str += QStringLiteral("</val>");
     }
     return str;
