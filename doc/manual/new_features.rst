@@ -9,7 +9,7 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.11.2>`__
 
 ----------------------------
-Version 3.11.2 (xx-Nov-2024)
+Version 3.11.2 (28-Nov-2024)
 ----------------------------
 
 - :ref:`particles.modifiers.affine_transformation` modifier: (pure) rotations are now applied to the ``Orientation`` property of particles if present
