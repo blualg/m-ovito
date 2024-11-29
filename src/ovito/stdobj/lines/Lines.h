@@ -61,7 +61,8 @@ public:
         SampleTimeProperty,  // Is used by the GenerateTrajectoryLinesModifier
         SectionProperty,
         Position1Property,
-        Position2Property
+        Position2Property,
+        SelectionProperty = Property::GenericSelectionProperty,
     };
 
     /// Constructor.
