@@ -124,7 +124,7 @@ void PluginManager::loadAllPlugins()
 #ifndef OVITO_BUILD_MONOLITHIC
 
 #ifdef Q_OS_WIN
-    // Extend enviroment variable PATH so that the plugin DLLs are automatically found, because
+    // Extend environment variable PATH so that the plugin DLLs are automatically found, because
     // there typically are inter-dependencies between them.
     QByteArray path = qgetenv("PATH");
     for(QDir pluginDir : pluginDirs()) {
@@ -168,6 +168,7 @@ void PluginManager::loadAllPlugins()
 ******************************************************************************/
 void PluginManager::registerLoadedPluginClasses()
 {
+    qInfo() << "PluginManager::registerLoadedPluginClasses()";
     for(OvitoClass* clazz = OvitoClass::_firstNativeMetaClass; clazz != _lastRegisteredClass; clazz = clazz->_nextNativeMetaclass) {
         clazz->initialize();
         OVITO_ASSERT(clazz->pluginId() != nullptr);

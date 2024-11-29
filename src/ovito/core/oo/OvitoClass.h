@@ -211,7 +211,7 @@ protected:
     OvitoClass* _nextNativeMetaclass;
 
     /// The head of the linked list with all native C++ meta-classes.
-    static OvitoClass* _firstNativeMetaClass;
+    inline static OvitoClass* _firstNativeMetaClass = nullptr;
 
     friend class PluginManager;
     friend class RefTarget;     // Give RefTarget::clone() access to low-level method createInstanceImpl().

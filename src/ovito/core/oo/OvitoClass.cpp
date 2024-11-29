@@ -31,9 +31,6 @@
 
 namespace Ovito {
 
-// Head of linked list of native C++ classes.
-OvitoClass* OvitoClass::_firstNativeMetaClass{};
-
 /******************************************************************************
 * Constructor used for non-templated classes.
 ******************************************************************************/
@@ -57,6 +54,7 @@ OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char
 ******************************************************************************/
 void OvitoClass::initialize()
 {
+    qInfo() << "OvitoClass::initialize(): name=" << name();
     // Class must have been initialized with a plugin id.
     OVITO_ASSERT(_pluginId != nullptr);
 
