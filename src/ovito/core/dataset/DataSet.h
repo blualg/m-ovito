@@ -63,7 +63,7 @@ public:
 
 #ifdef OVITO_DEBUG
     /// Destructor.
-    virtual ~DataSet();
+    ~DataSet();
 #endif
 
     /// \brief Rescales the animation keys of all controllers in the scene.

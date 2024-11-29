@@ -75,7 +75,7 @@ QRectF TextPrimitive::queryLocalBounds(qreal devicePixelRatio, Qt::TextFormat te
 #else
     // Workaround for macOS: When rendering text using the regular QPainter::drawText() method, the font size changes between GUI/CLI mode (for unknown reasons).
     // To avoid this problem, always use the rich-text rendering method in console mode.
-    if(resolvedTextFormat != Qt::RichText && effectiveOutlineWidth(devicePixelRatio) == 0 && Application::instance()->guiMode()) {
+    if(resolvedTextFormat != Qt::RichText && effectiveOutlineWidth(devicePixelRatio) == 0 && Application::guiEnabled()) {
 #endif
         if(!useTightBox()) {
             textBounds = QFontMetricsF(font()).boundingRect(text());
@@ -158,7 +158,7 @@ void TextPrimitive::draw(QPainter& painter, Qt::TextFormat resolvedTextFormat, q
 #else
     // Workaround for macOS: When rendering text using the regular QPainter::drawText() method, the font size changes between GUI/CLI mode (for unknown reasons).
     // To avoid this problem, always use the rich-text rendering method in console mode.
-    if(resolvedTextFormat != Qt::RichText && effectiveOutlineWidth() == 0 && Application::instance()->guiMode()) {
+    if(resolvedTextFormat != Qt::RichText && effectiveOutlineWidth() == 0 && Application::guiEnabled()) {
 #endif
         drawPlainText(painter);
     }

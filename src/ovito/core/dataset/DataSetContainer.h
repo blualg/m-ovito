@@ -113,7 +113,7 @@ Q_SIGNALS:
     /// \brief This signal is emitted when a viewport became the maximized one.
     void maximizedViewportChanged(Viewport* maximizedViewport);
 
-    /// \brief This signal is sent whenver the layout of the viewports changes in some way.
+    /// \brief This signal is sent whenever the layout of the viewports changes in some way.
     void viewportLayoutChanged();
 
     /// \brief This signal is emitted whenever the active scene of current dataset has been replaced by a new one.

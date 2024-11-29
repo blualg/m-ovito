@@ -56,7 +56,7 @@ public:
     MainWindow();
 
     /// Destructor.
-    virtual ~MainWindow();
+    ~MainWindow();
 
     /// Returns the main toolbar of the window.
     QToolBar* mainToolbar() const { return _mainToolbar; }
@@ -199,6 +199,16 @@ public:
     /// This method will prompt the user the first time it is called (for each ovito version). Returns true on non macOS.
     bool checkAccessibilityAccess(QWidget* parent = nullptr) const;
 
+    /// Invokes a visitor function for every MainWindow instance of the application.
+    template<typename Visitor>
+    static void visitMainWindows(Visitor&& visitor) {
+        for(QWidget* widget : QApplication::topLevelWidgets()) {
+            if(MainWindow* mainWindow = qobject_cast<MainWindow*>(widget)) {
+                visitor(mainWindow);
+            }
+        }
+    }
+
     /// The type-erased function object type to be passed to scheduleOperationAfterScenePreparation().
     using operation_function = fu2::function_base<
         true, // IsOwning = true: The function object owns the callable object and is responsible for its destruction.
@@ -295,9 +305,6 @@ private:
 
     /// The layout manager for the status bar area of the main window.
     QHBoxLayout* _statusBarLayout;
-
-    /// The OpenGL context used for rendering the viewports.
-    QPointer<QOpenGLContext> _glcontext;
 
     /// The UI panel containing the data inspector tabs.
     DataInspectorPanel* _dataInspector;

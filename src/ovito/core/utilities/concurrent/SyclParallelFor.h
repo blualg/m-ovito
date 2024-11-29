@@ -58,7 +58,7 @@ inline bool syclParallelForWithProgress(std::size_t total_problem_size, CGFuncti
     // Break down total problem size into smaller chunks for progress reporting (only in GUI mode).
     std::size_t min_progress_size = 4 * desired_num_groups * group_size;
     std::size_t progress_problem_size = total_problem_size;
-    if(Application::guiMode()) {
+    if(Application::guiEnabled()) {
         progress_problem_size = std::min(total_problem_size, std::max(min_progress_size, total_problem_size / 50));
         this_task::setMaximum(total_problem_size);
     }
@@ -81,7 +81,7 @@ inline bool syclParallelForWithProgress(std::size_t total_problem_size, CGFuncti
             });
         }).wait();
 
-        if(Application::guiMode()) {
+        if(Application::guiEnabled()) {
             this_task::setValue(progress_offset + problem_size);
         }
     }

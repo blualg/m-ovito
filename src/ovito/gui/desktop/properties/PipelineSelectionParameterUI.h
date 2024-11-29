@@ -42,7 +42,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
-    virtual ~PipelineSelectionParameterUI();
+    ~PipelineSelectionParameterUI();
 
     /// This returns the combo box managed by this ParameterUI.
     QComboBox* comboBox() const { return _comboBox; }

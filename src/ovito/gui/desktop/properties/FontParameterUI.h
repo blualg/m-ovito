@@ -42,7 +42,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
-    virtual ~FontParameterUI();
+    ~FontParameterUI();
 
     /// This returns the font picker widget managed by this parameter UI.
     QPushButton* fontPicker() const { return _fontPicker; }

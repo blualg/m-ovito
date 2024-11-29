@@ -88,7 +88,7 @@ void ActiveObject::decrementNumberOfActiveTasks()
 void ActiveObject::registerActiveFuture(const FutureBase& future)
 {
     OVITO_ASSERT(future);
-    if(!future.task()->isFinished() && Application::guiMode()) {
+    if(!future.task()->isFinished() && Application::guiEnabled()) {
         incrementNumberOfActiveTasks();
         // Reset the pending status after the Future is fulfilled.
         future.finally(ObjectExecutor(this), [this]() noexcept { decrementNumberOfActiveTasks(); });
@@ -106,7 +106,8 @@ void ActiveObject::setStatusIfCurrentFrame(const PipelineStatus& status, const P
     if(request.interactiveMode())
         return;
 
-    if(!Application::instance()->guiMode())
+    // No need to display status when there is no GUI.
+    if(!Application::guiEnabled())
         return;
 
     if(request.time() != this_task::ui()->datasetContainer().currentAnimationTime())

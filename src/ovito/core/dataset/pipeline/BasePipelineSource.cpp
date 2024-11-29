@@ -88,7 +88,7 @@ void BasePipelineSource::postprocessDataCollection(Future<PipelineFlowState>& st
                     if(state.stateValidity().contains(currentTime)) {
 
                         // In GUI mode, create editable proxy objects for the data objects in the generated collection.
-                        if(Application::guiMode()) {
+                        if(Application::guiEnabled()) {
                             _updatingEditableProxies = true;
                             ConstDataObjectPath dataPath = { state.data() };
                             state.data()->updateEditableProxies(state, dataPath, false);
@@ -145,7 +145,7 @@ PipelineEvaluationResult BasePipelineSource::postprocessCachedState(const Pipeli
         if(state.stateValidity().contains(currentTime)) {
 
             // In GUI mode, create editable proxy objects for the data objects in the generated collection.
-            if(Application::guiMode()) {
+            if(Application::guiEnabled()) {
                 UndoSuspender noUndo;
                 _updatingEditableProxies = true;
                 ConstDataObjectPath dataPath = { state.data() };

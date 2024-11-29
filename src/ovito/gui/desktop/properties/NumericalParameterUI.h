@@ -44,7 +44,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QMetaObject* defaultParameterUnitType);
 
     /// Destructor.
-    virtual ~NumericalParameterUI();
+    ~NumericalParameterUI();
 
     /// Returns a label for the control widget managed by this ParameterUI.
     QLabel* label() const { return _label; }

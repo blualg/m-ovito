@@ -53,8 +53,10 @@ class OVITO_CORE_EXPORT Pipeline : public SceneNode
 
 public:
 
+#ifdef OVITO_DEBUG
     /// Destructor.
-    virtual ~Pipeline();
+    ~Pipeline();
+#endif
 
     /// Throws an exception if the pipeline stage cannot be evaluated at this time.
     /// This is called by the system to catch user mistakes that would lead to infinite recursion.

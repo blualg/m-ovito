@@ -45,16 +45,16 @@ class OVITO_CORE_EXPORT ApplicationService : public OvitoObject
 
 public:
 
-    /// \brief Registers additional command line options when running in standalone application mode.
+    /// Registers additional command line options when running in standalone application mode.
     virtual void registerCommandLineOptions(QCommandLineParser& cmdLineParser) {}
 
-    /// \brief Is called by the system during standalone application startup before a main window is created.
+    /// Is called by the system during standalone application startup before a main window is created.
     virtual void applicationInitializing() {}
 
-    /// \brief Is called by the system during standalone application startup after a main window has been created.
+    /// Is called by the system during standalone application startup after a main window has been created.
     virtual void applicationStarting() {}
 
-    /// \brief Is called by the system after the standalone application has been completely initialized.
+    /// Is called by the system after the standalone application has been completely initialized.
     virtual void applicationStarted() {}
 };
 

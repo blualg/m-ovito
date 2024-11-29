@@ -336,14 +336,14 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
                 // Verify that the typed property, which has been selected as the source of the color legend, is available.
                 if(!typedProperty) {
                     // Escalate to an error state if in console mode.
-                    if(!Application::guiMode())
+                    if(!this_task::isInteractive())
                         throw Exception(tr("The property '%1' set as source of the color legend is not present in the data pipeline output.").arg(sourceProperty().dataTitleOrPath()));
                     else
                         return PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not available in the pipeline output.").arg(sourceProperty().dataTitleOrPath()));
                 }
                 else if(!typedProperty->isTypedProperty()) {
                     // Escalate to an error state if in console mode.
-                    if(!Application::guiMode())
+                    if(!this_task::isInteractive())
                         throw Exception(tr("The property '%1' set as source of the color legend is not a typed property, i.e., it has no ElementType(s) attached.").arg(sourceProperty().dataTitleOrPath()));
                     else
                         return PipelineStatus(PipelineStatus::Warning, tr("The property '%1' is not a typed property.").arg(sourceProperty().dataTitleOrPath()));
@@ -357,7 +357,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
     }
 
     // Escalate to an error state if in console mode.
-    if(!Application::guiMode()) {
+    if(!this_task::isInteractive()) {
         if(!sourcePipeline)
             throw Exception(tr("You are rendering a viewport with an attached ColorLegendOverlay that has no "
                                 "source pipeline set. Make sure you set the legend's 'pipeline' field."));
@@ -742,8 +742,8 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
                                                                       .arg(numTicks)
                                                                       .arg(maxTicks)));
 
-                // Escalate to an error state if in terminal mode.
-                if(!Application::guiMode())
+                // Escalate to an error state if in scripting mode.
+                if(!this_task::isInteractive())
                     throw Exception(tr("Tried to generate %1 tick marks. Currently, no more than %2 "
                                        "ticks may be generated. Please increase the tick spacing.")
                                         .arg(numTicks)

@@ -42,7 +42,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor);
 
     /// Destructor.
-    virtual ~ObjectStatusDisplay();
+    ~ObjectStatusDisplay();
 
     /// Returns the UI widget managed by this ParameterUI.
     StatusWidget* statusWidget() const;

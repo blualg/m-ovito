@@ -43,7 +43,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor, which releases all GUI widgets.
-    virtual ~BooleanGroupBoxParameterUI();
+    ~BooleanGroupBoxParameterUI();
 
     /// This returns the group box managed by this parameter UI.
     QGroupBox* groupBox() const { return _groupBox; }

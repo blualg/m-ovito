@@ -151,11 +151,9 @@ void ConfigureViewportGraphicsDialog::closeEvent(QCloseEvent* event)
 ******************************************************************************/
 void ConfigureViewportGraphicsDialog::recreateViewportWindows()
 {
-    for(QWidget* widget : QApplication::topLevelWidgets()) {
-        if(MainWindow* mainWindow = qobject_cast<MainWindow*>(widget)) {
-            mainWindow->viewportsPanel()->recreateViewportWindows();
-        }
-    }
+    MainWindow::visitMainWindows([&](MainWindow* mainWindow) {
+        mainWindow->viewportsPanel()->recreateViewportWindows();
+    });
 }
 
 /******************************************************************************

@@ -40,6 +40,13 @@ class OVITO_CORE_EXPORT Application : public QObject, public UserInterface
 
 public:
 
+    enum RunMode {
+        AppMode,        ///< The application is running in GUI mode as a regular desktop app.
+        TerminalMode,   ///< The application is running in terminal mode (command line interface or Python script execution).
+        PyImportMode,   ///< The application is running as an imported Python module in an external Python interpreter.
+        KernelMode,     ///< The application is running as a Jupyter kernel (may display a GUI window).
+    };
+
     /// Returns the one and only instance of this class.
     static Application* instance() { return _instance; }
 
@@ -47,7 +54,7 @@ public:
     explicit Application();
 
     /// Destructor.
-    virtual ~Application();
+    ~Application();
 
     /// \brief Initializes the application.
     /// \param argc The number of command line arguments.
@@ -64,13 +71,14 @@ public:
     /// This can be used to set a debugger breakpoint for the OVITO_ASSERT macros.
     static void qtMessageOutput(QtMsgType type, const QMessageLogContext& context, const QString& msg);
 
-    /// \brief Returns whether the application is running with a graphical user interface or in the terminal (e.g. in a Python interpreter).
-    /// \return \c true if the application shows a graphical user interface;
-    ///         \c false if the application has been started in terminal mode.
-    static bool guiMode() { return _guiMode; }
+    /// Indicates how the application is currently running (with or without GUI, as a Python module, etc.)
+    static RunMode runMode() { return _runMode; }
 
-    /// Switches between graphical and terminal mode.
-    static void setGuiMode(bool enabled) { _guiMode = enabled; }
+    /// Sets how the application is currently running.
+    static void setRunMode(RunMode mode) { _runMode = mode; }
+
+    /// Indicates whether the application is showing a graphical user interface or not.
+    static bool guiEnabled() { return runMode() == AppMode || runMode() == KernelMode; }
 
     /// Returns whether printing of task status messages to the console is currently enabled.
     bool taskConsoleLoggingEnabled() const { return _taskConsoleLoggingEnabled; }
@@ -147,8 +155,8 @@ protected:
     /// The one and only instance of this class.
     static Application* _instance;
 
-    /// Indicates that the application is running with a graphical user interface.
-    static bool _guiMode;
+    /// Indicates what kind of application is running (GUI, console, Python module, etc.)
+    static RunMode _runMode;
 };
 
 }   // End of namespace

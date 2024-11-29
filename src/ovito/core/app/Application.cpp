@@ -101,11 +101,11 @@ static QString ovitoAppFileName()
 #endif
 }
 
-/// The one and only instance of this class.
+/// The one and only instance of the class.
 Application* Application::_instance = nullptr;
 
-/// Indicates that the application is running with a graphical user interface.
-bool Application::_guiMode = false;
+/// Indicates what kind of application is running (GUI, console, Python module, etc.)
+Application::RunMode Application::_runMode = Application::AppMode;
 
 /// Stores a pointer to the original Qt message handler function, which has been replaced with our own handler.
 QtMessageHandler Application::defaultQtMessageHandler = nullptr;
@@ -274,13 +274,8 @@ bool Application::initialize(int& argc, char** argv)
     if(QCoreApplication::startingUp()) {
         // Enable OpenGL context sharing globally.
         QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-#if 1
         // Always use desktop OpenGL (avoid ANGLE on Windows):
         QCoreApplication::setAttribute(Qt::AA_UseDesktopOpenGL);
-#else
-        // Use ANGLE OpenGL-to-DirectX translation layer on Windows:
-        QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
-#endif
     }
 
     // Specify default OpenGL surface format.

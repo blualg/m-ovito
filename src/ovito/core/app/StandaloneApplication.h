@@ -47,7 +47,7 @@ public:
     using Application::Application;
 
     /// Destructor is called just before program exit.
-    virtual ~StandaloneApplication();
+    ~StandaloneApplication();
 
     /// \brief Initializes the application.
     /// \param argc The number of command line arguments.

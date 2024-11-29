@@ -128,11 +128,9 @@ void ViewportSettingsPage::saveValues(QTabWidget* tabWidget)
     // Recreate all interactive viewport windows in all program windows after a different graphics API has been activated.
     // No restart of the software is required.
     if(recreateViewportWindows) {
-        for(QWidget* widget : QApplication::topLevelWidgets()) {
-            if(MainWindow* mainWindow = qobject_cast<MainWindow*>(widget)) {
-                mainWindow->viewportsPanel()->recreateViewportWindows();
-            }
-        }
+        MainWindow::visitMainWindows([&](MainWindow* mainWindow) {
+            mainWindow->viewportsPanel()->recreateViewportWindows();
+        });
     }
 
     // Update settings.

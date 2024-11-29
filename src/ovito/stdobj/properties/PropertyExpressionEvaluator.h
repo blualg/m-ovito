@@ -45,7 +45,7 @@ public:
     PropertyExpressionEvaluator() = default;
 
     /// Destructor.
-    virtual ~PropertyExpressionEvaluator() {}
+    virtual ~PropertyExpressionEvaluator() = default;
 
     /// Specifies the expressions to be evaluated for each element and creates the input variables.
     virtual void initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame = 0);

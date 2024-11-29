@@ -43,7 +43,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
-    virtual ~BooleanRadioButtonParameterUI();
+    ~BooleanRadioButtonParameterUI();
 
     /// This returns the radio button group managed by this ParameterUI.
     QButtonGroup* buttonGroup() const { return _buttonGroup; }

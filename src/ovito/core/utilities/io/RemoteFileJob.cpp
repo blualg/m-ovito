@@ -206,7 +206,7 @@ void RemoteFileJob::connectionError()
 {
     QStringList errorMessages = _connection->errorMessages();
     if(errorMessages.size() != 0) {
-        if(Application::guiMode()) {
+        if(isInteractive()) {
             errorMessages[0] = tr("<p>Cannot access URL:</p><p><i>%1</i></p><p>SSH connection error: %2</p><p>See <a href=\"https://docs.ovito.org/advanced_topics/remote_file_access.html#troubleshooting-information\">troubleshooting information</a>.</p>")
                 .arg(_url.toString(QUrl::RemovePassword | QUrl::PreferLocalFile | QUrl::PrettyDecoded).toHtmlEscaped())
                 .arg(errorMessages[0].toHtmlEscaped());

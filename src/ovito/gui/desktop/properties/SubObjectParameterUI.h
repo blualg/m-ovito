@@ -43,9 +43,6 @@ public:
     /// Constructor.
     void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* refField, const RolloutInsertionParameters& rolloutParams = RolloutInsertionParameters());
 
-    /// Destructor.
-    virtual ~SubObjectParameterUI() {}
-
     /// This method is called when a new sub-object has been assigned to the reference field of the editable object
     /// this parameter UI is bound to. It is also called when the editable object itself has
     /// been replaced in the editor.

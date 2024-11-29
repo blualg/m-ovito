@@ -145,8 +145,8 @@ void UpdateDialog::onDownload()
  ******************************************************************************/
 void UpdateNotificationService::applicationStarting()
 {
-    // Do nothing when running in console mode.
-    if(!Application::guiMode())
+    // Do nothing when not started as a desktop application.
+    if(Application::runMode() != Application::AppMode)
         return;
 
     // Get operating system

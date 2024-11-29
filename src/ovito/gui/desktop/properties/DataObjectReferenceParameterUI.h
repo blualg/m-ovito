@@ -43,7 +43,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const DataObject::OOMetaClass& dataObjectClass);
 
     /// Destructor.
-    virtual ~DataObjectReferenceParameterUI();
+    ~DataObjectReferenceParameterUI();
 
     /// This returns the combobox widget managed by this ParameterUI.
     StableComboBox* comboBox() const { return _comboBox; }

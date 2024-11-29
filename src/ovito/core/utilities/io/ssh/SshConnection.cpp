@@ -36,7 +36,7 @@ SshConnection::SshImplementation SshConnection::getSshImplementation()
 #if defined(OVITO_BUILD_PROFESSIONAL) || defined(OVITO_BUILD_PYPI)
     #ifdef OVITO_SSH_CLIENT
         if(selectedSshMethod.isEmpty()) {
-            if(Application::guiMode()) {
+            if(Application::guiEnabled()) {
                 QSettings settings;
                 selectedSshMethod = settings.value("ssh/connection_method", QStringLiteral("libssh")).toString();
             }

@@ -45,7 +45,7 @@ public:
             const std::function<void(RefTarget*)>& resetUIFunction = std::function<void(RefTarget*)>());
 
     /// Destructor.
-    virtual ~CustomParameterUI();
+    ~CustomParameterUI();
 
     /// This returns the widget managed by this ParameterUI.
     QWidget* widget() const { return _widget; }

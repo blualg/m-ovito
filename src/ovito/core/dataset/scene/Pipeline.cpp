@@ -52,12 +52,14 @@ SET_PROPERTY_FIELD_CHANGE_EVENT(Pipeline, head, ReferenceEvent::PipelineChanged)
 SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(Pipeline, head, "dataProvider"); // For backward compatibility with OVITO 3.9.2
 SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(Pipeline, source, "pipelineSource"); // For backward compatibility with OVITO 3.9.2
 
+#ifdef OVITO_DEBUG
 /******************************************************************************
 * Destructor.
 ******************************************************************************/
 Pipeline::~Pipeline() // NOLINT
 {
 }
+#endif
 
 /******************************************************************************
 * Throws an exception if the pipeline stage cannot be evaluated at this time.

@@ -40,7 +40,7 @@ static void handleRenderResult(ActiveObject* object, PipelineStatus&& status)
         throw Exception(status.text());
 
     // In console mode, print warning messages to the terminal.
-    if(status.type() == PipelineStatus::Warning && !status.text().isEmpty() && !Application::guiMode()) {
+    if(status.type() == PipelineStatus::Warning && !status.text().isEmpty() && Application::runMode() != Application::AppMode) {
         if(dynamic_object_cast<DataVis>(object))
             qWarning() << "WARNING: Visual element" << object->objectTitle() << "reported:" << status.text();
         else if(dynamic_object_cast<ViewportOverlay>(object))

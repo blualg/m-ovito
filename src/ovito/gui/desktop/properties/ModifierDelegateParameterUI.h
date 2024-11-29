@@ -43,7 +43,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor, const OvitoClass& delegateType);
 
     /// Destructor.
-    virtual ~ModifierDelegateParameterUI();
+    ~ModifierDelegateParameterUI();
 
     /// This returns the combo box managed by this ParameterUI.
     StableComboBox* comboBox() const { return _comboBox; }

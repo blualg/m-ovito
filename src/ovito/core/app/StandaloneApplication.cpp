@@ -58,7 +58,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         QString arg = QString::fromLocal8Bit(argv[i]);
 #ifdef Q_OS_MACOS
         // When started from the macOS Finder, the OS may pass the 'process serial number' to the application.
-        // We are not interested in this parameter, so exclude it from our internal list.
+        // We are not interested in this parameter, so filter it from our internal list.
         if(arg.startsWith(QStringLiteral("-psn")))
             continue;
 #endif
@@ -79,13 +79,13 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
     // Output program version if requested.
     if(cmdLineParser().isSet("version")) {
         std::cout << qPrintable(Application::applicationName()) << " " << qPrintable(Application::applicationVersionString()) << std::endl;
-        setGuiMode(false);
+        setRunMode(Application::TerminalMode);
         return true;
     }
 
     // Help command line option implicitly activates console mode.
     if(_cmdLineParser.isSet("help")) {
-        setGuiMode(false);
+        setRunMode(Application::TerminalMode);
     }
 
     try {
@@ -114,7 +114,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         // Parse the command line parameters again after the plugins have registered their options.
         if(!_cmdLineParser.parse(arguments)) {
             qInfo().noquote() << "Error:" << _cmdLineParser.errorText();
-            setGuiMode(false);
+            setRunMode(Application::TerminalMode);
             return false;
         }
 
@@ -171,7 +171,7 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
             }
             catch(const Exception& ex) {
                 // Shutdown with error exit code when running in scripting mode.
-                if(Application::instance()->guiMode())
+                if(Application::runMode() == Application::AppMode)
                     this_task::ui()->reportError(ex);
                 else
                     this_task::ui()->exitWithFatalError(ex);

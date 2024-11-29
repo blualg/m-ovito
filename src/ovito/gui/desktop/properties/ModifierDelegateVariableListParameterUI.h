@@ -44,7 +44,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor, const OvitoClass& delegateType);
 
     /// Destructor.
-    virtual ~ModifierDelegateVariableListParameterUI();
+    ~ModifierDelegateVariableListParameterUI();
 
     /// This method is called when a new editable object has been assigned to the properties owner this
     /// parameter UI belongs to. The parameter UI should react to this change appropriately and

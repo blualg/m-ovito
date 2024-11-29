@@ -43,7 +43,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField);
 
     /// Destructor.
-    virtual ~ColorParameterUI();
+    ~ColorParameterUI();
 
     /// This returns the color picker widget managed by this parameter UI.
     ColorPickerWidget* colorPicker() const { return _colorPicker; }

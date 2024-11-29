@@ -43,7 +43,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, int uncheckedValue, int checkedValue);
 
     /// Destructor.
-    virtual ~IntegerCheckBoxParameterUI();
+    ~IntegerCheckBoxParameterUI();
 
     /// This returns the checkbox managed by this parameter UI.
     QCheckBox* checkBox() const { return _checkBox; }

@@ -53,7 +53,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, PropertyContainerClassPtr containerClass = nullptr, PropertyComponentsMode componentsMode = ShowOnlyComponents, bool inputProperty = true);
 
     /// Destructor.
-    virtual ~PropertyReferenceParameterUI();
+    ~PropertyReferenceParameterUI();
 
     /// This returns the combo box managed by this ParameterUI.
     QComboBox* comboBox() const { return _comboBox; }

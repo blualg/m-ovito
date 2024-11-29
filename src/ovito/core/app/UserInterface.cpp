@@ -76,7 +76,7 @@ void UserInterface::exitWithFatalError(const Exception& ex)
 ******************************************************************************/
 void UserInterface::shutdown()
 {
-    // Close the dataset container. This should release all objects in the current dataset and stop all associated background tasks.
+    // Close the dataset container. This should release all objects in the current dataset and stop all associated tasks.
     try {
         // Set up a local task context in case we don't have one.
         // The shutdown() method may be called from anywhere.

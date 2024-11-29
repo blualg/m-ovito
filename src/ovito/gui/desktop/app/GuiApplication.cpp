@@ -30,11 +30,13 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include "GuiApplication.h"
 
-#ifdef Q_OS_LINUX
-    #include <QDBusConnection>
-    #include <QDBusMessage>
-    #include <QDBusVariant>
-    #include <QDBusReply>
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
+    #ifdef Q_OS_LINUX
+        #include <QDBusConnection>
+        #include <QDBusMessage>
+        #include <QDBusVariant>
+        #include <QDBusReply>
+    #endif
 #endif
 
 // Registers the embedded Qt resource files embedded in a statically linked executable at application startup.
@@ -81,13 +83,9 @@ bool GuiApplication::processCommandLineParameters()
         return false;
 
     // Check if program was started in console mode.
-    if(!_cmdLineParser.isSet("nogui")) {
-        // Enable GUI mode by default.
-        setGuiMode(true);
-    }
-    else {
+    if(_cmdLineParser.isSet("nogui")) {
         // Activate console mode.
-        setGuiMode(false);
+        setRunMode(Application::TerminalMode);
 #if defined(Q_OS_MACOS)
         // Don't let Qt move the app to the foreground when running in console mode.
         ::setenv("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", "1", 1);
@@ -150,7 +148,7 @@ QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& 
         OVITO_ASSERT(QOpenGLContext::globalShareContext() != nullptr);
 
 #ifdef OVITO_SSH_CLIENT
-        if(guiMode()) {
+        if(Application::guiEnabled()) {
             fileManager().registerAskUserForPasswordImpl(&GuiApplication::askUserForPassword);
             fileManager().registerAskUserForKbiResponseImpl(&GuiApplication::askUserForKbiResponse);
             fileManager().registerAskUserForKeyPassphraseImpl(&GuiApplication::askUserForKeyPassphrase);
@@ -207,8 +205,8 @@ MainThreadOperation GuiApplication::startupApplication()
 {
     OVITO_ASSERT(this_task::get());
 
-    if(guiMode()) {
-        // Setup graphical user interface.
+    if(Application::guiEnabled()) {
+        // Set up Qt event loop.
         createQtApplication(true);
 
         // Activate icon theme that matches the current UI theme.
@@ -271,22 +269,23 @@ MainThreadOperation GuiApplication::startupApplication()
         mainWindowIcon.addFile(":/guibase/mainwin/window_icon_16.png");
         QGuiApplication::setWindowIcon(mainWindowIcon);
 
-        // Create the main window.
-        OORef<MainWindow> mainWin = OORef<MainWindow>::create();
-        mainWin->keepAliveUntilShutdown();
+        if(Application::runMode() == Application::AppMode) {
+            // Create the main window.
+            OORef<MainWindow> mainWin = OORef<MainWindow>::create();
+            mainWin->keepAliveUntilShutdown();
 
-        // Show the main window.
-        mainWin->setUpdatesEnabled(false);
-        mainWin->restoreMainWindowGeometry();
-        mainWin->restoreLayout();
-        mainWin->setUpdatesEnabled(true);
+            // Show the main window.
+            mainWin->setUpdatesEnabled(false);
+            mainWin->restoreMainWindowGeometry();
+            mainWin->restoreLayout();
+            mainWin->setUpdatesEnabled(true);
 
-        return MainThreadOperation(*mainWin, MainThreadOperation::Kind::Isolated);
+            return MainThreadOperation(*mainWin, MainThreadOperation::Kind::Isolated);
+        }
     }
-    else {
-        // Use this application's command line user interface.
-        return MainThreadOperation(*this, MainThreadOperation::Kind::Isolated);
-    }
+
+    // Run application in non-gui mode.
+    return MainThreadOperation(*this, MainThreadOperation::Kind::Isolated);
 }
 
 /******************************************************************************
@@ -324,7 +323,7 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
 
     // If no .ovito state file was specified on the command line, load
     // the user's default state from the standard location.
-    if(datasetContainer.currentSet() == nullptr && Application::guiMode()) {
+    if(datasetContainer.currentSet() == nullptr && Application::runMode() == Application::AppMode) {
         QString defaultsFilePath = QStandardPaths::locate(QStandardPaths::AppDataLocation, QStringLiteral("defaults.ovito"));
         if(!defaultsFilePath.isEmpty()) {
             try {
@@ -382,16 +381,13 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
     if(event->type() == QEvent::FileOpen) {
         QFileOpenEvent* openEvent = static_cast<QFileOpenEvent*>(event);
 
-        // Only use an existing main window to load the imported file if there is no existing scene content. Otherwise, open a new window.
+        // Only use an existing main window to load the imported file if it has no existing scene content. Otherwise, open a new window.
         MainWindow* mainWindow = nullptr;
-        for(QWidget* widget : QApplication::topLevelWidgets()) {
-            if(MainWindow* mw = qobject_cast<MainWindow*>(widget)) {
-                if(!mw->datasetContainer().activeScene() || mw->datasetContainer().activeScene()->children().empty()) {
-                    mainWindow = mw;
-                    break;
-                }
+        MainWindow::visitMainWindows([&](MainWindow* mw) {
+            if(!mw->datasetContainer().activeScene() || mw->datasetContainer().activeScene()->children().empty()) {
+                mainWindow = mw;
             }
-        }
+        });
 
         if(mainWindow) {
             mainWindow->handleExceptions([&] {
@@ -425,8 +421,8 @@ void GuiApplication::reportError(const Exception& ex, bool blocking)
     // Always display errors in the terminal window.
     Application::reportError(ex, blocking);
 
-    // In GUI mode, display a message box (application modal).
-    if(guiMode()) {
+    // In app mode, display a message box (application modal).
+    if(Application::runMode() == Application::AppMode) {
         // Require a Qt event loop to show message box.
         createQtApplication(true);
 

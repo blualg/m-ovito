@@ -42,7 +42,7 @@ public:
     void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, const QStringList& fileFilter, bool existingFile);
 
     /// Destructor.
-    virtual ~FilenameParameterUI();
+    ~FilenameParameterUI();
 
     /// This returns the button managed by this ParameterUI.
     QPushButton* selectorWidget() const { return _selectorButton; }
