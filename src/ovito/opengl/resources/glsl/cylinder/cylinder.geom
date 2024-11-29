@@ -33,6 +33,7 @@ in float radius_gs[1];
 in vec4 color1_gs[1];
 in vec4 color2_gs[1];
 uniform vec3 unit_box_triangle_strip[14];
+in float selection_gs[1];
 
 // Outputs:
 flat out vec4 color1_fs;
@@ -41,6 +42,7 @@ flat out vec3 cylinder_view_base;		// Transformed cylinder position in view coor
 flat out vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
 flat out float cylinder_radius_sq_fs;	// The squared radius of the cylinder
 flat out float cylinder_length;			// The length of the cylinder
+flat out float selection_fs;
 
 void main()
 {
@@ -73,6 +75,9 @@ void main()
         // Forward cylinder colors to fragment shader.
         color1_fs = color1_gs[0];
         color2_fs = color2_gs[0];
+
+        // Forward selection to fragment shader
+        selection_fs = selection_gs[0];
 
         // Pass square of cylinder radius to fragment shader.
         cylinder_radius_sq_fs = viewspace_radius * viewspace_radius;

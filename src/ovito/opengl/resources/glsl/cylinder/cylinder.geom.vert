@@ -30,6 +30,7 @@ in vec3 color1;
 in vec3 color2;
 in float transparency1;
 in float transparency2;
+in float selection;
 
 // Outputs:
 out vec3 base_gs;
@@ -37,6 +38,7 @@ out vec3 head_gs;
 out float radius_gs;
 out vec4 color1_gs;
 out vec4 color2_gs;
+out float selection_gs;
 
 void main()
 {
@@ -46,4 +48,5 @@ void main()
     radius_gs = 0.5 * diameter;
     color1_gs = vec4(color1, clamp(1.0 - transparency1, 0.0, 1.0));
     color2_gs = vec4(color2, clamp(1.0 - transparency2, 0.0, 1.0));
+    selection_gs = selection;
 }

@@ -234,6 +234,17 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
             }
 #endif
         }
+
+        // Upload cylinder selection.
+        if(primitive.selection() && primitive.shape() == CylinderPrimitive::CylinderShape) {
+            QOpenGLBuffer selectionBuffer = shader.uploadDataBuffer(primitive.selection(), OpenGLShaderHelper::PerInstance);
+            shader.bindBuffer(selectionBuffer, "selection", GL_UNSIGNED_BYTE, 1, sizeof(int8_t), 0, OpenGLShaderHelper::PerInstance);
+        }
+        else if(!primitive.selection() && primitive.shape() == CylinderPrimitive::CylinderShape) {
+            shader.unbindBuffer("selection");
+            shader.setAttributeValue("selection", 0);
+        }
+        shader.setUniformValue("selection_color", ColorA(primitive.selectionColor()));
     }
 
     // Draw triangle strip or fan instances in regular storage order (not sorted).

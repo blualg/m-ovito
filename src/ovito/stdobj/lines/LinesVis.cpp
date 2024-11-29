@@ -76,7 +76,7 @@ QString LinesPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId
         str += QStringLiteral("</val>");
 
         for(const Property* property : linesObj()->properties()) {
-            if(property->typeId() == Property::GenericColorProperty) continue;
+            if(property->typeId() == Property::GenericColorProperty || property->typeId() == Property::GenericSelectionProperty) continue;
 
             if(!str.isEmpty()) str += QStringLiteral("<sep>");
 
@@ -256,6 +256,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                 BufferReadAccess<ColorG> colorProperty = lines->getProperty(Lines::ColorProperty);
                 RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
 
+                BufferReadAccess<SelectionIntType> selectionProperty = lines->getProperty(Lines::SelectionProperty);
+
                 // Determine the number of line segments and corner points to render.
                 BufferFactory<Point3G> cornerPoints(0);
                 BufferFactory<Point3G> baseSegmentPoints(0);
@@ -270,6 +272,13 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                 // subObject index map to allow picking in the viewport
                 int subobjIndex = 0;
 
+                // corner selection
+                BufferFactory<SelectionIntType> cornerSelection =
+                    selectionProperty ? BufferFactory<SelectionIntType>(0) : BufferFactory<SelectionIntType>{};
+                // corner selection
+                BufferFactory<SelectionIntType> segmentSelection =
+                    selectionProperty ? BufferFactory<SelectionIntType>(0) : BufferFactory<SelectionIntType>{};
+
                 if(pos1Property.valid() && pos2Property.valid()) {
                     OVITO_ASSERT(pos1Property.size() == pos2Property.size());
                     subobjToSegmentMap.reserve(pos1Property.size());
@@ -279,6 +288,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                     // segment callback used by the "clipLines" function
                     const auto clipPointCallback = [&](const Point3& p1, size_t row) {
                         cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
+                        if(selectionProperty) {
+                            cornerSelection.push_back(selectionProperty[row]);
+                        }
                         if(colorProperty) {
                             cornerColors.push_back(colorProperty[row]);
                         }
@@ -296,6 +308,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                                  [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
                                      baseSegmentPoints.push_back(p1.toDataType<GraphicsFloatType>());
                                      headSegmentPoints.push_back(p2.toDataType<GraphicsFloatType>());
+                                     if(selectionProperty) {
+                                         segmentSelection.push_back(selectionProperty[row]);
+                                     }
                                      if(colorProperty) {
                                          segmentColors.push_back(colorProperty[row]);
                                          segmentColors.push_back(colorProperty[row]);
@@ -330,6 +345,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                     const auto clipPointCallback = [&](const Point3& p1, int colorOffset) {
                         OVITO_ASSERT(colorOffset < 2);
                         cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
+                        if(selectionProperty) {
+                            cornerSelection.push_back(selectionProperty[inputColorIndex + colorOffset]);
+                        }
                         if(colorProperty) {
                             cornerColors.push_back(colorProperty[inputColorIndex + colorOffset]);
                         }
@@ -348,6 +366,10 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                                      [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
                                          baseSegmentPoints.push_back(p1.toDataType<GraphicsFloatType>());
                                          headSegmentPoints.push_back(p2.toDataType<GraphicsFloatType>());
+                                         if(selectionProperty) {
+                                             segmentSelection.push_back(selectionProperty[inputColorIndex] ||
+                                                                        selectionProperty[inputColorIndex + 1]);
+                                         }
                                          if(colorProperty) {
                                              segmentColors.push_back((GraphicsFloatType(1) - t1) * colorProperty[inputColorIndex] +
                                                                      t1 * colorProperty[inputColorIndex + 1]);
@@ -390,6 +412,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                 segments.setUniformColor(lineColor());
                 segments.setUniformWidth(lineDiameter);
                 segments.setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
+                if(selectionProperty) {
+                    segments.setSelection(segmentSelection.take());
+                }
 
                 // Create rendering primitive for the corner points.
                 corners.setParticleShape(ParticlePrimitive::SphericalShape);
@@ -399,6 +424,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                 corners.setUniformColor(lineColor());
                 corners.setColors(cornerColors.take());
                 corners.setUniformRadius(0.5 * lineDiameter);
+                if(selectionProperty) {
+                    corners.setSelection(cornerSelection.take());
+                }
 
                 // Save the pseudo-colors of the corner spheres. They will be converted to RGB colors below.
                 cornerPseudoColorsCached = cornerPseudoColors.take();

@@ -22,7 +22,6 @@
 
 #pragma once
 
-
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include "PseudoColorMapping.h"
@@ -45,14 +44,15 @@ class OVITO_CORE_EXPORT CylinderPrimitive final : public RenderingPrimitive
 #endif
 
 public:
-
-    enum ShadingMode {
+    enum ShadingMode
+    {
         NormalShading,
         FlatShading,
     };
     Q_ENUM(ShadingMode);
 
-    enum Shape {
+    enum Shape
+    {
         CylinderShape,
         ArrowShape,
     };
@@ -74,17 +74,13 @@ public:
     FloatType uniformWidth() const { return _uniformWidth; }
 
     /// Sets the cylinder diameter of all primitives to the given value.
-    void setUniformWidth(FloatType width) {
-        _uniformWidth = width;
-    }
+    void setUniformWidth(FloatType width) { _uniformWidth = width; }
 
     /// Returns the color assigned to all primitives.
     const Color& uniformColor() const { return _uniformColor; }
 
     /// Sets the color of all primitives to the given value.
-    void setUniformColor(const Color& color) {
-        _uniformColor = color;
-    }
+    void setUniformColor(const Color& color) { _uniformColor = color; }
 
     /// Returns whether only one of the two cylinder caps is rendered.
     bool renderSingleCylinderCap() const { return _renderSingleCylinderCap; }
@@ -99,7 +95,8 @@ public:
     const ConstDataBufferPtr& headPositions() const { return _headPositions; }
 
     /// Sets the coordinates of the base and the head points.
-    void setPositions(ConstDataBufferPtr baseCoordinates, ConstDataBufferPtr headCoordinates) {
+    void setPositions(ConstDataBufferPtr baseCoordinates, ConstDataBufferPtr headCoordinates)
+    {
         OVITO_ASSERT((baseCoordinates != nullptr) == (headCoordinates != nullptr));
         OVITO_ASSERT(!baseCoordinates || baseCoordinates->componentCount() == 3);
         OVITO_ASSERT(!headCoordinates || headCoordinates->componentCount() == 3);
@@ -112,13 +109,15 @@ public:
     const ConstDataBufferPtr& colors() const { return _colors; }
 
     /// Sets the per-primitive or per-vertex colors (either RGB or scalar pseudo-color values).
-    void setColors(ConstDataBufferPtr colors) {
+    void setColors(ConstDataBufferPtr colors)
+    {
         OVITO_ASSERT(!colors || (colors->componentCount() == 3 || colors->componentCount() == 1));
         _colors = std::move(colors);
     }
 
     /// Sets the transparency values of the primitives.
-    void setTransparencies(ConstDataBufferPtr transparencies) {
+    void setTransparencies(ConstDataBufferPtr transparencies)
+    {
         OVITO_ASSERT(!transparencies || transparencies->componentCount() == 1);
         _transparencies = std::move(transparencies);
     }
@@ -127,7 +126,8 @@ public:
     const ConstDataBufferPtr& transparencies() const { return _transparencies; }
 
     /// Sets the diameters of the primitives.
-    void setWidths(ConstDataBufferPtr widths) {
+    void setWidths(ConstDataBufferPtr widths)
+    {
         OVITO_ASSERT(!widths || widths->componentCount() == 1);
         _widths = std::move(widths);
     }
@@ -139,12 +139,27 @@ public:
     const PseudoColorMapping& pseudoColorMapping() const { return _pseudoColorMapping; }
 
     /// Sets the mapping from pseudo-color values to RGB colors.
-    void setPseudoColorMapping(const PseudoColorMapping& mapping) {
-        _pseudoColorMapping = mapping;
+    void setPseudoColorMapping(const PseudoColorMapping& mapping) { _pseudoColorMapping = mapping; }
+
+    /// Returns the buffer storing the cylinder selection flags.
+    const ConstDataBufferPtr& selection() const { return _selection; }
+
+    /// Sets the selection flags of the cylinders.
+    void setSelection(ConstDataBufferPtr selection)
+    {
+        OVITO_ASSERT(!selection || (selection->dataType() == DataBuffer::IntSelection && selection->componentCount() == 1));
+        _selection = std::move(selection);
     }
 
-	/// Computes the 3d bounding box of the primitive in local coordinate space.
-	virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override {
+    /// Returns the color used for rendering all selected cylinders.
+    const Color& selectionColor() const { return _selectionColor; }
+
+    /// Sets the color to be used for rendering the selected cylinders.
+    void setSelectionColor(const Color& color) { _selectionColor = color; }
+
+    /// Computes the 3d bounding box of the primitive in local coordinate space.
+    virtual Box3 computeBoundingBox(const RendererResourceCache::ResourceFrame& visCache) const override
+    {
         OVITO_ASSERT(this);
         const Box3& bb = visCache.lookup<Box3>(
             RendererResourceKey<struct CylinderBoundingBoxCache, ConstDataBufferPtr, ConstDataBufferPtr>{basePositions(), headPositions()},
@@ -156,9 +171,9 @@ public:
             });
         FloatType maxWidth = 0;
         if(widths()) {
-            const FloatType& cachedMaxWidth = visCache.lookup<FloatType>(RendererResourceKey<struct CylinderMaxWidthBoundingBoxCache, ConstDataBufferPtr>{widths()}, [this](FloatType& cachedMaxWidth) {
-                cachedMaxWidth = widths()->minMax().second;
-            });
+            const FloatType& cachedMaxWidth =
+                visCache.lookup<FloatType>(RendererResourceKey<struct CylinderMaxWidthBoundingBoxCache, ConstDataBufferPtr>{widths()},
+                                           [this](FloatType& cachedMaxWidth) { cachedMaxWidth = widths()->minMax().second; });
             maxWidth = std::max(maxWidth, cachedMaxWidth);
         }
         else {
@@ -168,7 +183,6 @@ public:
     }
 
 private:
-
     /// Controls the shading.
     ShadingMode _shadingMode = NormalShading;
 
@@ -182,25 +196,31 @@ private:
     bool _renderSingleCylinderCap = false;
 
     /// The color to be used if no per-primitive colors have been specified.
-    Color _uniformColor{1,1,1};
+    Color _uniformColor{1, 1, 1};
 
     /// The diameter of the cylinders.
     FloatType _uniformWidth{2.0};
 
     /// Buffer storing the coordinates of the arrow/cylinder base points.
-    ConstDataBufferPtr _basePositions; // Array of Point3
+    ConstDataBufferPtr _basePositions;  // Array of Point3
 
     /// Buffer storing the coordinates of the arrow/cylinder head points.
-    ConstDataBufferPtr _headPositions; // Array of Point3
+    ConstDataBufferPtr _headPositions;  // Array of Point3
 
     /// Buffer storing the colors of the arrows/cylinders.
-    ConstDataBufferPtr _colors; // Array of RGB ColorG or FloatType (pseudocolors)
+    ConstDataBufferPtr _colors;  // Array of RGB ColorG or FloatType (pseudocolors)
+
+    /// The internal buffer storing the array of cylinder selection flags.
+    ConstDataBufferPtr _selection;  // Array of int8
 
     /// Buffer storing the semi-transparency values.
-    ConstDataBufferPtr _transparencies; // Array of GraphicsFloatType
+    ConstDataBufferPtr _transparencies;  // Array of GraphicsFloatType
 
     /// Buffer storing the per-primitive width values.
-    ConstDataBufferPtr _widths; // Array of GraphicsFloatType
+    ConstDataBufferPtr _widths;  // Array of GraphicsFloatType
+
+    /// The color used for rendering all selected cylinder.
+    Color _selectionColor{1.0, 0.0, 0.0};
 };
 
-}   // End of namespace
+}  // namespace Ovito

@@ -59,7 +59,10 @@ public:
     template<typename T>
     ColorT<T> valueToColor(T v) const {
         OVITO_ASSERT(isValid());
-        OVITO_ASSERT(std::isfinite(v));
+        OVITO_ASSERT(!std::isinf(v));
+        if(std::isnan(v)) {
+            return {(T)1, (T)0, (T)0};
+        }
         // Handle a degenerate mapping interval.
         if(_maxValue == _minValue) {
             if(v == static_cast<T>(_maxValue)) return gradient()->valueToColor(T(0.5));
