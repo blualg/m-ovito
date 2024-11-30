@@ -350,11 +350,11 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 
         // Determine new cluster ordering.
         std::vector<size_t> mapping(clusterSizeArray.size());
-        std::iota(mapping.begin(), mapping.end(), size_t(0));
-        std::sort(mapping.begin(), mapping.end(), [&](auto a, auto b) {
+        boost::algorithm::iota(mapping, size_t(0));
+        boost::sort(mapping, [&](auto a, auto b) {
             return clusterSizeArray[a] > clusterSizeArray[b];
         });
-        std::sort(clusterSizeArray.begin(), clusterSizeArray.end(), std::greater<>());
+        boost::sort(clusterSizeArray, std::greater<>());
         setLargestClusterSize(clusterSizeArray[0]);
 
         // Reorder centers of mass.

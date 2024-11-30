@@ -567,7 +567,7 @@ void OpenGLShaderHelper::setupVertexAndInstanceIDOpenGL2()
             // WebGL 1/OpenGL ES 2.0 does not support mapping a GL buffer to memory.
             // Need to emulate the map() method by providing a temporary memory buffer on the host.
             std::vector<float> stagingBuffer(vboSize);
-            std::iota(stagingBuffer.begin(), stagingBuffer.end(), 0);
+            boost::algorithm::iota(stagingBuffer, 0);
             OVITO_CHECK_OPENGL(_renderer, vbo.write(0, stagingBuffer.data(), vboSize * sizeof(float)));
 #endif
         }

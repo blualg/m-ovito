@@ -531,8 +531,8 @@ std::vector<size_t> PropertyContainer::sortById()
 
     // Determine new permutation of data elements which sorts them by ascending ID.
     std::vector<size_t> permutation(ids.size());
-    std::iota(permutation.begin(), permutation.end(), (size_t)0);
-    std::sort(permutation.begin(), permutation.end(), [&](size_t a, size_t b) { return ids[a] < ids[b]; });
+    boost::algorithm::iota(permutation, (size_t)0);
+    boost::sort(permutation, [&](size_t a, size_t b) { return ids[a] < ids[b]; });
     std::vector<size_t> invertedPermutation(ids.size());
     bool isAlreadySorted = true;
     for(size_t i = 0; i < permutation.size(); i++) {

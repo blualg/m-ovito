@@ -197,8 +197,8 @@ public:
         std::vector<size_t> regionSizes(_emptyRegionCount);
         std::vector<double> regionVolumes(_emptyRegionCount, 0.0);
         boost::dynamic_bitset<> regionIsExterior(_emptyRegionCount);
-        std::iota(regionParents.begin(), regionParents.end(), (size_t)0);
-        std::fill(regionSizes.begin(), regionSizes.end(), 1);
+        boost::algorithm::iota(regionParents, (size_t)0);
+        boost::fill(regionSizes, 1);
 
         // "Find" part of Union-Find:
         auto findRegion = [&](size_t index) {

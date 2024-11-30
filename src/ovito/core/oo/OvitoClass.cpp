@@ -44,8 +44,6 @@ OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char
     OVITO_ASSERT(superClass != nullptr || name == QStringLiteral("OvitoObject"));
     OVITO_ASSERT(pluginId != nullptr);
 
-    qInfo() << "----OvitoClass::OvitoClass(): name=" << name << "_firstNativeMetaClass=" << _firstNativeMetaClass;
-
     // Insert class into the linked list.
     _nextNativeMetaclass = _firstNativeMetaClass;
     _firstNativeMetaClass = this;
@@ -56,7 +54,6 @@ OvitoClass::OvitoClass(const QString& name, OvitoClassPtr superClass, const char
 ******************************************************************************/
 void OvitoClass::initialize()
 {
-    qInfo() << "----OvitoClass::initialize(): name=" << name();
     // Class must have been initialized with a plugin id.
     OVITO_ASSERT(_pluginId != nullptr);
 

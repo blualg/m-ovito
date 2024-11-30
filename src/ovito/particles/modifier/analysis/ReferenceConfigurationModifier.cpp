@@ -356,8 +356,8 @@ void ReferenceConfigurationModifier::Engine::buildParticleMapping(bool requireCo
 
         // When particle identifiers are not available, assume the storage order of particles in the
         // reference configuration and the current configuration are the same and use trivial 1-to-1 mapping.
-        std::iota(_refToCurrentIndexMap.begin(), _refToCurrentIndexMap.end(), size_t(0));
-        std::iota(_currentToRefIndexMap.begin(), _currentToRefIndexMap.end(), size_t(0));
+        boost::algorithm::iota(_refToCurrentIndexMap, size_t(0));
+        boost::algorithm::iota(_currentToRefIndexMap, size_t(0));
     }
 
     this_task::throwIfCanceled();

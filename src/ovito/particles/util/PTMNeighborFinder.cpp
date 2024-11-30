@@ -74,7 +74,7 @@ void PTMNeighborFinder::Query::findNeighbors(size_t particleIndex, std::optional
     getNeighbors(particleIndex, ptm_type);
 
     int8_t remap_permutation[PTM_MAX_INPUT_POINTS];
-    std::iota(std::begin(remap_permutation), std::end(remap_permutation), 0);
+    boost::algorithm::iota(remap_permutation, 0);
 
     if(_structureType != PTMAlgorithm::OTHER && targetOrientation) {
         //arrange orientation in PTM format

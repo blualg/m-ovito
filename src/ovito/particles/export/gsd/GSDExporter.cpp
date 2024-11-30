@@ -111,7 +111,7 @@ OORef<FileExportJob> GSDExporter::createExportJob(const QString& filePath, int n
 
             // Determine particle ordering.
             std::vector<size_t> ordering(particles->elementCount());
-            std::iota(ordering.begin(), ordering.end(), (size_t)0);
+            boost::algorithm::iota(ordering, (size_t)0);
             if(BufferReadAccess<int64_t> idProperty = particles->getProperty(Particles::IdentifierProperty)) {
                 boost::sort(ordering, [&](size_t a, size_t b) { return idProperty[a] < idProperty[b]; });
             }

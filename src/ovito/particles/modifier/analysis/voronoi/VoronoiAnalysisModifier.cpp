@@ -730,7 +730,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         // Initialize disjoint set data structure to keep track which vertices have been merged with which.
         std::vector<SurfaceMesh::vertex_index> parents(polyhedraMesh.vertexCount());
         std::vector<SurfaceMesh::vertex_index> ranks(polyhedraMesh.vertexCount(), 0);
-        std::iota(parents.begin(), parents.end(), (SurfaceMesh::vertex_index)0);
+        boost::algorithm::iota(parents, (SurfaceMesh::vertex_index)0);
 
         // Iterate over all Voronoi faces.
         BufferReadAccess<int32_t> adjacentCellArray(adjacentCellProperty);

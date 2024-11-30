@@ -116,7 +116,7 @@ ConstPropertyPtr DataTable::getXValues() const
     }
     else {
         PropertyFactory<int64_t> xdata(OOClass(), elementCount(), axisLabelX().isEmpty() ? QStringLiteral("Index") : axisLabelX());
-        std::iota(xdata.begin(), xdata.end(), (int64_t)0);
+        boost::algorithm::iota(xdata, (int64_t)0);
         return xdata.take();
     }
 }

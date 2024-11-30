@@ -291,8 +291,8 @@ Future<DataOORef<const Lines>> GenerateTrajectoryLinesModifier::generateTrajecto
     progress.setMaximum(0);
     progress.setText(tr("Sorting trajectory data"));
     std::vector<size_t> permutation(pointData.size());
-    std::iota(permutation.begin(), permutation.end(), (size_t)0);
-    std::sort(permutation.begin(), permutation.end(), [&](size_t a, size_t b) {
+    boost::algorithm::iota(permutation, (size_t)0);
+    boost::sort(permutation, [&](size_t a, size_t b) {
         if(idData[a] < idData[b]) return true;
         if(idData[a] > idData[b]) return false;
         return timeData[a] < timeData[b];

@@ -261,7 +261,7 @@ void DataTablePlotWidget::updateDataPlot()
                 }
             }
             else {
-                std::iota(xcoords.begin(), xcoords.end(), 0);
+                boost::algorithm::iota(xcoords, 0);
             }
         }
         else {

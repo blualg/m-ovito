@@ -271,7 +271,7 @@ public:
                         OVITO_ASSERT(!subset);
                         auto sortedIndices = std::span(static_cast<GLuint*>(buffer), renderInstanceCount);
                         if(!_instancesSubset)
-                            std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
+                            boost::algorithm::iota(sortedIndices, (GLuint)0);
                         else
                             boost::copy(BufferReadAccess<int32_t>(_instancesSubset), sortedIndices.begin());
                         // Call user function to generate the element ordering.
@@ -313,7 +313,7 @@ public:
                         OVITO_ASSERT(!subset);
                         auto sortedIndices = std::span(static_cast<GLuint*>(buffer), renderInstanceCount);
                         if(!_instancesSubset)
-                            std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
+                            boost::algorithm::iota(sortedIndices, (GLuint)0);
                         else
                             boost::copy(BufferReadAccess<int32_t>(_instancesSubset), sortedIndices.begin());
                         // Call user function to generate the element ordering.
@@ -367,7 +367,7 @@ public:
                 [&](std::vector<GLint>& indirectFirst, std::vector<GLsizei>& indirectCount) {
                     std::vector<GLuint> sortedIndices(renderInstanceCount);
                     if(!_instancesSubset)
-                        std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
+                        boost::algorithm::iota(sortedIndices, (GLuint)0);
                     else
                         boost::copy(BufferReadAccess<int32_t>(_instancesSubset), sortedIndices.begin());
                     // Call user function to generate the element ordering.

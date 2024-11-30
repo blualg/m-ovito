@@ -249,7 +249,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             }
 
             // When particle identifiers are not available, use trivial 1-to-1 mapping.
-            std::iota(indexToIndexMap.begin(), indexToIndexMap.end(), size_t(0));
+            boost::algorithm::iota(indexToIndexMap, size_t(0));
         }
 
         // Transfer particle properties from the trajectory file.

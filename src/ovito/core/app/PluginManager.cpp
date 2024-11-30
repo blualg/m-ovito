@@ -39,7 +39,6 @@ PluginManager* PluginManager::_instance = nullptr;
 PluginManager::PluginManager()
 {
     OVITO_ASSERT_MSG(!_instance, "PluginManager constructor", "Multiple instances of this singleton class have been created.");
-    qInfo() << "----PluginManager::PluginManager()";
 }
 
 /******************************************************************************
@@ -169,9 +168,7 @@ void PluginManager::loadAllPlugins()
 ******************************************************************************/
 void PluginManager::registerLoadedPluginClasses()
 {
-    qInfo() << "----PluginManager::registerLoadedPluginClasses() _lastRegisteredClass=" << _lastRegisteredClass;
     for(OvitoClass* clazz = OvitoClass::_firstNativeMetaClass; clazz != _lastRegisteredClass; clazz = clazz->_nextNativeMetaclass) {
-        qInfo() << "----Registering clazz=" << clazz;
         clazz->initialize();
         OVITO_ASSERT(clazz->pluginId() != nullptr);
 

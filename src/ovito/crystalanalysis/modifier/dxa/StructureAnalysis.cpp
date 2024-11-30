@@ -390,7 +390,7 @@ void StructureAnalysis::initializeListOfStructures()
         // Find symmetry permutations.
         std::vector<int> permutation(latticeStruct->latticeVectors.size());
         std::vector<int> lastPermutation(latticeStruct->latticeVectors.size(), -1);
-        std::iota(permutation.begin(), permutation.end(), 0);
+        boost::algorithm::iota(permutation, 0);
         SymmetryPermutation symmetryPermutation;
         do {
             int changedFrom = std::mismatch(permutation.begin(), permutation.end(), lastPermutation.begin()).first - permutation.begin();

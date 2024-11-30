@@ -250,10 +250,10 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
 
             // Create index array with all face indices.
             std::vector<uint32_t> sortedIndices(mesh.faceCount());
-            std::iota(sortedIndices.begin(), sortedIndices.end(), (uint32_t)0);
+            boost::algorithm::iota(sortedIndices, (uint32_t)0);
 
             // Sort face indices with respect to distance (back-to-front order).
-            std::sort(sortedIndices.begin(), sortedIndices.end(), [&](uint32_t a, uint32_t b) {
+            boost::sort(sortedIndices, [&](uint32_t a, uint32_t b) {
                 return distances[a] < distances[b];
             });
 

@@ -580,8 +580,8 @@ void GrainSegmentationEngine2::perform()
 
         // Determine the index remapping for reordering the grain list by size.
         std::vector<size_t> mapping(_numClusters - 1);
-        std::iota(mapping.begin(), mapping.end(), size_t(0));
-        std::sort(mapping.begin(), mapping.end(), [grainSizeArray = BufferReadAccess<int64_t>(_grainSizes)](size_t a, size_t b) {
+        boost::algorithm::iota(mapping, size_t(0));
+        boost::sort(mapping, [grainSizeArray = BufferReadAccess<int64_t>(_grainSizes)](size_t a, size_t b) {
             return grainSizeArray[a] > grainSizeArray[b];
         });
         this_task::throwIfCanceled();
