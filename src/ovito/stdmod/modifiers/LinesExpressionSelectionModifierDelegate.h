@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <ovito./stdobj/lines/Lines.h>
+#include <ovito/stdobj/lines/Lines.h>
 #include "ExpressionSelectionModifier.h"
 
 namespace Ovito {
