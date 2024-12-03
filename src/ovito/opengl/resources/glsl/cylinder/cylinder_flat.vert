@@ -34,9 +34,11 @@ in vec3 color2;
 in float transparency1;
 in float transparency2;
 uniform vec2 unit_quad_triangle_strip[4];
+in float selection;
 
 // Outputs:
 out vec4 color_fs;
+flat out float selection_fs;
 
 void main()
 {
@@ -61,6 +63,9 @@ void main()
 
 	// Project corner vertex.
     gl_Position = modelview_projection_matrix * vec4(base + uv_tm[0] + uv_tm * vec3(unit_quad_triangle_strip[corner], 0.0), 1.0);
+
+    // Forward selection to fragment shader
+    selection_fs = selection;
 
     // Forward primitive color to fragment shader.
     if(corner == 0 || corner == 2) {
