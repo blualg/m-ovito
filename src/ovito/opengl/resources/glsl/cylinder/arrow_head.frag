@@ -26,10 +26,11 @@
 
 // Inputs:
 flat in vec4 color_fs;
-flat in vec3 center;	// Transformed cone vertex in view coordinates
-flat in vec3 axis;		// Transformed cone axis in view coordinates
-flat in float cone_radius;	// The radius of the cone
+flat in vec3 center;					// Transformed cone vertex in view coordinates
+flat in vec3 axis;						// Transformed cone axis in view coordinates
+flat in float cone_radius;				// The radius of the cone
 
+// Constants:
 const float cone_ratio = 1.8; // Ratio of height to radius of arrow head code.
 const float cone_angle = atan(1.0 / cone_ratio);
 const float cone_cos_squared = cos(cone_angle) * cos(cone_angle); // squared cosine of the cone angle

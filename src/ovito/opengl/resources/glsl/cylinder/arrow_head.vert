@@ -23,6 +23,9 @@
 #include "../global_uniforms.glsl"
 #include <view_ray.vert>
 
+// Uniforms:
+uniform vec4 selection_color;
+
 // Inputs:
 in vec3 base;
 in vec3 head;
@@ -30,12 +33,13 @@ in float diameter;
 in vec3 color1;
 in float transparency1;
 uniform vec3 unit_box_triangle_strip[14];
+in float selection;
 
 // Outputs:
 flat out vec4 color_fs;
-flat out vec3 center;	// Transformed cone vertex in view coordinates
-flat out vec3 axis;		// Transformed cone axis in view coordinates
-flat out float cone_radius;	// The radius of the cone
+flat out vec3 center;	                // Transformed cone vertex in view coordinates
+flat out vec3 axis;		                // Transformed cone axis in view coordinates
+flat out float cone_radius;	            // The radius of the cone
 
 const float cone_ratio = 1.8; // Ratio of height to radius of arrow head code.
 
@@ -76,6 +80,7 @@ void main()
 
     // Forward arrow color to fragment shader.
     color_fs = vec4(color1, clamp(1.0 - transparency1, 0.0, 1.0));
+    color_fs = (selection != 0.0) ? selection_color : color_fs;
 
     // Apply additional scaling to cone radius due to model-view transformation.
 	// Pass square of cylinder radius to fragment shader.

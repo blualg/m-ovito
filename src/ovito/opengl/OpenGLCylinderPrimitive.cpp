@@ -235,12 +235,12 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
 #endif
         }
 
-        // Upload cylinder selection.
-        if(primitive.selection() && primitive.shape() == CylinderPrimitive::CylinderShape) {
+        // Upload cylinder / arrow selection.
+        if(primitive.selection()) {
             QOpenGLBuffer selectionBuffer = shader.uploadDataBuffer(primitive.selection(), OpenGLShaderHelper::PerInstance);
             shader.bindBuffer(selectionBuffer, "selection", GL_UNSIGNED_BYTE, 1, sizeof(int8_t), 0, OpenGLShaderHelper::PerInstance);
         }
-        else if(!primitive.selection() && primitive.shape() == CylinderPrimitive::CylinderShape) {
+        else {
             shader.unbindBuffer("selection");
             shader.setAttributeValue("selection", 0);
         }
@@ -252,13 +252,15 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
 
     // Draw cylindric part of the arrows.
     if(primitive.shape() == CylinderPrimitive::ArrowShape && primitive.shadingMode() == CylinderPrimitive::NormalShading) {
-        if(!isPickingPass())
+        if(!isPickingPass()) {
             shader.load("arrow_tail", "cylinder/arrow_tail.vert", "cylinder/arrow_tail.frag");
+            // Upload arrow selection color.
+            shader.setUniformValue("selection_color", ColorA(primitive.selectionColor()));
+        }
         else {
             shader.load("arrow_tail_picking", "cylinder/arrow_tail_picking.vert", "cylinder/arrow_tail_picking.frag");
             shader.setPickingBaseId(pickingBaseId);
         }
-
         shader.draw(GL_TRIANGLE_STRIP);
     }
 

@@ -24,6 +24,7 @@
 
 // Uniforms:
 uniform vec3 view_dir_eye_pos; // Either camera viewing direction (parallel) or camera position (perspective) in object space coordinates.
+uniform vec4 selection_color;
 
 // Inputs:
 in vec3 base;
@@ -31,6 +32,7 @@ in vec3 head;
 in float diameter;
 in vec3 color1;
 in float transparency1;
+in float selection;
 
 // Outputs:
 flat out vec4 color_fs;
@@ -78,4 +80,5 @@ void main()
 
     // Forward primitive color to fragment shader.
     color_fs = vec4(color1, clamp(1.0 - transparency1, 0.0, 1.0));
+    color_fs = (selection != 0.0) ? selection_color : color_fs;
 }

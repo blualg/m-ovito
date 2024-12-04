@@ -38,7 +38,7 @@ flat in vec3 cylinder_view_base;		// Transformed cylinder position in view coord
 flat in vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
 flat in float cylinder_radius_sq_fs;	// The squared radius of the cylinder
 flat in float cylinder_length;			// The length of the cylinder
-flat in float selection_fs; 
+flat in float selection_fs; 			// Selection variable
 
 void main()
 {

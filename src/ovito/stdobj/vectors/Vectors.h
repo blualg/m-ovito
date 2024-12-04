@@ -59,6 +59,7 @@ public:
         PositionProperty = Property::FirstSpecificProperty,
         TransparencyProperty,
         DirectionProperty,
+        SelectionProperty = Property::GenericSelectionProperty,
     };
 
     /// Constructor.
@@ -69,7 +70,7 @@ public:
                                                    const RendererResourceCache::ResourceFrame& visCache) const override
     {
         return {getProperty(PositionProperty), getProperty(DirectionProperty), getProperty(ColorProperty),
-                getProperty(TransparencyProperty)};
+                getProperty(TransparencyProperty), getProperty(SelectionProperty)};
     }
 
     virtual std::array<bool, 2> hasVectorVisColorsAndTransparencies() const override

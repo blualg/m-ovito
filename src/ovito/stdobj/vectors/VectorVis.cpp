@@ -140,34 +140,22 @@ Box3 VectorVis::arrowBoundingBox(const DataBuffer* vectorProperty, const DataBuf
     BufferReadAccess<Point3> positions(basePositions);
     const Point3* p = positions.cbegin();
 
-    if(vectorProperty->dataType() == Property::Float64) {
-        BufferReadAccess<Vector_3<double>> vectorData(vectorProperty);
-        for(const Vector_3<double>& v : vectorData) {
-            if(v != Vector_3<double>::Zero())
+    vectorProperty->forTypes<Property::Float32, Property::Float64>([&](auto _) {
+        using T = decltype(_);
+        BufferReadAccess<Vector_3<T>> vectorData(vectorProperty);
+        for(const Vector_3<T>& v : vectorData) {
+            if(v != typename Vector_3<T>::Zero()) {
                 bbox.addPoint(*p);
+            }
             ++p;
         }
 
         // Find largest vector magnitude.
-        for(const Vector_3<double>& v : vectorData) {
+        for(const Vector_3<T>& v : vectorData) {
             auto m = v.squaredLength();
             if(m > maxMagnitude) maxMagnitude = m;
         }
-    }
-    else if(vectorProperty->dataType() == Property::Float32) {
-        BufferReadAccess<Vector3F> vectorData(vectorProperty);
-        for(const Vector3F& v : vectorData) {
-            if(v != Vector3F::Zero())
-                bbox.addPoint(*p);
-            ++p;
-        }
-
-        // Find largest vector magnitude.
-        for(const Vector3F& v : vectorData) {
-            auto m = v.squaredLength();
-            if(m > maxMagnitude) maxMagnitude = m;
-        }
-    }
+    });
 
     // Apply displacement offset.
     bbox.minc += offset();
@@ -211,6 +199,11 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VectorVis::render(const Con
         throw Exception(tr("This version of OVITO cannot render more than %1 vector arrows.").arg(std::numeric_limits<int>::max()));
     }
 
+    // Only use selection in interactive context
+    if(!frameGraph.isInteractive()) {
+        vectorData.selection = nullptr;
+    }
+
     // Look for selected pseudo-coloring property.
     const Property* pseudoColorProperty = nullptr;
     int pseudoColorPropertyComponent = 0;
@@ -228,21 +221,22 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VectorVis::render(const Con
 
     // The key type used for caching the rendering primitive:
     using CacheKey = RendererResourceKey<struct VectorVisCache,
-        ConstDataObjectRef,     // Vector property
-        ConstDataObjectRef,     // Base positions
-        ShadingMode,            // Arrow shading mode
-        FloatType,              // Scaling factor
-        FloatType,              // Arrow width
-        Color,                  // Arrow color
-        GraphicsFloatType,      // Arrow transparency
-        bool,                   // Reverse arrow direction
-        ArrowPosition,          // Arrow position
-        ConstDataObjectRef,     // Vector color property
-        ConstDataObjectRef,     // Vector transparency property
-        ConstDataObjectRef,     // Pseudo-color property
-        int,                    // Pseudo-color vector component
-        PseudoColorMapping      // Pseudo-color mapping
-    >;
+                                         ConstDataObjectRef,  // Vector property
+                                         ConstDataObjectRef,  // Base positions
+                                         ConstDataObjectRef,  // Selection property
+                                         ShadingMode,         // Arrow shading mode
+                                         FloatType,           // Scaling factor
+                                         FloatType,           // Arrow width
+                                         Color,               // Arrow color
+                                         GraphicsFloatType,   // Arrow transparency
+                                         bool,                // Reverse arrow direction
+                                         ArrowPosition,       // Arrow position
+                                         ConstDataObjectRef,  // Vector color property
+                                         ConstDataObjectRef,  // Vector transparency property
+                                         ConstDataObjectRef,  // Pseudo-color property
+                                         int,                 // Pseudo-color vector component
+                                         PseudoColorMapping   // Pseudo-color mapping
+                                         >;
 
     // Determine effective color including alpha value.
     GraphicsFloatType transparency = 0;
@@ -252,30 +246,34 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VectorVis::render(const Con
 
     // Lookup the rendering primitive in the vis cache.
     const CylinderPrimitive& arrows = frameGraph.visCache().lookup<CylinderPrimitive>(
-        CacheKey(vectorData.directions, vectorData.positions, shadingMode(), scalingFactor(), arrowWidth(), arrowColor(),
-                 transparency, reverseArrowDirection(), arrowPosition(), vectorData.colors,
-                 vectorData.transparencies, pseudoColorProperty, pseudoColorPropertyComponent, pseudoColorMapping),
+        CacheKey{
+            vectorData.directions,
+            vectorData.positions,
+            vectorData.selection,
+            shadingMode(),
+            scalingFactor(),
+            arrowWidth(),
+            arrowColor(),
+            transparency,
+            reverseArrowDirection(),
+            arrowPosition(),
+            vectorData.colors,
+            vectorData.transparencies,
+            pseudoColorProperty,
+            pseudoColorPropertyComponent,
+            pseudoColorMapping,
+        },
         [&](CylinderPrimitive& arrows) {
             // Determine number of non-zero vectors.
             int vectorCount = 0;
-            BufferReadAccess<Vector3F> vectorData32(
-                vectorData.directions && vectorData.directions->dataType() == DataBuffer::Float32 ? vectorData.directions : nullptr);
-            BufferReadAccess<Vector_3<double>> vectorData64(
-                vectorData.directions && vectorData.directions->dataType() == DataBuffer::Float64 ? vectorData.directions : nullptr);
-            if(vectorData.positions) {
-                if(vectorData32) {
-                    for(const auto& v : vectorData32) {
-                        if(v != Vector3F::Zero())
-                            vectorCount++;
-                    }
+            BufferReadAccess<SelectionIntType> selectionProperty(vectorData.selection);
+
+            vectorData.directions->forTypes<DataBuffer::Float32, DataBuffer::Float64>([&](auto _) {
+                using T = decltype(_);
+                for(const auto& v : BufferReadAccess<Vector_3<T>>(vectorData.directions)) {
+                    vectorCount += (v != typename Vector_3<T>::Zero());
                 }
-                else if(vectorData64) {
-                    for(const auto& v : vectorData64) {
-                        if(v != Vector_3<double>::Zero())
-                            vectorCount++;
-                    }
-                }
-            }
+            });
 
             // Allocate data buffers.
             BufferFactory<Point3G> arrowBasePositions(vectorCount);
@@ -284,6 +282,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VectorVis::render(const Con
                 (vectorData.colors || pseudoColorProperty) ? BufferFactory<ColorG>(vectorCount) : BufferFactory<ColorG>{};
             BufferFactory<GraphicsFloatType> arrowTransparencies =
                 vectorData.transparencies ? BufferFactory<GraphicsFloatType>(vectorCount) : BufferFactory<GraphicsFloatType>{};
+            BufferFactory<SelectionIntType> arrowSelection(vectorData.selection ? vectorCount : 0);
 
             // Fill data buffers.
             if(vectorCount) {
@@ -293,28 +292,38 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VectorVis::render(const Con
                 BufferReadAccess<Point3> basePositionData(vectorData.positions);
                 BufferReadAccess<ColorG> vectorColorData(vectorData.colors);
                 BufferReadAccess<GraphicsFloatType> vectorTransparencyData(vectorData.transparencies);
+                BufferReadAccess<SelectionIntType> vectorSelectionData(vectorData.selection);
                 RawBufferReadAccess vectorPseudoColorData(pseudoColorProperty);
                 size_t outIndex = 0;
                 const auto arrowPosition = this->arrowPosition();
-                for(size_t inIndex = 0; inIndex < basePositionData.size(); inIndex++) {
-                    const Vector3G vec = vectorData32 ? vectorData32[inIndex].toDataType<GraphicsFloatType>() : vectorData64[inIndex].toDataType<GraphicsFloatType>();
-                    if(vec != Vector3G::Zero()) {
-                        Vector3G v = vec * scalingFac;
-                        Point3G base = basePositionData[inIndex].toDataType<GraphicsFloatType>();
-                        if(arrowPosition == Head)
-                            base -= v;
-                        else if(arrowPosition == Center)
-                            base -= v * GraphicsFloatType(0.5);
-                        arrowBasePositions[outIndex] = base;
-                        arrowHeadPositions[outIndex] = base + v;
-                        if(vectorData.colors)
-                            arrowColors[outIndex] = vectorColorData[inIndex];
-                        else if(pseudoColorProperty)
-                            arrowColors[outIndex] = pseudoColorMapping.valueToColor(vectorPseudoColorData.get<GraphicsFloatType>(inIndex, pseudoColorPropertyComponent));
-                        if(vectorData.transparencies) arrowTransparencies[outIndex] = vectorTransparencyData[inIndex];
-                        outIndex++;
+
+                vectorData.directions->forTypes<DataBuffer::Float32, DataBuffer::Float64>([&](auto _) {
+                    using T = decltype(_);
+                    BufferReadAccess<Vector_3<T>> vectorDirs(vectorData.directions);
+                    for(size_t inIndex = 0; inIndex < basePositionData.size(); inIndex++) {
+                        const Vector3G vec = vectorDirs[inIndex].template toDataType<GraphicsFloatType>();
+                        if(vec != Vector3G::Zero()) {
+                            Vector3G v = vec * scalingFac;
+                            Point3G base = basePositionData[inIndex].toDataType<GraphicsFloatType>();
+                            if(arrowPosition == Head)
+                                base -= v;
+                            else if(arrowPosition == Center)
+                                base -= v * GraphicsFloatType(0.5);
+                            arrowBasePositions[outIndex] = base;
+                            arrowHeadPositions[outIndex] = base + v;
+                            if(vectorData.colors)
+                                arrowColors[outIndex] = vectorColorData[inIndex];
+                            else if(pseudoColorProperty)
+                                arrowColors[outIndex] = pseudoColorMapping.valueToColor(
+                                    vectorPseudoColorData.get<GraphicsFloatType>(inIndex, pseudoColorPropertyComponent));
+                            if(vectorData.selection) {
+                                arrowSelection[outIndex] = vectorSelectionData[inIndex];
+                            }
+                            if(vectorData.transparencies) arrowTransparencies[outIndex] = vectorTransparencyData[inIndex];
+                            outIndex++;
+                        }
                     }
-                }
+                });
                 OVITO_ASSERT(outIndex == vectorCount);
             }
 
@@ -332,6 +341,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VectorVis::render(const Con
                 DataBufferPtr transparencyBuffer = DataBufferPtr::create(vectorCount, DataBuffer::FloatGraphics);
                 transparencyBuffer->fill<GraphicsFloatType>(transparency);
                 arrows.setTransparencies(std::move(transparencyBuffer));
+            }
+            if(vectorData.selection) {
+                arrows.setSelection(arrowSelection.take());
             }
         });
 
