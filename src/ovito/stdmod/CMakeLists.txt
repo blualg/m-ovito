@@ -36,6 +36,7 @@ OVITO_STANDARD_PLUGIN(StdMod
         modifiers/ReplicateModifier.cpp
         modifiers/ExpressionSelectionModifier.cpp
         modifiers/LinesModifierDelegates.cpp
+        modifiers/VectorsModifierDelegates.cpp
         modifiers/FreezePropertyModifier.cpp
         modifiers/ManualSelectionModifier.cpp
         modifiers/ComputePropertyModifier.cpp
