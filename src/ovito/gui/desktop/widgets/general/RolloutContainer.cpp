@@ -100,8 +100,8 @@ void RolloutContainer::updateRolloutsLater()
 
     // Update layout a second time after some delay in case
     // the widgets are not up to date yet.
-    if(!_updateGeometryTimer)
-        _updateGeometryTimer = startTimer(80); // 80 millisecs
+    if(!_updateGeometryTimer.isActive())
+        _updateGeometryTimer.start(80, this); // 80 millisecs
 }
 
 /******************************************************************************
@@ -143,7 +143,7 @@ Rollout::Rollout(QWidget* parent, QWidget* content, const QString& title, const 
     _collapseAnimation.setEasingCurve(QEasingCurve::InOutCubic);
 
     // Set initial open/collapsed state.
-    if(!params._animateFirstOpening && !params._collapsed)
+    if(!params._collapsed)
         _visiblePercentage = 100;
     else
         _visiblePercentage = 0;
@@ -192,9 +192,6 @@ Rollout::Rollout(QWidget* parent, QWidget* content, const QString& title, const 
         connect(_helpButton, &QPushButton::clicked, this, &Rollout::onHelpButton);
     }
     else _helpButton = nullptr;
-
-    if(params._animateFirstOpening && !params._collapsed)
-        setCollapsed(false);
 }
 
 /******************************************************************************

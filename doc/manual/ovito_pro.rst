@@ -47,6 +47,7 @@ A (nearly complete) list of the program features available only in *OVITO Pro* a
   - Miller index based :ref:`particles.modifiers.slice` modifier
 
 - :ref:`file_formats.input.ase_database` and :ref:`file_formats.input.ase_trajectory`
+- :ref:`file_formats.output.ase_trajectory`
 - :ref:`file_formats.output.gltf`
 
 Please visit `www.ovito.org <https://www.ovito.org/#proFeatures>`__ for further details on OVITO Pro, our support services, and pricing.

@@ -50,8 +50,8 @@ PluginManager::~PluginManager()
     _extensionClasses.clear();
 
     // Unload plugins in reverse order.
-    for(int i = plugins().size() - 1; i >= 0; --i) {
-        delete plugins()[i];
+    for(auto plugin = plugins().crbegin(); plugin != plugins().crend(); ++plugin) {
+        delete *plugin;
     }
 }
 
@@ -88,7 +88,7 @@ void PluginManager::registerPlugin(Plugin* plugin)
 /******************************************************************************
 * Returns the list of directories containing the Ovito plugins.
 ******************************************************************************/
-QList<QDir> PluginManager::pluginDirs()
+std::vector<QDir> PluginManager::pluginDirs()
 {
     // Resolve path to Ovito's plugin directory, which is specified at compile time relative to the executable path.
     // See ovito/core/CMakeLists.txt for details.
@@ -127,7 +127,7 @@ void PluginManager::loadAllPlugins()
     // Extend environment variable PATH so that the plugin DLLs are automatically found, because
     // there typically are inter-dependencies between them.
     QByteArray path = qgetenv("PATH");
-    for(QDir pluginDir : pluginDirs()) {
+    for(const QDir& pluginDir : pluginDirs()) {
         path = QDir::toNativeSeparators(pluginDir.absolutePath()).toUtf8() + ";" + path;
     }
     qputenv("PATH", path);
@@ -137,7 +137,7 @@ void PluginManager::loadAllPlugins()
     // This only done in standalone mode.
     // When OVITO is being used from an external Python interpreter,
     // then plugins are loaded via explicit import statements.
-    for(QDir pluginDir : pluginDirs()) {
+    for(QDir& pluginDir : pluginDirs()) {
         if(!pluginDir.exists())
             throw Exception(tr("Failed to scan the plugin directory. Path %1 does not exist.").arg(pluginDir.path()));
 
@@ -241,9 +241,9 @@ OvitoClassPtr PluginManager::findClass(const QString& pluginId, const QString& c
 /******************************************************************************
 * Returns all installed plugin classes derived from the given type.
 ******************************************************************************/
-QVector<OvitoClassPtr> PluginManager::listClasses(const OvitoClass& superClass, bool onlyInstantiable)
+std::vector<OvitoClassPtr> PluginManager::listClasses(const OvitoClass& superClass, bool onlyInstantiable)
 {
-    QVector<OvitoClassPtr> result;
+    std::vector<OvitoClassPtr> result;
 
     for(Plugin* plugin : plugins()) {
         for(OvitoClassPtr clazz : plugin->classes()) {

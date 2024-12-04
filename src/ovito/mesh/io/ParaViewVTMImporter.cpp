@@ -209,7 +209,7 @@ Future<PipelineFlowState> ParaViewVTMImporter::loadFrame(const LoadOperationRequ
     std::vector<ParaViewVTMBlockInfo> blockDatasets = loadVTMFile(request.fileHandle);
 
     // Create filter objects.
-    static const QVector<OvitoClassPtr> filterClassList = PluginManager::instance().listClasses(ParaViewVTMFileFilter::OOClass());
+    static const std::vector<OvitoClassPtr> filterClassList = PluginManager::instance().listClasses(ParaViewVTMFileFilter::OOClass());
     for(OvitoClassPtr clazz : filterClassList) {
         modifiedRequest.filters.push_back(static_object_cast<ParaViewVTMFileFilter>(clazz->createInstance()));
 

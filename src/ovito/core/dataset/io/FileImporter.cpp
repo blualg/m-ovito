@@ -59,10 +59,10 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(const QUrl& url, 
 ******************************************************************************/
 auto getInstalledFileImporterClasses()
 {
-    static QVector<const FileImporter::OOMetaClass*> importers;
-    static QMutex mutex;
+    static std::vector<const FileImporter::OOMetaClass*> importers;
+    static std::mutex mutex;
     if(importers.empty()) {
-        QMutexLocker locker(&mutex);
+        std::lock_guard lock(mutex);
         if(importers.empty()) {
             // Obtain a list of all installed file importer classes from the PluginManager at program startup.
             importers = PluginManager::instance().metaclassMembers<FileImporter>();
@@ -89,11 +89,11 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
     static std::map<QString, std::pair<const FileImporterClass*, QString>> formatDetectionCache;
 
     // Mutex for synchronized access to the format detection cache.
-    static QMutex formatDetectionCacheMutex;
+    static std::mutex formatDetectionCacheMutex;
 
     // Check the format cache if we have already detected the format of the same file before.
     const QString& fileIdentifier = file.localFilePath();
-    QMutexLocker locker(&formatDetectionCacheMutex);
+    std::unique_lock lock(formatDetectionCacheMutex);
     if(auto entry = formatDetectionCache.find(fileIdentifier); entry != formatDetectionCache.end()) {
         const FileImporterClass* clazz = entry->second.first;
         const QString& format = entry->second.second;
@@ -109,14 +109,14 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
             return importer;
         }
     }
-    locker.unlock();
+    lock.unlock();
 
     // If caller has provided an existing importer, check it first against the file.
     if(existingImporterHint) {
         try {
             if(std::optional<QString> formatIdentifier = existingImporterHint->getOOMetaClass().determineFileFormat(file)) {
                 // Insert detected format into cache to speed up future requests for the same file.
-                locker.relock();
+                lock.lock();
                 formatDetectionCache.emplace(fileIdentifier, std::make_pair(&existingImporterHint->getOOMetaClass(), *formatIdentifier));
                 existingImporterHint->setSelectedFileFormat(*formatIdentifier);
                 return existingImporterHint;
@@ -128,9 +128,9 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
     }
 
     // Prepare a permanent list of all available FileImporter classes, sorted by priority.
-    static QVector<const FileImporter::OOMetaClass*> installedFileImporterClasses;
-    static QMutex installedFileImporterClassesMutex;
-    QMutexLocker classesLocker(&installedFileImporterClassesMutex);
+    static std::vector<const FileImporter::OOMetaClass*> installedFileImporterClasses;
+    static std::mutex installedFileImporterClassesMutex;
+    std::lock_guard classesLocker(installedFileImporterClassesMutex);
     if(installedFileImporterClasses.empty()) {
 
         // Obtain a list of all installed file importer classes from the PluginManager at program startup.
@@ -155,7 +155,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
         try {
             if(std::optional<QString> formatIdentifier = importerClass->determineFileFormat(file)) {
                 // Insert detected format into cache to speed up future requests for the same file.
-                locker.relock();
+                lock.lock();
                 formatDetectionCache.emplace(fileIdentifier, std::make_pair(importerClass, *formatIdentifier));
 
                 // Instantiate the file importer for this file format.

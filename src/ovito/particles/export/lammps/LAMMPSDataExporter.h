@@ -45,7 +45,7 @@ class OVITO_PARTICLES_EXPORT LAMMPSDataExporter : public ParticleExporter
         virtual QString fileFilter() const override { return QStringLiteral("*"); }
 
         /// Returns the filter description that is displayed in the drop-down box of the file dialog.
-        virtual QString fileFilterDescription() const override { return tr("LAMMPS Data File"); }
+        virtual QString fileFilterDescription() const override { return tr("LAMMPS Data"); }
     };
 
     OVITO_CLASS_META(LAMMPSDataExporter, OOMetaClass)

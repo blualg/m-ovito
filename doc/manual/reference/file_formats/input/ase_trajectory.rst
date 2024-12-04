@@ -19,4 +19,4 @@ Loads particles coordinates from `trajectory files of the Atomic Simulation Envi
 Internally, the file reader is based on the :py:func:`ovito.io.ase.ase_to_ovito` function, which converts ASE atoms objects
 to OVITO's :ref:`particle <scene_objects.particles>` datasets.
 
-.. seealso:: :ref:`file_formats.input.ase_database`
+.. seealso:: :ref:`file_formats.input.ase_database`, :ref:`file_formats.output.ase_trajectory`

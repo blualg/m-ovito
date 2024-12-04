@@ -45,7 +45,7 @@ class OVITO_STDOBJGUI_EXPORT DataTablePlotExporter : public FileExporter
         virtual QString fileFilter() const override { return QStringLiteral("*.pdf *.png"); }
 
         /// Returns the filter description that is displayed in the drop-down box of the file dialog.
-        virtual QString fileFilterDescription() const override { return tr("Data Plot File"); }
+        virtual QString fileFilterDescription() const override { return tr("Data Plot"); }
     };
 
     OVITO_CLASS_META(DataTablePlotExporter, OOMetaClass)
@@ -53,7 +53,7 @@ class OVITO_STDOBJGUI_EXPORT DataTablePlotExporter : public FileExporter
 public:
 
     /// Returns the type(s) of data objects that this exporter service can export.
-    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
+    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() override {
         return { &DataTable::OOClass() };
     }
 

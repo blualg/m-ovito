@@ -38,23 +38,17 @@ public:
 
     RolloutInsertionParameters after(QWidget* afterThisRollout) const {
         OVITO_ASSERT(afterThisRollout);
-        RolloutInsertionParameters p;
-        p._collapsed = this->_collapsed;
-        p._useAvailableSpace = this->_useAvailableSpace;
-        p._intoThisContainer = this->_intoThisContainer;
+        RolloutInsertionParameters p(*this);
         p._afterThisRollout = afterThisRollout;
-        p._title = this->_title;
+        p._beforeThisRollout = nullptr;
         return p;
     }
 
     RolloutInsertionParameters before(QWidget* beforeThisRollout) const {
         OVITO_ASSERT(beforeThisRollout);
-        RolloutInsertionParameters p;
-        p._collapsed = this->_collapsed;
-        p._useAvailableSpace = this->_useAvailableSpace;
-        p._intoThisContainer = this->_intoThisContainer;
+        RolloutInsertionParameters p(*this);
         p._beforeThisRollout = beforeThisRollout;
-        p._title = this->_title;
+        p._afterThisRollout = nullptr;
         return p;
     }
 
@@ -67,12 +61,6 @@ public:
     RolloutInsertionParameters useAvailableSpace() const {
         RolloutInsertionParameters p(*this);
         p._useAvailableSpace = true;
-        return p;
-    }
-
-    RolloutInsertionParameters animate() const {
-        RolloutInsertionParameters p(*this);
-        p._animateFirstOpening = true;
         return p;
     }
 
@@ -95,24 +83,27 @@ public:
         return p;
     }
 
-    /// Returns the container set by insertInto() into which the properties editor should inserted.
-    QWidget* container() const {
-        return _intoThisContainer;
+    RolloutInsertionParameters setEditorHint(const QString& key, QVariant&& value = QVariant()) const {
+        RolloutInsertionParameters p(*this);
+        p._editorHints[key] = std::move(value);
+        return p;
     }
 
+    QWidget* container() const { return _intoThisContainer; }
     const QString& title() const { return _title; }
     const QString& helpUrl() const { return _helpUrl; }
+    const QVariantMap& editorHints() const { return _editorHints; }
 
 private:
 
     bool _collapsed = false;
-    bool _animateFirstOpening = false;
     bool _useAvailableSpace = false;
     QPointer<QWidget> _afterThisRollout;
     QPointer<QWidget> _beforeThisRollout;
     QPointer<QWidget> _intoThisContainer;
     QString _title;
     QString _helpUrl;
+    QVariantMap _editorHints;
 
     friend class Rollout;
     friend class RolloutContainer;
@@ -249,9 +240,8 @@ protected:
 
     /// Handles the timer events for the container widget.
     virtual void timerEvent(QTimerEvent* event) override {
-        if(event->timerId() == _updateGeometryTimer) {
-            killTimer(_updateGeometryTimer);
-            _updateGeometryTimer = 0;
+        if(event->timerId() == _updateGeometryTimer.timerId()) {
+            _updateGeometryTimer.stop();
             updateRollouts();
         }
         QScrollArea::timerEvent(event);
@@ -270,7 +260,7 @@ private:
     /// The main window that provides the context for this UI element.
     MainWindow& _mainWindow;
 
-    int _updateGeometryTimer = 0;
+    QBasicTimer _updateGeometryTimer;
 };
 
 }   // End of namespace

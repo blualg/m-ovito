@@ -36,7 +36,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the dialog window.
 ******************************************************************************/
-ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const QVector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption) : QDialog(parent), _mainWindow(mainWindow)
+ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption) : QDialog(parent), _mainWindow(mainWindow)
 {
     setWindowTitle(caption);
 

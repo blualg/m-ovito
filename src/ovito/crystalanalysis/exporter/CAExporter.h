@@ -46,7 +46,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT CAExporter : public FileExporter
         virtual QString fileFilter() const override { return QStringLiteral("*.ca *.ca.gz"); }
 
         /// Returns the filter description that is displayed in the drop-down box of the file dialog.
-        virtual QString fileFilterDescription() const override { return tr("Crystal Analysis File"); }
+        virtual QString fileFilterDescription() const override { return tr("Crystal Analysis"); }
     };
 
     OVITO_CLASS_META(CAExporter, OOMetaClass)
@@ -63,7 +63,7 @@ public:
     void setMeshExportEnabled(bool enable) { _meshExportEnabled = enable; }
 
     /// \brief Returns the type(s) of data objects that this exporter service can export.
-    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
+    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() override {
         return { &DislocationNetwork::OOClass() };
     }
 

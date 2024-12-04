@@ -45,7 +45,7 @@ class OVITO_CRYSTALANALYSIS_EXPORT VTKDislocationsExporter : public FileExporter
         virtual QString fileFilter() const override { return QStringLiteral("*.vtk"); }
 
         /// Returns the filter description that is displayed in the drop-down box of the file dialog.
-        virtual QString fileFilterDescription() const override { return tr("VTK Dislocation Lines File"); }
+        virtual QString fileFilterDescription() const override { return tr("VTK Dislocation Lines"); }
     };
 
     OVITO_CLASS_META(VTKDislocationsExporter, OOMetaClass)
@@ -56,7 +56,7 @@ public:
     using FileExporter::FileExporter;
 
     /// \brief Returns the type(s) of data objects that this exporter service can export.
-    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
+    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() override {
         return { &DislocationNetwork::OOClass() };
     }
 

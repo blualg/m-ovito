@@ -75,9 +75,8 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout1->addWidget(_colorGradientList);
     _colorGradientList->setIconSize(QSize(48,16));
     connect(_colorGradientList, qOverload<int>(&QComboBox::activated), this, &ColorCodingModifierEditor::onColorGradientSelected);
-    QVector<OvitoClassPtr> sortedColormapClassList = PluginManager::instance().listClasses(ColorCodingGradient::OOClass());
-    std::sort(sortedColormapClassList.begin(), sortedColormapClassList.end(),
-        [](OvitoClassPtr a, OvitoClassPtr b) { return QString::localeAwareCompare(a->displayName(), b->displayName()) < 0; });
+    std::vector<OvitoClassPtr> sortedColormapClassList = PluginManager::instance().listClasses(ColorCodingGradient::OOClass());
+    boost::sort(sortedColormapClassList, [](OvitoClassPtr a, OvitoClassPtr b) { return QString::localeAwareCompare(a->displayName(), b->displayName()) < 0; });
     for(OvitoClassPtr clazz : sortedColormapClassList) {
         if(clazz == &ColorCodingImageGradient::OOClass() || clazz == &ColorCodingTableGradient::OOClass())
             continue;

@@ -107,8 +107,7 @@ public:
     /// Deletes the singleton instance of this class.
     static void shutdown() { delete _instance; _instance = nullptr; }
 
-    /// \brief Returns the one and only instance of this class.
-    /// \return The predefined instance of the PluginManager singleton class.
+    /// Returns the one and only instance of this class.
     inline static PluginManager& instance() {
         OVITO_ASSERT_MSG(_instance != nullptr, "PluginManager::instance", "Singleton object is not initialized yet.");
         return *_instance;
@@ -117,29 +116,25 @@ public:
     /// Searches the plugin directories for installed plugins and loads them.
     void loadAllPlugins();
 
-    /// \brief Returns the plugin with a given identifier.
-    /// \param pluginId The identifier of the plugin to return.
-    /// \return The plugin with the given identifier or \c NULL if no such plugin is installed.
+    /// Returns the plugin with a given identifier.
     Plugin* plugin(const QString& pluginId);
 
-    /// \brief Returns the list of installed plugins.
-    /// \return The list of all installed plugins.
-    const QVector<Plugin*>& plugins() const { return _plugins; }
+    /// Returns the list of installed plugins.
+    const std::vector<Plugin*>& plugins() const { return _plugins; }
 
-    /// \brief Returns all installed plugin classes derived from the given type.
+    /// Returns all installed plugin classes derived from the given type.
     /// \param superClass Specifies the base class from which all returned classes should be derived.
     /// \param onlyInstantiable If \c true, only non-abstract classes are returned.
-    /// \return A list that contains all requested classes.
-    QVector<OvitoClassPtr> listClasses(const OvitoClass& superClass, bool onlyInstantiable = true);
+    std::vector<OvitoClassPtr> listClasses(const OvitoClass& superClass, bool onlyInstantiable = true);
 
-    /// \brief Returns the metaclass with the given name defined by the given plugin.
+    /// Returns the metaclass with the given name defined by the given plugin.
     OvitoClassPtr findClass(const QString& pluginId, const QString& className);
 
     /// Returns a list with all classes that belong to a metaclass.
     template<class C>
-    QVector<const typename C::OOMetaClass*> metaclassMembers(const OvitoClass& parentClass = C::OOClass(), bool onlyInstantiable = true) {
+    std::vector<const typename C::OOMetaClass*> metaclassMembers(const OvitoClass& parentClass = C::OOClass(), bool onlyInstantiable = true) {
         OVITO_ASSERT(parentClass.isDerivedFrom(C::OOClass()));
-        QVector<const typename C::OOMetaClass*> result;
+        std::vector<const typename C::OOMetaClass*> result;
         for(Plugin* plugin : plugins()) {
             for(OvitoClassPtr clazz : plugin->classes()) {
                 if(!onlyInstantiable || clazz->isInstantiable()) {
@@ -151,30 +146,28 @@ public:
         return result;
     }
 
-    /// \brief Registers a new plugin with the manager.
-    /// \param plugin The plugin to be registered.
-    /// \throw Exception when the plugin ID is not unique.
-    /// \note The PluginManager becomes the owner of the Plugin class instance and will
-    ///       delete it on application shutdown.
+    /// Registers a new plugin with the manager.
+    /// The PluginManager becomes the owner of the Plugin class instance and will
+    /// delete it on application shutdown.
     void registerPlugin(Plugin* plugin);
 
-    /// \brief Registers all classes of all plugins already loaded so far.
+    /// Registers all classes of all plugins already loaded so far.
     void registerLoadedPluginClasses();
 
-    /// \brief Returns the list of directories containing the Ovito plugins.
-    QList<QDir> pluginDirs();
+    /// Returns the list of directories containing the Ovito plugins.
+    std::vector<QDir> pluginDirs();
 
-    /// \brief Returns the path where OVITO Pro's Python files reside.
+    /// Returns the path where OVITO Pro's Python files reside.
     QString pythonDir();
 
-    /// \brief Registers an extension class at runtime.
+    /// Registers an extension class at runtime.
     /// The PluginMananger becomes the owner of the class object and will delete it on application shutdown.
     void addExtensionClass(std::unique_ptr<OvitoClass> clazz);
 
     /// Looks up a registered extension class.
     OvitoClass* getExtensionClass(const QString& name, OvitoClassPtr superClass) const;
 
-    /// \brief Destructor that unloads all plugins.
+    /// Destructor that unloads all plugins.
     ~PluginManager();
 
 Q_SIGNALS:
@@ -188,7 +181,7 @@ private:
     PluginManager();
 
     /// The list of installed plugins.
-    QVector<Plugin*> _plugins;
+    std::vector<Plugin*> _plugins;
 
     /// The position in the global linked list of native object types up to which classes have already been registered.
     OvitoClass* _lastRegisteredClass = nullptr;

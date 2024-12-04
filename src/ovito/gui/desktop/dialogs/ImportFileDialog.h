@@ -56,19 +56,19 @@ public:
 
 public:
 
-    /// \brief Constructs the dialog window.
-    ImportFileDialog(const QVector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption, bool allowMultiSelection, const QString& dialogClass = QStringLiteral("import"));
+    /// Constructor.
+    ImportFileDialog(const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption, bool allowMultiSelection, const QString& dialogClass = QStringLiteral("import"));
 
-    /// \brief Returns the file to import after the dialog has been closed with "OK".
+    /// Returns the file to import after the dialog has been closed with "OK".
     QString fileToImport() const;
 
-    /// \brief Returns the file to import after the dialog has been closed with "OK".
+    /// Returns the file to import after the dialog has been closed with "OK".
     QUrl urlToImport() const;
 
-    /// \brief Returns the list of files to import after the dialog has been closed with "OK".
+    /// Returns the list of files to import after the dialog has been closed with "OK".
     std::vector<QUrl> urlsToImport() const;
 
-    /// \brief Returns the selected importer class and sub-format name.
+    /// Returns the selected importer class and sub-format name.
     const std::pair<const FileImporterClass*, QString>& selectedFileImporter() const;
 
 private:

@@ -46,7 +46,7 @@ class OVITO_MESH_EXPORT VTKTriangleMeshExporter : public FileExporter
         virtual QString fileFilter() const override { return QStringLiteral("*.vtk"); }
 
         /// Returns the filter description that is displayed in the drop-down box of the file dialog.
-        virtual QString fileFilterDescription() const override { return tr("VTK Triangle Mesh File"); }
+        virtual QString fileFilterDescription() const override { return tr("VTK Triangle Mesh"); }
     };
 
     OVITO_CLASS_META(VTKTriangleMeshExporter, OOMetaClass)
@@ -54,7 +54,7 @@ class OVITO_MESH_EXPORT VTKTriangleMeshExporter : public FileExporter
 public:
 
     /// \brief Returns the type(s) of data objects that this exporter service can export.
-    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
+    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() override {
         return { &SurfaceMesh::OOClass() };
     }
 

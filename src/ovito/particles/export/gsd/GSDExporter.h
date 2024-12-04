@@ -47,7 +47,7 @@ class OVITO_PARTICLES_EXPORT GSDExporter : public ParticleExporter
         virtual QString fileFilter() const override { return QStringLiteral("*.gsd"); }
 
         /// Returns the filter description that is displayed in the drop-down box of the file dialog.
-        virtual QString fileFilterDescription() const override { return tr("GSD/HOOMD File"); }
+        virtual QString fileFilterDescription() const override { return tr("GSD/HOOMD"); }
     };
 
     OVITO_CLASS_META(GSDExporter, OOMetaClass)
@@ -55,7 +55,7 @@ class OVITO_PARTICLES_EXPORT GSDExporter : public ParticleExporter
 public:
 
     /// Indicates whether this file exporter can write more than one animation frame into a single output file.
-    virtual bool supportsMultiFrameFiles() const override { return true; }
+    virtual bool supportsMultiFrameFiles() override { return true; }
 
 protected:
 

@@ -7,6 +7,7 @@ Output file formats
   :hidden:
 
   output/gltf
+  output/ase_trajectory
 
 OVITO can export data in the following file formats:
 
@@ -87,5 +88,10 @@ OVITO can export data in the following file formats:
       The format is documented :ref:`here <particles.modifiers.dislocation_analysis.fileformat>`.
     - :ref:`dislocations <scene_objects.dislocations>`, :ref:`surface meshes <scene_objects.surface_mesh>`
     -
+
+  * - ASE trajectory |ovito-pro|
+    - `Simulation trajectory files reaf by the Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/ase/io/trajectory.html>`__
+    - :ref:`particles <scene_objects.particles>`
+    - :ref:`Details <file_formats.output.ase_trajectory>`
 
 .. seealso:: :py:func:`ovito.io.export_file` (Python API)

@@ -55,7 +55,7 @@ public:
     void initializeObject(ObjectInitializationFlags flags);
 
     /// Indicates whether this file exporter can write more than one animation frame into a single output file.
-    virtual bool supportsMultiFrameFiles() const override { return true; }
+    virtual bool supportsMultiFrameFiles() override { return true; }
 
     /// Evaluates the pipeline of the PipelineSceneNode to be exported and returns the attributes list.
     Future<QVariantMap> getAttributesMap(int frame) const;

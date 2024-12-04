@@ -45,7 +45,7 @@ class OVITO_GRID_EXPORT VTKVoxelGridExporter : public FileExporter
         virtual QString fileFilter() const override { return QStringLiteral("*.vtk"); }
 
         /// Returns the filter description that is displayed in the drop-down box of the file dialog.
-        virtual QString fileFilterDescription() const override { return tr("VTK Voxel Grid File"); }
+        virtual QString fileFilterDescription() const override { return tr("VTK Voxel Grid"); }
     };
 
     OVITO_CLASS_META(VTKVoxelGridExporter, OOMetaClass)
@@ -53,7 +53,7 @@ class OVITO_GRID_EXPORT VTKVoxelGridExporter : public FileExporter
 public:
 
     /// \brief Returns the type(s) of data objects that this exporter service can export.
-    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
+    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() override {
         return { &VoxelGrid::OOClass() };
     }
 

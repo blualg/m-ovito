@@ -44,7 +44,7 @@ class OVITO_PARTICLES_EXPORT LAMMPSDumpExporter : public FileColumnParticleExpor
         virtual QString fileFilter() const override { return QStringLiteral("*"); }
 
         /// Returns the filter description that is displayed in the drop-down box of the file dialog.
-        virtual QString fileFilterDescription() const override { return tr("LAMMPS Dump File"); }
+        virtual QString fileFilterDescription() const override { return tr("LAMMPS Dump"); }
     };
 
     OVITO_CLASS_META(LAMMPSDumpExporter, OOMetaClass)
@@ -52,7 +52,7 @@ class OVITO_PARTICLES_EXPORT LAMMPSDumpExporter : public FileColumnParticleExpor
 public:
 
     /// Indicates whether this file exporter can write more than one animation frame into a single output file.
-    virtual bool supportsMultiFrameFiles() const override { return true; }
+    virtual bool supportsMultiFrameFiles() override { return true; }
 
 protected:
 

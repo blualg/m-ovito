@@ -40,7 +40,7 @@ class OVITO_PARTICLES_EXPORT ParticleExporter : public FileExporter
 public:
 
     /// Returns the type(s) of data objects that this exporter service can export.
-    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const override {
+    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() override {
         return { &Particles::OOClass() };
     }
 

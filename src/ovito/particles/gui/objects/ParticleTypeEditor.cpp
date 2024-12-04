@@ -304,7 +304,7 @@ void ParticleTypeEditor::onLoadParticleShape()
 
     handleExceptions([&]() {
         // Build list of file importers that can import triangle meshes.
-        QVector<const FileImporterClass*> meshImporters;
+        std::vector<const FileImporterClass*> meshImporters;
         for(const FileImporterClass* importerClass : PluginManager::instance().metaclassMembers<FileSourceImporter>()) {
             if(importerClass->importsDataType(TriangleMesh::OOClass()))
                 meshImporters.push_back(importerClass);

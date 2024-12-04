@@ -142,7 +142,7 @@ void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
 * By default, all pipeline scene nodes are considered suitable that produce
 * suitable data objects of the type specified by the FileExporter::exportableDataObjectClass() method.
 ******************************************************************************/
-bool FileExporter::isSuitableSceneNode(SceneNode* node) const
+bool FileExporter::isSuitableSceneNode(SceneNode* node)
 {
     if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
         if(sceneToExport()) {
@@ -159,7 +159,7 @@ bool FileExporter::isSuitableSceneNode(SceneNode* node) const
 * that contain suitable data objects of the type specified by the
 * FileExporter::exportableDataObjectClass() method.
 ******************************************************************************/
-bool FileExporter::isSuitablePipelineOutput(const PipelineFlowState& state) const
+bool FileExporter::isSuitablePipelineOutput(const PipelineFlowState& state)
 {
     if(!state)
         return false;
@@ -167,8 +167,11 @@ bool FileExporter::isSuitablePipelineOutput(const PipelineFlowState& state) cons
     if(objClasses.empty())
         return true;
     for(DataObjectClassPtr objClass : objClasses) {
-        if(state.containsObjectRecursive(*objClass))
-            return true;
+        for(const ConstDataObjectPath& dataPath : state.data()->getObjectsRecursive(*objClass)) {
+            if(isSuitableDataObject(dataPath)) {
+                return true;
+            }
+        }
     }
     return false;
 }
@@ -203,10 +206,10 @@ Future<PipelineFlowState> FileExporter::getPipelineDataToBeExported(int frameNum
     }
 }
 
-/******************************************************************************
- * Exports the scene data to the output file(s).
- *****************************************************************************/
-Future<void> FileExporter::doExport()
+/*****************************************************************************
+* Exports the scene data to the output file(s).
+*****************************************************************************/
+Future<void> FileExporter::performExport()
 {
     if(outputFilename().isEmpty())
         throw Exception(tr("The output filename not been set for the file exporter."));
@@ -221,24 +224,11 @@ Future<void> FileExporter::doExport()
         QString errorMsg = tr("There is no data in the current scene that can be exported to the selected file format.");
         const std::vector<DataObjectClassPtr>& objClasses = exportableDataObjectClass();
         if(!objClasses.empty()) {
-            errorMsg += tr("\n\nThe selected output format (%1) requires one of the following data types to be present in the pipeline output:\n").arg(getOOMetaClass().fileFilterDescription());
+            errorMsg += tr("\n\nThe selected output format (%1) requires one of the following data types to be present in the pipeline output:\n").arg(objectTitle());
             for(const DataObjectClassPtr& clazz : objClasses)
                 errorMsg += QStringLiteral("\n%1").arg(clazz->displayName());
         }
         throw Exception(std::move(errorMsg));
-    }
-
-    // Compute the number of frames that need to be exported.
-    int firstFrameNumber, numberOfFrames;
-    if(exportTrajectory()) {
-        firstFrameNumber = startFrame();
-        numberOfFrames = (endFrame() - startFrame() + everyNthFrame()) / everyNthFrame();
-        if(numberOfFrames < 1 || everyNthFrame() < 1)
-            throw Exception(tr("Invalid export trajectory range: Frame %1 to %2").arg(startFrame()).arg(endFrame()));
-    }
-    else {
-        firstFrameNumber = sceneToExport()->animationSettings()->currentFrame();
-        numberOfFrames = 1;
     }
 
     // Validate export settings.
@@ -248,6 +238,34 @@ Future<void> FileExporter::doExport()
         if(!wildcardFilename().contains(QChar('*')))
             throw Exception(tr("Cannot export trajectory frames to separate files. The filename must contain the '*' wildcard character, which gets replaced by the frame number."));
     }
+
+    // Compute the number of frames that need to be exported.
+    int firstFrame, lastFrame, frameStepSize;
+    if(exportTrajectory()) {
+        firstFrame = startFrame();
+        lastFrame = endFrame();
+        frameStepSize = everyNthFrame();
+        if(firstFrame > lastFrame || frameStepSize < 1)
+            throw Exception(tr("Invalid export trajectory range: Frame %1 to %2 (step size %3)").arg(firstFrame).arg(lastFrame).arg(frameStepSize));
+    }
+    else {
+        firstFrame = lastFrame = sceneToExport()->animationSettings()->currentFrame();
+        frameStepSize = 1;
+    }
+
+    return exportFrames(firstFrame, lastFrame, frameStepSize);
+}
+
+/*****************************************************************************
+* Writes the given sequence of frames to the output file(s).
+*****************************************************************************/
+Future<void> FileExporter::exportFrames(int firstFrame, int lastFrame, int frameStepSize)
+{
+    OVITO_ASSERT(firstFrame <= lastFrame && frameStepSize > 0);
+    int numberOfFrames = (lastFrame - firstFrame + frameStepSize) / frameStepSize;
+
+    // Keep the FileExporter object alive during the export operation.
+    OORef<FileExporter> self(this);
 
     QDir dir = QFileInfo(outputFilename()).dir();
     QString filename = outputFilename();
@@ -264,7 +282,7 @@ Future<void> FileExporter::doExport()
 
     // Export animation frames.
     for(int frameIndex = 0; frameIndex < numberOfFrames; frameIndex++, progress.nextSubStep()) {
-        int frameNumber = firstFrameNumber + frameIndex * everyNthFrame();
+        int frameNumber = firstFrame + frameIndex * everyNthFrame();
 
         // Open per-frame output file.
         if(exportTrajectory() && useWildcardFilename()) {

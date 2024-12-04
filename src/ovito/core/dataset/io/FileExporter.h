@@ -73,27 +73,30 @@ public:
     /// Determines whether the given scene node is suitable for this file exporter service.
     /// By default, all pipeline scene nodes are considered suitable that produce
     /// suitable data objects of the type specified by the FileExporter::exportableDataObjectClass() method.
-    virtual bool isSuitableSceneNode(SceneNode* node) const;
+    virtual bool isSuitableSceneNode(SceneNode* node);
 
     /// Determines whether the given pipeline output is suitable for exporting with this exporter service.
     /// By default, all data collections are considered suitable that contain suitable data objects
     /// of the type(s) specified by the FileExporter::exportableDataObjectClass() method.
     /// Subclasses can refine this behavior as needed.
-    virtual bool isSuitablePipelineOutput(const PipelineFlowState& state) const;
+    virtual bool isSuitablePipelineOutput(const PipelineFlowState& state);
+
+    /// Determines whether the given data object is suitable for being exported by this file exporter service.
+    virtual bool isSuitableDataObject(const ConstDataObjectPath& dataPath) { return true; }
 
     /// Returns the specific type(s) of data objects that this exporter service can export.
     /// The default implementation returns an empty list to indicate that the exporter is not restricted to
     /// a specific class of data objects. Subclasses should override this behavior.
-    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() const { return {}; }
+    virtual std::vector<DataObjectClassPtr> exportableDataObjectClass() { return {}; }
 
     /// Sets the name of the output file that should be written by this exporter.
     virtual void setOutputFilename(const QString& filename);
 
     /// Exports the scene data to the output file(s).
-    [[nodiscard]] Future<void> doExport();
+    [[nodiscard]] Future<void> performExport();
 
-    /// Indicates whether this file exporter can write more than one animation frame into a single output file.
-    virtual bool supportsMultiFrameFiles() const { return false; }
+    /// Indicates whether this file exporter can write more than one animation frame (i.e. a trajectory) into a single output file.
+    virtual bool supportsMultiFrameFiles() { return false; }
 
     /// Evaluates the pipeline whose data is to be exported.
     [[nodiscard]] virtual Future<PipelineFlowState> getPipelineDataToBeExported(int frameNumber) const;
@@ -102,6 +105,9 @@ public:
     static QString getAvailableDataObjectList(const PipelineFlowState& state, const DataObject::OOMetaClass& objectType);
 
 protected:
+
+    /// Writes the given sequence of frames to the output file(s).
+    [[nodiscard]] virtual Future<void> exportFrames(int firstFrame, int lastFrame, int frameStepSize);
 
     /// Creates a worker performing the actual data export.
     virtual OORef<FileExportJob> createExportJob(const QString& filePath, int numberOfFrames) = 0;

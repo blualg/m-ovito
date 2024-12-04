@@ -37,16 +37,16 @@ class OVITO_GUI_EXPORT ImportRemoteFileDialog : public QDialog
 
 public:
 
-    /// \brief Constructs the dialog window.
-    ImportRemoteFileDialog(MainWindow& mainWindow, const QVector<const FileImporterClass*>& importerTypes, QWidget* parent = nullptr, const QString& caption = QString());
+    /// Constructor.
+    ImportRemoteFileDialog(MainWindow& mainWindow, const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent = nullptr, const QString& caption = QString());
 
-    /// \brief Sets the current URL in the dialog.
+    /// Sets the current URL in the dialog.
     void selectFile(const QUrl& url);
 
-    /// \brief Returns the file to import after the dialog has been closed with "OK".
+    /// Returns the file to import after the dialog has been closed with "OK".
     QUrl urlToImport() const;
 
-    /// \brief Returns the selected importer class and sub-format name.
+    /// Returns the selected importer class and sub-format name.
     const std::pair<const FileImporterClass*, QString>& selectedFileImporter() const;
 
     virtual QSize sizeHint() const override {

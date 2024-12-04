@@ -44,7 +44,7 @@ class OVITO_PARTICLES_EXPORT XYZExporter : public FileColumnParticleExporter
         virtual QString fileFilter() const override { return QStringLiteral("*"); }
 
         /// Returns the filter description that is displayed in the drop-down box of the file dialog.
-        virtual QString fileFilterDescription() const override { return tr("XYZ File"); }
+        virtual QString fileFilterDescription() const override { return tr("XYZ"); }
     };
 
     OVITO_CLASS_META(XYZExporter, OOMetaClass)
@@ -61,7 +61,7 @@ public:
 public:
 
     /// Indicates whether this file exporter can write more than one animation frame into a single output file.
-    virtual bool supportsMultiFrameFiles() const override { return true; }
+    virtual bool supportsMultiFrameFiles() override { return true; }
 
 protected:
 

@@ -6,6 +6,18 @@ Changelog
 
 .. sidebar::
 
+  * `Download this version <https://www.ovito.org/download_history/#3.12.0>`__
+
+----------------------------
+Version 3.12.0 (xx-xxx-2024)
+----------------------------
+
+- |ovito-python| Added :py:class:`ovito.io.FileWriterInterface`
+- |ovito-pro| Added :ref:`file_formats.output.ase_trajectory`
+- |ovito-pro| Added GUI function for installing Python packages in the embedded interpreter
+
+.. sidebar::
+
   * `Download this version <https://www.ovito.org/download_history/#3.11.2>`__
 
 ----------------------------

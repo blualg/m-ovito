@@ -45,7 +45,7 @@ class OVITO_NETCDFPLUGIN_EXPORT AMBERNetCDFExporter : public FileColumnParticleE
         virtual QString fileFilter() const override { return QStringLiteral("*.nc"); }
 
         /// Returns the filter description that is displayed in the drop-down box of the file dialog.
-        virtual QString fileFilterDescription() const override { return tr("NetCDF/AMBER File"); }
+        virtual QString fileFilterDescription() const override { return tr("NetCDF/AMBER"); }
     };
 
     OVITO_CLASS_META(AMBERNetCDFExporter, OOMetaClass)
@@ -53,7 +53,7 @@ class OVITO_NETCDFPLUGIN_EXPORT AMBERNetCDFExporter : public FileColumnParticleE
 public:
 
     /// Indicates whether this file exporter can write more than one animation frame into a single output file.
-    virtual bool supportsMultiFrameFiles() const override { return true; }
+    virtual bool supportsMultiFrameFiles() override { return true; }
 
 protected:
 

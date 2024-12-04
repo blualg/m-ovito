@@ -279,16 +279,17 @@ void WidgetActionManager::on_FileExport_triggered()
 
         // Build filter string.
         QStringList filterStrings;
-        QVector<const FileExporterClass*> exporterTypes = PluginManager::instance().metaclassMembers<FileExporter>();
+        std::vector<const FileExporterClass*> exporterTypes = PluginManager::instance().metaclassMembers<FileExporter>();
+        // Filter out exporters that want to remain hidden from the user.
+        std::erase_if(exporterTypes, [](const FileExporterClass* exporterClass) {
+            return exporterClass->fileFilterDescription().isEmpty();
+        });
         if(exporterTypes.empty())
             throw Exception(tr("This function is disabled, because no file exporter plugins have been installed."));
         std::sort(exporterTypes.begin(), exporterTypes.end(), [](const FileExporterClass* a, const FileExporterClass* b) {
             return a->fileFilterDescription().compare(b->fileFilterDescription(), Qt::CaseInsensitive) < 0;
         });
         for(const FileExporterClass* exporterClass : exporterTypes) {
-            // Skip exporters that want to remain hidden from the user.
-            if(exporterClass->fileFilterDescription().isEmpty())
-                continue;
 #ifndef Q_OS_WIN
             filterStrings << QStringLiteral("%1 (%2)").arg(exporterClass->fileFilterDescription(), exporterClass->fileFilter());
 #else
@@ -354,7 +355,7 @@ void WidgetActionManager::on_FileExport_triggered()
                 return;
 
             // Let the exporter do its work.
-            Future<void> future = exporter->doExport();
+            Future<void> future = exporter->performExport();
 
             // Show a progress dialog while the operation is in progress.
             ProgressDialog::showForFuture(std::move(future), mainWindow(), tr("Exporting to file"));

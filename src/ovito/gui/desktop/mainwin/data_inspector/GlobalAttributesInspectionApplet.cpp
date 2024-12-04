@@ -160,7 +160,7 @@ void GlobalAttributesInspectionApplet::exportToFile()
             return;
 
         // Let the exporter do its job.
-        Future<void> future = exporter->doExport();
+        Future<void> future = exporter->performExport();
 
         // Show a progress dialog while the operation is in progress. The dialog will self-destruct when the operation is done.
         ProgressDialog::showForFuture(std::move(future), mainWindow(), tr("File export"));
