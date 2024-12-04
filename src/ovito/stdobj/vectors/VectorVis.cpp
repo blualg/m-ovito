@@ -350,7 +350,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VectorVis::render(const Con
     // Get world transformation matrix of scene node.
     const AffineTransformation& nodeTM = pipeline->getWorldTransform(frameGraph.time());
 
-    // Apply offset translation
+    // Apply offset translation.
     const AffineTransformation tm = AffineTransformation::translation(offset()) * nodeTM;
 
     // Add arrow glyphs to the frame graph.

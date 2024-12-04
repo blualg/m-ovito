@@ -84,37 +84,14 @@ QString LinesPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId
             str += property->name().toHtmlEscaped();
             str += QStringLiteral(":</key> <val>");
 
-            if(property->dataType() == Property::Int32) {
-                BufferReadAccess<int*> data(property);
+            property->forAnyType([&](auto _) {
+                using T = decltype(_);
+                BufferReadAccess<T*> data(property);
                 for(size_t component = 0; component < data.componentCount(); component++) {
                     if(component != 0) str += QStringLiteral(", ");
                     str += QString::number(data.get(index, component));
                 }
-            }
-            else if(property->dataType() == Property::Int64) {
-                BufferReadAccess<int64_t*> data(property);
-                for(size_t component = 0; component < property->componentCount(); component++) {
-                    if(component != 0) str += QStringLiteral(", ");
-                    str += QString::number(data.get(index, component));
-                }
-            }
-            else if(property->dataType() == Property::Float32) {
-                BufferReadAccess<float*> data(property);
-                for(size_t component = 0; component < property->componentCount(); component++) {
-                    if(component != 0) str += QStringLiteral(", ");
-                    str += QString::number(data.get(index, component));
-                }
-            }
-            else if(property->dataType() == Property::Float64) {
-                BufferReadAccess<double*> data(property);
-                for(size_t component = 0; component < property->componentCount(); component++) {
-                    if(component != 0) str += QStringLiteral(", ");
-                    str += QString::number(data.get(index, component));
-                }
-            }
-            else {
-                str += QStringLiteral("<%1>").arg(property->dataTypeName());
-            }
+            });
             str += QStringLiteral("</val>");
         }
     }

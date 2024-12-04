@@ -93,35 +93,61 @@ QVector<DataObjectReference> LinesSliceModifierDelegate::OOMetaClass::getApplica
  ******************************************************************************/
 Future<PipelineFlowState> LinesSliceModifierDelegate::apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
 {
-    SliceModifier* mod = static_object_cast<SliceModifier>(request.modifier());
+    SliceModifier* modifier = static_object_cast<SliceModifier>(request.modifier());
     QString statusMessage;
 
     // Obtain modifier parameter values.
     Plane3 plane;
     FloatType sliceWidth;
-    std::tie(plane, sliceWidth) = mod->slicingPlane(request.time(), state.mutableStateValidity(), state);
+    std::tie(plane, sliceWidth) = modifier->slicingPlane(request.time(), state.mutableStateValidity(), state);
     sliceWidth /= 2;
 
-    // Loop over all lines objects in data collection
-    for(const DataObject* obj : originalState.data()->objects()) {
-        // Transform the Lines.
-        if(const Lines* inputLines = dynamic_object_cast<Lines>(obj)) {
-            // Make sure we can safely modify the lines object.
-            Lines* outputLines = state.makeMutable(inputLines);
+    return asyncLaunch([state = std::move(state), plane, sliceWidth, invert = modifier->inverse(),
+                        createSelection = modifier->createSelection()]() mutable {
 
-            QVector<Plane3> planes = outputLines->cuttingPlanes();
-            if(sliceWidth <= 0) {
-                planes.push_back(plane);
+        QString statusMessage;
+
+        // Loop over all lines objects in data collection
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
+            if(const Lines* inputLines = dynamic_object_cast<Lines>(state.data()->objects()[i])) {
+                // Make sure we can safely modify the lines object.
+                Lines* outputLines = state.makeMutable(inputLines);
+
+                if(!createSelection) {
+                    QVector<Plane3> planes = outputLines->cuttingPlanes();
+                    if(sliceWidth <= 0) {
+                        planes.push_back(plane);
+                    }
+                    else {
+                        planes.push_back(Plane3(plane.normal, plane.dist + sliceWidth));
+                        planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth));
+                    }
+                    outputLines->setCuttingPlanes(std::move(planes));
+                }
+                else {
+                    // Create a line vertex selection.
+                    BufferReadAccess<Point3> vertexPositionProperty = outputLines->expectProperty(Lines::PositionProperty);
+                    BufferWriteAccess<SelectionIntType, access_mode::discard_read_write> vertexSelectionProperty = outputLines->createProperty(Lines::SelectionProperty);
+                    size_t numSelectedVertices = 0;
+                    boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
+                        bool selectionState =
+                            (sliceWidth <= 0) ?
+                                (plane.pointDistance(pos) > 0) :
+                                (invert == (plane.classifyPoint(pos, sliceWidth) == 0));
+                        if(selectionState)
+                            numSelectedVertices++;
+                        return selectionState ? 1 : 0;
+                    });
+                    if(!statusMessage.isEmpty())
+                        statusMessage += QChar('\n');
+                    statusMessage += tr("%1 of %2 line vertices selected").arg(numSelectedVertices).arg(outputLines->elementCount());
+                }
             }
-            else {
-                planes.push_back(Plane3(plane.normal, plane.dist + sliceWidth));
-                planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth));
-            }
-            outputLines->setCuttingPlanes(std::move(planes));
         }
-    }
 
-    return state;
+        state.setStatus(statusMessage);
+        return std::move(state);
+    });
 }
 
 /******************************************************************************

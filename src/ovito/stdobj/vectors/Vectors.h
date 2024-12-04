@@ -56,10 +56,10 @@ public:
     enum Type
     {
         ColorProperty = Property::GenericColorProperty,
+        SelectionProperty = Property::GenericSelectionProperty,
         PositionProperty = Property::FirstSpecificProperty,
         TransparencyProperty,
         DirectionProperty,
-        SelectionProperty = Property::GenericSelectionProperty,
     };
 
     /// Constructor.
