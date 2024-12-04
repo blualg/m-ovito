@@ -34,7 +34,7 @@ OVITO_CLASSINFO(LinesExpressionSelectionModifierDelegate, "DisplayName", "Lines"
  ******************************************************************************/
 QVector<DataObjectReference> LinesExpressionSelectionModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    // Gather list of all surface mesh regions in the input data collection.
+    // Gather list of all Lines objects in the input data collection.
     QVector<DataObjectReference> objects;
     for(const ConstDataObjectPath& path : input.getObjectsRecursive(Lines::OOClass())) {
         objects.push_back(path);
