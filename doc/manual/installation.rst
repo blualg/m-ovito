@@ -40,8 +40,13 @@ Download a binary program package for *OVITO Basic* or *OVITO Pro* from `www.ovi
     Double-click the downloaded :file:`.dmg` disk image file to open it, agree to the license terms, and drag the :program:`Ovito` bundle into your :file:`Applications` folder.
     You can then launch OVITO by double-clicking the application bundle.
 
-Alternatively, you can install the software via the Anaconda package manager from
-the `conda-forge channel <https://anaconda.org/conda-forge/ovito>`__ (*OVITO Basic*) or :ref:`our own channel <pydoc:installation.anaconda>` (*OVITO Pro*).
+**Anaconda installation:** You can install the software also via the Anaconda package manager from
+the `conda-forge channel <https://anaconda.org/conda-forge/ovito>`__ (*OVITO Basic*) or from :ref:`our own conda channel <pydoc:installation.anaconda>` (*OVITO Pro*).
+
+**Unattended installation:** The Windows installers support `unattended installation via command-line parameters <https://nsis.sourceforge.io/Docs/Chapter3.html#installerusage>`__
+:command:`/S` and :command:`/D` from an administrator command prompt. Furthermore, Windows versions of OVITO are available as .zip archives
+`here <https://www.ovito.org/download_history/>`__ and can simply be extracted to a directory of your choice
+(`Microsoft Visual C++ Redistributable <https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist>`__ may need to be installed separately).
 
 .. _installation.python:
 

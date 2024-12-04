@@ -63,11 +63,14 @@ public:
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
     /// Modifies the input data.
-    virtual Future<PipelineFlowState> evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state) override;
+    Future<PipelineFlowState> evaluateComplexModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state, DataOORef<const Lines> trajectoryLines);
 
     /// Indicates that a preliminary viewport update will be performed immediately after this modifier
 	/// has computed new results.
     virtual bool shouldRefreshViewportsAfterEvaluation() override { return true; }
+
+    /// Asynchronously performs the sampling of the input trajectory to generate the trajectory lines object.
+    Future<DataOORef<const Lines>> computeTrajectoryLines(const ModifierEvaluationRequest& request, int numberOfSourceFrames) const;
 
 protected:
 
@@ -121,10 +124,16 @@ protected:
     /// Sends an event to all dependents of this RefTarget.
     virtual void notifyDependentsImpl(const ReferenceEvent& event) noexcept override;
 
+    /// Launches an asynchronous task to evaluate the node's modifier.
+    virtual SharedFuture<PipelineFlowState> launchModifierEvaluation(ModifierEvaluationRequest&& request, SharedFuture<PipelineFlowState> inputFuture) override;
+
 private:
 
-    /// The asynchronous task object that computes and stores the trajectory lines.
-    SharedFuture<DataOORef<const Lines>> _samplingOperation;
+    /// The asynchronous task object currently computing the trajectory lines.
+    WeakSharedFuture<DataOORef<const Lines>> _trajectoryWeakFuture;
+
+    /// The trajectory lines computed during the last successful modifier evaluation.
+    DataOORef<const Lines> _trajectoryLines;
 
     friend class GenerateTrajectoryLinesModifier;
 };

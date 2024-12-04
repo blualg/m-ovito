@@ -26,6 +26,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/pipeline/PipelineEvaluationRequest.h>
+#include <ovito/core/dataset/pipeline/ComplexModifierEvaluationTask.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/viewport/ViewportConfiguration.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
@@ -108,6 +109,17 @@ void GenerateTrajectoryLinesModifier::preevaluateModifier(const ModifierEvaluati
         evaluationTypes = PipelineEvaluationResult::EvaluationType::Interactive;
     else
         evaluationTypes = PipelineEvaluationResult::EvaluationType::Noninteractive;
+}
+
+/******************************************************************************
+ * Modifies the input data.
+ ******************************************************************************/
+Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateComplexModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state, DataOORef<const Lines> trajectoryLines)
+{
+    OVITO_ASSERT(state);
+    if(trajectoryLines)
+        state.addObject(std::move(trajectoryLines));
+    return std::move(state);
 }
 
 /**
@@ -233,10 +245,13 @@ public:
         // Obtain the simulation cell geometry at the current animation time.
         if(_unwrapTrajectories) {
             if(const SimulationCell* cell = state.getObject<SimulationCell>()) {
-                _cells.push_back(cell);
+                _cellMatrices.push_back(cell->matrix());
+                _inverseCellMatrices.push_back(cell->inverseMatrix());
+                _cellPbcFlags = cell->pbcFlagsCorrected();
             }
             else {
-                _cells.push_back({});
+                _cellMatrices.emplace_back(AffineTransformation::Zero());
+                _inverseCellMatrices.emplace_back(AffineTransformation::Zero());
             }
         }
     }
@@ -328,7 +343,7 @@ public:
         this_task::throwIfCanceled();
 
         // Unwrap trajectory vertices at periodic boundaries of the simulation cell.
-        if(_unwrapTrajectories && _pointData.size() >= 2 && !_cells.empty() && _cells.front() && _cells.front()->hasPbcCorrected()) {
+        if(_unwrapTrajectories && _pointData.size() >= 2 && !_cellMatrices.empty() && _cellMatrices.front() != AffineTransformation::Zero() && (_cellPbcFlags[0] || _cellPbcFlags[1] || _cellPbcFlags[2])) {
             this_task::setProgressText(GenerateTrajectoryLinesModifier::tr("Unwrapping trajectory lines"));
             this_task::setProgressMaximum(trajPosProperty.size() - 1);
             Point3* pos = trajPosProperty.begin();
@@ -337,19 +352,21 @@ public:
             for(auto pos_end = pos + trajPosProperty.size() - 1; pos != pos_end; ++pos, ++piter, ++id) {
                 this_task::incrementProgressValue();
                 if(id[0] == id[1]) {
-                    const SimulationCell* cell1 = _cells[_timeData[piter[0]]];
-                    const SimulationCell* cell2 = _cells[_timeData[piter[1]]];
-                    if(cell1 && cell2) {
+                    const AffineTransformation& cell1 = _cellMatrices[_timeData[piter[0]]];
+                    const AffineTransformation& cell2 = _cellMatrices[_timeData[piter[1]]];
+                    const AffineTransformation& invCell1 = _inverseCellMatrices[_timeData[piter[0]]];
+                    const AffineTransformation& invCell2 = _inverseCellMatrices[_timeData[piter[1]]];
+                    if(cell1 != AffineTransformation::Zero() && cell2 != AffineTransformation::Zero()) {
                         const Point3& p1 = pos[0];
                         Point3 p2 = pos[1];
                         for(size_t dim = 0; dim < 3; dim++) {
-                            if(cell1->hasPbcCorrected(dim)) {
-                                FloatType reduced1 = cell1->inverseMatrix().prodrow(p1, dim);
-                                FloatType reduced2 = cell2->inverseMatrix().prodrow(p2, dim);
+                            if(_cellPbcFlags[dim]) {
+                                FloatType reduced1 = invCell1.prodrow(p1, dim);
+                                FloatType reduced2 = invCell2.prodrow(p2, dim);
                                 FloatType delta = reduced2 - reduced1;
                                 FloatType shift = std::floor(delta + FloatType(0.5));
                                 if(shift != 0) {
-                                    pos[1] -= cell2->matrix().column(dim) * shift;
+                                    pos[1] -= cell2.column(dim) * shift;
                                 }
                             }
                         }
@@ -372,7 +389,8 @@ public:
         decltype(_timeData)().swap(_timeData);
         decltype(_idData)().swap(_idData);
         decltype(_samplingPropertyData)().swap(_samplingPropertyData);
-        decltype(_cells)().swap(_cells);
+        decltype(_cellMatrices)().swap(_cellMatrices);
+        decltype(_inverseCellMatrices)().swap(_inverseCellMatrices);
     }
 
 private:
@@ -391,79 +409,62 @@ private:
     std::vector<int32_t> _timeData;
     std::vector<int64_t> _idData;
     std::vector<DataBuffer::Byte> _samplingPropertyData;
-    std::vector<DataOORef<const SimulationCell>> _cells;
+    std::vector<AffineTransformation> _cellMatrices;
+    std::vector<AffineTransformation> _inverseCellMatrices;
+    std::array<bool, 3> _cellPbcFlags;
 };
 
 /******************************************************************************
-* Modifies the input data.
+* Asynchronously performs the sampling of the input trajectory to generate the trajectory lines object.
 ******************************************************************************/
-Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
+Future<DataOORef<const Lines>> GenerateTrajectoryLinesModifier::computeTrajectoryLines(const ModifierEvaluationRequest& request, int numberOfSourceFrames) const
 {
     // Need our type of ModificationNode.
     GenerateTrajectoryLinesModificationNode* modNode = dynamic_object_cast<GenerateTrajectoryLinesModificationNode>(request.modificationNode());
     if(!modNode)
-        return std::move(state);
+        return Future<DataOORef<const Lines>>::createImmediateEmplace();
 
-    // Get a reference to the SharedFuture storing the results of a previous run.
-    SharedFuture<DataOORef<const Lines>>& samplingOperation = modNode->_samplingOperation;
+    // Determine time interval over which to generate trajectories and which need to be fetched from the upstream pipeline.
+    int startFrame = useCustomInterval() ? customIntervalStart() : 0;
+    int endFrame = useCustomInterval() ? (customIntervalEnd() + 1) : numberOfSourceFrames;
+    if(endFrame <= startFrame || everyNthFrame() < 1)
+        throw Exception(tr("Trajectory range contains zero frames. Cannot generate trajectory lines over this time interval."));
+    auto frame_range = boost::irange(startFrame, endFrame, everyNthFrame());
+    request.modificationNode()->setStatus(tr("Processing %1 trajectory frames...").arg(boost::size(frame_range)));
 
-    // In interactive mode, do not perform a real computation. Instead, reuse an old result from the cached state if available.
-    if(request.interactiveMode()) {
-        if(PipelineFlowState cachedState = modNode->getCachedPipelineNodeOutput(request.time(), true)) {
-            // Adopt all data objects computed by the modifier from the cached state.
-            for(const DataObject* obj : cachedState.data()->objects()) {
-                if(obj->createdByNode() == modNode)
-                    state.addObject(obj);
-            }
-        }
-        return std::move(state);
-    }
+    // Loop over all input animation frames and gather particle position data.
+    Future<std::shared_ptr<TrajectoryGenerator>> future = for_each_sequential(
+        std::move(frame_range),
+        ObjectExecutor(modNode, true), // Request deferred execution
+        [request = request](int frame) mutable -> SharedFuture<PipelineFlowState> {
+            // Evaluate upstream pipeline at current frame.
+            request.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
+            return request.modificationNode()->evaluateInput(request).asFuture();
+        },
+        [](int frame, const PipelineFlowState& state, auto& generator) {
+            generator->addFrame(frame, state);
+        },
+        std::make_shared<TrajectoryGenerator>(
+            transferParticleProperties(),
+            onlySelectedParticles(),
+            unwrapTrajectories(),
+            particleProperty(),
+            trajectoryVis(),
+            modNode
+        ));
 
-    // Is there an ongoing or already completed operation that we can reuse?
-    if(!samplingOperation || samplingOperation.isCanceled()) {
-        // If not, start a new sampling operation that loops over all trajectory frames.
+    future.task()->setProgressText(tr("Generating trajectory lines"));
 
-        // Determine time interval over which to generate trajectories and which need to be fetched from the upstream pipeline.
-        int startFrame = useCustomInterval() ? customIntervalStart() : 0;
-        int endFrame = useCustomInterval() ? (customIntervalEnd() + 1) : modNode->numberOfSourceFrames();
-        if(endFrame <= startFrame || everyNthFrame() < 1)
-            throw Exception(tr("Trajectory range contains zero frames. Cannot generate trajectory lines over this time interval."));
+    // After each frame of the input trajectory has been processed, build the final lines.
+    auto linesFuture = std::move(future).then([](std::shared_ptr<TrajectoryGenerator>&& generator) {
+        return launchTask(std::move(generator));
+    });
 
-        // Loop over all input animation frames and gather particle position data.
-        Future<std::shared_ptr<TrajectoryGenerator>> future = for_each_sequential(
-            boost::irange(startFrame, endFrame, everyNthFrame()),
-            ObjectExecutor(modNode, true), // Request deferred execution
-            [request = request](int frame) mutable -> SharedFuture<PipelineFlowState> {
-                this_task::setProgressText(tr("Generating trajectory lines"));
-                // Evaluate upstream pipeline at current frame.
-                request.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
-                return request.modificationNode()->evaluateInput(request).asFuture();
-            },
-            [](int frame, const PipelineFlowState& state, auto& generator) {
-                generator->addFrame(frame, state);
-            },
-            std::make_shared<TrajectoryGenerator>(
-                transferParticleProperties(),
-                onlySelectedParticles(),
-                unwrapTrajectories(),
-                particleProperty(),
-                trajectoryVis(),
-                modNode
-            ));
-
-        // After each frame of the input trajectory has been processed, build the final lines.
-        samplingOperation = std::move(future).then([](std::shared_ptr<TrajectoryGenerator>&& generator) {
-            return launchTask(std::move(generator));
-        });
-
-        // Let the modification node indicate its activity in the UI.
-        modNode->registerActiveFuture(samplingOperation);
-    }
-
-    // Pass generated trajectory lines to the pipeline.
-    return samplingOperation.then(*modNode, [state = std::move(state)](const DataOORef<const Lines>& trajectoryLines) mutable {
-        state.addObject(trajectoryLines);
-        return std::move(state);
+    // After trajectory lines have been generated, return them to the caller.
+    // Also store the data object in the modification node for later reuse.
+    return std::move(linesFuture).then(*modNode, [modNode](DataOORef<const Lines> lines) {
+        modNode->_trajectoryLines = std::move(lines);
+        return modNode->_trajectoryLines;
     });
 }
 
@@ -473,11 +474,61 @@ Future<PipelineFlowState> GenerateTrajectoryLinesModifier::evaluateModifier(cons
 void GenerateTrajectoryLinesModificationNode::notifyDependentsImpl(const ReferenceEvent& event) noexcept
 {
     if(event.type() == ReferenceEvent::TargetChanged) {
-        // Throw away precomputed trajectories when the modifier or the upstream pipeline change.
-        // This also discards the stored trajectory lines in case the modifier is turned off by the user.
-        _samplingOperation.reset();
+        // Do not discard existing results if the modifier is just turned off and on again by the user.
+        const TargetChangedEvent& changeEvent = static_cast<const TargetChangedEvent&>(event);
+        if(changeEvent.field() != PROPERTY_FIELD(Modifier::isEnabled) || event.sender() != modifier()) {
+            // Invalidate cached trajectory lines and ongoing trajectory sampling operation when the modifier or the upstream pipeline change.
+            _trajectoryLines.reset();
+            _trajectoryWeakFuture.reset();
+        }
     }
     ModificationNode::notifyDependentsImpl(event);
+}
+
+/******************************************************************************
+ * Launches an asynchronous task to evaluate the node's modifier.
+ ******************************************************************************/
+SharedFuture<PipelineFlowState> GenerateTrajectoryLinesModificationNode::launchModifierEvaluation(ModifierEvaluationRequest&& request, SharedFuture<PipelineFlowState> inputFuture)
+{
+    // Check if the trajectory lines have already been computed or if a computation is already in progress that we can hook up to.
+    SharedFuture<DataOORef<const Lines>> trajectoryFuture;
+    if(_trajectoryLines) {
+        // Trajectories have already been computed.
+        trajectoryFuture = Future<DataOORef<const Lines>>::createImmediate(_trajectoryLines);
+    }
+    else if(request.interactiveMode()) {
+        // In interactive mode, temporarily adopt an older result from a previous pipeline state if available.
+        if(PipelineFlowState cachedState = getCachedPipelineNodeOutput(request.time(), true)) {
+            if(const Lines* lines = cachedState.getObjectBy<Lines>(this, QStringLiteral("trajectories"))) {
+                trajectoryFuture = Future<DataOORef<const Lines>>::createImmediate(lines);
+            }
+        }
+        if(!trajectoryFuture)
+            trajectoryFuture = Future<DataOORef<const Lines>>::createImmediateEmplace();
+    }
+    else {
+        // Is there an ongoing operation that we can hook up to?
+        trajectoryFuture = _trajectoryWeakFuture.lock();
+        if(!trajectoryFuture || trajectoryFuture.isCanceled()) {
+            // If not, start a new sampling operation that loops over all trajectory frames.
+            try {
+                trajectoryFuture = static_object_cast<GenerateTrajectoryLinesModifier>(modifier())->computeTrajectoryLines(request, numberOfSourceFrames());
+                registerActiveFuture(trajectoryFuture);
+            }
+            catch(Exception& ex) {
+                trajectoryFuture = Future<DataOORef<const Lines>>::createFailed(std::move(ex));
+            }
+            // Keep a weak reference to the task.
+            _trajectoryWeakFuture = trajectoryFuture;
+        }
+    }
+
+    using TrajectoryTask = ComplexModifierEvaluationTask<GenerateTrajectoryLinesModifier, decltype(trajectoryFuture)>;
+
+    return launchTask(
+        std::make_shared<TrajectoryTask>(std::move(request)),
+        std::move(inputFuture),
+        std::move(trajectoryFuture));
 }
 
 /******************************************************************************
