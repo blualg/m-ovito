@@ -20,10 +20,27 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include "LinesDeleteSelectedModifierDelegate.h"
+#include <ovito/stdobj/properties/PropertyExpressionEvaluator.h>
+#include "LinesModifierDelegates.h"
 
 namespace Ovito {
+
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinesExpressionSelectionModifierDelegate);
+OVITO_CLASSINFO(LinesExpressionSelectionModifierDelegate, "DisplayName", "Lines");
+
+/******************************************************************************
+ * Indicates which data objects in the given input data collection the modifier
+ * delegate is able to operate on.
+ ******************************************************************************/
+QVector<DataObjectReference> LinesExpressionSelectionModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all surface mesh regions in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Lines::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
+}
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(LinesDeleteSelectedModifierDelegate);
 OVITO_CLASSINFO(LinesDeleteSelectedModifierDelegate, "DisplayName", "Lines");
@@ -75,6 +92,23 @@ Future<PipelineFlowState> LinesDeleteSelectedModifierDelegate::apply(
 
         return std::move(state);
     });
+}
+
+IMPLEMENT_CREATABLE_OVITO_CLASS(LinesComputePropertyModifierDelegate);
+OVITO_CLASSINFO(LinesComputePropertyModifierDelegate, "DisplayName", "Lines");
+
+/******************************************************************************
+ * Indicates which data objects in the given input data collection the modifier
+ * delegate is able to operate on.
+ ******************************************************************************/
+QVector<DataObjectReference> LinesComputePropertyModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
+{
+    // Gather list of all Lines objects in the input data collection.
+    QVector<DataObjectReference> objects;
+    for(const ConstDataObjectPath& path : input.getObjectsRecursive(Lines::OOClass())) {
+        objects.push_back(path);
+    }
+    return objects;
 }
 
 }  // namespace Ovito
