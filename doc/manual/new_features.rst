@@ -13,6 +13,8 @@ Version 3.12.0 (xx-xxx-2024)
 ----------------------------
 
 - |ovito-python| Added :py:class:`ovito.io.FileWriterInterface`
+- |ovito-python| Replaced :py:attr:`!LinesVis.shading` parameter with :py:attr:`LinesVis.flat_shading <ovito.vis.LinesVis.flat_shading>` parameter
+- |ovito-python| Replaced :py:attr:`!DislocationVis.shading` parameter with :py:attr:`DislocationVis.flat_shading <ovito.vis.DislocationVis.flat_shading>` parameter
 - |ovito-pro| Added :ref:`file_formats.output.ase_trajectory`
 - |ovito-pro| Added GUI function for installing Python packages in the embedded interpreter
 
