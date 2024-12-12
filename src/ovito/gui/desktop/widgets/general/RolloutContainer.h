@@ -64,6 +64,12 @@ public:
         return p;
     }
 
+    RolloutInsertionParameters hideTitleBar() const {
+        RolloutInsertionParameters p(*this);
+        p._hideTitleBar = true;
+        return p;
+    }
+
     RolloutInsertionParameters insertInto(QWidget* intoThisContainer) const {
         OVITO_ASSERT(intoThisContainer);
         RolloutInsertionParameters p;
@@ -98,6 +104,7 @@ private:
 
     bool _collapsed = false;
     bool _useAvailableSpace = false;
+    bool _hideTitleBar = false;
     QPointer<QWidget> _afterThisRollout;
     QPointer<QWidget> _beforeThisRollout;
     QPointer<QWidget> _intoThisContainer;
@@ -162,7 +169,8 @@ public Q_SLOTS:
 
     /// Changes the title of the rollout.
     void setTitle(const QString& title) {
-        _titleButton->setText(title);
+        if(_titleButton)
+            _titleButton->setText(title);
     }
 
     /// Displays a notice text at the top of the rollout window.
@@ -182,10 +190,10 @@ protected:
 private:
 
     /// The button that allows to collapse the rollout.
-    QPushButton* _titleButton;
+    QPushButton* _titleButton = nullptr;
 
     /// The button that opens the help page.
-    QPushButton* _helpButton;
+    QPushButton* _helpButton = nullptr;
 
     /// The widget that is inside the rollout.
     QPointer<QWidget> _content;

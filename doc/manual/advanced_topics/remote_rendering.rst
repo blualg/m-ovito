@@ -73,9 +73,9 @@ To prepare remote rendering follow these steps in your local *OVITO Pro* instanc
      they will first be downloaded to your local computer once you click :guilabel:`Export`.
 
 #. Optionally, you can configure the number of CPU cores per render task (i.e. threads per
-   MPI process) by entering a number into the *Cores per task* field. A value of 0, or leaving the field empty, will let OVITO
+   MPI process) by entering a number into the *CPU cores per task* field. A value of 0, or leaving the field empty, will let OVITO
    utilize all available cores on each compute node to render one frame at a time on each node. On the other hand,
-   on a cluster node containing 96 cores, for example, setting *Cores per task* to 8 means that each node can spawn up to 12
+   on a cluster node containing 96 cores, for example, setting *CPU cores per task* to 8 means that each node can spawn up to 12
    independent workers, rendering 12 images concurrently.
 
 #. Finally, use the :guilabel:`Choose...` button to select a local output

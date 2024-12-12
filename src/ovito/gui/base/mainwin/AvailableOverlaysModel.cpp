@@ -46,7 +46,7 @@ OverlayAction* OverlayAction::createForClass(const ViewportOverlay::OOMetaClass*
     // Set the action's UI display name.
     action->setText(clazz->displayName());
 
-    // Give the modifier a status bar text.
+    // Give the overlay a status bar text.
     QString description = clazz->descriptionString();
     action->setStatusTip(!description.isEmpty() ? std::move(description) : tr("Insert this viewport layer."));
 

@@ -37,30 +37,31 @@ class OVITO_GUI_EXPORT CommandPanel : public QWidget
 
 public:
 
-    /// \brief Creates the command panel.
+    /// Constructor.
     CommandPanel(MainWindow& mainWindow, QWidget* parent);
 
-    /// \brief Activate one of the command pages.
-    /// \param newPage The identifier of the page to activate.
+    /// Activates one of the command pages.
     void setCurrentPage(MainWindow::CommandPanelPage newPage) {
         OVITO_ASSERT(newPage < _tabWidget->count());
         _tabWidget->setCurrentIndex((int)newPage);
     }
 
-    /// \brief Returns the active command page.
-    /// \return The identifier of the page that is currently active.
-    MainWindow::CommandPanelPage currentPage() const { return (MainWindow::CommandPanelPage)_tabWidget->currentIndex(); }
+    /// Returns the currently active command page.
+    MainWindow::CommandPanelPage currentPage() const { return static_cast<MainWindow::CommandPanelPage>(_tabWidget->currentIndex()); }
 
-    /// \brief Returns the modification page contained in the command panel.
+    /// Returns the modification page contained in the command panel.
     ModifyCommandPage* modifyPage() const { return _modifyPage; }
 
-    /// \brief Returns the rendering page contained in the command panel.
+    /// Returns the rendering page contained in the command panel.
     RenderCommandPage* renderPage() const { return _renderPage; }
 
-    /// \brief Returns the viewport overlay page contained in the command panel.
+    /// Returns the viewport overlay page contained in the command panel.
     OverlayCommandPage* overlayPage() const { return _overlayPage; }
 
-    /// \brief Returns the default size for the command panel.
+    /// Returns the utilities page contained in the command panel.
+    UtilityCommandPage* utilityPage() const { return _utilityPage; }
+
+    /// Returns the default size for the command panel.
     virtual QSize sizeHint() const { return QSize(336, 300); }
 
     /// Loads the layout of the widgets from the settings store.
@@ -75,18 +76,22 @@ private:
     ModifyCommandPage* _modifyPage;
     RenderCommandPage* _renderPage;
     OverlayCommandPage* _overlayPage;
+    UtilityCommandPage* _utilityPage;
 };
 
-
-/******************************************************************************
-* This Qt item delegate class renders the list items of the pipeline editor and other list views.
-* It extends the QStyledItemDelegate base class by displaying the
-* PipelineStatus::shortInfo() value next to the title of each pipeline entry.
-******************************************************************************/
+/**
+ * This Qt item delegate class renders the list items of the pipeline editor and other list views.
+ * It extends the QStyledItemDelegate base class by displaying the
+ * PipelineStatus::shortInfo() value next to the title of each pipeline entry.
+ */
 class ExtendedListItemDelegate : public QStyledItemDelegate
 {
 public:
+
+    /// Constructor.
     ExtendedListItemDelegate(QObject* parent, int shortInfoRole) : QStyledItemDelegate(parent), _shortInfoRole(shortInfoRole) {}
+
+    /// Renders the list item.
     virtual void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
 private:

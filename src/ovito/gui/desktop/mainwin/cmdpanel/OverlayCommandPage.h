@@ -42,7 +42,7 @@ class OVITO_GUI_EXPORT OverlayCommandPage : public QWidget
 
 public:
 
-    /// Initializes the modify page.
+    /// Initializes the command panel page.
     OverlayCommandPage(MainWindow& mainWindow, QWidget* parent);
 
     /// Returns the list model that encapsulates the list of overlays of the active viewport.

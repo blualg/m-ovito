@@ -364,8 +364,6 @@ void MainWindow::createMainMenu()
     if(QAction* generateScriptFileAction = actionManager()->findAction(ACTION_SCRIPTING_GENERATE_CODE))
         fileMenu->addAction(generateScriptFileAction);
     fileMenu->addSeparator();
-    if(QAction* remoteRenderingAction = actionManager()->findAction(ACTION_REMOTE_RENDERING)) fileMenu->addAction(remoteRenderingAction);
-    fileMenu->addSeparator();
     fileMenu->addAction(actionManager()->getAction(ACTION_FILE_NEW_WINDOW));
     fileMenu->addSeparator();
     fileMenu->addAction(actionManager()->getAction(ACTION_QUIT));

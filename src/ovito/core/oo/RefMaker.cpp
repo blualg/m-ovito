@@ -197,10 +197,10 @@ bool RefMaker::handleReferenceEvent(RefTarget* source, const ReferenceEvent& eve
 bool RefMaker::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(event.shouldPropagate()) {
-        // Check if message is comming from a reference field for which message propagation is explicitly disabled.
+        // Check if message is coming from a reference field for which message propagation is explicitly disabled.
         // Note that a target object may be referenced from multiple reference fields, some of which having
         // message propagation enabled and some not.
-        bool isSupressedField = false;
+        bool isSuppressedField = false;
         for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
             if(!field->isReferenceField())
                 continue;
@@ -208,20 +208,20 @@ bool RefMaker::referenceEvent(RefTarget* source, const ReferenceEvent& event)
                 continue;
             if(!field->isVector()) {
                 if(getReferenceFieldTarget(field) == source) {
-                    isSupressedField = true;
+                    isSuppressedField = true;
                     break;
                 }
             }
             else {
                 if(vectorReferenceFieldContains(field, source)) {
-                    isSupressedField = true;
+                    isSuppressedField = true;
                     break;
                 }
             }
         }
-        if(!isSupressedField)
+        if(!isSuppressedField)
             return true;
-        // Perform counter check and determine if message is comming from a reference field for which message propagation
+        // Perform counter check and determine if message is coming from a reference field for which message propagation
         // is NOT explicitly disabled.
         for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
             if(!field->isReferenceField())

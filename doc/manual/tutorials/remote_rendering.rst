@@ -112,7 +112,7 @@ the remote computer.
 
 Set the number of cores per rendering task. By default, this is set to *all available*,
 but you may want to adjust it based on your needs and also the memory requirements of your simulation dataset.
-For example, on a compute node with 96 cores, setting *Cores per task* to 8 means that each node
+For example, on a compute node with 96 cores, setting *CPU cores per task* to 8 means that each node
 will spawn 12 workers, rendering 12 images concurrently. Generally, more workers
 with fewer cores scale better for most rendering tasks, but some benchmarking
 might be required to reach optimal performance.

@@ -46,7 +46,6 @@
  ******************************************************************************/
 namespace Ovito
 {
-    class UtilityApplet;
     class GuiAutoStartObject;
     class MainWindow;
     class GuiApplication;
@@ -60,6 +59,7 @@ namespace Ovito
     class FrameBufferWidget;
     class AutocompleteTextEdit;
     class AutocompleteLineEdit;
+    class StatusWidget;
     class ElidedTextLabel;
     class HtmlListWidget;
     class PropertiesEditor;

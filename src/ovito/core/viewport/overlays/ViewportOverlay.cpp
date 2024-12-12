@@ -31,7 +31,6 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(ViewportOverlay);
 DEFINE_REFERENCE_FIELD(ViewportOverlay, pipeline);
 SET_PROPERTY_FIELD_LABEL(ViewportOverlay, pipeline, "Data source");
 SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(ViewportOverlay, pipeline, "sourceNode"); // For backward compatibility with OVITO 3.9.2
-//SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(ViewportOverlay, pipeline, "dataSource"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
 * Returns the category under which the layer will be displayed in the drop-down list box.

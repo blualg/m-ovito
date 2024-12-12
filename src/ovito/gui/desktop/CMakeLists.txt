@@ -38,6 +38,8 @@ OVITO_STANDARD_PLUGIN(Gui
         mainwin/cmdpanel/RenderCommandPage.cpp
         mainwin/cmdpanel/ModifyCommandPage.cpp
         mainwin/cmdpanel/OverlayCommandPage.cpp
+        mainwin/cmdpanel/UtilityCommandPage.cpp
+        mainwin/cmdpanel/UtilityListModel.cpp
         mainwin/data_inspector/DataInspectorPanel.cpp
         mainwin/data_inspector/DataInspectionApplet.cpp
         mainwin/data_inspector/GlobalAttributesInspectionApplet.cpp

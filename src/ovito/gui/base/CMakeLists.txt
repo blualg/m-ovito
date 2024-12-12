@@ -33,6 +33,7 @@ OVITO_STANDARD_PLUGIN(GuiBase
         mainwin/OverlayListItem.cpp
         mainwin/PipelineListModel.cpp
         mainwin/PipelineListItem.cpp
+        mainwin/UtilityObject.cpp
         mainwin/templates/ModifierTemplates.cpp
         mainwin/templates/OverlayTemplates.cpp
         mainwin/templates/ObjectTemplates.cpp

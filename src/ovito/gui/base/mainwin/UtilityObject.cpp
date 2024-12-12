@@ -20,36 +20,19 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-//
-// Standard precompiled header file included by all source files in this module
-//
+#include <ovito/gui/base/GUIBase.h>
+#include "UtilityObject.h"
 
-#ifndef __OVITO_GUI_BASE_
-#define __OVITO_GUI_BASE_
+namespace Ovito {
 
-#include <ovito/core/Core.h>
+IMPLEMENT_ABSTRACT_OVITO_CLASS(UtilityObject);
 
 /******************************************************************************
-* Qt framework classes.
+* Returns the category under which the utility will be displayed in the drop-down list box.
 ******************************************************************************/
-#include <QResource>
-#include <QtDebug>
-#include <QtGui>
-#include <QAction>
-
-/******************************************************************************
-* Forward declaration of classes.
-******************************************************************************/
-namespace Ovito
+QString UtilityObject::OOMetaClass::utilityCategory() const
 {
-    class UserInterface;
-    class BaseViewportWindow;
-    class ActionManager;
-    class ViewportModeAction;
-    class ViewportInputManager;
-    class ViewportInputMode;
-    class ViewportGizmo;
-    class UtilityObject;
+    return {};
 }
 
-#endif // __OVITO_GUI_BASE_
+}   // End of namespace

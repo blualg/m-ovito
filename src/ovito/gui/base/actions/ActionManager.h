@@ -152,6 +152,8 @@ namespace Ovito {
 #define ACTION_COMMAND_PANEL_RENDER         "CommandPanel.Render"
 /// Activates the "Viewport layers" tab of the command panel.
 #define ACTION_COMMAND_PANEL_OVERLAYS       "CommandPanel.Overlays"
+/// Activates the "Utilities" tab of the command panel.
+#define ACTION_COMMAND_PANEL_UTILITIES      "CommandPanel.Utilities"
 
 /// This actions activates the scene node selection mode.
 #define ACTION_SELECTION_MODE               "SelectionMode"
@@ -166,9 +168,6 @@ namespace Ovito {
 #define ACTION_SCRIPTING_GENERATE_CODE      "ScriptingGenerateCode"
 /// This actions shows the Python extensions gallery.
 #define ACTION_SCRIPTING_EXTENSIONS_GALLERY "ScriptingShowExtensionsGallery"
-
-/// Show the "Render on remote computer" dialog.
-#define ACTION_REMOTE_RENDERING             "RemoteRendering"
 
 /// This action adds a new pipeline to the scene with a FileSource.
 #define ACTION_NEW_PIPELINE_FILESOURCE      "NewPipeline.FileSource"
@@ -255,6 +254,9 @@ public Q_SLOTS:
 
     /// Shows the online manual and opens the given help page.
     void openHelpTopic(const QString& page);
+
+    /// Handles user clicks on an action link.
+    void handleActionLink(const QString& link);
 
 Q_SIGNALS:
 

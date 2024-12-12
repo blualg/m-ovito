@@ -126,13 +126,11 @@ public:
     bool operator!=(const OvitoClass& other) const { return (this != &other); }
 
     /// \brief Writes a type descriptor to the stream.
-    /// \note This method is for internal use only.
     static void serializeRTTI(SaveStream& stream, OvitoClassPtr type);
 
     /// \brief Loads a type descriptor from the stream.
-    /// \throw Exception if the class is not defined or the required plugin is not installed.
-    /// \note This method is for internal use only.
-    static OvitoClassPtr deserializeRTTI(LoadStream& stream);
+    /// \throw Exception if the class is not defined or the required plugin is not installed (only if \c throwOnMissingClass is true).
+    static OvitoClassPtr deserializeRTTI(LoadStream& stream, bool throwOnMissingClass = true);
 
     /// \brief Encodes the plugin ID and the class name as a string.
     static QString encodeAsString(OvitoClassPtr type);
@@ -227,7 +225,7 @@ protected:
 template<class T>
 inline const typename T::OOMetaClass* static_class_cast(const OvitoClass* clazz) {
     OVITO_ASSERT_MSG(!clazz || clazz->isDerivedFrom(T::OOClass()), "static_class_cast",
-        qPrintable(QStringLiteral("Runtime type check failed. The source class %1 is not drived from the target class %2.").arg(clazz->name()).arg(T::OOClass().name())));
+        qPrintable(QStringLiteral("Runtime type check failed. The source class %1 is not derived from the target class %2.").arg(clazz->name()).arg(T::OOClass().name())));
     return static_cast<const typename T::OOMetaClass*>(clazz);
 }
 

@@ -20,36 +20,36 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-//
-// Standard precompiled header file included by all source files in this module
-//
+#pragma once
 
-#ifndef __OVITO_GUI_BASE_
-#define __OVITO_GUI_BASE_
 
-#include <ovito/core/Core.h>
+#include <ovito/gui/base/GUIBase.h>
 
-/******************************************************************************
-* Qt framework classes.
-******************************************************************************/
-#include <QResource>
-#include <QtDebug>
-#include <QtGui>
-#include <QAction>
+namespace Ovito {
 
-/******************************************************************************
-* Forward declaration of classes.
-******************************************************************************/
-namespace Ovito
+/**
+ * Abstract base class for utility objects, which represent utility applets
+ * shown in the command panel of OVITO. Utility objects encapsulate the state (data)
+ * associated with a utility applet and get stored as part of a state file to
+ * restore their settings when the state file is loaded.
+ *
+ * The actual GUI component of a utility applet is implemented in a PropertiesEditor
+ * subclass that is associated with the utility object.
+ */
+class OVITO_GUIBASE_EXPORT UtilityObject : public RefTarget
 {
-    class UserInterface;
-    class BaseViewportWindow;
-    class ActionManager;
-    class ViewportModeAction;
-    class ViewportInputManager;
-    class ViewportInputMode;
-    class ViewportGizmo;
-    class UtilityObject;
-}
+    /// A meta-class for utility objects (i.e. classes derived from UtilityObject).
+    class OVITO_GUIBASE_EXPORT OOMetaClass : public RefTarget::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base meta class.
+        using RefTarget::OOMetaClass::OOMetaClass;
 
-#endif // __OVITO_GUI_BASE_
+        /// Returns the category under which the utility will be displayed in the drop-down list box.
+        virtual QString utilityCategory() const;
+    };
+
+    OVITO_CLASS_META(UtilityObject, OOMetaClass);
+};
+
+}   // End of namespace

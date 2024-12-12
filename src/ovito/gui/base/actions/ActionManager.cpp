@@ -344,6 +344,28 @@ void ActionManager::on_EditDelete_triggered()
 }
 
 /******************************************************************************
+* Handles user clicks on an action link.
+******************************************************************************/
+void ActionManager::handleActionLink(const QString& link)
+{
+    if(link.startsWith("action:")) {
+        QString actionId = link.mid(7);
+        if(QAction* action = findAction(actionId)) {
+            action->trigger();
+        }
+        else {
+            userInterface().reportError(tr("Action not found: %1").arg(actionId));
+        }
+    }
+    else if(link.startsWith("manual:")) {
+        openHelpTopic(link);
+    }
+    else {
+        userInterface().reportError(tr("Invalid action link: %1").arg(link));
+    }
+}
+
+/******************************************************************************
 * Shows the online manual and opens the given help page.
 ******************************************************************************/
 void ActionManager::openHelpTopic(const QString& helpTopicId)

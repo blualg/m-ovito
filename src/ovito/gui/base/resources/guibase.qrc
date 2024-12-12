@@ -90,6 +90,8 @@
 	<file>icons/ovito-light/actions/overlay_alignment_top.svg</file>
 	<file>icons/ovito-light/actions/overlay_alignment_bottom.svg</file>
 
+	<file>icons/ovito-light/actions/utility_action_icon.svg</file>
+
 	<file>icons/ovito-light/actions/framebuffer_save_picture.svg</file>
 	<file>icons/ovito-light/actions/framebuffer_copy_picture_to_clipboard.svg</file>
 	<file>icons/ovito-light/actions/framebuffer_auto_crop.svg</file>
@@ -107,6 +109,7 @@
 	<file>icons/ovito-light/actions/command_panel_tab_modify.svg</file>
 	<file>icons/ovito-light/actions/command_panel_tab_render.svg</file>
 	<file>icons/ovito-light/actions/command_panel_tab_overlays.svg</file>
+	<file>icons/ovito-light/actions/command_panel_tab_utilities.svg</file>
 
 	<file>icons/ovito-light/actions/particles_measure_distances.svg</file>
 	<file>icons/ovito-light/actions/particles_select_mode.svg</file>
@@ -206,6 +209,8 @@
 	<file>icons/ovito-dark/actions/overlay_alignment_top.svg</file>
 	<file>icons/ovito-dark/actions/overlay_alignment_bottom.svg</file>
 
+	<file>icons/ovito-dark/actions/utility_action_icon.svg</file>
+
 	<file>icons/ovito-dark/actions/framebuffer_save_picture.svg</file>
 	<file>icons/ovito-dark/actions/framebuffer_copy_picture_to_clipboard.svg</file>
 	<file>icons/ovito-dark/actions/framebuffer_auto_crop.svg</file>
@@ -223,6 +228,7 @@
 	<file>icons/ovito-dark/actions/command_panel_tab_modify.svg</file>
 	<file>icons/ovito-dark/actions/command_panel_tab_render.svg</file>
 	<file>icons/ovito-dark/actions/command_panel_tab_overlays.svg</file>
+	<file>icons/ovito-dark/actions/command_panel_tab_utilities.svg</file>
 
 	<file>icons/ovito-dark/actions/particles_measure_distances.svg</file>
 	<file>icons/ovito-dark/actions/particles_select_mode.svg</file>

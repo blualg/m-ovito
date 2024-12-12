@@ -103,12 +103,20 @@ void ObjectSaveStream::close()
             OvitoClassPtr clazz = &record.object->getOOClass();
             if(classes.find(clazz) == classes.end()) {
                 classes.insert(std::make_pair(clazz, (quint32)classes.size()));
+
+                // Is the class tagged as nonessential?
+                // For nonessential classes it is not an error if they are getting removed in a future version of OVITO
+                // or if objects of this class cannot be deserialized from a state file.
+                // In other words, it's okay to remove such classes in a future version of OVITO without breaking compatibility with older state files.
+                bool isNonessentialClass = (clazz->classMetadata("NonessentialClass").isEmpty() == false);
+
                 // Write the basic runtime type information (name and plugin ID) of the class to the stream.
-                beginChunk(0x201);
+                beginChunk(isNonessentialClass ? 0x202 : 0x201);
                 OvitoClass::serializeRTTI(*this, clazz);
                 endChunk();
-                // Let the metaclass save additional information like for example the list of property fields defined
-                // for RefMaker-derived classes.
+
+                // Let the metaclass save additional information, example the list of property fields defined
+                // by RefMaker-derived classes.
                 beginChunk(0x202);
                 clazz->saveClassInfo(*this);
                 endChunk();

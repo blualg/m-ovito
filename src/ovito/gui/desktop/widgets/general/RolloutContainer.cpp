@@ -153,45 +153,46 @@ Rollout::Rollout(QWidget* parent, QWidget* content, const QString& title, const 
     _content->setVisible(true);
     connect(_content.data(), &QWidget::destroyed, this, &Rollout::deleteLater);
 
-    // Set up title button.
-    _titleButton = new QPushButton(title, this);
-    _titleButton->setAutoFillBackground(true);
-    _titleButton->setFocusPolicy(Qt::NoFocus);
-    _titleButton->setStyleSheet("QPushButton { "
-                               "  color: white; "
-                               "  border-style: solid; "
-                               "  border-width: 1px; "
-                               "  border-radius: 0px; "
-                               "  border-color: black; "
-                               "  background-color: grey; "
-                               "  padding: 1px; "
-                               "}"
-                               "QPushButton:pressed { "
-                               "  border-color: white; "
-                               "}");
-    connect(_titleButton, &QPushButton::clicked, this, &Rollout::toggleCollapsed);
+    if(!params._hideTitleBar) {
+        // Set up title button.
+        _titleButton = new QPushButton(title, this);
+        _titleButton->setAutoFillBackground(true);
+        _titleButton->setFocusPolicy(Qt::NoFocus);
+        _titleButton->setStyleSheet("QPushButton { "
+                                "  color: white; "
+                                "  border-style: solid; "
+                                "  border-width: 1px; "
+                                "  border-radius: 0px; "
+                                "  border-color: black; "
+                                "  background-color: grey; "
+                                "  padding: 1px; "
+                                "}"
+                                "QPushButton:pressed { "
+                                "  border-color: white; "
+                                "}");
+        connect(_titleButton, &QPushButton::clicked, this, &Rollout::toggleCollapsed);
 
-    if(!helpPageUrl.isEmpty()) {
-        _helpButton = new QPushButton(QStringLiteral("?"), this);
-        _helpButton->setAutoFillBackground(true);
-        _helpButton->setFocusPolicy(Qt::NoFocus);
-        _helpButton->setToolTip(tr("Open help topic"));
-        _helpButton->setStyleSheet("QPushButton { "
-                                   "  color: white; "
-                                   "  border-style: solid; "
-                                   "  border-width: 1px; "
-                                   "  border-radius: 0px; "
-                                   "  border-color: black; "
-                                   "  background-color: rgb(80,130,80); "
-                                   "  padding: 1px; "
-                                   "  min-width: 16px; "
-                                   "}"
-                                   "QPushButton:pressed { "
-                                   "  border-color: white; "
-                                   "}");
-        connect(_helpButton, &QPushButton::clicked, this, &Rollout::onHelpButton);
+        if(!helpPageUrl.isEmpty()) {
+            _helpButton = new QPushButton(QStringLiteral("?"), this);
+            _helpButton->setAutoFillBackground(true);
+            _helpButton->setFocusPolicy(Qt::NoFocus);
+            _helpButton->setToolTip(tr("Open help topic"));
+            _helpButton->setStyleSheet("QPushButton { "
+                                    "  color: white; "
+                                    "  border-style: solid; "
+                                    "  border-width: 1px; "
+                                    "  border-radius: 0px; "
+                                    "  border-color: black; "
+                                    "  background-color: rgb(80,130,80); "
+                                    "  padding: 1px; "
+                                    "  min-width: 16px; "
+                                    "}"
+                                    "QPushButton:pressed { "
+                                    "  border-color: white; "
+                                    "}");
+            connect(_helpButton, &QPushButton::clicked, this, &Rollout::onHelpButton);
+        }
     }
-    else _helpButton = nullptr;
 }
 
 /******************************************************************************
@@ -240,7 +241,7 @@ void Rollout::ensureVisible()
 ******************************************************************************/
 QSize Rollout::sizeHint() const
 {
-    QSize titleSize = _titleButton->sizeHint();
+    QSize titleSize = _titleButton ? _titleButton->sizeHint() : QSize(0,0);
     QSize contentSize(0,0);
     if(_content)
         contentSize = _content->sizeHint();
@@ -271,7 +272,7 @@ int Rollout::heightForWidth(int w) const
 {
     if(!_noticeWidget) return -1;
 
-    int titleSize = _titleButton->sizeHint().height();
+    int titleSize = _titleButton ? _titleButton->sizeHint().height() : 0;
     int contentSize = 0;
     if(_content)
         contentSize = _content->sizeHint().height();
@@ -299,7 +300,7 @@ int Rollout::heightForWidth(int w) const
 ******************************************************************************/
 void Rollout::resizeEvent(QResizeEvent* event)
 {
-    int titleHeight = _titleButton->sizeHint().height();
+    int titleHeight = _titleButton ? _titleButton->sizeHint().height() : 0;
     int contentHeight = 0;
     if(_content)
         contentHeight = _content->sizeHint().height();
@@ -321,13 +322,15 @@ void Rollout::resizeEvent(QResizeEvent* event)
         if(availSpace > contentHeight)
             contentHeight = availSpace;
     }
-    if(_helpButton) {
-        int helpButtonWidth = titleHeight;
-        _titleButton->setGeometry(0, 0, width() - helpButtonWidth + 1, titleHeight);
-        _helpButton->setGeometry(width() - helpButtonWidth, 0, helpButtonWidth, titleHeight);
-    }
-    else {
-        _titleButton->setGeometry(0, 0, width(), titleHeight);
+    if(_titleButton) {
+        if(_helpButton) {
+            int helpButtonWidth = titleHeight;
+            _titleButton->setGeometry(0, 0, width() - helpButtonWidth + 1, titleHeight);
+            _helpButton->setGeometry(width() - helpButtonWidth, 0, helpButtonWidth, titleHeight);
+        }
+        else {
+            _titleButton->setGeometry(0, 0, width(), titleHeight);
+        }
     }
     int contentY = 0;
     if(_noticeWidget) {

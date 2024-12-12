@@ -27,6 +27,7 @@
 #include "RenderCommandPage.h"
 #include "ModifyCommandPage.h"
 #include "OverlayCommandPage.h"
+#include "UtilityCommandPage.h"
 
 namespace Ovito {
 
@@ -47,9 +48,11 @@ CommandPanel::CommandPanel(MainWindow& mainWindow, QWidget* parent) : QWidget(pa
     _tabWidget->addTab(_modifyPage = new ModifyCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_modify"), QString());
     _tabWidget->addTab(_renderPage = new RenderCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_render"), QString());
     _tabWidget->addTab(_overlayPage = new OverlayCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_overlays"), QString());
+    _tabWidget->addTab(_utilityPage = new UtilityCommandPage(mainWindow, _tabWidget), QIcon::fromTheme("command_panel_tab_utilities"), QString());
     _tabWidget->setTabToolTip(0, tr("Pipelines"));
     _tabWidget->setTabToolTip(1, tr("Rendering"));
     _tabWidget->setTabToolTip(2, tr("Viewport layers"));
+    _tabWidget->setTabToolTip(3, tr("Utilities"));
     setCurrentPage(MainWindow::MODIFY_PAGE);
 
     QAction* showModifyPageAction = mainWindow.actionManager()->createCommandAction(ACTION_COMMAND_PANEL_MODIFY, tr("Pipeline editor"), {}, tr("Switches to the pipeline editing tab."));
@@ -60,6 +63,9 @@ CommandPanel::CommandPanel(MainWindow& mainWindow, QWidget* parent) : QWidget(pa
 
     QAction* showOverlayPageAction = mainWindow.actionManager()->createCommandAction(ACTION_COMMAND_PANEL_OVERLAYS, tr("Viewport layers"), {}, tr("Switches to the viewport layers tab."));
     connect(showOverlayPageAction, &QAction::triggered, this, [this]() { setCurrentPage(MainWindow::OVERLAY_PAGE); });
+
+    QAction* showUtilityPageAction = mainWindow.actionManager()->createCommandAction(ACTION_COMMAND_PANEL_UTILITIES, tr("Utilities"), {}, tr("Switches to the utilities tab."));
+    connect(showUtilityPageAction, &QAction::triggered, this, [this]() { setCurrentPage(MainWindow::UTILITY_PAGE); });
 }
 
 /******************************************************************************
@@ -81,7 +87,6 @@ void CommandPanel::saveLayout()
     _renderPage->saveLayout();
     _overlayPage->saveLayout();
 }
-
 
 /******************************************************************************
 * This Qt item delegate class renders the list items of the pipeline editor and other list views.

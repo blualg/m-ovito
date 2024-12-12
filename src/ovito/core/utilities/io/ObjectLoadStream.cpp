@@ -54,21 +54,31 @@ ObjectLoadStream::ObjectLoadStream(QDataStream& source) : LoadStream(source)
     _classes.resize(classCount);
     for(auto& classInfo : _classes) {
 
+        int chunkId = expectChunkRange(0x201, 1);
+
+        // Was the class tagged as nonessential?
+        // For nonessential classes it is not an error if they got removed in the current version of OVITO
+        // or if objects of this class cannot be deserialized from the state file.
+        bool isNonessentialClass = (chunkId != 0);
+
         // Read the runtime type from the stream.
-        expectChunk(0x201);
-        OvitoClassPtr clazz = OvitoClass::deserializeRTTI(*this);
+        OvitoClassPtr clazz = OvitoClass::deserializeRTTI(*this, !isNonessentialClass);
+
         closeChunk();
 
-        // Load the plugin containing the class.
-        clazz->plugin()->loadPlugin();
+        if(clazz) {
+            // Load the plugin containing the class.
+            clazz->plugin()->loadPlugin();
 
-        // Create the class info structure.
-        classInfo = clazz->createClassInfoStructure();
-        classInfo->clazz = clazz;
+            // Create the class info structure.
+            classInfo = clazz->createClassInfoStructure();
+            classInfo->clazz = clazz;
+        }
 
         // Let the metaclass read its specific information from the stream.
         expectChunk(0x202);
-        clazz->loadClassInfo(*this, classInfo.get());
+        if(clazz)
+            clazz->loadClassInfo(*this, classInfo.get());
         closeChunk();
     }
     closeChunk();
@@ -106,6 +116,10 @@ OORef<OvitoObject> ObjectLoadStream::loadObjectInternal()
         ObjectRecord& record = _objects[objectId - 1];
         if(record.object != nullptr) {
             return record.object;
+        }
+        else if(record.classInfo == nullptr) {
+            // The object's class is not available in this program version but it is marked as optional.
+            return {};
         }
         else {
             // Create an instance of the object class.

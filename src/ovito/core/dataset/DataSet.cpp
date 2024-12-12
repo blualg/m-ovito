@@ -297,6 +297,12 @@ void DataSet::loadFromStreamComplete(ObjectLoadStream& stream)
 {
     RefTarget::loadFromStreamComplete(stream);
 
+    // Discard null entries in the global objects list, which may originate from optional classes that could not be deserialized.
+    for(int index = globalObjects().size(); index--; ) {
+        if(!globalObjects()[index])
+            _globalObjects.remove(this, PROPERTY_FIELD(globalObjects), index);
+    }
+
     // For backward compatibility with OVITO 3.7:
     if(stream.formatVersion() <= 30008) {
         // Retrieve legacy AnimationSettings, Scene, and SelectionSet loaded by the overrideFieldDeserialization() method above.

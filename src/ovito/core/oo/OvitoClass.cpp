@@ -149,7 +149,7 @@ OORef<OvitoObject> OvitoClass::createInstanceImpl(ObjectInitializationFlags flag
 }
 
 /******************************************************************************
-* Writes a class descriptor to the stream. This is for internal use of the core only.
+* Writes a class descriptor to the stream.
 ******************************************************************************/
 void OvitoClass::serializeRTTI(SaveStream& stream, OvitoClassPtr type)
 {
@@ -165,10 +165,9 @@ void OvitoClass::serializeRTTI(SaveStream& stream, OvitoClassPtr type)
 }
 
 /******************************************************************************
-* Loads a class descriptor from the stream. This is for internal use of the core only.
-* Throws an exception if the class is not defined or the required plugin is not installed.
+* Loads a class descriptor from the stream.
 ******************************************************************************/
-OvitoClassPtr OvitoClass::deserializeRTTI(LoadStream& stream)
+OvitoClassPtr OvitoClass::deserializeRTTI(LoadStream& stream, bool throwOnMissingClass)
 {
     QString pluginId, className;
     stream.expectChunk(0x10000000);
@@ -183,28 +182,30 @@ OvitoClassPtr OvitoClass::deserializeRTTI(LoadStream& stream)
         // Look plugin.
         Plugin* plugin = PluginManager::instance().plugin(pluginId);
         if(!plugin) {
-
             // If plugin does not exist anymore, fall back to searching other plugins for the requested class.
             for(Plugin* otherPlugin : PluginManager::instance().plugins()) {
                 if(OvitoClassPtr clazz = otherPlugin->findClass(className))
                     return clazz;
             }
-
-            throw Exception(OvitoObject::tr("A required plugin is not installed: %1").arg(pluginId));
+            if(throwOnMissingClass)
+                throw Exception(OvitoObject::tr("A required plugin is not installed: %1").arg(pluginId));
+            else
+                return nullptr;
         }
         OVITO_CHECK_POINTER(plugin);
 
         // Look up class descriptor.
         OvitoClassPtr clazz = plugin->findClass(className);
         if(!clazz) {
-
             // If class does not exist in the plugin anymore, fall back to searching other plugins for the requested class.
             for(Plugin* otherPlugin : PluginManager::instance().plugins()) {
                 if(OvitoClassPtr clazz = otherPlugin->findClass(className))
                     return clazz;
             }
-
-            throw Exception(OvitoObject::tr("Required class '%1' not found in plugin '%2'.").arg(className, pluginId));
+            if(throwOnMissingClass)
+                throw Exception(OvitoObject::tr("Required class '%1' not found in plugin '%2'.").arg(className, pluginId));
+            else
+                return nullptr;
         }
 
         return clazz;

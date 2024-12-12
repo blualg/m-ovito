@@ -43,7 +43,7 @@
 namespace Ovito {
 
 /******************************************************************************
-* Initializes the modify tab.
+* Initializes the command panel tab.
 ******************************************************************************/
 ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : QWidget(parent), _mainWindow(mainWindow)
 {

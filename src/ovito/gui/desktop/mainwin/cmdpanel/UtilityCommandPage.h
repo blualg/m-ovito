@@ -24,53 +24,45 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/core/dataset/pipeline/PipelineStatus.h>
+#include <ovito/gui/desktop/properties/PropertiesPanel.h>
 
 namespace Ovito {
 
+class UtilityListModel; // defined in UtilityListModel.h
+
 /**
- * \brief A widget that displays information from the PipelineStatus class.
+ * The command panel tab lets the user access utility functions.
  */
-class OVITO_GUI_EXPORT StatusWidget : public QScrollArea
+class OVITO_GUI_EXPORT UtilityCommandPage : public QWidget
 {
     Q_OBJECT
 
 public:
 
-    /// \brief Constructs the widget.
-    /// \param parent The parent widget for the new widget.
-    explicit StatusWidget(QWidget* parent = nullptr);
+    /// Initializes the command panel page.
+    UtilityCommandPage(MainWindow& mainWindow, QWidget* parent);
 
-    /// Returns the current status displayed by the widget.
-    const PipelineStatus& status() const { return _status; }
+protected Q_SLOTS:
 
-    /// Sets the status to be displayed by the widget.
-    void setStatus(const PipelineStatus& status);
-
-    /// Resets the widget to not display any status.
-    void clearStatus() { setStatus({}); }
-
-    /// Returns the minimum size of the widget.
-    virtual QSize minimumSizeHint() const override;
-
-    /// Returns the preferred size of the widget.
-    virtual QSize sizeHint() const override;
-
-Q_SIGNALS:
-
-    /// Emitted when the user clicks on a link in the status text.
-    void linkActivated(const QString& link);
+    /// Called when the user selected a utility from the drop-down list of available utilities.
+    void onOpenUtility(int index);
 
 private:
 
-    /// The current status displayed by the widget.
-    PipelineStatus _status;
+    /// Returns the selected viewport layer.
+    ViewportOverlay* selectedLayer() const;
 
-    /// The internal text label.
-    QLabel* _textLabel;
+    /// The main window hosting this page.
+    MainWindow& _mainWindow;
 
-    /// The internal icon label.
-    QLabel* _iconLabel;
+    /// Contains the list of available utilities.
+    QComboBox* _utilitiesBox;
+
+    /// This panel shows the GUI of the selected utility.
+    PropertiesPanel* _propertiesPanel;
+
+    /// The list model containing the available utilities.
+    UtilityListModel* _utilityListModel;
 };
 
 }   // End of namespace
