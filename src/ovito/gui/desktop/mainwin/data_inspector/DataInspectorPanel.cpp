@@ -83,7 +83,7 @@ DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
     _appletContainer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
     _appletContainer->setMinimumWidth(10);
     _appletContainer->resize(0,0);
-    QLabel* label = new QLabel(tr("No data available or no object selected."));
+    QLabel* label = new QLabel(tr("This panel will list the output of the currently selected pipeline."));
     label->setAlignment(Qt::AlignCenter);
     _appletContainer->addWidget(label);
     for(DataInspectionApplet* applet : _applets)

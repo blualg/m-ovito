@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/mainwin/cmdpanel/UtilityListModel.h>
 #include "CommandPanel.h"
@@ -76,7 +77,10 @@ void UtilityCommandPage::onOpenUtility(int index)
         _propertiesPanel->close();
     }
     else if(index == _utilityListModel->getMoreExtensionsItemIndex()) {
-        QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
+        if(QAction* action = _mainWindow.actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_UTILITIES))
+            action->trigger();
+        else
+            QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
     }
     else {
         if(QAction* action = _utilityListModel->actionFromIndex(index))

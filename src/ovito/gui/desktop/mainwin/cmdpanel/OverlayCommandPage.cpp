@@ -184,7 +184,10 @@ void OverlayCommandPage::onInsertNewOverlay(int index)
     QComboBox* selector = static_cast<QComboBox*>(sender());
     AvailableOverlaysModel* model = static_cast<AvailableOverlaysModel*>(selector->model());
     if(index == model->getMoreExtensionsItemIndex()) {
-        QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
+        if(QAction* action = _mainWindow.actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_OVERLAYS))
+            action->trigger();
+        else
+            QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
     }
     else {
         if(QAction* action = model->actionFromIndex(index))

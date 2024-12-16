@@ -34,6 +34,9 @@ public:
         setDynamicSortFilter(false);
         loadUseCounts();
         setSourceModel(sourceModel);
+
+        // Trigger a re-filtering of the list model when all actions have been registered with the ActionManager and are fully configured.
+        QTimer::singleShot(0, this, &QSortFilterProxyModel::invalidate);
     }
 
     virtual ~ActionListModel() {

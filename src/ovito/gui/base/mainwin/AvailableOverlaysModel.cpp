@@ -427,11 +427,11 @@ void AvailableOverlaysModel::extensionClassAdded(OvitoClassPtr cls)
     _actions.insert(iter, action);
 
     // Insert action into the right category. Or create a new category if necessary.
-    auto categoryIter = std::lower_bound(_categoryNames.begin(), _categoryNames.end(), action->category());
+    auto categoryIter = boost::find(_categoryNames, action->category());
     int categoryIndex = std::distance(_categoryNames.begin(), categoryIter);
-    if(categoryIter == _categoryNames.end() || *categoryIter != action->category()) {
-        _categoryNames.insert(categoryIter, action->category());
-        _actionsPerCategory.insert(_actionsPerCategory.begin() + categoryIndex, std::vector<OverlayAction*>{});
+    if(categoryIter == _categoryNames.end()) {
+        _categoryNames.push_back(action->category());
+        _actionsPerCategory.emplace_back();
     }
     _actionsPerCategory[categoryIndex].push_back(action);
 

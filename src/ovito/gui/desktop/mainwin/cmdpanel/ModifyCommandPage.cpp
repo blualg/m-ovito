@@ -241,7 +241,10 @@ void ModifyCommandPage::saveLayout()
 void ModifyCommandPage::onInsertNewModifier(int index)
 {
     if(index == availableModifiersModel()->getMoreExtensionsItemIndex()) {
-        QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
+        if(QAction* action = _mainWindow.actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_MODIFIERS))
+            action->trigger();
+        else
+            QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
     }
     else {
         availableModifiersModel()->insertModifierByIndex(index);

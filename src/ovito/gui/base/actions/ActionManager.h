@@ -168,6 +168,11 @@ namespace Ovito {
 #define ACTION_SCRIPTING_GENERATE_CODE      "ScriptingGenerateCode"
 /// This actions shows the Python extensions gallery.
 #define ACTION_SCRIPTING_EXTENSIONS_GALLERY "ScriptingShowExtensionsGallery"
+#define ACTION_SCRIPTING_EXTENSIONS_GALLERY_MODIFIERS   "ScriptingShowExtensionsGallery.Modifiers"
+#define ACTION_SCRIPTING_EXTENSIONS_GALLERY_FILEREADERS "ScriptingShowExtensionsGallery.FileReaders"
+#define ACTION_SCRIPTING_EXTENSIONS_GALLERY_FILEWRITERS "ScriptingShowExtensionsGallery.FileWriters"
+#define ACTION_SCRIPTING_EXTENSIONS_GALLERY_OVERLAYS    "ScriptingShowExtensionsGallery.ViewportLayers"
+#define ACTION_SCRIPTING_EXTENSIONS_GALLERY_UTILITIES   "ScriptingShowExtensionsGallery.Utilities"
 
 /// This action adds a new pipeline to the scene with a FileSource.
 #define ACTION_NEW_PIPELINE_FILESOURCE      "NewPipeline.FileSource"
