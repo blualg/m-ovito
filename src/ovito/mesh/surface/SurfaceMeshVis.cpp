@@ -442,7 +442,7 @@ Future<std::shared_ptr<const RenderableSurfaceMesh>> SurfaceMeshVis::transformSu
 }
 
 /******************************************************************************
-* Creates the object that builds the non-peridic representation of the input surface mesh.
+* Creates the object that builds the non-periodic representation of the input surface mesh.
 ******************************************************************************/
 std::unique_ptr<SurfaceMeshVis::RenderableSurfaceBuilder> SurfaceMeshVis::createRenderableSurfaceBuilder(const SurfaceMesh* mesh) const
 {

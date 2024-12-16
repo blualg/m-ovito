@@ -178,7 +178,7 @@ protected:
         friend class SurfaceMeshVis;
     };
 
-    /// Creates the object that builds the non-peridic representation of the input surface mesh.
+    /// Creates the object that builds the non-periodic representation of the input surface mesh.
     /// This method may be overridden by subclasses that want to implement custom behavior.
     virtual std::unique_ptr<RenderableSurfaceBuilder> createRenderableSurfaceBuilder(const SurfaceMesh* mesh) const;
 
