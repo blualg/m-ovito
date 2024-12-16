@@ -38,6 +38,7 @@ namespace Ovito {
  */
 class OVITO_GUIBASE_EXPORT UtilityObject : public RefTarget
 {
+public:
     /// A meta-class for utility objects (i.e. classes derived from UtilityObject).
     class OVITO_GUIBASE_EXPORT OOMetaClass : public RefTarget::OOMetaClass
     {
