@@ -370,17 +370,16 @@ void POSCARImporter::setupPipeline(Pipeline* pipeline, FileSource* importObj)
     const PipelineFlowState& data = future.result();
 
     // Get charge density grid from data object -> skip if not found
-    const ConstDataObjectPath path =
-        data.getObject<VoxelGrid>(PropertyContainerReference(&VoxelGrid::OOClass(), QStringLiteral("charge-density")));
+    const ConstDataObjectPath path = data.getObject<VoxelGrid>(QStringLiteral("charge-density"));
     const VoxelGrid* grid = path.lastAs<VoxelGrid>();
     if(!grid) return;
 
     // Get charge density property from grid -> skip if not found
     BufferReadAccess<FloatType> chargeAccess(grid->getProperty(tr("Charge density")));
-    if(!chargeAccess) return;
+    if(!chargeAccess || chargeAccess.size() == 0) return;
 
     // Mean will be used as default iso level
-    FloatType mean = std::accumulate(chargeAccess.begin(), chargeAccess.end(), (FloatType)0) / (FloatType)chargeAccess.size();
+    FloatType mean = std::accumulate(chargeAccess.begin(), chargeAccess.end(), (FloatType)0) / chargeAccess.size();
 
     // Create and configure the CreateIsosurfaceModifier
     OORef<CreateIsosurfaceModifier> mod = OORef<CreateIsosurfaceModifier>::create();
@@ -390,7 +389,7 @@ void POSCARImporter::setupPipeline(Pipeline* pipeline, FileSource* importObj)
     mod->surfaceMeshVis()->setSurfaceTransparency(0.333);
 
     // Add modifier to pipeline
-    pipeline->applyModifier(time, true, mod);
+    pipeline->applyModifier(time, false, mod);
 }
 
 /******************************************************************************
