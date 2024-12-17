@@ -4,6 +4,12 @@
 Changelog
 =========
 
+----------------------------
+Version 3.11.3 (XX-YYY-2024)
+----------------------------
+
+- Automatically apply the :ref:`particles.modifiers.create_isosurface` modifier when reading CHGCAR files.
+
 .. sidebar::
 
   * `Download this version <https://www.ovito.org/download_history/#3.11.2>`__
