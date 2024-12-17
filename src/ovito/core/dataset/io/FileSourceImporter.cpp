@@ -144,7 +144,7 @@ bool FileSourceImporter::isReplaceExistingPossible(Scene* scene, const std::vect
 * Return false if the import has been aborted by the user.
 * Throws an exception when the import has failed.
 ******************************************************************************/
-OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode)
+Future<OORef<Pipeline>> FileSourceImporter::importFileSet(OORef<Scene> scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode)
 {
     OVITO_ASSERT(!sourceUrlsAndImporters.empty());
     OORef<FileSource> existingFileSource;
@@ -197,6 +197,7 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
     if(existingPipeline == nullptr) {
         {
             UndoSuspender undoSuspender;    // Do not create undo records for this part.
+            AnimationSuspender animSuspender(*this_task::ui());
 
             // Add object to scene.
             pipeline = OORef<Pipeline>::create();
@@ -235,7 +236,10 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
 
     // Let the importer subclass customize the pipeline scene node.
     // Placing this after setSource allows "pipeline->evaluatePipeline" in setupPipeline
-    setupPipeline(pipeline, fileSource);
+    Future<void> setupFuture = setupPipeline(pipeline, fileSource);
+    if(setupFuture) {
+        co_await FutureAwaiter(ObjectExecutor(this), std::move(setupFuture));
+    }
 
     if(importMode != ReplaceSelected && importMode != DontAddToScene) {
         // Adjust viewports to completely show the newly imported object.
@@ -246,23 +250,23 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
     // If this importer did not handle all supplied input files,
     // continue importing the remaining files.
     if(!sourceUrlsAndImporters.empty()) {
-        importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline);
+        co_await FutureAwaiter(ObjectExecutor(this), importFurtherFiles(std::move(scene), std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline));
     }
 
-    return pipeline;
+    co_return pipeline;
 }
 
 /******************************************************************************
 * Is called when importing multiple files of different formats.
 ******************************************************************************/
-void FileSourceImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline)
+Future<OORef<Pipeline>> FileSourceImporter::importFurtherFiles(OORef<Scene> scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline)
 {
     if(importMode == DontAddToScene)
-        return;    // It doesn't make sense to import additional datasets if they are not being added to the scene. They would get lost.
+        return Future<OORef<Pipeline>>::createImmediateEmplace();    // It doesn't make sense to import additional datasets if they are not being added to the scene. They would get lost.
 
     OVITO_ASSERT(!sourceUrlsAndImporters.empty());
     OORef<FileImporter> importer = sourceUrlsAndImporters.front().second;
-    importer->importFileSet(scene, std::move(sourceUrlsAndImporters), AddToScene, autodetectFileSequences, multiFileImportMode);
+    return importer->importFileSet(scene, std::move(sourceUrlsAndImporters), AddToScene, autodetectFileSequences, multiFileImportMode);
 }
 
 /******************************************************************************

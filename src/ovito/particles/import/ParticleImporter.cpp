@@ -507,7 +507,7 @@ void ParticleImporter::FrameLoader::loadFile()
 /******************************************************************************
 * Is called when importing multiple files of different formats.
 ******************************************************************************/
-void ParticleImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline)
+Future<OORef<Pipeline>> ParticleImporter::importFurtherFiles(OORef<Scene> scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline)
 {
     OVITO_ASSERT(!sourceUrlsAndImporters.empty());
     OORef<ParticleImporter> nextImporter = dynamic_object_cast<ParticleImporter>(sourceUrlsAndImporters.front().second);
@@ -540,10 +540,10 @@ void ParticleImporter::importFurtherFiles(Scene* scene, std::vector<std::pair<QU
         pipeline->applyModifier(scene->animationSettings()->currentTime(), true, std::move(loadTrjMod));
 
         if(sourceUrlsAndImporters.empty())
-            return;
+            return Future<OORef<Pipeline>>::createImmediateEmpty();
     }
 
-    FileSourceImporter::importFurtherFiles(scene, std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline);
+    return FileSourceImporter::importFurtherFiles(std::move(scene), std::move(sourceUrlsAndImporters), importMode, autodetectFileSequences, multiFileImportMode, pipeline);
 }
 
 }   // End of namespace

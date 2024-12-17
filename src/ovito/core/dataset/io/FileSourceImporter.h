@@ -182,7 +182,7 @@ public:
     virtual bool isReplaceExistingPossible(Scene* scene, const std::vector<QUrl>& sourceUrls) override;
 
     /// \brief Imports the given file(s) into the scene.
-    virtual OORef<Pipeline> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) override;
+    virtual Future<OORef<Pipeline>> importFileSet(OORef<Scene> scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) override;
 
     //////////////////////////// Specific methods ////////////////////////////////
 
@@ -252,7 +252,7 @@ protected:
     /// This method is called when the pipeline scene node for the FileSource is created.
     /// It can be overwritten by importer subclasses to customize the initial pipeline, add modifiers, etc.
     /// The default implementation does nothing.
-    virtual void setupPipeline(Pipeline* pipeline, FileSource* importObj) {}
+    virtual Future<void> setupPipeline(OORef<Pipeline> pipeline, OORef<FileSource> importObj) { return {}; }
 
     /// Checks if a filename matches to the given wildcard pattern.
     static bool matchesWildcardPattern(const QString& pattern, const QString& filename);
@@ -269,7 +269,7 @@ protected:
     virtual FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) { return {}; }
 
     /// Is called when importing multiple files of different formats.
-    virtual void importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline);
+    virtual Future<OORef<Pipeline>> importFurtherFiles(OORef<Scene> scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline);
 
 private:
 

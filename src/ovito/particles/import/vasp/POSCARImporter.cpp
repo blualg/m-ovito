@@ -357,38 +357,41 @@ void POSCARImporter::parseAtomTypeNamesAndCounts(CompressedTextReader& stream, Q
  * This method is called when the pipeline scene node for the FileSource is created.
  * It adds the Create Isosurface modifier to the pipeline.
  ******************************************************************************/
-void POSCARImporter::setupPipeline(Pipeline* pipeline, FileSource* importObj)
+Future<void> POSCARImporter::setupPipeline(OORef<Pipeline> pipeline, OORef<FileSource> importObj)
 {
     // Get current time
-    AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+    AnimationTime time = this_task::ui()->datasetContainer().currentAnimationTime();
 
-    // Evaluate pipeline and ignore any errors
-    PipelineEvaluationResult future = pipeline->evaluatePipeline(PipelineEvaluationRequest(time));
+    PipelineFlowState data;
     try {
-        future.waitForFinished();
+        // Evaluate pipeline and ignore any errors
+        PipelineEvaluationResult future = pipeline->evaluatePipeline(PipelineEvaluationRequest(time));
+        data = co_await FutureAwaiter(ObjectExecutor(this), std::move(future).asFuture());
     }
-    catch(...) {
-        return;
+    catch(const Exception&) {
+        co_return;
     }
-    const PipelineFlowState& data = future.result();
 
     // Get charge density grid from data object -> skip if not found
     const ConstDataObjectPath path = data.getObject<VoxelGrid>(QStringLiteral("charge-density"));
     const VoxelGrid* grid = path.lastAs<VoxelGrid>();
-    if(!grid) return;
+    if(!grid) co_return;
 
     // Get charge density property from grid -> skip if not found
-    BufferReadAccess<FloatType> chargeAccess(grid->getProperty(tr("Charge density")));
-    if(!chargeAccess || chargeAccess.size() == 0) return;
+    BufferReadAccess<FloatType> chargeAccess(grid->getProperty(QStringLiteral("Charge Density")));
+    if(!chargeAccess || chargeAccess.size() == 0) co_return;
 
     // Mean will be used as default iso level
-    FloatType mean = std::accumulate(chargeAccess.begin(), chargeAccess.end(), (FloatType)0) / chargeAccess.size();
+    FloatType mean = std::accumulate(chargeAccess.begin(), chargeAccess.end(), (FloatType)0) / (FloatType)chargeAccess.size();
+
+    // Don't create animation keys for isolevel and surface transparency parameters.
+    AnimationSuspender animSuspender(*this_task::ui());
 
     // Create and configure the CreateIsosurfaceModifier
     OORef<CreateIsosurfaceModifier> mod = OORef<CreateIsosurfaceModifier>::create();
     mod->setIsolevel(mean);
     mod->setSubject(path);
-    mod->setSourceProperty(grid->getProperty(tr("Charge density"))->name());
+    mod->setSourceProperty(QStringLiteral("Charge Density"));
     mod->surfaceMeshVis()->setSurfaceTransparency(0.333);
 
     // Add modifier to pipeline

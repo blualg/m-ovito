@@ -161,6 +161,24 @@ public:
     /// Returns whether viewports should be updated whenever preliminary pipeline results are available.
     bool arePreliminaryViewportUpdatesSuspended() const { return _preliminaryViewportUpdatesSuspendCount != 0; }
 
+    /// \brief Suspends the animation auto-key mode temporarily.
+    ///
+    /// Automatic generation of animation keys is suspended by this method until a call to resumeAnim().
+    /// If suspendAnim() is called multiple times then resumeAnim() must be called the same number of
+    /// times until animation mode is enabled again.
+    ///
+    /// It is recommended to use the AnimationSuspender helper class to suspend animation mode because
+    /// this is more exception save than the suspendAnim()/resumeAnim() combination.
+    void suspendAnim() { _animSuspendCount++; }
+
+    /// \brief Resumes the automatic generation of animation keys.
+    ///
+    /// This re-enables animation mode after it had been suspended by a call to suspendAnim().
+    void resumeAnim() {
+        OVITO_ASSERT_MSG(_animSuspendCount > 0, "UserInterface::resumeAnim()", "resumeAnim() has been called more often than suspendAnim().");
+        _animSuspendCount--;
+    }
+
     /// Flags all viewports for redrawing.
     /// This function does not lead to an immediate repainting of the viewports; instead it schedules a
     /// refresh request, which will be processed at some later time when execution returns to the Qt event loop.
@@ -253,6 +271,9 @@ protected:
     /// List of all viewport windows associated with this abstract user interface.
     std::vector<ViewportWindow*> _viewportWindows;
 
+    /// Counts the number of times the auto-key animation mode has been suspended.
+    int _animSuspendCount = 0;
+
     /// Counts the number of times preliminary viewport updates have been suspended.
     int _preliminaryViewportUpdatesSuspendCount = 0;
 
@@ -263,6 +284,31 @@ protected:
     OORef<UserInterface> _selfGuard;
 
     friend class TaskProgress; // Needs access to the taskProgressBegin(), taskProgressEnd(), and taskProgressUpdate() methods.
+};
+
+/**
+ * \brief A RAII helper class that suspends the automatic generation of animation keys while it exists.
+ *
+ * You typically create an instance of this class on the stack to temporarily suspend the
+ * automatic generation of animation keys in an exception-safe way.
+ */
+class OVITO_CORE_EXPORT AnimationSuspender
+{
+public:
+
+    /// Suspends the automatic generation of animation keys by calling UserInterface::suspendAnim().
+    AnimationSuspender(UserInterface& ui) noexcept : _ui(ui) {
+        _ui.suspendAnim();
+    }
+
+    /// Resumes the automatic generation of animation keys by calling UserInterface::resumeAnim().
+    ~AnimationSuspender() {
+        _ui.resumeAnim();
+    }
+
+private:
+
+    UserInterface& _ui;
 };
 
 }   // End of namespace

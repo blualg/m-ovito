@@ -1199,14 +1199,12 @@ void MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterCl
         }
     }
 
-    // Do not create any animation keys during import.
-    AnimationSuspender animSuspender(*this);
+    Future<OORef<Pipeline>> future = importer->importFileSet(scene, std::move(urlImporters), importMode, true, ImportFileDialog::multiFileImportMode());
+    ProgressDialog::blockForFuture(std::move(future), *this, tr("Importing data"));
 
-    if(OORef<Pipeline> pipeline = importer->importFileSet(scene, std::move(urlImporters), importMode, true, ImportFileDialog::multiFileImportMode())) {
-        if(importMode == FileImporter::ResetScene) {
-            undoStack()->clear();
-            dataset->setFilePath({});
-        }
+    if(importMode == FileImporter::ResetScene) {
+        undoStack()->clear();
+        dataset->setFilePath({});
     }
 }
 

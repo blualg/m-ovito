@@ -136,7 +136,7 @@ public:
     /// \param autodetectFileSequences Enables the automatic detection of file sequences.
     /// \param multiFileImportMode Specifies what should happen if the user imports several files of the same kind.
     /// \throw Exception when the import operation has failed.
-    virtual OORef<Pipeline> importFileSet(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) = 0;
+    virtual Future<OORef<Pipeline>> importFileSet(OORef<Scene> scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) = 0;
 
     /// \brief Tries to detect the format of the given file.
     /// \param existingImporterHint Optional existing importer object, which is tested first against the file. Providing this importer can speed up the auto-detection.

@@ -122,24 +122,6 @@ public:
     /// Sets the file path associated with this window and updates the window's title.
     void setWindowFilePath(const QString& filePath);
 
-    /// \brief Suspends the animation auto-key mode temporarily.
-    ///
-    /// Automatic generation of animation keys is suspended by this method until a call to resumeAnim().
-    /// If suspendAnim() is called multiple times then resumeAnim() must be called the same number of
-    /// times until animation mode is enabled again.
-    ///
-    /// It is recommended to use the AnimationSuspender helper class to suspend animation mode because
-    /// this is more exception save than the suspendAnim()/resumeAnim() combination.
-    void suspendAnim() { _animSuspendCount++; }
-
-    /// \brief Resumes the automatic generation of animation keys.
-    ///
-    /// This re-enables animation mode after it had been suspended by a call to suspendAnim().
-    void resumeAnim() {
-        OVITO_ASSERT_MSG(_animSuspendCount > 0, "MainWindow::resumeAnim()", "resumeAnim() has been called more often than suspendAnim().");
-        _animSuspendCount--;
-    }
-
     /// \brief Returns whether animation recording is active and animation keys should be automatically generated.
     /// \return \c true if animating is currently turned on and not suspended; \c false otherwise.
     ///
@@ -316,9 +298,6 @@ private:
     /// Indicates whether the user has activated auto-key animation mode.
     bool _autoKeyModeOn = false;
 
-    /// Counts the number of times the auto-key animation mode has been suspended.
-    int _animSuspendCount = 0;
-
     /// List of errors to be displayed by showErrorMessages().
     std::deque<Exception> _errorList;
 
@@ -336,31 +315,6 @@ private:
 
     /// The current screen the window is on (to detect screen changes).
     QScreen* _currentScreen = nullptr;
-};
-
-/**
- * \brief A RAII helper class that suspends the automatic generation of animation keys while it exists.
- *
- * You typically create an instance of this class on the stack to temporarily suspend the
- * automatic generation of animation keys in an exception-safe way.
- */
-class OVITO_GUI_EXPORT AnimationSuspender
-{
-public:
-
-    /// Suspends the automatic generation of animation keys by calling MainWindow::suspendAnim().
-    AnimationSuspender(MainWindow& mainWindow) noexcept : _mainWindow(mainWindow) {
-        _mainWindow.suspendAnim();
-    }
-
-    /// Resumes the automatic generation of animation keys by calling MainWindow::resumeAnim().
-    ~AnimationSuspender() {
-        _mainWindow.resumeAnim();
-    }
-
-private:
-
-    MainWindow& _mainWindow;
 };
 
 }   // End of namespace

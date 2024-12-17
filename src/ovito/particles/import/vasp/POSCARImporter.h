@@ -73,7 +73,7 @@ protected:
 
     /// This method is called when the pipeline scene node for the FileSource is created.
     /// It adds the Create Isosurface modifier to the pipeline
-    virtual void setupPipeline(Pipeline* pipeline, FileSource* importObj) override;
+    virtual Future<void> setupPipeline(OORef<Pipeline> pipeline, OORef<FileSource> importObj) override;
 
 private:
 

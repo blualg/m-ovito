@@ -179,7 +179,7 @@ protected:
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
     /// Is called when importing multiple files of different formats.
-    virtual void importFurtherFiles(Scene* scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline) override;
+    virtual Future<OORef<Pipeline>> importFurtherFiles(OORef<Scene> scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline) override;
 
 private:
 
