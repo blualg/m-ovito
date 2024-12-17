@@ -4,6 +4,13 @@
 Changelog
 =========
 
+----------------------------
+Version 3.11.3 (XX-YYY-2024)
+----------------------------
+
+- Automatically apply the :ref:`particles.modifiers.create_isosurface` modifier when reading CHGCAR files.
+- Add error message to :py:class:`ovito.data.CutoffNeighborFinder` when reading invalid values (`MatSci discussion <https://matsci.org/t/indices-found-by-ovito-data-cutoffneighborfinder-look-like-overflow/59686>`__))
+
 .. sidebar::
 
   * `Download this version <https://www.ovito.org/download_history/#3.12.0>`__

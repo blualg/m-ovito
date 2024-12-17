@@ -71,6 +71,10 @@ protected:
     /// Parses the list of atom types from the POSCAR file.
     static void parseAtomTypeNamesAndCounts(CompressedTextReader& stream, QStringList& atomTypeNames, QVector<int>& atomCounts);
 
+    /// This method is called when the pipeline scene node for the FileSource is created.
+    /// It adds the Create Isosurface modifier to the pipeline
+    virtual void setupPipeline(Pipeline* pipeline, FileSource* importObj) override;
+
 private:
 
     /// The format-specific task object that is responsible for reading an input file in the background.

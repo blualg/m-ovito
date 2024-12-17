@@ -201,9 +201,6 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
             // Add object to scene.
             pipeline = OORef<Pipeline>::create();
             pipeline->setHead(fileSource);
-
-            // Let the importer subclass customize the pipeline scene node.
-            setupPipeline(pipeline, fileSource);
         }
 
         // Insert pipeline into scene.
@@ -235,6 +232,10 @@ OORef<Pipeline> FileSourceImporter::importFileSet(Scene* scene, std::vector<std:
     bool keepExistingDataCollection = true;
     auto urlCount = sourceUrls.size();
     fileSource->setSource(std::move(sourceUrls), this, autodetectFileSequences && (urlCount == 1 && sourceUrlsAndImporters.empty()), keepExistingDataCollection);
+
+    // Let the importer subclass customize the pipeline scene node.
+    // Placing this after setSource allows "pipeline->evaluatePipeline" in setupPipeline
+    setupPipeline(pipeline, fileSource);
 
     if(importMode != ReplaceSelected && importMode != DontAddToScene) {
         // Adjust viewports to completely show the newly imported object.

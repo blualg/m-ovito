@@ -122,7 +122,7 @@ public:
         void next();
 
         /// Returns the index of the current neighbor particle.
-        size_t current() { return _neighborIndex; }
+        size_t current() const { return _neighborIndex; }
 
         /// Returns the vector connecting the central particle with the current neighbor.
         const Vector3& delta() const { return _delta; }

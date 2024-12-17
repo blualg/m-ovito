@@ -28,6 +28,7 @@
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "POSCARImporter.h"
+#include <ovito/grid/modifier/CreateIsosurfaceModifier.h>
 
 namespace Ovito {
 
@@ -350,6 +351,48 @@ void POSCARImporter::parseAtomTypeNamesAndCounts(CompressedTextReader& stream, Q
         if(i == 1)
             throw Exception(tr("Invalid atom counts (line %1): %2").arg(stream.lineNumber()).arg(stream.lineString()));
     }
+}
+
+/******************************************************************************
+ * This method is called when the pipeline scene node for the FileSource is created.
+ * It adds the Create Isosurface modifier to the pipeline.
+ ******************************************************************************/
+void POSCARImporter::setupPipeline(Pipeline* pipeline, FileSource* importObj)
+{
+    // Get current time
+    AnimationTime time = ExecutionContext::current().ui().datasetContainer().currentAnimationTime();
+
+    // Evaluate pipeline and ignore any errors
+    PipelineEvaluationResult future = pipeline->evaluatePipeline(PipelineEvaluationRequest(time));
+    try {
+        future.waitForFinished();
+    }
+    catch(...) {
+        return;
+    }
+    const PipelineFlowState& data = future.result();
+
+    // Get charge density grid from data object -> skip if not found
+    const ConstDataObjectPath path = data.getObject<VoxelGrid>(QStringLiteral("charge-density"));
+    const VoxelGrid* grid = path.lastAs<VoxelGrid>();
+    if(!grid) return;
+
+    // Get charge density property from grid -> skip if not found
+    BufferReadAccess<FloatType> chargeAccess(grid->getProperty(tr("Charge density")));
+    if(!chargeAccess || chargeAccess.size() == 0) return;
+
+    // Mean will be used as default iso level
+    FloatType mean = std::accumulate(chargeAccess.begin(), chargeAccess.end(), (FloatType)0) / chargeAccess.size();
+
+    // Create and configure the CreateIsosurfaceModifier
+    OORef<CreateIsosurfaceModifier> mod = OORef<CreateIsosurfaceModifier>::create();
+    mod->setIsolevel(mean);
+    mod->setSubject(path);
+    mod->setSourceProperty(grid->getProperty(tr("Charge density"))->name());
+    mod->surfaceMeshVis()->setSurfaceTransparency(0.333);
+
+    // Add modifier to pipeline
+    pipeline->applyModifier(time, false, mod);
 }
 
 /******************************************************************************
