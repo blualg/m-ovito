@@ -379,7 +379,7 @@ void POSCARImporter::setupPipeline(Pipeline* pipeline, FileSource* importObj)
     if(!chargeAccess || chargeAccess.size() == 0) return;
 
     // Mean will be used as default iso level
-    FloatType mean = std::accumulate(chargeAccess.begin(), chargeAccess.end(), (FloatType)0) / chargeAccess.size();
+    FloatType mean = std::accumulate(chargeAccess.begin(), chargeAccess.end(), (FloatType)0) / (FloatType)chargeAccess.size();
 
     // Create and configure the CreateIsosurfaceModifier
     OORef<CreateIsosurfaceModifier> mod = OORef<CreateIsosurfaceModifier>::create();
