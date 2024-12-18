@@ -9,7 +9,8 @@ Version 3.11.3 (XX-YYY-2024)
 ----------------------------
 
 - Automatically apply the :ref:`particles.modifiers.create_isosurface` modifier when reading CHGCAR files.
-- Add error message to :py:class:`ovito.data.CutoffNeighborFinder` when reading invalid values (`MatSci discussion <https://matsci.org/t/indices-found-by-ovito-data-cutoffneighborfinder-look-like-overflow/59686>`__))
+- Add error message to :py:class:`ovito.data.CutoffNeighborFinder` when reading invalid values (`MatSci discussion <https://matsci.org/t/indices-found-by-ovito-data-cutoffneighborfinder-look-like-overflow/59686>`__)
+- |ovito-python| Implement :py:func:`ovito.io.pymatgen.pymatgen_to_ovito` and :py:func:`ovito.io.pymatgen.ovito_to_pymatgen` to convert :py:class:`ovito.data.DataCollection` from and to `pymatgen Structure objects <https://pymatgen.org/pymatgen.core.html#pymatgen.core.structure.Structure>`__
 
 .. sidebar::
 
