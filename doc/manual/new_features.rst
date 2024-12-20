@@ -9,10 +9,10 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.11.3>`__
 
 ----------------------------
-Version 3.11.3 (XX-YYY-2024)
+Version 3.11.3 (XX-XXX-2024)
 ----------------------------
 
-- Automatically apply the :ref:`particles.modifiers.create_isosurface` modifier when importing a CHGCAR file
+- Automatically insert the :ref:`particles.modifiers.create_isosurface` modifier into the pipeline when importing a CHGCAR file
 - Notify user about invalid usage of :py:class:`ovito.data.CutoffNeighborFinder` iterators (`matsci.org discussion <https://matsci.org/t/indices-found-by-ovito-data-cutoffneighborfinder-look-like-overflow/59686>`__)
 - Workaround for `Qt/OpenGL memory leak on macOS <https://matsci.org/t/ovito-elevated-ram-usage-on-macos-with-ambient-occlusion/59683>`__ when using the :ref:`particles.modifiers.ambient_occlusion` modifier
 - |ovito-python| Added :py:func:`~ovito.io.pymatgen.pymatgen_to_ovito` and :py:func:`~ovito.io.pymatgen.ovito_to_pymatgen` functions for converting OVITO particle structures to and from `pymatgen Structure objects <https://pymatgen.org/pymatgen.core.html#pymatgen.core.structure.Structure>`__
