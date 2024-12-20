@@ -86,6 +86,20 @@ void OffscreenOpenGLRenderingJob::createOffscreenSurface()
 ******************************************************************************/
 QOpenGLContext& OffscreenOpenGLRenderingJob::createOffscreenContext()
 {
+#ifdef Q_OS_MACOS
+    // On macOS, the global OpenGL context must be created in the main thread.
+    // Also: Creating ad-hoc contexts seems to leak memory on macOS since Qt 6.7.
+    // That's why we create only a single shared context and re-use it for all offscreen rendering tasks.
+    OVITO_ASSERT(ExecutionContext::isMainThread());
+    static QOpenGLContext sharedOffscreenContext;
+    if(!sharedOffscreenContext.isValid()) {
+        // The context should share its resources with interactive viewport renderers.
+        sharedOffscreenContext.setShareContext(QOpenGLContext::globalShareContext());
+        if(!sharedOffscreenContext.create())
+            throw RendererException(tr("Failed to create OpenGL context for offscreen rendering."));
+    }
+    return sharedOffscreenContext;
+#else
     if(!_offscreenContext.has_value()) {
         // Create an OpenGL context for rendering into the offscreen buffer.
         _offscreenContext.emplace();
@@ -94,7 +108,10 @@ QOpenGLContext& OffscreenOpenGLRenderingJob::createOffscreenContext()
         if(!_offscreenContext->create())
             throw RendererException(tr("Failed to create OpenGL context for offscreen rendering."));
     }
+    // Can use the GL context only in the thread it was created in.
+    OVITO_ASSERT(_offscreenContext->thread() == QThread::currentThread());
     return _offscreenContext.value();
+#endif
 }
 
 /******************************************************************************
@@ -117,6 +134,9 @@ void OffscreenOpenGLRenderingJob::aboutToBeDeleted()
 {
     OpenGLRenderingJob::aboutToBeDeleted();
 
+    // Release the offscreen GL context.
+    _offscreenContext.reset();
+
     // Release the offscreen surface.
     if(_offscreenSurface) {
         if(ExecutionContext::isMainThread())
@@ -124,9 +144,6 @@ void OffscreenOpenGLRenderingJob::aboutToBeDeleted()
         else
             _offscreenSurface.release()->deleteLater();
     }
-
-    // Release the offscreen GL context.
-    _offscreenContext.reset();
 }
 
 }   // End of namespace

@@ -611,23 +611,6 @@ QOpenGLShaderProgram* OpenGLRenderingJob::loadShaderProgram(const QString& id, c
         loadShader(program.get(), QOpenGLShader::Geometry, geometryShaderFile, isWBOITPass);
     }
 
-    // Make the shader program a child object of the GL context group.
-    if(program->thread() == contextGroup->thread()) {
-        program->setParent(contextGroup);
-    }
-    else {
-        program->moveToThread(contextGroup->thread());
-        // Make the program object a child of the context group object in the main thread to follow the thread-affinity rules of Qt.
-        detail::Latch latch(1);
-        OVITO_ASSERT(!ExecutionContext::current().ui().taskManager().isShuttingDown()); // Note: During late-phase shutdown the main thread may not be able to process tasks.
-        ExecutionContext::current().runDeferred(nullptr, [&]() noexcept {
-            program->setParent(contextGroup);
-            latch.count_down();
-        });
-        latch.wait();
-    }
-    OVITO_ASSERT(contextGroup->findChild<QOpenGLShaderProgram*>(mangledId));
-
     // Compile the shader program.
     if(!program->link()) {
         RendererException ex(QString("The OpenGL shader program %1 failed to link.").arg(mangledId));
@@ -636,6 +619,22 @@ QOpenGLShaderProgram* OpenGLRenderingJob::loadShaderProgram(const QString& id, c
     }
 
     OVITO_REPORT_OPENGL_ERRORS(this);
+
+    // Make the shader program a child object of the GL context group.
+    if(program->thread() == contextGroup->thread()) {
+        program->setParent(contextGroup);
+    }
+    else {
+        program->moveToThread(contextGroup->thread());
+        // Make the program object a child of the context group object in the main thread to follow the thread-affinity rules of Qt.
+        OVITO_ASSERT(!ExecutionContext::current().ui().taskManager().isShuttingDown()); // Note: During late-phase shutdown the main thread may not be able to process tasks.
+        ExecutionContext::current().runDeferred(nullptr, [program=program.get(), contextGroup=QPointer<QOpenGLContextGroup>(contextGroup)]() noexcept {
+            if(!contextGroup.isNull())
+                program->setParent(contextGroup);
+            else
+                program->deleteLater();
+        });
+    }
 
     return program.release();
 }
