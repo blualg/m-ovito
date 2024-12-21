@@ -577,24 +577,24 @@ Property* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, const cha
 }
 
 /******************************************************************************
-* Assigns a mesh-based shape to a particle type.
+* Sets the shape of a particle type.
 ******************************************************************************/
-void GSDImporter::FrameLoader::setParticleTypeShape(int typeId, DataOORef<const TriangleMesh> shapeMesh)
+void GSDImporter::FrameLoader::setParticleTypeShape(int typeId, ParticlesVis::ParticleShape shape, DataOORef<const TriangleMesh> shapeMesh, FloatType radius)
 {
     const Property* existingTypeProperty = particles()->expectProperty(Particles::TypeProperty);
     const ParticleType* existingType = static_object_cast<ParticleType>(existingTypeProperty->elementType(typeId));
     OVITO_ASSERT(existingType);
 
     // Check whether the shape mesh is already assigned to the existing particle type.
-    if(!existingType || existingType->shapeMesh() == shapeMesh)
+    if(!existingType || (existingType->shape() == shape && existingType->shapeMesh() == shapeMesh))
         return;
 
     // Assign the shape to the particle type.
     Property* typeProperty = particles()->makeMutable(existingTypeProperty);
     ParticleType* mutableType = typeProperty->makeMutable(existingType);
+    mutableType->setShape(shape);
     mutableType->setShapeMesh(std::move(shapeMesh));
-    mutableType->setShape(ParticlesVis::ParticleShape::Mesh);
-    mutableType->setRadius(1.0);
+    mutableType->setRadius(radius);
     mutableType->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius), SHADOW_PROPERTY_FIELD(ParticleType::shape)});
 }
 
@@ -607,7 +607,7 @@ void GSDImporter::FrameLoader::parseParticleShape(int typeId, const QByteArray& 
     DataOORef<const TriangleMesh> cacheShapeMesh = _importer->lookupParticleShapeInCache(shapeSpecString);
     if(cacheShapeMesh) {
         // Assign shape to particle type.
-        setParticleTypeShape(typeId, std::move(cacheShapeMesh));
+        setParticleTypeShape(typeId, ParticlesVis::ParticleShape::Mesh, std::move(cacheShapeMesh));
         return; // No need to parse the JSON string again.
     }
 
@@ -779,7 +779,7 @@ void GSDImporter::FrameLoader::parsePolygonShape(int typeId, QJsonObject definit
     _importer->storeParticleShapeInCache(shapeSpecString, triMesh);
 
     // Assign shape to particle type.
-    setParticleTypeShape(typeId, std::move(triMesh));
+    setParticleTypeShape(typeId, ParticlesVis::ParticleShape::Mesh, std::move(triMesh));
 }
 
 /******************************************************************************
@@ -861,8 +861,45 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
             vertex[c] = coordinateArray[c].toDouble();
         vertices.push_back(vertex);
     }
-    if(vertices.size() < 4)
-        throw Exception(tr("Invalid 'ConvexPolyhedron' particle shape definition in GSD file: Number of vertices must be at least 4."));
+
+    // Parse rounding radius.
+    FloatType roundingRadius = definition.value("rounding_radius").toDouble();
+    if(roundingRadius < 0)
+        throw Exception(tr("Invalid 'rounding_radius' field in 'ConvexPolyhedron' particle shape definition in GSD file. Value must not be negative."));
+
+    if(vertices.size() <= 0) {
+        throw Exception(tr("Invalid 'ConvexPolyhedron' particle shape definition in GSD file: Number of vertices must be positive."));
+    }
+    else if(vertices.size() == 1) {
+        if(vertices[0] != Point3::Origin())
+            throw Exception(tr("Unsupported 'ConvexPolyhedron' particle shape definition in GSD file: single sphere must be centered on the origin."));
+        setParticleTypeShape(typeId, ParticlesVis::ParticleShape::Sphere, {}, roundingRadius);
+        return;
+    }
+    else if(vertices.size() == 2) {
+        if(vertices[0].x() != 0 || vertices[0].y() != 0 || vertices[1].x() != 0 || vertices[1].y() != 0 || vertices[0].z() != -vertices[1].z())
+            throw Exception(tr("Unsupported 'ConvexPolyhedron' particle shape definition in GSD file: OVITO supports only spherocylinders aligned with the z-axis and centered on the origin. If you require support for more general shapes, please contact the OVITO development team."));
+        if(roundingRadius <= 0)
+            throw Exception(tr("Invalid rounding radius for 'ConvexPolyhedron' particle shape with 2 vertices (spherocylinder): Radius must be positive."));
+
+        setParticleTypeShape(typeId, ParticlesVis::ParticleShape::Spherocylinder);
+
+        // Create the 'Aspherical Shape' particle property if it doesn't exist yet.
+        BufferWriteAccess<Vector3G, access_mode::read_write> ashapeProperty = particles()->createProperty(DataBuffer::Initialized, Particles::AsphericalShapeProperty);
+
+        // Assign the [a,b,c] values to those particles which are of the given type.
+        BufferReadAccess<int32_t> typeProperty = particles()->expectProperty(Particles::TypeProperty);
+        const Vector3G abc(roundingRadius, 0, std::abs(vertices[1].z() - vertices[0].z()));
+        for(size_t i = 0; i < typeProperty.size(); i++) {
+            if(typeProperty[i] == typeId)
+                ashapeProperty[i] = abc;
+        }
+
+        return;
+    }
+    else if(vertices.size() == 3) {
+        throw Exception(tr("Unsupported 'ConvexPolyhedron' particle shape in GSD file: OVITO supports only ConvexPolyhedron shapes with a number of vertices other than 3. If you require support for additional shapes, please contact the OVITO development team."));
+    }
 
     // Construct the convex hull of the vertices.
     // This yields a half-edge surface mesh data structure.
@@ -873,8 +910,6 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
         meshBuilder.joinCoplanarFaces();
     }
 
-    // Parse rounding radius.
-    FloatType roundingRadius = definition.value("rounding_radius").toDouble();
     std::vector<Vector3> vertexNormals;
     if(roundingRadius > 0) {
         DataOORef<SurfaceMesh> roundedMeshObj = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
@@ -1014,7 +1049,7 @@ void GSDImporter::FrameLoader::parseConvexPolyhedronShape(int typeId, QJsonObjec
     _importer->storeParticleShapeInCache(shapeSpecString, triMesh);
 
     // Assign shape to particle type.
-    setParticleTypeShape(typeId, std::move(triMesh));
+    setParticleTypeShape(typeId, ParticlesVis::ParticleShape::Mesh, std::move(triMesh));
 }
 
 /******************************************************************************
@@ -1073,7 +1108,7 @@ void GSDImporter::FrameLoader::parseMeshShape(int typeId, QJsonObject definition
     _importer->storeParticleShapeInCache(shapeSpecString, triMesh);
 
     // Assign shape to particle type.
-    setParticleTypeShape(typeId, std::move(triMesh));
+    setParticleTypeShape(typeId, ParticlesVis::ParticleShape::Mesh, std::move(triMesh));
 }
 
 /******************************************************************************
@@ -1146,7 +1181,7 @@ void GSDImporter::FrameLoader::parseSphereUnionShape(int typeId, QJsonObject def
     _importer->storeParticleShapeInCache(shapeSpecString, triMesh);
 
     // Assign shape to particle type.
-    setParticleTypeShape(typeId, std::move(triMesh));
+    setParticleTypeShape(typeId, ParticlesVis::ParticleShape::Mesh, std::move(triMesh));
 }
 
 }   // End of namespace

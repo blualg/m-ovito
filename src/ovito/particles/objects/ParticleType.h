@@ -201,7 +201,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, shapeBackfaceCullingEnabled, setShapeBackfaceCullingEnabled, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(shapeBackfaceCullingEnabled);
 
-    /// Use the mesh colors intead of particle colors when rendering the user-defined shape.
+    /// Use the mesh colors instead of particle colors when rendering the user-defined shape.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, shapeUseMeshColor, setShapeUseMeshColor);
     DECLARE_SHADOW_PROPERTY_FIELD(shapeUseMeshColor);
 
