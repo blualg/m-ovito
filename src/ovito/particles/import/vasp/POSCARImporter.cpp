@@ -359,6 +359,10 @@ void POSCARImporter::parseAtomTypeNamesAndCounts(CompressedTextReader& stream, Q
  ******************************************************************************/
 Future<void> POSCARImporter::setupPipeline(OORef<Pipeline> pipeline, OORef<FileSource> importObj)
 {
+    // Add CreateIsosurfaceModifier to pipeline (only in GUI mode).
+    if(!this_task::isInteractive())
+        co_return;
+
     // Get current time
     AnimationTime time = this_task::ui()->datasetContainer().currentAnimationTime();
 

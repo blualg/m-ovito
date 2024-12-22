@@ -25,6 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
+#include <ovito/particles/objects/ParticlesVis.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
@@ -137,8 +138,8 @@ private:
         /// Parsing routine for 'SphereUnion' particle shape definitions.
         void parseSphereUnionShape(int typeId, QJsonObject definition, const QByteArray& shapeSpecString);
 
-        /// Assigns a mesh-based shape to a particle type.
-        void setParticleTypeShape(int typeId, DataOORef<const TriangleMesh> shapeMesh);
+        /// Sets the shape of a particle type.
+        void setParticleTypeShape(int typeId, ParticlesVis::ParticleShape shape, DataOORef<const TriangleMesh> shapeMesh = {}, FloatType radius = 1);
 
     private:
 

@@ -34,6 +34,10 @@
 #include <ovito/opengl/OffscreenOpenGLRenderingJob.h>
 #include "AmbientOcclusionModifier.h"
 
+#ifdef Q_OS_MACOS
+#include <ovito/core/utilities/concurrent/ForEach.h>
+#endif
+
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(AmbientOcclusionModifier);
@@ -106,14 +110,15 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
         OORef<OffscreenOpenGLRenderingJob> renderingJob = OORef<OffscreenOpenGLRenderingJob>::create(std::make_shared<RendererResourceCache>(), nullptr);
 
         // Perform the AO computation in a separate thread.
-        return asyncLaunch(
-                [renderingJobTemp = std::move(renderingJob),
+        return asyncLaunch([
+                self = OORef<AmbientOcclusionModifier>(this),
+                renderingJobTemp = std::move(renderingJob),
                 bufferResolution = bufferResolution(),
                 samplingCount = std::max(1, samplingCount()),
                 particles = DataOORef<const Particles>(particles)]() mutable
         {
-            TaskProgress progress(this_task::ui());
-            progress.setText(tr("Ambient occlusion"));
+            auto progress = std::make_unique<TaskProgress>(this_task::ui());
+            progress->setText(tr("Ambient occlusion"));
 
             // Move this object into a function scope variable to make sure it gets destroyed in the current thread.
             // That's because the QOpenGLContext and other resources managed by the rendering job are tied to a specific thread.
@@ -163,21 +168,40 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             renderingJob->postprocessFrameGraph(*frameGraph);
             this_task::throwIfCanceled();
 
+            // Release data that is no longer needed to reduce memory footprint.
+            particles.reset();
+
             // Create a special object picking map to extract the particle indices from the frame buffer.
             std::shared_ptr<ObjectPickingIdentifierMap> objectIdentifierMap = std::make_shared<ObjectPickingIdentifierMap>();
 
+#ifndef Q_OS_MACOS
             // Create an offscreen framebuffer for rendering.
             OORef<AbstractRenderingFrameBuffer> renderBuffer = renderingJob->createOffscreenFrameBuffer(frameBufferRect, frameBuffer);
 
-            progress.setMaximum(samplingCount);
+            progress->setMaximum(samplingCount);
             for(int sample = 0; sample < samplingCount; sample++) {
-                progress.setValue(sample);
+                progress->setValue(sample);
+#else
+            return std::make_tuple(std::move(progress), std::move(renderingJob), std::move(objectIdentifierMap), std::move(frameBuffer), std::move(frameGraph), std::move(brightness), std::move(radii), samplingCount, resolution, boundingBox);
+        }).then(DeferredObjectExecutor(request.modificationNode()), [node=request.modificationNode()]<typename... Args>(std::tuple<Args...>&& inputs) {
+            auto [progress, renderingJob, objectIdentifierMap, frameBuffer, frameGraph, brightness, radii, samplingCount, resolution, boundingBox] = std::move(inputs);
 
+            // Create an offscreen framebuffer for rendering.
+            OORef<AbstractRenderingFrameBuffer> renderBuffer = renderingJob->createOffscreenFrameBuffer(QRect(QPoint(0,0), frameBuffer->size()), frameBuffer);
+
+            // Perform the evaluation for all requested animation frames.
+            progress->setMaximum(samplingCount);
+            return for_each_sequential(
+                boost::irange(0, samplingCount),
+                DeferredObjectExecutor(node),
+                [=, progress=std::move(progress)](int sample) -> Future<void> {
+                    progress->setValue(sample);
+#endif
                 // Generate lighting direction on unit sphere using "Fibonacci sphere algorithm".
                 // https://stackoverflow.com/a/26127012
                 FloatType y = FloatType(1) - (sample / FloatType(samplingCount - 1)) * 2; // y goes from 1 to -1
                 FloatType r = std::sqrt(FloatType(1) - y * y); // radius at y
-                FloatType phi = (FloatType)sample * FLOATTYPE_PI * (FloatType(3) - sqrt(FloatType(5)));
+                FloatType phi = (FloatType)sample * FLOATTYPE_PI * (FloatType(3) - std::sqrt(FloatType(5)));
                 Vector3 dir(std::cos(phi)*r, y, std::sin(phi)*r);
                 OVITO_ASSERT(std::abs(dir.length() - 1.0) < FLOATTYPE_EPSILON);
 
@@ -211,7 +235,11 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                 objectIdentifierMap->reset();
                 auto future = renderingJob->renderFrame(frameGraph, renderBuffer, TaskProgress::Ignore, objectIdentifierMap);
                 OVITO_ASSERT(future && future.isFinished() && !future.isCanceled());
-
+#ifdef Q_OS_MACOS
+                return static_cast<Future<void>&&>(future); // Note: for_each_sequential cannot deal with SCFuture yet, but we know it's finished
+            },
+            [=](int sample) {
+#endif
                 // Extract brightness values from rendered image.
                 const QImage& image = frameBuffer->image();
                 OVITO_ASSERT(!image.isNull());
@@ -231,10 +259,16 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                         brightnessValues[particleIndex] += 1;
                     }
                 }
+#ifndef Q_OS_MACOS
             }
 
-            progress.setValue(samplingCount);
-
+            progress->setValue(samplingCount);
+#else
+            },
+            std::make_tuple(radii, brightness));
+        }).then(DeferredObjectExecutor(request.modificationNode()), []<typename... Args2>(std::tuple<Args2...>&& inputs) {
+            auto [radii, brightness] = std::move(inputs);
+#endif
             // Normalize brightness values by particle area.
             BufferReadAccess<GraphicsFloatType> radiusArray(radii);
             BufferWriteAccess<FloatType, access_mode::read_write> brightnessValues(brightness);
@@ -253,9 +287,6 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
                     b /= maxBrightness;
                 }
             }
-
-            // Release data that is no longer needed to reduce memory footprint.
-            particles.reset();
 
             return brightness;
         });

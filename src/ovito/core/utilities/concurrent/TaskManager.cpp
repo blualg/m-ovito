@@ -197,6 +197,7 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
     OVITO_ASSERT(this_task::isMainThread());
     OVITO_ASSERT(!_shutdownCompleted || _pendingWork.empty());
 
+    size_t itemCount = _pendingWork.size();
     while(!_pendingWork.empty()) {
         {
             // Grab the next work item from the queue.
@@ -220,6 +221,13 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
 
         // Continue by grabbing the next work item from the queue.
         lock.lock();
+
+        // Make sure to return control to the GUI event loop before processing newly queued work items.
+        itemCount--;
+        if(itemCount == 0 && !_pendingWork.empty() && QCoreApplication::instance() && QThread::currentThread()->loopLevel() != 0) {
+            notifyWorkArrived();
+            return;
+        }
     }
 
     if(isShuttingDown() && !_waitingForTask && !_shutdownCompleted) {

@@ -32,7 +32,7 @@ class OVITO_CORE_EXPORT ThreadPoolExecutor
 public:
 
     /// Constructor.
-    ThreadPoolExecutor(bool highPriority = false) noexcept : _highPriority(highPriority) {}
+    explicit ThreadPoolExecutor(bool highPriority = false) noexcept : _highPriority(highPriority) {}
 
     /// Executes some work.
     template<typename Function>

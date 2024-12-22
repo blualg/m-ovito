@@ -146,6 +146,7 @@ private:
     /// Working state used during processing of the input trajectory.
     struct WorkingData {
         UnwrapTrajectoriesModificationNode* _modNode;
+        std::unique_ptr<TaskProgress> _progress;
         std::unordered_map<qlonglong, Point3> _previousPositions;
         DataOORef<const SimulationCell> _previousCell;
         std::array<int, 3> _currentFlipState{{0,0,0}};

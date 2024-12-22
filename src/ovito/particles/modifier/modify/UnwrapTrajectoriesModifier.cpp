@@ -140,21 +140,21 @@ SharedFuture<void> UnwrapTrajectoriesModificationNode::detectPeriodicCrossings(c
             return Future<void>::createImmediateEmpty();
         auto inputFrameRange = boost::irange(startFrame, endFrame);
         request.modificationNode()->setStatus(tr("Processing %1 trajectory frames...").arg(boost::size(inputFrameRange)));
+        auto progress = std::make_unique<TaskProgress>(this_task::ui());
+        progress->setText(tr("Unwrapping particle trajectories"));
+        progress->setMaximum(boost::size(inputFrameRange));
 
         // Iterate over all frames of the input range in sequential order.
         unwrapFuture = for_each_sequential(
             std::move(inputFrameRange),
             DeferredObjectExecutor(this), // Require deferred execution
             // Requests the next frame from the upstream pipeline.
-            [request = request](int frame) mutable -> SharedFuture<PipelineFlowState> {
+            [request=request](int frame) mutable -> SharedFuture<PipelineFlowState> {
                 request.setTime(request.modificationNode()->sourceFrameToAnimationTime(frame));
                 return request.modificationNode()->evaluateInput(request).asFuture();
             },
             // This object processes each frame's data.
-            WorkingData{this});
-
-        // TODO: Display progress in the UI.
-        //unwrapFuture.task()->setText(tr("Unwrapping particle trajectories"));
+            WorkingData{this, std::move(progress)});
 
         // Keep a weak reference to the task.
         _unwrapWeakFuture = unwrapFuture;
@@ -447,6 +447,7 @@ void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, cons
     }
 
     _modNode->_unwrappedUpToTime = time;
+    _progress->incrementValueNoCancel();
 }
 
 /******************************************************************************

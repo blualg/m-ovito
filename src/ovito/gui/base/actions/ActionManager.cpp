@@ -207,7 +207,7 @@ void ActionManager::onSelectionChangeComplete(SelectionSet* selection)
 void ActionManager::addAction(QAction* action)
 {
     OVITO_CHECK_POINTER(action);
-    OVITO_ASSERT_MSG(action->parent() == this || findAction(action->objectName()) == nullptr, "ActionManager::addAction()", "There is already an action with the same ID.");
+    OVITO_ASSERT_MSG(action->parent() == this || findAction(action->objectName()) == nullptr, "ActionManager::addAction()", qPrintable(QStringLiteral("There is already an action with the same ID: %1").arg(action->objectName())));
     OVITO_ASSERT(!_actions.contains(action));
 
     // Make the action a child of this object.
@@ -449,7 +449,7 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
             // Write a small HTML file that just contains a redirect directive to the actual help page including the # fragment.
             QTextStream(temporaryHtmlFile) << QStringLiteral("<html><meta http-equiv=Refresh content=\"0; url=%1\"><body><a href=\"%1\">Continue to help topic...</a></body></html>").arg(url.toString(QUrl::FullyEncoded));
             temporaryHtmlFile->close();
-            // Let the web brwoser ppen the redirect page instead of the original help page.
+            // Let the web browser open the redirect page instead of the original help page.
             url = QUrl::fromLocalFile(temporaryHtmlFile->fileName());
         }
     }
