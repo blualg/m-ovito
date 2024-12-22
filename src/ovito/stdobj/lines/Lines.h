@@ -57,11 +57,12 @@ public:
     enum Type
     {
         ColorProperty = Property::GenericColorProperty,
+        SelectionProperty = Property::GenericSelectionProperty,
         PositionProperty = Property::FirstSpecificProperty,
         SampleTimeProperty,  // Is used by the GenerateTrajectoryLinesModifier
         SectionProperty,
         Position1Property,
-        Position2Property
+        Position2Property,
     };
 
     /// Constructor.

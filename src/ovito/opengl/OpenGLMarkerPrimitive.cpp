@@ -22,7 +22,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/MarkerPrimitive.h>
-#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include "OpenGLRenderingJob.h"
 #include "OpenGLShaderHelper.h"
 
@@ -60,7 +59,7 @@ void OpenGLRenderingJob::renderMarkersImplementation(const MarkerPrimitive& prim
 
     if(isPickingPass()) {
         // Pass picking base ID to shader.
-        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(command, primitive.positions()->size()));
+        shader.setPickingBaseId(objectPickingMap()->allocateObjectPickingIDs(command, primitive.positions()->size()));
     }
     else {
         // Pass uniform marker color to fragment shader as a uniform value.

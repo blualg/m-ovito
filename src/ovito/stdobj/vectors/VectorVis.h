@@ -71,6 +71,7 @@ public:
         ConstDataBufferPtr directions;
         ConstDataBufferPtr colors;
         ConstDataBufferPtr transparencies;
+        ConstDataBufferPtr selection;
     };
 
 public:

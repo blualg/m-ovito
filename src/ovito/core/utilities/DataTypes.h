@@ -27,6 +27,7 @@
 
 #pragma once
 
+#include <cstdint>
 
 namespace Ovito {
 
@@ -69,7 +70,7 @@ template<> constexpr double FloatTypeEpsilon<double>() { return 1e-12f; }
 /// The constant PI.
 #define FLOATTYPE_PI    Ovito::FloatType(3.14159265358979323846)
 
-/// Low-precisiion floating-point type used for graphics data.
+/// Low-precision floating-point type used for graphics data.
 using GraphicsFloatType = float;
 
 /// The format specifier to be passed to the sscanf() function to parse low-precision floating-point numbers of type Ovito::GraphicsFloatType.

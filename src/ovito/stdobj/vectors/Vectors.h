@@ -56,6 +56,7 @@ public:
     enum Type
     {
         ColorProperty = Property::GenericColorProperty,
+        SelectionProperty = Property::GenericSelectionProperty,
         PositionProperty = Property::FirstSpecificProperty,
         TransparencyProperty,
         DirectionProperty,
@@ -69,7 +70,7 @@ public:
                                                    const RendererResourceCache::ResourceFrame& visCache) const override
     {
         return {getProperty(PositionProperty), getProperty(DirectionProperty), getProperty(ColorProperty),
-                getProperty(TransparencyProperty)};
+                getProperty(TransparencyProperty), getProperty(SelectionProperty)};
     }
 
     virtual std::array<bool, 2> hasVectorVisColorsAndTransparencies() const override

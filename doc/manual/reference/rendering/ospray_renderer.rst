@@ -74,6 +74,29 @@ Specular brightness
 Shininess
   This specular Phong exponent is usually in the range between 2.0 and 10000.0 (default value: 10.0).
 
+Post-processing effects
+"""""""""""""""""""""""
+
+Outlines
+    Enables depth-aware outlines in the rendered image.
+
+    .. image:: /images/rendering/ospray_render_outlines.*
+        :width: 50%
+        :align: right
+
+Depth Difference & Outline Width
+  Uniform Width Mode
+    In this mode, a single value is used for both the depth difference and the outline width. An outline with a constant width is drawn for all objects with a depth difference greater than the specified value.
+
+  Variable Width Mode
+    In this mode, the outline width increases linearly from the minimum width to the maximum width as the depth difference between adjacent objects varies from the minimum to the maximum depth difference.
+    When switching from "Uniform Width Mode" to "Variable Width Mode", missing values for depth or line width will be automatically set to default values.
+
+Custom Color
+    When disabled, the outline color is automatically set based on the background color:
+    white outlines for dark backgrounds and black outlines for light backgrounds. When enabled,
+    the manually selected color is used instead.
+
 .. seealso::
 
   :py:class:`~ovito.vis.OSPRayRenderer` (Python API)

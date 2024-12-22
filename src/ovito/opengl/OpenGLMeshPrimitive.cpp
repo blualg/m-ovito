@@ -24,7 +24,6 @@
 #include <ovito/core/dataset/data/BufferAccess.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
-#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include <ovito/core/utilities/SortZipped.h>
 #include "OpenGLRenderingJob.h"
 #include "OpenGLShaderHelper.h"
@@ -112,7 +111,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
 
     // Pass picking base ID to shader.
     if(isPickingPass()) {
-        shader.setPickingBaseId(objectPickingIdentifierMap()->allocateObjectPickingIDs(command, primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount()));
+        shader.setPickingBaseId(objectPickingMap()->allocateObjectPickingIDs(command, primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount()));
     }
 
     bool highlightSelectedFaces = frameGraph()->isInteractive() && !isPickingPass();
@@ -428,7 +427,6 @@ void OpenGLRenderingJob::renderMeshWireframeImplementation(const MeshPrimitive& 
                 }
                 replicatedBuffer = replicatedAccess.take();
             });
-        qDebug() << "Rendering" << orgCount/2 << "lines using VBO of" << wireframeLinesBuffer->size() << "vertices";
     }
 
     // Configure shader.

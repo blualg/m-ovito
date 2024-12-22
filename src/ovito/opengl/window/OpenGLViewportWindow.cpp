@@ -140,7 +140,7 @@ void OpenGLViewportWindow::paint()
         // Recreate/resize abstract frame buffer for rendering into the widget if necessary.
         const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
         if(!_visualFrameBuffer || _visualFrameBuffer->outputViewportRect() != viewportRect)
-            _visualFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(static_object_cast<OpenGLRenderingJob>(renderingJob()), viewportRect, glwin()->defaultFramebufferObject());
+            _visualFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(renderingJob(), viewportRect, glwin()->defaultFramebufferObject());
 
         // Render the viewport contents. This requires an active GL context.
         auto future = renderingJob()->renderFrame(frameGraph(), _visualFrameBuffer, TaskProgress::Ignore);
@@ -183,14 +183,14 @@ std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPoin
                 // Recreate/resize offscreen OpenGL framebuffer.
                 const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
                 if(!_pickingFrameBuffer || _pickingFrameBuffer->outputViewportRect() != viewportRect)
-                    _pickingFrameBuffer = renderingJob()->createOffscreenFrameBuffer(viewportRect, {});
+                    _pickingFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(renderingJob(), viewportRect, nullptr);
 
                 // Render into the OpenGL framebuffer.
                 _objectPickingMap->reset();
-                renderingJob()->renderFrame(frameGraph(), _pickingFrameBuffer, TaskProgress::Ignore, _objectPickingMap).waitForFinished();
+                renderingJob()->renderFrame(frameGraph(), _pickingFrameBuffer, _objectPickingMap).waitForFinished();
 
                 // Read out the contents of the OpenGL framebuffer.
-                _objectPickingMap->acquire(_pickingFrameBuffer);
+                _objectPickingMap->acquireFramebufferContents(_pickingFrameBuffer);
             });
         }
 

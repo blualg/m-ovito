@@ -23,6 +23,9 @@
 #include "../global_uniforms.glsl"
 #include <view_ray.vert>
 
+// Uniforms:
+uniform vec4 selection_color;
+
 // Inputs:
 in vec3 base;
 in vec3 head;
@@ -30,6 +33,7 @@ in float diameter;
 in vec3 color1;
 in float transparency1;
 uniform vec3 unit_box_triangle_strip[14];
+in float selection;
 
 // Outputs:
 flat out vec4 color_fs;
@@ -69,7 +73,7 @@ void main()
     gl_Position = modelview_projection_matrix * vec4(base + (orientation_tm * unit_box_triangle_strip[corner]), 1.0);
 
     // Forward arrow color to fragment shader.
-    color_fs = vec4(color1, clamp(1.0 - transparency1, 0.0, 1.0));
+    color_fs = (selection != 0.0) ? selection_color : vec4(color1, clamp(1.0 - transparency1, 0.0, 1.0));
 
     // Apply additional scaling to cylinder radius due to model-view transformation.
     float viewspace_radius = radius * length(modelview_matrix[0]);

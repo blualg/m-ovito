@@ -23,15 +23,15 @@
 #pragma once
 
 
-#include <ovito/gui/base/GUIBase.h>
-#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
+#include <ovito/core/Core.h>
+#include <ovito/core/rendering/ObjectPickingMap.h>
 
 namespace Ovito {
 
 /**
  * \brief Stores the result of an object picking render pass.
  */
-class OVITO_OPENGLRENDERERWINDOW_EXPORT OpenGLPickingMap : public ObjectPickingIdentifierMap
+class OVITO_OPENGLRENDERER_EXPORT OpenGLPickingMap : public ObjectPickingMap
 {
 public:
 
@@ -40,22 +40,32 @@ public:
 
 	/// Releases all data held by the object.
 	virtual void reset() override {
-		ObjectPickingIdentifierMap::reset();
+		ObjectPickingMap::reset();
+		_nextAvailablePickingID = 1;
         _image = {};
         _depthBuffer.reset();
         _numDepthBufferBits = 0;
     }
 
-    /// Reads out the contents of the OpenGL framebuffer.
-    void acquire(const OORef<AbstractRenderingFrameBuffer>& frameBuffer);
+	/// Registers a range of unique object IDs for a rendering command.
+	uint32_t allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, ConstDataBufferPtr indices = {});
 
-    /// Returns the frame buffer object ID at the given frame buffer location.
-    virtual uint32_t objectIdentifierAt(const QPoint& frameBufferLocation) const override;
+	/// Finds the picked object at the given frame buffer pixel position.
+	virtual std::optional<ViewportWindow::PickResult> pickAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const override;
+
+    /// Returns the linear object ID at the given frame buffer location.
+    uint32_t linearIdAt(const QPoint& frameBufferLocation) const;
 
     /// Returns the z-value at the given frame buffer location.
     virtual FloatType depthAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const override;
 
+    /// Reads out the contents of the OpenGL framebuffer.
+    void acquireFramebufferContents(const OORef<AbstractRenderingFrameBuffer>& frameBuffer);
+
 private:
+
+	/// The next available frame buffer object ID to be used.
+	uint32_t _nextAvailablePickingID = 1;
 
     /// Color component of the OpenGL framebuffer.
     QImage _image;

@@ -92,6 +92,36 @@ Latitude & Longitude
 Brightness
   Irradiance of the direct light source (default value: 0.5).
 
+Post-processing effects
+"""""""""""""""""""""""
+
+Outlines
+    Enables depth-aware outlines. They can be used either in the interactive viewport or
+    VisRTX final frame rendering.
+
+  .. figure:: /images/rendering/visrtx_viewport_outlines.*
+    :figwidth: 49%
+
+    Outlines in the interactive viewport.
+
+  .. figure:: /images/rendering/visrtx_render_outlines.*
+    :figwidth: 49%
+
+    Outlines in the rendered image.
+
+Depth Difference & Outline Width
+  Uniform Width Mode
+    In this mode, a single value is used for both the depth difference and the outline width. An outline with a constant width is drawn for all objects with a depth difference greater than the specified value.
+
+  Variable Width Mode
+    In this mode, the outline width increases linearly from the minimum width to the maximum width as the depth difference between adjacent objects varies from the minimum to the maximum depth difference.
+    When switching from "Uniform Width Mode" to "Variable Width Mode", missing values for depth or line width will be automatically set to default values.
+
+Custom Color
+    When disabled, the outline color is automatically set based on the background color:
+    white outlines for dark backgrounds and black outlines for light backgrounds. When enabled,
+    the manually selected color is used instead.
+
 .. seealso::
 
   :py:class:`~ovito.vis.AnariRenderer` (Python API)

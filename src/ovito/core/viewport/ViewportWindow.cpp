@@ -153,6 +153,7 @@ void ViewportWindow::frameGraphRenderingFinished(Task& task) noexcept
 {
     // Error handling and image presentation.
     if(auto future = std::move(_frameFuture)) {
+        OVITO_ASSERT(!_frameFuture);
         OVITO_ASSERT(future.task().get() == &task);
         OVITO_ASSERT(future.isFinished());
         try {
@@ -169,7 +170,6 @@ void ViewportWindow::frameGraphRenderingFinished(Task& task) noexcept
             fatalError(ex);
         }
     }
-    OVITO_ASSERT(!_frameFuture);
 
     // If another update was requested while the current one was being processed, restart the process.
     resumeViewportUpdates();

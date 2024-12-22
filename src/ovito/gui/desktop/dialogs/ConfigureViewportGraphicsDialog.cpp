@@ -139,6 +139,11 @@ void ConfigureViewportGraphicsDialog::updateGUI()
 ******************************************************************************/
 void ConfigureViewportGraphicsDialog::closeEvent(QCloseEvent* event)
 {
+    for(int i = 0; i < _backendSettingsStack->count(); i++) {
+        if(PropertiesPanel* propertiesPanel = qobject_cast<PropertiesPanel*>(_backendSettingsStack->widget(i))) {
+            propertiesPanel->close();
+        }
+    }
     _mainWindow.handleExceptions([&]() {
         ViewportWindow::saveInteractiveWindowRendererSettings();
     });

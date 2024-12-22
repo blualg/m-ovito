@@ -32,24 +32,12 @@ namespace Ovito {
 /**
  * \brief A mapping of frame buffer object IDs to picking groups.
  */
-class OVITO_CORE_EXPORT ObjectPickingIdentifierMap
+class OVITO_CORE_EXPORT ObjectPickingMap
 {
 public:
 
-	/// Releases all data held by the object.
-	virtual void reset() {
-		_nextAvailablePickingID = 1;
-		_pickingRecords.clear();
-	}
-
-	/// Registers a range of unique IDs for the current object picking group being rendered.
-	uint32_t allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, const ConstDataBufferPtr& indices = {}, uint32_t rendererFlags = 0);
-
 	/// Finds the picked object at the given frame buffer pixel position.
-	std::optional<ViewportWindow::PickResult> pickAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const;
-
-    /// Returns the frame buffer object ID at the given frame buffer location.
-    virtual uint32_t objectIdentifierAt(const QPoint& frameBufferLocation) const { return 0; }
+	virtual std::optional<ViewportWindow::PickResult> pickAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const = 0;
 
     /// Returns the z-value at the given frame buffer location.
     virtual FloatType depthAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const { return 0; }
@@ -57,8 +45,10 @@ public:
     /// Computes the 3d world-space location corresponding to the given 2d window position.
     Point3 worldPositionAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const;
 
-	/// Returns the informational text to be displayed in the status bar for a pickable scene object.
-	QString pickableObjectInformationText(uint32_t objectID) const;
+	/// Releases all data held by the object.
+	virtual void reset() {
+		_pickingRecords.clear();
+	}
 
 protected:
 
@@ -68,11 +58,8 @@ protected:
 	public:
 
 		/// Constructor.
-		explicit PickingRecord(uint32_t baseObjectID, const ConstDataBufferPtr& indices, const FrameGraph::RenderingCommand& command, uint32_t rendererFlags) :
-			_baseObjectID(baseObjectID), _indices(indices), _pipeline(command.pipeline()), _pickInfo(command.pickInfo()), _pickElementOffset(command.pickElementOffset()), _rendererFlags(rendererFlags) {}
-
-		/// Returns the base object ID at which the rendering primitives start.
-		uint32_t baseObjectID() const { return _baseObjectID; }
+		explicit PickingRecord(const FrameGraph::RenderingCommand& command, ConstDataBufferPtr indices = {}, uint32_t rendererFlags = 0) :
+			_pipeline(command.pipeline()), _pickInfo(command.pickInfo()), _pickElementOffset(command.pickElementOffset()), _indices(std::move(indices)), _rendererFlags(rendererFlags) {}
 
 		/// Returns the picked scene pipeline.
 		const OORef<const Pipeline>& pipeline() const { return _pipeline; }
@@ -81,18 +68,16 @@ protected:
 		const OORef<ObjectPickInfo>& pickInfo() const { return _pickInfo; }
 
 		/// Returns the renderer-specific flags associated with this picking record.
-		/// This flags field may be set by the renderer and then interpreted by the ObjectPickingIdentifierMap sub-class.
+		/// This flags field may be set by the renderer and then interpreted by the ObjectPickingMap sub-class.
 		uint32_t rendererFlags() const { return _rendererFlags; }
 
-		/// If the global object ID is within the range of this picking group, resolve it to the local object ID.
-		uint32_t resolveObjectID(uint32_t objectID) const {
-			OVITO_ASSERT(objectID >= baseObjectID());
-			uint32_t localID = objectID - baseObjectID();
+		/// Resolves the given 0-based consecutive sub-object ID to an original sub-object ID of a ObjectPickInfo.
+		uint32_t resolveSubObjectID(uint32_t objectID) const {
 			if(_indices) {
-				OVITO_ASSERT(localID >= 0 && localID < _indices->size());
-				localID = BufferReadAccess<int32_t>(_indices).get(localID);
+				OVITO_ASSERT(objectID >= 0 && objectID < _indices->size());
+				objectID = BufferReadAccess<int32_t>(_indices).get(objectID);
 			}
-			return localID + _pickElementOffset;
+			return objectID + _pickElementOffset;
 		}
 
 	private:
@@ -108,26 +93,20 @@ protected:
 		/// An optional object that knows what high-level data is being represented by this render command and which sub-elements it consists of.
 		OORef<ObjectPickInfo> _pickInfo;
 
-		/// The base object ID at which the rendering primitives of this group start.
-		uint32_t _baseObjectID;
-
 		/// If this rendering command is part of a composite object that requires multiple rendering commands,
 		/// then this offset indicates where this command's primitive elements start in the composite range.
 		uint32_t _pickElementOffset;
 
 		/// Renderer-specific flags that may be used to store additional information from the renderer.
-		/// This flags field may be interpreted by a ObjectPickingIdentifierMap sub-class belonging to the renderer.
+		/// This flags field may be interpreted by a ObjectPickingMap sub-class belonging to the renderer.
 		uint32_t _rendererFlags = 0;
 	};
 
-	/// Given an frame buffer object ID, looks up the corresponding picking record.
-	const PickingRecord* lookupPickingRecordFromObjectId(uint32_t objectID) const;
+	/// Given a linear object ID, looks up the corresponding picking record.
+	std::pair<uint32_t, const PickingRecord*> lookupPickingRecordFromLinearId(uint32_t objectID) const;
 
-	/// The picking infos of rendered primitives.
-	std::vector<PickingRecord> _pickingRecords;
-
-	/// The next available frame buffer object ID to be used.
-	uint32_t _nextAvailablePickingID = 1;
+	/// The picking infos for the rendered graphics primitives, indexed by base object ID.
+	std::map<uint32_t, PickingRecord> _pickingRecords;
 };
 
 }   // End of namespace

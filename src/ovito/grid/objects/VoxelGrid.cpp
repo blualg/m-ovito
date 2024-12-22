@@ -225,7 +225,7 @@ VectorVis::VectorData VoxelGrid::getVectorVisData(const ConstDataObjectPath& pat
             basePositions = points.take();
         });
 
-    return { basePositions, path.lastAs<DataBuffer>(), nullptr, nullptr };
+    return {basePositions, path.lastAs<DataBuffer>(), nullptr, nullptr, nullptr};
 }
 
 }   // End of namespace

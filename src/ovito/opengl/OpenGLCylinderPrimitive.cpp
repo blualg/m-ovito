@@ -22,7 +22,6 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
-#include <ovito/core/rendering/ObjectPickingIdentifierMap.h>
 #include "OpenGLRenderingJob.h"
 #include "OpenGLShaderHelper.h"
 
@@ -113,7 +112,7 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
     // Pass picking base ID to shader.
     GLint pickingBaseId;
     if(isPickingPass()) {
-        pickingBaseId = objectPickingIdentifierMap()->allocateObjectPickingIDs(command, primitive.basePositions()->size());
+        pickingBaseId = objectPickingMap()->allocateObjectPickingIDs(command, primitive.basePositions()->size());
         shader.setPickingBaseId(pickingBaseId);
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
@@ -235,6 +234,17 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
             }
 #endif
         }
+
+        // Upload cylinder / arrow selection.
+        if(primitive.selection()) {
+            QOpenGLBuffer selectionBuffer = shader.uploadDataBuffer(primitive.selection(), OpenGLShaderHelper::PerInstance);
+            shader.bindBuffer(selectionBuffer, "selection", GL_UNSIGNED_BYTE, 1, sizeof(int8_t), 0, OpenGLShaderHelper::PerInstance);
+        }
+        else {
+            shader.unbindBuffer("selection");
+            shader.setAttributeValue("selection", 0);
+        }
+        shader.setUniformValue("selection_color", ColorA(primitive.selectionColor()));
     }
 
     // Draw triangle strip or fan instances in regular storage order (not sorted).
@@ -242,13 +252,15 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
 
     // Draw cylindric part of the arrows.
     if(primitive.shape() == CylinderPrimitive::ArrowShape && primitive.shadingMode() == CylinderPrimitive::NormalShading) {
-        if(!isPickingPass())
+        if(!isPickingPass()) {
             shader.load("arrow_tail", "cylinder/arrow_tail.vert", "cylinder/arrow_tail.frag");
+            // Upload arrow selection color.
+            shader.setUniformValue("selection_color", ColorA(primitive.selectionColor()));
+        }
         else {
             shader.load("arrow_tail_picking", "cylinder/arrow_tail_picking.vert", "cylinder/arrow_tail_picking.frag");
             shader.setPickingBaseId(pickingBaseId);
         }
-
         shader.draw(GL_TRIANGLE_STRIP);
     }
 

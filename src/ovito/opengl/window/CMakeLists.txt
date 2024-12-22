@@ -28,7 +28,6 @@ OVITO_STANDARD_PLUGIN(OpenGLRendererWindow
     SOURCES
         OpenGLViewportWindow.cpp
         WidgetOpenGLRenderingJob.cpp
-        OpenGLPickingMap.cpp
     PLUGIN_DEPENDENCIES
         OpenGLRenderer
         ViewportWidget

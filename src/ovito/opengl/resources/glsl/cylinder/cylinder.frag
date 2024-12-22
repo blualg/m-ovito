@@ -29,6 +29,7 @@ uniform float color_range_min;
 uniform float color_range_max;
 uniform sampler2D color_map;
 uniform int single_cylinder_cap;
+uniform vec4 selection_color;
 
 // Inputs:
 flat in vec4 color1_fs;
@@ -37,6 +38,7 @@ flat in vec3 cylinder_view_base;		// Transformed cylinder position in view coord
 flat in vec3 cylinder_view_axis;		// Transformed cylinder axis in view coordinates
 flat in float cylinder_radius_sq_fs;	// The squared radius of the cylinder
 flat in float cylinder_length;			// The length of the cylinder
+flat in float selection_fs; 			// Selection variable
 
 void main()
 {
@@ -134,11 +136,11 @@ void main()
 	float zdepth = (projected_intersection.z / projected_intersection.w + 1.0) * 0.5;
 
 	// Perform linear interpolation of color.
-	vec4 color = mix(color1_fs, color2_fs, x);
+	vec4 color = (selection_fs != 0.0) ? selection_color : mix(color1_fs, color2_fs, x);
 
 	// If pseudocolor mapping is used, apply tabulated transfer function to pseudocolor value,
 	// which is stored in the R component of the input color.
-	if(color_range_min != color_range_max) {
+	if(selection_fs == 0.0 && color_range_min != color_range_max) {
 		float pseudocolor_value = (color.r - color_range_min) / (color_range_max - color_range_min);
 		color.rgb = <texture2D>(color_map, vec2(pseudocolor_value, 0.0)).rgb;
 	}

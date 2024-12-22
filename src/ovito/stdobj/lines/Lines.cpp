@@ -58,6 +58,7 @@ void Lines::OOMetaClass::initialize()
     registerStandardProperty(Position2Property, tr("Position2"), Property::FloatDefault, xyzList);
     registerStandardProperty(SampleTimeProperty, tr("Time"), Property::Int32, emptyList);
     registerStandardProperty(SectionProperty, tr("Section"), Property::Int64, emptyList);
+    registerStandardProperty(SelectionProperty, tr("Selection"), Property::IntSelection, emptyList);
 }
 
 /******************************************************************************
@@ -88,6 +89,10 @@ PropertyPtr Lines::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buffe
             break;
         case SectionProperty:
             dataType = Property::Int64;
+            componentCount = 1;
+            break;
+        case SelectionProperty:
+            dataType = DataBuffer::IntSelection;
             componentCount = 1;
             break;
         default:
@@ -201,7 +206,7 @@ VectorVis::VectorData Lines::getVectorVisData(const ConstDataObjectPath& path, c
                             }
                         });
 
-                    return { filteredPositions, filteredVectors, nullptr, nullptr };
+                    return {filteredPositions, filteredVectors, nullptr, nullptr, nullptr};
                 }
             }
         }

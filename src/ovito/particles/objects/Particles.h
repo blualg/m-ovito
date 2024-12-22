@@ -188,7 +188,7 @@ public:
                                                    const RendererResourceCache::ResourceFrame& visCache) const override
     {
         return {getProperty(PositionProperty), path.lastAs<DataBuffer>(), getProperty(VectorColorProperty),
-                getProperty(VectorTransparencyProperty)};
+                getProperty(VectorTransparencyProperty), nullptr};
     }
 
     /// Tells a VectorVis element whether per-vector color and transparancy properties are available.

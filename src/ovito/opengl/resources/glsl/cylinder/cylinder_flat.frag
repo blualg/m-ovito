@@ -27,18 +27,20 @@
 uniform float color_range_min;
 uniform float color_range_max;
 uniform sampler2D color_map;
+uniform vec4 selection_color;
 
 // Inputs:
 in vec4 color_fs;
+flat in float selection_fs; 
 
 void main()
 {
 	// Interpolated input color.
-	vec4 color = color_fs;
+	vec4 color = (selection_fs != 0.0) ? selection_color : color_fs;
 
 	// If pseudocolor mapping is used, apply tabulated transfer function to pseudocolor value,
 	// which is stored in the R component of the input color.
-	if(color_range_min != color_range_max) {
+	if(selection_fs == 0.0 && color_range_min != color_range_max) {
 		float pseudocolor_value = (color.r - color_range_min) / (color_range_max - color_range_min);
 		color.rgb = <texture2D>(color_map, vec2(pseudocolor_value, 0.0)).rgb;
 	}

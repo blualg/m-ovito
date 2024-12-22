@@ -47,6 +47,7 @@ void Vectors::OOMetaClass::initialize()
     registerStandardProperty(DirectionProperty, tr("Direction"), Property::FloatDefault, xyzList);
     registerStandardProperty(PositionProperty, tr("Position"), Property::FloatDefault, xyzList);
     registerStandardProperty(TransparencyProperty, tr("Transparency"), Property::FloatGraphics, emptyList);
+    registerStandardProperty(SelectionProperty, tr("Selection"), Property::IntSelection, emptyList);
 }
 
 /******************************************************************************
@@ -76,6 +77,10 @@ PropertyPtr Vectors::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buf
             break;
         case TransparencyProperty:
             dataType = Property::FloatGraphics;
+            componentCount = 1;
+            break;
+        case SelectionProperty:
+            dataType = DataBuffer::IntSelection;
             componentCount = 1;
             break;
         default:
