@@ -42,7 +42,7 @@ public:
 
     /// A null progress state that ignores all progress reporting calls.
     /// It can be used in places where progress reporting is not needed but some TaskProgress is expected.
-    OVITO_CORE_EXPORT static TaskProgress Ignore; // static variable is defined in source file Task.cpp.
+    static TaskProgress Ignore; // static variable is defined in source file Task.cpp.
 
 public:
 
