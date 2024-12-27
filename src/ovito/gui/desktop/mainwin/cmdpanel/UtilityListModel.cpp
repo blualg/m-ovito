@@ -275,18 +275,23 @@ void UtilityListModel::activateUtility()
     _mainWindow.handleExceptions([&]() {
 
         // Check if a utility object of the selected class has already been instantiated before.
-        OvitoClassPtr utilityClass = action->utilityClass();
+        auto utilityClass = action->utilityClass();
         OORef<UtilityObject> utility;
-        for(const OORef<UtilityObject>& obj : _utilityObjects) {
-            if(utilityClass->isMember(obj)) {
-                utility = obj;
+        for(const OORef<UtilityObject>& u : _utilityObjects) {
+            if(utilityClass->isMemberUtility(u)) {
+                utility = u;
                 break;
             }
         }
 
         // Otherwise, create an instance of the utility object class.
         if(!utility) {
-            utility = static_object_cast<UtilityObject>(utilityClass->createInstance());
+            try {
+                utility = static_object_cast<UtilityObject>(utilityClass->createInstance());
+            }
+            catch(Exception& ex) {
+                throw ex.prependGeneralMessage(tr("Failed to initialize utility '%1' (class: %2). See details for more information.").arg(utilityClass->displayName()).arg(utilityClass->className()));
+            }
             _utilityObjects.push_back(utility);
             OVITO_ASSERT(utility);
 
@@ -308,7 +313,7 @@ int UtilityListModel::indexFromUtilityObject(const UtilityObject* utility) const
     if(utility) {
         int index = 0;
         for(UtilityAction* action : _modelActions) {
-            if(action && action->utilityClass()->isMember(utility))
+            if(action && action->utilityClass()->isMemberUtility(utility))
                 return index;
             index++;
         }
@@ -328,7 +333,7 @@ void UtilityListModel::datasetReplaced(DataSet* dataset)
     for(const auto& obj : dataset->globalObjects()) {
         if(UtilityObject* utility = dynamic_object_cast<UtilityObject>(obj)) {
             // Replace any existing utility of the same class.
-            auto iter = boost::find_if(_utilityObjects, [&](const auto& utility2) { return utility->getOOClass().isMember(utility2); });
+            auto iter = boost::find_if(_utilityObjects, [&](const auto& utility2) { return utility->getOOMetaClass().isMemberUtility(utility2); });
             if(iter != _utilityObjects.end())
                 *iter = utility;
             else

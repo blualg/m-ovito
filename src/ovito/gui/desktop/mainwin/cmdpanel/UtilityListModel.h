@@ -44,12 +44,12 @@ public:
     const QString& category() const { return _category; }
 
     /// Returns the utility class descriptor.
-    OvitoClassPtr utilityClass() const { return _utilityClass; }
+    const UtilityObject::OOMetaClass* utilityClass() const { return _utilityClass; }
 
 private:
 
     /// The Ovito class descriptor of the utility object class.
-    OvitoClassPtr _utilityClass = nullptr;
+    const UtilityObject::OOMetaClass* _utilityClass = nullptr;
 
     /// The utility's category.
     QString _category;

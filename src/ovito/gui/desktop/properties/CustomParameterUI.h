@@ -40,9 +40,9 @@ public:
 
     /// Constructor.
     void initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, QWidget* widget,
-            const std::function<void(const QVariant&)>& updateWidgetFunction,
-            const std::function<QVariant()>& updatePropertyFunction,
-            const std::function<void(RefTarget*)>& resetUIFunction = std::function<void(RefTarget*)>());
+            std::function<void(const QVariant&)>&& updateWidgetFunction,
+            std::function<QVariant()>&& updatePropertyFunction,
+            std::function<void(RefTarget*)>&& resetUIFunction = std::function<void(RefTarget*)>());
 
     /// Destructor.
     ~CustomParameterUI();

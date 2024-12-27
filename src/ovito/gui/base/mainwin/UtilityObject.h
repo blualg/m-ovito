@@ -48,6 +48,13 @@ public:
 
         /// Returns the category under which the utility will be displayed in the drop-down list box.
         virtual QString utilityCategory() const;
+
+        /// Determines whether the given UtilityObject instance is an instance of this class.
+        /// The default implementation checks the C++ class hierarchy. Subclasses may override this method
+        /// to customize the membership test.
+        virtual bool isMemberUtility(const UtilityObject* utility) const {
+            return isMember(utility);
+        }
     };
 
     OVITO_CLASS_META(UtilityObject, OOMetaClass);

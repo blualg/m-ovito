@@ -27,7 +27,6 @@
 #include <ovito/gui/desktop/properties/VectorParameterUI.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include <ovito/gui/desktop/properties/CustomParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateParameterUI.h>
 #include <ovito/gui/desktop/dialogs/SaveImageFileDialog.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>

@@ -32,16 +32,16 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(CustomParameterUI);
 * Constructor.
 ******************************************************************************/
 void CustomParameterUI::initializeObject(PropertiesEditor* parentEditor, const PropertyFieldDescriptor* propField, QWidget* widget,
-        const std::function<void(const QVariant&)>& updateWidgetFunction,
-        const std::function<QVariant()>& updatePropertyFunction,
-        const std::function<void(RefTarget*)>& resetUIFunction)
+        std::function<void(const QVariant&)>&& updateWidgetFunction,
+        std::function<QVariant()>&& updatePropertyFunction,
+        std::function<void(RefTarget*)>&& resetUIFunction)
 {
     PropertyParameterUI::initializeObject(parentEditor, propField);
 
     _widget = widget;
-    _updateWidgetFunction = updateWidgetFunction;
-    _updatePropertyFunction = updatePropertyFunction;
-    _resetUIFunction = resetUIFunction;
+    _updateWidgetFunction = std::move(updateWidgetFunction);
+    _updatePropertyFunction = std::move(updatePropertyFunction);
+    _resetUIFunction = std::move(resetUIFunction);
 }
 
 /******************************************************************************
