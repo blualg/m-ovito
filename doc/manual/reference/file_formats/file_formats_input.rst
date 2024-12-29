@@ -16,6 +16,7 @@ Input file formats
   input/lammps_dump
   input/lammps_dump_grid
   input/lammps_dump_local
+  input/poscar
   input/reaxff
   input/xtc
   input/xyz
@@ -69,10 +70,10 @@ OVITO can directly read the following file formats:
     - :ref:`Details <file_formats.input.xyz>`
 
   * - POSCAR / XDATCAR / CHGCAR
-    - File formats used by the *ab initio* simulation package `VASP <http://www.vasp.at/>`__.
+    - File formats used by the *ab initio* simulation package `VASP <https://www.vasp.at/>`__.
       OVITO can import atomistic configurations and also charge density fields from CHGCAR files.
     - :ref:`particles <scene_objects.particles>`, :ref:`voxel grids <scene_objects.voxel_grid>`
-    -
+    - :ref:`Details <file_formats.input.poscar>`
 
   * - Gromacs GRO
     - Coordinate file format used by the `GROMACS <http://www.gromacs.org/>`__ simulation code.

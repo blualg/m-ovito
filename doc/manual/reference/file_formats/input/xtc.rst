@@ -26,5 +26,5 @@ The file reader accepts the following optional keyword parameters in a call to t
   :noindex:
 
   :param centering: If set to ``True``, the simulation cell and all atomic coordinates are translated to center the box at the coordinate origin.
-                    If set to ``False``, the corner of the simulation cell remains fixed at the coordinate origin.
+                    If set to ``False``, one corner of the simulation cell remains fixed at the coordinate origin.
   :type centering: bool

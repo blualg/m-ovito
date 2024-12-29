@@ -22,7 +22,7 @@ If the imported file uses Bohr units, OVITO converts them to Angstroms automatic
 Volumetric grid type
 """"""""""""""""""""
 
-The user interface of the file reader provides an option that controls how the volumetric data should be intepreted by OVITO.
+The user interface of the file reader provides an option that controls how the volumetric data should be interpreted by OVITO.
 The field values may either be attributed to the grid line intersections (the default) or the cell centers:
 
 .. image:: /images/io/voxel_grid_types.png
@@ -44,7 +44,7 @@ The file reader accepts the following optional keyword parameters in a call to t
 .. py:function:: import_file(location, grid_type = VoxelGrid.GridType.PointData, generate_bonds = False)
   :noindex:
 
-  :param grid_type: Selects how OVITO should interprete the volumetric data loaded from the Cube file.
+  :param grid_type: Selects how OVITO should interpret the volumetric data loaded from the Cube file.
                     See :py:attr:`VoxelGrid.grid_type <ovito.data.VoxelGrid.grid_type>` for further information.
 
   :param generate_bonds: Activates the generation of ad-hoc bonds connecting the atoms loaded from the file.

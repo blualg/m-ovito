@@ -37,7 +37,7 @@ OVITO can export data in the following file formats:
     -
 
   * - POSCAR
-    - File format used by the *ab initio* simulation package `VASP <http://www.vasp.at/">`__.
+    - File format used by the *ab initio* simulation package `VASP <https://www.vasp.at/">`__.
     - :ref:`particles <scene_objects.particles>`
     -
 

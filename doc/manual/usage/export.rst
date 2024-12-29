@@ -56,7 +56,7 @@ Supported output file formats
 
     - :ref:`particles <scene_objects.particles>`
   * - POSCAR
-    - File format used by the *ab initio* simulation package `VASP <http://www.vasp.at/>`__.
+    - File format used by the *ab initio* simulation package `VASP <https://www.vasp.at/>`__.
     - :ref:`particles <scene_objects.particles>`
   * - IMD
     - File format used by the molecular dynamics code `IMD <http://imd.itap.physik.uni-stuttgart.de/>`__.
