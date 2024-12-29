@@ -168,7 +168,7 @@ void UpdateNotificationService::applicationStarting()
         QString programEdition;
 #if defined(OVITO_BUILD_BASIC)
         programEdition = QStringLiteral("basic/");
-#elif defined(OVITO_BUILD_PRO)
+#elif defined(OVITO_BUILD_PROFESSIONAL)
         programEdition = QStringLiteral("pro/");
 #endif
 
