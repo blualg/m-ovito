@@ -4,19 +4,20 @@ Application settings
 ====================
 
 .. image:: /images/app_settings/general_settings.*
-  :width: 35%
+  :width: 40%
   :align: right
 
-To open the application settings dialog, select :menuselection:`Edit --> Application settings` from the main menu on Windows/Linux.
-On macOS, select :menuselection:`Ovito --> Preferences`. The dialog contains several tabs:
+To access the application settings dialog, choose :menuselection:`Edit --> Application settings` from the main menu.
+The dialog consists of several tabs:
 
 .. toctree::
   :maxdepth: 1
 
-  general_settings
-  viewport_settings
+  General <general_settings>
+  Viewports <viewport_settings>
   modifier_templates
-  particle_settings
+  Particles <particle_settings>
+  Python <python_settings>
 
 .. _application_settings.storage_location:
 

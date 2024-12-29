@@ -30,13 +30,13 @@
 /******************************************************************************
 * Standard Template Library (STL)
 ******************************************************************************/
-#include <iostream>
 #include <cmath>
 #include <cstdint>
 #include <cstddef>
 #include <cinttypes>
 #include <cstring>
 #include <type_traits>
+#include <iostream>
 #include <stack>
 #include <array>
 #include <vector>
