@@ -114,7 +114,7 @@ Q_SIGNALS:
     void maximizedViewportChanged(Viewport* maximizedViewport);
 
     /// \brief This signal is sent whenever the layout of the viewports changes in some way.
-    void viewportLayoutChanged();
+    void viewportLayoutChanged(ViewportConfiguration* viewportConfig);
 
     /// \brief This signal is emitted whenever the active scene of current dataset has been replaced by a new one.
     /// \note This signal is NOT emitted when the contents of the current scene change.

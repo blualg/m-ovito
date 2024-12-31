@@ -228,14 +228,23 @@ Future<void> FrameGraph::buildFromScene(OORef<Scene> scene, OORef<Viewport> view
     // Evaluate all visible pipelines in the scene to obtain their output data.
 	std::vector<PipelineFlowState> pipelineResults;
     for(const auto& pipeline : visiblePipelines) {
-        // Request pipeline result.
-        PipelineEvaluationResult pipelineResult = pipeline->evaluatePipeline(PipelineEvaluationRequest(time(), stopOnPipelineError(), isInteractive()));
+        try {
+            // Request pipeline result.
+            PipelineEvaluationResult pipelineResult = pipeline->evaluatePipeline(PipelineEvaluationRequest(time(), stopOnPipelineError(), isInteractive()));
 
-        // Flag the entire frame graph as preliminary if the pipeline output is preliminary.
-        if(pipelineResult.evaluationTypes().testFlag(PipelineEvaluationResult::EvaluationType::Noninteractive) == false)
-            setIsPreliminaryState(true);
+            // Flag the entire frame graph as preliminary if the pipeline output is preliminary.
+            if(pipelineResult.evaluationTypes().testFlag(PipelineEvaluationResult::EvaluationType::Noninteractive) == false)
+                setIsPreliminaryState(true);
 
-        pipelineResults.push_back(co_await FutureAwaiter(DeferredObjectExecutor(this), std::move(pipelineResult).asFuture()));
+            pipelineResults.push_back(co_await FutureAwaiter(DeferredObjectExecutor(this), std::move(pipelineResult).asFuture()));
+        }
+        catch(const Exception& ex) {
+            if(stopOnPipelineError())
+                throw;
+            // In interactive mode, log the exception and continue rendering.
+            ex.logError();
+            continue;
+        }
     }
 
     // Visit all vis elements and let them populate the frame graph.

@@ -279,6 +279,9 @@ private Q_SLOTS:
     /// This is called when a different viewport become the maximized one.
     void onMaximizedViewportChanged(Viewport* maximizedViewport);
 
+    /// This is called when the viewport layout changes.
+    void onViewportLayoutChanged(ViewportConfiguration* viewportConfig);
+
     /// This is called whenever the scene node selection changed.
     void onSelectionChangeComplete(SelectionSet* selection);
 

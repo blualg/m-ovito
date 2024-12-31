@@ -29,7 +29,7 @@
 namespace Ovito {
 
 /**
- * \brief Abstract base class for plugin services that can perform actions on application startup.
+ * \brief Abstract base class for plugin services that integrate into the main window GUI.
  */
 class OVITO_GUI_EXPORT GuiApplicationService : public ApplicationService
 {
@@ -37,11 +37,8 @@ class OVITO_GUI_EXPORT GuiApplicationService : public ApplicationService
 
 public:
 
-    /// \brief Is called when a new main window is created.
+    /// Is called when a new main window is created.
     virtual void registerActions(ActionManager& actionManager, MainWindow& mainWindow) {}
-
-    /// \brief Is called when the main menu is created.
-    virtual void addActionsToMenu(ActionManager& actionManager, QMenuBar* menuBar) {}
 };
 
 }   // End of namespace

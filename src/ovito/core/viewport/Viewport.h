@@ -78,10 +78,10 @@ public:
 
 public:
 
-    /// \brief Constructor.
+    /// Constructor.
     void initializeObject(ObjectInitializationFlags flags);
 
-    /// \brief Destructor.
+    /// Destructor.
     ~Viewport();
 
     /// \brief Computes the projection matrix and other parameters.
@@ -110,19 +110,19 @@ public:
         _fieldOfView.set(this, PROPERTY_FIELD(fieldOfView), qBound(FloatType(-1e12), fov, FloatType(1e12)));
     }
 
-    /// \brief Returns the viewing direction of the camera.
+    /// Returns the viewing direction of the camera.
     Vector3 cameraDirection() const;
 
-    /// \brief Changes the viewing direction of the camera.
+    /// Changes the viewing direction of the camera.
     void setCameraDirection(const Vector3& newDir);
 
-    /// \brief Returns the position of the camera.
+    /// Returns the position of the camera.
     Point3 cameraPosition() const;
 
-    /// \brief Sets the position of the camera.
+    /// Sets the position of the camera.
     void setCameraPosition(const Point3& p);
 
-    /// \brief Returns the current orbit center for this viewport.
+    /// Returns the current orbit center for this viewport.
     Point3 orbitCenter();
 
     /// \brief Returns a color value for drawing something in the viewport. The user can configure the color for each element.
@@ -135,14 +135,12 @@ public:
     /// \brief Inserts an overlay into this viewport's list of overlays.
     /// \param index The position at which to insert the overlay.
     /// \param layer The overlay to insert.
-    /// \undoable
     void insertOverlay(qsizetype index, OORef<ViewportOverlay> layer) {
         _overlays.insert(this, PROPERTY_FIELD(overlays), index, std::move(layer));
     }
 
     /// \brief Removes an overlay from this viewport.
     /// \param index The index of the overlay to remove.
-    /// \undoable
     void removeOverlay(qsizetype index) {
         _overlays.remove(this, PROPERTY_FIELD(overlays), index);
     }
@@ -150,14 +148,12 @@ public:
     /// \brief Inserts an underlay into this viewport's list of underlays.
     /// \param index The position at which to insert the underlay into the stack.
     /// \param layer The underlay to insert.
-    /// \undoable
     void insertUnderlay(qsizetype index, OORef<ViewportOverlay> layer) {
         _underlays.insert(this, PROPERTY_FIELD(underlays), index, std::move(layer));
     }
 
     /// \brief Removes an underlay from this viewport.
     /// \param index The index of the underlay to remove.
-    /// \undoable
     void removeUnderlay(qsizetype index) {
         _underlays.remove(this, PROPERTY_FIELD(underlays), index);
     }
@@ -186,6 +182,11 @@ public:
     /// \brief Returns true if the viewport is using a perspective projection;
     ///        returns false if it is using an orthogonal projection.
     bool isPerspectiveProjection() const;
+
+    /// Returns the current animation time displayed by the viewport.
+    AnimationTime currentTime() const {
+        return scene() ? scene()->animationSettings()->currentTime() : AnimationTime(0);
+    }
 
     /// Returns the list of active viewport gizmos that are displayed in this viewport.
     const std::vector<ViewportGizmo*>& viewportGizmos() const { return _viewportGizmos; }

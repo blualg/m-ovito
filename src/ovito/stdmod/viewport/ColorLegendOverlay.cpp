@@ -124,7 +124,7 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
         // the first available typed property as color mapping source.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
             viewport->scene()->visitPipelines([&](Pipeline* pipeline) {
-                const PipelineFlowState& state = pipeline->getCachedPipelineOutput(viewport->scene()->animationSettings()->currentTime());
+                const PipelineFlowState& state = pipeline->getCachedPipelineOutput(viewport->currentTime());
                 for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(Property::OOClass())) {
                     const Property* property = static_object_cast<Property>(dataPath.back());
                     // Check if the property is a typed property, i.e. it has one or more ElementType objects attached to it.

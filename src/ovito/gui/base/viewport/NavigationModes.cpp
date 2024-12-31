@@ -200,16 +200,15 @@ void PanMode::modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, boo
     else {
         // Get parent's system.
         const AffineTransformation& parentSys =
-                vp->viewNode()->parentNode()->getWorldTransform(vp->scene()->animationSettings()->currentTime());
+                vp->viewNode()->parentNode()->getWorldTransform(vp->currentTime());
 
         // Move node in parent's system.
         vp->viewNode()->transformationController()->translate(
-                vp->scene()->animationSettings()->currentTime(), displacement, parentSys.inverse());
+                vp->currentTime(), displacement, parentSys.inverse());
 
         // If it's a target camera, move target as well.
         if(vp->viewNode()->lookatTargetNode()) {
-            vp->viewNode()->lookatTargetNode()->transformationController()->translate(
-                    vp->scene()->animationSettings()->currentTime(), displacement, parentSys.inverse());
+            vp->viewNode()->lookatTargetNode()->transformationController()->translate(vp->currentTime(), displacement, parentSys.inverse());
         }
     }
 }
@@ -228,9 +227,9 @@ void ZoomMode::modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, bo
             vp->setCameraPosition(_oldCameraPosition + _oldCameraDirection.resized(amount));
         }
         else {
-            const AffineTransformation& sys = vp->viewNode()->getWorldTransform(vp->scene()->animationSettings()->currentTime());
+            const AffineTransformation& sys = vp->viewNode()->getWorldTransform(vp->currentTime());
             vp->viewNode()->transformationController()->translate(
-                    vp->scene()->animationSettings()->currentTime(), Vector3(0,0,-amount), sys);
+                    vp->currentTime(), Vector3(0,0,-amount), sys);
         }
     }
     else {
@@ -253,7 +252,7 @@ FloatType ZoomMode::sceneSizeFactor(Viewport* vp)
 {
     OVITO_CHECK_OBJECT_POINTER(vp);
     if(vp->scene()) {
-        Box3 sceneBoundingBox = vp->scene()->worldBoundingBox(vp->scene()->animationSettings()->currentTime(), vp);
+        Box3 sceneBoundingBox = vp->scene()->worldBoundingBox(vp->currentTime(), vp);
         if(!sceneBoundingBox.isEmpty())
             return sceneBoundingBox.size().length() * FloatType(5e-4);
     }
@@ -277,8 +276,8 @@ void ZoomMode::zoom(Viewport* vp, FloatType steps, UserInterface& ui)
         ui.performTransaction(tr("Zoom viewport"), [this, steps, vp]() {
             if(vp->isPerspectiveProjection()) {
                 FloatType amount = sceneSizeFactor(vp) * steps;
-                const AffineTransformation& sys = vp->viewNode()->getWorldTransform(vp->scene()->animationSettings()->currentTime());
-                vp->viewNode()->transformationController()->translate(vp->scene()->animationSettings()->currentTime(), Vector3(0,0,-amount), sys);
+                const AffineTransformation& sys = vp->viewNode()->getWorldTransform(vp->currentTime());
+                vp->viewNode()->transformationController()->translate(vp->currentTime(), Vector3(0,0,-amount), sys);
             }
             else {
                 if(AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(getViewportCamera(vp))) {
@@ -367,7 +366,7 @@ void OrbitMode::modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, b
         }
         else {
             Controller* ctrl = vp->viewNode()->transformationController();
-            AnimationTime time = vp->scene()->animationSettings()->currentTime();
+            AnimationTime time = vp->currentTime();
             Rotation rotX(Vector3(1,0,0), deltaPhi, false);
             ctrl->rotate(time, rotX, _oldInverseViewMatrix);
             Rotation rotZ(ViewportSettings::getSettings().upVector(), -deltaTheta);
@@ -390,7 +389,7 @@ void OrbitMode::modifyView(ViewportWindow* vpwin, Viewport* vp, QPointF delta, b
         }
         else {
             Controller* ctrl = vp->viewNode()->transformationController();
-            AnimationTime time = vp->scene()->animationSettings()->currentTime();
+            AnimationTime time = vp->currentTime();
             Rotation rot = Rotation(Vector3(0,1,0), -deltaTheta, false) * Rotation(Vector3(1,0,0), deltaPhi, false);
             ctrl->rotate(time, rot, _oldInverseViewMatrix);
             Vector3 translation = t2 - (Matrix3::rotation(rot) * t2);

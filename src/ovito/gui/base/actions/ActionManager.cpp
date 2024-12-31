@@ -46,6 +46,7 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
     connect(&userInterface.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &ActionManager::onSelectionChangeComplete);
     connect(&userInterface.datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &ActionManager::onAnimationIntervalChanged);
     connect(&userInterface.datasetContainer(), &DataSetContainer::maximizedViewportChanged, this, &ActionManager::onMaximizedViewportChanged);
+    connect(&userInterface.datasetContainer(), &DataSetContainer::viewportLayoutChanged, this, &ActionManager::onViewportLayoutChanged);
 
     createCommandAction(ACTION_QUIT, tr("Quit"), "file_quit", tr("Quit the application."));
     createCommandAction(ACTION_FILE_OPEN, tr("Load Session State..."), "file_open", tr("Load a previously saved session from a file."), QKeySequence::Open);
@@ -189,6 +190,14 @@ void ActionManager::onAnimationIntervalChanged(int firstFrame, int lastFrame)
 void ActionManager::onMaximizedViewportChanged(Viewport* maximizedViewport)
 {
     getAction(ACTION_VIEWPORT_MAXIMIZE)->setChecked(maximizedViewport != nullptr);
+}
+
+/******************************************************************************
+* This is called when the viewport layout changes.
+******************************************************************************/
+void ActionManager::onViewportLayoutChanged(ViewportConfiguration* viewportConfig)
+{
+    getAction(ACTION_VIEWPORT_MAXIMIZE)->setEnabled(viewportConfig && !viewportConfig->layoutRootCell()->children().empty());
 }
 
 /******************************************************************************

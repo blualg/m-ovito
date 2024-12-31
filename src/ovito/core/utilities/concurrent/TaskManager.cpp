@@ -313,7 +313,9 @@ void TaskManager::processWorkWhileWaiting(Task* waitingTask, detail::TaskDepende
             eventLoop->exec(_nativeDialogActive ? QEventLoop::ExcludeUserInputEvents : QEventLoop::AllEvents);
 #endif
             lock.lock();
-            break;
+
+            if(_waitingForTask->isCanceled() || _waitingForTask->isFinished() || waitingTask->isCanceled())
+                break;
         }
         else {
             // Block until new work arrives in the queue or quitWorkProcessingLoop() is called.

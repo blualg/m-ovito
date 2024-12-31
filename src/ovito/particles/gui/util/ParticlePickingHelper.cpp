@@ -48,7 +48,7 @@ bool ParticlePickingHelper::pickParticle(ViewportWindow* vpwin, const QPoint& cl
             size_t particleIndex = pickInfo->particleIndexFromSubObjectID(vpPickResult->subobjectId());
             if(posProperty && particleIndex < posProperty.size()) {
                 // Save reference to the selected particle.
-                AnimationTime time = vpwin->viewport()->scene()->animationSettings()->currentTime();
+                AnimationTime time = vpwin->viewport()->currentTime();
                 result.pipeline = vpPickResult->pipeline();
                 result.particleIndex = particleIndex;
                 result.localPos = posProperty[result.particleIndex];

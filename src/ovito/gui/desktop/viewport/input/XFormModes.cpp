@@ -222,7 +222,7 @@ Point3 XFormMode::transformationCenter()
     Point3 center = Point3::Origin();
     SelectionSet* selection = viewportWindow()->viewport()->scene()->selection();
     if(selection && !selection->nodes().empty()) {
-        AnimationTime time = viewportWindow()->viewport()->scene()->animationSettings()->currentTime();
+        AnimationTime time = viewportWindow()->viewport()->currentTime();
         for(SceneNode* node : selection->nodes()) {
             const AffineTransformation& nodeTM = node->getWorldTransform(time);
             center += nodeTM.translation();
@@ -262,7 +262,7 @@ void MoveMode::doXForm()
         _delta = _translationSystem * (point2 - _initialPoint);
 
         // Apply transformation to selected nodes.
-        applyXForm(viewportWindow()->viewport()->scene()->animationSettings()->currentTime(), viewportWindow()->viewport()->scene()->selection()->nodes(), 1);
+        applyXForm(viewportWindow()->viewport()->currentTime(), viewportWindow()->viewport()->scene()->selection()->nodes(), 1);
     }
 }
 
@@ -359,7 +359,7 @@ void RotateMode::doXForm()
     _rotation = Rotation(Vector3(0,0,1), angle1);
 
     // Apply transformation to selected nodes.
-    applyXForm(viewportWindow()->viewport()->scene()->animationSettings()->currentTime(), viewportWindow()->viewport()->scene()->selection()->nodes(), 1);
+    applyXForm(viewportWindow()->viewport()->currentTime(), viewportWindow()->viewport()->scene()->selection()->nodes(), 1);
 }
 
 /******************************************************************************

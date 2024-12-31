@@ -39,7 +39,7 @@
 #define DEFAULT_ORTHOGONAL_FIELD_OF_VIEW        FloatType(200)
 
 /// The default field of view angle in radians used for perspective view types when the scene is empty.
-#define DEFAULT_PERSPECTIVE_FIELD_OF_VIEW       FloatType(35*FLOATTYPE_PI/180)
+#define DEFAULT_PERSPECTIVE_FIELD_OF_VIEW       qDegreesToRadians(FloatType(35))
 
 namespace Ovito {
 
@@ -148,7 +148,7 @@ void Viewport::setViewType(ViewType type, bool keepCameraTransformation, bool ke
             break;
         case VIEW_SCENENODE:
             if(!keepCameraTransformation && viewNode() && scene()) {
-                setCameraTransformation(viewNode()->getWorldTransform(scene()->animationSettings()->currentTime()));
+                setCameraTransformation(viewNode()->getWorldTransform(currentTime()));
             }
             setGridMatrix(AffineTransformation(coordSys));
             break;
@@ -168,9 +168,9 @@ void Viewport::setViewType(ViewType type, bool keepCameraTransformation, bool ke
                 setFieldOfView(DEFAULT_ORTHOGONAL_FIELD_OF_VIEW);
         }
         else if(type == VIEW_SCENENODE && viewNode() && scene()) {
-            if(DataOORef<const AbstractCameraObject> camera = cameraObject(scene()->animationSettings()->currentTime())) {
+            if(DataOORef<const AbstractCameraObject> camera = cameraObject(currentTime())) {
                 TimeInterval iv;
-                setFieldOfView(camera->fieldOfView(scene()->animationSettings()->currentTime(), iv));
+                setFieldOfView(camera->fieldOfView(currentTime(), iv));
             }
         }
     }
@@ -237,7 +237,7 @@ bool Viewport::isPerspectiveProjection() const
     else if(viewType() == VIEW_PERSPECTIVE)
         return true;
     else if(viewType() == VIEW_SCENENODE && viewNode() && scene()) {
-        if(DataOORef<const AbstractCameraObject> camera = cameraObject(scene()->animationSettings()->currentTime())) {
+        if(DataOORef<const AbstractCameraObject> camera = cameraObject(currentTime())) {
             return camera->isPerspectiveCamera();
         }
     }
@@ -348,7 +348,7 @@ void Viewport::zoomToBox(const Box3& box, FloatType viewportAspectRatio)
     }
     else {
         // Set up projection.
-        ViewProjectionParameters projParams = computeProjectionParameters(scene()->animationSettings()->currentTime(), viewportAspectRatio, box);
+        ViewProjectionParameters projParams = computeProjectionParameters(currentTime(), viewportAspectRatio, box);
 
         FloatType minX = FLOATTYPE_MAX, minY = FLOATTYPE_MAX;
         FloatType maxX = FLOATTYPE_MIN, maxY = FLOATTYPE_MIN;
@@ -379,7 +379,7 @@ bool Viewport::referenceEvent(RefTarget* source, const ReferenceEvent& event)
             // Adopt camera information from view node.
             if(viewType() == VIEW_SCENENODE && !isBeingLoaded() && !isBeingDeleted() && scene()) {
                 // Get camera transformation and settings (FOV etc.).
-                AnimationTime time = scene()->animationSettings()->currentTime();
+                AnimationTime time = currentTime();
                 TimeInterval iv;
                 setCameraTransformation(viewNode()->getWorldTransform(time, iv));
                 if(DataOORef<const AbstractCameraObject> camera = cameraObject(time)) {
@@ -560,24 +560,22 @@ Point3 Viewport::orbitCenter()
 {
     // Use the target of a camera as the orbit center.
     if(viewNode() && viewType() == Viewport::VIEW_SCENENODE && viewNode()->lookatTargetNode()) {
-        AnimationTime time = scene()->animationSettings()->currentTime();
-        return Point3::Origin() + viewNode()->lookatTargetNode()->getWorldTransform(time).translation();
+        return Point3::Origin() + viewNode()->lookatTargetNode()->getWorldTransform(currentTime()).translation();
     }
 
     Point3 center = Point3::Origin();
     if(scene()) {
         // Compute scene's orbiting center.
         if(scene()->orbitCenterMode() == Scene::OrbitCenterMode::ORBIT_SELECTION_CENTER) {
-            AnimationTime time = scene()->animationSettings()->currentTime();
             Box3 selectionBoundingBox;
             for(SceneNode* node : scene()->selection()->nodes()) {
-                selectionBoundingBox.addBox(node->worldBoundingBox(time, this));
+                selectionBoundingBox.addBox(node->worldBoundingBox(currentTime(), this));
             }
             if(!selectionBoundingBox.isEmpty()) {
                 center = selectionBoundingBox.center();
             }
             else {
-                Box3 sceneBoundingBox = scene()->worldBoundingBox(time, this);
+                Box3 sceneBoundingBox = scene()->worldBoundingBox(currentTime(), this);
                 if(!sceneBoundingBox.isEmpty())
                     center = sceneBoundingBox.center();
             }
@@ -587,12 +585,12 @@ Point3 Viewport::orbitCenter()
         }
 
         if(viewType() == VIEW_SCENENODE && viewNode() && scene()) {
-            if(DataOORef<const AbstractCameraObject> camera = cameraObject(scene()->animationSettings()->currentTime())) {
+            if(DataOORef<const AbstractCameraObject> camera = cameraObject(currentTime())) {
                 if(camera->isPerspectiveCamera()) {
                     // If a free camera node is selected, the current orbit center is at the same location as the camera.
                     // In this case, we should shift the orbit center such that it is in front of the camera.
                     TimeInterval iv;
-                    const AffineTransformation cameraTM = viewNode()->getWorldTransform(scene()->animationSettings()->currentTime(), iv);
+                    const AffineTransformation cameraTM = viewNode()->getWorldTransform(currentTime(), iv);
                     Point3 camPos = Point3::Origin() + cameraTM.translation();
                     if(center.equals(camPos))
                         center = camPos - FloatType(50) * cameraTM.column(2);

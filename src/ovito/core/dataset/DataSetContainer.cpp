@@ -101,10 +101,11 @@ bool DataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& e
             else if(refEvent.field() == PROPERTY_FIELD(ViewportConfiguration::maximizedViewport)) {
                 Q_EMIT maximizedViewportChanged(activeViewportConfig()->maximizedViewport());
             }
+            Q_EMIT viewportLayoutChanged(activeViewportConfig());
         }
         else if(event.type() == ReferenceEvent::TargetChanged) {
             if(dynamic_object_cast<ViewportLayoutCell>(event.sender()) && !source->isBeingLoaded() && !source->isBeingDeleted()) {
-                Q_EMIT viewportLayoutChanged();
+                Q_EMIT viewportLayoutChanged(activeViewportConfig());
             }
         }
     }
@@ -165,6 +166,7 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
         Q_EMIT viewportConfigReplaced(activeViewportConfig());
         _activeViewport.set(this, PROPERTY_FIELD(activeViewport), activeViewportConfig() ? activeViewportConfig()->activeViewport() : nullptr);
         Q_EMIT maximizedViewportChanged(activeViewportConfig() ? activeViewportConfig()->maximizedViewport() : nullptr);
+        Q_EMIT viewportLayoutChanged(activeViewportConfig());
     }
     else if(field == PROPERTY_FIELD(activeViewport)) {
         Q_EMIT activeViewportChanged(activeViewport());

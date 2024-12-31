@@ -141,7 +141,7 @@ void UpdateDialog::onDownload()
 
 /******************************************************************************
  * Is called by the system during standalone application startup after the main window has been created.
- * Downloads the new s segment from the web and sets the side panel and update dialog
+ * Downloads the news page from the web server and displays it in the command panel.
  ******************************************************************************/
 void UpdateNotificationService::applicationStarting()
 {
@@ -191,7 +191,7 @@ void UpdateNotificationService::applicationStarting()
 
 /******************************************************************************
  * Is called when a new main window is created.
- * Store the main window
+ * Stores a reference to the main window.
  ******************************************************************************/
 void UpdateNotificationService::registerActions(ActionManager& actionManager, MainWindow& mainWindow)
 {

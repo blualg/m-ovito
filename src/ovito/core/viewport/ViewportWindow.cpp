@@ -167,7 +167,7 @@ void ViewportWindow::frameGraphRenderingFinished(Task& task) noexcept
         catch(Exception& ex) {
             // Automatically switch back to the standard OpenGL renderer if there is a problem with
             // the non-standard renderer.
-            fatalError(ex);
+            Q_EMIT fatalError(ex);
         }
     }
 
@@ -218,7 +218,7 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
     OVITO_ASSERT(this_task::ui());
 
     // Set up preliminary projection without knowing the scene bounding box yet.
-    AnimationTime time = viewport()->scene()->animationSettings()->currentTime();
+    AnimationTime time = viewport()->currentTime();
     FloatType aspectRatio = (FloatType)windowSize.height() / windowSize.width();
     ViewProjectionParameters projParams = viewport()->computeProjectionParameters(time, aspectRatio);
 
@@ -533,8 +533,9 @@ void ViewportWindow::zoomToSceneExtentsWhenReady()
         // Fire-and-forget task that will zoom to the scene extents once the scene is ready.
         scenePreparation().future().finally([self = OOWeakRef<ViewportWindow>(this)](Task& task) noexcept {
             if(!task.isCanceled()) {
-                if(OORef<ViewportWindow> window = self.lock())
+                if(OORef<ViewportWindow> window = self.lock()) {
                     QMetaObject::invokeMethod(window.get(), "zoomToSceneExtents", Qt::AutoConnection);
+                }
             }
         });
     }

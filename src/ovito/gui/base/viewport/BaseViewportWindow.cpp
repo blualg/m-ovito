@@ -108,7 +108,7 @@ void BaseViewportWindow::mouseDoubleClickEvent(QMouseEvent* event)
 {
     if(inputManager()) {
         if(ViewportInputMode* mode = inputManager()->activeMode()) {
-            userInterface().handleExceptions([&] {
+            userInterface().handleExceptions<true>([&] {
                 mode->mouseDoubleClickEvent(this, event);
             });
         }
@@ -126,7 +126,7 @@ void BaseViewportWindow::mousePressEvent(QMouseEvent* event)
     // Make this viewport the active one.
     if(DataSet* dataset = userInterface().datasetContainer().currentSet()) {
         if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
-            userInterface().handleExceptions([&] {
+            userInterface().handleExceptions<true>([&] {
                 viewportConfig->setActiveViewport(viewport());
             });
         }
@@ -139,7 +139,7 @@ void BaseViewportWindow::mousePressEvent(QMouseEvent* event)
     }
 
     if(ViewportInputMode* mode = inputManager()->activeMode()) {
-        userInterface().handleExceptions([&] {
+        userInterface().handleExceptions<true>([&] {
             mode->mousePressEvent(this, event);
         });
     }
@@ -152,7 +152,7 @@ void BaseViewportWindow::mouseReleaseEvent(QMouseEvent* event)
 {
     if(inputManager()) {
         if(ViewportInputMode* mode = inputManager()->activeMode()) {
-            userInterface().handleExceptions([&] {
+            userInterface().handleExceptions<true>([&] {
                 mode->mouseReleaseEvent(this, event);
             });
         }
@@ -173,7 +173,7 @@ void BaseViewportWindow::mouseMoveEvent(QMouseEvent* event)
 
     if(inputManager()) {
         if(ViewportInputMode* mode = inputManager()->activeMode()) {
-            userInterface().handleExceptions([&] {
+            userInterface().handleExceptions<true>([&] {
                 mode->mouseMoveEvent(this, event);
             });
         }
@@ -187,7 +187,7 @@ void BaseViewportWindow::wheelEvent(QWheelEvent* event)
 {
     if(inputManager()) {
         if(ViewportInputMode* mode = inputManager()->activeMode()) {
-            userInterface().handleExceptions([&] {
+            userInterface().handleExceptions<true>([&] {
                 mode->wheelEvent(this, event);
             });
         }
@@ -210,7 +210,7 @@ void BaseViewportWindow::focusOutEvent(QFocusEvent* event)
 {
     if(inputManager()) {
         if(ViewportInputMode* mode = inputManager()->activeMode()) {
-            userInterface().handleExceptions([&] {
+            userInterface().handleExceptions<true>([&] {
                 mode->focusOutEvent(this, event);
             });
         }
@@ -232,7 +232,7 @@ void BaseViewportWindow::keyPressEvent(QKeyEvent* event)
 {
     if(inputManager()) {
         if(ViewportInputMode* mode = inputManager()->activeMode()) {
-            userInterface().handleExceptions([&] {
+            userInterface().handleExceptions<true>([&] {
                 if(mode->keyPressEvent(this, event))
                     return; // Do not propagate handled key events to base class.
             });

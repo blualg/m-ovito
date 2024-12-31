@@ -291,8 +291,8 @@ void MainWindow::restoreMainWindowGeometry()
     settings.beginGroup("app/mainwindow");
 
     // TODO: For now we only restore the maximized/normal state of the main window, because
-    // the QWidget::restoreGeometry() method is broken in Qt 6.4.2 under macOS. We'll activate the new code
-    // once we've switched to Qt 6.5, which hopefully fixes the issue.
+    // the QWidget::restoreGeometry() method is broken in Qt 6.7.x under macOS. We'll activate the new code
+    // once Qt fixes the issue.
 #if 1
     if(settings.value("maximized", true).toBool())
         showMaximized();
@@ -390,12 +390,6 @@ void MainWindow::createMainMenu()
     helpMenu->addSeparator();
 #endif
     helpMenu->addAction(actionManager()->getAction(ACTION_HELP_ABOUT));
-
-    // Let GUI application services add their actions to the main menu.
-    for(const auto& service : StandaloneApplication::instance()->applicationServices()) {
-        if(auto gui_service = dynamic_object_cast<GuiApplicationService>(service))
-            gui_service->addActionsToMenu(*actionManager(), menuBar);
-    }
 }
 
 /******************************************************************************

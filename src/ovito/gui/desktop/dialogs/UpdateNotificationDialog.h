@@ -36,15 +36,17 @@ class OVITO_GUI_EXPORT UpdateNotificationService : public QObject, public GuiApp
     OVITO_CLASS(UpdateNotificationService)
 
 public:
+
     /// Is called by the system during standalone application startup.
-    /// Downloads the news page from the web and sets the side panel and update dialog.
+    /// Downloads the news page from the web server and displays it in the command panel.
     void applicationStarting() override;
 
     /// Is called when a new main window is created.
-    /// Used to store the main window.
+    /// Stores a reference to the main window.
     void registerActions(ActionManager& actionManager, MainWindow& mainWindow) override;
 
 private:
+
     /// Extracts the two version strings from the first line of the news webpage.
     /// Pattern of the version strings: <!--vX+.Y+.Z+|vA+.B+.C+-->
     /// where X+.Y+.Z+ are the significant version even shown when "Skip this version" is pressed
@@ -61,6 +63,7 @@ private:
     void createUpdateDialog(const QStringList& versionMatch) const;
 
 private:
+
     /// Pointer to the current main window
     QPointer<MainWindow> _mainWindow;
 };

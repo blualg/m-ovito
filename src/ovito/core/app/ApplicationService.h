@@ -33,10 +33,10 @@ namespace Ovito {
  *
  * If you derive a subclass, a single instance of it will automatically be
  * created by the system and its virtual callback methods will be called at
- * appropriate times during the application life-cycle.
+ * appropriate times during the application's life cycle.
  *
  * For example, it is possible for a plugin to register additional command line
- * options with the central Application and react to them when they are used
+ * options with the global Application object and handle them when they are used
  * by the user.
  */
 class OVITO_CORE_EXPORT ApplicationService : public OvitoObject

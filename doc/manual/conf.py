@@ -14,9 +14,6 @@
 import sys
 import os
 
-# Use the Read-The-Docs theme.
-import sphinx_rtd_theme
-
 # Needed for PreferSectionTarget:
 from docutils import nodes
 from docutils.transforms import Transform
