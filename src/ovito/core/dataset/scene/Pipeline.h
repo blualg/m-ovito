@@ -77,27 +77,27 @@ public:
     /// input data entering the pipeline.
     void setSource(PipelineNode* sourceObject);
 
-    /// \brief Applies a modifier by appending a node for it to the pipeline.
+    /// Applies a modifier by appending a node for it to the pipeline.
     ModificationNode* applyModifier(AnimationTime time, bool interactiveMode, Modifier* modifier);
 
-    /// \brief Returns the title of this object.
+    /// Returns the title of this object.
     virtual QString objectTitle() const override;
 
-    /// \brief Deletes this node from the scene.
+    /// Deletes this node from the scene.
     virtual void deleteSceneNode() override;
 
     /// Rescales the times of all animation keys from the old animation interval to the new interval.
     virtual void rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval) override;
 
-    /// \brief Replaces the given visual element in this pipeline's output with an independent copy.
+    /// Replaces the given visual element in this pipeline's output with an independent copy.
     DataVis* makeVisElementIndependent(DataVis* visElement);
 
-    /// Returns the internal replacement for the given data vis element.
+    /// Returns the internal replacement for the given vis element produced by the pipeline.
     /// If there is no replacement, the original vis element is returned.
     DataVis* getReplacementVisElement(DataVis* vis) const;
 
     /// Gathers a list of data objects from the given pipeline flow state (which should have been produced by this pipeline)
-    /// that are associated with the given vis element. This method takes into account replacement vis elements of this pipeline node.
+    /// that are associated with the given vis element. This method takes into account replacement vis elements.
     std::vector<ConstDataObjectPath> getDataObjectsForVisElement(const PipelineFlowState& state, DataVis* vis) const;
 
 protected:

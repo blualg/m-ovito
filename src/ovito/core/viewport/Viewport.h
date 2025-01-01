@@ -125,35 +125,27 @@ public:
     /// Returns the current orbit center for this viewport.
     Point3 orbitCenter();
 
-    /// \brief Returns a color value for drawing something in the viewport. The user can configure the color for each element.
-    /// \param which The enum constant that specifies what type of element to draw.
-    /// \return The color that should be used for the given element type.
+    /// Returns a color value for drawing something in the viewport. The user can configure the color for each element.
     static const Color& viewportColor(ViewportSettings::ViewportColor which) {
         return ViewportSettings::getSettings().viewportColor(which);
     }
 
-    /// \brief Inserts an overlay into this viewport's list of overlays.
-    /// \param index The position at which to insert the overlay.
-    /// \param layer The overlay to insert.
+    /// Inserts an overlay into this viewport's list of overlays.
     void insertOverlay(qsizetype index, OORef<ViewportOverlay> layer) {
         _overlays.insert(this, PROPERTY_FIELD(overlays), index, std::move(layer));
     }
 
-    /// \brief Removes an overlay from this viewport.
-    /// \param index The index of the overlay to remove.
+    /// Removes an overlay from this viewport.
     void removeOverlay(qsizetype index) {
         _overlays.remove(this, PROPERTY_FIELD(overlays), index);
     }
 
-    /// \brief Inserts an underlay into this viewport's list of underlays.
-    /// \param index The position at which to insert the underlay into the stack.
-    /// \param layer The underlay to insert.
+    /// Inserts an underlay into this viewport's list of underlays.
     void insertUnderlay(qsizetype index, OORef<ViewportOverlay> layer) {
         _underlays.insert(this, PROPERTY_FIELD(underlays), index, std::move(layer));
     }
 
-    /// \brief Removes an underlay from this viewport.
-    /// \param index The index of the underlay to remove.
+    /// Removes an underlay from this viewport.
     void removeUnderlay(qsizetype index) {
         _underlays.remove(this, PROPERTY_FIELD(underlays), index);
     }
@@ -170,7 +162,7 @@ public:
     /// To update all viewports at once, use ViewportConfiguration::updateViewports().
     void updateViewport();
 
-    /// \brief Zooms to the extents of the given bounding box.
+    /// Zooms to the extents of the given bounding box.
     void zoomToBox(const Box3& box, FloatType viewportAspectRatio);
 
     /// Determines the aspect ratio of this viewport's area in the rendered output image.
@@ -179,8 +171,7 @@ public:
     /// Obtains the camera description from the view node.
     DataOORef<const AbstractCameraObject> cameraObject(AnimationTime time) const;
 
-    /// \brief Returns true if the viewport is using a perspective projection;
-    ///        returns false if it is using an orthogonal projection.
+    /// Returns whether this viewport is using a perspective or a parallel projection.
     bool isPerspectiveProjection() const;
 
     /// Returns the current animation time displayed by the viewport.

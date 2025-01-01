@@ -164,7 +164,7 @@ public:
     ///         terminated early because the visitor function has returned false.
     ///
     /// The visitor function must return a boolean value to indicate whether
-    /// it wants to continue visit more pipelines. A return value of false
+    /// it wants to continue to visit more pipelines. A return value of false
     /// leads to early termination and no further pipelines are visited.
     template<class Function>
     bool visitPipelines(Function&& fn) const {

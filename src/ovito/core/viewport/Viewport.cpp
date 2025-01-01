@@ -227,8 +227,7 @@ void Viewport::setCameraPosition(const Point3& p)
 }
 
 /******************************************************************************
-* Returns true if the viewport is using a perspective projection;
-* returns false if it is using an orthogonal projection.
+* Returns whether this viewport is using a perspective or a parallel projection.
 ******************************************************************************/
 bool Viewport::isPerspectiveProjection() const
 {

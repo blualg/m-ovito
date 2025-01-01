@@ -536,7 +536,7 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
 }
 
 /******************************************************************************
-* Returns the internal replacement for the given data vis element.
+* Returns the internal replacement for the given vis element.
 * If there is no replacement, the original vis element is returned.
 ******************************************************************************/
 DataVis* Pipeline::getReplacementVisElement(DataVis* vis) const
@@ -620,8 +620,7 @@ void Pipeline::collectDataObjectsForVisElement(ConstDataObjectPath& path, DataVi
 /******************************************************************************
 * Gathers a list of data objects from the given pipeline flow state (which
 * should have been produced by this pipeline) that are associated with the
-* given vis element. This method takes into account replacement vis elements
-* of this pipeline node.
+* given vis element. This method takes into account replacement vis elements.
 ******************************************************************************/
 std::vector<ConstDataObjectPath> Pipeline::getDataObjectsForVisElement(const PipelineFlowState& state, DataVis* vis) const
 {
