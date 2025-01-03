@@ -14,7 +14,7 @@ Version 3.12.0 (xx-xxx-2025)
 
 - New utilities command panel tab
 - |ovito-python| Added :py:class:`ovito.io.FileWriterInterface`
-- |ovito-python| Added :py:module:`ovito.gui` module
+- |ovito-python| Added :py:mod:`ovito.gui` module
 - |ovito-python| Added *translation* and *rotation* parameters to :py:meth:`Pipeline.add_to_scene() <ovito.pipeline.Pipeline.add_to_scene>`
 - |ovito-python| Removed :py:attr:`!Pipeline.translation` and :py:attr:`!Pipeline.rotation` properties
 - |ovito-python| Replaced :py:attr:`!LinesVis.shading` parameter with :py:attr:`LinesVis.flat_shading <ovito.vis.LinesVis.flat_shading>` parameter
