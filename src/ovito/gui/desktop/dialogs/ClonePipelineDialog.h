@@ -44,7 +44,7 @@ public:
     };
 
     /// Constructor.
-    ClonePipelineDialog(MainWindow& mainWindow, Pipeline* pipeline, QWidget* parentWindow = nullptr);
+    ClonePipelineDialog(MainWindow& mainWindow, SceneNode* sceneNode, QWidget* parentWindow = nullptr);
 
 private Q_SLOTS:
 
@@ -87,6 +87,9 @@ private:
 
     /// Widget that displays the current pipeline layout.
     QGraphicsView* _pipelineView;
+
+    /// The original scene node to be cloned.
+    OORef<SceneNode> _originalSceneNode;
 
     /// The original pipeline to be cloned.
     OORef<Pipeline> _originalPipeline;

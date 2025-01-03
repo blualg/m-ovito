@@ -39,7 +39,19 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT SelectionSet : public RefTarget
 {
-    OVITO_CLASS(SelectionSet)
+public:
+    /// Give this class its own metaclass.
+    class OVITO_CORE_EXPORT SelectionSetClass : public RefTarget::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using RefTarget::OOMetaClass::OOMetaClass;
+
+        /// Provides a custom function that takes are of the deserialization of a serialized property field.
+        /// This is needed for backward compatibility with OVITO 3.11.
+        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const override;
+    };
+    OVITO_CLASS_META(SelectionSet, SelectionSetClass)
 
 public:
 

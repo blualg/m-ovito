@@ -32,7 +32,7 @@
 namespace Ovito {
 
 /**
- * \brief This represents an entire scene node tree.
+ * \brief The root node of a scene tree made of SceneNode instances.
  */
 class OVITO_CORE_EXPORT Scene : public SceneNode
 {
@@ -52,24 +52,14 @@ public:
     /// Constructor.
     void initializeObject(ObjectInitializationFlags flags, AnimationSettings* animationSettings = nullptr);
 
-    /// \brief Searches the scene for a node with the given name.
-    /// \param nodeName The name to look for.
-    /// \return The scene node or \c nullptr, if there is no node with the given name.
+    /// Searches the scene for a node with the given name.
     SceneNode* getNodeByName(const QString& nodeName) const;
 
-    /// \brief Generates a name for a node that is unique throughout the scene.
-    /// \param baseName A base name that will be made unique by appending a number.
-    /// \return The generated unique name.
+    /// Generates a name for a node that is unique throughout the scene.
     QString makeNameUnique(QString baseName) const;
 
-    /// \brief Returns whether this is the root scene node.
+    /// Returns whether this is the root scene node.
     virtual bool isRootNode() const override { return true; }
-
-    /// \brief Deletes all child nodes of the scene.
-    void clear() {
-        while(!children().empty())
-            children().back()->deleteSceneNode();
-    }
 
 protected:
 

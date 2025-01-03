@@ -166,7 +166,7 @@ ConstPropertyPtr NucleotidesVis::nucleobaseColors(const Particles* particles, bo
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-std::variant<PipelineStatus, Future<PipelineStatus>> NucleotidesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> NucleotidesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     // Get input data.
     const Particles* particles = path.lastAs<Particles>();
@@ -190,7 +190,6 @@ std::variant<PipelineStatus, Future<PipelineStatus>> NucleotidesVis::render(cons
 
     // The type of lookup key used for caching the rendering primitives:
     using NucleotidesCacheKey = RendererResourceKey<struct NucleotidesVisCache,
-        OOWeakRef<Pipeline>,        // Pipeline scene node
         ConstDataObjectRef,         // Position property
         ConstDataObjectRef,         // Color property
         ConstDataObjectRef,         // Strand property
@@ -213,7 +212,6 @@ std::variant<PipelineStatus, Future<PipelineStatus>> NucleotidesVis::render(cons
     // Look up the rendering primitives in the vis cache.
     const auto& cache = frameGraph.visCache().lookup<NucleotidesCacheValue>(
         NucleotidesCacheKey(
-            const_cast<Pipeline*>(pipeline),
             positionProperty,
             colorProperty,
             strandProperty,
@@ -313,13 +311,13 @@ std::variant<PipelineStatus, Future<PipelineStatus>> NucleotidesVis::render(cons
     cache.pickInfo->setParticles(particles);
 
     FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::SceneLayer);
-    frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(cache.backbonePrimitive), pipeline, cache.pickInfo);
+    frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(cache.backbonePrimitive), sceneNode, cache.pickInfo);
 
     if(cache.connectionPrimitive.basePositions())
-        frameGraph.addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(cache.connectionPrimitive), pipeline, cache.pickInfo);
+        frameGraph.addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(cache.connectionPrimitive), sceneNode, cache.pickInfo);
 
     if(cache.basePrimitive.positions())
-        frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(cache.basePrimitive), pipeline, cache.pickInfo);
+        frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(cache.basePrimitive), sceneNode, cache.pickInfo);
 
     return {};
 }

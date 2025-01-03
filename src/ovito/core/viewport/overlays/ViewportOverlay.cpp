@@ -46,8 +46,11 @@ QString ViewportOverlay::OOMetaClass::viewportOverlayCategory() const
 void ViewportOverlay::initializeOverlay(Viewport* viewport)
 {
     // Automatically connect to the currently selected pipeline.
-    if(!pipeline() && viewport->scene())
-        setPipeline(dynamic_object_cast<Pipeline>(viewport->scene()->selection()->firstNode()));
+    if(!pipeline() && viewport->scene()) {
+        if(SceneNode* sceneNode = viewport->scene()->selection()->firstNode()) {
+            setPipeline(sceneNode->pipeline());
+        }
+    }
 }
 
 /******************************************************************************
@@ -57,7 +60,7 @@ void ViewportOverlay::sceneNodeAdded(SceneNode* node)
 {
     // Automatically connect to the new pipeline.
     if(!pipeline())
-        setPipeline(dynamic_object_cast<Pipeline>(node));
+        setPipeline(node->pipeline());
 }
 
 /******************************************************************************

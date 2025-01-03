@@ -49,14 +49,14 @@ void TargetObject::initializeObject(ObjectInitializationFlags flags)
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-std::variant<PipelineStatus, Future<PipelineStatus>> TargetVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> TargetVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     // Target objects are only visible in the interactive viewport windows.
     if(!frameGraph.isInteractive())
         return {};
 
     // Setup transformation matrix to always show the icon at the same size.
-    const AffineTransformation& nodeTM = pipeline->getWorldTransform(frameGraph.time());
+    const AffineTransformation& nodeTM = sceneNode->getWorldTransform(frameGraph.time());
     FloatType scaling = FloatType(0.2) * frameGraph.nonScalingSize(Point3::Origin() + nodeTM.translation());
 
     // Cache the line vertices for the icon.
@@ -85,11 +85,11 @@ std::variant<PipelineStatus, Future<PipelineStatus>> TargetVis::render(const Con
 
     // Create line rendering primitive.
     std::unique_ptr<LinePrimitive> iconPrimitive = std::make_unique<LinePrimitive>();
-    iconPrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
+    iconPrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(sceneNode->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_CAMERAS));
     iconPrimitive->setPositions(vertexPositions);
 
     // Render the lines.
-    frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(iconPrimitive), nodeTM * AffineTransformation::scaling(scaling), Box3(Point3::Origin(), 1), pipeline);
+    frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(iconPrimitive), nodeTM * AffineTransformation::scaling(scaling), Box3(Point3::Origin(), 1), sceneNode);
 
     return {};
 }

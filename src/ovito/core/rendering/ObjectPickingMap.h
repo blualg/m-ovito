@@ -59,10 +59,10 @@ protected:
 
 		/// Constructor.
 		explicit PickingRecord(const FrameGraph::RenderingCommand& command, ConstDataBufferPtr indices = {}, uint32_t rendererFlags = 0) :
-			_pipeline(command.pipeline()), _pickInfo(command.pickInfo()), _pickElementOffset(command.pickElementOffset()), _indices(std::move(indices)), _rendererFlags(rendererFlags) {}
+			_sceneNode(command.sceneNode()), _pickInfo(command.pickInfo()), _pickElementOffset(command.pickElementOffset()), _indices(std::move(indices)), _rendererFlags(rendererFlags) {}
 
-		/// Returns the picked scene pipeline.
-		const OORef<const Pipeline>& pipeline() const { return _pipeline; }
+		/// Returns the picked pipeline scene node.
+		const OORef<const SceneNode>& sceneNode() const { return _sceneNode; }
 
 		/// Returns an optional object that knows what high-level data was picked.
 		const OORef<ObjectPickInfo>& pickInfo() const { return _pickInfo; }
@@ -86,9 +86,9 @@ protected:
 		/// back to the original indices of the rendering primitive.
 		ConstDataBufferPtr _indices;
 
-		/// The scene pipeline to which this rendering command belongs.
+		/// The pipeline scene node to which the picked rendering command belongs.
 		/// Note: may be null in rare cases, e.g., when the AmbientOcclusionModifier renders particles using false colors.
-		OORef<const Pipeline> _pipeline;
+		OORef<const SceneNode> _sceneNode;
 
 		/// An optional object that knows what high-level data is being represented by this render command and which sub-elements it consists of.
 		OORef<ObjectPickInfo> _pickInfo;

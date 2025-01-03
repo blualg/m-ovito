@@ -58,9 +58,9 @@ void SelectionMode::mouseReleaseEvent(ViewportWindow* vpwin, QMouseEvent* event)
     if(_viewport != nullptr) {
         // Select object under mouse cursor.
         if(std::optional<ViewportWindow::PickResult> pickResult = vpwin->pick(_clickPoint)) {
-            if(_viewport->scene() && pickResult->pipeline()->scene() == _viewport->scene()) {
+            if(_viewport->scene() && pickResult->sceneNode()->scene() == _viewport->scene()) {
                 inputManager()->userInterface().performTransaction(tr("Select"), [&] {
-                    _viewport->scene()->selection()->setNode(pickResult->pipeline());
+                    _viewport->scene()->selection()->setNode(pickResult->sceneNode());
                 });
             }
         }
@@ -96,7 +96,7 @@ void SelectionMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
 
     // Display a description of the object under the mouse cursor in the status bar and/or in a tooltip window.
     if(pickResult && pickResult->pickInfo()) {
-        QString infoText = pickResult->pickInfo()->infoString(pickResult->pipeline(), pickResult->subobjectId());
+        QString infoText = pickResult->pickInfo()->infoString(pickResult->sceneNode()->pipeline(), pickResult->subobjectId());
         inputManager()->userInterface().showStatusBarMessage(infoText);
     }
     else {

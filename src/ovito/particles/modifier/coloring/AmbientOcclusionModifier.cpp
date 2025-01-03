@@ -161,7 +161,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             particleBuffer->setRenderingQuality(ParticlePrimitive::LowQuality);
             particleBuffer->setPositions(positions);
             particleBuffer->setRadii(radii);
-            frameGraph->addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(particleBuffer), AffineTransformation::Identity(), boundingBox, OORef<const Pipeline>{});
+            frameGraph->addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(particleBuffer), AffineTransformation::Identity(), boundingBox, OORef<const SceneNode>{});
             OVITO_ASSERT(frameGraph->commandGroups().size() == 1);
             OVITO_ASSERT(frameGraph->commandGroups().front().commands().size() == 1);
             OVITO_ASSERT(frameGraph->commandGroups().front().commands().front().skipInPickingPass() == false);

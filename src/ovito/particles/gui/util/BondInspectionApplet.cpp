@@ -104,11 +104,11 @@ void BondInspectionApplet::PickingMode::mouseReleaseEvent(ViewportWindow* vpwin,
         pickBond(vpwin, event->pos(), pickResult);
         if(!event->modifiers().testFlag(Qt::ControlModifier))
             _pickedElements.clear();
-        if(pickResult.pipeline == _applet->currentPipeline()) {
+        if(pickResult.sceneNode == _applet->currentSceneNode()) {
             // Don't select the same bond twice. Instead, toggle selection.
             bool alreadySelected = false;
             for(auto p = _pickedElements.begin(); p != _pickedElements.end(); ++p) {
-                if(p->pipeline == pickResult.pipeline && p->bondIndex == pickResult.bondIndex) {
+                if(p->sceneNode == pickResult.sceneNode && p->bondIndex == pickResult.bondIndex) {
                     alreadySelected = true;
                     _pickedElements.erase(p);
                     break;
@@ -135,7 +135,7 @@ void BondInspectionApplet::PickingMode::mouseMoveEvent(ViewportWindow* vpwin, QM
 {
     // Change mouse cursor while hovering over a bond.
     PickResult pickResult;
-    if(pickBond(vpwin, event->pos(), pickResult) && pickResult.pipeline == _applet->currentPipeline())
+    if(pickBond(vpwin, event->pos(), pickResult) && pickResult.sceneNode == _applet->currentSceneNode())
         setCursor(SelectionMode::selectionCursor());
     else
         setCursor(QCursor());

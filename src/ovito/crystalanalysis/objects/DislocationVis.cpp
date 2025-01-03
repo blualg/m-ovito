@@ -131,7 +131,7 @@ Box3 DislocationVis::boundingBoxImmediate(AnimationTime time, const ConstDataObj
 /******************************************************************************
 * Lets the vis element render a data object.
 ******************************************************************************/
-std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     // Get the dislocation network to be rendered.
     DataOORef<const DislocationNetwork> dislocations = path.lastAs<DislocationNetwork>();
@@ -148,7 +148,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(cons
         });
 
     // Wait for the renderable lines to be generated.
-    return renderableLinesFuture.then(ObjectExecutor(this), [this, &commandGroup=frameGraph.addCommandGroup(FrameGraph::SceneLayer), frameGraph=OORef<FrameGraph>(&frameGraph), dislocations, pipeline=OORef<const Pipeline>(pipeline)](std::shared_ptr<const RenderableDislocationLines> renderableLines) -> PipelineStatus {
+    return renderableLinesFuture.then(ObjectExecutor(this), [this, &commandGroup=frameGraph.addCommandGroup(FrameGraph::SceneLayer), frameGraph=OORef<FrameGraph>(&frameGraph), dislocations, sceneNode=OORef<const SceneNode>(sceneNode)](std::shared_ptr<const RenderableDislocationLines> renderableLines) -> PipelineStatus {
 
         // Make sure we don't exceed our internal limits.
         if(renderableLines->lineSegments().size() > (size_t)std::numeric_limits<int>::max())
@@ -337,17 +337,17 @@ std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(cons
 
         // Take simulation cell as bounding box of dislocation lines.
         Box3 bb = Box3(Point3(0), Point3(1)).transformed(cellObject->cellMatrix()).padBox(std::max(lineWidth(), FloatType(0)) * FloatType(0.5));
-        const AffineTransformation& tm = pipeline->getWorldTransform(frameGraph->time());
+        const AffineTransformation& tm = sceneNode->getWorldTransform(frameGraph->time());
 
         // Render dislocation segments.
-        commandGroup.addPrimitive(std::make_unique<CylinderPrimitive>(primitives.segments), tm, bb, pipeline, primitives.pickInfo);
+        commandGroup.addPrimitive(std::make_unique<CylinderPrimitive>(primitives.segments), tm, bb, sceneNode, primitives.pickInfo);
 
         // Render segment vertices.
-        commandGroup.addPrimitive(std::make_unique<ParticlePrimitive>(primitives.corners), tm, bb, pipeline, primitives.pickInfo, primitives.lineSegmentCount);
+        commandGroup.addPrimitive(std::make_unique<ParticlePrimitive>(primitives.corners), tm, bb, sceneNode, primitives.pickInfo, primitives.lineSegmentCount);
 
         // Render Burgers vectors.
         if(showBurgersVectors() && primitives.burgersArrows.basePositions())
-            frameGraph->addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(primitives.burgersArrows), pipeline, primitives.pickInfo, primitives.lineSegmentCount + primitives.cornerCount);
+            frameGraph->addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(primitives.burgersArrows), sceneNode, primitives.pickInfo, primitives.lineSegmentCount + primitives.cornerCount);
 
         return {};
     });
@@ -356,7 +356,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(cons
 /******************************************************************************
 * Renders an overlay marker for a single dislocation segment.
 ******************************************************************************/
-void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, FrameGraph& frameGraph, const Pipeline* pipeline)
+void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const PipelineFlowState& flowState, int segmentIndex, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     // Get the dislocations.
     const DislocationNetwork* dislocations = dynamic_object_cast<DislocationNetwork>(dataObject);
@@ -395,7 +395,7 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
     segmentBuffer->setUniformWidth(lineDiameter);
     segmentBuffer->setPositions(baseSegmentPoints.take(), headSegmentPoints.take());
     segmentBuffer->setUniformColor(Color(1,1,1));
-    frameGraph.addPrimitiveNonpickable(commandGroup, std::move(segmentBuffer), pipeline);
+    frameGraph.addPrimitiveNonpickable(commandGroup, std::move(segmentBuffer), sceneNode);
 
     std::unique_ptr<ParticlePrimitive> cornerBuffer = std::make_unique<ParticlePrimitive>();
     cornerBuffer->setParticleShape(ParticlePrimitive::SphericalShape);
@@ -404,7 +404,7 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
     cornerBuffer->setPositions(cornerVertices.take());
     cornerBuffer->setUniformColor(Color(1,1,1));
     cornerBuffer->setUniformRadius(0.5 * lineDiameter);
-    frameGraph.addPrimitiveNonpickable(commandGroup, std::move(cornerBuffer), pipeline);
+    frameGraph.addPrimitiveNonpickable(commandGroup, std::move(cornerBuffer), sceneNode);
 
     if(!segment->line.empty()) {
         BufferFactory<Point3G> wrappedHeadPos(1);
@@ -415,7 +415,7 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
         headBuffer->setPositions(wrappedHeadPos.take());
         headBuffer->setUniformColor(Color(1,1,1));
         headBuffer->setUniformRadius(headRadius);
-        frameGraph.addPrimitiveNonpickable(commandGroup, std::move(headBuffer), pipeline);
+        frameGraph.addPrimitiveNonpickable(commandGroup, std::move(headBuffer), sceneNode);
     }
 }
 

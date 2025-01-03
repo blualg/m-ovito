@@ -41,11 +41,19 @@ MainWindow& DataInspectionApplet::mainWindow() const
 }
 
 /******************************************************************************
-* Returns the currently selected data pipeline in the scene.
+* Returns the currently selected data pipeline.
 ******************************************************************************/
 Pipeline* DataInspectionApplet::currentPipeline() const
 {
     return inspectorPanel()->selectedPipeline();
+}
+
+/******************************************************************************
+* Returns the currently selected pipeline scene node.
+******************************************************************************/
+SceneNode* DataInspectionApplet::currentSceneNode() const
+{
+    return inspectorPanel()->selectedSceneNode();
 }
 
 /******************************************************************************

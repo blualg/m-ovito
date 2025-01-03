@@ -49,23 +49,25 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* 
     gridLayout->addWidget(new QLabel(tr("Copy to pipeline:")), 0, 0);
     gridLayout->addWidget(_destinationPipelineList, 0, 1);
 
-    // Populate list of scene pipelines.
+    // Build the list of scene pipelines.
     if(Scene* scene = _mainWindow.datasetContainer().activeScene()) {
-        scene->visitChildren([&](SceneNode* node) -> bool {
-            if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
-                QString itemLabel = pipeline->objectTitle();
-                if(pipeline == sourcePipeline)
-                    itemLabel += tr(" (source pipeline)");
-                _destinationPipelineList->addItem(std::move(itemLabel), QVariant::fromValue(OORef<OvitoObject>(pipeline)));
-                if(pipeline == sourcePipeline)
-                    _destinationPipelineList->setCurrentIndex(_destinationPipelineList->count() - 1);
-                else {
-    #ifndef OVITO_BUILD_PROFESSIONAL
-                    QStandardItem* item = static_cast<QStandardItemModel*>(_destinationPipelineList->model())->item(_destinationPipelineList->count() - 1);
-                    item->setEnabled(false);
-                    item->setText(item->text() + " (requires OVITO Pro)");
-    #endif
-                }
+        scene->visitPipelines([&](SceneNode* sceneNode) -> bool {
+            QString itemLabel = sceneNode->objectTitle();
+            if(sceneNode->pipeline() == sourcePipeline)
+                itemLabel += tr(" (source pipeline)");
+            QVariant data = QVariant::fromValue(OORef<OvitoObject>(sceneNode->pipeline()));
+            // Skip duplicate pipelines (in case a pipeline is reference by multiple scene nodes).
+            if(_destinationPipelineList->findData(data) != -1)
+                return true;
+            _destinationPipelineList->addItem(std::move(itemLabel), std::move(data));
+            if(sceneNode->pipeline() == sourcePipeline)
+                _destinationPipelineList->setCurrentIndex(_destinationPipelineList->count() - 1);
+            else {
+#ifndef OVITO_BUILD_PROFESSIONAL
+                QStandardItem* item = static_cast<QStandardItemModel*>(_destinationPipelineList->model())->item(_destinationPipelineList->count() - 1);
+                item->setEnabled(false);
+                item->setText(item->text() + " (requires OVITO Pro)");
+#endif
             }
             return true;
         });

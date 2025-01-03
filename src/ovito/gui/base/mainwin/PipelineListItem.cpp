@@ -183,11 +183,13 @@ const PipelineStatus& PipelineListItem::status() const
 /******************************************************************************
 * Returns a short piece of information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
 ******************************************************************************/
-QVariant PipelineListItem::shortInfo(Pipeline* selectedPipeline) const
+QVariant PipelineListItem::shortInfo(SceneNode* selectedSceneNode) const
 {
     OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(selectedSceneNode);
+
     if(ActiveObject* activeObject = dynamic_object_cast<ActiveObject>(object())) {
-        if(Scene* scene = selectedPipeline->scene()) {
+        if(Scene* scene = selectedSceneNode->scene()) {
             return activeObject->getPipelineEditorShortInfo(scene);
         }
     }

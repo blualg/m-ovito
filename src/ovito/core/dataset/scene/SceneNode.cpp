@@ -32,14 +32,14 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/oo/CloneHelper.h>
-#include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(SceneNode);
+IMPLEMENT_CREATABLE_OVITO_CLASS(SceneNode);
 DEFINE_REFERENCE_FIELD(SceneNode, transformationController);
 DEFINE_REFERENCE_FIELD(SceneNode, lookatTargetNode);
+DEFINE_REFERENCE_FIELD(SceneNode, pipeline);
 DEFINE_VECTOR_REFERENCE_FIELD(SceneNode, children);
 DEFINE_RUNTIME_PROPERTY_FIELD(SceneNode, hiddenInViewports);
 DEFINE_PROPERTY_FIELD(SceneNode, sceneNodeName);
@@ -49,6 +49,7 @@ SET_PROPERTY_FIELD_LABEL(SceneNode, lookatTargetNode, "Target");
 SET_PROPERTY_FIELD_LABEL(SceneNode, children, "Children");
 SET_PROPERTY_FIELD_LABEL(SceneNode, sceneNodeName, "Name");
 SET_PROPERTY_FIELD_LABEL(SceneNode, displayColor, "Display color");
+SET_PROPERTY_FIELD_LABEL(SceneNode, pipeline, "Pipeline");
 SET_PROPERTY_FIELD_CHANGE_EVENT(SceneNode, sceneNodeName, ReferenceEvent::TitleChanged);
 SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(SceneNode, sceneNodeName, "nodeName"); // For backward compatibility with OVITO 3.9.2
 
@@ -127,26 +128,47 @@ void SceneNode::invalidateWorldTransformation()
 }
 
 /******************************************************************************
-* Deletes this node from the scene. This will also delete all child nodes.
+* Asks this object to delete itself.
 ******************************************************************************/
-void SceneNode::deleteSceneNode()
+void SceneNode::requestObjectDeletion()
 {
-    // Delete target too.
-    OORef<SceneNode> tn = lookatTargetNode();
-    if(tn) {
+    // Delete target scene node too.
+    if(OORef<SceneNode> tn = lookatTargetNode()) {
         // Clear reference first to prevent infinite recursion.
         _lookatTargetNode.set(this, PROPERTY_FIELD(lookatTargetNode), nullptr);
-        tn->deleteSceneNode();
+        tn->requestObjectDeletion();
     }
 
     // Delete all child nodes recursively.
-    for(SceneNode* child : children())
-        child->deleteSceneNode();
-
+    deleteChildren();
     OVITO_ASSERT(children().empty());
 
-    // Delete node itself.
-    requestObjectDeletion();
+    // Delete pipeline if there are no more scene nodes referencing the same pipeline.
+    if(OORef<Pipeline> pl = pipeline()) {
+        setPipeline(nullptr);
+        if(!pl->someSceneNode())
+            pl->requestObjectDeletion();
+    }
+
+    // Delete scene node itself.
+    RefTarget::requestObjectDeletion();
+}
+
+/******************************************************************************
+* Returns the title of this object.
+******************************************************************************/
+QString SceneNode::objectTitle() const
+{
+    // If a user-defined name has been assigned to this scene node, return it as the its display title.
+    if(!sceneNodeName().isEmpty())
+        return sceneNodeName();
+
+    // Otherwise, use the title of the pipeline.
+    if(pipeline())
+        return pipeline()->objectTitle();
+
+    // Fall back to default behavior.
+    return RefTarget::objectTitle();
 }
 
 /******************************************************************************
@@ -174,7 +196,7 @@ LookAtController* SceneNode::setLookatTargetNode(AnimationTime time, SceneNode* 
         if(targetNode) {
             OVITO_CHECK_OBJECT_POINTER(targetNode);
 
-            // Create a look at controller.
+            // Create a look-at controller.
             OORef<LookAtController> lookAtCtrl = dynamic_object_cast<LookAtController>(prs->rotationController());
             if(!lookAtCtrl)
                 lookAtCtrl = OORef<LookAtController>::create();
@@ -216,13 +238,24 @@ bool SceneNode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
             invalidateBoundingBox();
         }
     }
-    else if(event.type() == ReferenceEvent::TargetDeleted && source == lookatTargetNode()) {
-        // Lookat target node has been deleted -> delete this node too.
-        if(!isUndoingOrRedoing())
-            deleteSceneNode();
+    else if(event.type() == ReferenceEvent::TargetDeleted) {
+        if(source == pipeline() || source == lookatTargetNode()) {
+            // Pipeline or look-at target have been deleted -> delete this node too.
+            if(!isUndoingOrRedoing())
+                requestObjectDeletion();
+        }
     }
-    else if(event.type() == ReferenceEvent::AnimationFramesChanged && children().contains(static_cast<SceneNode*>(source))) {
-        onAnimationFramesChanged();
+    else if(event.type() == ReferenceEvent::AnimationFramesChanged) {
+        if(source == pipeline() || children().contains(static_cast<SceneNode*>(source)))
+            onAnimationFramesChanged();
+    }
+    else if(source == pipeline() && event.type() == Pipeline::BoundingBoxChanged) {
+        // Mark the cached bounding box of this scene node as invalid.
+        invalidateBoundingBox();
+    }
+    if(source == this->pipeline() && event.type() == ReferenceEvent::TitleChanged && sceneNodeName().isEmpty()) {
+        // Forward this event to dependents.
+        return true;
     }
     return RefTarget::referenceEvent(source, event);
 }
@@ -252,6 +285,11 @@ void SceneNode::referenceReplaced(const PropertyFieldDescriptor* field, RefTarge
 
         // The animation length might have changed when an object has been removed from the scene.
         onAnimationFramesChanged();
+    }
+    else if(field == PROPERTY_FIELD(pipeline)) {
+        // When the pipeline of the scene node is being replaced, the scene node's title changes.
+        if(sceneNodeName().isEmpty())
+            notifyDependents(ReferenceEvent::TitleChanged);
     }
     RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -441,14 +479,15 @@ void SceneNode::loadFromStream(ObjectLoadStream& stream)
 
 /******************************************************************************
 * Provides a custom function that takes are of the deserialization of a
-* serialized property field that has been removed from the class.
+* serialized property field that has been removed or changed in a newer version of OVITO.
 * This is needed for file backward compatibility with OVITO 3.11.
 ******************************************************************************/
 RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr SceneNode::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
 {
-    // The 'hiddenInViewports' list used to be a vector reference field in previous OVITO versions.
-    // Now it is a simple property field holding a vector of weak references to viewports.
+    // For backward compatibility with OVITO 3.11:
     if(field.definingClass == &SceneNode::OOClass() && stream.formatVersion() < 30013) {
+        // The 'hiddenInViewports' list used to be a vector reference field in previous OVITO versions.
+        // Now it is a simple property field holding a vector of weak references to viewports.
         if(field.identifier == "hiddenInViewports") {
             return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
                 stream.expectChunk(0x02);
@@ -459,6 +498,19 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
                     viewports.push_back(stream.loadObject<Viewport>());
                 }
                 static_object_cast<SceneNode>(&owner)->setHiddenInViewports(std::move(viewports));
+                stream.closeChunk();
+            };
+        }
+        // The Pipeline class has been split from the SceneNode base class in OVITO 3.12. This means we have to handle
+        // the deserialization of the children field here, which used to be a list of Pipeline objects (now a list of SceneNode instances).
+        else if(field.identifier == "children") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x02);
+                qint32 numChildren;
+                stream >> numChildren;
+                for(qint32 i = 0; i < numChildren; i++) {
+                    static_object_cast<SceneNode>(&owner)->_children.insert(&owner, PROPERTY_FIELD(SceneNode::children), i, stream.loadObject<Pipeline>()->deserializationSceneNode());
+                }
                 stream.closeChunk();
             };
         }
@@ -478,7 +530,7 @@ OORef<RefTarget> SceneNode::clone(bool deepCopy, CloneHelper& cloneHelper) const
     if(clone->lookatTargetNode()) {
         OVITO_ASSERT(lookatTargetNode());
 
-        // Insert the cloned target into the same scene as out target.
+        // Insert the cloned target into the same scene as our target.
         if(lookatTargetNode()->parentNode() && !clone->lookatTargetNode()->parentNode()) {
             lookatTargetNode()->parentNode()->addChildNode(clone->lookatTargetNode());
         }

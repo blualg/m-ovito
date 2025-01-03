@@ -112,7 +112,7 @@ Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPat
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     const Bonds* bonds = path.lastAs<Bonds>(0);
     const Particles* particles = path.lastAs<Particles>(1);
@@ -328,10 +328,10 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
         return {};
 
     FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::SceneLayer);
-    frameGraph.addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(cylinders), pipeline, pickInfo);
+    frameGraph.addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(cylinders), sceneNode, pickInfo);
 
     if(renderNodalVertices)
-        frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(vertices), pipeline);
+        frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(vertices), sceneNode);
 
     return {};
 }

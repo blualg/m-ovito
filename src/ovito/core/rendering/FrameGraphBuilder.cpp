@@ -75,28 +75,28 @@ static void handleRenderException(const FrameGraph& fg, ActiveObject* object, Ex
 /******************************************************************************
 * Builds the list of visible scene pipeline nodes to be rendered.
 ******************************************************************************/
-static std::vector<OORef<Pipeline>> compilePipelinesList(const Scene& scene, const Viewport* viewport)
+static std::vector<OORef<SceneNode>> compilePipelineSceneNodesList(const Scene& scene, const Viewport* viewport)
 {
-    std::vector<OORef<Pipeline>> visiblePipelines;
+    std::vector<OORef<SceneNode>> visiblePipelineSceneNodes;
 
     // Visit all pipelines in the current scene.
-    scene.visitPipelines([&](Pipeline* pipeline) {
+    scene.visitPipelines([&](SceneNode* sceneNode) {
 
         // Skip pipeline if it is hidden in the current viewport.
-        if(viewport && pipeline->isHiddenInViewport(viewport, false))
+        if(viewport && sceneNode->isHiddenInViewport(viewport, false))
             return true;
 
         // Skip pipeline if it is the view node of the viewport or if it is the target of the view node.
-        if(viewport && viewport->viewNode() && (viewport->viewNode() == pipeline || viewport->viewNode()->lookatTargetNode() == pipeline))
+        if(viewport && viewport->viewNode() && (viewport->viewNode() == sceneNode || viewport->viewNode()->lookatTargetNode() == sceneNode))
             return true;
 
         // Add the pipeline to the list of pipeline to be rendered.
-        visiblePipelines.push_back(pipeline);
+        visiblePipelineSceneNodes.push_back(sceneNode);
 
         return true;
     });
 
-    return visiblePipelines;
+    return visiblePipelineSceneNodes;
 }
 
 /******************************************************************************
@@ -149,7 +149,7 @@ static void renderOverlays(
 static void gatherVisElements(
     FrameGraph& fg,
     const DataObject* dataObj,
-    const Pipeline* pipeline,
+    const SceneNode* sceneNode,
     const PipelineFlowState& state,
     ConstDataObjectPath& dataObjectPath,
     std::vector<OORef<DataVis>>& asyncVisElements,
@@ -159,8 +159,8 @@ static void gatherVisElements(
 
     // Call all attached vis elements of the data object.
     for(DataVis* vis : dataObj->visElements()) {
-        // Let the PipelineSceneNode substitute the vis element with another one.
-        vis = pipeline->getReplacementVisElement(vis);
+        // Let the pipeline substitute the vis element with another one.
+        vis = sceneNode->pipeline()->getReplacementVisElement(vis);
         if(vis->isEnabled()) {
             // Push the data object onto the stack.
             if(!isOnStack) {
@@ -169,7 +169,7 @@ static void gatherVisElements(
             }
             try {
                 // Let the vis element do the rendering.
-                auto result = vis->render(dataObjectPath, state, fg, pipeline);
+                auto result = vis->render(dataObjectPath, state, fg, sceneNode);
 
                 // Check if rendering happened synchronously or asynchronously.
                 if(PipelineStatus* status = std::get_if<PipelineStatus>(&result)) {
@@ -200,7 +200,7 @@ static void gatherVisElements(
             dataObjectPath.push_back(dataObj);
             isOnStack = true;
         }
-        gatherVisElements(fg, subObject, pipeline, state, dataObjectPath, asyncVisElements, asyncVisElementFutures);
+        gatherVisElements(fg, subObject, sceneNode, state, dataObjectPath, asyncVisElements, asyncVisElementFutures);
         return false;
     });
 
@@ -214,8 +214,8 @@ static void gatherVisElements(
 ******************************************************************************/
 Future<void> FrameGraph::buildFromScene(OORef<Scene> scene, OORef<Viewport> viewport, const QRect& logicalViewportRect, const QRect& physicalViewportRect, const ViewProjectionParameters& noninteractiveProjParams)
 {
-    // Gather list of pipelines to render.
-    std::vector<OORef<Pipeline>> visiblePipelines = compilePipelinesList(*scene, viewport);
+    // Gather list of pipeline scene nodes to render.
+    std::vector<OORef<SceneNode>> visiblePipelineSceneNodes = compilePipelineSceneNodesList(*scene, viewport);
 
     // Render viewport underlays and overlays.
 	std::vector<OORef<ViewportOverlay>> asyncViewportLayers; // List of asynchronous viewport layers.
@@ -227,10 +227,10 @@ Future<void> FrameGraph::buildFromScene(OORef<Scene> scene, OORef<Viewport> view
 
     // Evaluate all visible pipelines in the scene to obtain their output data.
 	std::vector<PipelineFlowState> pipelineResults;
-    for(const auto& pipeline : visiblePipelines) {
+    for(const auto& sceneNode : visiblePipelineSceneNodes) {
         try {
             // Request pipeline result.
-            PipelineEvaluationResult pipelineResult = pipeline->evaluatePipeline(PipelineEvaluationRequest(time(), stopOnPipelineError(), isInteractive()));
+            PipelineEvaluationResult pipelineResult = sceneNode->pipeline()->evaluatePipeline(PipelineEvaluationRequest(time(), stopOnPipelineError(), isInteractive()));
 
             // Flag the entire frame graph as preliminary if the pipeline output is preliminary.
             if(pipelineResult.evaluationTypes().testFlag(PipelineEvaluationResult::EvaluationType::Noninteractive) == false)
@@ -243,21 +243,23 @@ Future<void> FrameGraph::buildFromScene(OORef<Scene> scene, OORef<Viewport> view
                 throw;
             // In interactive mode, log the exception and continue rendering.
             ex.logError();
+            pipelineResults.push_back({});
             continue;
         }
     }
+    OVITO_ASSERT(pipelineResults.size() == visiblePipelineSceneNodes.size());
 
     // Visit all vis elements and let them populate the frame graph.
     std::vector<OORef<DataVis>> asyncVisElements; // List of asynchronous visual elements.
 	std::vector<Future<PipelineStatus>> asyncVisElementFutures; // List of asynchronous visual element rendering tasks.
-    auto pipeline = visiblePipelines.begin();
+    auto sceneNode = visiblePipelineSceneNodes.begin();
     ConstDataObjectPath dataObjectPath;
     for(const PipelineFlowState& state : pipelineResults) {
         // Visit all vis elements of all data objects in the pipeline state.
         if(state)
-            gatherVisElements(*this, state.data(), *pipeline, state, dataObjectPath, asyncVisElements, asyncVisElementFutures);
+            gatherVisElements(*this, state.data(), *sceneNode, state, dataObjectPath, asyncVisElements, asyncVisElementFutures);
         OVITO_ASSERT(dataObjectPath.empty());
-        ++pipeline;
+        ++sceneNode;
     }
 
     // Wait for all visual elements to finish rendering.

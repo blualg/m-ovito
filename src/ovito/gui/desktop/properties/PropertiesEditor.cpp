@@ -248,12 +248,10 @@ PipelineFlowState PropertiesEditor::getPipelineInput() const
 
     // When editing a DataVis element, request pipeline state from the selected pipeline.
     if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
-        if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet()) {
-            if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(selection->firstNode())) {
-                OVITO_ASSERT(vis->pipelines(true).contains(pipeline));
-                OVITO_ASSERT(pipeline->visElements().contains(vis));
-                return pipeline->getCachedPipelineOutput(currentAnimationTime());
-            }
+        if(Pipeline* pipeline = selectedPipeline()) {
+            OVITO_ASSERT(vis->pipelines(true).contains(pipeline));
+            OVITO_ASSERT(pipeline->visElements().contains(vis));
+            return pipeline->getCachedPipelineOutput(currentAnimationTime());
         }
     }
 
@@ -361,15 +359,13 @@ ConstDataObjectRefPath PropertiesEditor::getVisDataObjectPath() const
     if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
         // We'll now try to find the DataObject this DataVis element is associated with.
         // Let's start looking in the output data collection of the currently selected pipeline scene node.
-        if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet()) {
-            if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(selection->firstNode())) {
-                std::vector<ConstDataObjectPath> dataObjectPaths;
-                const PipelineFlowState& state = pipeline->getCachedPipelineOutput(currentAnimationTime());
-                dataObjectPaths = pipeline->getDataObjectsForVisElement(state, vis);
-                if(!dataObjectPaths.empty()) {
-                    // Return just the first path from the list.
-                    return ConstDataObjectRefPath(dataObjectPaths.front().begin(), dataObjectPaths.front().end());
-                }
+        if(Pipeline* pipeline = selectedPipeline()) {
+            std::vector<ConstDataObjectPath> dataObjectPaths;
+            const PipelineFlowState& state = pipeline->getCachedPipelineOutput(currentAnimationTime());
+            dataObjectPaths = pipeline->getDataObjectsForVisElement(state, vis);
+            if(!dataObjectPaths.empty()) {
+                // Return just the first path from the list.
+                return ConstDataObjectRefPath(dataObjectPaths.front().begin(), dataObjectPaths.front().end());
             }
         }
         return {};

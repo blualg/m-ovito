@@ -142,7 +142,7 @@ Box3 SurfaceMeshVis::boundingBoxImmediate(AnimationTime time, const ConstDataObj
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-std::variant<PipelineStatus, Future<PipelineStatus>> SurfaceMeshVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> SurfaceMeshVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     // Get the surface mesh.
     DataOORef<const SurfaceMesh> surfaceMesh = path.lastAs<SurfaceMesh>();
@@ -176,7 +176,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> SurfaceMeshVis::render(cons
         });
 
     // Wait for the renderable mesh to be generated.
-    return renderableMeshFuture.then(ObjectExecutor(this), [this, frameGraph=OORef<FrameGraph>(&frameGraph), surfaceMesh, pipeline=OORef<const Pipeline>(pipeline)](std::shared_ptr<const RenderableSurfaceMesh> renderableMesh) {
+    return renderableMeshFuture.then(ObjectExecutor(this), [this, frameGraph=OORef<FrameGraph>(&frameGraph), surfaceMesh, sceneNode=OORef<const SceneNode>(sceneNode)](std::shared_ptr<const RenderableSurfaceMesh> renderableMesh) {
 
         // Get the rendering colors for the surface and cap meshes.
         FloatType surface_alpha = 1;
@@ -225,7 +225,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> SurfaceMeshVis::render(cons
             auto coloredSurface = std::make_unique<MeshPrimitive>(surfacePrimitive);
             // Update the color mapping.
             coloredSurface->setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());
-            frameGraph->addPrimitive(commandGroup, std::move(coloredSurface), pipeline, pickInfo);
+            frameGraph->addPrimitive(commandGroup, std::move(coloredSurface), sceneNode, pickInfo);
         }
 
         // Render the surface mesh cap.
@@ -237,9 +237,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> SurfaceMeshVis::render(cons
             // If the caps are semi-transparent, exclude them from the object picking render pass to
             // make it easier for the user to pick other things inside the mesh.
             if(cap_alpha >= 1)
-                frameGraph->addPrimitive(commandGroup, std::move(capPrimitive), pipeline);
+                frameGraph->addPrimitive(commandGroup, std::move(capPrimitive), sceneNode);
             else
-                frameGraph->addPrimitiveNonpickable(commandGroup, std::move(capPrimitive), pipeline);
+                frameGraph->addPrimitiveNonpickable(commandGroup, std::move(capPrimitive), sceneNode);
         }
 
         return renderableMesh->status();

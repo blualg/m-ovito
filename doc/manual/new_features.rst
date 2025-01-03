@@ -6,6 +6,30 @@ Changelog
 
 .. sidebar::
 
+  * `Download this version <https://www.ovito.org/download_history/#3.12.0>`__
+
+----------------------------
+Version 3.12.0 (xx-xxx-2025)
+----------------------------
+
+- New utilities command panel tab
+- |ovito-python| Added :py:class:`ovito.io.FileWriterInterface`
+- |ovito-python| Added :py:module:`ovito.gui` module
+- |ovito-python| Added *translation* and *rotation* parameters to :py:meth:`Pipeline.add_to_scene() <ovito.pipeline.Pipeline.add_to_scene>`
+- |ovito-python| Removed :py:attr:`!Pipeline.translation` and :py:attr:`!Pipeline.rotation` properties
+- |ovito-python| Replaced :py:attr:`!LinesVis.shading` parameter with :py:attr:`LinesVis.flat_shading <ovito.vis.LinesVis.flat_shading>` parameter
+- |ovito-python| Replaced :py:attr:`!DislocationVis.shading` parameter with :py:attr:`DislocationVis.flat_shading <ovito.vis.DislocationVis.flat_shading>` parameter
+- |ovito-pro| Added :ref:`file_formats.output.ase_trajectory`
+- |ovito-pro| Added OVITO Pro Python extensions gallery
+- |ovito-pro| Added support for :ref:`user-defined file exporters <writing_custom_file_writers>`
+- |ovito-pro| Added support for user-defined utility applets running in the command panel of OVITO Pro
+- |ovito-pro| Added GUI function for installing third-party Python packages in the embedded interpreter
+- |ovito-pro| OVITO Pro can now be used as a Jupyter kernel (in conda environments), combining interactive Python scripting with the full OVITO Pro GUI
+- |ovito-pro| Added outline effect to :ref:`rendering.ospray_renderer` and :ref:`rendering.visrtx_renderer`
+- |ovito-pro| Improved object picking performance in interactive viewports for the :ref:`rendering.visrtx_renderer`
+
+.. sidebar::
+
   * `Download this version <https://www.ovito.org/download_history/#3.11.3>`__
 
 ----------------------------
@@ -17,20 +41,6 @@ Version 3.11.3 (29-Dec-2024)
 - Workaround for `Qt/OpenGL memory leak on macOS <https://matsci.org/t/ovito-elevated-ram-usage-on-macos-with-ambient-occlusion/59683>`__ when using the :ref:`particles.modifiers.ambient_occlusion` modifier
 - |ovito-python| Added :py:func:`~ovito.io.pymatgen.pymatgen_to_ovito` and :py:func:`~ovito.io.pymatgen.ovito_to_pymatgen` functions for converting OVITO particle structures to and from `pymatgen Structure objects <https://pymatgen.org/pymatgen.core.html#pymatgen.core.structure.Structure>`__
 - |ovito-python| Notify user of invalid usage of :py:class:`ovito.data.CutoffNeighborFinder` iterators (`matsci.org discussion <https://matsci.org/t/indices-found-by-ovito-data-cutoffneighborfinder-look-like-overflow/59686>`__)
-
-.. sidebar::
-
-  * `Download this version <https://www.ovito.org/download_history/#3.12.0>`__
-
-----------------------------
-Version 3.12.0 (xx-xxx-2024)
-----------------------------
-
-- |ovito-python| Added :py:class:`ovito.io.FileWriterInterface`
-- |ovito-python| Replaced :py:attr:`!LinesVis.shading` parameter with :py:attr:`LinesVis.flat_shading <ovito.vis.LinesVis.flat_shading>` parameter
-- |ovito-python| Replaced :py:attr:`!DislocationVis.shading` parameter with :py:attr:`DislocationVis.flat_shading <ovito.vis.DislocationVis.flat_shading>` parameter
-- |ovito-pro| Added :ref:`file_formats.output.ase_trajectory`
-- |ovito-pro| Added GUI function for installing Python packages in the embedded interpreter
 
 .. sidebar::
 
@@ -348,7 +358,7 @@ Version 3.10.1 (09-Jan-2024)
 - Added support for the LAMMPS *dump yaml* file format to the :ref:`file_formats.input.lammps_dump`
 - :ref:`particles.modifiers.show_periodic_images` modifier: Use particle property ``Periodic Image`` if present to yield correct replicated molecule identifiers
 - Fix: Frame 0 of LAMMPS dump, xyz and pdb trajectory files gets loaded a second time unnecessarily
-- |ovito-python| New Python properties :py:attr:`Pipeline.translation <ovito.pipeline.Pipeline.translation>` and :py:attr:`Pipeline.rotation <ovito.pipeline.Pipeline.rotation>`, which control the placement of a pipeline's visual output in the 3d scene
+- |ovito-python| New Python properties :py:attr:`!Pipeline.translation` and :py:attr:`!Pipeline.rotation`, which control the placement of a pipeline's visual output in the 3d scene
 - |ovito-python| Fixed offscreen font rendering in standalone Python module on (headless) Linux platform
 
 .. sidebar::

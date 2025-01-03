@@ -86,8 +86,8 @@ void PipelineSelectionParameterUI::updateUI()
     if(comboBox()) {
         comboBox()->clear();
         if(editObject()) {
-            editor()->visitScenePipelines([&](Pipeline* pipeline) {
-                comboBox()->addItem(pipeline->objectTitle(), QVariant::fromValue(pipeline));
+            editor()->visitScenePipelines([&](SceneNode* sceneNode) {
+                comboBox()->addItem(sceneNode->objectTitle(), QVariant::fromValue(sceneNode->pipeline()));
                 return true;
             });
         }

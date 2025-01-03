@@ -44,7 +44,7 @@ DEFINE_PROPERTY_FIELD(FileExporter, everyNthFrame);
 DEFINE_PROPERTY_FIELD(FileExporter, floatOutputPrecision);
 DEFINE_REFERENCE_FIELD(FileExporter, datasetToExport);
 DEFINE_REFERENCE_FIELD(FileExporter, sceneToExport);
-DEFINE_REFERENCE_FIELD(FileExporter, sceneNodeToExport);
+DEFINE_REFERENCE_FIELD(FileExporter, pipelineToExport);
 DEFINE_PROPERTY_FIELD(FileExporter, dataObjectToExport);
 SET_PROPERTY_FIELD_LABEL(FileExporter, outputFilename, "Output filename");
 SET_PROPERTY_FIELD_LABEL(FileExporter, exportTrajectory, "Export trajectory");
@@ -55,7 +55,6 @@ SET_PROPERTY_FIELD_LABEL(FileExporter, endFrame, "End frame");
 SET_PROPERTY_FIELD_LABEL(FileExporter, everyNthFrame, "Every Nth frame");
 SET_PROPERTY_FIELD_LABEL(FileExporter, floatOutputPrecision, "Numeric output precision");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(FileExporter, floatOutputPrecision, IntegerParameterUnit, 1, std::numeric_limits<FloatType>::max_digits10);
-SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(FileExporter, sceneNodeToExport, "nodeToExport"); // For backward compatibility with OVITO 3.9.2
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(FileExportJob);
 
@@ -93,15 +92,13 @@ void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
         setSceneToExport(scene);
 
     // Export the entire frame interval of the selected pipeline by default.
-    if(endFrame() < startFrame()) {
-        if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(sceneNodeToExport())) {
-            if(pipeline->head()) {
-                int nframes = pipeline->head()->numberOfSourceFrames();
-                int start = pipeline->head()->sourceFrameToAnimationTime(0).frame();
-                if(start < startFrame()) setStartFrame(start);
-                int end = (pipeline->head()->sourceFrameToAnimationTime(nframes) - 1).frame();
-                if(end > endFrame()) setEndFrame(end);
-            }
+    if(endFrame() < startFrame() && pipelineToExport()) {
+        if(pipelineToExport()->head()) {
+            int nframes = pipelineToExport()->head()->numberOfSourceFrames();
+            int start = pipelineToExport()->head()->sourceFrameToAnimationTime(0).frame();
+            if(start < startFrame()) setStartFrame(start);
+            int end = (pipelineToExport()->head()->sourceFrameToAnimationTime(nframes) - 1).frame();
+            if(end > endFrame()) setEndFrame(end);
         }
     }
 
@@ -112,28 +109,23 @@ void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
     }
 
     // By default, export the data of the selected pipeline.
-    if(!sceneNodeToExport() && sceneToExport()) {
+    if(!pipelineToExport() && sceneToExport()) {
         if(SceneNode* selectedNode = sceneToExport()->selection()->firstNode()) {
             if(isSuitableSceneNode(selectedNode)) {
-                setSceneNodeToExport(selectedNode);
+                setPipelineToExport(selectedNode->pipeline());
             }
         }
     }
 
-    // If no scene node is currently selected, pick the first suitable node from the scene.
-    if(!sceneNodeToExport() && sceneToExport()) {
-        if(isSuitableSceneNode(sceneToExport())) {
-            setSceneNodeToExport(sceneToExport());
-        }
-        else {
-            sceneToExport()->visitChildren([this](SceneNode* node) {
-                if(isSuitableSceneNode(node)) {
-                    setSceneNodeToExport(node);
-                    return false;
-                }
-                return true;
-            });
-        }
+    // If no pipeline is currently selected, pick the first suitable pipeline from the scene.
+    if(!pipelineToExport() && sceneToExport()) {
+        sceneToExport()->visitChildren([this](SceneNode* node) {
+            if(isSuitableSceneNode(node)) {
+                setPipelineToExport(node->pipeline());
+                return false;
+            }
+            return true;
+        });
     }
 }
 
@@ -144,7 +136,7 @@ void FileExporter::selectDefaultExportableData(DataSet* dataset, Scene* scene)
 ******************************************************************************/
 bool FileExporter::isSuitableSceneNode(SceneNode* node)
 {
-    if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
+    if(Pipeline* pipeline = node->pipeline()) {
         if(sceneToExport()) {
             AnimationTime time = sceneToExport()->animationSettings()->currentTime();
             return isSuitablePipelineOutput(pipeline->evaluatePipeline(PipelineEvaluationRequest(time)).blockForResult());
@@ -183,15 +175,13 @@ Future<PipelineFlowState> FileExporter::getPipelineDataToBeExported(int frameNum
 {
     if(!sceneToExport())
         throw Exception(tr("No scene has been specified for file export."));
-
-    Pipeline* pipeline = dynamic_object_cast<Pipeline>(sceneNodeToExport());
-    if(!pipeline)
-        throw Exception(tr("The scene node to be exported is not a data pipeline."));
+    if(!pipelineToExport())
+        throw Exception(tr("No pipeline has been specified for file export."));
 
     try {
         // Evaluate pipeline.
         PipelineEvaluationRequest request(AnimationTime::fromFrame(frameNumber), this_task::isScripting());
-        PipelineFlowState state = co_await pipeline->evaluatePipeline(request).asFuture();
+        PipelineFlowState state = co_await pipelineToExport()->evaluatePipeline(request).asFuture();
 
         if(this_task::isScripting() && state.status().type() == PipelineStatus::Error)
             throw Exception(state.status().text());
@@ -220,11 +210,11 @@ Future<void> FileExporter::performExport()
     if(!sceneToExport())
         throw Exception(tr("No scene has been specified for file export."));
 
-    if(!sceneNodeToExport()) {
-        QString errorMsg = tr("There is no data in the current scene that can be exported to the selected file format.");
+    if(!pipelineToExport() && !isSuitableSceneNode(sceneToExport())) {
+        QString errorMsg = tr("There is no object in the current scene that can be exported to the selected file format.");
         const std::vector<DataObjectClassPtr>& objClasses = exportableDataObjectClass();
         if(!objClasses.empty()) {
-            errorMsg += tr("\n\nThe selected output format (%1) requires one of the following data types to be present in the pipeline output:\n").arg(objectTitle());
+            errorMsg += tr("\n\nThe selected output format (%1) requires one of the following data types to be present in a pipeline's output:\n").arg(objectTitle());
             for(const DataObjectClassPtr& clazz : objClasses)
                 errorMsg += QStringLiteral("\n%1").arg(clazz->displayName());
         }

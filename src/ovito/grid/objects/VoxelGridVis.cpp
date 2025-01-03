@@ -96,7 +96,7 @@ Box3 VoxelGridVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjec
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-std::variant<PipelineStatus, Future<PipelineStatus>> VoxelGridVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> VoxelGridVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     PipelineStatus status;
 
@@ -634,7 +634,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VoxelGridVis::render(const 
         coloredVolumeFaces->setPseudoColorMapping(colorMapping()->pseudoColorMapping());
 
         // Add the mesh to the frame graph.
-        frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(coloredVolumeFaces), pipeline->getWorldTransform(frameGraph.time()), boundingBox, pipeline, pickInfo);
+        frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(coloredVolumeFaces), sceneNode->getWorldTransform(frameGraph.time()), boundingBox, sceneNode, pickInfo);
     }
 
     return status;

@@ -49,10 +49,10 @@ bool ParticlePickingHelper::pickParticle(ViewportWindow* vpwin, const QPoint& cl
             if(posProperty && particleIndex < posProperty.size()) {
                 // Save reference to the selected particle.
                 AnimationTime time = vpwin->viewport()->currentTime();
-                result.pipeline = vpPickResult->pipeline();
+                result.sceneNode = vpPickResult->sceneNode();
                 result.particleIndex = particleIndex;
                 result.localPos = posProperty[result.particleIndex];
-                result.worldPos = result.pipeline->getWorldTransform(time) * result.localPos;
+                result.worldPos = result.sceneNode->getWorldTransform(time) * result.localPos;
 
                 // Determine particle ID.
                 BufferReadAccess<IdentifierIntType> identifierProperty = particles->getProperty(Particles::IdentifierProperty);
@@ -66,7 +66,7 @@ bool ParticlePickingHelper::pickParticle(ViewportWindow* vpwin, const QPoint& cl
         }
     }
 
-    result.pipeline = nullptr;
+    result.sceneNode = nullptr;
     return false;
 }
 
@@ -75,11 +75,11 @@ bool ParticlePickingHelper::pickParticle(ViewportWindow* vpwin, const QPoint& cl
 ******************************************************************************/
 void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, FrameGraph& frameGraph, const PickResult& pickRecord)
 {
-    if(!pickRecord.pipeline)
+    if(!pickRecord.sceneNode)
         return;
 
     PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
-    const PipelineFlowState flowState = pickRecord.pipeline->evaluatePipeline(request).blockForResult();
+    const PipelineFlowState flowState = pickRecord.sceneNode->pipeline()->evaluatePipeline(request).blockForResult();
     const Particles* particles = flowState.getObject<Particles>();
     if(!particles)
         return;
@@ -103,7 +103,7 @@ void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, FrameGraph& fram
         return;
 
     // Render highlight marker.
-    particleVis->highlightParticle(particleIndex, particles, frameGraph, pickRecord.pipeline);
+    particleVis->highlightParticle(particleIndex, particles, frameGraph, pickRecord.sceneNode);
 }
 
 }   // End of namespace

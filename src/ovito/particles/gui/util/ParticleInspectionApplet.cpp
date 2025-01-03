@@ -230,11 +230,11 @@ void ParticleInspectionApplet::PickingMode::mouseReleaseEvent(ViewportWindow* vp
         pickParticle(vpwin, event->pos(), pickResult);
         if(!event->modifiers().testFlag(Qt::ControlModifier))
             _pickedElements.clear();
-        if(pickResult.pipeline == _applet->currentPipeline()) {
+        if(pickResult.sceneNode == _applet->currentSceneNode()) {
             // Don't select the same particle twice. Instead, toggle selection.
             bool alreadySelected = false;
             for(auto p = _pickedElements.begin(); p != _pickedElements.end(); ++p) {
-                if(p->pipeline == pickResult.pipeline && p->particleIndex == pickResult.particleIndex) {
+                if(p->sceneNode == pickResult.sceneNode && p->particleIndex == pickResult.particleIndex) {
                     alreadySelected = true;
                     _pickedElements.erase(p);
                     break;
@@ -264,7 +264,7 @@ void ParticleInspectionApplet::PickingMode::mouseMoveEvent(ViewportWindow* vpwin
 {
     // Change mouse cursor while hovering over a particle.
     PickResult pickResult;
-    if(pickParticle(vpwin, event->pos(), pickResult) && pickResult.pipeline == _applet->currentPipeline())
+    if(pickParticle(vpwin, event->pos(), pickResult) && pickResult.sceneNode == _applet->currentSceneNode())
         setCursor(SelectionMode::selectionCursor());
     else
         setCursor(QCursor());
@@ -290,7 +290,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
         auto outVertex = vertices.begin();
         for(auto& element : _pickedElements) {
             PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
-            const PipelineFlowState flowState = element.pipeline->evaluatePipeline(request).blockForResult();
+            const PipelineFlowState flowState = element.sceneNode->pipeline()->evaluatePipeline(request).blockForResult();
             if(const Particles* particles = flowState.getObject<Particles>()) {
                 // If particle selection is based on ID, find particle with the given ID.
                 size_t particleIndex = element.particleIndex;
@@ -305,7 +305,7 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
                 }
                 if(BufferReadAccess<Point3> posProperty = particles->getProperty(Particles::PositionProperty)) {
                     if(particleIndex < posProperty.size()) {
-                        const AffineTransformation& nodeTM = element.pipeline->getWorldTransform(frameGraph.time());
+                        const AffineTransformation& nodeTM = element.sceneNode->getWorldTransform(frameGraph.time());
                         *outVertex++ = (nodeTM * posProperty[particleIndex]).toDataType<GraphicsFloatType>();
                     }
                 }

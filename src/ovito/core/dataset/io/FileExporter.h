@@ -144,8 +144,8 @@ private:
     /// The scene to be exported.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Scene>, sceneToExport, setSceneToExport, PROPERTY_FIELD_NO_SUB_ANIM);
 
-    /// The scene node to be exported.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, sceneNodeToExport, setSceneNodeToExport, PROPERTY_FIELD_NO_SUB_ANIM);
+    /// The pipeline to be exported.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Pipeline>, pipelineToExport, setPipelineToExport, PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// The specific data object from the pipeline output to be exported.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(DataObjectReference{}, dataObjectToExport, setDataObjectToExport);

@@ -47,9 +47,9 @@ public:
     /// \param path The data object to be rendered and its parent objects.
     /// \param flowState The pipeline evaluation results.
     /// \param frameGraph The output frame graph being generated.
-    /// \param pipeline The pipeline scene node that produced the data object.
+    /// \param sceneNode The pipeline scene node that produced the data object.
     /// \return A status code indicating the success or failure of the rendering operation.
-    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) = 0;
+    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode) = 0;
 
     /// \brief Computes the view-dependent bounding box of the given data object.
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) = 0;

@@ -95,7 +95,7 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
         // Keep waiting for the ongoing pipeline evaluation to complete - unless we are at the different animation time now.
         // Or unless the pipeline has been removed from the scene in the meantime.
-        if(_currentTime == scene()->animationSettings()->currentTime() && _currentPipeline && _currentPipeline->isChildOf(scene())) {
+        if(_currentTime == scene()->animationSettings()->currentTime() && _currentPipeline && scene()->containsPipeline(_currentPipeline)) {
             return;
         }
     }
@@ -117,25 +117,27 @@ void ScenePreparation::makeReady(bool forceReevaluation)
 
     // Go through all pipelines of the scene until we find one
     // that is not completely evaluated yet.
-    scene()->visitPipelines([&](Pipeline* pipeline) {
-        _pipelineEvaluationFuture = pipeline->evaluatePipeline(request);
-        if(!_pipelineEvaluationFuture.isFinished()) {
-            // Wait for this state to become available and return a pending future.
-            _currentPipeline = pipeline;
-            _currentTime = request.time();
-            return false;
-        }
-        else if(!_pipelineEvaluationFuture.isCanceled()) {
-            try { _pipelineEvaluationFuture.waitForFinished(); }
-            catch(const Exception& ex) {
-                qWarning() << "ScenePreparation::makeReady(): Pipeline evaluation raised an exception.";
-                ex.logError();
+    scene()->visitPipelines([&](const SceneNode* sceneNode) {
+        if(OORef<Pipeline> pipeline = sceneNode->pipeline()) {
+            _pipelineEvaluationFuture = pipeline->evaluatePipeline(request);
+            if(!_pipelineEvaluationFuture.isFinished()) {
+                // Wait for this state to become available and return a pending future.
+                _currentPipeline = std::move(pipeline);
+                _currentTime = request.time();
+                return false;
             }
-            catch(...) {
-                qWarning() << "ScenePreparation::makeReady(): Pipeline evaluation raised an exception.";
+            else if(!_pipelineEvaluationFuture.isCanceled()) {
+                try { _pipelineEvaluationFuture.waitForFinished(); }
+                catch(const Exception& ex) {
+                    qWarning() << "ScenePreparation::makeReady(): Pipeline evaluation raised an exception.";
+                    ex.logError();
+                }
+                catch(...) {
+                    qWarning() << "ScenePreparation::makeReady(): Pipeline evaluation raised an exception.";
+                }
             }
+            _pipelineEvaluationFuture.reset();
         }
-        _pipelineEvaluationFuture.reset();
         return true;
     });
 

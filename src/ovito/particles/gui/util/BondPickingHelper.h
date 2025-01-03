@@ -41,8 +41,8 @@ public:
         /// The index of the picked bond.
         size_t bondIndex;
 
-        /// The pipeline that produced the picked bond.
-        OORef<Pipeline> pipeline;
+        /// The pipeline scene node pipeline that produced the picked bond.
+        OORef<SceneNode> sceneNode;
     };
 
     /// \brief Finds the bond under the mouse cursor.

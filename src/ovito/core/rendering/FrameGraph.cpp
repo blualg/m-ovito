@@ -48,15 +48,15 @@ void ImagePrimitive::__key_function() {}
  * Optional: A FrameGraph::RenderingCommand::Flag can be give, default is "NoFlags"
  ******************************************************************************/
 FrameGraph::RenderingCommand& FrameGraph::addPrimitive(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive,
-                                                       OORef<const Pipeline> pipeline, OORef<ObjectPickInfo> pickInfo,
+                                                       OORef<const SceneNode> sceneNode, OORef<ObjectPickInfo> pickInfo,
                                                        uint32_t pickElementOffset, RenderingCommand::Flags flags)
 {
-    OVITO_ASSERT(pipeline);
+    OVITO_ASSERT(sceneNode);
     OVITO_ASSERT(this_task::isMainThread()); // Must be called from main thread, because we are accessing the pipeline.
 
-    const AffineTransformation& tm = pipeline->getWorldTransform(time());
+    const AffineTransformation& tm = sceneNode->getWorldTransform(time());
     Box3 boundingBox = primitive->computeBoundingBox(visCache());
-    return group.addPrimitive(std::move(primitive), tm, boundingBox, std::move(pipeline), std::move(pickInfo), pickElementOffset, flags);
+    return group.addPrimitive(std::move(primitive), tm, boundingBox, std::move(sceneNode), std::move(pickInfo), pickElementOffset, flags);
 }
 
 /******************************************************************************
@@ -64,13 +64,13 @@ FrameGraph::RenderingCommand& FrameGraph::addPrimitive(RenderingCommandGroup& gr
  * Automatically computes the bounding box of the primitive and the model-to-world transformation.
  ******************************************************************************/
 FrameGraph::RenderingCommand& FrameGraph::addPrimitiveNonpickable(RenderingCommandGroup& group,
-                                                                  std::unique_ptr<RenderingPrimitive> primitive, const Pipeline* pipeline)
+                                                                  std::unique_ptr<RenderingPrimitive> primitive, const SceneNode* sceneNode)
 {
-    OVITO_ASSERT(pipeline);
+    OVITO_ASSERT(sceneNode);
     OVITO_ASSERT(this_task::isMainThread()); // Must be called from main thread, because we are accessing the pipeline.
 
     Box3 boundingBox = primitive->computeBoundingBox(visCache());
-    return group.addPrimitiveNonpickable(std::move(primitive), pipeline->getWorldTransform(time()), boundingBox);
+    return group.addPrimitiveNonpickable(std::move(primitive), sceneNode->getWorldTransform(time()), boundingBox);
 }
 
 /******************************************************************************
@@ -80,14 +80,14 @@ FrameGraph::RenderingCommand& FrameGraph::addPrimitiveNonpickable(RenderingComma
  ******************************************************************************/
 FrameGraph::RenderingCommand& FrameGraph::RenderingCommandGroup::addPrimitive(std::unique_ptr<RenderingPrimitive> primitive,
                                                                               const AffineTransformation& tm, const Box3& box,
-                                                                              OORef<const Pipeline> pickablePipeline,
+                                                                              OORef<const SceneNode> pickableSceneNode,
                                                                               OORef<ObjectPickInfo> pickInfo, uint32_t pickElementOffset,
                                                                               RenderingCommand::Flags flags)
 {
     // Add the world-space bounding box of the primitive to the group's bounding box.
     _boundingBox.addBox(box.transformed(tm));
 
-    return addCommand(flags, std::move(primitive), tm, std::move(pickablePipeline), std::move(pickInfo), pickElementOffset);
+    return addCommand(flags, std::move(primitive), tm, std::move(pickableSceneNode), std::move(pickInfo), pickElementOffset);
 }
 
 /******************************************************************************

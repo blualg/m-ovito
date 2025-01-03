@@ -96,7 +96,7 @@ void FileColumnParticleExporterEditor::createUI(const RolloutInsertionParameters
 bool FileColumnParticleExporterEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(source == editObject() && event.type() == ReferenceEvent::ReferenceChanged) {
-        if(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(FileExporter::sceneNodeToExport)) {
+        if(static_cast<const ReferenceFieldEvent&>(event).field() == PROPERTY_FIELD(FileExporter::pipelineToExport)) {
             updateParticlePropertiesList();
         }
     }

@@ -327,10 +327,10 @@ void SceneNodesListModel::deleteItem(int index)
     // Change scene node selection when a scene node has been selected in the combobox.
     int pipelineIndex = index - firstSceneNodeIndex();
     if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
-        if(SceneNode* node = sceneNodes()[pipelineIndex]) {
+        if(OORef<SceneNode> node = sceneNodes()[pipelineIndex]) {
             _mainWindow.performTransaction(tr("Delete pipeline"), [&]() {
                 bool wasSelected = node->isSelected();
-                node->deleteSceneNode();
+                node->requestObjectDeletion();
 
                 // Automatically select one of the remaining nodes.
                 Scene* scene = _sceneListener.target();

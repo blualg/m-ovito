@@ -134,7 +134,7 @@ public:
     virtual bool shouldRefreshViewportsAfterChange() override { return true; }
 
     /// Lets the modifier render itself in an interactive viewport.
-    virtual void renderModifierVisual(ModificationNode* modNode, Pipeline* pipeline, FrameGraph& frameGraph) override;
+    virtual void renderModifierVisual(ModificationNode* modNode, SceneNode* sceneNode, FrameGraph& frameGraph) override;
 
     // Property access functions:
 
@@ -190,7 +190,7 @@ protected:
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
     /// Renders the plane in the viewport.
-    void renderPlane(FrameGraph& frameGraph, const Pipeline* pipeline, const Plane3& plane, const Box3& box, const ColorA& color) const;
+    void renderPlane(FrameGraph& frameGraph, const SceneNode* sceneNode, const Plane3& plane, const Box3& box, const ColorA& color) const;
 
     /// Computes the intersection lines of a plane and a quad.
     void planeQuadIntersection(const Point3 corners[8], const std::array<int,4>& quadVerts, const Plane3& plane, std::vector<Point3>& vertices) const;

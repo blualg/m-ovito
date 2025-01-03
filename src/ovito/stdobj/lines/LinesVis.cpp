@@ -158,7 +158,7 @@ Box3 LinesVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPat
 /******************************************************************************
  * Lets the visualization element render the data object.
  ******************************************************************************/
-std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     PipelineStatus status;
 
@@ -440,8 +440,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
     }
 
     FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::SceneLayer);
-    frameGraph.addPrimitive(commandGroup, std::move(coloredSegments), pipeline, pickInfo);
-    frameGraph.addPrimitive(commandGroup, std::move(coloredCorners), pipeline); // No picking info for corner spheres
+    frameGraph.addPrimitive(commandGroup, std::move(coloredSegments), sceneNode, pickInfo);
+    frameGraph.addPrimitive(commandGroup, std::move(coloredCorners), sceneNode); // No picking info for corner spheres
 
     return status;
 }

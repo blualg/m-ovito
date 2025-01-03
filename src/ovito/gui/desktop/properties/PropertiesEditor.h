@@ -182,15 +182,15 @@ public:
         return mainWindow().performTransaction(undoOperationName, std::forward<Function>(func));
     }
 
-    /// \brief Recursively visits all pipelines in the current scene
-    ///        and invokes the given visitor function for every PipelineSceneNode.
+    /// \brief Recursively visits all pipeline scene nodes in the current scene
+    ///        and invokes the given visitor function for every scene node with a pipeline.
     ///
-    /// \param fn A function that takes an PipelineSceneNode pointer as argument and returns a boolean value.
+    /// \param fn A function that takes an SceneNode pointer as argument and returns a boolean value.
     /// \return true if all pipelines have been visited; false if the loop has been
     ///         terminated early because the visitor function has returned false.
     ///
     /// The visitor function must return a boolean value to indicate whether
-    /// it wants to continue visit more pipelines. A return value of false
+    /// it wants to continue visit more scene nodes. A return value of false
     /// leads to early termination and no further nodes are visited.
     template<typename Function>
     bool visitScenePipelines(Function&& fn) const {
@@ -199,10 +199,17 @@ public:
         return true;
     }
 
+    /// Returns the scene node that is currently selected in the scene.
+    SceneNode* selectedSceneNode() const {
+        if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet())
+            return selection->firstNode();
+        return nullptr;
+    }
+
     /// Returns the pipeline that is currently selected in the scene.
     Pipeline* selectedPipeline() const {
-        if(Scene* scene = mainWindow().datasetContainer().activeScene())
-            return dynamic_object_cast<Pipeline>(scene->selection()->firstNode());
+        if(SceneNode* sceneNode = selectedSceneNode())
+            return sceneNode->pipeline();
         return nullptr;
     }
 

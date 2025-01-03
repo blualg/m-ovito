@@ -199,7 +199,7 @@ int DislocationInspectionApplet::PickingMode::pickDislocation(ViewportWindow* vp
     if(std::optional<ViewportWindow::PickResult> vpPickResult = vpwin->pick(pos)) {
         // Check if that was a dislocation.
         DislocationPickInfo* pickInfo = dynamic_object_cast<DislocationPickInfo>(vpPickResult->pickInfo());
-        if(pickInfo && vpPickResult->pipeline() == _applet->currentPipeline()) {
+        if(pickInfo && vpPickResult->sceneNode() == _applet->currentSceneNode()) {
             return pickInfo->segmentIndexFromSubObjectID(vpPickResult->subobjectId());
         }
     }
@@ -241,7 +241,7 @@ void DislocationInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewp
     for(const QModelIndex& index : _applet->_tableView->selectionModel()->selectedRows()) {
         int segmentIndex = index.row();
         if(segmentIndex >= 0 && segmentIndex < dislocations->segments().size())
-            vis->renderOverlayMarker(dislocations, flowState, segmentIndex, frameGraph, _applet->currentPipeline());
+            vis->renderOverlayMarker(dislocations, flowState, segmentIndex, frameGraph, _applet->currentSceneNode());
     }
 }
 

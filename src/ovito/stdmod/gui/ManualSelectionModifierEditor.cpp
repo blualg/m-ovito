@@ -354,7 +354,7 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportWindow::PickRe
         for(ModificationNode* node : modificationNodes()) {
 
             // Make sure we are in the right data pipeline.
-            if(!node->pipelines(true).contains(pickResult.pipeline()))
+            if(!node->pipelines(true).contains(pickResult.sceneNode()->pipeline()))
                 continue;
 
             // Get the modifier's input data.
@@ -396,24 +396,26 @@ void ManualSelectionModifierEditor::onFence(const QVector<Point2>& fence, Viewpo
             // Iterate over the pipelines.
             // We'll need their object-to-world transformation.
             for(Pipeline* pipeline : node->pipelines(true)) {
+                for(SceneNode* sceneNode : pipeline->sceneNodes()) {
+                    // Set up projection matrix transforming elements from object space to screen space.
+                    const AffineTransformation& nodeTM = sceneNode->getWorldTransform(request.time());
+                    Matrix4 ndcToScreen = Matrix4::Identity();
+                    ndcToScreen(0,0) = 0.5 * vpwin->viewportWindowDeviceSize().width();
+                    ndcToScreen(1,1) = 0.5 * vpwin->viewportWindowDeviceSize().height();
+                    ndcToScreen(0,3) = ndcToScreen(0,0);
+                    ndcToScreen(1,3) = ndcToScreen(1,1);
+                    ndcToScreen(1,1) = -ndcToScreen(1,1);   // Vertical flip.
+                    Matrix4 projectionTM = ndcToScreen * vpwin->projectionParams().projectionMatrix * (vpwin->projectionParams().viewMatrix * nodeTM);
 
-                // Set up projection matrix transforming elements from object space to screen space.
-                const AffineTransformation& nodeTM = pipeline->getWorldTransform(request.time());
-                Matrix4 ndcToScreen = Matrix4::Identity();
-                ndcToScreen(0,0) = 0.5 * vpwin->viewportWindowDeviceSize().width();
-                ndcToScreen(1,1) = 0.5 * vpwin->viewportWindowDeviceSize().height();
-                ndcToScreen(0,3) = ndcToScreen(0,0);
-                ndcToScreen(1,3) = ndcToScreen(1,1);
-                ndcToScreen(1,1) = -ndcToScreen(1,1);   // Vertical flip.
-                Matrix4 projectionTM = ndcToScreen * vpwin->projectionParams().projectionMatrix * (vpwin->projectionParams().viewMatrix * nodeTM);
-
-                // Determine which elements are within the closed fence polygon.
-                ConstPropertyPtr selection = mod->subject().dataClass()->viewportFenceSelection(fence, inputObjectPath, pipeline, projectionTM);
-                if(selection) {
-                    mod->setSelection(node, modInput, std::move(selection), mode);
-                }
-                else {
-                    throw Exception(tr("Sorry, making a fence-based selection is not supported for %1.").arg(mod->subject().dataClass()->elementDescriptionName()));
+                    // Determine which elements are within the closed fence polygon.
+                    ConstPropertyPtr selection = mod->subject().dataClass()->viewportFenceSelection(fence, inputObjectPath, pipeline, projectionTM);
+                    if(selection) {
+                        mod->setSelection(node, modInput, std::move(selection), mode);
+                    }
+                    else {
+                        throw Exception(tr("Sorry, making a fence-based selection is not supported for %1.").arg(mod->subject().dataClass()->elementDescriptionName()));
+                    }
+                    break;
                 }
                 break;
             }

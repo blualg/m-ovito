@@ -69,8 +69,11 @@ public:
     /// Selects a specific data object in this applet.
     virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
 
-    /// Returns the currently selected data pipeline in the scene.
+    /// Returns the currently selected data pipeline.
     Pipeline* currentPipeline() const;
+
+    /// Returns the currently selected pipeline scene node.
+    SceneNode* currentSceneNode() const;
 
     /// Returns the current output of the data pipeline displayed in the applet.
     const PipelineFlowState& currentState() const;

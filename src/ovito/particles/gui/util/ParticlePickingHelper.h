@@ -56,8 +56,8 @@ public:
         /// The identifier of the picked particle.
         IdentifierIntType particleId;
 
-        /// The pipeline that produced the picked particle.
-        OORef<Pipeline> pipeline;
+        /// The pipeline scene node that produced the picked particle.
+        OORef<SceneNode> sceneNode;
     };
 
     /// \brief Finds the particle under the mouse cursor.

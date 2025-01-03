@@ -168,17 +168,22 @@ void DataInspectorPanel::open()
 ******************************************************************************/
 void DataInspectorPanel::onSceneSelectionChanged(SelectionSet* selection)
 {
-    // Find the first selected Pipeline and make it the active node:
-    Pipeline* selectedNode = nullptr;
+    // Find the first selected Pipeline:
+    SceneNode* selectedSceneNode = nullptr;
+    Pipeline* selectedPipeline = nullptr;
     if(selection) {
         for(SceneNode* node : selection->nodes()) {
-            selectedNode = dynamic_object_cast<Pipeline>(node);
-            if(selectedNode) break;
+            if(node->pipeline()) {
+                selectedSceneNode = node;
+                selectedPipeline = node->pipeline();
+                break;
+            }
         }
     }
-    if(selectedNode != _selectedPipeline) {
-        _selectedPipeline = selectedNode;
-        Q_EMIT selectedPipelineChanged(selectedNode);
+    _selectedSceneNode = selectedSceneNode;
+    if(selectedPipeline != _selectedPipeline) {
+        _selectedPipeline = selectedPipeline;
+        Q_EMIT selectedPipelineChanged(selectedPipeline);
         updateInspector();
     }
 }

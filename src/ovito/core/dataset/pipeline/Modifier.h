@@ -77,7 +77,7 @@ public:
     }
 
     /// Lets the modifier render itself in an interactive viewport.
-    virtual void renderModifierVisual(ModificationNode* modNode, Pipeline* pipeline, FrameGraph& frameGraph) {}
+    virtual void renderModifierVisual(ModificationNode* modNode, SceneNode* sceneNode, FrameGraph& frameGraph) {}
 
     /// Returns the list of pipeline nodes that share this modifier.
     ///

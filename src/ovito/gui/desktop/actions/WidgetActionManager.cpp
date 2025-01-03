@@ -76,9 +76,11 @@ WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow& mainWindow
 void WidgetActionManager::on_ClonePipeline_triggered()
 {
     if(SelectionSet* selection = userInterface().datasetContainer().activeSelectionSet()) {
-        if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(selection->firstNode())) {
-            ClonePipelineDialog dialog(mainWindow(), pipeline, &mainWindow());
-            dialog.exec();
+        if(SceneNode* sceneNode = selection->firstNode()) {
+            if(Pipeline* pipeline = sceneNode->pipeline()) {
+                ClonePipelineDialog dialog(mainWindow(), sceneNode, &mainWindow());
+                dialog.exec();
+            }
         }
     }
 }
@@ -89,13 +91,13 @@ void WidgetActionManager::on_ClonePipeline_triggered()
 void WidgetActionManager::on_RenamePipeline_triggered()
 {
     if(SelectionSet* selection = userInterface().datasetContainer().activeSelectionSet()) {
-        if(OORef<Pipeline> pipeline = dynamic_object_cast<Pipeline>(selection->firstNode())) {
-            QString oldPipelineName = pipeline->objectTitle();
+        if(SceneNode* sceneNode = selection->firstNode()) {
+            QString oldNodeName = sceneNode->objectTitle();
             bool ok;
-            QString pipelineName = QInputDialog::getText(&mainWindow(), tr("Rename pipeline"), tr("New pipeline name:                                         "), QLineEdit::Normal, oldPipelineName, &ok).trimmed();
-            if(ok && pipelineName != oldPipelineName) {
+            QString newName = QInputDialog::getText(&mainWindow(), tr("Rename pipeline"), tr("New pipeline name:                                         "), QLineEdit::Normal, oldNodeName, &ok).trimmed();
+            if(ok && newName != oldNodeName) {
                 mainWindow().performTransaction(tr("Rename pipeline"), [&]() {
-                    pipeline->setSceneNodeName(pipelineName);
+                    sceneNode->setSceneNodeName(newName);
                 });
             }
         }
@@ -122,15 +124,19 @@ void WidgetActionManager::on_NewPipelineFileSource_triggered()
             // Create the FileSource.
             OORef<FileSource> fileSource = OORef<FileSource>::create();
 
-            // Create pipeline scene node.
+            // Create pipeline.
             OORef<Pipeline> pipeline = OORef<Pipeline>::create();
             pipeline->setHead(fileSource);
 
-            // Insert pipeline into scene.
-            scene->addChildNode(pipeline);
+            // Create scene node.
+            OORef<SceneNode> sceneNode = OORef<SceneNode>::create();
+            sceneNode->setPipeline(pipeline);
+
+            // Insert node into scene.
+            scene->addChildNode(sceneNode);
 
             // Select new object in the scene.
-            scene->selection()->setNode(pipeline);
+            scene->selection()->setNode(sceneNode);
         }
     });
 }

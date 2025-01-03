@@ -66,4 +66,33 @@ void SelectionSet::remove(const SceneNode* node)
     OVITO_ASSERT(!nodes().contains(node));
 }
 
+/******************************************************************************
+* Provides a custom function that takes are of the deserialization of a
+* serialized property field that has been removed from the class.
+* This is needed for file backward compatibility with OVITO 3.11.
+******************************************************************************/
+RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr SelectionSet::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+{
+    // For backward compatibility with OVITO 3.11:
+    // The Pipeline class has been split from the SceneNode base class in OVITO 3.12. This means we have to handle
+    // the deserialization of the nodes field here, which used to be a list of SceneNode or Pipeline objects (now only SceneNode instances).
+    if(field.definingClass == &SelectionSet::OOClass() && stream.formatVersion() < 30013) {
+        if(field.identifier == "nodes") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x02);
+                qint32 numNodes;
+                stream >> numNodes;
+                for(qint32 i = 0; i < numNodes; i++) {
+                    OORef<RefTarget> node = stream.loadObject<RefTarget>();
+                    if(OORef<Pipeline> pipeline = dynamic_object_cast<Pipeline>(node))
+                        node = pipeline->deserializationSceneNode();
+                    static_object_cast<SelectionSet>(&owner)->_nodes.insert(&owner, PROPERTY_FIELD(nodes), i, static_object_cast<SceneNode>(std::move(node)));
+                }
+                stream.closeChunk();
+            };
+        }
+    }
+    return RefTarget::OOMetaClass::overrideFieldDeserialization(stream, field);
+}
+
 }   // End of namespace

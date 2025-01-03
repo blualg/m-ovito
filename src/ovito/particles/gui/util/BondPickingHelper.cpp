@@ -48,7 +48,7 @@ bool BondPickingHelper::pickBond(ViewportWindow* vpwin, const QPoint& clickPoint
                 const Property* topologyProperty = pickInfo->particles()->bonds()->getTopology();
                 if(topologyProperty && topologyProperty->size() > bondIndex) {
                     // Save reference to the selected bond.
-                    result.pipeline = vpPickResult->pipeline();
+                    result.sceneNode = vpPickResult->sceneNode();
                     result.bondIndex = bondIndex;
                     return true;
                 }
@@ -56,7 +56,7 @@ bool BondPickingHelper::pickBond(ViewportWindow* vpwin, const QPoint& clickPoint
         }
     }
 
-    result.pipeline = nullptr;
+    result.sceneNode = nullptr;
     return false;
 }
 

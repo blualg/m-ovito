@@ -129,7 +129,7 @@ bool FileSourceImporter::isReplaceExistingPossible(Scene* scene, const std::vect
         // Look for an existing FileSource in the scene whose
         // data source we can replace with the new file.
         for(SceneNode* node : scene->selection()->nodes()) {
-            if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
+            if(Pipeline* pipeline = node->pipeline()) {
                 if(dynamic_object_cast<FileSource>(pipeline->source()))
                     return true;
             }
@@ -139,7 +139,7 @@ bool FileSourceImporter::isReplaceExistingPossible(Scene* scene, const std::vect
 }
 
 /******************************************************************************
-* Imports the given file into the scene.
+* Imports the data from a file into the scene.
 * Return true if the file has been imported.
 * Return false if the import has been aborted by the user.
 * Throws an exception when the import has failed.
@@ -148,14 +148,14 @@ Future<OORef<Pipeline>> FileSourceImporter::importFileSet(OORef<Scene> scene, st
 {
     OVITO_ASSERT(!sourceUrlsAndImporters.empty());
     OORef<FileSource> existingFileSource;
-    Pipeline* existingPipeline = nullptr;
+    OORef<Pipeline> existingPipeline;
 
     if(importMode == ReplaceSelected) {
         // Look for an existing FileSource in the scene whose
         // data source can be replaced with the newly imported file.
         if(scene) {
             for(SceneNode* node : scene->selection()->nodes()) {
-                if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node)) {
+                if(Pipeline* pipeline = node->pipeline()) {
                     existingFileSource = dynamic_object_cast<FileSource>(pipeline->source());
                     if(existingFileSource) {
                         existingPipeline = pipeline;
@@ -167,7 +167,7 @@ Future<OORef<Pipeline>> FileSourceImporter::importFileSet(OORef<Scene> scene, st
     }
     else if(importMode == ResetScene) {
         if(scene)
-            scene->clear();
+            scene->deleteChildren();
     }
     else if(importMode == AddToScene) {
         OVITO_ASSERT(scene != nullptr);
@@ -192,9 +192,10 @@ Future<OORef<Pipeline>> FileSourceImporter::importFileSet(OORef<Scene> scene, st
     if(existingFileSource && existingFileSource->importer() && existingFileSource->importer()->getOOClass() == this->getOOClass() && existingFileSource->importer()->isMultiTimestepFile())
         setMultiTimestepFile(true);
 
-    // Create a new pipeline in the scene for the linked data.
+    // Create a new pipeline and a new node in the scene.
     OORef<Pipeline> pipeline;
-    if(existingPipeline == nullptr) {
+    if(!existingPipeline) {
+        OORef<SceneNode> sceneNode;
         {
             UndoSuspender undoSuspender;    // Do not create undo records for this part.
             AnimationSuspender animSuspender(*this_task::ui());
@@ -202,17 +203,20 @@ Future<OORef<Pipeline>> FileSourceImporter::importFileSet(OORef<Scene> scene, st
             // Add object to scene.
             pipeline = OORef<Pipeline>::create();
             pipeline->setHead(fileSource);
+            sceneNode = OORef<SceneNode>::create();
+            sceneNode->setPipeline(pipeline);
         }
 
-        // Insert pipeline into scene.
-        if(importMode != DontAddToScene && scene != nullptr)
-            scene->addChildNode(pipeline);
+        // Insert node into scene.
+        if(importMode != DontAddToScene && scene != nullptr) {
+            scene->addChildNode(sceneNode);
+
+            // Select new object in the scene.
+            if(this_task::isInteractive())
+                scene->selection()->setNode(sceneNode);
+        }
     }
     else pipeline = existingPipeline;
-
-    // Select new object in the scene.
-    if(importMode != DontAddToScene && scene != nullptr && this_task::isInteractive())
-        scene->selection()->setNode(pipeline);
 
     // Concatenate all files from the input list having the same file format into one sequence,
     // which gets handled by this importer.
@@ -234,8 +238,8 @@ Future<OORef<Pipeline>> FileSourceImporter::importFileSet(OORef<Scene> scene, st
     auto urlCount = sourceUrls.size();
     fileSource->setSource(std::move(sourceUrls), this, autodetectFileSequences && (urlCount == 1 && sourceUrlsAndImporters.empty()), keepExistingDataCollection);
 
-    // Let the importer subclass customize the pipeline scene node.
-    // Placing this after setSource allows "pipeline->evaluatePipeline" in setupPipeline
+    // Let the importer subclass customize the pipeline.
+    // Placing this after setSource allows a call to evaluatePipeline() in setupPipeline() implementation.
     Future<void> setupFuture = setupPipeline(pipeline, fileSource);
     if(setupFuture) {
         co_await FutureAwaiter(ObjectExecutor(this), std::move(setupFuture));

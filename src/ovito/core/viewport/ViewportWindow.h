@@ -50,11 +50,11 @@ public:
     public:
 
         /// Constructor.
-        PickResult(OORef<Pipeline> pipeline, OORef<ObjectPickInfo> pickInfo, const Point3& hitLocation, quint32 subobjectId)
-            : _pipeline(std::move(pipeline)), _pickInfo(std::move(pickInfo)), _hitLocation(hitLocation), _subobjectId(subobjectId) {}
+        PickResult(OORef<SceneNode> sceneNode, OORef<ObjectPickInfo> pickInfo, const Point3& hitLocation, quint32 subobjectId)
+            : _sceneNode(std::move(sceneNode)), _pickInfo(std::move(pickInfo)), _hitLocation(hitLocation), _subobjectId(subobjectId) {}
 
-        /// Returns the pipeline that has been picked.
-        const OORef<Pipeline>& pipeline() const { return _pipeline; }
+        /// Returns the scene node that has been picked.
+        const OORef<SceneNode>& sceneNode() const { return _sceneNode; }
 
         /// Returns the object-specific data at the pick location.
         const OORef<ObjectPickInfo>& pickInfo() const { return _pickInfo; }
@@ -67,8 +67,8 @@ public:
 
     private:
 
-        /// The pipeline that was picked.
-        OORef<Pipeline> _pipeline;
+        /// The scene node that was picked.
+        OORef<SceneNode> _sceneNode;
 
         /// The object-specific data at the pick location.
         OORef<ObjectPickInfo> _pickInfo;
@@ -285,7 +285,7 @@ protected:
     QRectF renderViewportTitle(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup);
 
 	/// Renders the visual representation of the modifiers in a pipeline.
-	void renderPipelineModifiers(Pipeline* pipeline, FrameGraph& frameGraph);
+	void renderPipelineModifiers(SceneNode* sceneNode, FrameGraph& frameGraph);
 
 	/// Determines the range of the construction grid to display.
 	std::tuple<FloatType, Box2I> determineConstructionGridRange();

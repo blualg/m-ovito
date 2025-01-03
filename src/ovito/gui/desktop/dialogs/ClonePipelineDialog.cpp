@@ -34,8 +34,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, Pipeline* pipeline, QWidget* parent) :
-    QDialog(parent), _mainWindow(mainWindow), _originalPipeline(pipeline)
+ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, SceneNode* sceneNode, QWidget* parent) :
+    QDialog(parent), _mainWindow(mainWindow), _originalSceneNode(sceneNode), _originalPipeline(sceneNode->pipeline())
 {
     setWindowTitle(tr("Clone pipeline"));
 
@@ -88,8 +88,8 @@ ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, Pipeline* pipel
     sublayout2->addSpacing(10);
     sublayout2->addWidget(new QLabel(tr("Clone:")));
     sublayout2->addWidget(_cloneNameEdit, 1);
-    _originalNameEdit->setPlaceholderText(pipeline->objectTitle());
-    _cloneNameEdit->setPlaceholderText(pipeline->objectTitle());
+    _originalNameEdit->setPlaceholderText(sceneNode->objectTitle());
+    _cloneNameEdit->setPlaceholderText(sceneNode->objectTitle());
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &ClonePipelineDialog::onAccept);
@@ -427,11 +427,12 @@ void ClonePipelineDialog::onAccept()
 
         // Clone the scene node.
         CloneHelper cloneHelper;
+        OORef<SceneNode> clonedSceneNode = cloneHelper.cloneObject(_originalSceneNode, false);
         OORef<Pipeline> clonedPipeline = cloneHelper.cloneObject(_originalPipeline, false);
         OVITO_ASSERT(clonedPipeline->head() == _originalPipeline->head());
 
         // The scene we are working in.
-        Scene* scene = _originalPipeline->scene();
+        Scene* scene = _originalSceneNode->scene();
 
         // Clone the pipeline nodes.
         OORef<PipelineNode> precedingNode;
@@ -462,34 +463,35 @@ void ClonePipelineDialog::onAccept()
             }
         }
         clonedPipeline->setHead(precedingNode);
+        clonedSceneNode->setPipeline(clonedPipeline);
 
-        // Give the cloned pipeline the user-defined name.
+        // Give the cloned scene node the user-defined name.
         QString nodeName = _cloneNameEdit->text().trimmed();
         if(nodeName.isEmpty() == false)
-            clonedPipeline->setSceneNodeName(nodeName);
+            clonedSceneNode->setSceneNodeName(nodeName);
 
-        // Give the original pipeline the new user-defined name.
+        // Give the original scene node the new user-defined name.
         nodeName = _originalNameEdit->text().trimmed();
         if(nodeName.isEmpty() == false)
-            _originalPipeline->setSceneNodeName(nodeName);
+            _originalSceneNode->setSceneNodeName(nodeName);
 
-        // Translate cloned pipeline in scene.
+        // Translate cloned node in scene.
         int displacementMode = _displacementDirectionGroup->checkedAction()->data().toInt();
         if(displacementMode != -1) {
             AnimationTime time = scene ? scene->animationSettings()->currentTime() : AnimationTime(0);
-            const Box3& bbox = _originalPipeline->worldBoundingBox(time);
+            const Box3& bbox = _originalSceneNode->worldBoundingBox(time);
             Vector3 translation = Vector3::Zero();
             translation[displacementMode] = bbox.size(displacementMode) + FloatType(0.2) * bbox.size().length();
-            clonedPipeline->transformationController()->translate(time, translation, AffineTransformation::Identity());
+            clonedSceneNode->transformationController()->translate(time, translation, AffineTransformation::Identity());
         }
 
-        // Insert cloned pipeline into scene.
-        if(SceneNode* parentNode = _originalPipeline->parentNode())
-            parentNode->addChildNode(clonedPipeline);
+        // Insert cloned scene node into scene.
+        if(SceneNode* parentNode = _originalSceneNode->parentNode())
+            parentNode->addChildNode(clonedSceneNode);
 
-        // Select cloned pipeline.
+        // Select cloned scene node.
         if(scene)
-            scene->selection()->setNode(clonedPipeline);
+            scene->selection()->setNode(clonedSceneNode);
     });
     accept();
 }

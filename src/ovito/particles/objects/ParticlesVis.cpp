@@ -439,7 +439,7 @@ ParticlePrimitive::ParticleShape ParticlesVis::effectiveParticleShape(ParticleSh
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-std::variant<PipelineStatus, Future<PipelineStatus>> ParticlesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> ParticlesVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     // Get input particle data.
     DataOORef<const Particles> particles = path.lastAs<Particles>();
@@ -463,19 +463,19 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ParticlesVis::render(const 
             self=OORef<ParticlesVis>(this), // To keep this vis element alive while rendering.
             &commandGroup=frameGraph.addCommandGroup(FrameGraph::SceneLayer),
             frameGraph=OORef<FrameGraph>(&frameGraph),
-            pipeline=OORef<const Pipeline>(pipeline),
+            sceneNode=OORef<const SceneNode>(sceneNode),
             particles=std::move(particles),
-            tm=pipeline->getWorldTransform(frameGraph.time())
+            tm=sceneNode->getWorldTransform(frameGraph.time())
         ]() -> PipelineStatus {
 
         // Render all mesh-based particle types.
-        renderMeshBasedParticles(particles, *frameGraph, commandGroup, pipeline, tm);
+        renderMeshBasedParticles(particles, *frameGraph, commandGroup, sceneNode, tm);
 
         // Render all primitive particle types.
-        renderPrimitiveParticles(particles, *frameGraph, commandGroup, pipeline, tm);
+        renderPrimitiveParticles(particles, *frameGraph, commandGroup, sceneNode, tm);
 
         // Render all (sphero-)cylindric particle types.
-        renderCylindricParticles(particles, *frameGraph, commandGroup, pipeline, tm);
+        renderCylindricParticles(particles, *frameGraph, commandGroup, sceneNode, tm);
 
         return {};
     });
@@ -484,7 +484,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ParticlesVis::render(const 
 /******************************************************************************
 * Renders particle types that have a mesh-based shape assigned.
 ******************************************************************************/
-void ParticlesVis::renderMeshBasedParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const Pipeline* pipeline, const AffineTransformation& tm) const
+void ParticlesVis::renderMeshBasedParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const SceneNode* sceneNode, const AffineTransformation& tm) const
 {
     // Get input particle data.
     const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
@@ -614,14 +614,14 @@ void ParticlesVis::renderMeshBasedParticles(const Particles* particles, FrameGra
         t.pickInfo->setParticles(particles);
 
         // Add the instanced mesh primitive to the frame graph.
-        commandGroup.addPrimitive(std::make_unique<MeshPrimitive>(t.meshPrimitive), tm, t.meshPrimitive.computeBoundingBox(frameGraph.visCache()), pipeline, t.pickInfo);
+        commandGroup.addPrimitive(std::make_unique<MeshPrimitive>(t.meshPrimitive), tm, t.meshPrimitive.computeBoundingBox(frameGraph.visCache()), sceneNode, t.pickInfo);
     }
 }
 
 /******************************************************************************
 * Renders all particles with a primitive shape (spherical, box, (super)quadrics).
 ******************************************************************************/
-void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const Pipeline* pipeline, const AffineTransformation& tm) const
+void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const SceneNode* sceneNode, const AffineTransformation& tm) const
 {
     // Determine whether all particle types use the same uniform shape or not.
     ParticlesVis::ParticleShape uniformShape = particleShape();
@@ -809,14 +809,14 @@ void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGra
             });
 
         // Add the particles primitive to the frame graph.
-        commandGroup.addPrimitive(std::make_unique<ParticlePrimitive>(primitive), tm, primitive.computeBoundingBox(frameGraph.visCache()), pipeline, pickingInfo);
+        commandGroup.addPrimitive(std::make_unique<ParticlePrimitive>(primitive), tm, primitive.computeBoundingBox(frameGraph.visCache()), sceneNode, pickingInfo);
     }
 }
 
 /******************************************************************************
 * Renders all particles with a (sphero-)cylindrical shape.
 ******************************************************************************/
-void ParticlesVis::renderCylindricParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const Pipeline* pipeline, const AffineTransformation& tm) const
+void ParticlesVis::renderCylindricParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const SceneNode* sceneNode, const AffineTransformation& tm) const
 {
     // Determine whether all particle types use the same uniform shape or not.
     ParticlesVis::ParticleShape uniformShape = particleShape();
@@ -1016,12 +1016,12 @@ void ParticlesVis::renderCylindricParticles(const Particles* particles, FrameGra
         pickInfo->setParticles(particles);
 
         // Add the cylinders to the frame graph.
-        commandGroup.addPrimitive(std::make_unique<CylinderPrimitive>(cylinderPrimitive), tm, cylinderPrimitive.computeBoundingBox(frameGraph.visCache()), pipeline, pickInfo);
+        commandGroup.addPrimitive(std::make_unique<CylinderPrimitive>(cylinderPrimitive), tm, cylinderPrimitive.computeBoundingBox(frameGraph.visCache()), sceneNode, pickInfo);
 
         // Render the spherical caps.
         if(spheresPrimitives[0].positions()) {
-            commandGroup.addPrimitive(std::make_unique<ParticlePrimitive>(spheresPrimitives[0]), tm, spheresPrimitives[0].computeBoundingBox(frameGraph.visCache()), pipeline, pickInfo);
-            commandGroup.addPrimitive(std::make_unique<ParticlePrimitive>(spheresPrimitives[1]), tm, spheresPrimitives[1].computeBoundingBox(frameGraph.visCache()), pipeline, pickInfo);
+            commandGroup.addPrimitive(std::make_unique<ParticlePrimitive>(spheresPrimitives[0]), tm, spheresPrimitives[0].computeBoundingBox(frameGraph.visCache()), sceneNode, pickInfo);
+            commandGroup.addPrimitive(std::make_unique<ParticlePrimitive>(spheresPrimitives[1]), tm, spheresPrimitives[1].computeBoundingBox(frameGraph.visCache()), sceneNode, pickInfo);
         }
     }
 }
@@ -1029,7 +1029,7 @@ void ParticlesVis::renderCylindricParticles(const Particles* particles, FrameGra
 /******************************************************************************
 * Render a marker around a particle to highlight it in the viewports.
 ******************************************************************************/
-void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline) const
+void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* particles, FrameGraph& frameGraph, const SceneNode* sceneNode) const
 {
     // Fetch properties of selected particle which are needed to render the overlay.
     const Property* posProperty = nullptr;
@@ -1084,7 +1084,7 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* part
     GraphicsFloatType radius = particleRadius(particleIndex, radiusProperty, typeProperty);
 
     // Get world transformation matrix of scene node.
-    const AffineTransformation& nodeTM = pipeline->getWorldTransform(frameGraph.time());
+    const AffineTransformation& nodeTM = sceneNode->getWorldTransform(frameGraph.time());
 
     FloatType padding = frameGraph.nonScalingSize(nodeTM * pos) * FloatType(1e-1);
 
@@ -1207,14 +1207,14 @@ void ParticlesVis::highlightParticle(size_t particleIndex, const Particles* part
     FrameGraph::RenderingCommandGroup& commandGroup2 = frameGraph.addCommandGroup(FrameGraph::HighlightLayer2);
 
     if(particleBuffer)
-        frameGraph.addPrimitiveNonpickable(commandGroup1, std::move(particleBuffer), pipeline);
+        frameGraph.addPrimitiveNonpickable(commandGroup1, std::move(particleBuffer), sceneNode);
     if(cylinderBuffer)
-        frameGraph.addPrimitiveNonpickable(commandGroup1, std::move(cylinderBuffer), pipeline);
+        frameGraph.addPrimitiveNonpickable(commandGroup1, std::move(cylinderBuffer), sceneNode);
 
     if(highlightParticleBuffer)
-        frameGraph.addPrimitiveNonpickable(commandGroup2, std::move(highlightParticleBuffer), pipeline);
+        frameGraph.addPrimitiveNonpickable(commandGroup2, std::move(highlightParticleBuffer), sceneNode);
     if(highlightCylinderBuffer)
-        frameGraph.addPrimitiveNonpickable(commandGroup2, std::move(highlightCylinderBuffer), pipeline);
+        frameGraph.addPrimitiveNonpickable(commandGroup2, std::move(highlightCylinderBuffer), sceneNode);
 }
 
 /******************************************************************************

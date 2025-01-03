@@ -293,10 +293,10 @@ void SliceModifierEditor::onAlignPlaneToView()
     if(!vp) return;
 
     // Get the object to world transformation for the currently selected object.
-    Pipeline* pipeline = selectedPipeline();
-    if(!pipeline) return;
+    SceneNode* sceneNode = selectedSceneNode();
+    if(!sceneNode) return;
     AnimationTime time = currentAnimationTime();
-    const AffineTransformation& nodeTM = pipeline->getWorldTransform(time);
+    const AffineTransformation& nodeTM = sceneNode->getWorldTransform(time);
 
     performTransaction(tr("Align plane to view"), [&]() {
 
@@ -343,10 +343,10 @@ void SliceModifierEditor::onAlignViewToPlane()
         if(!vp) return;
 
         // Get the object to world transformation for the currently selected object
-        Pipeline* pipeline = selectedPipeline();
-        if(!pipeline) return;
+        SceneNode* sceneNode = selectedSceneNode();
+        if(!sceneNode) return;
         AnimationTime time = currentAnimationTime();
-        const AffineTransformation& nodeTM = pipeline->getWorldTransform(time, interval);
+        const AffineTransformation& nodeTM = sceneNode->getWorldTransform(time, interval);
 
         // Transform the current slicing plane to the world coordinate system.
         SliceModifier* mod = static_object_cast<SliceModifier>(editObject());
@@ -492,10 +492,10 @@ void PickPlanePointsInputMode::alignPlane(SliceModifier* mod)
         // Get the object-to-world transformation for the currently selected pipeline.
         ModificationNode* modNode = _editor->modificationNode();
         if(!modNode) return;
-        Pipeline* pipeline = _editor->selectedPipeline();
-        if(!pipeline) return;
+        SceneNode* sceneNode = _editor->selectedSceneNode();
+        if(!sceneNode) return;
         TimeInterval interval;
-        const AffineTransformation& nodeTM = pipeline->getWorldTransform(_editor->currentAnimationTime(), interval);
+        const AffineTransformation& nodeTM = sceneNode->getWorldTransform(_editor->currentAnimationTime(), interval);
 
         // Transform new plane from world to object space.
         Plane3 localPlane = nodeTM.inverse() * worldPlane;

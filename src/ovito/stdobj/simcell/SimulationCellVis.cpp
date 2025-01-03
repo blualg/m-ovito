@@ -66,17 +66,17 @@ Box3 SimulationCellVis::boundingBoxImmediate(AnimationTime time, const ConstData
 /******************************************************************************
 * Lets the visualization element render the data object.
 ******************************************************************************/
-std::variant<PipelineStatus, Future<PipelineStatus>> SimulationCellVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+std::variant<PipelineStatus, Future<PipelineStatus>> SimulationCellVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     if(const SimulationCell* cell = path.lastAs<SimulationCell>()) {
         if(frameGraph.isInteractive() && !frameGraph.isPreviewMode()) {
-            renderWireframe(cell, flowState, frameGraph, pipeline);
+            renderWireframe(cell, flowState, frameGraph, sceneNode);
         }
         else {
             if(!renderCellEnabled())
                 return {};      // Do nothing if rendering has been disabled by the user.
 
-            renderSolid(cell, flowState, frameGraph, pipeline);
+            renderSolid(cell, flowState, frameGraph, sceneNode);
         }
     }
     return {};
@@ -85,7 +85,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> SimulationCellVis::render(c
 /******************************************************************************
 * Renders the given simulation cell using lines.
 ******************************************************************************/
-void SimulationCellVis::renderWireframe(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+void SimulationCellVis::renderWireframe(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     OVITO_ASSERT(this_task::isMainThread());
 
@@ -127,22 +127,22 @@ void SimulationCellVis::renderWireframe(const SimulationCell* cell, const Pipeli
     // Prepare line drawing primitive.
     std::unique_ptr<LinePrimitive> linePrimitive = std::make_unique<LinePrimitive>();
     linePrimitive->setPositions(lineVertices);
-    linePrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(pipeline->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_UNSELECTED));
+    linePrimitive->setUniformColor(ViewportSettings::getSettings().viewportColor(sceneNode->isSelected() ? ViewportSettings::COLOR_SELECTION : ViewportSettings::COLOR_UNSELECTED));
 
     // Compute transformation matrix from unit cell space to world space.
-    const AffineTransformation nodeTM = pipeline->getWorldTransform(frameGraph.time());
+    const AffineTransformation nodeTM = sceneNode->getWorldTransform(frameGraph.time());
     AffineTransformation cellMatrix = cell->cellMatrix();
     if(cell->is2D())
         cellMatrix(2,3) = 0; // For 2D cells, implicitly set z-coordinate of origin to zero.
     frameGraph.addCommandGroup(FrameGraph::SceneLayer)
-        .addPrimitive(std::move(linePrimitive), nodeTM * cellMatrix, Box3(Point3(0), Point3(1)), pipeline, /*pickInfo=*/{},
+        .addPrimitive(std::move(linePrimitive), nodeTM * cellMatrix, Box3(Point3(0), Point3(1)), sceneNode, /*pickInfo=*/{},
                       /*pickElementOffset=*/0, FrameGraph::RenderingCommand::ExcludeFromOutline);
 }
 
 /******************************************************************************
 * Renders the given simulation cell using solid shading mode.
 ******************************************************************************/
-void SimulationCellVis::renderSolid(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline)
+void SimulationCellVis::renderSolid(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
     // Lookup the rendering primitive in the vis cache.
     const auto& [edges, corners] = frameGraph.visCache().lookup<std::tuple<CylinderPrimitive, ParticlePrimitive>>(
@@ -210,9 +210,9 @@ void SimulationCellVis::renderSolid(const SimulationCell* cell, const PipelineFl
         });
 
     FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::SceneLayer);
-    frameGraph.addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(edges), pipeline, /*pickInfo=*/{},
+    frameGraph.addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(edges), sceneNode, /*pickInfo=*/{},
                             /*pickElementOffset=*/0, FrameGraph::RenderingCommand::ExcludeFromOutline);
-    frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(corners), pipeline, /*pickInfo=*/{},
+    frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(corners), sceneNode, /*pickInfo=*/{},
                             /*pickElementOffset=*/0, FrameGraph::RenderingCommand::ExcludeFromOutline);
 }
 

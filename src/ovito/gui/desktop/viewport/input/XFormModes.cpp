@@ -140,7 +140,7 @@ void XFormMode::mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event)
                 _startPoint = getMousePosition(event);
                 _undoTransaction.begin(inputManager()->userInterface(), undoDisplayName());
                 inputManager()->userInterface().performActions(_undoTransaction, [&] {
-                    viewportWindow()->viewport()->scene()->selection()->setNode(pickResult->pipeline());
+                    viewportWindow()->viewport()->scene()->selection()->setNode(pickResult->sceneNode());
                 });
                 _undoSelectionOperation = _undoTransaction.snapshot();
                 startXForm();

@@ -518,15 +518,17 @@ void UnwrapTrajectoriesModificationNode::loadFromStreamComplete(ObjectLoadStream
     if(stream.formatVersion() <= 30008) {
         QSet<Pipeline*> pipelines = this->pipelines(true);
         if(!pipelines.empty()) {
-            if(Scene* scene = (*pipelines.begin())->scene()) {
-                if(scene->animationSettings()) {
-                    int ticksPerFrame = std::lround(4800.0f / scene->animationSettings()->framesPerSecond());
-                    _unwrappedUpToTime = AnimationTime::fromFrame(_unwrappedUpToTime.ticks() / ticksPerFrame);
-                    for(auto& record : _unwrapRecords) {
-                        record.time = AnimationTime::fromFrame(record.time.ticks() / ticksPerFrame);
-                    }
-                    for(auto& record : _unflipRecords) {
-                        record.time = AnimationTime::fromFrame(record.time.ticks() / ticksPerFrame);
+            if(SceneNode* sceneNode = (*pipelines.begin())->someSceneNode()) {
+                if(Scene* scene = sceneNode->scene()) {
+                    if(scene->animationSettings()) {
+                        int ticksPerFrame = std::lround(4800.0f / scene->animationSettings()->framesPerSecond());
+                        _unwrappedUpToTime = AnimationTime::fromFrame(_unwrappedUpToTime.ticks() / ticksPerFrame);
+                        for(auto& record : _unwrapRecords) {
+                            record.time = AnimationTime::fromFrame(record.time.ticks() / ticksPerFrame);
+                        }
+                        for(auto& record : _unflipRecords) {
+                            record.time = AnimationTime::fromFrame(record.time.ticks() / ticksPerFrame);
+                        }
                     }
                 }
             }

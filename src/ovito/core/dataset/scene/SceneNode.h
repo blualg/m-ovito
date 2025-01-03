@@ -28,17 +28,16 @@
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/dataset/animation/controller/Controller.h>
+#include <ovito/core/dataset/scene/Pipeline.h>
 
 namespace Ovito {
 
 /**
  * \brief Tree node in the scene hierarchy.
- *
- * A SceneNode is a node in the scene graph. Every object shown in the viewports
- * has an associated SceneNode.
  */
 class OVITO_CORE_EXPORT SceneNode : public RefTarget
 {
+public:
     /// Give this class its own metaclass.
     class OVITO_CORE_EXPORT SceneNodeClass : public RefTarget::OOMetaClass
     {
@@ -46,7 +45,7 @@ class OVITO_CORE_EXPORT SceneNode : public RefTarget
         /// Inherit constructor from base class.
         using RefTarget::OOMetaClass::OOMetaClass;
 
-        /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed from the class.
+        /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed or changed in a newer version of OVITO.
         /// This is needed for backward compatibility with OVITO 3.11.
         virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const override;
     };
@@ -76,7 +75,7 @@ public:
     ///         This matrix contains also the transformation of the parent node.
     const AffineTransformation& getWorldTransform(AnimationTime time, TimeInterval& validityInterval) const;
 
-    /// \brief Returns this node's world transformation matrix.
+    /// Returns this node's world transformation matrix.
     const AffineTransformation& getWorldTransform(AnimationTime time) const {
         TimeInterval validity;
         return getWorldTransform(time, validity);
@@ -93,14 +92,11 @@ public:
     /// does not contain the transformation of the parent node.
     AffineTransformation getLocalTransform(AnimationTime time, TimeInterval& validityInterval) const;
 
-    /// \brief Returns the parent node of this node in the scene tree graph.
-    /// \return This node's parent node or \c nullptr if this is the root node.
+    /// Returns the parent node of this node in the scene tree graph.
     SceneNode* parentNode() const { return _parentNode; }
 
-    /// \brief Deletes this node from the scene.
-    ///
-    /// This will also deletes all child nodes.
-    virtual void deleteSceneNode();
+    /// Asks this object to delete itself. This will also delete all child nodes.
+    virtual void requestObjectDeletion() override;
 
     /// \brief Inserts a scene node into this node's list of children.
     /// \param index The position at which to insert the child node into the list of children.
@@ -127,14 +123,10 @@ public:
     /// This method preserves the world transformation of the child node by calling
     void removeChildNode(qsizetype index);
 
-    /// \brief Returns whether the given node is a parent of this node.
-    bool isChildOf(SceneNode* node) const {
-        SceneNode* p = parentNode();
-        while(p) {
-            if(p == node) return true;
-            p = p->parentNode();
-        }
-        return false;
+    /// Deletes all child nodes of the scene node.
+    void deleteChildren() {
+        while(!children().empty())
+            children().back()->requestObjectDeletion();
     }
 
     /// \brief Recursively visits all nodes below this parent node
@@ -156,27 +148,31 @@ public:
         return true;
     }
 
-    /// \brief Recursively visits all pipelines below this parent scene node
-    ///        and invokes the given visitor function for every pipeline.
+    /// \brief Recursively visits all scene nodes with pipelines below this parent scene node
+    ///        and invokes the given visitor function for every scene node.
     ///
-    /// \param fn A function that takes an Pipeline pointer as argument and returns a boolean value.
-    /// \return true if all pipelines in the scene have been visited; false if the loop has been
+    /// \param fn A function that takes an SceneNode pointer as argument and returns a boolean value.
+    /// \return true if all pipeline scene nodes in the scene have been visited; false if the loop has been
     ///         terminated early because the visitor function has returned false.
     ///
     /// The visitor function must return a boolean value to indicate whether
-    /// it wants to continue to visit more pipelines. A return value of false
-    /// leads to early termination and no further pipelines are visited.
+    /// it wants to continue to visit more pipeline scene nodes. A return value of false
+    /// leads to early termination and no further pipeline scene nodes are visited.
     template<class Function>
     bool visitPipelines(Function&& fn) const {
         for(SceneNode* child : children()) {
-            if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(child)) {
-                if(!fn(pipeline))
-                    return false;
-            }
-            else if(!child->visitPipelines(fn))
+            if(child->pipeline() && !fn(child))
+                return false;
+            if(!child->visitPipelines(fn))
                 return false;
         }
         return true;
+    }
+
+    /// Determines whether the given pipeline is part of this scene tree.
+    bool containsPipeline(const Pipeline* pipeline) const {
+        OVITO_ASSERT(pipeline);
+        return visitPipelines([&](const SceneNode* node) { return node->pipeline() != pipeline; }) == false;
     }
 
     /// \brief Binds this scene node to a target node and creates a LookAtController
@@ -217,11 +213,11 @@ public:
     /// \return \c true if the node has a root node.
     bool isInScene() const { return scene() != nullptr; }
 
-    /// \brief Returns the root node of the scene tree; or \c nullptr if the node is not currently part of a scene.
+    /// Returns the root node of the scene tree; or \c nullptr if the node is not currently part of a scene.
     Scene* scene() const;
 
-    /// \brief Returns the title of this object.
-    virtual QString objectTitle() const override { return sceneNodeName(); }
+    /// Returns the title of this object.
+    virtual QString objectTitle() const override;
 
     /// Shows/hides this node in the given viewport, i.e. turns rendering on or off.
     void setPerViewportVisibility(Viewport* vp, bool visible);
@@ -255,17 +251,16 @@ protected:
 
     /// This method marks the world transformation cache as invalid,
     /// so it will be rebuilt during the next call to getWorldTransform().
-    virtual void invalidateWorldTransformation();
+    void invalidateWorldTransformation();
 
     /// This method marks the cached world bounding box as invalid,
     /// so it will be rebuilt during the next call to worldBoundingBox().
-    virtual void invalidateBoundingBox();
+    void invalidateBoundingBox();
 
-    /// \brief Computes the bounding box of the scene node in local coordinates.
-    /// \param time The animation time at which to compute the bounding box.
-    /// \return An axis-aligned box in the node's local coordinate system that contains
-    ///         the whole node geometry.
-    virtual Box3 localBoundingBoxInternal(AnimationTime time, TimeInterval& validity) const = 0;
+    /// Computes the bounding box of the scene node in local coordinates.
+    virtual Box3 localBoundingBoxInternal(AnimationTime time, TimeInterval& validity) const {
+        return pipeline() ? pipeline()->localBoundingBox(time, validity) : Box3();
+    }
 
     /// Is called whenever one of the child nodes in the tree has generated a AnimationFramesChanged event.
     virtual void onAnimationFramesChanged();
@@ -293,6 +288,9 @@ private:
 
     /// Viewports in which this node should NOT be rendered. Allows to selectively control the visibility of the scene node in different viewports.
     DECLARE_RUNTIME_PROPERTY_FIELD(std::vector<OOWeakRef<Viewport>>{}, hiddenInViewports, setHiddenInViewports);
+
+    /// The pipeline displayed by the scene node.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Pipeline>, pipeline, setPipeline);
 
     /// This node's cached world transformation matrix.
     /// It contains the transformation of the parent node.

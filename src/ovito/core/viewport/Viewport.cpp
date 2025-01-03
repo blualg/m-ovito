@@ -69,7 +69,7 @@ void Viewport::initializeObject(ObjectInitializationFlags flags)
     _viewportSettingsChangedConnection = QObject::connect(&ViewportSettings::getSettings(), &ViewportSettings::settingsChanged, [this](ViewportSettings* newSettings) { viewportSettingsChanged(newSettings); });
 
     // Automatically associate the new viewport with the global scene (if there is one).
-    // This is needed for the Python interface, where each viewport created by the user must be automatically
+    // This is needed for the Python interface, where each viewport created by the user must automatically be
     // associated with some scene.
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject) && this_task::isScripting()) {
         setScene(this_task::ui()->datasetContainer().activeScene());
@@ -248,8 +248,8 @@ bool Viewport::isPerspectiveProjection() const
 ******************************************************************************/
 DataOORef<const AbstractCameraObject> Viewport::cameraObject(AnimationTime time) const
 {
-    if(viewNode()) {
-        if(const AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(viewNode()->source())) {
+    if(viewNode() && viewNode()->pipeline()) {
+        if(const AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(viewNode()->pipeline()->source())) {
             return cameraSource->cameraObject(time);
         }
     }
@@ -644,6 +644,26 @@ void Viewport::removeViewportGizmo(ViewportGizmo* gizmo)
         // Update viewport to hide gizmo.
         updateViewport();
     }
+}
+
+/******************************************************************************
+* Provides a custom function that takes are of the deserialization of a
+* serialized property field that has been removed or changed in a newer version of OVITO.
+* This is needed for file backward compatibility with OVITO 3.11.
+******************************************************************************/
+RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr Viewport::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
+{
+    if(field.definingClass == &Viewport::OOClass() && stream.formatVersion() < 30013) {
+        if(field.identifier == "viewNode") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x02);
+                if(OORef<Pipeline> pipeline = stream.loadObject<Pipeline>())
+                    static_object_cast<Viewport>(&owner)->setViewNode(pipeline->deserializationSceneNode());
+                stream.closeChunk();
+            };
+        }
+    }
+    return RefTarget::OOMetaClass::overrideFieldDeserialization(stream, field);
 }
 
 }   // End of namespace

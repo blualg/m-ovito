@@ -147,11 +147,12 @@ void GlobalAttributesInspectionApplet::exportToFile()
         // Pass output filename to exporter.
         exporter->setOutputFilename(exportFile);
 
-        // Set scene node to be exported.
-        exporter->setSceneNodeToExport(currentPipeline());
+        // Set pipeline to be exported.
+        exporter->setSceneToExport(currentSceneNode()->scene());
+        exporter->setPipelineToExport(currentPipeline());
 
         // If the exporter supports it, automatically choose the data object(s) to be exported.
-        exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentPipeline()->scene());
+        exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentSceneNode()->scene());
         OVITO_ASSERT(exporter->sceneToExport());
 
         // Let the user adjust the export settings.

@@ -102,12 +102,12 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
 
         // Find a ColorCodingModifier in the scene that we can connect to.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
-            viewport->scene()->visitPipelines([&](Pipeline* pipeline) {
-                PipelineNode* node = pipeline->head();
+            viewport->scene()->visitPipelines([&](SceneNode* sceneNode) {
+                PipelineNode* node = sceneNode->pipeline()->head();
                 for(;;) {
                     if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(node)) {
                         if(ColorCodingModifier* mod = dynamic_object_cast<ColorCodingModifier>(modNode->modifier())) {
-                            setPipeline(pipeline);
+                            setPipeline(sceneNode->pipeline());
                             setModifier(mod);
                             if(mod->isEnabled())
                                 return false; // Stop search if modifier is enabled; otherwise, keep looking for an alternative.
@@ -123,13 +123,13 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
         // If there is no ColorCodingModifier in the scene, initialize the overlay to use
         // the first available typed property as color mapping source.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
-            viewport->scene()->visitPipelines([&](Pipeline* pipeline) {
-                const PipelineFlowState& state = pipeline->getCachedPipelineOutput(viewport->currentTime());
+            viewport->scene()->visitPipelines([&](SceneNode* sceneNode) {
+                const PipelineFlowState& state = sceneNode->pipeline()->getCachedPipelineOutput(viewport->currentTime());
                 for(const ConstDataObjectPath& dataPath : state.getObjectsRecursive(Property::OOClass())) {
                     const Property* property = static_object_cast<Property>(dataPath.back());
                     // Check if the property is a typed property, i.e. it has one or more ElementType objects attached to it.
                     if(property->isTypedProperty() && dataPath.size() >= 2) {
-                        setPipeline(pipeline);
+                        setPipeline(sceneNode->pipeline());
                         setSourceProperty(dataPath);
                         return false; // Stop search.
                     }
@@ -140,14 +140,14 @@ void ColorLegendOverlay::initializeOverlay(Viewport* viewport)
 
         // If we still don't have a valid source, look for a visual element in the scene which uses pseudo-color mapping.
         if(!modifier() && !sourceProperty() && !colorMapping() && viewport->scene()) {
-            viewport->scene()->visitPipelines([&](Pipeline* pipeline) {
-                for(DataVis* vis : pipeline->visElements()) {
+            viewport->scene()->visitPipelines([&](SceneNode* sceneNode) {
+                for(DataVis* vis : sceneNode->pipeline()->visElements()) {
                     if(vis->isEnabled()) {
                         for(const PropertyFieldDescriptor* field : vis->getOOMetaClass().propertyFields()) {
                             if(field->isReferenceField() && field->targetClass()->isDerivedFrom(PropertyColorMapping::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM) && !field->isVector()) {
                                 if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(vis->getReferenceFieldTarget(field))) {
                                     if(mapping->sourceProperty()) {
-                                        setPipeline(pipeline);
+                                        setPipeline(sceneNode->pipeline());
                                         setColorMapping(mapping);
                                         return false; // Stop search.
                                     }
@@ -267,8 +267,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
     Pipeline* sourcePipeline = this->pipeline();
     if(!sourcePipeline) {
         // If no source pipeline has been specified by the user, use the first pipeline found in the current scene as a fallback.
-        scene->visitPipelines([&](Pipeline* pipeline) {
-            sourcePipeline = pipeline;
+        scene->visitPipelines([&](SceneNode* sceneNode) {
+            sourcePipeline = sceneNode->pipeline();
             return false;
         });
     }
@@ -1145,7 +1145,8 @@ void ColorLegendOverlay::loadFromStreamComplete(ObjectLoadStream& stream)
         if(Viewport* vp = stream.datasetToBePopulated()->viewportConfig()->activeViewport()) {
             if(Scene* scene = vp->scene()) {
                 Pipeline* selectedPipeline = nullptr;
-                scene->visitPipelines([&](Pipeline* pipeline) {
+                scene->visitPipelines([&](SceneNode* sceneNode) {
+                    Pipeline* pipeline = sceneNode->pipeline();
                     if(selectedPipeline == nullptr)
                         selectedPipeline = pipeline;
                     if(modifier()) {

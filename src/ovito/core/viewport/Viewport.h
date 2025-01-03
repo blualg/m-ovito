@@ -39,7 +39,20 @@ namespace Ovito {
  */
 class OVITO_CORE_EXPORT Viewport : public RefTarget
 {
-    OVITO_CLASS(Viewport)
+public:
+
+    /// Give this class its own metaclass.
+    class OVITO_CORE_EXPORT ViewportClass : public RefTarget::OOMetaClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using RefTarget::OOMetaClass::OOMetaClass;
+
+        /// Provides a custom function that takes are of the deserialization of a serialized property field that has been removed or changed in a newer version of OVITO.
+        /// This is needed for backward compatibility with OVITO 3.11.
+        virtual SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const override;
+    };
+    OVITO_CLASS_META(Viewport, ViewportClass)
 
 public:
 
@@ -241,7 +254,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, isGridVisible, setGridVisible, PROPERTY_FIELD_NO_UNDO);
 
     /// The scene node (camera) that has been selected as the view node.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<Pipeline>, viewNode, setViewNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<SceneNode>, viewNode, setViewNode, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// The title of the viewport.
     DECLARE_PROPERTY_FIELD_FLAGS(QString{}, viewportTitle, PROPERTY_FIELD_NO_UNDO);

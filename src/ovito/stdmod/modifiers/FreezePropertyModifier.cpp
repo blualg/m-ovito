@@ -305,10 +305,12 @@ void FreezePropertyModifier::loadFromStreamComplete(ObjectLoadStream& stream)
         if(ModificationNode* node = someNode()) {
             QSet<Pipeline*> pipelines = node->pipelines(true);
             if(!pipelines.empty()) {
-                if(Scene* scene = (*pipelines.begin())->scene()) {
-                    if(scene->animationSettings()) {
-                        int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
-                        setFreezeTime(freezeTime() / ticksPerFrame);
+                if(SceneNode* sceneNode = (*pipelines.begin())->someSceneNode()) {
+                    if(Scene* scene = sceneNode->scene()) {
+                        if(scene->animationSettings()) {
+                            int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
+                            setFreezeTime(freezeTime() / ticksPerFrame);
+                        }
                     }
                 }
             }

@@ -192,8 +192,10 @@ void StandardCameraSource::setFov(FloatType newFOV)
 bool StandardCameraSource::isTargetCamera() const
 {
     for(Pipeline* pipeline : pipelines(true)) {
-        if(pipeline->lookatTargetNode() != nullptr)
-            return true;
+        for(SceneNode* sceneNode : pipeline->sceneNodes()) {
+            if(sceneNode->lookatTargetNode() != nullptr)
+                return true;
+        }
     }
     return false;
 }
@@ -204,8 +206,10 @@ bool StandardCameraSource::isTargetCamera() const
 FloatType StandardCameraSource::targetDistance(AnimationTime time) const
 {
     for(Pipeline* pipeline : pipelines(true)) {
-        if(pipeline->lookatTargetNode() != nullptr) {
-            return StandardCameraObject::getTargetDistance(time, pipeline);
+        for(SceneNode* sceneNode : pipeline->sceneNodes()) {
+            if(sceneNode->lookatTargetNode() != nullptr) {
+                return StandardCameraObject::getTargetDistance(time, sceneNode);
+            }
         }
     }
 
@@ -223,28 +227,32 @@ void StandardCameraSource::setIsTargetCamera(bool enable)
     AnimationTime time = this_task::ui()->datasetContainer().currentAnimationTime();
 
     for(Pipeline* pipeline : pipelines(true)) {
-        if(pipeline->lookatTargetNode() == nullptr && enable) {
-            if(SceneNode* parentNode = pipeline->parentNode()) {
-                DataOORef<DataCollection> dataCollection = DataOORef<DataCollection>::create();
-                dataCollection->addObject(DataOORef<TargetObject>::create());
-                OORef<StaticSource> targetSource = OORef<StaticSource>::create();
-                targetSource->setDataCollection(std::move(dataCollection));
-                OORef<Pipeline> targetNode = OORef<Pipeline>::create();
-                targetNode->setHead(targetSource);
-                targetNode->setSceneNodeName(tr("%1.target").arg(pipeline->sceneNodeName()));
-                parentNode->addChildNode(targetNode);
-                // Position the new target to match the current orientation of the camera.
-                const AffineTransformation& cameraTM = pipeline->getWorldTransform(time);
-                Vector3 cameraPos = cameraTM.translation();
-                Vector3 cameraDir = cameraTM.column(2).normalized();
-                Vector3 targetPos = cameraPos - targetDistance(time) * cameraDir;
-                targetNode->transformationController()->translate(time, targetPos, AffineTransformation::Identity());
-                pipeline->setLookatTargetNode(time, targetNode);
+        for(SceneNode* sceneNode : pipeline->sceneNodes()) {
+            if(sceneNode->lookatTargetNode() == nullptr && enable) {
+                if(SceneNode* parentNode = sceneNode->parentNode()) {
+                    DataOORef<DataCollection> dataCollection = DataOORef<DataCollection>::create();
+                    dataCollection->addObject(DataOORef<TargetObject>::create());
+                    OORef<StaticSource> targetSource = OORef<StaticSource>::create();
+                    targetSource->setDataCollection(std::move(dataCollection));
+                    OORef<Pipeline> targetPipeline = OORef<Pipeline>::create();
+                    targetPipeline->setHead(targetSource);
+                    OORef<SceneNode> targetNode = OORef<SceneNode>::create();
+                    targetNode->setPipeline(targetPipeline);
+                    targetNode->setSceneNodeName(tr("%1.target").arg(sceneNode->sceneNodeName()));
+                    parentNode->addChildNode(targetNode);
+                    // Position the new target to match the current orientation of the camera.
+                    const AffineTransformation& cameraTM = sceneNode->getWorldTransform(time);
+                    Vector3 cameraPos = cameraTM.translation();
+                    Vector3 cameraDir = cameraTM.column(2).normalized();
+                    Vector3 targetPos = cameraPos - targetDistance(time) * cameraDir;
+                    targetNode->transformationController()->translate(time, targetPos, AffineTransformation::Identity());
+                    sceneNode->setLookatTargetNode(time, targetNode);
+                }
             }
-        }
-        else if(pipeline->lookatTargetNode() != nullptr && !enable) {
-            pipeline->lookatTargetNode()->deleteSceneNode();
-            OVITO_ASSERT(pipeline->lookatTargetNode() == nullptr);
+            else if(sceneNode->lookatTargetNode() != nullptr && !enable) {
+                sceneNode->lookatTargetNode()->requestObjectDeletion();
+                OVITO_ASSERT(sceneNode->lookatTargetNode() == nullptr);
+            }
         }
     }
 

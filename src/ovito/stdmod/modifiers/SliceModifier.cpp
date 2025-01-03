@@ -429,10 +429,10 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(AnimationTime time, Ti
 /******************************************************************************
 * Lets the modifier render itself in an interactive viewport.
 ******************************************************************************/
-void SliceModifier::renderModifierVisual(ModificationNode* modNode, Pipeline* pipeline, FrameGraph& frameGraph)
+void SliceModifier::renderModifierVisual(ModificationNode* modNode, SceneNode* sceneNode, FrameGraph& frameGraph)
 {
     if(isBeingEdited()) {
-        Box3 bb = pipeline->localBoundingBox(frameGraph.time());
+        Box3 bb = sceneNode->localBoundingBox(frameGraph.time());
         if(bb.isEmpty())
             return;
 
@@ -448,13 +448,13 @@ void SliceModifier::renderModifierVisual(ModificationNode* modNode, Pipeline* pi
 
         constexpr ColorA color(0.8, 0.3, 0.3);
         if(slabWidth <= 0) {
-            renderPlane(frameGraph, pipeline, plane, bb, color);
+            renderPlane(frameGraph, sceneNode, plane, bb, color);
         }
         else {
             plane.dist += slabWidth / 2;
-            renderPlane(frameGraph, pipeline, plane, bb, color);
+            renderPlane(frameGraph, sceneNode, plane, bb, color);
             plane.dist -= slabWidth;
-            renderPlane(frameGraph, pipeline, plane, bb, color);
+            renderPlane(frameGraph, sceneNode, plane, bb, color);
         }
     }
 }
@@ -462,7 +462,7 @@ void SliceModifier::renderModifierVisual(ModificationNode* modNode, Pipeline* pi
 /******************************************************************************
 * Renders the plane in the viewports.
 ******************************************************************************/
-void SliceModifier::renderPlane(FrameGraph& frameGraph, const Pipeline* pipeline, const Plane3& plane, const Box3& bb, const ColorA& color) const
+void SliceModifier::renderPlane(FrameGraph& frameGraph, const SceneNode* sceneNode, const Plane3& plane, const Box3& bb, const ColorA& color) const
 {
     const ConstDataBufferPtr& vertexBuffer = frameGraph.visCache().lookup<ConstDataBufferPtr>(
         RendererResourceKey<struct SlicePlaneCache, Plane3, Box3>{plane, bb},
@@ -506,7 +506,7 @@ void SliceModifier::renderPlane(FrameGraph& frameGraph, const Pipeline* pipeline
     std::unique_ptr<LinePrimitive> lines = std::make_unique<LinePrimitive>();
     lines->setPositions(vertexBuffer);
     lines->setUniformColor(color);
-    frameGraph.addPrimitive(frameGraph.addCommandGroup(FrameGraph::SceneLayer), std::move(lines), pipeline);
+    frameGraph.addPrimitive(frameGraph.addCommandGroup(FrameGraph::SceneLayer), std::move(lines), sceneNode);
 }
 
 /******************************************************************************

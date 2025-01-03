@@ -483,11 +483,13 @@ void GenerateTrajectoryLinesModifier::loadFromStreamComplete(ObjectLoadStream& s
         if(ModificationNode* modNode = someNode()) {
             QSet<Pipeline*> pipelines = modNode->pipelines(true);
             if(!pipelines.empty()) {
-                if(Scene* scene = (*pipelines.begin())->scene()) {
-                    if(scene->animationSettings()) {
-                        int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
-                        setCustomIntervalStart(customIntervalStart() / ticksPerFrame);
-                        setCustomIntervalEnd(customIntervalEnd() / ticksPerFrame);
+                if(SceneNode* sceneNode = (*pipelines.begin())->someSceneNode()) {
+                    if(Scene* scene = sceneNode->scene()) {
+                        if(scene->animationSettings()) {
+                            int ticksPerFrame = (int)std::round(4800.0f / scene->animationSettings()->framesPerSecond());
+                            setCustomIntervalStart(customIntervalStart() / ticksPerFrame);
+                            setCustomIntervalEnd(customIntervalEnd() / ticksPerFrame);
+                        }
                     }
                 }
             }

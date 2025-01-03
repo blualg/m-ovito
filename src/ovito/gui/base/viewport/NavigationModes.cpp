@@ -171,8 +171,8 @@ void NavigationMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
 ******************************************************************************/
 PipelineNode* NavigationMode::getViewportCamera(Viewport* vp)
 {
-    if(vp->viewNode() && vp->viewType() == Viewport::VIEW_SCENENODE) {
-        return vp->viewNode()->source();
+    if(vp->viewNode() && vp->viewNode()->pipeline() && vp->viewType() == Viewport::VIEW_SCENENODE) {
+        return vp->viewNode()->pipeline()->source();
     }
     return nullptr;
 }

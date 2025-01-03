@@ -83,10 +83,10 @@ public:
 
         /// Constructor.
         explicit RenderingCommand(Flags flags, std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm,
-                                  OORef<const Pipeline> pipeline = {}, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0)
+                                  OORef<const SceneNode> sceneNode = {}, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0)
             : _primitive(std::move(primitive)),
               _tm(tm),
-              _pipeline(std::move(pipeline)),
+              _sceneNode(std::move(sceneNode)),
               _pickInfo(std::move(pickInfo)),
               _pickElementOffset(pickElementOffset),
               _flags(flags)
@@ -102,8 +102,8 @@ public:
         /// Returns the model-to-world transformation matrix to be applied to the graphics primitive.
         const AffineTransformation& modelWorldTM() const { return _tm; }
 
-        /// The scene pipeline to which this rendering command belongs.
-        const OORef<const Pipeline>& pipeline() const { return _pipeline; }
+        /// The pipeline scene node to which this rendering command belongs.
+        const OORef<const SceneNode>& sceneNode() const { return _sceneNode; }
 
         /// An optional object that knows more about what is being rendered and which sub-elements it consists of.
         const OORef<ObjectPickInfo>& pickInfo() const { return _pickInfo; }
@@ -136,9 +136,9 @@ public:
         /// May be a null matrix to indicate that the primitive contains pre-projected coordinates.
         AffineTransformation _tm = AffineTransformation::Zero();
 
-        /// The scene pipeline to which this rendering command belongs.
+        /// The pipeline scene node to which this rendering command belongs.
         /// Note: may be null in rare cases, e.g., when the AmbientOcclusionModifier renders particles using false colors.
-        OORef<const Pipeline> _pipeline;
+        OORef<const SceneNode> _sceneNode;
 
         /// An optional object that knows what high-level data is being represented by this render command and which sub-elements it
         /// consists of.
@@ -184,7 +184,7 @@ public:
         /// Automatically computes the bounding box of the primitive and the model-to-world transformation.
         /// Optional: A FrameGraph::RenderingCommand::Flag can be give, default is "NoFlags"
         RenderingCommand& addPrimitive(std::unique_ptr<RenderingPrimitive> primitive, const AffineTransformation& tm, const Box3& box,
-                                       OORef<const Pipeline> pickablePipeline, OORef<ObjectPickInfo> pickInfo = {},
+                                       OORef<const SceneNode> pickableSceneNode, OORef<ObjectPickInfo> pickInfo = {},
                                        uint32_t pickElementOffset = 0, RenderingCommand::Flags flags = RenderingCommand::NoFlags);
 
         /// Add a 3d rendering primitive to the current layer of the frame graph with a pre-computed bounding box.
@@ -301,13 +301,13 @@ public:
     /// Automatically computes the bounding box of the primitive and the model-to-world transformation.
     /// Optional: A FrameGraph::RenderingCommand::Flag can be give, default is "NoFlags"
     RenderingCommand& addPrimitive(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive,
-                                   OORef<const Pipeline> pipeline, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0,
+                                   OORef<const SceneNode> sceneNode, OORef<ObjectPickInfo> pickInfo = {}, uint32_t pickElementOffset = 0,
                                    RenderingCommand::Flags flags = RenderingCommand::NoFlags);
 
     /// Add a 3d rendering primitive to the current layer of the frame graph.
     /// Automatically computes the bounding box of the primitive and the model-to-world transformation.
     RenderingCommand& addPrimitiveNonpickable(RenderingCommandGroup& group, std::unique_ptr<RenderingPrimitive> primitive,
-                                              const Pipeline* pipeline);
+                                              const SceneNode* sceneNode);
 
     /// Replaces all text primitives with (cached) image primitives.
     void renderTextAsImagePrimitives();

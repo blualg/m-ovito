@@ -188,7 +188,8 @@ void AnimationTrackBar::onRebuildControllerList()
     // Traverse object graphs of selected scene nodes to find all animation controllers.
     if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet()) {
         for(SceneNode* node : selection->nodes()) {
-            if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(node))
+            findControllers(node);
+            if(Pipeline* pipeline = node->pipeline())
                 findControllers(pipeline);
         }
     }

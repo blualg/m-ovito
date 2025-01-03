@@ -57,7 +57,7 @@ public:
 public:
 
     /// Renders the visual element.
-    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
+    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode) override;
 
     /// Computes the bounding box of the visual element.
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
@@ -90,7 +90,7 @@ public:
     Box3 particleBoundingBox(BufferReadAccess<Point3> positionProperty, const Property* typeProperty, BufferReadAccess<GraphicsFloatType> radiusProperty, BufferReadAccess<Vector3G> shapeProperty, bool includeParticleRadius) const;
 
     /// Render a marker around a particle to highlight it in the viewports.
-    void highlightParticle(size_t particleIndex, const Particles* particles, FrameGraph& frameGraph, const Pipeline* pipeline) const;
+    void highlightParticle(size_t particleIndex, const Particles* particles, FrameGraph& frameGraph, const SceneNode* sceneNode) const;
 
     /// Returns the typed particle property used to determine the rendering colors of particles (if no per-particle colors are defined).
     virtual const Property* getParticleTypeColorProperty(const Particles* particles) const;
@@ -106,13 +106,13 @@ public:
 private:
 
     /// Renders particle types that have a mesh-based shape assigned.
-    void renderMeshBasedParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const Pipeline* pipeline, const AffineTransformation& tm) const;
+    void renderMeshBasedParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const SceneNode* sceneNode, const AffineTransformation& tm) const;
 
     /// Renders all particles with a primitive shape (spherical, box, (super)quadrics).
-    void renderPrimitiveParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const Pipeline* pipeline, const AffineTransformation& tm) const;
+    void renderPrimitiveParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const SceneNode* sceneNode, const AffineTransformation& tm) const;
 
     /// Renders all particles with a (sphero-)cylindrical shape.
-    void renderCylindricParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const Pipeline* pipeline, const AffineTransformation& tm) const;
+    void renderCylindricParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const SceneNode* sceneNode, const AffineTransformation& tm) const;
 
 private:
 

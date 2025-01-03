@@ -342,8 +342,8 @@ void ActionManager::on_EditDelete_triggered()
         // Get active scene.
         if(Scene* scene = userInterface().datasetContainer().activeScene()) {
             // Delete all nodes in selection set.
-            for(SceneNode* node : scene->selection()->nodes())
-                node->deleteSceneNode();
+            while(!scene->selection()->nodes().empty())
+                scene->selection()->nodes().front()->requestObjectDeletion();
 
             // Automatically select one of the remaining nodes.
             if(scene->children().isEmpty() == false)

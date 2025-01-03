@@ -128,11 +128,11 @@ void RefMakerClass::loadClassInfo(LoadStream& stream, OvitoClass::SerializedClas
 
             // Verify consistency of serialized and runtime class hierarchy.
             if(!classInfo->clazz->isDerivedFrom(*fieldInfo.definingClass)) {
-                qDebug() << "WARNING:" << classInfo->clazz->name() << "is not derived from" << fieldInfo.definingClass->name();
+                qDebug() << "WARNING:" << classInfo->clazz->name() << "is not derived from" << fieldInfo.definingClass->name() << ", which defines the field" << fieldInfo.identifier;
                 throw Exception(RefMaker::tr("The class hierarchy stored in the file differs from the class hierarchy of the program."));
             }
 
-            // Verify consistency  of serialized and runtime property field definition.
+            // Verify consistency  of serialized and runtime property field definitions.
             fieldInfo.field = fieldInfo.definingClass->findPropertyField(fieldInfo.identifier.constData(), true);
             if(fieldInfo.field) {
                 if(fieldInfo.field->isReferenceField() != fieldInfo.isReferenceField ||

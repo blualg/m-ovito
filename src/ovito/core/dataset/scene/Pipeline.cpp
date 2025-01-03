@@ -29,7 +29,6 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/viewport/Viewport.h>
-#include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
 #include <ovito/core/app/undo/RefTargetOperations.h>
 #include <ovito/core/oo/CloneHelper.h>
@@ -79,8 +78,8 @@ void Pipeline::invalidatePipelineCache(TimeInterval keepInterval)
     // Invalidate data cache.
     _pipelineCache.invalidate(keepInterval);
 
-    // Also mark the cached bounding box of this scene node as invalid.
-    invalidateBoundingBox();
+    // Also mark the cached bounding box of the scene node as invalid.
+    notifyDependents(Pipeline::BoundingBoxChanged);
 }
 
 /******************************************************************************
@@ -156,9 +155,9 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
             // Reduce memory footprint when the pipeline's data provider gets deleted.
             _pipelineCache.reset();
 
-            // Data provider has been deleted -> delete scene node as well.
+            // Data provider has been deleted -> delete pipeline as well.
             if(!isUndoingOrRedoing())
-                deleteSceneNode();
+                requestObjectDeletion();
         }
         else if(event.type() == ReferenceEvent::PipelineChanged) {
             // Determine the new source node of the pipeline.
@@ -174,8 +173,8 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
             if(preliminaryUpdatesEnabled()) {
                 // Invalidate the cache whenever the last pipeline stage can provide a new interactive state.
                 _pipelineCache.invalidateInteractiveState();
-                // Recompute the cached bounding box of this scene node.
-                invalidateBoundingBox();
+                // Recompute the cached bounding box of the scene node.
+                notifyDependents(Pipeline::BoundingBoxChanged);
                 // Inform all vis elements that their input state has changed when the pipeline reports that a new preliminary output state is available.
                 for(DataVis* vis : visElements())
                     vis->notifyDependents(ReferenceEvent::PipelineInputChanged);
@@ -200,20 +199,18 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
     else if(_visElements.contains(source)) {
         if(event.type() == ReferenceEvent::TargetChanged) {
 
-            // Recompute bounding box when a visual element changes.
-            invalidateBoundingBox();
+            // Recompute bounding box of scene node when a visual element changes.
+            notifyDependents(Pipeline::BoundingBoxChanged);
 
             // Trigger an interactive viewport repaint without pipeline re-evaluation.
             notifyDependents(ReferenceEvent::InteractiveStateAvailable);
         }
     }
-    if(source == this->source()) {
-        if(event.type() == ReferenceEvent::TitleChanged && sceneNodeName().isEmpty()) {
-            // Forward this event to dependents of the pipeline.
-            return true;
-        }
+    if(source == this->source() && event.type() == ReferenceEvent::TitleChanged) {
+        // Forward this event to scene nodes referencing this the pipeline.
+        return true;
     }
-    return SceneNode::referenceEvent(source, event);
+    return RefTarget::referenceEvent(source, event);
 }
 
 /******************************************************************************
@@ -241,10 +238,51 @@ void Pipeline::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
     }
     else if(field == PROPERTY_FIELD(source)) {
         // When the source node of the pipeline is being replaced, the pipeline's title changes.
-        if(sceneNodeName().isEmpty())
-            notifyDependents(ReferenceEvent::TitleChanged);
+        notifyDependents(ReferenceEvent::TitleChanged);
     }
-    SceneNode::referenceReplaced(field, oldTarget, newTarget, listIndex);
+    RefTarget::referenceReplaced(field, oldTarget, newTarget, listIndex);
+}
+
+/******************************************************************************
+* Returns the list of scene nodes that share this pipeline.
+******************************************************************************/
+QVector<SceneNode*> Pipeline::sceneNodes() const
+{
+    QVector<SceneNode*> list;
+    visitDependents([&](RefMaker* dependent) {
+        SceneNode* node = dynamic_object_cast<SceneNode>(dependent);
+        if(node != nullptr && node->pipeline() == this)
+            list.push_back(node);
+    });
+    return list;
+}
+
+/******************************************************************************
+* Returns one of the scene nodes referencing this pipeline (if any).
+******************************************************************************/
+SceneNode* Pipeline::someSceneNode() const
+{
+    SceneNode* result = nullptr;
+    visitDependents([&](RefMaker* dependent) {
+        SceneNode* node = dynamic_object_cast<SceneNode>(dependent);
+        if(node != nullptr && node->pipeline() == this)
+            result = node;
+    });
+    return result;
+}
+
+/******************************************************************************
+* Determines  whether this pipeline is currently part of a visualization scene.
+******************************************************************************/
+bool Pipeline::isInScene() const
+{
+    bool result = false;
+    visitDependents([&](RefMaker* dependent) {
+        SceneNode* node = dynamic_object_cast<SceneNode>(dependent);
+        if(node != nullptr && node->pipeline() == this && node->isInScene())
+            result = true;
+    });
+    return result;
 }
 
 /******************************************************************************
@@ -252,7 +290,7 @@ void Pipeline::referenceReplaced(const PropertyFieldDescriptor* field, RefTarget
 ******************************************************************************/
 void Pipeline::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeInterval& newAnimationInterval)
 {
-    SceneNode::rescaleTime(oldAnimationInterval, newAnimationInterval);
+    RefTarget::rescaleTime(oldAnimationInterval, newAnimationInterval);
     _pipelineCache.invalidate();
 }
 
@@ -261,16 +299,12 @@ void Pipeline::rescaleTime(const TimeInterval& oldAnimationInterval, const TimeI
 ******************************************************************************/
 QString Pipeline::objectTitle() const
 {
-    // If a user-defined name has been assigned to this pipeline, return it as the pipeline's display title.
-    if(!sceneNodeName().isEmpty())
-        return sceneNodeName();
-
-    // Otherwise, use the title of the pipeline's data source.
+    // Use the title of the pipeline's data source by default.
     if(source())
         return source()->objectTitle();
 
     // Fall back to default behavior.
-    return SceneNode::objectTitle();
+    return RefTarget::objectTitle();
 }
 
 /******************************************************************************
@@ -323,9 +357,9 @@ void Pipeline::setSource(PipelineNode* sourceObject)
 }
 
 /******************************************************************************
-* Computes the bounding box of the scene node in local coordinates.
+* Computes the axis-aligned bounding box of the pipeline's visual output in local coordinates.
 ******************************************************************************/
-Box3 Pipeline::localBoundingBoxInternal(AnimationTime time, TimeInterval& validity) const
+Box3 Pipeline::localBoundingBox(AnimationTime time, TimeInterval& validity) const
 {
     const PipelineFlowState& state = getCachedPipelineOutput(time);
 
@@ -385,9 +419,9 @@ void Pipeline::getDataObjectBoundingBox(AnimationTime time, const DataObject* da
 }
 
 /******************************************************************************
-* Deletes this node from the scene.
+* Asks this object to delete itself.
 ******************************************************************************/
-void Pipeline::deleteSceneNode()
+void Pipeline::requestObjectDeletion()
 {
     OVITO_ASSERT(this_task::get());
 
@@ -414,7 +448,7 @@ void Pipeline::deleteSceneNode()
     // Discard transient references to visual elements.
     _visElements.clear(this, PROPERTY_FIELD(visElements));
 
-    SceneNode::deleteSceneNode();
+    RefTarget::requestObjectDeletion();
 }
 
 /******************************************************************************
@@ -426,7 +460,7 @@ void Pipeline::referenceInserted(const PropertyFieldDescriptor* field, RefTarget
         // Reset pipeline cache if a new replacement for a visual element is assigned.
         invalidatePipelineCache();
     }
-    SceneNode::referenceInserted(field, newTarget, listIndex);
+    RefTarget::referenceInserted(field, newTarget, listIndex);
 }
 
 /******************************************************************************
@@ -443,7 +477,7 @@ void Pipeline::propertyChanged(const PropertyFieldDescriptor* field)
             notifyTargetChanged(PROPERTY_FIELD(pipelineTrajectoryCachingEnabled));
     }
 
-    SceneNode::propertyChanged(field);
+    RefTarget::propertyChanged(field);
 }
 
 /******************************************************************************
@@ -451,7 +485,7 @@ void Pipeline::propertyChanged(const PropertyFieldDescriptor* field)
 ******************************************************************************/
 void Pipeline::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
-    SceneNode::saveToStream(stream, excludeRecomputableData);
+    RefTarget::saveToStream(stream, excludeRecomputableData);
     stream.beginChunk(0x02);
     // Save list of weak references to vis elements that have been replaced with local copies.
     stream.writeSizeT(replacedVisElements().size());
@@ -466,7 +500,15 @@ void Pipeline::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
 ******************************************************************************/
 void Pipeline::loadFromStream(ObjectLoadStream& stream)
 {
-    SceneNode::loadFromStream(stream);
+    RefTarget::loadFromStream(stream);
+
+    // For backward compatibility with OVITO 3.11:
+    // The Pipeline class used to be derived from the SceneNode class.
+    // Parse the placeholder chunk which used to be written by the SceneNode::saveToStream() method in older OVITO versions.
+    if(stream.formatVersion() < 30013) {
+        stream.expectChunk(0x02);
+        stream.closeChunk();
+    }
 
     int version = stream.expectChunkRange(0x01, 1);
     if(version >= 1) {
@@ -489,7 +531,7 @@ void Pipeline::loadFromStream(ObjectLoadStream& stream)
 ******************************************************************************/
 void Pipeline::loadFromStreamComplete(ObjectLoadStream& stream)
 {
-    SceneNode::loadFromStreamComplete(stream);
+    RefTarget::loadFromStreamComplete(stream);
 
     OVITO_ASSERT(replacedVisElements().size() == replacementVisElements().size());
     OVITO_ASSERT(!isUndoRecording());
@@ -506,16 +548,35 @@ void Pipeline::loadFromStreamComplete(ObjectLoadStream& stream)
         setReplacedVisElements(std::move(newReplacedVisElements));
         OVITO_ASSERT(replacedVisElements().size() == replacementVisElements().size());
     }
+
+    // Clear the ad-hoc reference to the SceneNode to avoid the circular reference.
+    _deserializationSceneNode.reset();
+}
+
+/******************************************************************************
+* For backward compatibility with OVITO 3.11:
+* The Pipeline class has been separated from the SceneNode base class in OVITO 3.12.
+* A separate SceneNode must now be created when loading an old Pipeline object from a state file.
+* This function creates and returns the SceneNode for this pipeline object during deserialization of legacy state files.
+******************************************************************************/
+OORef<SceneNode>& Pipeline::deserializationSceneNode()
+{
+    if(!_deserializationSceneNode) {
+        _deserializationSceneNode = OORef<SceneNode>::create();
+        _deserializationSceneNode->setPipeline(this);
+    }
+    return _deserializationSceneNode;
 }
 
 /******************************************************************************
 * Provides a custom function that takes are of the deserialization of a
-* serialized property field that has been removed from the class.
+* serialized property field that has been removed or changed in a newer version of OVITO.
 * This is needed for file backward compatibility with OVITO 3.11.
 ******************************************************************************/
 RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunctionPtr Pipeline::OOMetaClass::overrideFieldDeserialization(LoadStream& stream, const SerializedClassInfo::PropertyFieldInfo& field) const
 {
-    // The 'replacedVisElements' list used to be a vector reference field in previous OVITO versions.
+    // For backward compatibility with OVITO 3.11:
+    // The 'replacedVisElements' list used to be a vector reference field in previous program versions.
     // Now it is a simple property field holding a vector of weak references to vis elements.
     if(field.definingClass == &Pipeline::OOClass() && stream.formatVersion() < 30013) {
         if(field.identifier == "replacedVisElements") {
@@ -532,7 +593,66 @@ RefMakerClass::SerializedClassInfo::PropertyFieldInfo::CustomDeserializationFunc
             };
         }
     }
-    return SceneNode::OOMetaClass::overrideFieldDeserialization(stream, field);
+
+    // For backward compatibility with OVITO 3.11:
+    // The Pipeline class has been split from the SceneNode base class. This means we have to handle
+    // the deserialization of the SceneNode fields here and then copy them over to the separate SceneNode instance.
+    if(field.definingClass == &SceneNode::OOClass() && stream.formatVersion() < 30013) {
+        if(field.identifier == "displayColor") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x04);
+                static_object_cast<Pipeline>(&owner)->deserializationSceneNode()->_displayColor.loadFromStream(stream);
+                stream.closeChunk();
+            };
+        }
+        else if(field.identifier == "sceneNodeName" || field.identifier == "nodeName") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x04);
+                static_object_cast<Pipeline>(&owner)->deserializationSceneNode()->_sceneNodeName.loadFromStream(stream);
+                stream.closeChunk();
+            };
+        }
+        else if(field.identifier == "transformationController") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x02);
+                static_object_cast<Pipeline>(&owner)->deserializationSceneNode()->setTransformationController(stream.loadObject<Controller>());
+                stream.closeChunk();
+            };
+        }
+        else if(field.identifier == "lookatTargetNode") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x02);
+                SceneNode* node = static_object_cast<Pipeline>(&owner)->deserializationSceneNode();
+                if(OORef<Pipeline> targetPipeline = stream.loadObject<Pipeline>())
+                    node->_lookatTargetNode.set(node, PROPERTY_FIELD(SceneNode::lookatTargetNode), targetPipeline->deserializationSceneNode());
+                stream.closeChunk();
+            };
+        }
+        else if(field.identifier == "hiddenInViewports") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x02);
+                qint32 numHiddenInViewports;
+                stream >> numHiddenInViewports;
+                std::vector<OOWeakRef<Viewport>> viewports;
+                for(qint32 i = 0; i < numHiddenInViewports; i++) {
+                    viewports.push_back(stream.loadObject<Viewport>());
+                }
+                static_object_cast<Pipeline>(&owner)->deserializationSceneNode()->setHiddenInViewports(std::move(viewports));
+                stream.closeChunk();
+            };
+        }
+        else if(field.identifier == "children") {
+            return [](const SerializedClassInfo::PropertyFieldInfo& field, ObjectLoadStream& stream, RefMaker& owner) {
+                stream.expectChunk(0x02);
+                qint32 numChildren;
+                stream >> numChildren;
+                OVITO_ASSERT(numChildren == 0);
+                stream.closeChunk();
+            };
+        }
+    }
+
+    return RefTarget::OOMetaClass::overrideFieldDeserialization(stream, field);
 }
 
 /******************************************************************************

@@ -38,7 +38,7 @@ class OVITO_STDOBJ_EXPORT SimulationCellVis : public DataVis
 public:
 
     /// Lets the visualization element render the data object.
-    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline) override;
+    virtual std::variant<PipelineStatus, Future<PipelineStatus>> render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode) override;
 
     /// Computes the bounding box of the object.
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
@@ -49,10 +49,10 @@ public:
 protected:
 
     /// Renders the given simulation using wireframe mode.
-    void renderWireframe(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline);
+    void renderWireframe(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode);
 
     /// Renders the given simulation using solid shading mode.
-    void renderSolid(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const Pipeline* pipeline);
+    void renderSolid(const SimulationCell* cell, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode);
 
 protected:
 

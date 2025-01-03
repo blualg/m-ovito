@@ -49,9 +49,9 @@ std::optional<ViewportWindow::PickResult> OpenGLPickingMap::pickAt(const QPoint&
     if(uint32_t linearId = linearIdAt(frameBufferLocation)) {
         auto [baseObjectID, pickingRecord] = lookupPickingRecordFromLinearId(linearId);
         if(pickingRecord) {
-            OVITO_ASSERT(pickingRecord->pipeline());
+            OVITO_ASSERT(pickingRecord->sceneNode());
             return ViewportWindow::PickResult(
-                const_cast<Pipeline*>(pickingRecord->pipeline().get()),
+                const_cast<SceneNode*>(pickingRecord->sceneNode().get()),
                 pickingRecord->pickInfo(),
                 worldPositionAt(frameBufferLocation, projectionParams, framebufferSize),
                 pickingRecord->resolveSubObjectID(linearId - baseObjectID));

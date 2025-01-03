@@ -254,8 +254,8 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
         renderConstructionGrid(*frameGraph);
 
     // Render visual representations of the modifiers.
-    viewport()->scene()->visitPipelines([&](Pipeline* pipeline) {
-        renderPipelineModifiers(pipeline, *frameGraph);
+    viewport()->scene()->visitPipelines([&](SceneNode* sceneNode) {
+        renderPipelineModifiers(sceneNode, *frameGraph);
         return true;
     });
 
@@ -750,14 +750,14 @@ void ViewportWindow::setCursorInContextMenuArea(bool flag)
 /******************************************************************************
 * Renders the visual representation of the modifiers in a pipeline.
 ******************************************************************************/
-void ViewportWindow::renderPipelineModifiers(Pipeline* pipeline, FrameGraph& frameGraph)
+void ViewportWindow::renderPipelineModifiers(SceneNode* sceneNode, FrameGraph& frameGraph)
 {
-    OORef<ModificationNode> node = dynamic_object_cast<ModificationNode>(pipeline->head());
+    OORef<ModificationNode> node = dynamic_object_cast<ModificationNode>(sceneNode->pipeline()->head());
     while(node) {
         try {
             // Render modifier.
             if(OORef<Modifier> mod = node->modifier())
-                mod->renderModifierVisual(node, pipeline, frameGraph);
+                mod->renderModifierVisual(node, sceneNode, frameGraph);
         }
         catch(const Exception& ex) {
             // Swallow exceptions, because we are in interactive rendering mode.

@@ -37,7 +37,7 @@ SET(OVITO_VERSION_REVISION      "0")
 # Format version 30010 - OVITO ver>=3.9.0: New property data types (Float32, Float64, Int8)
 # Format version 30011 - OVITO ver>=3.9.3: Renamed and/or merged several classes, added RemoteExportSettings to dataset
 # Format version 30012 - OVITO ver>=3.11.0: Added reference field flag PROPERTY_FIELD_DONT_SAVE_TARGET
-# Format version 30013 - OVITO ver>=3.12.0: Removed weak reference fields. Serialized classes can be tagged as "nonessential"
+# Format version 30013 - OVITO ver>=3.12.0: Removed weak reference fields. Serialized classes can be tagged as "nonessential". Split Pipeline class from SceneNode class.
 SET(OVITO_FILE_FORMAT_VERSION   "30013")
 
 # The application's default version string:

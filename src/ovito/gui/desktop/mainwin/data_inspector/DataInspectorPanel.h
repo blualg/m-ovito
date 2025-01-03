@@ -53,6 +53,9 @@ public:
     /// Returns the currently selected pipeline whose output is being shown by the data inspector.
     Pipeline* selectedPipeline() const { return _selectedPipeline; }
 
+    /// Returns the currently selected pipeline scene node.
+    SceneNode* selectedSceneNode() const { return _selectedSceneNode; }
+
     /// Returns the most recent output data of the selected pipeline, which is displayed in the data inspector panel.
     const PipelineFlowState& pipelineOutput() const { return _pipelineOutput; }
 
@@ -146,8 +149,11 @@ private:
     /// The container for the applet widgets.
     QStackedWidget* _appletContainer;
 
-    /// Listens to messages from the currently selected pipeline.
+    /// The currently selected data pipeline.
     OORef<Pipeline> _selectedPipeline;
+
+    /// The currently selected scene node.
+    OORef<SceneNode> _selectedSceneNode;
 
     /// Helper object which asks the scene pipelines to compute their results.
     OORef<ScenePreparation> _scenePreparation;
