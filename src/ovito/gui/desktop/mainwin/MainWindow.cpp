@@ -885,12 +885,12 @@ bool MainWindow::checkLoadedDataset(DataSet* dataset)
     if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
         if(Viewport* vp = viewportConfig->activeViewport()) {
             if(Scene* scene = vp->scene()) {
-                std::vector<OORef<Pipeline>> fileSourcePipelines;
+                std::vector<OORef<SceneNode>> fileSourcePipelines;
                 QStringList itemsList;
-                scene->visitPipelines([&](Pipeline* pipeline) {
-                    if(dynamic_object_cast<FileSource>(pipeline->source())) {
-                        fileSourcePipelines.emplace_back(pipeline);
-                        itemsList.push_back(pipeline->objectTitle());
+                scene->visitPipelines([&](SceneNode* sceneNode) {
+                    if(dynamic_object_cast<FileSource>(sceneNode->pipeline()->source())) {
+                        fileSourcePipelines.emplace_back(sceneNode);
+                        itemsList.push_back(sceneNode->objectTitle());
                     }
                     return true;
                 });
@@ -926,9 +926,9 @@ bool MainWindow::checkLoadedDataset(DataSet* dataset)
                             return false; // Abort loading of the DataSet.
                         int keepIndex = listWidget->row(selectedItems.front());
                         scene->selection()->setNode(fileSourcePipelines[keepIndex]);
-                        for(const auto& pipeline : fileSourcePipelines) {
-                            if(pipeline != fileSourcePipelines[keepIndex]) {
-                                pipeline->deleteSceneNode();
+                        for(const auto& sceneNode : fileSourcePipelines) {
+                            if(sceneNode != fileSourcePipelines[keepIndex]) {
+                                sceneNode->requestObjectDeletion();
                             }
                         }
                     }
