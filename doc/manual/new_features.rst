@@ -15,8 +15,8 @@ Version 3.12.0 (xx-xxx-2025)
 - New utilities command panel tab
 - |ovito-python| Added :py:class:`ovito.io.FileWriterInterface`
 - |ovito-python| Added :py:mod:`ovito.gui` module
-- |ovito-python| Added *translation* and *rotation* parameters to :py:meth:`Pipeline.add_to_scene() <ovito.pipeline.Pipeline.add_to_scene>`
-- |ovito-python| Removed :py:attr:`!Pipeline.translation` and :py:attr:`!Pipeline.rotation` properties
+- |ovito-python| Added :py:func:`ovito.traits.action_handler` decorator
+- |ovito-python| Added *translation* and *rotation* parameters to :py:meth:`Pipeline.add_to_scene() <ovito.pipeline.Pipeline.add_to_scene>` and removed :py:attr:`!Pipeline.translation` and :py:attr:`!Pipeline.rotation` properties
 - |ovito-python| Replaced :py:attr:`!LinesVis.shading` parameter with :py:attr:`LinesVis.flat_shading <ovito.vis.LinesVis.flat_shading>` parameter
 - |ovito-python| Replaced :py:attr:`!DislocationVis.shading` parameter with :py:attr:`DislocationVis.flat_shading <ovito.vis.DislocationVis.flat_shading>` parameter
 - |ovito-pro| Added :ref:`file_formats.output.ase_trajectory`

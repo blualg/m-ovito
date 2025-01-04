@@ -137,6 +137,9 @@ void TaskManager::shutdownImplementation(std::unique_lock<std::mutex>& lock)
     lock.unlock();
 }
 
+/// Indicates that a custom event has been posted to the Qt event queue to notify the main event loop of more work.
+static bool isNotificationEventPending = false;
+
 /******************************************************************************
 * Executes the given function at some later time.
 ******************************************************************************/
@@ -163,7 +166,7 @@ void TaskManager::submitWork(work_function_type&& function)
 ******************************************************************************/
 void TaskManager::notifyWorkArrived()
 {
-    if(QCoreApplication::instance()) {
+    if(QCoreApplication::instance() && !isNotificationEventPending) {
 
         // Keep the Qt main event loop running while the task manager's work queue is non-empty.
         if(!_eventLoopLocker.has_value())
@@ -176,6 +179,7 @@ void TaskManager::notifyWorkArrived()
             Event() : QEvent(QEvent::None) {}
             ~Event() { Application::instance()->taskManager().executePendingWork(); }
         };
+        isNotificationEventPending = true;
         QCoreApplication::postEvent(Application::instance(), new Event());
     }
 }
@@ -186,6 +190,7 @@ void TaskManager::notifyWorkArrived()
 void TaskManager::executePendingWork()
 {
     std::unique_lock<std::mutex> lock{_mutex};
+    isNotificationEventPending = false;
     executePendingWorkLocked(lock);
 }
 
@@ -224,8 +229,9 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
 
         // Make sure to return control to the GUI event loop before processing newly queued work items.
         itemCount--;
-        if(itemCount == 0 && !_pendingWork.empty() && QCoreApplication::instance() && QThread::currentThread()->loopLevel() != 0) {
-            notifyWorkArrived();
+        if(itemCount == 0 && !_pendingWork.empty() && QCoreApplication::instance()) {
+            if(QThread::currentThread()->loopLevel() == 1)
+                notifyWorkArrived();
             return;
         }
     }
