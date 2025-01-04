@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2024 OVITO GmbH, Germany
+//  Copyright 2025 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -31,7 +31,7 @@ uniform vec4 selection_color;
 
 // Inputs:
 in vec4 color_fs;
-flat in float selection_fs; 
+flat in float selection_fs;
 
 void main()
 {

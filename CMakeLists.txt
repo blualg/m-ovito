@@ -1,6 +1,6 @@
 #######################################################################################
 #
-#  Copyright 2024 OVITO GmbH, Germany
+#  Copyright 2025 OVITO GmbH, Germany
 #
 #  This file is part of OVITO (Open Visualization Tool).
 #
@@ -99,7 +99,7 @@ IF(OVITO_USE_CUDA)
     # TODO: Do we need c++ 20?
     set(CMAKE_CUDA_STANDARD 20)
     set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-    
+
 ENDIF()
 
 # Define user options that control the building of OVITO's standard plugins.
