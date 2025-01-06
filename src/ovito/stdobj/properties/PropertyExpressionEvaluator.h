@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2024 OVITO GmbH, Germany
+//  Copyright 2025 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -47,8 +47,12 @@ public:
     /// Destructor.
     virtual ~PropertyExpressionEvaluator() {}
 
-    /// Specifies the expressions to be evaluated for each element and creates the input variables.
-    virtual void initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame = 0);
+    /// Specifies the expressions to be evaluated for each element and creates the input variables (via initializeInputs).
+    void initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath,
+                    int animationFrame = 0);
+
+    /// Creates the input variables.
+    virtual void initializeInputs(const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame = 0);
 
     /// Returns the number of input data element.
     size_t elementCount() const { return _elementCount; }

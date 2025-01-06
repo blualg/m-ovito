@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2024 OVITO GmbH, Germany
+//  Copyright 2025 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -26,6 +26,8 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
+
+#include <algorithm>
 #include "PropertyExpressionEvaluator.h"
 
 namespace Ovito {
@@ -39,12 +41,25 @@ mu::string_type PropertyExpressionEvaluator::_validVariableNameChars(_T("0123456
 ******************************************************************************/
 void PropertyExpressionEvaluator::initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame)
 {
+    // Create the input variables.
+    initializeInputs(state, containerPath, animationFrame);
+
+    // Copy expression strings into internal array.
+    _expressions.resize(expressions.size());
+    std::ranges::transform(expressions, _expressions.begin(), &convertQString);
+}
+
+/******************************************************************************
+ * Creates the input variables.
+ ******************************************************************************/
+void PropertyExpressionEvaluator::initializeInputs(const PipelineFlowState& state, const ConstDataObjectPath& containerPath,
+                                                   int animationFrame)
+{
     const PropertyContainer* container = static_object_cast<PropertyContainer>(containerPath.back());
 
     // Build list of properties that will be made available as expression variables.
     std::vector<ConstPropertyPtr> inputProperties;
-    for(const Property* property : container->properties())
-        inputProperties.push_back(property);
+    for(const Property* property : container->properties()) inputProperties.push_back(property);
     _elementDescriptionName = container->getOOMetaClass().elementDescriptionName();
 
     // Get simulation cell information.
@@ -57,10 +72,6 @@ void PropertyExpressionEvaluator::initialize(const QStringList& expressions, con
 
     // Create list of input variables.
     createInputVariables(inputProperties, simCell, state.buildAttributesMap(), animationFrame);
-
-    // Copy expression strings into internal array.
-    _expressions.resize(expressions.size());
-    std::transform(expressions.begin(), expressions.end(), _expressions.begin(), &convertQString);
 }
 
 /******************************************************************************

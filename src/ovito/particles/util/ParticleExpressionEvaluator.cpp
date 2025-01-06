@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2024 OVITO GmbH, Germany
+//  Copyright 2025 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -55,11 +55,11 @@ void ParticleExpressionEvaluator::createInputVariables(const std::vector<ConstPr
 }
 
 /******************************************************************************
-* Specifies the expressions to be evaluated for each bond and creates the input variables.
-******************************************************************************/
-void BondExpressionEvaluator::initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame)
+ * Creates the input variables.
+ ******************************************************************************/
+void BondExpressionEvaluator::initializeInputs(const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame)
 {
-    PropertyExpressionEvaluator::initialize(expressions, state, containerPath, animationFrame);
+    PropertyExpressionEvaluator::initializeInputs(state, containerPath, animationFrame);
 
     // Look for the particles object, which is the parent of the bonds object.
     if(containerPath.size() >= 2) {
