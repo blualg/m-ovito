@@ -368,7 +368,7 @@ void SpatialCorrelationFunctionModifierEditor::plotAllData()
         // Obtain the pipeline data produced by the modifier.
         const PipelineFlowState& state = getPipelineOutput();
 
-        // Retreive computed values from pipeline.
+        // Retrieve computed values from pipeline.
         const QVariant& mean1 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.mean1"));
         const QVariant& mean2 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.mean2"));
         const QVariant& variance1 = state.getAttributeValue(modificationNode(), QStringLiteral("CorrelationFunction.variance1"));

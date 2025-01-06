@@ -128,23 +128,25 @@ void PolyhedralTemplateMatchingModifierEditor::createUI(const RolloutInsertionPa
 ******************************************************************************/
 void PolyhedralTemplateMatchingModifierEditor::plotHistogram()
 {
-    PolyhedralTemplateMatchingModifier* modifier = static_object_cast<PolyhedralTemplateMatchingModifier>(editObject());
-    if(modifier && modifier->rmsdCutoff() > 0) {
-        _rmsdRangeIndicator->setInterval(0, modifier->rmsdCutoff());
-        _rmsdRangeIndicator->show();
-    }
-    else {
-        _rmsdRangeIndicator->hide();
-    }
+    handleExceptions([&]() {
+        PolyhedralTemplateMatchingModifier* modifier = static_object_cast<PolyhedralTemplateMatchingModifier>(editObject());
+        if(modifier && modifier->rmsdCutoff() > 0) {
+            _rmsdRangeIndicator->setInterval(0, modifier->rmsdCutoff());
+            _rmsdRangeIndicator->show();
+        }
+        else {
+            _rmsdRangeIndicator->hide();
+        }
 
-    // Request the modifier's pipeline output.
-    if(const PipelineFlowState& state = getPipelineOutput()) {
-        // Look up the data table in the modifier's pipeline output.
-        _rmsdPlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("ptm-rmsd")));
-    }
-    else {
-        _rmsdPlotWidget->setTable({});
-    }
+        // Request the modifier's pipeline output.
+        if(const PipelineFlowState& state = getPipelineOutput()) {
+            // Look up the data table in the modifier's pipeline output.
+            _rmsdPlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("ptm-rmsd")));
+        }
+        else {
+            _rmsdPlotWidget->setTable({});
+        }
+    });
 }
 
 }   // End of namespace

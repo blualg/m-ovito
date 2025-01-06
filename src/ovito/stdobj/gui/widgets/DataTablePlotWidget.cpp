@@ -97,6 +97,8 @@ void DataTablePlotWidget::setTable(const DataTable* table, bool forceUpdate)
 ******************************************************************************/
 void DataTablePlotWidget::updateDataPlot()
 {
+    OVITO_ASSERT(this_task::get() || !_table);
+
     static const Qt::GlobalColor curveColors[] = {
         Qt::black, Qt::red, Qt::blue, Qt::green,
         Qt::cyan, Qt::magenta, Qt::gray, Qt::darkRed,

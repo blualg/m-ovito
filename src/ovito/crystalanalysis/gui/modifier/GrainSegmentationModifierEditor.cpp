@@ -145,37 +145,39 @@ void GrainSegmentationModifierEditor::createUI(const RolloutInsertionParameters&
 ******************************************************************************/
 void GrainSegmentationModifierEditor::plotMerges()
 {
-    GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(editObject());
+    handleExceptions([&]() {
+        GrainSegmentationModifier* modifier = static_object_cast<GrainSegmentationModifier>(editObject());
 
-    if(modifier && modificationNode()) {
-        // Request the modifier's pipeline output.
-        const PipelineFlowState& state = getPipelineOutput();
+        if(modifier && modificationNode()) {
+            // Request the modifier's pipeline output.
+            const PipelineFlowState& state = getPipelineOutput();
 
-        // Look up the data table in the modifier's pipeline output.
-        _mergePlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("grains-merge")));
+            // Look up the data table in the modifier's pipeline output.
+            _mergePlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("grains-merge")));
 
-        // Indicate the current merge threshold in the plot.
-        FloatType mergingThreshold = modifier->mergingThreshold();
-        if(modifier->mergeAlgorithm() == GrainSegmentationModifier::GraphClusteringAutomatic) {
-            mergingThreshold = state.getAttributeValue(modificationNode(), QStringLiteral("GrainSegmentation.auto_merge_threshold"), mergingThreshold).value<FloatType>();
+            // Indicate the current merge threshold in the plot.
+            FloatType mergingThreshold = modifier->mergingThreshold();
+            if(modifier->mergeAlgorithm() == GrainSegmentationModifier::GraphClusteringAutomatic) {
+                mergingThreshold = state.getAttributeValue(modificationNode(), QStringLiteral("GrainSegmentation.auto_merge_threshold"), mergingThreshold).value<FloatType>();
+            }
+            _mergeRangeIndicator->setInterval(std::numeric_limits<double>::lowest(), mergingThreshold);
+            _mergeRangeIndicator->show();
+
+            // Look up the data table in the modifier's pipeline output.
+            _logPlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("grains-log")));
+
+            // Indicate the current log threshold in the plot.
+            _logRangeIndicator->setInterval(0, mergingThreshold);
+            _logRangeIndicator->show();
         }
-        _mergeRangeIndicator->setInterval(std::numeric_limits<double>::lowest(), mergingThreshold);
-        _mergeRangeIndicator->show();
+        else {
+            _mergePlotWidget->setTable({});
+            _mergeRangeIndicator->hide();
 
-        // Look up the data table in the modifier's pipeline output.
-        _logPlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("grains-log")));
-
-        // Indicate the current log threshold in the plot.
-        _logRangeIndicator->setInterval(0, mergingThreshold);
-        _logRangeIndicator->show();
-    }
-    else {
-        _mergePlotWidget->setTable({});
-        _mergeRangeIndicator->hide();
-
-        _logPlotWidget->setTable({});
-        _logRangeIndicator->hide();
-    }
+            _logPlotWidget->setTable({});
+            _logRangeIndicator->hide();
+        }
+    });
 }
 
 }   // End of namespace

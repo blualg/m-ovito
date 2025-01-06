@@ -114,18 +114,20 @@ ConstPropertyPtr DataTableInspectionApplet::createHeaderColumnProperty(const Pro
 ******************************************************************************/
 void DataTableInspectionApplet::onCurrentContainerChanged(const DataObject* dataObject)
 {
-    // Update the displayed plot.
-    plotWidget()->setTable(static_object_cast<DataTable>(dataObject));
+    mainWindow().handleExceptions([&]() {
+        // Update the displayed plot.
+        plotWidget()->setTable(static_object_cast<DataTable>(dataObject));
 
-    // Switch to table view if plot mode is none
-    if(const DataTable* table = static_object_cast<DataTable>(dataObject)) {
-        if(table->plotMode() == DataTable::None) {
-            _switchToTableAction->trigger();
+        // Switch to table view if plot mode is none
+        if(const DataTable* table = static_object_cast<DataTable>(dataObject)) {
+            if(table->plotMode() == DataTable::None) {
+                _switchToTableAction->trigger();
+            }
         }
-    }
 
-    // Update actions.
-    _exportTableToFileAction->setEnabled(plotWidget()->table() != nullptr);
+        // Update actions.
+        _exportTableToFileAction->setEnabled(plotWidget()->table() != nullptr);
+    });
 }
 
 /******************************************************************************

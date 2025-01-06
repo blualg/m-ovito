@@ -102,16 +102,18 @@ void CentroSymmetryModifierEditor::createUI(const RolloutInsertionParameters& ro
 ******************************************************************************/
 void CentroSymmetryModifierEditor::plotHistogram()
 {
-    // Request the modifier's pipeline output.
-    const PipelineFlowState& state = getPipelineOutput();
+    handleExceptions([&]() {
+        // Request the modifier's pipeline output.
+        const PipelineFlowState& state = getPipelineOutput();
 
-    if(state) {
-        // Look up the data table in the modifier's pipeline output.
-        _cspPlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("csp-centrosymmetry")));
-    }
-    else {
-        _cspPlotWidget->setTable({});
-    }
+        if(state) {
+            // Look up the data table in the modifier's pipeline output.
+            _cspPlotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("csp-centrosymmetry")));
+        }
+        else {
+            _cspPlotWidget->setTable({});
+        }
+    });
 }
 
 }   // End of namespace

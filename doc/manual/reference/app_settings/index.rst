@@ -8,7 +8,7 @@ Application settings
   :align: right
 
 To access the application settings dialog, choose :menuselection:`Edit --> Application settings` from the main menu.
-The dialog consists of several tabs:
+The settings dialog has several tabs:
 
 .. toctree::
   :maxdepth: 1

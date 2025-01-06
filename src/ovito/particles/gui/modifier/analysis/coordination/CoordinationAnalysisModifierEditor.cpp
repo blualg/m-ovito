@@ -96,27 +96,29 @@ void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParamete
 ******************************************************************************/
 void CoordinationAnalysisModifierEditor::plotRDF()
 {
-    // Look up the data table in the modifier's pipeline output.
-    OORef<DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modificationNode(), QStringLiteral("coordination-rdf"));
+    handleExceptions([&]() {
+        // Look up the data table in the modifier's pipeline output.
+        OORef<DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modificationNode(), QStringLiteral("coordination-rdf"));
 
-    // Determine X plotting range.
-    if(table) {
-        ConstPropertyPtr x = table->getXValues();
-        BufferReadAccessAndRef<FloatType>  rdfXArray(x);
-        BufferReadAccessAndRef<FloatType*> rdfYArray(table->y());
-        double minX = 0;
-        for(size_t i = 0; i < rdfYArray.size(); i++) {
-            for(size_t cmpnt = 0; cmpnt < rdfYArray.componentCount(); cmpnt++) {
-                if(rdfYArray.get(i, cmpnt) != 0) {
-                    minX = rdfXArray[i];
-                    break;
+        // Determine X plotting range.
+        if(table) {
+            ConstPropertyPtr x = table->getXValues();
+            BufferReadAccessAndRef<FloatType>  rdfXArray(x);
+            BufferReadAccessAndRef<FloatType*> rdfYArray(table->y());
+            double minX = 0;
+            for(size_t i = 0; i < rdfYArray.size(); i++) {
+                for(size_t cmpnt = 0; cmpnt < rdfYArray.componentCount(); cmpnt++) {
+                    if(rdfYArray.get(i, cmpnt) != 0) {
+                        minX = rdfXArray[i];
+                        break;
+                    }
                 }
+                if(minX) break;
             }
-            if(minX) break;
+            _rdfPlot->setAxisScale(QwtPlot::xBottom, std::floor(minX * 9.0 / table->intervalEnd()) / 10.0 * table->intervalEnd(), table->intervalEnd());
         }
-        _rdfPlot->setAxisScale(QwtPlot::xBottom, std::floor(minX * 9.0 / table->intervalEnd()) / 10.0 * table->intervalEnd(), table->intervalEnd());
-    }
-    _rdfPlot->setTable(table);
+        _rdfPlot->setTable(table);
+    });
 }
 
 }   // End of namespace

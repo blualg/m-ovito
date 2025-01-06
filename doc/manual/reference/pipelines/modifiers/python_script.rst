@@ -151,8 +151,8 @@ The OVITO Python manual contains several :ref:`examples <modifier_script_example
 
 .. _python_settings_dialog:
 
-Python Settings dialog
-""""""""""""""""""""""
+Python Extension Options
+""""""""""""""""""""""""
 
 .. image:: /images/python_settings_dialog/python_settings_dialog.png
   :width: 45%
@@ -161,10 +161,6 @@ Python Settings dialog
 This dialog window lets you inspect and configure several aspects of a Python-based extension that you are working with in OVITO Pro, for
 example, :ref:`Python modifiers <particles.modifiers.python_script>`, :ref:`Python viewport layers <viewport_layers.python_script>`, :ref:`Python pipeline sources <data_source.python_script>`,
 or :ref:`Python-based file readers <writing_custom_file_readers>`.
-
-:guilabel:`Working directory` specifies the file system location on your computer that should be used as the current working directory while executing
-the Python script. This setting is optional and only plays a role if your script performs I/O operations using relative file paths, which will be resolved with respect to
-the current working directory.
 
 The panel :guilabel:`Python extension` displays information about the Python code object for the current extension and whether
 it is defined in embedded source code or in an installed extension module.
@@ -183,13 +179,8 @@ it is defined in embedded source code or in an installed extension module.
 
   See also :ref:`registering_custom_python_classes` and the `OVITO Extensions Directory <https://www.ovito.org/extensions/>`__.
 
-The option :guilabel:`Edit embedded source code with` only applies to embedded extension code developed within OVITO Pro and not imported from an external Python module.
-The option selects what the button :guilabel:`Edit code...` should do: OVITO Pro can open a simple integrated code editor, or you can
-let OVITO Pro start up an external text editor or Python IDE (e.g. *Visual Studio Code*), which provides a better coding experience. OVITO Pro will automatically
-re-run your source code whenever you save it in the external application and switch back to the OVITO Pro window.
+:guilabel:`Working directory` specifies the file system location on your computer that should be used as the current working directory while executing
+the Python script. This setting is optional and only plays a role if your script performs I/O operations using relative file paths, which will be resolved with respect to
+the current working directory.
 
-The bottom panel of the dialog window lists all Python packages that are currently installed in the OVITO Pro environment and which may be imported
-and used by your Python extension scripts. Note that regular installations of OVITO Pro use :ref:`an embedded Python interpreter <ovitos_interpreter>`, which
-manages its own set of Python packages independent from your system's Python interpreter. Thus, :ref:`installing additional packages from the PyPI repository <ovitos_install_modules>` requires a
-special :command:`pip` command, which is displayed below the package list for your convenience. If you are working with the :ref:`Conda version of OVITO Pro <installation.anaconda>`, the program
-uses Conda's Python interpreter and you can make additional Python packages available simply by installing them in the same Conda environment as OVITO Pro.
+.. seealso:: :ref:`application_settings.python`

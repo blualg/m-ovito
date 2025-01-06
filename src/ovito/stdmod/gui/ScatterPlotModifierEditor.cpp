@@ -204,43 +204,45 @@ void ScatterPlotModifierEditor::createUI(const RolloutInsertionParameters& rollo
 ******************************************************************************/
 void ScatterPlotModifierEditor::plotScatterPlot()
 {
-    ScatterPlotModifier* modifier = static_object_cast<ScatterPlotModifier>(editObject());
+    handleExceptions([&]() {
+        ScatterPlotModifier* modifier = static_object_cast<ScatterPlotModifier>(editObject());
 
-    if(modifier && modifier->fixXAxisRange()) {
-        _plotWidget->setAxisScale(QwtPlot::xBottom, modifier->xAxisRangeStart(), modifier->xAxisRangeEnd());
-    }
-    else {
-        _plotWidget->setAxisAutoScale(QwtPlot::xBottom);
-    }
+        if(modifier && modifier->fixXAxisRange()) {
+            _plotWidget->setAxisScale(QwtPlot::xBottom, modifier->xAxisRangeStart(), modifier->xAxisRangeEnd());
+        }
+        else {
+            _plotWidget->setAxisAutoScale(QwtPlot::xBottom);
+        }
 
-    if(modifier && modifier->fixYAxisRange()) {
-        _plotWidget->setAxisScale(QwtPlot::yLeft, modifier->yAxisRangeStart(), modifier->yAxisRangeEnd());
-    }
-    else {
-        _plotWidget->setAxisAutoScale(QwtPlot::yLeft);
-    }
+        if(modifier && modifier->fixYAxisRange()) {
+            _plotWidget->setAxisScale(QwtPlot::yLeft, modifier->yAxisRangeStart(), modifier->yAxisRangeEnd());
+        }
+        else {
+            _plotWidget->setAxisAutoScale(QwtPlot::yLeft);
+        }
 
-    if(modifier && modifier->selectXAxisInRange()) {
-        auto minmax = std::minmax(modifier->selectionXAxisRangeStart(), modifier->selectionXAxisRangeEnd());
-        _selectionRangeIndicatorX->setInterval(minmax.first, minmax.second);
-        _selectionRangeIndicatorX->show();
-    }
-    else {
-        _selectionRangeIndicatorX->hide();
-    }
+        if(modifier && modifier->selectXAxisInRange()) {
+            auto minmax = std::minmax(modifier->selectionXAxisRangeStart(), modifier->selectionXAxisRangeEnd());
+            _selectionRangeIndicatorX->setInterval(minmax.first, minmax.second);
+            _selectionRangeIndicatorX->show();
+        }
+        else {
+            _selectionRangeIndicatorX->hide();
+        }
 
-    if(modifier && modifier->selectYAxisInRange()) {
-        auto minmax = std::minmax(modifier->selectionYAxisRangeStart(), modifier->selectionYAxisRangeEnd());
-        _selectionRangeIndicatorY->setInterval(minmax.first, minmax.second);
-        _selectionRangeIndicatorY->show();
-    }
-    else {
-        _selectionRangeIndicatorY->hide();
-    }
+        if(modifier && modifier->selectYAxisInRange()) {
+            auto minmax = std::minmax(modifier->selectionYAxisRangeStart(), modifier->selectionYAxisRangeEnd());
+            _selectionRangeIndicatorY->setInterval(minmax.first, minmax.second);
+            _selectionRangeIndicatorY->show();
+        }
+        else {
+            _selectionRangeIndicatorY->hide();
+        }
 
-    // Look up the generated data table in the modifier's pipeline output and plot it.
-    DataOORef<const DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modificationNode(), QStringLiteral("scatter"));
-    _plotWidget->setTable(table, true);
+        // Look up the generated data table in the modifier's pipeline output and plot it.
+        DataOORef<const DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modificationNode(), QStringLiteral("scatter"));
+        _plotWidget->setTable(table, true);
+    });
 }
 
 }   // End of namespace

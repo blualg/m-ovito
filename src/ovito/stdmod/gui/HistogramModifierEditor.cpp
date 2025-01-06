@@ -184,35 +184,37 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
 ******************************************************************************/
 void HistogramModifierEditor::plotHistogram()
 {
-    HistogramModifier* modifier = static_object_cast<HistogramModifier>(editObject());
+    handleExceptions([&]() {
+        HistogramModifier* modifier = static_object_cast<HistogramModifier>(editObject());
 
-    if(modifier && modifier->fixYAxisRange()) {
-        _plotWidget->setAxisScale(QwtPlot::yLeft, modifier->yAxisRangeStart(), modifier->yAxisRangeEnd());
-    }
-    else {
-        _plotWidget->setAxisAutoScale(QwtPlot::yLeft);
-    }
+        if(modifier && modifier->fixYAxisRange()) {
+            _plotWidget->setAxisScale(QwtPlot::yLeft, modifier->yAxisRangeStart(), modifier->yAxisRangeEnd());
+        }
+        else {
+            _plotWidget->setAxisAutoScale(QwtPlot::yLeft);
+        }
 
-    if(modifier && modifier->selectInRange()) {
-        auto minmax = std::minmax(modifier->selectionRangeStart(), modifier->selectionRangeEnd());
-        _selectionRangeIndicator->setInterval(minmax.first, minmax.second);
-        _selectionRangeIndicator->show();
-    }
-    else {
-        _selectionRangeIndicator->hide();
-    }
+        if(modifier && modifier->selectInRange()) {
+            auto minmax = std::minmax(modifier->selectionRangeStart(), modifier->selectionRangeEnd());
+            _selectionRangeIndicator->setInterval(minmax.first, minmax.second);
+            _selectionRangeIndicator->show();
+        }
+        else {
+            _selectionRangeIndicator->hide();
+        }
 
-    if(modifier && modificationNode()) {
-        // Request the modifier's pipeline output.
-        const PipelineFlowState& state = getPipelineOutput();
+        if(modifier && modificationNode()) {
+            // Request the modifier's pipeline output.
+            const PipelineFlowState& state = getPipelineOutput();
 
-        // Look up the generated data table in the modifier's pipeline output.
-        QString tableName = QStringLiteral("histogram[%1]").arg(modifier->sourceProperty().nameWithComponent());
-        _plotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), tableName), true);
-    }
-    else {
-        _plotWidget->setTable({});
-    }
+            // Look up the generated data table in the modifier's pipeline output.
+            QString tableName = QStringLiteral("histogram[%1]").arg(modifier->sourceProperty().nameWithComponent());
+            _plotWidget->setTable(state.getObjectBy<DataTable>(modificationNode(), tableName), true);
+        }
+        else {
+            _plotWidget->setTable({});
+        }
+    });
 }
 
 }   // End of namespace

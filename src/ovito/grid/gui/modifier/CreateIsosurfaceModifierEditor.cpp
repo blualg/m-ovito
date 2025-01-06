@@ -162,15 +162,17 @@ void CreateIsosurfaceModifierEditor::plotHistogram()
     CreateIsosurfaceModifier* modifier = static_object_cast<CreateIsosurfaceModifier>(editObject());
 
     if(modifier && modificationNode()) {
-        _isoLevelIndicator->setXValue(modifier->isolevel());
-        _isoLevelIndicator->show();
+        handleExceptions([&]() {
+            _isoLevelIndicator->setXValue(modifier->isolevel());
+            _isoLevelIndicator->show();
 
-        // Request the modifier's pipeline output.
-        const PipelineFlowState& state = getPipelineOutput();
+            // Request the modifier's pipeline output.
+            const PipelineFlowState& state = getPipelineOutput();
 
-        // Look up the generated data table in the modifier's pipeline output.
-        const DataTable* table = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("isosurface-histogram"));
-        _plotWidget->setTable(table);
+            // Look up the generated data table in the modifier's pipeline output.
+            const DataTable* table = state.getObjectBy<DataTable>(modificationNode(), QStringLiteral("isosurface-histogram"));
+            _plotWidget->setTable(table);
+        });
     }
     else {
         _isoLevelIndicator->hide();
