@@ -46,7 +46,32 @@ void PropertyExpressionEvaluator::initialize(const QStringList& expressions, con
 
     // Copy expression strings into internal array.
     _expressions.resize(expressions.size());
-    std::ranges::transform(expressions, _expressions.begin(), &convertQString);
+
+    std::optional<PropertyExpressionRewriter::Parser> parser;
+    std::optional<PropertyExpressionRewriter::ASTWriter> rewriter;
+    // Check whether we need to rewrite any expression
+    if(std::ranges::any_of(expressions, [](const auto& expr) { return expr.contains("\"") || expr.contains("\'"); })) {
+        parser.emplace(_typeMapping);
+        rewriter.emplace(_typeMapping);
+    }
+
+    // Process expressions
+    _expressions.clear();
+    for(const auto& expr : expressions) {
+        if(expr.contains("\"") || expr.contains("\'")) {
+            // Rewrite expressions if required
+            const QStringList& tokens = PropertyExpressionRewriter::tokenizeExpression(expr);
+            OVITO_ASSERT(parser);
+            std::unique_ptr<PropertyExpressionRewriter::ASTNode> ast = parser->parse(&tokens);
+            OVITO_ASSERT(rewriter);
+            // Store updated expression
+            _expressions.emplace_back(convertQString(rewriter->write(ast.get())));
+        }
+        else {
+            // Emplace expression
+            _expressions.emplace_back(convertQString(expr));
+        }
+    }
 }
 
 /******************************************************************************
@@ -176,6 +201,11 @@ void PropertyExpressionEvaluator::registerPropertyVariables(const std::vector<Co
 
             // Register variable.
             addVariable(v);
+
+            // Register typed property to map
+            if(property->isTypedProperty()) {
+                addTypedPropertyToMap(convertMuString(_variables.back().mangledName), property);
+            }
         }
 
         propertyIndex++;
@@ -211,6 +241,29 @@ size_t PropertyExpressionEvaluator::addVariable(ExpressionVariable v)
 }
 
 /******************************************************************************
+ * Registers a typed property with its mangled name and adds it to _typeMapping
+ ******************************************************************************/
+void PropertyExpressionEvaluator::addTypedPropertyToMap(const QString& mangledName, const ConstPropertyPtr& property)
+{
+    // Access or insert mangledName in _typeMapping (outer map)
+    auto& omap = _typeMapping[mangledName];
+
+    // Get names and ids of all types in property
+    for(const ElementType* type : property->elementTypes()) {
+        QString typeIdStr = QString::number(type->numericId());
+        QString typeName = QString("\"%1\"").arg(type->nameOrNumericId());
+
+        // Access or insert typeName in omap
+        auto& imap = omap[typeName];
+
+        // Append to QStringList
+        if(!imap.contains(typeIdStr)) {
+            imap << typeIdStr;
+        }
+    }
+}
+
+/******************************************************************************
 * Returns the list of available input variables.
 ******************************************************************************/
 QStringList PropertyExpressionEvaluator::inputVariableNames() const
@@ -219,6 +272,11 @@ QStringList PropertyExpressionEvaluator::inputVariableNames() const
     for(const ExpressionVariable& v : _variables) {
         if(v.isRegistered)
             vlist << convertMuString(v.mangledName);
+    }
+    for(const auto& [_, ovalue] : _typeMapping) {
+        for(const auto& [ikey, _] : ovalue) {
+            vlist << ikey;
+        }
     }
     return vlist;
 }
@@ -419,4 +477,4 @@ QString PropertyExpressionEvaluator::inputVariableTable() const
     return str;
 }
 
-}   // End of namespace
+}  // namespace Ovito

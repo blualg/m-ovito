@@ -30,6 +30,8 @@
 
 #include <muparser/muParser.h>
 
+#include "PropertyExpressionRewriter.h"
+
 namespace Ovito {
 
 /**
@@ -124,6 +126,9 @@ public:
 
     /// Registers a list of expression variables that refer to input properties.
     void registerPropertyVariables(const std::vector<ConstPropertyPtr>& inputProperties, int variableClass, const mu::char_type* namePrefix = nullptr);
+
+    /// Registers a typed property with its mangled name and adds it to _typeMapping
+    void addTypedPropertyToMap(const QString& mangledName, const ConstPropertyPtr& property);
 
 protected:
 
@@ -247,7 +252,8 @@ protected:
     }
 
     /// Helper function for converting a muParser string to a Qt string.
-    static QString convertMuString(const mu::string_type& str) {
+    [[nodiscard]] static QString convertMuString(const mu::string_type& str)
+    {
 #if defined(_UNICODE)
         return QString::fromStdWString(str);
 #else
@@ -290,6 +296,11 @@ protected:
 
     /// The simulation cell information.
     DataOORef<const SimulationCell> _simCell;
+
+    /// Map typed properties from string to numeric id values:
+    /// MapType mapping = {{"StructureType", {{"'other'", {"0"}}, {"'fcc'", {"1"}}, {"'hcp'", {"2"}}, {"'bcc'", {"3"}}}},
+    //                     {"ParticleType", {{"'Li'", {"1"}}, {"'Co'", {"2"}}, {"'O'", {"3"}}, {"'Ni'", {"4", "5", "6"}}}}};
+    PropertyExpressionRewriter::MapType _typeMapping;
 };
 
 }   // End of namespace
