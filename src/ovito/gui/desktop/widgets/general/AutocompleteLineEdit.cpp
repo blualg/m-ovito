@@ -28,8 +28,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AutocompleteLineEdit::AutocompleteLineEdit(QWidget* parent) : EnterLineEdit(parent),
-        _wordSplitter("(?:(?<![\\w\\.@])(?=[\\w\\.@])|(?<=[\\w\\.@])(?![\\w\\.@]))")
+AutocompleteLineEdit::AutocompleteLineEdit(QWidget* parent) : EnterLineEdit(parent), _wordSplitter(R"([0-9a-zA-Z\.@\[\]])")
 {
     _wordListModel = new QStringListModel(this);
     _completer = new QCompleter(this);
@@ -45,27 +44,76 @@ AutocompleteLineEdit::AutocompleteLineEdit(QWidget* parent) : EnterLineEdit(pare
 ******************************************************************************/
 void AutocompleteLineEdit::onComplete(const QString& completion)
 {
-    QStringList tokens = getTokenList();
-    int pos = 0;
-    for(QString& token : tokens) {
-        pos += token.length();
-        if(pos >= cursorPosition()) {
-            int oldLen = token.length();
-            token = completion;
-            setText(tokens.join(QString()));
-            setCursorPosition(pos - oldLen + completion.length());
-            break;
-        }
-    }
+    const auto [start, length] = getToken();
+
+    // Assemble and set new text
+    setText(text().first(start) + completion + text().mid(start + length, text().size() - (start + length)));
+
+    // Set new position
+    setCursorPosition((int)(start + completion.size()));
 }
 
 /******************************************************************************
-* Creates a list of tokens from the current text string.
-******************************************************************************/
-QStringList AutocompleteLineEdit::getTokenList() const
+ * Get the current token from the text string.
+ * This will fail for strings with nested quotes.
+ * Returns the starting index and the length of the token from the original string
+ ******************************************************************************/
+std::tuple<qsizetype, qsizetype> AutocompleteLineEdit::getToken() const
 {
-    // Split text at word boundaries. Consider '.' a word character.
-    return text().split(_wordSplitter);
+    OVITO_ASSERT(cursorPosition() <= text().size());
+
+    // '\0' used to delimit no (open) quote char
+    QChar currentQuote = QChar::Null;
+
+    // Find out what is the most recent opened quote char
+    for(qsizetype i = 0; i < cursorPosition(); ++i) {
+        if(text()[i] == '\'' || text()[i] == '\"') {
+            currentQuote = (text()[i] == currentQuote) ? QChar::Null : text()[i];
+        }
+    }
+
+    qsizetype start = 0;
+    qsizetype end = text().size();
+    if(currentQuote != QChar::Null) {
+        // Go through the text() from pos (exclusive) to 0
+        // Determine the first currentQuote position
+        for(qsizetype i = cursorPosition() - 1; i >= 0; --i) {
+            if(text()[i] == currentQuote) {
+                start = i;
+                break;
+            }
+        }
+        // Go through the text() from pos (inclusive) to the end
+        // Determine the first currentQuote position
+        for(qsizetype i = cursorPosition(); i < text().size(); ++i) {
+            if(text()[i] == currentQuote) {
+                end = i;
+                break;
+            }
+        }
+    }
+    else {
+        OVITO_ASSERT(_wordSplitter.isValid());
+        // Go through the text() from pos (exclusive) to 0
+        // Determine the character that matches _wordSplitter
+        for(qsizetype i = cursorPosition() - 1; i >= 0; --i) {
+            if(!_wordSplitter.match(text()[i]).hasMatch()) {
+                start = i + 1;
+                break;
+            }
+        }
+        // Go through the text() from pos (inclusive) to the end
+        // Determine the character that matches _wordSplitter
+        for(qsizetype i = cursorPosition(); i < text().size(); ++i) {
+            if(!_wordSplitter.match(text()[i]).hasMatch()) {
+                end = i - 1;
+                break;
+            }
+        }
+    }
+    OVITO_ASSERT(start >= 0 && end <= text().size());
+    // Return the text segment position
+    return {start, end - start + 1};
 }
 
 /******************************************************************************
@@ -83,24 +131,14 @@ void AutocompleteLineEdit::keyPressEvent(QKeyEvent* event)
 
     QLineEdit::keyPressEvent(event);
 
-    QStringList tokens = getTokenList();
-    if(tokens.empty())
-        return;
-    int pos = 0;
-    QString completionPrefix;
-    for(const QString& token : tokens) {
-        pos += token.length();
-        if(pos >= cursorPosition()) {
-            completionPrefix = token.trimmed();
-            break;
-        }
-    }
+    const auto [start, length] = getToken();
+    QString completionPrefix = text().mid(start, length);
 
     if(completionPrefix != _completer->completionPrefix()) {
         _completer->setCompletionPrefix(completionPrefix);
         _completer->popup()->setCurrentIndex(_completer->completionModel()->index(0,0));
     }
-    if(completionPrefix.isEmpty() == false && !_wordListModel->stringList().contains(completionPrefix))
+    if(!completionPrefix.isEmpty() && !_wordListModel->stringList().contains(completionPrefix))
         _completer->complete();
     else
         _completer->popup()->hide();

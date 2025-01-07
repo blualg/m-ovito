@@ -58,11 +58,12 @@ protected:
     /// Handles key-press events.
     virtual void keyPressEvent(QKeyEvent* event) override;
 
-    /// Creates a list of tokens from the current text string.
-    QStringList getTokenList() const;
+    /// Get the current token from the text string.
+    /// This will fail for strings with nested quotes!
+    // Returns the starting index and the length of the token from the original string
+    std::tuple<qsizetype, qsizetype> getToken() const;
 
 protected:
-
     /// The completer object used by the widget.
     QCompleter* _completer;
 
