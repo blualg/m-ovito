@@ -1,9 +1,7 @@
 .. _usage.animation:
 
-Parameter and camera animations
-===============================
-.. 
-   <titleabbrev>Animations</titleabbrev>
+Animating the camera and other parameters
+=========================================
 
 In addition to simply visualizing a simulation trajectory, OVITO provides powerful animation capabilities,
 which let you animate the virtual camera, modifiers, or visual parameters. The following sections explain OVITO's
@@ -14,7 +12,7 @@ animation system in more detail.
   :align: right
 
 .. _usage.animation.frames:
- 
+
 Animation frames vs. simulation frames
 --------------------------------------
 
@@ -40,7 +38,7 @@ setting allows you to specify a mapping that is not one-to-one. For example, a p
 of the simulation will then be visible for two consecutive video frames. A playback rate of
 2/1, in contrast, compresses the playback of the simulation sequence to half of the animation frames.
 Then, every other simulation frame gets skipped in the rendered animation.
-   
+
 The :guilabel:`Starting at animation frame` setting specifies where on OVITO's timeline the
 playback of the simulation trajectory begins. By default, it starts immediately at animation frame 0, but you can
 change this number, e.g. to insert static frames at the beginning of a movie.
@@ -50,7 +48,7 @@ simultaneously side-by-side or on top of each other. By default, OVITO adjusts t
 to fully accommodate all loaded trajectories.
 
 .. image:: /images/animation_settings_dialog/animation_settings_dialog.*
-  :width: 35%
+  :width: 30%
   :align: right
 
 
@@ -92,16 +90,16 @@ keyframes, the value of the parameter is then determined using smooth interpolat
 .. image:: /images/usage/animation/keyframe_dialog.*
   :width: 25%
   :align: right
-        
+
 The screenshot on the right shows the parameter panel of the :ref:`particles.modifiers.slice`
 modifier as an example. Animatable parameters are indicated by an :guilabel:`A` button next to the input field.
 This button opens the animation key dialog for that parameter, which allows you to define
 new animation keys. Animation keys are time-value pairs.
-    
+
 In the next screenshot on the right, two animation keys have been defined for the *Distance* parameter of the slicing plane,
 one at frame 0 and the other at frame 50. Thus, the parameter will have a value of 20.0
 at the beginning of the animation and reach 80.0 at the second animation keyframe.
-  
+
 Note that an animatable parameter always has at least one animation key.
 As long as there is only that single key, it defines the constant value of the parameter.
 Once you add another key OVITO will interpolate between the key values and the
@@ -129,7 +127,7 @@ want to animate. The *Auto-key mode* provides a convenient alternative for creat
 new animation keys, which can be faster than using the animation key dialog introduced in the previous section.
 
 
-Editing keys using the animation track bar 
+Editing keys using the animation track bar
 ------------------------------------------
 
 The *track bar* is located right below the time slider and displays the created animation keys
@@ -151,10 +149,10 @@ will automatically disappear from the track bar.
 
 Animating the camera
 --------------------
-    
+
 .. image:: /images/usage/animation/create_camera_function.*
   :width: 25%
-  :align: right   
+  :align: right
 
 To animate the camera, you first have to create a *camera object*. This is done
 from a viewport's :ref:`context menu <usage.viewports.menu>` as shown by the screenshot on the right. The new camera object will be
@@ -166,8 +164,8 @@ be moved accordingly.
 
 .. image:: /images/usage/animation/viewports_with_camera.*
   :width: 35%
-  :align: right  
-     
+  :align: right
+
 The newly created camera object is visible in the other three viewports. You might have to zoom out to see it.
 Click on the camera object in the viewports to select it
 and show its parameters in the command panel. Alternatively, you can select the camera object using the
@@ -182,7 +180,7 @@ the :guilabel:`Rotate` tool in the main toolbar:
 
 .. image:: /images/usage/animation/move_and_rotate_tool.*
   :width: 25%
-   
+
 While one of these modes is active, you can drag the camera object with the mouse; or use
 the numeric input fields that appear in the status bar area, which let you enter the position coordinates and
 Euler orientation angles of the selected object:

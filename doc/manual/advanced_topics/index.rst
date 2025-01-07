@@ -12,10 +12,11 @@ Advanced topics
   aspherical_particles
   animation
   clone_pipeline
-  remote_file_access
-  customize_init_state
   viewport_layouts
-  code_generation
+  remote_file_access
   remote_rendering
+  code_generation
+  python_extensions
   scale_bar
   data_plot
+  customize_init_state

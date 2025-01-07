@@ -15,18 +15,16 @@ Non-spherical particle shapes
 
    User-defined particle shapes
 
-OVITO has built-in support for a range of different particle shapes aside from the standard spherical shape.
-Furthermore, it supports user-defined particle shapes, which are specified in terms of polyhedral meshes:
+OVITO has built-in support for a range of different particle shapes aside from the default spherical shape:
 
- - spheres
- - ellipsoids
- - superquadrics
- - cubes, boxes
- - cylinders
- - spherocylinders (capsules)
- - circles (discs that follow the view direction)
- - squares (billboards that follow the view direction)
- - user-defined polygonal meshes
+ - :ref:`spheres <howto.aspherical_particles.spheres>`
+ - :ref:`ellipsoids <howto.aspherical_particles.ellipsoids>`
+ - :ref:`superquadrics <howto.aspherical_particles.superquadrics>`
+ - :ref:`cubes, boxes <howto.aspherical_particles.boxes>`
+ - :ref:`cylinders <howto.aspherical_particles.cylinders>`
+ - :ref:`spherocylinders (capsules) <howto.aspherical_particles.capsules>`
+ - :ref:`circles and squares (billboards that follow the view direction) <howto.aspherical_particles.circles_and_squares>`
+ - :ref:`user-defined polygonal meshes <howto.aspherical_particles.user_shapes>`
 
 You can set the display shape of particles globally for the :ref:`Particles <visual_elements.particles>` visual element
 or on a per particle type basis in the :ref:`Particle types <scene_objects.particle_types>` panel.

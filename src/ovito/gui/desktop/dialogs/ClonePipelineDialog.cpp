@@ -112,6 +112,8 @@ ClonePipelineDialog::ClonePipelineDialog(MainWindow& mainWindow, SceneNode* scen
                             "  background-color: rgb(230,180,180); "
                             "}");
     mainLayout->insertWidget(0, noticeWidget);
+#else
+    buttonBox->button(QDialogButtonBox::Ok)->setDefault(true);
 #endif
 
     resize(sizeHint());

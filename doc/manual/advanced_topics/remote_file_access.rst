@@ -1,7 +1,7 @@
 .. _usage.import.remote:
 
-Remote file access
-==================
+Remote file access (SSH)
+========================
 
 OVITO comes with built-in SSH and HTTP(S) clients for accessing files located on remote machines. This feature can save you from having to transfer
 files stored in remote locations, for example on an HPC cluster, to your local desktop computer first.

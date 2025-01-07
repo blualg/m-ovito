@@ -61,3 +61,5 @@ or, if you are using the conda version of OVITO Pro:
 
 The :program:`ovitos` command line tool is included in the OVITO Pro installation and can be used to execute Python commands and scripts from a system terminal
 using the embedded Python interpreter. For more information, see :ref:`ovitos_interpreter`.
+
+.. seealso:: :ref:`topics.python_extensions.gallery`
