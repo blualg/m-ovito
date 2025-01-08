@@ -180,7 +180,7 @@ void PropertyExpressionEvaluator::registerPropertyVariables(const std::vector<Co
         QString propertyName = property->name();
         // If the name is empty, generate one.
         if(propertyName.isEmpty())
-            propertyName = QString("Property%1").arg(propertyIndex);
+            propertyName = QStringLiteral("Property%1").arg(propertyIndex);
         // If the name starts with a number, prepend an underscore.
         else if(propertyName[0].isDigit())
             propertyName.prepend(QChar('_'));
@@ -189,7 +189,7 @@ void PropertyExpressionEvaluator::registerPropertyVariables(const std::vector<Co
 
             QString fullPropertyName = propertyName;
             if(property->componentNames().size() == property->componentCount())
-                fullPropertyName += "." + property->componentNames()[k];
+                fullPropertyName += QStringLiteral(".") + property->componentNames()[k];
             if(!namePrefix)
                 v.name = convertQString(fullPropertyName);
             else
@@ -243,15 +243,17 @@ size_t PropertyExpressionEvaluator::addVariable(ExpressionVariable v)
 /******************************************************************************
  * Registers a typed property with its mangled name and adds it to _typeMapping
  ******************************************************************************/
-void PropertyExpressionEvaluator::addTypedPropertyToMap(const QString& mangledName, const ConstPropertyPtr& property)
+void PropertyExpressionEvaluator::addTypedPropertyToMap(const QString& mangledPropertyName, const ConstPropertyPtr& property)
 {
     // Access or insert mangledName in _typeMapping (outer map)
-    auto& omap = _typeMapping[mangledName];
+    auto& omap = _typeMapping[mangledPropertyName];
 
-    // Get names and ids of all types in property
+    // Register names and numeric ids of all types defined for the property.
+    // Type names get placed in double quotes to make them compatible with the format used in input expressions.
+    // Numeric ids are converted to strings to make them compatible with the format used in output expressions.
     for(const ElementType* type : property->elementTypes()) {
         QString typeIdStr = QString::number(type->numericId());
-        QString typeName = QString("\"%1\"").arg(type->nameOrNumericId());
+        QString typeName = QStringLiteral("\"%1\"").arg(type->nameOrNumericId());
 
         // Access or insert typeName in omap
         auto& imap = omap[typeName];

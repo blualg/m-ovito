@@ -462,13 +462,13 @@ struct TernaryOp : ASTNode {
                 // Collect expressions
                 _scratch.clear();
                 for(const auto& v : vals) {
-                    _scratch << QString("(%1%2%3)").arg(leftStr).arg(OpToString(node->op)).arg(v);
+                    _scratch << QStringLiteral("(%1%2%3)").arg(leftStr).arg(OpToString(node->op)).arg(v);
                 }
                 // Expand differently depending on the operator
                 switch(node->op) {
                     case Op::EQ: {
                         // E.g. "(ParticleType == 4 || ParticleType == 5 || ParticleType == 6)"
-                        return QString("(%1)").arg(_scratch.join("||"));
+                        return QStringLiteral("(%1)").arg(_scratch.join("||"));
                     }
                     case Op::NEQ: [[fallthrough]];
                     case Op::GE: [[fallthrough]];
@@ -477,7 +477,7 @@ struct TernaryOp : ASTNode {
                     case Op::LEQ: {
                         // E.g. ParticleType != (4 || 5 || 6) => "(ParticleType != 4 && ParticleType != 5 && ParticleType != 6)"
                         // or ParticleType > (4 || 5 || 6) => "(ParticleType > 4 && ParticleType > 5 && ParticleType > 6)"
-                        return QString("(%1)").arg(_scratch.join("&&"));
+                        return QStringLiteral("(%1)").arg(_scratch.join("&&"));
                     }
                     default: {
                         // unreachable
@@ -488,7 +488,7 @@ struct TernaryOp : ASTNode {
             else {
                 // Generate expressions
                 QString rightStr = write(node->right.get());
-                return QString("%1%2%3").arg(leftStr).arg(OpToString(node->op)).arg(rightStr);
+                return QStringLiteral("%1%2%3").arg(leftStr).arg(OpToString(node->op)).arg(rightStr);
             }
             // There should always be an early return or throw
             OVITO_ASSERT(false);
@@ -505,7 +505,7 @@ struct TernaryOp : ASTNode {
             QString conditionStr = write(node->condition.get());
             QString trueStr = write(node->trueExpr.get());
             QString falseStr = write(node->falseExpr.get());
-            return QString("(%1?%2:%3)").arg(conditionStr).arg(trueStr).arg(falseStr);
+            return QStringLiteral("(%1?%2:%3)").arg(conditionStr).arg(trueStr).arg(falseStr);
         }
         default: {
             OVITO_ASSERT(false);
@@ -568,11 +568,11 @@ struct TernaryOp : ASTNode {
     for(const auto& t : *trueExpr) {
         for(const auto& f : *falseExpr) {
             // (left_str == (condition_str ? t : f))
-            _scratch << QString("(%1==(%2?%3:%4))").arg(leftString).arg(conditionStr).arg(t).arg(f);
+            _scratch << QStringLiteral("(%1==(%2?%3:%4))").arg(leftString).arg(conditionStr).arg(t).arg(f);
         }
     }
     // join them with OR
-    return QString("(%1)").arg(_scratch.join("||"));
+    return QStringLiteral("(%1)").arg(_scratch.join("||"));
 }
 
 #ifdef OVITO_DEBUG
