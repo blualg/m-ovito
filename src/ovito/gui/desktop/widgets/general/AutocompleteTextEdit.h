@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright 2024 OVITO GmbH, Germany
+//  Copyright 2025 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
@@ -68,9 +68,6 @@ protected:
 
     /// Handles keyboard focus lost events.
     virtual void focusOutEvent(QFocusEvent* event) override;
-
-    /// Creates a list of tokens from the current text string.
-    QStringList getTokenList() const;
 
 protected:
 
