@@ -471,16 +471,18 @@ struct TernaryOp : ASTNode {
                 switch(node->op) {
                     case Op::EQ: {
                         // E.g. "(ParticleType == 4 || ParticleType == 5 || ParticleType == 6)"
-                        return QStringLiteral("(%1)").arg(_scratch.join("||"));
+                        return QString("(%1)").arg(_scratch.join("||"));
                     }
-                    case Op::NEQ: [[fallthrough]];
+                    case Op::NEQ:
+                        // E.g. ParticleType != (4 || 5 || 6) => "(ParticleType != 4 && ParticleType != 5 && ParticleType != 6)"
+                        // or ParticleType > (4 || 5 || 6) => "(ParticleType > 4 && ParticleType > 5 && ParticleType > 6)"
+                        return QString("(%1)").arg(_scratch.join("&&"));
                     case Op::GE: [[fallthrough]];
                     case Op::GEQ: [[fallthrough]];
                     case Op::LE: [[fallthrough]];
                     case Op::LEQ: {
-                        // E.g. ParticleType != (4 || 5 || 6) => "(ParticleType != 4 && ParticleType != 5 && ParticleType != 6)"
-                        // or ParticleType > (4 || 5 || 6) => "(ParticleType > 4 && ParticleType > 5 && ParticleType > 6)"
-                        return QStringLiteral("(%1)").arg(_scratch.join("&&"));
+                        throw Exception(
+                            QStringLiteral("A non-unique type mapping cannot be used with a %1 operator.").arg(OpToString(node->op)));
                     }
                     default: {
                         // unreachable
