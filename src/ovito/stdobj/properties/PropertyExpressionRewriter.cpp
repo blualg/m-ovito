@@ -32,9 +32,12 @@ namespace Ovito::PropertyExpressionRewriter {
     // Regularize " and ' characters
     expression.replace('\'', '\"');
 
-    const static QRegularExpression regex(QRegularExpression(QStringLiteral(R"((==|!=|>=|<=|\?|:|\(|\)|&&|\|\||[\w\._'\"]+|\S))")));
+    // Regular expressions for tokens - split on expected operators, parenthesis, and group everything inside "...".
+    const static QRegularExpression regex(
+        QRegularExpression(QStringLiteral(R"((".*?"|'.*?'|==|!=|>=|<=|\?|:|\(|\)|&&|\|\||[\w\._]+|\S))")));
     OVITO_ASSERT(regex.isValid());
 
+    // Tokenize
     QStringList tokens;
     for(const auto& match : regex.globalMatch(expression)) {
         OVITO_ASSERT(match.hasMatch());
