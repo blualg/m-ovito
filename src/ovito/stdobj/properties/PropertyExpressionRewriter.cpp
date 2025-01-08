@@ -440,13 +440,8 @@ struct TernaryOp : ASTNode {
             return name;
         }
         case ASTNodeType::MULTIIDENTIFIER: {
-            // This will now be directly handled in expressionToValuesList()
-            OVITO_ASSERT(false);
-            //  const MultiIdentifier* node = static_cast<const MultiIdentifier*>(astNode);
-            // if(!node->names) {
-            // throw Exception(QStringLiteral("Empty 'MultiIdentifier' names!"));
-            // }
-            // return QString("(%1)").arg(node->names->join("||"));
+            throw Exception(QStringLiteral("A mutli valued type name cannot be used on the left hand side of an expression."));
+            break;
         }
         case ASTNodeType::BINARYOP: {
             const BinaryOp* node = static_cast<const BinaryOp*>(astNode);
