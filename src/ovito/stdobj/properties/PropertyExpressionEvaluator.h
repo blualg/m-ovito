@@ -30,6 +30,8 @@
 
 #include <muparser/muParser.h>
 
+#include "PropertyExpressionRewriter.h"
+
 namespace Ovito {
 
 /**
@@ -47,8 +49,12 @@ public:
     /// Destructor.
     virtual ~PropertyExpressionEvaluator() = default;
 
-    /// Specifies the expressions to be evaluated for each element and creates the input variables.
-    virtual void initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame = 0);
+    /// Specifies the expressions to be evaluated for each element and creates the input variables (via initializeInputs).
+    void initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath,
+                    int animationFrame = 0);
+
+    /// Creates the input variables.
+    virtual void initializeInputs(const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame = 0);
 
     /// Returns the number of input data element.
     size_t elementCount() const { return _elementCount; }
@@ -120,6 +126,9 @@ public:
 
     /// Registers a list of expression variables that refer to input properties.
     void registerPropertyVariables(const std::vector<ConstPropertyPtr>& inputProperties, int variableClass, const mu::char_type* namePrefix = nullptr);
+
+    /// Registers a typed property with its mangled name and adds it to _typeMapping
+    void addTypedPropertyToMap(const QString& mangledPropertyName, const ConstPropertyPtr& property);
 
 protected:
 
@@ -243,7 +252,8 @@ protected:
     }
 
     /// Helper function for converting a muParser string to a Qt string.
-    static QString convertMuString(const mu::string_type& str) {
+    [[nodiscard]] static QString convertMuString(const mu::string_type& str)
+    {
 #if defined(_UNICODE)
         return QString::fromStdWString(str);
 #else
@@ -286,6 +296,12 @@ protected:
 
     /// The simulation cell information.
     DataOORef<const SimulationCell> _simCell;
+
+    /// Maps type name strings to numeric type IDs for all typed properties. Example:
+    ///
+    /// MapType mapping = {{"StructureType", {{"'other'", {"0"}}, {"'fcc'", {"1"}}, {"'hcp'", {"2"}}, {"'bcc'", {"3"}}}},
+    //                     {"ParticleType", {{"'Li'", {"1"}}, {"'Co'", {"2"}}, {"'O'", {"3"}}, {"'Ni'", {"4", "5", "6"}}}}};
+    PropertyExpressionRewriter::MapType _typeMapping;
 };
 
 }   // End of namespace

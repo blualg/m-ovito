@@ -39,6 +39,7 @@ OVITO_STANDARD_PLUGIN(StdObj
         properties/ElementType.cpp
         properties/GenericPropertyModifier.cpp
         properties/PropertyExpressionEvaluator.cpp
+        properties/PropertyExpressionRewriter.cpp
         properties/InputColumnMapping.cpp
         properties/PropertyColorMapping.cpp
         simcell/SimulationCell.cpp

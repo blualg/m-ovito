@@ -22,14 +22,15 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include "AutocompleteTextEdit.h"
+#include "AutocompleteEdit.h"
 
 namespace Ovito {
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AutocompleteTextEdit::AutocompleteTextEdit(QWidget* parent) : QPlainTextEdit(parent),
-        _wordSplitter("(?:(?<![\\w(\\.|\\[|\\[)])(?=[\\w(\\.|\\[|\\[)])|(?<=[\\w(\\.|\\[|\\[)])(?![\\w(\\.|\\[|\\[)]))")
+AutocompleteTextEdit::AutocompleteTextEdit(QWidget* parent)
+    : QPlainTextEdit(parent), _wordSplitter(AutocompleteEdit::wordSplitterExpression)
 {
     _wordListModel = new QStringListModel(this);
     _completer = new QCompleter(this);
@@ -45,29 +46,16 @@ AutocompleteTextEdit::AutocompleteTextEdit(QWidget* parent) : QPlainTextEdit(par
 ******************************************************************************/
 void AutocompleteTextEdit::onComplete(const QString& completion)
 {
-    QStringList tokens = getTokenList();
-    int pos = 0;
-    for(QString& token : tokens) {
-        pos += token.length();
-        if(pos >= textCursor().position()) {
-            int oldLen = token.length();
-            token = completion;
-            setPlainText(tokens.join(QString()));
-            QTextCursor cursor = textCursor();
-            cursor.setPosition(pos - oldLen + completion.length());
-            setTextCursor(cursor);
-            break;
-        }
-    }
-}
+    const auto& [newCursorPos, newText] =
+        AutocompleteEdit::completeExpression(textCursor().position(), toPlainText(), _wordSplitter, completion);
 
-/******************************************************************************
-* Creates a list of tokens from the current text string.
-******************************************************************************/
-QStringList AutocompleteTextEdit::getTokenList() const
-{
-    // Split text at word boundaries. Consider '.', '[', and ']' word characters.
-    return toPlainText().split(_wordSplitter);
+    // Set new text
+    setPlainText(newText);
+
+    // Set new position
+    QTextCursor cursor = textCursor();
+    cursor.setPosition((int)newCursorPos);
+    setTextCursor(cursor);
 }
 
 /******************************************************************************
@@ -91,26 +79,14 @@ void AutocompleteTextEdit::keyPressEvent(QKeyEvent* event)
 
     QPlainTextEdit::keyPressEvent(event);
 
-    if(_wordListModel->rowCount() == 0)
-        return;
-    QStringList tokens = getTokenList();
-    if(tokens.empty())
-        return;
-    int pos = 0;
-    QString completionPrefix;
-    for(const QString& token : tokens) {
-        pos += token.length();
-        if(pos >= textCursor().position()) {
-            completionPrefix = token.trimmed();
-            break;
-        }
-    }
+    const auto [start, length] = AutocompleteEdit::getToken(textCursor().position(), toPlainText(), _wordSplitter);
+    QString completionPrefix = toPlainText().mid(start, length);
 
     if(completionPrefix != _completer->completionPrefix()) {
         _completer->setCompletionPrefix(completionPrefix);
         _completer->popup()->setCurrentIndex(_completer->completionModel()->index(0,0));
     }
-    if(completionPrefix.isEmpty() == false && !_wordListModel->stringList().contains(completionPrefix)) {
+    if(!completionPrefix.isEmpty() && !_wordListModel->stringList().contains(completionPrefix)) {
         QRect cr = cursorRect();
         cr.setWidth(_completer->popup()->sizeHintForColumn(0)
                 + _completer->popup()->verticalScrollBar()->sizeHint().width());

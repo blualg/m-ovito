@@ -81,6 +81,7 @@ OVITO_STANDARD_PLUGIN(Gui
         widgets/general/SpinnerWidget.cpp
         widgets/general/ColorPickerWidget.cpp
         widgets/general/ElidedTextLabel.cpp
+        widgets/general/AutocompleteEdit.cpp
         widgets/general/AutocompleteLineEdit.cpp
         widgets/general/AutocompleteTextEdit.cpp
         widgets/general/HtmlListWidget.cpp

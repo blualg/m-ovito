@@ -69,9 +69,6 @@ protected:
     /// Handles keyboard focus lost events.
     virtual void focusOutEvent(QFocusEvent* event) override;
 
-    /// Creates a list of tokens from the current text string.
-    QStringList getTokenList() const;
-
 protected:
 
     /// The completer object used by the widget.

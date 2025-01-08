@@ -63,7 +63,7 @@ public:
     }
 
     /// Specifies the expressions to be evaluated for each bond and creates the input variables.
-    void initialize(const QStringList& expressions, const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame) override;
+    virtual void initializeInputs(const PipelineFlowState& state, const ConstDataObjectPath& containerPath, int animationFrame) override;
 
     /// Returns a human-readable text listing the input variables.
     virtual QString inputVariableTable() const override;

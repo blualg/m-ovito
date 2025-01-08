@@ -22,14 +22,14 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include "AutocompleteLineEdit.h"
+#include "AutocompleteEdit.h"
 
 namespace Ovito {
 
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AutocompleteLineEdit::AutocompleteLineEdit(QWidget* parent) : EnterLineEdit(parent),
-        _wordSplitter("(?:(?<![\\w\\.@])(?=[\\w\\.@])|(?<=[\\w\\.@])(?![\\w\\.@]))")
+AutocompleteLineEdit::AutocompleteLineEdit(QWidget* parent) : EnterLineEdit(parent), _wordSplitter(AutocompleteEdit::wordSplitterExpression)
 {
     _wordListModel = new QStringListModel(this);
     _completer = new QCompleter(this);
@@ -45,27 +45,13 @@ AutocompleteLineEdit::AutocompleteLineEdit(QWidget* parent) : EnterLineEdit(pare
 ******************************************************************************/
 void AutocompleteLineEdit::onComplete(const QString& completion)
 {
-    QStringList tokens = getTokenList();
-    int pos = 0;
-    for(QString& token : tokens) {
-        pos += token.length();
-        if(pos >= cursorPosition()) {
-            int oldLen = token.length();
-            token = completion;
-            setText(tokens.join(QString()));
-            setCursorPosition(pos - oldLen + completion.length());
-            break;
-        }
-    }
-}
+    const auto& [newCursorPos, newText] = AutocompleteEdit::completeExpression(cursorPosition(), text(), _wordSplitter, completion);
 
-/******************************************************************************
-* Creates a list of tokens from the current text string.
-******************************************************************************/
-QStringList AutocompleteLineEdit::getTokenList() const
-{
-    // Split text at word boundaries. Consider '.' a word character.
-    return text().split(_wordSplitter);
+    // Set new text
+    setText(newText);
+
+    // Set new position
+    setCursorPosition((int)newCursorPos);
 }
 
 /******************************************************************************
@@ -83,24 +69,14 @@ void AutocompleteLineEdit::keyPressEvent(QKeyEvent* event)
 
     QLineEdit::keyPressEvent(event);
 
-    QStringList tokens = getTokenList();
-    if(tokens.empty())
-        return;
-    int pos = 0;
-    QString completionPrefix;
-    for(const QString& token : tokens) {
-        pos += token.length();
-        if(pos >= cursorPosition()) {
-            completionPrefix = token.trimmed();
-            break;
-        }
-    }
+    const auto [start, length] = AutocompleteEdit::getToken(cursorPosition(), text(), _wordSplitter);
+    QString completionPrefix = text().mid(start, length);
 
     if(completionPrefix != _completer->completionPrefix()) {
         _completer->setCompletionPrefix(completionPrefix);
         _completer->popup()->setCurrentIndex(_completer->completionModel()->index(0,0));
     }
-    if(completionPrefix.isEmpty() == false && !_wordListModel->stringList().contains(completionPrefix))
+    if(!completionPrefix.isEmpty() && !_wordListModel->stringList().contains(completionPrefix))
         _completer->complete();
     else
         _completer->popup()->hide();
