@@ -319,7 +319,7 @@ struct TernaryOp : ASTNode {
 
     if(std::optional<Op> op = match({QStringLiteral("=="), QStringLiteral("!="), QStringLiteral(">"), QStringLiteral("<"),
                                      QStringLiteral(">="), QStringLiteral("<=")})) {
-        std::unique_ptr<ASTNode> right = parsePrimary();
+        std::unique_ptr<ASTNode> right = parsePrimary(left.get());
         return std::make_unique<BinaryOp>(std::move(left), op.value(), std::move(right));
     }
     // No comparison operator => just primary
@@ -329,7 +329,7 @@ struct TernaryOp : ASTNode {
 /******************************************************************************
  * Parse a Primary: Identifier or '(' Expression ')'
  ******************************************************************************/
-[[nodiscard]] std::unique_ptr<ASTNode> Parser::parsePrimary()
+[[nodiscard]] std::unique_ptr<ASTNode> Parser::parsePrimary(ASTNode* left)
 {
     // Consume first token
     const QString* token = consume();
@@ -353,23 +353,39 @@ struct TernaryOp : ASTNode {
             return std::make_unique<Identifier>(token);
         }
         else {
-            // Search mappings in inner dicts
-            // -> first match is determined to be correct
-            // -> all subsequent findings need to match that first result
             const QStringList* match = nullptr;
-            for(const auto& [_, innerMap] : _mapping) {
-                if(const auto it = innerMap.find(tokenValue); it != innerMap.end()) {
-                    if(!match) {
-                        // first match
+            if(left && left->type == ASTNodeType::IDENTIFIER) {
+                // Use information from left hand side expression
+                const Identifier* leftNode = static_cast<const Identifier*>(left);
+                // Search left node name in _mapping to determine inner map
+                if(const auto oit = _mapping.find(leftNode->name()); oit != _mapping.end()) {
+                    const InnerMapType& innerMap = oit->second;
+                    if(const auto it = innerMap.find(tokenValue); it != innerMap.end()) {
                         match = &(it->second);
                     }
-                    else {
-                        // subsequent matches
-                        if(*match != it->second) {
-                            throw Exception(QStringLiteral("Mismatch in type mapping for %1: (%2) != (%3)")
-                                                .arg(tokenValue)
-                                                .arg(match->join(", "))
-                                                .arg(it->second.join(", ")));
+                }
+            }
+            else {
+                // No information from left hand side expression
+                // Search mappings in inner dicts
+                // -> first match is determined to be correct
+                // -> all subsequent findings need to match that first result
+                for(const auto& [_, innerMap] : _mapping) {
+                    if(const auto it = innerMap.find(tokenValue); it != innerMap.end()) {
+                        if(!match) {
+                            // first match
+                            match = &(it->second);
+                        }
+                        else {
+                            // subsequent matches
+                            if(*match != it->second) {
+                                throw Exception(
+                                    QStringLiteral("Ambiguous type name %1. The type name maps to different numerical values in "
+                                                   "different properties: (%2) != (%3). Use a numerical value instead to avoid this error.")
+                                        .arg(tokenValue)
+                                        .arg(match->join(", "))
+                                        .arg(it->second.join(", ")));
+                            }
                         }
                     }
                 }

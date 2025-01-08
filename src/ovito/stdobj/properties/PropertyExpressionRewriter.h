@@ -114,7 +114,7 @@ private:
     [[nodiscard]] std::unique_ptr<ASTNode> parseComparison();
 
     // Parse a Primary: Identifier or '(' Expression ')'
-    [[nodiscard]] std::unique_ptr<ASTNode> parsePrimary();
+    [[nodiscard]] std::unique_ptr<ASTNode> parsePrimary(ASTNode* left = nullptr);
 
 private:
     // Example mapping for structure and particle types:
