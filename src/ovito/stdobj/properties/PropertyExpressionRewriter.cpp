@@ -96,11 +96,11 @@ inline Op StringToOp(const QString& str)
         OVITO_ASSERT(false);
 }
 
-/*
+/******************************************************************************
  * Represents an identifier, e.g. 'ParticleType', 'fcc', 1, ...
  * Can be created from a QString or a QStringlist of length 1
  * Note: no data is guaranteed to be stored -> original source must be kept alive
- */
+ ******************************************************************************/
 struct Identifier : ASTNode {
 public:
     explicit Identifier(const QString* name) : ASTNode{ASTNodeType::IDENTIFIER}, _nameStr{name}, _namesList{nullptr} { OVITO_ASSERT(name); }
@@ -155,9 +155,9 @@ private:
     mutable QStringList _names;
 };
 
-/*
+/******************************************************************************
  * Represents a multi-valued identifier, e.g., "Ni" -> (4, 5, 6)
- */
+ ******************************************************************************/
 struct MultiIdentifier : ASTNode {
     // Names (as strings)
     const QStringList* names;
@@ -169,9 +169,9 @@ struct MultiIdentifier : ASTNode {
     }
 };
 
-/*
+/******************************************************************************
  * Represents a binary operation, e.g. (left; ==, !=, >, or >=, ...; right)
- */
+ ******************************************************************************/
 struct BinaryOp : ASTNode {
     // Left branch
     const std::unique_ptr<ASTNode> left;
@@ -186,9 +186,9 @@ struct BinaryOp : ASTNode {
     }
 };
 
-/*
+/******************************************************************************
  * Represents a ternary expression: condition ? true_expr : false_expr
- */
+ ******************************************************************************/
 struct TernaryOp : ASTNode {
     // Condition
     const std::unique_ptr<ASTNode> condition;
@@ -219,7 +219,7 @@ struct TernaryOp : ASTNode {
 }
 
 /******************************************************************************
- *  Return the current token without consuming it.
+ * Return the current token without consuming it.
  ******************************************************************************/
 [[nodiscard]] const QString* Parser::peek() const
 {
@@ -230,7 +230,7 @@ struct TernaryOp : ASTNode {
 }
 
 /******************************************************************************
- *  Consume and return the current token.
+ * Consume and return the current token.
  ******************************************************************************/
 [[nodiscard]] const QString* Parser::consume()
 {
@@ -240,7 +240,7 @@ struct TernaryOp : ASTNode {
 }
 
 /******************************************************************************
- *  If the current token is in 'expected', consume and return it else return null.
+ * If the current token is in 'expected', consume and return it else return null.
  ******************************************************************************/
 [[nodiscard]] std::optional<Op> Parser::match(std::initializer_list<QStringView> expected)
 {
@@ -471,12 +471,12 @@ struct TernaryOp : ASTNode {
                 switch(node->op) {
                     case Op::EQ: {
                         // E.g. "(ParticleType == 4 || ParticleType == 5 || ParticleType == 6)"
-                        return QString("(%1)").arg(_scratch.join("||"));
+                        return QStringLiteral("(%1)").arg(_scratch.join("||"));
                     }
                     case Op::NEQ:
                         // E.g. ParticleType != (4 || 5 || 6) => "(ParticleType != 4 && ParticleType != 5 && ParticleType != 6)"
                         // or ParticleType > (4 || 5 || 6) => "(ParticleType > 4 && ParticleType > 5 && ParticleType > 6)"
-                        return QString("(%1)").arg(_scratch.join("&&"));
+                        return QStringLiteral("(%1)").arg(_scratch.join("&&"));
                     case Op::GE: [[fallthrough]];
                     case Op::GEQ: [[fallthrough]];
                     case Op::LE: [[fallthrough]];
