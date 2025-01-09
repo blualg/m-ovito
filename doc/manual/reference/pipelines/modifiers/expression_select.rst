@@ -96,17 +96,17 @@ The expression parser supports the following constants:
 Support for typed properties
 ############################
 
-Properties in OVITO are stored as integer values. However, some properties, called :ref:`typed properties <scene_objects.particle_types>`, can also store a 
-non-unique name. One example would be structure type, where a numeric value of `1` maps to the name *"FCC"*. Similarly for particle types the name might 
-store the chemical symbol. 
+Properties in OVITO are stored as integer values. Some properties, called :ref:`typed properties <scene_objects.particle_types>`, can also store a 
+non-unique name. One example is *Structure Type*, where a numeric value of `1` maps to the name *"FCC"*. Similarly, *Particle Types* may  
+store the chemical symbol as their names. 
 
-In the expressionss used in expression select these names can be used as well. This allows the usage of expressions like ``ParticleType=="Cu"``, where *"Cu"*
-is a type name connected to the *Particle Type* property. Note, that these type names have to be given in double quotes: ``"<Type Name>"``. References to type names 
-that do not exist, i.e. which do not have any numeric value, are transformed into either a ``true`` or ``false`` value depending on the context they are used in. 
-For example, ``ParticleType!="<Type Name>"`` is alway true if the type ``"<Type Name>"`` is not defined.
+These names can also be referenced inside the expressions. This allows the usage of expressions like ``ParticleType == "Cu"``, where *"Cu"*
+is a type name connected to the *Particle Type* property. Note, that these type names must be enclosed in double quotes: ``"<Type Name>"``. References to
+undefined type names (i.e., names with no numeric mapping) are transformed into either ``true`` or ``false`` depending on the context they are used in. 
+For example, ``ParticleType != "<Type Name>"`` is alway true if the type ``"<Type Name>"`` is not defined.
 
-In the easiest case, this mapping from numeric ids to names is unqiue. This means in a simple example this means that the particle type *"Cu"* maps to the number `1`. 
-Here the expression::
+In the simplest case, the mapping from numeric IDs to names is unqiue. For example, the particle type *"Cu"* might map exclusively to the number `1`. 
+Here, the expression::
 
   ParticleType == "Cu"
 
@@ -116,8 +116,9 @@ can be tranformed trivally to::
 
 In this context all binary comparison operators listed in the table above are supported.
 
-However, there are also cases where the name to id mapping is not unique. This means that for example particle type ``2``, ``3``, and ``5`` map to the name *"Ni"*.
-In this context, only the ``==`` and ``!=`` comparison operators are allowed for these type names. Depending on the operator used, the resulting conditions are either 
+However, there are also cases where the mapping between names and numeric IDs is not unique. For example, 
+particle types ``2``, ``3``, and ``5`` might all map to the name *"Ni"*.
+In this case, only the ``==`` and ``!=`` comparison operators are allowed for these type names. Depending on the operator used, the resulting conditions are either 
 linked by *or* (``||``) or *and* (``&&``) operators as shown in the following examples::
 
   1.) ParticleType == "Ni"
@@ -128,16 +129,17 @@ which will be interpreted as::
   1.) ParticleType == 2 || ParticleType == 3 || ParticleType == 5
   2.) ParticleType != 2 && ParticleType != 3 && ParticleType != 5
 
-Duplicate type names for different type properties cannot always be uniquely resolved. If there is both a *Particle Type* and 
-a *Structure Type* called *alpha* with numeric id values of ``3``, and ``5``, respectively, the expression parser will do its 
-best to resolve the ambiguity. This means that in queries like: ``ParticleType=="alpha"`` or ``StructureType=="alpha"`` the left
-hand side of the expression can be used to deduce which numeric id is expected by the user. 
-There are, however, expression in which such a resolution is impossible: ``((StructureType==0) ? ParticleType : StructureType) == "alpha"``. 
-These expressions will lead to an error if the numeric ids of both types named *alpha* are different. They are still 
-valid if both *alpha* types point to the same numeric value.
+Duplicate type names across different type properties cannot always be resolved uniquely. For instance, if both 
+*Particle Type* and *Structure Type* have a type name *alpha* associated with numeric IDs 3 and 5, respectively, 
+the expression parser will attempt to resolve the ambiguity. For example, in queries like ``ParticleType == "alpha"`` 
+or ``StructureType == "alpha"``, the left-hand side of the expression helps determine the user's intend.
+There are, however, expression in which such a resolution is impossible: ``(<condition> ? ParticleType : StructureType) == "alpha"``. 
+This leads to an error if the numeric IDs of the two *alpha* types are different. 
+Such expressions are valid only if both *alpha* types map to the same numeric value.
 
-Ternary expression, both on the condition and the result side are supported as well. This can be seen in the following examples. Assuming the same *Particle Type* mapping used above, 
-and *Structure Type* mappings of to *FCC* ``1`` and *HCP* ``2``. The expression::
+Ternary expression, are supported on both on the condition and the result side. This can be seen in the following
+examples. Assuming the same *Particle Type* mapping used above
+and *Structure Type* mappings of *FCC* to ``1`` and *HCP* to ``2``. The expression::
 
    StructureType == (ParticleType == "Ni" ? "FCC" : "HCP")
 
