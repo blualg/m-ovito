@@ -67,7 +67,7 @@ struct ASTNode {
     ASTNodeType type;
 };
 
-// Types used for mapping mapping
+// Types used for mapping of string type names to integer values
 using ValueType = QStringList;
 using InnerMapType = std::unordered_map<QString, ValueType>;
 using MapType = std::unordered_map<QString, InnerMapType>;

@@ -13,6 +13,7 @@ Version 3.12.0 (xx-xxx-2025)
 ----------------------------
 
 - New utilities command panel tab
+- Support for :ref:`named types in selection expressions <particles.modifiers.type_names>`
 - |ovito-python| Added :py:class:`ovito.io.FileWriterInterface`
 - |ovito-python| Added :py:mod:`ovito.gui` module
 - |ovito-python| Added :py:func:`ovito.traits.action_handler` decorator

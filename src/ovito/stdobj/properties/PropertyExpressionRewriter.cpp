@@ -33,8 +33,7 @@ namespace Ovito::PropertyExpressionRewriter {
     expression.replace('\'', '\"');
 
     // Regular expressions for tokens - split on expected operators, parenthesis, and group everything inside "...".
-    const static QRegularExpression regex(
-        QRegularExpression(QStringLiteral(R"((".*?"|'.*?'|==|!=|>=|<=|\?|:|\(|\)|&&|\|\||[\w\._]+|\S))")));
+    const static QRegularExpression regex(QStringLiteral(R"((".*?"|'.*?'|==|!=|>=|<=|\?|:|\(|\)|&&|\|\||[\w\._]+|\S))"));
     OVITO_ASSERT(regex.isValid());
 
     // Tokenize
@@ -64,7 +63,7 @@ inline QString OpToString(Op op)
         case(Op::COL): return QStringLiteral(":");
         default: OVITO_ASSERT(false);
     }
-    return QStringLiteral("");
+    return {};
 }
 
 /******************************************************************************
@@ -103,15 +102,15 @@ inline Op StringToOp(const QString& str)
  ******************************************************************************/
 struct Identifier : ASTNode {
 public:
-    explicit Identifier(const QString* name) : ASTNode{ASTNodeType::IDENTIFIER}, _nameStr{name}, _namesList{nullptr} { OVITO_ASSERT(name); }
+    explicit Identifier(const QString* name) : ASTNode{ASTNodeType::IDENTIFIER}, _nameStr{name} { OVITO_ASSERT(name); }
 
-    explicit Identifier(const QStringList* names) : ASTNode{ASTNodeType::IDENTIFIER}, _nameStr{nullptr}, _namesList{names}
+    explicit Identifier(const QStringList* names) : ASTNode{ASTNodeType::IDENTIFIER}, _namesList{names}
     {
         OVITO_ASSERT(names);
         OVITO_ASSERT(names->size() == 1);
     }
 
-    explicit Identifier(const QString& string) : ASTNode{ASTNodeType::IDENTIFIER}, _nameStr{nullptr}, _namesList{&_names}, _names{string} {}
+    explicit Identifier(const QString& string) : ASTNode{ASTNodeType::IDENTIFIER}, _namesList{&_names}, _names{string} {}
 
     // Returns the name as QString from either the QString or the QStringlist
     const QString& name() const
@@ -148,9 +147,9 @@ public:
 
 private:
     // User provided QString
-    const QString* _nameStr;
+    const QString* _nameStr = nullptr;
     // User provided QStringList
-    const QStringList* _namesList;
+    const QStringList* _namesList = nullptr;
     // QStringList used as intermediate storage when user only provided a QString but requests a QStringList& output
     mutable QStringList _names;
 };
@@ -264,6 +263,7 @@ struct TernaryOp : ASTNode {
     // Top-level parse: we parse a ternary expression (which includes lower level expressions).
     return parseTernary();
 }
+
 /******************************************************************************
  * Parse ternary expression: OrExpr ( '?' TernaryExpr ':' TernaryExpr )
  ******************************************************************************/

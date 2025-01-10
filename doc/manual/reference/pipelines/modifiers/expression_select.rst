@@ -24,6 +24,8 @@ Note that variable names and function names are case-sensitive and restricted to
 underscores. That's why OVITO automatically replaces invalid characters in property names with an underscore to generate valid variable names
 that can be used in the expression.
 
+.. _particles.modifiers.expression_select.syntax:
+
 Expression syntax
 """""""""""""""""
 
@@ -93,19 +95,21 @@ The expression parser supports the following constants:
   *inf*               Infinity (∞)
   =================== =========================================================================
 
-Support for typed properties
-############################
+.. _particles.modifiers.type_names:
 
-Properties in OVITO are stored as integer values. Some properties, called :ref:`typed properties <scene_objects.particle_types>`, can also store a 
-non-unique name. One example is *Structure Type*, where a numeric value of `1` maps to the name *"FCC"*. Similarly, *Particle Types* may  
-store the chemical symbol as their names. 
+Using type names in expressions
+"""""""""""""""""""""""""""""""
+
+Properties in OVITO are stored as integer values. Some properties, called :ref:`typed properties <scene_objects.particle_types>`, can also store a
+non-unique name. One example is *Structure Type*, where a numeric value of `1` maps to the name *"FCC"*. Similarly, *Particle Types* may
+store the chemical symbol as their names.
 
 These names can also be referenced inside the expressions. This allows the usage of expressions like ``ParticleType == "Cu"``, where *"Cu"*
 is a type name connected to the *Particle Type* property. Note, that these type names must be enclosed in double quotes: ``"<Type Name>"``. References to
-undefined type names (i.e., names with no numeric mapping) are transformed into either ``true`` or ``false`` depending on the context they are used in. 
+undefined type names (i.e., names with no numeric mapping) are transformed into either ``true`` or ``false`` depending on the context they are used in.
 For example, ``ParticleType != "<Type Name>"`` is alway true if the type ``"<Type Name>"`` is not defined.
 
-In the simplest case, the mapping from numeric IDs to names is unique. For example, the particle type *"Cu"* might map exclusively to the number `1`. 
+In the simplest case, the mapping from numeric IDs to names is unique. For example, the particle type *"Cu"* might map exclusively to the number `1`.
 Here, the expression::
 
   ParticleType == "Cu"
@@ -116,9 +120,9 @@ can be transformed trivially to::
 
 In this context all binary comparison operators listed in the table above are supported.
 
-However, there are also cases where the mapping between names and numeric IDs is not unique. For example, 
+However, there are also cases where the mapping between names and numeric IDs is not unique. For example,
 particle types ``2``, ``3``, and ``5`` might all map to the name *"Ni"*.
-In this case, only the ``==`` and ``!=`` comparison operators are allowed for these type names. Depending on the operator used, the resulting conditions are either 
+In this case, only the ``==`` and ``!=`` comparison operators are allowed for these type names. Depending on the operator used, the resulting conditions are either
 linked by *or* (``||``) or *and* (``&&``) operators as shown in the following examples::
 
   1.) ParticleType == "Ni"
@@ -129,12 +133,12 @@ which will be interpreted as::
   1.) ParticleType == 2 || ParticleType == 3 || ParticleType == 5
   2.) ParticleType != 2 && ParticleType != 3 && ParticleType != 5
 
-Duplicate type names across different type properties cannot always be resolved uniquely. For instance, if both 
-*Particle Type* and *Structure Type* have a type name *alpha* associated with numeric IDs 3 and 5, respectively, 
-the expression parser will attempt to resolve the ambiguity. For example, in queries like ``ParticleType == "alpha"`` 
+Duplicate type names across different type properties cannot always be resolved uniquely. For instance, if both
+*Particle Type* and *Structure Type* have a type name *alpha* associated with numeric IDs 3 and 5, respectively,
+the expression parser will attempt to resolve the ambiguity. For example, in queries like ``ParticleType == "alpha"``
 or ``StructureType == "alpha"``, the left-hand side of the expression helps determine the user's intend.
-There are, however, expression in which such a resolution is impossible: ``(<condition> ? ParticleType : StructureType) == "alpha"``. 
-This leads to an error if the numeric IDs of the two *alpha* types are different. 
+There are, however, expression in which such a resolution is impossible: ``(<condition> ? ParticleType : StructureType) == "alpha"``.
+This leads to an error if the numeric IDs of the two *alpha* types are different.
 Such expressions are valid only if both *alpha* types map to the same numeric value.
 
 Ternary expression, are supported on both on the condition and the result side. This can be seen in the following
@@ -148,9 +152,9 @@ corresponds to::
   StructureType == (ParticleType == 2 || ParticleType == 3 || ParticleType == 5 ? 1 : 2)
 
 similarly,::
-  
-  ParticleType == (<condition> ? "Ni" : "Cu") 
-  
+
+  ParticleType == (<condition> ? "Ni" : "Cu")
+
 will be interpreted as::
 
   (ParticleType == (<condition> ? 2 : 1)) || (ParticleType == (<condition> ? 3 : 1)) || (ParticleType == (<condition> ? 5 : 1))
@@ -164,6 +168,26 @@ does. The second expression will select particles within a cylindrical region of
     ParticleType==1 || ParticleType==2
 
     sqrt(Position.X*Position.X + Position.Y*Position.Y) < 10.0
+
+Other selection tools in OVITO
+""""""""""""""""""""""""""""""
+
+OVITO provides more tools for selecting particles:
+
+The :ref:`particles.modifiers.compute_property` modifier allows you to directly set the ``Selection`` property of
+particles based on a user-defined expression. Thus, it may also be used to create a particle selection by setting the
+``Selection`` property to non-zero for selected particles and 0 for unselected particles. In contrast to the *Expression selection* modifier, the
+:ref:`particles.modifiers.compute_property` modifier has the option to include neighboring particles, up to some user-defined cutoff distance,
+in the selection process. For example, you can select particles based on whether they are surrounded by a certain number or certain kind of neighbors.
+
+The `Match Molecule <https://github.com/ovito-org/MatchMolecule>`__ modifier is an extension available for OVITO Pro, which allows you to create
+selections in bonded (molecular) systems using query expressions. These selection expressions are based on a simplified version of the SMILES language
+and let you to select atoms, bonds, or sections of a molecule based on their chemical environment.
+
+For advanced selection tasks, you can write a custom Python function using OVITO Pro's :ref:`particles.modifiers.python_script` modifier
+to implement complex selection criteria that are not possible with the built-in selection tools. Your Python function can access all properties of the
+input particles, bonds, or other data elements, letting you implement arbitrary selection logic. The Python interface of OVITO Pro provides
+useful spatial queries for this purpose, e.g., cutoff-based neighbor searches, k-nearest neighbor searches, or point-in-region tests.
 
 .. seealso::
 
