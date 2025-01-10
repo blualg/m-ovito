@@ -105,12 +105,12 @@ is a type name connected to the *Particle Type* property. Note, that these type 
 undefined type names (i.e., names with no numeric mapping) are transformed into either ``true`` or ``false`` depending on the context they are used in. 
 For example, ``ParticleType != "<Type Name>"`` is alway true if the type ``"<Type Name>"`` is not defined.
 
-In the simplest case, the mapping from numeric IDs to names is unqiue. For example, the particle type *"Cu"* might map exclusively to the number `1`. 
+In the simplest case, the mapping from numeric IDs to names is unique. For example, the particle type *"Cu"* might map exclusively to the number `1`. 
 Here, the expression::
 
   ParticleType == "Cu"
 
-can be tranformed trivally to::
+can be transformed trivially to::
 
   ParticleType == 1
 
@@ -151,7 +151,7 @@ similarly,::
   
   ParticleType == (<condition> ? "Ni" : "Cu") 
   
-will be intepreted as::
+will be interpreted as::
 
   (ParticleType == (<condition> ? 2 : 1)) || (ParticleType == (<condition> ? 3 : 1)) || (ParticleType == (<condition> ? 5 : 1))
 
