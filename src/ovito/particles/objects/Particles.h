@@ -162,10 +162,10 @@ public:
     /// Does nothing if particles do not have IDs.
     virtual std::vector<size_t> sortById() override;
 
-    /// Convinience method that makes sure that there is a Bonds.
+    /// Convenience method that makes sure that there is a Bonds.
     const Bonds* expectBonds() const;
 
-    /// Convinience method that makes sure that there is a Bonds and the bond topology property.
+    /// Convenience method that makes sure that there is a Bonds and the bond topology property.
     const Property* expectBondsTopology() const;
 
     /// Adds a set of new bonds to the particle system.

@@ -57,6 +57,12 @@ class OVITO_PARTICLES_EXPORT ParticlesComputePropertyModifierDelegate : public C
 
 public:
 
+    enum NeighborMode {
+        Cutoff,    ///< Visit particles which are within a certain distance of the central particle.
+        Bonded,    ///< Visit particles which are connected to the central particle by a bond.
+    };
+    Q_ENUM(NeighborMode);
+
     /// \brief Sets the math expression that is used to compute the neighbor-terms of the property function.
     /// \param index The property component for which the expression should be set.
     /// \param expression The math formula.
@@ -80,6 +86,9 @@ public:
     /// Sets the number of vector components of the property to compute.
     virtual void setComponentCount(int componentCount) override;
 
+    /// Returns the title string to be displayed in the UI for the group box containing the math expression(s).
+    virtual QString expressionUITitle(int componentCount) const override { return componentCount <= 1 ? tr("Central expression") : tr("Central expressions"); }
+
     /// Checks if math expressions are time-dependent, i.e. whether they involve the animation frame number.
     virtual bool isExpressionTimeDependent(ComputePropertyModifier* modifier) const override;
 
@@ -93,7 +102,10 @@ private:
     /// The math expressions for calculating the neighbor-terms of the property function.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QStringList{}, neighborExpressions, setNeighborExpressions);
 
-    /// Controls the cutoff radius for the neighbor lists.
+    /// The neighbor mode.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(NeighborMode{Cutoff}, neighborMode, setNeighborMode, PROPERTY_FIELD_MEMORIZE);
+
+    /// Controls the cutoff distance for neighbor particles being visited.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{3}, cutoff, setCutoff, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls whether multi-line input fields are shown in the UI for the expressions.

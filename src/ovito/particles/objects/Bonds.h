@@ -115,7 +115,7 @@ class OVITO_PARTICLES_EXPORT Bonds : public PropertyContainer
 
 public:
 
-    /// \brief The list of standard bond properties.
+    /// Standard bond properties.
     enum Type {
         UserProperty = Property::GenericUserProperty, //< This is reserved for user-defined properties.
         SelectionProperty = Property::GenericSelectionProperty,
@@ -132,7 +132,7 @@ public:
     /// Constructor.
     void initializeObject(ObjectInitializationFlags flags);
 
-    /// Convinience method that returns the bond topology property.
+    /// Convenience method that returns the bond topology property.
     const Property* getTopology() const { return getProperty(TopologyProperty); }
 
     /// Determines the PBC shift vectors for bonds using the minimum image convention.

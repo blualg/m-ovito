@@ -25,6 +25,7 @@
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/StringParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
@@ -40,35 +41,44 @@ SET_OVITO_OBJECT_EDITOR(ParticlesComputePropertyModifierDelegate, ParticlesCompu
 ******************************************************************************/
 void ParticlesComputePropertyModifierDelegateEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-    // Neighbor mode panel.
-    QWidget* neighorRollout = createRollout(tr("Neighbor particles"), rolloutParams, "manual:particles.modifiers.compute_property");
+    QWidget* neighborRollout = createRollout(tr("Neighbor particles"), rolloutParams, "manual:particles.modifiers.compute_property");
 
-    QVBoxLayout* mainLayout = new QVBoxLayout(neighorRollout);
-    mainLayout->setContentsMargins(4,4,4,4);
+    QVBoxLayout* mainLayout = new QVBoxLayout(neighborRollout);
+    if(!rolloutParams.container())
+        mainLayout->setContentsMargins(4,4,4,4);
+    else
+        mainLayout->setContentsMargins(0,0,0,0);
 
-    QGroupBox* rangeGroupBox = new QGroupBox(tr("Evaluation range"));
-    mainLayout->addWidget(rangeGroupBox);
-    QGridLayout* rangeGroupBoxLayout = new QGridLayout(rangeGroupBox);
-    rangeGroupBoxLayout->setContentsMargins(4,4,4,4);
-    rangeGroupBoxLayout->setSpacing(1);
-    rangeGroupBoxLayout->setColumnStretch(1,1);
+    neighborExpressionsGroupBox = new QGroupBox(tr("Neighbor particle expression"));
+    mainLayout->addWidget(neighborExpressionsGroupBox);
+    QGridLayout* groupBoxLayout = new QGridLayout(neighborExpressionsGroupBox);
+    groupBoxLayout->setContentsMargins(4,4,4,4);
+    groupBoxLayout->setSpacing(2);
+    groupBoxLayout->setRowMinimumHeight(2, 4);
+    groupBoxLayout->setColumnStretch(1, 1);
+
+    IntegerRadioButtonParameterUI* neighborModePUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate::neighborMode));
+    QRadioButton* cutoffModeBtn = neighborModePUI->addRadioButton(ParticlesComputePropertyModifierDelegate::Cutoff, tr("Cutoff range:"));
+    groupBoxLayout->addWidget(cutoffModeBtn, 0, 0);
+    QRadioButton* bondModeBtn = neighborModePUI->addRadioButton(ParticlesComputePropertyModifierDelegate::Bonded, tr("Bonded"));
+    groupBoxLayout->addWidget(bondModeBtn, 1, 0, 1, 2);
 
     // Cutoff parameter.
     FloatParameterUI* cutoffRadiusUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate::cutoff));
-    rangeGroupBoxLayout->addWidget(cutoffRadiusUI->label(), 0, 0);
-    rangeGroupBoxLayout->addLayout(cutoffRadiusUI->createFieldLayout(), 0, 1);
-
-    neighborExpressionsGroupBox = new QGroupBox(tr("Neighbor expression"));
-    mainLayout->addWidget(neighborExpressionsGroupBox);
-    neighborExpressionsLayout = new QGridLayout(neighborExpressionsGroupBox);
-    neighborExpressionsLayout->setContentsMargins(4,4,4,4);
-    neighborExpressionsLayout->setSpacing(1);
-    neighborExpressionsLayout->setRowMinimumHeight(1, 4);
-    neighborExpressionsLayout->setColumnStretch(1, 1);
+    groupBoxLayout->addLayout(cutoffRadiusUI->createFieldLayout(), 0, 1);
+    cutoffRadiusUI->setEnabled(false);
+    connect(cutoffModeBtn, &QRadioButton::toggled, cutoffRadiusUI, &FloatParameterUI::setEnabled);
 
     // Show multiline fields.
     BooleanParameterUI* multilineFieldsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate::useMultilineFields));
-    neighborExpressionsLayout->addWidget(multilineFieldsUI->checkBox(), 0, 1, Qt::AlignRight | Qt::AlignBottom);
+    groupBoxLayout->addWidget(multilineFieldsUI->checkBox(), 2, 0, 1, 2, Qt::AlignRight | Qt::AlignBottom);
+
+    // Sublayout for the expression fields.
+    neighborExpressionsLayout = new QGridLayout();
+    neighborExpressionsLayout->setColumnStretch(1, 1);
+    neighborExpressionsLayout->setContentsMargins(0,0,0,0);
+    neighborExpressionsLayout->setSpacing(1);
+    groupBoxLayout->addLayout(neighborExpressionsLayout, 3, 0, 1, 2);
 
     // Update input variables list if another modifier has been loaded into the editor.
     connect(this, &ParticlesComputePropertyModifierDelegateEditor::contentsReplaced, this, &ParticlesComputePropertyModifierDelegateEditor::updateExpressionFields);
@@ -114,14 +124,13 @@ void ParticlesComputePropertyModifierDelegateEditor::updateExpressionFields()
     if(!delegate) return;
 
     const QStringList& neighExpr = delegate->neighborExpressions();
-    neighborExpressionsGroupBox->setTitle((neighExpr.size() <= 1) ? tr("Neighbor expression") : tr("Neighbor expressions"));
     while(neighExpr.size() > neighborExpressionLineEdits.size()) {
         QLabel* label = new QLabel();
         AutocompleteLineEdit* lineEdit = new AutocompleteLineEdit();
         AutocompleteTextEdit* textEdit = new AutocompleteTextEdit();
-        neighborExpressionsLayout->addWidget(label, neighborExpressionLineEdits.size()+2, 0);
-        neighborExpressionsLayout->addWidget(lineEdit, neighborExpressionLineEdits.size()+2, 1);
-        neighborExpressionsLayout->addWidget(textEdit, neighborExpressionTextEdits.size()+2, 1);
+        neighborExpressionsLayout->addWidget(label, neighborExpressionLineEdits.size(), 0);
+        neighborExpressionsLayout->addWidget(lineEdit, neighborExpressionLineEdits.size(), 1);
+        neighborExpressionsLayout->addWidget(textEdit, neighborExpressionTextEdits.size(), 1);
         neighborExpressionLineEdits.push_back(lineEdit);
         neighborExpressionTextEdits.push_back(textEdit);
         neighborExpressionLabels.push_back(label);

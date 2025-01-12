@@ -52,6 +52,7 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     // Create the rollout contents.
     QVBoxLayout* mainLayout = new QVBoxLayout(rollout);
     mainLayout->setContentsMargins(4,4,4,4);
+    mainLayout->setSpacing(6);
 
     QGroupBox* operateOnGroup = new QGroupBox(tr("Operate on"));
     QVBoxLayout* sublayout = new QVBoxLayout(operateOnGroup);
@@ -96,9 +97,17 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     expressionsLayout->setRowMinimumHeight(1,4);
     expressionsLayout->setColumnStretch(1,1);
 
-    // Show multiline fields.
+    // Show multi-line fields.
     BooleanParameterUI* multilineFieldsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields));
     expressionsLayout->addWidget(multilineFieldsUI->checkBox(), 0, 1, Qt::AlignRight | Qt::AlignBottom);
+
+    // Show editor of modifier delegate as an embedded widget.
+    QWidget* delegateEditorContainer = new QWidget();
+    mainLayout->addWidget(delegateEditorContainer);
+    QVBoxLayout* delegateEditorLayout = new QVBoxLayout(delegateEditorContainer);
+    delegateEditorLayout->setContentsMargins(0,0,0,0);
+    delegateEditorLayout->setSpacing(0);
+    createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(DelegatingModifier::delegate), RolloutInsertionParameters().insertInto(delegateEditorContainer));
 
     // Status label.
     mainLayout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
@@ -115,9 +124,6 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     // Update input variables list if another modifier has been loaded into the editor.
     connect(this, &ComputePropertyModifierEditor::contentsReplaced, this, &ComputePropertyModifierEditor::updateExpressionFields);
     connect(this, &ComputePropertyModifierEditor::contentsReplaced, this, &ComputePropertyModifierEditor::updateVariablesList);
-
-    // Show settings editor of modifier delegate.
-    createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(DelegatingModifier::delegate), rolloutParams.before(variablesRollout));
 }
 
 /******************************************************************************
@@ -161,10 +167,10 @@ void ComputePropertyModifierEditor::updateVariablesList()
 void ComputePropertyModifierEditor::updateExpressionFields()
 {
     ComputePropertyModifier* mod = static_object_cast<ComputePropertyModifier>(editObject());
-    if(!mod) return;
+    if(!mod || !mod->delegate()) return;
 
     const QStringList& expr = mod->expressions();
-    expressionsGroupBox->setTitle((expr.size() <= 1) ? tr("Expression") : tr("Expressions"));
+    expressionsGroupBox->setTitle(mod->delegate()->expressionUITitle(expr.size()));
     while(expr.size() > expressionLineEdits.size()) {
         QLabel* label = new QLabel();
         AutocompleteLineEdit* lineEdit = new AutocompleteLineEdit();

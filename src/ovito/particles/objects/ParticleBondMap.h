@@ -113,10 +113,10 @@ public:
 public:
 
     /// Initializes the helper class.
-    ParticleBondMap(const Bonds& bonds);
+    explicit ParticleBondMap(const Bonds& bonds);
 
     /// Initializes the helper class.
-    ParticleBondMap(ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages = {});
+    explicit ParticleBondMap(ConstPropertyPtr bondTopology, ConstPropertyPtr bondPeriodicImages = {});
 
     /// Returns an iterator range over the indices of the bonds adjacent to the given particle.
     /// Returns real indices into the bonds list. Note that bonds can point away from and to the given particle.

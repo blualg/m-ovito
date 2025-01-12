@@ -55,6 +55,9 @@ public:
         return PropertyContainerReference(inputContainerClass(), inputDataObject().dataPath(), inputDataObject().dataTitle());
     }
 
+    /// Returns the title string to be displayed in the UI for the group box containing the math expression(s).
+    virtual QString expressionUITitle(int componentCount) const { return componentCount <= 1 ? tr("Expression") : tr("Expressions"); }
+
     /// Sets the number of vector components of the property to compute.
     virtual void setComponentCount(int componentCount) {}
 
