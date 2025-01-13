@@ -50,7 +50,7 @@ void PropertyExpressionEvaluator::initialize(const QStringList& expressions, con
     std::optional<PropertyExpressionRewriter::Parser> parser;
     std::optional<PropertyExpressionRewriter::ASTWriter> rewriter;
     // Check whether we need to rewrite any expression
-    if(std::ranges::any_of(expressions, [](const auto& expr) { return expr.contains("\"") || expr.contains("\'"); })) {
+    if(std::ranges::any_of(expressions, [](const auto& expr) { return expr.contains("\""); })) {
         parser.emplace(_typeMapping);
         rewriter.emplace(_typeMapping);
     }
@@ -58,7 +58,7 @@ void PropertyExpressionEvaluator::initialize(const QStringList& expressions, con
     // Process expressions
     _expressions.clear();
     for(const auto& expr : expressions) {
-        if(expr.contains("\"") || expr.contains("\'")) {
+        if(expr.contains("\"")) {
             // Rewrite expressions if required
             const QStringList& tokens = PropertyExpressionRewriter::tokenizeExpression(expr);
             OVITO_ASSERT(parser);

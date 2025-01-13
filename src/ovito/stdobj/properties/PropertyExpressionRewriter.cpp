@@ -22,6 +22,8 @@
 
 #include "PropertyExpressionRewriter.h"
 
+#include <algorithm>
+
 namespace Ovito::PropertyExpressionRewriter {
 
 /******************************************************************************
@@ -29,9 +31,6 @@ namespace Ovito::PropertyExpressionRewriter {
  ******************************************************************************/
 [[nodiscard]] QStringList tokenizeExpression(QString expression)
 {
-    // Regularize " and ' characters
-    expression.replace('\'', '\"');
-
     // Regular expressions for tokens - split on expected operators, parenthesis, and group everything inside "...".
     const static QRegularExpression regex(QStringLiteral(R"((".*?"|'.*?'|==|!=|>=|<=|\?|:|\(|\)|&&|\|\||[\w\._]+|\S))"));
     OVITO_ASSERT(regex.isValid());
@@ -61,6 +60,11 @@ inline QString OpToString(Op op)
         case(Op::LEQ): return QStringLiteral("<=");
         case(Op::QM): return QStringLiteral("?");
         case(Op::COL): return QStringLiteral(":");
+        case(Op::ADD): return QStringLiteral("+");
+        case(Op::SUB): return QStringLiteral("-");
+        case(Op::MULT): return QStringLiteral("*");
+        case(Op::DIV): return QStringLiteral("/");
+        case(Op::POW): return QStringLiteral("^");
         default: OVITO_ASSERT(false);
     }
     return {};
@@ -71,28 +75,38 @@ inline QString OpToString(Op op)
  ******************************************************************************/
 inline Op StringToOp(const QString& str)
 {
-    if(str == "&&")
+    if(str == QStringLiteral("&&"))
         return Op::AND;
-    else if(str == "||")
+    else if(str == QStringLiteral("||"))
         return Op::OR;
-    else if(str == "==")
+    else if(str == QStringLiteral("=="))
         return Op::EQ;
-    else if(str == "!=")
+    else if(str == QStringLiteral("!="))
         return Op::NEQ;
-    else if(str == ">")
+    else if(str == QStringLiteral(">"))
         return Op::GE;
-    else if(str == ">=")
+    else if(str == QStringLiteral(">="))
         return Op::GEQ;
-    else if(str == "<")
+    else if(str == QStringLiteral("<"))
         return Op::LE;
-    else if(str == "<=")
+    else if(str == QStringLiteral("<="))
         return Op::LEQ;
-    else if(str == "?")
+    else if(str == QStringLiteral("?"))
         return Op::QM;
-    else if(str == ":")
+    else if(str == QStringLiteral(":"))
         return Op::COL;
-    else
-        OVITO_ASSERT(false);
+    else if(str == QStringLiteral("+"))
+        return Op::ADD;
+    else if(str == QStringLiteral("-"))
+        return Op::SUB;
+    else if(str == QStringLiteral("*"))
+        return Op::MULT;
+    else if(str == QStringLiteral("/"))
+        return Op::DIV;
+    else if(str == QStringLiteral("^"))
+        return Op::POW;
+    OVITO_ASSERT(false);
+    return Op::NONE;
 }
 
 /******************************************************************************
@@ -169,6 +183,17 @@ struct MultiIdentifier : ASTNode {
 };
 
 /******************************************************************************
+ * Represents a unary operation, e.g. -X or +X.
+ ******************************************************************************/
+struct UnaryOp : ASTNode {
+    // Operation ( Either + or -)
+    const Op op;
+    const std::unique_ptr<ASTNode> right;
+
+    explicit UnaryOp(Op op, std::unique_ptr<ASTNode>&& right) : ASTNode{ASTNodeType::UNARYOP}, op{op}, right{std::move(right)} {}
+};
+
+/******************************************************************************
  * Represents a binary operation, e.g. (left; ==, !=, >, or >=, ...; right)
  ******************************************************************************/
 struct BinaryOp : ASTNode {
@@ -203,6 +228,65 @@ struct TernaryOp : ASTNode {
 };
 
 /******************************************************************************
+ * Represents a function call name(args, ...)
+ ******************************************************************************/
+struct FunctionCall : ASTNode {
+    // Name (Identifier)
+    const std::unique_ptr<ASTNode> name;
+    // Operation
+    std::vector<std::unique_ptr<ASTNode>> args;
+
+    explicit FunctionCall(std::unique_ptr<ASTNode>&& name, std::vector<std::unique_ptr<ASTNode>>&& args)
+        : ASTNode{ASTNodeType::FUNC}, name{std::move(name)}, args{std::move(args)}
+    {
+    }
+};
+
+/******************************************************************************
+ * Checks whether a branch of an AST contains nodes of the specific type
+ ******************************************************************************/
+[[nodiscard]] bool BranchContainsType(const ASTNode* start, ASTNodeType type)
+{
+    OVITO_ASSERT(start);
+    if(!start) {
+        return false;
+    }
+    switch(start->type) {
+        case ASTNodeType::IDENTIFIER: {
+            [[fallthrough]];
+        }
+        case ASTNodeType::MULTIIDENTIFIER: {
+            return start->type == type;
+        }
+        case ASTNodeType::UNARYOP: {
+            const UnaryOp* node = static_cast<const UnaryOp*>(start);
+            OVITO_ASSERT(node);
+            return BranchContainsType(node->right.get(), type);
+        }
+        case ASTNodeType::BINARYOP: {
+            const BinaryOp* node = static_cast<const BinaryOp*>(start);
+            OVITO_ASSERT(node);
+            return BranchContainsType(node->left.get(), type) || BranchContainsType(node->right.get(), type);
+        }
+        case ASTNodeType::TERNARYOP: {
+            const TernaryOp* node = static_cast<const TernaryOp*>(start);
+            OVITO_ASSERT(node);
+            return BranchContainsType(node->condition.get(), type) || BranchContainsType(node->trueExpr.get(), type) ||
+                   BranchContainsType(node->falseExpr.get(), type);
+        }
+        case ASTNodeType::FUNC: {
+            const FunctionCall* node = static_cast<const FunctionCall*>(start);
+            OVITO_ASSERT(node);
+            return BranchContainsType(node->name.get(), type) ||
+                   std::ranges::any_of(node->args, [type](const auto& item) { return BranchContainsType(item.get(), type); });
+        }
+        default: {
+            return false;
+        }
+    }
+}
+
+/******************************************************************************
  * Parse a list of tokens into an AST
  * The lifetime of tokens MUST exceed the usage of the AST as strings are not copied
  ******************************************************************************/
@@ -212,7 +296,7 @@ struct TernaryOp : ASTNode {
     _index = 0;
     std::unique_ptr<ASTNode> ast = parseExpression();
     if(_index != _tokens->size()) {
-        throw Exception(QStringLiteral("Extra characters after valid expression."));
+        throw Exception(QStringLiteral("Extra characters after valid expression at position %1.").arg(_index));
     }
     return ast;
 }
@@ -273,7 +357,7 @@ struct TernaryOp : ASTNode {
     if(match({QStringLiteral("?")})) {
         std::unique_ptr<ASTNode> trueExpr = parseExpression();
         if(!match({QStringLiteral(":")})) {
-            throw Exception(QStringLiteral("Missing ':' in ternary expression."));
+            throw Exception(QStringLiteral("Missing ':' in ternary expression at position %1.").arg(_index));
         }
         std::unique_ptr<ASTNode> falseExpr = parseExpression();
         return std::make_unique<TernaryOp>(std::move(condition), std::move(trueExpr), std::move(falseExpr));
@@ -315,11 +399,10 @@ struct TernaryOp : ASTNode {
  ******************************************************************************/
 [[nodiscard]] std::unique_ptr<ASTNode> Parser::parseComparison()
 {
-    std::unique_ptr<ASTNode> left = parsePrimary();
-
+    std::unique_ptr<ASTNode> left = parseMathOperation();
     if(std::optional<Op> op = match({QStringLiteral("=="), QStringLiteral("!="), QStringLiteral(">"), QStringLiteral("<"),
                                      QStringLiteral(">="), QStringLiteral("<=")})) {
-        std::unique_ptr<ASTNode> right = parsePrimary(left.get());
+        std::unique_ptr<ASTNode> right = parseMathOperation();
         return std::make_unique<BinaryOp>(std::move(left), op.value(), std::move(right));
     }
     // No comparison operator => just primary
@@ -327,7 +410,22 @@ struct TernaryOp : ASTNode {
 }
 
 /******************************************************************************
- * Parse a Primary: Identifier or '(' Expression ')'
+ * Parse left and right side of one or more chained math operations
+ ******************************************************************************/
+[[nodiscard]] std::unique_ptr<ASTNode> Parser::parseMathOperation()
+{
+    std::unique_ptr<ASTNode> left = parsePrimary();
+    // match one or more math operators
+    while(std::optional<Op> op =
+              match({QStringLiteral("+"), QStringLiteral("-"), QStringLiteral("*"), QStringLiteral("/"), QStringLiteral("^")})) {
+        std::unique_ptr<ASTNode> right = parsePrimary(left.get());
+        left = std::make_unique<BinaryOp>(std::move(left), op.value(), std::move(right));
+    }
+    return left;
+}
+
+/******************************************************************************
+ * Parse a Primary: Primary -> ( '+' | '-' ) Primary | '(' Expression ')' | Identifier | FunctionCall
  ******************************************************************************/
 [[nodiscard]] std::unique_ptr<ASTNode> Parser::parsePrimary(ASTNode* left)
 {
@@ -338,73 +436,113 @@ struct TernaryOp : ASTNode {
     }
 
     const QString& tokenValue = *token;
-    if(tokenValue == "(") {
+
+    // 1) Check for unary +/-
+    if(tokenValue == QStringLiteral("-") || tokenValue == QStringLiteral("+")) {
+        return std::make_unique<UnaryOp>(StringToOp(tokenValue), parseExpression());
+    }
+
+    // 2) Check for Parenthesized expressions
+    if(tokenValue == QStringLiteral("(")) {
         // Parse inside expression
         std::unique_ptr<ASTNode> node = parseExpression();
         // Validate and consume ')'
         if(!peek() || *consume() != QStringLiteral(")")) {
-            throw Exception(QStringLiteral("Missing closing parenthesis in expression."));
+            throw Exception(QStringLiteral("Missing closing parenthesis in expression at position %1.").arg(_index));
         }
         return node;
     }
-    else {
-        if(_mapping.contains(tokenValue)) {
-            // Identifiers like StructureType or ParticleType
-            return std::make_unique<Identifier>(token);
+
+    // 3) If the next token is '(' => function call
+    if(peek() && *peek() == QStringLiteral("(")) {
+        // Consume '('. Cast to void to ignore [[nodiscard]]
+        (void)consume();
+
+        // Store args
+        std::vector<std::unique_ptr<ASTNode>> args;
+
+        // Parse function arguments until ')' is found
+        while(peek() && *peek() != QStringLiteral(")")) {
+            // Duplicate ','
+            if(!peek() || *peek() == QStringLiteral(",")) {
+                throw Exception(QStringLiteral("Invalid arguments in function call: %1. Expected value, found ',' instead at position %2.")
+                                    .arg(tokenValue)
+                                    .arg(_index));
+            }
+            args.emplace_back(parseExpression());
+
+            if(peek() && *peek() != QStringLiteral(",")) {
+                break;
+            }
+            // Consume the ','
+            (void)consume();
         }
-        else {
-            const QStringList* match = nullptr;
-            if(left && left->type == ASTNodeType::IDENTIFIER) {
-                // Use information from left hand side expression
-                const Identifier* leftNode = static_cast<const Identifier*>(left);
-                // Search left node name in _mapping to determine inner map
-                if(const auto oit = _mapping.find(leftNode->name()); oit != _mapping.end()) {
-                    const InnerMapType& innerMap = oit->second;
-                    if(const auto it = innerMap.find(tokenValue); it != innerMap.end()) {
-                        match = &(it->second);
-                    }
-                }
+
+        // Validate and consume ')'
+        if(!peek() || *consume() != QStringLiteral(")")) {
+            throw Exception(QStringLiteral("Missing closing parenthesis in function call: %1 at position %2.").arg(tokenValue).arg(_index));
+        }
+
+        return std::make_unique<FunctionCall>(std::make_unique<Identifier>(tokenValue), std::move(args));
+    }
+
+    // 4.0) Identifier or a known mapped token.
+    if(_mapping.contains(tokenValue)) {
+        // Identifiers like StructureType or ParticleType.
+        return std::make_unique<Identifier>(token);
+    }
+
+    // 4.1) Disentangle identifier or multi identifier from map.
+    const QStringList* match = nullptr;
+    if(left && left->type == ASTNodeType::IDENTIFIER) {
+        // Use information from left hand side expression
+        const Identifier* leftNode = static_cast<const Identifier*>(left);
+        // Search left node name in _mapping to determine inner map
+        if(const auto oit = _mapping.find(leftNode->name()); oit != _mapping.end()) {
+            const InnerMapType& innerMap = oit->second;
+            if(const auto it = innerMap.find(tokenValue); it != innerMap.end()) {
+                match = &(it->second);
             }
-            else {
-                // No information from left hand side expression
-                // Search mappings in inner dicts
-                // -> first match is determined to be correct
-                // -> all subsequent findings need to match that first result
-                for(const auto& [_, innerMap] : _mapping) {
-                    if(const auto it = innerMap.find(tokenValue); it != innerMap.end()) {
-                        if(!match) {
-                            // first match
-                            match = &(it->second);
-                        }
-                        else {
-                            // subsequent matches
-                            if(*match != it->second) {
-                                throw Exception(
-                                    QStringLiteral("Ambiguous type name %1. The type name maps to different numerical values in "
-                                                   "different properties: (%2) != (%3). Use a numerical value instead to avoid this error.")
-                                        .arg(tokenValue)
-                                        .arg(match->join(", "))
-                                        .arg(it->second.join(", ")));
-                            }
-                        }
-                    }
-                }
-            }
-            if(!match) {
-                // Use inf as an invalid type-id
-                if(tokenValue.startsWith("\"") && tokenValue.endsWith("\"")) {
-                    return std::make_unique<Identifier>(QStringLiteral("inf"));
-                }
-                // Otherwise just return the token
-                return std::make_unique<Identifier>(tokenValue);
-            }
-            if(match->size() == 1) {
-                return std::make_unique<Identifier>(match);
-            }
-            return std::make_unique<MultiIdentifier>(match);
         }
     }
-    OVITO_ASSERT(false);
+    else {
+        // No information from left hand side expression
+        // Search mappings in inner dicts
+        // -> first match is determined to be correct
+        // -> all subsequent findings need to match that first result
+        for(const auto& [_, innerMap] : _mapping) {
+            if(const auto it = innerMap.find(tokenValue); it != innerMap.end()) {
+                if(!match) {
+                    // first match
+                    match = &(it->second);
+                }
+                else {
+                    // subsequent matches
+                    if(*match != it->second) {
+                        throw Exception(
+                            QStringLiteral("Ambiguous type name %1 at position %2. The type name maps to different numerical values in "
+                                           "different properties: (%3) != (%4). Use a numerical value instead to avoid this error.")
+                                .arg(tokenValue)
+                                .arg(_index)
+                                .arg(match->join(", "))
+                                .arg(it->second.join(", ")));
+                    }
+                }
+            }
+        }
+    }
+    if(!match) {
+        // Use inf as an invalid type-id
+        if(tokenValue.startsWith("\"") && tokenValue.endsWith("\"")) {
+            return std::make_unique<Identifier>(QStringLiteral("inf"));
+        }
+        // Otherwise just return the token
+        return std::make_unique<Identifier>(tokenValue);
+    }
+    if(match->size() == 1) {
+        return std::make_unique<Identifier>(match);
+    }
+    return std::make_unique<MultiIdentifier>(match);
 }
 
 /******************************************************************************
@@ -417,8 +555,20 @@ struct TernaryOp : ASTNode {
     OVITO_ASSERT(astNode);
 
     switch(astNode->type) {
+        case ASTNodeType::UNARYOP: {
+            const UnaryOp* node = static_cast<const UnaryOp*>(astNode);
+            OVITO_ASSERT(node);
+
+            // Unary +/- only supported on identifiers
+            if(BranchContainsType(node->right.get(), ASTNodeType::MULTIIDENTIFIER)) {
+                throw Exception(QStringLiteral("A multi valued type name cannot be used with a unary + or - sign."));
+            }
+            // Assemble expression
+            return QStringLiteral("%1%2").arg(OpToString(node->op)).arg(write(node->right.get()));
+        }
         case ASTNodeType::IDENTIFIER: {
             const Identifier* node = static_cast<const Identifier*>(astNode);
+            OVITO_ASSERT(node);
 
             const QString& name = node->name();
 
@@ -440,11 +590,11 @@ struct TernaryOp : ASTNode {
             return name;
         }
         case ASTNodeType::MULTIIDENTIFIER: {
-            throw Exception(QStringLiteral("A mutli valued type name cannot be used on the left hand side of an expression."));
-            break;
+            throw Exception(QStringLiteral("A multi valued type name cannot be used on the left hand side of an expression."));
         }
         case ASTNodeType::BINARYOP: {
             const BinaryOp* node = static_cast<const BinaryOp*>(astNode);
+            OVITO_ASSERT(node);
 
             if(!node->left || !node->right) {
                 throw Exception(QStringLiteral("Malformed or empty expression in 'BinaryOp' is empty!"));
@@ -455,8 +605,11 @@ struct TernaryOp : ASTNode {
                 const TernaryOp* rightNode = static_cast<const TernaryOp*>(node->right.get());
                 return handleBinaryWithTernary(write(node->left.get()), rightNode);
             }
-            else if(node->left->type == ASTNodeType::TERNARYOP) {
+            if(node->left->type == ASTNodeType::TERNARYOP) {
                 throw Exception(QStringList("Ternary expression on the left is not supported."));
+            }
+            if(node->left->type == ASTNodeType::MULTIIDENTIFIER) {
+                throw Exception(QStringList("A multi valued type name cannot be used on the left hand side of an expression."));
             }
 
             QString leftStr = write(node->left.get());
@@ -464,9 +617,6 @@ struct TernaryOp : ASTNode {
             // we expand the condition.  E.g. "ParticleType == (4 || 5 || 6)" ->
             // "(ParticleType == 4 || ParticleType == 5 || ParticleType == 6)"
             // Similarly for '!=', '>', ... => "&&".
-            if(node->left->type == ASTNodeType::MULTIIDENTIFIER) {
-                throw Exception(QStringList("Multi-Identifier on the left is not supported."));
-            }
 
             if(node->right->type == ASTNodeType::MULTIIDENTIFIER) {
                 const MultiIdentifier* rightNode = static_cast<const MultiIdentifier*>(node->right.get());
@@ -488,16 +638,9 @@ struct TernaryOp : ASTNode {
                         // E.g. ParticleType != (4 || 5 || 6) => "(ParticleType != 4 && ParticleType != 5 && ParticleType != 6)"
                         // or ParticleType > (4 || 5 || 6) => "(ParticleType > 4 && ParticleType > 5 && ParticleType > 6)"
                         return QStringLiteral("(%1)").arg(_scratch.join("&&"));
-                    case Op::GE: [[fallthrough]];
-                    case Op::GEQ: [[fallthrough]];
-                    case Op::LE: [[fallthrough]];
-                    case Op::LEQ: {
+                    default: {
                         throw Exception(
                             QStringLiteral("A non-unique type mapping cannot be used with a %1 operator.").arg(OpToString(node->op)));
-                    }
-                    default: {
-                        // unreachable
-                        OVITO_ASSERT(false);
                     }
                 }
             }
@@ -508,10 +651,12 @@ struct TernaryOp : ASTNode {
             }
             // There should always be an early return or throw
             OVITO_ASSERT(false);
+            return "";
         }
         case ASTNodeType::TERNARYOP: {
             // Recurse each branch
             const TernaryOp* node = static_cast<const TernaryOp*>(astNode);
+            OVITO_ASSERT(node);
 
             if(!node->condition || !node->trueExpr || !node->falseExpr) {
                 throw Exception(QStringLiteral("Malformed or empty expression in 'TernaryOp'!"));
@@ -522,6 +667,23 @@ struct TernaryOp : ASTNode {
             QString trueStr = write(node->trueExpr.get());
             QString falseStr = write(node->falseExpr.get());
             return QStringLiteral("(%1?%2:%3)").arg(conditionStr).arg(trueStr).arg(falseStr);
+        }
+        case ASTNodeType::FUNC: {
+            const FunctionCall* node = static_cast<const FunctionCall*>(astNode);
+            OVITO_ASSERT(node);
+            if(BranchContainsType(node, ASTNodeType::MULTIIDENTIFIER)) {
+                throw Exception(QStringLiteral("A non-unique type mapping cannot be in a %1 function call.").arg(write(node->name.get())));
+            }
+            QString funcName = write(node->name.get());
+            QStringList argsStringList;
+
+            if(funcName == "Bond") {
+            }
+
+            for(const auto& arg : node->args) {
+                argsStringList << write(arg.get());
+            }
+            return QStringLiteral("%1(%2)").arg(funcName).arg(argsStringList.join(","));
         }
         default: {
             OVITO_ASSERT(false);
@@ -595,134 +757,73 @@ struct TernaryOp : ASTNode {
 /*
  * Debug print for Identifier.
  */
-QDebug operator<<(QDebug dbg, const Identifier& i)
-{
-    dbg.nospace() << "Identifier(" << i.name() << ")";
-    return dbg.nospace();
-}
+QDebug operator<<(QDebug dbg, const Identifier& i) { return dbg.nospace() << "Identifier(" << i.name() << ")"; }
+QDebug operator<<(QDebug dbg, const Identifier* i) { return dbg.nospace() << *i; }
 
 /*
  * Debug print for MultiIdentifier.
  */
-QDebug operator<<(QDebug dbg, const MultiIdentifier& m)
-{
-    dbg.nospace() << "MultiIdentifier(";
-    if(m.names) {
-        dbg.nospace() << *(m.names);
-    }
-    else {
-        dbg.nospace() << m.names;
-    }
-    dbg.nospace() << ")";
-    return dbg.nospace();
-}
-
-/*
- * Debug print for TernaryOp.
- */
-QDebug operator<<(QDebug dbg, const TernaryOp& b);
+QDebug operator<<(QDebug dbg, const MultiIdentifier& m) { return dbg.nospace() << "MultiIdentifier(" << *(m.names) << ")"; }
+QDebug operator<<(QDebug dbg, const MultiIdentifier* m) { return dbg.nospace() << *m; }
 
 /*
  * Debug print for BinaryOp.
  */
 QDebug operator<<(QDebug dbg, const BinaryOp& b)
 {
-    dbg.nospace() << "BinaryOp(";
-    if(b.left) {
-        switch(b.left->type) {
-            case ASTNodeType::IDENTIFIER: dbg.nospace() << *static_cast<Identifier*>(b.left.get()); break;
-            case ASTNodeType::MULTIIDENTIFIER: dbg.nospace() << *static_cast<MultiIdentifier*>(b.left.get()); break;
-            case ASTNodeType::BINARYOP: dbg.nospace() << *static_cast<BinaryOp*>(b.left.get()); break;
-            case ASTNodeType::TERNARYOP: dbg.nospace() << *static_cast<TernaryOp*>(b.left.get()); break;
-            default: dbg.nospace() << "UNKNOWN LEFT!"; break;
-        }
-    }
-    else {
-        dbg.nospace() << "NO LEFT!";
-    }
-    dbg.nospace() << OpToString(b.op);
-
-    if(b.right) {
-        switch(b.right->type) {
-            case ASTNodeType::IDENTIFIER: dbg.nospace() << *static_cast<Identifier*>(b.right.get()); break;
-            case ASTNodeType::MULTIIDENTIFIER: dbg.nospace() << *static_cast<MultiIdentifier*>(b.right.get()); break;
-            case ASTNodeType::BINARYOP: dbg.nospace() << *static_cast<BinaryOp*>(b.right.get()); break;
-            case ASTNodeType::TERNARYOP: dbg.nospace() << *static_cast<TernaryOp*>(b.right.get()); break;
-            default: dbg.nospace() << "UNKNOWN RIGHT!"; break;
-        }
-    }
-    else {
-        dbg.nospace() << "NO RIGHT!";
-    }
-    dbg.nospace() << ")";
-    return dbg.nospace();
+    return dbg.nospace() << "BinaryOp(" << b.left.get() << OpToString(b.op) << b.right.get() << ")";
 }
+QDebug operator<<(QDebug dbg, const BinaryOp* b) { return dbg.nospace() << *b; }
 
 /*
  * Debug print for TernaryOp.
  */
 QDebug operator<<(QDebug dbg, const TernaryOp& t)
 {
-    dbg.nospace() << "TernaryOp(" << "condition=";
-    if(t.condition) {
-        switch(t.condition->type) {
-            case ASTNodeType::IDENTIFIER: dbg.nospace() << *static_cast<Identifier*>(t.condition.get()); break;
-            case ASTNodeType::MULTIIDENTIFIER: dbg.nospace() << *static_cast<MultiIdentifier*>(t.condition.get()); break;
-            case ASTNodeType::BINARYOP: dbg.nospace() << *static_cast<BinaryOp*>(t.condition.get()); break;
-            case ASTNodeType::TERNARYOP: dbg.nospace() << *static_cast<TernaryOp*>(t.condition.get()); break;
-            default: dbg.nospace() << "UNKNOWN CONDITION!"; break;
-        }
-    }
-    else {
-        dbg.nospace() << "NO CONDITION!";
-    }
-    dbg.nospace() << "true=";
-    if(t.trueExpr) {
-        switch(t.trueExpr->type) {
-            case ASTNodeType::IDENTIFIER: dbg.nospace() << *static_cast<Identifier*>(t.trueExpr.get()); break;
-            case ASTNodeType::MULTIIDENTIFIER: dbg.nospace() << *static_cast<MultiIdentifier*>(t.trueExpr.get()); break;
-            case ASTNodeType::BINARYOP: dbg.nospace() << *static_cast<BinaryOp*>(t.trueExpr.get()); break;
-            case ASTNodeType::TERNARYOP: dbg.nospace() << *static_cast<TernaryOp*>(t.trueExpr.get()); break;
-            default: dbg.nospace() << "UNKNOWN TRUE EXPRESSION!"; break;
-        }
-    }
-    else {
-        dbg.nospace() << "NO TRUE EXPRESSION!";
-    }
-    dbg.nospace() << "false=";
-    if(t.falseExpr) {
-        switch(t.falseExpr->type) {
-            case ASTNodeType::IDENTIFIER: dbg.nospace() << *static_cast<Identifier*>(t.falseExpr.get()); break;
-            case ASTNodeType::MULTIIDENTIFIER: dbg.nospace() << *static_cast<MultiIdentifier*>(t.falseExpr.get()); break;
-            case ASTNodeType::BINARYOP: dbg.nospace() << *static_cast<BinaryOp*>(t.falseExpr.get()); break;
-            case ASTNodeType::TERNARYOP: dbg.nospace() << *static_cast<TernaryOp*>(t.falseExpr.get()); break;
-            default: dbg.nospace() << "UNKNOWN FALSE EXPRESSION!"; break;
-        }
-    }
-    else {
-        dbg.nospace() << "NO FALSE EXPRESSION!";
-    }
-    dbg.nospace() << ")";
-    return dbg.nospace();
+    return dbg.nospace() << "TernaryOp(" << t.condition.get() << " ? " << t.trueExpr.get() << " : " << t.falseExpr.get() << ")";
 }
+QDebug operator<<(QDebug dbg, const TernaryOp* t) { return dbg.nospace() << *t; }
+
+/*
+ * Debug print for UnaryOp.
+ */
+QDebug operator<<(QDebug dbg, const UnaryOp& u) { return dbg.nospace() << "UnaryOp(" << OpToString(u.op) << u.right.get() << ")"; }
+QDebug operator<<(QDebug dbg, const UnaryOp* u) { return dbg.nospace() << *u; }
+
+/*
+ * Debug print for FunctionCall.
+ */
+QDebug operator<<(QDebug dbg, const FunctionCall& f)
+{
+    dbg.nospace() << "FunctionCall(" << f.name.get();
+    for(const auto& a : f.args) {
+        dbg.nospace() << a.get() << ",";
+    }
+    return dbg.nospace() << ")";
+}
+QDebug operator<<(QDebug dbg, const FunctionCall* f) { return dbg.nospace() << *f; }
 
 /*
  * Debug print for ASTNode.
  */
-QDebug operator<<(QDebug dbg, ASTNode* ast)
+QDebug operator<<(QDebug dbg, const ASTNode* ast)
 {
     if(ast) {
         switch(ast->type) {
-            case ASTNodeType::IDENTIFIER: dbg.nospace() << *static_cast<Identifier*>(ast); break;
-            case ASTNodeType::MULTIIDENTIFIER: dbg.nospace() << *static_cast<MultiIdentifier*>(ast); break;
-            case ASTNodeType::BINARYOP: dbg.nospace() << *static_cast<BinaryOp*>(ast); break;
-            case ASTNodeType::TERNARYOP: dbg.nospace() << *static_cast<TernaryOp*>(ast); break;
+            case ASTNodeType::IDENTIFIER: dbg.nospace() << *static_cast<const Identifier*>(ast); break;
+            case ASTNodeType::MULTIIDENTIFIER: dbg.nospace() << *static_cast<const MultiIdentifier*>(ast); break;
+            case ASTNodeType::UNARYOP: dbg.nospace() << *static_cast<const UnaryOp*>(ast); break;
+            case ASTNodeType::FUNC: dbg.nospace() << *static_cast<const FunctionCall*>(ast); break;
+            case ASTNodeType::BINARYOP: dbg.nospace() << *static_cast<const BinaryOp*>(ast); break;
+            case ASTNodeType::TERNARYOP: dbg.nospace() << *static_cast<const TernaryOp*>(ast); break;
             default: dbg.nospace() << "UNKNOWN TYPE!"; break;
         }
     }
     return dbg.nospace();
 }
+QDebug operator<<(QDebug dbg, const ASTNode& ast) { return dbg.nospace() << &ast; }
 
+void ASTNode::debugPrint() const { qDebug() << this; }
 #endif
 
 }  // namespace Ovito::PropertyExpressionRewriter

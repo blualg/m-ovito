@@ -32,16 +32,22 @@ namespace Ovito::PropertyExpressionRewriter {
 // Known operators for parser
 enum class Op : uint8_t
 {
-    AND,  // &&
-    OR,   // ||
-    EQ,   // ==
-    NEQ,  // !=
-    GE,   // >
-    GEQ,  // >=
-    LE,   // <
-    LEQ,  // <=
-    QM,   // ?
-    COL   // :
+    AND,   // &&
+    OR,    // ||
+    EQ,    // ==
+    NEQ,   // !=
+    GE,    // >
+    GEQ,   // >=
+    LE,    // <
+    LEQ,   // <=
+    QM,    // ?
+    COL,   // :
+    ADD,   // +
+    SUB,   // -
+    MULT,  // *
+    DIV,   // /
+    POW,   // ^
+    NONE   // Blank
 };
 
 // Convert an operation (Op) enum to its string representation.
@@ -55,8 +61,10 @@ enum class ASTNodeType : uint8_t
 {
     IDENTIFIER,
     MULTIIDENTIFIER,
+    UNARYOP,
     BINARYOP,
     TERNARYOP,
+    FUNC,
     NONE
 };
 
@@ -65,6 +73,10 @@ struct ASTNode {
     // Holds the specific type of the ASTNode for later lookup
     explicit ASTNode(ASTNodeType type = ASTNodeType::NONE) : type{type} {}
     ASTNodeType type;
+
+#ifdef OVITO_DEBUG
+    void debugPrint() const;
+#endif
 };
 
 // Types used for mapping of string type names to integer values
@@ -111,7 +123,11 @@ private:
     // Parse AndExpr -> Comparison ( '&&' Comparison ).
     [[nodiscard]] std::unique_ptr<ASTNode> parseAndExpression();
 
+    // Parse left and right side of exactly one comparison operator
     [[nodiscard]] std::unique_ptr<ASTNode> parseComparison();
+
+    // Parse left and right side of one or more chained math operations
+    [[nodiscard]] std::unique_ptr<ASTNode> parseMathOperation();
 
     // Parse a Primary: Identifier or '(' Expression ')'
     [[nodiscard]] std::unique_ptr<ASTNode> parsePrimary(ASTNode* left = nullptr);
