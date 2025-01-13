@@ -81,7 +81,7 @@ bool GzipIODevice::setUnderlyingDevice(QIODevice* device)
 
 /*!
     Opens the GzipIODevice in \a mode. Only ReadOnly and WriteOnly is supported.
-    This functon will return false if you try to open in other modes.
+    This function will return false if you try to open in other modes.
 
     If the underlying device is not opened, this function will open it in a suitable mode. If this happens
     the device will also be closed when close() is called.
@@ -249,7 +249,7 @@ void GzipIODevice::flushZlib(int flushMode)
         OVITO_ASSERT(status == Z_OK);
 }
 
-// Writes outputSize bytes from buffer to the inderlying device.
+// Writes outputSize bytes from buffer to the underlying device.
 bool GzipIODevice::writeBytes(qint64 outputSize)
 {
     ZlibSize totalBytesWritten = 0;
@@ -353,6 +353,7 @@ qint64 GzipIODevice::readData(char* data, qint64 maxSize)
     _zlibStream.avail_out = maxSize;
 
     int status;
+    bool reachedEnd = false;
     do {
         // Read data if the input buffer is empty. There could be data in the buffer
         // from a previous readData call.
@@ -365,6 +366,13 @@ qint64 GzipIODevice::readData(char* data, qint64 maxSize)
                 _state = Error;
                 setErrorString(tr("Error reading data from underlying device: %1").arg(_device->errorString()));
                 return -1;
+            }
+
+            // If the underlying file stream is still opened for writing by the simulation code, QIODevice::read() does not return -1 when the end of the file is reached.
+            // To not wait for more data indefinitely, we should check if the underlying device is at the end of the file.
+            // This explicit check seems to be necessary only for zstd streams.
+            if(bytesAvailable == 0 && _device->atEnd()) {
+                reachedEnd = true;
             }
 
             if(_state != InStream) {
@@ -388,16 +396,19 @@ qint64 GzipIODevice::readData(char* data, qint64 maxSize)
             case Z_BUF_ERROR: // No more input and zlib can not provide more output - Not an error, we can try to read again when we have more input.
                 return 0;
         }
-    // Loop until data buffer is full or we reach the end of the input stream.
+        // Loop until data buffer is full or we reach the end of the input stream.
     }
-    while(_zlibStream.avail_out != 0 && status != Z_STREAM_END);
+    while(_zlibStream.avail_out != 0 && status != Z_STREAM_END && !reachedEnd);
 
     if(status == Z_STREAM_END) {
         _state = EndOfStream;
-
         // Unget any data left in the read buffer.
-        for(int i = _zlibStream.avail_in;  i >= 0; --i)
+        for(int i = _zlibStream.avail_in; i >= 0; --i)
             _device->ungetChar(*reinterpret_cast<const char*>(_zlibStream.next_in + i));
+    }
+    else if(reachedEnd) {
+        // Reached premature end of compressed data stream. The file may be truncated.
+        _state = EndOfStream;
     }
 
     return maxSize - _zlibStream.avail_out;

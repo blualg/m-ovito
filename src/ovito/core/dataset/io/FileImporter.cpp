@@ -168,6 +168,14 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
             // Ignore errors that occur during file format detection.
         }
     }
+
+    // Special check for empty files.
+    if(std::unique_ptr<QIODevice> device = file.createIODevice()) {
+        if(!device->isSequential() && device->size() == 0) {
+            throw Exception(tr("Could not auto-detect the format of the file %1. The file is empty.").arg(file.sourceUrl().fileName()));
+        }
+    }
+
     return nullptr;
 }
 
