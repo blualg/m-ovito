@@ -224,7 +224,7 @@ void UnwrapTrajectoriesModificationNode::unwrapParticleCoordinates(const Modifie
         if(this_task::isInteractive())
             state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Particle crossings of periodic cell boundaries have not been determined yet.")));
         else
-            throw Exception(tr("Particle crossings of periodic cell boundaries have not been determined yet or the requested trajectory frame is out of range. Cannot unwrap trajectories at this time."));
+            throw Exception(tr("Particle crossings of periodic cell boundaries have not been determined yet or the requested trajectory frame is out of range. Cannot unwrap trajectories in frame %1.").arg(time.frame()));
         return;
     }
 
