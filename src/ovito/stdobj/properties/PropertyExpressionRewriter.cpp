@@ -189,13 +189,15 @@ private:
  * Represents a multi-valued identifier, e.g., "Ni" -> (4, 5, 6)
  ******************************************************************************/
 struct MultiIdentifier : ASTNode {
-    // Names (as strings)
-    const QStringList* names;
+    // Identifier name
+    const QString name;
+    // Values (as strings)
+    const QStringList* values;
 
-    explicit MultiIdentifier(const QStringList* names) : ASTNode{ASTNodeType::MULTIIDENTIFIER}, names{names}
+    explicit MultiIdentifier(const QString& name, const QStringList* values) : ASTNode{ASTNodeType::MULTIIDENTIFIER}, name(name), values{values}
     {
-        OVITO_ASSERT(names);
-        OVITO_ASSERT(names->size() > 1);
+        OVITO_ASSERT(values);
+        OVITO_ASSERT(values->size() > 1);
     }
 };
 
@@ -262,18 +264,18 @@ struct FunctionCall : ASTNode {
 /******************************************************************************
  * Checks whether a branch of an AST contains nodes of the specific type
  ******************************************************************************/
-[[nodiscard]] bool BranchContainsType(const ASTNode* start, ASTNodeType type)
+[[nodiscard]] const ASTNode* BranchContainsType(const ASTNode* start, ASTNodeType type)
 {
     OVITO_ASSERT(start);
     if(!start) {
-        return false;
+        return nullptr;
     }
     switch(start->type) {
         case ASTNodeType::IDENTIFIER: {
             [[fallthrough]];
         }
         case ASTNodeType::MULTIIDENTIFIER: {
-            return start->type == type;
+            return (start->type == type) ? start : nullptr;
         }
         case ASTNodeType::UNARYOP: {
             const UnaryOp* node = static_cast<const UnaryOp*>(start);
@@ -283,22 +285,32 @@ struct FunctionCall : ASTNode {
         case ASTNodeType::BINARYOP: {
             const BinaryOp* node = static_cast<const BinaryOp*>(start);
             OVITO_ASSERT(node);
-            return BranchContainsType(node->left.get(), type) || BranchContainsType(node->right.get(), type);
+            if(auto result = BranchContainsType(node->left.get(), type))
+                return result;
+            return BranchContainsType(node->right.get(), type);
         }
         case ASTNodeType::TERNARYOP: {
             const TernaryOp* node = static_cast<const TernaryOp*>(start);
             OVITO_ASSERT(node);
-            return BranchContainsType(node->condition.get(), type) || BranchContainsType(node->trueExpr.get(), type) ||
-                   BranchContainsType(node->falseExpr.get(), type);
+            if(auto result = BranchContainsType(node->condition.get(), type))
+                return result;
+            if(auto result = BranchContainsType(node->trueExpr.get(), type))
+                return result;
+            return BranchContainsType(node->falseExpr.get(), type);
         }
         case ASTNodeType::FUNC: {
             const FunctionCall* node = static_cast<const FunctionCall*>(start);
             OVITO_ASSERT(node);
-            return BranchContainsType(node->name.get(), type) ||
-                   std::ranges::any_of(node->args, [type](const auto& item) { return BranchContainsType(item.get(), type); });
+            if(auto result = BranchContainsType(node->name.get(), type))
+                return result;
+            for(const auto& item : node->args) {
+                if(auto result = BranchContainsType(item.get(), type))
+                    return result;
+            }
+            return nullptr;
         }
         default: {
-            return false;
+            return nullptr;
         }
     }
 }
@@ -559,7 +571,7 @@ struct FunctionCall : ASTNode {
     if(match->size() == 1) {
         return std::make_unique<Identifier>(match);
     }
-    return std::make_unique<MultiIdentifier>(match);
+    return std::make_unique<MultiIdentifier>(tokenValue, match);
 }
 
 /******************************************************************************
@@ -577,8 +589,8 @@ struct FunctionCall : ASTNode {
             OVITO_ASSERT(node);
 
             // Unary +/- only supported on identifiers
-            if(BranchContainsType(node->right.get(), ASTNodeType::MULTIIDENTIFIER)) {
-                throw Exception(QStringLiteral("A multi valued type name cannot be used with a unary + or - sign."));
+            if(const ASTNode* multiIdentifier = BranchContainsType(node->right.get(), ASTNodeType::MULTIIDENTIFIER)) {
+                throw Exception(QStringLiteral("Type name %1, which as a non-unique numeric value, cannot be used with a unary + or - sign.").arg(static_cast<const MultiIdentifier*>(multiIdentifier)->name));
             }
             // Assemble expression
             return QStringLiteral("%1%2").arg(OpToString(node->op)).arg(write(node->right.get()));
@@ -607,7 +619,7 @@ struct FunctionCall : ASTNode {
             return name;
         }
         case ASTNodeType::MULTIIDENTIFIER: {
-            throw Exception(QStringLiteral("A multi valued type name cannot be used on the left hand side of an expression."));
+            throw Exception(QStringLiteral("Type name %1, which as a non-unique numeric value, cannot be used as a literal value in an expression.").arg(static_cast<const MultiIdentifier*>(astNode)->name));
         }
         case ASTNodeType::BINARYOP: {
             const BinaryOp* node = static_cast<const BinaryOp*>(astNode);
@@ -626,7 +638,7 @@ struct FunctionCall : ASTNode {
                 throw Exception(QStringList("Ternary expression on the left is not supported."));
             }
             if(node->left->type == ASTNodeType::MULTIIDENTIFIER) {
-                throw Exception(QStringList("A multi valued type name cannot be used on the left hand side of an expression."));
+                throw Exception(QStringLiteral("Type name %1, which as a non-unique numeric value, cannot be used on the left-hand side of an expression.").arg(static_cast<const MultiIdentifier*>(node->left.get())->name));
             }
 
             QString leftStr = write(node->left.get());
@@ -637,8 +649,8 @@ struct FunctionCall : ASTNode {
 
             if(node->right->type == ASTNodeType::MULTIIDENTIFIER) {
                 const MultiIdentifier* rightNode = static_cast<const MultiIdentifier*>(node->right.get());
-                OVITO_ASSERT(rightNode->names);
-                const QStringList& vals = *(rightNode->names);
+                OVITO_ASSERT(rightNode->values);
+                const QStringList& vals = *(rightNode->values);
 
                 // Collect expressions
                 _scratch.clear();
@@ -657,7 +669,7 @@ struct FunctionCall : ASTNode {
                         return QStringLiteral("(%1)").arg(_scratch.join("&&"));
                     default: {
                         throw Exception(
-                            QStringLiteral("A non-unique type mapping cannot be used with a %1 operator.").arg(OpToString(node->op)));
+                            QStringLiteral("Type name %1, which has a non-unique numeric value, cannot be used with %2 operator.").arg(rightNode->name, OpToString(node->op)));
                     }
                 }
             }
@@ -688,8 +700,8 @@ struct FunctionCall : ASTNode {
         case ASTNodeType::FUNC: {
             const FunctionCall* node = static_cast<const FunctionCall*>(astNode);
             OVITO_ASSERT(node);
-            if(BranchContainsType(node, ASTNodeType::MULTIIDENTIFIER)) {
-                throw Exception(QStringLiteral("A non-unique type mapping cannot be in a %1 function call.").arg(write(node->name.get())));
+            if(const ASTNode* multiIdentifier = BranchContainsType(node, ASTNodeType::MULTIIDENTIFIER)) {
+                throw Exception(QStringLiteral("Type name %1, which has a non-unique numeric value, cannot be used as a function argument.").arg(static_cast<const MultiIdentifier*>(multiIdentifier)->name));
             }
             QString funcName = write(node->name.get());
             _scratch.clear();
@@ -717,11 +729,11 @@ struct FunctionCall : ASTNode {
                 const QString& prop = static_cast<const Identifier*>(node->args[0].get())->name();
                 const QStringList* leftList = (node->args[1]->type == ASTNodeType::IDENTIFIER)
                                                   ? &(static_cast<const Identifier*>(node->args[1].get())->namesList())
-                                                  : static_cast<const MultiIdentifier*>(node->args[1].get())->names;
+                                                  : static_cast<const MultiIdentifier*>(node->args[1].get())->values;
                 OVITO_ASSERT(leftList);
                 const QStringList* rightList = (node->args[2]->type == ASTNodeType::IDENTIFIER)
                                                    ? &(static_cast<const Identifier*>(node->args[2].get())->namesList())
-                                                   : static_cast<const MultiIdentifier*>(node->args[2].get())->names;
+                                                   : static_cast<const MultiIdentifier*>(node->args[2].get())->values;
                 OVITO_ASSERT(rightList);
                 // Write bond selection expression
                 for(const auto& left : *leftList) {
@@ -756,8 +768,8 @@ struct FunctionCall : ASTNode {
     OVITO_ASSERT(astNode);
     if(astNode->type == ASTNodeType::MULTIIDENTIFIER) {
         const MultiIdentifier* node = static_cast<const MultiIdentifier*>(astNode);
-        OVITO_ASSERT(node->names);
-        return (node->names);
+        OVITO_ASSERT(node->values);
+        return (node->values);
     }
     else if(astNode->type == ASTNodeType::IDENTIFIER) {
         const Identifier* node = static_cast<const Identifier*>(astNode);
@@ -817,7 +829,7 @@ QDebug operator<<(QDebug dbg, const Identifier* i) { return dbg.nospace() << *i;
 /*
  * Debug print for MultiIdentifier.
  */
-QDebug operator<<(QDebug dbg, const MultiIdentifier& m) { return dbg.nospace() << "MultiIdentifier(" << *(m.names) << ")"; }
+QDebug operator<<(QDebug dbg, const MultiIdentifier& m) { return dbg.nospace() << "MultiIdentifier(" << *(m.values) << ")"; }
 QDebug operator<<(QDebug dbg, const MultiIdentifier* m) { return dbg.nospace() << *m; }
 
 /*

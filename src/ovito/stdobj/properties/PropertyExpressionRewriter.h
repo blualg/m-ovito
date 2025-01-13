@@ -160,7 +160,7 @@ class ASTWriter
 public:
     ASTWriter(const MapType& mapping) : _mapping{mapping} {}
 
-    // Convert an AST back into a string, replacing tag values with integer indices
+    // Convert an AST back into a string, replacing type names with integer values
     // as specified in '_mappings'.
     // Tokens and mapping from the ast generation MUST still be valid.
     [[nodiscard]] QString write(const ASTNode* astNode);

@@ -44,40 +44,30 @@ void PropertyExpressionEvaluator::initialize(const QStringList& expressions, con
     // Create the input variables.
     initializeInputs(state, containerPath, animationFrame);
 
-    // Copy expression strings into internal array.
-    _expressions.resize(expressions.size());
-
-    // Expression rewriter variables
+    // Expression parser and rewriter
     std::optional<PropertyExpressionRewriter::Parser> parser;
     std::optional<PropertyExpressionRewriter::ASTWriter> rewriter;
 
-    qDebug() << containerPath.last()->identifier();
-    // Validate custom functions
-    std::for_each(expressions.begin(), expressions.end(), [&containerPath](const auto& expr) {
-        PropertyExpressionRewriter::validateCustomFunctionCalls(expr, containerPath.last()->identifier());
-    });
-
-    // Check whether we need to rewrite any expression
-    if(std::ranges::any_of(expressions, PropertyExpressionRewriter::expressionNeedsRewrite)) {
-        parser.emplace(_typeMapping);
-        rewriter.emplace(_typeMapping);
-    }
-
-    // Process expressions
+    // Process expressions being passed in.
     _expressions.clear();
+    _expressions.reserve(expressions.size());
     for(const auto& expr : expressions) {
+        // Validate custom functions
+        PropertyExpressionRewriter::validateCustomFunctionCalls(expr, containerPath.last()->identifier());
+        // Check if expression contains a reference to a named type.
         if(PropertyExpressionRewriter::expressionNeedsRewrite(expr)) {
-            // Rewrite expressions if required
+            // Rewrite expressions if required.
+            if(!parser) {
+                parser.emplace(_typeMapping);
+                rewriter.emplace(_typeMapping);
+            }
             const QStringList& tokens = PropertyExpressionRewriter::tokenizeExpression(expr);
-            OVITO_ASSERT(parser);
             std::unique_ptr<PropertyExpressionRewriter::ASTNode> ast = parser->parse(&tokens);
-            OVITO_ASSERT(rewriter);
-            // Store updated expression
-            _expressions.emplace_back(convertQString(rewriter->write(ast.get())));
+            _expressions.push_back(convertQString(rewriter->write(ast.get())));
         }
         else {
-            // Emplace expression
-            _expressions.emplace_back(convertQString(expr));
+            // Use original expression as is.
+            _expressions.push_back(convertQString(expr));
         }
     }
 }
