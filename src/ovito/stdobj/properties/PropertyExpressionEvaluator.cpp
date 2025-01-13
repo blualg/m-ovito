@@ -277,7 +277,7 @@ QStringList PropertyExpressionEvaluator::inputVariableNames() const
     }
     for(const auto& [_, ovalue] : _typeMapping) {
         for(const auto& [ikey, _] : ovalue) {
-            vlist << ikey;
+            if(!vlist.contains(ikey)) vlist << ikey;
         }
     }
     return vlist;
