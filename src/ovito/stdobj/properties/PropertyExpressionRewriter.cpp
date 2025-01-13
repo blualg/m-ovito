@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include "PropertyExpressionRewriter.h"
-
 #include <algorithm>
 
 namespace Ovito::PropertyExpressionRewriter {
@@ -29,7 +28,7 @@ namespace Ovito::PropertyExpressionRewriter {
 /******************************************************************************
  * Tokenize an expression
  ******************************************************************************/
-[[nodiscard]] QStringList tokenizeExpression(QString expression)
+[[nodiscard]] QStringList tokenizeExpression(const QString& expression)
 {
     // Regular expressions for tokens - split on expected operators, parenthesis, and group everything inside "...".
     const static QRegularExpression regex(QStringLiteral(R"((".*?"|'.*?'|==|!=|>=|<=|\?|:|\(|\)|&&|\|\||[\w\._]+|\S))"));
@@ -42,6 +41,24 @@ namespace Ovito::PropertyExpressionRewriter {
         tokens << match.captured();
     }
     return tokens;
+}
+
+/******************************************************************************
+ * Check whether an expression needs to be rewritten
+ ******************************************************************************/
+[[nodiscard]] bool expressionNeedsRewrite(const QString& expr)
+{
+    return expr.contains(QStringLiteral("\"")) || expr.contains(QStringLiteral("Bond("));
+}
+
+// Validate custom function calls (only defined in the rewriter)
+bool validateCustomFunctionCalls(const QString& expr, const QString& container)
+{
+    if(expr.contains(QStringLiteral("Bond(")) && container != QStringLiteral("bonds")) {
+        throw Exception(QStringLiteral("The Bond() function requires the modifier to operate on Bonds."));
+        return false;
+    }
+    return true;
 }
 
 /******************************************************************************
