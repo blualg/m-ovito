@@ -27,7 +27,14 @@
 namespace Ovito::PropertyExpressionRewriter {
 
 // Tokenize an expression
-[[nodiscard]] QStringList tokenizeExpression(QString expression);
+[[nodiscard]] QStringList tokenizeExpression(const QString& expression);
+
+// Check whether an expression needs to be rewritten
+[[nodiscard]] bool expressionNeedsRewrite(const QString& expr);
+
+// Validate custom function calls (only defined in the rewriter)
+// Throws for invalid input
+bool validateCustomFunctionCalls(const QString& expr, const QString& container);
 
 // Known operators for parser
 enum class Op : uint8_t
