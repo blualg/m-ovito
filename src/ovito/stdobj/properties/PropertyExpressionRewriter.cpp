@@ -675,15 +675,52 @@ struct FunctionCall : ASTNode {
                 throw Exception(QStringLiteral("A non-unique type mapping cannot be in a %1 function call.").arg(write(node->name.get())));
             }
             QString funcName = write(node->name.get());
-            QStringList argsStringList;
+            _scratch.clear();
 
+            // Handle bonds function
             if(funcName == "Bond") {
+                // Input validation
+                if(node->args.size() != 3) {
+                    throw Exception(
+                        QStringLiteral("The Bond() function requires exactly 3 arguments. Found %1 arguments.").arg(node->args.size()));
+                }
+                if(node->args[0] && node->args[0]->type != ASTNodeType::IDENTIFIER) {
+                    throw Exception(QStringLiteral("The first argument of the Bond() function needs to be a particle property."));
+                }
+                if(!node->args[1] ||
+                   (node->args[1]->type != ASTNodeType::IDENTIFIER && node->args[1]->type != ASTNodeType::MULTIIDENTIFIER)) {
+                    throw Exception(QStringLiteral("The second argument of the Bond() function needs to be an Identifier."));
+                }
+                if(!node->args[2] ||
+                   (node->args[2]->type != ASTNodeType::IDENTIFIER && node->args[2]->type != ASTNodeType::MULTIIDENTIFIER)) {
+                    throw Exception(QStringLiteral("The third argument of the Bond() function needs to be an Identifier."));
+                }
+
+                // Get left and right expressions
+                const QString& prop = static_cast<const Identifier*>(node->args[0].get())->name();
+                const QStringList* leftList = (node->args[1]->type == ASTNodeType::IDENTIFIER)
+                                                  ? &(static_cast<const Identifier*>(node->args[1].get())->namesList())
+                                                  : static_cast<const MultiIdentifier*>(node->args[1].get())->names;
+                OVITO_ASSERT(leftList);
+                const QStringList* rightList = (node->args[2]->type == ASTNodeType::IDENTIFIER)
+                                                   ? &(static_cast<const Identifier*>(node->args[2].get())->namesList())
+                                                   : static_cast<const MultiIdentifier*>(node->args[2].get())->names;
+                OVITO_ASSERT(rightList);
+                // Write bond selection expression
+                for(const auto& left : *leftList) {
+                    for(const auto& right : *rightList) {
+                        _scratch << QStringLiteral("@1.%1==%2&&@2.%1==%3").arg(prop).arg(left).arg(right);
+                        _scratch << QStringLiteral("@1.%1==%2&&@2.%1==%3").arg(prop).arg(right).arg(left);
+                    }
+                }
+                return QStringLiteral("(%1)").arg(_scratch.join("||"));
             }
 
+            // Handle generic functions
             for(const auto& arg : node->args) {
-                argsStringList << write(arg.get());
+                _scratch << write(arg.get());
             }
-            return QStringLiteral("%1(%2)").arg(funcName).arg(argsStringList.join(","));
+            return QStringLiteral("%1(%2)").arg(funcName).arg(_scratch.join(","));
         }
         default: {
             OVITO_ASSERT(false);
