@@ -29,7 +29,7 @@ OVITO activates the render preview mode automatically for the active viewport wh
    :width: 40%
    :align: right
 
-**Available viewport layer types:**
+**Available viewport layers:**
 
 ================================================================ ==================================
 Layer type                                                       Description
@@ -40,10 +40,30 @@ Layer type                                                       Description
 :ref:`Text label <viewport_layers.text_label>`                   Renders some text, which may be used to display dynamically computed quantities
 ================================================================ ==================================
 
-More viewport layer types have been contributed by the community and can be installed as extensions in OVITO Pro:
+.. image:: /images/viewport_layers/viewport_layer_data_plot.*
+  :width: 35%
+  :align: right
 
-  * https://github.com/ovito-org/DataTablePlotOverlay.git
-  * https://github.com/ovito-org/DistancesAndAnglesOverlay
+.. image:: /images/viewport_layers/python_script_scale_bar_example.*
+  :width: 35%
+  :align: right
+
+More viewport layers are available as :ref:`installable extensions for OVITO Pro <topics.python_extensions.gallery>`,
+for instance:
+
+   * https://github.com/ovito-org/DataTablePlotOverlay
+
+     Adds a data plot to a viewport on top of the rendered image. This extension allows to
+     incorporate dynamically computed information in a simulation video, for example.
+
+   * https://github.com/ovito-org/DistancesAndAnglesOverlay
+
+     This extension lets you measure distances and angles between particles and visualize them as
+     a graphical overlay in the viewports.
+
+   * :ref:`Code example: Scale bar <example_scale_bar_overlay>`
+
+     You can use this example Python script to paint a custom scale bar on top of a viewport or the rendered images.
 
 .. seealso::
 

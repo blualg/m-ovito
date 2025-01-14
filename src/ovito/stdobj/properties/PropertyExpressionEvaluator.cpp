@@ -26,8 +26,6 @@
 #include <ovito/stdobj/simcell/SimulationCell.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-
-#include <algorithm>
 #include "PropertyExpressionEvaluator.h"
 
 namespace Ovito {

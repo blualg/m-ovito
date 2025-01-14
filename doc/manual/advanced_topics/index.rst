@@ -17,6 +17,4 @@ Advanced topics
   remote_rendering
   code_generation
   python_extensions
-  scale_bar
-  data_plot
   customize_init_state

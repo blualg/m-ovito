@@ -69,7 +69,6 @@ OVITO User Manual
     * :ref:`custom_initial_session_state`
     * :ref:`viewport_layouts`
     * :ref:`python_code_generation`
-    * :ref:`howto.scale_bar`
 
   * :ref:`reference`
 

@@ -24,6 +24,24 @@ Available extensions for OVITO Pro
 
 The `OVITO Pro Extension Directory <https://www.ovito.org/extensions/>`__ is a curated collection of open-source
 Python extensions written and shared by members of the OVITO user community.
-These ready-to-use extensions are hosted in external code repositories and can easily be installed in OVITO Pro
-or your Python environment for using them in standalone Python programs.
+These ready-to-use extensions are hosted in external code repositories and can easily be installed in OVITO Pro.
+Or your can use them in your standalone Python scripts by installing the packages in your Python interpreter.
 
+From the OVITO Pro GUI, you can browse the extension directory by selecting :menuselection:`File --> Manage Python Extensions` from the main menu:
+
+.. image:: /images/python_settings_dialog/python_extension_gallery.*
+  :width: 70%
+
+The extension directory is organized by categories, such as modifiers, viewport layers, file import/export, and general utility applets.
+It provides a short description for each extension, a link to the source code repository, and a button to download and install the extension in OVITO Pro.
+
+.. note::
+
+   The extension directory is a community-driven platform. The extensions are not officially supported by *OVITO GmbH* and may not be compatible with
+   all versions of the program. They are written and maintained by third-party authors (some of which may be OVITO developers).
+
+More extension packages for OVITO Pro are available from other online sources - or you may have developed your own extensions.
+To install such extensions in OVITO Pro, go to the :ref:`application_settings.python` tab of the application settings dialog and use
+the :guilabel:`Install additional package` function to install the package. Follow the instructions provided by the extension author.
+
+.. seealso:: :ref:`registering_custom_python_classes`

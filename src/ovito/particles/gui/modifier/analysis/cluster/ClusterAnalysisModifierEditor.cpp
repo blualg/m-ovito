@@ -55,7 +55,7 @@ void ClusterAnalysisModifierEditor::createUI(const RolloutInsertionParameters& r
     gridlayout->setColumnMinimumWidth(0, 10);
     gridlayout->setRowMinimumHeight(3, 6);
 
-    gridlayout->addWidget(new QLabel(tr("Neighbor mode:")), 0, 0, 1, 3);
+    gridlayout->addWidget(new QLabel(tr("Connectivity criterion:")), 0, 0, 1, 3);
 
     IntegerRadioButtonParameterUI* neighborModePUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(ClusterAnalysisModifier::neighborMode));
     QRadioButton* cutoffModeBtn = neighborModePUI->addRadioButton(ClusterAnalysisModifier::CutoffRange, tr("Cutoff distance:"));

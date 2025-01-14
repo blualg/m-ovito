@@ -38,7 +38,7 @@ making them available within OVITO Pro. This function will run :command:`pip ins
 .. note::
 
   If you are using the :ref:`conda version of OVITO Pro <installation.anaconda>`, the embedded Python interpreter is identical with the one used by the conda environment in which OVITO Pro is installed.
-  Thus, Python packages you install in your conda environment are also available in OVITO Pro, and vice versa.
+  Thus, Python packages you install in your conda environment become also available in OVITO Pro, and vice versa.
 
   For the *non-conda* version of OVITO Pro, the embedded Python interpreter is completely isolated from all other Python installations on your system.
   Thus, you can install additional Python packages in the embedded interpreter without affecting other Python environments on your system.

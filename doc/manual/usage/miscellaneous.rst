@@ -91,4 +91,4 @@ provides a mechanism for writing custom data manipulation functions and integrat
 OVITO's modification pipeline system. Furthermore, the :ref:`Python script viewport layer <viewport_layers.python_script>`
 allows you to write a Python function that overlays arbitrary 2D graphics
 on top of rendered images and enrich the visualization with additional information
-such as a :ref:`scale bar <howto.scale_bar>`.
+such as a :ref:`length scale bar <example_scale_bar_overlay>`.

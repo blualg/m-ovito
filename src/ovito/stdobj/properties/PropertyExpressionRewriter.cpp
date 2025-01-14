@@ -20,8 +20,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#include <ovito/stdobj/StdObj.h>
 #include "PropertyExpressionRewriter.h"
-#include <algorithm>
 
 namespace Ovito::PropertyExpressionRewriter {
 
@@ -46,7 +46,7 @@ namespace Ovito::PropertyExpressionRewriter {
 /******************************************************************************
  * Check whether an expression needs to be rewritten
  ******************************************************************************/
-[[nodiscard]] bool expressionNeedsRewrite(const QString& expr) { return expr.contains(QStringLiteral("\"")); }
+[[nodiscard]] bool expressionNeedsRewrite(const QString& expr) { return expr.contains(QChar('\"')); }
 
 /******************************************************************************
  * Convert an operation (Op) enum to its string representation.
@@ -391,10 +391,10 @@ struct FunctionCall : ASTNode {
     _index = 0;
     std::unique_ptr<ASTNode> ast = parseExpression();
     if(_index < _tokens->size()) {
-        throw Exception(QStringLiteral("Unexpected value %1 found at position %2.").arg((*_tokens)[_index]).arg(indexToPosition(_index)));
+        throw Exception(QStringLiteral("Syntax error: Unexpected value %1 found at position %2.").arg((*_tokens)[_index]).arg(indexToPosition(_index)));
     }
     else if(_index > _tokens->size()) {
-        throw Exception(QStringLiteral("Unexpected end of expression at position %1").arg(indexToPosition(_index)));
+        throw Exception(QStringLiteral("Syntax error: Unexpected end of expression at position %1").arg(indexToPosition(_index)));
     }
     return ast;
 }
@@ -580,7 +580,7 @@ struct FunctionCall : ASTNode {
         while(peek() && *peek() != QStringLiteral(")")) {
             // Duplicate ','
             if(!peek() || *peek() == QStringLiteral(",")) {
-                throw Exception(QStringLiteral("Invalid arguments in function call: %1. Expected value, found ',' instead at position %2.")
+                throw Exception(QStringLiteral("Invalid arguments in function call: %1. Expected a value, found ',' instead at position %2.")
                                     .arg(tokenValue)
                                     .arg(indexToPosition(_index)));
             }
@@ -679,7 +679,7 @@ struct FunctionCall : ASTNode {
             // Unary +/- only supported on identifiers
             if(node->right->type == ASTNodeType::MULTIIDENTIFIER) {
                 throw Exception(
-                    QStringLiteral("Type name %1, which as a non-unique numeric value, cannot be used with a unary + or - sign.")
+                    QStringLiteral("Type name %1, which has a non-unique numeric value, cannot be used with a unary + or - sign.")
                         .arg(*(static_cast<const MultiIdentifier*>(node->right.get())->name)));
             }
             // Assemble expression
@@ -707,7 +707,7 @@ struct FunctionCall : ASTNode {
                     if(it->second.size() != 1) {
                         throw Exception(
                             QStringLiteral(
-                                "Type name %1, which as a non-unique numeric value, cannot be used as a literal value in an expression.")
+                                "Type name %1, which has a non-unique numeric value, cannot be used as a literal value in an expression.")
                                 .arg(name));
                     }
                     return it->second[0];
@@ -718,7 +718,7 @@ struct FunctionCall : ASTNode {
         }
         case ASTNodeType::MULTIIDENTIFIER: {
             throw Exception(
-                QStringLiteral("Type name %1, which as a non-unique numeric value, cannot be used as a literal value in an expression.")
+                QStringLiteral("Type name %1, which has a non-unique numeric value, cannot be used as a literal value in an expression.")
                     .arg(*(static_cast<const MultiIdentifier*>(astNode)->name)));
         }
         case ASTNodeType::BINARYOP: {
@@ -733,7 +733,7 @@ struct FunctionCall : ASTNode {
             if(node->left->type == ASTNodeType::TERNARYOP) {
                 if(const auto* leafNode = BranchContainsType(node->left.get(), ASTNodeType::MULTIIDENTIFIER)) {
                     throw Exception(
-                        QStringLiteral("Type name %1, which as a non-unique numeric value, cannot be used on the left-hand side of "
+                        QStringLiteral("Type name %1, which has a non-unique numeric value, cannot be used on the left-hand side of "
                                        "a ternary expression.")
                             .arg(*(static_cast<const MultiIdentifier*>(leafNode)->name)));
                 }
@@ -794,7 +794,7 @@ struct FunctionCall : ASTNode {
             OVITO_ASSERT(node);
 
             if(!node->condition || !node->trueExpr || !node->falseExpr) {
-                throw Exception(QStringLiteral("Malformed or empty expression in 'TernaryOp'!"));
+                throw Exception(QStringLiteral("Malformed or empty expression in ternary operator."));
             }
 
             // Generate expressions

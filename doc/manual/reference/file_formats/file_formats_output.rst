@@ -94,4 +94,6 @@ OVITO can export data in the following file formats:
     - :ref:`particles <scene_objects.particles>`
     - :ref:`Details <file_formats.output.ase_trajectory>`
 
+*OVITO Pro* additionally provides the option for you to write :ref:`custom file exporters in Python <writing_custom_file_writers>`.
+
 .. seealso:: :py:func:`ovito.io.export_file` (Python API)

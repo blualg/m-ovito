@@ -363,6 +363,8 @@ void MainWindow::createMainMenu()
         fileMenu->addAction(runScriptFileAction);
     if(QAction* generateScriptFileAction = actionManager()->findAction(ACTION_SCRIPTING_GENERATE_CODE))
         fileMenu->addAction(generateScriptFileAction);
+    if(QAction* extensionGalleryAction = actionManager()->findAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY))
+        fileMenu->addAction(extensionGalleryAction);
     fileMenu->addSeparator();
     fileMenu->addAction(actionManager()->getAction(ACTION_FILE_NEW_WINDOW));
     fileMenu->addSeparator();
