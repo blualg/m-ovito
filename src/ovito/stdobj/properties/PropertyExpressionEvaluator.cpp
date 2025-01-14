@@ -61,6 +61,7 @@ void PropertyExpressionEvaluator::initialize(const QStringList& expressions, con
             }
             const QStringList& tokens = PropertyExpressionRewriter::tokenizeExpression(expr);
             std::unique_ptr<PropertyExpressionRewriter::ASTNode> ast = parser->parse(&expr, &tokens);
+            // qDebug() << rewriter->write(ast.get());
             _expressions.push_back(convertQString(rewriter->write(ast.get())));
         }
         else {

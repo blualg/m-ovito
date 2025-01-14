@@ -263,6 +263,121 @@ struct FunctionCall : ASTNode {
 };
 
 /******************************************************************************
+ * Checks whether a branch of an AST contains nodes of the specific type
+ ******************************************************************************/
+// [[nodiscard]] bool BranchContainsType(const ASTNode* start, ASTNodeType type)
+// {
+//     OVITO_ASSERT(start);
+//     if(!start) {
+//         return false;
+//     }
+//     if(start->type == type) {
+//         return true;
+//     }
+//     switch(start->type) {
+//         case ASTNodeType::IDENTIFIER: {
+//             [[fallthrough]];
+//         }
+//         case ASTNodeType::MULTIIDENTIFIER: {
+//             return start->type == type;
+//         }
+//         case ASTNodeType::UNARYOP: {
+//             const UnaryOp* node = static_cast<const UnaryOp*>(start);
+//             OVITO_ASSERT(node);
+//             return BranchContainsType(node->right.get(), type);
+//         }
+//         case ASTNodeType::BINARYOP: {
+//             const BinaryOp* node = static_cast<const BinaryOp*>(start);
+//             OVITO_ASSERT(node);
+//             return BranchContainsType(node->left.get(), type) || BranchContainsType(node->right.get(), type);
+//         }
+//         case ASTNodeType::TERNARYOP: {
+//             const TernaryOp* node = static_cast<const TernaryOp*>(start);
+//             OVITO_ASSERT(node);
+//             return BranchContainsType(node->condition.get(), type) || BranchContainsType(node->trueExpr.get(), type) ||
+//                    BranchContainsType(node->falseExpr.get(), type);
+//         }
+//         case ASTNodeType::FUNC: {
+//             const FunctionCall* node = static_cast<const FunctionCall*>(start);
+//             OVITO_ASSERT(node);
+//             return BranchContainsType(node->name.get(), type) ||
+//                    std::any_of(node->args.begin(), node->args.end(), [type](const auto& a) { return BranchContainsType(a.get(), type);
+//                    });
+//         }
+//         default: {
+//             OVITO_ASSERT(false);
+//             return false;
+//         }
+//     }
+// }
+
+[[nodiscard]] const ASTNode* BranchContainsType(const ASTNode* start, ASTNodeType type)
+{
+    OVITO_ASSERT(start);
+    if(!start) {
+        return nullptr;
+    }
+    if(start->type == type) {
+        return start;
+    }
+    switch(start->type) {
+        case ASTNodeType::IDENTIFIER: {
+            [[fallthrough]];
+        }
+        case ASTNodeType::MULTIIDENTIFIER: {
+            return (start->type == type) ? start : nullptr;
+        }
+        case ASTNodeType::UNARYOP: {
+            const UnaryOp* node = static_cast<const UnaryOp*>(start);
+            OVITO_ASSERT(node);
+            return BranchContainsType(node->right.get(), type);
+        }
+        case ASTNodeType::BINARYOP: {
+            const BinaryOp* node = static_cast<const BinaryOp*>(start);
+            OVITO_ASSERT(node);
+            if(const ASTNode* leafNode = BranchContainsType(node->left.get(), type)) {
+                return leafNode;
+            }
+            if(const ASTNode* leafNode = BranchContainsType(node->right.get(), type)) {
+                return leafNode;
+            }
+            return nullptr;
+        }
+        case ASTNodeType::TERNARYOP: {
+            const TernaryOp* node = static_cast<const TernaryOp*>(start);
+            OVITO_ASSERT(node);
+            if(const ASTNode* leafNode = BranchContainsType(node->condition.get(), type)) {
+                return leafNode;
+            }
+            if(const ASTNode* leafNode = BranchContainsType(node->trueExpr.get(), type)) {
+                return leafNode;
+            }
+            if(const ASTNode* leafNode = BranchContainsType(node->falseExpr.get(), type)) {
+                return leafNode;
+            }
+            return nullptr;
+        }
+        case ASTNodeType::FUNC: {
+            const FunctionCall* node = static_cast<const FunctionCall*>(start);
+            OVITO_ASSERT(node);
+            if(const ASTNode* leafNode = BranchContainsType(node->name.get(), type)) {
+                return leafNode;
+            }
+            for(const auto& a : node->args) {
+                if(const auto* leafNode = BranchContainsType(a.get(), type)) {
+                    return leafNode;
+                }
+            }
+            return nullptr;
+        }
+        default: {
+            OVITO_ASSERT(false);
+        }
+    }
+    return nullptr;
+}
+
+/******************************************************************************
  * Parse a list of tokens into an AST
  * The lifetime of tokens MUST exceed the usage of the AST as strings are not copied
  ******************************************************************************/
@@ -615,18 +730,17 @@ struct FunctionCall : ASTNode {
             }
 
             // Distribute / expand ternary
+            if(node->left->type == ASTNodeType::TERNARYOP) {
+                if(const auto* leafNode = BranchContainsType(node->left.get(), ASTNodeType::MULTIIDENTIFIER)) {
+                    throw Exception(
+                        QStringLiteral("Type name %1, which as a non-unique numeric value, cannot be used on the left-hand side of "
+                                       "a ternary expression.")
+                            .arg(*(static_cast<const MultiIdentifier*>(leafNode)->name)));
+                }
+            }
             if(node->right->type == ASTNodeType::TERNARYOP) {
                 const TernaryOp* rightNode = static_cast<const TernaryOp*>(node->right.get());
                 return handleBinaryWithTernary(write(node->left.get()), rightNode);
-            }
-            if(node->left->type == ASTNodeType::TERNARYOP) {
-                throw Exception(QStringList("Ternary expression on the left is not supported."));
-            }
-            if(node->left->type == ASTNodeType::MULTIIDENTIFIER) {
-                throw Exception(
-                    QStringLiteral(
-                        "Type name %1, which as a non-unique numeric value, cannot be used on the left-hand side of an expression.")
-                        .arg(*(static_cast<const MultiIdentifier*>(node->left.get())->name)));
             }
 
             QString leftStr = write(node->left.get());
