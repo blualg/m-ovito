@@ -131,10 +131,10 @@ private:
     [[nodiscard]] std::unique_ptr<ASTNode> parseComparison();
 
     // Parse left and right side of one or more chained math operations
-    [[nodiscard]] std::unique_ptr<ASTNode> parseMathOperation();
+    [[nodiscard]] std::unique_ptr<ASTNode> parseMathOperation(ASTNode* left_inp = nullptr);
 
     // Parse a Primary: Identifier or '(' Expression ')'
-    [[nodiscard]] std::unique_ptr<ASTNode> parsePrimary(ASTNode* left = nullptr);
+    [[nodiscard]] std::unique_ptr<ASTNode> parsePrimary(ASTNode* left_inp = nullptr);
 
 private:
     // Example mapping for structure and particle types:

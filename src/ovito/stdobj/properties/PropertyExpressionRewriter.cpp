@@ -378,7 +378,7 @@ struct FunctionCall : ASTNode {
     std::unique_ptr<ASTNode> left = parseMathOperation();
     if(std::optional<Op> op = match({QStringLiteral("=="), QStringLiteral("!="), QStringLiteral(">"), QStringLiteral("<"),
                                      QStringLiteral(">="), QStringLiteral("<=")})) {
-        std::unique_ptr<ASTNode> right = parseMathOperation();
+        std::unique_ptr<ASTNode> right = parseMathOperation(left.get());
         return std::make_unique<BinaryOp>(std::move(left), op.value(), std::move(right));
     }
     // No comparison operator => just primary
@@ -388,9 +388,9 @@ struct FunctionCall : ASTNode {
 /******************************************************************************
  * Parse left and right side of one or more chained math operations
  ******************************************************************************/
-[[nodiscard]] std::unique_ptr<ASTNode> Parser::parseMathOperation()
+[[nodiscard]] std::unique_ptr<ASTNode> Parser::parseMathOperation(ASTNode* left_inp)
 {
-    std::unique_ptr<ASTNode> left = parsePrimary();
+    std::unique_ptr<ASTNode> left = parsePrimary(left_inp);
     // match one or more math operators
     while(std::optional<Op> op =
               match({QStringLiteral("+"), QStringLiteral("-"), QStringLiteral("*"), QStringLiteral("/"), QStringLiteral("^")})) {
@@ -403,7 +403,7 @@ struct FunctionCall : ASTNode {
 /******************************************************************************
  * Parse a Primary: Primary -> ( '+' | '-' ) Primary | '(' Expression ')' | Identifier | FunctionCall
  ******************************************************************************/
-[[nodiscard]] std::unique_ptr<ASTNode> Parser::parsePrimary(ASTNode* left)
+[[nodiscard]] std::unique_ptr<ASTNode> Parser::parsePrimary(ASTNode* left_inp)
 {
     // Consume first token
     const QString* token = consume();
@@ -471,9 +471,9 @@ struct FunctionCall : ASTNode {
 
     // 4.1) Disentangle identifier or multi identifier from map.
     const QStringList* match = nullptr;
-    if(left && left->type == ASTNodeType::IDENTIFIER) {
+    if(left_inp && left_inp->type == ASTNodeType::IDENTIFIER) {
         // Use information from left hand side expression
-        const Identifier* leftNode = static_cast<const Identifier*>(left);
+        const Identifier* leftNode = static_cast<const Identifier*>(left_inp);
         // Search left node name in _mapping to determine inner map
         if(const auto oit = _mapping.find(leftNode->name()); oit != _mapping.end()) {
             const InnerMapType& innerMap = oit->second;
