@@ -46,20 +46,7 @@ namespace Ovito::PropertyExpressionRewriter {
 /******************************************************************************
  * Check whether an expression needs to be rewritten
  ******************************************************************************/
-[[nodiscard]] bool expressionNeedsRewrite(const QString& expr)
-{
-    return expr.contains(QStringLiteral("\"")) || expr.contains(QStringLiteral("Bond("));
-}
-
-// Validate custom function calls (only defined in the rewriter)
-bool validateCustomFunctionCalls(const QString& expr, const QString& container)
-{
-    if(expr.contains(QStringLiteral("Bond(")) && container != QStringLiteral("bonds")) {
-        throw Exception(QStringLiteral("The Bond() function requires the modifier to operate on Bonds."));
-        return false;
-    }
-    return true;
-}
+[[nodiscard]] bool expressionNeedsRewrite(const QString& expr) { return expr.contains(QStringLiteral("\"")); }
 
 /******************************************************************************
  * Convert an operation (Op) enum to its string representation.
@@ -133,15 +120,21 @@ inline Op StringToOp(const QString& str)
  ******************************************************************************/
 struct Identifier : ASTNode {
 public:
-    explicit Identifier(const QString* name) : ASTNode{ASTNodeType::IDENTIFIER}, _nameStr{name} { OVITO_ASSERT(name); }
+    explicit Identifier(const QString* name, bool group = false) : ASTNode{group, ASTNodeType::IDENTIFIER}, _nameStr{name}
+    {
+        OVITO_ASSERT(name);
+    }
 
-    explicit Identifier(const QStringList* names) : ASTNode{ASTNodeType::IDENTIFIER}, _namesList{names}
+    explicit Identifier(const QStringList* names, bool group = false) : ASTNode{group, ASTNodeType::IDENTIFIER}, _namesList{names}
     {
         OVITO_ASSERT(names);
         OVITO_ASSERT(names->size() == 1);
     }
 
-    explicit Identifier(const QString& string) : ASTNode{ASTNodeType::IDENTIFIER}, _namesList{&_names}, _names{string} {}
+    explicit Identifier(const QString& string, bool group = false)
+        : ASTNode{group, ASTNodeType::IDENTIFIER}, _namesList{&_names}, _names{string}
+    {
+    }
 
     // Returns the name as QString from either the QString or the QStringlist
     const QString& name() const
@@ -190,11 +183,12 @@ private:
  ******************************************************************************/
 struct MultiIdentifier : ASTNode {
     // Identifier name
-    const QString name;
+    const QString* name;
     // Values (as strings)
     const QStringList* values;
 
-    explicit MultiIdentifier(const QString& name, const QStringList* values) : ASTNode{ASTNodeType::MULTIIDENTIFIER}, name(name), values{values}
+    explicit MultiIdentifier(const QString* name, const QStringList* values, bool group = false)
+        : ASTNode{group, ASTNodeType::MULTIIDENTIFIER}, name(name), values{values}
     {
         OVITO_ASSERT(values);
         OVITO_ASSERT(values->size() > 1);
@@ -209,7 +203,10 @@ struct UnaryOp : ASTNode {
     const Op op;
     const std::unique_ptr<ASTNode> right;
 
-    explicit UnaryOp(Op op, std::unique_ptr<ASTNode>&& right) : ASTNode{ASTNodeType::UNARYOP}, op{op}, right{std::move(right)} {}
+    explicit UnaryOp(Op op, std::unique_ptr<ASTNode>&& right, bool group = false)
+        : ASTNode{group, ASTNodeType::UNARYOP}, op{op}, right{std::move(right)}
+    {
+    }
 };
 
 /******************************************************************************
@@ -223,8 +220,8 @@ struct BinaryOp : ASTNode {
     // Right branch
     const std::unique_ptr<ASTNode> right;
 
-    explicit BinaryOp(std::unique_ptr<ASTNode>&& left, Op op, std::unique_ptr<ASTNode>&& right)
-        : ASTNode{ASTNodeType::BINARYOP}, left{std::move(left)}, op{op}, right{std::move(right)}
+    explicit BinaryOp(std::unique_ptr<ASTNode>&& left, Op op, std::unique_ptr<ASTNode>&& right, bool group = false)
+        : ASTNode{group, ASTNodeType::BINARYOP}, left{std::move(left)}, op{op}, right{std::move(right)}
     {
     }
 };
@@ -240,8 +237,12 @@ struct TernaryOp : ASTNode {
     // False branch
     const std::unique_ptr<ASTNode> falseExpr;
 
-    TernaryOp(std::unique_ptr<ASTNode>&& condition, std::unique_ptr<ASTNode>&& trueExpr, std::unique_ptr<ASTNode>&& falseExpr)
-        : ASTNode{ASTNodeType::TERNARYOP}, condition{std::move(condition)}, trueExpr{std::move(trueExpr)}, falseExpr{std::move(falseExpr)}
+    TernaryOp(std::unique_ptr<ASTNode>&& condition, std::unique_ptr<ASTNode>&& trueExpr, std::unique_ptr<ASTNode>&& falseExpr,
+              bool group = false)
+        : ASTNode{group, ASTNodeType::TERNARYOP},
+          condition{std::move(condition)},
+          trueExpr{std::move(trueExpr)},
+          falseExpr{std::move(falseExpr)}
     {
     }
 };
@@ -255,65 +256,11 @@ struct FunctionCall : ASTNode {
     // Operation
     std::vector<std::unique_ptr<ASTNode>> args;
 
-    explicit FunctionCall(std::unique_ptr<ASTNode>&& name, std::vector<std::unique_ptr<ASTNode>>&& args)
-        : ASTNode{ASTNodeType::FUNC}, name{std::move(name)}, args{std::move(args)}
+    explicit FunctionCall(std::unique_ptr<ASTNode>&& name, std::vector<std::unique_ptr<ASTNode>>&& args, bool group = false)
+        : ASTNode{group, ASTNodeType::FUNC}, name{std::move(name)}, args{std::move(args)}
     {
     }
 };
-
-/******************************************************************************
- * Checks whether a branch of an AST contains nodes of the specific type
- ******************************************************************************/
-[[nodiscard]] const ASTNode* BranchContainsType(const ASTNode* start, ASTNodeType type)
-{
-    OVITO_ASSERT(start);
-    if(!start) {
-        return nullptr;
-    }
-    switch(start->type) {
-        case ASTNodeType::IDENTIFIER: {
-            [[fallthrough]];
-        }
-        case ASTNodeType::MULTIIDENTIFIER: {
-            return (start->type == type) ? start : nullptr;
-        }
-        case ASTNodeType::UNARYOP: {
-            const UnaryOp* node = static_cast<const UnaryOp*>(start);
-            OVITO_ASSERT(node);
-            return BranchContainsType(node->right.get(), type);
-        }
-        case ASTNodeType::BINARYOP: {
-            const BinaryOp* node = static_cast<const BinaryOp*>(start);
-            OVITO_ASSERT(node);
-            if(auto result = BranchContainsType(node->left.get(), type))
-                return result;
-            return BranchContainsType(node->right.get(), type);
-        }
-        case ASTNodeType::TERNARYOP: {
-            const TernaryOp* node = static_cast<const TernaryOp*>(start);
-            OVITO_ASSERT(node);
-            if(auto result = BranchContainsType(node->condition.get(), type))
-                return result;
-            if(auto result = BranchContainsType(node->trueExpr.get(), type))
-                return result;
-            return BranchContainsType(node->falseExpr.get(), type);
-        }
-        case ASTNodeType::FUNC: {
-            const FunctionCall* node = static_cast<const FunctionCall*>(start);
-            OVITO_ASSERT(node);
-            if(auto result = BranchContainsType(node->name.get(), type))
-                return result;
-            for(const auto& item : node->args) {
-                if(auto result = BranchContainsType(item.get(), type))
-                    return result;
-            }
-            return nullptr;
-        }
-        default: {
-            return nullptr;
-        }
-    }
-}
 
 /******************************************************************************
  * Parse a list of tokens into an AST
@@ -479,6 +426,7 @@ struct FunctionCall : ASTNode {
         if(!peek() || *consume() != QStringLiteral(")")) {
             throw Exception(QStringLiteral("Missing closing parenthesis in expression at position %1.").arg(_index));
         }
+        node->group = true;
         return node;
     }
 
@@ -534,7 +482,7 @@ struct FunctionCall : ASTNode {
             }
         }
     }
-    else {
+    if(!match) {
         // No information from left hand side expression
         // Search mappings in inner dicts
         // -> first match is determined to be correct
@@ -571,7 +519,7 @@ struct FunctionCall : ASTNode {
     if(match->size() == 1) {
         return std::make_unique<Identifier>(match);
     }
-    return std::make_unique<MultiIdentifier>(tokenValue, match);
+    return std::make_unique<MultiIdentifier>(token, match);
 }
 
 /******************************************************************************
@@ -589,10 +537,15 @@ struct FunctionCall : ASTNode {
             OVITO_ASSERT(node);
 
             // Unary +/- only supported on identifiers
-            if(const ASTNode* multiIdentifier = BranchContainsType(node->right.get(), ASTNodeType::MULTIIDENTIFIER)) {
-                throw Exception(QStringLiteral("Type name %1, which as a non-unique numeric value, cannot be used with a unary + or - sign.").arg(static_cast<const MultiIdentifier*>(multiIdentifier)->name));
+            if(node->right->type == ASTNodeType::MULTIIDENTIFIER) {
+                throw Exception(
+                    QStringLiteral("Type name %1, which as a non-unique numeric value, cannot be used with a unary + or - sign.")
+                        .arg(*(static_cast<const MultiIdentifier*>(node->right.get())->name)));
             }
             // Assemble expression
+            if(node->group) {
+                return QStringLiteral("(%1%2)").arg(OpToString(node->op)).arg(write(node->right.get()));
+            }
             return QStringLiteral("%1%2").arg(OpToString(node->op)).arg(write(node->right.get()));
         }
         case ASTNodeType::IDENTIFIER: {
@@ -611,7 +564,12 @@ struct FunctionCall : ASTNode {
 
                 // Check values
                 if(const auto it = innerMap.find(name); it != innerMap.end()) {
-                    OVITO_ASSERT(it->second.size() == 1);
+                    if(it->second.size() != 1) {
+                        throw Exception(
+                            QStringLiteral(
+                                "Type name %1, which as a non-unique numeric value, cannot be used as a literal value in an expression.")
+                                .arg(name));
+                    }
                     return it->second[0];
                 }
             }
@@ -619,7 +577,9 @@ struct FunctionCall : ASTNode {
             return name;
         }
         case ASTNodeType::MULTIIDENTIFIER: {
-            throw Exception(QStringLiteral("Type name %1, which as a non-unique numeric value, cannot be used as a literal value in an expression.").arg(static_cast<const MultiIdentifier*>(astNode)->name));
+            throw Exception(
+                QStringLiteral("Type name %1, which as a non-unique numeric value, cannot be used as a literal value in an expression.")
+                    .arg(*(static_cast<const MultiIdentifier*>(astNode)->name)));
         }
         case ASTNodeType::BINARYOP: {
             const BinaryOp* node = static_cast<const BinaryOp*>(astNode);
@@ -638,7 +598,10 @@ struct FunctionCall : ASTNode {
                 throw Exception(QStringList("Ternary expression on the left is not supported."));
             }
             if(node->left->type == ASTNodeType::MULTIIDENTIFIER) {
-                throw Exception(QStringLiteral("Type name %1, which as a non-unique numeric value, cannot be used on the left-hand side of an expression.").arg(static_cast<const MultiIdentifier*>(node->left.get())->name));
+                throw Exception(
+                    QStringLiteral(
+                        "Type name %1, which as a non-unique numeric value, cannot be used on the left-hand side of an expression.")
+                        .arg(*(static_cast<const MultiIdentifier*>(node->left.get())->name)));
             }
 
             QString leftStr = write(node->left.get());
@@ -669,13 +632,17 @@ struct FunctionCall : ASTNode {
                         return QStringLiteral("(%1)").arg(_scratch.join("&&"));
                     default: {
                         throw Exception(
-                            QStringLiteral("Type name %1, which has a non-unique numeric value, cannot be used with %2 operator.").arg(rightNode->name, OpToString(node->op)));
+                            QStringLiteral("Type name %1, which has a non-unique numeric value, cannot be used with %2 operator.")
+                                .arg(*(rightNode->name), OpToString(node->op)));
                     }
                 }
             }
             else {
                 // Generate expressions
                 QString rightStr = write(node->right.get());
+                if(node->group) {
+                    return QStringLiteral("(%1%2%3)").arg(leftStr).arg(OpToString(node->op)).arg(rightStr);
+                }
                 return QStringLiteral("%1%2%3").arg(leftStr).arg(OpToString(node->op)).arg(rightStr);
             }
             // There should always be an early return or throw
@@ -700,50 +667,21 @@ struct FunctionCall : ASTNode {
         case ASTNodeType::FUNC: {
             const FunctionCall* node = static_cast<const FunctionCall*>(astNode);
             OVITO_ASSERT(node);
-            if(const ASTNode* multiIdentifier = BranchContainsType(node, ASTNodeType::MULTIIDENTIFIER)) {
-                throw Exception(QStringLiteral("Type name %1, which has a non-unique numeric value, cannot be used as a function argument.").arg(static_cast<const MultiIdentifier*>(multiIdentifier)->name));
+            // Validate function name
+            if(node->name->type != ASTNodeType::IDENTIFIER) {
+                throw Exception(QStringLiteral("A function name has to be a unique name, not %1.").arg(write(node->name.get())));
+            }
+
+            // Validate arguments
+            for(const auto& a : node->args) {
+                if(a->type == ASTNodeType::MULTIIDENTIFIER) {
+                    throw Exception(
+                        QStringLiteral("Type name %1, which has a non-unique numeric value, cannot be used as a function argument.")
+                            .arg(*(static_cast<const MultiIdentifier*>(a.get())->name)));
+                }
             }
             QString funcName = write(node->name.get());
             _scratch.clear();
-
-            // Handle bonds function
-            if(funcName == "Bond") {
-                // Input validation
-                if(node->args.size() != 3) {
-                    throw Exception(
-                        QStringLiteral("The Bond() function requires exactly 3 arguments. Found %1 arguments.").arg(node->args.size()));
-                }
-                if(node->args[0] && node->args[0]->type != ASTNodeType::IDENTIFIER) {
-                    throw Exception(QStringLiteral("The first argument of the Bond() function needs to be a particle property."));
-                }
-                if(!node->args[1] ||
-                   (node->args[1]->type != ASTNodeType::IDENTIFIER && node->args[1]->type != ASTNodeType::MULTIIDENTIFIER)) {
-                    throw Exception(QStringLiteral("The second argument of the Bond() function needs to be an Identifier."));
-                }
-                if(!node->args[2] ||
-                   (node->args[2]->type != ASTNodeType::IDENTIFIER && node->args[2]->type != ASTNodeType::MULTIIDENTIFIER)) {
-                    throw Exception(QStringLiteral("The third argument of the Bond() function needs to be an Identifier."));
-                }
-
-                // Get left and right expressions
-                const QString& prop = static_cast<const Identifier*>(node->args[0].get())->name();
-                const QStringList* leftList = (node->args[1]->type == ASTNodeType::IDENTIFIER)
-                                                  ? &(static_cast<const Identifier*>(node->args[1].get())->namesList())
-                                                  : static_cast<const MultiIdentifier*>(node->args[1].get())->values;
-                OVITO_ASSERT(leftList);
-                const QStringList* rightList = (node->args[2]->type == ASTNodeType::IDENTIFIER)
-                                                   ? &(static_cast<const Identifier*>(node->args[2].get())->namesList())
-                                                   : static_cast<const MultiIdentifier*>(node->args[2].get())->values;
-                OVITO_ASSERT(rightList);
-                // Write bond selection expression
-                for(const auto& left : *leftList) {
-                    for(const auto& right : *rightList) {
-                        _scratch << QStringLiteral("@1.%1==%2&&@2.%1==%3").arg(prop).arg(left).arg(right);
-                        _scratch << QStringLiteral("@1.%1==%2&&@2.%1==%3").arg(prop).arg(right).arg(left);
-                    }
-                }
-                return QStringLiteral("(%1)").arg(_scratch.join("||"));
-            }
 
             // Handle generic functions
             for(const auto& arg : node->args) {

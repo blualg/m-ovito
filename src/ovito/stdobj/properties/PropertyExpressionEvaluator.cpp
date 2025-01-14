@@ -52,8 +52,6 @@ void PropertyExpressionEvaluator::initialize(const QStringList& expressions, con
     _expressions.clear();
     _expressions.reserve(expressions.size());
     for(const auto& expr : expressions) {
-        // Validate custom functions
-        PropertyExpressionRewriter::validateCustomFunctionCalls(expr, containerPath.last()->identifier());
         // Check if expression contains a reference to a named type.
         if(PropertyExpressionRewriter::expressionNeedsRewrite(expr)) {
             // Rewrite expressions if required.

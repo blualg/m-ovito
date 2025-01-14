@@ -32,10 +32,6 @@ namespace Ovito::PropertyExpressionRewriter {
 // Check whether an expression needs to be rewritten
 [[nodiscard]] bool expressionNeedsRewrite(const QString& expr);
 
-// Validate custom function calls (only defined in the rewriter)
-// Throws for invalid input
-bool validateCustomFunctionCalls(const QString& expr, const QString& container);
-
 // Known operators for parser
 enum class Op : uint8_t
 {
@@ -78,8 +74,9 @@ enum class ASTNodeType : uint8_t
 // ASTNode base class
 struct ASTNode {
     // Holds the specific type of the ASTNode for later lookup
-    explicit ASTNode(ASTNodeType type = ASTNodeType::NONE) : type{type} {}
+    explicit ASTNode(bool group, ASTNodeType type = ASTNodeType::NONE) : type{type}, group{group} {}
     ASTNodeType type;
+    bool group;
 
 #ifdef OVITO_DEBUG
     void debugPrint() const;
