@@ -103,9 +103,12 @@ public:
 
     // Parse a list of tokens into an AST
     // The lifetime of tokens MUST exceed the usage of the AST as strings are not copied
-    [[nodiscard]] std::unique_ptr<ASTNode> parse(const QStringList* tokens);
+    [[nodiscard]] std::unique_ptr<ASTNode> parse(const QString* expression, const QStringList* tokens);
 
 private:
+    // Converts the token index variable to an approximate position in the original expression.
+    [[nodiscard]] qsizetype indexToPosition(int index) const;
+
     // Return the current token without consuming it.
     [[nodiscard]] const QString* peek() const;
 
@@ -144,6 +147,9 @@ private:
 
     // List of tokens to be processed
     const QStringList* _tokens;
+
+    // Original expression
+    const QString* _expression;
 
     // Current index
     int _index = 0;

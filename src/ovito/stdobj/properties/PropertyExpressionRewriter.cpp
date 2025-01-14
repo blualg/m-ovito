@@ -266,15 +266,38 @@ struct FunctionCall : ASTNode {
  * Parse a list of tokens into an AST
  * The lifetime of tokens MUST exceed the usage of the AST as strings are not copied
  ******************************************************************************/
-[[nodiscard]] std::unique_ptr<ASTNode> Parser::parse(const QStringList* tokens)
+[[nodiscard]] std::unique_ptr<ASTNode> Parser::parse(const QString* expression, const QStringList* tokens)
 {
+    _expression = expression;
+    OVITO_ASSERT(_expression);
     _tokens = tokens;
+    OVITO_ASSERT(_tokens);
+
     _index = 0;
     std::unique_ptr<ASTNode> ast = parseExpression();
-    if(_index != _tokens->size()) {
-        throw Exception(QStringLiteral("Extra characters after valid expression at position %1.").arg(_index));
+    if(_index < _tokens->size()) {
+        throw Exception(QStringLiteral("Unexpected value %1 found at position %2.").arg((*_tokens)[_index]).arg(indexToPosition(_index)));
+    }
+    else if(_index > _tokens->size()) {
+        throw Exception(QStringLiteral("Unexpected end of expression at position %1").arg(indexToPosition(_index)));
     }
     return ast;
+}
+/******************************************************************************
+ * Converts the token index variable to an approximate position in the original expression.
+ ******************************************************************************/
+[[nodiscard]] qsizetype Parser::indexToPosition(int index) const
+{
+    const QStringList& tokens = (*_tokens);
+    if(index >= tokens.size()) {
+        return _expression->size();
+    }
+
+    qsizetype current_pos = 0;
+    for(qsizetype i = 0; i <= index; ++i) {
+        current_pos = _expression->indexOf(tokens[i], current_pos);
+    }
+    return current_pos + 1;
 }
 
 /******************************************************************************
@@ -333,7 +356,7 @@ struct FunctionCall : ASTNode {
     if(match({QStringLiteral("?")})) {
         std::unique_ptr<ASTNode> trueExpr = parseExpression();
         if(!match({QStringLiteral(":")})) {
-            throw Exception(QStringLiteral("Missing ':' in ternary expression at position %1.").arg(_index));
+            throw Exception(QStringLiteral("Missing ':' in ternary expression at position %1.").arg(indexToPosition(_index)));
         }
         std::unique_ptr<ASTNode> falseExpr = parseExpression();
         return std::make_unique<TernaryOp>(std::move(condition), std::move(trueExpr), std::move(falseExpr));
@@ -408,7 +431,7 @@ struct FunctionCall : ASTNode {
     // Consume first token
     const QString* token = consume();
     if(!token) {
-        throw Exception(QStringLiteral("Unexpected end of expression."));
+        throw Exception(QStringLiteral("Unexpected end of expression at position %1").arg(indexToPosition(_index)));
     }
 
     const QString& tokenValue = *token;
@@ -424,7 +447,7 @@ struct FunctionCall : ASTNode {
         std::unique_ptr<ASTNode> node = parseExpression();
         // Validate and consume ')'
         if(!peek() || *consume() != QStringLiteral(")")) {
-            throw Exception(QStringLiteral("Missing closing parenthesis in expression at position %1.").arg(_index));
+            throw Exception(QStringLiteral("Missing closing parenthesis in expression at position %1.").arg(indexToPosition(_index)));
         }
         node->group = true;
         return node;
@@ -444,7 +467,7 @@ struct FunctionCall : ASTNode {
             if(!peek() || *peek() == QStringLiteral(",")) {
                 throw Exception(QStringLiteral("Invalid arguments in function call: %1. Expected value, found ',' instead at position %2.")
                                     .arg(tokenValue)
-                                    .arg(_index));
+                                    .arg(indexToPosition(_index)));
             }
             args.emplace_back(parseExpression());
 
@@ -457,7 +480,9 @@ struct FunctionCall : ASTNode {
 
         // Validate and consume ')'
         if(!peek() || *consume() != QStringLiteral(")")) {
-            throw Exception(QStringLiteral("Missing closing parenthesis in function call: %1 at position %2.").arg(tokenValue).arg(_index));
+            throw Exception(QStringLiteral("Missing closing parenthesis in function call: %1 at position %2.")
+                                .arg(tokenValue)
+                                .arg(indexToPosition(_index)));
         }
 
         return std::make_unique<FunctionCall>(std::make_unique<Identifier>(tokenValue), std::move(args));
@@ -500,7 +525,7 @@ struct FunctionCall : ASTNode {
                             QStringLiteral("Ambiguous type name %1 at position %2. The type name maps to different numerical values in "
                                            "different properties: (%3) != (%4). Use a numerical value instead to avoid this error.")
                                 .arg(tokenValue)
-                                .arg(_index)
+                                .arg(indexToPosition(_index))
                                 .arg(match->join(", "))
                                 .arg(it->second.join(", ")));
                     }
