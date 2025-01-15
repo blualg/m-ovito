@@ -1,3 +1,6 @@
+..
+  This page was last revised on 15-JAN-25.
+
 .. _particles.modifiers.expression_select:
 
 Expression selection
@@ -7,30 +10,36 @@ Expression selection
   :width: 30%
   :align: right
 
-This modifier let you select particles, bonds or other data elements based on user-defined criteria, i.e., by entering a Boolean expression,
-which is evaluated by the modifier for every input element.
-Those elements get selected for which the Boolean expression yields a non-zero result (*true*);
-all other elements, for which the expression evaluates to zero (*false*), get deselected.
+This modifier allows you to select :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, or other data elements based on user-defined criteria,
+using a Boolean expression. The modifier evaluates the expression for each input element, selecting those for which the Boolean expression returns a non-zero result (*true*).
+All other elements, for which the expression evaluates to zero (*false*), are deselected.
 
-The Boolean expression can contain references to local properties as well as global quantities, e.g. the simulation cell size or the current timestep number.
-Hence, the modifier can be used to dynamically select elements based on properties such as position,
-type, energy, etc. and any combination thereof. The list of available input variables that may be incorporated into the expression
-is displayed in the lower panel as shown in the screenshot.
+The Boolean expression can include references to both local properties and :ref:`global quantities <usage.global_attributes>`, such as the simulation cell size or the
+current timestep number. This flexibility allows for dynamic selection of elements based on properties like position, type, energy, or combinations of these.
+The lower panel of the modifier's user interface displays a list of input variables that can be included in the expression, as shown in the accompanying screenshot.
 
-Boolean expressions can contain comparison operators like ``==``, ``!=``, ``>=``, etc.,
-and several conditions can be combined using logical *AND* and *OR* operators (``&&`` and ``||``).
+Expressions can include comparison operators (e.g., ``==``, ``!=``, ``>=``), logical operators (AND and OR, represented as ``&&`` and ``||``),
+arithmetic calculations and math functions:
 
-Note that variable names and function names are case-sensitive and restricted to alphanumeric characters and
-underscores. That's why OVITO automatically replaces invalid characters in property names with an underscore to generate valid variable names
-that can be used in the expression.
+.. code-block:: none
+
+  ParticleType == 1 && Position.Z > 2.5
 
 .. _particles.modifiers.expression_select.syntax:
 
 Expression syntax
 """""""""""""""""
 
-The expression syntax is very similar to the C programming language. Arithmetic expressions can be created from
-float literals, variables or functions using the following operators in this order of precedence:
+The syntax for expressions is similar to the C programming language. You can build arithmetic expressions using
+float literals, variables, or functions, combined with operators.
+
+.. attention::
+
+  The expression parser of OVITO is case-sensitive. This means that variable names must be spelled exactly as they appear in the list of available input variables.
+  Spaces in property names are simply left out in the corresponding variable names. For example, the particle property *Particle Type* is accessible as the variable
+  ``ParticleType`` in the expression. Other invalid characters in property names are replaced by underscores in the variable names.
+
+Operators are evaluated in the following precedence:
 
 .. table::
   :widths: auto
@@ -38,17 +47,17 @@ float literals, variables or functions using the following operators in this ord
   ======================================================== ========================================================================================
   Operator                                                 Description
   ======================================================== ========================================================================================
-  ``(...)``                                                expressions in parentheses are evaluated first
-  ``A^B``                                                  exponentiation (A raised to the power B)
-  ``A*B``, ``A/B``                                         multiplication and division
-  ``A+B``, ``A-B``                                         addition and subtraction
-  ``A==B``, ``A!=B``, ``A<B``, ``A<=B``, ``A>B``, ``A>=B`` comparison between A and B (result is either 0 or 1)
-  ``A && B``                                               logical AND operator: result is 1 if A and B differ from 0, else 0
-  ``A || B``                                               logical OR operator: result is 1 if A or B differ from 0, else 0
-  ``A ? B : C``                                            if A differs from 0 (i.e. is true), the resulting value of this expression is B, else C
+  ``(...)``                                                Parentheses for explicit precedence
+  ``A^B``                                                  Exponentiation (*A* raised to the power *B*)
+  ``A*B``, ``A/B``                                         Multiplication and division
+  ``A+B``, ``A-B``                                         Addition and subtraction
+  ``A==B``, ``A!=B``, ``A<B``, ``A<=B``, ``A>B``, ``A>=B`` Comparisons between *A* and *B* (yielding either 0 or 1)
+  ``A && B``                                               Logical AND: True if both *A* and *B* are non-zero
+  ``A || B``                                               Logical OR: True if *A*, *B*, or both are non-zero
+  ``A ? B : C``                                            Conditional (ternary) operator: If *A* differs from 0, yields *B*, else *C*
   ======================================================== ========================================================================================
 
-The expression parser supports the following functions:
+OVITO's expression parser supports the following functions:
 
 .. table::
   :widths: auto
@@ -83,7 +92,7 @@ The expression parser supports the following functions:
   ``tan(A)``          Tangent of A. Returns the tangent of the angle A, where A is measured in radians.
   =================== =========================================================================
 
-The expression parser supports the following constants:
+The parser supports the following constants in expressions:
 
 .. table::
   :widths: auto
@@ -91,103 +100,122 @@ The expression parser supports the following constants:
   =================== =========================================================================
   Constant name       Description
   =================== =========================================================================
-  *pi*                Pi (3.14159...)
-  *inf*               Infinity (∞)
+  ``pi``              Pi (3.14159...)
+  ``inf``             Infinity (∞)
   =================== =========================================================================
 
 .. _particles.modifiers.type_names:
 
-Using type names in expressions
-"""""""""""""""""""""""""""""""
+Type names in expressions
+"""""""""""""""""""""""""
 
-Properties in OVITO are stored as integer values. Some properties, called :ref:`typed properties <scene_objects.particle_types>`, can also store a
-non-unique name. One example is *Structure Type*, where a numeric value of `1` maps to the name *"FCC"*. Similarly, *Particle Types* may
-store the chemical symbol as their names.
+.. versionadded:: 3.12.0
 
-These names can also be referenced inside the expressions. This allows the usage of expressions like ``ParticleType == "Cu"``, where *"Cu"*
-is a type name connected to the *Particle Type* property. Note, that these type names must be enclosed in double quotes: ``"<Type Name>"``. References to
-undefined type names (i.e., names with no numeric mapping) are transformed into either ``true`` or ``false`` depending on the context they are used in.
-For example, ``ParticleType != "<Type Name>"`` is alway true if the type ``"<Type Name>"`` is not defined.
+Particle types and bond types are represented by unique numeric identifiers in OVITO, i.e., the ``ParticleType`` variable evaluates to an integer value
+uniquely identifying the type of the current particle. The same applies to other :ref:`typed properties <scene_objects.particle_types>`
+in OVITO such as the *Structure Type* property.
 
-In the simplest case, the mapping from numeric IDs to names is unique. For example, the particle type *"Cu"* might map exclusively to the number `1`.
-Here, the expression::
+Each type may have a human-readable name associated with it, e.g., the numeric type 1 may be named *"Cu"*.
+You can use these type names in expressions, e.g., ``ParticleType == "Cu"``, where the type name is enclosed in double quotes.
 
-  ParticleType == "Cu"
+There may be cases where multiple numeric types are associated with the same name, e.g., both types 2 and 3 may be named *"Ni"*,
+because there are two different kinds of "nickel" atoms in the simulation. In such cases, the ``==`` and ``!=`` comparison operators are
+still allowed. The expression parser performs an implicit expansion for you:
 
-can be transformed trivially to::
+.. code-block:: none
 
-  ParticleType == 1
+  ParticleType == "Ni"    -->    ParticleType == 2 || ParticleType == 3
 
-In this context all binary comparison operators listed in the table above are supported.
+.. code-block:: none
 
-However, there are also cases where the mapping between names and numeric IDs is not unique. For example,
-particle types ``2``, ``3``, and ``5`` might all map to the name *"Ni"*.
-In this case, only the ``==`` and ``!=`` comparison operators are allowed for these type names. Depending on the operator used, the resulting conditions are either
-linked by *or* (``||``) or *and* (``&&``) operators as shown in the following examples::
+  ParticleType != "Ni"    -->    ParticleType != 2 && ParticleType != 3
 
-  1.) ParticleType == "Ni"
-  2.) ParticleType != "Ni"
+References to nonexistent type names, i.e., names with no corresponding numeric value, are implicitly replaced with the special value ``inf``:
 
-which will be interpreted as::
+.. code-block:: none
 
-  1.) ParticleType == 2 || ParticleType == 3 || ParticleType == 5
-  2.) ParticleType != 2 && ParticleType != 3 && ParticleType != 5
+  ParticleType == "undefined"    -->    ParticleType == inf
 
-Duplicate type names across different type properties cannot always be resolved uniquely. For instance, if both
-*Particle Type* and *Structure Type* have a type name *alpha* associated with numeric IDs 3 and 5, respectively,
-the expression parser will attempt to resolve the ambiguity. For example, in queries like ``ParticleType == "alpha"``
-or ``StructureType == "alpha"``, the left-hand side of the expression helps determine the user's intend.
-There are, however, expression in which such a resolution is impossible: ``(<condition> ? ParticleType : StructureType) == "alpha"``.
-This leads to an error if the numeric IDs of the two *alpha* types are different.
-Such expressions are valid only if both *alpha* types map to the same numeric value.
+This expression evaluates to *false* for any numeric particle type.
 
-Ternary expression, are supported on both on the condition and the result side. This can be seen in the following
-examples. Assuming the same *Particle Type* mapping used above
-and *Structure Type* mappings of *FCC* to ``1`` and *HCP* to ``2``. The expression::
+.. attention::
 
-   StructureType == (ParticleType == "Ni" ? "FCC" : "HCP")
+  The type names are case-sensitive. For example, the type name ``"Cu"`` is not the same as ``"cu"``.
 
-corresponds to::
+.. note::
 
-  StructureType == (ParticleType == 2 || ParticleType == 3 || ParticleType == 5 ? 1 : 2)
+  If there are multiple :ref:`typed properties <scene_objects.particle_types>`, each defining a type with the same name but different numeric IDs,
+  the expression parser will attempt to resolve the ambiguity based on the context. For example, in the expressions
+  ``ParticleType == "alpha"`` and ``StructureType == "alpha"``, the left-hand side of the expression helps determine the user's intent.
+  The parser can replace ``"alpha"`` with the right numeric type ID for that particle property.
+  However, there are cases where such a resolution is impossible. Then the expression parser will raise an error.
 
-similarly,::
+Selection of bonds
+""""""""""""""""""
 
-  ParticleType == (<condition> ? "Ni" : "Cu")
+In bond selection mode, the modifier makes the properties of the current bond available as normal expression variables.
+In addition, properties of the two particles connected by the bond can be accessed by prepending
+``@1.`` or ``@2.`` to the particle property name. For example, the following expression selects bonds that
+connect two particles of different type and whose length exceeds a threshold value of 2.8:
 
-will be interpreted as::
+.. code-block:: none
 
-  (ParticleType == (<condition> ? 2 : 1)) || (ParticleType == (<condition> ? 3 : 1)) || (ParticleType == (<condition> ? 5 : 1))
+  @1.ParticleType != @2.ParticleType && BondLength > 2.8
 
-Usage examples
-""""""""""""""
+Note that a bond's direction is arbitrary. It either points from particle *A* to particle
+*B*, or vice versa. Accordingly, ``@1.`` and ``@2.`` alike can refer to either one of the
+two particles. More complex expressions may thus be necessary to account
+for the two possibilities:
 
-The first expression below will select all particles of numeric type 1 or 2, similar to what the :ref:`particles.modifiers.select_particle_type` modifier
-does. The second expression will select particles within a cylindrical region of radius 10::
+.. code-block:: none
 
-    ParticleType==1 || ParticleType==2
+  (@1.ParticleType == "H" && @2.ParticleType == "C") || (@2.ParticleType == "H" && @1.ParticleType == "C")
 
-    sqrt(Position.X*Position.X + Position.Y*Position.Y) < 10.0
-
-Other selection tools in OVITO
+Additional expression examples
 """"""""""""""""""""""""""""""
 
-OVITO provides more tools for selecting particles:
+Select particles within a cylindrical region of radius 10:
 
-The :ref:`particles.modifiers.compute_property` modifier allows you to directly set the ``Selection`` property of
-particles based on a user-defined expression. Thus, it may also be used to create a particle selection by setting the
-``Selection`` property to non-zero for selected particles and 0 for unselected particles. In contrast to the *Expression selection* modifier, the
-:ref:`particles.modifiers.compute_property` modifier has the option to include neighboring particles, up to some user-defined cutoff distance,
-in the selection process. For example, you can select particles based on whether they are surrounded by a certain number or certain kind of neighbors.
+.. code-block:: none
 
-The `Match Molecule <https://github.com/ovito-org/MatchMolecule>`__ modifier is an extension available for OVITO Pro, which allows you to create
-selections in bonded (molecular) systems using query expressions. These selection expressions are based on a simplified version of the SMILES language
-and let you to select atoms, bonds, or sections of a molecule based on their chemical environment.
+  sqrt(Position.X*Position.X + Position.Y*Position.Y) <= 10.0
 
-For advanced selection tasks, you can write a custom Python function using OVITO Pro's :ref:`particles.modifiers.python_script` modifier
-to implement complex selection criteria that are not possible with the built-in selection tools. Your Python function can access all properties of the
-input particles, bonds, or other data elements, letting you implement arbitrary selection logic. The Python interface of OVITO Pro provides
-useful spatial queries for this purpose, e.g., cutoff-based neighbor searches, k-nearest neighbor searches, or point-in-region tests.
+Select all particles in the upper half of the simulation box:
+
+.. code-block:: none
+
+  ReducedPosition.Z > 0.5
+
+Given an existing selection of particles (represented by a non-zero ``Selection`` property), filter the set
+to include only those with a positive charge:
+
+.. code-block:: none
+
+  Selection && Charge > 0
+
+Additional selection tools in OVITO
+"""""""""""""""""""""""""""""""""""
+
+:ref:`particles.modifiers.select_particle_type` modifier:
+  Use this modifier to select particles based on just their type.
+  It is a more user-friendly alternative to the *Expression selection* modifier.
+
+:ref:`particles.modifiers.compute_property` modifier:
+  Allows you to directly set the ``Selection`` property of
+  particles based on a user-defined expression. Thus, it may also be used to create a particle selection by setting the
+  ``Selection`` property to 1 for selected particles and 0 for unselected particles. In contrast to the *Expression selection* modifier, the
+  :ref:`particles.modifiers.compute_property` modifier has the option to include neighboring particles, up to some user-defined cutoff distance,
+  in the selection process. For example, you can select particles based on whether they are surrounded by a certain number or certain kind of neighbors.
+
+`Match Molecule <https://github.com/ovito-org/MatchMolecule>`__ modifier:
+  Available as an extension for OVITO Pro, it allows you to create
+  selections in bonded (molecular) systems using query expressions. These selection expressions are based on a simplified version of the SMILES language
+  and let you to select atoms, bonds, or sections of a molecule based on their chemical environment.
+
+:ref:`particles.modifiers.python_script` modifier:
+  Use custom Python functions in OVITO Pro to implement complex selection logic. The Python interface provides
+  useful spatial queries, e.g., cutoff-based neighbor searches, k-nearest neighbor searches,
+  or point-in-region tests.
 
 .. seealso::
 

@@ -69,10 +69,10 @@ the central particle for which the output property value is being calculated.
 
 Formally speaking, the modifier supports formulas of the following general form
 
-  :math:`P(i) = F(i) + \sum_{j \in \mathcal{N}_i}{G(j)}`, 
-  
-  with 
-  
+  :math:`P(i) = F(i) + \sum_{j \in \mathcal{N}_i}{G(j)}`,
+
+  with
+
   :math:`\mathcal{N}_i = {j: |\mathbf{r}_i - \mathbf{r}_j| < R_c}`,
 
 for computing the output property value :math:`P(i)` for some particle :math:`i`.
@@ -135,7 +135,7 @@ Expression syntax
 """""""""""""""""
 
 The expression syntax supported by the modifier is very similar to the one of the C programming language. Variable names and function names are case-sensitive.
-Variable names are restricted to alphanumeric characters and underscores. OVITO automatically replaces invalid characters in input property names with an 
+Variable names are restricted to alphanumeric characters and underscores. OVITO automatically replaces invalid characters in input property names with an
 underscore to generate valid variable names that can be referenced in expressions.
 Arithmetic expressions can be composed from constant values, input variables and math functions using the following operators in the given order of precedence:
 
@@ -145,125 +145,89 @@ Arithmetic expressions can be composed from constant values, input variables and
   ======================================================== ========================================================================================
   Operator                                                 Description
   ======================================================== ========================================================================================
-  ``(...)``                                                expressions in parentheses are evaluated first
-  ``A^B``                                                  exponentiation (A raised to the power B)
-  ``A*B``, ``A/B``                                         multiplication and division
-  ``A+B``, ``A-B``                                         addition and subtraction
-  ``A==B``, ``A!=B``, ``A<B``, ``A<=B``, ``A>B``, ``A>=B`` comparison between A and B (result is either 0 or 1)
-  ``A && B``                                               logical AND operator: result is 1 if A and B differ from 0, else 0
-  ``A || B``                                               logical OR operator: result is 1 if A or B differ from 0, else 0
-  ``A ? B : C``                                            if A differs from 0 (i.e. is true), the resulting value of this expression is B, else C
+  ``(...)``                                                Parentheses for explicit precedence
+  ``A^B``                                                  Exponentiation (*A* raised to the power *B*)
+  ``A*B``, ``A/B``                                         Multiplication and division
+  ``A+B``, ``A-B``                                         Addition and subtraction
+  ``A==B``, ``A!=B``, ``A<B``, ``A<=B``, ``A>B``, ``A>=B`` Comparisons between *A* and *B* (yielding either 0 or 1)
+  ``A && B``                                               Logical AND: True if both *A* and *B* are non-zero
+  ``A || B``                                               Logical OR: True if *A*, *B*, or both are non-zero
+  ``A ? B : C``                                            Conditional (ternary) operator: If *A* differs from 0, yields *B*, else *C*
   ======================================================== ========================================================================================
 
 The expression parser supports the following functions:
 
 .. table::
     :widths: auto
-  
+
     =================== =========================================================================
     Function name       Description
     =================== =========================================================================
     ``abs(A)``          Absolute value of A. If A is negative, returns -A otherwise returns A.
-    ``acos(A)``         Arc-cosine of A. Returns the angle, measured in radians, whose cosine is A. 
-    ``acosh(A)``        Same as ``acos()`` but for hyperbolic cosine. 
-    ``asin(A)``         Arc-sine of A. Returns the angle, measured in radians, whose sine is A. 
-    ``asinh(A)``        Same as ``asin()`` but for hyperbolic sine. 
-    ``atan(A)``         Arc-tangent of A. Returns the angle, measured in radians, whose tangent is A. 
-    ``atan2(Y,X)``      Two argument variant of the arctangent function. Returns the angle, measured in radians. see `here <http://en.wikipedia.org/wiki/Atan2>`__. 
-    ``atanh(A)``        Same as ``atan()`` but for hyperbolic tangent. 
-    ``avg(A,B,...)``    Returns the average of all arguments. 
-    ``cos(A)``          Cosine of A. Returns the cosine of the angle A, where A is measured in radians. 
-    ``cosh(A)``         Same as ``cos()`` but for hyperbolic cosine. 
-    ``exp(A)``          Exponential of A. Returns the value of e raised to the power A where e is the base of the natural logarithm, i.e. the non-repeating value approximately equal to 2.71828182846. 
-    ``fmod(A,B)``       Returns the floating-point remainder of A/B (rounded towards zero). 
-    ``rint(A)``         Rounds A to the closest integer. 0.5 is rounded to 1. 
-    ``ln(A)``           Natural (base e) logarithm of A. 
-    ``log10(A)``        Base 10 logarithm of A. 
-    ``log2(A)``         Base 2 logarithm of A. 
-    ``max(A,B,...)``    Returns the maximum of all values. 
-    ``min(A,B,...)``    Returns the minimum of all values. 
-    ``sign(A)``         Returns: 1 if A is positive; -1 if A is negative; 0 if A is zero. 
-    ``sin(A)``          Sine of A. Returns the sine of the angle A, where A is measured in radians. 
-    ``sinh(A)``         Same as ``sin()`` but for hyperbolic sine. 
-    ``sqrt(A)``         Square root of a value. 
-    ``sum(A,B,...)``    Returns the sum of all parameter values. 
-    ``tan(A)``          Tangent of A. Returns the tangent of the angle A, where A is measured in radians. 
+    ``acos(A)``         Arc-cosine of A. Returns the angle, measured in radians, whose cosine is A.
+    ``acosh(A)``        Same as ``acos()`` but for hyperbolic cosine.
+    ``asin(A)``         Arc-sine of A. Returns the angle, measured in radians, whose sine is A.
+    ``asinh(A)``        Same as ``asin()`` but for hyperbolic sine.
+    ``atan(A)``         Arc-tangent of A. Returns the angle, measured in radians, whose tangent is A.
+    ``atan2(Y,X)``      Two argument variant of the arctangent function. Returns the angle, measured in radians. see `here <http://en.wikipedia.org/wiki/Atan2>`__.
+    ``atanh(A)``        Same as ``atan()`` but for hyperbolic tangent.
+    ``avg(A,B,...)``    Returns the average of all arguments.
+    ``cos(A)``          Cosine of A. Returns the cosine of the angle A, where A is measured in radians.
+    ``cosh(A)``         Same as ``cos()`` but for hyperbolic cosine.
+    ``exp(A)``          Exponential of A. Returns the value of e raised to the power A where e is the base of the natural logarithm, i.e. the non-repeating value approximately equal to 2.71828182846.
+    ``fmod(A,B)``       Returns the floating-point remainder of A/B (rounded towards zero).
+    ``rint(A)``         Rounds A to the closest integer. 0.5 is rounded to 1.
+    ``ln(A)``           Natural (base e) logarithm of A.
+    ``log10(A)``        Base 10 logarithm of A.
+    ``log2(A)``         Base 2 logarithm of A.
+    ``max(A,B,...)``    Returns the maximum of all values.
+    ``min(A,B,...)``    Returns the minimum of all values.
+    ``sign(A)``         Returns: 1 if A is positive; -1 if A is negative; 0 if A is zero.
+    ``sin(A)``          Sine of A. Returns the sine of the angle A, where A is measured in radians.
+    ``sinh(A)``         Same as ``sin()`` but for hyperbolic sine.
+    ``sqrt(A)``         Square root of a value.
+    ``sum(A,B,...)``    Returns the sum of all parameter values.
+    ``tan(A)``          Tangent of A. Returns the tangent of the angle A, where A is measured in radians.
     =================== =========================================================================
 
-Support for typed properties
-############################
+The parser supports the following constants in expressions:
 
-Properties in OVITO are stored as integer values. Some properties, called :ref:`typed properties <scene_objects.particle_types>`, can also store a 
-non-unique name. One example is *Structure Type*, where a numeric value of `1` maps to the name *"FCC"*. Similarly, *Particle Types* may  
-store the chemical symbol as their names. 
+.. table::
+  :widths: auto
 
-These names can also be referenced inside the expressions. This allows the usage of expressions like ``ParticleType == "Cu"``, where *"Cu"*
-is a type name connected to the *Particle Type* property. Note, that these type names must be enclosed in double quotes: ``"<Type Name>"``. References to
-undefined type names (i.e., names with no numeric mapping) are transformed into either ``true`` or ``false`` depending on the context they are used in. 
-For example, ``ParticleType != "<Type Name>"`` is alway true if the type ``"<Type Name>"`` is not defined.
+  =================== =========================================================================
+  Constant name       Description
+  =================== =========================================================================
+  ``pi``              Pi (3.14159...)
+  ``inf``             Infinity (∞)
+  =================== =========================================================================
 
-In the simplest case, the mapping from numeric IDs to names is unique. For example, the particle type *"Cu"* might map exclusively to the number `1`. 
-Here, the expression::
+Type names in expressions
+"""""""""""""""""""""""""
 
-  ParticleType == "Cu"
+.. versionadded:: 3.12.0
 
-can be transformed trivially to::
+Particle types and bond types are represented by unique numeric identifiers in OVITO, i.e., the ``ParticleType`` variable evaluates to an integer value
+uniquely identifying the type of the current particle. The same applies to other :ref:`typed properties <scene_objects.particle_types>`
+in OVITO such as the *Structure Type* property.
 
-  ParticleType == 1
+Each type may have a human-readable name associated with it, e.g., the numeric type 1 may be named *"Cu"*.
+You can use these type names in expressions, e.g., ``ParticleType == "Cu"``, where the type name is enclosed in double quotes.
 
-In this context all binary comparison operators listed in the table above are supported.
-
-However, there are also cases where the mapping between names and numeric IDs is not unique. For example, 
-particle types ``2``, ``3``, and ``5`` might all map to the name *"Ni"*.
-In this case, only the ``==`` and ``!=`` comparison operators are allowed for these type names. Depending on the operator used, the resulting conditions are either 
-linked by *or* (``||``) or *and* (``&&``) operators as shown in the following examples::
-
-  1.) ParticleType == "Ni"
-  2.) ParticleType != "Ni"
-
-which will be interpreted as::
-
-  1.) ParticleType == 2 || ParticleType == 3 || ParticleType == 5
-  2.) ParticleType != 2 && ParticleType != 3 && ParticleType != 5
-
-Duplicate type names across different type properties cannot always be resolved uniquely. For instance, if both 
-*Particle Type* and *Structure Type* have a type name *alpha* associated with numeric IDs 3 and 5, respectively, 
-the expression parser will attempt to resolve the ambiguity. For example, in queries like ``ParticleType == "alpha"`` 
-or ``StructureType == "alpha"``, the left-hand side of the expression helps determine the user's intend.
-There are, however, expression in which such a resolution is impossible: ``(<condition> ? ParticleType : StructureType) == "alpha"``. 
-This leads to an error if the numeric IDs of the two *alpha* types are different. 
-Such expressions are valid only if both *alpha* types map to the same numeric value.
-
-Ternary expression, are supported on both on the condition and the result side. This can be seen in the following
-examples. Assuming the same *Particle Type* mapping used above
-and *Structure Type* mappings of *FCC* to ``1`` and *HCP* to ``2``. The expression::
-
-   StructureType == (ParticleType == "Ni" ? "FCC" : "HCP")
-
-corresponds to::
-
-  StructureType == (ParticleType == 2 || ParticleType == 3 || ParticleType == 5 ? 1 : 2)
-
-similarly,::
-  
-  ParticleType == (<condition> ? "Ni" : "Cu") 
-  
-will be interpreted as::
-
-  (ParticleType == (<condition> ? 2 : 1)) || (ParticleType == (<condition> ? 3 : 1)) || (ParticleType == (<condition> ? 5 : 1))
+For further information on the use of type names in expressions, see :ref:`here <particles.modifiers.type_names>`.
 
 Additional example 1
 """"""""""""""""""""
 
 Our aim is to compute the linear velocity of each particle based on the components :math:`v_x`, :math:`v_y`, and :math:`v_z` of its velocity
 vector. For this, we create a new user-defined property with the name ``Speed``, which is computed
-according to the following expression:: 
+according to the following expression::
 
   sqrt(Velocity.X^2 + Velocity.Y^2 + Velocity.Z^2)
 
 Note that this expressions contains references to the X, Y, and Z components of the standard
-``Velocity`` particle property, which must be present in the input dataset for this to work. 
-The computed linear velocity values, stored in the new particle property ``Speed``, can subsequently be used to color particles with the 
+``Velocity`` particle property, which must be present in the input dataset for this to work.
+The computed linear velocity values, stored in the new particle property ``Speed``, can subsequently be used to color particles with the
 :ref:`particles.modifiers.color_coding` modifier, for instance.
 
 Additional example 2
