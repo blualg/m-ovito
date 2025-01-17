@@ -363,14 +363,19 @@ void FileSourceEditor::onReloadAnimation()
     if(FileSource* fileSource = static_object_cast<FileSource>(editObject())) {
         handleExceptions([&] {
             // Let the FileSource update the list of source animation frames.
-            // After the update is complete, jump to the last one of the newly added animation frames.
-            int oldFrameCount = fileSource->frames().size();
-            fileSource->updateListOfFrames(true).finally(ObjectExecutor(fileSource), [fileSource, oldFrameCount, anim=OORef<AnimationSettings>(mainWindow().datasetContainer().activeAnimationSettings())](Task& task) noexcept {
-                if(!task.isCanceled() && fileSource->frames().size() > oldFrameCount && anim) {
-                    AnimationTime time = fileSource->sourceFrameToAnimationTime(fileSource->frames().size() - 1);
-                    anim->setCurrentFrame(time.frame());
-                }
-            });
+            auto future = fileSource->updateListOfFrames(true);
+
+            // After the trajectory update is complete, jump to the last one of the newly added animation frames.
+            OORef<AnimationSettings> anim = mainWindow().datasetContainer().activeAnimationSettings();
+            if(anim && anim->currentFrame() == anim->lastFrame()) {
+                int oldFrameCount = fileSource->frames().size();
+                future.finally(ObjectExecutor(fileSource), [fileSource, oldFrameCount, anim=std::move(anim)](Task& task) noexcept {
+                    if(!task.isCanceled() && fileSource->frames().size() > oldFrameCount) {
+                        AnimationTime time = fileSource->sourceFrameToAnimationTime(fileSource->frames().size() - 1);
+                        anim->setCurrentFrame(time.frame());
+                    }
+                });
+            }
         });
     }
 }

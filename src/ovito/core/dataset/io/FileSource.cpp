@@ -198,8 +198,6 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::updateListOfFrames(
 ******************************************************************************/
 void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 {
-    _framesListFuture.reset();
-
     // Determine the new validity of the existing pipeline state in the cache.
     TimeInterval remainingCacheValidity = TimeInterval::infinite();
 
@@ -494,6 +492,12 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
     // If yes, reset the future before returning from this function.
     if(_framesListFuture.isFinished())
         return std::move(_framesListFuture);
+
+    // Reset _framesListFuture when finished.
+    _framesListFuture.finally(ObjectExecutor(this), [this](Task& task) noexcept {
+        if(_framesListFuture.task().get() == &task)
+            _framesListFuture.reset();
+    });
 
     // The status of this pipeline object changes while loading is in progress.
     registerActiveFuture(_framesListFuture);
