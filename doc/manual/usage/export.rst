@@ -3,7 +3,6 @@
 Exporting data
 ==============
 
-
 The :menuselection:`File --> Export File` function of OVITO exports the results of
 the current data pipeline to a file. Depending on the selected output format (see table below), different fragments of the dataset are exported,
 e.g. the particles and their properties, the bonds, other computed quantities, etc.

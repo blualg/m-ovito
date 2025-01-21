@@ -10,7 +10,7 @@ Cluster analysis
   :width: 35%
   :align: right
 
-This modifier groups particles into disconnected sets, referred to as *clusters*, based on the
+This modifier groups particles into sets, referred to as *clusters*, based on the
 selected *connectivity criterion*. The criterion can be either distance-based (cutoff range)
 or topology-based (bond connectivity).
 

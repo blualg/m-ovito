@@ -64,7 +64,7 @@ allows you to output this per-particle information to a dump file using the foll
   compute orient all property/atom quatw quati quatj quatk
   compute diameter all property/atom shapex shapey shapez
   dump 1 all custom 100 ellipsoid.dump id type x y z &
-                                       c_q[1] c_q[2] c_q[3] c_q[4] &
+                                       c_orient[1] c_orient[2] c_orient[3] c_orient[4] &
                                        c_diameter[1] c_diameter[2] c_diameter[3]
 
 During import of the dump file in OVITO, you should map the ``quati``, ``quatj``, ``quatj``, and ``quatw`` atom attributes from LAMMPS
@@ -74,7 +74,7 @@ when writing the dump file:
 
 ::
 
-  dump_modify 1 colname c_q[1] quatw colname c_q[2] quati colname c_q[3] quatj colname c_q[4] quatk
+  dump_modify 1 colname c_orient[1] quatw colname c_orient[2] quati colname c_orient[3] quatj colname c_orient[4] quatk
   dump_modify 1 colname c_diameter[1] shapex colname c_diameter[2] shapey colname c_diameter[3] shapez
 
 Similarly, the ``shapex``, ``shapey``, and ``shapez`` columns will be mapped to the properties ``Aspherical Shape.X``, ``Aspherical Shape.Y``, and ``Aspherical Shape.Z``

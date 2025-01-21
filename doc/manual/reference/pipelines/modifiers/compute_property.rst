@@ -1,3 +1,6 @@
+..
+  This page was last revised on 15-JAN-25.
+
 .. _particles.modifiers.compute_property:
 
 Compute property
@@ -7,137 +10,168 @@ Compute property
   :width: 30%
   :align: right
 
-This modifier assigns new values to a per-particle or per-bond property by computing them according to a user-defined mathematical formula.
-The modifier may also be used to create new :ref:`particle or bond properties <usage.particle_properties>`.
+The *Compute Property* modifier assigns property values to particle, bonds, and other elements based on a user-defined mathematical formula.
+It can also be used to create new :ref:`particle and bond properties <usage.particle_properties>`.
 
-The user-defined formula for computing the property values can include references to existing per-particle or per-bond data as well as
-global parameters such as the simulation box dimensions or the current animation time. You can find a list of
-all available input variables in the user interface of the modifier. Furthermore, the *Compute property* modifier
-supports performing computations that involve neighboring particles within a spherical volume around each particle.
+The mathematical formula for computing the value for each element can reference existing per-particle or per-bond data, as well as
+global parameters such as the simulation box dimensions or the current animation time. A list of available input variables is
+provided in the modifier's user interface. Additionally, the *Compute Property* modifier supports computations involving neighboring particles
+within a defined spherical volume around each particle or which are bonded to the central particle.
 
-Output property
-"""""""""""""""
+The output property
+"""""""""""""""""""
 
-As described in the :ref:`introduction on particle properties <usage.particle_properties>`, certain properties
-such as ``Color`` or ``Radius`` have a special meaning to the program as their values control the visual appearance of particles and bonds.
-Thus, if you use the *Compute property* modifier to set or modify such properties, it will affect the visualization directly.
-For instance, you can use the modifier to change the values of the ``Position``
-particle property and move particles around or set the ``Color`` property to give particles newly computed colors.
-When setting the ``Selection`` property, the *Compute property* modifier acts like a more powerful
-version of the :ref:`particles.modifiers.expression_select` modifier.
+As explained in the :ref:`introduction on particle properties <usage.particle_properties>`, certain properties, such as ``Color`` or ``Radius``,
+have special significance within OVITO because they control the visual appearance of individual particles and bonds. Modifying these properties using
+the *Compute Property* modifier directly impacts visualization.
 
-You can also use the *Compute property* modifier to assign new kinds of properties to particles or bonds and use this information in
-subsequent operations in the data pipeline or export it to an output file.
-Simply enter a name of your choice for the new property into the input field :guilabel:`Output property`.
-Note that property names in OVITO are always case-sensitive. All standard property names defined by the program are found in the
-drop-down list box.
+For example, you can:
 
-Vector properties
-"""""""""""""""""
+  - Modify the ``Position`` property to move particles.
+  - Assign new values to the ``Color`` property to recolor particles dynamically.
+  - Modify the ``Selection`` property, creating a selection set like the :ref:`particles.modifiers.expression_select` modifier, but with greater flexibility.
 
-Some particle properties in OVITO such as ``Position`` or ``Color`` possess multiple components per particle.
-In such cases, you'll have to enter a separate math expression for each vector component of the output property.
-Note that, in the current program version, the modifier does not allow you to create user-defined vector properties.
-You can only create scalar user-defined properties.
+Additionally, you can create entirely new properties and use them in subsequent operations within the data pipeline or export them to an output file.
+To do so, simply enter a custom property name in the :guilabel:`Output property` field. Note that property names in OVITO are case-sensitive.
+Standard property names predefined by the software are available in the drop-down list.
 
-Selective and conditional property assignment
-"""""""""""""""""""""""""""""""""""""""""""""
+  - :ref:`List of standard particle properties <particle-properties-list>`
+  - :ref:`List of standard bond properties <bond-types-list>`
+  - :ref:`List of standard line properties <lines-property-list>`
+  - :ref:`List of standard vector properties <vectors-property-list>`
 
-If the selected output property already exists, then the old values of the property will be overwritten with the new ones
-computed by the modifier. The option :guilabel:`Compute only for selected elements`, however, lets you restrict the
-assignment to a subset of the particles or bonds and thus preserve the existing property values for some of the elements.
+Vectorial properties
+""""""""""""""""""""
 
-.. highlight:: octave
+Some particle properties, such as ``Position`` and ``Color``, consist of multiple components (XYZ and RGB).
+When computing such vector properties, you need to specify a separate scalar expression for each component.
 
-The ternary operator ``?:`` (described in the operator table below) allows you to use simple *if-else* conditions as part of the calculation.
-For example, to make all particles in the upper half of the simulation box semi-transparent and the particles in the lower half fully opaque,
-one could use the following conditional expression to set the values of the ``Transparency`` particle property::
+.. note::
+
+  The modifier does not support the creation of new user-defined properties with multiple components -- only scalar properties or
+  predefined vectorial properties can be created. Use a :ref:`Python script modifier <particles.modifiers.python_script>`,
+  which allows to perform NumPy array computations, for more advanced cases.
+
+Selective assignment
+""""""""""""""""""""
+
+If the specified output property already exists, the modifier overwrites it with the newly computed values.
+However, by enabling the :guilabel:`Compute only for selected elements` option, you can restrict property assignment to a
+subset of particles or bonds, preserving existing values for currently unselected elements.
+
+Conditional values
+""""""""""""""""""
+
+You can also use conditional logic within expressions using the ternary operator ``? :``. This allows for simple *if-else* conditions.
+
+For example, to make the particles in the upper half of the simulation box :ref:`semi-transparent <howto.transparent_particles>` while keeping those in the lower half fully opaque,
+use the following expression to set the ``Transparency`` property of all particles:
+
+.. code-block:: none
 
   (ReducedPosition.Z > 0.5) ? 0.7 : 0.0
 
-For more complex computations, which cannot be accomplished with static expressions like in this example, please
-consider using the :ref:`particles.modifiers.python_script` modifier instead,
-which lets you write custom modification functions in a real programming language.
+For more complex computations that cannot be performed using conditional expressions like this,
+consider using a :ref:`particles.modifiers.python_script` modifier, which allows scripting in a real programming language.
 
-Including neighbor particles in the calculation
-"""""""""""""""""""""""""""""""""""""""""""""""
+Performing computations over neighbors and bonded particles
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-In the standard case, the expression for computing the output value for a particle depends only on the values of existing properties
-of the particle as well as global quantities such as the current simulation time. Optionally, the modifier allows you to specify
-a formula that includes terms referring to the properties of neighboring particles within a certain range around
-the central particle for which the output property value is being calculated.
+The *Compute Property* modifier supports computations that involve the local neighborhood of particles.
 
-Formally speaking, the modifier supports formulas of the following general form
+The final output value for the :math:`i`-th particle is computed as a sum of two terms: a base expression, :math:`F(i)`, that is evaluated for the central particle :math:`i`,
+and a second term, :math:`G(i,j)`, that is evaluated for each neighboring (or connected) particle :math:`j`:
 
-  :math:`P(i) = F(i) + \sum_{j \in \mathcal{N}_i}{G(j)}`,
+  :math:`P(i) = F(i) + \sum_{j \in \mathcal{N}_i}{G(i,j)}`
 
-  with
+.. image:: /images/modifiers/compute_property_neighbor_expr.*
+  :width: 30%
+  :align: right
 
-  :math:`\mathcal{N}_i = {j: |\mathbf{r}_i - \mathbf{r}_j| < R_c}`,
+The expressions for :math:`F(i)` and :math:`G(i,j)` must be entered separately in the user interface of the modifier.
 
-for computing the output property value :math:`P(i)` for some particle :math:`i`.
-The first term, :math:`F(i)`, refers to the base expression, which only depends on the properties of central particle :math:`i` itself.
-The second term consists of contributions from all neighboring particles within a spherical region of radius :math:`R_c`
-centered around particle :math:`i`. These neighbor contributions to the final output value are computed according to a second
-user-defined expression, :math:`G(j)`, which is evaluated for every neighbor particle :math:`j`. This formula for the user-defined function :math:`G(j)`
-must be entered into the input field :guilabel:`Neighbor expression`, and it can depend on property values
-of the current neighbor particle :math:`j`, property values of the central particle :math:`i`, and the vector connecting the two particles.
+The set of visited neighbors, :math:`\mathcal{N}_i`, may be defined in two ways:
 
-The neighbor term allows you to perform advanced computations that involve the local neighborhood of particles. For example, you can use this feature
-to average an existing particle property (e.g. named ``InputProperty``) over a spherical volume around each particle by using the following expressions::
+  - By specifying a cutoff radius, :math:`R_c`, around each particle, within which neighboring particles are considered:
 
-  F(i) := InputProperty / (NumNeighbors+1)
-  G(j) := InputProperty / (NumNeighbors+1)
+      :math:`\mathcal{N}_i = {j: |\mathbf{r}_i - \mathbf{r}_j| < R_c}`,
 
-Note that ``NumNeighbors`` is a dynamic variable that represents the number of neighbors within the selected cutoff radius,
-which is used in this example to normalize the resulting mean property value.
-We can even weight the contributions from different neighbors according to their distance from the central particle by incorporating the ``Distance``
-dynamic variable in the expression for :math:`G(j)`. To give another example, the following pair of expressions computes the potential energy of each particle according to a Lennard-Jones function::
+  - By using the bonds between particles. The neighbor term will then be evaluated for each particle that has a bond to the current central particle.
 
-  F(i) := 0
-  G(j) := 4 * (Distance^-12 - Distance^-6)
+The neighbor term :math:`G(i,j)` may depend on property values of the current neighbor :math:`j`, the central particle :math:`i`,
+and the vector connecting the two particles.
 
-In this example, the central particle makes no contribution to the final output value, only its neighbor particles do.
+**Example: Smoothing a property over neighboring particles**
 
-Within the neighbor expression term, :math:`G(j)`, it is possible to refer to properties of
-the central particle :math:`i` by prepending the property name with an @-symbol.
-For example, we can use this feature to count the neighbors around a particle whose types are
-different from the type of the central particle::
+The neighbor expression allows you to perform advanced computations that involve the local neighborhood of particles. For example, you
+can smooth an existing particle property (e.g. ``InputProperty``) by averaging its value over a particle's local neighborhood:
 
-  F(i) := 0
-  G(j) := ParticleType != @ParticleType
+.. code-block:: none
 
-Here, the negative comparison operator ``!=`` will evaluate to 1 if the type of particle :math:`j` is
-not equal to the type of particle :math:`i`; and 0 otherwise.
+  F(i)   := InputProperty / (NumNeighbors+1)
+  G(i,j) := InputProperty / (NumNeighbors+1)
+
+``NumNeighbors`` is a dynamic variable yielding the current number of neighboring particles within the selected cutoff radius, ensuring proper normalization.
+
+**Example: Lennard-Jones potential calculation**
+
+The following expressions compute the potential energy of each particle using a Lennard-Jones function:
+
+.. code-block:: none
+
+  F(i)   := 0
+  G(i,j) := 4 * (Distance^-12 - Distance^-6)
+
+The dynamic variable ``Distance`` in the :math:`G(i,j)` expression yields the current separation between the central particle and its neighbor.
+
+**Example: Counting neighbor particles of a certain type**
+
+The :math:`G(i,j)` expression may refer to property values of the central particle :math:`i` by prepending
+the ``@`` prefix to a property name. For instance, the following expressions count the neighbors whose types are
+different from the type of the central particle:
+
+.. code-block:: none
+
+  F(i)   := 0
+  G(i,j) := (ParticleType != @ParticleType)
+
+Note that the operator ``!=`` evaluates to 1 if the type of particle :math:`j` is not equal to the type of particle :math:`i`; and 0 otherwise.
 
 Computations on bonds
 """""""""""""""""""""
 
-In addition to particle properties, the modifier also allows you to compute and assign new bond properties.
-In bond-based mode, regular expression variables refer to existing properties of the current bond. Additionally, you can incorporate
-the properties of the two adjacent particles connected by the current bond into the expression. When referring to a particle
-property, you need to prepend ``@1.`` or ``@2.`` to the property name.
-For example, we can use the following expression to set the ``Selection`` property
-of bonds and thus select all bonds which connect two particles of different type and whose length exceeds a
-threshold value of 2.8::
+The modifier can also operate on bonds instead of particles. Then it will compute a new property for each pair-wise bond in the system.
+
+If :guilabel:`Operate on` is set to *Bonds*, expression variables refer to existing per-bond properties.
+You can also include properties of the two connected particles by prefixing their property names with ``@1.`` or ``@2.``.
+
+For example, to select all bonds that connect different particle types and have a length greater than 2.8,
+you can set the output bond property to ``Selection`` and use the following expression:
+
+.. code-block:: none
 
   @1.ParticleType != @2.ParticleType && BondLength > 2.8
 
-Note that, in general, the orientation of bonds is arbitrary. Thus, a bond can point from particle A to particle
-B or vice versa, and accordingly ``@1.`` and ``@2.`` alike can refer to either one of the
-two particles connected by the bond. This means, in some cases more complex expressions are necessary to account
-for the two possibilities. For example, to select all bonds that connect pairs of particles of
-type 1 and 2::
+Since bond orientation is arbitrary, ``@1.`` and ``@2.`` may refer to either connected particle.
+Thus, to explicitly select bonds between type-1 and type-2 particles, a more complex expression is necessary
+to account for the two possibilities:
+
+.. code-block:: none
 
   (@1.ParticleType == 1 && @2.ParticleType == 2) || (@1.ParticleType == 2 && @2.ParticleType == 1)
 
 Expression syntax
 """""""""""""""""
 
-The expression syntax supported by the modifier is very similar to the one of the C programming language. Variable names and function names are case-sensitive.
-Variable names are restricted to alphanumeric characters and underscores. OVITO automatically replaces invalid characters in input property names with an
-underscore to generate valid variable names that can be referenced in expressions.
-Arithmetic expressions can be composed from constant values, input variables and math functions using the following operators in the given order of precedence:
+The modifier's expression syntax resembles that of the C programming language.
+Variable names and function names are case-sensitive.
+
+.. attention::
+
+  Spaces in property names are simply left out in the corresponding variable names. For example, the particle property *Particle Type* is accessible as the variable
+  ``ParticleType`` in the expression. Other invalid characters in property names are replaced by underscores in the variable names.
+
+Operators are evaluated in the following order of precedence:
 
 .. table::
   :widths: auto
@@ -216,35 +250,17 @@ You can use these type names in expressions, e.g., ``ParticleType == "Cu"``, whe
 
 For further information on the use of type names in expressions, see :ref:`here <particles.modifiers.type_names>`.
 
-Additional example 1
-""""""""""""""""""""
+Additional examples
+"""""""""""""""""""
 
-Our aim is to compute the linear velocity of each particle based on the components :math:`v_x`, :math:`v_y`, and :math:`v_z` of its velocity
-vector. For this, we create a new user-defined property with the name ``Speed``, which is computed
-according to the following expression::
+**Example: Computing particle speed**
+
+To compute the linear velocity (speed) of each particle based on the components :math:`(v_x, v_y, v_z)` of its velocity
+vector, you can use the following expression:
+
+.. code-block:: none
 
   sqrt(Velocity.X^2 + Velocity.Y^2 + Velocity.Z^2)
-
-Note that this expressions contains references to the X, Y, and Z components of the standard
-``Velocity`` particle property, which must be present in the input dataset for this to work.
-The computed linear velocity values, stored in the new particle property ``Speed``, can subsequently be used to color particles with the
-:ref:`particles.modifiers.color_coding` modifier, for instance.
-
-Additional example 2
-""""""""""""""""""""
-
-The *Compute property* modifier can also be used to set
-particle properties which are not modifiable by other means. One such example is
-the per-particle radius: Let us assume you have already selected a subset of particles
-and want to give these particles a different size.
-You can use the *Compute property* modifier to set
-the value of the particle property ``Radius``, which determines the
-per-particle display radii (see :ref:`here <visual_elements.particles>`).
-
-The selection state of particles is determined by the current value of their
-``Selection`` property (non-zero means selected). The conditional
-formula ``Selection ? 1.5 : 0.75`` sets a radius that depends on a particle's selection state.
-The above expression will evaluate to 1.5 for selected particles, and to 0.75 for unselected particles.
 
 .. seealso::
 

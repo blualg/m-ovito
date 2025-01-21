@@ -113,7 +113,7 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     mainLayout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
     // List of available input variables.
-    QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:particles.modifiers.compute_property");
+    QWidget* variablesRollout = createRollout(tr("Expression variables"), rolloutParams.after(rollout), "manual:particles.modifiers.compute_property");
     QVBoxLayout* variablesLayout = new QVBoxLayout(variablesRollout);
     variablesLayout->setContentsMargins(4,4,4,4);
     variableNamesDisplay = new QLabel();

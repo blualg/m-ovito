@@ -59,7 +59,7 @@ void ExpressionSelectionModifierEditor::createUI(const RolloutInsertionParameter
     layout->addSpacing(12);
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
-    QWidget* variablesRollout = createRollout(tr("Variables"), rolloutParams.after(rollout), "manual:particles.modifiers.expression_select");
+    QWidget* variablesRollout = createRollout(tr("Expression variables"), rolloutParams.after(rollout), "manual:particles.modifiers.expression_select");
     QVBoxLayout* variablesLayout = new QVBoxLayout(variablesRollout);
     variablesLayout->setContentsMargins(4,4,4,4);
     variableNamesList = new QLabel();

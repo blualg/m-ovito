@@ -19,21 +19,17 @@ computing cluster.
 How it works
 ------------
 
-.. image:: /images/rendering/remote_render_dialog.*
-  :width: 50%
-  :align: right
-
 The :menuselection:`Render on Remote Computer` function of *OVITO Pro* prepares
 a file bundle for you that can be sent to a different computer, e.g. a parallel computing cluster,
-and render a simulation video on a massively parallel scale. The visualization scene you have created
-on your local computer is transferred in the form of an :ref:`OVITO session state file <usage.saving_loading_scene>`,
+and render the frames of a simulation video on many compute nodes. The visualization scene you have created
+on your local computer is transferred as a :ref:`OVITO session state file <usage.saving_loading_scene>`,
 which means all settings will be precisely preserved when the bundle is unpacked and run on the remote machine.
 
 The generated file bundle contains the necessary job submission scripts and Conda environment files
-to execute the rendering task on the remote computer cluster. The rendering job will be performed by a
-auto-generated Python script, which uses the OVITO Python module to load the saved session state on the cluster
-and render the animation frames one by one. The script is designed to use multiple compute nodes in parallel
-to distribute the rendering work and will combine the resulting frame sequence into a video file.
+to execute the rendering task on the remote computing cluster. The rendering job will be performed by a
+auto-generated Python script, which uses the OVITO Python module to load the session state on the cluster
+and render the animation frames. The script is designed to use multiple compute nodes in parallel
+to distribute the rendering work and will combine the resulting frame sequence into a final video file at the end.
 
 A typical visualization setup includes one or more external simulation data files, which you have imported into the
 OVITO scene. Since these external data files are not part of the session state, they need to be bundled and transferred to the
@@ -41,19 +37,39 @@ remote machine as well -- unless the simulation data is already present on the c
 In that case, *OVITO Pro* provides the option to remap the local file paths to the correct remote paths on
 the target machine.
 
-Setting up the remote export
+Setting up the bundle export
 ----------------------------
 
 To prepare remote rendering follow these steps in your local *OVITO Pro* instance:
 
-#. Build and configure your visualization scene like you would do for producing a video on your local computer. Adjust
+.. image:: /images/rendering/remote_render_utility.jpg
+  :width: 35%
+  :align: right
+
+#. Build and configure your visualization scene like you would do for producing a video locally. Select
    :ref:`settings <core.render_settings>` such as output video resolution, animation range, and rendering backend as usual.
-   Notably, you do *not* need to specify any :guilabel:`render output` file path,
+   Notably, you do *not* need to specify any video output file path,
    as this will be handled automatically.
 
-#. Select :menuselection:`File --> Render on Remote Computer...` from the main menu to
-   open the :menuselection:`Remote Render Settings` dialog window. In this dialog, you
-   find a table listing all filesystem locations used in the current OVITO scene
+#. Go to the *Utilities* tab of the command panel and
+   open the :guilabel:`Render On Remote Computer` utility.
+
+#. Here, you can optionally configure the number of CPU cores per render task (i.e. threads per
+   MPI process) by entering a number into the *CPU cores per task* field. A value of 0, or leaving the field empty, will let OVITO
+   utilize all available cores on each compute node to render one frame at a time on each node. On the other hand,
+   on a cluster node containing 96 cores, for example, setting *CPU cores per task* to 8 means that each node can spawn up to 12
+   independent workers, rendering 12 images concurrently.
+
+#. Use the :guilabel:`Choose...` button to select a local output
+   directory for saving the bundle. Please note that this directory must be
+   empty to avoid accidentally overwriting existing files.
+
+   .. image:: /images/rendering/remote_render_dialog.*
+      :width: 50%
+      :align: right
+
+#. Then click the :guilabel:`Start export...` button. This will open a dialog where you can
+   find a list of all filesystem locations used in the current OVITO scene
    (column *Current path*). Paths starting with ``sftp://`` have been :ref:`loaded from a remote server <usage.import.remote>`,
    other paths point to the local filesystem. For each *current path*,
    you can either enter a new *remote target path* or check the *bundle data*
@@ -72,21 +88,11 @@ To prepare remote rendering follow these steps in your local *OVITO Pro* instanc
      Note that, if you decide to pack files :ref:`imported from a remote location <usage.import.remote>` (``sftp://`` URLs),
      they will first be downloaded to your local computer once you click :guilabel:`Export`.
 
-#. Optionally, you can configure the number of CPU cores per render task (i.e. threads per
-   MPI process) by entering a number into the *CPU cores per task* field. A value of 0, or leaving the field empty, will let OVITO
-   utilize all available cores on each compute node to render one frame at a time on each node. On the other hand,
-   on a cluster node containing 96 cores, for example, setting *CPU cores per task* to 8 means that each node can spawn up to 12
-   independent workers, rendering 12 images concurrently.
+#. Finally, click :guilabel:`Export` to start the bundling process.
 
-#. Finally, use the :guilabel:`Choose...` button to select a local output
-   directory for saving the bundle. Please note that this directory must be
-   empty to avoid accidentally overwriting existing files.
-
-#. Click on :guilabel:`Export` to start the bundling process.
-   Alternatively, you can use the :guilabel:`Close` button to save all settings and close the
-   :menuselection:`Remote Render Settings` dialog without performing the bundle export now.
-   Your export settings will be saved :ref:`along with the scene <usage.saving_loading_scene>`
-   so that you can come back later and resume the export process.
+Alternatively, you can click :guilabel:`Cancel` to save the settings you have made so far and close the
+dialog without performing the bundle export now. The settings will be saved :ref:`along with the scene <usage.saving_loading_scene>`
+so that you can come back later and resume the export process.
 
 Transferring the bundle directory
 ---------------------------------

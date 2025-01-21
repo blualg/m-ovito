@@ -443,7 +443,7 @@ void PropertyExpressionEvaluator::ExpressionVariable::updateValue(size_t element
 ******************************************************************************/
 QString PropertyExpressionEvaluator::inputVariableTable() const
 {
-    QString str(tr("<p>Available input variables:</p><p><b>Properties:</b><ul>"));
+    QString str(tr("<p><b>Properties:</b><ul>"));
     for(const ExpressionVariable& v : _variables) {
         if((v.type == FLOAT32_PROPERTY || v.type == FLOAT64_PROPERTY || v.type == INT8_PROPERTY || v.type == INT32_PROPERTY || v.type == INT64_PROPERTY || v.type == ELEMENT_INDEX || v.type == DERIVED_PROPERTY) && v.isRegistered && v.variableClass == 0) {
             if(v.description.isEmpty())
