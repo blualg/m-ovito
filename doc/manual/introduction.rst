@@ -8,21 +8,26 @@ About OVITO
   :width: 60%
   :align: right
 
-OVITO is a scientific data visualization and analysis software for molecular and other particle-based simulation models,
-which are commonly used in computational materials science, engineering, physics, and chemistry. The software has been cited in
-`over 14,000 research publications <https://scholar.google.com/citations?view_op=view_citation&hl=en&user=f8Tw3eEAAAAJ&citation_for_view=f8Tw3eEAAAAJ:u5HHmVD_uO8C>`__.
+OVITO (Open Visualization Tool) is a *scientific data visualization and analysis software* designed for molecular and particle-based simulation models.
+It is widely used in computational materials science, engineering, physics, and chemistry.
+The software has been cited in over `14,600 research publications <https://scholar.google.com/citations?view_op=view_citation&hl=en&user=f8Tw3eEAAAAJ&citation_for_view=f8Tw3eEAAAAJ:u5HHmVD_uO8C>`__.
 
-OVITO is a 3D graphics desktop application for Windows, Linux, and macOS. The software is developed, distributed, and supported by `OVITO GmbH <https://www.ovito.org>`__,
-a German software company founded by the original developer of OVITO, `Dr. Alexander Stukowski <http://scholar.google.com/citations?user=f8Tw3eEAAAAJ>`__,
-along with other team members. The OVITO ecosystem also includes the :ref:`OVITO Python module <scripting_manual>`, which is freely available as a standalone product.
+**A cross-platform 3D visualization tool**
 
-The `first public release of OVITO <http://stacks.iop.org/0965-0393/18/015012>`__ dates back to 2009, when the software emerged as a byproduct of a Ph.D. project
-at the Materials Science Department of Technische Universität Darmstadt. For many years, OVITO remained an academic open-source project,
-sustained by voluntary work of a single person. Despite its growing popularity, funding challenges posed a significant threat to OVITO's long-term
-availability.
+OVITO is a 3D graphics desktop application available for Windows, Linux, and macOS.
+It is developed, distributed, and supported by `OVITO GmbH <https://www.ovito.org>`__, a German independent software vendor founded by
+OVITO's original author, `Dr. Alexander Stukowski <http://scholar.google.com/citations?user=f8Tw3eEAAAAJ>`__, along with a team of contributors.
 
-The pivotal step to secure OVITO's future occurred in 2020: *OVITO GmbH* was founded.
-The company's mission is to ensure the continued development, professional maintenance, and user support of the software through financial
-contributions (license fees) from its international user base.
+In addition to the main application, the OVITO ecosystem includes the
+:ref:`OVITO Python module <scripting_manual>`, a standalone scripting framework that enables advanced post-processing and data analysis of simulation outputs.
+
+**Origins and evolution**
+
+`First released in 2009 <http://stacks.iop.org/0965-0393/18/015012>`__, OVITO originated as part of a Ph.D. project at the
+`Materials Science Department` of `Technische Universität Darmstadt`. For years, it remained an academic open-source project, developed voluntarily by a single researcher.
+Despite its increasing adoption in the scientific community, sustaining long-term development without sufficient funding was a challenge.
+
+A turning point came in 2020, when *OVITO GmbH* was founded. The company's mission is to ensure the continued development,
+professional maintenance, and dedicated user support through license fees, securing OVITO's future as a reliable scientific tool.
 
 For more information about OVITO, refer to this user manual or visit the official website, `www.ovito.org <https://www.ovito.org>`__.

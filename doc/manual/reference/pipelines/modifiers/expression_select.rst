@@ -119,8 +119,8 @@ Each type may have a human-readable name associated with it, e.g., the numeric t
 You can use these type names in expressions, e.g., ``ParticleType == "Cu"``, where the type name is enclosed in double quotes.
 
 There may be cases where multiple numeric types are associated with the same name, e.g., both types 2 and 3 may be named *"Ni"*,
-because there are two different kinds of "nickel" atoms in the simulation. In such cases, the ``==`` and ``!=`` comparison operators are
-still allowed. The expression parser performs an implicit expansion for you:
+because there are two different kinds of "nickel" atoms in the simulation. In such cases, only the ``==`` and ``!=`` comparison operators are
+allowed. The expression parser performs an implicit expansion for you:
 
 .. code-block:: none
 

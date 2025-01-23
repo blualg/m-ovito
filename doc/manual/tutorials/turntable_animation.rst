@@ -22,7 +22,7 @@ Step 2: Extract a static snapshot
 """""""""""""""""""""""""""""""""
 
 The loaded trajectory file contains 12 simulation frames, indicated in the timeline of OVITO. However, the aim of this tutorial is to
-create an animation in which the only camera is moving around a single, static snapshot of the simulation. Thus, we have to first isolate
+create an animation in which only the camera is moving around a single, static snapshot of the simulation. Thus, we first need to isolate
 one particular frame from the loaded trajectory.
 
 In the :ref:`External file <scene_objects.file_source>` panel, press the `Playback ratio` :guilabel:`Change...` button to open the
@@ -38,13 +38,13 @@ Step 3: Adjust center of rotation
   :width: 22px
   :alt: Rotate tool
 
-OVITO animation capabilities only allow you to move the virtual camera on straight paths through the three-dimensional scene. Thus,
+OVITO's animation capabilities only allow you to move the virtual camera on straight paths through the three-dimensional scene. Thus,
 revolving the camera in a circular orbit around an object requires a different approach. Instead of
 animating the camera itself, we are going to rotate the simulation model while keeping the camera fixed.
 
 You can adjust the rotation of the whole model, relative to the global scene coordinate system, using the `Rotate` tool |rotate-tool-button| found in the main toolbar of OVITO.
 After activating this mode, three numeric input fields appear in the status bar at the bottom of the program window, which let you
-adjust the current `Euler angles <https://en.wikipedia.org/wiki/Euler_angles>`__ of the selected object, i.e. its rotation around the three axes of the global coordinate system.
+adjust the current `Euler angles <https://en.wikipedia.org/wiki/Euler_angles>`__ of the selected object, i.e., its rotation around the three axes of the global coordinate system.
 For a turntable animation, we will have to vary the third Euler angle (Z), which specifies the object's rotation around the z-axis.
 
 .. figure:: /images/tutorials/turntable_animation/euler_angles_input_fields.jpg
@@ -70,7 +70,7 @@ This can be accomplished by applying the :ref:`particles.modifiers.affine_transf
 Open the :guilabel:`Add modification...` drop-down list and select `Affine transformation` from the `Modification` section.
 The newly inserted modifier appears as a new item in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
 Activate the option :guilabel:`In reduced cell coordinates` as shown in the screenshot and enter the values :math:`(-0.5, -0.5, 0)` into the
-fields for the translation vector. This shifts the simulation box including all atoms such that the pivot point :math:`(0,0,0)`
+fields for the translation vector. This shifts the simulation box, including all atoms, such that the pivot point :math:`(0,0,0)`
 is now located in the center.
 
 Step 4: Set animation length
@@ -84,8 +84,8 @@ Step 4: Set animation length
    :width: 30%
    :align: right
 
-Rendering an animation video in OVITO requires a finite timeline, i.e. an interval of :ref:`animation frames <usage.animation.frames>`.
-In step 2 above we extracted a single snapshot from the loaded trajectory, which means the current timeline is degenerate and
+Rendering an animation video in OVITO requires a finite timeline, i.e., an interval of :ref:`animation frames <usage.animation.frames>`.
+In step 2 above, we extracted a single snapshot from the loaded trajectory, which means the current timeline is degenerate and
 consists of one static frame only. OVITO automatically hides the time slider and disables the playback controls in such a case.
 
 Now you are going to override the length of the animation interval to explicitly define the duration of the turntable
@@ -106,10 +106,10 @@ Make sure the `Rotate` tool |rotate-tool-button| is still selected in the main t
 
 This opens the animation keys dialog window. OVITO's :ref:`parameter animation system <usage.animation>` is based on so-called *keyframes*, which
 means that the user specifies the value(s) of an animated parameter, for example the dataset's orientation, at specific
-points along the timeline. In between these keyframes the program will automatically interpolate from one key value to the next
+points along the timeline. In between these keyframes, the program will automatically interpolate from one key value to the next
 to create a smooth transition.
 
-For animating one complete rotation of the dataset, i.e. revolving once by 360 degrees around the z-axis, two animation keys
+For animating one complete rotation of the dataset, i.e., revolving once by 360 degrees around the z-axis, two animation keys
 are required: A first one at the start of the animation interval (frame 0) and a second one at the end of the interval (frame 100).
 The first key brings the object into its standard orientation (zero degrees), while the second key specifies a full 360° turn.
 Note that, visually, the start and end orientations are indistinguishable, but OVITO keeps track of how many revolutions an object

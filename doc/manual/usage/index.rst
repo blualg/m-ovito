@@ -1,10 +1,10 @@
 .. _basic_usage:
 
-===========
-Basic usage
-===========
+============
+Introduction
+============
 
-The following sections will introduce you to the basic usage of the OVITO desktop application.
+If you are new to OVITO, you can start by reading the following sections of this manual:
 
 .. toctree::
   :maxdepth: 1

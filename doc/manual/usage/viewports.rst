@@ -3,10 +3,10 @@
 Viewport windows
 ================
 
-The interactive viewport windows of OVITO show the three-dimensional visualization scene from different angles.
+The interactive viewport windows of OVITO display the three-dimensional visualization scene from different angles.
 The text caption in the upper left corner and the axis tripod in the lower left corner of each viewport
 indicate the orientation of the virtual camera. If you don't like the standard 2-by-2 viewport layout,
-you can :ref:`tailor the layout <viewport_layouts>` to your specific needs.
+you can :ref:`customize the layout <viewport_layouts>` to your specific needs.
 
 .. _usage.viewports.navigation:
 
@@ -20,20 +20,20 @@ Camera navigation
 Use the mouse to rotate or move the virtual camera of a viewport:
 
 * Left-click and drag to rotate the camera around the current orbit center, which is located in the center of the simulation model by default.
-* Right-click and drag the mouse in order to move the camera parallel to the projection plane. You can also use the middle mouse button
+* Right-click and drag the mouse to move the camera parallel to the projection plane. You can also use the middle mouse button
   or :kbd:`Shift` + left mouse button for this.
 * Use the mouse wheel to zoom in or out.
 * Double-click an object to reposition the orbit center to the point under the mouse cursor.
-  From now on the camera will rotate around that new location marked with a three-dimensional cross.
+  From now on, the camera will rotate around that new location marked with a three-dimensional cross.
 * Double-click in an empty region of a viewport to reset the orbit center to the center of the simulation model.
 
 Note that the z-axis is considered the "up" (vertical) direction, and OVITO constrains the camera orientation
-such that this axis always points upward in the viewports. You turn this behavior off in the :ref:`viewport context menu <usage.viewports.menu>`
+such that this axis always points upward in the viewports. You can turn this behavior off in the :ref:`viewport context menu <usage.viewports.menu>`
 or change the constraint axis in the :ref:`application settings <application_settings.viewports>` of OVITO.
 
 .. _usage.viewports.toolbar:
 
-Viewport toolbar
+Viewport Toolbar
 ----------------
 
 .. image:: /images/viewport_control_toolbar/viewport_toolbar.*
@@ -49,7 +49,7 @@ In addition, you can find two other useful functions here:
 
 The :guilabel:`Zoom Scene Extents` button automatically adjusts the virtual camera of the active viewport
 such that all objects in the scene become fully visible. Use the :kbd:`Ctrl` key (:kbd:`Command` key on macOS) to
-do it for all viewports at once.
+apply this to all viewports at once.
 
 .. image:: /images/viewport_control_toolbar/maximize_viewport.bw.*
    :width: 32
@@ -67,7 +67,7 @@ Viewport menu
    :width: 40%
    :align: right
 
-Click on the caption text in the upper left corner of a viewport window (e.g. *Perspective*, *Top*, etc.)
+Click on the caption text in the upper left corner of a viewport window (e.g., *Perspective*, *Top*, etc.)
 to open the *viewport menu*.
 
 :guilabel:`Preview Mode` activates the display of a virtual frame in the viewport to

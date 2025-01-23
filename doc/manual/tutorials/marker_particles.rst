@@ -8,21 +8,15 @@ Motion visualization with marker particles
    :width: 40%
    :align: right
 
-In this step-by-step tutorial, you will create an animation from an MD simulation of a simple shearing experiment
-as shown on the right. You will learn how to highlight a group of atoms,
-initially located in a narrow region, with a marker color to visualize the atomic motion 
-in the interior of the crystal during the course of the simulation.
+This step-by-step tutorial will guide you through creating an animation from an MD simulation of a simple shearing experiment, as shown on the right. You will learn how to highlight a specific group of atoms - initially located in a narrow region - using marker colors to visualize atomic motion within the crystal throughout the simulation.
 
-In particular, you will learn more about the purpose of the :ref:`particles.modifiers.freeze_property` modifier in OVITO,
-which helps you preserve the initial selection state of a group of particles. 
+You will learn about the :ref:`particles.modifiers.freeze_property` modifier in OVITO, which helps preserve the initial particle selection set from the first frame of the trajectory.
 
 Step 1: Load simulation trajectory
 """"""""""""""""""""""""""""""""""
 
-Start by downloading the simulation trajectory file 
-`shear.dump <https://gitlab.com/stuko/ovito/-/blob/master/examples/data/shear.dump>`__
-for this tutorial to your computer. It was generated from the ``shear`` simulation script 
-found in the `LAMMPS examples folder <https://docs.lammps.org/Examples.html>`__. Use the :menuselection:`File --> Load File` function
+Start by downloading the simulation trajectory file
+`shear.dump <https://gitlab.com/stuko/ovito/-/blob/master/examples/data/shear.dump>`__ to your computer. This file was generated the ``shear`` simulation script found in the `LAMMPS examples folder <https://docs.lammps.org/Examples.html>`__. Use the :menuselection:`File --> Load File` function
 to open the file :file:`shear.dump` in OVITO.
 
 Step 2: Adjust animation speed
@@ -40,16 +34,17 @@ Step 2: Adjust animation speed
    :width: 26%
    :align: right
 
-The simulation trajectory comprises 41 frames as indicated by the numbers in the timeline of 
-OVITO located below the viewports. Drag the time slider with the mouse to skip through the 
-frames of the trajectory, or press the :guilabel:`Play` |play-button| button in the animation toolbar to play back 
-the animation in the interactive viewports in a loop.
+The simulation trajectory consists of 41 frames, as indicated in the timeline below the viewports of OVITO.
 
-The playback speed, i.e. the number of animation frames per second, can be adjusted in the 
-:ref:`Animation settings dialog <animation.animation_settings_dialog>`. Open the dialog using
-the |anim-settings-button| button in the animation toolbar and make sure the :guilabel:`Frames per second` value is set to **15**.
-This parameter not only affects the playback in the interactive viewports of OVITO but also 
-the frame rate of movie files written by the program.
+  * Drag the time slider with the mouse to manually navigate through frames.
+  * Press the :guilabel:`Play` |play-button| button in the animation toolbar to loop the animation in the interactive viewports.
+
+To adjust the animation speed:
+
+  1. Open the :ref:`Animation settings dialog <animation.animation_settings_dialog>` |anim-settings-button|.
+  2. Set :guilabel:`Frames per second` to 15.
+
+This setting affects both interactive playback and the frame rate of exported movie files.
 
 Step 3: Create particle selection
 """""""""""""""""""""""""""""""""
@@ -58,27 +53,29 @@ Step 3: Create particle selection
    :width: 26%
    :align: right
 
-We now insert the :ref:`particles.modifiers.slice` modifier into the :ref:`pipeline <usage.modification_pipeline>` to select all particles within a 
-narrow slab of the crystal. Open the :guilabel:`Add modification...` drop-down list and select `Slice` from the `Modification` section.
-The newly inserted modifier appears as a new item in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
+Next, insert the :ref:`particles.modifiers.slice` modifier into the :ref:`data pipeline <usage.modification_pipeline>` to select all particles within a narrow slab of the crystal:
 
-While the :ref:`particles.modifiers.slice` modifier's normal operation is to actually delete all particles on one side of the slicing plane, 
-we can tell the modifier to only select the particles by activating the option :guilabel:`Create selection (do not delete)`. 
-Furthermore, set the :guilabel:`Slab width` to **5.0** to make the slab five angstroms wide and check :guilabel:`Reverse orientation` to select the particles
-located *in between* the two parallel planes.
+  1. Select :ref:`particles.modifiers.slice` from the :guilabel:`Add modification...` drop-down list (`Modifications` section).
+  2. The modifier will now appear as a new item in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
+
+By default, the :ref:`particles.modifiers.slice` modifier removes particles on one side of the slicing plane.
+However, in this case, we want to select particles instead of deleting them. In the :ref:`particles.modifiers.slice` modifier panel:
+
+  1. Enable :guilabel:`Create selection (do not delete)`.
+  2. Set :guilabel:`Slab width` to 5 angstroms.
+  3. Check :guilabel:`Reverse orientation` to select particles located between the two parallel planes.
 
 Step 4: Color the marker particles
 """"""""""""""""""""""""""""""""""
 
-OVITO highlights the selected particles using a bright red color. However, the actual color of these particles did not change
-yet. The red color is only visible in the interactive viewports of the program to indicate which particles are currently selected,
-but if you would render an output image or a movie of the system now (see step 6), these particles would still appear 
-in their original gray color like the rest of the crystal.
+OVITO highlights selected particles in bright red in the viewports, but this color is only a temporary indicator to show the selection state.
+To permanently change the particle color for rendering:
 
-You have to actively change the color of the selected particles by inserting another modifier into the pipeline.
-Open again the :guilabel:`Add modification...` drop-down list and select `Assign color` from the `Coloring` section.
-The :ref:`particles.modifiers.assign_color` modifier assigns a new uniform color of your choice to the currently selected particles. Let's use a green color:
- 
+  1. Select :ref:`particles.modifiers.assign_color` from the :guilabel:`Add modification...` drop-down list (`Coloring` section).
+  2. Choose green as the new color for the selected particles.
+
+Here is how the result looks like at different frames of the simulation:
+
 .. image:: /images/tutorials/marker_particles/intermediate_frame0.jpg
    :width: 28%
 
@@ -95,21 +92,21 @@ Step 5: Freeze the particle colors
    :width: 26%
    :align: right
 
-When looking at the time sequence above, you will notice that the set of green marker particles is not quite right yet: The green slab remains exactly straight even though
-the crystal is deforming. Different particles turn green as they enter the selection region and, after leaving the region, 
-they become white again.
+If you play the animation now, you will notice that the particle selection is not static. The green slab remains straight, but different particles turn green as they enter the selection region, while others revert to white when leaving.
 
-The reason for this is that the `Slice` and `Assign color` operations are (re-)performed dynamically on each frame of the simulation trajectory.
-OVITO updates the results of these modifiers automatically whenever their input state changes, i.e., when particles move during 
-the course of the simulation.
+This happens because the `Slice` and `Assign Color` modifiers are applied dynamically in each frame.
+OVITO automatically recalculates the selection and colors whenever particles move.
 
-Often times this is exactly the behavior one needs, but here in this tutorial it is not: We'd rather like to create a static set of green marker 
-particles, which remains unaffected by the particle motion. In other words, once the particle selection has been defined at the beginning of the simulation, it needs to be *frozen* 
-to preserve it across the entire timeline. For this purpose, OVITO provides the :ref:`particles.modifiers.freeze_property` modifier.
+**Freezing the selection**
 
-Add this modifier to the pipeline as usual and change the :guilabel:`Property to freeze` to ``Color``. This tells the modifier to 
-take the original colors of the particles from animation frame 0 and override the current colors with them in all other frames of the trajectory.
-Thus, the effectively assigned particle colors will now remain static, replacing the otherwise dynamic coloring produced by the combination of modifiers `Slice` and `Assign color`:
+To ensure the same set of particles remains green throughout the animation, we need to "freeze" their color state.
+Freezing a particle property means transferring the property values from the first frame of the trajectory to all other frames.
+To freeze the particle colors:
+
+  1. Add the :ref:`particles.modifiers.freeze_property` modifier to the pipeline.
+  2. Set :guilabel:`Property to freeze` to `Color`.
+
+This locks each particle's color from frame 0 and applies them consistently throughout the animation:
 
 .. image:: /images/tutorials/marker_particles/final_frame0.jpg
    :width: 28%
@@ -122,28 +119,32 @@ Thus, the effectively assigned particle colors will now remain static, replacing
 
 .. note::
 
-  Note that we have placed the :ref:`particles.modifiers.freeze_property` modifier at the top of the modifier stack in the pipeline editor, which means 
-  it will be executed last - after the two other modifiers have performed their actions. This ordering is important for two reasons: The :ref:`particles.modifiers.freeze_property` modifier
-  is only able to preserve the particle state produced by modifiers preceding it in the pipeline. The effect of subsequent modifiers, in contrast, will not be visible to `Freeze property`.
-  Furthermore, we want the :ref:`particles.modifiers.freeze_property` modifier to be the last one changing the colors of the particles. Placing additional modifiers
-  behind it in the pipeline, which introduce again some dynamic coloring, might undo the step of freezing the particle colors.
+  We have placed the :ref:`particles.modifiers.freeze_property` modifier at the top of the modifier stack, which means
+  it will be executed last - after the two other modifiers. This ordering is important: The :ref:`particles.modifiers.freeze_property` modifier
+  is only able to preserve the particle state produced so far by preceding modifiers. Any effects of downstream modifiers in the pipeline would not be visible
+  to the :ref:`particles.modifiers.freeze_property` modifier.
 
 .. image:: /images/tutorials/marker_particles/freeze_property_selection.jpg
   :width: 26%
   :align: right
 
-An alternative approach, leading to virtually the same results, is to let the :ref:`particles.modifiers.freeze_property` modifier freeze the *selection* state of the particles instead of their *color* state. 
-To do this, reorder the modifier sequence as shown in the second screenshot and change the :guilabel:`Property to freeze` to ``Selection``. 
-Now `Freeze property` will preserve the particle selection created by `Slice` in frame 0 of the trajectory, and `Assign color` will use that frozen 
-selection state as input to always color the same set of particles.
+**Freezing the selection instead of the colors**
+
+Instead of freezing the particle colors, you can freeze their selection state:
+
+  1. Move the :ref:`particles.modifiers.freeze_property` modifier before (below) the :ref:`particles.modifiers.assign_color` modifier in the stack.
+  2. Set :guilabel:`Property to freeze` to `Selection`.
+
+Now, the frozen selection from frame 0 remains unchanged, and the :ref:`particles.modifiers.assign_color` modifier applies the green color to
+the same selected particles in every frame.
 
 Step 6: Render a movie
 """"""""""""""""""""""
 
-To complete this tutorial you will now render a movie of the simulation and save it as a video file. 
+To complete this tutorial you will now render a movie of the simulation and save it as a video file.
 
 Switch to the `Render` tab of the command panel and set the rendering range to :guilabel:`Complete animation`.
-Click :guilabel:`Choose...` and specify the name and format of the video file to be written by OVITO, e.g. :file:`shear_marker.mp4`. 
+Click :guilabel:`Choose...` and specify the name and format of the video file to be written by OVITO, e.g. :file:`shear_marker.mp4`.
 The option :guilabel:`Save to file` should now automatically be turned on.
 
 .. image:: /images/tutorials/marker_particles/render_settings.jpg
@@ -157,19 +158,17 @@ Finally, press the button :guilabel:`Render active viewport` to start the render
 
 .. tip::
 
-  To further refine the visualization you may want to perform a few additional actions:
+  To further refine the visualization you may want to perform a few additional steps:
 
   - Turn off the display of the :ref:`visual_elements.simulation_cell` visual element in the pipeline editor.
   - Adjust the display radius of the particles in the :ref:`visual_elements.particles` visual element to a value of **1.0**.
   - Activate :menuselection:`Preview Mode` in the :ref:`viewport menu <usage.viewports.menu>` to check the visible viewport region before rendering the video.
 
-Download tutorial solution
-""""""""""""""""""""""""""
+Download the tutorial solution
+""""""""""""""""""""""""""""""
 
-In case you would like to skip right to the end of this tutorial or verify your own solution, an OVITO session state file is available.
-Download the state file `shear.ovito <https://gitlab.com/stuko/ovito/-/blob/master/examples/data/shear.ovito>`__
-and save it in the same folder as the trajectory file :file:`shear.dump`. Use the :menuselection:`File --> Load Session State` 
-menu function to load it in OVITO. 
+If you'd like to skip ahead or verify your solution, download the preconfigured OVITO session state file: `shear.ovito <https://gitlab.com/stuko/ovito/-/blob/master/examples/data/shear.ovito>`__
 
-If you encounter any problems with this tutorial, please drop us an email at support@ovito.org to help us improve 
-the instructions.
+Save it in the same folder as the trajectory file :file:`shear.dump`. Open it using :menuselection:`File --> Load Session State`.
+
+If you encounter any issues, feel free to contact us at support@ovito.org to help us improve this tutorial.

@@ -12,70 +12,29 @@ datasets are saved to a single output file or to a sequence of files, one per fr
 OVITO will ask you for a destination filename. Note that, if you append a :file:`.gz` or :file:`.zst` suffix, the output file(s) will automatically be
 compressed for text-based file formats.
 
+.. seealso:: :ref:`Output file formats support by OVITO <file_formats.output>`
+
 .. _usage.global_attributes:
 
-Global attribute values
------------------------
+Global attributes
+-----------------
 
-Some of OVITO's analysis functions compute scalar output values, e.g. the total number of atoms of a
-particular type or the computed surface area of a solid. You can find a table of these *global attributes*
-associated with the current dataset on the :ref:`Attributes page <data_inspector.attributes>` of the data inspector panel.
-Attributes may have time-dependent values, i.e., they are dynamically recomputed by the pipeline system for every animation frame.
-Plotting the values of one or more global attributes as functions of time can be done in *OVITO Pro* using the :ref:`particles.modifiers.time_series` modifier.
+*Global attributes* are numeric values or other pieces of information associated with the dataset as a whole,
+not individual particles or bonds.
 
-You can also export global attribute values to a text file using OVITO's file export function described above.
-Make sure to select the "*Table of Values*" export format in the file selection dialog.
-This output format produces a tabular text file with the values of the selected attributes as functions of time.
+OVITO's analysis functions may produce new global attributes as an output, e.g., the number of atoms of a
+particular type or the computed total surface area of a structure. You can open the :ref:`Attributes page <data_inspector.attributes>`
+of the data inspector to see the list of global attributes associated with the current dataset at the current simulation timestep.
 
-.. seealso:: :ref:`adding_global_attributes`
+Global attributes often have time-dependent values, i.e., they are dynamically recomputed by the pipeline system for every animation frame.
+Plotting the value(s) of one or more global attributes as functions of time can be done using the :ref:`particles.modifiers.time_series`
+modifier of OVITO Pro.
 
-.. _usage.export.formats:
+You can export global attribute values to a text file using OVITO's file export function described above.
+Make sure to select the "*Table of Values*" :ref:`export format <file_formats.output>`. This output format yields a tabular data file
+with one row per animation frame and one column per global attribute.
 
-Supported output file formats
------------------------------
+.. seealso::
 
-.. list-table::
-  :widths: 20 55 25
-  :header-rows: 1
-
-  * - File format
-    - Description
-    - Exported data
-  * - LAMMPS dump
-    - Text-based file format produced and read by the `LAMMPS <https://www.lammps.org/>`__ molecular dynamics code.
-    - :ref:`particles <scene_objects.particles>`
-  * - LAMMPS data
-    - File format read by the `LAMMPS <https://www.lammps.org/>`__ molecular dynamics code.
-    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers
-  * - XYZ
-    - A simple column-based text format, which is documented `here <http://en.wikipedia.org/wiki/XYZ_file_format>`__.
-
-      ..
-        and `here <http://libatoms.github.io/QUIP/io.html#module-ase.io.extxyz>`__. TODO
-
-    - :ref:`particles <scene_objects.particles>`
-  * - POSCAR
-    - File format used by the *ab initio* simulation package `VASP <https://www.vasp.at/>`__.
-    - :ref:`particles <scene_objects.particles>`
-  * - IMD
-    - File format used by the molecular dynamics code `IMD <http://imd.itap.physik.uni-stuttgart.de/>`__.
-    - :ref:`particles <scene_objects.particles>`
-  * - FHI-aims
-    - File format used by the *ab initio* simulation package `FHI-aims <https://aimsclub.fhi-berlin.mpg.de/index.php>`__.
-    - :ref:`particles <scene_objects.particles>`
-  * - NetCDF
-    - Binary format for molecular dynamics data following the `AMBER <http://ambermd.org/netcdf/nctraj.pdf>`__ format convention.
-    - :ref:`particles <scene_objects.particles>`
-  * - GSD/HOOMD
-    - Binary format for molecular dynamics data used by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ code. See `GSD (General Simulation Data) format <https://gsd.readthedocs.io>`__.
-    - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, :ref:`global attributes <usage.global_attributes>`
-  * - VTK
-    - Generic text-based data format used by the ParaView software.
-    - :ref:`surface meshes <scene_objects.surface_mesh>`, :ref:`voxel grids <scene_objects.voxel_grid>`, :ref:`dislocations <scene_objects.dislocations>`
-  * - POV-Ray scene
-    - Exports the entire scene to a file that can be rendered with `POV-Ray <http://www.povray.org/>`__.
-    - any
-  * - Crystal Analysis (.ca)
-    - Format that can store dislocation lines extracted from an atomistic crystal model by the :ref:`Dislocation Analysis <particles.modifiers.dislocation_analysis>` modifier.
-      The format is documented :ref:`here <particles.modifiers.dislocation_analysis.fileformat>`.
-    - :ref:`dislocations <scene_objects.dislocations>`, :ref:`surface meshes <scene_objects.surface_mesh>`
+  * :ref:`adding_global_attributes`
+  * `Reduce Property modifier <https://github.com/ovito-org/ReduceProperty>`__

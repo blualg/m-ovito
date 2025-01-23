@@ -363,8 +363,6 @@ void MainWindow::createMainMenu()
         fileMenu->addAction(runScriptFileAction);
     if(QAction* generateScriptFileAction = actionManager()->findAction(ACTION_SCRIPTING_GENERATE_CODE))
         fileMenu->addAction(generateScriptFileAction);
-    if(QAction* extensionGalleryAction = actionManager()->findAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY))
-        fileMenu->addAction(extensionGalleryAction);
     fileMenu->addSeparator();
     fileMenu->addAction(actionManager()->getAction(ACTION_FILE_NEW_WINDOW));
     fileMenu->addSeparator();
@@ -380,6 +378,8 @@ void MainWindow::createMainMenu()
 #endif
     editMenu->addSeparator();
     editMenu->addAction(actionManager()->getAction(ACTION_SETTINGS_DIALOG));
+    if(QAction* extensionGalleryAction = actionManager()->findAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY))
+        editMenu->addAction(extensionGalleryAction);
 
     // Build the help menu.
     QMenu* helpMenu = menuBar->addMenu(tr("&Help"));
