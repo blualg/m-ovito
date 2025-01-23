@@ -63,15 +63,15 @@ functionality with the URL
 the file from its remote location. When asked by OVITO, select :ref:`Add to scene <usage.import.multiple_datasets>`
 to load the second dataset into the existing scene.
 
+.. image:: ../images/tutorials/remote_render/render_tab.png
+    :width: 30%
+    :align: left
+
 At this point, both simulation trajectories should be visible side-by-side in the viewports.
 Next, you can apply modifiers as desired to build up typical visualization pipelines.
 For this tutorial, we will color the water molecules by their molecule identifiers using the
 :ref:`particles.modifiers.color_coding` modifier. This is also the time to configure
 viewport overlays, the camera perspective, and any other settings required for a visualization.
-
-.. image:: ../images/tutorials/remote_render/render_tab.png
-    :width: 30%
-    :align: left
 
 Finally, go to the :ref:`render tab <rendering>` and configure the animation rendering options.
 Since rendering on a remote computer makes the most sense when a lot of frames have to be rendered, we will select
@@ -83,13 +83,25 @@ to :ref:`Tachyon <rendering.tachyon_renderer>`,
 This step can be necessary because many compute clusters do not provide
 the required system environment for the OpenGL renderer to work on the compute nodes.
 
+.. image:: ../images/tutorials/remote_render/remote_render_settings_tab.png
+   :width: 30%
+   :align: right
+
 After configuring everything as we would for local rendering, instead of
 hitting the :guilabel:`Render active viewport` button and grabbing some coffee, we
-select :menuselection:`File --> Render on remote computer...` from the main menu. This
-opens the *Remote render settings* dialog window.
+select :guilabel:`Render on remote computer` from the :guilabel:`Utilities...` tab. This
+opens the *Remote render settings*. Here we can specify a (local) destination directory for the bundle by clicking
+the :guilabel:`Choose...` button. In this tutorial, it's ``C:\Users\daniel\Downloads\remote_render_tutorial``.
+The selected directory must be empty.
+Moreover, the number of cores per rendering task has to be set. By default, this is set to *all available*,
+but you may want to adjust it based on your needs and also the memory requirements of your simulation dataset.
+For example, on a compute node with 96 cores, setting *CPU cores per task* to 8 means that each node
+will spawn 12 workers, rendering 12 images concurrently. Generally, more workers
+with fewer cores scale better for most rendering tasks, but some benchmarking
+might be required to reach optimal performance.
 
 .. image:: ../images/tutorials/remote_render/export_dialog.png
-   :width: 40%
+   :width: 50%
    :align: right
 
 You'll be presented with a table containing three columns (*Current path*,
@@ -110,16 +122,7 @@ on the remote cluster. This informs OVITO that all files found at the
 original URL will be available under the new (local) path once the bundle is moved to
 the remote computer.
 
-Set the number of cores per rendering task. By default, this is set to *all available*,
-but you may want to adjust it based on your needs and also the memory requirements of your simulation dataset.
-For example, on a compute node with 96 cores, setting *CPU cores per task* to 8 means that each node
-will spawn 12 workers, rendering 12 images concurrently. Generally, more workers
-with fewer cores scale better for most rendering tasks, but some benchmarking
-might be required to reach optimal performance.
-
-Lastly, specify a (local) destination directory for the bundle by clicking
-the :guilabel:`Choose...` button. In this tutorial, it's ``C:\Users\daniel\Downloads\remote_render_tutorial``.
-The selected directory must be empty. Once everything is set up, hit
+Once everything is set up, hit
 :guilabel:`Export` to let *OVITO Pro* write the actual file bundle.
 
 Pack and transfer
