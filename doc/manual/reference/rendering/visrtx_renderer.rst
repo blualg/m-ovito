@@ -96,31 +96,36 @@ Post-processing effects
 """""""""""""""""""""""
 
 Outlines
-    Enables depth-aware outlines. They can be used either in the interactive viewport or
-    VisRTX final frame rendering.
+  Enables depth-aware outlines. They can be used either in the interactive viewport or
+  VisRTX final frame rendering.
 
   .. figure:: /images/rendering/visrtx_viewport_outlines.*
-    :figwidth: 49%
+    :figwidth: 55%
 
     Outlines in the interactive viewport.
 
   .. figure:: /images/rendering/visrtx_render_outlines.*
-    :figwidth: 49%
+    :figwidth: 44%
 
     Outlines in the rendered image.
 
-Depth Difference & Outline Width
-  Uniform Width Mode
-    In this mode, a single value is used for both the depth difference and the outline width. An outline with a constant width is drawn for all objects with a depth difference greater than the specified value.
+  Depth Difference & Outline Width
+    Uniform Width Mode
+      In this mode, a single value is used for both the depth difference and the outline width.
+      An outline with a constant width is drawn around all objects that have a depth difference
+      greater than the specified value relative to the background.
 
-  Variable Width Mode
-    In this mode, the outline width increases linearly from the minimum width to the maximum width as the depth difference between adjacent objects varies from the minimum to the maximum depth difference.
-    When switching from "Uniform Width Mode" to "Variable Width Mode", missing values for depth or line width will be automatically set to default values.
+    Variable Width Mode
+      In this mode, the outline width increases linearly from the minimum to the maximum width
+      as the depth difference between overlapping objects varies from the minimum to the maximum depth difference.
+      When switching from Uniform Width Mode to Variable Width Mode, any missing values for
+      depth or line width will be automatically set to their default values.
 
-Custom Color
-    When disabled, the outline color is automatically set based on the background color:
-    white outlines for dark backgrounds and black outlines for light backgrounds. When enabled,
-    the manually selected color is used instead.
+  Custom Color
+    When disabled, the outline color is automatically determined based on the background color:
+    white outlines for dark backgrounds and black outlines for light backgrounds.
+    When enabled, the manually selected color is used instead.
+
 
 .. seealso::
 
