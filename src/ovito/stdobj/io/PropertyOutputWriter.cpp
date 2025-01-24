@@ -88,7 +88,7 @@ PropertyOutputWriter::PropertyOutputWriter(const OutputColumnMapping& mapping, c
         QString errorDescription;
         auto [property, vectorComponent] = mapping[i].findInContainerWithComponent(sourceContainer, errorDescription, false);
         if(property == nullptr && mapping[i].name() != sourceContainer->getOOMetaClass().standardPropertyName(Property::GenericIdentifierProperty)) {
-            throw Exception(tr("Invalid output file column %1 specification: %2").arg(errorDescription));
+            throw Exception(tr("Invalid output file column specification '%1': %2").arg(mapping[i].nameWithComponent()).arg(errorDescription));
         }
         if(vectorComponent < 0) {
             // If the user did not specify a specific component for a vector property, generate multiple columns to export all property components.

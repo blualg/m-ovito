@@ -15,49 +15,56 @@ Non-spherical particle shapes
 
    User-defined particle shapes
 
-OVITO has built-in support for a range of different particle shapes aside from the default spherical shape:
+OVITO provides built-in support for various particle shapes beyond the default spherical shape:
 
- - :ref:`spheres <howto.aspherical_particles.spheres>`
- - :ref:`ellipsoids <howto.aspherical_particles.ellipsoids>`
- - :ref:`superquadrics <howto.aspherical_particles.superquadrics>`
- - :ref:`cubes, boxes <howto.aspherical_particles.boxes>`
- - :ref:`cylinders <howto.aspherical_particles.cylinders>`
- - :ref:`spherocylinders (capsules) <howto.aspherical_particles.capsules>`
- - :ref:`circles and squares (billboards that follow the view direction) <howto.aspherical_particles.circles_and_squares>`
- - :ref:`user-defined polygonal meshes <howto.aspherical_particles.user_shapes>`
+ - :ref:`Spheres <howto.aspherical_particles.spheres>`
+ - :ref:`Ellipsoids <howto.aspherical_particles.ellipsoids>`
+ - :ref:`Superquadrics <howto.aspherical_particles.superquadrics>`
+ - :ref:`Cubes and boxes <howto.aspherical_particles.boxes>`
+ - :ref:`Cylinders <howto.aspherical_particles.cylinders>`
+ - :ref:`Spherocylinders (capsules) <howto.aspherical_particles.capsules>`
+ - :ref:`Circles and squares (billboards that follow the view direction) <howto.aspherical_particles.circles_and_squares>`
+ - :ref:`User-defined polygonal meshes <howto.aspherical_particles.user_shapes>`
 
-You can set the display shape of particles globally for the :ref:`Particles <visual_elements.particles>` visual element
-or on a per particle type basis in the :ref:`Particle types <scene_objects.particle_types>` panel.
+You can specify the display shape of particles for the entire system in the :ref:`Particles <visual_elements.particles>` visual element
+or specify it per particle type in the :ref:`Particle types <scene_objects.particle_types>` panel.
 
 .. _howto.aspherical_particles.orientation:
 
-Size and orientation of particles are controlled by properties
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Controlling size and orientation of particles
+"""""""""""""""""""""""""""""""""""""""""""""
 
-By assigning values to the following particle properties in OVITO, you can control the orientation and the dimensions or size of
-each particle individually:
+By assigning values to the following particle properties in OVITO, you can control the orientation and dimensions of
+individual particles:
 
    - ``Radius`` (scalar)
    - ``Aspherical Shape`` (X, Y, Z)
    - ``Orientation`` (X, Y, Z, W)
    - ``Superquadric Roundness`` (Phi, Theta)
 
-The property assignment can happen directly during import of your data file into OVITO by mapping values from corresponding
-file columns to the right target properties in OVITO. Furthermore, you can subsequently assign values to these properties as needed by inserting
-the :ref:`particles.modifiers.compute_property` modifier into the data pipeline.
+These properties can be assigned during data import by mapping corresponding file columns to the appropriate target properties in OVITO.
+You can also modify them later by inserting the :ref:`particles.modifiers.compute_property` modifier into the data pipeline.
 
-The orientation of non-spherical particles is controlled by the ``Orientation`` particle property,
-which consists of four components :math:`\mathrm{q} = (x, y, z, w)` forming a `quaternion <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__.
-A quaternion is a mathematical representation of an arbitrary rotation in three-dimensional space, similar to (but more compact than)
-a rotation matrix.
+The orientation of non-spherical particles is controlled by the ``Orientation`` property, which consists of four components:
 
-Note that OVITO employs a notation for quaternions that follows the `work of Ken Shoemake <https://www.ljll.math.upmc.fr/~frey/papers/scientific%20visualisation/Shoemake%20K.,%20Quaternions.pdf>`__.
-This convention may slightly differ from other notations you find in the literature (e.g. on `Wikipedia <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__).
-The four quaternion components :math:`(x, y, z, w)` are sometimes interchanged and written as :math:`(q_r,q_i,q_j,q_k) = (w',x',y',z')` instead.
-Thus, during import of orientational data into OVITO, you may have to remap the four input components of the quaternions to the right target components.
+.. math::
 
-The ``Orientation`` and ``Aspherical Shape`` particle properties are typically loaded from data files written by some simulation code. The LAMMPS simulation code, for example,
-allows you to output this per-particle information to a dump file using the following LAMMPS script commands:
+   \mathbf{q} = (x, y, z, w)
+
+This represents a `quaternion <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__, a mathematical construct
+used for three-dimensional rotations. Quaternions offer a more compact and numerically stable alternative to rotation matrices.
+
+OVITO follows the quaternion notation established by `Ken Shoemake <https://www.ljll.math.upmc.fr/~frey/papers/scientific%20visualisation/Shoemake%20K.,%20Quaternions.pdf>`__.
+This notation may differ from other conventions found in literature, such as the `Wikipedia <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>`__ format, where quaternion components are often written as:
+
+.. math::
+
+   (q_r, q_i, q_j, q_k) = (w', x', y', z')
+
+Thus, when importing quaternion data into OVITO, ensure the correct mapping of input components.
+
+The ``Orientation`` and ``Aspherical Shape`` properties are typically derived from simulation outputs.
+For example, in `LAMMPS`, the following script commands dump and export per-particle orientation and size information:
 
 ::
 
@@ -67,24 +74,23 @@ allows you to output this per-particle information to a dump file using the foll
                                        c_orient[1] c_orient[2] c_orient[3] c_orient[4] &
                                        c_diameter[1] c_diameter[2] c_diameter[3]
 
-During import of the dump file in OVITO, you should map the ``quati``, ``quatj``, ``quatj``, and ``quatw`` atom attributes from LAMMPS
-to the ``Orientation.X``, ``Orientation.Y``, ``Orientation.Z``, and ``Orientation.W`` particle properties in OVITO (in this exact order).
-This mapping will be established automatically if you `assign the right names to the columns <https://docs.lammps.org/dump_modify.html>`__
-when writing the dump file:
+When :ref:`importing the dump file into OVITO <file_formats.input.lammps_dump.property_mapping>`, ensure that the ``quati``, ``quatj``, ``quatk``, and ``quatw`` attributes are correctly mapped to
+``Orientation.X``, ``Orientation.Y``, ``Orientation.Z``, and ``Orientation.W`` particle properties (in this exact order).
+
+OVITO can automatically establish this mapping if the `column names in the LAMMPS dump file are properly assigned <https://docs.lammps.org/dump_modify.html>`__:
 
 ::
 
   dump_modify 1 colname c_orient[1] quatw colname c_orient[2] quati colname c_orient[3] quatj colname c_orient[4] quatk
   dump_modify 1 colname c_diameter[1] shapex colname c_diameter[2] shapey colname c_diameter[3] shapez
 
-Similarly, the ``shapex``, ``shapey``, and ``shapez`` columns will be mapped to the properties ``Aspherical Shape.X``, ``Aspherical Shape.Y``, and ``Aspherical Shape.Z``
-within OVITO, which controls the principal semi-axes of non-spherical particles as described below.
+Similarly, the ``shapex``, ``shapey``, and ``shapez`` columns will be mapped to ``Aspherical Shape.X``, ``Aspherical Shape.Y``, and ``Aspherical Shape.Z``,
+which define the principal semi-axes of non-spherical particles as described below.
 
 .. note::
 
-   The correct mapping can be set up automatically by OVITO only if you name the dump file columns as specified
-   :ref:`here <file_formats.input.lammps_dump.property_mapping>`. Otherwise, you may have to adjust the mapping by hand in the :guilabel:`Edit column mapping` dialog,
-   which is accessible from the :ref:`file import panel <file_formats.input.lammps_dump>` after opening the dump or xyz file.
+   OVITO can automatically set up the correct mapping only if dump file column names are assigned as described :ref:`here <file_formats.input.lammps_dump.property_mapping>`.
+   Otherwise, you may need to adjust the mapping manually in the :guilabel:`Edit column mapping` dialog, accessible from the :ref:`File import panel <file_formats.input.lammps_dump>`.
 
 .. _howto.aspherical_particles.spheres:
 
@@ -102,7 +108,7 @@ The `sphere <https://en.wikipedia.org/wiki/Sphere>`__ particle shape is defined 
 The sphere radius :math:`r` is controlled by the per-particle property ``Radius``. If not present, the radius is determined by the
 :ref:`particle type <scene_objects.particle_types>` or, globally, by the :ref:`Particles <visual_elements.particles>` visual element.
 
-The ``Position`` particle property specifies an additional translation of the spherical equation above away from coordinate system origin, of course.
+The ``Position`` particle property specifies an additional translation of the spherical equation above away from the coordinate system origin.
 
 .. _howto.aspherical_particles.ellipsoids:
 
@@ -117,7 +123,7 @@ The `ellipsoid <https://en.wikipedia.org/wiki/Ellipsoid>`__ particle shape is de
 
   :math:`{\displaystyle {\frac {x^2}{a^2}}+{\frac {y^2}{b^2}}+{\frac {z^2}{c^2}} = 1}`.
 
-The length of the principal semi-axes :math:`a`, :math:`b`, :math:`c` of the ellipsoid are controlled by the per-particle property ``Aspherical Shape``,
+The lengths of the principal semi-axes :math:`a`, :math:`b`, :math:`c` of the ellipsoid are controlled by the per-particle property ``Aspherical Shape``,
 which has three components `X`, `Y`, and `Z` (all positive). If all three components of the property are zero for a particle,
 OVITO falls back to :math:`a=b=c=r`, with :math:`r` being the spherical radius of the particle as defined above.
 
@@ -149,7 +155,7 @@ Boxes
    :align: right
 
 The size of box-shaped particles is given by the semi-axes :math:`a`, :math:`b`, :math:`c`, which are multiplied by a factor of two to yield the edge lengths of the box along the
-Cartesian coordinate axes. In OVITO the semi-axes are determined by the particle property ``Aspherical Shape``, which has three components.
+Cartesian coordinate axes. In OVITO, the semi-axes are determined by the particle property ``Aspherical Shape``, which has three components.
 If not present, or if the components of ``Aspherical Shape`` are zero for a particle, OVITO falls back to using the ``Radius`` particle property and renders a cube.
 
 .. _howto.aspherical_particles.cylinders:
@@ -170,14 +176,14 @@ Spherocylinders (capsules)
    :width: 25%
    :align: right
 
-The size of spherocylindrical particles is controlled in the same way as cylindrical particles. OVITO additionally renders two hemispheres at each end of the cylinder extending its height.
+The size of spherocylindrical particles is controlled in the same way as cylindrical particles. OVITO additionally renders two hemispheres at each end of the cylinder, extending its height.
 
 .. _howto.aspherical_particles.circles_and_squares:
 
 Circles and squares
 """""""""""""""""""
 
-Circles and squares are two-dimensional, i.e. flat, shapes, whose size is controlled by the ``Radius`` particle property. The orientation
+Circles and squares are two-dimensional, i.e., flat, shapes, whose size is controlled by the ``Radius`` particle property. The orientation
 of each particle in three-dimensional space is determined automatically such that it exactly faces the viewer. Thus, their orientations are view-dependent,
 and the ``Orientation`` particle property, if present, is ignored. In other words, you don't have the possibility to control their orientations explicitly
 (use a mesh-based shape instead if you need control).
