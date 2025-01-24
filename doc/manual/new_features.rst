@@ -13,22 +13,24 @@ Version 3.12.0 (xx-xxx-2025)
 ----------------------------
 
 - New utilities command panel tab
-- :ref:`particles.modifiers.compute_property` modifier: New option to include all bonded neighbor particles in the computation
+- :ref:`particles.modifiers.compute_property` modifier: New option to include :ref:`all bonded neighbor particles <particles.modifiers.compute_property.neighbor_expr>` in the computation
 - Support for :ref:`named types in selection expressions <particles.modifiers.type_names>`
 - Support reading a zstd compressed trajectory file while it is written by the simulation code
+- Aspherix file reader: Fixed grid domain size incorrectly overriding the simulation cell size
+- Restored automatic seeking to the last frame of a growing trajectory file when using the 'update trajectory frames' function
 - |ovito-python| Added :py:class:`ovito.io.FileWriterInterface`
 - |ovito-python| Added :py:mod:`ovito.gui` module
 - |ovito-python| Added :py:func:`ovito.traits.action_handler` decorator
 - |ovito-python| Added *translation* and *rotation* parameters to :py:meth:`Pipeline.add_to_scene() <ovito.pipeline.Pipeline.add_to_scene>` and removed :py:attr:`!Pipeline.translation` and :py:attr:`!Pipeline.rotation` properties
 - |ovito-python| Replaced :py:attr:`!LinesVis.shading` parameter with :py:attr:`LinesVis.flat_shading <ovito.vis.LinesVis.flat_shading>` parameter
 - |ovito-python| Replaced :py:attr:`!DislocationVis.shading` parameter with :py:attr:`DislocationVis.flat_shading <ovito.vis.DislocationVis.flat_shading>` parameter
+- |ovito-pro| Added :ref:`OVITO Pro Python extensions gallery <topics.python_extensions.gallery>`
 - |ovito-pro| Added :ref:`file_formats.output.ase_trajectory`
-- |ovito-pro| Added OVITO Pro Python extensions gallery
 - |ovito-pro| Added support for :ref:`user-defined file exporters <writing_custom_file_writers>`
-- |ovito-pro| Added support for user-defined utility applets running in the command panel of OVITO Pro
-- |ovito-pro| Added GUI function for installing third-party Python packages in the embedded interpreter
-- |ovito-pro| OVITO Pro can now be used as a Jupyter kernel (in conda environments), combining interactive Python scripting with the full OVITO Pro GUI
-- |ovito-pro| Added outline effect to :ref:`rendering.ospray_renderer` and :ref:`rendering.visrtx_renderer`
+- |ovito-pro| Added support for :ref:`user-defined utility applets <writing_custom_utilities>` running in the command panel of OVITO Pro
+- |ovito-pro| Added a :ref:`GUI function for installing third-party Python packages in the embedded interpreter <application_settings.python.package_installation>`
+- |ovito-pro| :ref:`OVITO Pro can now be used as a Jupyter kernel (in conda environments) <ovito_jupyter_kernel>`, combining interactive Python scripting with the full OVITO Pro GUI
+- |ovito-pro| Added depth-aware outline effect to :ref:`rendering.ospray_renderer` and :ref:`rendering.visrtx_renderer`
 - |ovito-pro| Improved object picking performance in interactive viewports for the :ref:`rendering.visrtx_renderer`
 
 .. sidebar::

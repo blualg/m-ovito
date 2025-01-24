@@ -225,9 +225,15 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
             cellMatrix.column(1) = (points[pieceExtent.size(0) + 1] - points[0]) * (FloatType)wholeExtent.size(1);
             cellMatrix.column(2) = (points[(pieceExtent.size(0) + 1) * (pieceExtent.size(1) + 1)] - points[0]) * (FloatType)wholeExtent.size(2);
             cellMatrix.translation() = points[0] - Point3::Origin();
-            simulationCell()->setCellMatrix(cellMatrix);
-            simulationCell()->setPbcFlags(false, false, false);
-            gridObj->setDomain(simulationCell());
+            if(SimulationCell* domain = gridObj->mutableDomain()) {
+                domain->setCellMatrix(cellMatrix);
+            }
+            else {
+                // Create a cell domain for the grid (without any visual element - cell should not be rendered).
+                auto newDomain = DataOORef<SimulationCell>::create(ObjectInitializationFlag::DontCreateVisElement, cellMatrix, false, false, false);
+                newDomain->setCreatedByNode(pipelineNode());
+                gridObj->setDomain(std::move(newDomain));
+            }
 
             xml.skipCurrentElement();
         }

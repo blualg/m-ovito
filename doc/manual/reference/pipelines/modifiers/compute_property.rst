@@ -74,6 +74,8 @@ use the following expression to set the ``Transparency`` property of all particl
 For more complex computations that cannot be performed using conditional expressions like this,
 consider using a :ref:`particles.modifiers.python_script` modifier, which allows scripting in a real programming language.
 
+.. _particles.modifiers.compute_property.neighbor_expr:
+
 Performing computations over neighbors and bonded particles
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
