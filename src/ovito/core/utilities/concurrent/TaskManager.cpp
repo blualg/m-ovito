@@ -227,11 +227,10 @@ void TaskManager::executePendingWorkLocked(std::unique_lock<std::mutex>& lock)
         // Continue by grabbing the next work item from the queue.
         lock.lock();
 
-        // Make sure to return control to the GUI event loop before processing newly queued work items.
+        // Make sure to return control to the GUI event loop before processing any newly queued work items.
         itemCount--;
         if(itemCount == 0 && !_pendingWork.empty() && QCoreApplication::instance()) {
-            if(QThread::currentThread()->loopLevel() == 1)
-                notifyWorkArrived();
+            notifyWorkArrived();
             return;
         }
     }

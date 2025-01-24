@@ -609,7 +609,7 @@ void FileSource::propertyChanged(const PropertyFieldDescriptor* field)
             field == PROPERTY_FIELD(playbackSpeedDenominator) ||
             field == PROPERTY_FIELD(playbackStartTime)) {
 
-        // Clear frame label list. It will be regnerated upon request in animationFrameLabels().
+        // Clear frame label list. It will be regenerated upon request in animationFrameLabels().
         _frameLabels.clear();
 
         // Invalidate cached frames, because their validity intervals have changed.

@@ -50,7 +50,7 @@ public:
 	void setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection = false);
 
 	/// \brief This triggers a reload of input data from the external file for the given frame or all frames.
-	/// \param refetchFiles Clears the remote file cache so that file data will be retreived again from the remote location.
+	/// \param refetchFiles Clears the remote file cache so that file data will be retrieved again from the remote location.
 	/// \param frameIndex The index of the input frame to refresh; or -1 to refresh all frames.
 	void reloadFrame(bool refetchFiles, int frameIndex = -1);
 
