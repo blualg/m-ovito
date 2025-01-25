@@ -2,30 +2,37 @@
 
 Rendering
 =========
+
 .. image:: /images/rendering/render_tab.*
    :width: 35%
    :align: right
 
-After you have created a pipeline for data analysis and visualization, at some point you may want to
-produce images or a movie for publications or presentations. For this, go to the *Rendering* tab
-in the command panel as shown on the right.
+Once you have set up a data pipeline for analysis and visualization, you may want to generate high-quality images or
+animations for publications or presentations. This can be done from the *Rendering* tab in the command panel, as shown on the right.
 
-The :guilabel:`Render active viewport` button launches the image rendering process for the active viewport (marked by a yellow border).
-OVITO will open a separate window to show the generated image, which can be saved to disk or copied to the clipboard from there.
+To render the :ref:`active viewport <usage.viewports>` (indicated by a yellow border), click the :guilabel:`Render active viewport` button.
+OVITO will generate the image and display it in a separate window, where you can save it to disk or copy it to the clipboard.
 
-The :ref:`Render settings <core.render_settings>` panel controls various
-settings such as the resolution of the generated image and its background color. You can set a filename in the render settings panel
-in advance under which the rendered picture or movie will be saved. Or you can manually save the picture later on once rendering is complete
-and you are happy with the result.
+The :ref:`Render settings <core.render_settings>` panel allows you to adjust rendering parameters, such as image resolution and background color.
+You can specify a filename in advance to save the rendered image or manually save it later once you're satisfied with the result.
 
-OVITO Pro comes with several rendering engines to choose from, which differ in terms of speed, visual quality, and memory requirements.
-The default :ref:`OpenGL renderer <rendering.opengl_renderer>` is the fastest one and produces pictures that are more or less
-identical to what you see in the interactive viewports. The :ref:`Tachyon <rendering.tachyon_renderer>` and
-:ref:`OSPRay <rendering.ospray_renderer>` rendering engines, on the other hand,
-are software-based ray tracing engines, which are able to generate high-quality visualizations that include shadows, ambient occlusion shading, and depth of field effects.
-The :ref:`VisRTX renderer <rendering.visrtx_renderer>` offers similar capabilities using hardware-accelerated ray tracing.
-See the :ref:`reference section <rendering>` to learn more about the rendering capabilities of OVITO.
+OVITO Pro offers multiple rendering engines, each optimized for different performance and quality needs:
 
+:ref:`OpenGL renderer <rendering.opengl_renderer>`:
+   The fastest option, producing images identical to the interactive viewports.
+
+:ref:`Tachyon <rendering.tachyon_renderer>` |ovito-pro|:
+   A software-based ray tracing engine capable of generating high-quality images with shadows, ambient occlusion, and depth of field.
+
+:ref:`OSPRay <rendering.ospray_renderer>` |ovito-pro|:
+   Another software-based ray tracer that enhances visual realism.
+
+:ref:`VisRTX <rendering.visrtx_renderer>` |ovito-pro|:
+   A hardware-accelerated ray tracing engine running on NVIDIA CUDA devices.
+   Provides real-time rendering performance and can be used for :ref:`interactive visualization <viewports.configure_graphics_dialog>`
+   instead of the default OpenGL renderer.
+
+For more details, see :ref:`rendering` in the reference section.
 
 .. |opengl-image| image:: /images/rendering/renderer_example_opengl.*
    :width: 100%
@@ -40,7 +47,6 @@ See the :ref:`reference section <rendering>` to learn more about the rendering c
    :width: 100%
    :align: middle
 
-
 ============================= ============================= ============================= =============================
 OpenGL renderer:              Tachyon renderer: |ovito-pro| OSPRay renderer: |ovito-pro|  VisRTX renderer: |ovito-pro|
 ============================= ============================= ============================= =============================
@@ -52,11 +58,16 @@ OpenGL renderer:              Tachyon renderer: |ovito-pro| OSPRay renderer: |ov
 Creating animations
 -------------------
 
-OVITO can render a movie of the loaded simulation trajectory. To render an animation,
-select the :guilabel:`Complete animation` option in the :ref:`Render settings <core.render_settings>` panel and
-specify an output filename for the video. OVITO's built-in video encoder supports standard formats such as AVI and MPEG.
-The frame rate for the output video is set in the :ref:`animation settings <animation.animation_settings_dialog>` dialog.
-Alternatively, you can produce a series of image files, one per frame, and combine them later into a movie using an external video encoding tool.
+OVITO can render animations of simulation trajectories. To do this:
+
+   1. In the :ref:`Render settings <core.render_settings>` panel, select :guilabel:`Complete animation`.
+   2. Specify an output filename for the video.
+   3. Choose a frame rate in the :ref:`Animation settings <animation.animation_settings_dialog>`.
+
+OVITO's built-in video encoder supports formats such as AVI and MPEG. Alternatively, you can export individual frames
+as image files and use an external encoding tool, such as :program:`ffmpeg`, to compile them into a video.
+
+.. seealso:: :ref:`usage.animation`
 
 .. _usage.rendering.show_render_frame:
 

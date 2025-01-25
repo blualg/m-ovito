@@ -37,6 +37,8 @@ access to further layout manipulation functions, e.g. for splitting a viewport w
 
 Any changes you make to the viewport layout can be undone if needed using the :menuselection:`Edit --> Undo` function as usual.
 
+.. _viewport_layouts.pipeline_visibility:
+
 Controlling what is shown in the viewports
 """"""""""""""""""""""""""""""""""""""""""
 

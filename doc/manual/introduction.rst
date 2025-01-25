@@ -15,8 +15,8 @@ The software has been cited in over `14,600 research publications <https://schol
 **A cross-platform 3D visualization tool**
 
 OVITO is a 3D graphics desktop application available for Windows, Linux, and macOS.
-It is developed, distributed, and supported by `OVITO GmbH <https://www.ovito.org>`__, a German independent software vendor founded by
-OVITO's original author, `Dr. Alexander Stukowski <http://scholar.google.com/citations?user=f8Tw3eEAAAAJ>`__, along with a team of contributors.
+It is developed and distributed by `OVITO GmbH <https://www.ovito.org>`__, a German independent software vendor founded by
+OVITO's original author, `Dr. Alexander Stukowski <http://scholar.google.com/citations?user=f8Tw3eEAAAAJ>`__.
 
 In addition to the main application, the OVITO ecosystem includes the
 :ref:`OVITO Python module <scripting_manual>`, a standalone scripting framework that enables advanced post-processing and data analysis of simulation outputs.

@@ -3,9 +3,8 @@
 Animating the camera and other parameters
 =========================================
 
-In addition to simply visualizing a simulation trajectory, OVITO provides powerful animation capabilities,
-which let you animate the virtual camera, modifiers, or visual parameters. The following sections explain OVITO's
-animation system in more detail.
+OVITO offers powerful animation capabilities that allow you to animate the virtual camera, modifiers, and visual parameters.
+This section explains the animation system in detail.
 
 .. image:: /images/usage/animation/file_source_animation_panel.*
   :width: 45%
@@ -13,137 +12,126 @@ animation system in more detail.
 
 .. _usage.animation.frames:
 
-Animation frames vs. simulation frames
+Animation frames vs. trajectory frames
 --------------------------------------
 
-After loading a simulation sequence into OVITO, the timeline below the viewport area indicates
-the length of the current animation interval. Animation frame numbers start at zero in OVITO. Thus, an animation
-ending at frame 100, for example, consists of 101 video frames.
+When you load a simulation trajectory into OVITO, the timeline below the viewport indicates the animation length.
+Animation frames in OVITO start at 0, meaning an animation ending at frame 100 consists of 101 frames.
 
-It is important to point out the semantic difference between *simulation frames*
-(i.e. the imported simulation snapshots) and *animation frames*, which are
-the time units used by OVITO's animation timeline.
-Normally there is a one-to-one mapping between the two, i.e., the number of animation frames in OVITO's timeline is
-automatically adjusted to match the number of frames of the loaded simulation trajectory.
-This default behavior can be overridden in the :ref:`Animation settings <animation.animation_settings_dialog>` dialog.
-Then you will be in control of the animation length. If you extend the animation interval beyond the
-number of imported simulation frames, you will get additional static video frames at the end of the rendered animation.
+There is a key distinction between *trajectory frames* (snapshots from a simulation) and *animation frames* (units of time in OVITO's timeline).
+By default, OVITO maps trajectory frames one-to-one to animation frames and the length of the animation timeline matches the number of imported trajectory frames.
+However, you can override this in the :ref:`Animation settings <animation.animation_settings_dialog>` dialog and set the animation length manually.
+Extending the animation interval beyond the available trajectory frames results in additional static frames at the end of the rendered video.
 
-Furthermore, the :ref:`Configure trajectory playback <scene_objects.file_source.configure_playback>` dialog,
-which is accessible from the :ref:`External file <scene_objects.file_source>` panel (see screenshot),
-provides control of how the frames of the simulation trajectory
-get mapped to animation frames. The :guilabel:`Playback rate`
-setting allows you to specify a mapping that is not one-to-one. For example, a playback rate of
-1/2 stretches the simulation sequence to extend over twice as many animation frames. Each snapshot
-of the simulation will then be visible for two consecutive video frames. A playback rate of
-2/1, in contrast, compresses the playback of the simulation sequence to half of the animation frames.
-Then, every other simulation frame gets skipped in the rendered animation.
+Further control over how trajectory frames map to animation frames is provided in the :ref:`Configure trajectory playback <scene_objects.file_source.configure_playback>` dialog,
+which is shown in the screenshot on the right. This dialog is accessible from the :ref:`External file <scene_objects.file_source>` panel (pipeline data source).
 
-The :guilabel:`Starting at animation frame` setting specifies where on OVITO's timeline the
-playback of the simulation trajectory begins. By default, it starts immediately at animation frame 0, but you can
-change this number, e.g. to insert static frames at the beginning of a movie.
+- The :guilabel:`Playback rate` setting allows you to adjust the frame mapping. For instance:
 
-Note that OVITO provides the possibility to insert several simulation datasets into one scene to show them
-simultaneously side-by-side or on top of each other. By default, OVITO adjusts the length of the timeline
-to fully accommodate all loaded trajectories.
+  - A rate of **1/2** stretches the trajectory over twice as many animation frames, making each simulation snapshot persist for two consecutive frames.
+  - A rate of **2/1** compresses the trajectory, skipping every other simulation frame in the animation.
+
+- The :guilabel:`Starting at animation frame` setting determines when the simulation trajectory playback begins in OVITO's timeline.
+  By default, it starts at frame 0, but you can change this to insert static frames at the beginning.
+
+OVITO Pro also supports inserting :ref:`multiple simulation trajectories into a single scene <usage.import.multiple_datasets>` to display them side by side or layered.
+By default, the timeline automatically adjusts to accommodate all loaded trajectories (respecting their individual playback rates and starting times).
+
+.. seealso:: :ref:`scene_objects.file_source.configure_playback`
 
 .. image:: /images/animation_settings_dialog/animation_settings_dialog.*
   :width: 30%
   :align: right
 
-
 Playback speed
 --------------
 
-In the :ref:`Animation settings dialog <animation.animation_settings_dialog>`,
-you set the playback speed (frames per second) of the current animation. This number determines the frame rate of
-video files produced by OVITO (e.g. AVI or MPEG). It also affects the playback within OVITO's viewports, which, however, typically
-occurs at a lower effective rate because loading the next simulation snapshot from disk can easily take too long to reach the
-real-time frame rate.
+In the :ref:`Animation settings dialog <animation.animation_settings_dialog>`, you can set the playback speed (frames per second)
+for the animation. This value determines the frame rate of exported video files (e.g., AVI, MPEG). It also affects viewport playback,
+though real-time performance may be limited by how quickly OVITO can load simulation snapshots from disk and process them.
 
+Using time-dependent formulas
+-----------------------------
 
-Animating by means of time-dependent formulas
----------------------------------------------
+Basic animation effects can be achieved using the :ref:`particles.modifiers.expression_select` and :ref:`particles.modifiers.compute_property` modifiers.
+These allow you to use mathematical formulas or Boolean expressions to manipulate particle properties (e.g., position, color, transparency)
+and create dynamic selection sets.
 
-Simple animation effects can be readily achieved by using the :ref:`particles.modifiers.expression_select`
-and :ref:`particles.modifiers.compute_property` modifiers. These modifiers
-allow you to enter mathematical formulas or Boolean expressions to select subsets of
-particles or to manipulate certain particle properties (e.g. position, color, transparency, etc.).
-
-Within such math expressions, you can incorporate the special variable `Frame`, which evaluates
-to the current animation frame number. Thus, whenever you reference this variable in an expression, the formula becomes
-time-dependent and OVITO will recompute the results on every animation frame.
+You can incorporate the special variable ``Frame`` in expressions, which represents the current animation frame number.
+Using this variable makes expressions time-dependent, meaning OVITO will recompute them for each animation frame.
 
 .. _usage.animation.keyframes:
+
+Keyframe-based animations
+-------------------------
+
+OVITO supports keyframe-based animations, where you define values for animatable parameters at specific frames
+(e.g., at the start and end of an animation). The software interpolates between these keyframes,
+typically using linear interpolation.
 
 .. image:: /images/usage/animation/slice_modifier_animatable_parameter.*
   :width: 25%
   :align: right
 
-Animation via keyframes
------------------------
-
-OVITO also provides a key-based animation framework. It lets you specify the value of an animatable parameter
-at certain animation times (for example at the beginning and at the end of the animation). In between these
-keyframes, the value of the parameter is then determined using smooth interpolation (typically linear).
+The screenshot on the right shows the parameter panel for the :ref:`particles.modifiers.slice` modifier.
+Animatable parameters are marked with an :guilabel:`A` button next to the input field.
+Clicking this button opens the animation key dialog, allowing you to define time-value pairs (animation keys).
 
 .. image:: /images/usage/animation/keyframe_dialog.*
   :width: 25%
   :align: right
 
-The screenshot on the right shows the parameter panel of the :ref:`particles.modifiers.slice`
-modifier as an example. Animatable parameters are indicated by an :guilabel:`A` button next to the input field.
-This button opens the animation key dialog for that parameter, which allows you to define
-new animation keys. Animation keys are time-value pairs.
+For example, in the screenshot, two keyframes are set for the *Distance* parameter of the slicing plane:
 
-In the next screenshot on the right, two animation keys have been defined for the *Distance* parameter of the slicing plane,
-one at frame 0 and the other at frame 50. Thus, the parameter will have a value of 20.0
-at the beginning of the animation and reach 80.0 at the second animation keyframe.
+  - Frame **0** --> value **20.0**
+  - Frame **50** --> value **80.0**
 
-Note that an animatable parameter always has at least one animation key.
-As long as there is only that single key, it defines the constant value of the parameter.
-Once you add another key OVITO will interpolate between the key values and the
-parameter actually becomes animated.
+This setup ensures a smooth transition from 20.0 to 80.0 over the animation interval.
+Every animatable parameter has at least one keyframe. With a single keyframe, the parameter remains constant.
+Adding a second keyframe enables animation through interpolation.
+
+.. _usage.animation.auto_key_mode:
 
 Auto-key mode
 -------------
 
-The animation toolbar at the bottom of the main window contains a button with a key icon, which activates
-the so-called *Auto-key mode*:
-
 .. image:: /images/usage/animation/key_mode_button.*
-  :width: 12%
+  :width: 40%
+  :align: right
 
-While this mode is active, the time slider background is highlighted red and any change made to an animatable
-parameter in the program will automatically generate a new animation key at the current animation time.
-For example, after activating *Auto-key mode*, you can jump to animation frame 0
-using the time slider and set the *Distance* parameter of the Slice modifier to a value of 20.
-You then go to the last frame of the animation and change the parameter value to 80.
-Each of these two parameter changes results in the creation of a new animation key at the corresponding animation time.
+The animation toolbar next to the time slider features a button that activates *Auto-key mode*.
 
-Don't forget to deactivate *Auto-key mode* after you are done creating the desired
-animation keys. Otherwise, you might inadvertently define more keys for other parameters which you don't
-want to animate. The *Auto-key mode* provides a convenient alternative for creating
-new animation keys, which can be faster than using the animation key dialog introduced in the previous section.
+When enabled, the time slider background turns red. Any change you make to an animatable parameter while this mode is active automatically
+generates a keyframe at the current animation time.
 
+Example workflow:
 
-Editing keys using the animation track bar
-------------------------------------------
+  1. Activate *Auto-key mode*.
+  2. Move the time slider to frame **0** and set the *Distance* parameter of the :ref:`particles.modifiers.slice` modifier to **20**.
+  3. Move the time slider to the final frame of the animation and set the parameter to **80**.
+  4. OVITO automatically creates keyframes at these points of the timeline.
 
-The *track bar* is located right below the time slider and displays the created animation keys
-for the currently selected scene object and its parameters:
+Remember to turn off *Auto-key mode* again once you've finished creating the animation keys to prevent unintended changes.
+The *Auto-key mode* is a convenient alternative for creating new animation keys,
+which can be quicker than using the animation key dialog introduced in the previous section.
+
+.. _usage.animation.track_bar:
+
+The animation track bar
+-----------------------
+
+The *track bar* beneath the time slider displays keyframes for the selected pipeline and all its animated parameters:
 
 .. image:: /images/usage/animation/track_bar.*
   :width: 55%
 
-Each key is represented by a small marker at the corresponding position of the timeline. Positioning the
-mouse cursor over a marker will show the key's information in a small tooltip window.
-You can use the mouse to drag animation keys to a different position on the timeline.
-Right-clicking on a key opens a context menu that allows you to delete the key.
+Each keyframe appears as a small marker on the timeline. Hovering over a marker reveals keyframe details. You can:
 
-Note that the track bar will only display the animation keys of parameters that are actually animated,
-i.e., which have at least two keys defined. Thus, as soon as only one key is left, it
-will automatically disappear from the track bar.
+- Drag keyframes to reposition them.
+- Right-click to open a context menu and delete them.
+
+The track bar shows markers only for animated parameters (i.e., those with at least two keyframes).
+Parameters with a single keyframe remain constant and do not appear in the track bar.
 
 .. _usage.animation.camera:
 
@@ -151,51 +139,43 @@ Animating the camera
 --------------------
 
 .. image:: /images/usage/animation/create_camera_function.*
-  :width: 25%
+  :width: 35%
   :align: right
 
-To animate the camera, you first have to create a *camera object*. This is done
-from a viewport's :ref:`context menu <usage.viewports.menu>` as shown by the screenshot on the right. The new camera object will be
-placed in the three-dimensional scene at the current viewpoint.
-Furthermore, the active viewport will be linked to the new camera object so that when the camera is moved,
-the viewport will be updated to show the scene as seen through the new camera position. Conversely, if you use
-the zoom, pan, or orbit functions to adjust the viewport's view, the camera object in the scene will
-be moved accordingly.
+To animate the camera, first create a *camera object* from a viewport's :ref:`context menu <usage.viewports.menu>` (see screenshot).
+The camera object is placed in the 3D scene at the current viewpoint and is linked to the viewport.
 
 .. image:: /images/usage/animation/viewports_with_camera.*
   :width: 35%
   :align: right
 
-The newly created camera object is visible in the other three viewports. You might have to zoom out to see it.
-Click on the camera object in the viewports to select it
-and show its parameters in the command panel. Alternatively, you can select the camera object using the
-object selector box located in the top right corner of the main window, which lists all objects in the
-current scene:
+The camera object is visible in the other three viewports. Zoom out if necessary.
+Select the camera by clicking on it in a viewport or using the object selector box in the top-right corner of the main window:
 
 .. image:: /images/usage/animation/object_selection_box.*
-  :width: 25%
+  :width: 30%
 
-The camera object can be moved around in space using the :guilabel:`Move` tool and
-the :guilabel:`Rotate` tool in the main toolbar:
+Use the :guilabel:`Move` and :guilabel:`Rotate` tools in the main toolbar to adjust the camera position and orientation:
 
 .. image:: /images/usage/animation/move_and_rotate_tool.*
   :width: 25%
 
-While one of these modes is active, you can drag the camera object with the mouse; or use
-the numeric input fields that appear in the status bar area, which let you enter the position coordinates and
-Euler orientation angles of the selected object:
+While using these tools, you can:
+
+  - Drag the camera object with the mouse.
+  - Enter precise position and rotation values in the numeric input fields located in the status bar:
 
 .. image:: /images/usage/animation/numeric_move_tool.*
   :width: 35%
 
-Similar to other parameters, the position and the orientation of the camera object can be animated
-using the keyframing approach. To create animation keys for the camera position or rotation,
-you first have to activate the *Auto-key mode* as described above.
-If you now change the camera's position at different animation times, animation keys will automatically be created
-and the camera will move on an interpolated path between the keyframe positions. The created animation keys are also shown in
-the *track bar* while the camera is selected.
+Like other scene objects, the camera's position and orientation can be animated using keyframes. To do this:
 
-By the way, instead of animating the camera's position, you can also animate the simulation box
-and let it rotate, for example. This is done in an analogous way by selecting the simulation box
-and using the :guilabel:`Rotate` tool while *Auto-key* mode is active.
+  1. Enable *Auto-key mode*.
+  2. Move the time slider to a different animation time and adjust the camera's position.
+  3. OVITO automatically creates keyframes, animating the camera along an interpolated path.
 
+The :ref:`track bar <usage.animation.track_bar>` displays camera animation keys when the camera is selected.
+
+Instead of moving the camera, you can also animate the simulation model (e.g., by rotating it).
+This is done similarly: Select the simulation model and use the :guilabel:`Rotate` tool while *Auto-key mode* is active.
+See the tutorial :ref:`tutorials.turntable_animation` for more information.
