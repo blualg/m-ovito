@@ -25,16 +25,12 @@ MACRO(OVITO_ADD_CUDA_TO_TARGET target_name)
 
     # Enable Cuda.
     IF(OVITO_USE_CUDA)
-        target_compile_definitions(${target_name} PUBLIC OVITO_USE_CUDA)
+        TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC OVITO_USE_CUDA)
+        TARGET_LINK_LIBRARIES(${target_name} PRIVATE CUDA::cudart)
 
-        # target_include_directories(${target_name} PUBLIC ${CUDAToolkit_INCLUDE_DIRS})
-        target_link_libraries(${target_name} PRIVATE CUDA::cudart)
-
-        # TODO: Do we need seperable compilation?
-        set_target_properties(${target_name} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-
-        set_target_properties(${target_name} PROPERTIES CUDA_ARCHITECTURES ${OVITO_USE_CUDA})
-
+        # TODO: Do we need separable compilation?
+        SET_TARGET_PROPERTIES(${target_name} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+        SET_TARGET_PROPERTIES(${target_name} PROPERTIES CUDA_ARCHITECTURES ${OVITO_USE_CUDA})
         TARGET_COMPILE_DEFINITIONS(${target_name} PRIVATE "$<$<CONFIG:Debug>:OVITO_DEBUG>")
 
         # Turn off certain Microsoft compiler warnings.
@@ -43,16 +39,12 @@ MACRO(OVITO_ADD_CUDA_TO_TARGET target_name)
             # $<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>
             $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=\"/Zc:__cplusplus\">
         )
-
-        target_compile_options(${target_name} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
-                       --generate-line-info
-                       --use_fast_math
-                       --relocatable-device-code=true
-                       --expt-relaxed-constexpr
-                       >)
-
+            TARGET_COMPILE_OPTIONS(${target_name} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+                        --generate-line-info
+                        --use_fast_math
+                        --relocatable-device-code=true
+                        --expt-relaxed-constexpr
+                        >)
         ENDIF()
-
     ENDIF()
-
 ENDMACRO()

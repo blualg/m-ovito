@@ -92,14 +92,12 @@ IF(OVITO_USE_SYCL STREQUAL DPC++)
     ENDIF()
 ENDIF()
 
-# Look for cuda
+# Enable CUDA support (optional)
 IF(OVITO_USE_CUDA)
-    enable_language("CUDA")
-    find_package(CUDAToolkit)
-    # TODO: Do we need c++ 20?
-    set(CMAKE_CUDA_STANDARD 20)
-    set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-
+    ENABLE_LANGUAGE(CUDA)
+    FIND_PACKAGE(CUDAToolkit)
+    SET(CMAKE_CUDA_STANDARD 20)
+    SET(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 ENDIF()
 
 # Define user options that control the building of OVITO's standard plugins.
