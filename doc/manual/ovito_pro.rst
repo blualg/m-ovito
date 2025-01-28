@@ -19,9 +19,9 @@ A (nearly complete) list of the program features available only in *OVITO Pro* a
 - Instant :ref:`Python code generation <python_code_generation>` to greatly simplify script development for the OVITO Python package
 - :ref:`User-defined modifier functions <particles.modifiers.python_script>` including GUI controls for user-defined parameters
 - :ref:`User-defined viewport layers <writing_custom_viewport_overlays>`
-- :ref:`User-defined file readers <writing_custom_file_readers>` written in Python
-- :ref:`User-defined file writers <writing_custom_file_writers>` written in Python
-- User-defined utility applets
+- :ref:`User-defined file readers <writing_custom_file_readers>`
+- :ref:`User-defined file writers <writing_custom_file_writers>`
+- :ref:`User-defined utility applets <writing_custom_utilities>`
 - LAMMPS integration via :ref:`data_source.lammps_script` pipeline source
 - :ref:`data_source.python_script` pipeline source to generate particle models via scripts
 - :ref:`OpenSSH client integration <usage.import.remote.openssh_connection_method>` for remote file access (support for smartcards and 2FA authentication methods)

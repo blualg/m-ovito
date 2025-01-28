@@ -102,6 +102,8 @@ If you just want to select particles located *exactly on* the surface, then the
 option :guilabel:`Select particles on the surface` should be used instead. It is only available for the alpha-shape method and lets the modifier
 directly select particles that are part of the surface mesh, i.e. which are touched by the virtual probe sphere.
 
+.. _particles.modifiers.construct_surface_mesh.cap_polygons:
+
 Periodic systems and cap polygons
 """""""""""""""""""""""""""""""""
 

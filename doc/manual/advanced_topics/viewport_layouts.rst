@@ -7,65 +7,74 @@ Multi-viewport layouts
   :width: 60%
   :align: right
 
-OVITO lets you change the standard 2-by-2 layout of the :ref:`interactive viewport windows <usage.viewports>`
-to tailor the arrangement and number of viewports to your specific needs. Furthermore, it's possible to import
-:ref:`multiple simulation datasets into the scene <usage.import.multiple_datasets>` or use :ref:`branched data pipelines <clone_pipeline>` to
-visualize different datasets or analysis results side by side or in different viewports.
+OVITO allows you to customize the default 2×2 layout of the :ref:`interactive viewports <usage.viewports>` to suit your needs.
+You can also import :ref:`multiple datasets <usage.import.multiple_datasets>` or use :ref:`branched data pipelines <clone_pipeline>`
+to visualize different simulations or analysis results in separate viewports.
 
-The layout of the viewport windows consists of nested boxes, each split either horizontally or vertically. A layout box can be subdivided one or more times, and each sub-cell can either contain a nested layout box or an actual viewport window.
-The cells are separated by divider lines, which you can move with the mouse to adjust the relative size of the viewport windows in the layout:
+Customizing the viewport layout
+"""""""""""""""""""""""""""""""
+
+The viewport layout consists of nested boxes, each subdivided either horizontally or vertically.
+Each sub-cell can contain another nested layout box or an actual viewport window.
+You can resize viewports by dragging the divider lines with the mouse.
 
 .. image:: /images/howtos/viewport_layout_schematic.svg
   :width: 35%
 
-Note that the multi-viewport layout is only visible if none of the viewport windows is currently maximized, which is indicated by the state of the maximize button in the :ref:`viewport toolbar <usage.viewports.toolbar>`.
-If necessary, press the maximize button a second time to return to the full layout view.
+**Important:** The multi-viewport layout is only visible when no viewport is maximized.
+To restore the full layout view, toggle the maximize button in the :ref:`viewport toolbar <usage.viewports.toolbar>`.
 
-Right-click on any of the blue divider lines to open the context menu depicted in the following screenshot, which provides functions for introducing further subdivisions, removing entire layout cells, or resetting the relative size of the cells.
-Additionally, you can left-click on a window's caption text to open the :ref:`viewport menu <usage.viewports.menu>`. Here you have
-access to further layout manipulation functions, e.g. for splitting a viewport window into two halves:
+To modify the layout, right-click on any blue divider line to open a context menu with options to:
+
+  - Further subdivide a layout cell.
+  - Remove a layout cell to merge adjacent viewports.
+  - Reset the viewport sizes to their default proportions.
+
+Additionally, left-click on a viewport's caption text to access the :ref:`viewport menu <usage.viewports.menu>`,
+where you can split a viewport into two sections or delete the viewport from the layout.
 
 .. figure:: /images/howtos/viewport_layout_splitter_menu.jpg
   :figwidth: 40%
 
-  Right-click on a divider line
+  Right-click a divider line to access layout options.
 
 .. figure:: /images/howtos/viewport_layout_viewport_menu.jpg
   :figwidth: 40%
 
-  Left-click on a viewport caption
+  Left-click a viewport caption for additional options.
 
-Any changes you make to the viewport layout can be undone if needed using the :menuselection:`Edit --> Undo` function as usual.
+All layout modifications can be undone via :menuselection:`Edit --> Undo`.
 
 .. _viewport_layouts.pipeline_visibility:
 
 Controlling what is shown in the viewports
 """"""""""""""""""""""""""""""""""""""""""
 
-By default, all viewports in the layout depict the same three-dimensional scene, just from different camera angles.
-If you add multiple datasets or pipelines to the scene, they will be visible in every viewport. However, using
-the :menuselection:`Pipeline Visibility` function found in the viewport menu (see right screenshot above), you
-can turn the visibility of individual pipelines on or off on a per-viewport basis. This gives you the possibility to display different
-objects or models in different viewport windows of the layout.
+By default, all viewports display the same scene from different camera angles.
+If :ref:`multiple datasets or pipelines <usage.import.multiple_datasets>` are loaded, they will appear in every viewport.
 
-Read the introduction on :ref:`pipeline cloning <clone_pipeline>` to learn how to duplicate an existing pipeline
-in OVITO and change the visualization style or input dataset for the cloned pipeline.
+To control visibility on a per-viewport basis, use the :menuselection:`Pipeline Visibility` function
+in the :ref:`viewport menu <usage.viewports.menu>`. This lets you toggle individual pipelines in specific viewports,
+allowing different objects to be displayed in separate windows.
+
+For more details, refer to the :ref:`pipeline cloning <clone_pipeline>` section to learn how to
+duplicate a pipeline and modify its visualization style or input simulation file.
 
 .. _viewport_layouts.rendering:
 
 Rendering images or movies of a viewport layout |ovito-pro|
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-In the :ref:`render settings panel <core.render_settings>` of OVITO Pro you can turn on the option :guilabel:`Render all viewports`
-to include all panels of the current layout in the rendered output image or movie:
+In OVITO Pro, the :ref:`render settings panel <core.render_settings>` includes the option :guilabel:`Render all viewports`,
+which allows you to capture the entire viewport layout in a rendered image or animation.
 
 .. image:: /images/howtos/viewport_layout_rendering.jpg
   :width: 100%
 
-Additionally, switch on the option :guilabel:`Preview visible region` to display guides in all interactive viewport windows
-indicating the visible portions that will be part of the final output layout.
+For better composition, enable :guilabel:`Preview visible region` to display guides in the interactive viewports,
+indicating the portions that will appear in the final render output.
 
 .. tip::
 
-  If you want to permanently replace the standard 2-by-2 viewport layout of OVITO with your own layout,
-  you can do it via :ref:`this customization mechanism <custom_initial_session_state>`.
+  To make your custom viewport layout the default in OVITO,
+  refer to :ref:`custom_initial_session_state`.

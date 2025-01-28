@@ -3,18 +3,23 @@
 Customizing the initial program state
 =====================================
 
-Upon each program start, OVITO looks for a file named :file:`defaults.ovito` on your system and, if found, uses it
-to initialize a new program session. This optional mechanism allows you to override hardcoded factory defaults for various settings
-and can save you from having to set up everything over and again. In the :file:`defaults.ovito` file you can specify
+When OVITO starts, it searches for a file named :file:`defaults.ovito` on your system.
+If found, this file is used to initialize the session, allowing you to override factory defaults for various settings.
+This feature saves time by preserving your preferred configuration across sessions.
 
- * the initial :ref:`layout of the viewport windows <viewport_layouts>`,
- * the :ref:`projection type and camera orientation of each viewport <viewports.adjust_view_dialog>`,
- * the :ref:`render settings <core.render_settings>`.
+The :file:`defaults.ovito` file can define:
 
-Note that this mechanism is orthogonal to the way most other application-wide settings are managed by the program, which
-can be edited in the :ref:`application_settings` dialog and which are stored in configuration file on your system.
+- The initial :ref:`viewport layout <viewport_layouts>`.
+- The :ref:`projection type and camera orientation for each viewport <viewports.adjust_view_dialog>`.
+- The :ref:`render settings <core.render_settings>`.
 
-The software will look in the following filesystem locations for the initial session state file:
+This mechanism is independent of other application-wide settings, which can be modified in the :ref:`application_settings` dialog
+and are stored separately in a configuration file.
+
+File locations
+""""""""""""""
+
+OVITO searches for the :file:`defaults.ovito` file in the following locations:
 
 .. list-table::
     :widths: auto
@@ -26,6 +31,6 @@ The software will look in the following filesystem locations for the initial ses
     * - macOS:
       - :file:`~/Library/Application Support/Ovito/Ovito/defaults.ovito`
 
-You can create the file in one of these locations simply using the :menuselection:`File --> Save Session State As` function of OVITO.
-Make sure the saved state file contains an empty scene (no pipelines), because it just serves as a blank session before
-you import an actual simulation into the scene.
+To create a :file:`defaults.ovito` file, use :menuselection:`File --> Save Session State As` in OVITO.
+Ensure the saved session is empty (i.e., contains no datasets and pipelines), as this file serves only as a blank starting
+template before you import simulation data.

@@ -1,8 +1,8 @@
 .. _tutorials.marker_particles:
 .. _howto.marker_particles:
 
-Motion visualization with marker particles
-==========================================
+Visualizing motion with marker particles
+========================================
 
 .. image:: /images/howtos/shear_marker.gif
    :width: 40%

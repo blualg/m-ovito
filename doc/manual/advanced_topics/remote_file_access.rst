@@ -3,32 +3,36 @@
 Remote file access (SSH)
 ========================
 
-OVITO comes with built-in SSH and HTTP(S) clients for accessing files located on remote machines. This feature can save you from having to transfer
-files stored in remote locations, for example on an HPC cluster, to your local desktop computer first.
-To open a file located on a remote host, select :menuselection:`File --> Load Remote File` from the menu.
+OVITO includes built-in SSH and HTTP(S) clients, allowing direct access to data files stored on remote machines.
+This feature eliminates the need to manually transfer files, such as those on an HPC cluster, to your local desktop.
 
-The current version of OVITO does not provide a way to browse directories on remote machines. That means you need to directly specify
-the full path to the remote file as an URL of the form::
+To open a remote file, select :menuselection:`File --> Load Remote File` from the menu.
+
+Currently, OVITO does not support browsing directories on remote machines.
+Instead, you must provide the full file path using a URL in the following format::
 
   sftp://user@hostname/path/filename
 
-Replace :command:`user` with your SSH login name on the remote machine, :command:`hostname` with the hostname of the remote machine,
-and :command:`/path/filename` with the full path to the simulation data file to load. Note that the use of the "~" shortcut to a user's
-home directory is *not* supported; you have to specify an absolute directory path.
+Replace:
 
-You can also let OVITO download data from a web location by specifying an URL of the form::
+- ``user`` with your SSH username.
+- ``hostname`` with the remote machine's hostname.
+- ``/path/filename`` with the full file path.
+
+Note that the "~" shortcut for a home directory is *not* supported; use an absolute path instead.
+
+You can also download files from a web location using a URL like::
 
   https://www.website.org/path/filename
 
-When connecting to the remote machine via SSH, OVITO will ask for the login password or the passphrase for the private key to be used for authentication.
-Once established, the SSH connection is kept alive until the program session ends. OVITO creates a temporary local copy of downloaded remote files before
-loading the data into memory to speed up subsequent accesses to the same simulation frames. The local data copies are cached until you close OVITO or
-until you hit the :guilabel:`Reload` button in the :ref:`External File <scene_objects.file_source>` panel.
+When connecting via SSH, OVITO will prompt for your password or private key passphrase.
+Once established, the SSH connection remains active until the program session ends.
+OVITO temporarily stores downloaded trajectory files locally to speed up access to subsequent frames.
+These cached files persist until you close OVITO or click :guilabel:`Reload` in the :ref:`External File <scene_objects.file_source>` panel.
 
 .. note::
 
-  OVITO's built-in SSH client parses the :file:`~/.ssh/config` `configuration file <https://www.ssh.com/ssh/config>`_ in your home directory if it exists to
-  configure the SSH connection.
+  If present, OVITO's SSH client reads the :file:`~/.ssh/config` `configuration file <https://www.ssh.com/ssh/config>`_ to apply connection settings.
 
 .. _usage.import.remote.openssh_connection_method:
 
@@ -39,36 +43,39 @@ OpenSSH client |ovito-pro|
   :width: 50%
   :align: right
 
-The integrated standard SSH client of OVITO is based on `Libssh <https://www.libssh.org>`__, an implementation of the SSH protocol that is distinct
-from the standalone command line tools (:program:`ssh` & :program:`scp`, parts of the OpenSSH system package) you are probably used to.
-Unfortunantely, Libssh does not support all authentication methods that commonly work with these OpenSSH utilities. In particular,
-smartcard-based and other two-factor authentication methods, requiring PKCS#11 extensions, won't work with OVITO's integrated SSH client.
+OVITO's integrated standard SSH client is based on `Libssh <https://www.libssh.org>`__, a separate implementation of
+the SSH protocol distinct from the commonly used OpenSSH command-line tools (:program:`ssh` and :program:`scp`), which are present on most systems.
 
-For these systems, OVITO Pro provides an alternative SSH connection method that is based on the external :program:`sftp` tool,
-which is part of the `OpenSSH <https://www.openssh.com>`__ suite and available on most systems. When this connection method is selected,
-all authentication methods and other features configured in :file:`~/.ssh/config` will work as usual.
+However, Libssh does not support all authentication methods available in OpenSSH. In particular, it does *not* work with
+smartcards or two-factor authentication systems requiring PKCS#11 extensions.
+
+For these cases, OVITO Pro offers an alternative connection method that uses the external :program:`sftp` tool
+from `OpenSSH <https://www.openssh.com>`__. This method ensures full compatibility with authentication methods
+and settings configured in :file:`~/.ssh/config`.
+
+You may need to specify its location on your computer if the :program:`sftp` tool is not in the system's `PATH`.
 
 .. _usage.import.remote.troubleshooting:
 
 Troubleshooting connection problems
 -----------------------------------
 
-Establishing a connection between OVITO and the SSH server may fail if the client and server cannot agree on a common authentication and encryption method.
-OVITO's built-in SSH client is based on the :program:`libssh` library, which supports a specific set of SSH key exchange methods,
-public key algorithms, ciphers, and authentication methods (`see here <https://www.libssh.org/features/>`__). During the handshaking process,
-both parties need to agree on at least one common choice from each of these categories to successfully establish an SSH connection.
+SSH connections may fail if the client and server do not share a common authentication or encryption method.
+OVITO's built-in SSH client, based on the :program:`libssh` library, supports a specific set of key exchange methods,
+public key algorithms, ciphers, and authentication mechanisms (`see details <https://www.libssh.org/features/>`__).
+The client and server must agree on at least one method from each category to establish a connection.
 
-Which SSH connection methods the server side supports depends on the specific configuration of your SSH server. Please consult
-the documentation for your remote system or contact the administrator of your remote host if you are not sure.
+The available SSH methods depend on the remote server's configuration. If unsure, consult your system administrator or server documentation.
 
-To diagnose possible connection problems, and to find out which set of SSH connection methods your server actually accepts, you can
-set the environment variable ``OVITO_SSH_LOG=1`` when you run OVITO. This will request the program to print verbose logging
-messages to the terminal during a connection attempt. The log output should tell you more about why the handshaking process
-fails.
+Diagnosing connection issues
+""""""""""""""""""""""""""""
 
-On some platforms such as Windows, output sent to the terminal is not directly visible. In such a case you should additionally set the
-environment variable ``OVITO_LOG_FILE=<filename>`` to redirect all log output of the program into a text file. On Windows, for example,
-open the command prompt (:program:`cmd.exe`) and start OVITO by entering the following commands:
+To troubleshoot, set the environment variable ``OVITO_SSH_LOG=1`` before running OVITO.
+This enables detailed SSH connection logs in the terminal. If the connection or the client-server handshake fail,
+these logs can help identify the issue.
+
+On platforms where terminal output is not visible (e.g., Windows), redirect logs to a file by setting the
+``OVITO_LOG_FILE`` environment variable. For example, in Windows Command Prompt (:program:`cmd.exe`):
 
 .. code-block:: winbatch
 
@@ -76,6 +83,6 @@ open the command prompt (:program:`cmd.exe`) and start OVITO by entering the fol
   set OVITO_SSH_LOG=1
   "C:\Program Files\OVITO Basic\ovito.exe"
 
-Try loading a remote file via SSH. If the connection fails, have a look at the file :file:`ovito_log.txt`, which should have been created
-in your user directory. For further help, visit the `online user forum <https://matsci.org/c/ovito/>`__ or contact
-`OVITO technical support <https://www.ovito.org/contact/>`__ directly.
+Then try loading a remote file via SSH in OVITO. If the connection fails, check :file:`ovito_log.txt` in your user directory for error details.
+
+For further assistance, visit the `online user forum <https://matsci.org/c/ovito/>`__ or contact `OVITO technical support <https://www.ovito.org/contact/>`__.

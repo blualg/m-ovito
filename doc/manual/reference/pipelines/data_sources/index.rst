@@ -7,33 +7,33 @@ Data sources
   :width: 35%
   :align: right
 
-A *data source* is an essential part of every :ref:`pipeline <usage.modification_pipeline>` as it provides the input data that enters the 
-pipeline and is passed to the modifiers. The current pipeline's data source appears under the `Data source` section of the pipeline editor as 
-depicted in this screenshot. Most of the time, you will work with the data source type :ref:`External file <scene_objects.file_source>`, 
-which imports the input data for the pipeline from one or more files stored on your local computer or a remote machine.
+A *data source* is the starting point of every :ref:`data pipeline <usage.modification_pipeline>` in OVITO, providing the input data
+that flows through the pipeline and is processed by the modifiers. The active data source is displayed under the **Data source** section in the
+:ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`, as shown in the screenshot.
 
 .. list-table::
   :widths: 35 65
   :header-rows: 1
 
-  * - Data source
+  * - Data source type
     - Description
 
   * - :ref:`External file <scene_objects.file_source>`
-    - Reads the simulation data from an external file.
+    - Loads simulation data from external files (stored locally or remotely).
 
   * - :ref:`Python script <data_source.python_script>` |ovito-pro|
-    - Runs a user-defined Python script function to generate a dataset.
+    - Executes a custom Python script to generate data dynamically.
 
   * - :ref:`LAMMPS script <data_source.lammps_script>` |ovito-pro|
-    - Runs a user-defined LAMMPS script to generate a dataset. 
+    - Runs a LAMMPS simulation script within OVITO and forwards the output to the pipeline.
 
+Additionally, the Python API provides the :py:class:`~ovito.pipeline.StaticSource` class,
+which allows passing in-memory datasets to a pipeline.
 
-    
 .. toctree::
   :maxdepth: 1
   :hidden:
 
   external_file
   python_script
-  lammps_script  
+  lammps_script

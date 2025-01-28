@@ -3,44 +3,56 @@
 Surface meshes
 --------------
 
-A surface mesh is a type of :ref:`data object <scene_objects>` that represents two-dimensional, closed and orientable manifolds.
-Typically, surface meshes are generated within OVITO by modifiers such as :ref:`particles.modifiers.construct_surface_mesh`,
-:ref:`particles.modifiers.create_isosurface` or :ref:`particles.modifiers.coordination_polyhedra`.
+A **surface mesh** is a :ref:`data object <scene_objects>` representing a closed, orientable two-dimensional manifold.
+Surface meshes in OVITO are typically generated using modifiers such as:
 
-The appearance of a surface mesh can be controlled through the parameter panel of the :ref:`Surface mesh visual element <visual_elements.surface_mesh>`,
-which is located in the topmost section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
+- :ref:`particles.modifiers.construct_surface_mesh` -- Constructs a closed surface around a set of particles.
+- :ref:`particles.modifiers.create_isosurface` -- Generates an isosurface from scalar field data.
+- :ref:`particles.modifiers.voronoi_analysis` -- Computes the Voronoi tessellation of a particle system.
+- :ref:`particles.modifiers.coordination_polyhedra` -- Creates polyhedral representations based on particle coordination.
 
-Surfaces embedded in periodic domains
-"""""""""""""""""""""""""""""""""""""
+The appearance of a surface mesh is controlled by a corresponding :ref:`visual_elements.surface_mesh` visual element,
+which is found under the `Visual elements` section of the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>`.
 
 .. image:: /images/visual_elements/surface_mesh_example.png
-  :width: 30%
+  :width: 35%
   :align: right
 
-Surface meshes may be embedded in a periodic domain, i.e. in a simulation cell with periodic boundary conditions.
-That means the triangle faces of the surface mesh can connect vertices on opposite sides of a simulation box and wrap around correctly.
-OVITO takes care of computing the intersections of the periodic mesh with the box boundaries and automatically produces a non-periodic representation of the triangle mesh
-when it comes to rendering the surface.
+Periodic surfaces
+"""""""""""""""""
+
+Surface meshes can exist within a **periodic simulation domain**, meaning their triangle faces may wrap around and
+connect vertices on opposite sides of a :ref:`periodic simulation cell <scene_objects.simulation_cell>`.
+OVITO automatically handles these periodic intersections, ensuring a correct non-periodic representation of the triangle mesh for rendering.
+
+See also :ref:`particles.modifiers.construct_surface_mesh.cap_polygons` for more information on this topic.
 
 Interior and exterior region
 """"""""""""""""""""""""""""
 
-As surface meshes are closed orientable manifolds, they define an *interior* and an *exterior* spatial region,
-which are separated by the surface manifold. For example, if the surface mesh was constructed by the :ref:`particles.modifiers.construct_surface_mesh` modifier
-around a set of particles, then the volume enclosed by the surface represents the "filled" region and the outside region is the empty region.
+Since surface meshes are **closed orientable manifolds**, they define several spatial regions: one or more **interior** regions and an **exterior** region.
 
-Sometimes there is no interior region and the exterior region is infinite and fills all space. In this case the surface mesh is degenerate and
-consists of no triangles. The opposite extreme is also possible in periodic domains: The interior region extends over the entire periodic domain
-and there is no outside region. Again, the surface mesh will consist of zero triangles in this case.
+- When a surface mesh is generated using the :ref:`particles.modifiers.construct_surface_mesh` modifier,
+  the enclosed volume represents the interior region filled with particles, while the exterior is the empty space (including pores).
+- There may be no interior region at all, meaning the exterior region is space-filling,
+  resulting in a degenerate mesh with zero faces.
+- The opposite can occur as well (only in periodic domains): the interior region may extend over the entire periodic domain,
+  leaving no exterior region. Again, this results in a degenerate surface mesh with zero faces.
 
-Data export
-"""""""""""
+.. seealso:: :ref:`particles.modifiers.construct_surface_mesh.regions`
 
-OVITO can export the surface as a triangle mesh.
-During export, a non-periodic version is produced by truncating triangles at the periodic domain boundaries and generating "cap polygons" to fill the holes that
-occur at the intersection of the interior region with the domain boundaries. To export the mesh, use OVITO's :ref:`file export function <usage.export>`
-and select the output format `VTK`.
+Exporting to a file
+"""""""""""""""""""
+
+OVITO can export surface meshes as :ref:`triangle meshes <scene_objects.triangle_mesh>` in a non-periodic form. During export:
+
+- Triangles intersecting periodic domain boundaries are truncated.
+- `Cap polygons` are generated to fill any gaps at the periodic boundary intersections.
+
+To export a surface mesh, use OVITO's :ref:`file export function <usage.export>` and select the **VTK** format.
 
 .. seealso::
 
-  :py:class:`ovito.data.SurfaceMesh` (Python API)
+  * :ref:`file_formats.output`
+  * `Surface mesh file writer (code example) <https://github.com/ovito-org/SurfaceMeshIO>`__
+  * :py:class:`ovito.data.SurfaceMesh` (Python API)
