@@ -86,14 +86,14 @@ For remote use, consider the following options:
 Troubleshooting
 ===============
 
-If you encounter issues during installation, assistance is available in the `OVITO user forum <https://matsci.org/c/ovito/>`__ on matsci.org.
+If you experience installation issues, visit the `OVITO user forum <https://matsci.org/c/ovito/>`__ for support.
 *OVITO Pro* users can also contact `customer support <https://www.ovito.org/contact/>`__ directly. The OVITO team will be happy to help you.
 
-Below are some common installation issues and solutions:
+Common installation issues and solutions:
 
-  - :ref:`Installation troubleshooting tips for Linux <installation.troubleshooting.linux>`
-  - :ref:`Installation troubleshooting tips for Windows <installation.troubleshooting.windows>`
-  - :ref:`Installation troubleshooting tips for macOS <installation.troubleshooting.macos>`
+  - :ref:`Linux troubleshooting <installation.troubleshooting.linux>`
+  - :ref:`Windows troubleshooting <installation.troubleshooting.windows>`
+  - :ref:`macOS troubleshooting <installation.troubleshooting.macos>`
 
 .. _installation.troubleshooting.linux:
 
@@ -203,26 +203,34 @@ macOS
 OVITO Pro license activation fails
   .. error::
 
-    The activation step could not be completed due to an issue with the local license information store. File path: :file:`$HOME/.config/Ovito/LicenseStore.ini`.
+    License activation fails due to an issue with the local license information store (file path :file:`$HOME/.config/Ovito/LicenseStore.ini`).
     Please check if file access permissions are correctly set. OVITO Pro requires read/write access to this filesystem path.
 
   .. admonition:: Solution
 
-    During license activation, *OVITO Pro* needs to create the directory :file:`$HOME/.config/Ovito/` to store the downloaded licensing information.
-    The error occurs if creating this directory or storing files in this directory is prevented by insufficient file system permissions.
+    OVITO Pro requires read/write access to :file:`$HOME/.config/Ovito/` for storing the license activation.
 
-    In many cases, the parent directory, :file:`$HOME/.config/`, is the actual reason for this problem, because it is owned by the wrong macOS user account.
-    :file:`$HOME/.config/` is the `canonical storage location <https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html>`__  for application configuration
-    data on Linux/Unix systems. On macOS, this directory is not created by the system by default, but rather it is created by individual applications
-    such as OVITO when they run for the first time. As a result, the ownership and permissions of this directory can vary depending on how it was created and
-    which system user ran the first process creating it.
+    - If this directory does not exist, OVITO Pro will attempt to create it. If permission issues arise, check ownership of :file:`$HOME/.config/`.
+    - This directory may be owned by the system administrator (`root`), preventing modifications by applications running under your personal user account.
+      In such cases, a system administrator must grant write access.
 
-    It can happen that :file:`$HOME/.config/` is owned by the system administrator ("root" user), because it was the root user who first ran an application
-    creating the :file:`.config` directory. As a result, your personal user account, which you are using to install *OVITO Pro*, can't make further modifications to the directory, which
-    lets the license activation fail. To resolve the problem, ask your system administrator to create the :file:`$HOME/.config/Ovito/` subdirectory for you
-    and make it writable by your personal user account -- or follow `these instructions <https://apple.stackexchange.com/a/320686>`__ to correct the ownership
-    of the :file:`$HOME/.config/` parent directory yourself.
+    In many cases, the issue stems from the parent directory, :file:`$HOME/.config/`, being owned by the wrong macOS user account.
+    This directory serves as the `canonical storage location <https://specifications.freedesktop.org/basedir-spec/latest/>`__ for
+    application configuration data on Linux/Unix systems. Unlike Linux, macOS does not create :file:`$HOME/.config/` by default;
+    instead, individual applications such as OVITO create it when first run. As a result, its ownership and permissions may vary
+    depending on which user account initiated its creation.
 
-    If changing the ownership is not possible for some reason, as a last resort, you can set the standard environment variable ``XDG_CONFIG_HOME`` to point to some existing directory
-    other than :file:`$HOME/.config/`. This will `redirect OVITO Pro <https://specifications.freedesktop.org/basedir-spec/latest/ar01s03.html>`__ to store its
-    licensing information in a different place, i.e., in a writable filesystem path of your choice.
+    If :file:`$HOME/.config/` was originally created by the system administrator (`root`), your personal user account may lack
+    write access, preventing OVITO Pro from modifying it. This causes license activation to fail. To fix this issue:
+
+    - Ask your system administrator to create :file:`$HOME/.config/Ovito/` and grant write access to your user account.
+    - Alternatively, follow `this guide <https://apple.stackexchange.com/a/320686>`__ to correct ownership of :file:`$HOME/.config/` yourself.
+
+    If changing ownership is not possible, you can set the environment variable ``XDG_CONFIG_HOME`` (`info <https://specifications.freedesktop.org/basedir-spec/latest/#variables>`__)
+    to point to a different writable directory:
+
+    .. code-block:: shell
+
+      export XDG_CONFIG_HOME=/path/to/writable/directory
+
+    This redirects OVITO Pro to store its licensing information in a user-specified location.
