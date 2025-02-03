@@ -24,25 +24,21 @@
 MACRO(OVITO_ADD_CUDA_TO_TARGET target_name)
     IF(OVITO_USE_CUDA)
         TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC OVITO_USE_CUDA)
-        TARGET_LINK_LIBRARIES(${target_name} PRIVATE CUDA::cudart)
+        TARGET_LINK_LIBRARIES(${target_name} PRIVATE CUDA::cudart_static)
 
         SET_TARGET_PROPERTIES(${target_name} PROPERTIES CUDA_SEPARABLE_COMPILATION ON) # TODO: Do we need separable compilation?
         SET_TARGET_PROPERTIES(${target_name} PROPERTIES CUDA_ARCHITECTURES all)
-        TARGET_COMPILE_DEFINITIONS(${target_name} PRIVATE "$<$<CONFIG:Debug>:OVITO_DEBUG>")
 
         # Turn off certain Microsoft compiler warnings.
         IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
-            TARGET_COMPILE_OPTIONS(${target_name} PRIVATE
-                # $<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>
-                $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=\"/Zc:__cplusplus\">
-            )
+            TARGET_COMPILE_OPTIONS(${target_name} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=\"/Zc:__cplusplus\">)
         ENDIF()
 
         TARGET_COMPILE_OPTIONS(${target_name} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
-            --generate-line-info
             --use_fast_math
             --relocatable-device-code=true
             --expt-relaxed-constexpr
+            $<$<CONFIG:Debug>:--generate-line-info>
         >)
     ENDIF()
 ENDMACRO()
