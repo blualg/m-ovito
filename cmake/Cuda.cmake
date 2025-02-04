@@ -26,9 +26,6 @@ MACRO(OVITO_ADD_CUDA_TO_TARGET target_name)
         TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC OVITO_USE_CUDA)
         TARGET_LINK_LIBRARIES(${target_name} PRIVATE CUDA::cudart_static)
 
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES CUDA_SEPARABLE_COMPILATION ON) # TODO: Do we need separable compilation?
-        SET_TARGET_PROPERTIES(${target_name} PROPERTIES CUDA_ARCHITECTURES all)
-
         # Turn off certain Microsoft compiler warnings.
         IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
             TARGET_COMPILE_OPTIONS(${target_name} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=\"/Zc:__cplusplus\">)
