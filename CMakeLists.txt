@@ -98,6 +98,9 @@ IF(OVITO_USE_CUDA)
     FIND_PACKAGE(CUDAToolkit)
     SET(CMAKE_CUDA_STANDARD 20)
     SET(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+    IF(CMAKE_CUDA_ARCHITECTURES STREQUAL "")
+        SET(CMAKE_CUDA_ARCHITECTURES all)
+    ENDIF()
 ENDIF()
 
 # Define user options that control the building of OVITO's standard plugins.
