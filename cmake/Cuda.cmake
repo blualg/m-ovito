@@ -20,13 +20,12 @@
 #
 #######################################################################################
 
-# Enables Cuda support for a CMake target.
+# Enables CUDA support for a CMake target.
 MACRO(OVITO_ADD_CUDA_TO_TARGET target_name)
     IF(OVITO_USE_CUDA)
         TARGET_COMPILE_DEFINITIONS(${target_name} PUBLIC OVITO_USE_CUDA)
-        TARGET_LINK_LIBRARIES(${target_name} PRIVATE CUDA::cudart_static)
+        TARGET_LINK_LIBRARIES(${target_name} PUBLIC CUDA::cudart_static)
 
-        # Turn off certain Microsoft compiler warnings.
         IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
             TARGET_COMPILE_OPTIONS(${target_name} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=\"/Zc:__cplusplus\">)
         ENDIF()
