@@ -28,14 +28,12 @@ CMAKE_POLICY(VERSION 3.12.0)
 CMAKE_POLICY(SET CMP0100 NEW)   # Let AUTOMOC and AUTOUIC process .hh files.
 CMAKE_POLICY(SET CMP0099 NEW)   # Link properties are transitive over private dependency on static libraries.
 CMAKE_POLICY(SET CMP0079 NEW)   # Allows use of target_link_libraries() with targets defined in other directories.
+CMAKE_POLICY(SET CMP0104 NEW)   # Initialize CMAKE_CUDA_ARCHITECTURES when CMAKE_CUDA_COMPILER_ID is NVIDIA. Raise an error if CUDA_ARCHITECTURES is empty.
 IF(CMAKE_VERSION VERSION_GREATER_EQUAL "3.27")
     CMAKE_POLICY(SET CMP0144 NEW)   # find_package() uses upper-case <PACKAGENAME>_ROOT variables.
 ENDIF()
 IF(CMAKE_VERSION VERSION_GREATER_EQUAL "3.30")
     CMAKE_POLICY(SET CMP0167 OLD)   # find_package(Boost) should load CMake's FindBoost module for now. We'll switch to the new policy later.
-ENDIF()
-IF(CMAKE_VERSION VERSION_GREATER_EQUAL "3.18")
-    CMAKE_POLICY(SET CMP0104 NEW)   # Initialize CMAKE_CUDA_ARCHITECTURES when CMAKE_CUDA_COMPILER_ID is NVIDIA. Raise an error if CUDA_ARCHITECTURES is empty.
 ENDIF()
 
 PROJECT(Ovito)
@@ -102,10 +100,6 @@ IF(OVITO_USE_CUDA)
     SET(CMAKE_CUDA_STANDARD 20)
     SET(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
     SET(CMAKE_CUDA_SEPARABLE_COMPILATION TRUE)
-    IF(NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-        MESSAGE(INFO "Setting CMAKE_CUDA_ARCHITECTURES to all")
-        SET(CMAKE_CUDA_ARCHITECTURES all)
-    ENDIF()
 ENDIF()
 
 # Define user options that control the building of OVITO's standard plugins.
