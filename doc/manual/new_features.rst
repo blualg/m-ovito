@@ -15,10 +15,13 @@ Version 3.12.0 (xx-xxx-2025)
 - New utilities command panel tab
 - :ref:`particles.modifiers.compute_property` modifier: New option to include :ref:`all bonded neighbor particles <particles.modifiers.compute_property.neighbor_expr>` in the computation
 - Support for :ref:`named types in selection expressions <particles.modifiers.type_names>`
-- Support reading a zstd compressed trajectory file while it is written by the simulation code
-- Extended LAMMPS dump local reader and LoadTrajectoryModifier to support other interaction types (angles/dihedrals/impropers)
+- Support for reading a zstd compressed trajectory file while it is being written by the simulation code
+- :ref:`file_formats.input.lammps_dump_local` in combination with :ref:`particles.modifiers.load_trajectory` modifier now supports
+  loading dynamic angle/dihedral/improper interaction data from LAMMPS `dump local` files
+- :ref:`file_formats.input.gsd`: Retain complete chunk paths in per-particle property names loaded from GSD files
+- :ref:`file_formats.input.gsd`: Automatically generate :ref:`visual_elements.vectors` visual elements for user-defined particle properties with 3 components
 - Aspherix file reader: Fixed grid domain size incorrectly overriding the simulation cell size
-- Restored automatic seeking to the last frame of a growing trajectory file when using the 'update trajectory frames' function
+- Restored automatic seeking to the last frame of a growing trajectory file when using the `update trajectory frames` function
 - |ovito-python| Added :py:class:`ovito.io.FileWriterInterface`
 - |ovito-python| Added :py:mod:`ovito.gui` module
 - |ovito-python| Added :py:func:`ovito.traits.action_handler` decorator
