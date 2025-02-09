@@ -38,7 +38,7 @@ class OVITO_STDOBJGUI_EXPORT InputColumnMappingDialog : public QDialog
 public:
 
     /// Constructor.
-    InputColumnMappingDialog(MainWindow& mainWindow, const InputColumnMapping& mapping, QWidget* parent);
+    InputColumnMappingDialog(MainWindow& mainWindow, const InputColumnMapping& mapping, QWidget* parent, const QString& fileName = {});
 
     /// Fills the editor with the given mapping.
     void setMapping(const InputColumnMapping& mapping);

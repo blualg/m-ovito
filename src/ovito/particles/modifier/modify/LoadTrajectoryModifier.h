@@ -81,6 +81,9 @@ public:
         return inputLabels;
     }
 
+    /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override;
+
 protected:
 
     /// Is called when a RefTarget referenced by this object generated an event.

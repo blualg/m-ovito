@@ -41,7 +41,7 @@ class OVITO_PARTICLES_EXPORT Angles : public PropertyContainer
         /// Inherit constructor from base class.
         using PropertyContainerClass::PropertyContainerClass;
 
-        /// \brief Create a storage object for standard properties.
+        /// Creates a storage object for standard properties.
         virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const override;
 
         /// Generates a human-readable string representation of the data object reference.
@@ -57,17 +57,18 @@ class OVITO_PARTICLES_EXPORT Angles : public PropertyContainer
 
 public:
 
-    /// \brief The list of standard angle properties.
+    /// The list of standard angle properties.
     enum Type {
         UserProperty = Property::GenericUserProperty,
         TypeProperty = Property::GenericTypeProperty,
         TopologyProperty,
+        ParticleIdentifiersProperty,
     };
 
     /// Constructor.
     void initializeObject(ObjectInitializationFlags flags);
 
-    /// Convinience method that returns the angle topology property.
+    /// Convenience method that returns the angle topology property.
     const Property* getTopology() const { return getProperty(TopologyProperty); }
 };
 

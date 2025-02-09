@@ -25,13 +25,13 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/import/ParticleImporter.h>
-#include <ovito/particles/objects/Bonds.h>
+#include <ovito/stdobj/properties/InputColumnMapping.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
 namespace Ovito {
 
 /**
- * \brief File parser for LAMMPS dump local files, which contain per-bond information.
+ * \brief File parser for LAMMPS dump local files, which can contain bond/angle/dihedral/improper attributes.
  */
 class OVITO_PARTICLES_EXPORT LAMMPSDumpLocalImporter : public ParticleImporter
 {
@@ -64,8 +64,8 @@ public:
         return std::make_unique<FrameLoader>(request, columnMapping());
     }
 
-    /// Inspects the header of the given file and returns the number of file columns.
-    [[nodiscard]] Future<BondInputColumnMapping> inspectFileHeader(const Frame& frame);
+    /// Inspects the header of the given file and returns the list of file columns.
+    [[nodiscard]] Future<InputColumnMapping> inspectFileHeader(const Frame& frame);
 
 protected:
 
@@ -75,6 +75,9 @@ protected:
     /// Is called when the value of a non-animatable property field of this RefMaker has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
+    /// Guesses the mapping of input file columns to OVITO properties.
+    static InputColumnMapping generateAutomaticColumnMapping(PropertyContainerClassPtr containerClass, const QStringList& columnNames);
+
 private:
 
     /// The format-specific task object that is responsible for reading an input file in the background.
@@ -83,11 +86,11 @@ private:
     public:
 
         /// Constructor.
-        FrameLoader(const LoadOperationRequest& request, const BondInputColumnMapping& columnMapping)
+        FrameLoader(const LoadOperationRequest& request, const InputColumnMapping& columnMapping)
             : ParticleImporter::FrameLoader(request), _columnMapping(columnMapping) {}
 
         /// Returns the file column mapping used to load the file.
-        const BondInputColumnMapping& columnMapping() const { return _columnMapping; }
+        const InputColumnMapping& columnMapping() const { return _columnMapping; }
 
     protected:
 
@@ -96,13 +99,13 @@ private:
 
     private:
 
-        BondInputColumnMapping _columnMapping;
+        InputColumnMapping _columnMapping;
     };
 
 private:
 
-    /// The user-defined mapping of input file columns to OVITO's bond properties.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(BondInputColumnMapping{}, columnMapping, setColumnMapping);
+    /// The user-defined mapping of input file columns to OVITO properties.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(InputColumnMapping{}, columnMapping, setColumnMapping);
 };
 
 }   // End of namespace

@@ -444,12 +444,12 @@ public:
         return mutableData()->addAttribute(key, std::move(value), std::move(createdByNode));
     }
 
-    /// Inserts a new global attribute into the pipeline state overwritting any existing attribute with the same name.
+    /// Inserts a new global attribute into the pipeline state, overwriting any existing attribute with the same name.
     AttributeDataObject* setAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode) {
         return mutableData()->setAttribute(key, std::move(value), std::move(createdByNode));
     }
 
-    /// Copies all global attribute created by the given pipeline node over to this pipeline state.
+    /// Copies all global attributes created by the given pipeline node over to this pipeline state.
     void adoptAttributesFrom(const PipelineFlowState& other, const OOWeakRef<const PipelineNode>& createdByNode) {
         if(other.data())
             mutableData()->adoptAttributesFrom(*other.data(), createdByNode);

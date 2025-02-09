@@ -70,7 +70,7 @@ public:
     /// Inspects the header of the given file and returns the number of file columns.
     virtual Future<ParticleInputColumnMapping> inspectFileHeader(const Frame& frame);
 
-    /// \brief Guesses the mapping of input file columns to particle properties.
+    /// Guesses the mapping of input file columns to particle properties.
     static ParticleInputColumnMapping generateAutomaticColumnMapping(const QStringList& columnNames);
 
 protected:

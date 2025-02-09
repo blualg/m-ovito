@@ -279,8 +279,15 @@ void GSDImporter::FrameLoader::loadFile()
     // Read any user-defined log chunks and add them to the global attributes dictionary.
     chunkName = gsd.findMatchingChunkName("log/", nullptr);
     while(chunkName) {
-        QString key = QString::fromUtf8(chunkName + 4); // Cut off "log/" prefix
-        state().setAttribute(key, gsd.readVariant(chunkName, frameNumber), pipelineNode());
+        QString key = QString::fromUtf8(chunkName + 4); // Remove "log/" prefix.
+        // Skip chunks that are imported as per-particle/bond/angle/etc. property.
+        if(!key.startsWith("particles/") &&
+                !key.startsWith("bonds/") &&
+                !key.startsWith("angles/") &&
+                !key.startsWith("dihedrals/") &&
+                !key.startsWith("impropers/")) {
+            state().setAttribute(key, gsd.readVariant(chunkName, frameNumber), pipelineNode());
+        }
         chunkName = gsd.findMatchingChunkName("log/", chunkName);
     }
 
@@ -529,10 +536,29 @@ Property* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, const cha
         }
         else {
             QString propertyName = QString::fromUtf8(chunkName);
-            int slashPos = propertyName.lastIndexOf(QChar('/'));
-            if(slashPos != -1) propertyName.remove(0, slashPos + 1);
+            if(propertyName.startsWith("log/particles/"))
+                propertyName.remove(0, 14);
+            else if(propertyName.startsWith("log/bonds/"))
+                propertyName.remove(0, 10);
+            else if(propertyName.startsWith("log/angles/"))
+                propertyName.remove(0, 11);
+            else if(propertyName.startsWith("log/dihedrals/"))
+                propertyName.remove(0, 14);
+            else if(propertyName.startsWith("log/impropers/"))
+                propertyName.remove(0, 14);
             std::pair<int, size_t> dataTypeAndComponents = gsd.getChunkDataTypeAndComponentCount(chunkName);
             prop = container->createProperty(Property::makePropertyNameValid(propertyName), dataTypeAndComponents.first, dataTypeAndComponents.second);
+
+            // Automatically attach a VectorVis element to the property if it has 3 components and likely represents a force or velocity vector.
+            if(!prop->visElement() && container == particles() && prop->componentCount() == 3 && prop->dataType() == Property::Float64 && (propertyName.contains("force", Qt::CaseInsensitive) || propertyName.contains("velocity", Qt::CaseInsensitive))) {
+                OORef<VectorVis> vis = OORef<VectorVis>::create();
+                vis->setObjectTitle(propertyName);
+                vis->setEnabled(false);
+                vis->setReverseArrowDirection(false);
+                vis->setArrowPosition(VectorVis::Base);
+                vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title), SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(VectorVis::reverseArrowDirection), SHADOW_PROPERTY_FIELD(VectorVis::arrowPosition)});
+                prop->addVisElement(std::move(vis));
+            }
         }
         if(prop->dataType() == Property::Float32)
             gsd.readFloatArray(chunkName, frameNumber, BufferWriteAccess<float*, access_mode::discard_write>(prop).begin(), container->elementCount(), prop->componentCount());
@@ -551,7 +577,7 @@ Property* GSDImporter::FrameLoader::readOptionalProperty(GSDFile& gsd, const cha
         const char* found_name = gsd.findMatchingChunkName(chunkName, nullptr);
         if(found_name && qstrcmp(found_name, chunkName) == 0) {
             // If the GSD file contains the requested chunk in some other trajectory frame(s), just not in the current frame, then
-            // fill the property array with the default value for that chunk as specified by the HOOMD standard.
+            // fill the property array with the default value for that chunk as specified by the HOOMD schema.
             if(propertyType != Property::GenericUserProperty) {
                 prop = container->createProperty(DataBuffer::Uninitialized, propertyType);
             }

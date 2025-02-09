@@ -155,13 +155,11 @@ bool PropertyReference::isStandardProperty(PropertyContainerClassPtr pclass, int
 ******************************************************************************/
 int PropertyReference::componentIndex(PropertyContainerClassPtr pclass) const
 {
-    OVITO_ASSERT(pclass);
-
     QStringView componentName = this->componentName();
     if(componentName.isEmpty())
         return -1;
 
-    int typeId = pclass->standardPropertyTypeId(name());
+    int typeId = pclass ? pclass->standardPropertyTypeId(name()) : 0;
     if(typeId != 0) {
         return pclass->standardPropertyComponentNames(typeId).indexOf(componentName);
     }

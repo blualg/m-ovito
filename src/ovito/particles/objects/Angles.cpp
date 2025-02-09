@@ -54,6 +54,7 @@ PropertyPtr Angles::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buff
         componentCount = 1;
         break;
     case TopologyProperty:
+    case ParticleIdentifiersProperty:
         dataType = Property::Int64;
         componentCount = 3;
         break;
@@ -89,9 +90,11 @@ void Angles::OOMetaClass::initialize()
 
     const QStringList emptyList;
     const QStringList abcList = QStringList() << "A" << "B" << "C";
+    const QStringList onetwothreeList = QStringList() << "1" << "2" << "3";
 
     registerStandardProperty(TypeProperty, tr("Angle Type"), Property::Int32, emptyList, &ElementType::OOClass(), tr("Angle types"));
     registerStandardProperty(TopologyProperty, tr("Topology"), Property::Int64, abcList);
+    registerStandardProperty(ParticleIdentifiersProperty, tr("Particle Identifiers"), Property::Int64, onetwothreeList);
 }
 
 }   // End of namespace

@@ -23,6 +23,7 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
+#include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include <ovito/core/utilities/io/FileManager.h>
@@ -50,13 +51,15 @@ bool LAMMPSDumpLocalImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
     if(!stream.lineStartsWith("ITEM: TIMESTEP") && !stream.lineStartsWith("ITEM: UNITS") && !stream.lineStartsWith("ITEM: TIME"))
         return false;
 
-    // Continue reading until "ITEM: NUMBER OF ENTRIES" line is encountered.
+    // Continue reading until "ITEM: NUMBER OF <XXX>" line is encountered.
+    // Note: <XXX> may NOT be "ATOMS", because that is handled by LAMMPSTextDumpImporter.
     for(int i = 0; i < 20; i++) {
         if(stream.eof())
             return false;
         stream.readLine();
-        if(stream.lineStartsWith("ITEM: NUMBER OF ENTRIES"))
-            return true;
+        if(stream.lineStartsWith("ITEM: NUMBER OF ")) {
+            return !stream.lineStartsWithToken("ITEM: NUMBER OF ATOMS");
+        }
     }
 
     return false;
@@ -67,6 +70,8 @@ bool LAMMPSDumpLocalImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 ******************************************************************************/
 void LAMMPSDumpLocalImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<FileSourceImporter::Frame>& frames) const
 {
+    using namespace std::string_literals;
+
     CompressedTextReader stream(fileHandle);
 
     TaskProgress progress(this_task::ui());
@@ -76,6 +81,7 @@ void LAMMPSDumpLocalImporter::discoverFramesInFile(const FileHandle& fileHandle,
     unsigned long long timestep = 0;
     size_t numElements = 0;
     Frame frame(fileHandle);
+    std::string itemsSectionName;
 
     while(!stream.eof() && !this_task::isCanceled()) {
         qint64 byteOffset = stream.byteOffset();
@@ -102,7 +108,12 @@ void LAMMPSDumpLocalImporter::discoverFramesInFile(const FileHandle& fileHandle,
                 stream.readLine();
                 stream.readLine();
             }
-            else if(stream.lineStartsWith("ITEM: NUMBER OF ENTRIES")) {
+            else if(stream.lineStartsWith("ITEM: NUMBER OF ")) {
+                // Extract the "ITEM: <XXX>" section name (default is "ITEM: ENTRIES").
+                // Note: The LAMMPS user may have customized the ITEM section name using the "dump_modify label" command, so we cannot rely on a fixed name.
+                itemsSectionName = "ITEM: "s + (stream.line() + std::size("ITEM: NUMBER OF ") - 1);
+                itemsSectionName.erase(itemsSectionName.find_last_not_of(" \n\r\t") + 1);
+
                 // Parse number of entries.
                 unsigned long long u;
                 if(sscanf(stream.readLine(), "%llu", &u) != 1)
@@ -112,7 +123,7 @@ void LAMMPSDumpLocalImporter::discoverFramesInFile(const FileHandle& fileHandle,
                 numElements = (size_t)u;
                 break;
             }
-            else if(stream.lineStartsWith("ITEM: ENTRIES")) {
+            else if(!itemsSectionName.empty() && stream.lineStartsWithToken(itemsSectionName.c_str())) {
                 for(size_t i = 0; i < numElements; i++) {
                     stream.readLine();
                     // Update progress bar and check for user cancellation.
@@ -142,17 +153,17 @@ void LAMMPSDumpLocalImporter::discoverFramesInFile(const FileHandle& fileHandle,
 ******************************************************************************/
 void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 {
+    using namespace std::string_literals;
+
     TaskProgress progress(this_task::ui());
     progress.setText(tr("Reading LAMMPS dump local file %1").arg(fileHandle().toString()));
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
 
-    // Hide particles, because this importer loads non-particle data.
-    particles()->setVisElement(nullptr);
-
     unsigned long long timestep;
     size_t numElements = 0;
+    std::string itemsSectionName;
 
     while(!stream.eof()) {
 
@@ -173,15 +184,36 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
                 state().setAttribute(QStringLiteral("Time"), QVariant::fromValue(simulationTime), pipelineNode());
                 break;
             }
-            else if(stream.lineStartsWith("ITEM: NUMBER OF ENTRIES")) {
+            else if(stream.lineStartsWith("ITEM: NUMBER OF ")) {
+                // Extract the "ITEM: <XXX>" section name (default is "ITEM: ENTRIES").
+                // Note: The LAMMPS user may have customized the ITEM section name using the "dump_modify label" command, so we cannot rely on a fixed name.
+                std::string itemLabel(stream.line() + std::size("ITEM: NUMBER OF ") - 1);
+                itemLabel.erase(itemLabel.find_last_not_of(" \n\r\t") + 1);
+                itemsSectionName = "ITEM: "s + itemLabel;
+
                 // Parse number of entries.
                 unsigned long long u;
                 if(sscanf(stream.readLine(), "%llu", &u) != 1)
                     throw Exception(tr("LAMMPS dump local file parsing error. Invalid number of entries in line %1:\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
 
                 numElements = (size_t)u;
-                setBondCount(numElements);
                 progress.setMaximum(u);
+
+                // Convert itemLabel to lower case.
+                std::transform(itemLabel.begin(), itemLabel.end(), itemLabel.begin(), ::tolower);
+
+                // Determine interaction type the file contains.
+                if(itemLabel == "bonds" || itemLabel == "entries")
+                    _columnMapping.convertToContainerClass(&Bonds::OOClass());
+                else if(itemLabel == "angles")
+                    _columnMapping.convertToContainerClass(&Angles::OOClass());
+                else if(itemLabel == "dihedrals")
+                    _columnMapping.convertToContainerClass(&Dihedrals::OOClass());
+                else if(itemLabel == "impropers")
+                    _columnMapping.convertToContainerClass(&Impropers::OOClass());
+                else
+                    _columnMapping.convertToContainerClass(&DataTable::OOClass());
+
                 break;
             }
             else if(stream.lineStartsWith("ITEM: BOX BOUNDS xy xz yz")) {
@@ -255,15 +287,30 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
                         simBox.minc - Point3::Origin()));
                 break;
             }
-            else if(stream.lineStartsWith("ITEM: ENTRIES")) {
+            else if(!itemsSectionName.empty() && stream.lineStartsWithToken(itemsSectionName.c_str())) {
 
-                // Read the column names list.
-                QStringList tokens = FileImporter::splitString(stream.lineString());
-                OVITO_ASSERT(tokens[0] == "ITEM:" && tokens[1] == "ENTRIES");
-                QStringList fileColumnNames = tokens.mid(2);
+                // Get the target property container.
+                PropertyContainer* container = nullptr;
+                if(columnMapping().containerClass() == &Bonds::OOClass())
+                    container = bonds();
+                else if(columnMapping().containerClass() == &Angles::OOClass())
+                    container = angles();
+                else if(columnMapping().containerClass() == &Dihedrals::OOClass())
+                    container = dihedrals();
+                else if(columnMapping().containerClass() == &Impropers::OOClass())
+                    container = impropers();
+                else if(columnMapping().containerClass() == &DataTable::OOClass()) {
+                    container = state().getMutableLeafObject<DataTable>(DataTable::OOClass(), QStringLiteral("imported"));
+                    if(!container)
+                        container = state().createObject<DataTable>(pipelineNode(), DataTable::PlotMode::None, QStringLiteral("imported"));
+                }
+
+                // Allocate the loaded number of elements.
+                if(container)
+                    container->setElementCount(numElements);
 
                 // Parse data columns.
-                InputColumnReader columnParser(*this, _columnMapping, bonds());
+                InputColumnReader columnParser(*this, columnMapping(), container);
 
                 // If possible, use memory-mapped file access for best performance.
                 const char* s_start;
@@ -295,10 +342,41 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
 
                 // If the bond "Topology" property was loaded, we need to shift particle indices by 1, because LAMMPS
                 // uses 1-based atom IDs and OVITO uses 0-based indices.
-                if(BufferWriteAccess<ParticleIndexPair, access_mode::read_write> topologyProperty = bonds()->getMutableProperty(Bonds::TopologyProperty)) {
-                    for(ParticleIndexPair& ab : topologyProperty) {
-                        ab[0] -= 1;
-                        ab[1] -= 1;
+                if(columnMapping().containerClass() == &Bonds::OOClass()) {
+                    if(BufferWriteAccess<ParticleIndexPair, access_mode::read_write> topologyProperty = bonds()->getMutableProperty(Bonds::TopologyProperty)) {
+                        for(ParticleIndexPair& ab : topologyProperty) {
+                            ab[0] -= 1;
+                            ab[1] -= 1;
+                        }
+                    }
+                }
+                else if(columnMapping().containerClass() == &Angles::OOClass()) {
+                    if(BufferWriteAccess<ParticleIndexTriplet, access_mode::read_write> topologyProperty = angles()->getMutableProperty(Angles::TopologyProperty)) {
+                        for(ParticleIndexTriplet& abc : topologyProperty) {
+                            abc[0] -= 1;
+                            abc[1] -= 1;
+                            abc[2] -= 1;
+                        }
+                    }
+                }
+                else if(columnMapping().containerClass() == &Dihedrals::OOClass()) {
+                    if(BufferWriteAccess<ParticleIndexQuadruplet, access_mode::read_write> topologyProperty = dihedrals()->getMutableProperty(Dihedrals::TopologyProperty)) {
+                        for(ParticleIndexQuadruplet& abcd : topologyProperty) {
+                            abcd[0] -= 1;
+                            abcd[1] -= 1;
+                            abcd[2] -= 1;
+                            abcd[3] -= 1;
+                        }
+                    }
+                }
+                else if(columnMapping().containerClass() == &Impropers::OOClass()) {
+                    if(BufferWriteAccess<ParticleIndexQuadruplet, access_mode::read_write> topologyProperty = impropers()->getMutableProperty(Impropers::TopologyProperty)) {
+                        for(ParticleIndexQuadruplet& abcd : topologyProperty) {
+                            abcd[0] -= 1;
+                            abcd[1] -= 1;
+                            abcd[2] -= 1;
+                            abcd[3] -= 1;
+                        }
                     }
                 }
 
@@ -309,7 +387,11 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
                         signalAdditionalFrames();
                 }
 
-                state().setStatus(tr("%1 bonds at timestep %2").arg(numElements).arg(timestep));
+                state().setStatus(tr("%1 %2 at timestep %3").arg(numElements).arg(columnMapping().containerClass()->elementDescriptionName()).arg(timestep));
+
+                // Hide particles, because this importer loads non-particle data.
+                if(Particles* particles = state().getMutableObject<Particles>())
+                    particles->setVisElement(nullptr);
 
                 // Call base implementation to finalize the loaded data.
                 ParticleImporter::FrameLoader::loadFile();
@@ -333,71 +415,152 @@ void LAMMPSDumpLocalImporter::FrameLoader::loadFile()
         while(!stream.eof());
     }
 
-    throw Exception(tr("LAMMPS dump local file parsing error. Unexpected end of file at line %1 or \"ITEM: ENTRIES\" section is not present in dump file.").arg(stream.lineNumber()));
+    // This point is only reached if no data section was encountered.
+    if(itemsSectionName.empty())
+        itemsSectionName = "ITEM: ENTRIES";
+    throw Exception(tr("LAMMPS dump local file parsing error. Unexpected end of file at line %1 or \"%2\" section is not present in dump file.").arg(stream.lineNumber()).arg(QString::fromStdString(itemsSectionName)));
 }
 
 /******************************************************************************
-* Inspects the header of the given file and returns the number of file columns.
-******************************************************************************/
-Future<BondInputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const Frame& frame)
+ * Guesses the mapping of input file columns to OVITO properties.
+ *****************************************************************************/
+InputColumnMapping LAMMPSDumpLocalImporter::generateAutomaticColumnMapping(PropertyContainerClassPtr containerClass, const QStringList& columnNames)
 {
+    InputColumnMapping columnMapping(containerClass);
+    columnMapping.resize(columnNames.size());
+    for(int i = 0; i < columnNames.size(); i++) {
+        columnMapping[i].columnName = columnNames[i];
+        QString name = columnNames[i].toLower();
+
+        // Bonds
+        if(containerClass == &Bonds::OOClass() && name == "btype") columnMapping.mapColumnToStandardProperty(i, Bonds::TypeProperty);
+        else if(containerClass == &Bonds::OOClass() && name == "batom1") columnMapping.mapColumnToStandardProperty(i, Bonds::ParticleIdentifiersProperty, 0);
+        else if(containerClass == &Bonds::OOClass() && name == "batom2") columnMapping.mapColumnToStandardProperty(i, Bonds::ParticleIdentifiersProperty, 1);
+        else if(containerClass == &Bonds::OOClass() && name == "dist") columnMapping.mapColumnToStandardProperty(i, Bonds::LengthProperty);
+        // Angles
+        else if(containerClass == &Angles::OOClass() && name == "atype") columnMapping.mapColumnToStandardProperty(i, Angles::TypeProperty);
+        else if(containerClass == &Angles::OOClass() && name == "aatom1") columnMapping.mapColumnToStandardProperty(i, Angles::ParticleIdentifiersProperty, 0);
+        else if(containerClass == &Angles::OOClass() && name == "aatom2") columnMapping.mapColumnToStandardProperty(i, Angles::ParticleIdentifiersProperty, 1);
+        else if(containerClass == &Angles::OOClass() && name == "aatom3") columnMapping.mapColumnToStandardProperty(i, Angles::ParticleIdentifiersProperty, 2);
+        else if(containerClass == &Angles::OOClass() && name == "theta") columnMapping.mapColumnToUserProperty(i, QStringLiteral("Theta"), Property::FloatDefault);
+        // Dihedrals
+        else if(containerClass == &Dihedrals::OOClass() && name == "dtype") columnMapping.mapColumnToStandardProperty(i, Dihedrals::TypeProperty);
+        else if(containerClass == &Dihedrals::OOClass() && name == "datom1") columnMapping.mapColumnToStandardProperty(i, Dihedrals::ParticleIdentifiersProperty, 0);
+        else if(containerClass == &Dihedrals::OOClass() && name == "datom2") columnMapping.mapColumnToStandardProperty(i, Dihedrals::ParticleIdentifiersProperty, 1);
+        else if(containerClass == &Dihedrals::OOClass() && name == "datom3") columnMapping.mapColumnToStandardProperty(i, Dihedrals::ParticleIdentifiersProperty, 2);
+        else if(containerClass == &Dihedrals::OOClass() && name == "datom4") columnMapping.mapColumnToStandardProperty(i, Dihedrals::ParticleIdentifiersProperty, 3);
+        else if(containerClass == &Dihedrals::OOClass() && name == "phi") columnMapping.mapColumnToUserProperty(i, QStringLiteral("Phi"), Property::FloatDefault);
+        // Impropers
+        else if(containerClass == &Impropers::OOClass() && name == "itype") columnMapping.mapColumnToStandardProperty(i, Impropers::TypeProperty);
+        else if(containerClass == &Impropers::OOClass() && name == "iatom1") columnMapping.mapColumnToStandardProperty(i, Impropers::ParticleIdentifiersProperty, 0);
+        else if(containerClass == &Impropers::OOClass() && name == "iatom2") columnMapping.mapColumnToStandardProperty(i, Impropers::ParticleIdentifiersProperty, 1);
+        else if(containerClass == &Impropers::OOClass() && name == "iatom3") columnMapping.mapColumnToStandardProperty(i, Impropers::ParticleIdentifiersProperty, 2);
+        else if(containerClass == &Impropers::OOClass() && name == "iatom4") columnMapping.mapColumnToStandardProperty(i, Impropers::ParticleIdentifiersProperty, 3);
+        else if(containerClass == &Impropers::OOClass() && name == "chi") columnMapping.mapColumnToUserProperty(i, QStringLiteral("Chi"), Property::FloatDefault);
+        // Automatically map columns to standard OVITO properties.
+        else {
+            bool isStandardProperty = false;
+            const static QRegularExpression invalidCharacters(QStringLiteral("[^A-Za-z\\d_]"));
+            for(auto entry = containerClass->standardPropertyIds().cbegin(), end = containerClass->standardPropertyIds().cend(); entry != end; ++entry) {
+                const auto componentCount = containerClass->standardPropertyComponentCount(entry->second);
+                for(size_t component = 0; component < componentCount; component++) {
+                    QString propertyName = entry->first;
+                    propertyName.remove(invalidCharacters); // LAMMPS dump file format does not support column names containing spaces.
+                    const QStringList& componentNames = containerClass->standardPropertyComponentNames(entry->second);
+                    QString propertyName2;
+                    if(!componentNames.empty()) {
+                        OVITO_ASSERT(!componentNames[component].contains(invalidCharacters));
+                        propertyName2 = propertyName + componentNames[component];
+                        propertyName += QChar('.');
+                        propertyName += componentNames[component];
+                    }
+                    if(propertyName.compare(name, Qt::CaseInsensitive) == 0 || propertyName2.compare(name, Qt::CaseInsensitive) == 0) {
+                        columnMapping.mapColumnToStandardProperty(i, entry->second, component);
+                        isStandardProperty = true;
+                        break;
+                    }
+                }
+                if(isStandardProperty)
+                    break;
+            }
+            // If automatic mapping to one of the standard properties was unsuccessful, read the file column as a user-defined property.
+            if(!isStandardProperty && containerClass == &DataTable::OOClass())
+                columnMapping.mapColumnToUserProperty(i, Property::makePropertyNameValid(columnNames[i]), Property::FloatDefault);
+        }
+    }
+    return columnMapping;
+}
+
+/******************************************************************************
+* Inspects the header of the given file and returns the list of file columns.
+******************************************************************************/
+Future<InputColumnMapping> LAMMPSDumpLocalImporter::inspectFileHeader(const Frame& frame)
+{
+    using namespace std::string_literals;
+
     // Retrieve file.
     return Application::instance()->fileManager().fetchUrl(frame.sourceFile)
         .then([](const FileHandle& fileHandle) {
 
             // Start parsing the file up to the specification of the file columns.
             CompressedTextReader stream(fileHandle);
+            std::string itemsSectionName;
 
-            BondInputColumnMapping detectedColumnMapping;
+            InputColumnMapping detectedColumnMapping;
             while(!stream.eof()) {
                 // Parse next line.
                 stream.readLine();
 
-                if(stream.lineStartsWith("ITEM: ENTRIES")) {
+                if(stream.lineStartsWith("ITEM: NUMBER OF ")) {
+                    // Extract the "ITEM: <XXX>" section name (LAMMPS default is "ITEM: ENTRIES").
+                    // Note: The LAMMPS user may have customized the ITEM section name using the "dump_modify label" command,
+                    // that's why we cannot rely on a fixed name here.
+                    std::string itemLabel(stream.line() + std::size("ITEM: NUMBER OF ") - 1);
+                    itemLabel.erase(itemLabel.find_last_not_of(" \n\r\t") + 1);
+                    itemsSectionName = "ITEM: "s + itemLabel;
+
+                    // Convert itemLabel to lower case.
+                    std::transform(itemLabel.begin(), itemLabel.end(), itemLabel.begin(), ::tolower);
+
+                    if(itemLabel == "bonds" || itemLabel == "entries")
+                        detectedColumnMapping = InputColumnMapping(&Bonds::OOClass());
+                    else if(itemLabel == "angles")
+                        detectedColumnMapping = InputColumnMapping(&Angles::OOClass());
+                    else if(itemLabel == "dihedrals")
+                        detectedColumnMapping = InputColumnMapping(&Dihedrals::OOClass());
+                    else if(itemLabel == "impropers")
+                        detectedColumnMapping = InputColumnMapping(&Impropers::OOClass());
+                    else
+                        detectedColumnMapping = InputColumnMapping(&DataTable::OOClass());
+                }
+                else if(!itemsSectionName.empty() && stream.lineStartsWithToken(itemsSectionName.c_str())) {
                     // Read the column names list.
                     QStringList tokens = FileImporter::splitString(stream.lineString());
-                    OVITO_ASSERT(tokens[0] == "ITEM:" && tokens[1] == "ENTRIES");
+                    OVITO_ASSERT(tokens[0] == "ITEM:");
                     QStringList fileColumnNames = tokens.mid(2);
+
+                    // Read also the first data line to capture file excerpt.
+                    QString fileExcerpt = stream.lineString();
+                    stream.readLine();
+                    fileExcerpt += stream.lineString();
 
                     if(fileColumnNames.isEmpty()) {
                         // If no file columns names are available, count at least the number of columns in the first data line.
-                        stream.readLine();
                         int columnCount = FileImporter::splitString(stream.lineString()).size();
                         detectedColumnMapping.resize(columnCount);
                     }
                     else {
-                        detectedColumnMapping.resize(fileColumnNames.size());
-                        for(int i = 0; i < fileColumnNames.size(); i++) {
-
-                            // Automatically map columns to standard OVITO bond properties.
-                            QString name = fileColumnNames[i].toLower();
-                            bool isStandardProperty = false;
-                            const static QRegularExpression invalidCharacters(QStringLiteral("[^A-Za-z\\d_]"));
-                            for(auto entry = Bonds::OOClass().standardPropertyIds().cbegin(), end = Bonds::OOClass().standardPropertyIds().cend(); entry != end; ++entry) {
-                                const auto componentCount = Bonds::OOClass().standardPropertyComponentCount(entry->second);
-                                for(size_t component = 0; component < componentCount; component++) {
-                                    QString propertyName = entry->first;
-                                    propertyName.remove(invalidCharacters); // LAMMPS dump file format does not support column names containing spaces.
-                                    const QStringList& componentNames = Bonds::OOClass().standardPropertyComponentNames(entry->second);
-                                    QString propertyName2;
-                                    if(!componentNames.empty()) {
-                                        OVITO_ASSERT(!componentNames[component].contains(invalidCharacters));
-                                        propertyName2 = propertyName + componentNames[component];
-                                        propertyName += QChar('.');
-                                        propertyName += componentNames[component];
-                                    }
-                                    if(propertyName.compare(name, Qt::CaseInsensitive) == 0 || propertyName2.compare(name, Qt::CaseInsensitive) == 0) {
-                                        detectedColumnMapping.mapColumnToStandardProperty(i, (Bonds::Type)entry->second, component);
-                                        isStandardProperty = true;
-                                        break;
-                                    }
-                                }
-                                if(isStandardProperty)
-                                    break;
-                            }
-                            detectedColumnMapping[i].columnName = fileColumnNames[i];
-                        }
+                        detectedColumnMapping = generateAutomaticColumnMapping(detectedColumnMapping.containerClass(), fileColumnNames);
                     }
+
+                    // Read first few lines of the data and add them to the file excerpt.
+                    for(size_t i = 0; i < 3 && !stream.eof(); i++) {
+                        stream.readLine();
+                        fileExcerpt += stream.lineString();
+                    }
+                    if(!stream.eof())
+                        fileExcerpt += QStringLiteral("...\n");
+                    detectedColumnMapping.setFileExcerpt(std::move(fileExcerpt));
                     break;
                 }
             }

@@ -352,37 +352,54 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
         }
     }
 
-    if(const Bonds* trajectoryBonds = trajectoryParticles->bonds()) {
-        trajectoryBonds->verifyIntegrity();
+    // This generic function merges the 4 kinds of interactions (bonds, angles, dihedrals, impropers) from the trajectory dataset with the topology dataset.
+    auto mergeInteractionTopology = [&](const PropertyContainer* trajectoryInteractions, const PropertyContainer* topologyInteractions, int topologyPropertyId, int particleIdentifiersPropertyId, const QString& interactionName) {
+        if(!trajectoryInteractions)
+            return;
+
+        trajectoryInteractions->verifyIntegrity();
 
         // Create a mutable copy of the particles object.
         Particles* particles = state.expectMutableObject<Particles>();
-        particles->verifyIntegrity();
 
-        // If the trajectory file contains a bond topology, completely replace all existing bonds
-        // from the topology dataset with the new set of bonds.
-        // The topology can be specified either in the form of the "Topology" bond property (two 0-based particle indices)
-        // or in the form of the "Particle Identifiers" bond property (pairs of atom IDs).
-        const Property* bondTopology = trajectoryBonds->getProperty(Bonds::TopologyProperty);
-        const Property* bondParticleIdentifiers = trajectoryBonds->getProperty(Bonds::ParticleIdentifiersProperty);
+        // If the trajectory file contains a topology, completely replace all existing interactions
+        // from the topology dataset with the new set of interactions.
+        // The topology can be specified either in the form of the "Topology" property (two 0-based particle indices)
+        // or in the form of the "Particle Identifiers" property (tuples of atom IDs).
+        const Property* interactionTopology = trajectoryInteractions->getProperty(topologyPropertyId);
+        const Property* interactionParticleIdentifiers = trajectoryInteractions->getProperty(particleIdentifiersPropertyId);
 
-        if(bondTopology || bondParticleIdentifiers) {
-            if(particles->bonds()) {
-                // Replace the property arrays, but make sure that BondType instances
+        if(interactionTopology || interactionParticleIdentifiers) {
+            if(topologyInteractions) {
+                // Replace the property arrays, but make sure that type elements
                 // as well as the visual elements from the topology dataset are preserved.
-                particles->makeBondsMutable()->setContent(trajectoryBonds->elementCount(), trajectoryBonds->properties());
+                PropertyContainer* interactions = particles->makeMutable(topologyInteractions);
+                interactions->setContent(trajectoryInteractions->elementCount(), trajectoryInteractions->properties());
+                topologyInteractions = interactions;
             }
             else {
-                // We can simply adopt the bonds object from the trajectory dataset as a whole
-                // if the topology dataset didn't contain any bonds yet.
-                particles->setBonds(trajectoryBonds);
+                // We can simply adopt the property container from the trajectory dataset as a whole
+                // if the topology dataset didn't contain any interactions yet.
+                if(trajectoryInteractions == trajectoryParticles->bonds())
+                    particles->setBonds(static_object_cast<Bonds>(trajectoryInteractions));
+                else if(trajectoryInteractions == trajectoryParticles->angles())
+                    particles->setAngles(static_object_cast<Angles>(trajectoryInteractions));
+                else if(trajectoryInteractions == trajectoryParticles->dihedrals())
+                    particles->setDihedrals(static_object_cast<Dihedrals>(trajectoryInteractions));
+                else if(trajectoryInteractions == trajectoryParticles->impropers())
+                    particles->setImpropers(static_object_cast<Impropers>(trajectoryInteractions));
+                else
+                    throw Exception(tr("Unsupported interaction type in trajectory."));
+
+                topologyInteractions = trajectoryInteractions;
             }
 
-            // If the input bonds are defined in terms of atom IDs (i.e. bond property "Particle Identifiers"), then map the IDs
-            // to corresponding particle indices and store them in the "Topology" bond property.
-            if(bondParticleIdentifiers) {
+            // If the input interactions are defined in terms of atom IDs (i.e.property "Particle Identifiers"), then map the IDs
+            // to corresponding particle indices and store them in the "Topology" property.
+            if(interactionParticleIdentifiers) {
                 // Build map from particle identifiers to particle indices.
-                std::map<IdentifierIntType, size_t> idToIndexMap;
+                std::unordered_map<IdentifierIntType, size_t> idToIndexMap;
+                idToIndexMap.reserve(particles->elementCount());
                 if(BufferReadAccess<IdentifierIntType> particleIdentifierProperty = particles->getProperty(Particles::IdentifierProperty)) {
                     size_t index = 0;
                     for(auto id : particleIdentifierProperty) {
@@ -397,60 +414,71 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                 }
 
                 // Perform lookup of particle IDs.
-                BufferWriteAccess<ParticleIndexPair, access_mode::discard_write> bondTopologyArray = particles->makeBondsMutable()->createProperty(Bonds::TopologyProperty);
-                auto t = bondTopologyArray.begin();
-                for(const ParticleIndexPair& bond : BufferReadAccess<ParticleIndexPair>(bondParticleIdentifiers)) {
-                    auto iter1 = idToIndexMap.find(bond[0]);
-                    auto iter2 = idToIndexMap.find(bond[1]);
-                    if(iter1 == idToIndexMap.end())
-                        throw Exception(tr("Particle id %1 referenced by bond #%2 does not exist.").arg(bond[0]).arg(std::distance(bondTopologyArray.begin(), t)));
-                    if(iter2 == idToIndexMap.end())
-                        throw Exception(tr("Particle id %1 referenced by bond #%2 does not exist.").arg(bond[1]).arg(std::distance(bondTopologyArray.begin(), t)));
-                    (*t)[0] = iter1->second;
-                    (*t)[1] = iter2->second;
-                    ++t;
+                PropertyContainer* interactions = particles->makeMutable(topologyInteractions);
+                BufferWriteAccess<int64_t*, access_mode::discard_write> interactionTopologyArray = interactions->createProperty(topologyPropertyId);
+                auto t = interactionTopologyArray.begin();
+                for(const int64_t& id : BufferReadAccess<int64_t*>(interactionParticleIdentifiers)) {
+                    auto iter = idToIndexMap.find(id);
+                    if(iter == idToIndexMap.end())
+                        throw Exception(tr("Particle id %1 referenced by %2 #%3 does not exist.")
+                            .arg(id)
+                            .arg(interactionName)
+                            .arg(std::distance(interactionTopologyArray.begin(), t) / interactionTopologyArray.componentCount()));
+                    *t++ = iter->second;
                 }
+                OVITO_ASSERT(t == interactionTopologyArray.end());
 
-                // Remove the "Particle Identifiers" property from bonds again, because it is no longer needed.
-                particles->makeBondsMutable()->removeProperty(bondParticleIdentifiers);
+                // Remove the "Particle Identifiers" property from interactions again, because it is no longer needed.
+                interactions->removeProperty(interactionParticleIdentifiers);
             }
 
             // Compute the PBC shift vectors of the bonds based on current particle positions.
-            if(!trajectoryBonds->getProperty(Bonds::PeriodicImageProperty)) {
-                if(const SimulationCell* simCellObj = state.getObject<SimulationCell>()) {
-                    if(simCellObj->pbcX() || simCellObj->pbcY() || simCellObj->pbcZ()) {
-                        particles->makeBondsMutable()->generatePeriodicImageProperty(particles, simCellObj);
+            if(trajectoryInteractions == trajectoryParticles->bonds()) {
+                if(!trajectoryInteractions->getProperty(Bonds::PeriodicImageProperty)) {
+                    if(const SimulationCell* simCellObj = state.getObject<SimulationCell>()) {
+                        if(simCellObj->hasPbcCorrected()) {
+                            particles->makeBondsMutable()->generatePeriodicImageProperty(particles, simCellObj);
+                        }
                     }
                 }
             }
         }
-        else if(particles->bonds()) {
-            // If the trajectory dataset doesn't contain the "Topology" nor the "Particle Identifiers" bond property,
-            // then add the bond properties to the existing bonds from the topology dataset.
-            // This requires that the number of bonds remains constant.
-            if(trajectoryBonds->elementCount() != particles->bonds()->elementCount()) {
-                throw Exception(tr("Cannot merge bond properties of trajectory dataset with topology dataset, because numbers of bonds in the two datasets do not match."));
+        else if(topologyInteractions) {
+            // If the trajectory dataset doesn't contain the "Topology" nor the "Particle Identifiers" property,
+            // then add the properties to the existing interactions from the topology dataset.
+            // This requires that the number of interactions remains constant.
+            if(trajectoryInteractions->elementCount() != topologyInteractions->elementCount()) {
+                throw Exception(tr("Cannot merge %1 properties of trajectory dataset with topology dataset, because numbers of %1s in the two datasets do not match.").arg(interactionName));
             }
 
-            if(!trajectoryBonds->properties().empty()) {
-                Bonds* bonds = particles->makeBondsMutable();
+            if(!trajectoryInteractions->properties().empty()) {
+                PropertyContainer* interactions = particles->makeMutable(topologyInteractions);
 
-                // Add the properties to the existing bonds, overwriting existing values if necessary.
-                for(const Property* newProperty : trajectoryBonds->properties()) {
-                    const Property* existingPropertyObj = bonds->getPropertyLike(newProperty);
+                // Add the properties to the existing interactions, overwriting existing values if necessary.
+                for(const Property* newProperty : trajectoryInteractions->properties()) {
+                    const Property* existingPropertyObj = interactions->getPropertyLike(newProperty);
                     if(existingPropertyObj) {
-                        bonds->makeMutable(existingPropertyObj)->copyFrom(*newProperty);
+                        interactions->makeMutable(existingPropertyObj)->copyFrom(*newProperty);
                     }
                     else {
-                        bonds->addProperty(newProperty);
+                        interactions->addProperty(newProperty);
                     }
                 }
             }
         }
         else {
-            throw Exception(tr("Neither the trajectory nor the topology dataset contain bond connectivity information."));
+            throw Exception(tr("Neither the trajectory nor the topology dataset contain %1 connectivity information.").arg(interactionName));
         }
-    }
+    };
+
+    // Merge bonds from the trajectory dataset with the topology dataset.
+    mergeInteractionTopology(trajectoryParticles->bonds(), particles->bonds(), Bonds::TopologyProperty, Bonds::ParticleIdentifiersProperty, tr("bond"));
+    // Merge angles from the trajectory dataset with the topology dataset.
+    mergeInteractionTopology(trajectoryParticles->angles(), particles->angles(), Angles::TopologyProperty, Angles::ParticleIdentifiersProperty, tr("angle"));
+    // Merge dihedrals from the trajectory dataset with the topology dataset.
+    mergeInteractionTopology(trajectoryParticles->dihedrals(), particles->dihedrals(), Dihedrals::TopologyProperty, Dihedrals::ParticleIdentifiersProperty, tr("dihedral"));
+    // Merge impropers from the trajectory dataset with the topology dataset.
+    mergeInteractionTopology(trajectoryParticles->impropers(), particles->impropers(), Impropers::TopologyProperty, Impropers::ParticleIdentifiersProperty, tr("improper"));
 
     // Merge global attributes of topology and trajectory datasets.
     // If there is a naming collision, attributes from the trajectory dataset override those from the topology dataset.
@@ -495,6 +523,27 @@ void LoadTrajectoryModifier::referenceReplaced(const PropertyFieldDescriptor* fi
         notifyDependents(ReferenceEvent::AnimationFramesChanged);
     }
     Modifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
+}
+
+/******************************************************************************
+* Returns a short piece of information (typically a string or color) to be
+* displayed next to the object's title in the pipeline editor.
+******************************************************************************/
+QVariant LoadTrajectoryModifier::getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const
+{
+    OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(scene);
+
+    // Display the name of the trajectory file as short info.
+    if(node && trajectorySource()) {
+        const PipelineFlowState& state = trajectorySource()->getCachedPipelineNodeOutput(scene->animationSettings()->currentTime());
+        const QString sourceFile = state.getAttributeValue(QStringLiteral("SourceFile")).toString();
+        if(!sourceFile.isEmpty()) {
+            // Extract filename from path.
+            return sourceFile.section('/', -1);
+        }
+    }
+    return {};
 }
 
 }   // End of namespace

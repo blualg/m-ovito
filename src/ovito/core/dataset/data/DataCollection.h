@@ -310,7 +310,7 @@ public:
     /// Ensures that a DataObject from this collection is not shared with others and is safe to modify.
     DataObjectPath makeMutable(const ConstDataObjectPath& path, CloneHelper& cloneHelper);
 
-    /// \brief Returns true if this state object has no valid contents.
+    /// Returns true if this state object has no valid contents.
     bool isEmpty() const { return objects().empty(); }
 
     /// Returns the source frame number associated with this pipeline state.

@@ -66,7 +66,7 @@ void LAMMPSBinaryDumpImporterEditor::inspectNewFile(FileImporter* importer, cons
             }
         }
 
-        InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow);
+        InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow, sourceFile.fileName());
         if(dialog.exec() == QDialog::Accepted) {
             lammpsImporter->setColumnMapping(dialog.mapping());
             // Remember the user-defined mapping for the next time.

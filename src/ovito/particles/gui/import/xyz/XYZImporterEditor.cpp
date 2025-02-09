@@ -73,7 +73,7 @@ void XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourc
         }
     }
 
-    InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow);
+    InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow, sourceFile.fileName());
     if(dialog.exec() == QDialog::Accepted) {
         xyzImporter->setColumnMapping(dialog.mapping());
 

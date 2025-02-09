@@ -22,6 +22,7 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/import/lammps/LAMMPSDumpLocalImporter.h>
+#include <ovito/particles/objects/Bonds.h>
 #include <ovito/stdobj/gui/properties/InputColumnMappingDialog.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
@@ -48,12 +49,16 @@ void LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
     if(lammpsImporter->columnMapping().empty()) {
         QSettings settings;
         settings.beginGroup("viz/importer/lammps_dump_local/");
+        // Keep separate column mappings for different interaction types.
+        if(mapping.containerClass() && mapping.containerClass() != &Bonds::OOClass()) {
+            settings.beginGroup(mapping.containerClass()->elementDescriptionName());
+        }
         if(settings.contains("colmapping")) {
             try {
                 InputColumnMapping storedMapping;
                 storedMapping.fromByteArray(settings.value("colmapping").toByteArray());
                 for(size_t i = 0; i < std::min(storedMapping.size(), mapping.size()); i++) {
-                    if(mapping[i].columnName == storedMapping[i].columnName) {
+                    if(!mapping[i].isMapped() && mapping[i].columnName == storedMapping[i].columnName) {
                         mapping[i].property = storedMapping[i].property;
                         mapping[i].dataType = storedMapping[i].dataType;
                     }
@@ -77,15 +82,18 @@ void LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
         }
     }
 
-    InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow);
+    InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow, sourceFile.fileName());
     if(dialog.exec() == QDialog::Accepted) {
         lammpsImporter->setColumnMapping(dialog.mapping());
 
         // Remember the user-defined mapping for the next time.
         QSettings settings;
         settings.beginGroup("viz/importer/lammps_dump_local/");
+        // Keep separate column mappings for different interaction types.
+        if(mapping.containerClass() && mapping.containerClass() != &Bonds::OOClass()) {
+            settings.beginGroup(mapping.containerClass()->elementDescriptionName());
+        }
         settings.setValue("colmapping", dialog.mapping().toByteArray());
-        settings.endGroup();
     }
     else {
         this_task::cancelAndThrow();
@@ -153,28 +161,32 @@ void LAMMPSDumpLocalImporterEditor::onEditColumnMapping()
         int frameIndex = qBound(0, fileSource->dataCollectionFrame(), fileSource->frames().size()-1);
 
         // Show the dialog box, which lets the user modify the file column mapping.
-        Future<BondInputColumnMapping> future = importer->inspectFileHeader(fileSource->frames()[frameIndex]);
+        Future<InputColumnMapping> future = importer->inspectFileHeader(fileSource->frames()[frameIndex]);
 
         // Show a progress dialog while performing the whole operation.
-        scheduleOperationAfter(std::move(future), [this, importer=std::move(importer)](BondInputColumnMapping&& mapping) {
+        scheduleOperationAfter(std::move(future), [this, importer=std::move(importer)](InputColumnMapping&& mapping) {
 
-            if(!importer->columnMapping().empty()) {
-                InputColumnMapping newMapping = importer->columnMapping();
-                newMapping.resize(mapping.size());
-                for(size_t i = 0; i < newMapping.size(); i++)
-                    newMapping[i].columnName = mapping[i].columnName;
-                mapping = std::move(newMapping);
+            if(!importer->columnMapping().empty() && mapping.containerClass()) {
+                InputColumnMapping oldMapping = importer->columnMapping();
+                oldMapping.convertToContainerClass(mapping.containerClass());
+                for(size_t i = 0; i < mapping.size() && i < oldMapping.size(); i++) {
+                    mapping[i].property = oldMapping[i].property;
+                    mapping[i].dataType = oldMapping[i].dataType;
+                }
             }
 
-            InputColumnMappingDialog dialog(mainWindow(), std::move(mapping), parentWindow());
+            InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
             if(dialog.exec() == QDialog::Accepted) {
                 performTransaction(tr("Change file column mapping"), [&]() {
                     importer->setColumnMapping(dialog.mapping());
                     // Remember the user-defined mapping for the next time.
                     QSettings settings;
                     settings.beginGroup("viz/importer/lammps_dump_local/");
+                    // Keep separate column mappings for different interaction types.
+                    if(mapping.containerClass() && mapping.containerClass() != &Bonds::OOClass()) {
+                        settings.beginGroup(mapping.containerClass()->elementDescriptionName());
+                    }
                     settings.setValue("colmapping", dialog.mapping().toByteArray());
-                    settings.endGroup();
                 });
             }
         });

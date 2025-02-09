@@ -34,33 +34,32 @@ namespace Ovito {
 /**
  * \brief Defines the mapping of a column in an imported data file to a target property in OVITO.
  *
- * An InputColumnMapping is composed of a list of these structures, one for each
- * column in the data file.
+ * An InputColumnMapping is composed of a list of these structures, one for each data file column.
  */
 class OVITO_STDOBJ_EXPORT InputColumnInfo
 {
 public:
 
-    /// \brief Default constructor mapping the column to no property.
+    /// Default constructor mapping the column to no property.
     InputColumnInfo() = default;
 
-    /// \brief Constructor mapping the column to a standard property.
+    /// Constructor mapping the column to a standard property.
     InputColumnInfo(PropertyContainerClassPtr pclass, int typeId, int vectorComponent = -1) {
         mapToStandardProperty(pclass, typeId, vectorComponent);
     }
 
-    /// \brief Constructor mapping the column to a user-defined property.
+    /// Constructor mapping the column to a user-defined property.
     InputColumnInfo(const QString& propertyName, int dataType, int vectorComponent = -1) {
         mapToUserProperty(propertyName, dataType, vectorComponent);
     }
 
-    /// \brief Maps this column to a user-defined property.
+    /// Maps this column to a user-defined property.
     void mapToUserProperty(const QString& propertyName, int dataType, int vectorComponent = -1) {
         this->property = PropertyReference(vectorComponent < 0 ? propertyName : QStringLiteral("%1.%2").arg(propertyName).arg(vectorComponent + 1));
         this->dataType = dataType;
     }
 
-    /// \brief Maps this column to a standard property.
+    /// Maps this column to a standard property.
     void mapToStandardProperty(PropertyContainerClassPtr pclass, int typeId, int vectorComponent = -1) {
         OVITO_ASSERT(pclass);
         OVITO_ASSERT(typeId != Property::GenericUserProperty);
@@ -68,16 +67,22 @@ public:
         this->dataType = pclass->standardPropertyDataType(typeId);
     }
 
-    /// \brief Returns true if the file column is mapped to a target property; false otherwise (file column will be ignored during import).
+    /// Maps this column to a property.
+    void mapToProperty(const PropertyReference& property, int dataType) {
+        this->property = property;
+        this->dataType = dataType;
+    }
+
+    /// Returns true if the file column is mapped to a target property; false otherwise (file column will be ignored during import).
     bool isMapped() const { return dataType != QMetaType::Void && property; }
 
-    /// \brief Removes the mapping of this file column to a target property.
+    /// Removes the mapping of this file column to a target property.
     void unmap() {
         property = {};
         dataType = QMetaType::Void;
     }
 
-    /// \brief Compares two column records for equality.
+    /// Compares two column records for equality.
     bool operator==(const InputColumnInfo& other) const {
         return property == other.property && dataType == other.dataType && columnName == other.columnName;
     }
@@ -94,42 +99,39 @@ public:
 };
 
 /**
- * \brief Defines a mapping between the columns in a column-based input particle file
- *        and OVITO's internal particle properties.
+ * \brief Defines a mapping of data columns of an input file to OVITO properties.
  */
 class OVITO_STDOBJ_EXPORT InputColumnMapping : public std::vector<InputColumnInfo>
 {
 public:
 
-    /// Default constructor.
-    InputColumnMapping() = default;
-
     /// Constructor.
-    explicit InputColumnMapping(PropertyContainerClassPtr containerClass) : _containerClass(containerClass) {
-        OVITO_ASSERT(containerClass->isDerivedFrom(PropertyContainer::OOClass()));
-    }
+    explicit InputColumnMapping(PropertyContainerClassPtr containerClass = nullptr) : _containerClass(containerClass) {}
 
     /// Return the class of the property container.
     PropertyContainerClassPtr containerClass() const { return _containerClass; }
 
-    /// \brief Saves the mapping into a byte array.
+    /// Converts the mapping to a different target container class.
+    void convertToContainerClass(PropertyContainerClassPtr newClass);
+
+    /// Saves the mapping into a byte array.
     QByteArray toByteArray() const;
 
-    /// \brief Loads the mapping from a byte array.
+    /// Loads the mapping from a byte array.
     void fromByteArray(const QByteArray& array);
 
-    /// \brief Checks if the mapping is valid; throws an exception if not.
+    /// Checks if the mapping is valid; throws an exception if not.
     void validate(const QString& fileFormatName = {}) const;
 
-    /// \brief Returns the first few lines of the file, which can help the user to figure out
-    ///        the column mapping.
+    /// Returns the first few lines of the file, which can help the user to figure out
+    /// the column mapping.
     const QString& fileExcerpt() const { return _fileExcerpt; }
 
-    /// \brief Stores the first few lines of the file, which can help the user to figure out
-    ///        the column mapping.
+    /// Stores the first few lines of the file, which can help the user to figure out
+    /// the column mapping.
     void setFileExcerpt(const QString& text) { _fileExcerpt = text; }
 
-    /// \brief Returns whether at least some of the file columns have names.
+    /// Returns whether at least some of the file columns have names.
     bool hasFileColumnNames() const {
         return std::any_of(begin(), end(), [](const InputColumnInfo& column) {
             return column.columnName.isEmpty() == false;
@@ -149,7 +151,7 @@ public:
     /// \param vectorComponent The component index if the target property is a vector property.
     bool mapColumnToUserProperty(int column, const QString& propertyName, int dataType, int vectorComponent = -1);
 
-    /// \brief Compares two mapping for equality.
+    /// Compares two mapping for equality.
     bool operator==(const InputColumnMapping& other) const {
         if(containerClass() != other.containerClass()) return false;
         if(size() != other.size()) return false;
@@ -157,7 +159,7 @@ public:
         return fileExcerpt() == other.fileExcerpt();
     }
 
-    /// \brief Compares two mappings for inequality.
+    /// Compares two mappings for inequality.
     bool operator!=(const InputColumnMapping& other) const { return !(*this == other); }
 
     friend OVITO_STDOBJ_EXPORT SaveStream& operator<<(SaveStream& stream, const InputColumnMapping& m);
@@ -181,10 +183,10 @@ class TypedInputColumnMapping : public InputColumnMapping
 {
 public:
 
-    /// \brief Default constructor.
+    /// Default constructor.
     TypedInputColumnMapping() : InputColumnMapping(&PropertyContainerType::OOClass()) {}
 
-    /// \brief Constructor for conversion from a generic InputColumnMapping.
+    /// Constructor for conversion from a generic InputColumnMapping.
     TypedInputColumnMapping(const InputColumnMapping& m) : InputColumnMapping(&PropertyContainerType::OOClass()) {
         OVITO_ASSERT(m.containerClass() == containerClass());
         InputColumnMapping::operator=(m);
@@ -232,19 +234,19 @@ public:
     /// \param dataLine The text line read from the input file containing the field values.
     const char* readElement(size_t elementIndex, const char* dataLine, const char* dataLineEnd);
 
-    /// \brief Processes the values from one line of the input file and stores them in the target properties.
+    /// Processes the values from one line of the input file and stores them in the target properties.
     void readElement(size_t elementIndex, const double* values, int nvalues);
 
     /// Parse a single field from a text line.
     void parseField(size_t elementIndex, int columnIndex, const char* token, const char* token_end);
 
-    /// \brief Sorts the created element types either by numeric ID or by name, depending on how they were stored in the input file.
+    /// Sorts the created element types either by numeric ID or by name, depending on how they were stored in the input file.
     void sortElementTypes();
 
     /// Returns a list of properties that have been parsed.
     std::set<Property*> parsedProperties() const;
 
-    /// \brief Explicitly release the target properties written to by this class.
+    /// Explicitly release the target properties written to by this class.
     void reset() { _properties.clear(); }
 
     /// Assigns textual names, read from separate file columns, to numeric element types.

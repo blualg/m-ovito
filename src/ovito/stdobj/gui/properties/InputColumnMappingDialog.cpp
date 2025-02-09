@@ -35,7 +35,7 @@ enum {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const InputColumnMapping& mapping, QWidget* parent) : QDialog(parent),
+InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const InputColumnMapping& mapping, QWidget* parent, const QString& fileName) : QDialog(parent),
     _mainWindow(mainWindow),
     _containerClass(mapping.containerClass())
 {
@@ -51,8 +51,9 @@ InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const
     layout->setSpacing(2);
 
     QLabel* captionLabel = new QLabel(
-            tr("Please specify how the data columns of the input file should be mapped "
-                "to OVITO properties."));
+        !fileName.isEmpty() ?
+            tr("Please specify how to map the data columns of the input file '%1' to OVITO properties.").arg(fileName) :
+            tr("Please specify how to map the file columns to OVITO properties."));
     captionLabel->setWordWrap(true);
     layout->addWidget(captionLabel);
     layout->addSpacing(10);
@@ -74,23 +75,9 @@ InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const
     _tableWidget->setHorizontalHeaderLabels(horizontalHeaders);
     _tableWidget->setEditTriggers(QAbstractItemView::AllEditTriggers);
 
-#if 0
-    _tableWidget->resizeColumnToContents(VECTOR_COMPNT_COLUMN);
-
-    // Calculate the optimum width of the property column.
-    QComboBox* box = new QComboBox();
-    box->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    QMapIterator<QString, int> i(Particles::OOClass().standardPropertyIds());
-    while(i.hasNext()) {
-        i.next();
-        box->addItem(i.key(), i.value());
-    }
-    _tableWidget->setColumnWidth(PROPERTY_COLUMN, box->sizeHint().width());
-#else
     _tableWidget->horizontalHeader()->setSectionResizeMode(FILE_COLUMN_COLUMN, QHeaderView::ResizeToContents);
     _tableWidget->horizontalHeader()->setSectionResizeMode(PROPERTY_COLUMN, QHeaderView::Stretch);
     _tableWidget->horizontalHeader()->setSectionResizeMode(VECTOR_COMPNT_COLUMN, QHeaderView::ResizeToContents);
-#endif
 
     _tableWidget->verticalHeader()->setVisible(false);
     _tableWidget->setShowGrid(false);
@@ -103,6 +90,7 @@ InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const
     _fileExcerptField->setAcceptRichText(false);
     _fileExcerptField->setReadOnly(true);
     _fileExcerptField->setVisible(false);
+    _fileExcerptField->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
     layout->addWidget(_fileExcerptField, 1);
     layout->addSpacing(10);
 

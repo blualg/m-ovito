@@ -54,6 +54,7 @@ PropertyPtr Impropers::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
         componentCount = 1;
         break;
     case TopologyProperty:
+    case ParticleIdentifiersProperty:
         dataType = Property::Int64;
         componentCount = 4;
         break;
@@ -89,9 +90,11 @@ void Impropers::OOMetaClass::initialize()
 
     const QStringList emptyList;
     const QStringList abcdList = QStringList() << "A" << "B" << "C" << "D";
+    const QStringList onetwothreefourList = QStringList() << "1" << "2" << "3" << "4";
 
     registerStandardProperty(TypeProperty, tr("Improper Type"), Property::Int32, emptyList, &ElementType::OOClass(), tr("Improper types"));
     registerStandardProperty(TopologyProperty, tr("Topology"), Property::Int64, abcdList);
+    registerStandardProperty(ParticleIdentifiersProperty, tr("Particle Identifiers"), Property::Int64, onetwothreefourList);
 }
 
 }   // End of namespace

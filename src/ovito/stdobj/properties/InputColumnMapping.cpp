@@ -71,6 +71,32 @@ bool InputColumnMapping::mapColumnToUserProperty(int column, const QString& prop
 }
 
 /******************************************************************************
+ * Converts the mapping to a different target container class.
+ *****************************************************************************/
+void InputColumnMapping::convertToContainerClass(PropertyContainerClassPtr newClass)
+{
+    OVITO_ASSERT(newClass);
+    if(containerClass() == newClass)
+        return;
+
+    for(InputColumnInfo& col : *this) {
+        if(col.property) {
+            int typeId = col.property.standardTypeId(newClass);
+            if(typeId != 0) {
+                col.dataType = newClass->standardPropertyDataType(typeId);
+            }
+            else {
+                int componentIndex = col.property.componentIndex(containerClass());
+                auto name = col.property.name();
+                col.mapToUserProperty(name.toString(), DataBuffer::FloatDefault, componentIndex);
+            }
+        }
+    }
+
+    _containerClass = newClass;
+}
+
+/******************************************************************************
  * Saves the mapping to the given stream.
  *****************************************************************************/
 SaveStream& operator<<(SaveStream& stream, const InputColumnMapping& m)
@@ -161,12 +187,15 @@ void InputColumnMapping::fromByteArray(const QByteArray& array)
  *****************************************************************************/
 void InputColumnMapping::validate(const QString& fileFormatName) const
 {
-    OVITO_ASSERT(containerClass());
+    // Make sure a target property container type has been specified.
+    if(!containerClass())
+        throw Exception(InputColumnReader::tr("File column mapping%1 is invalid. No target property container type has been specified.")
+            .arg(fileFormatName.isEmpty() ? QString() : InputColumnReader::tr(" for parsing \"%1\"").arg(fileFormatName)));
 
     // Let the property container class perform specific checks.
     containerClass()->validateInputColumnMapping(*this);
 
-    // Check for conflicting mappings, i.e. several file columns being mapped to the same particle property.
+    // Check for conflicting mappings, i.e. several file columns being mapped to the same property.
     int numMapped = 0;
     for(auto m1 = begin(); m1 != end(); ++m1) {
         // Skip columns to be ignored.
