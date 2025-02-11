@@ -293,7 +293,7 @@ void MainWindow::restoreMainWindowGeometry()
     // TODO: For now we only restore the maximized/normal state of the main window, because
     // the QWidget::restoreGeometry() method is broken in Qt 6.7.x under macOS. We'll activate the new code
     // once Qt fixes the issue.
-#if 1
+#if 0
     if(settings.value("maximized", true).toBool())
         showMaximized();
     else
