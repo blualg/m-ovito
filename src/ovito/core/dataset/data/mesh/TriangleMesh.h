@@ -162,7 +162,7 @@ private:
 Q_DECLARE_OPERATORS_FOR_FLAGS(TriMeshFace::MeshFaceFlags);
 
 /**
- * \brief A data object represeting a mesh made of vertices and triangles.
+ * \brief A data object representing a mesh made of vertices and triangles.
  */
 class OVITO_CORE_EXPORT TriangleMesh : public DataObject
 {
@@ -327,7 +327,7 @@ public:
         _vertexPseudoColors.resize(enablePseudoColors ? _vertices.size() : 0);
     }
 
-    /// \brief Allows direct access to the per-vertex psudo-color array of the mesh.
+    /// \brief Allows direct access to the per-vertex pseudo-color array of the mesh.
     /// \return A reference to the vector that stores all vertex pseudo-color values.
     QVector<FloatType>& vertexPseudoColors() {
         OVITO_ASSERT(_hasVertexPseudoColors);
@@ -580,7 +580,7 @@ public:
     /// \param t If an intersection has been found, the method stores the distance of the intersection in this output parameter.
     /// \param normal If an intersection has been found, the method stores the surface normal at the point of intersection in this output parameter.
     /// \param faceIndex If an intersection has been found, the method stores the index of the face intersected by the ray in this output parameter.
-    /// \param backfaceCull Controls whether backfacing faces are tested too.
+    /// \param backfaceCull Controls whether back-facing faces are tested too.
     /// \return True if the closest intersection has been found. False if no intersection has been found.
     bool intersectRay(const Ray3& ray, FloatType& t, Vector3& normal, int& faceIndex, bool backfaceCull) const;
 

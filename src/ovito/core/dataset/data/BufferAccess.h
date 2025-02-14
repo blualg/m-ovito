@@ -604,7 +604,7 @@ using RawBufferReadAccess = RawBufferAccess<access_mode::read>;
 
 /**
  * Same as RawBufferReadAccess but additionally keeps a strong reference to the DataBuffer object
- * to keep it alive while the acessor object exists.
+ * to keep it alive while the accessor object exists.
 */
 using RawBufferReadAccessAndRef = detail::BufferAccessUntyped<const DataBuffer, true, access_mode::read>;;
 
@@ -625,14 +625,14 @@ using BufferWriteAccess = detail::BufferAccessTyped<T, DataBuffer, false, access
 
 /**
  * Same as BufferWriteAccess but additionally keeps a strong reference to the DataBuffer object
- * to keep it alive while the acessor object exists.
+ * to keep it alive while the accessor object exists.
 */
 template<typename T, access_mode accessmode>
 using BufferWriteAccessAndRef = detail::BufferAccessTyped<T, DataBuffer, true, accessmode>;
 
 /**
  * Same as BufferReadAccess but additionally keeps a strong reference to the DataBuffer object
- * to keep it alive while the acessor object exists.
+ * to keep it alive while the accessor object exists.
 */
 template<typename T>
 using BufferReadAccessAndRef = detail::BufferAccessTyped<std::conditional_t<std::is_pointer_v<T>,

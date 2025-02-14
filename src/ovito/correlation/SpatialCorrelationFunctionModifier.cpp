@@ -613,7 +613,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
     FloatType gridSpacing = (neighCutoff() + FLOATTYPE_EPSILON) / neighCorrelation()->size();
     EnumerableThreadSpecific<std::vector<FloatType>> threadLocalCorrelations;
     EnumerableThreadSpecific<std::vector<int64_t>> threadLocalRDFs;
-    parallelForInnerOuter(particleCount, 4096, *this,[&](auto&& iterate) {
+    parallelForInnerOuter(particleCount, 4096, *this, [&](auto&& iterate) {
         std::vector<FloatType>& threadLocalCorrelation = threadLocalCorrelations.create(neighCorrelation()->size(), 0);
         std::vector<int64_t>& threadLocalRDF = threadLocalRDFs.create(neighCorrelation()->size(), 0);
         iterate([&](size_t i) {

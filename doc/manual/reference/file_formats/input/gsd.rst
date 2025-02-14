@@ -13,8 +13,14 @@ Binary file format written by the `HOOMD-blue <https://glotzerlab.engin.umich.ed
 For a specification of the file format, see the `GSD (General Simulation Data) website <https://gsd.readthedocs.io>`__.
 
 The file reader supports loading `particle shape definitions <https://gsd.readthedocs.io/en/latest/shapes.html>`__ from a GSD file
-and will automatically generate corresponding polygons (2d) or meshes (3d) based on these definitions
-to render :ref:`particles with user-defined shapes <howto.aspherical_particles>`.
+and automatically generates :ref:`particles types with user-defined shapes <howto.aspherical_particles>`.
+
+.. _file_formats.input.gsd.log_data:
+
+Log data
+""""""""
+
+The GSD format can store ...
 
 .. _file_formats.input.gsd.python:
 

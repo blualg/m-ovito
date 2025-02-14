@@ -274,7 +274,7 @@ private:
     mutable std::atomic_bool _referenceTrackingEnabled{false};
 #endif
 
-    // Give DataOORef smart-pointer class direct access to the DataObject's shared owenership counter.
+    // Give DataOORef smart-pointer class direct access to the DataObject's shared ownership counter.
     template<typename DataObjectClass> friend class DataOORef;
 };
 

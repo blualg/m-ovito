@@ -289,19 +289,8 @@ void MainWindow::restoreMainWindowGeometry()
 {
     QSettings settings;
     settings.beginGroup("app/mainwindow");
-
-    // TODO: For now we only restore the maximized/normal state of the main window, because
-    // the QWidget::restoreGeometry() method is broken in Qt 6.7.x under macOS. We'll activate the new code
-    // once Qt fixes the issue.
-#if 0
-    if(settings.value("maximized", true).toBool())
-        showMaximized();
-    else
-        show();
-#else
     restoreGeometry(settings.value("geometry").toByteArray());
     show();
-#endif
 }
 
 /******************************************************************************
@@ -311,7 +300,6 @@ void MainWindow::saveMainWindowGeometry()
 {
     QSettings settings;
     settings.beginGroup("app/mainwindow");
-    settings.setValue("maximized", isMaximized());
     settings.setValue("geometry", saveGeometry());
 }
 

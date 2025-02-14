@@ -363,7 +363,7 @@ public:
             _checksum[i].store(0, std::memory_order_relaxed);
     }
 
-    /// Invokes a generic lampda function with the current data type of the buffer.
+    /// Invokes a generic lambda function with the current data type of the buffer.
     /// The lambda function must accept exactly one generic parameter ("auto _"), whose type
     /// will be the type of the DataBuffer. The value of the parameter is not used.
     template<typename F>
@@ -371,7 +371,7 @@ public:
         forTypes<Float64, Float32, Int32, Int64, Int8>(std::forward<F>(f));
     }
 
-    /// Invokes a generic lampda function with the current data type of the buffer.
+    /// Invokes a generic lambda function with the current data type of the buffer.
     /// The lambda function must accept exactly one generic parameter ("auto _"), whose type
     /// will be the type of the DataBuffer. The value of the parameter is not used.
     template<DataTypes... TypeIds, typename F>
@@ -408,7 +408,7 @@ public:
     inline void prepareWriteAccess() {
 #ifdef OVITO_DEBUG
         if(_activeAccessors.fetchAndStoreAcquire(-1) != 0) {
-            OVITO_ASSERT_MSG(false, "DataBuffer::prepareWriteAccess()", "Property cannot be locked for write acccess while it is already locked.");
+            OVITO_ASSERT_MSG(false, "DataBuffer::prepareWriteAccess()", "Property cannot be locked for write access while it is already locked.");
         }
 #endif
         invalidateCachedInfo();
