@@ -192,7 +192,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
 
         // Assuming that the input mesh is convex, render semi-transparent triangles in two passes:
         // First, render triangles facing away from the viewer, then render triangles facing toward the viewer.
-        // Each time we pass the entire triangle list to OpenGL and use OpenGL's backface/frontfrace culling
+        // Each time we pass the entire triangle list to OpenGL and use OpenGL's backface/frontface culling
         // option to render the right subset of triangles.
         if(!primitive.cullFaces()) {
             // First pass is only needed if backface culling is not active.

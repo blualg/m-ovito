@@ -147,7 +147,6 @@ QString UserInterface::generateSystemReport()
     stream << "======= System info =======\n";
     stream << "Current date: " << QDateTime::currentDateTime().toString() << "\n";
     stream << "Application: " << Application::applicationName() << " " << Application::applicationVersionString() << "\n";
-    stream << "Operating system: " <<  QOperatingSystemVersion::current().name() << " (" << QOperatingSystemVersion::current().majorVersion() << "." << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
 #if defined(Q_OS_LINUX)
     // Get 'uname' output.
     QProcess unameProcess;
@@ -163,6 +162,8 @@ QString UserInterface::generateSystemReport()
     QByteArray lsbOutput = lsbProcess.readAllStandardOutput();
     lsbOutput.replace('\n', ' ');
     stream << "LSB output: " << lsbOutput << "\n";
+#else
+    stream << "Operating system: " << QOperatingSystemVersion::current().name() << " (" << QOperatingSystemVersion::current().majorVersion() << "." << QOperatingSystemVersion::current().minorVersion() << ")" << "\n";
 #endif
     stream << "Processor architecture: " << QSysInfo::currentCpuArchitecture() << "\n";
     stream << "Qt version: " << QT_VERSION_STR << " (" << QSysInfo::buildCpuArchitecture() << ")\n";
