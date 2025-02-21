@@ -250,9 +250,21 @@ ELSEIF(OVITO_USE_SYCL STREQUAL DPC++)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_USE_SYCL_DPCPP)
 ENDIF()
 
-# Enable CUDA in source code.
+# Enable CUDA code.
 IF(OVITO_USE_CUDA)
+    # Tell source code that the use of CUDA is enabled.
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_USE_CUDA)
+    # Deploy CUDA runtime library with the application.
+    IF(NOT OVITO_BUILD_CONDA)
+        FIND_PACKAGE(CUDAToolkit REQUIRED)
+        GET_TARGET_PROPERTY(CUDA_LIBRARY_LOCATION CUDA::cudart LOCATION)
+        IF(WIN32)
+            # Derive path of DLL from .lib location.
+            GET_FILENAME_COMPONENT(CUDA_LIBRARY_PATH "${CUDA_LIBRARY_LOCATION}" PATH)
+            SET(CUDA_LIBRARY_LOCATION "${CUDA_LIBRARY_PATH}/../../bin/cudart64_12.dll")
+        ENDIF()
+        OVITO_INSTALL_SHARED_LIB("${CUDA_LIBRARY_LOCATION}")
+    ENDIF()
 ENDIF()
 
 # Compute the relative path from the OVITO executable to where the plugin libraries get installed.
@@ -267,9 +279,6 @@ ELSE()
     # Compute the relative path from the Conda prefix to where the Python module layer gets installed.
     FILE(RELATIVE_PATH OVITO_PYTHON_LAYER_PATH "$ENV{PREFIX}" "$ENV{SP_DIR}")
     TARGET_COMPILE_DEFINITIONS(Core PRIVATE "OVITO_PYTHON_LAYER_PATH=\"${OVITO_PYTHON_LAYER_PATH}\"")
-    MESSAGE(STATUS "PREFIX: $ENV{PREFIX}")
-    MESSAGE(STATUS "SP_DIR: $ENV{SP_DIR}")
-    MESSAGE(STATUS "OVITO_PYTHON_LAYER_PATH: ${OVITO_PYTHON_LAYER_PATH}")
 ENDIF()
 
 # Link to the pthread library on Linux platform.
