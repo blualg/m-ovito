@@ -178,7 +178,7 @@ QString UserInterface::generateSystemReport()
 #else
         "no\n";
 #endif
-    // Let the plugin class add their information to their system report.
+    // Let the plugin classes optionally add their specific info to the system report, e.g. the OpenGL driver information.
     for(Plugin* plugin : PluginManager::instance().plugins()) {
         for(OvitoClassPtr clazz : plugin->classes()) {
             clazz->querySystemInformation(stream, *this);

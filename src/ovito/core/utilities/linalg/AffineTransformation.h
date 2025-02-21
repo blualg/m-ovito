@@ -546,6 +546,15 @@ public:
         return linear() == typename Matrix_3<T>::Identity();
     }
 
+    /// \brief Tests whether the matrix describes a pure uniform scaling.
+    /// \return \c true if the matrix is a pure uniform scaling matrix; \c false otherwise.
+    Q_DECL_CONSTEXPR bool isUniformScaling() const {
+        const auto s = (*this)(0,0);
+        return (*this)(1,1) == s && (*this)(2,2) == s &&
+                (*this)(0,1) == 0 && (*this)(0,2) == 0 && (*this)(1,2) == 0 && (*this)(1,0) == 0 && (*this)(2,0) == 0 && (*this)(2,1) == 0 &&
+                translation() == typename Vector_3<T>::Zero();
+    }
+
     /// \brief Converts the matrix to a Qt 4x4 matrix.
     operator QMatrix4x4() const {
         return QMatrix4x4(

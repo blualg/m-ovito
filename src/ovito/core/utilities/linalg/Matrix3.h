@@ -341,6 +341,14 @@ public:
         return isOrthogonalMatrix(epsilon) && (std::abs(determinant() - T(1)) <= epsilon);
     }
 
+    /// \brief Tests whether the matrix describes a pure uniform scaling.
+    /// \return \c true if the matrix is a pure uniform scaling matrix; \c false otherwise.
+    Q_DECL_CONSTEXPR bool isUniformScaling() const {
+        const auto s = (*this)(0,0);
+        return (*this)(1,1) == s && (*this)(2,2) == s &&
+                (*this)(0,1) == 0 && (*this)(0,2) == 0 && (*this)(1,2) == 0 && (*this)(1,0) == 0 && (*this)(2,0) == 0 && (*this)(2,1) == 0;
+    }
+
     /// \brief Converts this matrix to a Qt matrix.
     operator QMatrix3x3() const {
         QMatrix3x3 qtm;
