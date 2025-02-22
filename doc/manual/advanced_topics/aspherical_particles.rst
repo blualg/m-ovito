@@ -74,7 +74,7 @@ For example, in `LAMMPS`, the following script commands dump and export per-part
                                        c_orient[1] c_orient[2] c_orient[3] c_orient[4] &
                                        c_diameter[1] c_diameter[2] c_diameter[3]
 
-When :ref:`importing the dump file into OVITO <file_formats.input.lammps_dump.property_mapping>`, ensure that the ``quati``, ``quatj``, ``quatk``, and ``quatw`` attributes are correctly mapped to
+When :ref:`importing the dump file into OVITO <file_formats.input.lammps_dump.property_mapping>`, ensure that the ``quati``, ``quatj``, ``quatk``, and ``quatw`` attributes are correctly mapped to the
 ``Orientation.X``, ``Orientation.Y``, ``Orientation.Z``, and ``Orientation.W`` particle properties (in this exact order).
 
 OVITO can automatically establish this mapping if the `column names in the LAMMPS dump file are properly assigned <https://docs.lammps.org/dump_modify.html>`__:

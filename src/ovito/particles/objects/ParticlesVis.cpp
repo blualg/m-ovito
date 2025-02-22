@@ -109,10 +109,20 @@ Box3 ParticlesVis::particleBoundingBox(BufferReadAccess<Point3> positionProperty
         if(maxAtomRadius == 0)
             maxAtomRadius = defaultParticleRadius();
         if(shapeProperty) {
-            for(const Vector3G& s : shapeProperty)
-                maxAtomRadius = std::max(maxAtomRadius, static_cast<FloatType>(std::max(s.x(), std::max(s.y(), s.z()))));
+            bool shapeSetForAllParticles = true;
+            FloatType maxShapeSize = 0;
+            for(const Vector3G& s : shapeProperty) {
+                if(s.x() <= 0 && s.y() <= 0 && s.z() <= 0)
+                    shapeSetForAllParticles = false;
+                else
+                    maxShapeSize = std::max(maxShapeSize, static_cast<FloatType>(std::max(s.x(), std::max(s.y(), s.z()))));
+            }
             if(particleShape() == Spherocylinder)
-                maxAtomRadius *= 2;
+                maxShapeSize *= 2;
+            if(shapeSetForAllParticles)
+                maxAtomRadius = maxShapeSize;
+            else
+                maxAtomRadius = std::max(maxAtomRadius, maxShapeSize);
         }
         if(radiusProperty && radiusProperty.size() != 0) {
             auto minmax = std::minmax_element(radiusProperty.cbegin(), radiusProperty.cend());

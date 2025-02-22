@@ -206,16 +206,23 @@ public:
             });
         FloatType maxRadius = std::max(uniformRadius(), FloatType(0));
         if(radii()) {
-            auto& cachedMaxRadius = visCache.lookup<FloatType>(RendererResourceKey<struct ParticlesMaxRadiusCache, ConstDataBufferPtr>{radii()}, [this](FloatType& cachedMaxRadius) {
-                cachedMaxRadius = radii()->minMax().second;
+            auto& [cachedMinRadius, cachedMaxRadius] = visCache.lookup<std::tuple<FloatType, FloatType>>(RendererResourceKey<struct ParticlesMaxRadiusCache, ConstDataBufferPtr>{radii()}, [this](FloatType& cachedMinRadius, FloatType& cachedMaxRadius) {
+                std::tie(cachedMinRadius, cachedMaxRadius) = radii()->minMax();
             });
-            maxRadius = std::max(maxRadius, cachedMaxRadius);
+            if(cachedMinRadius <= 0)
+                maxRadius = std::max(maxRadius, cachedMaxRadius);
+            else
+                maxRadius = cachedMaxRadius;
         }
         if(asphericalShapes()) {
-            auto& cachedMaxShape = visCache.lookup<FloatType>(RendererResourceKey<struct ParticleMaxShapeBoxCache, ConstDataBufferPtr>{asphericalShapes()}, [this](FloatType& cachedMaxShape) {
-                cachedMaxShape = (asphericalShapes()->boundingBox3().maxc - Point3::Origin()).length();
+            auto& cachedShapeBox = visCache.lookup<Box3>(RendererResourceKey<struct ParticleMaxShapeBoxCache, ConstDataBufferPtr>{asphericalShapes()}, [this](Box3& cachedShapeBox) {
+                cachedShapeBox = asphericalShapes()->boundingBox3();
             });
-            maxRadius = std::max(maxRadius, cachedMaxShape);
+            FloatType cachedMaxShape = (cachedShapeBox.maxc - Point3::Origin()).length();
+            if(cachedShapeBox.minc == Point3::Origin())
+                maxRadius = std::max(maxRadius, cachedMaxShape);
+            else
+                maxRadius = cachedMaxShape;
         }
         return bb.padBox(maxRadius);
     }
