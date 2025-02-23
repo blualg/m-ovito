@@ -484,8 +484,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ParticlesVis::render(const 
         // Render all primitive particle types.
         renderPrimitiveParticles(particles, *frameGraph, commandGroup, sceneNode, tm);
 
-        // Render all (sphero-)cylindric particle types.
-        renderCylindricParticles(particles, *frameGraph, commandGroup, sceneNode, tm);
+        // Render all (sphero-)cylindrical particle types.
+        renderCylindricalParticles(particles, *frameGraph, commandGroup, sceneNode, tm);
 
         return {};
     });
@@ -826,7 +826,7 @@ void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGra
 /******************************************************************************
 * Renders all particles with a (sphero-)cylindrical shape.
 ******************************************************************************/
-void ParticlesVis::renderCylindricParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const SceneNode* sceneNode, const AffineTransformation& tm) const
+void ParticlesVis::renderCylindricalParticles(const Particles* particles, FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const SceneNode* sceneNode, const AffineTransformation& tm) const
 {
     // Determine whether all particle types use the same uniform shape or not.
     ParticlesVis::ParticleShape uniformShape = particleShape();
@@ -883,7 +883,7 @@ void ParticlesVis::renderCylindricParticles(const Particles* particles, FrameGra
             ConstDataObjectRef,                 // Selection property
             ConstDataObjectRef,                 // Color property
             ConstDataObjectRef,                 // Transparency property
-            ConstDataObjectRef,                 // Apherical shape property
+            ConstDataObjectRef,                 // Aspherical shape property
             ConstDataObjectRef,                 // Orientation property
             ConstDataObjectRef,                 // Radius property
             FloatType,                          // Default particle radius
