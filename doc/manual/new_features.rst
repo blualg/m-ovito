@@ -12,9 +12,17 @@ Changelog
 Version 3.12.0 (xx-xxx-2025)
 ----------------------------
 
-- New utilities command panel tab
-- :ref:`particles.modifiers.compute_property` modifier: New option to include :ref:`all bonded neighbor particles <particles.modifiers.compute_property.neighbor_expr>` in the computation
-- Support for :ref:`named types in selection expressions <particles.modifiers.type_names>`
+- A new command panel tab, which can host various utility applets (e.g. Python scripts, custom tools, or the existing :ref:`remote rendering function <usage.remote_rendering>`)
+- Support for :ref:`named types in selection expressions <particles.modifiers.type_names>`:
+
+  .. image:: /images/new_features/expression_selection_type_names.jpg
+    :width: 35%
+
+- :ref:`particles.modifiers.compute_property` modifier: New option to include :ref:`all bonded neighbor particles <particles.modifiers.compute_property.neighbor_expr>` in the computation:
+
+  .. image:: /images/new_features/compute_property_bonded_neighbors.jpg
+    :width: 35%
+
 - Support for reading a zstd compressed trajectory file while it is being written by the simulation code
 - :ref:`file_formats.input.lammps_dump_local` in combination with :ref:`particles.modifiers.load_trajectory` modifier now supports
   loading dynamic angle/dihedral/improper interaction data from LAMMPS `dump local` files
@@ -22,19 +30,56 @@ Version 3.12.0 (xx-xxx-2025)
 - :ref:`file_formats.input.gsd`: Automatically generate :ref:`visual_elements.vectors` visual elements for user-defined particle properties with 3 components
 - Aspherix file reader: Fixed grid domain size incorrectly overriding the simulation cell size
 - Restored automatic seeking to the last frame of a growing trajectory file when using the `update trajectory frames` function
-- |ovito-python| Added :py:class:`ovito.io.FileWriterInterface`
-- |ovito-python| Added :py:mod:`ovito.gui` module
-- |ovito-python| Added :py:func:`ovito.traits.action_handler` decorator
+- |ovito-python| Added the :py:class:`ovito.io.FileWriterInterface` class, which allows writing :ref:`custom file exporters <writing_custom_file_writers>` for OVITO:
+
+  .. code-block:: python
+
+    class MyFileWriter(FileWriterInterface):
+        def write(self, *, filename, frames, pipeline, **kwargs):
+            with open(filename, 'w') as file:
+                file.write("...")
+
+- |ovito-python| Added the new :py:mod:`ovito.gui` module, which contains GUI-related functions, e.g., functions for creating visible viewport windows
+- |ovito-python| Added the :py:class:`ovito.gui.UtilityInterface` extension class and the :py:func:`ovito.traits.action_handler` decorator, which allow defining custom action handlers for UI push buttons, e.g., in :ref:`custom utility applets <writing_custom_utilities>`:
+
+  .. code-block:: python
+
+    class MyUtilityApplet(UtilityInterface):
+        export_btn = Button(ovito_label="Export my data")
+
+        @action_handler("export_btn")
+        def export_data(self):
+            pipeline = scene.pipelines.selected_pipeline
+            export_file(pipeline, "data.txt", "txt/attr", columns=["CommonNeighborAnalysis.counts.FCC"])
+
 - |ovito-python| Added *translation* and *rotation* parameters to :py:meth:`Pipeline.add_to_scene() <ovito.pipeline.Pipeline.add_to_scene>` and removed :py:attr:`!Pipeline.translation` and :py:attr:`!Pipeline.rotation` properties
 - |ovito-python| Replaced :py:attr:`!LinesVis.shading` parameter with :py:attr:`LinesVis.flat_shading <ovito.vis.LinesVis.flat_shading>` parameter
 - |ovito-python| Replaced :py:attr:`!DislocationVis.shading` parameter with :py:attr:`DislocationVis.flat_shading <ovito.vis.DislocationVis.flat_shading>` parameter
-- |ovito-pro| Added :ref:`OVITO Pro Python extensions gallery <topics.python_extensions.gallery>`
-- |ovito-pro| Added :ref:`file_formats.output.ase_trajectory`
-- |ovito-pro| Added support for :ref:`user-defined file exporters <writing_custom_file_writers>`
-- |ovito-pro| Added support for :ref:`user-defined utility applets <writing_custom_utilities>` running in the command panel of OVITO Pro
-- |ovito-pro| Added a :ref:`GUI function for installing third-party Python packages in the embedded interpreter <application_settings.python.package_installation>`
+- |ovito-pro| Added :ref:`OVITO Pro Python extensions gallery <topics.python_extensions.gallery>`, which provides an easy way to discover and install third-party Python extensions:
+
+  .. image:: /images/python_settings_dialog/python_extension_gallery.*
+    :width: 60%
+
+- |ovito-pro| Added the new :ref:`file_formats.output.ase_trajectory`
+- |ovito-pro| Added extension interface for :ref:`custom file exporters <writing_custom_file_writers>`
+- |ovito-pro| Added extension interface for :ref:`custom utility applets <writing_custom_utilities>` running in the command panel of OVITO Pro
+- |ovito-pro| Added a :ref:`GUI function for easily installing third-party Python packages <application_settings.python.package_installation>` in the embedded interpreter of OVITO Pro:
+
+  .. image:: /images/app_settings/python_settings.*
+    :width: 45%
+
+  .. image:: /images/app_settings/python_settings_install_package.*
+    :width: 35%
+
 - |ovito-pro| :ref:`OVITO Pro can now be used as a Jupyter kernel (in conda environments) <ovito_jupyter_kernel>`, combining interactive Python scripting with the full OVITO Pro GUI
-- |ovito-pro| Added depth-aware outline effect to :ref:`rendering.ospray_renderer` and :ref:`rendering.visrtx_renderer`
+- |ovito-pro| New depth-aware outline effect in :ref:`rendering.ospray_renderer` and :ref:`rendering.visrtx_renderer`:
+
+  .. image:: /images/rendering/visrtx_viewport_outlines.*
+    :width: 49%
+
+  .. image:: /images/rendering/visrtx_render_outlines.*
+    :width: 49%
+
 - |ovito-pro| Improved object picking performance in interactive viewports for the :ref:`rendering.visrtx_renderer`
 
 .. sidebar::

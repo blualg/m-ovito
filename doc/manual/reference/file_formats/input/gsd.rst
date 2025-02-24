@@ -12,15 +12,57 @@ GSD/HOOMD file reader
 Binary file format written by the `HOOMD-blue <https://glotzerlab.engin.umich.edu/hoomd-blue/>`__ molecular dynamic simulation code.
 For a specification of the file format, see the `GSD (General Simulation Data) website <https://gsd.readthedocs.io>`__.
 
-The file reader supports loading `particle shape definitions <https://gsd.readthedocs.io/en/latest/shapes.html>`__ from a GSD file
-and automatically generates :ref:`particles types with user-defined shapes <howto.aspherical_particles>`.
+OVITO loads `all data chunks <https://gsd.readthedocs.io/en/latest/schema-hoomd.html#data-chunks>`__ from the following categories of a GSD file:
+
+  - **Configuration**: :ref:`Simulation cell definition <scene_objects.simulation_cell>`
+  - **Particle data**: :ref:`Particle properties <scene_objects.particles>`
+  - **Bond data**: :ref:`Bonded interactions <scene_objects.bonds>`
+  - **Angle data**: Angular interactions
+  - **Dihedral data**: Dihedral interactions
+  - **Improper data**: Improper interactions
+
+In addition, OVITO loads `logged data <https://gsd.readthedocs.io/en/latest/schema-hoomd.html#logged-data>`__ from the GSD file,
+either as :ref:`global attributes <usage.global_attributes>`, user-defined particle properties, or user-defined bond properties.
+See :ref:`file_formats.input.gsd.log_data` for more details.
+
+.. _file_formats.input.gsd.shapes:
+
+Particle shapes
+"""""""""""""""
+
+The file reader supports `shape definitions <https://gsd.readthedocs.io/en/latest/shapes.html>`__ in a GSD file
+and automatically generates a :ref:`user-defined shape <howto.aspherical_particles>` for each particle type.
+Currently, the following GSD shape types are supported:
+
+  - ``Sphere``
+  - ``Ellipsoid``
+  - ``Polygon``
+  - ``ConvexPolyhedron`` (with 1, 2, 4, or more vertices)
+  - ``Mesh``
+  - ``SphereUnion``
+
+For shape types with a positive rounding radius, OVITO generates a tessellated mesh representation of the shape.
+The :guilabel:`Shape rounding resolution` parameter controls the quality of the generated mesh (an integer value in the range 1 to 6).
 
 .. _file_formats.input.gsd.log_data:
 
 Log data
 """"""""
 
-The GSD format can store ...
+OVITO loads `logged data <https://gsd.readthedocs.io/en/latest/schema-hoomd.html#logged-data>`__ from the GSD file found in
+data chunks under the ``log/`` directory:
+
+  - ``log/*``: Loaded as :ref:`global attributes <usage.global_attributes>`
+  - ``log/particles/*``: Loaded as user-defined particle properties
+  - ``log/bonds/*``: Loaded as user-defined bond properties
+  - ``log/angles/*``: Loaded as user-defined angle properties
+  - ``log/dihedrals/*``: Loaded as user-defined dihedral properties
+  - ``log/impropers/*``: Loaded as user-defined improper properties
+
+This includes data chunks located in nested sub-folders of the listed root directories.
+
+User-defined particle properties with three vector components of type ``float`` are automatically
+given a :ref:`visual_elements.vectors` visual element to allow easy visualization.
 
 .. _file_formats.input.gsd.python:
 

@@ -100,12 +100,12 @@ Outlines
   VisRTX final frame rendering.
 
   .. figure:: /images/rendering/visrtx_viewport_outlines.*
-    :figwidth: 55%
+    :figwidth: 49%
 
     Outlines in the interactive viewport.
 
   .. figure:: /images/rendering/visrtx_render_outlines.*
-    :figwidth: 44%
+    :figwidth: 49%
 
     Outlines in the rendered image.
 

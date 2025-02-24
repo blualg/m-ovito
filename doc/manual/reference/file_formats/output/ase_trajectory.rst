@@ -17,6 +17,6 @@ ASE trajectory writer |ovito-pro|
 Saves the particles and their trajectories to a `trajectory file of the Atomic Simulation Environment (ASE) <https://wiki.fysik.dtu.dk/ase/ase/io/trajectory.html>`__.
 
 Internally, the file writer is based on the :py:func:`ovito.io.ase.ovito_to_ase` function, which converts OVITO's :ref:`particles <scene_objects.particles>`
-tp ASE atoms objects.
+to ASE atoms objects.
 
 .. seealso:: :ref:`file_formats.input.ase_trajectory`
