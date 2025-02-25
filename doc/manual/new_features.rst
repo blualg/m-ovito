@@ -9,11 +9,11 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.12.0>`__
 
 ----------------------------
-Version 3.12.0 (xx-xxx-2025)
+Version 3.12.0 (26-Feb-2025)
 ----------------------------
 
 - A new command panel tab, which can host various utility applets (e.g. Python scripts, custom tools, or the existing :ref:`remote rendering function <usage.remote_rendering>`)
-- Support for :ref:`named types in selection expressions <particles.modifiers.type_names>`:
+- Support for :ref:`type names in selection expressions <particles.modifiers.type_names>`:
 
   .. image:: /images/new_features/expression_selection_type_names.jpg
     :width: 35%
@@ -23,14 +23,16 @@ Version 3.12.0 (xx-xxx-2025)
   .. image:: /images/new_features/compute_property_bonded_neighbors.jpg
     :width: 35%
 
-- Support for reading a zstd compressed trajectory file while it is being written by the simulation code
-- :ref:`file_formats.input.lammps_dump_local` in combination with :ref:`particles.modifiers.load_trajectory` modifier now supports
-  loading dynamic angle/dihedral/improper interaction data from LAMMPS `dump local` files
+- The :ref:`file_formats.input.lammps_dump_local` in combination with the :ref:`particles.modifiers.load_trajectory` modifier now supports
+  loading dynamic angle/dihedral/improper interactions from LAMMPS `dump local` files. In addition, it can now automatically recognize the columns
+  of the dump file if you follow the instructions given in :ref:`file_formats.input.lammps_dump_local.property_mapping`.
+- OVITO can now read a zstd compressed trajectory file while new frames are being appended to it by the running simulation code.
+  For gzipped and uncompressed trajectory files, this already worked.
 - :ref:`file_formats.input.gsd`: Retain complete chunk paths in per-particle property names loaded from GSD files
 - :ref:`file_formats.input.gsd`: Automatically generate :ref:`visual_elements.vectors` visual elements for user-defined particle properties with 3 components
 - Aspherix file reader: Fixed grid domain size incorrectly overriding the simulation cell size
 - Restored automatic seeking to the last frame of a growing trajectory file when using the `update trajectory frames` function
-- |ovito-python| Added the :py:class:`ovito.io.FileWriterInterface` class, which allows writing :ref:`custom file exporters <writing_custom_file_writers>` for OVITO:
+- |ovito-python| The new :py:class:`ovito.io.FileWriterInterface` class allows writing :ref:`custom file exporters <writing_custom_file_writers>` for OVITO Pro and the OVITO Python module:
 
   .. code-block:: python
 
@@ -39,7 +41,11 @@ Version 3.12.0 (xx-xxx-2025)
             with open(filename, 'w') as file:
                 file.write("...")
 
-- |ovito-python| Added the new :py:mod:`ovito.gui` module, which contains GUI-related functions, e.g., functions for creating visible viewport windows
+  .. code-block:: python
+
+    export_file(pipeline, "output.dat", format=MyFileWriter)
+
+- |ovito-python| Added the new :py:mod:`ovito.gui` module, which contains GUI-related functions, e.g., functions for creating visible viewport windows.
 - |ovito-python| Added the :py:class:`ovito.gui.UtilityInterface` extension class and the :py:func:`ovito.traits.action_handler` decorator, which allow defining custom action handlers for UI push buttons, e.g., in :ref:`custom utility applets <writing_custom_utilities>`:
 
   .. code-block:: python
@@ -71,7 +77,16 @@ Version 3.12.0 (xx-xxx-2025)
   .. image:: /images/app_settings/python_settings_install_package.*
     :width: 35%
 
-- |ovito-pro| :ref:`OVITO Pro can now be used as a Jupyter kernel (in conda environments) <ovito_jupyter_kernel>`, combining interactive Python scripting with the full OVITO Pro GUI
+- |ovito-pro| :ref:`OVITO Pro can now be used as a Jupyter kernel (in conda environments) <ovito_jupyter_kernel>`, combining interactive Python scripting with the full OVITO Pro GUI:
+
+  .. |ovito-pro-jupyter-kernel-demo-video| raw:: html
+
+    <video width="100%" controls autoplay muted loop playsinline>
+      <source src="https://www.ovito.org/download/data/documentation/ovito_pro_jupyter_kernel_demo.mp4" type="video/mp4">
+    </video>
+
+  |ovito-pro-jupyter-kernel-demo-video|
+
 - |ovito-pro| New depth-aware outline effect in :ref:`rendering.ospray_renderer` and :ref:`rendering.visrtx_renderer`:
 
   .. image:: /images/rendering/visrtx_viewport_outlines.*

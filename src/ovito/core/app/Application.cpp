@@ -348,6 +348,7 @@ void Application::createQtApplication(bool supportGui)
         // Keep Qt event loop running indefinitely in Jupyter kernel mode, such that
         // new main windows can be opened and closed more than once.
         if(runMode() == KernelMode) {
+            qtApp->setQuitLockEnabled(false);
             if(QGuiApplication* guiApp = qobject_cast<QGuiApplication*>(qtApp)) {
                 guiApp->setQuitOnLastWindowClosed(false);
             }

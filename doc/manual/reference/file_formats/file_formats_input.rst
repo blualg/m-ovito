@@ -47,7 +47,7 @@ OVITO can read the following file formats:
     - File format written by the `dump local <https://docs.lammps.org/dump.html>`__ command of LAMMPS.
       OVITO's :ref:`particles.modifiers.load_trajectory` modifier can read varying bond topology and
       per-bond quantities from such files generated in reactive molecular dynamics simulations.
-    - :ref:`bonds <scene_objects.bonds>`
+    - :ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers
     - :ref:`Details <file_formats.input.lammps_dump_local>`
 
   * - LAMMPS dump grid
