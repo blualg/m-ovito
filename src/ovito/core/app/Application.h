@@ -160,3 +160,7 @@ protected:
 };
 
 }   // End of namespace
+
+#include <ovito/core/utilities/concurrent/ObjectExecutorImpl.h>
+#include <ovito/core/utilities/concurrent/DeferredObjectExecutorImpl.h>
+#include <ovito/core/utilities/concurrent/ThreadPoolExecutorImpl.h>

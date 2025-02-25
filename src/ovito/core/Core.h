@@ -182,5 +182,6 @@
 #include <ovito/core/oo/RefTarget.h>
 #include <ovito/core/utilities/concurrent/Launch.h>
 #include <ovito/core/utilities/concurrent/TaskProgress.h>
+#include <ovito/core/app/Application.h>
 
 #endif // __OVITO_CORE_
