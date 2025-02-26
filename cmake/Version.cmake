@@ -25,9 +25,11 @@
 # This is the canonical program version number:
 SET(OVITO_VERSION_MAJOR         "3")
 SET(OVITO_VERSION_MINOR         "12")
-SET(OVITO_VERSION_REVISION      "0")
+SET(OVITO_VERSION_REVISION      "1")
 
-# Increment the following version counter every time the .ovito file format
+# The following version number is used to tag the file format of .ovito session state files.
+#
+# Instructions: Increment the following version counter every time the .ovito file format
 # changes in a backward-incompatible way.
 #
 # Format version 30006 - OVITO ver>3.2.1: TimeAveragingModifier changed.
