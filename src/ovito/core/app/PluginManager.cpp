@@ -106,7 +106,7 @@ QString PluginManager::pythonDir()
     // Resolve path to Ovito's Python layer files, which is specified at compile time relative to the executable path.
     // See ovito/core/CMakeLists.txt for details.
     QDir prefixDir(Application::instance()->applicationDirPath());
-    return QDir(prefixDir.filePath(QStringLiteral(OVITO_PYTHON_LAYER_PATH))).absolutePath();
+    return QDir::toNativeSeparators(QDir(prefixDir.filePath(QStringLiteral(OVITO_PYTHON_LAYER_PATH))).absolutePath());
 #else
     // Resolve path to Ovito's Python layer files, which is specified at compile time relative to the Conda prefix path.
     // See ovito/core/CMakeLists.txt for details.

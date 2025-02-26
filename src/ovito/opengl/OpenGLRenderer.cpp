@@ -101,7 +101,7 @@ void OpenGLRenderer::OOMetaClass::querySystemInformation(QTextStream& stream, Us
         stream << "Shading language: " << OpenGLRenderer::openGLSLVersion() << "\n";
         stream << "Deprecated functions: " << (format.testOption(QSurfaceFormat::DeprecatedFunctions) ? "yes" : "no") << "\n";
         stream << "Geometry shader support: " << (OpenGLRenderer::openGLSupportsGeometryShaders() ? "yes" : "no") << "\n";
-        stream << "Alpha: " << format.hasAlpha() << "\n";
+        stream << "Alpha: " << (format.hasAlpha() ? "yes" : "no") << "\n";
 #if 0
         stream << "Supported extensions:\n";
         QStringList extensionList;
