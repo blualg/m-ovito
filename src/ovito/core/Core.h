@@ -138,7 +138,7 @@
 #include <boost/dynamic_bitset.hpp>
 #include <boost/iterator/counting_iterator.hpp>
 #include <boost/iterator/transform_iterator.hpp>
-#include <boost/random/uniform_int.hpp>
+#include <boost/random/uniform_int_distribution.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
 #include <boost/range/algorithm_ext/is_sorted.hpp>
 #include <boost/range/algorithm.hpp>
