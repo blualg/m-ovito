@@ -35,6 +35,9 @@ ENDIF()
 IF(CMAKE_VERSION VERSION_GREATER_EQUAL "3.30")
     CMAKE_POLICY(SET CMP0167 OLD)   # find_package(Boost) should load CMake's FindBoost module for now. We'll switch to the new policy later.
 ENDIF()
+IF(CMAKE_VERSION VERSION_GREATER_EQUAL "3.31")
+    CMAKE_POLICY(SET CMP0177 NEW)   # Normalize install() DESTINATION paths.
+ENDIF()
 
 PROJECT(Ovito)
 
