@@ -37,7 +37,6 @@ IF(OVITO_BUILD_SSH_CLIENT)
 ENDIF()
 
 # Locate the Boost library.
-SET(_Boost_IMPORTED_TARGETS TRUE) # Workaround for bug in CMake 3.5, which doesn't define the Boost::boost imported target.
 FIND_PACKAGE(Boost REQUIRED)
 IF(NOT TARGET Boost::boost)
     MESSAGE(FATAL_ERROR "The Boost library was not found on your system. Please make sure it is available.")

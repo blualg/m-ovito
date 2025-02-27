@@ -42,6 +42,11 @@ ENDIF()
 # Add standard compile and link options to the CMake target.
 OVITO_ADD_STANDARD_COMPILE_OPTIONS(geogram)
 
+# Locate the Boost library.
+FIND_PACKAGE(Boost REQUIRED)
+# Use Boost in the Geogram library (cross-platform random number generation functions)
+TARGET_LINK_LIBRARIES(geogram PRIVATE Boost::boost)
+
 IF(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # Do not warn about missing dll-interface of members of an exported class.
     TARGET_COMPILE_OPTIONS(geogram PRIVATE "/wd4251")
