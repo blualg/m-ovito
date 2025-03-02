@@ -243,6 +243,7 @@ void ProcessChannel::processState()
             std::memset(&_channelCallbacks, 0, sizeof(_channelCallbacks));
             _channelCallbacks.userdata = this;
             _channelCallbacks.channel_data_function = &ProcessChannel::channelDataCallback;
+            _channelCallbacks.channel_exit_status_function = &ProcessChannel::channelExitStatusCallback;
             ssh_callbacks_init(&_channelCallbacks);
             LibsshWrapper::ssh_set_channel_callbacks()(channel(), &_channelCallbacks);
 #endif
@@ -298,7 +299,9 @@ void ProcessChannel::processState()
             if(!stderrChannel()->_readBuffer.isEmpty()) {
                 Q_EMIT stderrChannel()->readyRead();
             }
+#if LIBSSH_VERSION_INT < SSH_VERSION_INT(0,11,0)
             _exitCode = LibsshWrapper::ssh_channel_get_exit_status()(channel());
+#endif
             Q_EMIT finished(_exitCode);
             closeChannel();
         }
@@ -318,6 +321,16 @@ int ProcessChannel::channelDataCallback(ssh_session session, ssh_channel channel
         procChannel->queueCheckIO();
     }
     return 0;
+}
+
+/******************************************************************************
+* Callback function that is called by libssh when a channel has received an exit status.
+******************************************************************************/
+void ProcessChannel::channelExitStatusCallback(ssh_session session, ssh_channel channel, int exit_status, void* userdata)
+{
+    if(ProcessChannel* procChannel = static_cast<ProcessChannel*>(userdata)) {
+        procChannel->_exitCode = exit_status;
+    }
 }
 
 } // End of namespace

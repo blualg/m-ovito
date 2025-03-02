@@ -135,8 +135,11 @@ private:
     /// Returns the underlying SSH connection.
     using SshChannel::connection;
 
-    /// Callback function, which is called by libssh when data is available on the channel.
+    /// Callback function that is called by libssh when data is available on the channel.
     static int channelDataCallback(ssh_session session, ssh_channel channel, void* data, uint32_t len, int is_stderr, void* userdata);
+
+    /// Callback function that is called by libssh when a channel has received an exit status.
+    static void channelExitStatusCallback(ssh_session session, ssh_channel channel, int exit_status, void* userdata);
 
 private Q_SLOTS:
 

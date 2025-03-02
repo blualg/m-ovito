@@ -48,7 +48,9 @@ class LibsshWrapper
 public:
     using ssh_channel_close_ptr = int (*)(ssh_channel channel);
     using ssh_channel_free_ptr = void (*)(ssh_channel channel);
+#if LIBSSH_VERSION_INT < SSH_VERSION_INT(0,11,0)
     using ssh_channel_get_exit_status_ptr = int (*)(ssh_channel channel);
+#endif
     using ssh_channel_is_open_ptr = int (*)(ssh_channel channel);
     using ssh_channel_new_ptr = ssh_channel (*)(ssh_session session);
     using ssh_channel_open_session_ptr = int (*)(ssh_channel channel);
@@ -111,7 +113,9 @@ public:
 
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_channel_close)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_channel_free)
+#if LIBSSH_VERSION_INT < SSH_VERSION_INT(0,11,0)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_channel_get_exit_status)
+#endif
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_channel_is_open)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_channel_new)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_channel_open_session)
