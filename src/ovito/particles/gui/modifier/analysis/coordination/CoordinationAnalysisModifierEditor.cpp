@@ -98,7 +98,8 @@ void CoordinationAnalysisModifierEditor::plotRDF()
 {
     handleExceptions([&]() {
         // Look up the data table in the modifier's pipeline output.
-        OORef<DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modificationNode(), QStringLiteral("coordination-rdf"));
+        OORef<DataTable> table =
+            getPipelineOutput().getObjectBy<DataTable>(modificationNode(), CoordinationAnalysisModifier::OOMetaClass::tableName);
 
         // Determine X plotting range.
         if(table) {

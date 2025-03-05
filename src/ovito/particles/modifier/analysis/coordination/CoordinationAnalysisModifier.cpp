@@ -90,7 +90,8 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             if(DataOORef<const Particles> cachedParticles = cachedState.getObject<Particles>()) {
                 if(const Property* cachedCoordination = cachedParticles->getProperty(Particles::CoordinationProperty)) {
-                    if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(request.modificationNode(), QStringLiteral("coordination-rdf"))) {
+                    if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(
+                           request.modificationNode(), CoordinationAnalysisModifier::OOMetaClass::tableName)) {
                         state.addObject(cachedTable);
                     }
                     return asyncLaunch([state = std::move(state), particles, cachedCoordination, cachedParticles = std::move(cachedParticles)]() mutable {
@@ -407,7 +408,8 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
         }
 
         // Output RDF histogram(s).
-        DataTable* table = state.createObject<DataTable>(QStringLiteral("coordination-rdf"), createdByNode, DataTable::Line, tr("Radial distribution function"), std::move(rdfY));
+        DataTable* table = state.createObject<DataTable>(CoordinationAnalysisModifier::OOMetaClass::tableName, createdByNode,
+                                                         DataTable::Line, tr("Radial distribution function"), std::move(rdfY));
         table->setIntervalStart(0);
         table->setIntervalEnd(cutoff);
         table->setAxisLabelX(tr("Pair separation distance"));
