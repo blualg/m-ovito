@@ -9,7 +9,7 @@ In accordance with the requirements of this license, this page provides instruct
 Windows
 """""""
 
-OVITO for Windows includes binaries that have been built from the unmodified sources of ffmpeg 6.1.2.
+OVITO for Windows includes binaries that have been built from the unmodified sources of ffmpeg 7.1.
 The following commands have been used to generate them::
 
   # Compiler: Microsoft Visual C++ 2022 (command line tools) + MSYS2 environment
@@ -42,7 +42,7 @@ The following commands have been used to generate them::
 Linux
 """""
 
-OVITO for Linux includes shared libraries that have been built from the unmodified sources of ffmpeg 6.1.2.
+OVITO for Linux includes shared libraries that have been built from the unmodified sources of ffmpeg 7.1.
 The following commands have been used to generate them::
 
   # Build platform: CentOS 7

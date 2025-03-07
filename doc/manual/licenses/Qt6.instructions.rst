@@ -9,12 +9,12 @@ In accordance with the requirements of this license, this section gives instruct
 Windows
 """""""
 
-OVITO for Windows includes an unmodified copy of the Qt shared libraries (version 6.7.3, MSVC 2022 64-bit) distributed by the Qt Company.
+OVITO for Windows includes an unmodified copy of the Qt shared libraries (version 6.8.2, MSVC 2022 64-bit) distributed by the Qt Company.
 
 Linux
 """""
 
-OVITO for Linux includes a copy of Qt shared libraries, which have been built from the unmodified Qt sources (version 6.7.3) as follows::
+OVITO for Linux includes a copy of Qt shared libraries, which have been built from the unmodified Qt sources (version 6.8.2) as follows::
 
   ./configure \
     -opensource -confirm-license -shared -nomake examples -qt-libpng -qt-libjpeg -qt-pcre -xkbcommon -no-cups -pch -no-eglfs -no-linuxfb -fontconfig -libinput -icu -no-feature-vulkan \
@@ -31,4 +31,4 @@ OVITO for Linux includes a copy of Qt shared libraries, which have been built fr
 macOS
 """""
 
-OVITO for macOS includes an unmodified copy of the Qt shared libraries (version 6.7.3) distributed by the Qt Company.
+OVITO for macOS includes an unmodified copy of the Qt shared libraries (version 6.8.2) distributed by the Qt Company.

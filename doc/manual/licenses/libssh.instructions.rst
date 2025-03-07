@@ -9,16 +9,16 @@ In accordance with the requirements of this license, this page provides instruct
 Windows
 """""""
 
-OVITO for Windows includes binaries that have been built from the unmodified sources of libssh 0.10.6.
+OVITO for Windows includes binaries that have been built from the unmodified sources of libssh 0.11.1.
 The following commands have been used to generate them::
 
-  # Compiler: Microsoft Visual C++ 2019 (command line tools)
-  # OpenSSL version: 3.0.13
+  # Compiler: Microsoft Visual C++ 2022 (command line tools)
+  # OpenSSL version: 3.0.16
   # zlib version: 1.3.1
-  cd libssh-0.10.6
+  cd libssh-0.11.1
   mkdir build
   cd build
-  cmake -G "NMake Makefiles" ^
+  cmake -G Ninja ^
     -DCMAKE_BUILD_TYPE=Release ^
     -DCMAKE_INSTALL_PREFIX=../../libssh ^
     -DZLIB_INCLUDE_DIR=%cd:\=/%/../../zlib/include ^
@@ -28,12 +28,12 @@ The following commands have been used to generate them::
     -DWITH_EXAMPLES=OFF ^
     -DOPENSSL_ROOT_DIR=%cd:\=/%/../../openssl ^
     ..
-  nmake install
+  cmake --build . --config Release --target install
 
 Linux
 """""
 
-OVITO for Linux includes a shared library that has been built from the unmodified sources of libssh 0.10.6.
+OVITO for Linux includes a shared library that has been built from the unmodified sources of libssh 0.11.1.
 The following commands were used to build it::
 
   cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DWITH_SERVER=OFF .
@@ -43,7 +43,7 @@ The following commands were used to build it::
 macOS
 """""
 
-OVITO for amcOS includes a shared library that has been built from the unmodified sources of libssh 0.10.6.
+OVITO for macOS includes a shared library that has been built from the unmodified sources of libssh 0.10.6.
 The following commands were used to build it::
 
   export OPENSSL_ROOT_DIR=...
