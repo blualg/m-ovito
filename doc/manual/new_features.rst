@@ -6,6 +6,17 @@ Changelog
 
 .. sidebar::
 
+  * `Download this version <https://www.ovito.org/download_history/#3.12.1>`__
+
+----------------------------
+Version 3.12.1 (XX-YYY-2025)
+----------------------------
+
+- Fix discrete color map item order
+- Fix crash in "dislocation core atoms" when no dislocations are present
+
+.. sidebar::
+
   * `Download this version <https://www.ovito.org/download_history/#3.12.0>`__
 
 ----------------------------

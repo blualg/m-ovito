@@ -29,6 +29,8 @@
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+
+#include <algorithm>
 #include "ColorLegendOverlay.h"
 
 namespace Ovito {
@@ -921,21 +923,23 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph
     QRectF boundingBox;
 
     // Compile the list of type colors.
-    std::vector<Color> typeColors;
+    std::vector<std::tuple<int, QString, Color>> typeColorsLabels;
     for(const ElementType* type : property->elementTypes()) {
-        if(type && type->enabled())
-            typeColors.push_back(type->color());
+        if(type && type->enabled()) {
+            typeColorsLabels.emplace_back(type->numericId(), type->objectTitle(), type->color());
+        }
     }
+    std::ranges::sort(typeColorsLabels, [](const auto& lhs, const auto& rhs) { return std::get<int>(lhs) < std::get<int>(rhs); });
 
     // Look up the image primitive for the color bar in the cache.
     const auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
-        RendererResourceKey<struct TypeColorsImageCache, std::vector<Color>, FloatType, int, bool, Color, QSizeF>{
-            typeColors,
+        RendererResourceKey<struct TypeColorsImageCache, decltype(typeColorsLabels), FloatType, int, bool, Color, QSizeF>{
+            typeColorsLabels,
             devicePixelRatio,
             orientation(),
             borderEnabled(),
             borderColor(),
-            colorBarRect.size()
+            colorBarRect.size(),
         },
         [&](QImage& image, QPointF& offset) {
             // Render the color fields into an image texture.
@@ -947,22 +951,24 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph
                 image.fill((QColor)borderColor());
 
             // Create the color gradient image.
-            if(!typeColors.empty()) {
+            if(!typeColorsLabels.empty()) {
                 QPainter painter(&image);
                 if(orientation() == Qt::Vertical) {
-                    int effectiveSize = gradientSize.height() - borderWidth * (typeColors.size() - 1);
-                    for(size_t i = 0; i < typeColors.size(); i++) {
-                        QRect rect(borderWidth, borderWidth + (i * effectiveSize / typeColors.size()) + i * borderWidth, gradientSize.width(), 0);
-                        rect.setBottom(borderWidth + ((i+1) * effectiveSize / typeColors.size()) + i * borderWidth - 1);
-                        painter.fillRect(rect, QColor(typeColors[i]));
+                    int effectiveSize = gradientSize.height() - borderWidth * (typeColorsLabels.size() - 1);
+                    for(size_t i = 0; i < typeColorsLabels.size(); i++) {
+                        QRect rect(borderWidth, borderWidth + (i * effectiveSize / typeColorsLabels.size()) + i * borderWidth,
+                                   gradientSize.width(), 0);
+                        rect.setBottom(borderWidth + ((i + 1) * effectiveSize / typeColorsLabels.size()) + i * borderWidth - 1);
+                        painter.fillRect(rect, QColor(std::get<Color>(typeColorsLabels[i])));
                     }
                 }
                 else {
-                    int effectiveSize = gradientSize.width() - borderWidth * (typeColors.size() - 1);
-                    for(size_t i = 0; i < typeColors.size(); i++) {
-                        QRect rect(borderWidth + (i * effectiveSize / typeColors.size()) + i * borderWidth, borderWidth, 0, gradientSize.height());
-                        rect.setRight(borderWidth + ((i+1) * effectiveSize / typeColors.size()) + i * borderWidth - 1);
-                        painter.fillRect(rect, QColor(typeColors[i]));
+                    int effectiveSize = gradientSize.width() - borderWidth * (typeColorsLabels.size() - 1);
+                    for(size_t i = 0; i < typeColorsLabels.size(); i++) {
+                        QRect rect(borderWidth + (i * effectiveSize / typeColorsLabels.size()) + i * borderWidth, borderWidth, 0,
+                                   gradientSize.height());
+                        rect.setRight(borderWidth + ((i + 1) * effectiveSize / typeColorsLabels.size()) + i * borderWidth - 1);
+                        painter.fillRect(rect, QColor(std::get<Color>(typeColorsLabels[i])));
                     }
                 }
             }
@@ -979,7 +985,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph
     boundingBox |= colorBarImageRect;
 
     // Count the number of element types that are enabled.
-    int numTypes = typeColors.size();
+    int numTypes = typeColorsLabels.size();
 
     const qreal fontSize = legendSize * std::max(FloatType(0), this->fontSize());
     const qreal textMargin = 0.2 * legendSize / std::max(FloatType(0.01), aspectRatio());
@@ -1086,11 +1092,8 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph
     labelPrimitive.setTextFormat(Qt::AutoText);
 
     std::vector<std::unique_ptr<TextPrimitive>> labels;
-    for(const ElementType* type : property->elementTypes()) {
-        if(!type || !type->enabled())
-            continue;
-
-        labelPrimitive.setText(type->objectTitle());
+    for(const auto& colorLabel : typeColorsLabels) {
+        labelPrimitive.setText(std::get<QString>(colorLabel));
         labelPrimitive.setPositionWindow(labelPos);
         boundingBox |= labelPrimitive.computeBounds(devicePixelRatio);
         labels.push_back(std::make_unique<TextPrimitive>(labelPrimitive));
