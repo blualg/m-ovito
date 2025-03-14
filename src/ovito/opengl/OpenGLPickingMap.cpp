@@ -112,6 +112,10 @@ void OpenGLPickingMap::acquireFramebufferContents(const OORef<AbstractRenderingF
         glfuncs->glReadPixels(0, 0, size.width(), size.height(), GL_DEPTH_COMPONENT, GL_FLOAT, _depthBuffer.get());
         _numDepthBufferBits = 0;
     }
+
+    if(!glFrameBuffer->framebufferObject()->release()) {
+        throw RendererException(QStringLiteral("Failed to release OpenGL framebuffer object."));
+    }
 }
 
 /******************************************************************************
