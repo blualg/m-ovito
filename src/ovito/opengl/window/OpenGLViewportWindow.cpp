@@ -139,7 +139,7 @@ void OpenGLViewportWindow::paint()
     try {
         // Recreate/resize abstract frame buffer for rendering into the widget if necessary.
         const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
-        if(!_visualFrameBuffer || _visualFrameBuffer->outputViewportRect() != viewportRect)
+        if(!_visualFrameBuffer || _visualFrameBuffer->outputViewportRect() != viewportRect || _visualFrameBuffer->framebufferObjectId() != glwin()->defaultFramebufferObject())
             _visualFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(renderingJob(), viewportRect, glwin()->defaultFramebufferObject());
 
         // Render the viewport contents. This requires an active GL context.
@@ -172,7 +172,7 @@ void OpenGLViewportWindow::paint()
 std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPointF& pos)
 {
     // Cannot perform picking while viewport is not visible or when updates are disabled.
-    if(isVisible() && !userInterface().exitingDueToFatalError() && glwin()->isValid() && widget()->isEnabled() && glwin()->defaultFramebufferObject() != 0) {
+    if(isVisible() && !userInterface().exitingDueToFatalError() && glwin()->isValid() && widget()->isEnabled()) {
 
         // Is the picking buffer still valid? If not, we need to render a new frame.
         if(!_objectPickingMap->isValid() && frameGraph()) {
@@ -182,8 +182,9 @@ std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPoin
 
                 // Recreate/resize offscreen OpenGL framebuffer.
                 const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
-                if(!_pickingFrameBuffer || _pickingFrameBuffer->outputViewportRect() != viewportRect)
+                if(!_pickingFrameBuffer || _pickingFrameBuffer->outputViewportRect() != viewportRect || !_pickingFrameBuffer->framebufferObject()->isValid())
                     _pickingFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(renderingJob(), viewportRect, nullptr);
+                OVITO_ASSERT(_pickingFrameBuffer->framebufferObject().has_value());
 
                 // Render into the OpenGL framebuffer.
                 _objectPickingMap->reset();

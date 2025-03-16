@@ -58,6 +58,9 @@ public:
     /// Returns the offscreen OpenGL framebuffer.
     std::optional<QOpenGLFramebufferObject>& framebufferObject() { return _framebufferObject; }
 
+    /// The ID of the OpenGL framebuffer to render into.
+    GLuint framebufferObjectId() const { return _framebufferObjectId; }
+
     /// Returns the physical resolution of the offscreen OpenGL framebuffer, which includes the multisampling factor.
     const QSize& framebufferSize() const { return _framebufferSize; }
 
@@ -83,7 +86,7 @@ private:
     /// An additional offscreen framebuffer used for the OIT transparency pass.
     std::optional<QOpenGLFramebufferObject> _oitFramebuffer;
 
-    /// The OpenGL framebuffer to be rendered into.
+    /// The ID of the OpenGL framebuffer to render into.
     GLuint _framebufferObjectId = 0;
 
     /// The physical resolution of the offscreen OpenGL framebuffer.

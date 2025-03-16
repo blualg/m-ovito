@@ -128,8 +128,11 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
     initializeOpenGLFunctions();
     OVITO_REPORT_OPENGL_ERRORS(this);
 
+    // A picking render pass must always be done into an offscreen framebuffer.
+    OVITO_ASSERT(!pickingMap || frameBuffer->framebufferObject().has_value());
+
     // Bind offscreen OpenGL framebuffer for rendering.
-    if(frameBuffer->framebufferObject() && !frameBuffer->framebufferObject()->bind())
+    if(frameBuffer->framebufferObject().has_value() && !frameBuffer->framebufferObject()->bind())
         throw RendererException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
     // Store physical framebuffer size.
@@ -357,7 +360,7 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
     // for subsequent frames.
     frameBuffer->storePreviousResourceFrame(std::move(_currentResourceFrame));
 
-    // Read the rendered image from the OpenGL framebuffer and paint it into to the output frame buffer.
+    // Read the rendered image from the OpenGL framebuffer and paint it into the output frame buffer.
     if(frameBuffer->outputFrameBuffer() && frameBuffer->framebufferObject()) {
         const QRect& viewportRect = frameBuffer->outputViewportRect();
 
@@ -393,6 +396,10 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
         if(QOpenGLDebugLogger* logger = glcontext()->findChild<QOpenGLDebugLogger*>())
             logger->stopLogging();
     }
+
+    // Unbind offscreen OpenGL framebuffer.
+    if(frameBuffer->framebufferObject().has_value() && !frameBuffer->framebufferObject()->release())
+        throw RendererException(tr("Failed to release OpenGL framebuffer object after offscreen rendering."));
 
     _glcontext = nullptr;
     _objectPickingMap = nullptr;

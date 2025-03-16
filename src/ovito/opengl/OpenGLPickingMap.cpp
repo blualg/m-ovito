@@ -74,6 +74,8 @@ void OpenGLPickingMap::acquireFramebufferContents(const OORef<AbstractRenderingF
     QOpenGLContext* glcontext = QOpenGLContext::currentContext();
     QOpenGLFunctions* glfuncs = glcontext->functions();
 
+    if(!glFrameBuffer->framebufferObject()->isValid())
+        throw RendererException(QStringLiteral("OpenGL framebuffer object became invalid."));
     if(!glFrameBuffer->framebufferObject()->bind())
         throw RendererException(QStringLiteral("Failed to bind OpenGL framebuffer object."));
 
