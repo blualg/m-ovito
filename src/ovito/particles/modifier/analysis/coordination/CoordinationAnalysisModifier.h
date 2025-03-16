@@ -44,6 +44,9 @@ class OVITO_PARTICLES_EXPORT CoordinationAnalysisModifier : public Modifier
 
         /// Asks the metaclass whether the modifier can be applied to the given input data.
         virtual bool isApplicableTo(const DataCollection& input) const override;
+
+        /// Name of the output table
+        constexpr static const char* tableName = "coordination-rdf";
     };
 
     OVITO_CLASS_META(CoordinationAnalysisModifier, CoordinationAnalysisModifierClass)

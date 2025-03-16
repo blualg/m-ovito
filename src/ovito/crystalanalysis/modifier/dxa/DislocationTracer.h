@@ -80,11 +80,9 @@ public:
     /// This method is part of the dislocation core atom identification algorithm.
     std::pair<DislocationNode*, bool> getDislocationNodeForDelaunayCell(size_t cell) const {
         OVITO_ASSERT(_markCoreAtoms);
-
         auto cellIdx = _mesh.tessellation().getUserField(cell);
-        OVITO_ASSERT(cellIdx == -1 || (size_t)cellIdx < _cellDataForCoreAtomIdentification.size());
-
-        return (cellIdx != -1) ? _cellDataForCoreAtomIdentification[cellIdx] : std::make_pair(nullptr, false);
+        return (cellIdx >= 0 && cellIdx < _cellDataForCoreAtomIdentification.size()) ? _cellDataForCoreAtomIdentification[cellIdx]
+                                                                                     : std::make_pair(nullptr, false);
     }
 
 private:
@@ -173,6 +171,7 @@ private:
     /// Stores auxiliary information per "defective" Delaunay cell for dislocation core atom identification:
     ///   1. The dislocation line end that got associated with the cell.
     ///   2. A flag indicating whether that dislocation line end got extended already to detect dislocation junctions.
+public:
     std::vector<std::pair<DislocationNode*, bool>> _cellDataForCoreAtomIdentification;
 };
 
