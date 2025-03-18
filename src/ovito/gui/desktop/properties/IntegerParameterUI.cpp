@@ -62,7 +62,7 @@ void IntegerParameterUI::updatePropertyValue()
 void IntegerParameterUI::updateUI()
 {
     if(editObject() && spinner() && !spinner()->isDragging()) {
-        handleExceptions([&] {
+        handleExceptions<true>([&] {
             if(isReferenceFieldUI()) {
                 if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
                     spinner()->setIntValue(ctrl->getIntValue(currentAnimationTime().value_or(AnimationTime(0))));

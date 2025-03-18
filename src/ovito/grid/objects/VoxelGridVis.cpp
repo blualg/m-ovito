@@ -24,6 +24,7 @@
 #include <ovito/grid/objects/VoxelGrid.h>
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
+#include <ovito/core/rendering/VolumePrimitive.h>
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/dataset/data/mesh/TriangleMesh.h>
 #include "VoxelGridVis.h"
@@ -35,11 +36,13 @@ OVITO_CLASSINFO(VoxelGridVis, "DisplayName", "Voxel grid");
 DEFINE_REFERENCE_FIELD(VoxelGridVis, transparencyController);
 DEFINE_PROPERTY_FIELD(VoxelGridVis, highlightGridLines);
 DEFINE_PROPERTY_FIELD(VoxelGridVis, interpolateColors);
+DEFINE_PROPERTY_FIELD(VoxelGridVis, renderVolume);
 DEFINE_REFERENCE_FIELD(VoxelGridVis, colorMapping);
-SET_PROPERTY_FIELD_LABEL(VoxelGridVis, transparencyController, "Surface transparency");
-SET_PROPERTY_FIELD_LABEL(VoxelGridVis, highlightGridLines, "Show grid lines");
-SET_PROPERTY_FIELD_LABEL(VoxelGridVis, interpolateColors, "Color interpolation");
+SET_PROPERTY_FIELD_LABEL(VoxelGridVis, transparencyController, "Transparency");
+SET_PROPERTY_FIELD_LABEL(VoxelGridVis, highlightGridLines, "Grid lines");
+SET_PROPERTY_FIELD_LABEL(VoxelGridVis, interpolateColors, "Interpolation");
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, colorMapping, "Color mapping");
+SET_PROPERTY_FIELD_LABEL(VoxelGridVis, renderVolume, "Render volume");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(VoxelGridVis, transparencyController, PercentParameterUnit, 0, 1);
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(VoxelGridPickInfo);
@@ -108,11 +111,11 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VoxelGridVis::render(const 
     // Throws an exception if the input data structure is corrupt.
     gridObj->verifyIntegrity();
 
-    // Look for 'Color' voxel property.
-    const Property* colorProperty = gridObj->getProperty(VoxelGrid::ColorProperty);
-    BufferReadAccess<ColorG> colorArray(colorProperty);
+    // Look up 'Color' voxel property if available, which specifies the RGB colors of the grid cells explicitly.
+    // This is done only when rendering the grid's surface, because volumetric rendering can works for 1D transfer functions.
+    const Property* colorProperty = !renderVolume() ? gridObj->getProperty(VoxelGrid::ColorProperty) : nullptr;
 
-    // Look for selected pseudo-coloring property.
+    // Look for selected pseudo-coloring property unless RGB grid cell colors have been specified explicitly.
     const Property* pseudoColorProperty = nullptr;
     int pseudoColorPropertyComponent = 0;
     if(!colorProperty && colorMapping() && colorMapping()->sourceProperty()) {
@@ -122,7 +125,27 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VoxelGridVis::render(const 
             status = PipelineStatus(PipelineStatus::Error, std::move(errorDescription));
         }
     }
+
+    if(!renderVolume() || colorProperty || !pseudoColorProperty || gridObj->domain()->is2D()) {
+        // Render the outer surfaces of the grid.
+        renderGridBoundaries(frameGraph, sceneNode, gridObj, colorProperty, pseudoColorProperty, pseudoColorPropertyComponent);
+    }
+    else {
+        // Render the interior volume of the grid.
+        renderGridVolume(frameGraph, sceneNode, gridObj, pseudoColorProperty, pseudoColorPropertyComponent);
+    }
+
+    return status;
+}
+
+/******************************************************************************
+* Renders the outer surfaces of the grid.
+******************************************************************************/
+void VoxelGridVis::renderGridBoundaries(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* colorProperty, const Property* pseudoColorProperty, int pseudoColorPropertyComponent)
+{
+    BufferReadAccess<ColorG> colorArray(colorProperty);
     RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
+
     OVITO_ASSERT(!(colorArray && pseudoColorArray));
 
     // The key type used for caching the geometry primitive:
@@ -143,12 +166,13 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VoxelGridVis::render(const 
         Box3 boundingBox;
     };
 
-    // Determine the opacity value for rendering the mesh.
+    // Determine the opacity value for rendering the surface.
     FloatType transp = 0;
     TimeInterval iv;
     if(transparencyController()) {
         transp = transparencyController()->getFloatValue(frameGraph.time(), iv);
-        if(transp >= 1.0) return status;
+        if(transp >= 1.0)
+            return;
     }
 
     // Look up the rendering primitive in the vis cache.
@@ -636,8 +660,37 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VoxelGridVis::render(const 
         // Add the mesh to the frame graph.
         frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(coloredVolumeFaces), sceneNode->getWorldTransform(frameGraph.time()), boundingBox, sceneNode, pickInfo);
     }
+}
 
-    return status;
+/******************************************************************************
+* Renders the interior volume of the grid.
+******************************************************************************/
+void VoxelGridVis::renderGridVolume(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* pseudoColorProperty, int pseudoColorPropertyComponent)
+{
+    OVITO_ASSERT(pseudoColorProperty);
+    OVITO_ASSERT(gridObj->domain() && !gridObj->domain()->is2D());
+
+    if(!pseudoColorProperty)
+        return;
+    if(pseudoColorPropertyComponent < 0 || pseudoColorPropertyComponent >= pseudoColorProperty->componentCount())
+        return;
+    if(!gridObj->domain() || gridObj->domain()->is2D())
+        return;
+    if(gridObj->shape()[0] < 2 || gridObj->shape()[1] < 2 || gridObj->shape()[2] < 2)
+        return;
+
+    const AffineTransformation& cellMatrix = gridObj->domain()->cellMatrix();
+    Box3 boundingBox = Box3(Point3(0), Point3(1)).transformed(cellMatrix);
+
+    // Create a VolumePrimitive for rendering the grid volume.
+    auto volume = std::make_unique<VolumePrimitive>();
+    volume->setPseudoColorMapping(colorMapping()->pseudoColorMapping());
+    volume->setFieldData(pseudoColorProperty, pseudoColorPropertyComponent);
+    volume->setDomain(cellMatrix);
+    volume->setDimensions(gridObj->shape());
+
+    // Add the volume to the frame graph.
+    frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(volume), sceneNode->getWorldTransform(frameGraph.time()), boundingBox, sceneNode);
 }
 
 /******************************************************************************

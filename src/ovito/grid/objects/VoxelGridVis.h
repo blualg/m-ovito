@@ -64,17 +64,28 @@ protected:
 
 private:
 
-    /// Controls the transparency of the grid's faces.
+    /// Renders the outer surfaces of the grid.
+    void renderGridBoundaries(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* colorProperty, const Property* pseudoColorProperty, int pseudoColorPropertyComponent);
+
+    /// Renders the interior volume of the grid.
+    void renderGridVolume(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* pseudoColorProperty, int pseudoColorPropertyComponent);
+
+private:
+
+    /// Controls the transparency of the grid's surfaces.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
 
-    /// Controls whether the grid lines should be highlighted.
+    /// Controls whether the grid lines on the surface should be highlighted.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, highlightGridLines, setHighlightGridLines);
 
-    /// Controls whether the voxel face colors should be interpolated.
+    /// Controls whether the voxel colors should be interpolated.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, interpolateColors, setInterpolateColors);
 
-    /// Transfer function for pseudo-color visualization of a grid property.
+    /// Transfer function for pseudo-color visualization of a field property.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
+
+    /// Controls whether the interior volume of the grid should be rendered.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, renderVolume, setRenderVolume);
 };
 
 /**

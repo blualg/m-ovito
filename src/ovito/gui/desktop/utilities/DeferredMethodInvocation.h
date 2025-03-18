@@ -75,7 +75,7 @@ private:
             if(owner) {
                 OVITO_ASSERT(owner->_event == this);
                 owner->_event = nullptr;
-                ui->handleExceptions([&]() {
+                ui->handleExceptions<true>([&]() {
                     (object->*method)();
                 });
             }

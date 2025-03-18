@@ -24,6 +24,7 @@
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
+#include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
 #include <ovito/stdobj/gui/properties/PropertyColorMappingEditor.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/grid/objects/VoxelGridVis.h>
@@ -45,18 +46,41 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     // Create the rollout contents.
     QGridLayout* layout = new QGridLayout(rollout);
     layout->setContentsMargins(4,4,4,4);
-    layout->setSpacing(4);
+    layout->setSpacing(8);
+    layout->setColumnMinimumWidth(0, 20);
     layout->setColumnStretch(1, 1);
 
-    FloatParameterUI* transparencyUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VoxelGridVis::transparencyController));
-    layout->addWidget(transparencyUI->label(), 1, 0);
-    layout->addLayout(transparencyUI->createFieldLayout(), 1, 1);
+    BooleanRadioButtonParameterUI* renderVolumeUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(VoxelGridVis::renderVolume));
+
+    QRadioButton* renderBoundariesButton = renderVolumeUI->buttonFalse();
+    renderBoundariesButton->setText(tr("Boundary representation:"));
+    layout->addWidget(renderBoundariesButton, 0, 0, 1, 2);
+
+    QGridLayout* sublayout = new QGridLayout();
+    sublayout->setContentsMargins(0,0,0,0);
+    sublayout->setSpacing(4);
+    sublayout->setColumnStretch(1, 1);
+    layout->addLayout(sublayout, 1, 1);
 
     BooleanParameterUI* highlightLinesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoxelGridVis::highlightGridLines));
-    layout->addWidget(highlightLinesUI->checkBox(), 2, 0, 1, 2);
+    sublayout->addWidget(highlightLinesUI->checkBox(), 0, 0, 1, 2);
+    highlightLinesUI->setEnabled(false);
+    connect(renderBoundariesButton, &QRadioButton::toggled, highlightLinesUI, &ParameterUI::setEnabled);
 
     BooleanParameterUI* interpolateColorsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoxelGridVis::interpolateColors));
-    layout->addWidget(interpolateColorsUI->checkBox(), 3, 0, 1, 2);
+    sublayout->addWidget(interpolateColorsUI->checkBox(), 1, 0, 1, 2);
+    interpolateColorsUI->setEnabled(false);
+    connect(renderBoundariesButton, &QRadioButton::toggled, interpolateColorsUI, &ParameterUI::setEnabled);
+
+    FloatParameterUI* transparencyUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VoxelGridVis::transparencyController));
+    sublayout->addWidget(transparencyUI->label(), 2, 0);
+    sublayout->addLayout(transparencyUI->createFieldLayout(), 2, 1);
+    transparencyUI->setEnabled(false);
+    connect(renderBoundariesButton, &QRadioButton::toggled, transparencyUI, &ParameterUI::setEnabled);
+
+    QRadioButton* renderVolumeButton = renderVolumeUI->buttonTrue();
+    renderVolumeButton->setText(tr("Volume representation:"));
+    layout->addWidget(renderVolumeButton, 2, 0, 1, 2);
 
     // Open a sub-editor for the property color mapping.
     SubObjectParameterUI* colorMappingParamUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(VoxelGridVis::colorMapping), rolloutParams.after(rollout));
