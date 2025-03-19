@@ -224,7 +224,7 @@ void PropertyReferenceParameterUI::addItemsToComboBox(const PropertyContainer* c
             // Property without component:
             _comboBox->addItem(property);
         }
-        if(_componentsMode != ShowNoComponents && property->componentCount() > 1) {
+        if(_componentsMode != ShowNoComponents && (property->componentCount() > 1 || !property->componentNames().empty())) {
             // Components of vector property:
             bool isChildItem = (_componentsMode == ShowComponentsAndVectorProperties);
             for(int vectorComponent = 0; vectorComponent < (int)property->componentCount(); vectorComponent++) {

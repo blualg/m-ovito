@@ -99,7 +99,7 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
         }
         else {
             // If the "Color" property is present, hide the color mapping panel, because the explicit RGB color values
-            // take precendence during rendering of the voxel grid.
+            // take precedence during rendering of the voxel grid.
             colorMappingParamUI->setEnabled(false);
         }
     });
