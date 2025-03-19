@@ -197,7 +197,7 @@ void ActionManager::onMaximizedViewportChanged(Viewport* maximizedViewport)
 ******************************************************************************/
 void ActionManager::onViewportLayoutChanged(ViewportConfiguration* viewportConfig)
 {
-    getAction(ACTION_VIEWPORT_MAXIMIZE)->setEnabled(viewportConfig && !viewportConfig->layoutRootCell()->children().empty());
+    getAction(ACTION_VIEWPORT_MAXIMIZE)->setEnabled(viewportConfig && viewportConfig->layoutRootCell() && !viewportConfig->layoutRootCell()->children().empty());
 }
 
 /******************************************************************************

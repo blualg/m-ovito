@@ -260,8 +260,18 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
 }
 
 /******************************************************************************
- * Launches the actual computations.
- ******************************************************************************/
+* Initializes an expression evaluator.
+******************************************************************************/
+std::unique_ptr<PropertyExpressionEvaluator> ComputePropertyModifierDelegate::initializeExpressionEvaluator(const ComputePropertyModifier* modifier, const PipelineFlowState& originalState, int frame) const
+{
+    auto evaluator = std::make_unique<PropertyExpressionEvaluator>();
+    evaluator->initialize(modifier->expressions(), originalState, originalState.expectObject(inputContainerRef()), frame);
+    return evaluator;
+}
+
+/******************************************************************************
+* Launches the actual computation.
+******************************************************************************/
 Future<PipelineFlowState> ComputePropertyModifierDelegate::performComputation(
     const ComputePropertyModifier* modifier,
     ComputePropertyModificationNode* modNode,
@@ -272,8 +282,7 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::performComputation(
     int frame) const
 {
     // Initialize expression evaluator.
-    auto evaluator = std::make_unique<PropertyExpressionEvaluator>();
-    evaluator->initialize(modifier->expressions(), originalState, originalState.expectObject(inputContainerRef()), frame);
+    auto evaluator = initializeExpressionEvaluator(modifier, originalState, frame);
 
     // Store the list of input variables in the ModificationNode so that the UI component can display it to the user.
     modNode->setInputVariableNames(evaluator->inputVariableNames());

@@ -74,6 +74,9 @@ protected:
 
     /// Launches the actual computations.
     virtual Future<PipelineFlowState> performComputation(const ComputePropertyModifier* modifier, ComputePropertyModificationNode* modNode, PipelineFlowState state, const PipelineFlowState& originalState, PropertyPtr outputProperty, ConstPropertyPtr selectionProperty, int frame) const;
+
+    /// Initializes an expression evaluator.
+    virtual std::unique_ptr<PropertyExpressionEvaluator> initializeExpressionEvaluator(const ComputePropertyModifier* modifier, const PipelineFlowState& originalState, int frame) const;
 };
 
 /**

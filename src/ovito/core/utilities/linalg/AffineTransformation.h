@@ -450,13 +450,21 @@ public:
                                      T(0), T(0), T(1), t.z());
     }
 
-    /// Generates a diagonal scaling matrix.
+    /// Generates a diagonal matrix, i.e., a uniform scaling matrix.
     /// \param s The value of the three diagonal elements.
     static Q_DECL_CONSTEXPR AffineTransformationT scaling(T s) {
         return AffineTransformationT(
                          s, T(0), T(0), T(0),
-                         T(0),    s, T(0), T(0),
-                         T(0), T(0),    s, T(0));
+                         T(0), s, T(0), T(0),
+                         T(0), T(0), s, T(0));
+    }
+
+    /// Generates a diagonal scaling matrix.
+    static Q_DECL_CONSTEXPR AffineTransformationT diagonal(T s1, T s2, T s3) {
+        return AffineTransformationT(
+                         s1, T(0), T(0), T(0),
+                         T(0), s2, T(0), T(0),
+                         T(0), T(0), s3, T(0));
     }
 
     /// Generates a pure scaling matrix.

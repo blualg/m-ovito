@@ -49,63 +49,13 @@ QVector<DataObjectReference> BondsComputePropertyModifierDelegate::OOMetaClass::
 }
 
 /******************************************************************************
- * Launches the actual computations.
- ******************************************************************************/
-Future<PipelineFlowState> BondsComputePropertyModifierDelegate::performComputation(
-    const ComputePropertyModifier* modifier,
-    ComputePropertyModificationNode* modNode,
-    PipelineFlowState state,
-    const PipelineFlowState& originalState,
-    PropertyPtr outputProperty,
-    ConstPropertyPtr selectionProperty,
-    int frame) const
+* Initializes an expression evaluator.
+******************************************************************************/
+std::unique_ptr<PropertyExpressionEvaluator> BondsComputePropertyModifierDelegate::initializeExpressionEvaluator(const ComputePropertyModifier* modifier, const PipelineFlowState& originalState, int frame) const
 {
-    // Initialize expression evaluator.
     auto evaluator = std::make_unique<BondExpressionEvaluator>();
     evaluator->initialize(modifier->expressions(), originalState, originalState.expectObject(inputContainerRef()), frame);
-
-    // Store the list of input variables in the ModificationNode so that the UI component can display it to the user.
-    modNode->setInputVariableNames(evaluator->inputVariableNames());
-    modNode->setInputVariableTable(evaluator->inputVariableTable());
-
-    // Notify the UI component that the list of variables should be refreshed.
-    modifier->notifyDependents(ReferenceEvent::ObjectStatusChanged);
-    modNode->notifyDependents(ReferenceEvent::ObjectStatusChanged);
-
-    // The actual computation can be performed in a separate worker thread.
-    return asyncLaunch([
-            state = std::move(state),
-            outputProperty = std::move(outputProperty),
-            selectionProperty = std::move(selectionProperty),
-            evaluator = std::move(evaluator)]() mutable
-    {
-        TaskProgress progress(this_task::ui());
-        progress.setText(tr("Computing property '%1'").arg(outputProperty->name()));
-
-        RawBufferAccess<access_mode::write> outputAccessor(outputProperty, selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized);
-        BufferReadAccess<SelectionIntType> selectionAccessor(selectionProperty);
-
-        EnumerableThreadSpecific<BondExpressionEvaluator::Worker> expressionWorkers;
-        size_t componentCount = outputAccessor.componentCount();
-
-        parallelForInnerOuter(outputProperty->size(), 10000, progress, [&](auto&& iterate) {
-            BondExpressionEvaluator::Worker& worker = expressionWorkers.create(*evaluator);
-            iterate([&](size_t i) {
-                // Skip unselected particles if requested.
-                if(selectionAccessor && !selectionAccessor[i])
-                    return;
-
-                for(size_t component = 0; component < componentCount; component++) {
-                    // Compute expression value.
-                    FloatType value = worker.evaluate(i, component);
-
-                    // Store results in output property.
-                    outputAccessor.set(i, component, value);
-                }
-            });
-        });
-        return std::move(state);
-    });
+    return evaluator;
 }
 
 }   // End of namespace

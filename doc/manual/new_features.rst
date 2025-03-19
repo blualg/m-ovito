@@ -12,8 +12,9 @@ Changelog
 Version 3.12.1 (XX-YYY-2025)
 ----------------------------
 
-- Fix discrete color map item order
-- Fix crash in "dislocation core atoms" when no dislocations are present
+- :ref:`particles.modifiers.compute_property` modifier: Added special variables ``SpatialPosition`` and ``VoxelCoordinate`` for voxel grid computations
+- :ref:`viewport_layers.color_legend`: Stable ordering of DXA dislocation type list during trajectory playback
+- :ref:`particles.modifiers.dislocation_analysis` modifier: Fix crash in function "Mark dislocation core atoms" when no dislocations are present
 
 .. sidebar::
 
