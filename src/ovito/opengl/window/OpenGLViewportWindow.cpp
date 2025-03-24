@@ -27,6 +27,7 @@
 #include <ovito/opengl/OpenGLRenderer.h>
 #include "OpenGLViewportWindow.h"
 #include "WidgetOpenGLRenderingJob.h"
+#include "PickingOpenGLRenderingJob.h"
 
 namespace Ovito {
 
@@ -104,6 +105,9 @@ void OpenGLViewportWindow::releaseResources()
     // Release frame graph.
     _frameGraph.reset();
 
+    // Release resources of offscreen rendering job.
+    _pickingRenderingJob.reset();
+
     // This also releases the rendering job and the OpenGL resources it holds.
     WidgetViewportWindow::releaseResources();
 }
@@ -180,15 +184,22 @@ std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPoin
             // Gracefully handle any exceptions that occur during rendering.
             userInterface().handleExceptions([&]() {
 
+                // Create the offscreen rendering job for object picking.
+                if(!_pickingRenderingJob) {
+                    _pickingRenderingJob = PickingOpenGLRenderingJob::createSharedInstance(
+                        userInterface().datasetContainer().visCache(), // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
+                        renderingJob()->sceneRenderer());
+                }
+
                 // Recreate/resize offscreen OpenGL framebuffer.
                 const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
                 if(!_pickingFrameBuffer || _pickingFrameBuffer->outputViewportRect() != viewportRect || !_pickingFrameBuffer->framebufferObject()->isValid())
-                    _pickingFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(renderingJob(), viewportRect, nullptr);
+                    _pickingFrameBuffer = static_object_cast<OpenGLRenderingFrameBuffer>(_pickingRenderingJob->createOffscreenFrameBuffer(viewportRect, nullptr));
                 OVITO_ASSERT(_pickingFrameBuffer->framebufferObject().has_value());
 
                 // Render into the OpenGL framebuffer.
                 _objectPickingMap->reset();
-                renderingJob()->renderFrame(frameGraph(), _pickingFrameBuffer, _objectPickingMap).waitForFinished();
+                _pickingRenderingJob->renderFrame(frameGraph(), _pickingFrameBuffer, _objectPickingMap).waitForFinished();
 
                 // Read out the contents of the OpenGL framebuffer.
                 _objectPickingMap->acquireFramebufferContents(_pickingFrameBuffer);
@@ -201,6 +212,7 @@ std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPoin
             return _objectPickingMap->pickAt(devicePixelPos, frameGraph()->projectionParams(), viewportWindowDeviceSize());
         }
     }
+
     return std::nullopt;
 }
 
