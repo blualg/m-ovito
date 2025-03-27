@@ -19,7 +19,7 @@ Windows:
 Linux:
   Ubuntu 21.04+, ALT Linux 10+, RHEL 9+, Debian 11+, Fedora 34+, or compatible distributions with glibc >= 2.28, running on x86_64 processors.
 macOS:
-  macOS 11.0 or newer, supporting both Apple Silicon (arm64) and Intel architectures.
+  macOS 11.0+, Apple Silicon (arm64).
 
 .. _installation.instructions:
 
