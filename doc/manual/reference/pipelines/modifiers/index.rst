@@ -28,6 +28,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.scatter_plot`                    Generates a scatter plot of two properties.
   :ref:`particles.modifiers.bin_and_reduce` |ovito-pro|      Aggregates a particle property over a one-, two- or three-dimensional bin grid.
   :ref:`particles.modifiers.correlation_function`            Calculates the spatial cross-correlation function between two particle properties.
+  :ref:`particles.modifiers.structure_factor` |ovito-pro|    Calculates the structure factor :math:`S(k)`.
   :ref:`particles.modifiers.time_averaging` |ovito-pro|      Computes the average of some time-dependent input quantity over the entire trajectory.
   :ref:`particles.modifiers.time_series` |ovito-pro|         Plots the value of a global attribute as function of simulation time.
   :ref:`particles.modifiers.voronoi_analysis`                Computes the coordination number, atomic volume, and Voronoi index of particles from their Voronoi polyhedra.
@@ -179,6 +180,7 @@ combine several modifiers to accomplish more complex tasks.
   smooth_trajectory
   bin_and_reduce
   correlation_function
+  structure_factor
   time_averaging
   time_series
   unwrap_trajectories
