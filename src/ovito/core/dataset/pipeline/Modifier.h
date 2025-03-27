@@ -46,19 +46,19 @@ class OVITO_CORE_EXPORT Modifier : public RefTarget
 public:
 
     /// Gets called by the system when the modifier is being inserted into a data pipeline.
-    virtual void initializeModifier(const ModifierInitializationRequest& request) {}
+    virtual void initializeModifier(const ModifierInitializationRequest& request) { OVITO_ASSERT(this_task::isMainThread()); }
 
     /// Throws an exception if the pipeline stage cannot be evaluated at this time.
     /// This is called by the system to catch user mistakes that would lead to infinite recursion.
-    virtual void preEvaluationCheck(const PipelineEvaluationRequest& request) const {}
+    virtual void preEvaluationCheck(const PipelineEvaluationRequest& request) const { OVITO_ASSERT(this_task::isMainThread()); }
 
     /// Asks the modifier for the set of animation time intervals that should be cached by the upstream pipeline.
-    virtual void inputCachingHints(ModifierEvaluationRequest& request) {}
+    virtual void inputCachingHints(ModifierEvaluationRequest& request) { OVITO_ASSERT(this_task::isMainThread()); }
 
     /// This method is called by the ModificationNode to let the modifier adjust the time interval
     /// of a TargetChanged event received from the upstream pipeline before it is propagated to the
     /// downstream pipeline.
-    virtual void restrictInputValidityInterval(TimeInterval& iv) const {}
+    virtual void restrictInputValidityInterval(TimeInterval& iv) const { OVITO_ASSERT(this_task::isMainThread()); }
 
     /// Indicates whether the interactive viewports should be updated after the modifier has computed
     /// its results and before the entire pipeline is complete.
@@ -107,7 +107,7 @@ public:
     PipelineStatus globalStatus() const;
 
     /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const { return {}; }
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const { OVITO_ASSERT(this_task::isMainThread()); return {}; }
 
     /// Returns the number of animation frames this modifier provides.
     virtual int numberOfOutputFrames(ModificationNode* node) const;
