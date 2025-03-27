@@ -28,6 +28,7 @@
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/gui/desktop/dialogs/AnimationKeyEditorDialog.h>
+#include <ovito/core/utilities/concurrent/NoninteractiveContext.h>
 
 namespace Ovito {
 
@@ -181,6 +182,10 @@ QAction* PropertyParameterUI::createResetAction()
             return;
         }
         performTransaction(tr("Reset %1 to its default value").arg(propertyField()->displayName()), [&]() {
+            // Temporarily establish a non-interactive context to always initialize
+            // the field to its factory default settings.
+            NoninteractiveContext noninteractiveContext;
+
             // Create new instance of the same class as the edited object. Filled with its default parameters.
             OORef<RefTarget> tempInstance = static_object_cast<RefTarget>(editObject()->getOOClass().createInstance());
             // Update tempInstance with defaults from the current object instance.

@@ -15,6 +15,7 @@ Version 3.12.1 (XX-YYY-2025)
 - :ref:`particles.modifiers.compute_property` modifier: Added special variables ``SpatialPosition`` and ``VoxelCoordinate`` for voxel grid computations
 - :ref:`viewport_layers.color_legend`: Stable ordering of DXA dislocation type list during trajectory playback
 - :ref:`particles.modifiers.dislocation_analysis` modifier: Fix crash in function "Mark dislocation core atoms" when no dislocations are present
+- Fix reset to default values not working for numerical parameters in the render tab
 
 .. sidebar::
 
