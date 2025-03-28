@@ -42,7 +42,7 @@ void Lines::OOMetaClass::initialize()
     PropertyContainerClass::initialize();
 
     setPropertyClassDisplayName(tr("Lines"));
-    setElementDescriptionName(QStringLiteral("vertex"));
+    setElementDescriptionName(QStringLiteral("vertices"));
     setPythonName(QStringLiteral("lines"));
 
     const QStringList emptyList;

@@ -63,6 +63,10 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     ModifierDelegateParameterUI* delegateUI = createParamUI<ModifierDelegateParameterUI>(ComputePropertyModifierDelegate::OOClass());
     sublayout->addWidget(delegateUI->comboBox());
 
+    // Create the check box for the selection flag.
+    onlySelectedUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::onlySelectedElements));
+    sublayout->addWidget(onlySelectedUI->checkBox());
+
     QGroupBox* propertiesGroupBox = new QGroupBox(tr("Output property"), rollout);
     mainLayout->addWidget(propertiesGroupBox);
     QVBoxLayout* propertiesLayout = new QVBoxLayout(propertiesGroupBox);
@@ -85,10 +89,6 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
         }
     });
 
-    // Create the check box for the selection flag.
-    BooleanParameterUI* selectionFlagUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::onlySelectedElements));
-    propertiesLayout->addWidget(selectionFlagUI->checkBox());
-
     expressionsGroupBox = new QGroupBox(tr("Expression"));
     mainLayout->addWidget(expressionsGroupBox);
     expressionsLayout = new QGridLayout(expressionsGroupBox);
@@ -98,8 +98,26 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     expressionsLayout->setColumnStretch(1,1);
 
     // Show multi-line fields.
-    BooleanParameterUI* multilineFieldsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields));
-    expressionsLayout->addWidget(multilineFieldsUI->checkBox(), 0, 1, Qt::AlignRight | Qt::AlignBottom);
+    expandFieldsLabel = new QLabel();
+    expandFieldsLabel->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+    expressionsLayout->addWidget(expandFieldsLabel, 0, 1, Qt::AlignRight | Qt::AlignBottom);
+    connect(expandFieldsLabel, &QLabel::linkActivated, this, [this]() {
+        performTransaction(tr("Collapse/expand input fields"), [&]() {
+            if(ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject()))
+                modifier->setUseMultilineFields(!modifier->useMultilineFields());
+        });
+    });
+    connect(this, &PropertiesEditor::contentsChanged, this, [this](RefTarget* editObject) {
+        ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject);
+        if(modifier && modifier->useMultilineFields()) {
+            expandFieldsLabel->setText(tr("<a href=\"expand\">↑</a>"));
+            expandFieldsLabel->setToolTip(tr("Switch to single-line input fields"));
+        }
+        else {
+            expandFieldsLabel->setText(tr("<a href=\"collapse\">↓<a>"));
+            expandFieldsLabel->setToolTip(tr("Expand the input field(s)"));
+        }
+    });
 
     // Show editor of modifier delegate as an embedded widget.
     QWidget* delegateEditorContainer = new QWidget();
@@ -195,10 +213,18 @@ void ComputePropertyModifierEditor::updateExpressionFields()
     if(mod->useMultilineFields()) {
         for(AutocompleteLineEdit* lineEdit : expressionLineEdits) lineEdit->setVisible(false);
         for(AutocompleteTextEdit* textEdit : expressionTextEdits) textEdit->setVisible(true);
+        for(QLabel* label : expressionLabels) {
+            label->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+            label->setMargin(4);
+        }
     }
     else {
         for(AutocompleteLineEdit* lineEdit : expressionLineEdits) lineEdit->setVisible(true);
         for(AutocompleteTextEdit* textEdit : expressionTextEdits) textEdit->setVisible(false);
+        for(QLabel* label : expressionLabels) {
+            label->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+            label->setMargin(0);
+        }
     }
 
     QStringList standardPropertyComponentNames;
@@ -219,6 +245,10 @@ void ComputePropertyModifierEditor::updateExpressionFields()
             expressionLabels[i]->show();
         }
     }
+
+    onlySelectedUI->checkBox()->setText(tr("Compute only for selected %1").arg(mod->delegate()->elementLabel()));
+    onlySelectedUI->setEnabled(mod->delegate()->inputContainerClass()->isValidStandardPropertyId(Property::GenericSelectionProperty));
+
     container()->updateRolloutsLater();
 }
 

@@ -70,6 +70,9 @@ public:
     /// Applies this modifier delegate to the data.
     virtual Future<PipelineFlowState> apply(const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs) override;
 
+    /// Returns how the elements computed by this delegate are called. This label is shown in the UI.
+    virtual QString elementLabel() const { return inputContainerClass()->elementDescriptionName(); }
+
 protected:
 
     /// Launches the actual computations.

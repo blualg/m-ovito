@@ -70,8 +70,26 @@ void ParticlesComputePropertyModifierDelegateEditor::createUI(const RolloutInser
     connect(cutoffModeBtn, &QRadioButton::toggled, cutoffRadiusUI, &FloatParameterUI::setEnabled);
 
     // Show multiline fields.
-    BooleanParameterUI* multilineFieldsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticlesComputePropertyModifierDelegate::useMultilineFields));
-    groupBoxLayout->addWidget(multilineFieldsUI->checkBox(), 2, 0, 1, 2, Qt::AlignRight | Qt::AlignBottom);
+    expandFieldsLabel = new QLabel();
+    expandFieldsLabel->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+    groupBoxLayout->addWidget(expandFieldsLabel, 2, 0, 1, 2, Qt::AlignRight | Qt::AlignBottom);
+    connect(expandFieldsLabel, &QLabel::linkActivated, this, [this]() {
+        performTransaction(tr("Collapse/expand input fields"), [&]() {
+            if(ParticlesComputePropertyModifierDelegate* delegate = static_object_cast<ParticlesComputePropertyModifierDelegate>(editObject()))
+                delegate->setUseMultilineFields(!delegate->useMultilineFields());
+        });
+    });
+    connect(this, &PropertiesEditor::contentsChanged, this, [this](RefTarget* editObject) {
+        ParticlesComputePropertyModifierDelegate* delegate = static_object_cast<ParticlesComputePropertyModifierDelegate>(editObject);
+        if(delegate && delegate->useMultilineFields()) {
+            expandFieldsLabel->setText(tr("<a href=\"expand\">↑</a>"));
+            expandFieldsLabel->setToolTip(tr("Switch to single-line input fields"));
+        }
+        else {
+            expandFieldsLabel->setText(tr("<a href=\"collapse\">↓<a>"));
+            expandFieldsLabel->setToolTip(tr("Expand the input field(s)"));
+        }
+    });
 
     // Sublayout for the expression fields.
     neighborExpressionsLayout = new QGridLayout();
@@ -83,6 +101,12 @@ void ParticlesComputePropertyModifierDelegateEditor::createUI(const RolloutInser
     // Update input variables list if another modifier has been loaded into the editor.
     connect(this, &ParticlesComputePropertyModifierDelegateEditor::contentsReplaced, this, &ParticlesComputePropertyModifierDelegateEditor::updateExpressionFields);
     connect(this, &ParticlesComputePropertyModifierDelegateEditor::contentsReplaced, this, &ParticlesComputePropertyModifierDelegateEditor::updateVariablesList);
+
+    // Enable bonded neighbor mode depending on whether bonds are available in the input.
+    connect(this, &ParticlesComputePropertyModifierDelegateEditor::pipelineInputChanged, this, [this, bondModeBtn]() {
+        const Particles* particles = getPipelineInput().getObject<Particles>();
+        bondModeBtn->setEnabled(particles && particles->bonds());
+    });
 }
 
 /******************************************************************************
@@ -148,10 +172,18 @@ void ParticlesComputePropertyModifierDelegateEditor::updateExpressionFields()
     if(delegate->useMultilineFields()) {
         for(AutocompleteLineEdit* lineEdit : neighborExpressionLineEdits) lineEdit->setVisible(false);
         for(AutocompleteTextEdit* textEdit : neighborExpressionTextEdits) textEdit->setVisible(true);
+        for(QLabel* label : neighborExpressionLabels) {
+            label->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+            label->setMargin(4);
+        }
     }
     else {
         for(AutocompleteLineEdit* lineEdit : neighborExpressionLineEdits) lineEdit->setVisible(true);
         for(AutocompleteTextEdit* textEdit : neighborExpressionTextEdits) textEdit->setVisible(false);
+        for(QLabel* label : neighborExpressionLabels) {
+            label->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+            label->setMargin(0);
+        }
     }
 
     QStringList standardPropertyComponentNames;

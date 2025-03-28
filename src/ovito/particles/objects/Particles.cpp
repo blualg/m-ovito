@@ -108,7 +108,7 @@ Impropers* Particles::makeImpropersMutable()
 }
 
 /******************************************************************************
-* Convinience method that makes sure that there is a Bonds.
+* Convenience method that makes sure that there is a Bonds.
 * Throws an exception if there isn't.
 ******************************************************************************/
 const Bonds* Particles::expectBonds() const

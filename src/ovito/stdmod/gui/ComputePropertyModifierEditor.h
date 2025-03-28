@@ -62,8 +62,10 @@ private:
 	QList<AutocompleteLineEdit*> expressionLineEdits;
 	QList<AutocompleteTextEdit*> expressionTextEdits;
 	QList<QLabel*> expressionLabels;
+	QLabel* expandFieldsLabel;
 	QGridLayout* expressionsLayout;
 	QLabel* variableNamesDisplay;
+	BooleanParameterUI* onlySelectedUI;
 
 	// For deferred invocation of the UI update functions.
 	DeferredMethodInvocation<ComputePropertyModifierEditor, &ComputePropertyModifierEditor::updateExpressionFields> updateExpressionFieldsLater;
