@@ -21,19 +21,28 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include "WidgetOpenGLRenderingJob.h"
+#include "PickingOpenGLRenderingJob.h"
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(WidgetOpenGLRenderingJob);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(PickingOpenGLRenderingJob);
 
 /******************************************************************************
-* Constructor.
+* Returns an instance of this rendering job class that is shared among all viewport windows.
 ******************************************************************************/
-void WidgetOpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, QOpenGLWidget* glwin, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer)
+OORef<PickingOpenGLRenderingJob> PickingOpenGLRenderingJob::createSharedInstance(std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> renderer)
 {
-    OpenGLRenderingJob::initializeObject(flags, std::move(visCache), std::move(sceneRenderer));
-    _glwin = glwin;
+    static OOWeakRef<PickingOpenGLRenderingJob> sharedJob;
+    OORef<PickingOpenGLRenderingJob> job = sharedJob.lock();
+    if(!job) {
+        job = OORef<PickingOpenGLRenderingJob>::create(std::move(visCache), std::move(renderer));
+        sharedJob = job;
+    }
+    else {
+        OVITO_ASSERT(job->visCache() == visCache);
+        OVITO_ASSERT(job->sceneRenderer() == renderer);
+    }
+    return job;
 }
 
 }   // End of namespace

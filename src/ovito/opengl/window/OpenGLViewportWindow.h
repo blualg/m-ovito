@@ -28,6 +28,7 @@
 #include <ovito/opengl/OpenGLRenderer.h>
 #include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
 #include <ovito/opengl/OpenGLPickingMap.h>
+#include "PickingOpenGLRenderingJob.h"
 
 #include <QOpenGLWidget>
 
@@ -85,6 +86,9 @@ private:
 
     /// Manages the information obtained from an object picking render pass.
     std::shared_ptr<OpenGLPickingMap> _objectPickingMap = std::make_shared<OpenGLPickingMap>();
+
+    /// The rendering job that renders the object picking offscreen pass.
+    OORef<PickingOpenGLRenderingJob> _pickingRenderingJob;
 };
 
 }   // End of namespace

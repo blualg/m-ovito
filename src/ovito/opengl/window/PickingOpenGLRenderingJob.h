@@ -20,20 +20,29 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
+
 #include <ovito/core/Core.h>
-#include "WidgetOpenGLRenderingJob.h"
+#include <ovito/opengl/OffscreenOpenGLRenderingJob.h>
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(WidgetOpenGLRenderingJob);
-
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-void WidgetOpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, QOpenGLWidget* glwin, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer)
+/**
+ * \brief A rendering job that uses OpenGL to render the picking pass into an offscreen buffer.
+ */
+class OVITO_OPENGLRENDERERWINDOW_EXPORT PickingOpenGLRenderingJob : public OffscreenOpenGLRenderingJob
 {
-    OpenGLRenderingJob::initializeObject(flags, std::move(visCache), std::move(sceneRenderer));
-    _glwin = glwin;
-}
+    OVITO_CLASS(PickingOpenGLRenderingJob)
+
+public:
+
+    /// Returns an instance of this rendering job class that is shared among all viewport windows.
+    static OORef<PickingOpenGLRenderingJob> createSharedInstance(std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> renderer);
+
+	/// Returns the multi-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
+    /// Note: Overwritten to return 1, because the interactive viewport renderer does not support multi-sampling yet.
+	virtual int multisamplingLevel() const override { return 1; }
+};
 
 }   // End of namespace
