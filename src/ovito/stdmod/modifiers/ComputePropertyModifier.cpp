@@ -243,7 +243,7 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
 
     // Warn user if property name is invalid.
     try { Property::throwIfInvalidPropertyName(modifier->outputProperty().nameWithComponent()); }
-    catch(const Exception& e) { state.combineStatus(PipelineStatus(PipelineStatus::Warning, e.message())); }
+    catch(const Exception& e) { state.combineStatus(PipelineStatus::Warning, e.message()); }
 
     // Prepare output property.
     PropertyPtr outputProperty;
@@ -264,10 +264,10 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
                 throw Exception(tr("Number of vector component names does not match number of compute expressions."));
             // Validate vector component names.
             if(QStringList(componentNames).removeDuplicates() != 0)
-                state.combineStatus(PipelineStatus(PipelineStatus::Warning, tr("List of vector components contains duplicate entries: Property component names must be unique.")));
+                state.combineStatus(PipelineStatus::Warning, tr("List of vector components contains duplicate entries: Property component names must be unique."));
             for(const QString& name : componentNames) {
                 try { Property::throwIfInvalidPropertyComponentName(name); }
-                catch(const Exception& e) { state.combineStatus(PipelineStatus(PipelineStatus::Warning, e.message())); }
+                catch(const Exception& e) { state.combineStatus(PipelineStatus::Warning, e.message()); }
             }
             // Create user-defined output property.
             outputProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized,

@@ -43,7 +43,7 @@ DEFINE_PROPERTY_FIELD(AffineTransformationModifier, targetCell);
 DEFINE_PROPERTY_FIELD(AffineTransformationModifier, relativeMode);
 DEFINE_PROPERTY_FIELD(AffineTransformationModifier, translationReducedCoordinates);
 SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, transformationTM, "Transformation");
-SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, selectionOnly, "Transform selected elements only");
+SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, selectionOnly, "Transform only selected particles/vertices");
 SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, targetCell, "Target cell shape");
 SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, relativeMode, "Relative transformation");
 SET_PROPERTY_FIELD_LABEL(AffineTransformationModifier, translationReducedCoordinates, "Relative transformation");

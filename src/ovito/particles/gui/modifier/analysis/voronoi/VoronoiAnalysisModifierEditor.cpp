@@ -63,26 +63,7 @@ void VoronoiAnalysisModifierEditor::createUI(const RolloutInsertionParameters& r
     BooleanParameterUI* onlySelectedPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::onlySelected));
     sublayout->addWidget(onlySelectedPUI->checkBox(), row++, 0, 1, 2);
 
-    QGroupBox* filterSmallFacesGroup = new QGroupBox(tr("Removal of degenerate faces"));
-    sublayout = new QGridLayout(filterSmallFacesGroup);
-    sublayout->setContentsMargins(4,4,4,4);
-    sublayout->setSpacing(4);
-    sublayout->setColumnStretch(1, 1);
-    mainLayout->addWidget(filterSmallFacesGroup);
-    row = 0;
-
-    // Face threshold.
-    FloatParameterUI* faceThresholdPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::faceThreshold));
-    sublayout->addWidget(faceThresholdPUI->label(), row, 0);
-    sublayout->addLayout(faceThresholdPUI->createFieldLayout(), row++, 1);
-    faceThresholdPUI->spinner()->setStandardValue(0.0);
-    faceThresholdPUI->textBox()->setPlaceholderText(tr("‹none›"));
-
-    // Relative face threshold.
-    FloatParameterUI* relativeFaceThresholdPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::relativeFaceThreshold));
-    sublayout->addWidget(relativeFaceThresholdPUI->label(), row, 0);
-    sublayout->addLayout(relativeFaceThresholdPUI->createFieldLayout(), row++, 1);
-
+    // Output group.
     QGroupBox* outputOptionsGroup = new QGroupBox(tr("Output"));
     sublayout = new QGridLayout(outputOptionsGroup);
     sublayout->setContentsMargins(4,4,4,4);
@@ -112,6 +93,27 @@ void VoronoiAnalysisModifierEditor::createUI(const RolloutInsertionParameters& r
     // Generate polyhedral mesh.
     BooleanParameterUI* computePolyhedraPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::computePolyhedra));
     sublayout->addWidget(computePolyhedraPUI->checkBox(), row++, 0, 1, 3);
+
+    // Face area threshold group.
+    QGroupBox* filterSmallFacesGroup = new QGroupBox(tr("Face area threshold"));
+    sublayout = new QGridLayout(filterSmallFacesGroup);
+    sublayout->setContentsMargins(4,4,4,4);
+    sublayout->setSpacing(4);
+    sublayout->setColumnStretch(1, 1);
+    mainLayout->addWidget(filterSmallFacesGroup);
+    row = 0;
+
+    // Absolute face area threshold.
+    FloatParameterUI* faceThresholdPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::faceThreshold));
+    sublayout->addWidget(new QLabel(tr("Absolute:")), row, 0);
+    sublayout->addLayout(faceThresholdPUI->createFieldLayout(), row++, 1);
+    faceThresholdPUI->spinner()->setStandardValue(0.0);
+    faceThresholdPUI->textBox()->setPlaceholderText(tr("‹none›"));
+
+    // Relative face area threshold.
+    FloatParameterUI* relativeFaceThresholdPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VoronoiAnalysisModifier::relativeFaceThreshold));
+    sublayout->addWidget(new QLabel(tr("Relative:")), row, 0);
+    sublayout->addLayout(relativeFaceThresholdPUI->createFieldLayout(), row++, 1);
 
     // Status label.
     mainLayout->addSpacing(6);
