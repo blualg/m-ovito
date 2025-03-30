@@ -86,7 +86,7 @@ Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEv
 
         size_t numCopies = (newImages.sizeX() + 1) * (newImages.sizeY() + 1) * (newImages.sizeZ() + 1);
 
-        // Get the simulation cell
+        // Get the simulation cell.
         const SimulationCell* cell = state.expectObject<SimulationCell>();
         const AffineTransformation& cellMatrix = cell->matrix();
 
@@ -273,16 +273,16 @@ void ReplicateModifier::propertyChanged(const PropertyFieldDescriptor* field)
 Box3I ReplicateModifier::replicaRange() const
 {
     std::array<int,3> nPBC;
-    nPBC[0] = std::max(numImagesX(),1);
-    nPBC[1] = std::max(numImagesY(),1);
-    nPBC[2] = std::max(numImagesZ(),1);
+    nPBC[0] = std::max(numImagesX(), 1);
+    nPBC[1] = std::max(numImagesY(), 1);
+    nPBC[2] = std::max(numImagesZ(), 1);
     Box3I replicaBox;
-    replicaBox.minc[0] = -(nPBC[0]-1)/2;
-    replicaBox.minc[1] = -(nPBC[1]-1)/2;
-    replicaBox.minc[2] = -(nPBC[2]-1)/2;
-    replicaBox.maxc[0] = nPBC[0]/2;
-    replicaBox.maxc[1] = nPBC[1]/2;
-    replicaBox.maxc[2] = nPBC[2]/2;
+    replicaBox.minc[0] = -(nPBC[0]-1) / 2;
+    replicaBox.minc[1] = -(nPBC[1]-1) / 2;
+    replicaBox.minc[2] = -(nPBC[2]-1) / 2;
+    replicaBox.maxc[0] = nPBC[0] / 2;
+    replicaBox.maxc[1] = nPBC[1] / 2;
+    replicaBox.maxc[2] = nPBC[2] / 2;
     OVITO_ASSERT(
         nPBC[0] * nPBC[1] * nPBC[2] ==
         (replicaBox.sizeX() + 1) *
@@ -299,6 +299,10 @@ Future<PipelineFlowState> ReplicateModifier::evaluateModifier(const ModifierEval
     // Return unmodified state if replication is not necessary.
     if(numImagesX() <= 1 && numImagesY() <= 1 && numImagesZ() <= 1)
         return std::move(state);
+
+    const SimulationCell* cell = state.expectObject<SimulationCell>();
+    if(cell->is2D() && numImagesZ() > 1)
+        state.combineStatus(PipelineStatus::Warning, tr("Replicating a 2D simulation cell along Z is an invalid operation."));
 
     // First, apply all delegates to the input data.
     Future<PipelineFlowState> future = MultiDelegatingModifier::evaluateModifier(request, std::move(state));
