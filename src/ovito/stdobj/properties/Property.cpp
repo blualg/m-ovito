@@ -435,7 +435,7 @@ QString Property::nameWithComponent(int vectorComponent) const
 }
 
 /******************************************************************************
-* Throws an exception with an informative text if the given name is not a
+* Throws an exception with an informative text if the given string is not a
 * valid name for an OVITO property.
 ******************************************************************************/
 void Property::throwIfInvalidPropertyName(const QStringView name)
@@ -454,6 +454,26 @@ void Property::throwIfInvalidPropertyName(const QStringView name)
         throw Exception(tr("Invalid property name: '%1'. OVITO property names must not end with whitespace.").arg(name));
     if(name.endsWith(QChar('_')))
         throw Exception(tr("Invalid property name: '%1'. OVITO property names must not end with an underscore.").arg(name));
+}
+
+/******************************************************************************
+* Throws an exception with an informative text if the given string is not a
+* valid name for an OVITO property vector component.
+******************************************************************************/
+void Property::throwIfInvalidPropertyComponentName(const QStringView name)
+{
+    if(name.isEmpty())
+        throw Exception(tr("Invalid empty component name. OVITO vector component names must have at least length 1."));
+    if(name.contains(QChar('.')))
+        throw Exception(tr("Invalid component name: '%1'. Dots are not allowed in OVITO vector component names.").arg(name));
+    if(name.contains(QChar('/')))
+        throw Exception(tr("Invalid component name: '%1'. '/' is not allowed in OVITO vector component names.").arg(name));
+    if(name.contains(QChar(':')))
+        throw Exception(tr("Invalid component name: '%1'. ':' is not allowed in OVITO vector component names.").arg(name));
+    if(name.contains(QChar(' ')))
+        throw Exception(tr("Invalid component name: '%1'. OVITO vector component names must not contain whitespace.").arg(name));
+    if(name.endsWith(QChar('_')))
+        throw Exception(tr("Invalid component name: '%1'. OVITO vector component names must not end with an underscore.").arg(name));
 }
 
 /******************************************************************************

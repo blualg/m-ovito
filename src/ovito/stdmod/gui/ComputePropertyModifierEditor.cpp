@@ -67,25 +67,48 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     onlySelectedUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::onlySelectedElements));
     sublayout->addWidget(onlySelectedUI->checkBox());
 
-    QGroupBox* propertiesGroupBox = new QGroupBox(tr("Output property"), rollout);
+    QGroupBox* propertiesGroupBox = new QGroupBox(tr("Output"), rollout);
     mainLayout->addWidget(propertiesGroupBox);
-    QVBoxLayout* propertiesLayout = new QVBoxLayout(propertiesGroupBox);
+    QGridLayout* propertiesLayout = new QGridLayout(propertiesGroupBox);
     propertiesLayout->setContentsMargins(6,6,6,6);
+    propertiesLayout->setColumnStretch(1,1);
     propertiesLayout->setSpacing(4);
 
     // Output property
-    PropertyReferenceParameterUI* outputPropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::outputProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
-    propertiesLayout->addWidget(outputPropertyUI->comboBox());
-    connect(this, &PropertiesEditor::contentsChanged, this, [outputPropertyUI](RefTarget* editObject) {
+    outputPropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::outputProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
+    propertiesLayout->addWidget(new QLabel(tr("Property name:")), 0, 0);
+    propertiesLayout->addWidget(outputPropertyUI->comboBox(), 0, 1);
+    propertiesLayout->addWidget(new QLabel(tr("Components:")), 1, 0);
+    componentNamesEdit = new EnterLineEdit();
+    componentNamesEdit->setPlaceholderText(tr("‹scalar›"));
+    propertiesLayout->addWidget(componentNamesEdit, 1, 1);
+    connect(this, &PropertiesEditor::contentsChanged, this, [this](RefTarget* editObject) {
         ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject);
-        if(modifier && modifier->delegate())
+        if(modifier && modifier->delegate()) {
             outputPropertyUI->setContainerRef(modifier->delegate()->inputContainerRef());
-        else
+            int typeId = modifier->outputProperty().standardTypeId(modifier->delegate()->inputContainerClass());
+            componentNamesEdit->setEnabled(typeId == Property::GenericUserProperty);
+            componentNamesEdit->setText(modifier->effectiveComponentNames().join(QStringLiteral(", ")));
+        }
+        else {
             outputPropertyUI->setContainerRef({});
+            componentNamesEdit->setEnabled(false);
+            componentNamesEdit->clear();
+        }
     });
-    connect(outputPropertyUI, &PropertyReferenceParameterUI::valueEntered, this, [this]() {
+    connect(componentNamesEdit, &QLineEdit::editingFinished, this, [this]() {
         if(ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject())) {
-            modifier->adjustPropertyComponentCount();
+            QStringList componentNames = componentNamesEdit->text().trimmed().split(QChar(','));
+            for(QString& name : componentNames) name = name.trimmed();
+            componentNames.removeIf([](const QString& name) { return name.isEmpty(); });
+            if(modifier->delegate()) {
+                int typeId = modifier->outputProperty().standardTypeId(modifier->delegate()->inputContainerClass());
+                if(typeId == Property::GenericUserProperty) {
+                    performTransaction(tr("Set components list"), [&]() {
+                        modifier->setPropertyComponentCount(std::max(1, (int)componentNames.size()), componentNames);
+                    });
+                }
+            }
         }
     });
 
@@ -227,19 +250,16 @@ void ComputePropertyModifierEditor::updateExpressionFields()
         }
     }
 
-    QStringList standardPropertyComponentNames;
-    if(int typeId = mod->outputProperty().standardTypeId(mod->delegate()->inputContainerClass()))
-        standardPropertyComponentNames = mod->delegate()->inputContainerClass()->standardPropertyComponentNames(typeId);
-
+    const QStringList propertyComponentNames = mod->effectiveComponentNames();
     for(int i = 0; i < expr.size(); i++) {
         expressionLineEdits[i]->setText(expr[i]);
         if(expressionTextEdits[i]->toPlainText() != expr[i])
             expressionTextEdits[i]->setPlainText(expr[i]);
-        if(expr.size() == 1)
+        if(expr.size() == 1 && propertyComponentNames.empty())
             expressionLabels[i]->hide();
         else {
-            if(i < standardPropertyComponentNames.size())
-                expressionLabels[i]->setText(tr("%1:").arg(standardPropertyComponentNames[i]));
+            if(i < propertyComponentNames.size())
+                expressionLabels[i]->setText(tr("%1:").arg(propertyComponentNames[i]));
             else
                 expressionLabels[i]->setText(tr("%1:").arg(i+1));
             expressionLabels[i]->show();

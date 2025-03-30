@@ -69,6 +69,8 @@ void ParticlesComputePropertyModifierDelegate::setComponentCount(int componentCo
             newList.append(QString());
         setNeighborExpressions(newList);
     }
+    // To update the list of vector components in the UI.
+    notifyDependents(ReferenceEvent::ObjectStatusChanged);
 }
 
 /******************************************************************************
@@ -87,6 +89,28 @@ bool ParticlesComputePropertyModifierDelegate::isExpressionTimeDependent(Compute
     }
 
     return false;
+}
+
+/******************************************************************************
+* Sets up the visual element(s) associated with the new property.
+******************************************************************************/
+void ParticlesComputePropertyModifierDelegate::setupVisualElements(Property* outputProperty, ComputePropertyModificationNode* modNode)
+{
+    // Automatically create a VectorVis element for user-defined vector properties with 3 components named X,Y,Z.
+    if(outputProperty->typeId() == Property::GenericUserProperty && outputProperty->componentCount() == 3 && outputProperty->dataType() == Property::Float64) {
+        const QStringList& names = outputProperty->componentNames();
+        if(names.size() == 3 && names[0].compare("x", Qt::CaseInsensitive) == 0 && names[1].compare("y", Qt::CaseInsensitive) == 0 && names[2].compare("z", Qt::CaseInsensitive) == 0) {
+            OORef<VectorVis> vis = OORef<VectorVis>::create();
+            vis->setObjectTitle(outputProperty->name());
+            vis->setEnabled(false);
+            vis->setReverseArrowDirection(false);
+            vis->setArrowPosition(VectorVis::Base);
+            vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title), SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled), SHADOW_PROPERTY_FIELD(VectorVis::reverseArrowDirection), SHADOW_PROPERTY_FIELD(VectorVis::arrowPosition)});
+            outputProperty->addVisElement(std::move(vis));
+        }
+    }
+
+    ComputePropertyModifierDelegate::setupVisualElements(outputProperty, modNode);
 }
 
 /******************************************************************************

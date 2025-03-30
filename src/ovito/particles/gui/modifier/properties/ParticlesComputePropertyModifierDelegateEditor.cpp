@@ -120,6 +120,7 @@ bool ParticlesComputePropertyModifierDelegateEditor::referenceEvent(RefTarget* s
         }
         else if(event.type() == ReferenceEvent::ObjectStatusChanged) {
             updateVariablesListLater(this, mainWindow());
+            updateExpressionFieldsLater(this, mainWindow());
         }
     }
     return PropertiesEditor::referenceEvent(source, event);
@@ -186,20 +187,17 @@ void ParticlesComputePropertyModifierDelegateEditor::updateExpressionFields()
         }
     }
 
-    QStringList standardPropertyComponentNames;
-    if(ComputePropertyModifier* modifier = dynamic_object_cast<ComputePropertyModifier>(delegate->modifier())) {
-        if(int typeId = modifier->outputProperty().standardTypeId(modifier->delegate()->inputContainerClass()))
-            standardPropertyComponentNames = modifier->delegate()->inputContainerClass()->standardPropertyComponentNames(typeId);
-    }
-
+    QStringList propertyComponentNames;
+    if(ComputePropertyModifier* modifier = dynamic_object_cast<ComputePropertyModifier>(delegate->modifier()))
+        propertyComponentNames = modifier->effectiveComponentNames();
     for(int i = 0; i < neighExpr.size(); i++) {
         neighborExpressionLineEdits[i]->setText(neighExpr[i]);
         neighborExpressionTextEdits[i]->setPlainText(neighExpr[i]);
-        if(neighExpr.size() == 1)
+        if(neighExpr.size() == 1 && propertyComponentNames.empty())
             neighborExpressionLabels[i]->hide();
         else {
-            if(i < standardPropertyComponentNames.size())
-                neighborExpressionLabels[i]->setText(tr("%1:").arg(standardPropertyComponentNames[i]));
+            if(i < propertyComponentNames.size())
+                neighborExpressionLabels[i]->setText(tr("%1:").arg(propertyComponentNames[i]));
             else
                 neighborExpressionLabels[i]->setText(tr("%1:").arg(i+1));
             neighborExpressionLabels[i]->show();

@@ -66,6 +66,8 @@ private:
 	QGridLayout* expressionsLayout;
 	QLabel* variableNamesDisplay;
 	BooleanParameterUI* onlySelectedUI;
+	PropertyReferenceParameterUI* outputPropertyUI;
+	QLineEdit* componentNamesEdit;
 
 	// For deferred invocation of the UI update functions.
 	DeferredMethodInvocation<ComputePropertyModifierEditor, &ComputePropertyModifierEditor::updateExpressionFields> updateExpressionFieldsLater;

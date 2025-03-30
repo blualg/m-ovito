@@ -94,6 +94,9 @@ public:
 
 protected:
 
+    // Sets up the visual element(s) associated with the new property.
+    virtual void setupVisualElements(Property* outputProperty, ComputePropertyModificationNode* modNode) override;
+
     /// Launches the actual computations.
     virtual Future<PipelineFlowState> performComputation(const ComputePropertyModifier* modifier, ComputePropertyModificationNode* modNode, PipelineFlowState state, const PipelineFlowState& originalState, PropertyPtr outputProperty, ConstPropertyPtr selectionProperty, int frame) const override;
 

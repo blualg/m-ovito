@@ -75,6 +75,9 @@ public:
 
 protected:
 
+    // Sets up the visual element(s) associated with the new property.
+    virtual void setupVisualElements(Property* outputProperty, ComputePropertyModificationNode* modNode);
+
     /// Launches the actual computations.
     virtual Future<PipelineFlowState> performComputation(const ComputePropertyModifier* modifier, ComputePropertyModificationNode* modNode, PipelineFlowState state, const PipelineFlowState& originalState, PropertyPtr outputProperty, ConstPropertyPtr selectionProperty, int frame) const;
 
@@ -133,10 +136,10 @@ public:
     int propertyComponentCount() const { return expressions().size(); }
 
     /// Sets the number of vector components of the property to create.
-    void setPropertyComponentCount(int newComponentCount);
+    void setPropertyComponentCount(int newComponentCount, const QStringList& componentNames);
 
-    /// Sets the number of expressions based on the selected output property.
-    void adjustPropertyComponentCount();
+    /// Returns the names of the vector components of the output property. This list is shown in the UI.
+    QStringList effectiveComponentNames() const;
 
     /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return outputProperty().nameWithComponent(); }
@@ -160,6 +163,10 @@ private:
 
     /// The math expressions for calculating the property values. One for every vector component.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QStringList{"0"}, expressions, setExpressions);
+
+    /// The names of the property's vector components (when computing a user-defined vector property).
+    /// Note: In case of predefined standard properties, the component names are prescribed by the container class.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(QStringList{}, componentNames, setComponentNames);
 
     /// Specifies the output property that will receive the computed per-particles values.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, outputProperty, setOutputProperty);

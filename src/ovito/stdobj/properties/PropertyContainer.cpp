@@ -476,7 +476,7 @@ void PropertyContainer::setContent(size_t newElementCount, const DataRefVector<P
 }
 
 /******************************************************************************
-* Duplicates all data elements by extensing the property arrays and
+* Duplicates all data elements by extending the property arrays and
 * replicating the existing data N times.
 ******************************************************************************/
 void PropertyContainer::replicate(size_t n)
