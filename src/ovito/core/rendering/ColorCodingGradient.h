@@ -61,7 +61,7 @@ private:
 };
 
 /**
- * \brief Converts a scalar value to a color using the HSV color system.
+ * \brief Converts a scalar value to a color using a partial range of the HSV color system (rainbow map).
  */
 class OVITO_CORE_EXPORT ColorCodingHSVGradient : public ColorCodingGradient
 {
@@ -261,6 +261,32 @@ public:
         auto c1 = colormap_magma_data[(size_t)t0];
         auto c2 = colormap_magma_data[(size_t)std::ceil(t)];
         return ColorT<float>(c1[0], c1[1], c1[2]) * (1.0f - (t - t0)) + ColorT<float>(c2[0], c2[1], c2[2]) * (t - t0);
+    }
+};
+
+/**
+ * \brief Converts a scalar value to a color using the full HSV color system to generate a cyclic color mapping.
+ */
+class OVITO_CORE_EXPORT ColorCodingCyclicHSVGradient : public ColorCodingGradient
+{
+    OVITO_CLASS(ColorCodingCyclicHSVGradient)
+
+public:
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<double> valueToColor(double t) const override {
+        OVITO_ASSERT(t >= 0.0 && t <= 1.0);
+        return ColorT<double>::fromHSV(1.0 - t, 1.0, 1.0);
+    }
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<float> valueToColor(float t) const override {
+        OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
+        return ColorT<float>::fromHSV(1.0f - t, 1.0f, 1.0f);
     }
 };
 
