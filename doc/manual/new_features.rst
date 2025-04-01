@@ -9,17 +9,18 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.12.1>`__
 
 ----------------------------
-Version 3.12.1 (XX-YYY-2025)
+Version 3.12.1 (02-Apr-2025)
 ----------------------------
 
-- Fixed visual glitch when moving the mouse cursor into a 3D viewport window, which occurred on some Windows/Linux systems in OVITO 3.12.0
-- :ref:`particles.modifiers.compute_property` modifier: Now allows generating user-defined vector properties
+- Fixed visual glitch when moving the cursor into the 3D viewport window, which occurred on some Windows/Linux systems in OVITO 3.12.0
+- :ref:`particles.modifiers.compute_property` modifier: Now allows creating :ref:`user-defined vector properties <particles.modifiers.compute_property.vector_properties>`
 - :ref:`particles.modifiers.compute_property` modifier: Added the special variables ``SpatialPosition`` and ``VoxelCoordinate`` for voxel grid computations
 - :ref:`particles.modifiers.color_coding` modifier: Added new color gradient "Cyclic Rainbow", which is useful for visualizing cyclic properties such as phase angles or in-plane orientations
-- :ref:`viewport_layers.color_legend`: Stable ordering of DXA dislocation type list during trajectory playback
+- :ref:`viewport_layers.color_legend`: Fixed reordering of DXA dislocation types list during trajectory playback
 - :ref:`particles.modifiers.dislocation_analysis` modifier: Fixed crash in function "Mark dislocation core atoms" when no dislocations are present
 - :ref:`particles.modifiers.voronoi_analysis` modifier: Redesigned UI
-- Fix: Function "Reset to default" not working for numerical parameters
+- Fix: GUI function "Reset to default" not working for numerical parameter fields
+- |ovito-python| Extended the :py:attr:`ComputePropertyModifier.expressions <ovito.modifiers.ComputePropertyModifier.expressions>` parameter to support the creation of user-defined vector properties
 
 .. sidebar::
 

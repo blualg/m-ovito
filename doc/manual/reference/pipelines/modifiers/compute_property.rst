@@ -41,6 +41,8 @@ Standard property names predefined by the software are available in the drop-dow
   - :ref:`List of standard line properties <lines-properties-list>`
   - :ref:`List of standard vector properties <vectors-properties-list>`
 
+.. _particles.modifiers.compute_property.vector_properties:
+
 Vectorial properties
 """"""""""""""""""""
 
@@ -48,9 +50,9 @@ Some particle properties, such as ``Position`` and ``Color``, consist of multipl
 When computing such vector properties, you need to specify a separate scalar expression for each component.
 
 Since OVITO 3.12.1, the modifier also supports the creation of user-defined vector properties.
-To define a new vector property, simply enter the names of vector components into the :guilabel:`Components` field
-as a comma-separated list, e.g. "X, Y, Z". The GUI panel will then display a corresponding number of expression
-input fields, which allow you to specify individual expressions for each component.
+To define a custom vector property, simply enter the names of the vector components into the :guilabel:`Components` field
+as a comma-separated list, e.g. "X, Y, Z" and press :kbd:`Enter`. The GUI panel will then dynamically display a corresponding number of
+input fields for you to specify an expression for each component.
 
 Selective assignment
 """"""""""""""""""""
