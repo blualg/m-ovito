@@ -10,10 +10,10 @@ Compute property
   :width: 30%
   :align: right
 
-The *Compute Property* modifier assigns property values to particle, bonds, and other elements based on a user-defined mathematical formula.
-It can also be used to create new :ref:`particle and bond properties <usage.particle_properties>`.
+The *Compute Property* modifier sets property values of particle, bonds, and other elements according to a user-defined mathematical formula.
+It can also be used to create new :ref:`user-defined properties <usage.particle_properties>`.
 
-The mathematical formula for computing the value for each element can reference existing per-particle or per-bond data, as well as
+The math expression for computing the value for each element can reference existing per-particle or per-bond data, as well as
 global parameters such as the simulation box dimensions or the current animation time. A list of available input variables is
 provided in the modifier's user interface. Additionally, the *Compute Property* modifier supports computations involving neighboring particles
 within a defined spherical volume around each particle or which are bonded to the central particle.
@@ -36,9 +36,10 @@ To do so, simply enter a custom property name in the :guilabel:`Output property`
 Standard property names predefined by the software are available in the drop-down list.
 
   - :ref:`List of standard particle properties <particle-properties-list>`
-  - :ref:`List of standard bond properties <bond-types-list>`
-  - :ref:`List of standard line properties <lines-property-list>`
-  - :ref:`List of standard vector properties <vectors-property-list>`
+  - :ref:`List of standard bond properties <bond-properties-list>`
+  - :ref:`List of standard voxel grid properties <voxelgrid-properties-list>`
+  - :ref:`List of standard line properties <lines-properties-list>`
+  - :ref:`List of standard vector properties <vectors-properties-list>`
 
 Vectorial properties
 """"""""""""""""""""
@@ -46,17 +47,16 @@ Vectorial properties
 Some particle properties, such as ``Position`` and ``Color``, consist of multiple components (XYZ and RGB).
 When computing such vector properties, you need to specify a separate scalar expression for each component.
 
-.. note::
-
-  The modifier does not support the creation of new user-defined properties with multiple components -- only scalar properties or
-  predefined vectorial properties can be created. Use a :ref:`Python script modifier <particles.modifiers.python_script>`,
-  which allows to perform NumPy array computations, for more advanced cases.
+Since OVITO 3.12.1, the modifier also supports the creation of user-defined vector properties.
+To define a new vector property, simply enter the names of vector components into the :guilabel:`Components` field
+as a comma-separated list, e.g. "X, Y, Z". The GUI panel will then display a corresponding number of expression
+input fields, which allow you to specify individual expressions for each component.
 
 Selective assignment
 """"""""""""""""""""
 
 If the specified output property already exists, the modifier overwrites it with the newly computed values.
-However, by enabling the :guilabel:`Compute only for selected elements` option, you can restrict property assignment to a
+However, by enabling the :guilabel:`Compute only for selected` option, you can restrict property assignment to a
 subset of particles or bonds, preserving existing values for currently unselected elements.
 
 Conditional values
