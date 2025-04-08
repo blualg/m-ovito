@@ -6,6 +6,16 @@ Changelog
 
 .. sidebar::
 
+  * `Download this version <https://www.ovito.org/download_history/#3.13.0>`__
+
+----------------------------
+Version 3.13.0 (xx-xxx-2025)
+----------------------------
+
+- :ref:`particles.modifiers.histogram` modifier: Added new option to select the bin normalization mode: (1) absolute count, (2) relative frequency, (3) probability density
+
+.. sidebar::
+
   * `Download this version <https://www.ovito.org/download_history/#3.12.1>`__
 
 ----------------------------

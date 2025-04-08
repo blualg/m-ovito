@@ -39,6 +39,14 @@ class OVITO_STDMOD_EXPORT HistogramModifier : public GenericPropertyModifier
 
 public:
 
+    /// The different ways the bin counts of the histogram can be normalized.
+    enum NormalizationMode {
+        AbsoluteCount,      ///< No normalization, the bin counts are absolute values.
+        RelativeFrequency,  ///< The bin counts are normalized to the total number of elements.
+        ProbabilityDensity  ///< The bin counts are normalized to the total number of elements and the bin width.
+    };
+    Q_ENUM(NormalizationMode);
+
     /// Constructor.
     void initializeObject(ObjectInitializationFlags flags);
 
@@ -105,6 +113,9 @@ private:
 
     /// Controls whether the modifier should take into account only selected elements.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, onlySelectedElements, setOnlySelectedElements);
+
+    /// Controls how bin counts are normalized.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(NormalizationMode{AbsoluteCount}, normalizationMode, setNormalizationMode, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace
