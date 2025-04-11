@@ -26,6 +26,7 @@
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
+#include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
 #include "FreezePropertyModifierEditor.h"
 
@@ -66,10 +67,34 @@ void FreezePropertyModifierEditor::createUI(const RolloutInsertionParameters& ro
     layout->addWidget(new QLabel(tr("Output property:"), rollout));
     layout->addWidget(destPropertyUI->comboBox());
     layout->addSpacing(8);
-    connect(this, &PropertiesEditor::contentsChanged, this, [sourcePropertyUI,destPropertyUI](RefTarget* editObject) {
+
+
+    QGridLayout* gridlayout = new QGridLayout();
+    gridlayout->setContentsMargins(0,0,0,0);
+    gridlayout->setColumnStretch(1, 1);
+    gridlayout->setVerticalSpacing(4);
+
+    IntegerParameterUI* freezeTimePUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(FreezePropertyModifier::freezeTime));
+    gridlayout->addWidget(freezeTimePUI->label(), 0, 0);
+    gridlayout->addLayout(freezeTimePUI->createFieldLayout(), 0, 1);
+
+    gridlayout->setRowMinimumHeight(1, 6);
+    BooleanParameterUI* tolerateNewElementsPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(FreezePropertyModifier::tolerateNewElements));
+    gridlayout->addWidget(tolerateNewElementsPUI->checkBox(), 2, 0, 1, 2);
+
+    BooleanParameterUI* selectNewElementsPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(FreezePropertyModifier::selectNewElements));
+    gridlayout->addWidget(selectNewElementsPUI->checkBox(), 3, 0, 1, 2);
+
+    connect(this, &PropertiesEditor::contentsChanged, this, [=](RefTarget* editObject) {
         if(FreezePropertyModifier* modifier = static_object_cast<FreezePropertyModifier>(editObject)) {
             sourcePropertyUI->setContainerRef(modifier->subject());
             destPropertyUI->setContainerRef(modifier->subject());
+            if(modifier->subject().dataClass()) {
+                PropertyContainerClassPtr classPtr = modifier->subject().dataClass();
+                tolerateNewElementsPUI->checkBox()->setText(tr("Tolerate newly appearing %1").arg(classPtr->elementDescriptionName()));
+                selectNewElementsPUI->checkBox()->setText(tr("Select newly appearing %1").arg(classPtr->elementDescriptionName()));
+            }
+            selectNewElementsPUI->setEnabled(modifier->tolerateNewElements());
         }
         else {
             sourcePropertyUI->setContainerRef({});
@@ -77,13 +102,6 @@ void FreezePropertyModifierEditor::createUI(const RolloutInsertionParameters& ro
         }
     });
 
-    QGridLayout* gridlayout = new QGridLayout();
-    gridlayout->setContentsMargins(0,0,0,0);
-    gridlayout->setColumnStretch(1, 1);
-
-    IntegerParameterUI* freezeTimePUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(FreezePropertyModifier::freezeTime));
-    gridlayout->addWidget(freezeTimePUI->label(), 0, 0);
-    gridlayout->addLayout(freezeTimePUI->createFieldLayout(), 0, 1);
     layout->addLayout(gridlayout);
     layout->addSpacing(8);
 

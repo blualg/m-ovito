@@ -272,20 +272,20 @@ public:
     /// Copies the elements from this buffer into the given destination buffer using an index mapping.
     /// This method overload accepts a std::span with an integral value type as index mapping.
     template<std::integral MappingT>
-    OVITO_CORE_EXPORT void mappedCopyTo(DataBuffer& destination, std::span<const MappingT> mapping) const;
+    OVITO_CORE_EXPORT void mappedCopyTo(DataBuffer& destination, std::span<const MappingT> mapping, bool allowOutOfBoundsIndices = false) const;
 
     /// Copies the elements from this buffer into the given destination buffer using an index mapping.
     /// This method overload accepts a std::vector with an integral value type as index mapping.
     template<std::integral MappingT>
-    void mappedCopyTo(DataBuffer& destination, const std::vector<MappingT>& mapping) const {
-        mappedCopyTo(destination, std::span(mapping));
+    void mappedCopyTo(DataBuffer& destination, const std::vector<MappingT>& mapping, bool allowOutOfBoundsIndices = false) const {
+        mappedCopyTo(destination, std::span(mapping), allowOutOfBoundsIndices);
     }
 
     /// Copies the elements from this buffer into the given destination buffer using an index mapping.
     /// This method overload accepts a buffer accessor with an integral value type as index mapping.
     template<std::integral MappingT, typename BufferType, bool StrongReference, Ovito::access_mode accessmode>
-    void mappedCopyTo(DataBuffer& destination, const detail::BufferAccessTyped<MappingT, BufferType, StrongReference, accessmode>& mapping) const {
-        mappedCopyTo(destination, std::span(mapping));
+    void mappedCopyTo(DataBuffer& destination, const detail::BufferAccessTyped<MappingT, BufferType, StrongReference, accessmode>& mapping, bool allowOutOfBoundsIndices = false) const {
+        mappedCopyTo(destination, std::span(mapping), allowOutOfBoundsIndices);
     }
 
     /// Reorders the existing elements in this storage array according to an index map.
@@ -795,10 +795,10 @@ inline size_t DataBuffer::count(const T value) const
 // Instantiate function templates for different integral types.
 #ifndef OVITO_BUILD_MONOLITHIC
     #if !defined(Core_EXPORTS)
-        extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const size_t> mapping) const;
-        extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const int> mapping) const;
         extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const size_t> mapping, bool discardOldContents);
         extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const int> mapping, bool discardOldContents);
+        extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const size_t> mapping, bool allowOutOfBoundsIndices) const;
+        extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const int> mapping, bool allowOutOfBoundsIndices) const;
     #endif
 #endif
 
