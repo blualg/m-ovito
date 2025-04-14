@@ -6,6 +6,16 @@ Changelog
 
 .. sidebar::
 
+  * `Download this version <https://www.ovito.org/download_history/#3.12.2>`__
+
+----------------------------
+Version 3.12.2 (xx-yyy-2025)
+----------------------------
+
+- |ovito-python| Bug fix: NumPy-view-based writes to ``Selection`` property array, followed by application of :py:class:`~ovito.modifiers.DeleteSelectedModifier` modifier, may lead to wrong results (OVITO 3.11.0 regression)
+
+.. sidebar::
+
   * `Download this version <https://www.ovito.org/download_history/#3.12.1>`__
 
 ----------------------------

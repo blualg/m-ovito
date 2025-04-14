@@ -387,6 +387,10 @@ public:
 
     ////////////////////////////// Data access management //////////////////////////////
 
+    /// Indicates that there currently exists an external memory access to this buffer's data.
+    /// This flag is set by the Python binding layer when a NumPy view is created that references this buffer's memory directly.
+    bool isBeingAccessedExternally() const { return _isBeingAccessedExternally.load(std::memory_order_acquire); }
+
     /// Informs the buffer object that a read accessor is becoming active.
     inline void prepareReadAccess() const {
 #ifdef OVITO_DEBUG
@@ -465,6 +469,10 @@ private:
     /// The data type of the array (a Qt metadata type identifier).
     int _dataType = QMetaType::Void;
 
+    /// Signals that a direct memory access to this buffer's memory is currently active.
+    /// This is set by the Python binding layer when a NumPy view is created that references this buffer's memory directly.
+    std::atomic<bool> _isBeingAccessedExternally{false};
+
     /// The number of bytes per single value.
     size_t _dataTypeSize = 0;
 
@@ -497,11 +505,11 @@ private:
     /// The number of non-zero entries in the array (if known).
     /// This field can provide a performance optimization if the number of
     /// selected elements is queried via nonzeroCount().
-    std::atomic<size_t> _nonzeroCount = std::numeric_limits<size_t>::max();
+    std::atomic<size_t> _nonzeroCount{std::numeric_limits<size_t>::max()};
 
     /// The MD5 checksum computed from the data elements.
     /// This field can provide a performance optimization if the checksum is queried via checksum().
-    std::array<std::atomic<std::uint64_t>, 2> _checksum = {std::uint64_t{0}, std::uint64_t{0}};
+    std::array<std::atomic<std::uint64_t>, 2> _checksum{{std::uint64_t{0}, std::uint64_t{0}}};
 
 #ifdef OVITO_USE_SYCL
     /// Flag indicating that new kernels have been scheduled for execution that read from the buffer.
@@ -521,6 +529,7 @@ private:
     bool _isDataInitialized = false;
 #endif
 
+    friend class RegisteredBufferAccess;
     template<typename BufferType, bool StrongReference, Ovito::access_mode accessmode> friend class detail::BufferAccessBase;
 #ifdef OVITO_USE_SYCL
     template<typename T, Ovito::access_mode AccessMode> friend class detail::SyclBufferAccessTyped;
