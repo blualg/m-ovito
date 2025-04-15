@@ -13,6 +13,7 @@ Version 3.12.2 (xx-yyy-2025)
 ----------------------------
 
 - |ovito-python| Bug fix: NumPy-view-based writes to ``Selection`` property array, followed by application of :py:class:`~ovito.modifiers.DeleteSelectedModifier` modifier, may lead to wrong results (OVITO 3.11.0 regression)
+- |ovito-pro| Suppress unnecessary Python code generation for :py:attr:`ComputePropertyModifier.neighbor_expressions <ovito.modifiers.ComputePropertyModifier.neighbor_expressions>` field if modifier is not set to operate on particles (OVITO 3.12.0 regression)
 
 .. sidebar::
 
