@@ -118,47 +118,117 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
                 if(line[0] == '/') {
                     break;
                 }
-                else if(boost::algorithm::starts_with(line, "celldm(1)")) {
-                    // Extract 'alat' parameter value.
-                    line += 9;
-                    if(*line == '=' || *line <= ' ') {
-                        if(sscanf(line, "= " FLOATTYPE_SCANF_STRING, &alat) != 1)
-                            throw Exception(tr("Invalid celldm(1) value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-                        alat *= bohr2angstrom;
+#if 1
+                static const QRegularExpression ibravRe(R"(ibrav\s*=\s*(\d+))");
+                QRegularExpressionMatch match = ibravRe.match(line);
+                if(match.hasMatch()) {
+                    bool ok;
+                    ibrav = match.captured(1).toInt(&ok);
+                    OVITO_ASSERT(ok);
+                }
+
+                static const QRegularExpression celldmRe(R"(celldm\(1\)\s*=\s*([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)))");
+                match = celldmRe.match(line);
+                if(match.hasMatch()) {
+                    bool ok;
+                    alat = match.captured(1).toDouble(&ok);
+                    alat *= bohr2angstrom;
+                    OVITO_ASSERT(ok);
+                }
+
+                static const QRegularExpression aRe(R"(A\s*=\s*(\d+))");
+                match = aRe.match(line);
+                if(match.hasMatch()) {
+                    bool ok;
+                    alat = match.captured(1).toDouble(&ok);
+                    OVITO_ASSERT(ok);
+                }
+
+                static const QRegularExpression natRe(R"(nat\s*=\s*(\d+))");
+                match = natRe.match(line);
+                if(match.hasMatch()) {
+                    bool ok;
+                    natoms = match.captured(1).toInt(&ok);
+                    OVITO_ASSERT(ok);
+                }
+
+                static const QRegularExpression ntypRe(R"(ntyp\s*=\s*(\d+))");
+                match = ntypRe.match(line);
+                if(match.hasMatch()) {
+                    bool ok;
+                    ntypes = match.captured(1).toInt(&ok);
+                    OVITO_ASSERT(ok);
+                }
+#else
+                constexpr static std::array<const char*, 5> keywords = {"ibrav", "A", "celldm(1)", "nat", "ntyp"};
+                const std::string_view line_sv(line);
+                for(size_t i = 0; i < keywords.size(); ++i) {
+                    const char* key = keywords[i];
+                    size_t keyPos = line_sv.find(key);
+                    if(keyPos != std::string::npos) {
+                        // Find the '=' character after the keyword.
+                        size_t eqPos = line_sv.find('=', keyPos);
+                        if(eqPos != std::string::npos) {
+                            // Start position for the value: after the equals sign.
+                            size_t valueStart = eqPos + 1;
+                            // Skip any whitespace.
+                            while(valueStart < line_sv.size() && std::isspace(line[valueStart])) {
+                                ++valueStart;
+                            }
+
+                            // Assume the value ends at a comma or at the end of the line.
+                            size_t valueEnd = line_sv.find_first_of(",\n", valueStart);
+                            if(valueEnd == std::string::npos) {
+                                valueEnd = line_sv.size();
+                            }
+
+                            std::string_view line_sv_sub = line_sv.substr(valueStart, valueEnd - valueStart);
+
+                            switch(i) {
+                                case 0:
+                                    if(std::from_chars(line_sv_sub.begin(), line_sv_sub.end(), ibrav).ec != std::errc{}) {
+                                        throw Exception(tr("Invalid 'ibrav' value in line %1 of QE file: %2")
+                                                            .arg(stream.lineNumber())
+                                                            .arg(stream.lineString()));
+                                    }
+                                    break;
+                                case 1:
+                                    // from_chars doesnt support doubles yet -> update later
+                                    if(sscanf(line_sv_sub.begin(), FLOATTYPE_SCANF_STRING, &alat) != 1) {
+                                        throw Exception(tr("Invalid 'A' value in line %1 of QE file: %2")
+                                                            .arg(stream.lineNumber())
+                                                            .arg(stream.lineString()));
+                                    }
+                                    break;
+                                case 2:
+                                    // from_chars doesnt support doubles yet -> update later
+                                    if(sscanf(line_sv_sub.begin(), FLOATTYPE_SCANF_STRING, &alat) != 1) {
+                                        throw Exception(tr("Invalid 'celldm(1)' value in line %1 of QE file: %2")
+                                                            .arg(stream.lineNumber())
+                                                            .arg(stream.lineString()));
+                                    }
+                                    alat *= bohr2angstrom;
+                                    break;
+                                case 3:
+                                    if(std::from_chars(line_sv_sub.begin(), line_sv_sub.end(), natoms).ec != std::errc{}) {
+                                        throw Exception(tr("Invalid 'nat' value in line %1 of QE file: %2")
+                                                            .arg(stream.lineNumber())
+                                                            .arg(stream.lineString()));
+                                    }
+                                    break;
+                                case 4:
+                                    if(std::from_chars(line_sv_sub.begin(), line_sv_sub.end(), ntypes).ec != std::errc{}) {
+                                        throw Exception(tr("Invalid 'ntyp' value in line %1 of QE file: %2")
+                                                            .arg(stream.lineNumber())
+                                                            .arg(stream.lineString()));
+                                    }
+                                    break;
+                                default: OVITO_ASSERT(false); break;
+                            }
+                        }
                     }
                 }
-                else if(boost::algorithm::starts_with(line, "A")) {
-                    // Extract 'alat' parameter value.
-                    line += 1;
-                    if(*line == '=' || *line <= ' ') {
-                        if(sscanf(line, "= " FLOATTYPE_SCANF_STRING, &alat) != 1)
-                            throw Exception(tr("Invalid A value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-                    }
-                }
-                else if(boost::algorithm::starts_with(line, "nat")) {
-                    // Extract 'nat' parameter value.
-                    line += 3;
-                    if(*line == '=' || *line <= ' ') {
-                        if(sscanf(line, "=%i" , &natoms) != 1 || natoms <= 0)
-                            throw Exception(tr("Invalid 'nat' value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-                    }
-                }
-                else if(boost::algorithm::starts_with(line, "ntyp")) {
-                    // Extract 'ntyp' parameter value.
-                    line += 4;
-                    if(*line == '=' || *line <= ' ') {
-                        if(sscanf(line, "=%i" , &ntypes) != 1 || ntypes <= 0)
-                            throw Exception(tr("Invalid 'ntyp' value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-                    }
-                }
-                else if(boost::algorithm::starts_with(line, "ibrav")) {
-                    // Extract 'ibrav' parameter value.
-                    line += 5;
-                    if(*line == '=' || *line <= ' ') {
-                        if(sscanf(line, "=%i" , &ibrav) != 1)
-                            throw Exception(tr("Invalid 'ibrav' value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-                    }
-                }
+#endif
             }
             continue;
         }

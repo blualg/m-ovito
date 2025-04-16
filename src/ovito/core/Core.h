@@ -40,6 +40,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <charconv>
 #include <forward_list>
 #include <functional>
 #include <iostream>
