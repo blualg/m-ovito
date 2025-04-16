@@ -15,6 +15,7 @@ Version 3.13.0 (xx-xxx-2025)
 - :ref:`particles.modifiers.histogram` modifier: Added new option to select the bin normalization mode: (1) absolute count, (2) relative frequency, (3) probability density
 - :ref:`particles.modifiers.freeze_property` modifier: Added support for simulations with varying number of particles.
   The modifier now provides a new option to handle previously unknown particles that were not present in the initial simulation frame.
+- Allow for more flexible syntax in the Quantum Espresso file reader (`forum post <https://www.ovito.org/forum/topic/quantum-espresso-output/#postid-5009>`__ )
 
 .. sidebar::
 
