@@ -411,8 +411,20 @@ void XYZImporter::FrameLoader::loadFile()
     }
 
     // If this is an extended XYZ file, extract the column mapping from the comment line.
-    if(_columnMapping.empty())
+    if(_columnMapping.empty()) {
         _columnMapping = parseExtendedXYZColumnSpecification(commentLine);
+    }
+    else {
+        // If the user has specified a column mapping, override the data types of user-defined columns
+        // with the types specified in the file. This is to prevent situations where an invalid data type conversion
+        // would be attempted when reading the file (e.g. reading a Bool column into a floating point property).
+        InputColumnMapping detectedMapping = parseExtendedXYZColumnSpecification(commentLine);
+        for(int i = 0; i < _columnMapping.size() && i < detectedMapping.size(); i++) {
+            if(_columnMapping[i].isMapped() && detectedMapping[i].isMapped()) {
+                _columnMapping[i].dataType = detectedMapping[i].dataType;
+            }
+        }
+    }
 
     // In script mode, assume standard set of XYZ columns unless the user has specified otherwise or
     // the file constains column metadata.
