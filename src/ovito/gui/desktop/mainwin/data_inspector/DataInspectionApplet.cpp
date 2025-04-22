@@ -106,7 +106,7 @@ QListWidget* DataInspectionApplet::objectSelectionWidget()
 
                 // Draw first line of text.
                 options.rect.adjust(0, 4, 0, -4);
-                options.backgroundBrush = {};
+                options.backgroundBrush = QBrush();
 #ifndef Q_OS_WIN
                 // Override text color for highlighted items.
                 if(options.state & QStyle::State_Selected)
@@ -114,7 +114,7 @@ QListWidget* DataInspectionApplet::objectSelectionWidget()
 #endif
                 options.state.setFlag(QStyle::State_Selected, false);
                 options.state.setFlag(QStyle::State_MouseOver, false);
-                options.icon = {};
+                options.icon = QIcon();
                 options.displayAlignment = Qt::AlignLeft | Qt::AlignTop;
                 options.font = _font1;
                 options.text = std::move(text);
