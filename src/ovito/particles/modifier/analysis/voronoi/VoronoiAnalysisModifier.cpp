@@ -917,7 +917,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::applyResults(PipelineFlowSt
                         "This may be a result of particles being located outside of the simulation box boundaries. "
                         "See user manual for more information.\n"
                         "Simulation box volume: %1\n"
-                        "Voronoi cell volume sum: %2").arg(_simulationBoxVolume).arg(voronoiVolumeSum())));
+                        "Voronoi cell volume sum: %2").arg(_simulationBoxVolume).arg(voronoiVolumeSum().load())));
     }
 
     if(_computeBonds) {
