@@ -9,11 +9,12 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.12.2>`__
 
 ----------------------------
-Version 3.12.2 (xx-yyy-2025)
+Version 3.12.2 (23-Apr-2025)
 ----------------------------
 
 - The *file column mapping* dialog now includes a context menu function for toggling the checked state of multiple columns at once
-- |ovito-python| Bug fix: Writes to a NumPy view of the ``Selection`` property array, followed by application of :py:class:`~ovito.modifiers.DeleteSelectedModifier` modifier, may lead to wrong results (OVITO 3.11.0 regression)
+- Bug fix: Crash in the *Particles* tab of the application settings dialog when using the "Restore built-in defaults" function (OVITO 3.11.0 regression)
+- |ovito-python| Bug fix: Writes to a NumPy view of the ``Selection`` property array, followed by an application of the :py:class:`~ovito.modifiers.DeleteSelectedModifier` modifier, may lead to wrong results (OVITO 3.11.0 regression)
 - |ovito-pro| Suppress unnecessary Python code generation for :py:attr:`ComputePropertyModifier.neighbor_expressions <ovito.modifiers.ComputePropertyModifier.neighbor_expressions>` field if modifier is not set to operate on particles (OVITO 3.12.0 regression)
 
 .. sidebar::
