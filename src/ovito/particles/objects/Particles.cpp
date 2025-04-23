@@ -119,7 +119,7 @@ const Bonds* Particles::expectBonds() const
 }
 
 /******************************************************************************
-* Convinience method that makes sure that there is a Bonds and the
+* Convenience method that makes sure that there is a Bonds and the
 * bond topology property. Throws an exception if there isn't.
 ******************************************************************************/
 const Property* Particles::expectBondsTopology() const

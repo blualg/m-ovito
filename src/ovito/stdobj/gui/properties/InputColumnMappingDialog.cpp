@@ -52,8 +52,8 @@ InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const
 
     QLabel* captionLabel = new QLabel(
         !fileName.isEmpty() ?
-            tr("Please specify how to map the data columns of the input file '%1' to OVITO properties.").arg(fileName) :
-            tr("Please specify how to map the file columns to OVITO properties."));
+            tr("Please specify how to map the data columns of the input file '%1' to properties in OVITO.").arg(fileName) :
+            tr("Please specify how to map the file columns to properties in OVITO."));
     captionLabel->setWordWrap(true);
     layout->addWidget(captionLabel);
     layout->addSpacing(10);
@@ -74,6 +74,7 @@ InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const
     horizontalHeaders << tr("Component");
     _tableWidget->setHorizontalHeaderLabels(horizontalHeaders);
     _tableWidget->setEditTriggers(QAbstractItemView::AllEditTriggers);
+    _tableWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     _tableWidget->horizontalHeader()->setSectionResizeMode(FILE_COLUMN_COLUMN, QHeaderView::ResizeToContents);
     _tableWidget->horizontalHeader()->setSectionResizeMode(PROPERTY_COLUMN, QHeaderView::Stretch);
@@ -81,6 +82,19 @@ InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const
 
     _tableWidget->verticalHeader()->setVisible(false);
     _tableWidget->setShowGrid(false);
+
+    connect(_tableWidget, &QTableWidget::clicked, this, &InputColumnMappingDialog::fileColumnClicked);
+    _toggleSelectedAction = new QAction(tr("Toggle selected"), this);
+    _toggleSelectedAction->setEnabled(false);
+    connect(_toggleSelectedAction, &QAction::triggered, this, &InputColumnMappingDialog::toggleSelected);
+    connect(_tableWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, [this]() {
+        _toggleSelectedAction->setEnabled(_tableWidget->selectionModel()->hasSelection());
+    });
+    // Show action in a context menu:
+    _tableWidget->addAction(_toggleSelectedAction);
+    _tableWidget->setContextMenuPolicy(Qt::ActionsContextMenu);
+    _tableWidget->horizontalHeader()->addAction(_toggleSelectedAction);
+    _tableWidget->horizontalHeader()->setContextMenuPolicy(Qt::ActionsContextMenu);
 
     layout->addSpacing(6);
     layout->addWidget(_fileExcerptLabel = new QLabel(tr("File excerpt:")));
@@ -131,21 +145,20 @@ void InputColumnMappingDialog::setMapping(const InputColumnMapping& mapping)
     OVITO_ASSERT(mapping.containerClass() == _containerClass);
 
     _tableWidget->clearContents();
-    _fileColumnBoxes.clear();
     _propertyBoxes.clear();
     _vectorComponentBoxes.clear();
     _propertyDataTypes.clear();
 
     _tableWidget->setRowCount(mapping.size());
     for(int i = 0; i < (int)mapping.size(); i++) {
-        QCheckBox* fileColumnItem = new QCheckBox();
+        QTableWidgetItem* fileColumnItem = new QTableWidgetItem();
         if(mapping[i].columnName.isEmpty())
             fileColumnItem->setText(tr("Column %1").arg(i+1));
         else
             fileColumnItem->setText(mapping[i].columnName);
-        fileColumnItem->setChecked(mapping[i].isMapped());
-        _tableWidget->setCellWidget(i, FILE_COLUMN_COLUMN, fileColumnItem);
-        _fileColumnBoxes.push_back(fileColumnItem);
+        fileColumnItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        fileColumnItem->setCheckState(mapping[i].isMapped() ? Qt::Checked : Qt::Unchecked);
+        _tableWidget->setItem(i, FILE_COLUMN_COLUMN, fileColumnItem);
 
         QComboBox* nameItem = new QComboBox();
         nameItem->setEditable(true);
@@ -158,6 +171,11 @@ void InputColumnMappingDialog::setMapping(const InputColumnMapping& mapping)
         _tableWidget->setCellWidget(i, PROPERTY_COLUMN, nameItem);
         _propertyBoxes.push_back(nameItem);
 
+        // Make table items not selectable.
+        QTableWidgetItem* nameColumnItem = new QTableWidgetItem();
+        nameColumnItem->setFlags(Qt::ItemIsEnabled);
+        _tableWidget->setItem(i, PROPERTY_COLUMN, nameColumnItem);
+
         QComboBox* vectorComponentItem = new QComboBox();
         _tableWidget->setCellWidget(i, VECTOR_COMPNT_COLUMN, vectorComponentItem);
         _vectorComponentBoxes.push_back(vectorComponentItem);
@@ -165,11 +183,13 @@ void InputColumnMappingDialog::setMapping(const InputColumnMapping& mapping)
         if(vectorComponentItem->count() != 0)
             vectorComponentItem->setCurrentIndex(std::max(0, mapping[i].property.componentIndex(_containerClass)));
 
-        connect(fileColumnItem, &QCheckBox::clicked, nameItem, &QComboBox::setEnabled);
-        _vectorCmpntSignalMapper->setMapping(fileColumnItem, i);
+        // Make table items not selectable.
+        QTableWidgetItem* cmpntColumnItem = new QTableWidgetItem();
+        cmpntColumnItem->setFlags(Qt::ItemIsEnabled);
+        _tableWidget->setItem(i, VECTOR_COMPNT_COLUMN, cmpntColumnItem);
+
         _vectorCmpntSignalMapper->setMapping(nameItem, i);
-        connect(fileColumnItem, &QCheckBox::clicked, _vectorCmpntSignalMapper, (void (QSignalMapper::*)())&QSignalMapper::map);
-        connect(nameItem, &QComboBox::currentTextChanged, _vectorCmpntSignalMapper, (void (QSignalMapper::*)())&QSignalMapper::map);
+        connect(nameItem, &QComboBox::currentTextChanged, _vectorCmpntSignalMapper, qOverload<>(&QSignalMapper::map));
 
         _propertyDataTypes.push_back(mapping[i].dataType != QMetaType::Void ? mapping[i].dataType : Property::FloatDefault);
     }
@@ -188,6 +208,37 @@ void InputColumnMappingDialog::setMapping(const InputColumnMapping& mapping)
 }
 
 /******************************************************************************
+ * Called when the user clicks on an item in the table column for file columns.
+ *****************************************************************************/
+void InputColumnMappingDialog::fileColumnClicked(const QModelIndex& index)
+{
+    if(index.column() == FILE_COLUMN_COLUMN) {
+        if(QTableWidgetItem* item = _tableWidget->item(index.row(), index.column())) {
+            QList<QTableWidgetItem*> selectedItems = _tableWidget->selectedItems();
+            if(selectedItems.size() == 1 && selectedItems[0] == item) { // Only toggle the check state if the user is not trying to select multiple items.
+                item->setCheckState(item->checkState() == Qt::Checked ? Qt::Unchecked : Qt::Checked);
+                _propertyBoxes[index.row()]->setEnabled(item->checkState() == Qt::Checked);
+                updateVectorComponentList(index.row());
+            }
+        }
+    }
+}
+
+/******************************************************************************
+ * Called when the user has triggered the action to toggle the selected file columns.
+ *****************************************************************************/
+void InputColumnMappingDialog::toggleSelected()
+{
+    for(QTableWidgetItem* item : _tableWidget->selectedItems()) {
+        if(item->column() == FILE_COLUMN_COLUMN) {
+            item->setCheckState(item->checkState() == Qt::Checked ? Qt::Unchecked : Qt::Checked);
+            _propertyBoxes[item->row()]->setEnabled(item->checkState() == Qt::Checked);
+            updateVectorComponentList(item->row());
+        }
+    }
+}
+
+/******************************************************************************
  * Updates the list of vector components for the given file column.
  *****************************************************************************/
 void InputColumnMappingDialog::updateVectorComponentList(int columnIndex)
@@ -202,7 +253,7 @@ void InputColumnMappingDialog::updateVectorComponentList(int columnIndex)
         _vectorComponentBoxes[columnIndex]->clear();
         for(const QString& name : _containerClass->standardPropertyComponentNames(standardProperty))
             vecBox->addItem(name);
-        vecBox->setEnabled(_fileColumnBoxes[columnIndex]->isChecked() && vecBox->count() != 0);
+        vecBox->setEnabled(_tableWidget->item(columnIndex, FILE_COLUMN_COLUMN)->checkState() == Qt::Checked && vecBox->count() != 0);
         if(oldIndex >= 0)
             vecBox->setCurrentIndex(std::min(oldIndex, vecBox->count()-1));
     }
@@ -220,8 +271,9 @@ InputColumnMapping InputColumnMappingDialog::mapping() const
     InputColumnMapping mapping(_containerClass);
     mapping.resize(_tableWidget->rowCount());
     for(int index = 0; index < (int)mapping.size(); index++) {
-        mapping[index].columnName = _fileColumnBoxes[index]->text();
-        if(_fileColumnBoxes[index]->isChecked()) {
+        QTableWidgetItem* fileColumnItem = _tableWidget->item(index, FILE_COLUMN_COLUMN);
+        mapping[index].columnName = fileColumnItem->text();
+        if(fileColumnItem->checkState() == Qt::Checked) {
             QString propertyName = _propertyBoxes[index]->currentText().trimmed();
             int typeId = _containerClass->standardPropertyTypeId(propertyName);
             if(typeId != Property::GenericUserProperty) {
@@ -330,7 +382,7 @@ void InputColumnMappingDialog::onLoadPreset()
         OVITO_ASSERT(mapping.containerClass() == _containerClass);
 
         for(int index = 0; index < (int)mapping.size() && index < _tableWidget->rowCount(); index++) {
-            _fileColumnBoxes[index]->setChecked(mapping[index].isMapped());
+            _tableWidget->item(index, FILE_COLUMN_COLUMN)->setCheckState(mapping[index].isMapped() ? Qt::Checked : Qt::Unchecked);
             _propertyBoxes[index]->setCurrentText(mapping[index].property.name().toString());
             _propertyBoxes[index]->setEnabled(mapping[index].isMapped());
             updateVectorComponentList(index);
@@ -338,7 +390,7 @@ void InputColumnMappingDialog::onLoadPreset()
                 _vectorComponentBoxes[index]->setCurrentIndex(std::max(0, mapping[index].property.componentIndex(_containerClass)));
         }
         for(int index = mapping.size(); index < _tableWidget->rowCount(); index++) {
-            _fileColumnBoxes[index]->setChecked(false);
+            _tableWidget->item(index, FILE_COLUMN_COLUMN)->setCheckState(Qt::Unchecked);
             _propertyBoxes[index]->setCurrentText(QString());
             _propertyBoxes[index]->setEnabled(false);
             updateVectorComponentList(index);

@@ -16,6 +16,20 @@ Version 3.13.0 (xx-xxx-2025)
 - :ref:`particles.modifiers.freeze_property` modifier: Added support for simulations with varying number of particles.
   The modifier now provides a new option to handle previously unknown particles that were not present in the initial simulation frame.
 - Allow for more flexible syntax in the Quantum Espresso file reader (`forum post <https://www.ovito.org/forum/topic/quantum-espresso-output/#postid-5009>`__ )
+  * `Download this version <https://www.ovito.org/download_history/#3.12.2>`__
+
+.. sidebar::
+
+  * `Download this version <https://www.ovito.org/download_history/#3.12.2>`__
+
+----------------------------
+Version 3.12.2 (23-Apr-2025)
+----------------------------
+
+- The *file column mapping* dialog now includes a context menu function for toggling the checked state of multiple columns at once
+- Bug fix: Crash in the *Particles* tab of the application settings dialog when using the "Restore built-in defaults" function (OVITO 3.11.0 regression)
+- |ovito-python| Bug fix: Writes to a NumPy view of the ``Selection`` property array, followed by an application of the :py:class:`~ovito.modifiers.DeleteSelectedModifier` modifier, may lead to wrong results (OVITO 3.11.0 regression)
+- |ovito-pro| Suppress unnecessary Python code generation for :py:attr:`ComputePropertyModifier.neighbor_expressions <ovito.modifiers.ComputePropertyModifier.neighbor_expressions>` field if modifier is not set to operate on particles (OVITO 3.12.0 regression)
 
 .. sidebar::
 

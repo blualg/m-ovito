@@ -78,7 +78,7 @@ OORef<RefTarget> Property::clone(bool deepCopy, CloneHelper& cloneHelper) const
     finishReadAccess();
 
 #ifdef OVITO_USE_SYCL
-    if(isBeingAccessedFromPython()) {
+    if(isBeingAccessedExternally()) {
         // Force flush SYCL queue to complete the memcpy to the cloned data buffer now.
         // That's needed because Python code may be performing subsequent writes to the old memory buffer that will go unnoticed by
         // SYCL. We need to make sure these happen after the memcpy is completed, because a direct write access to the array should never
@@ -106,7 +106,7 @@ void Property::propertyChanged(const PropertyFieldDescriptor* field)
     DataBuffer::propertyChanged(field);
 
     if(field == PROPERTY_FIELD(DataObject::identifier) && title().isEmpty()) {
-        // Since the idenfifier is the property's name, the property's title potentially changes too.
+        // Since the identifier is the property's name, the property's title potentially changes too.
         notifyDependents(ReferenceEvent::TitleChanged);
     }
 }

@@ -116,9 +116,11 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     clone->_stride = _stride;
     clone->_componentCount = _componentCount;
     clone->_componentNames = _componentNames;
-    clone->_nonzeroCount.store(_nonzeroCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    for(size_t i = 0; i < _checksum.size(); i++)
-        clone->_checksum[i].store(_checksum[i].load(std::memory_order_relaxed), std::memory_order_relaxed);
+    if(!isBeingAccessedExternally()) {
+        clone->_nonzeroCount.store(_nonzeroCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+        for(size_t i = 0; i < _checksum.size(); i++)
+            clone->_checksum[i].store(_checksum[i].load(std::memory_order_relaxed), std::memory_order_relaxed);
+    }
 #ifdef OVITO_DEBUG
     clone->_isDataInitialized = _isDataInitialized;
 #endif
@@ -957,7 +959,7 @@ void DataBuffer::copyFromAndConvert(const DataBuffer& source)
     _isDataInitialized = true;
 #endif
 
-    // Copy values and perform data type convertion.
+    // Copy values and perform data type conversion.
     if(size() != 0) {
         WriteAccess writeAccess(*this);
         forAnyType([&](auto _) {
@@ -990,7 +992,7 @@ void DataBuffer::fillZero()
     RawBufferAccess<access_mode::discard_write> writeAccess(this);
     std::memset(writeAccess.data(), 0, this->size() * this->stride());
 #endif
-    setNonzeroCount(size());
+    setNonzeroCount(0);
 }
 
 /******************************************************************************
@@ -1111,15 +1113,26 @@ size_t DataBuffer::nonzeroCount() const
     OVITO_ASSERT(this);
     OVITO_ASSERT(componentCount() == 1);
 
-    if(_nonzeroCount.load(std::memory_order_relaxed) == std::numeric_limits<size_t>::max()) {
+    auto count = _nonzeroCount.load(std::memory_order_relaxed);
+
+    if(count == std::numeric_limits<size_t>::max() || isBeingAccessedExternally()) {
         forAnyType([&](auto _) {
             using T = decltype(_);
-            const_cast<DataBuffer*>(this)->setNonzeroCount(this->size() - this->count<T>(0));
+            count = this->size() - this->count<T>(0);
         });
+        const_cast<DataBuffer*>(this)->setNonzeroCount(count);
+    }
+    else {
+#ifdef OVITO_DEBUG
+        forAnyType([&](auto _) {
+            using T = decltype(_);
+            OVITO_ASSERT(this->size() - this->count<T>(0) == count);
+        });
+#endif
     }
 
-    OVITO_ASSERT(_nonzeroCount.load(std::memory_order_relaxed) <= size());
-    return _nonzeroCount.load(std::memory_order_relaxed);
+    OVITO_ASSERT(count <= size());
+    return count;
 }
 
 /******************************************************************************
@@ -1129,7 +1142,12 @@ DataBuffer::Checksum DataBuffer::checksum() const
 {
     OVITO_ASSERT(this);
 
-    if(size() != 0 && _checksum[0].load(std::memory_order_relaxed) == 0 && _checksum[1].load(std::memory_order_relaxed) == 0) {
+    if(size() == 0)
+        return { 0, 0 };
+
+    auto a = _checksum[0].load(std::memory_order_relaxed);
+    auto b = _checksum[1].load(std::memory_order_relaxed);
+    if((a == 0 && b == 0) || isBeingAccessedExternally()) {
         ReadAccess readAccess(*this);
 
         // Compute MD5 hash of the buffer's data.
@@ -1145,13 +1163,15 @@ DataBuffer::Checksum DataBuffer::checksum() const
         // Cache checksum in the DataBuffer object for future use.
         // The cached checksum will be invalidated by the invalidateCachedInfo() method when the buffer's data is modified.
         auto c = reinterpret_cast<const Checksum::value_type*>(hash.resultView().constData());
-        for(size_t i = 0; i < _checksum.size(); i++, c++)
-            const_cast<DataBuffer*>(this)->_checksum[i].store(*c, std::memory_order_relaxed);
+        a = c[0];
+        b = c[1];
+        OVITO_ASSERT(a != 0 || b != 0); // Most likely!
 
-        OVITO_ASSERT(_checksum[0].load(std::memory_order_relaxed) != 0 || _checksum[1].load(std::memory_order_relaxed) != 0);
+        const_cast<DataBuffer*>(this)->_checksum[0].store(a, std::memory_order_relaxed);
+        const_cast<DataBuffer*>(this)->_checksum[1].store(b, std::memory_order_relaxed);
     }
 
-    return { _checksum[0].load(std::memory_order_relaxed), _checksum[1].load(std::memory_order_relaxed) };
+    return { a, b };
 }
 
 #ifdef OVITO_USE_SYCL
