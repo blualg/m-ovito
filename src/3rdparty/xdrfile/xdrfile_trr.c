@@ -385,7 +385,7 @@ static int do_trn(XDRFILE *xd, mybool bRead, int *step, float *t, float *lambda,
  *
  ************************************************************/
 
-int read_trr_natoms(char *fn, int *natoms) {
+int read_trr_natoms(const char *fn, int *natoms) {
   XDRFILE *xd;
   t_trnheader sh;
   int result;

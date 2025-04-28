@@ -6,7 +6,17 @@ Changelog
 
 .. sidebar::
 
-  * `Download this version <https://www.ovito.org/download_history/#3.12.2>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.12.3>`__
+
+----------------------------
+Version 3.12.3 (DD-MMM-2025)
+----------------------------
+
+- Add support for GROMACS TRR file format
+
+.. sidebar::
+
+  * `Download this version <https://www.ovito.org/download_history/#3.12.1>`__
 
 ----------------------------
 Version 3.12.2 (23-Apr-2025)

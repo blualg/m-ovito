@@ -2,7 +2,7 @@
  *
  * $Id$
  *
- /* -*- mode: c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*-
+ * -*- mode: c; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*-
  *
  * $Id$
  *
@@ -70,7 +70,7 @@ typedef struct /* This struct describes the order and the   */
 } t_trnheader;
 
 /* This function returns the number of atoms in the trr file in *natoms */
-extern int read_trr_natoms(char *fn, int *natoms);
+extern int read_trr_natoms(const char* fn, int* natoms);
 
 /* Read one frame of an open trr file. If either of x,v,f,box are
    NULL the arrays will be read from the file but not used.  */

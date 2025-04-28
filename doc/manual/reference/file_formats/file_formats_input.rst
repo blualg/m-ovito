@@ -18,6 +18,7 @@ Input file formats
   input/lammps_dump_local
   input/poscar
   input/reaxff
+  input/trr
   input/xtc
   input/xyz
 
@@ -84,6 +85,11 @@ OVITO can read the following file formats:
     - Trajectory file format used by the `GROMACS <http://www.gromacs.org/>`__ simulation code.
     - :ref:`particles <scene_objects.particles>`
     - :ref:`Details <file_formats.input.xtc>`
+
+  * - Gromacs TRR
+    - Trajectory file format used by the `GROMACS <http://www.gromacs.org/>`__ simulation code.
+    - :ref:`particles <scene_objects.particles>`
+    - :ref:`Details <file_formats.input.trr>`
 
   * - DCD
     - Trajectory file format written by the CHARMM, NAMD, and LAMMPS simulation codes.

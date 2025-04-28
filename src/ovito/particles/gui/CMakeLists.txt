@@ -72,6 +72,7 @@ OVITO_STANDARD_PLUGIN(ParticlesGui
         import/cif/mmCIFImporterEditor.cpp
         import/gromacs/GroImporterEditor.cpp
         import/gromacs/XTCImporterEditor.cpp
+        import/gromacs/TRRImporterEditor.cpp
         import/dcd/DCDImporterEditor.cpp
         import/vasp/POSCARImporterEditor.cpp
         import/xyz/XYZImporterEditor.cpp
