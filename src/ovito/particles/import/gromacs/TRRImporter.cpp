@@ -95,7 +95,6 @@ public:
         int returnCode = read_trr(_file, _numAtoms, &frame.step, &frame.time, &frame.lambda, reinterpret_cast<matrix&>(frame.cell),
                                   reinterpret_cast<rvec*>(frame.xyz.data()), reinterpret_cast<rvec*>(frame.velocity.data()),
                                   reinterpret_cast<rvec*>(frame.force.data()), &frame.hasProp);
-
         if(returnCode != exdrOK && returnCode != exdrENDOFFILE)
             throw Exception(TRRImporter::tr("Error reading TRR file (code %1).").arg(returnCode));
         if(returnCode == exdrENDOFFILE) _eof = true;

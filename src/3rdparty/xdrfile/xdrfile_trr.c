@@ -69,8 +69,7 @@ int do_trnheader(XDRFILE *xd, mybool bRead, t_trnheader *sh) {
   char *version = "GMX_trn_file";
   char buf[BUFSIZE];
 
-  if (xdrfile_read_int(&magic, 1, xd) != 1)
-    return exdrINT;
+  if(xdrfile_read_int(&magic, 1, xd) != 1) return exdrENDOFFILE;
 
   if (bRead) {
     if (xdrfile_read_int(&slen, 1, xd) != 1)
