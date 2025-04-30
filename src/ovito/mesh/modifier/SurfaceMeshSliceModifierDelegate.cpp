@@ -50,12 +50,16 @@ Future<PipelineFlowState> SurfaceMeshSliceModifierDelegate::apply(const Modifier
             state = std::move(state),
             plane, sliceWidth,
             invert = modifier->inverse(),
-            createSelection = modifier->createSelection()]() mutable {
+            createSelection = modifier->createSelection(),
+            sliceModifierNode = request.modificationNodeWeak()]() mutable {
 
         QString statusMessage;
 
         for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            if(const SurfaceMesh* inputMesh = dynamic_object_cast<SurfaceMesh>(state.data()->objects()[i])) {
+            const DataObject* object = state.data()->objects()[i];
+            if(object->createdByNode() == sliceModifierNode)
+                continue; // Leave meshes alone that were created by the slice modifier, e.g. from the VoxelGridSliceModifierDelegate.
+            if(const SurfaceMesh* inputMesh = dynamic_object_cast<SurfaceMesh>(object)) {
                 inputMesh->verifyMeshIntegrity();
                 SurfaceMesh* outputMesh = state.makeMutable(inputMesh);
                 if(!createSelection) {
