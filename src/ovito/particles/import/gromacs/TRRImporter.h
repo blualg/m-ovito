@@ -42,9 +42,8 @@ class OVITO_PARTICLES_EXPORT TRRImporter : public ParticleImporter
         using ParticleImporter::OOMetaClass::OOMetaClass;
 
         /// Returns the list of file formats that can be read by this importer class.
-        virtual std::span<const SupportedFormat> supportedFormats() const override
-        {
-            static const std::array<SupportedFormat, 2> formats = {{QStringLiteral("*.trr"), tr("Gromacs Trajectory Files")}};
+        virtual std::span<const SupportedFormat> supportedFormats() const override {
+            static const SupportedFormat formats[] = {{QStringLiteral("*.trr"), tr("Gromacs Trajectory Files")}};
             return formats;
         }
 

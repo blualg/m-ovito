@@ -44,7 +44,7 @@ ImportFileDialog::ImportFileDialog(const std::vector<const FileImporterClass*>& 
     for(const auto& importerClass : importerTypes) {
         for(const FileImporterClass::SupportedFormat& format : importerClass->supportedFormats()) {
             OVITO_ASSERT(!format.description.isEmpty() && !format.fileFilter.isEmpty());
-            fileFilterStrings << QString("%1 (%2)").arg(format.description, format.fileFilter);
+            fileFilterStrings << QStringLiteral("%1 (%2)").arg(format.description, format.fileFilter);
             _importerFormats.emplace_back(importerClass, format.identifier);
         }
     }
