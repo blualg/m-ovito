@@ -54,12 +54,15 @@ public:
 
     class FacetCirculator {
     public:
+        FacetCirculator(const DelaunayTessellation& tess, CellHandle cell, int i, int j) :
+            _tess(tess), _pos(cell), _s(tess.cellVertex(cell, i)), _t(tess.cellVertex(cell, j)) {}
+
         FacetCirculator(const DelaunayTessellation& tess, CellHandle cell, int s, int t, CellHandle start, int f) :
             _tess(tess), _s(tess.cellVertex(cell, s)), _t(tess.cellVertex(cell, t)) {
-            int i = tess.index(start, _s);
-            int j = tess.index(start, _t);
+            int i = tess.localVertexIndex(start, _s);
+            int j = tess.localVertexIndex(start, _t);
 
-            OVITO_ASSERT( f!=i && f!=j );
+            OVITO_ASSERT(f != i && f != j);
 
             if(f == next_around_edge(i,j))
                 _pos = start;
@@ -67,7 +70,7 @@ public:
                 _pos = tess.cellAdjacent(start, f); // other cell with same facet
         }
         FacetCirculator& operator--() {
-            _pos = _tess.cellAdjacent(_pos, next_around_edge(_tess.index(_pos, _t), _tess.index(_pos, _s)));
+            _pos = _tess.cellAdjacent(_pos, next_around_edge(_tess.localVertexIndex(_pos, _t), _tess.localVertexIndex(_pos, _s)));
             return *this;
         }
         FacetCirculator operator--(int) {
@@ -75,8 +78,8 @@ public:
             --(*this);
             return tmp;
         }
-        FacetCirculator & operator++() {
-            _pos = _tess.cellAdjacent(_pos, next_around_edge(_tess.index(_pos, _s), _tess.index(_pos, _t)));
+        FacetCirculator& operator++() {
+            _pos = _tess.cellAdjacent(_pos, next_around_edge(_tess.localVertexIndex(_pos, _s), _tess.localVertexIndex(_pos, _t)));
             return *this;
         }
         FacetCirculator operator++(int) {
@@ -85,10 +88,10 @@ public:
             return tmp;
         }
         Facet operator*() const {
-            return Facet(_pos, next_around_edge(_tess.index(_pos, _s), _tess.index(_pos, _t)));
+            return Facet(_pos, next_around_edge(_tess.localVertexIndex(_pos, _s), _tess.localVertexIndex(_pos, _t)));
         }
         Facet operator->() const {
-            return Facet(_pos, next_around_edge(_tess.index(_pos, _s), _tess.index(_pos, _t)));
+            return Facet(_pos, next_around_edge(_tess.localVertexIndex(_pos, _s), _tess.localVertexIndex(_pos, _t)));
         }
         bool operator==(const FacetCirculator& ccir) const
         {
@@ -104,12 +107,13 @@ public:
         VertexHandle _s;
         VertexHandle _t;
         CellHandle _pos;
-        static int next_around_edge(int i, int j) {
-            static const int tab_next_around_edge[4][4] = {
+
+        static constexpr int next_around_edge(int i, int j) {
+            constexpr int tab_next_around_edge[4][4] = {
                   {5, 2, 3, 1},
                   {3, 5, 0, 2},
                   {1, 3, 5, 0},
-                  {2, 0, 1, 5} };
+                  {2, 0, 1, 5}};
             return tab_next_around_edge[i][j];
         }
     };
@@ -117,11 +121,14 @@ public:
     /// Generates the Delaunay tessellation.
     void generateTessellation(const SimulationCell* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, TaskProgress& progress);
 
-    /// Returns the total number of tetrahedra in the tessellation.
+    /// Returns the total number of tetrahedra in the tessellation, including ghost tetrahedra and infinite tetrahedra.
     size_type numberOfTetrahedra() const { return _dt->nb_cells(); }
 
-    /// Returns the number of finite cells in the primary image of the simulation cell.
+    /// Returns the number of finite cells, which belong to the primary image of the simulation cell.
     size_type numberOfPrimaryTetrahedra() const { return _numPrimaryTetrahedra; }
+
+    /// Returns the number of Delaunay vertices in the tessellation, including ghost vertices.
+    size_type numberOfVertices() const { return _dt->nb_vertices(); }
 
     /// Returns the beginning of the iterator range over all Delaunay tetrahedra.
     CellIterator begin_cells() const { return boost::make_counting_iterator<size_type>(0); }
@@ -133,95 +140,131 @@ public:
     auto cells() const { return boost::make_iterator_range(begin_cells(), end_cells()); }
 
     void setCellIndex(CellHandle cell, qint64 value) {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         _cellInfo[cell].index = value;
     }
 
     qint64 getCellIndex(CellHandle cell) const {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         return _cellInfo[cell].index;
     }
 
     void setUserField(CellHandle cell, int value) {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         _cellInfo[cell].userField = value;
     }
 
     int getUserField(CellHandle cell) const {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         return _cellInfo[cell].userField;
     }
 
-    /// Returns whether the given tessellation cell connects four physical vertices.
+    /// Determines whether the given tessellation cell connects four physical vertices.
     /// Returns false if one of the four vertices is the infinite vertex.
     bool isFiniteCell(CellHandle cell) const {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         return _dt->cell_is_finite(cell);
     }
 
-    bool isGhostCell(CellHandle cell) const {
-        return _cellInfo[cell].isGhost;
-    }
-
+    /// Determines whether the given Delaunay vertex is a ghost vertex or a primary vertex.
+    /// This method must not be called for the infinite vertex.
     bool isGhostVertex(VertexHandle vertex) const {
+        OVITO_ASSERT(vertex >= 0 && vertex < numberOfVertices());
         return vertex >= _primaryVertexCount;
     }
 
+    /// Returns true if the given cell is a ghost cell or an infinite cell.
+    bool isGhostCell(CellHandle cell) const {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
+        return _cellInfo[cell].isGhost;
+    }
+
+    /// Returns the i-th vertex of the given Delaunay cell.
     VertexHandle cellVertex(CellHandle cell, size_type localIndex) const {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
+        OVITO_ASSERT(localIndex >= 0 && localIndex < 4);
         return _dt->cell_vertex(cell, localIndex);
     }
 
+    /// Returns the spatial coordinates of the given Delaunay vertex.
+    /// This method must not be called for the infinite vertex.
 #ifndef FLOATTYPE_FLOAT
     const Point3& vertexPosition(VertexHandle vertex) const {
+        OVITO_ASSERT(vertex >= 0 && vertex < numberOfVertices());
         return *reinterpret_cast<const Point3*>(_dt->vertex_ptr(vertex));
     }
 #else
     Point3 vertexPosition(VertexHandle vertex) const {
+        OVITO_ASSERT(vertex >= 0 && vertex < numberOfVertices());
         const double* xyz = _dt->vertex_ptr(vertex);
         return Point3((FloatType)xyz[0], (FloatType)xyz[1], (FloatType)xyz[2]);
     }
 #endif
 
+    /// Performs the alpha test for the given cell and the given alpha value.
+    /// Returns true if the cell passes the alpha test, false if not.
+    /// Returns none if the cell is a degenerate sliver element, for which an alpha value cannot be computed.
     std::optional<bool> alphaTest(CellHandle cell, FloatType alpha) const;
 
-    size_t vertexIndex(VertexHandle vertex) const {
-        OVITO_ASSERT(vertex < _particleIndices.size());
-        return _particleIndices[vertex];
+    /// Returns the input point index corresponding to the given Delaunay vertex.
+    /// This method must not be called for the infinite vertex.
+    size_t inputPointIndex(VertexHandle vertex) const {
+        OVITO_ASSERT(vertex >= 0 && (size_t)vertex < _inputPointIndices.size());
+        return _inputPointIndices[vertex];
     }
 
-    Facet mirrorFacet(CellHandle cell, int face) const {
-        CellHandle adjacentCell = cellAdjacent(cell, face);
+    /// Returns the triangular cell facet that is opposite to the given facet.
+    Facet mirrorFacet(CellHandle cell, int facet) const {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
+        OVITO_ASSERT(facet >= 0 && facet < 4);
+        CellHandle adjacentCell = cellAdjacent(cell, facet);
         OVITO_ASSERT(adjacentCell >= 0);
-        return Facet(adjacentCell, adjacentIndex(adjacentCell, cell));
+        return Facet(adjacentCell, adjacentFacet(adjacentCell, cell));
     }
 
+    /// Returns the triangular cell facet that is opposite to the given facet.
     Facet mirrorFacet(const Facet& facet) const {
         return mirrorFacet(facet.first, facet.second);
     }
 
-    /// Retrieves a local vertex index from cell index and global vertex index.
-    int index(CellHandle cell, VertexHandle vertex) const {
+    /// For a given (global) Delaunay vertex, determines the corresponding local vertex index within a Delaunay cell index.
+    /// The Delaunay vertex to be searched for must not be the infinite vertex.
+    int localVertexIndex(CellHandle cell, VertexHandle vertex) const {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
+        OVITO_ASSERT(vertex < numberOfVertices());
         for(int iv = 0; iv < 4; iv++) {
             if(cellVertex(cell, iv) == vertex) {
                 return iv;
             }
         }
-        OVITO_ASSERT(false);
         return -1;
     }
 
-    /// Gets an adjacent cell index by cell index and local facet index.
+    /// Returns the adjacent cell for a given triangular facet.
     CellHandle cellAdjacent(CellHandle cell, int localFace) const {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
+        OVITO_ASSERT(localFace >= 0 && localFace < 4);
         return _dt->cell_adjacent(cell, localFace);
     }
 
+    /// Returns the adjacent cell for a given triangular facet.
+    CellHandle cellAdjacent(const Facet& facet) const {
+        return _dt->cell_adjacent(facet.first, facet.second);
+    }
+
     /// Retrieves a local facet index from two adjacent cell global indices.
-    int adjacentIndex(CellHandle c1, CellHandle c2) const {
+    int adjacentFacet(CellHandle c1, CellHandle c2) const {
+        OVITO_ASSERT(c1 >= 0 && c1 < numberOfTetrahedra());
+        OVITO_ASSERT(c2 >= 0 && c2 < numberOfTetrahedra());
+        OVITO_ASSERT(c2 != c1);
         for(int f = 0; f < 4; f++) {
-            if(cellAdjacent(c1, f) == c2) {
+            if(cellAdjacent(c1, f) == c2)
                 return f;
-            }
         }
-        OVITO_ASSERT(false);
         return -1;
     }
 
-    /// Get the underlying points used in the tessellation (includes ghost points)
+    /// Returns the list of point coordinates used in the tessellation, including ghost points.
     const std::vector<Point3>& points() const { return _pointData; }
 
     /// Returns the cell vertex for the given triangle vertex of the given cell facet.
@@ -237,7 +280,11 @@ public:
         return tab_vertex_triple_index[cellFacetIndex][facetVertexIndex];
     }
 
-    FacetCirculator incident_facets(CellHandle cell, int i, int j, CellHandle start, int f) const {
+    FacetCirculator incidentFacets(CellHandle cell, int i, int j) const {
+        return FacetCirculator(*this, cell, i, j);
+    }
+
+    FacetCirculator incidentFacets(CellHandle cell, int i, int j, CellHandle start, int f) const {
         return FacetCirculator(*this, cell, i, j, start, f);
     }
 
@@ -250,7 +297,7 @@ public:
 
 private:
 
-    /// Determines whether the given tetrahedral cell is a ghost cell (or an invalid cell).
+    /// Decides whether a tetrahedral cell is a primary cell or a ghost/infinite cell.
     bool classifyGhostCell(CellHandle cell) const;
 
     /// The internal Delaunay generator object.
@@ -262,8 +309,8 @@ private:
     /// Stores per-cell auxiliary data.
     std::vector<CellInfo> _cellInfo;
 
-    /// Mapping of Delaunay points to input particles.
-    std::vector<size_t> _particleIndices;
+    /// Mapping of Delaunay vertices to input point indices.
+    std::vector<size_t> _inputPointIndices;
 
     /// The number of primary (non-ghost) vertices.
     size_type _primaryVertexCount;
@@ -271,8 +318,8 @@ private:
     /// The number of finite cells in the primary image of the simulation cell.
     size_type _numPrimaryTetrahedra = 0;
 
-    /// The simulation cell geometry.
-    const SimulationCell* _simCell = nullptr;
+    /// The simulation cell (optional).
+    DataOORef<const SimulationCell> _simCell;
 };
 
 }  // End of namespace Ovito

@@ -289,7 +289,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             // We need a tie-breaker in case the four vertex atoms belong to different grains.
             int64_t result = 0;
             for(int v = 0; v < 4; v++) {
-                size_t particleIndex = tessellation.vertexIndex(tessellation.cellVertex(cell, v));
+                size_t particleIndex = tessellation.inputPointIndex(tessellation.cellVertex(cell, v));
                 int64_t clusterId = particleGrains[particleIndex];
                 if(clusterId > result)
                     result = clusterId;
@@ -378,7 +378,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
                     OVITO_ASSERT(regionId >= 0 && regionId < filledRegionCount + emptyRegionCount);
                     OVITO_ASSERT(regionId < regionParticleLists.size());
                     for(int v = 0; v < 4; v++) {
-                        size_t particleIndex = tessellation.vertexIndex(tessellation.cellVertex(cell, v));
+                        size_t particleIndex = tessellation.inputPointIndex(tessellation.cellVertex(cell, v));
                         OVITO_ASSERT(particleIndex < regionIds.size() || particleIndex == std::numeric_limits<size_t>::max());
                         if(particleIndex != std::numeric_limits<size_t>::max()) {
                             // Keep track of the number of particles visited so far.

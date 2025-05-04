@@ -41,7 +41,7 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
         GEO::set_assert_mode(GEO::ASSERT_ABORT);
     }
 
-    // Make the magnitude of the randomly perturbed particle positions dependent on the size of the system.
+    // Make the magnitude of the random perturbations dependent on the size of the system.
     double lengthScale;
     if(simCell) {
         lengthScale = (simCell->matrix().column(0) + simCell->matrix().column(1) + simCell->matrix().column(2)).length();
@@ -61,8 +61,9 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
     _simCell = simCell;
 
     // Build the list of input points.
-    _particleIndices.clear();
+    _inputPointIndices.clear();
     _pointData.clear();
+    _inputPointIndices.reserve(numPoints);
 
     for(size_t i = 0; i < numPoints; i++, ++positions) {
 
@@ -78,13 +79,13 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
             (double)wp.y() + displacement(rng),
             (double)wp.z() + displacement(rng));
 
-        _particleIndices.push_back(i);
+            _inputPointIndices.push_back(i);
 
         this_task::throwIfCanceled();
     }
-    _primaryVertexCount = _particleIndices.size();
+    _primaryVertexCount = _inputPointIndices.size();
 
-    if(simCell) {
+    if(simCell && simCell->hasPbc() && ghostLayerSize > 0) {
         // Determine how many periodic copies of the input particles are needed in each cell direction
         // to ensure a consistent periodic topology in the border region.
         Vector3I stencilCount;
@@ -96,7 +97,7 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
             cuts[dim][1] = cellNormals[dim].dot(simCell->reducedToAbsolute(Point3(1,1,1)) - Point3::Origin());
 
             if(simCell->hasPbc(dim)) {
-                stencilCount[dim] = (int)ceil(ghostLayerSize / simCell->matrix().column(dim).dot(cellNormals[dim]));
+                stencilCount[dim] = (int)std::ceil(ghostLayerSize / simCell->matrix().column(dim).dot(cellNormals[dim]));
                 cuts[dim][0] -= ghostLayerSize;
                 cuts[dim][1] += ghostLayerSize;
             }
@@ -130,7 +131,7 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
                         }
                         if(!isClipped) {
                             _pointData.push_back(pimage);
-                            _particleIndices.push_back(_particleIndices[vertexIndex]);
+                            _inputPointIndices.push_back(_inputPointIndices[vertexIndex]);
                         }
                     }
                 }
@@ -152,7 +153,7 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
         for(size_t i = 0; i < 8; i++) {
             Point3 corner = bb[i];
             _pointData.push_back(corner);
-            _particleIndices.push_back(std::numeric_limits<size_t>::max());
+            _inputPointIndices.push_back(std::numeric_limits<size_t>::max());
         }
     }
 
@@ -160,16 +161,19 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
     _dt = GEO::Delaunay::create(3, "BDEL");
     _dt->set_keeps_infinite(true);
     _dt->set_reorder(true);
-    _dt->set_progress_callback([&progress](GEO::index_t value, GEO::index_t maxProgress) {
-        progress.setMaximum(maxProgress, false);
-        progress.setValueIntermittent(value);
-    });
+    if(&progress != &TaskProgress::Ignore) {
+        _dt->set_progress_callback([&progress](GEO::index_t value, GEO::index_t maxProgress) {
+            progress.setMaximum(maxProgress, false);
+            progress.setValueIntermittent(value);
+        });
+    }
 
     // Construct Delaunay tessellation.
     _dt->set_vertices(_pointData.size(), reinterpret_cast<const double*>(_pointData.data()));
     this_task::throwIfCanceled();
 
-    // Classify tessellation cells as ghost or local cells.
+    // Classify tessellation cells as either primary or ghost cells.
+    // Infinite cells are also considered ghost cells.
     _numPrimaryTetrahedra = 0;
     _cellInfo.resize(_dt->nb_cells());
     for(CellHandle cell : cells()) {
@@ -187,19 +191,21 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
 }
 
 /******************************************************************************
-* Determines whether the given tetrahedral cell is a ghost cell (or an invalid cell).
+* Decides whether a tetrahedral cell is a primary cell or a ghost/infinite cell.
 ******************************************************************************/
 bool DelaunayTessellation::classifyGhostCell(CellHandle cell) const
 {
-    if(!isFiniteCell(cell))
+    // Check if the cell is infinite.
+    if(isFiniteCell(cell) == false)
         return true;
 
-    // Find head vertex with the lowest index.
+    // The cell is a primary cell if the vertex with the lowest input point index is a primary vertex.
+    // Find head vertex with the lowest input point index.
     VertexHandle headVertex = cellVertex(cell, 0);
-    size_t headVertexIndex = vertexIndex(headVertex);
+    size_t headVertexIndex = inputPointIndex(headVertex);
     for(int v = 1; v < 4; v++) {
         VertexHandle p = cellVertex(cell, v);
-        size_t vindex = vertexIndex(p);
+        size_t vindex = inputPointIndex(p);
         if(vindex < headVertexIndex) {
             headVertex = p;
             headVertexIndex = vindex;
@@ -224,7 +230,9 @@ static inline double determinant(double a00, double a01, double a02,
 }
 
 /******************************************************************************
-* Alpha test routine.
+* Performs the alpha test for the given cell and the given alpha value.
+* Returns true if the cell passes the alpha test, false if not.
+* Returns none if the cell is a degenerate sliver element, for which an alpha value cannot be computed.
 ******************************************************************************/
 std::optional<bool> DelaunayTessellation::alphaTest(CellHandle cell, FloatType alpha) const
 {

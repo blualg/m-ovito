@@ -310,7 +310,7 @@ void DislocationAnalysisEngine::assignCoreAtomDislocationIDs(size_t numParticles
 
             // Assign the dislocation ID to the 4 atoms of the tetrahedron.
             for(size_t lv = 0; lv < 4; ++lv) {
-                size_t particleIndex = _tessellation->vertexIndex(_tessellation->cellVertex(cell, lv));
+                size_t particleIndex = _tessellation->inputPointIndex(_tessellation->cellVertex(cell, lv));
                 dislocationPropertyAccess[particleIndex] = node->segment->replacedId();
             }
         }
