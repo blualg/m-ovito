@@ -79,7 +79,7 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
             (double)wp.y() + displacement(rng),
             (double)wp.z() + displacement(rng));
 
-            _inputPointIndices.push_back(i);
+        _inputPointIndices.push_back(i);
 
         this_task::throwIfCanceled();
     }
