@@ -41,7 +41,7 @@ public:
 
     /// The different ways the bin counts of the histogram can be normalized.
     enum NormalizationMode {
-        AbsoluteCount,      ///< No normalization, the bin counts are absolute values.
+        AbsoluteCount,      ///< No normalization, the bin counts are absolute values (default).
         RelativeFrequency,  ///< The bin counts are normalized to the total number of elements.
         ProbabilityDensity  ///< The bin counts are normalized to the total number of elements and the bin width.
     };
