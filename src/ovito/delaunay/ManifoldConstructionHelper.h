@@ -545,7 +545,7 @@ private:
                         // Note that we reverse their order to find the opposite face.
                         std::array<size_t, 3> vertices;
                         for(int v = 0; v < 3; v++)
-                            vertices[v] = _tessellation.vertexIndex(_tessellation.cellVertex(currentCell, DelaunayTessellation::cellFacetVertexIndex(f, 2-v)));
+                            vertices[v] = _tessellation.inputPointIndex(_tessellation.cellVertex(currentCell, DelaunayTessellation::cellFacetVertexIndex(f, 2-v)));
 
                         // Bring vertices into a well-defined order, which can be used as lookup key to find the adjacent tetrahedron.
                         reorderFaceVertices(vertices);
@@ -616,7 +616,7 @@ private:
                     // Get the 3 vertices of the first face of the tet.
                     std::array<size_t, 3> vertices;
                     for(int v = 0; v < 3; v++)
-                        vertices[v] = _tessellation.vertexIndex(_tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(0, v)));
+                        vertices[v] = _tessellation.inputPointIndex(_tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(0, v)));
 
                     // Bring vertices into a well-defined order, which can be used as lookup key.
                     reorderFaceVertices(vertices);
@@ -655,14 +655,14 @@ private:
                 // Get the 3 vertices of the facet.
                 std::array<size_t, 3> vertices;
                 for(int v = 0; v < 3; v++)
-                    vertices[v] = _tessellation.vertexIndex(_tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(f, v)));
+                    vertices[v] = _tessellation.inputPointIndex(_tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(f, v)));
 
                 // Bring vertices into a well-defined order, which can be used as lookup key.
                 reorderFaceVertices(vertices);
 
                 OVITO_ASSERT(_cellLookupMap.find(vertices) == _cellLookupMap.end());
 
-                // Add facet and its adjacent cell to the loopup map.
+                // Add facet and its adjacent cell to the lookup map.
                 _cellLookupMap.emplace(vertices, cell);
             }
         }
@@ -725,7 +725,7 @@ private:
                 std::array<size_t,3> vertexIndices;
                 for(int v = 0; v < 3; v++) {
                     vertexHandles[v] = _tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(f, _flipOrientation ? v : (2-v)));
-                    size_t vertexIndex = vertexIndices[v] = _tessellation.vertexIndex(vertexHandles[v]);
+                    size_t vertexIndex = vertexIndices[v] = _tessellation.inputPointIndex(vertexHandles[v]);
                     OVITO_ASSERT(vertexIndex < vertexMap.size());
                     if(vertexMap[vertexIndex] == SurfaceMesh::InvalidIndex) {
                         vertexMap[vertexIndex] = topo->createVertex();
@@ -749,7 +749,7 @@ private:
                     std::array<size_t,3> reverseVertexIndices;
                     for(int v = 0; v < 3; v++) {
                         vertexHandles[v] = _tessellation.cellVertex(adjacentCell, DelaunayTessellation::cellFacetVertexIndex(mirrorFacet.second, _flipOrientation ? v : (2-v)));
-                        size_t vertexIndex = reverseVertexIndices[v] = _tessellation.vertexIndex(vertexHandles[v]);
+                        size_t vertexIndex = reverseVertexIndices[v] = _tessellation.inputPointIndex(vertexHandles[v]);
                         OVITO_ASSERT(vertexIndex < vertexMap.size());
                         OVITO_ASSERT(vertexMap[vertexIndex] != SurfaceMesh::InvalidIndex);
                         facetVertices[v] = vertexMap[vertexIndex];
@@ -798,7 +798,7 @@ private:
             vertexIndex1 = DelaunayTessellation::cellFacetVertexIndex(f, (e+1)%3);
             vertexIndex2 = DelaunayTessellation::cellFacetVertexIndex(f, e);
         }
-        DelaunayTessellation::FacetCirculator circulator_start = _tessellation.incident_facets(cell, vertexIndex1, vertexIndex2, cell, f);
+        DelaunayTessellation::FacetCirculator circulator_start = _tessellation.incidentFacets(cell, vertexIndex1, vertexIndex2, cell, f);
         DelaunayTessellation::FacetCirculator circulator = circulator_start;
         OVITO_ASSERT((*circulator).first == cell);
         OVITO_ASSERT((*circulator).second == f);
@@ -933,7 +933,7 @@ private:
             std::array<size_t,3> faceVerts;
             for(size_t i = 0; i < 3; i++) {
                 int vertexIndex = DelaunayTessellation::cellFacetVertexIndex(facet.second, _flipOrientation ? i : (2-i));
-                faceVerts[i] = _tessellation.vertexIndex(_tessellation.cellVertex(cell, vertexIndex));
+                faceVerts[i] = _tessellation.inputPointIndex(_tessellation.cellVertex(cell, vertexIndex));
             }
             reorderFaceVertices(faceVerts);
             if(auto item = _faceLookupMap.find(faceVerts); item != _faceLookupMap.end())

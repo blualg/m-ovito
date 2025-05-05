@@ -116,9 +116,11 @@ OORef<RefTarget> DataBuffer::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     clone->_stride = _stride;
     clone->_componentCount = _componentCount;
     clone->_componentNames = _componentNames;
-    clone->_nonzeroCount.store(_nonzeroCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
-    for(size_t i = 0; i < _checksum.size(); i++)
-        clone->_checksum[i].store(_checksum[i].load(std::memory_order_relaxed), std::memory_order_relaxed);
+    if(!isBeingAccessedExternally()) {
+        clone->_nonzeroCount.store(_nonzeroCount.load(std::memory_order_relaxed), std::memory_order_relaxed);
+        for(size_t i = 0; i < _checksum.size(); i++)
+            clone->_checksum[i].store(_checksum[i].load(std::memory_order_relaxed), std::memory_order_relaxed);
+    }
 #ifdef OVITO_DEBUG
     clone->_isDataInitialized = _isDataInitialized;
 #endif
@@ -609,6 +611,7 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const Mappin
 
 #ifdef OVITO_DEBUG
     OVITO_ASSERT(source._isDataInitialized);
+    OVITO_ASSERT(_isDataInitialized || discardOldContents);
     _isDataInitialized = true;
 #endif
 
@@ -621,7 +624,7 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const Mappin
         auto typedSource = source._data->reinterpret<T, 1>();
         auto typedDest = _data->reinterpret<T, 1>();
         sycl::host_accessor readAccessor(typedSource, sycl::read_only);
-        sycl::host_accessor writeAccessor(typedDest, sycl::write_only);
+        sycl::host_accessor writeAccessor(typedDest, sycl::write_only, discardOldContents ? sycl::property_list{sycl::no_init} : sycl::property_list{});
         const T* __restrict src = readAccessor.get_pointer();
         T* __restrict dst = writeAccessor.get_pointer();
 #else
@@ -686,14 +689,14 @@ void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const Mappin
 }
 
 // Instantiate function template for different integral types.
-template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const size_t> mapping) const;
-template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const int> mapping) const;
+template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const size_t> mapping, bool discardOldContents);
+template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const int> mapping, bool discardOldContents);
 
 /******************************************************************************
 * Copies the elements from this buffer into the given destination buffer using an index mapping.
 ******************************************************************************/
 template<std::integral MappingT>
-void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const MappingT> mapping) const
+void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const MappingT> mapping, bool allowOutOfBoundsIndices) const
 {
     OVITO_ASSERT(destination.size() == mapping.size());
     OVITO_ASSERT(this->stride() == destination.stride());
@@ -704,100 +707,105 @@ void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const MappingT>
 
 #ifdef OVITO_DEBUG
     OVITO_ASSERT(_isDataInitialized);
+    OVITO_ASSERT(!allowOutOfBoundsIndices || destination._isDataInitialized);
     destination._isDataInitialized = true;
 #endif
 
     ReadAccess readAccess(*this);
     WriteAccess writeAccess(destination);
 
-#ifndef OVITO_USE_SYCL
-    // Optimize copying operation for the most common property types.
-    if(stride() == sizeof(FloatType)) {
-        // Single float
-        const FloatType* __restrict src = reinterpret_cast<const FloatType*>(cdata());
-        FloatType* __restrict dst = reinterpret_cast<FloatType*>(destination.data());
-        for(auto idx : mapping) {
-            OVITO_ASSERT(idx >= 0 && idx < size());
-            *dst++ = src[idx];
-        }
-    }
-    else if(stride() == sizeof(int32_t)) {
-        // Single integer
-        const int32_t* __restrict src = reinterpret_cast<const int32_t*>(cdata());
-        int32_t* __restrict dst = reinterpret_cast<int32_t*>(destination.data());
-        for(auto idx : mapping) {
-            OVITO_ASSERT(idx >= 0 && idx < size());
-            *dst++ = src[idx];
-        }
-    }
-    else if(stride() == sizeof(int64_t)) {
-        // Single 64-bit integer
-        const int64_t* __restrict src = reinterpret_cast<const int64_t*>(cdata());
-        int64_t* __restrict dst = reinterpret_cast<int64_t*>(destination.data());
-        for(auto idx : mapping) {
-            OVITO_ASSERT(idx >= 0 && idx < size());
-            *dst++ = src[idx];
-        }
-    }
-    else if(stride() == sizeof(int8_t)) {
-        const int8_t* __restrict src = reinterpret_cast<const int8_t*>(cdata());
-        int8_t* __restrict dst = reinterpret_cast<int8_t*>(destination.data());
-        for(auto idx : mapping) {
-            OVITO_ASSERT(idx >= 0 && idx < size());
-            *dst++ = src[idx];
-        }
-    }
-    else if(stride() == sizeof(Point3)) {
-        // Triple float (may actually be four floats when SSE instructions are enabled).
-        const Point3* __restrict src = reinterpret_cast<const Point3*>(cdata());
-        Point3* __restrict dst = reinterpret_cast<Point3*>(destination.data());
-        for(auto idx : mapping) {
-            OVITO_ASSERT(idx >= 0 && idx < size());
-            *dst++ = src[idx];
-        }
-    }
-    else if(stride() == sizeof(Color)) {
-        // Triple float
-        const Color* __restrict src = reinterpret_cast<const Color*>(cdata());
-        Color* __restrict dst = reinterpret_cast<Color*>(destination.data());
-        for(auto idx : mapping) {
-            OVITO_ASSERT(idx >= 0 && idx < size());
-            *dst++ = src[idx];
-        }
-    }
-    else if(stride() == sizeof(Point3I)) {
-        // Triple int
-        const Point3I* __restrict src = reinterpret_cast<const Point3I*>(cdata());
-        Point3I* __restrict dst = reinterpret_cast<Point3I*>(destination.data());
-        for(auto idx : mapping) {
-            OVITO_ASSERT(idx >= 0 && idx < size());
-            *dst++ = src[idx];
-        }
-    }
-    else {
-        // General case:
-        const DataBuffer::Byte* __restrict src = cdata();
-        DataBuffer::Byte* __restrict dst = destination.data();
+    auto specializedCopy = [&](auto _) {
+        using T = decltype(_);
+#ifdef OVITO_USE_SYCL
+        auto typedSource = _data->reinterpret<T, 1>();
+        auto typedDest = destination._data->reinterpret<T, 1>();
+        sycl::host_accessor readAccessor(typedSource, sycl::read_only);
+        sycl::host_accessor writeAccessor(typedDest, sycl::write_only, !allowOutOfBoundsIndices ? sycl::property_list{sycl::no_init} : sycl::property_list{});
+        const T* __restrict src = readAccessor.get_pointer();
+        T* __restrict dst = writeAccessor.get_pointer();
 #else
-        sycl::host_accessor readAccessor(*_data, sycl::read_only);
-        sycl::host_accessor writeAccessor(*destination._data, sycl::write_only, sycl::no_init);
-        const DataBuffer::Byte* __restrict src = readAccessor.get_pointer();
-        DataBuffer::Byte* __restrict dst = writeAccessor.get_pointer();
+        const T* __restrict src = reinterpret_cast<const T*>(cdata());
+        T* __restrict dst = reinterpret_cast<T*>(destination.data());
 #endif
-        size_t stride = this->stride();
+        if(!allowOutOfBoundsIndices) {
+            for(auto idx : mapping) {
+                OVITO_ASSERT(idx >= 0 && idx < size());
+                *dst++ = src[idx];
+            }
+        }
+        else {
+            for(auto idx : mapping) {
+                if(idx >= 0 && idx < size())
+                    *dst = src[idx];
+                ++dst;
+            }
+        }
+    };
+
+    // Optimize copying operation for the most common property types.
+    if(dataType() == DataBuffer::Float32) {
+        if(componentCount() == 1 && stride() == sizeof(float)) {
+            specializedCopy(float{});
+            return;
+        }
+        else if(componentCount() == 3 && stride() == sizeof(Vector_3<float>)) {
+            specializedCopy(Vector_3<float>{});
+            return;
+        }
+    }
+    else if(dataType() == DataBuffer::Float64) {
+        if(componentCount() == 1 && stride() == sizeof(double)) {
+            specializedCopy(double{});
+            return;
+        }
+        else if(componentCount() == 3 && stride() == sizeof(Vector_3<double>)) {
+            specializedCopy(Vector_3<double>{});
+            return;
+        }
+    }
+    else if(dataType() == DataBuffer::Int32 && componentCount() == 1 && stride() == sizeof(int32_t)) {
+        specializedCopy(int32_t{});
+        return;
+    }
+    else if(dataType() == DataBuffer::Int64 && componentCount() == 1 && stride() == sizeof(int64_t)) {
+        specializedCopy(int64_t{});
+        return;
+    }
+    else if(dataType() == DataBuffer::Int8 && componentCount() == 1 && stride() == sizeof(int8_t)) {
+        specializedCopy(int8_t{});
+        return;
+    }
+
+    // General case:
+#ifndef OVITO_USE_SYCL
+    const DataBuffer::Byte* __restrict src = cdata();
+    DataBuffer::Byte* __restrict dst = destination.data();
+#else
+    sycl::host_accessor readAccessor(*_data, sycl::read_only);
+    sycl::host_accessor writeAccessor(*destination._data, sycl::write_only, !allowOutOfBoundsIndices ? sycl::property_list{sycl::no_init} : sycl::property_list{});
+    const DataBuffer::Byte* __restrict src = readAccessor.get_pointer();
+    DataBuffer::Byte* __restrict dst = writeAccessor.get_pointer();
+#endif
+    size_t stride = this->stride();
+    if(!allowOutOfBoundsIndices) {
         for(auto idx : mapping) {
             OVITO_ASSERT(idx >= 0 && idx < size());
             std::memcpy(dst, src + stride * idx, stride);
             dst += stride;
         }
-#ifndef OVITO_USE_SYCL
     }
-#endif
+    else {
+        for(auto idx : mapping) {
+            if(idx >= 0 && idx < size())
+                std::memcpy(dst, src + stride * idx, stride);
+            dst += stride;
+        }
+    }
 }
 
 // Instantiate function template for different integral types.
-template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const size_t> mapping, bool discardOldContents);
-template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const int> mapping, bool discardOldContents);
+template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const size_t> mapping, bool allowOutOfBoundsIndices) const;
+template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const int> mapping, bool allowOutOfBoundsIndices) const;
 
 /******************************************************************************
 * Reorders the existing elements in this storage array according to an index map.
@@ -951,7 +959,7 @@ void DataBuffer::copyFromAndConvert(const DataBuffer& source)
     _isDataInitialized = true;
 #endif
 
-    // Copy values and perform data type convertion.
+    // Copy values and perform data type conversion.
     if(size() != 0) {
         WriteAccess writeAccess(*this);
         forAnyType([&](auto _) {
@@ -984,7 +992,7 @@ void DataBuffer::fillZero()
     RawBufferAccess<access_mode::discard_write> writeAccess(this);
     std::memset(writeAccess.data(), 0, this->size() * this->stride());
 #endif
-    setNonzeroCount(size());
+    setNonzeroCount(0);
 }
 
 /******************************************************************************
@@ -1105,15 +1113,26 @@ size_t DataBuffer::nonzeroCount() const
     OVITO_ASSERT(this);
     OVITO_ASSERT(componentCount() == 1);
 
-    if(_nonzeroCount.load(std::memory_order_relaxed) == std::numeric_limits<size_t>::max()) {
+    auto count = _nonzeroCount.load(std::memory_order_relaxed);
+
+    if(count == std::numeric_limits<size_t>::max() || isBeingAccessedExternally()) {
         forAnyType([&](auto _) {
             using T = decltype(_);
-            const_cast<DataBuffer*>(this)->setNonzeroCount(this->size() - this->count<T>(0));
+            count = this->size() - this->count<T>(0);
         });
+        const_cast<DataBuffer*>(this)->setNonzeroCount(count);
+    }
+    else {
+#ifdef OVITO_DEBUG
+        forAnyType([&](auto _) {
+            using T = decltype(_);
+            OVITO_ASSERT(this->size() - this->count<T>(0) == count);
+        });
+#endif
     }
 
-    OVITO_ASSERT(_nonzeroCount.load(std::memory_order_relaxed) <= size());
-    return _nonzeroCount.load(std::memory_order_relaxed);
+    OVITO_ASSERT(count <= size());
+    return count;
 }
 
 /******************************************************************************
@@ -1123,7 +1142,12 @@ DataBuffer::Checksum DataBuffer::checksum() const
 {
     OVITO_ASSERT(this);
 
-    if(size() != 0 && _checksum[0].load(std::memory_order_relaxed) == 0 && _checksum[1].load(std::memory_order_relaxed) == 0) {
+    if(size() == 0)
+        return { 0, 0 };
+
+    auto a = _checksum[0].load(std::memory_order_relaxed);
+    auto b = _checksum[1].load(std::memory_order_relaxed);
+    if((a == 0 && b == 0) || isBeingAccessedExternally()) {
         ReadAccess readAccess(*this);
 
         // Compute MD5 hash of the buffer's data.
@@ -1139,13 +1163,15 @@ DataBuffer::Checksum DataBuffer::checksum() const
         // Cache checksum in the DataBuffer object for future use.
         // The cached checksum will be invalidated by the invalidateCachedInfo() method when the buffer's data is modified.
         auto c = reinterpret_cast<const Checksum::value_type*>(hash.resultView().constData());
-        for(size_t i = 0; i < _checksum.size(); i++, c++)
-            const_cast<DataBuffer*>(this)->_checksum[i].store(*c, std::memory_order_relaxed);
+        a = c[0];
+        b = c[1];
+        OVITO_ASSERT(a != 0 || b != 0); // Most likely!
 
-        OVITO_ASSERT(_checksum[0].load(std::memory_order_relaxed) != 0 || _checksum[1].load(std::memory_order_relaxed) != 0);
+        const_cast<DataBuffer*>(this)->_checksum[0].store(a, std::memory_order_relaxed);
+        const_cast<DataBuffer*>(this)->_checksum[1].store(b, std::memory_order_relaxed);
     }
 
-    return { _checksum[0].load(std::memory_order_relaxed), _checksum[1].load(std::memory_order_relaxed) };
+    return { a, b };
 }
 
 #ifdef OVITO_USE_SYCL

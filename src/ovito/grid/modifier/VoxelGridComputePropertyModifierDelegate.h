@@ -53,6 +53,11 @@ class OVITO_GRID_EXPORT VoxelGridComputePropertyModifierDelegate : public Comput
     };
 
     OVITO_CLASS_META(VoxelGridComputePropertyModifierDelegate, OOMetaClass)
+
+protected:
+
+    /// Initializes an expression evaluator.
+    virtual std::unique_ptr<PropertyExpressionEvaluator> initializeExpressionEvaluator(const ComputePropertyModifier* modifier, const PipelineFlowState& originalState, int frame) const override;
 };
 
 }   // End of namespace

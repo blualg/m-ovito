@@ -25,6 +25,7 @@
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateFixedListParameterUI.h>
 #include <ovito/stdmod/modifiers/ReplicateModifier.h>
+#include <ovito/stdobj/simcell/SimulationCell.h>
 #include "ReplicateModifierEditor.h"
 
 namespace Ovito {
@@ -45,26 +46,29 @@ void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rollout
 #ifndef Q_OS_MACOS
     layout->setHorizontalSpacing(2);
     layout->setVerticalSpacing(2);
+#else
+    layout->setHorizontalSpacing(4);
 #endif
     layout->setColumnStretch(1, 1);
+    layout->setColumnStretch(2, 1);
+    layout->setColumnStretch(3, 1);
+
+    layout->addWidget(new QLabel(tr("Number of images:")), 0, 0);
 
     IntegerParameterUI* numImagesXPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ReplicateModifier::numImagesX));
-    layout->addWidget(numImagesXPUI->label(), 0, 0);
     layout->addLayout(numImagesXPUI->createFieldLayout(), 0, 1);
 
     IntegerParameterUI* numImagesYPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ReplicateModifier::numImagesY));
-    layout->addWidget(numImagesYPUI->label(), 1, 0);
-    layout->addLayout(numImagesYPUI->createFieldLayout(), 1, 1);
+    layout->addLayout(numImagesYPUI->createFieldLayout(), 0, 2);
 
     IntegerParameterUI* numImagesZPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(ReplicateModifier::numImagesZ));
-    layout->addWidget(numImagesZPUI->label(), 2, 0);
-    layout->addLayout(numImagesZPUI->createFieldLayout(), 2, 1);
+    layout->addLayout(numImagesZPUI->createFieldLayout(), 0, 3);
 
     BooleanParameterUI* adjustBoxSizeUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ReplicateModifier::adjustBoxSize));
-    layout->addWidget(adjustBoxSizeUI->checkBox(), 3, 0, 1, 2);
+    layout->addWidget(adjustBoxSizeUI->checkBox(), 1, 0, 1, 4);
 
     BooleanParameterUI* uniqueIdentifiersUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ReplicateModifier::uniqueIdentifiers));
-    layout->addWidget(uniqueIdentifiersUI->checkBox(), 4, 0, 1, 2);
+    layout->addWidget(uniqueIdentifiersUI->checkBox(), 2, 0, 1, 4);
 
     // Create a second rollout.
     rollout = createRollout(tr("Operate on"), rolloutParams.after(rollout), "manual:particles.modifiers.show_periodic_images");
@@ -76,6 +80,14 @@ void ReplicateModifierEditor::createUI(const RolloutInsertionParameters& rollout
 
     ModifierDelegateFixedListParameterUI* delegatesPUI = createParamUI<ModifierDelegateFixedListParameterUI>(rolloutParams.after(rollout));
     topLayout->addWidget(delegatesPUI->listWidget(103));
+
+    // Enable Z axis only if the simulation cell is 3D.
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, [this, numImagesXPUI, numImagesYPUI, numImagesZPUI]() {
+        const SimulationCell* cell = getPipelineInput().getObject<SimulationCell>();
+        numImagesXPUI->setEnabled(cell != nullptr);
+        numImagesYPUI->setEnabled(cell != nullptr);
+        numImagesZPUI->setEnabled(cell != nullptr && !cell->is2D());
+    });
 }
 
 }   // End of namespace

@@ -33,7 +33,6 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(WidgetOpenGLRenderingJob);
 void WidgetOpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, QOpenGLWidget* glwin, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer)
 {
     OpenGLRenderingJob::initializeObject(flags, std::move(visCache), std::move(sceneRenderer));
-
     _glwin = glwin;
 }
 

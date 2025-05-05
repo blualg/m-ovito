@@ -51,8 +51,8 @@ void ElasticMapping::generateTessellationEdges(TaskProgress& progress)
 
         // Create edge data structure for each of the six edges of the cell.
         for(int edgeIndex = 0; edgeIndex < 6; edgeIndex++) {
-            size_t vertex1 = tessellation().vertexIndex(tessellation().cellVertex(cell, edgeVertices[edgeIndex][0]));
-            size_t vertex2 = tessellation().vertexIndex(tessellation().cellVertex(cell, edgeVertices[edgeIndex][1]));
+            size_t vertex1 = tessellation().inputPointIndex(tessellation().cellVertex(cell, edgeVertices[edgeIndex][0]));
+            size_t vertex2 = tessellation().inputPointIndex(tessellation().cellVertex(cell, edgeVertices[edgeIndex][1]));
             if(vertex1 == vertex2)
                 continue;
             Point3 p1 = tessellation().vertexPosition(tessellation().cellVertex(cell, edgeVertices[edgeIndex][0]));
@@ -198,8 +198,8 @@ bool ElasticMapping::isElasticMappingCompatible(DelaunayTessellation::CellHandle
     // Retrieve the cluster vectors assigned to the six edges of the tetrahedron.
     std::pair<Vector3, ClusterTransition*> edgeVectors[6];
     for(int edgeIndex = 0; edgeIndex < 6; edgeIndex++) {
-        size_t vertex1 = tessellation().vertexIndex(tessellation().cellVertex(cell, edgeVertices[edgeIndex][0]));
-        size_t vertex2 = tessellation().vertexIndex(tessellation().cellVertex(cell, edgeVertices[edgeIndex][1]));
+        size_t vertex1 = tessellation().inputPointIndex(tessellation().cellVertex(cell, edgeVertices[edgeIndex][0]));
+        size_t vertex2 = tessellation().inputPointIndex(tessellation().cellVertex(cell, edgeVertices[edgeIndex][1]));
         TessellationEdge* tessEdge = findEdge(vertex1, vertex2);
         if(!tessEdge || !tessEdge->hasClusterVector())
             return false;

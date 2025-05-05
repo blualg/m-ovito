@@ -6,7 +6,7 @@ About OVITO
 
 OVITO (Open Visualization Tool) is a *scientific data visualization and analysis software* designed for molecular and particle-based simulation models.
 It is widely used in computational materials science, engineering, physics, and chemistry.
-The software has been cited in over `14,600 research publications <https://scholar.google.com/citations?view_op=view_citation&hl=en&user=f8Tw3eEAAAAJ&citation_for_view=f8Tw3eEAAAAJ:u5HHmVD_uO8C>`__.
+The software has been cited in over `15,000 research publications <https://scholar.google.com/citations?view_op=view_citation&hl=en&user=f8Tw3eEAAAAJ&citation_for_view=f8Tw3eEAAAAJ:u5HHmVD_uO8C>`__.
 
 **A cross-platform 3D visualization tool**
 

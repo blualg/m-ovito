@@ -42,4 +42,78 @@ QVector<DataObjectReference> VoxelGridComputePropertyModifierDelegate::OOMetaCla
     return objects;
 }
 
+/******************************************************************************
+* Initializes an expression evaluator.
+******************************************************************************/
+std::unique_ptr<PropertyExpressionEvaluator> VoxelGridComputePropertyModifierDelegate::initializeExpressionEvaluator(const ComputePropertyModifier* modifier, const PipelineFlowState& originalState, int frame) const
+{
+    const ConstDataObjectPath containerPath = originalState.expectObject(inputContainerRef());
+    const VoxelGrid* voxelGrid = containerPath.lastAs<VoxelGrid>();
+
+    auto evaluator = std::make_unique<PropertyExpressionEvaluator>();
+    evaluator->initialize(modifier->expressions(), originalState, containerPath, frame);
+
+    // A helper object, which computes the spatial coordinate of a voxel upon request.
+    struct GridPositionHelper {
+        const VoxelGrid::GridDimensions shape;
+        AffineTransformation tm = AffineTransformation::Zero();
+        GridPositionHelper(const VoxelGrid* voxelGrid) : shape(voxelGrid->shape()) {
+            voxelGrid->verifyIntegrity();
+            switch(voxelGrid->gridType()) {
+            case VoxelGrid::GridType::CellData:
+                if(shape[0] != 0 && shape[1] != 0 && shape[2] != 0) {
+                    tm = voxelGrid->domain()->cellMatrix() *
+                        Matrix3::diagonal(FloatType(1) / shape[0], FloatType(1) / shape[1], FloatType(1) / shape[2]) *
+                        AffineTransformation::translation(Vector3(FloatType(0.5), FloatType(0.5), voxelGrid->domain()->is2D() ? FloatType(0.5) : FloatType(0)));
+                }
+                break;
+            case VoxelGrid::GridType::PointData:
+                const int nx = ((voxelGrid->domain()->pbcFlags()[0] || shape[0] <= 1) ? shape[0] : (shape[0] - 1));
+                const int ny = ((voxelGrid->domain()->pbcFlags()[1] || shape[1] <= 1) ? shape[1] : (shape[1] - 1));
+                const int nz = ((voxelGrid->domain()->pbcFlags()[2] || shape[2] <= 1) ? shape[2] : (shape[2] - 1));
+                if(nx != 0 && ny != 0 && nz != 0) {
+                    tm = voxelGrid->domain()->cellMatrix() * Matrix3::diagonal(FloatType(1) / nx, FloatType(1) / ny, FloatType(1) / nz);
+                }
+                break;
+            }
+        }
+        Point3 operator()(size_t voxelIndex) const {
+            const size_t coords[3] = { voxelIndex % shape[0], (voxelIndex / shape[0]) % shape[1], voxelIndex / (shape[0] * shape[1]) };
+            return tm * Point3(coords[0], coords[1], coords[2]);
+        }
+    };
+
+    evaluator->registerComputedVariable("SpatialPosition.X", [helper=GridPositionHelper(voxelGrid)](size_t voxelIndex) -> double {
+        return helper(voxelIndex).x();
+    },
+    tr("Cartesian voxel coord"));
+
+    evaluator->registerComputedVariable("SpatialPosition.Y", [helper=GridPositionHelper(voxelGrid)](size_t voxelIndex) -> double {
+        return helper(voxelIndex).y();
+    },
+    tr("Cartesian voxel coord"));
+
+    evaluator->registerComputedVariable("SpatialPosition.Z", [helper=GridPositionHelper(voxelGrid)](size_t voxelIndex) -> double {
+        return helper(voxelIndex).z();
+    },
+    tr("Cartesian voxel coord"));
+
+    evaluator->registerComputedVariable("VoxelCoordinate.X", [shape=voxelGrid->shape()](size_t voxelIndex) -> double {
+        return voxelIndex % shape[0];
+    },
+    tr("Logical coordinate"));
+
+    evaluator->registerComputedVariable("VoxelCoordinate.Y", [shape=voxelGrid->shape()](size_t voxelIndex) -> double {
+        return (voxelIndex / shape[0]) % shape[1];
+    },
+    tr("Logical coordinate"));
+
+    evaluator->registerComputedVariable("VoxelCoordinate.Z", [shape=voxelGrid->shape()](size_t voxelIndex) -> double {
+        return voxelIndex / (shape[0] * shape[1]);
+    },
+    tr("Logical coordinate"));
+
+    return evaluator;
+}
+
 }   // End of namespace

@@ -42,12 +42,12 @@ OVITO can export data in the following file formats:
     -
 
   * - IMD
-    - File format used by the molecular dynamics code `IMD <http://imd.itap.physik.uni-stuttgart.de/>`__.
+    - File format used by the molecular dynamics code `IMD <https://sfb716.icp.uni-stuttgart.de/forschung/software/imd/index.en.html>`__.
     - :ref:`particles <scene_objects.particles>`
     -
 
   * - FHI-aims
-    - File format used by the *ab initio* simulation package `FHI-aims <https://aimsclub.fhi-berlin.mpg.de/index.php>`__.
+    - File format used by the *ab initio* simulation package `FHI-aims <https://fhi-aims.org>`__.
     - :ref:`particles <scene_objects.particles>`
     -
 
@@ -79,7 +79,7 @@ OVITO can export data in the following file formats:
     - :ref:`Details <file_formats.output.gltf>`
 
   * - POV-Ray scene
-    - Exports the entire scene to a file that can be rendered with `POV-Ray <http://www.povray.org/>`__.
+    - Exports the entire scene to a file that can be rendered with `POV-Ray <https://www.povray.org/>`__.
     - :ref:`whole scene <scene_objects>`
     -
 
@@ -94,6 +94,6 @@ OVITO can export data in the following file formats:
     - :ref:`particles <scene_objects.particles>`
     - :ref:`Details <file_formats.output.ase_trajectory>`
 
-*OVITO Pro* additionally provides the option for you to write :ref:`custom file exporters in Python <writing_custom_file_writers>`.
+:ref:`OVITO Pro <credits.ovito_pro>` provides the option for you to write a :ref:`custom file exporter in Python <writing_custom_file_writers>`.
 
 .. seealso:: :py:func:`ovito.io.export_file` (Python API)

@@ -24,8 +24,10 @@
 OVITO_STANDARD_PLUGIN(Delaunay
     SOURCES
         DelaunayTessellation.cpp
-    PLUGIN_DEPENDENCIES Mesh StdObj
-    LIB_DEPENDENCIES geogram
+    PLUGIN_DEPENDENCIES
+        Mesh StdObj
+    LIB_DEPENDENCIES
+        geogram
 )
 
 # Propagate list of plugins to parent scope.

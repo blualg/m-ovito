@@ -272,20 +272,20 @@ public:
     /// Copies the elements from this buffer into the given destination buffer using an index mapping.
     /// This method overload accepts a std::span with an integral value type as index mapping.
     template<std::integral MappingT>
-    OVITO_CORE_EXPORT void mappedCopyTo(DataBuffer& destination, std::span<const MappingT> mapping) const;
+    OVITO_CORE_EXPORT void mappedCopyTo(DataBuffer& destination, std::span<const MappingT> mapping, bool allowOutOfBoundsIndices = false) const;
 
     /// Copies the elements from this buffer into the given destination buffer using an index mapping.
     /// This method overload accepts a std::vector with an integral value type as index mapping.
     template<std::integral MappingT>
-    void mappedCopyTo(DataBuffer& destination, const std::vector<MappingT>& mapping) const {
-        mappedCopyTo(destination, std::span(mapping));
+    void mappedCopyTo(DataBuffer& destination, const std::vector<MappingT>& mapping, bool allowOutOfBoundsIndices = false) const {
+        mappedCopyTo(destination, std::span(mapping), allowOutOfBoundsIndices);
     }
 
     /// Copies the elements from this buffer into the given destination buffer using an index mapping.
     /// This method overload accepts a buffer accessor with an integral value type as index mapping.
     template<std::integral MappingT, typename BufferType, bool StrongReference, Ovito::access_mode accessmode>
-    void mappedCopyTo(DataBuffer& destination, const detail::BufferAccessTyped<MappingT, BufferType, StrongReference, accessmode>& mapping) const {
-        mappedCopyTo(destination, std::span(mapping));
+    void mappedCopyTo(DataBuffer& destination, const detail::BufferAccessTyped<MappingT, BufferType, StrongReference, accessmode>& mapping, bool allowOutOfBoundsIndices = false) const {
+        mappedCopyTo(destination, std::span(mapping), allowOutOfBoundsIndices);
     }
 
     /// Reorders the existing elements in this storage array according to an index map.
@@ -387,6 +387,10 @@ public:
 
     ////////////////////////////// Data access management //////////////////////////////
 
+    /// Indicates that there currently exists an external memory access to this buffer's data.
+    /// This flag is set by the Python binding layer when a NumPy view is created that references this buffer's memory directly.
+    bool isBeingAccessedExternally() const { return _isBeingAccessedExternally.load(std::memory_order_acquire); }
+
     /// Informs the buffer object that a read accessor is becoming active.
     inline void prepareReadAccess() const {
 #ifdef OVITO_DEBUG
@@ -465,6 +469,10 @@ private:
     /// The data type of the array (a Qt metadata type identifier).
     int _dataType = QMetaType::Void;
 
+    /// Signals that a direct memory access to this buffer's memory is currently active.
+    /// This is set by the Python binding layer when a NumPy view is created that references this buffer's memory directly.
+    std::atomic<bool> _isBeingAccessedExternally{false};
+
     /// The number of bytes per single value.
     size_t _dataTypeSize = 0;
 
@@ -497,11 +505,11 @@ private:
     /// The number of non-zero entries in the array (if known).
     /// This field can provide a performance optimization if the number of
     /// selected elements is queried via nonzeroCount().
-    std::atomic<size_t> _nonzeroCount = std::numeric_limits<size_t>::max();
+    std::atomic<size_t> _nonzeroCount{std::numeric_limits<size_t>::max()};
 
     /// The MD5 checksum computed from the data elements.
     /// This field can provide a performance optimization if the checksum is queried via checksum().
-    std::array<std::atomic<std::uint64_t>, 2> _checksum = {std::uint64_t{0}, std::uint64_t{0}};
+    std::array<std::atomic<std::uint64_t>, 2> _checksum{{std::uint64_t{0}, std::uint64_t{0}}};
 
 #ifdef OVITO_USE_SYCL
     /// Flag indicating that new kernels have been scheduled for execution that read from the buffer.
@@ -521,6 +529,7 @@ private:
     bool _isDataInitialized = false;
 #endif
 
+    friend class RegisteredBufferAccess;
     template<typename BufferType, bool StrongReference, Ovito::access_mode accessmode> friend class detail::BufferAccessBase;
 #ifdef OVITO_USE_SYCL
     template<typename T, Ovito::access_mode AccessMode> friend class detail::SyclBufferAccessTyped;
@@ -795,10 +804,10 @@ inline size_t DataBuffer::count(const T value) const
 // Instantiate function templates for different integral types.
 #ifndef OVITO_BUILD_MONOLITHIC
     #if !defined(Core_EXPORTS)
-        extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const size_t> mapping) const;
-        extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const int> mapping) const;
         extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const size_t> mapping, bool discardOldContents);
         extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyFrom(const DataBuffer& source, std::span<const int> mapping, bool discardOldContents);
+        extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const size_t> mapping, bool allowOutOfBoundsIndices) const;
+        extern template OVITO_CORE_EXPORT void DataBuffer::mappedCopyTo(DataBuffer& destination, std::span<const int> mapping, bool allowOutOfBoundsIndices) const;
     #endif
 #endif
 

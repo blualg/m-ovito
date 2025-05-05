@@ -63,6 +63,7 @@ private:
     QList<AutocompleteTextEdit*> neighborExpressionTextEdits;
     QList<QLabel*> neighborExpressionLabels;
     QGridLayout* neighborExpressionsLayout;
+	QLabel* expandFieldsLabel;
 
     // For deferred invocation of the UI update functions.
     DeferredMethodInvocation<ParticlesComputePropertyModifierDelegateEditor, &ParticlesComputePropertyModifierDelegateEditor::updateExpressionFields> updateExpressionFieldsLater;

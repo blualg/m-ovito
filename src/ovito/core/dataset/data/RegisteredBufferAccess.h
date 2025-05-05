@@ -37,7 +37,20 @@ class OVITO_CORE_EXPORT RegisteredBufferAccess
 public:
 
     /// Constructor.
-    RegisteredBufferAccess(DataBuffer& buffer) : _accessor(&buffer), _buffer(&buffer) {}
+    RegisteredBufferAccess(DataBuffer& buffer) : _accessor(&buffer), _buffer(&buffer) {
+        // Flag the buffer as being accessed externally.
+        OVITO_ASSERT(!buffer.isBeingAccessedExternally());
+        buffer._isBeingAccessedExternally.store(true, std::memory_order_release);
+    }
+
+    /// Destructor.
+    ~RegisteredBufferAccess() {
+        // After the buffer's memory has been accessed externally, inform the buffer object that its contents may have changed.
+        _buffer->invalidateCachedInfo();
+        // Reset the flag that indicates that the buffer's memory is being accessed externally.
+        OVITO_ASSERT(_buffer->isBeingAccessedExternally());
+        _buffer->_isBeingAccessedExternally.store(false, std::memory_order_release);
+    }
 
     /// Returns a C pointer to the buffer's internal storage.
     const void* dataPointer() { return _accessor.cdata(); }
@@ -65,6 +78,10 @@ public:
     RegisteredBufferAccess(DataBuffer& buffer, TaskManager& taskManager) : _buffer(&buffer), _syclAccessor(buffer.size() != 0 ? accessor_type{buffer.syclBuffer()} : accessor_type{}), _next(taskManager._registeredBufferAccessors), _listHead(&taskManager._registeredBufferAccessors) {
         if(_next) _next->_prev = this;
         *_listHead = this;
+
+        // Flag the buffer as being accessed externally.
+        OVITO_ASSERT(!buffer.isBeingAccessedExternally());
+        buffer._isBeingAccessedExternally.store(true, std::memory_order_release);
     }
 
     /// Returns a pointer to the buffer object.
@@ -79,6 +96,12 @@ public:
             _prev->_next = _next;
             if(_next) _next->_prev = _prev;
         }
+
+        // After the buffer's memory has been accessed externally, inform the buffer object that its contents may have changed.
+        _buffer->invalidateCachedInfo();
+        // Reset the flag that indicates that the buffer's memory is being accessed externally.
+        OVITO_ASSERT(_buffer->isBeingAccessedExternally());
+        _buffer->_isBeingAccessedExternally.store(false, std::memory_order_release);
     }
 
     /// Returns a C pointer to the buffer's internal storage.

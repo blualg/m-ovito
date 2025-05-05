@@ -193,7 +193,7 @@ Property* PropertyContainer::makePropertyMutable(const Property* property, DataB
 
     // Always clone property if its memory is currently being accessed from Python code.
     // That's required, because Python value holders are not strong DataOORefs protecting the property object from changes.
-    if(property && ((property->isBeingAccessedFromPython() && !ignorePythonAccess) || !isSafeToModifySubObject(property))) {
+    if(property && ((property->isBeingAccessedExternally() && !ignorePythonAccess) || !isSafeToModifySubObject(property))) {
         PropertyPtr clone;
         if(cloneMode == DataBuffer::Initialized) {
             clone = CloneHelper::cloneSingleObject(property, false);
@@ -225,7 +225,7 @@ Property* PropertyContainer::makePropertyMutableUnallocated(const Property* prop
 
     // Always clone property if it is currently being accessed from Python code.
     // That's required, because Python code never holds a strong DataOORef to the property object.
-    if(property->isBeingAccessedFromPython() || !isSafeToModifySubObject(property)) {
+    if(property->isBeingAccessedExternally() || !isSafeToModifySubObject(property)) {
         // Custom clone implementation, which copies only the metadata but not the contents of the original property.
         PropertyPtr clone = property->cloneWithoutData(0);
         replaceReferencesTo(property, clone);
@@ -476,7 +476,7 @@ void PropertyContainer::setContent(size_t newElementCount, const DataRefVector<P
 }
 
 /******************************************************************************
-* Duplicates all data elements by extensing the property arrays and
+* Duplicates all data elements by extending the property arrays and
 * replicating the existing data N times.
 ******************************************************************************/
 void PropertyContainer::replicate(size_t n)

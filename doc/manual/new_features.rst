@@ -6,14 +6,57 @@ Changelog
 
 .. sidebar::
 
+  * `Download this version <https://www.ovito.org/download_history/#3.13.0>`__
+
+----------------------------
+Version 3.13.0 (xx-xxx-2025)
+----------------------------
+
+- :ref:`particles.modifiers.histogram` modifier: Added new option to select the bin normalization mode: (1) absolute count, (2) relative frequency, (3) probability density
+- :ref:`particles.modifiers.freeze_property` modifier: Added support for simulations with varying number of particles.
+  The modifier now provides a new option to handle previously unknown particles that were not present in the initial simulation frame.
+- Allow for more flexible syntax in the Quantum Espresso file reader (`forum post <https://www.ovito.org/forum/topic/quantum-espresso-output/#postid-5009>`__)
+
+.. sidebar::
+
+  * `Download this version <https://www.ovito.org/download_history/#3.12.3>`__
+
+----------------------------
+Version 3.12.3 (DD-MMM-2025)
+----------------------------
+
+- Add support for GROMACS TRR file format
+
+.. sidebar::
+
+  * `Download this version <https://www.ovito.org/download_history/#3.12.2>`__
+
+----------------------------
+Version 3.12.2 (23-Apr-2025)
+----------------------------
+
+- The *file column mapping* dialog now includes a context menu function for toggling the checked state of multiple columns at once
+- Bug fix: Crash in the *Particles* tab of the application settings dialog when using the "Restore built-in defaults" function (OVITO 3.11.0 regression)
+- |ovito-python| Bug fix: Writes to a NumPy view of the ``Selection`` property array, followed by an application of the :py:class:`~ovito.modifiers.DeleteSelectedModifier` modifier, may lead to wrong results (OVITO 3.11.0 regression)
+- |ovito-pro| Suppress unnecessary Python code generation for :py:attr:`ComputePropertyModifier.neighbor_expressions <ovito.modifiers.ComputePropertyModifier.neighbor_expressions>` field if modifier is not set to operate on particles (OVITO 3.12.0 regression)
+
+.. sidebar::
+
   * `Download this version <https://www.ovito.org/download_history/#3.12.1>`__
 
 ----------------------------
-Version 3.12.1 (XX-YYY-2025)
+Version 3.12.1 (02-Apr-2025)
 ----------------------------
 
-- Fix discrete color map item order
-- Fix crash in "dislocation core atoms" when no dislocations are present
+- Fixed visual glitch when moving the cursor into the 3D viewport window, which occurred on some Windows/Linux systems in OVITO 3.12.0
+- :ref:`particles.modifiers.compute_property` modifier: Now allows creating :ref:`user-defined vector properties <particles.modifiers.compute_property.vector_properties>`
+- :ref:`particles.modifiers.compute_property` modifier: Added the special variables ``SpatialPosition`` and ``VoxelCoordinate`` for voxel grid computations
+- :ref:`particles.modifiers.color_coding` modifier: Added new color gradient "Cyclic Rainbow", which is useful for visualizing cyclic properties such as phase angles or in-plane orientations
+- :ref:`viewport_layers.color_legend`: Fixed reordering of DXA dislocation types list during trajectory playback
+- :ref:`particles.modifiers.dislocation_analysis` modifier: Fixed crash in function "Mark dislocation core atoms" when no dislocations are present
+- :ref:`particles.modifiers.voronoi_analysis` modifier: Redesigned UI
+- Fix: GUI function "Reset to default" not working for numerical parameter fields
+- |ovito-python| Extended the :py:attr:`ComputePropertyModifier.expressions <ovito.modifiers.ComputePropertyModifier.expressions>` parameter to support the creation of user-defined vector properties
 
 .. sidebar::
 

@@ -152,7 +152,7 @@ void WidgetActionManager::setupCommandSearch()
 
                     // Draw shortcut text.
                     options.rect.adjust(0, 4, 0, -4);
-                    options.backgroundBrush = {};
+                    options.backgroundBrush = QBrush();
 #ifndef Q_OS_WIN
                     // Override text color for highlighted items.
                     if(options.state & QStyle::State_Selected)
@@ -160,7 +160,7 @@ void WidgetActionManager::setupCommandSearch()
 #endif
                     options.state.setFlag(QStyle::State_Selected, false);
                     options.state.setFlag(QStyle::State_MouseOver, false);
-                    options.icon = {};
+                    options.icon = QIcon();
                     options.displayAlignment = Qt::AlignRight | Qt::AlignVCenter;
                     QKeySequence keySequence = index.data(ShortcutRole).value<QKeySequence>();
                     if(!keySequence.isEmpty()) {

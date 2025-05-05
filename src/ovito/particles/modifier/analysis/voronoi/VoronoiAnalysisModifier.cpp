@@ -49,10 +49,10 @@ DEFINE_PROPERTY_FIELD(VoronoiAnalysisModifier, relativeFaceThreshold);
 DEFINE_REFERENCE_FIELD(VoronoiAnalysisModifier, bondsVis);
 DEFINE_REFERENCE_FIELD(VoronoiAnalysisModifier, polyhedraVis);
 SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, onlySelected, "Use only selected particles");
-SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, useRadii, "Use particle radii");
-SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, computeIndices, "Compute Voronoi indices");
-SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, computeBonds, "Generate neighbor bonds");
-SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, computePolyhedra, "Generate Voronoi polyhedra");
+SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, useRadii, "Use particle radii (polydisperse Voronoi tessellation)");
+SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, computeIndices, "Voronoi indices");
+SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, computeBonds, "Neighbor bonds");
+SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, computePolyhedra, "Voronoi polyhedra");
 SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, edgeThreshold, "Edge length threshold");
 SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, faceThreshold, "Absolute face area threshold");
 SET_PROPERTY_FIELD_LABEL(VoronoiAnalysisModifier, relativeFaceThreshold, "Relative face area threshold");
@@ -917,7 +917,7 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::applyResults(PipelineFlowSt
                         "This may be a result of particles being located outside of the simulation box boundaries. "
                         "See user manual for more information.\n"
                         "Simulation box volume: %1\n"
-                        "Voronoi cell volume sum: %2").arg(_simulationBoxVolume).arg(voronoiVolumeSum())));
+                        "Voronoi cell volume sum: %2").arg(_simulationBoxVolume).arg(voronoiVolumeSum().load())));
     }
 
     if(_computeBonds) {

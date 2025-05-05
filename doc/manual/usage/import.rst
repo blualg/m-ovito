@@ -50,7 +50,7 @@ A pair of topology and trajectory files:
   Topology format                Trajectory format
   ============================== ======================
   LAMMPS data                    LAMMPS dump
-  Gromacs GRO                    Gromacs XTC
+  Gromacs GRO                    Gromacs XTC/TRR
   CASTEP cell                    CASTEP md/geom
   *any other supported format*   XYZ
   ============================== ======================

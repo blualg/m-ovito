@@ -64,7 +64,7 @@ You can select the types of data elements the modifier should transform:
   :ref:`Dislocations <scene_objects.dislocations>`                Applies the transformation to :ref:`dislocation lines <scene_objects.dislocations>` and their Burgers vectors.
   =============================================================== =================================================================================
 
-The option :guilabel:`Transform selected elements only` restricts the function to the subset of currently selected particles.
+The option :guilabel:`Transform only selected particles/vertices` restricts the function to the subset of currently selected particles or vertices of meshes and lines.
 
 .. seealso::
 

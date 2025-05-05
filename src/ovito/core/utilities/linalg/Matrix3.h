@@ -442,6 +442,14 @@ public:
 
     /// \brief Generates a scaling matrix.
     static Q_DECL_CONSTEXPR Matrix_3 scaling(const ScalingT<T>& scaling);
+
+    /// Generates a diagonal scaling matrix.
+    static Q_DECL_CONSTEXPR Matrix_3 diagonal(T s1, T s2, T s3) {
+        return Matrix_3(
+                         s1, T(0), T(0),
+                         T(0), s2, T(0),
+                         T(0), T(0), s3);
+    }
 };
 
 }   // End of namespace

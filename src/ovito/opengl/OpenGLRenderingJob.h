@@ -114,6 +114,9 @@ public:
 	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
 	virtual QImage::Format preferredImageFormat() const override { return QImage::QImage::Format_RGBA8888; }
 
+    /// Returns the renderer instance with the rendering parameters used by this rendering job.
+    const OORef<const OpenGLRenderer>& sceneRenderer() const { return _sceneRenderer; }
+
     /// Requests the rendering job to make its OpenGL context current, e.g. for releasing OpenGL resources that require an active context.
     [[nodiscard]] virtual OpenGLContextRestore activateContext() = 0;
 

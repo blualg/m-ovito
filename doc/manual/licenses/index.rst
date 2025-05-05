@@ -152,7 +152,7 @@ The table lists the licenses of the included components and, if they are used un
     - :ref:`license <appendix.license.pegtl>`
     -
 
-  * - XTC/XDR file I/O routines
+  * - XTC/TRR/XDR file I/O routines
     - :ref:`license <appendix.license.xdrfile>`
     -
 

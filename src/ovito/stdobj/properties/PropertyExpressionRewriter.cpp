@@ -31,7 +31,8 @@ namespace Ovito::PropertyExpressionRewriter {
 [[nodiscard]] QStringList tokenizeExpression(const QString& expression)
 {
     // Regular expressions for tokens - split on expected operators, parenthesis, and group everything inside "...".
-    const static QRegularExpression regex(QStringLiteral(R"((".*?"|'.*?'|==|!=|>=|<=|\?|:|\(|\)|&&|\|\||[\w\._]+|\S))"));
+    // Note: Keep this regex in sync with the PropertyExpressionEvaluator::_validVariableNameChars list.
+    const static QRegularExpression regex(QStringLiteral(R"((".*?"|'.*?'|==|!=|>=|<=|\?|:|\(|\)|&&|\|\||[@\w\._]+|\S))"));
     OVITO_ASSERT(regex.isValid());
 
     // Tokenize

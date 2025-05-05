@@ -63,31 +63,54 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     ModifierDelegateParameterUI* delegateUI = createParamUI<ModifierDelegateParameterUI>(ComputePropertyModifierDelegate::OOClass());
     sublayout->addWidget(delegateUI->comboBox());
 
-    QGroupBox* propertiesGroupBox = new QGroupBox(tr("Output property"), rollout);
+    // Create the check box for the selection flag.
+    onlySelectedUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::onlySelectedElements));
+    sublayout->addWidget(onlySelectedUI->checkBox());
+
+    QGroupBox* propertiesGroupBox = new QGroupBox(tr("Output"), rollout);
     mainLayout->addWidget(propertiesGroupBox);
-    QVBoxLayout* propertiesLayout = new QVBoxLayout(propertiesGroupBox);
+    QGridLayout* propertiesLayout = new QGridLayout(propertiesGroupBox);
     propertiesLayout->setContentsMargins(6,6,6,6);
+    propertiesLayout->setColumnStretch(1,1);
     propertiesLayout->setSpacing(4);
 
     // Output property
-    PropertyReferenceParameterUI* outputPropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::outputProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
-    propertiesLayout->addWidget(outputPropertyUI->comboBox());
-    connect(this, &PropertiesEditor::contentsChanged, this, [outputPropertyUI](RefTarget* editObject) {
+    outputPropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::outputProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
+    propertiesLayout->addWidget(new QLabel(tr("Property name:")), 0, 0);
+    propertiesLayout->addWidget(outputPropertyUI->comboBox(), 0, 1);
+    propertiesLayout->addWidget(new QLabel(tr("Components:")), 1, 0);
+    componentNamesEdit = new EnterLineEdit();
+    componentNamesEdit->setPlaceholderText(tr("‹scalar›"));
+    propertiesLayout->addWidget(componentNamesEdit, 1, 1);
+    connect(this, &PropertiesEditor::contentsChanged, this, [this](RefTarget* editObject) {
         ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject);
-        if(modifier && modifier->delegate())
+        if(modifier && modifier->delegate()) {
             outputPropertyUI->setContainerRef(modifier->delegate()->inputContainerRef());
-        else
+            int typeId = modifier->outputProperty().standardTypeId(modifier->delegate()->inputContainerClass());
+            componentNamesEdit->setEnabled(typeId == Property::GenericUserProperty);
+            componentNamesEdit->setText(modifier->effectiveComponentNames().join(QStringLiteral(", ")));
+        }
+        else {
             outputPropertyUI->setContainerRef({});
-    });
-    connect(outputPropertyUI, &PropertyReferenceParameterUI::valueEntered, this, [this]() {
-        if(ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject())) {
-            modifier->adjustPropertyComponentCount();
+            componentNamesEdit->setEnabled(false);
+            componentNamesEdit->clear();
         }
     });
-
-    // Create the check box for the selection flag.
-    BooleanParameterUI* selectionFlagUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::onlySelectedElements));
-    propertiesLayout->addWidget(selectionFlagUI->checkBox());
+    connect(componentNamesEdit, &QLineEdit::editingFinished, this, [this]() {
+        if(ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject())) {
+            QStringList componentNames = componentNamesEdit->text().trimmed().split(QChar(','));
+            for(QString& name : componentNames) name = name.trimmed();
+            componentNames.removeIf([](const QString& name) { return name.isEmpty(); });
+            if(modifier->delegate()) {
+                int typeId = modifier->outputProperty().standardTypeId(modifier->delegate()->inputContainerClass());
+                if(typeId == Property::GenericUserProperty) {
+                    performTransaction(tr("Set components list"), [&]() {
+                        modifier->setPropertyComponentCount(std::max(1, (int)componentNames.size()), componentNames);
+                    });
+                }
+            }
+        }
+    });
 
     expressionsGroupBox = new QGroupBox(tr("Expression"));
     mainLayout->addWidget(expressionsGroupBox);
@@ -98,8 +121,26 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
     expressionsLayout->setColumnStretch(1,1);
 
     // Show multi-line fields.
-    BooleanParameterUI* multilineFieldsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ComputePropertyModifier::useMultilineFields));
-    expressionsLayout->addWidget(multilineFieldsUI->checkBox(), 0, 1, Qt::AlignRight | Qt::AlignBottom);
+    expandFieldsLabel = new QLabel();
+    expandFieldsLabel->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+    expressionsLayout->addWidget(expandFieldsLabel, 0, 1, Qt::AlignRight | Qt::AlignBottom);
+    connect(expandFieldsLabel, &QLabel::linkActivated, this, [this]() {
+        performTransaction(tr("Collapse/expand input fields"), [&]() {
+            if(ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject()))
+                modifier->setUseMultilineFields(!modifier->useMultilineFields());
+        });
+    });
+    connect(this, &PropertiesEditor::contentsChanged, this, [this](RefTarget* editObject) {
+        ComputePropertyModifier* modifier = static_object_cast<ComputePropertyModifier>(editObject);
+        if(modifier && modifier->useMultilineFields()) {
+            expandFieldsLabel->setText(tr("<a href=\"expand\">↑</a>"));
+            expandFieldsLabel->setToolTip(tr("Switch to single-line input fields"));
+        }
+        else {
+            expandFieldsLabel->setText(tr("<a href=\"collapse\">↓<a>"));
+            expandFieldsLabel->setToolTip(tr("Expand the input field(s)"));
+        }
+    });
 
     // Show editor of modifier delegate as an embedded widget.
     QWidget* delegateEditorContainer = new QWidget();
@@ -195,30 +236,39 @@ void ComputePropertyModifierEditor::updateExpressionFields()
     if(mod->useMultilineFields()) {
         for(AutocompleteLineEdit* lineEdit : expressionLineEdits) lineEdit->setVisible(false);
         for(AutocompleteTextEdit* textEdit : expressionTextEdits) textEdit->setVisible(true);
+        for(QLabel* label : expressionLabels) {
+            label->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+            label->setMargin(4);
+        }
     }
     else {
         for(AutocompleteLineEdit* lineEdit : expressionLineEdits) lineEdit->setVisible(true);
         for(AutocompleteTextEdit* textEdit : expressionTextEdits) textEdit->setVisible(false);
+        for(QLabel* label : expressionLabels) {
+            label->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+            label->setMargin(0);
+        }
     }
 
-    QStringList standardPropertyComponentNames;
-    if(int typeId = mod->outputProperty().standardTypeId(mod->delegate()->inputContainerClass()))
-        standardPropertyComponentNames = mod->delegate()->inputContainerClass()->standardPropertyComponentNames(typeId);
-
+    const QStringList propertyComponentNames = mod->effectiveComponentNames();
     for(int i = 0; i < expr.size(); i++) {
         expressionLineEdits[i]->setText(expr[i]);
         if(expressionTextEdits[i]->toPlainText() != expr[i])
             expressionTextEdits[i]->setPlainText(expr[i]);
-        if(expr.size() == 1)
+        if(expr.size() == 1 && propertyComponentNames.empty())
             expressionLabels[i]->hide();
         else {
-            if(i < standardPropertyComponentNames.size())
-                expressionLabels[i]->setText(tr("%1:").arg(standardPropertyComponentNames[i]));
+            if(i < propertyComponentNames.size())
+                expressionLabels[i]->setText(tr("%1:").arg(propertyComponentNames[i]));
             else
                 expressionLabels[i]->setText(tr("%1:").arg(i+1));
             expressionLabels[i]->show();
         }
     }
+
+    onlySelectedUI->checkBox()->setText(tr("Compute only for selected %1").arg(mod->delegate()->elementLabel()));
+    onlySelectedUI->setEnabled(mod->delegate()->inputContainerClass()->isValidStandardPropertyId(Property::GenericSelectionProperty));
+
     container()->updateRolloutsLater();
 }
 

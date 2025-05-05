@@ -238,17 +238,16 @@ public:
     /// Returns the display title of this property object in the user interface.
     virtual QString objectTitle() const override;
 
-    /// Throws an exception with an informative text if the given name is not a valid name for an OVITO property.
+    /// Throws an exception with an informative text if the given string is not a valid name for an OVITO property.
     /// For example, to be valid, the name must not contains any dots.
     static void throwIfInvalidPropertyName(const QStringView name);
 
+    /// Throws an exception with an informative text if the given string is not a valid name for an OVITO vector property component.
+    /// For example, to be valid, the name must not contains any dots or spaces.
+    static void throwIfInvalidPropertyComponentName(const QStringView name);
+
     /// Performs name mangling if necessary to turn the given name into a valid property name.
     static QString makePropertyNameValid(const QString& name);
-
-public:
-
-    /// Indicates that there current exists a NumPy view referencing this property's memory buffer.
-    bool isBeingAccessedFromPython() const { return !_pythonAccessGuard.expired(); }
 
 protected:
 

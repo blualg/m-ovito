@@ -78,7 +78,7 @@ OORef<RefTarget> Property::clone(bool deepCopy, CloneHelper& cloneHelper) const
     finishReadAccess();
 
 #ifdef OVITO_USE_SYCL
-    if(isBeingAccessedFromPython()) {
+    if(isBeingAccessedExternally()) {
         // Force flush SYCL queue to complete the memcpy to the cloned data buffer now.
         // That's needed because Python code may be performing subsequent writes to the old memory buffer that will go unnoticed by
         // SYCL. We need to make sure these happen after the memcpy is completed, because a direct write access to the array should never
@@ -106,7 +106,7 @@ void Property::propertyChanged(const PropertyFieldDescriptor* field)
     DataBuffer::propertyChanged(field);
 
     if(field == PROPERTY_FIELD(DataObject::identifier) && title().isEmpty()) {
-        // Since the idenfifier is the property's name, the property's title potentially changes too.
+        // Since the identifier is the property's name, the property's title potentially changes too.
         notifyDependents(ReferenceEvent::TitleChanged);
     }
 }
@@ -435,7 +435,7 @@ QString Property::nameWithComponent(int vectorComponent) const
 }
 
 /******************************************************************************
-* Throws an exception with an informative text if the given name is not a
+* Throws an exception with an informative text if the given string is not a
 * valid name for an OVITO property.
 ******************************************************************************/
 void Property::throwIfInvalidPropertyName(const QStringView name)
@@ -454,6 +454,26 @@ void Property::throwIfInvalidPropertyName(const QStringView name)
         throw Exception(tr("Invalid property name: '%1'. OVITO property names must not end with whitespace.").arg(name));
     if(name.endsWith(QChar('_')))
         throw Exception(tr("Invalid property name: '%1'. OVITO property names must not end with an underscore.").arg(name));
+}
+
+/******************************************************************************
+* Throws an exception with an informative text if the given string is not a
+* valid name for an OVITO property vector component.
+******************************************************************************/
+void Property::throwIfInvalidPropertyComponentName(const QStringView name)
+{
+    if(name.isEmpty())
+        throw Exception(tr("Invalid empty component name. OVITO vector component names must have at least length 1."));
+    if(name.contains(QChar('.')))
+        throw Exception(tr("Invalid component name: '%1'. Dots are not allowed in OVITO vector component names.").arg(name));
+    if(name.contains(QChar('/')))
+        throw Exception(tr("Invalid component name: '%1'. '/' is not allowed in OVITO vector component names.").arg(name));
+    if(name.contains(QChar(':')))
+        throw Exception(tr("Invalid component name: '%1'. ':' is not allowed in OVITO vector component names.").arg(name));
+    if(name.contains(QChar(' ')))
+        throw Exception(tr("Invalid component name: '%1'. OVITO vector component names must not contain whitespace.").arg(name));
+    if(name.endsWith(QChar('_')))
+        throw Exception(tr("Invalid component name: '%1'. OVITO vector component names must not end with an underscore.").arg(name));
 }
 
 /******************************************************************************

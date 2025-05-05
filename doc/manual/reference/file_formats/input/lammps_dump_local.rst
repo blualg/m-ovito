@@ -165,12 +165,12 @@ you may need to specify the correct mapping by hand in the following dialog disp
   :width: 50%
 
 File columns get automatically mapped to corresponding standard properties in OVITO if their names
-match one of the predefined :ref:`standard bond properties <bond-types-list>` (case insensitive).
+match one of the predefined :ref:`standard bond properties <bond-properties-list>` (case insensitive).
 Spaces that are part of a standard property name must be left out, because LAMMPS dump files do not support column names containing spaces. For example,
 a dump file column named ``BondType`` will be mapped to the standard property :guilabel:`Bond Type`.
 
 For standard properties with multiple components, a component name must be appended with a dot. For example, a dump file column
-named ``ParticleIdentifiers.A`` will automatically be mapped to the second component of the :guilabel:`Particle Identifiers` :ref:`standard bond property <bond-types-list>`
+named ``ParticleIdentifiers.A`` will automatically be mapped to the second component of the :guilabel:`Particle Identifiers` :ref:`standard bond property <bond-properties-list>`
 in OVITO. Note that you can use the LAMMPS `dump_modify colname` command to give the columns in your dump file specific names.
 
 For further information on how to set up the bond property mapping correctly, see the :ref:`particles.modifiers.load_trajectory` modifier.
@@ -185,6 +185,6 @@ The file reader accepts the following keyword parameters in a call to the :py:me
 .. py:function:: load(location, columns = None)
   :noindex:
 
-  :param columns: A list of OVITO :ref:`bond/angle/dihedral/improper property <bond-types-list>` names, one for each data column in the dump local file.
+  :param columns: A list of OVITO :ref:`bond/angle/dihedral/improper property <bond-properties-list>` names, one for each data column in the dump local file.
                   List entries may be set to ``None`` to skip individual file columns during parsing.
   :type columns: list[str|None]

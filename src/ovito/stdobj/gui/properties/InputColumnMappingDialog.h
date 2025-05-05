@@ -60,6 +60,12 @@ protected Q_SLOTS:
     /// Loads a preset mapping.
     void onLoadPreset();
 
+    /// Called when the user clicks on an item in the table column for file columns.
+    void fileColumnClicked(const QModelIndex& index);
+
+    /// Called when the user has triggered the action to toggle the selected file columns.
+    void toggleSelected();
+
 protected:
 
     MainWindow& _mainWindow;
@@ -70,10 +76,10 @@ protected:
     /// The main table widget that contains the entries for each data column of the input file.
     QTableWidget* _tableWidget;
 
-    QVector<QCheckBox*> _fileColumnBoxes;
     QVector<QComboBox*> _propertyBoxes;
     QVector<QComboBox*> _vectorComponentBoxes;
     QVector<int> _propertyDataTypes;
+    QAction* _toggleSelectedAction;
 
     QSignalMapper* _vectorCmpntSignalMapper;
 

@@ -39,9 +39,13 @@ OVITO_CLASSINFO(FreezePropertyModifier, "ModifierCategory", "Modification");
 DEFINE_PROPERTY_FIELD(FreezePropertyModifier, sourceProperty);
 DEFINE_PROPERTY_FIELD(FreezePropertyModifier, destinationProperty);
 DEFINE_PROPERTY_FIELD(FreezePropertyModifier, freezeTime);
+DEFINE_PROPERTY_FIELD(FreezePropertyModifier, tolerateNewElements);
+DEFINE_PROPERTY_FIELD(FreezePropertyModifier, selectNewElements);
 SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, sourceProperty, "Property");
 SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, destinationProperty, "Destination property");
 SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, freezeTime, "Freeze at frame");
+SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, tolerateNewElements, "Tolerate newly appearing elements");
+SET_PROPERTY_FIELD_LABEL(FreezePropertyModifier, selectNewElements, "Select newly appearing elements");
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(FreezePropertyModificationNode);
 OVITO_CLASSINFO(FreezePropertyModificationNode, "ClassNameAlias", "FreezePropertyModifierApplication");  // For backward compatibility with OVITO 3.9.2
@@ -176,10 +180,6 @@ PipelineFlowState FreezePropertyModifier::transferFrozenProperty(FreezePropertyM
     int destTypeId = destinationProperty().standardTypeId(&container->getOOMetaClass());
     if(destTypeId != 0) {
         outputProperty = container->createProperty(DataBuffer::Initialized, destTypeId);
-        if(outputProperty->dataType() != modNode->property()->dataType()
-            || outputProperty->componentCount() != modNode->property()->componentCount()
-            || outputProperty->stride() != modNode->property()->stride())
-            throw Exception(tr("Types of source property and output property are not compatible. Cannot restore saved property values."));
     }
     else {
         outputProperty = container->createProperty(DataBuffer::Initialized, destinationProperty().name(),
@@ -187,6 +187,17 @@ PipelineFlowState FreezePropertyModifier::transferFrozenProperty(FreezePropertyM
         outputProperty->setComponentNames(modNode->property()->componentNames());
     }
     OVITO_ASSERT(outputProperty->stride() == modNode->property()->stride());
+
+    // Data types of the source property and the output property must be compatible for the copy operation.
+    if(outputProperty->dataType() != modNode->property()->dataType()
+            || outputProperty->componentCount() != modNode->property()->componentCount()
+            || outputProperty->stride() != modNode->property()->stride())
+        throw Exception(tr("Data types of source property and output property are not compatible. Cannot transfer frozen property values."));
+
+    // Create the output selection property if requested.
+    BufferWriteAccessAndRef<SelectionIntType, access_mode::write> selection;
+    if(selectNewElements() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty))
+        selection = container->getOOMetaClass().createStandardProperty(DataBuffer::Initialized, container->elementCount(), Property::GenericSelectionProperty);
 
     // Check if particle IDs are present and if the order of particles has changed
     // since we took the snapshot of the property values.
@@ -217,25 +228,50 @@ PipelineFlowState FreezePropertyModifier::transferFrozenProperty(FreezePropertyM
         auto id = idProperty.cbegin();
         for(size_t& mappedIndex : mapping) {
             auto mapEntry = idmap.find(*id++);
-            if(mapEntry == idmap.end())
-                throw Exception(tr("Detected new element ID %1, which didn't exist when the snapshot was created. Cannot restore saved property values.").arg(*id));
-            mappedIndex = mapEntry->second;
+            if(mapEntry == idmap.end()) {
+                if(!tolerateNewElements())
+                    throw Exception(tr("Detected newly added element ID %1 at current timestep, which didn't exist at frozen timestep. Property value transfer is not possible in this case.").arg(*id));
+                else {
+                    mappedIndex = std::numeric_limits<size_t>::max();
+                    if(selection)
+                        selection[&mappedIndex - mapping.data()] = 1;
+                }
+            }
+            else {
+                mappedIndex = mapEntry->second;
+            }
         }
         idProperty.reset();
 
         // Copy and reorder property data.
-        modNode->property()->mappedCopyTo(*outputProperty, mapping);
+        // Accept invalid indices if the user explicitly allowed new elements to be added.
+        modNode->property()->mappedCopyTo(*outputProperty, mapping, tolerateNewElements());
     }
     else {
         storedIds.reset();
         idProperty.reset();
 
         // Make sure the number of elements didn't change when no IDs are defined.
-        if(modNode->property()->size() != outputProperty->size())
-            throw Exception(tr("Number of input elements has changed. Cannot restore saved property values. There were %1 elements when the snapshot was created. Now there are %2.").arg(modNode->property()->size()).arg(outputProperty->size()));
-
-        if(outputProperty->dataType() == modNode->property()->dataType() && outputProperty->stride() == modNode->property()->stride())
+        if(modNode->property()->size() != outputProperty->size()) {
+            if(!tolerateNewElements()) {
+                throw Exception(tr("Cannot transfer frozen property values because the number of %1 has changed. There were %2 %1 at the frozen timestep; now there are %3.")
+                    .arg(container->getOOMetaClass().elementDescriptionName())
+                    .arg(modNode->property()->size())
+                    .arg(outputProperty->size()));
+            }
+            else {
+                // Transfer the property data only for a sub-range of the elements if the number of elements has changed (in either direction).
+                outputProperty->copyRangeFrom(*modNode->property(), 0, 0, std::min(modNode->property()->size(), outputProperty->size()));
+                // Select newly added elements if requested.
+                if(selection && modNode->property()->size() < outputProperty->size()) {
+                    std::fill(selection.begin() + modNode->property()->size(), selection.end(), 1);
+                }
+            }
+        }
+        else {
+            // Perform a 1-to-1 copy of the property data.
             outputProperty->copyFrom(*modNode->property());
+        }
     }
 
     // Replace vis elements of output property with cached ones and cache any new elements.
@@ -250,6 +286,10 @@ PipelineFlowState FreezePropertyModifier::transferFrozenProperty(FreezePropertyM
     }
     outputProperty->setVisElements(currentVisElements);
     modNode->setCachedVisElements(std::move(currentVisElements));
+
+    // Add selection property to the output container.
+    if(selection)
+        container->addProperty(static_object_cast<Property>(selection.take()));
 
     return state;
 }
