@@ -86,8 +86,8 @@ Future<PipelineFlowState> ParticlesAffineTransformationModifierDelegate::apply(c
 
             // Pure translations don't affect particle shapes and orientations and we can skip the following section.
             if(!tm.isTranslationMatrix()) {
-                // Is the transformation a pure rotation or a rotation+stretch?
-                if(tm.isRotationMatrix()) {
+                // Is the (linear) transformation a pure rotation or a rotation+stretch?
+                if(tm.linear().isRotationMatrix()) {
                     // Transform the particle orientations.
                     if(inputOrientationProperty) {
                         Quaternion q(tm.linear());
@@ -101,9 +101,9 @@ Future<PipelineFlowState> ParticlesAffineTransformationModifierDelegate::apply(c
                 }
                 else {
                     if(inputOrientationProperty)
-                        throw Exception(tr("Cannot apply a non-rotation affine transformation to particles with orientations. This function is not implemented yet. Please contact the OVITO developers if you need this capability."));
+                        throw Exception(tr("Cannot apply a non-rotation transformation to particles with orientations. This function is not implemented yet. Please contact the OVITO developers if you need this capability."));
                     if(inputShapeProperty)
-                        throw Exception(tr("Cannot apply a non-rotation affine transformation to particles with aspherical shapes. This function is not implemented yet. Please contact the OVITO developers if you need this capability"));
+                        throw Exception(tr("Cannot apply a non-rotation transformation to particles with aspherical shapes. This function is not implemented yet. Please contact the OVITO developers if you need this capability"));
                 }
             }
         }
