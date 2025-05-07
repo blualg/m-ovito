@@ -130,8 +130,7 @@ std::optional<std::pair<SurfaceMeshReadAccess::region_index, FloatType>> Surface
     }
 
     // If the surface is degenerate, any point is inside the space-filling region.
-    if(closestVertex == InvalidIndex)
-        return std::make_pair(spaceFillingRegion(), closestDistanceSq);
+    if(closestVertex == InvalidIndex) return std::make_pair(spaceFillingRegion(), std::sqrt(closestDistanceSq));
 
     // Check if any edge is closer to the test point than the closest vertex.
     size_type edgeCount = this->edgeCount();
