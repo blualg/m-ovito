@@ -115,12 +115,10 @@ private:
             if(dataCollection) {
                 for(const DataObject* obj : dataCollection->objects()) {
                     if(const AttributeDataObject* attribute = dynamic_object_cast<AttributeDataObject>(obj)) {
-                        _attributes.push_back(attribute);
+                        if(!attribute->identifier().startsWith(".")) _attributes.emplace_back(attribute);
                     }
                 }
-                boost::sort(_attributes, [](const auto& a, const auto& b) {
-                    return a->identifier() < b->identifier();
-                });
+                std::ranges::sort(_attributes, [](const auto& a, const auto& b) { return a->identifier() < b->identifier(); });
             }
             endResetModel();
         }

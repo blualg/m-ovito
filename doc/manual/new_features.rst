@@ -17,6 +17,7 @@ Version 3.13.0 (xx-xxx-2025)
   The modifier now provides a new option to handle previously unknown particles that were not present in the initial simulation frame.
 - Allow for more flexible syntax in the Quantum Espresso file reader (`forum post <https://www.ovito.org/forum/topic/quantum-espresso-output/#postid-5009>`__)
 - |ovito-python| Add ``return_distances`` parameter to :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` method.
+- :ref:`Global attribute <usage.global_attributes>` identifiers starting with ``'.'`` are hidden in the GUI.
 
 .. sidebar::
 
