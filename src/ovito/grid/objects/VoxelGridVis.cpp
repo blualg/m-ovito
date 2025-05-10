@@ -36,13 +36,15 @@ OVITO_CLASSINFO(VoxelGridVis, "DisplayName", "Voxel grid");
 DEFINE_REFERENCE_FIELD(VoxelGridVis, transparencyController);
 DEFINE_PROPERTY_FIELD(VoxelGridVis, highlightGridLines);
 DEFINE_PROPERTY_FIELD(VoxelGridVis, interpolateColors);
-DEFINE_PROPERTY_FIELD(VoxelGridVis, renderVolume);
+DEFINE_PROPERTY_FIELD(VoxelGridVis, representationMode);
 DEFINE_REFERENCE_FIELD(VoxelGridVis, colorMapping);
+DEFINE_REFERENCE_FIELD(VoxelGridVis, opacityFunction);
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, transparencyController, "Transparency");
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, highlightGridLines, "Grid lines");
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, interpolateColors, "Interpolation");
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, colorMapping, "Color mapping");
-SET_PROPERTY_FIELD_LABEL(VoxelGridVis, renderVolume, "Render volume");
+SET_PROPERTY_FIELD_LABEL(VoxelGridVis, representationMode, "Representation mode");
+SET_PROPERTY_FIELD_LABEL(VoxelGridVis, opacityFunction, "Opacity function");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(VoxelGridVis, transparencyController, PercentParameterUnit, 0, 1);
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(VoxelGridPickInfo);
@@ -60,6 +62,9 @@ void VoxelGridVis::initializeObject(ObjectInitializationFlags flags)
 
         // Create a color mapping object for pseudo-color visualization of a grid property.
         setColorMapping(OORef<PropertyColorMapping>::create(flags));
+
+        // Create a default opacity function for volume rendering.
+        setOpacityFunction(DataOORef<OpacityFunction>::create(flags));
     }
 }
 
@@ -76,6 +81,12 @@ void VoxelGridVis::loadFromStreamComplete(ObjectLoadStream& stream)
     if(!colorMapping()) {
         // Create a color mapping object for pseudo-color visualization of a grid property.
         setColorMapping(OORef<PropertyColorMapping>::create());
+    }
+
+    // For backward compatibility with OVITO 3.12.x.
+    // Create a opacity function if it wasn't loaded from the state file.
+    if(!opacityFunction()) {
+        setOpacityFunction(DataOORef<OpacityFunction>::create());
     }
 }
 
@@ -108,12 +119,12 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VoxelGridVis::render(const 
     if(!gridObj)
         return status;
 
-    // Throws an exception if the input data structure is corrupt.
+    // Throws an exception if the input data structure is in an invalid state.
     gridObj->verifyIntegrity();
 
     // Look up 'Color' voxel property if available, which specifies the RGB colors of the grid cells explicitly.
-    // This is done only when rendering the grid's surface, because volumetric rendering can works for 1D transfer functions.
-    const Property* colorProperty = !renderVolume() ? gridObj->getProperty(VoxelGrid::ColorProperty) : nullptr;
+    // This is done only when rendering the grid's surface, because volumetric rendering works only for pseudo-color transfer functions.
+    const Property* colorProperty = (representationMode() == RepresentationMode::Boundary) ? gridObj->getProperty(VoxelGrid::ColorProperty) : nullptr;
 
     // Look for selected pseudo-coloring property unless RGB grid cell colors have been specified explicitly.
     const Property* pseudoColorProperty = nullptr;
@@ -123,16 +134,18 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VoxelGridVis::render(const 
         std::tie(pseudoColorProperty, pseudoColorPropertyComponent) = colorMapping()->sourceProperty().findInContainerWithComponent(gridObj, errorDescription);
         if(!pseudoColorProperty) {
             status = PipelineStatus(PipelineStatus::Error, std::move(errorDescription));
+            if(representationMode() == RepresentationMode::Volume)
+                return status; // No pseudo-color property found, abort volume rendering, which always requires a valid pseudo-color property.
         }
     }
 
-    if(!renderVolume() || colorProperty || !pseudoColorProperty || gridObj->domain()->is2D()) {
+    if(representationMode() == RepresentationMode::Boundary) {
         // Render the outer surfaces of the grid.
-        renderGridBoundaries(frameGraph, sceneNode, gridObj, colorProperty, pseudoColorProperty, pseudoColorPropertyComponent);
+        renderGridBoundary(frameGraph, sceneNode, gridObj, colorProperty, pseudoColorProperty, pseudoColorPropertyComponent, status);
     }
-    else {
+    else if(representationMode() == RepresentationMode::Volume) {
         // Render the interior volume of the grid.
-        renderGridVolume(frameGraph, sceneNode, gridObj, pseudoColorProperty, pseudoColorPropertyComponent);
+        renderGridVolume(frameGraph, sceneNode, gridObj, pseudoColorProperty, pseudoColorPropertyComponent, status);
     }
 
     return status;
@@ -141,7 +154,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VoxelGridVis::render(const 
 /******************************************************************************
 * Renders the outer surfaces of the grid.
 ******************************************************************************/
-void VoxelGridVis::renderGridBoundaries(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* colorProperty, const Property* pseudoColorProperty, int pseudoColorPropertyComponent)
+void VoxelGridVis::renderGridBoundary(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* colorProperty, const Property* pseudoColorProperty, int pseudoColorPropertyComponent, PipelineStatus& status)
 {
     BufferReadAccess<ColorG> colorArray(colorProperty);
     RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
@@ -238,10 +251,10 @@ void VoxelGridVis::renderGridBoundaries(FrameGraph& frameGraph, const SceneNode*
 
                     // Will store the xyz voxel grid coordinates.
                     // The coordinate in the 3rd direction is a constant, which is precomputed here.
-                    size_t coords[3];
+                    std::array<size_t, 3> coords;
                     coords[dim3] = oppositeSide ? (gridDims[dim3] - 1) : 0;
                     // Voxel grid coordinate on the opposite side of the domain:
-                    size_t coords_wrap[3];
+                    std::array<size_t, 3> coords_wrap;
                     coords_wrap[dim3] = oppositeSide ? 0 : (gridDims[dim3] - 1);
 
                     if(gridObj->gridType() == VoxelGrid::GridType::PointData && interpolateColors() && pbcFlags[dim3])
@@ -280,11 +293,11 @@ void VoxelGridVis::renderGridBoundaries(FrameGraph& frameGraph, const SceneNode*
                                         else coords[dim2] = gridDims[dim2]-1;
                                     }
                                     if(vertexColor) {
-                                        const ColorG& c = colorArray[gridObj->voxelIndex(coords[0], coords[1], coords[2])];
+                                        const ColorG& c = colorArray[VoxelGrid::voxelIndex(coords, gridDims)];
                                         *vertexColor++ = ColorAG(c, alpha);
                                     }
                                     else {
-                                        *vertexPseudoColor++ = pseudoColorArray.get<FloatType>(gridObj->voxelIndex(coords[0], coords[1], coords[2]), pseudoColorPropertyComponent);
+                                        *vertexPseudoColor++ = pseudoColorArray.get<FloatType>(VoxelGrid::voxelIndex(coords, gridDims), pseudoColorPropertyComponent);
                                     }
                                 }
                             }
@@ -306,14 +319,14 @@ void VoxelGridVis::renderGridBoundaries(FrameGraph& frameGraph, const SceneNode*
                                 if(faceColor) {
                                     coords[dim1] = ix;
                                     coords[dim2] = iy;
-                                    const ColorG& c = colorArray[gridObj->voxelIndex(coords[0], coords[1], coords[2])];
+                                    const ColorG& c = colorArray[VoxelGrid::voxelIndex(coords, gridDims)];
                                     *faceColor++ = ColorAG(c, alpha);
                                     *faceColor++ = ColorAG(c, alpha);
                                 }
                                 if(facePseudoColor) {
                                     coords[dim1] = ix;
                                     coords[dim2] = iy;
-                                    FloatType c = pseudoColorArray.get<FloatType>(gridObj->voxelIndex(coords[0], coords[1], coords[2]), pseudoColorPropertyComponent);
+                                    FloatType c = pseudoColorArray.get<FloatType>(VoxelGrid::voxelIndex(coords, gridDims), pseudoColorPropertyComponent);
                                     *facePseudoColor++ = c;
                                     *facePseudoColor++ = c;
                                 }
@@ -353,12 +366,12 @@ void VoxelGridVis::renderGridBoundaries(FrameGraph& frameGraph, const SceneNode*
                             for(int ix = 0; ix < nvx; ix++, vertexColor += 4) {
                                 coords[dim1] = ix;
                                 coords[dim2] = iy;
-                                FloatType c1 = pseudoColorArray.get<FloatType>(gridObj->voxelIndex(coords[0], coords[1], coords[2]), pseudoColorPropertyComponent);
+                                FloatType c1 = pseudoColorArray.get<FloatType>(VoxelGrid::voxelIndex(coords, gridDims), pseudoColorPropertyComponent);
                                 if(pbcFlags[dim3]) {
                                     // Blend two colors if the grid is periodic.
                                     coords_wrap[dim1] = ix;
                                     coords_wrap[dim2] = iy;
-                                    FloatType c2 = pseudoColorArray.get<FloatType>(gridObj->voxelIndex(coords_wrap[0], coords_wrap[1], coords_wrap[2]), pseudoColorPropertyComponent);
+                                    FloatType c2 = pseudoColorArray.get<FloatType>(VoxelGrid::voxelIndex(coords_wrap, gridDims), pseudoColorPropertyComponent);
                                     vertexColor[3] = FloatType(0.5) * (c1 + c2);
                                 }
                                 else {
@@ -507,12 +520,12 @@ void VoxelGridVis::renderGridBoundaries(FrameGraph& frameGraph, const SceneNode*
                             for(int ix = 0; ix < nvx; ix++, vertexColor += 4) {
                                 coords[dim1] = ix;
                                 coords[dim2] = iy;
-                                const ColorG& c1 = colorArray[gridObj->voxelIndex(coords[0], coords[1], coords[2])];
+                                const ColorG& c1 = colorArray[VoxelGrid::voxelIndex(coords, gridDims)];
                                 if(pbcFlags[dim3]) {
                                     // Blend two colors if the grid is periodic.
                                     coords_wrap[dim1] = ix;
                                     coords_wrap[dim2] = iy;
-                                    const auto& c2 = colorArray[gridObj->voxelIndex(coords_wrap[0], coords_wrap[1], coords_wrap[2])];
+                                    const auto& c2 = colorArray[VoxelGrid::voxelIndex(coords_wrap, gridDims)];
                                     vertexColor[3] = ColorAG(GraphicsFloatType(0.5) * (c1 + c2), alpha);
                                 }
                                 else {
@@ -652,7 +665,6 @@ void VoxelGridVis::renderGridBoundaries(FrameGraph& frameGraph, const SceneNode*
         });
 
     if(volumeFaces.mesh()) {
-
         // Update the color mapping.
         auto coloredVolumeFaces = std::make_unique<MeshPrimitive>(volumeFaces);
         coloredVolumeFaces->setPseudoColorMapping(colorMapping()->pseudoColorMapping());
@@ -665,19 +677,89 @@ void VoxelGridVis::renderGridBoundaries(FrameGraph& frameGraph, const SceneNode*
 /******************************************************************************
 * Renders the interior volume of the grid.
 ******************************************************************************/
-void VoxelGridVis::renderGridVolume(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* pseudoColorProperty, int pseudoColorPropertyComponent)
+void VoxelGridVis::renderGridVolume(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* pseudoColorProperty, int pseudoColorPropertyComponent, PipelineStatus& status)
 {
     OVITO_ASSERT(pseudoColorProperty);
     OVITO_ASSERT(gridObj->domain() && !gridObj->domain()->is2D());
 
-    if(!pseudoColorProperty)
+    if(!pseudoColorProperty) {
+        status = PipelineStatus(PipelineStatus::Error, tr("Cannot render volume: no pseudo-color property specified."));
         return;
-    if(pseudoColorPropertyComponent < 0 || pseudoColorPropertyComponent >= pseudoColorProperty->componentCount())
+    }
+    if(pseudoColorPropertyComponent < 0 || pseudoColorPropertyComponent >= pseudoColorProperty->componentCount()) {
+        status = PipelineStatus(PipelineStatus::Error, tr("Component index for pseudo-color property is out of range."));
         return;
-    if(!gridObj->domain() || gridObj->domain()->is2D())
+    }
+    if(!gridObj->domain() || gridObj->domain()->is2D()) {
+        status = PipelineStatus(PipelineStatus::Error, tr("Volume domain is not defined or not three-dimensional."));
         return;
-    if(gridObj->shape()[0] < 2 || gridObj->shape()[1] < 2 || gridObj->shape()[2] < 2)
+    }
+
+    // Determine the number of data points in each direction for the volume grid used for rendering.
+    auto originalGridDims = gridObj->shape();
+    auto pbcFlags = gridObj->domain()->pbcFlags();
+    VoxelGrid::GridDimensions newGridDims;
+    for(size_t dim = 0; dim < 3; dim++)
+        newGridDims[dim] = originalGridDims[dim] + (gridObj->gridType() == VoxelGrid::GridType::CellData || pbcFlags[dim] ? 1 : 0);
+
+    if(newGridDims[0] < 2 || newGridDims[1] < 2 || newGridDims[2] < 2) {
+        status = PipelineStatus(PipelineStatus::Error, tr("Voxel grid has insufficient number of cells/points in one or more dimensions."));
         return;
+    }
+
+    // If the input grid is non-periodic and point-based, we can use it as is for volume rendering.
+    // Otherwise, build a new vertex-based grid used for volume rendering.
+    ConstDataBufferPtr volumeData;
+    if(newGridDims != originalGridDims) {
+        volumeData = frameGraph.visCache().lookup<DataBufferPtr>(
+            RendererResourceKey<struct VoxelGridVolumeResampling, ConstDataObjectRef, ConstDataObjectRef, int>{
+                gridObj,
+                pseudoColorProperty,
+                pseudoColorPropertyComponent,
+            },
+            [&](DataBufferPtr& volumeData) {
+                volumeData = DataBufferPtr::create(DataBuffer::Uninitialized, newGridDims[0] * newGridDims[1] * newGridDims[2], DataBuffer::Float32);
+                BufferWriteAccess<float, access_mode::discard_write> volumeDataAccess(volumeData);
+                // Resample the input grid data to the new grid dimensions.
+                RawBufferReadAccess pseudoColorArray(pseudoColorProperty);
+                if(gridObj->gridType() == VoxelGrid::GridType::PointData) {
+                    for(size_t z = 0; z < newGridDims[2]; z++) {
+                        for(size_t y = 0; y < newGridDims[1]; y++) {
+                            for(size_t x = 0; x < newGridDims[0]; x++) {
+                                float v = pseudoColorArray.get<float>(VoxelGrid::voxelIndex(x % originalGridDims[0], y % originalGridDims[1], z % originalGridDims[2], originalGridDims), pseudoColorPropertyComponent);
+                                volumeDataAccess[VoxelGrid::voxelIndex(x, y, z, newGridDims)] = v;
+                            }
+                        }
+                    }
+                }
+                else {
+                    for(size_t z = 0; z < newGridDims[2]; z++) {
+                        for(size_t y = 0; y < newGridDims[1]; y++) {
+                            for(size_t x = 0; x < newGridDims[0]; x++) {
+                                int count = 0;
+                                float sum = 0;
+                                for(int k = 0; k < 8; k++) {
+                                    size_t wrapped_x = (k & (1<<0)) ? ((x + newGridDims[0] - 1) % newGridDims[0]) : x;
+                                    if(!pbcFlags[0] && wrapped_x == originalGridDims[0]) continue;
+                                    size_t wrapped_y = (k & (1<<1)) ? ((y + newGridDims[1] - 1) % newGridDims[1]) : y;
+                                    if(!pbcFlags[1] && wrapped_y == originalGridDims[1]) continue;
+                                    size_t wrapped_z = (k & (1<<2)) ? ((z + newGridDims[2] - 1) % newGridDims[2]) : z;
+                                    if(!pbcFlags[2] && wrapped_z == originalGridDims[2]) continue;
+                                    sum += pseudoColorArray.get<float>(VoxelGrid::voxelIndex(wrapped_x % originalGridDims[0], wrapped_y % originalGridDims[1], wrapped_z % originalGridDims[2], originalGridDims), pseudoColorPropertyComponent);
+                                    count++;
+                                }
+                                OVITO_ASSERT(count != 0);
+                                volumeDataAccess[VoxelGrid::voxelIndex(x, y, z, newGridDims)] = sum / count;
+                            }
+                        }
+                    }
+                }
+            });
+        pseudoColorPropertyComponent = 0;
+    }
+    else {
+        volumeData = pseudoColorProperty;
+    }
 
     const AffineTransformation& cellMatrix = gridObj->domain()->cellMatrix();
     Box3 boundingBox = Box3(Point3(0), Point3(1)).transformed(cellMatrix);
@@ -685,9 +767,10 @@ void VoxelGridVis::renderGridVolume(FrameGraph& frameGraph, const SceneNode* sce
     // Create a VolumePrimitive for rendering the grid volume.
     auto volume = std::make_unique<VolumePrimitive>();
     volume->setPseudoColorMapping(colorMapping()->pseudoColorMapping());
-    volume->setFieldData(pseudoColorProperty, pseudoColorPropertyComponent);
+    volume->setOpacityFunction(opacityFunction());
+    volume->setFieldData(std::move(volumeData), pseudoColorPropertyComponent);
     volume->setDomain(cellMatrix);
-    volume->setDimensions(gridObj->shape());
+    volume->setDimensions(newGridDims);
 
     // Add the volume to the frame graph.
     frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(volume), sceneNode->getWorldTransform(frameGraph.time()), boundingBox, sceneNode);

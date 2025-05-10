@@ -76,9 +76,7 @@ bool PropertyParameterUI::referenceEvent(RefTarget* source, const ReferenceEvent
 }
 
 /******************************************************************************
-* This method is called when parameter object has been assigned to the reference field of the editable object
-* this parameter UI is bound to. It is also called when the editable object itself has
-* been replaced in the editor.
+* This method is called whenever the child parameter object or the parent object are replaced.
 ******************************************************************************/
 void PropertyParameterUI::resetUI()
 {

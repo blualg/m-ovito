@@ -48,17 +48,6 @@ FrameBufferWidget::FrameBufferWidget(QWidget* parent) : QAbstractScrollArea(pare
     viewport()->setAutoFillBackground(false); // We fill the background in paintEvent().
     viewport()->setBackgroundRole(QPalette::Window);
 
-    // Background for transparent framebuffer images.
-    QImage img(32, 32, QImage::Format_RGB32);
-    QPainter painter(&img);
-    QColor c1(136, 136, 136);
-    QColor c2(120, 120, 120);
-    painter.fillRect(0, 0, 16, 16, c1);
-    painter.fillRect(16, 16, 16, 16, c1);
-    painter.fillRect(16, 0, 16, 16, c2);
-    painter.fillRect(0, 16, 16, 16, c2);
-    _backgroundBrush.setTextureImage(std::move(img));
-
     // Create the label that indicates the current zoom factor.
     _zoomFactorDisplay = new QLabel("Hello", this);
     _zoomFactorDisplay->hide();
@@ -78,6 +67,28 @@ FrameBufferWidget::FrameBufferWidget(QWidget* parent) : QAbstractScrollArea(pare
     });
     connect(&_zoomLabelAnimation, &QVariantAnimation::valueChanged, this, &FrameBufferWidget::zoomLabelAnimationChanged);
     zoomLabelAnimationChanged(_zoomLabelAnimation.startValue());
+}
+
+/******************************************************************************
+* Returns a brush used for the background of (semi)transparent framebuffer images.
+******************************************************************************/
+const QBrush& FrameBufferWidget::backgroundBrush()
+{
+    static QBrush backgroundBrush(Qt::NoBrush);
+    if(backgroundBrush.style() == Qt::NoBrush) {
+        // Background for transparent framebuffer images.
+        QImage img(32, 32, QImage::Format_RGB32);
+        QPainter painter(&img);
+        QColor c1(136, 136, 136);
+        QColor c2(120, 120, 120);
+        painter.fillRect(0, 0, 16, 16, c1);
+        painter.fillRect(16, 16, 16, 16, c1);
+        painter.fillRect(16, 0, 16, 16, c2);
+        painter.fillRect(0, 16, 16, 16, c2);
+        backgroundBrush.setTextureImage(std::move(img));
+        OVITO_ASSERT(backgroundBrush.style() != Qt::NoBrush);
+    }
+    return backgroundBrush;
 }
 
 /******************************************************************************
@@ -170,7 +181,7 @@ void FrameBufferWidget::paintEvent(QPaintEvent* event)
         if(!imageRect.contains(event->rect()))
             painter.eraseRect(event->rect());
         painter.setBrushOrigin(imageRect.topLeft());
-        painter.fillRect(imageRect, _backgroundBrush);
+        painter.fillRect(imageRect, backgroundBrush());
         if(imageRect.width() < frameBuffer()->width() || imageRect.height() < frameBuffer()->height())
             painter.setRenderHint(QPainter::SmoothPixmapTransform);
         painter.drawImage(imageRect, frameBuffer()->displayImage());

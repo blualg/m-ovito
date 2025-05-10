@@ -157,18 +157,18 @@ public:
 
 public:
 
-    /// \brief Null constructor
+    /// Null constructor.
     void initializeObject(ObjectInitializationFlags flags) { DataObject::initializeObject(flags); }
 
-    /// \brief Constructor that creates and initializes a new buffer array.
+    /// Constructor that creates and initializes a new buffer array.
     void initializeObject(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList());
 
-    /// \brief Constructor that creates a new buffer array.
+    /// Constructor that creates a new buffer array.
     void initializeObject(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount = 1, QStringList componentNames = QStringList()) {
         initializeObject(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, std::move(componentNames));
     }
 
-    /// \brief Returns the number of elements stored in the buffer array.
+    /// Returns the number of elements stored in the buffer array.
     size_t size() const { return _numElements; }
 
     /// \brief Resizes the buffer.
@@ -177,7 +177,7 @@ public:
     ///                     This also determines whether newly allocated memory is initialized to zero.
     void resize(size_t newSize, bool preserveData);
 
-    /// \brief Resizes the buffer and copies the data element from an existing buffer.
+    /// Resizes the buffer and copies the data element from an existing buffer.
     void resizeCopyFrom(size_t newSize, const DataBuffer& original);
 
     /// \brief Grows the number of data elements while preserving the exiting data.
@@ -186,7 +186,7 @@ public:
     /// to accommodate the new elements.
     bool grow(size_t numAdditionalElements, bool callerAlreadyHasWriteAccess = false);
 
-    /// \brief Reduces the number of data elements while preserving the exiting data.
+    /// Reduces the number of data elements while preserving the exiting data.
     /// Note: This method never reallocates the memory buffer. Thus, the capacity of the array remains unchanged and the
     /// memory of the truncated elements is not released by the method.
     void truncate(size_t numElementsToRemove, bool callerAlreadyHasWriteAccess = false);
@@ -196,7 +196,7 @@ public:
     ///         this property storage according to the Qt meta type system.
     int dataType() const { return _dataType; }
 
-    /// \brief Returns the data type as a human-readable string.
+    /// Returns the data type as a human-readable string.
     const char* dataTypeName() const { return QMetaType(dataType()).name(); }
 
     /// \brief Returns the number of bytes per value.
@@ -204,7 +204,7 @@ public:
     ///         specified by type().
     size_t dataTypeSize() const { return _dataTypeSize; }
 
-    /// \brief Returns the number of bytes used per element.
+    /// Returns the number of bytes used per element.
     size_t stride() const { return _stride; }
 
     /// \brief Returns the number of vector components per element.

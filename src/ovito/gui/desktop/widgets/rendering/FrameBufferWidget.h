@@ -56,6 +56,9 @@ public:
     /// Returns the preferred size of the window.
     virtual QSize sizeHint() const override;
 
+    /// Returns a brush used for the background of (semi)transparent framebuffer images.
+    static const QBrush& backgroundBrush();
+
 public Q_SLOTS:
 
     /// Scales the image up.
@@ -90,7 +93,7 @@ protected:
     /// Returns the preferred size of the viewport widget.
     virtual QSize viewportSizeHint() const override;
 
-    /// Updates the scrollbars of the widget.
+    /// Updates the scroll bars of the widget.
     void updateScrollBarRange();
 
     /// Calculates the drawing rectangle for the framebuffer image within the viewport.
@@ -122,9 +125,6 @@ private:
 
     /// Stores the mouse cursor position from the last mouse move event.
     QPointF _mouseLastPosition;
-
-    /// The background for transparent framebuffer images.
-    QBrush _backgroundBrush;
 
     /// A label that is shown to indicate the current image zoom factor.
     QLabel* _zoomFactorDisplay;

@@ -135,6 +135,7 @@ namespace Ovito
     class MeshPrimitive;
     class ParticlePrimitive;
     class TextPrimitive;
+    class OpacityFunction;
     class Viewport;
     class ViewportConfiguration;
     class ViewportLayoutCell;

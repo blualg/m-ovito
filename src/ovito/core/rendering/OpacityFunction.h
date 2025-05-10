@@ -23,23 +23,40 @@
 #pragma once
 
 
-#include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/properties/PropertiesEditor.h>
-#include "OpacityFunctionParameterUI.h"
+#include <ovito/core/Core.h>
+#include <ovito/core/dataset/data/DataObject.h>
 
 namespace Ovito {
 
 /**
- * \brief A properties editor for the VoxelGridVis class.
+ * \brief A transfer function for the opacity used in volume rendering.
  */
-class VoxelGridVisEditor : public PropertiesEditor
+class OVITO_CORE_EXPORT OpacityFunction : public DataObject
 {
-    OVITO_CLASS(VoxelGridVisEditor)
+    OVITO_CLASS(OpacityFunction)
 
-protected:
+public:
 
-    /// Creates the user interface controls for the editor.
-    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+    static constexpr size_t DEFAULT_TABULATION_SIZE = 256;
+
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags);
+
+    /// Returns the optimal number of samples for tabulating the opacity function.
+    size_t optimalTabulationSize() const {
+        return table().size();
+    }
+
+    /// Produces a tabulated representation of the opacity function.
+    void tabulateOpacityValues(std::span<float> buffer) const;
+
+    /// Implements a free-hand drawing operation on the opacity function.
+    void freeDraw(std::span<const Point2> drawPath);
+
+private:
+
+    /// The tabulated opacity function.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(std::vector<FloatType>{}, table, setTable);
 };
 
 }   // End of namespace

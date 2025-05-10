@@ -44,7 +44,7 @@ class OVITO_GRID_EXPORT VoxelGrid : public PropertyContainer
         /// Inherit constructor from base class.
         using PropertyContainerClass::PropertyContainerClass;
 
-        /// \brief Create a storage object for standard voxel properties.
+        /// Create a storage object for standard voxel properties.
         virtual PropertyPtr createStandardPropertyInternal(DataBuffer::BufferInitialization init, size_t elementCount, int type, const ConstDataObjectPath& containerPath) const override;
 
     protected:
@@ -89,11 +89,24 @@ public:
     void verifyIntegrity() const;
 
     /// Converts logical grid coordinates to a linear array index.
+    inline static size_t voxelIndex(const std::array<size_t, 3>& coords, const GridDimensions& gridShape) {
+        OVITO_ASSERT(coords[0] < gridShape[0]);
+        OVITO_ASSERT(coords[1] < gridShape[1]);
+        OVITO_ASSERT(coords[2] < gridShape[2]);
+        return coords[2] * (gridShape[0] * gridShape[1]) + coords[1] * gridShape[0] + coords[0];
+    }
+
+    /// Converts logical grid coordinates to a linear array index.
+    inline static size_t voxelIndex(size_t x, size_t y, size_t z, const GridDimensions& gridShape) {
+        OVITO_ASSERT(x < gridShape[0]);
+        OVITO_ASSERT(y < gridShape[1]);
+        OVITO_ASSERT(z < gridShape[2]);
+        return z * (gridShape[0] * gridShape[1]) + y * gridShape[0] + x;
+    }
+
+    /// Converts logical grid coordinates to a linear array index.
     size_t voxelIndex(size_t x, size_t y, size_t z) const {
-        OVITO_ASSERT(x >= 0 && x < shape()[0]);
-        OVITO_ASSERT(y >= 0 && y < shape()[1]);
-        OVITO_ASSERT(z >= 0 && z < shape()[2]);
-        return z * (shape()[0] * shape()[1]) + y * shape()[0] + x;
+        return voxelIndex(x, y, z, shape());
     }
 
     /// Converts a linear array index into logical grid coordinates.

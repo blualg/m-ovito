@@ -26,6 +26,7 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/dataset/data/DataBuffer.h>
 #include "PseudoColorMapping.h"
+#include "OpacityFunction.h"
 #include "RenderingPrimitive.h"
 
 namespace Ovito {
@@ -81,6 +82,12 @@ public:
     /// Sets the field data and the optional field data vector component.
     void setFieldData(ConstDataBufferPtr fieldData, int fieldDataComponent = 0) { _fieldData = std::move(fieldData); _fieldDataComponent = fieldDataComponent; }
 
+    /// Returns the opacity function.
+    const DataOORef<const OpacityFunction>& opacityFunction() const { return _opacityFunction; }
+
+    /// Sets the opacity function.
+    void setOpacityFunction(DataOORef<const OpacityFunction> opacityFunction) { _opacityFunction = std::move(opacityFunction); }
+
 private:
 
     /// The dimensions of the regular grid, i.e, the number of vertices (data points) in each direction.
@@ -89,14 +96,17 @@ private:
     /// An affine transformation matrix that defines the grid's outer shape.
     AffineTransformation _domain = AffineTransformation::Identity();
 
-    // Field data.
+    /// Field data.
     ConstDataBufferPtr _fieldData;
 
-    // Field data vector component.
+    /// Field data vector component.
     int _fieldDataComponent = 0;
 
     /// The mapping from field values to RGB colors.
     PseudoColorMapping _pseudoColorMapping;
+
+    /// Opacity gradient.
+    DataOORef<const OpacityFunction> _opacityFunction;
 };
 
 }   // End of namespace

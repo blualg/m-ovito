@@ -42,6 +42,12 @@ class OVITO_GRID_EXPORT VoxelGridVis : public DataVis
 
 public:
 
+    enum RepresentationMode {
+        Boundary,
+        Volume,
+    };
+    Q_ENUM(RepresentationMode);
+
     /// Constructor.
     void initializeObject(ObjectInitializationFlags flags);
 
@@ -65,10 +71,10 @@ protected:
 private:
 
     /// Renders the outer surfaces of the grid.
-    void renderGridBoundaries(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* colorProperty, const Property* pseudoColorProperty, int pseudoColorPropertyComponent);
+    void renderGridBoundary(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* colorProperty, const Property* pseudoColorProperty, int pseudoColorPropertyComponent, PipelineStatus& status);
 
     /// Renders the interior volume of the grid.
-    void renderGridVolume(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* pseudoColorProperty, int pseudoColorPropertyComponent);
+    void renderGridVolume(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* pseudoColorProperty, int pseudoColorPropertyComponent, PipelineStatus& status);
 
 private:
 
@@ -84,8 +90,11 @@ private:
     /// Transfer function for pseudo-color visualization of a field property.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
 
-    /// Controls whether the interior volume of the grid should be rendered.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, renderVolume, setRenderVolume);
+    /// Controls how the grid is represented in the viewport.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(RepresentationMode{Boundary}, representationMode, setRepresentationMode);
+
+    /// Opacity transfer function for volume rendering.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const OpacityFunction>, opacityFunction, setOpacityFunction);
 };
 
 /**

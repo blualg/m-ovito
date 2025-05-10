@@ -24,7 +24,8 @@
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/SubObjectParameterUI.h>
-#include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
+#include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
+#include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/stdobj/gui/properties/PropertyColorMappingEditor.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/grid/objects/VoxelGridVis.h>
@@ -46,41 +47,60 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     // Create the rollout contents.
     QGridLayout* layout = new QGridLayout(rollout);
     layout->setContentsMargins(4,4,4,4);
-    layout->setSpacing(8);
-    layout->setColumnMinimumWidth(0, 20);
+    layout->setSpacing(4);
     layout->setColumnStretch(1, 1);
 
-    BooleanRadioButtonParameterUI* renderVolumeUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(VoxelGridVis::renderVolume));
+    VariantComboBoxParameterUI* representationModeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(VoxelGridVis::representationMode));
+    representationModeUI->comboBox()->addItem(tr("Boundary"), QVariant::fromValue((int)VoxelGridVis::RepresentationMode::Boundary));
+    representationModeUI->comboBox()->addItem(tr("Volume"), QVariant::fromValue((int)VoxelGridVis::RepresentationMode::Volume));
+    layout->addWidget(new QLabel(tr("Representation mode:")), 0, 0);
+    layout->addWidget(representationModeUI->comboBox(), 0, 1);
 
-    QRadioButton* renderBoundariesButton = renderVolumeUI->buttonFalse();
-    renderBoundariesButton->setText(tr("Boundary representation:"));
-    layout->addWidget(renderBoundariesButton, 0, 0, 1, 2);
-
-    QGridLayout* sublayout = new QGridLayout();
-    sublayout->setContentsMargins(0,0,0,0);
-    sublayout->setSpacing(4);
-    sublayout->setColumnStretch(1, 1);
-    layout->addLayout(sublayout, 1, 1);
+    QWidget* container1 = new QWidget();
+    QGridLayout* sublayout1 = new QGridLayout(container1);
+    sublayout1->setContentsMargins(0,0,0,0);
+    sublayout1->setSpacing(4);
+    sublayout1->setColumnStretch(1, 1);
+    layout->addWidget(container1, 1, 0, 1, 2);
 
     BooleanParameterUI* highlightLinesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoxelGridVis::highlightGridLines));
-    sublayout->addWidget(highlightLinesUI->checkBox(), 0, 0, 1, 2);
-    highlightLinesUI->setEnabled(false);
-    connect(renderBoundariesButton, &QRadioButton::toggled, highlightLinesUI, &ParameterUI::setEnabled);
+    sublayout1->addWidget(highlightLinesUI->checkBox(), 0, 0, 1, 2);
 
     BooleanParameterUI* interpolateColorsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(VoxelGridVis::interpolateColors));
-    sublayout->addWidget(interpolateColorsUI->checkBox(), 1, 0, 1, 2);
-    interpolateColorsUI->setEnabled(false);
-    connect(renderBoundariesButton, &QRadioButton::toggled, interpolateColorsUI, &ParameterUI::setEnabled);
+    sublayout1->addWidget(interpolateColorsUI->checkBox(), 1, 0, 1, 2);
 
     FloatParameterUI* transparencyUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VoxelGridVis::transparencyController));
-    sublayout->addWidget(transparencyUI->label(), 2, 0);
-    sublayout->addLayout(transparencyUI->createFieldLayout(), 2, 1);
-    transparencyUI->setEnabled(false);
-    connect(renderBoundariesButton, &QRadioButton::toggled, transparencyUI, &ParameterUI::setEnabled);
+    sublayout1->addWidget(transparencyUI->label(), 2, 0);
+    sublayout1->addLayout(transparencyUI->createFieldLayout(), 2, 1);
 
-    QRadioButton* renderVolumeButton = renderVolumeUI->buttonTrue();
-    renderVolumeButton->setText(tr("Volume representation:"));
-    layout->addWidget(renderVolumeButton, 2, 0, 1, 2);
+    QWidget* container2 = new QWidget();
+    QGridLayout* sublayout2 = new QGridLayout(container2);
+    sublayout2->setContentsMargins(0,0,0,0);
+    sublayout2->setSpacing(4);
+    sublayout2->setColumnStretch(1, 1);
+    layout->addWidget(container2, 2, 0, 1, 2);
+
+    QLabel* label = new QLabel(tr("<p style=\"font-size: small;\">Note: Volume rendering is only supported by <a href=\"settings\">VisRTX renderer</a>.</p>"));
+    //label->setWordWrap(true);
+    label->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+    connect(label, &QLabel::linkActivated, this, [this]() {
+        mainWindow().actionManager()->openHelpTopic(QStringLiteral("manual:rendering.visrtx_renderer"));
+    });
+    sublayout2->addWidget(label, 0, 0, 1, 2, Qt::AlignRight);
+
+    OpacityFunctionParameterUI* opacityFunctionUI = createParamUI<OpacityFunctionParameterUI>(PROPERTY_FIELD(VoxelGridVis::opacityFunction), PROPERTY_FIELD(VoxelGridVis::colorMapping));
+    sublayout2->addWidget(opacityFunctionUI->plotWidget(), 1, 0, 1, 2);
+
+    connect(this, &PropertiesEditor::contentsChanged, this, [this, container1, container2]() {
+        if(VoxelGridVis* vis = static_object_cast<VoxelGridVis>(editObject())) {
+            bool isVolumeRendering = vis->representationMode() == VoxelGridVis::RepresentationMode::Volume;
+            if(container2->isVisible() != isVolumeRendering || container1->isVisible() == isVolumeRendering) {
+                container1->setVisible(!isVolumeRendering);
+                container2->setVisible(isVolumeRendering);
+                container()->updateRollouts();
+            }
+        }
+    });
 
     // Open a sub-editor for the property color mapping.
     SubObjectParameterUI* colorMappingParamUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(VoxelGridVis::colorMapping), rolloutParams.after(rollout));
