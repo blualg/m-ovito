@@ -42,6 +42,12 @@ class OVITO_GRID_EXPORT VoxelGridVis : public DataVis
 
 public:
 
+    enum RepresentationMode {
+        Boundary,
+        Volume,
+    };
+    Q_ENUM(RepresentationMode);
+
     /// Constructor.
     void initializeObject(ObjectInitializationFlags flags);
 
@@ -64,17 +70,31 @@ protected:
 
 private:
 
-    /// Controls the transparency of the grid's faces.
+    /// Renders the outer surfaces of the grid.
+    void renderGridBoundary(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* colorProperty, const Property* pseudoColorProperty, int pseudoColorPropertyComponent, PipelineStatus& status);
+
+    /// Renders the interior volume of the grid.
+    void renderGridVolume(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* pseudoColorProperty, int pseudoColorPropertyComponent, PipelineStatus& status);
+
+private:
+
+    /// Controls the transparency of the grid's surfaces.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<Controller>, transparencyController, setTransparencyController);
 
-    /// Controls whether the grid lines should be highlighted.
+    /// Controls whether the grid lines on the surface should be highlighted.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, highlightGridLines, setHighlightGridLines);
 
-    /// Controls whether the voxel face colors should be interpolated.
+    /// Controls whether the voxel colors should be interpolated.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, interpolateColors, setInterpolateColors);
 
-    /// Transfer function for pseudo-color visualization of a grid property.
+    /// Transfer function for pseudo-color visualization of a field property.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(OORef<PropertyColorMapping>, colorMapping, setColorMapping);
+
+    /// Controls how the grid is represented in the viewport.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(RepresentationMode{Boundary}, representationMode, setRepresentationMode);
+
+    /// Opacity transfer function for volume rendering.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const OpacityFunction>, opacityFunction, setOpacityFunction);
 };
 
 /**

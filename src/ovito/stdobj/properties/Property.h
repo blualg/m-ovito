@@ -53,7 +53,7 @@ public:
 
 public:
 
-    /// \brief The standard property type identifiers used by all property container classes.
+    /// The standard property type identifiers used by all property container classes.
     enum GenericStandardType {
         GenericUserProperty = 0,    //< This is reserved for user-defined properties.
         GenericSelectionProperty = 1,
@@ -67,43 +67,43 @@ public:
 
 public:
 
-    /// \brief Creates an empty property array.
+    /// Creates an empty property array.
     void initializeObject(ObjectInitializationFlags flags);
 
-    /// \brief Constructor creating a new property array.
+    /// Constructor creating a new property array.
     void initializeObject(ObjectInitializationFlags flags, BufferInitialization init, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int typeId = 0, QStringList componentNames = QStringList());
 
-    /// \brief Constructor creating a new property array.
+    /// Constructor creating a new property array.
     void initializeObject(ObjectInitializationFlags flags, size_t elementCount, int dataType, size_t componentCount, const QStringView name, int typeId = 0, QStringList componentNames = QStringList()) {
         initializeObject(flags, BufferInitialization::Uninitialized, elementCount, dataType, componentCount, name, typeId, std::move(componentNames));
     }
 
 #ifdef OVITO_DEBUG
-    /// \brief Destructor.
+    /// Destructor.
     ~Property();
 #endif
 
-    /// \brief Gets the property's name, which is also the property object's unique identifier.
+    /// Gets the property's name, which is also the property object's unique identifier.
     const QString& name() const { return identifier(); }
 
-    /// \brief Sets the property's name, which is also the property object's unique identifier.
+    /// Sets the property's name, which is also the property object's unique identifier.
     void setName(const QString& name) { setIdentifier(name); }
 
-    /// \brief Sets the property's name, which is also the property object's unique identifier.
+    /// Sets the property's name, which is also the property object's unique identifier.
     void setName(const QStringView name) { setIdentifier(name.toString()); }
 
-    /// \brief Returns the kind of this property (standard or user-defined).
+    /// Returns the kind of this property (standard or user-defined).
     int typeId() const { return _typeId; }
 
-    /// \brief Changes the type identifier of this property. Note that this method is only for internal use.
-    ///        Normally, you should not change the type ID of a property after it has been created.
+    /// Changes the type identifier of this property. Note that this method is only for internal use.
+    /// Normally, you should not change the type ID of a property after it has been created.
     void setTypeId(int newTypeId) { _typeId = newTypeId; }
 
-    /// \brief Indicates whether this property is a standard property (and not a user-defined property).
+    /// Indicates whether this property is a standard property (and not a user-defined property).
     bool isStandardProperty() const { return typeId() != 0; }
 
-    /// \brief Returns the display name of the property including the name of the given
-    ///        vector component.
+    /// Returns the display name of the property including the name of the given
+    /// vector component.
     QString nameWithComponent(int vectorComponent) const;
 
     /// Checks if this property storage and its contents exactly match those of another property storage.

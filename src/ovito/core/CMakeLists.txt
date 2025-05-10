@@ -132,6 +132,7 @@ SET(SourceFiles
     rendering/FrameBuffer.cpp
     rendering/ColorCodingGradient.cpp
     rendering/ObjectPickingMap.cpp
+    rendering/OpacityFunction.cpp
     viewport/Viewport.cpp
     viewport/ViewportWindow.cpp
     viewport/ViewportConfiguration.cpp

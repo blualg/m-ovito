@@ -116,6 +116,7 @@ void XSFImporter::FrameLoader::loadFile()
 
     VoxelGrid* voxelGrid = nullptr;
     VoxelGridVis* newVoxelGridVis = nullptr;
+    bool containsSimulationCellInfo = false;
 
     while(!stream.eof()) {
         this_task::throwIfCanceled();
@@ -177,7 +178,7 @@ void XSFImporter::FrameLoader::loadFile()
             state().setStatus(tr("%1 atoms").arg(coords.size()));
 
             // If the input file does not contain simulation cell info,
-            // Use bounding box of particles as simulation cell.
+            // Use the axis-aligned bounding box of particles as a simulation cell.
             Box3 boundingBox;
             boundingBox.addPoints(posAccess);
             simulationCell()->setCellMatrix(AffineTransformation(
@@ -211,6 +212,7 @@ void XSFImporter::FrameLoader::loadFile()
                     throw Exception(tr("Invalid cell vector in XSF file at line %1").arg(stream.lineNumber()));
             }
             simulationCell()->setCellMatrix(cell);
+            containsSimulationCellInfo = true;
         }
         else if(boost::algorithm::starts_with(line, "PRIMCOORD")) {
             int anim;
@@ -327,11 +329,20 @@ void XSFImporter::FrameLoader::loadFile()
             }
             if(voxelGrid->domain()) {
                 voxelGrid->mutableDomain()->setCellMatrix(cell);
+                if(!containsSimulationCellInfo)
+                    simulationCell()->setCellMatrix(cell);
             }
             else {
-                DataOORef<SimulationCell> simCell = DataOORef<SimulationCell>::create(cell, true, true, true, false);
-                simCell->setCreatedByNode(pipelineNode());
-                voxelGrid->setDomain(std::move(simCell));
+                if(containsSimulationCellInfo) {
+                    DataOORef<SimulationCell> simCell = DataOORef<SimulationCell>::create(cell, true, true, true, false);
+                    simCell->setCreatedByNode(pipelineNode());
+                    voxelGrid->setDomain(std::move(simCell));
+                }
+                else {
+                    simulationCell()->setCellMatrix(cell);
+                    simulationCell()->setPbcFlags(true, true, true);
+                    voxelGrid->setDomain(simulationCell());
+                }
             }
 
             BufferWriteAccess<FloatType, access_mode::discard_read_write> fieldQuantity = voxelGrid->createProperty(name, DataBuffer::FloatDefault);

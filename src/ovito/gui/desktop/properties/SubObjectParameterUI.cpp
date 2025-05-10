@@ -47,7 +47,7 @@ void SubObjectParameterUI::resetUI()
 {
     PropertyParameterUI::resetUI();
 
-    handleExceptions([&] {
+    handleExceptions<true>([&] {
         // Close editor if it is no longer needed.
         if(subEditor()) {
             if(!parameterObject() || subEditor()->editObject() == nullptr ||

@@ -38,6 +38,7 @@ namespace Ovito {
  *   - TextPrimitive
  *   - ImagePrimitive
  *   - MarkerPrimitive
+ *   - VolumePrimitive
  */
 class OVITO_CORE_EXPORT RenderingPrimitive
 {

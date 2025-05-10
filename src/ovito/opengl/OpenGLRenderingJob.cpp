@@ -180,7 +180,7 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
     if(openGLRendererString == "Intel(R) HD Graphics" || openGLRendererString == "Intel(R) HD Graphics 2000" ||
        openGLRendererString == "Intel(R) HD Graphics 3000" || openGLRendererString == "Intel(R) HD Graphics 4400") {
         throw RendererException(tr("The graphics chip of your computer is not compatible with OVITO, unfortunately.\n\n"
-                                   "Intel(R) HD Graphics, an integrated graphics chip released in the years 2010/2011/2012, does not "
+                                   "Intel(R) HD Graphics, an integrated graphics chip from 2010-2012, does not "
                                    "support the specific OpenGL rendering functions required by OVITO. "
                                    "There is no known workaround to make OVITO work on systems with this particular graphics unit. Please "
                                    "use OVITO on a computer with a more modern graphics processor.\n\n"
