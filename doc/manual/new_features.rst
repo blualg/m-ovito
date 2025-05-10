@@ -9,10 +9,14 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.12.3>`__
 
 ----------------------------
-Version 3.12.3 (DD-MMM-2025)
+Version 3.12.3 (12-May-2025)
 ----------------------------
 
-- Add support for GROMACS TRR file format
+- Added support for the `GROMACS <https://manual.gromacs.org/current/reference-manual/file-formats.html>`__ *TRR* file format
+- Added support for the `MercuryDPM <https://www.mercurydpm.org>`__ trajectory data format
+- Fix: :ref:`particles.modifiers.affine_transformation` modifier refuses to apply a translation in addition to a rotation to particles with the `Orientation` property
+- Fix: :ref:`particles.modifiers.compute_property` modifier: Resolution of named types in expressions is not working for property variables starting with '@'
+- Fix: :ref:`visual_elements.vectors` visual element crashes if the input property has unexpected data type or component count
 
 .. sidebar::
 

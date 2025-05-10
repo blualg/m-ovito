@@ -35,7 +35,7 @@ class GzipIODevice; // defined in GzipIODevice.h
 /**
  * \brief A helper class for reading text-based files, which may be compressed (gzip format).
  *
- * This stream class uncompresses data from the underlying I/O device on the fly if
+ * This stream class decompresses data from the underlying I/O device on the fly if
  * the input filename has a .gz suffix. Otherwise it simply reads the original, uncompressed file contents.
  *
  * Call readLine() to read the next line of text from the file. The last line
@@ -51,7 +51,7 @@ public:
     /// Opens the given file for reading.
     /// \param input The file handle the data should be reade from.
     /// \throw Exception if an I/O error has occurred.
-    CompressedTextReader(const FileHandle& input, qint64 byteOffset = 0, int lineNumber = 0);
+    explicit CompressedTextReader(const FileHandle& input, qint64 byteOffset = 0, int lineNumber = 0);
 
     /// Destructor.
     ~CompressedTextReader();
@@ -131,6 +131,13 @@ public:
         size_t len_pattern = qstrlen(s);
         if(len < len_pattern) return false;
         return std::equal(s, s + len_pattern, l_end - len_pattern);
+    }
+
+    /// Checks if the given line is empty or contains only whitespace characters.
+    static bool isOnlyWhitespace(const char* line) {
+        const char* l = line;
+        while(*l > '\0' && *l <= ' ') ++l;
+        return *l == '\0';
     }
 
     /// Returns the last line read via readLine() as a Qt string.

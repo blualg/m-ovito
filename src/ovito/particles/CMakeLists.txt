@@ -90,6 +90,7 @@ SET(SourceFiles
     import/vtk/ParaViewVTPParticleImporter.cpp
     import/vtk/ParaViewVTPParticleParticleContactsImporter.cpp
     import/vtk/ParaViewVTPParticleWallContactsImporter.cpp
+    import/mercurydpm/MercuryDPMImporter.cpp
     export/ParticleExporter.cpp
     export/FileColumnParticleExporter.cpp
     export/vasp/POSCARExporter.cpp
