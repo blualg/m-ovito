@@ -20,20 +20,25 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/core/Core.h>
-#include "WidgetOpenGLRenderingJob.h"
+#pragma once
+
+
+#include <ovito/particles/gui/ParticlesGui.h>
+#include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(WidgetOpenGLRenderingJob);
-
-/******************************************************************************
-* Constructor.
-******************************************************************************/
-void WidgetOpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, QOpenGLWidget* glwin, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer)
+/**
+ * \brief A properties editor for the WrapPeriodicImagesModifier class.
+ */
+class WrapPeriodicImagesModifierEditor : public PropertiesEditor
 {
-    OpenGLRenderingJob::initializeObject(flags, std::move(visCache), std::move(sceneRenderer));
-    _glwin = glwin;
-}
+    OVITO_CLASS(WrapPeriodicImagesModifierEditor)
+
+protected:
+
+    /// Creates the user interface controls for the editor.
+    virtual void createUI(const RolloutInsertionParameters& rolloutParams) override;
+};
 
 }   // End of namespace

@@ -74,6 +74,8 @@ void OpenGLPickingMap::acquireFramebufferContents(const OORef<AbstractRenderingF
     QOpenGLContext* glcontext = QOpenGLContext::currentContext();
     QOpenGLFunctions* glfuncs = glcontext->functions();
 
+    if(!glFrameBuffer->framebufferObject()->isValid())
+        throw RendererException(QStringLiteral("OpenGL framebuffer object became invalid."));
     if(!glFrameBuffer->framebufferObject()->bind())
         throw RendererException(QStringLiteral("Failed to bind OpenGL framebuffer object."));
 
@@ -111,6 +113,10 @@ void OpenGLPickingMap::acquireFramebufferContents(const OORef<AbstractRenderingF
         _depthBuffer = std::make_unique<quint8[]>(size.width() * size.height() * sizeof(GLfloat));
         glfuncs->glReadPixels(0, 0, size.width(), size.height(), GL_DEPTH_COMPONENT, GL_FLOAT, _depthBuffer.get());
         _numDepthBufferBits = 0;
+    }
+
+    if(!glFrameBuffer->framebufferObject()->release()) {
+        throw RendererException(QStringLiteral("Failed to release OpenGL framebuffer object."));
     }
 }
 

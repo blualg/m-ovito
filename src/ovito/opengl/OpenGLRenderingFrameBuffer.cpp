@@ -102,7 +102,7 @@ void OpenGLRenderingFrameBuffer::beginOITRendering()
         throw RendererException(tr("Your OpenGL graphics driver does not support multiple render targets, which are required for order-independent transparency."));
 
     // Create additional offscreen OpenGL framebuffer.
-    if(!_oitFramebuffer) {
+    if(!_oitFramebuffer || !_oitFramebuffer->isValid()) {
         // Set up format.
         QOpenGLFramebufferObjectFormat framebufferFormat;
         framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);

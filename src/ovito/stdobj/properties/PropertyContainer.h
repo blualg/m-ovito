@@ -254,7 +254,7 @@ public:
         return {};
     }
 
-    /// Tells a VectorVis element whether per-vector color and transparancy properties are available.
+    /// Tells a VectorVis element whether per-vector color and transparency properties are available.
     virtual std::array<bool, 2> hasVectorVisColorsAndTransparencies() const { return {false, false}; }
 
     /// Generates the info string to be displayed in the OVITO status bar for an element from this container.

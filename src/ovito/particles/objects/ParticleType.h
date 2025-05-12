@@ -218,6 +218,7 @@ private:
         FloatType displayRadius;
         FloatType vdwRadius;
         FloatType mass;
+        FloatType alternativeMass = 0; // Used if the official atomic weight of the element has changed over the years.
     };
 
     /// Data structure that holds the name and display color of a structural particle type.
@@ -228,7 +229,7 @@ private:
 
     /// Contains default names, colors, and radii for some predefined particle types.
     /// +1 from duplication of Zn
-    static const std::array<PredefinedChemicalType, NUMBER_OF_PREDEFINED_PARTICLE_TYPES + 1> _predefinedParticleTypes;
+    static const std::array<PredefinedChemicalType, NUMBER_OF_PREDEFINED_PARTICLE_TYPES> _predefinedParticleTypes;
 
     /// Contains default names, colors, and radii for the predefined structure types.
     static const std::array<PredefinedStructuralType, NUMBER_OF_PREDEFINED_STRUCTURE_TYPES> _predefinedStructureTypes;

@@ -203,9 +203,7 @@ void ParticleType::loadFromStreamComplete(ObjectLoadStream& stream)
 // The radii for ions (Na, K, Cl, Ca, Mg, and Cs) are based on the CHARMM27 Rmin/2 parameters for (SOD, POT, CLA, CAL, MG, CES).
 //
 // Colors and covalent radii of elements marked with '//' have been adopted from OpenBabel.
-//
-// Zn is defined twice, once with the old mass (pre 2001) 65.409 and once with the update mass 65.38 (https://www.ciaaw.org/zinc.htm)
-const std::array<ParticleType::PredefinedChemicalType, ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES + 1> ParticleType::_predefinedParticleTypes{{
+const std::array<ParticleType::PredefinedChemicalType, ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES> ParticleType::_predefinedParticleTypes{{
     ParticleType::PredefinedChemicalType{ QStringLiteral("X"),  Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 0.00f, 0.00f, 0.0 },
     ParticleType::PredefinedChemicalType{ QStringLiteral("H"),  Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 0.46f, 1.20f, 1.00794 },
     ParticleType::PredefinedChemicalType{ QStringLiteral("He"), Color(217.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 1.22f, 1.40f, 4.00260 },
@@ -238,8 +236,8 @@ const std::array<ParticleType::PredefinedChemicalType, ParticleType::NUMBER_OF_P
     ParticleType::PredefinedChemicalType{ QStringLiteral("Co"), Color(240.0f/255.0f, 144.0f/255.0f, 160.0f/255.0f), 1.25f, 2.00f, 58.9332 },
     ParticleType::PredefinedChemicalType{ QStringLiteral("Ni"), Color( 80.0f/255.0f, 208.0f/255.0f,  80.0f/255.0f), 1.25f, 1.63f, 58.6934 },
     ParticleType::PredefinedChemicalType{ QStringLiteral("Cu"), Color(200.0f/255.0f, 128.0f/255.0f,  51.0f/255.0f), 1.28f, 1.40f, 63.546 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Zn"), Color(125.0f/255.0f, 128.0f/255.0f, 176.0f/255.0f), 1.37f, 1.39f, 65.409 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Zn"), Color(125.0f/255.0f, 128.0f/255.0f, 176.0f/255.0f), 1.37f, 1.39f, 65.38 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Zn"), Color(125.0f/255.0f, 128.0f/255.0f, 176.0f/255.0f), 1.37f, 1.39f, 65.38, 65.409 }, // Zn has two atomic weights: the old mass (pre 2001) 65.409 and the updated mass 65.38 (https://www.ciaaw.org/zinc.htm)
+
     ParticleType::PredefinedChemicalType{ QStringLiteral("Ga"), Color(194.0f/255.0f, 143.0f/255.0f, 143.0f/255.0f), 1.53f, 1.07f, 69.723 },
     ParticleType::PredefinedChemicalType{ QStringLiteral("Ge"), Color(102.0f/255.0f, 143.0f/255.0f, 143.0f/255.0f), 1.22f, 2.00f, 72.64 },
 
@@ -426,6 +424,9 @@ QString ParticleType::guessTypeNameFromMass(FloatType mass)
 
     for(const PredefinedChemicalType& predefType : _predefinedParticleTypes) {
         if(std::abs(predefType.mass - mass) <= tolerance) {
+            return predefType.name;
+        }
+        if(predefType.alternativeMass != 0 && std::abs(predefType.alternativeMass - mass) <= tolerance) {
             return predefType.name;
         }
     }

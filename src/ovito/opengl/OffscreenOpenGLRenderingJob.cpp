@@ -104,7 +104,7 @@ QOpenGLContext& OffscreenOpenGLRenderingJob::createOffscreenContext()
     if(!_offscreenContext.has_value() || _offscreenContext->thread() != QThread::currentThread()) {
         // Create an OpenGL context for rendering into the offscreen buffer.
         _offscreenContext.emplace();
-        // The context should share its resources with interactive viewport renderers.
+        // The context should share its resources with the interactive viewport windows.
         _offscreenContext->setShareContext(QOpenGLContext::globalShareContext());
         if(!_offscreenContext->create())
             throw RendererException(tr("Failed to create OpenGL context for offscreen rendering."));

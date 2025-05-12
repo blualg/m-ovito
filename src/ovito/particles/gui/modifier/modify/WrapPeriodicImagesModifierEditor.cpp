@@ -20,20 +20,29 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/core/Core.h>
-#include "WidgetOpenGLRenderingJob.h"
+#include <ovito/particles/gui/ParticlesGui.h>
+#include <ovito/particles/modifier/modify/WrapPeriodicImagesModifier.h>
+#include "WrapPeriodicImagesModifierEditor.h"
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(WidgetOpenGLRenderingJob);
+IMPLEMENT_CREATABLE_OVITO_CLASS(WrapPeriodicImagesModifierEditor);
+SET_OVITO_OBJECT_EDITOR(WrapPeriodicImagesModifier, WrapPeriodicImagesModifierEditor);
 
 /******************************************************************************
-* Constructor.
+* Sets up the UI widgets of the editor.
 ******************************************************************************/
-void WidgetOpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, QOpenGLWidget* glwin, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer)
+void WrapPeriodicImagesModifierEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-    OpenGLRenderingJob::initializeObject(flags, std::move(visCache), std::move(sceneRenderer));
-    _glwin = glwin;
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("Wrap at periodic boundaries"), rolloutParams, "manual:particles.modifiers.wrap_at_periodic_boundaries");
+
+    // Create the rollout contents.
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(6);
+
+    layout->addWidget(new QLabel(tr("This modifier has no adjustable parameters")));
 }
 
 }   // End of namespace

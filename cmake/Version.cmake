@@ -25,7 +25,7 @@
 # This is the canonical program version number:
 SET(OVITO_VERSION_MAJOR         "3")
 SET(OVITO_VERSION_MINOR         "12")
-SET(OVITO_VERSION_REVISION      "1")
+SET(OVITO_VERSION_REVISION      "2")
 
 # The following version number is used to tag the file format of .ovito session state files.
 #

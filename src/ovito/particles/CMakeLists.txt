@@ -86,6 +86,7 @@ SET(SourceFiles
     import/cif/mmCIFImporter.cpp
     import/gromacs/GroImporter.cpp
     import/gromacs/XTCImporter.cpp
+    import/gromacs/TRRImporter.cpp
     import/vtk/ParaViewVTPParticleImporter.cpp
     import/vtk/ParaViewVTPParticleParticleContactsImporter.cpp
     import/vtk/ParaViewVTPParticleWallContactsImporter.cpp

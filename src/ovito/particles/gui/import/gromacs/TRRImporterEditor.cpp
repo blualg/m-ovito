@@ -20,20 +20,37 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#include <ovito/core/Core.h>
-#include "WidgetOpenGLRenderingJob.h"
+#include <ovito/particles/gui/ParticlesGui.h>
+#include <ovito/particles/import/gromacs/TRRImporter.h>
+#include <ovito/gui/desktop/properties/BooleanParameterUI.h>
+#include "TRRImporterEditor.h"
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(WidgetOpenGLRenderingJob);
+IMPLEMENT_CREATABLE_OVITO_CLASS(TRRImporterEditor);
+SET_OVITO_OBJECT_EDITOR(TRRImporter, TRRImporterEditor);
 
 /******************************************************************************
-* Constructor.
-******************************************************************************/
-void WidgetOpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, QOpenGLWidget* glwin, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer)
+ * Sets up the UI widgets of the editor.
+ ******************************************************************************/
+void TRRImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
-    OpenGLRenderingJob::initializeObject(flags, std::move(visCache), std::move(sceneRenderer));
-    _glwin = glwin;
+    // Create a rollout.
+    QWidget* rollout = createRollout(tr("TRR reader"), rolloutParams);
+
+    // Create the rollout contents.
+    QVBoxLayout* layout = new QVBoxLayout(rollout);
+    layout->setContentsMargins(4, 4, 4, 4);
+    layout->setSpacing(4);
+
+    QGroupBox* optionsBox = new QGroupBox(tr("Options"), rollout);
+    QVBoxLayout* sublayout = new QVBoxLayout(optionsBox);
+    sublayout->setContentsMargins(4, 4, 4, 4);
+    layout->addWidget(optionsBox);
+
+    // Center simulation cell.
+    BooleanParameterUI* recenterCellUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::recenterCell));
+    sublayout->addWidget(recenterCellUI->checkBox());
 }
 
-}   // End of namespace
+}  // namespace Ovito

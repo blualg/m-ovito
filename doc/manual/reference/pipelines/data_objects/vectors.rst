@@ -13,7 +13,7 @@ using the Python :py:attr:`DataCollection.DataCollection.vectors.create() <ovito
 method.
 
 Each vector is defined by a base point (property `Position`) and a direction (property `Direction`). More
-:py:ref:`per-vector properties <vectors-property-list>` can be defined for each data element. The
+:py:ref:`per-vector properties <vectors-properties-list>` can be defined for each data element. The
 `Color` property controls the color for each rendered arrow. The property `Transparency` controls the
 transparency of individual arrow glyphs.
 

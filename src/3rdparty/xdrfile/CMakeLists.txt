@@ -30,6 +30,7 @@ ENDIF()
 ADD_LIBRARY(xdrfile
     xdrfile.c
     xdrfile_xtc.c
+    xdrfile_trr.c
 )
 
 # Give our library file a new name to not confuse it with any system versions of the library.

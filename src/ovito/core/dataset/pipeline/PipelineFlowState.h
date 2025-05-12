@@ -135,6 +135,10 @@ public:
     /// and want to combine the outcome of each operation into a single status.
     void combineStatus(const PipelineStatus& otherStatus) { _status.combine(otherStatus); }
 
+    /// Merges the status with the existing one.
+    template<typename... Args>
+    void combineStatus(Args&&... args) { _status.combine(PipelineStatus{std::forward<Args>(args)...}); }
+
     /// Returns the (read-only) data collection of this pipeline state.
     const DataCollection* data() const { return _data.get(); }
 

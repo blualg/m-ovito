@@ -1,7 +1,7 @@
 .. _appendix.license.xdrfile:
 
-XTC/XDR interface library license
----------------------------------
+XTC/TRR/XDR interface library license
+-------------------------------------
 
 Copyright (c) 2009-2014, Erik Lindahl and David van der Spoel.
 All rights reserved.

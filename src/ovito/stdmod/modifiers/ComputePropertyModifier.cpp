@@ -39,10 +39,12 @@ OVITO_CLASSINFO(ComputePropertyModifier, "DisplayName", "Compute property");
 OVITO_CLASSINFO(ComputePropertyModifier, "Description", "Enter a user-defined formula to set properties of particles, bonds and other elements.");
 OVITO_CLASSINFO(ComputePropertyModifier, "ModifierCategory", "Modification");
 DEFINE_PROPERTY_FIELD(ComputePropertyModifier, expressions);
+DEFINE_PROPERTY_FIELD(ComputePropertyModifier, componentNames);
 DEFINE_PROPERTY_FIELD(ComputePropertyModifier, outputProperty);
 DEFINE_PROPERTY_FIELD(ComputePropertyModifier, onlySelectedElements);
 DEFINE_PROPERTY_FIELD(ComputePropertyModifier, useMultilineFields);
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, expressions, "Expressions");
+SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, componentNames, "Component names");
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, outputProperty, "Output property");
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, onlySelectedElements, "Compute only for selected elements");
 SET_PROPERTY_FIELD_LABEL(ComputePropertyModifier, useMultilineFields, "Expand field(s)");
@@ -75,34 +77,41 @@ void ComputePropertyModifier::initializeObject(ObjectInitializationFlags flags)
 /******************************************************************************
 * Sets the number of vector components of the property to create.
 ******************************************************************************/
-void ComputePropertyModifier::setPropertyComponentCount(int newComponentCount)
+void ComputePropertyModifier::setPropertyComponentCount(int newComponentCount, const QStringList& componentNames)
 {
+    if(newComponentCount > 1 && !componentNames.empty()) {
+        OVITO_ASSERT(componentNames.size() == newComponentCount);
+    }
     if(newComponentCount < expressions().size()) {
         setExpressions(expressions().mid(0, newComponentCount));
     }
     else if(newComponentCount > expressions().size()) {
         QStringList newList = expressions();
         while(newList.size() < newComponentCount)
-            newList.append("0");
+            newList.append(QStringLiteral("0"));
         setExpressions(newList);
     }
+    setComponentNames(componentNames);
     if(delegate())
         delegate()->setComponentCount(newComponentCount);
 }
 
 /******************************************************************************
-* Sets the number of expressions based on the selected output property.
+* Returns the names of the vector components of the output property. This list is shown in the UI.
 ******************************************************************************/
-void ComputePropertyModifier::adjustPropertyComponentCount()
+QStringList ComputePropertyModifier::effectiveComponentNames() const
 {
-    if(delegate()) {
+    if(delegate() && delegate()->inputContainerClass()) {
         int typeId = outputProperty().standardTypeId(delegate()->inputContainerClass());
-        if(typeId != 0) {
-            setPropertyComponentCount(delegate()->inputContainerClass()->standardPropertyComponentCount(typeId));
-            return;
+        if(typeId != Property::GenericUserProperty) {
+            return delegate()->inputContainerClass()->standardPropertyComponentNames(typeId);
+        }
+        else {
+            if(!componentNames().empty())
+                return componentNames();
         }
     }
-    setPropertyComponentCount(1);
+    return {};
 }
 
 /******************************************************************************
@@ -112,7 +121,7 @@ void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* f
 {
     if(field == PROPERTY_FIELD(DelegatingModifier::delegate) && !isBeingDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
         if(delegate())
-            delegate()->setComponentCount(expressions().size());
+            delegate()->setComponentCount(propertyComponentCount());
     }
     DelegatingModifier::referenceReplaced(field, oldTarget, newTarget, listIndex);
 }
@@ -122,9 +131,18 @@ void ComputePropertyModifier::referenceReplaced(const PropertyFieldDescriptor* f
 ******************************************************************************/
 void ComputePropertyModifier::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(ComputePropertyModifier::outputProperty) && !isBeingLoaded()) {
-        // Changes to some the modifier's parameters affect the result of ComputePropertyModifier::getPipelineEditorShortInfo().
+    if(field == PROPERTY_FIELD(ComputePropertyModifier::outputProperty) && !isBeingDeleted() && !isBeingLoaded() && !isUndoingOrRedoing()) {
+        // Changes to some of the modifier's parameters affect the result of ComputePropertyModifier::getPipelineEditorShortInfo().
         notifyDependents(ReferenceEvent::ObjectStatusChanged);
+        // Adjust vector component list if a standard property is being selected by the user.
+        if(delegate() && delegate()->inputContainerClass() && outputProperty()) {
+            int typeId = outputProperty().standardTypeId(delegate()->inputContainerClass());
+            if(typeId != Property::GenericUserProperty) {
+                setPropertyComponentCount(
+                    delegate()->inputContainerClass()->standardPropertyComponentCount(typeId),
+                    delegate()->inputContainerClass()->standardPropertyComponentNames(typeId));
+            }
+        }
     }
 
     DelegatingModifier::propertyChanged(field);
@@ -199,10 +217,10 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
     if(modifier->onlySelectedElements() && container->getOOMetaClass().isValidStandardPropertyId(Property::GenericSelectionProperty)) {
         selectionProperty = container->getProperty(Property::GenericSelectionProperty);
         if(!selectionProperty)
-            throw Exception(tr("Compute property modifier has been restricted to selected elements, but no selection was previously defined."));
+            throw Exception(tr("Compute property modifier has been limited to selected %1, but there is no selection.").arg(elementLabel()));
     }
 
-    // In interactive mode, do not perform a real computation. Instead, used an old result from the cached state if available.
+    // In interactive mode, do not perform a real computation. Instead, use an old result from the cached state if available.
     if(request.interactiveMode()) {
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             ConstDataObjectPath containerPathCached = cachedState.getObject(inputContainerRef());
@@ -219,6 +237,14 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
         return std::move(state);
     }
 
+    // Validate output property name.
+    if(modifier->outputProperty().nameWithComponent().isEmpty())
+        throw Exception(tr("Output property name of compute property modifier is empty."));
+
+    // Warn user if property name is invalid.
+    try { Property::throwIfInvalidPropertyName(modifier->outputProperty().nameWithComponent()); }
+    catch(const Exception& e) { state.combineStatus(PipelineStatus::Warning, e.message()); }
+
     // Prepare output property.
     PropertyPtr outputProperty;
     const Property* existingProperty = modifier->outputProperty().findInContainer(container);
@@ -229,34 +255,59 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::apply(const ModifierE
     else {
         // Allocate new data array.
         int typeId = modifier->outputProperty().standardTypeId(&container->getOOMetaClass());
-        if(typeId != 0) {
+        if(typeId != Property::GenericUserProperty) {
             outputProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, typeId, containerPath);
         }
         else if(modifier->outputProperty() && modifier->propertyComponentCount() > 0) {
-            outputProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized, modifier->outputProperty().name(), Property::FloatDefault, modifier->propertyComponentCount());
+            QStringList componentNames = modifier->effectiveComponentNames();
+            if(!componentNames.empty() && componentNames.size() != modifier->propertyComponentCount())
+                throw Exception(tr("Number of vector component names does not match number of compute expressions."));
+            // Validate vector component names.
+            if(QStringList(componentNames).removeDuplicates() != 0)
+                state.combineStatus(PipelineStatus::Warning, tr("List of vector components contains duplicate entries: Property component names must be unique."));
+            for(const QString& name : componentNames) {
+                try { Property::throwIfInvalidPropertyComponentName(name); }
+                catch(const Exception& e) { state.combineStatus(PipelineStatus::Warning, e.message()); }
+            }
+            // Create user-defined output property.
+            outputProperty = container->createProperty(selectionProperty ? DataBuffer::Initialized : DataBuffer::Uninitialized,
+                modifier->outputProperty().name(), Property::FloatDefault, modifier->propertyComponentCount(),
+                std::move(componentNames));
         }
         else {
             throw Exception(tr("Output property of compute property modifier has not been specified."));
         }
 
-        // Replace vis elements of output property with cached ones and cache any new vis elements.
-        // This is required to avoid losing the output property's display settings
-        // each time the modifier is re-evaluated or when serializing the modifier.
-        OORefVector<DataVis> currentVisElements = outputProperty->visElements();
-        // Replace with cached vis elements if they are of the same class type.
-        for(int i = 0; i < currentVisElements.size() && i < modNode->cachedVisElements().size(); i++) {
-            if(currentVisElements[i]->getOOClass() == modNode->cachedVisElements()[i]->getOOClass()) {
-                currentVisElements[i] = modNode->cachedVisElements()[i];
-            }
-        }
-        outputProperty->setVisElements(currentVisElements);
-        modNode->setCachedVisElements(std::move(currentVisElements));
+        // Set up the visual element(s) associated with the new property.
+        setupVisualElements(outputProperty, modNode);
     }
     if(modifier->propertyComponentCount() != outputProperty->componentCount())
         throw Exception(tr("Number of expressions does not match component count of output property."));
 
     // Launch computations in a separate thread.
     return performComputation(modifier, modNode, std::move(state), originalState, std::move(outputProperty), std::move(selectionProperty), request.time().frame());
+}
+
+/******************************************************************************
+* Sets up the visual element(s) associated with the new property.
+******************************************************************************/
+void ComputePropertyModifierDelegate::setupVisualElements(Property* outputProperty, ComputePropertyModificationNode* modNode)
+{
+    // Replace vis elements of output property with cached ones and cache any new vis elements.
+    // This is required to avoid losing the display settings
+    // each time the modifier is re-evaluated or when deserializing the modifier.
+    OORefVector<DataVis> currentVisElements = outputProperty->visElements();
+
+    // Replace with cached vis elements if they are of the same class type.
+    for(int i = 0; i < currentVisElements.size() && i < modNode->cachedVisElements().size(); i++) {
+        auto& current = currentVisElements[i];
+        const auto& cached = modNode->cachedVisElements()[i];
+        if(current->getOOClass() == cached->getOOClass() && current->_title__shadow.get() == cached->_title__shadow.get()) {
+            current = cached;
+        }
+    }
+    outputProperty->setVisElements(currentVisElements);
+    modNode->setCachedVisElements(std::move(currentVisElements));
 }
 
 /******************************************************************************

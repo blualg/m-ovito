@@ -75,7 +75,7 @@ bool ParticlePickingHelper::pickParticle(ViewportWindow* vpwin, const QPoint& cl
 ******************************************************************************/
 void ParticlePickingHelper::renderSelectionMarker(Viewport* vp, FrameGraph& frameGraph, const PickResult& pickRecord)
 {
-    if(!pickRecord.sceneNode)
+    if(!pickRecord.sceneNode || !pickRecord.sceneNode->pipeline() || !pickRecord.sceneNode->isInScene())
         return;
 
     PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
