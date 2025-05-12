@@ -235,6 +235,11 @@ OVITO can read the following file formats:
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`
     -
 
+  * - MercuryDPM
+    - Trajectory data files written by the `MercuryDPM <https://www.mercurydpm.org>`__ particle simulation code. File format specification is `here <https://docs.mercurydpm.org/Trunk/db/da1/VisualisingYourResults.html#UnderstandingTheOutputFiles>`__.
+    - :ref:`particles <scene_objects.particles>`
+    -
+
 *OVITO Pro* additionally provides the option for you to write :ref:`custom file readers in Python <writing_custom_file_readers>` to import more formats.
 
 .. seealso:: :py:func:`ovito.io.import_file` (Python API)

@@ -187,22 +187,25 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VectorVis::render(const Con
     VectorData vectorData = container->getVectorVisData(path, flowState, frameGraph.visCache());
     OVITO_ASSERT(!vectorData.positions || vectorData.positions->size() == container->elementCount());
     OVITO_ASSERT(!vectorData.positions || vectorData.positions->dataType() == DataBuffer::FloatDefault);
-    OVITO_ASSERT(!vectorData.positions ||
-                 (vectorData.positions->componentCount() == 3 && vectorData.positions->dataType() == DataBuffer::FloatDefault));
-    if(vectorData.directions &&
-       ((vectorData.directions->dataType() != Property::Float32 && vectorData.directions->dataType() != Property::Float64) ||
-        vectorData.directions->componentCount() != 3))
-        vectorData.directions.reset();
+    OVITO_ASSERT(!vectorData.positions || (vectorData.positions->componentCount() == 3 && vectorData.positions->dataType() == DataBuffer::FloatDefault));
+    if(vectorData.directions) {
+        if(vectorData.directions->dataType() != Property::Float32 && vectorData.directions->dataType() != Property::Float64) {
+            vectorData.directions.reset();
+            status = PipelineStatus(PipelineStatus::Error, tr("The vector property must be of type Float32 or Float64."));
+        }
+        else if(vectorData.directions->componentCount() != 3) {
+            vectorData.directions.reset();
+            status = PipelineStatus(PipelineStatus::Error, tr("The vector property must have 3 components."));
+        }
+    }
 
     // Make sure we don't exceed our internal limits.
-    if(vectorData.directions && vectorData.directions->size() > (size_t)std::numeric_limits<int>::max()) {
+    if(vectorData.directions && vectorData.directions->size() > (size_t)std::numeric_limits<int>::max())
         throw Exception(tr("This version of OVITO cannot render more than %1 vector arrows.").arg(std::numeric_limits<int>::max()));
-    }
 
     // Only use selection in interactive context
-    if(!frameGraph.isInteractive()) {
-        vectorData.selection = nullptr;
-    }
+    if(!frameGraph.isInteractive())
+        vectorData.selection.reset();
 
     // Look for selected pseudo-coloring property.
     const Property* pseudoColorProperty = nullptr;
@@ -265,15 +268,15 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VectorVis::render(const Con
         },
         [&](CylinderPrimitive& arrows) {
             // Determine number of non-zero vectors.
-            int vectorCount = 0;
-            BufferReadAccess<SelectionIntType> selectionProperty(vectorData.selection);
-
-            vectorData.directions->forTypes<DataBuffer::Float32, DataBuffer::Float64>([&](auto _) {
-                using T = decltype(_);
-                for(const auto& v : BufferReadAccess<Vector_3<T>>(vectorData.directions)) {
-                    vectorCount += (v != typename Vector_3<T>::Zero());
-                }
-            });
+            size_t vectorCount = 0;
+            if(vectorData.directions) {
+                vectorData.directions->forTypes<DataBuffer::Float32, DataBuffer::Float64>([&](auto _) {
+                    using T = decltype(_);
+                    for(const auto& v : BufferReadAccess<Vector_3<T>>(vectorData.directions)) {
+                        vectorCount += (v != typename Vector_3<T>::Zero());
+                    }
+                });
+            }
 
             // Allocate data buffers.
             BufferFactory<Point3G> arrowBasePositions(vectorCount);

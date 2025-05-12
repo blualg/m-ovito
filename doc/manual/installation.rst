@@ -179,6 +179,29 @@ Missing OpenGL system libraries
     This should allow you to at least run Python scripts that import the OVITO Python module. The OVITO desktop application
     will still not work, however, because your system is lacking true OpenGL graphics support.
 
+LD_LIBRARY_PATH overrides OVITO's bundled Qt libraries
+  .. error::
+
+    Launching :command:`ovito` may fail with an error such as::
+
+      ./bin/ovito: /usr/lib/x86_64-linux-gnu/libQt6Core.so.6: version `Qt_6.8' not found (required by ovito)
+
+    or a similar message pointing to an incompatible copy of a shared library needed by the program.
+
+  .. admonition:: Solution
+
+    OVITO ships its own Qt libraries in :file:`lib/ovito/`.
+    If the environment variable ``LD_LIBRARY_PATH`` lists a system directory
+    like :file:`/usr/lib/`, the dynamic linker loads the wrong *libQt6Core.so.6*
+    before OVITO's own version, causing the mismatch above.
+    Either start OVITO with a clean library path
+
+    .. code-block:: shell
+
+      env -u LD_LIBRARY_PATH ./bin/ovito          # temporarily ignore LD_LIBRARY_PATH
+
+    or remove the offending directories from ``LD_LIBRARY_PATH`` in your shell configuration.
+
 .. _installation.troubleshooting.windows:
 
 Windows

@@ -31,6 +31,7 @@
 namespace Ovito {
 
 /// List of characters allowed in variable names.
+/// Note: Keep this list in sync with the regex used in PropertyExpressionRewriter::tokenizeExpression().
 mu::string_type PropertyExpressionEvaluator::_validVariableNameChars(_T("0123456789_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.@"));
 
 /******************************************************************************
@@ -250,13 +251,12 @@ void PropertyExpressionEvaluator::addTypedPropertyToMap(const QString& mangledPr
         QString typeIdStr = QString::number(type->numericId());
         QString typeName = QStringLiteral("\"%1\"").arg(type->nameOrNumericId());
 
-        // Access or insert typeName in omap
+        // Access or insert typeName in omap.
         auto& imap = omap[typeName];
 
         // Append to QStringList
-        if(!imap.contains(typeIdStr)) {
+        if(!imap.contains(typeIdStr))
             imap << typeIdStr;
-        }
     }
 }
 
