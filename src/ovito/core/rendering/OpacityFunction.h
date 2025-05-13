@@ -53,6 +53,9 @@ public:
     /// Implements a free-hand drawing operation on the opacity function.
     void freeDraw(std::span<const Point2> drawPath);
 
+    /// Restores the default opacity function state.
+    void reset();
+
 private:
 
     /// The tabulated opacity function.

@@ -50,10 +50,13 @@ void OpacityFunctionParameterUI::initializeObject(PropertiesEditor* parent, cons
     QwtPainter::setRoundingAlignment(false);
     _plotWidget = new QwtPlot();
     _plotWidget->setCanvasBackground(Qt::white);
-    _plotWidget->plotLayout()->setCanvasMargin(4);
+    _plotWidget->plotLayout()->setCanvasMargin(4, QwtAxis::YLeft);
+    _plotWidget->plotLayout()->setCanvasMargin(4, QwtAxis::YRight);
+    _plotWidget->plotLayout()->setCanvasMargin(10, QwtAxis::XBottom);
+    _plotWidget->plotLayout()->setCanvasMargin(10, QwtAxis::XTop);
     _plotWidget->setAxisTitle(QwtPlot::yLeft, tr("Opacity function"));
 
-#if 0
+#ifdef Q_OS_WIN
     // Choose a smaller font size for the axis labels.
     QFont fscl(_plotWidget->fontInfo().family(), 8);
     QFont fttl(_plotWidget->fontInfo().family(), 8, QFont::Bold);
@@ -71,6 +74,11 @@ void OpacityFunctionParameterUI::initializeObject(PropertiesEditor* parent, cons
     connect(picker, qOverload<const QPointF&>(&QwtPlotPicker::appended), this, &OpacityFunctionParameterUI::onPickerPoint);
     connect(picker, qOverload<const QPointF&>(&QwtPlotPicker::moved), this, &OpacityFunctionParameterUI::onPickerPoint);
     connect(picker, &QwtPicker::activated, this, &OpacityFunctionParameterUI::onPickerActivated);
+
+    QPushButton* resetOpacityButton = new QPushButton(tr("Reset"), _plotWidget->canvas());
+    resetOpacityButton->move(4, 4);
+    resetOpacityButton->setToolTip(tr("Reset the opacity function to its default state"));
+    connect(resetOpacityButton, &QPushButton::clicked, this, &OpacityFunctionParameterUI::onResetOpacityFunction);
 }
 
 /******************************************************************************
@@ -238,6 +246,17 @@ OpacityFunction* OpacityFunctionParameterUI::mutableOpacityFunction()
     OVITO_ASSERT(opacityFunction()->isSafeToModify());
 
     return const_cast<OpacityFunction*>(opacityFunction());
+}
+
+/******************************************************************************
+* Resets the opacity function to its default state.
+******************************************************************************/
+void OpacityFunctionParameterUI::onResetOpacityFunction()
+{
+    performTransaction(tr("Reset opacity function"), [&]() {
+        if(OpacityFunction* func = mutableOpacityFunction())
+            func->reset();
+    });
 }
 
 }   // End of namespace

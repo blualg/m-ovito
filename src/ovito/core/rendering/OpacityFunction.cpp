@@ -38,11 +38,20 @@ void OpacityFunction::initializeObject(ObjectInitializationFlags flags)
 
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Initialize the opacity function with a linear ramp.
-        std::vector<FloatType> defaultTable(DEFAULT_TABULATION_SIZE);
-        for(size_t i = 0; i < DEFAULT_TABULATION_SIZE; ++i)
-            defaultTable[i] = static_cast<FloatType>(i) / (DEFAULT_TABULATION_SIZE - 1);
-        setTable(std::move(defaultTable));
+        reset();
     }
+}
+
+/******************************************************************************
+* Restores the default opacity function state.
+******************************************************************************/
+void OpacityFunction::reset()
+{
+    // Reset the opacity function to a linear ramp.
+    std::vector<FloatType> defaultTable(DEFAULT_TABULATION_SIZE);
+    for(size_t i = 0; i < DEFAULT_TABULATION_SIZE; ++i)
+        defaultTable[i] = static_cast<FloatType>(i) / (DEFAULT_TABULATION_SIZE - 1);
+    setTable(std::move(defaultTable));
 }
 
 /******************************************************************************

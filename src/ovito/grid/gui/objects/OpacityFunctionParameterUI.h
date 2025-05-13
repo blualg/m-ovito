@@ -74,6 +74,9 @@ private Q_SLOTS:
     /// Is called when the user picks a location in the plot widget.
     void onPickerPoint(const QPointF& pt);
 
+    /// Resets the opacity function to its default state.
+    void onResetOpacityFunction();
+
 protected:
 
     /// This method is called when a reference target changes.
