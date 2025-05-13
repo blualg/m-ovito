@@ -84,7 +84,59 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
     connect(this, &SimulationCellEditor::contentsChanged, this, &SimulationCellEditor::updateSimulationBoxSize);
 
     {
-        QGroupBox* sizeGroupBox = new QGroupBox(tr("Box dimensions"), rollout);
+        QGroupBox* vectorsGroupBox = new QGroupBox(tr("Geometry"), rollout);
+        layout1->addWidget(vectorsGroupBox);
+
+        QGridLayout* sublayout = new QGridLayout(vectorsGroupBox);
+        sublayout->setContentsMargins(4,4,4,4);
+        sublayout->setSpacing(2);
+        sublayout->setColumnStretch(1, 1);
+        sublayout->setColumnStretch(2, 1);
+        sublayout->setColumnStretch(3, 1);
+
+        sublayout->addWidget(new QLabel(tr("Cell vectors:")), 0, 1, 1, 4);
+
+
+        {   // First cell vector.
+            sublayout->addWidget(new QLabel(tr("<b>a</b>:")), 1, 0);
+            for(int i = 0; i < 3; i++) {
+                _cellVectorFields[0][i] = new QLineEdit();
+                _cellVectorFields[0][i]->setReadOnly(true);
+                sublayout->addWidget(_cellVectorFields[0][i], 1, 1 + i);
+            }
+        }
+
+        {   // Second cell vector.
+            sublayout->addWidget(new QLabel(tr("<b>b</b>:")), 2, 0);
+            for(int i = 0; i < 3; i++) {
+                _cellVectorFields[1][i] = new QLineEdit();
+                _cellVectorFields[1][i]->setReadOnly(true);
+                sublayout->addWidget(_cellVectorFields[1][i], 2, 1 + i);
+            }
+        }
+
+        {   // Third cell vector.
+            sublayout->addWidget(new QLabel(tr("<b>c</b>:")), 3, 0);
+            for(int i = 0; i < 3; i++) {
+                _cellVectorFields[2][i] = new QLineEdit();
+                _cellVectorFields[2][i]->setReadOnly(true);
+                sublayout->addWidget(_cellVectorFields[2][i], 3, 1 + i);
+            }
+        }
+
+        {   // Cell origin.
+            sublayout->addWidget(new QLabel(tr("Cell origin:")), 4, 1, 1, 3);
+            sublayout->addWidget(new QLabel(tr("<b>o</b>:")), 5, 0);
+            for(int i = 0; i < 3; i++) {
+                _cellVectorFields[3][i] = new QLineEdit();
+                _cellVectorFields[3][i]->setReadOnly(true);
+                sublayout->addWidget(_cellVectorFields[3][i], 5, 1 + i);
+            }
+        }
+    }
+
+    {
+        QGroupBox* sizeGroupBox = new QGroupBox(tr("Bounding box"), rollout);
         layout1->addWidget(sizeGroupBox);
 
         QGridLayout* layout2 = new QGridLayout(sizeGroupBox);
@@ -101,72 +153,9 @@ void SimulationCellEditor::createUI(const RolloutInsertionParameters& rolloutPar
         layout2->addWidget(new QLabel(tr("Height (Z):")), 2, 0);
     }
 
-    {
-        QGroupBox* vectorsGroupBox = new QGroupBox(tr("Geometry"), rollout);
-        layout1->addWidget(vectorsGroupBox);
-
-        QVBoxLayout* sublayout = new QVBoxLayout(vectorsGroupBox);
-        sublayout->setContentsMargins(4,4,4,4);
-        sublayout->setSpacing(2);
-
-        QString xyz[3] = { QStringLiteral("X: "), QStringLiteral("Y: "), QStringLiteral("Z: ") };
-
-        {   // First cell vector.
-            sublayout->addSpacing(6);
-            sublayout->addWidget(new QLabel(tr("Cell vector 1:"), rollout));
-            QHBoxLayout* rowLayout = new QHBoxLayout();
-            rowLayout->setContentsMargins(0,0,0,0);
-            rowLayout->setSpacing(2);
-            sublayout->addLayout(rowLayout);
-            for(int i = 0; i < 3; i++) {
-                _cellVectorFields[0][i] = new QLineEdit();
-                _cellVectorFields[0][i]->setReadOnly(true);
-                rowLayout->addWidget(_cellVectorFields[0][i], 1);
-            }
-        }
-
-        {   // Second cell vector.
-            sublayout->addSpacing(2);
-            sublayout->addWidget(new QLabel(tr("Cell vector 2:"), rollout));
-            QHBoxLayout* rowLayout = new QHBoxLayout();
-            rowLayout->setContentsMargins(0,0,0,0);
-            rowLayout->setSpacing(2);
-            sublayout->addLayout(rowLayout);
-            for(int i = 0; i < 3; i++) {
-                _cellVectorFields[1][i] = new QLineEdit();
-                _cellVectorFields[1][i]->setReadOnly(true);
-                rowLayout->addWidget(_cellVectorFields[1][i], 1);
-            }
-        }
-
-        {   // Third cell vector.
-            sublayout->addSpacing(2);
-            sublayout->addWidget(new QLabel(tr("Cell vector 3:"), rollout));
-            QHBoxLayout* rowLayout = new QHBoxLayout();
-            rowLayout->setContentsMargins(0,0,0,0);
-            rowLayout->setSpacing(2);
-            sublayout->addLayout(rowLayout);
-            for(int i = 0; i < 3; i++) {
-                _cellVectorFields[2][i] = new QLineEdit();
-                _cellVectorFields[2][i]->setReadOnly(true);
-                rowLayout->addWidget(_cellVectorFields[2][i], 1);
-            }
-        }
-
-        {   // Cell origin.
-            sublayout->addSpacing(8);
-            sublayout->addWidget(new QLabel(tr("Cell origin:"), rollout));
-            QHBoxLayout* rowLayout = new QHBoxLayout();
-            rowLayout->setContentsMargins(0,0,0,0);
-            rowLayout->setSpacing(2);
-            sublayout->addLayout(rowLayout);
-            for(int i = 0; i < 3; i++) {
-                _cellVectorFields[3][i] = new QLineEdit();
-                _cellVectorFields[3][i]->setReadOnly(true);
-                rowLayout->addWidget(_cellVectorFields[3][i], 1);
-            }
-        }
-    }
+    // Initialize color palettes for displaying zero and non-zero cell matrix elements.
+    _zeroPalette = _nonzeroPalette = _cellVectorFields[0][0]->palette();
+    _zeroPalette.setColor(QPalette::Text, _zeroPalette.color(QPalette::PlaceholderText));
 }
 
 /******************************************************************************
@@ -181,9 +170,12 @@ void SimulationCellEditor::updateSimulationBoxSize()
     ParameterUnit* worldUnit = mainWindow().unitsManager().worldUnit();
 
     for(size_t dim = 0; dim < 3; dim++) {
-        _boxSizeFields[dim]->setText(worldUnit->formatValue(cellTM(dim, dim)));
-        for(size_t col = 0; col < 4; col++)
+        FloatType size = std::max({std::abs(cellTM.column(0)[dim]), std::abs(cellTM.column(1)[dim]), std::abs(cellTM.column(2)[dim])});
+        _boxSizeFields[dim]->setText(worldUnit->formatValue(size));
+        for(size_t col = 0; col < 4; col++) {
             _cellVectorFields[col][dim]->setText(worldUnit->formatValue(cellTM(dim, col)));
+            _cellVectorFields[col][dim]->setPalette(cellTM(dim, col) ? _nonzeroPalette : _zeroPalette);
+        }
     }
 
     _pbczPUI->setEnabled(!cell->is2D());
