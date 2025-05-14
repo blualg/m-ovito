@@ -6,6 +6,16 @@ Changelog
 
 .. sidebar::
 
+  * `Download this version <https://www.ovito.org/download_history/#3.12.4>`__
+
+----------------------------
+Version 3.12.4 (xx-May-2025)
+----------------------------
+
+- Fix: (very rare) bug in 2d polygon tessellation code used by the surface mesh visual element, which could lead to an infinite loop in pathological cases
+
+.. sidebar::
+
   * `Download this version <https://www.ovito.org/download_history/#3.12.3>`__
 
 ----------------------------
