@@ -2602,7 +2602,7 @@ namespace GEO {
 // thread_local is supposed to be supported by c++0x,
 // but some old MSVC compilers do not have it.
 #if defined(GEO_COMPILER_MSVC) && !defined(thread_local)
-#  define thread_local __declspec(thread)
+//#  define thread_local __declspec(thread) // Do not define macro "thread_local", because it conflicts with pybind11
 #endif
 
 // Older MAC OS X do not have thread_local

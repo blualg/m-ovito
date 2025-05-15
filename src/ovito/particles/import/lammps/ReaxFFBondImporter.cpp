@@ -93,16 +93,12 @@ bool ReaxFFBondImporter::OOMetaClass::checkFileFormat(const FileHandle& file) co
             return false;
         if(abo < 0.0 || nlp < 0.0)
             return false;
-        line += nread;
 
         // Nothing should follow on the same line.
-        while(*line != '\0') {
-            if(!isspace(*line)) return false;
-            if(*line == '\n' || *line == '\r')
-                return true;
-            ++line;
-        }
-        return false;
+        if(!CompressedTextReader::isOnlyWhitespace(line + nread))
+            return false;
+
+        return true;
     }
 
     return false;
