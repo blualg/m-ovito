@@ -129,12 +129,12 @@ void PropertyExpressionEvaluator::createInputVariables(const std::vector<ConstPr
         _simCell = simCell;
 
         // Cell volume
-        registerGlobalParameter("CellVolume", simCell->volume3D(), tr("simulation cell volume"));
+        registerGlobalParameter("CellVolume", _simCell.is2D() ? _simCell.volume2D() : _simCell.volume3D(), tr("simulation cell volume"));
 
         // Cell size
-        registerGlobalParameter("CellSize.X", std::abs(simCell->matrix().column(0).x()), tr("size along X"));
-        registerGlobalParameter("CellSize.Y", std::abs(simCell->matrix().column(1).y()), tr("size along Y"));
-        registerGlobalParameter("CellSize.Z", std::abs(simCell->matrix().column(2).z()), tr("size along Z"));
+        registerGlobalParameter("CellSize.X", std::abs(_simCell.cellMatrix().column(0).x()), tr("size along X"));
+        registerGlobalParameter("CellSize.Y", std::abs(_simCell.cellMatrix().column(1).y()), tr("size along Y"));
+        registerGlobalParameter("CellSize.Z", std::abs(_simCell.cellMatrix().column(2).z()), tr("size along Z"));
     }
 
     // Constant pi

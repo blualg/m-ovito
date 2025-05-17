@@ -53,6 +53,8 @@ namespace Ovito {
  */
 class OVITO_PARTICLES_EXPORT CutoffNeighborFinder
 {
+    Q_DISABLE_COPY_MOVE(CutoffNeighborFinder)
+
 private:
 
     // An internal per-particle data structure.
@@ -67,22 +69,12 @@ private:
 
 public:
 
-    /// Default constructor.
-    /// You need to call prepare() first before the neighbor finder can be used.
-    CutoffNeighborFinder() = default;
-
-    /// No copying allowed.
-    CutoffNeighborFinder(const CutoffNeighborFinder&) = delete;
-
-    /// No copying allowed.
-    CutoffNeighborFinder& operator=(const CutoffNeighborFinder&) = delete;
-
-    /// \brief Prepares the neighbor finder by sorting particles into a grid of bin cells.
+    /// Constructor that prepares the neighbor finder by sorting particles into a grid of bin cells.
     /// \param cutoffRadius The cutoff radius for neighbor lists.
     /// \param positions The property containing the particle coordinates.
-    /// \param simCell The input simulation cell geometry and boundary conditions.
+    /// \param cellData The input simulation cell geometry and boundary conditions.
     /// \param selectionProperty Determines which particles are included in the neighbor search (optional).
-    void prepare(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCell* simCell, BufferReadAccess<SelectionIntType> selectionProperty);
+    explicit CutoffNeighborFinder(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCellData& cellData, BufferReadAccess<SelectionIntType> selectionProperty);
 
     /// Returns the cutoff radius set via prepare().
     FloatType cutoffRadius() const { return _cutoffRadius; }
@@ -91,15 +83,15 @@ public:
     FloatType cutoffRadiusSquared() const { return _cutoffRadiusSquared; }
 
     /// Returns the simulation cell volume.
-    FloatType simulationCellVolume() const { return (simCell->is2D()) ? simCell->volume2D() : simCell->volume3D(); }
+    FloatType simulationCellVolume() const { return _simCell.is2D() ? _simCell.volume2D() : _simCell.volume3D(); }
 
-    /// Returns the simulation 2D-ness of the cell.
-    bool simulationCellIs2D() const { return simCell->is2D();};
+    /// Returns the simulation cell geometry.
+    const SimulationCellData& simCell() const { return _simCell; }
 
     /// Returns the number of input particles.
     size_t particleCount() const { return _particleCount; }
 
-    /// \brief An iterator class that returns all neighbors of a central particle.
+    /// An iterator class that returns all neighbors of a central particle.
     class OVITO_PARTICLES_EXPORT Query
     {
     public:
@@ -140,8 +132,8 @@ public:
         /// Returns the PBC shift vector between the central particle and the current neighbor as if the two particles
         /// were not wrapped at the periodic boundaries of the simulation cell.
         Vector3I unwrappedPbcShift() const {
-            const auto& s1 = _builder.particles[_centerIndex].pbcShift;
-            const auto& s2 = _builder.particles[_neighborIndex].pbcShift;
+            const auto& s1 = _builder._particles[_centerIndex].pbcShift;
+            const auto& s2 = _builder._particles[_neighborIndex].pbcShift;
             return Vector3I(
                     _pbcShift.x() - s1.x() + s2.x(),
                     _pbcShift.y() - s1.y() + s2.y(),
@@ -175,26 +167,26 @@ private:
     FloatType _cutoffRadiusSquared = 0;
 
     // Simulation cell.
-    DataOORef<const SimulationCell> simCell;
+    SimulationCellData _simCell;
 
     /// Number of bins in each spatial direction.
-    int binDim[3];
+    int _binDim[3];
 
     /// Used to determine the bin from a particle position.
-    AffineTransformation reciprocalBinCell;
+    AffineTransformation _reciprocalBinCell;
 
     /// The number of particles stored in the class.
     size_t _particleCount;
 
     /// The internal list of particles.
-    std::unique_ptr<NeighborListParticle[]> particles;
+    std::unique_ptr<NeighborListParticle[]> _particles;
 
     /// An 3d array of cubic bins. Each bin is a linked list of particles.
-    std::unique_ptr<std::atomic<const NeighborListParticle*>[]> bins;
+    std::unique_ptr<std::atomic<const NeighborListParticle*>[]> _bins;
 
     /// The list of adjacent cells to visit while finding the neighbors of a
     /// central particle.
-    std::vector<Vector3I> stencil;
+    std::vector<Vector3I> _stencil;
 };
 
 }   // End of namespace

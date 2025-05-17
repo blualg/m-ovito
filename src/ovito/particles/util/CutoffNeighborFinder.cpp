@@ -23,54 +23,41 @@
 #include <ovito/particles/Particles.h>
 #include <ovito/core/utilities/concurrent/Task.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
-#include <ovito/core/dataset/DataSet.h>
 #include "CutoffNeighborFinder.h"
 
 namespace Ovito {
 
 /******************************************************************************
-* Initialization function.
+* Constructor.
 ******************************************************************************/
-void CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selectionProperty)
+CutoffNeighborFinder::CutoffNeighborFinder(FloatType cutoffRadius, BufferReadAccess<Point3> positions, const SimulationCellData& cellData, BufferReadAccess<SelectionIntType> selectionProperty) :
+    _cutoffRadius(cutoffRadius),
+    _cutoffRadiusSquared(cutoffRadius * cutoffRadius),
+    _simCell(cellData)
 {
     OVITO_ASSERT(positions);
 
-    _cutoffRadius = cutoffRadius;
-    _cutoffRadiusSquared = cutoffRadius * cutoffRadius;
     if(_cutoffRadius <= 0)
         throw Exception("Invalid parameter: Neighbor cutoff radius must be positive.");
 
     // Check input simulation cell.
     // If it is periodic, make sure it is not degenerate.
     // If it is non-periodic and degenerate, replace the box with a non-degenerate one.
-    bool is2D = false;
-    if(cell && cell->isDegenerate()) {
-        is2D = cell->is2D();
-        if(cell->hasPbcCorrected())
+    if(simCell().isDegenerate()) {
+        if(simCell().hasPbc())
             throw Exception("Invalid input: Periodic simulation cell is degenerate.");
-        else
-            cell = nullptr;
-    }
-    simCell = cell;
-
-    // If needed, create an ad-hoc simulation cell that is non-periodic and non-degenerate.
-    if(!simCell) {
+        // If needed, create an ad-hoc simulation cell that is non-periodic and non-degenerate.
         Box3 boundingBox;
         boundingBox.addPoints(positions);
         if(boundingBox.isEmpty()) boundingBox.addPoint(Point3::Origin());
         if(boundingBox.sizeX() <= FLOATTYPE_EPSILON) boundingBox.maxc.x() = boundingBox.minc.x() + cutoffRadius/2;
         if(boundingBox.sizeY() <= FLOATTYPE_EPSILON) boundingBox.maxc.y() = boundingBox.minc.y() + cutoffRadius/2;
         if(boundingBox.sizeZ() <= FLOATTYPE_EPSILON) boundingBox.maxc.z() = boundingBox.minc.z() + cutoffRadius/2;
-        simCell = DataOORef<SimulationCell>::create(
-                ObjectInitializationFlag::DontCreateVisElement, AffineTransformation(
-                    Vector3(boundingBox.sizeX(), 0, 0),
-                    Vector3(0, boundingBox.sizeY(), 0),
-                    Vector3(0, 0, boundingBox.sizeZ()),
-                    boundingBox.minc - Point3::Origin()), false, false, false, is2D);
+        _simCell = SimulationCellData(boundingBox, simCell().is2D());
     }
-    OVITO_ASSERT(!simCell->is2D() || !simCell->matrix().column(2).isZero());
+    OVITO_ASSERT(!simCell().is2D() || !simCell().cellMatrix().column(2).isZero());
 
-    const AffineTransformation cellMatrix = simCell->matrix();
+    const AffineTransformation cellMatrix = simCell().cellMatrix();
     AffineTransformation binCell;
     binCell.translation() = cellMatrix.translation();
     std::array<Vector3,3> planeNormals;
@@ -78,39 +65,39 @@ void CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
     // Determine the number of bins along each simulation cell vector.
     const double binCountLimit = 128*128*128;
     for(size_t i = 0; i < 3; i++) {
-        planeNormals[i] = simCell->cellNormalVector(i);
+        planeNormals[i] = simCell().cellNormalVector(i);
         OVITO_ASSERT(planeNormals[i] != Vector3::Zero());
         FloatType x = std::abs(cellMatrix.column(i).dot(planeNormals[i]) / _cutoffRadius);
-        binDim[i] = std::max((int)floor(std::min(x, FloatType(binCountLimit))), 1);
+        _binDim[i] = std::max((int)floor(std::min(x, FloatType(binCountLimit))), 1);
     }
-    if(simCell->is2D())
-        binDim[2] = 1;
+    if(simCell().is2D())
+        _binDim[2] = 1;
 
     // Impose limit on the total number of bins.
-    double estimatedBinCount = (double)binDim[0] * (double)binDim[1] * (double)binDim[2];
+    double estimatedBinCount = (double)_binDim[0] * (double)_binDim[1] * (double)_binDim[2];
 
     // Reduce bin count in each dimension by the same fraction to stay below total bin count limit.
     if(estimatedBinCount > binCountLimit) {
-        if(!simCell->is2D()) {
+        if(!simCell().is2D()) {
             double factor = pow(binCountLimit / estimatedBinCount, 1.0/3.0);
             for(size_t i = 0; i < 3; i++)
-                binDim[i] = std::max((int)(binDim[i] * factor), 1);
+                _binDim[i] = std::max((int)(_binDim[i] * factor), 1);
         }
         else {
             double factor = pow(binCountLimit / estimatedBinCount, 1.0/2.0);
             for(size_t i = 0; i < 2; i++)
-                binDim[i] = std::max((int)(binDim[i] * factor), 1);
+                _binDim[i] = std::max((int)(_binDim[i] * factor), 1);
         }
     }
 
-    qint64 binCount = (qint64)binDim[0] * (qint64)binDim[1] * (qint64)binDim[2];
+    qint64 binCount = (qint64)_binDim[0] * (qint64)_binDim[1] * (qint64)_binDim[2];
     OVITO_ASSERT(binCount > 0 && binCount < (qint64)0xFFFFFFFF);
 
     // Compute bin cell.
     for(size_t i = 0; i < 3; i++) {
-        binCell.column(i) = cellMatrix.column(i) / binDim[i];
+        binCell.column(i) = cellMatrix.column(i) / _binDim[i];
     }
-    if(!binCell.inverse(reciprocalBinCell))
+    if(!binCell.inverse(_reciprocalBinCell))
         throw Exception("Invalid input: Simulation cell is degenerate.");
 
     // Generate stencil.
@@ -149,12 +136,12 @@ void CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
     // Compute the stencil of bin cells that need to be visited to find all neighbors of a particle located
     // in some central cell.
     for(int stencilRadius = 0; stencilRadius < 100; stencilRadius++) {
-        size_t oldCount = stencil.size();
+        size_t oldCount = _stencil.size();
         if(oldCount > 100*100)
             throw Exception("Neighbor cutoff radius is too large compared to the simulation cell size.");
-        int stencilRadiusX = simCell->hasPbcCorrected(0) ? stencilRadius : std::min(stencilRadius, binDim[0] - 1);
-        int stencilRadiusY = simCell->hasPbcCorrected(1) ? stencilRadius : std::min(stencilRadius, binDim[1] - 1);
-        int stencilRadiusZ = simCell->hasPbcCorrected(2) ? stencilRadius : std::min(stencilRadius, binDim[2] - 1);
+        int stencilRadiusX = _simCell.hasPbc(0) ? stencilRadius : std::min(stencilRadius, _binDim[0] - 1);
+        int stencilRadiusY = _simCell.hasPbc(1) ? stencilRadius : std::min(stencilRadius, _binDim[1] - 1);
+        int stencilRadiusZ = _simCell.hasPbc(2) ? stencilRadius : std::min(stencilRadius, _binDim[2] - 1);
         for(int ix = -stencilRadiusX; ix <= stencilRadiusX; ix++) {
             for(int iy = -stencilRadiusY; iy <= stencilRadiusY; iy++) {
                 for(int iz = -stencilRadiusZ; iz <= stencilRadiusZ; iz++) {
@@ -171,26 +158,26 @@ void CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
                         }
                     }
                     if(shortestDistance < cutoffRadiusSquared()) {
-                        stencil.push_back(Vector3I(ix,iy,iz));
+                        _stencil.push_back(Vector3I(ix,iy,iz));
                     }
                 }
             }
         }
-        if(stencil.size() == oldCount)
+        if(_stencil.size() == oldCount)
             break;
     }
 
     // An 3d array of bins.
     // Each bin is a linked list of particles.
-    bins = std::make_unique<std::atomic<const NeighborListParticle*>[]>(binCount);
+    _bins = std::make_unique<std::atomic<const NeighborListParticle*>[]>(binCount);
     _particleCount = positions.size();
-    particles = std::make_unique<NeighborListParticle[]>(_particleCount);
+    _particles = std::make_unique<NeighborListParticle[]>(_particleCount);
 
     // Sort particles into bins.
     parallelFor(_particleCount, 4096, TaskProgress::Ignore, [&](size_t pindex) {
         const Point3& p = positions[pindex];
 
-        NeighborListParticle& a = particles[pindex];
+        NeighborListParticle& a = _particles[pindex];
         a.pos = p;
         a.pbcShift.setZero();
 
@@ -198,34 +185,34 @@ void CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
             return;
 
         // Determine the bin the particle is located in.
-        Point3 rp = reciprocalBinCell * p;
+        Point3 rp = _reciprocalBinCell * p;
 
         Point3I binLocation;
         for(size_t k = 0; k < 3; k++) {
             binLocation[k] = (int)std::floor(rp[k]);
-            if(simCell->hasPbcCorrected(k)) {
-                if(binLocation[k] < 0 || binLocation[k] >= binDim[k]) {
+            if(_simCell.hasPbc(k)) {
+                if(binLocation[k] < 0 || binLocation[k] >= _binDim[k]) {
                     int shift;
                     if(binLocation[k] < 0)
-                        shift = -(binLocation[k]+1) / binDim[k]+1;
+                        shift = -(binLocation[k]+1) / _binDim[k]+1;
                     else
-                        shift = -binLocation[k] / binDim[k];
+                        shift = -binLocation[k] / _binDim[k];
                     a.pbcShift[k] = shift;
                     a.pos += (FloatType)shift * cellMatrix.column(k);
-                    binLocation[k] = SimulationCell::modulo(binLocation[k], binDim[k]);
+                    binLocation[k] = SimulationCell::modulo(binLocation[k], _binDim[k]);
                 }
             }
             else if(binLocation[k] < 0) {
                 binLocation[k] = 0;
             }
-            else if(binLocation[k] >= binDim[k]) {
-                binLocation[k] = binDim[k] - 1;
+            else if(binLocation[k] >= _binDim[k]) {
+                binLocation[k] = _binDim[k] - 1;
             }
-            OVITO_ASSERT(binLocation[k] >= 0 && binLocation[k] < binDim[k]);
+            OVITO_ASSERT(binLocation[k] >= 0 && binLocation[k] < _binDim[k]);
         }
 
         // Put particle into its bin.
-        size_t binIndex = binLocation[0] + binLocation[1]*binDim[0] + binLocation[2]*binDim[0]*binDim[1];
+        size_t binIndex = binLocation[0] + binLocation[1]*_binDim[0] + binLocation[2]*_binDim[0]*_binDim[1];
 
         // Insert new particle into linked-list such that the list stays ordered. This is needed for a deterministic neighbor finder.
         // Note: The particles in each cell are sorted in descending order to be compatible with previous OVITO versions, which used a serial algorithm to build the cell lists.
@@ -234,7 +221,7 @@ void CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
             // Find linked-list position where to insert the new particle.
             const NeighborListParticle* insertBefore;
             const NeighborListParticle* insertAfter;
-            auto entry = bins[binIndex].load(std::memory_order_relaxed);
+            auto entry = _bins[binIndex].load(std::memory_order_relaxed);
             if(!entry) {
                 insertBefore = insertAfter = nullptr;
             }
@@ -260,7 +247,7 @@ void CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
 
             // Try to insert the new particle into the list using a CAS operation.
             if(insertAfter == nullptr) {
-                if(bins[binIndex].compare_exchange_weak(insertBefore, newParticle, std::memory_order_release, std::memory_order_relaxed))
+                if(_bins[binIndex].compare_exchange_weak(insertBefore, newParticle, std::memory_order_release, std::memory_order_relaxed))
                     break;
             }
             else {
@@ -277,16 +264,16 @@ void CutoffNeighborFinder::prepare(FloatType cutoffRadius, BufferReadAccess<Poin
 * Iterator constructor
 ******************************************************************************/
 CutoffNeighborFinder::Query::Query(const CutoffNeighborFinder& finder, size_t particleIndex)
-    : _builder(finder), _centerIndex(particleIndex), _pbcFlags(finder.simCell->pbcFlagsCorrected()), _cellMatrix(finder.simCell->cellMatrix())
+    : _builder(finder), _centerIndex(particleIndex), _pbcFlags(finder._simCell.pbcFlags()), _cellMatrix(finder._simCell.cellMatrix())
 {
     OVITO_ASSERT(particleIndex < _builder.particleCount());
 
-    _stencilIter = _builder.stencil.begin();
-    _center = _builder.particles[particleIndex].pos;
+    _stencilIter = _builder._stencil.begin();
+    _center = _builder._particles[particleIndex].pos;
 
     // Determine the bin the central particle is located in.
     for(size_t k = 0; k < 3; k++) {
-        _centerBin[k] = std::clamp((int)std::floor(_builder.reciprocalBinCell.prodrow(_center, k)), 0, _builder.binDim[k] - 1);
+        _centerBin[k] = std::clamp((int)std::floor(_builder._reciprocalBinCell.prodrow(_center, k)), 0, _builder._binDim[k] - 1);
     }
 
     next();
@@ -296,13 +283,13 @@ CutoffNeighborFinder::Query::Query(const CutoffNeighborFinder& finder, size_t pa
 * Iterator constructor
 ******************************************************************************/
 CutoffNeighborFinder::Query::Query(const CutoffNeighborFinder& finder, const Point3& location)
-    : _builder(finder), _center(finder.simCell->wrapPoint(location)), _pbcFlags(finder.simCell->pbcFlagsCorrected()), _cellMatrix(finder.simCell->cellMatrix())
+    : _builder(finder), _center(finder._simCell.wrapPoint(location)), _pbcFlags(finder._simCell.pbcFlags()), _cellMatrix(finder._simCell.cellMatrix())
 {
-    _stencilIter = _builder.stencil.begin();
+    _stencilIter = _builder._stencil.begin();
 
     // Determine the bin the central particle is located in.
     for(size_t k = 0; k < 3; k++) {
-        _centerBin[k] = std::clamp((int)std::floor(_builder.reciprocalBinCell.prodrow(_center, k)), 0, _builder.binDim[k] - 1);
+        _centerBin[k] = std::clamp((int)std::floor(_builder._reciprocalBinCell.prodrow(_center, k)), 0, _builder._binDim[k] - 1);
     }
 
     next();
@@ -318,7 +305,7 @@ void CutoffNeighborFinder::Query::next()
     for(;;) {
         while(_neighbor) {
             _delta = _neighbor->pos - _shiftedCenter;
-            _neighborIndex = _neighbor - _builder.particles.get();
+            _neighborIndex = _neighbor - _builder._particles.get();
             _neighbor = _neighbor->nextInBin.load(std::memory_order_relaxed);
             _distsq = _delta.squaredLength();
             if(_distsq <= _builder._cutoffRadiusSquared && (_neighborIndex != _centerIndex || _pbcShift != Vector3I::Zero()))
@@ -326,7 +313,7 @@ void CutoffNeighborFinder::Query::next()
         };
 
         for(;;) {
-            if(_stencilIter == _builder.stencil.end()) {
+            if(_stencilIter == _builder._stencil.end()) {
                 _atEnd = true;
                 _neighborIndex = std::numeric_limits<size_t>::max();
                 return;
@@ -338,30 +325,30 @@ void CutoffNeighborFinder::Query::next()
             for(size_t k = 0; k < 3; k++) {
                 _currentBin[k] = _centerBin[k] + (*_stencilIter)[k];
                 if(!_pbcFlags[k]) {
-                    if(_currentBin[k] < 0 || _currentBin[k] >= _builder.binDim[k]) {
+                    if(_currentBin[k] < 0 || _currentBin[k] >= _builder._binDim[k]) {
                         skipBin = true;
                         break;
                     }
                 }
                 else {
-                    if(_currentBin[k] >= _builder.binDim[k]) {
-                        int s = _currentBin[k] / _builder.binDim[k];
+                    if(_currentBin[k] >= _builder._binDim[k]) {
+                        int s = _currentBin[k] / _builder._binDim[k];
                         _pbcShift[k] = s;
-                        _currentBin[k] -= s * _builder.binDim[k];
+                        _currentBin[k] -= s * _builder._binDim[k];
                         _shiftedCenter -= _cellMatrix.column(k) * (FloatType)s;
                     }
                     else if(_currentBin[k] < 0) {
-                        int s = (_currentBin[k] - _builder.binDim[k] + 1) / _builder.binDim[k];
+                        int s = (_currentBin[k] - _builder._binDim[k] + 1) / _builder._binDim[k];
                         _pbcShift[k] = s;
-                        _currentBin[k] -= s * _builder.binDim[k];
+                        _currentBin[k] -= s * _builder._binDim[k];
                         _shiftedCenter -= _cellMatrix.column(k) * (FloatType)s;
                     }
                 }
-                OVITO_ASSERT(_currentBin[k] >= 0 && _currentBin[k] < _builder.binDim[k]);
+                OVITO_ASSERT(_currentBin[k] >= 0 && _currentBin[k] < _builder._binDim[k]);
             }
             ++_stencilIter;
             if(!skipBin) {
-                _neighbor = _builder.bins[_currentBin[0] + _currentBin[1] * _builder.binDim[0] + _currentBin[2] * _builder.binDim[0] * _builder.binDim[1]].load(std::memory_order_relaxed);
+                _neighbor = _builder._bins[_currentBin[0] + _currentBin[1] * _builder._binDim[0] + _currentBin[2] * _builder._binDim[0] * _builder._binDim[1]].load(std::memory_order_relaxed);
                 break;
             }
         }

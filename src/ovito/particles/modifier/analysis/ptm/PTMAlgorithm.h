@@ -190,8 +190,16 @@ public:
         return qRadiansToDegrees(disorientation);
     }
 
-    /// Creates the algorithm object.
-    PTMAlgorithm();
+    /// \brief Initializes the PTMAlgorithm with the input system of particles.
+    /// \param positions The particle coordinates.
+    /// \param cell The simulation cell information.
+    /// \param selection Per-particle selection flags determining which particles are included in the neighbor search (optional).
+    /// \throw Exception on error.
+    PTMAlgorithm(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection = {}) :
+            NearestNeighborFinder(MAX_INPUT_NEIGHBORS, std::move(positions), cell, std::move(selection))
+    {
+        ptm_initialize_global();
+    }
 
     /// Sets the threshold for the RMSD that must not be exceeded for a structure match to be valid.
     /// A zero cutoff value turns off the threshold filtering. The default threshold value is 0.1.
@@ -223,15 +231,6 @@ public:
     void setIdentifyOrdering(ConstDataBufferPtr particleTypes) {
         _particleTypes = std::move(particleTypes);
         _identifyOrdering = (_particleTypes != nullptr);
-    }
-
-    /// \brief Initializes the PTMAlgorithm with the input system of particles.
-    /// \param positions The particle coordinates.
-    /// \param cell The simulation cell information.
-    /// \param selection Per-particle selection flags determining which particles are included in the neighbor search (optional).
-    /// \throw Exception on error.
-    void prepare(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection = {}) {
-        NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection));
     }
 
     /// This nested class performs a PTM calculation on a single input particle.

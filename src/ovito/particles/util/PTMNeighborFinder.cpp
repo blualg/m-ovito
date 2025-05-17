@@ -30,32 +30,21 @@ namespace Ovito {
 /******************************************************************************
 * Creates the neighbor finder.
 ******************************************************************************/
-PTMNeighborFinder::PTMNeighborFinder(bool all_properties) : NearestNeighborFinder(PTMAlgorithm::MAX_INPUT_NEIGHBORS)
+PTMNeighborFinder::PTMNeighborFinder(
+    bool all_properties,
+    BufferReadAccess<Point3> positions,
+    const SimulationCellData& cell,
+    BufferReadAccess<SelectionIntType> selection,
+    ConstDataBufferPtr structuresArray,
+    ConstDataBufferPtr orientationsArray,
+    ConstDataBufferPtr correspondencesArray) :
+        NearestNeighborFinder(PTMAlgorithm::MAX_INPUT_NEIGHBORS, std::move(positions), cell, std::move(selection)),
+        _structuresArray(std::move(structuresArray)),
+        _orientationsArray(std::move(orientationsArray)),
+        _correspondencesArray(std::move(correspondencesArray)),
+        _all_properties(all_properties)
 {
     ptm_initialize_global();
-
-    // scripting interface should always set this to true;
-    _all_properties = all_properties;
-}
-
-/******************************************************************************
-* Prepares the neighbor finder.
-******************************************************************************/
-void PTMNeighborFinder::prepare(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection,
-                                ConstDataBufferPtr structuresArray,
-                                ConstDataBufferPtr orientationsArray,
-                                ConstDataBufferPtr correspondencesArray)
-{
-    // Initialize the internal NearestNeighborFinder.
-    NearestNeighborFinder::prepare(std::move(positions), cell, std::move(selection));
-
-    OVITO_ASSERT(structuresArray);
-    OVITO_ASSERT(orientationsArray);
-    OVITO_ASSERT(correspondencesArray);
-
-    _structuresArray = std::move(structuresArray);
-    _orientationsArray = std::move(orientationsArray);
-    _correspondencesArray = std::move(correspondencesArray);
 }
 
 /******************************************************************************

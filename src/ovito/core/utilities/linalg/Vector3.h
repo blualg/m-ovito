@@ -106,7 +106,7 @@ public:
     Vector_3() noexcept = default;
 
     /// Constructs a vector with all three components initialized to the given value.
-    Q_DECL_CONSTEXPR explicit Vector_3(T val) noexcept :
+    constexpr explicit Vector_3(T val) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{val,val,val}} {}
 #else
@@ -114,7 +114,7 @@ public:
 #endif
 
     /// Initializes the components of the vector with the given values.
-    Q_DECL_CONSTEXPR Vector_3(T x, T y, T z) noexcept :
+    constexpr Vector_3(T x, T y, T z) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{x, y, z}} {}
 #else
@@ -122,7 +122,7 @@ public:
 #endif
 
     /// Initializes the vector to the null vector. All components are set to zero.
-    Q_DECL_CONSTEXPR Vector_3(Zero) noexcept :
+    constexpr Vector_3(Zero) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{T(0), T(0), T(0)}} {}
 #else
@@ -130,10 +130,10 @@ public:
 #endif
 
     /// Initializes the vector from an array.
-    Q_DECL_CONSTEXPR explicit Vector_3(const base_type& a) noexcept : base_type(a) {}
+    constexpr explicit Vector_3(const base_type& a) noexcept : base_type(a) {}
 
     /// Conversion constructor from a Qt vector.
-    Q_DECL_CONSTEXPR Vector_3(const QVector3D& v) noexcept :
+    constexpr Vector_3(const QVector3D& v) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{T(v.x()), T(v.y()), T(v.z())}} {}
 #else
@@ -142,7 +142,7 @@ public:
 
     /// Casts the vector to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Vector_3<U>, const Vector_3<T>&> {
+    constexpr auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Vector_3<U>, const Vector_3<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Vector_3<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()));
         else
@@ -152,30 +152,30 @@ public:
     /////////////////////////////// Unary operators //////////////////////////////
 
     /// Returns the reverse vector (-x(), -y(), -z()).
-    Q_DECL_CONSTEXPR Vector_3 operator-() const { return Vector_3(-x(), -y(), -z()); }
+    constexpr Vector_3 operator-() const { return Vector_3(-x(), -y(), -z()); }
 
     /// Conversion operator to a Qt vector.
-    Q_DECL_CONSTEXPR explicit operator QVector3D() const { return QVector3D(x(), y(), z()); }
+    constexpr explicit operator QVector3D() const { return QVector3D(x(), y(), z()); }
 
     ///////////////////////////// Assignment operators ///////////////////////////
 
     /// Increments the components of this vector by the components of another vector.
-    Q_DECL_CONSTEXPR Vector_3& operator+=(const Vector_3& v) { x() += v.x(); y() += v.y(); z() += v.z(); return *this; }
+    constexpr Vector_3& operator+=(const Vector_3& v) { x() += v.x(); y() += v.y(); z() += v.z(); return *this; }
 
     /// Decrements the components of this vector by the components of another vector.
-    Q_DECL_CONSTEXPR Vector_3& operator-=(const Vector_3& v) { x() -= v.x(); y() -= v.y(); z() -= v.z(); return *this; }
+    constexpr Vector_3& operator-=(const Vector_3& v) { x() -= v.x(); y() -= v.y(); z() -= v.z(); return *this; }
 
     /// Multiplies each component of the vector with a scalar.
-    Q_DECL_CONSTEXPR Vector_3& operator*=(T s) { x() *= s; y() *= s; z() *= s; return *this; }
+    constexpr Vector_3& operator*=(T s) { x() *= s; y() *= s; z() *= s; return *this; }
 
     /// Divides each component of the vector by a scalar.
-    Q_DECL_CONSTEXPR Vector_3& operator/=(T s) { x() /= s; y() /= s; z() /= s; return *this; }
+    constexpr Vector_3& operator/=(T s) { x() /= s; y() /= s; z() /= s; return *this; }
 
     /// Sets all components of the vector to zero.
-    Q_DECL_CONSTEXPR Vector_3& operator=(Zero) { setZero(); return *this; }
+    constexpr Vector_3& operator=(Zero) { setZero(); return *this; }
 
     /// Sets all components of the vector to zero.
-    Q_DECL_CONSTEXPR void setZero() {
+    constexpr void setZero() {
 #ifndef OVITO_USE_SYCL
         this->fill(T(0));
 #else
@@ -186,86 +186,86 @@ public:
     //////////////////////////// Component access //////////////////////////
 
     /// Returns the value of the X component of this vector.
-    Q_DECL_CONSTEXPR T x() const { return (*this)[0]; }
+    constexpr T x() const { return (*this)[0]; }
 
     /// Returns the value of the Y component of this vector.
-    Q_DECL_CONSTEXPR T y() const { return (*this)[1]; }
+    constexpr T y() const { return (*this)[1]; }
 
     /// Returns the value of the Z component of this vector.
-    Q_DECL_CONSTEXPR T z() const { return (*this)[2]; }
+    constexpr T z() const { return (*this)[2]; }
 
     /// Returns a reference to the X component of this vector.
-    Q_DECL_CONSTEXPR T& x() { return (*this)[0]; }
+    constexpr T& x() { return (*this)[0]; }
 
     /// Returns a reference to the Y component of this vector.
-    Q_DECL_CONSTEXPR T& y() { return (*this)[1]; }
+    constexpr T& y() { return (*this)[1]; }
 
     /// Returns a reference to the Z component of this vector.
-    Q_DECL_CONSTEXPR T& z() { return (*this)[2]; }
+    constexpr T& z() { return (*this)[2]; }
 
 #ifdef OVITO_USE_SYCL
     // Workaround for missing data() method in SYCL's marray class template.
-    Q_DECL_CONSTEXPR T* data() noexcept { return &(*this)[0]; }
-    Q_DECL_CONSTEXPR const T* data() const noexcept { return &(*this)[0]; }
+    constexpr T* data() noexcept { return &(*this)[0]; }
+    constexpr const T* data() const noexcept { return &(*this)[0]; }
 #endif
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
     /// \brief Compares two vectors for exact equality.
     /// \return \c true if all components are equal; \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator==(const Vector_3& v) const { return (v.x()==x()) && (v.y()==y()) && (v.z()==z()); }
+    constexpr bool operator==(const Vector_3& v) const { return (v.x()==x()) && (v.y()==y()) && (v.z()==z()); }
 
     /// \brief Compares two vectors for inequality.
     /// \return \c true if any of the components are not equal; \c false if all are equal.
-    Q_DECL_CONSTEXPR bool operator!=(const Vector_3& v) const { return (v.x()!=x()) || (v.y()!=y()) || (v.z()!=z()); }
+    constexpr bool operator!=(const Vector_3& v) const { return (v.x()!=x()) || (v.y()!=y()) || (v.z()!=z()); }
 
     /// \brief Tests if the vector is the null vector, i.e. if all components are zero.
     /// \return \c true if all components are exactly zero; \c false otherwise
-    Q_DECL_CONSTEXPR bool operator==(Zero) const { return (x()==T(0)) && (y()==T(0)) && (z()==T(0)); }
+    constexpr bool operator==(Zero) const { return (x()==T(0)) && (y()==T(0)) && (z()==T(0)); }
 
     /// \brief Tests if the vector is not a null vector, i.e. if any of the components is nonzero.
     /// \return \c true if any component is nonzero; \c false if all components are exactly zero.
-    Q_DECL_CONSTEXPR bool operator!=(Zero) const { return (x()!=T(0)) || (y()!=T(0)) || (z()!=T(0)); }
+    constexpr bool operator!=(Zero) const { return (x()!=T(0)) || (y()!=T(0)) || (z()!=T(0)); }
 
     /// \brief Tests if two vectors are equal within a given tolerance.
     /// \param v The vector to compare to this vector.
     /// \param tolerance A non-negative threshold for the equality test. The two vectors are considered equal if
     ///        the differences in the three components are all less than this tolerance value.
     /// \return \c true if this vector is equal to \a v within the given tolerance; \c false otherwise.
-    Q_DECL_CONSTEXPR bool equals(const Vector_3& v, T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool equals(const Vector_3& v, T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(v.x() - x()) <= tolerance && std::abs(v.y() - y()) <= tolerance && std::abs(v.z() - z()) <= tolerance;
     }
 
     /// \brief Test if the vector is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute vector components are all smaller than \a tolerance.
-    Q_DECL_CONSTEXPR bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance && std::abs(z()) <= tolerance;
     }
 
     ///////////////////////////////// Computations ////////////////////////////////
 
     /// Computes the inner dot product of this vector with the vector \a b.
-    Q_DECL_CONSTEXPR T dot(const Vector_3& b) const { return x()*b.x() + y()*b.y() + z()*b.z(); }
+    constexpr T dot(const Vector_3& b) const { return x()*b.x() + y()*b.y() + z()*b.z(); }
 
     /// Computes the cross product of this vector with the vector \a b.
-    Q_DECL_CONSTEXPR Vector_3 cross(const Vector_3& b) const {
+    constexpr Vector_3 cross(const Vector_3& b) const {
         return Vector_3(y() * b.z() - z() * b.y(),
                         z() * b.x() - x() * b.z(),
                         x() * b.y() - y() * b.x());
     }
 
     /// Computes the squared length of the vector.
-    Q_DECL_CONSTEXPR T squaredLength() const { return x()*x() + y()*y() + z()*z(); }
+    constexpr T squaredLength() const { return x()*x() + y()*y() + z()*z(); }
 
     /// Computes the length of the vector.
-    Q_DECL_CONSTEXPR T length() const { return static_cast<T>(sqrt(squaredLength())); }
+    constexpr T length() const { return static_cast<T>(sqrt(squaredLength())); }
 
     /// \brief Normalizes this vector by dividing it by its length, making it a unit vector.
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa normalized(), normalizeSafely(), resize()
-    Q_DECL_CONSTEXPR inline void normalize() {
+    constexpr inline void normalize() {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector3::normalize", "Cannot normalize a vector of length zero.");
         *this /= length();
     }
@@ -275,7 +275,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa normalize(), normalizeSafely()
-    Q_DECL_CONSTEXPR inline Vector_3 normalized() const {
+    constexpr inline Vector_3 normalized() const {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector3::normalize", "Cannot normalize a vector of length zero.");
         return *this / length();
     }
@@ -284,7 +284,7 @@ public:
     /// \param epsilon The epsilon used to test if this vector is zero.
     /// \return The normalized vector.
     /// \sa normalized(), normalizeSafely()
-    Q_DECL_CONSTEXPR inline Vector_3 safelyNormalized(T epsilon = FloatTypeEpsilon<T>()) const {
+    constexpr inline Vector_3 safelyNormalized(T epsilon = FloatTypeEpsilon<T>()) const {
         T l = length();
         if(l > epsilon)
             return *this / l;
@@ -297,7 +297,7 @@ public:
     /// This method rescales this vector to unit length if its original length is greater than \a epsilon.
     /// Otherwise it does nothing.
     /// \sa normalize(), normalized()
-    Q_DECL_CONSTEXPR inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
+    constexpr inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
         T l = length();
         if(l > epsilon)
             *this /= l;
@@ -308,7 +308,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa resized(), normalize(), normalized()
-    Q_DECL_CONSTEXPR inline void resize(T len) {
+    constexpr inline void resize(T len) {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector3::resize", "Cannot resize a vector of length zero.");
         *this *= (len / length());
     }
@@ -319,7 +319,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa resize(), normalized()
-    Q_DECL_CONSTEXPR inline Vector_3 resized(T len) const {
+    constexpr inline Vector_3 resized(T len) const {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector3::resized", "Cannot resize a vector of length zero.");
         return *this * (len / length());
     }
@@ -327,12 +327,12 @@ public:
     ///////////////////////////////// Utilities ////////////////////////////////
 
     /// \brief Returns the index of the component with the maximum value.
-    Q_DECL_CONSTEXPR inline size_type maxComponent() const {
+    constexpr inline size_type maxComponent() const {
         return ((x() >= y()) ? ((x() >= z()) ? 0 : 2) : ((y() >= z()) ? 1 : 2));
     }
 
     /// \brief Returns the index of the component with the minimum value.
-    Q_DECL_CONSTEXPR inline size_type minComponent() const {
+    constexpr inline size_type minComponent() const {
         return ((x() <= y()) ? ((x() <= z()) ? 0 : 2) : ((y() <= z()) ? 1 : 2));
     }
 
@@ -353,77 +353,77 @@ public:
 /// \brief Computes the sum of two vectors.
 /// \relates Vector_3
 template<typename T>
-Q_DECL_CONSTEXPR Vector_3<T> operator+(const Vector_3<T>& a, const Vector_3<T>& b) {
+constexpr Vector_3<T> operator+(const Vector_3<T>& a, const Vector_3<T>& b) {
     return Vector_3<T>( a.x() + b.x(), a.y() + b.y(), a.z() + b.z() );
 }
 
 /// \brief Computes the difference of two vectors.
 /// \relates Vector_3
 template<typename T>
-Q_DECL_CONSTEXPR Vector_3<T> operator-(const Vector_3<T>& a, const Vector_3<T>& b) {
+constexpr Vector_3<T> operator-(const Vector_3<T>& a, const Vector_3<T>& b) {
     return Vector_3<T>( a.x() - b.x(), a.y() - b.y(), a.z() - b.z() );
 }
 
 /// \brief Computes the product of a vector and a scalar value.
 /// \relates Vector_3
 template<typename T>
-Q_DECL_CONSTEXPR Vector_3<T> operator*(const Vector_3<T>& a, float s) {
+constexpr Vector_3<T> operator*(const Vector_3<T>& a, float s) {
     return Vector_3<T>( a.x() * (T)s, a.y() * (T)s, a.z() * (T)s );
 }
 
 /// \brief Computes the product of a vector and a scalar value.
 /// \relates Vector_3
 template<typename T>
-Q_DECL_CONSTEXPR Vector_3<T> operator*(const Vector_3<T>& a, double s) {
+constexpr Vector_3<T> operator*(const Vector_3<T>& a, double s) {
     return Vector_3<T>( a.x() * (T)s, a.y() * (T)s, a.z() * (T)s );
 }
 
 /// \brief Computes the product of a vector and a scalar value.
 /// \relates Vector_3
 template<typename T>
-Q_DECL_CONSTEXPR Vector_3<T> operator*(const Vector_3<T>& a, int s) {
+constexpr Vector_3<T> operator*(const Vector_3<T>& a, int s) {
     return Vector_3<T>( a.x() * s, a.y() * s, a.z() * s );
 }
 
 /// \brief Computes the product of a vector and a boolean value.
 /// \relates Vector_3
 template<typename T>
-Q_DECL_CONSTEXPR Vector_3<T> operator*(const Vector_3<T>& a, bool s) {
+constexpr Vector_3<T> operator*(const Vector_3<T>& a, bool s) {
     return Vector_3<T>( a.x() * s, a.y() * s, a.z() * s );
 }
 
 /// \brief Computes the product of a scalar value and a vector.
 /// \relates Vector_3
 template<typename T>
-Q_DECL_CONSTEXPR Vector_3<T> operator*(float s, const Vector_3<T>& a) {
+constexpr Vector_3<T> operator*(float s, const Vector_3<T>& a) {
     return Vector_3<T>( a.x() * (T)s, a.y() * (T)s, a.z() * (T)s );
 }
 
 /// \brief Computes the product of a scalar value and a vector.
 /// \relates Vector_3
 template<typename T>
-Q_DECL_CONSTEXPR Vector_3<T> operator*(double s, const Vector_3<T>& a) {
+constexpr Vector_3<T> operator*(double s, const Vector_3<T>& a) {
     return Vector_3<T>( a.x() * (T)s, a.y() * (T)s, a.z() * (T)s );
 }
 
 /// \brief Computes the product of a scalar value and a vector.
 /// \relates Vector_3
 template<typename T>
-Q_DECL_CONSTEXPR Vector_3<T> operator*(int s, const Vector_3<T>& a) {
+constexpr Vector_3<T> operator*(int s, const Vector_3<T>& a) {
     return Vector_3<T>( a.x() * s, a.y() * s, a.z() * s );
 }
 
 /// \brief Computes the product of a boolean value and a vector.
 /// \relates Vector_3
 template<typename T>
-Q_DECL_CONSTEXPR Vector_3<T> operator*(bool s, const Vector_3<T>& a) {
+constexpr Vector_3<T> operator*(bool s, const Vector_3<T>& a) {
     return Vector_3<T>( a.x() * s, a.y() * s, a.z() * s);
 }
 
 /// \brief Computes the division of a vector by a scalar value.
 /// \relates Vector_3
 template<typename T, typename S>
-Q_DECL_CONSTEXPR Vector_3<T> operator/(const Vector_3<T>& a, S s) {
+constexpr Vector_3<T> operator/(const Vector_3<T>& a, S s) {
     return Vector_3<T>( a.x() / s, a.y() / s, a.z() / s );
 }
 

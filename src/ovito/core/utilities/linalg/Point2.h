@@ -95,20 +95,20 @@ public:
     Point_2() noexcept = default;
 
     /// Constructs a point with \c x and \c y components initialized to the given value.
-    Q_DECL_CONSTEXPR explicit Point_2(T val) noexcept : std::array<T, 2>{{val,val}} {}
+    constexpr explicit Point_2(T val) noexcept : std::array<T, 2>{{val,val}} {}
 
     /// Initializes the coordinates of the point with the given values.
-    Q_DECL_CONSTEXPR Point_2(T x, T y) noexcept : std::array<T, 2>{{x, y}} {}
+    constexpr Point_2(T x, T y) noexcept : std::array<T, 2>{{x, y}} {}
 
     /// Initializes the point to the origin. All coordinates are set to zero.
-    Q_DECL_CONSTEXPR Point_2(Origin) noexcept : std::array<T, 2>{{T(0), T(0)}} {}
+    constexpr Point_2(Origin) noexcept : std::array<T, 2>{{T(0), T(0)}} {}
 
     /// Initializes the point from an array coordinates.
-    Q_DECL_CONSTEXPR explicit Point_2(const std::array<T, 2>& a) noexcept : std::array<T, 2>(a) {}
+    constexpr explicit Point_2(const std::array<T, 2>& a) noexcept : std::array<T, 2>(a) {}
 
     /// Casts the point to another coordinate type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Point_2<U>, const Point_2<T>&> {
+    constexpr auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Point_2<U>, const Point_2<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Point_2<U>(static_cast<U>(x()), static_cast<U>(y()));
         else
@@ -118,87 +118,87 @@ public:
     ///////////////////////////// Assignment operators ///////////////////////////
 
     /// Adds a vector to this point.
-    Q_DECL_CONSTEXPR Point_2& operator+=(const Vector_2<T>& v) { x() += v.x(); y() += v.y(); return *this; }
+    constexpr Point_2& operator+=(const Vector_2<T>& v) { x() += v.x(); y() += v.y(); return *this; }
 
     /// Subtracts a vector from this point.
-    Q_DECL_CONSTEXPR Point_2& operator-=(const Vector_2<T>& v) { x() -= v.x(); y() -= v.y(); return *this; }
+    constexpr Point_2& operator-=(const Vector_2<T>& v) { x() -= v.x(); y() -= v.y(); return *this; }
 
     /// Multiplies all coordinates of the point with a scalar value.
-    Q_DECL_CONSTEXPR Point_2& operator*=(T s) { x() *= s; y() *= s; return *this; }
+    constexpr Point_2& operator*=(T s) { x() *= s; y() *= s; return *this; }
 
     /// Divides all coordinates of the point by a scalar value.
-    Q_DECL_CONSTEXPR Point_2& operator/=(T s) { x() /= s; y() /= s; return *this; }
+    constexpr Point_2& operator/=(T s) { x() /= s; y() /= s; return *this; }
 
     /// Sets all coordinates of the point to zero.
-    Q_DECL_CONSTEXPR Point_2& operator=(Origin) { this->fill(T(0)); return *this; }
+    constexpr Point_2& operator=(Origin) { this->fill(T(0)); return *this; }
 
     /// Converts a point to a vector.
-    Q_DECL_CONSTEXPR Vector_2<T> operator-(Origin) const {
+    constexpr Vector_2<T> operator-(Origin) const {
         return Vector_2<T>(*this);
     }
 
     //////////////////////////// Component access //////////////////////////
 
     /// \brief Returns the value of the X coordinate of this point.
-    Q_DECL_CONSTEXPR T x() const { return (*this)[0]; }
+    constexpr T x() const { return (*this)[0]; }
 
     /// \brief Returns the value of the Y coordinate of this point.
-    Q_DECL_CONSTEXPR T y() const { return (*this)[1]; }
+    constexpr T y() const { return (*this)[1]; }
 
     /// \brief Returns a reference to the X coordinate of this point.
-    Q_DECL_CONSTEXPR T& x() { return (*this)[0]; }
+    constexpr T& x() { return (*this)[0]; }
 
     /// \brief Returns a reference to the Y coordinate of this point.
-    Q_DECL_CONSTEXPR T& y() { return (*this)[1]; }
+    constexpr T& y() { return (*this)[1]; }
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
     /// \brief Compares two points for exact equality.
     /// \return \c true if all coordinates are equal; \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator==(const Point_2& p) const { return (p.x()==x()) && (p.y()==y()); }
+    constexpr bool operator==(const Point_2& p) const { return (p.x()==x()) && (p.y()==y()); }
 
     /// \brief Compares two points for inequality.
     /// \return \c true if any of the coordinates is not equal; \c false if all are equal.
-    Q_DECL_CONSTEXPR bool operator!=(const Point_2& p) const { return (p.x()!=x()) || (p.y()!=y()); }
+    constexpr bool operator!=(const Point_2& p) const { return (p.x()!=x()) || (p.y()!=y()); }
 
     /// \brief Tests whether this point is at the origin, i.e. all of its coordinates are zero.
     /// \return \c true if all of the coordinates are exactly zero; \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator==(Origin) const { return (x()==T(0)) && (y()==T(0)); }
+    constexpr bool operator==(Origin) const { return (x()==T(0)) && (y()==T(0)); }
 
     /// \brief Tests whether the point is not at the origin, i.e. any of the coordinates is nonzero.
     /// \return \c true if any of the coordinates is nonzero; \c false if this is the origin point.
-    Q_DECL_CONSTEXPR bool operator!=(Origin) const { return (x()!=T(0)) || (y()!=T(0)); }
+    constexpr bool operator!=(Origin) const { return (x()!=T(0)) || (y()!=T(0)); }
 
     /// \brief Tests if two points are equal within a specified tolerance.
     /// \param p The second point.
     /// \param tolerance A non-negative threshold for the equality test. The two points are considered equal if
     ///        the absolute differences in their X and Y coordinates are all smaller than this tolerance.
     /// \return \c true if this point is equal to the second point within the specified tolerance; \c false otherwise.
-    Q_DECL_CONSTEXPR bool equals(const Point_2& p, T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool equals(const Point_2& p, T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(p.x() - x()) <= tolerance && std::abs(p.y() - y()) <= tolerance;
     }
 
     /// \brief Tests whether this point is at the origin within a specified tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute values of the point's coordinates are all below \a tolerance.
-    Q_DECL_CONSTEXPR bool isOrigin(T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool isOrigin(T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance;
     }
 
     ///////////////////////////////// Utilities ////////////////////////////////
 
     /// \brief Returns the index of the coordinate with the maximum value.
-    Q_DECL_CONSTEXPR inline std::size_t maxComponent() const {
+    constexpr inline std::size_t maxComponent() const {
         return (x() >= y()) ? 0 : 1;
     }
 
     /// \brief Returns the index of the coordinate with the minimum value.
-    Q_DECL_CONSTEXPR inline std::size_t minComponent() const {
+    constexpr inline std::size_t minComponent() const {
         return (x() <= y()) ? 0 : 1;
     }
 
     /// \brief Returns the midpoint that is located halfway between this point and another point.
-    Q_DECL_CONSTEXPR inline Point_2 midpoint(const Point_2& other) const {
+    constexpr inline Point_2 midpoint(const Point_2& other) const {
         return Point_2(T(0.5) * (x() + other.x()), T(0.5) * (y() + other.y()));
     }
 
@@ -212,49 +212,49 @@ public:
 /// \brief Computes the sum of a point and a vector.
 /// \relates Point_2
 template<typename T>
-Q_DECL_CONSTEXPR Point_2<T> operator+(const Point_2<T>& a, const Vector_2<T>& b) {
+constexpr Point_2<T> operator+(const Point_2<T>& a, const Vector_2<T>& b) {
     return Point_2<T>( a.x() + b.x(), a.y() + b.y() );
 }
 
 /// \brief Computes the sum of a vector and a point.
 /// \relates Point_2
 template<typename T>
-Q_DECL_CONSTEXPR Point_2<T> operator+(const Vector_2<T>& a, const Point_2<T>& b) {
+constexpr Point_2<T> operator+(const Vector_2<T>& a, const Point_2<T>& b) {
     return b + a;
 }
 
 /// \brief Computes the vector connecting two points.
 /// \relates Point_2
 template<typename T>
-Q_DECL_CONSTEXPR Vector_2<T> operator-(const Point_2<T>& a, const Point_2<T>& b) {
+constexpr Vector_2<T> operator-(const Point_2<T>& a, const Point_2<T>& b) {
     return Vector_2<T>( a.x() - b.x(), a.y() - b.y() );
 }
 
 /// \brief Subtracts a vector from a point.
 /// \relates Point_2
 template<typename T>
-Q_DECL_CONSTEXPR Point_2<T> operator-(const Point_2<T>& a, const Vector_2<T>& b) {
+constexpr Point_2<T> operator-(const Point_2<T>& a, const Vector_2<T>& b) {
     return Point_2<T>( a.x() - b.x(), a.y() - b.y() );
 }
 
 /// \brief Computes the component-wise product of a point and a scalar value.
 /// \relates Point_2
 template<typename T>
-Q_DECL_CONSTEXPR Point_2<T> operator*(const Point_2<T>& a, T s) {
+constexpr Point_2<T> operator*(const Point_2<T>& a, T s) {
     return Point_2<T>( a.x() * s, a.y() * s );
 }
 
 /// \brief Computes the component-wise product of a point and a scalar value.
 /// \relates Point_2
 template<typename T>
-Q_DECL_CONSTEXPR Point_2<T> operator*(T s, const Point_2<T>& a) {
+constexpr Point_2<T> operator*(T s, const Point_2<T>& a) {
     return Point_2<T>( a.x() * s, a.y() * s );
 }
 
 /// \brief Computes the component-wise division of a vector by a scalar value.
 /// \relates Point_2
 template<typename T>
-Q_DECL_CONSTEXPR Point_2<T> operator/(const Point_2<T>& a, T s) {
+constexpr Point_2<T> operator/(const Point_2<T>& a, T s) {
     return Point_2<T>( a.x() / s, a.y() / s );
 }
 

@@ -168,7 +168,7 @@ private:
         const ConstPropertyPtr& sourceProperty2() const { return _sourceProperty2; }
 
         /// Returns the simulation cell data.
-        const DataOORef<const SimulationCell>& cell() const { return _simCell; }
+        const SimulationCellData& cell() const { return _simCell; }
 
         /// Returns the FFT cutoff radius.
         FloatType fftGridSpacing() const { return _fftGridSpacing; }
@@ -236,7 +236,7 @@ private:
         const bool _applyWindow;
         const FloatType _neighCutoff;
         const AveragingDirectionType _averagingDirection;
-        DataOORef<const SimulationCell> _simCell;
+        const SimulationCellData _simCell;
         ConstPropertyPtr _positions;
         ConstPropertyPtr _sourceProperty1;
         ConstPropertyPtr _sourceProperty2;

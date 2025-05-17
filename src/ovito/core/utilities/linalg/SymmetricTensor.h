@@ -69,7 +69,7 @@ public:
 #endif
 
     /// \brief Constructor that initializes the six tensor components.
-    Q_DECL_CONSTEXPR SymmetricTensor2T(T xx, T yy, T zz, T xy, T xz, T yz)
+    constexpr SymmetricTensor2T(T xx, T yy, T zz, T xy, T xz, T yz)
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
         : std::array<T, 6>{{xx,yy,zz,xy,xz,yz}} {}
 #else
@@ -78,7 +78,7 @@ public:
 #endif
 
     /// \brief Initializes the tensor to the null tensor. All components are set to zero.
-    Q_DECL_CONSTEXPR SymmetricTensor2T(Zero)
+    constexpr SymmetricTensor2T(Zero)
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
     : std::array<T, 6>{{T(0),T(0),T(0),T(0),T(0),T(0)}} {}
 #else
@@ -86,7 +86,7 @@ public:
 #endif
 
     /// \brief Initializes the tensor to the identity tensor.
-    Q_DECL_CONSTEXPR SymmetricTensor2T(Identity)
+    constexpr SymmetricTensor2T(Identity)
 #if !defined(Q_CC_MSVC) && !defined(ONLY_FOR_DOXYGEN) // The MSVC compiler and the Doxygen parser do not like C++11 array aggregate initializers.
         : std::array<T, 6>{{T(1), T(1), T(1), T(0), T(0), T(0)}} {}
 #else
@@ -96,17 +96,17 @@ public:
 
     /// \brief Casts the tensor to a tensor with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR explicit operator SymmetricTensor2T<U>() const {
+    constexpr explicit operator SymmetricTensor2T<U>() const {
         return SymmetricTensor2T<U>(
                 static_cast<U>(xx()), static_cast<U>(yy()), static_cast<U>(zz()),
                 static_cast<U>(xy()), static_cast<U>(xz()), static_cast<U>(yz()));
     }
 
     /// \brief Returns the number of rows in this matrix.
-    static Q_DECL_CONSTEXPR size_type row_count() { return 3; }
+    static constexpr size_type row_count() { return 3; }
 
     /// \brief Returns the columns of rows in this matrix.
-    static Q_DECL_CONSTEXPR size_type col_count() { return 3; }
+    static constexpr size_type col_count() { return 3; }
 
     /// \brief Tensor element access.
     inline const T& operator()(size_type row, size_type col) const {
@@ -133,22 +133,22 @@ public:
     }
 
     /// \brief Returns the value of the XX component of this tensor.
-    Q_DECL_CONSTEXPR T xx() const { return (*this)[0]; }
+    constexpr T xx() const { return (*this)[0]; }
 
     /// \brief Returns the value of the YY component of this tensor.
-    Q_DECL_CONSTEXPR T yy() const { return (*this)[1]; }
+    constexpr T yy() const { return (*this)[1]; }
 
     /// \brief Returns the value of the ZZ component of this tensor.
-    Q_DECL_CONSTEXPR T zz() const { return (*this)[2]; }
+    constexpr T zz() const { return (*this)[2]; }
 
     /// \brief Returns the value of the XY component of this tensor.
-    Q_DECL_CONSTEXPR T xy() const { return (*this)[3]; }
+    constexpr T xy() const { return (*this)[3]; }
 
     /// \brief Returns the value of the XZ component of this tensor.
-    Q_DECL_CONSTEXPR T xz() const { return (*this)[4]; }
+    constexpr T xz() const { return (*this)[4]; }
 
     /// \brief Returns the value of the YZ component of this tensor.
-    Q_DECL_CONSTEXPR T yz() const { return (*this)[5]; }
+    constexpr T yz() const { return (*this)[5]; }
 
     /// \brief Returns a reference to the XX component of this tensor.
     T& xx() { return (*this)[0]; }
@@ -174,28 +174,28 @@ public:
 
 /// \relates SymmetricTensor2T
 template<typename T>
-Q_DECL_CONSTEXPR inline SymmetricTensor2T<T> operator+(const SymmetricTensor2T<T>& A, const SymmetricTensor2T<T>& B)
+constexpr inline SymmetricTensor2T<T> operator+(const SymmetricTensor2T<T>& A, const SymmetricTensor2T<T>& B)
 {
     return { A[0]+B[0], A[1]+B[1], A[2]+B[2], A[3]+B[3], A[4]+B[4], A[5]+B[5] };
 }
 
 /// \relates SymmetricTensor2T
 template<typename T>
-Q_DECL_CONSTEXPR inline SymmetricTensor2T<T> operator-(const SymmetricTensor2T<T>& A, const SymmetricTensor2T<T>& B)
+constexpr inline SymmetricTensor2T<T> operator-(const SymmetricTensor2T<T>& A, const SymmetricTensor2T<T>& B)
 {
     return { A[0]-B[0], A[1]-B[1], A[2]-B[2], A[3]-B[3], A[4]-B[4], A[5]-B[5] };
 }
 
 /// \relates SymmetricTensor2T
 template<typename T>
-Q_DECL_CONSTEXPR inline SymmetricTensor2T<T> operator-(const SymmetricTensor2T<T>& A, typename SymmetricTensor2T<T>::Identity)
+constexpr inline SymmetricTensor2T<T> operator-(const SymmetricTensor2T<T>& A, typename SymmetricTensor2T<T>::Identity)
 {
     return { A[0]-T(1), A[1]-T(1), A[2]-T(1), A[3], A[4], A[5] };
 }
 
 /// \relates SymmetricTensor2T
 template<typename T>
-Q_DECL_CONSTEXPR inline SymmetricTensor2T<T> operator-(typename SymmetricTensor2T<T>::Identity, const SymmetricTensor2T<T>& B)
+constexpr inline SymmetricTensor2T<T> operator-(typename SymmetricTensor2T<T>::Identity, const SymmetricTensor2T<T>& B)
 {
     return { T(1)-B[0], T(1)-B[1], T(1)-B[2], -B[3], -B[4], -B[5] };
 }
@@ -204,14 +204,14 @@ Q_DECL_CONSTEXPR inline SymmetricTensor2T<T> operator-(typename SymmetricTensor2
 
 /// \relates SymmetricTensor2T
 template<typename T>
-Q_DECL_CONSTEXPR inline SymmetricTensor2T<T> operator*(const SymmetricTensor2T<T>& A, T s)
+constexpr inline SymmetricTensor2T<T> operator*(const SymmetricTensor2T<T>& A, T s)
 {
     return { A[0]*s, A[1]*s, A[2]*s, A[3]*s, A[4]*s, A[5]*s };
 }
 
 /// \relates SymmetricTensor2T
 template<typename T>
-Q_DECL_CONSTEXPR inline SymmetricTensor2T<T> operator*(T s, const SymmetricTensor2T<T>& A)
+constexpr inline SymmetricTensor2T<T> operator*(T s, const SymmetricTensor2T<T>& A)
 {
     return { A[0]*s, A[1]*s, A[2]*s, A[3]*s, A[4]*s, A[5]*s };
 }

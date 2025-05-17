@@ -69,7 +69,7 @@ public:
     virtual QString inputVariableTable() const;
 
     /// Returns the stored simulation cell information.
-    const SimulationCell* simCell() const { return _simCell; }
+    const SimulationCellData& simCell() const { return _simCell; }
 
     /// Sets the name of the variable that provides the index of the current element.
     void setIndexVarName(QString name) { _indexVarName = std::move(name); }
@@ -295,7 +295,7 @@ protected:
     QString _elementDescriptionName;
 
     /// The simulation cell information.
-    DataOORef<const SimulationCell> _simCell;
+    SimulationCellData _simCell;
 
     /// Maps type name strings to numeric type IDs for all typed properties. Example:
     ///

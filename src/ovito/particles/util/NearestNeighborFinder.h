@@ -55,13 +55,15 @@ namespace Ovito {
  */
 class OVITO_PARTICLES_EXPORT NearestNeighborFinder
 {
+    Q_DISABLE_COPY_MOVE(NearestNeighborFinder)
+
 private:
 
-    // Internal data structure for each input particle.
+    /// Internal data structure holding per-particle information.
     struct NeighborListAtom {
         /// The next atom in the linked list used for binning.
         NeighborListAtom* nextInBin;
-        /// The wrapped position of the atom.
+        /// The wrapped position of the particle.
         Point3 pos;
     };
 
@@ -106,35 +108,22 @@ private:
 public:
 
     /// Constructor that builds the binary search tree.
-    NearestNeighborFinder(int _numNeighbors = 16) : numNeighbors(_numNeighbors) {
-        bucketSize = std::max(_numNeighbors / 2, 8);
-    }
-
-    /// No copying allowed.
-    NearestNeighborFinder(const NearestNeighborFinder&) = delete;
-
-    /// No copying allowed.
-    NearestNeighborFinder& operator=(const NearestNeighborFinder&) = delete;
-
-    /// \brief Prepares the tree data structure.
     /// \param posProperty The positions of the particles.
     /// \param cellData The simulation cell data.
     /// \param selectionProperty Determines which particles are included in the neighbor search (optional).
     /// \throw Exception on error.
-    void prepare(BufferReadAccess<Point3> posProperty, const SimulationCell* cellData, BufferReadAccess<SelectionIntType> selectionProperty);
+    NearestNeighborFinder(int numNeighbors, BufferReadAccess<Point3> posProperty, const SimulationCellData& cellData, BufferReadAccess<SelectionIntType> selectionProperty);
 
     /// Returns the maximum number of neighbors this class will find.
-    int maxNeighbors() const { return numNeighbors; }
+    int maxNeighbors() const { return _numNeighbors; }
 
     /// Returns the number of input particles in the system for which the NearestNeighborFinder was created.
-    size_t particleCount() const {
-        return atoms.size();
-    }
+    size_t particleCount() const { return _atoms.size(); }
 
     /// Returns the coordinates of the i-th input particle.
     const Point3& particlePos(size_t index) const {
-        OVITO_ASSERT(index >= 0 && index < atoms.size());
-        return atoms[index].pos;
+        OVITO_ASSERT(index >= 0 && index < _atoms.size());
+        return _atoms[index].pos;
     }
 
     /// Returns the index of the particle closest to the given point.
@@ -169,7 +158,7 @@ public:
     public:
 
         /// Constructor.
-        Query(const NearestNeighborFinder& finder) : t(finder), queue(finder.numNeighbors), inverseCellMatrix(finder.inverseCellMatrix) {}
+        Query(const NearestNeighborFinder& finder) : t(finder), queue(finder._numNeighbors), inverseCellMatrix(finder._simCell.reciprocalCellMatrix()) {}
 
         /// Builds the sorted list of neighbors around the given particle.
         void findNeighbors(size_t particleIndex) {
@@ -179,11 +168,11 @@ public:
         /// Builds the sorted list of neighbors around the given point.
         void findNeighbors(const Point3& query_point, bool includeSelf) {
             queue.clear();
-            for(const Vector3& pbcShift : t.pbcImages) {
+            for(const Vector3& pbcShift : t._pbcImages) {
                 q = query_point - pbcShift;
-                if(!queue.full() || queue.top().distanceSq > t.minimumDistance(t.root, q)) {
+                if(!queue.full() || queue.top().distanceSq > t.minimumDistance(t._root, q)) {
                     qr = inverseCellMatrix * q;
-                    visitNode(t.root, includeSelf);
+                    visitNode(t._root, includeSelf);
                 }
             }
             queue.sort();
@@ -202,7 +191,7 @@ public:
                     n.delta = atom->pos - q;
                     n.distanceSq = n.delta.squaredLength();
                     if(includeSelf || n.distanceSq != 0) {
-                        n.index = atom - t.atoms.data();
+                        n.index = atom - t._atoms.data();
                         queue.insert(n);
                     }
                 }
@@ -234,10 +223,10 @@ public:
     template<class Visitor>
     void visitNeighbors(const Point3& query_point, Visitor& v, bool includeSelf = false) const {
         FloatType mrs = FLOATTYPE_MAX;
-        for(const Vector3& pbcShift : pbcImages) {
+        for(const Vector3& pbcShift : _pbcImages) {
             Point3 q = query_point - pbcShift;
-            if(mrs > minimumDistance(root, q)) {
-                visitNode(root, q, inverseCellMatrix * q, v, mrs, includeSelf);
+            if(mrs > minimumDistance(_root, q)) {
+                visitNode(_root, q, _simCell.absoluteToReduced(q), v, mrs, includeSelf);
             }
         }
     }
@@ -259,9 +248,9 @@ private:
         Vector3 p2 = query_point - node->bounds.maxc;
         FloatType minDistance = 0;
         for(size_t dim = 0; dim < 3; dim++) {
-            FloatType t_min = planeNormals[dim].dot(p1);
+            FloatType t_min = _planeNormals[dim].dot(p1);
             if(t_min > minDistance) minDistance = t_min;
-            FloatType t_max = planeNormals[dim].dot(p2);
+            FloatType t_max = _planeNormals[dim].dot(p2);
             if(t_max > minDistance) minDistance = t_max;
         }
         return minDistance * minDistance;
@@ -275,7 +264,7 @@ private:
                 n.delta = atom->pos - q;
                 n.distanceSq = n.delta.squaredLength();
                 if(includeSelf || n.distanceSq != 0) {
-                    n.index = atom - atoms.data();
+                    n.index = atom - _atoms.data();
                     v(n, mrs);
                 }
             }
@@ -299,44 +288,38 @@ private:
 
 private:
 
-    /// The internal list of atoms.
-    std::vector<NeighborListAtom> atoms;
+    /// The internal list of particles.
+    std::vector<NeighborListAtom> _atoms;
 
     /// Simulation cell.
-    DataOORef<const SimulationCell> simCell;
-
-    /// Simulation cell matrix.
-    AffineTransformation cellMatrix;
-
-    /// Reciprocal simulation cell matrix.
-    AffineTransformation inverseCellMatrix;
+    SimulationCellData _simCell;
 
     /// The squared lengths of the simulation cell vectors.
-    FloatType cellVectorLengthsSquared[3];
+    FloatType _cellVectorLengthsSquared[3];
 
     /// The normal vectors of the three cell planes.
-    Vector3 planeNormals[3];
+    Vector3 _planeNormals[3];
 
     /// Used to allocate instances of TreeNode.
-    MemoryPool<TreeNode> nodePool;
+    MemoryPool<TreeNode> _nodePool;
 
     /// The root node of the binary tree.
-    TreeNode* root;
+    TreeNode* _root;
 
     /// The number of neighbors to finds for each atom.
-    int numNeighbors;
+    int _numNeighbors;
 
     /// The maximum number of particles per leaf node.
-    int bucketSize;
+    int _bucketSize;
 
     /// List of pbc image shift vectors.
-    std::vector<Vector3> pbcImages;
+    std::vector<Vector3> _pbcImages;
 
     /// The number of leaf nodes in the tree.
-    int numLeafNodes = 0;
+    int _numLeafNodes = 0;
 
     /// The maximum depth of this binary tree.
-    int maxTreeDepth = 1;
+    int _maxTreeDepth = 1;
 };
 
 }   // End of namespace

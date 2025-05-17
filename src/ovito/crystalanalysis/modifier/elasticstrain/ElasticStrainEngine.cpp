@@ -79,7 +79,7 @@ void ElasticStrainEngine::identifyStructures(const Particles* particles, const S
     setAtomClusters(_structureAnalysis->atomClusters());
 
     progress.beginSubSteps({ 35, 6, 1, 1, 20 });
-    _structureAnalysis->identifyStructures(progress);
+    _structureAnalysis->identifyStructures(progress, simulationCell);
 
     progress.nextSubStep();
     _structureAnalysis->buildClusters(progress);

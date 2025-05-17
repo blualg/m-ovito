@@ -115,7 +115,7 @@ private:
 
         void setNumSelectedParticlesOutput(size_t count) { _numSelectedParticlesOutput = count; }
 
-        const DataOORef<const SimulationCell>& simCell() const { return _simCell; }
+        const SimulationCellData& simCell() const { return _simCell; }
 
         const ConstPropertyPtr& positions() const { return _positions; }
 
@@ -126,7 +126,7 @@ private:
     protected:
 
         const int _numIterations;
-        DataOORef<const SimulationCell> _simCell;
+        const SimulationCellData _simCell;
         ConstPropertyPtr _positions;
         ConstPropertyPtr _inputSelection;
         PropertyPtr _outputSelection;

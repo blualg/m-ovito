@@ -34,55 +34,55 @@ class AnimationTime final
 public:
 
     using value_type = qint64;
-    Q_DECL_CONSTEXPR static value_type TicksPerFrame = 1;
+    constexpr static value_type TicksPerFrame = 1;
 
     /// Default constructor.
-    Q_DECL_CONSTEXPR AnimationTime() noexcept : _value(0) {}
+    constexpr AnimationTime() noexcept : _value(0) {}
 
     /// Constructs a time value from a numeric value.
-    Q_DECL_CONSTEXPR explicit AnimationTime(value_type ticks) noexcept : _value(ticks) {}
+    constexpr explicit AnimationTime(value_type ticks) noexcept : _value(ticks) {}
 
     /// Returns the animation frame corresponding to this time value.
-    Q_DECL_CONSTEXPR int frame() const noexcept { return static_cast<int>(_value / TicksPerFrame); }
+    constexpr int frame() const noexcept { return static_cast<int>(_value / TicksPerFrame); }
 
     /// Returns the animation time value.
-    Q_DECL_CONSTEXPR value_type ticks() const noexcept { return _value; }
+    constexpr value_type ticks() const noexcept { return _value; }
 
     /// Equal comparison.
-    Q_DECL_CONSTEXPR bool operator==(const AnimationTime& other) const noexcept { return _value == other._value; }
+    constexpr bool operator==(const AnimationTime& other) const noexcept { return _value == other._value; }
 
     /// Not-equal comparison.
-    Q_DECL_CONSTEXPR bool operator!=(const AnimationTime& other) const noexcept { return _value != other._value; }
+    constexpr bool operator!=(const AnimationTime& other) const noexcept { return _value != other._value; }
 
     /// Less-than comparison.
-    Q_DECL_CONSTEXPR bool operator<(const AnimationTime& other) const noexcept { return _value < other._value; }
+    constexpr bool operator<(const AnimationTime& other) const noexcept { return _value < other._value; }
 
     /// Less-than-or-equal comparison.
-    Q_DECL_CONSTEXPR bool operator<=(const AnimationTime& other) const noexcept { return _value <= other._value; }
+    constexpr bool operator<=(const AnimationTime& other) const noexcept { return _value <= other._value; }
 
     /// Greater-than comparison.
-    Q_DECL_CONSTEXPR bool operator>(const AnimationTime& other) const noexcept { return _value > other._value; }
+    constexpr bool operator>(const AnimationTime& other) const noexcept { return _value > other._value; }
 
     /// Greater-than-or-equal comparison.
-    Q_DECL_CONSTEXPR bool operator>=(const AnimationTime& other) const noexcept { return _value >= other._value; }
+    constexpr bool operator>=(const AnimationTime& other) const noexcept { return _value >= other._value; }
 
     /// Time difference.
-    friend Q_DECL_CONSTEXPR value_type operator-(const AnimationTime& a, const AnimationTime& b) noexcept { return a._value - b._value; }
+    friend constexpr value_type operator-(const AnimationTime& a, const AnimationTime& b) noexcept { return a._value - b._value; }
 
     /// Time addition.
-    friend Q_DECL_CONSTEXPR AnimationTime operator+(const AnimationTime& a, value_type delta) noexcept { return AnimationTime(a._value + delta); }
+    friend constexpr AnimationTime operator+(const AnimationTime& a, value_type delta) noexcept { return AnimationTime(a._value + delta); }
 
     /// Time subtraction.
-    friend Q_DECL_CONSTEXPR AnimationTime operator-(const AnimationTime& a, value_type delta) noexcept { return AnimationTime(a._value - delta); }
+    friend constexpr AnimationTime operator-(const AnimationTime& a, value_type delta) noexcept { return AnimationTime(a._value - delta); }
 
     /// Returns the smallest time value (negative infinity).
-    static Q_DECL_CONSTEXPR AnimationTime negativeInfinity() noexcept { return AnimationTime(std::numeric_limits<value_type>::lowest()); }
+    static constexpr AnimationTime negativeInfinity() noexcept { return AnimationTime(std::numeric_limits<value_type>::lowest()); }
 
     /// Returns the largest time value (positive infinity).
-    static Q_DECL_CONSTEXPR AnimationTime positiveInfinity() noexcept { return AnimationTime(std::numeric_limits<value_type>::max()); }
+    static constexpr AnimationTime positiveInfinity() noexcept { return AnimationTime(std::numeric_limits<value_type>::max()); }
 
     /// Constructs a time value corresponding to the given frame.
-    static Q_DECL_CONSTEXPR AnimationTime fromFrame(int frame) noexcept { return AnimationTime(TicksPerFrame * static_cast<value_type>(frame)); }
+    static constexpr AnimationTime fromFrame(int frame) noexcept { return AnimationTime(TicksPerFrame * static_cast<value_type>(frame)); }
 
     /// \brief Writes an animation time to a binary output stream.
     /// \param stream The output stream.
@@ -131,24 +131,24 @@ public:
     /// \brief Creates an empty time interval.
     ///
     /// Both start time and end time are initialized to negative infinity.
-    Q_DECL_CONSTEXPR TimeInterval() noexcept : _start{AnimationTime::negativeInfinity()}, _end{AnimationTime::negativeInfinity()} {}
+    constexpr TimeInterval() noexcept : _start{AnimationTime::negativeInfinity()}, _end{AnimationTime::negativeInfinity()} {}
 
     /// \brief Initializes the interval with start and end values.
     /// \param start The start time of the time interval.
     /// \param end The end time (including) of the time interval.
-    Q_DECL_CONSTEXPR TimeInterval(AnimationTime start, AnimationTime end) noexcept : _start(start), _end(end) {}
+    constexpr TimeInterval(AnimationTime start, AnimationTime end) noexcept : _start(start), _end(end) {}
 
     /// \brief Initializes the interval to an instant time.
     /// \param time The time where the interval starts and ends.
-    Q_DECL_CONSTEXPR TimeInterval(AnimationTime time) noexcept : _start(time), _end(time) {}
+    constexpr TimeInterval(AnimationTime time) noexcept : _start(time), _end(time) {}
 
     /// \brief Returns the start time of the interval.
     /// \return The beginning of the time interval.
-    Q_DECL_CONSTEXPR AnimationTime start() const noexcept { return _start; }
+    constexpr AnimationTime start() const noexcept { return _start; }
 
     /// \brief Returns the end time of the interval.
     /// \return The time at which the interval end.
-    Q_DECL_CONSTEXPR AnimationTime end() const noexcept { return _end; }
+    constexpr AnimationTime end() const noexcept { return _end; }
 
     /// \brief Sets the start time of the interval.
     /// \param start The new start time.
@@ -163,17 +163,17 @@ public:
     ///         end time is negative infinity;
     ///         \c false otherwise.
     /// \sa setEmpty()
-    Q_DECL_CONSTEXPR bool isEmpty() const noexcept { return (end() == AnimationTime::negativeInfinity() || start() > end()); }
+    constexpr bool isEmpty() const noexcept { return (end() == AnimationTime::negativeInfinity() || start() > end()); }
 
     /// \brief Returns whether this is the infinite time interval.
     /// \return \c true if the start time is negative infinity and the end time of the interval is positive infinity.
     /// \sa setInfinite()
-    Q_DECL_CONSTEXPR bool isInfinite() const noexcept { return (end() == AnimationTime::positiveInfinity() && start() == AnimationTime::negativeInfinity()); }
+    constexpr bool isInfinite() const noexcept { return (end() == AnimationTime::positiveInfinity() && start() == AnimationTime::negativeInfinity()); }
 
     /// \brief Returns the duration of the time interval.
     /// \return The difference between the end and the start time.
     /// \sa setDuration()
-    Q_DECL_CONSTEXPR AnimationTime::value_type duration() const noexcept { return end() - start(); }
+    constexpr AnimationTime::value_type duration() const noexcept { return end() - start(); }
 
     /// \brief Sets the duration of the time interval.
     /// \param duration The new duration of the interval.
@@ -227,7 +227,7 @@ public:
     /// \brief Returns whether a time lies between start and end time of this interval.
     /// \param time The time to check.
     /// \return \c true if \a time is equal or larger than start() and smaller or equal than end().
-    Q_DECL_CONSTEXPR bool contains(AnimationTime time) const noexcept {
+    constexpr bool contains(AnimationTime time) const noexcept {
         return (start() <= time && time <= end());
     }
 
@@ -249,7 +249,7 @@ public:
     }
 
     /// Tests if two time interval overlap (either full or partially).
-    Q_DECL_CONSTEXPR bool overlap(const TimeInterval& iv) const noexcept {
+    constexpr bool overlap(const TimeInterval& iv) const noexcept {
         if(isEmpty() || iv.isEmpty()) return false;
         if(start() >= iv.start() && start() <= iv.end()) return true;
         if(end() >= iv.start() && end() <= iv.end()) return true;
@@ -257,10 +257,10 @@ public:
     }
 
     /// Return the infinite time interval that contains all time values.
-    static Q_DECL_CONSTEXPR TimeInterval infinite() noexcept { return TimeInterval(AnimationTime::negativeInfinity(), AnimationTime::positiveInfinity()); }
+    static constexpr TimeInterval infinite() noexcept { return TimeInterval(AnimationTime::negativeInfinity(), AnimationTime::positiveInfinity()); }
 
     /// Return the empty time interval that contains no time values.
-    static Q_DECL_CONSTEXPR TimeInterval empty() noexcept { return TimeInterval(); }
+    static constexpr TimeInterval empty() noexcept { return TimeInterval(); }
 
     /// \brief Writes a time interval to a binary output stream.
     /// \param stream The output stream.

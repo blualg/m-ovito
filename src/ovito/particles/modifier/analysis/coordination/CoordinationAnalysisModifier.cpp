@@ -284,8 +284,7 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
         });
 #else
         // Prepare the neighbor list.
-        CutoffNeighborFinder neighborFinder;
-        neighborFinder.prepare(cutoff, particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
+        CutoffNeighborFinder neighborFinder(cutoff, particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
         BufferWriteAccess<int32_t, access_mode::discard_write> coordinationData(coordinationNumbers);
         BufferReadAccess<int32_t> particleTypeData(particleTypes);

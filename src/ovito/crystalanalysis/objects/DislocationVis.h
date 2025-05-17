@@ -120,7 +120,7 @@ public:
 protected:
 
     /// Clips a dislocation line at the periodic box boundaries.
-    static void clipDislocationLine(const std::deque<Point3>& line, const SimulationCell& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback);
+    static void clipDislocationLine(const std::deque<Point3>& line, const SimulationCellData& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback);
 
 protected:
 

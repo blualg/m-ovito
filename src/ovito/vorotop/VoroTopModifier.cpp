@@ -204,8 +204,7 @@ void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particl
     }
     else {
         // Prepare the nearest neighbor list generator.
-        NearestNeighborFinder nearestNeighborFinder;
-        nearestNeighborFinder.prepare(positions, simulationCell, selection);
+        NearestNeighborFinder nearestNeighborFinder(16, positions, simulationCell, selection);
 
         // This is the size we use to initialize Voronoi cells. Must be larger than the simulation box.
         double boxDiameter = std::sqrt(

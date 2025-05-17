@@ -92,7 +92,7 @@ public:
 
     /// \brief Constructor that initializes all 9 elements of the matrix to the given values.
     /// \note Values are given in row-major order, i.e. row by row.
-    Q_DECL_CONSTEXPR Matrix_3(T m11, T m12, T m13,
+    constexpr Matrix_3(T m11, T m12, T m13,
                        T m21, T m22, T m23,
                        T m31, T m32, T m33) noexcept
         : std::array<Vector_3<T>,3>{{Vector_3<T>(m11,m21,m31),
@@ -100,24 +100,24 @@ public:
                                      Vector_3<T>(m13,m23,m33)}} {}
 
     /// \brief Constructor that initializes the matrix from three column vectors.
-    Q_DECL_CONSTEXPR Matrix_3(const column_type& c1, const column_type& c2, const column_type& c3) noexcept
+    constexpr Matrix_3(const column_type& c1, const column_type& c2, const column_type& c3) noexcept
         : std::array<Vector_3<T>,3>{{c1, c2, c3}} {}
 
     /// \brief Initializes the matrix to the null matrix.
     /// All matrix elements are set to zero by this constructor.
-    Q_DECL_CONSTEXPR Matrix_3(Zero) noexcept
+    constexpr Matrix_3(Zero) noexcept
         : std::array<Vector_3<T>,3>{{typename Vector_3<T>::Zero(), typename Vector_3<T>::Zero(), typename Vector_3<T>::Zero()}} {}
 
     /// \brief Initializes the matrix to the identity matrix.
     /// All diagonal elements are set to one, and all off-diagonal elements are set to zero.
-    Q_DECL_CONSTEXPR Matrix_3(Identity) noexcept
+    constexpr Matrix_3(Identity) noexcept
         : std::array<Vector_3<T>,3>{{Vector_3<T>(T(1),T(0),T(0)),
                                      Vector_3<T>(T(0),T(1),T(0)),
                                      Vector_3<T>(T(0),T(0),T(1))}} {}
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Matrix_3<U>, const Matrix_3<T>&> {
+    constexpr auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Matrix_3<U>, const Matrix_3<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Matrix_3<U>(
                 static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)),
@@ -128,16 +128,16 @@ public:
     }
 
     /// \brief Returns the number of rows of this matrix.
-    static Q_DECL_CONSTEXPR size_type row_count() { return 3; }
+    static constexpr size_type row_count() { return 3; }
 
     /// \brief Returns the number of columns of this matrix.
-    static Q_DECL_CONSTEXPR size_type col_count() { return 3; }
+    static constexpr size_type col_count() { return 3; }
 
     /// \brief Returns the value of a matrix element.
     /// \param row The matrix row of the element.
     /// \param col The matrix column of the element.
     /// \return The value of the matrix element.
-    Q_DECL_CONSTEXPR inline T operator()(size_type row, size_type col) const {
+    constexpr inline T operator()(size_type row, size_type col) const {
         return (*this)[col][row];
     }
 
@@ -145,14 +145,14 @@ public:
     /// \param row The row of the element.
     /// \param col The column of the element.
     /// \return A non-const reference to the matrix element, which may be written to.
-    inline Q_DECL_CONSTEXPR T& operator()(size_type row, size_type col) {
+    inline constexpr T& operator()(size_type row, size_type col) {
         return (*this)[col][row];
     }
 
     /// \brief Returns a column vector of the matrix.
     /// \param col The index of the column to return.
     /// \return A vector containing the matrix elements of the column \a col.
-    Q_DECL_CONSTEXPR const column_type& column(size_type col) const {
+    constexpr const column_type& column(size_type col) const {
         return (*this)[col];
     }
 
@@ -161,7 +161,7 @@ public:
     /// \return A reference to the vector containing the matrix elements of the column \a col.
     /// \note Modifying the elements of the returned vector will modify the matrix elements.
     /// \sa row()
-    Q_DECL_CONSTEXPR column_type& column(size_type col) {
+    constexpr column_type& column(size_type col) {
         return (*this)[col];
     }
 
@@ -170,44 +170,44 @@ public:
     /// \return The requested row of the matrix as a vector.
     /// \note The returned vector is a copy of the matrix row elements.
     /// \sa column()
-    Q_DECL_CONSTEXPR Vector_3<T> row(size_type row) const {
+    constexpr Vector_3<T> row(size_type row) const {
         return { (*this)[0][row], (*this)[1][row], (*this)[2][row] };
     }
 
     /// Returns a pointer to the 9 elements of the matrix (stored in column-major order).
-    Q_DECL_CONSTEXPR const element_type* elements() const {
+    constexpr const element_type* elements() const {
         OVITO_STATIC_ASSERT(sizeof(*this) == sizeof(element_type)*9);
         return column(0).data();
     }
 
     /// Returns a pointer to the 9 elements of the matrix (stored in column-major order).
-    Q_DECL_CONSTEXPR element_type* elements() {
+    constexpr element_type* elements() {
         OVITO_STATIC_ASSERT(sizeof(*this) == sizeof(element_type)*9);
         return column(0).data();
     }
 
     /// Sets all elements of the matrix to zero.
-    Q_DECL_CONSTEXPR void setZero() {
+    constexpr void setZero() {
         (*this)[0].setZero();
         (*this)[1].setZero();
         (*this)[2].setZero();
     }
 
     /// Sets all elements of the matrix to zero.
-    Q_DECL_CONSTEXPR Matrix_3& operator=(Zero) {
+    constexpr Matrix_3& operator=(Zero) {
         setZero();
         return *this;
     }
 
     /// Sets the matrix to the identity matrix.
-    Q_DECL_CONSTEXPR void setIdentity() {
+    constexpr void setIdentity() {
         (*this)[0] = Vector_3<T>(1,0,0);
         (*this)[1] = Vector_3<T>(0,1,0);
         (*this)[2] = Vector_3<T>(0,0,1);
     }
 
     /// Sets the matrix to the identity matrix.
-    Q_DECL_CONSTEXPR Matrix_3& operator=(Identity) {
+    constexpr Matrix_3& operator=(Identity) {
         setIdentity();
         return *this;
     }
@@ -216,13 +216,13 @@ public:
 
     /// \brief Compares two matrices for exact equality.
     /// \return \c true if all elements are equal; \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator==(const Matrix_3& b) const {
+    constexpr bool operator==(const Matrix_3& b) const {
         return (b[0] == (*this)[0]) && (b[1] == (*this)[1]) && (b[2] == (*this)[2]);
     }
 
     /// \brief Compares two matrices for inequality.
     /// \return \c true if not all elements are equal; \c false if all are equal.
-    Q_DECL_CONSTEXPR bool operator!=(const Matrix_3& b) const {
+    constexpr bool operator!=(const Matrix_3& b) const {
         return !(*this == b);
     }
 
@@ -231,7 +231,7 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two matrices are considered equal if
     ///        the element-wise differences are all less than this tolerance value.
     /// \return \c true if this matrix is equal to \a m within the given tolerance; \c false otherwise.
-    inline Q_DECL_CONSTEXPR bool equals(const Matrix_3& m, T tolerance = FloatTypeEpsilon<T>()) const {
+    inline constexpr bool equals(const Matrix_3& m, T tolerance = FloatTypeEpsilon<T>()) const {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).equals(m.column(i), tolerance)) return false;
         return true;
@@ -240,7 +240,7 @@ public:
     /// \brief Test if the matrix is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute value of each matrix element is all smaller than \a tolerance.
-    inline Q_DECL_CONSTEXPR bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
+    inline constexpr bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).isZero(tolerance)) return false;
         return true;
@@ -251,7 +251,7 @@ public:
     /// Computes the inverse of the matrix.
     /// \throw Exception if matrix is not invertible because it is singular.
     /// \sa determinant()
-    Q_DECL_CONSTEXPR Matrix_3 inverse() const {
+    constexpr Matrix_3 inverse() const {
         T det = determinant();
         OVITO_ASSERT_MSG(det != T(0), "Matrix3::inverse()", "Singular matrix cannot be inverted: Determinant is zero.");
         if(det == 0) throw Exception("Matrix3 cannot be inverted: determinant is zero.");
@@ -272,7 +272,7 @@ public:
     /// \return \c false if the matrix is not invertible because it is singular; \c true if the inverse has been calculated
     ///         and was stored in \a result.
     /// \sa determinant()
-    Q_DECL_CONSTEXPR bool inverse(Matrix_3& result, T epsilon = FloatTypeEpsilon<T>()) const {
+    constexpr bool inverse(Matrix_3& result, T epsilon = FloatTypeEpsilon<T>()) const {
         T det = determinant();
         if(std::abs(det) <= epsilon) return false;
         result = Matrix_3(((*this)[1][1]*(*this)[2][2] - (*this)[1][2]*(*this)[2][1])/det,
@@ -288,14 +288,14 @@ public:
     }
 
     /// Calculates the determinant of the matrix.
-    Q_DECL_CONSTEXPR inline T determinant() const {
+    constexpr inline T determinant() const {
         return(((*this)[0][0]*(*this)[1][1] - (*this)[0][1]*(*this)[1][0])*((*this)[2][2])
               -((*this)[0][0]*(*this)[1][2] - (*this)[0][2]*(*this)[1][0])*((*this)[2][1])
               +((*this)[0][1]*(*this)[1][2] - (*this)[0][2]*(*this)[1][1])*((*this)[2][0]));
     }
 
     /// Returns the transpose of the matrix.
-    Q_DECL_CONSTEXPR Matrix_3 transposed() const {
+    constexpr Matrix_3 transposed() const {
         return Matrix_3((*this)[0][0], (*this)[0][1], (*this)[0][2],
                         (*this)[1][0], (*this)[1][1], (*this)[1][2],
                         (*this)[2][0], (*this)[2][1], (*this)[2][2]);
@@ -305,7 +305,7 @@ public:
     /// \param p The point to transform with the matrix.
     /// \param index The component (0-2) of the transformed point to return.
     /// \return ((*this)*p)[index]
-    inline Q_DECL_CONSTEXPR T prodrow(const Point_3<T>& p, typename Point_3<T>::size_type index) const {
+    inline constexpr T prodrow(const Point_3<T>& p, typename Point_3<T>::size_type index) const {
         return (*this)[0][index] * p[0] + (*this)[1][index] * p[1] + (*this)[2][index] * p[2];
     }
 
@@ -313,7 +313,7 @@ public:
     /// \param v The vector to transform with the matrix.
     /// \param index The component (0-2) of the transformed vector to return.
     /// \return ((*this)*v)[index]
-    inline Q_DECL_CONSTEXPR T prodrow(const Vector_3<T>& v, typename Vector_3<T>::size_type index) const {
+    inline constexpr T prodrow(const Vector_3<T>& v, typename Vector_3<T>::size_type index) const {
         return (*this)[0][index] * v[0] + (*this)[1][index] * v[1] + (*this)[2][index] * v[2];
     }
 
@@ -321,7 +321,7 @@ public:
     /// \return \c true if the matrix is orthogonal; \c false otherwise.
     ///
     /// The matrix A is orthogonal matrix if A * A^T = I.
-    Q_DECL_CONSTEXPR bool isOrthogonalMatrix(T epsilon = FloatTypeEpsilon<T>()) const {
+    constexpr bool isOrthogonalMatrix(T epsilon = FloatTypeEpsilon<T>()) const {
         return
             (std::abs((*this)[0][0]*(*this)[1][0] + (*this)[0][1]*(*this)[1][1] + (*this)[0][2]*(*this)[1][2]) <= epsilon) &&
             (std::abs((*this)[0][0]*(*this)[2][0] + (*this)[0][1]*(*this)[2][1] + (*this)[0][2]*(*this)[2][2]) <= epsilon) &&
@@ -337,13 +337,13 @@ public:
     /// The matrix A is a pure rotation matrix if:
     ///   1. det(A) = 1  and
     ///   2. A * A^T = I
-    Q_DECL_CONSTEXPR bool isRotationMatrix(T epsilon = FloatTypeEpsilon<T>()) const {
+    constexpr bool isRotationMatrix(T epsilon = FloatTypeEpsilon<T>()) const {
         return isOrthogonalMatrix(epsilon) && (std::abs(determinant() - T(1)) <= epsilon);
     }
 
     /// \brief Tests whether the matrix describes a pure uniform scaling.
     /// \return \c true if the matrix is a pure uniform scaling matrix; \c false otherwise.
-    Q_DECL_CONSTEXPR bool isUniformScaling() const {
+    constexpr bool isUniformScaling() const {
         const auto s = (*this)(0,0);
         return (*this)(1,1) == s && (*this)(2,2) == s &&
                 (*this)(0,1) == 0 && (*this)(0,2) == 0 && (*this)(1,2) == 0 && (*this)(1,0) == 0 && (*this)(2,0) == 0 && (*this)(2,1) == 0;
@@ -369,7 +369,7 @@ public:
     ///
     /// where |V| denotes length of vector V and A*B denotes dot
     /// product of vectors A and B.
-    Q_DECL_CONSTEXPR void orthonormalize() {
+    constexpr void orthonormalize() {
 
         // Compute q0.
         (*this)[0].normalize();
@@ -399,7 +399,7 @@ public:
 
     /// \brief Generates a matrix describing a rotation around the X axis.
     /// \param angle The rotation angle in radians.
-    static Q_DECL_CONSTEXPR inline Matrix_3 rotationX(T angle) {
+    static constexpr inline Matrix_3 rotationX(T angle) {
         const T c = cos(angle);
         const T s = sin(angle);
         return {T(1), T(0), T(0),
@@ -409,7 +409,7 @@ public:
 
     /// \brief Generates a matrix describing a rotation around the Y axis.
     /// \param angle The rotation angle in radians.
-    static Q_DECL_CONSTEXPR inline Matrix_3 rotationY(T angle) {
+    static constexpr inline Matrix_3 rotationY(T angle) {
         const T c = cos(angle);
         const T s = sin(angle);
         return { c,    T(0), s,
@@ -419,7 +419,7 @@ public:
 
     /// \brief Generates a matrix describing a rotation around the Z axis.
     /// \param angle The rotation angle in radians.
-    static Q_DECL_CONSTEXPR inline Matrix_3 rotationZ(T angle) {
+    static constexpr inline Matrix_3 rotationZ(T angle) {
         const T c = cos(angle);
         const T s = sin(angle);
         return {c,    -s,    T(0),
@@ -428,23 +428,23 @@ public:
     }
 
     /// \brief Generates a rotation matrix from an axis-angle representation.
-    static Q_DECL_CONSTEXPR Matrix_3 rotation(const RotationT<T>& rot);
+    static constexpr Matrix_3 rotation(const RotationT<T>& rot);
 
     /// \brief Generates a rotation matrix from a quaternion.
-    static Q_DECL_CONSTEXPR Matrix_3 rotation(const QuaternionT<T>& q);
+    static constexpr Matrix_3 rotation(const QuaternionT<T>& q);
 
     /// \brief Generates a rotation matrix from Euler angles.
     /// \param ai The first Euler angle.
     /// \param aj The second Euler angle.
     /// \param ak The third Euler angle.
     /// \param axisSequence Determines the order in which the rotations about the three axes are performed.
-    static Q_DECL_CONSTEXPR Matrix_3 rotation(T ai, T aj, T ak, EulerAxisSequence axisSequence);
+    static constexpr Matrix_3 rotation(T ai, T aj, T ak, EulerAxisSequence axisSequence);
 
     /// \brief Generates a scaling matrix.
-    static Q_DECL_CONSTEXPR Matrix_3 scaling(const ScalingT<T>& scaling);
+    static constexpr Matrix_3 scaling(const ScalingT<T>& scaling);
 
     /// Generates a diagonal scaling matrix.
-    static Q_DECL_CONSTEXPR Matrix_3 diagonal(T s1, T s2, T s3) {
+    static constexpr Matrix_3 diagonal(T s1, T s2, T s3) {
         return Matrix_3(
                          s1, T(0), T(0),
                          T(0), s2, T(0),
@@ -462,7 +462,7 @@ namespace Ovito {
 
 // Generates a rotation matrix from an axis and an angle.
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_3<T> Matrix_3<T>::rotation(const RotationT<T>& rot)
+constexpr inline Matrix_3<T> Matrix_3<T>::rotation(const RotationT<T>& rot)
 {
     if(rot.angle() == T(0))
         return Matrix_3<T>::Identity();
@@ -478,7 +478,7 @@ Q_DECL_CONSTEXPR inline Matrix_3<T> Matrix_3<T>::rotation(const RotationT<T>& ro
 
 // Generates a rotation matrix from a quaternion.
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_3<T> Matrix_3<T>::rotation(const QuaternionT<T>& q)
+constexpr inline Matrix_3<T> Matrix_3<T>::rotation(const QuaternionT<T>& q)
 {
 #ifdef OVITO_DEBUG
     if(std::abs(q.dot(q) - T(1)) > FloatTypeEpsilon<T>()) {
@@ -494,7 +494,7 @@ Q_DECL_CONSTEXPR inline Matrix_3<T> Matrix_3<T>::rotation(const QuaternionT<T>& 
 
 // Generates a rotation matrix from Euler angles and an axis sequence.
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_3<T> Matrix_3<T>::rotation(T ai, T aj, T ak, EulerAxisSequence axisSequence)
+constexpr inline Matrix_3<T> Matrix_3<T>::rotation(T ai, T aj, T ak, EulerAxisSequence axisSequence)
 {
     OVITO_ASSERT(axisSequence == Matrix_3<T>::szyx);
     int firstaxis = 2;
@@ -600,7 +600,7 @@ inline Vector_3<T> Matrix_3<T>::toEuler(EulerAxisSequence axisSequence) const
 
 // Creates a transformation matrix that describes a scaling of coordinates.
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_3<T> Matrix_3<T>::scaling(const ScalingT<T>& scaling)
+constexpr inline Matrix_3<T> Matrix_3<T>::scaling(const ScalingT<T>& scaling)
 {
     Matrix_3<T> K(scaling.S.x(), T(0), T(0),
                   T(0), scaling.S.y(), T(0),
@@ -614,7 +614,7 @@ Q_DECL_CONSTEXPR inline Matrix_3<T> Matrix_3<T>::scaling(const ScalingT<T>& scal
 /// \brief Computes the product of a matrix and a vector.
 /// \relates Matrix_3
 template<typename T>
-Q_DECL_CONSTEXPR inline Vector_3<T> operator*(const Matrix_3<T>& m, const Vector_3<T>& v)
+constexpr inline Vector_3<T> operator*(const Matrix_3<T>& m, const Vector_3<T>& v)
 {
     return { m(0,0)*v[0] + m(0,1)*v[1] + m(0,2)*v[2],
              m(1,0)*v[0] + m(1,1)*v[1] + m(1,2)*v[2],
@@ -624,7 +624,7 @@ Q_DECL_CONSTEXPR inline Vector_3<T> operator*(const Matrix_3<T>& m, const Vector
 /// \brief Computes the product of a matrix and a point. This is the same as a matrix-vector product.
 /// \relates Matrix_3
 template<typename T>
-Q_DECL_CONSTEXPR inline Point_3<T> operator*(const Matrix_3<T>& m, const Point_3<T>& p)
+constexpr inline Point_3<T> operator*(const Matrix_3<T>& m, const Point_3<T>& p)
 {
     return { m(0,0)*p[0] + m(0,1)*p[1] + m(0,2)*p[2],
              m(1,0)*p[0] + m(1,1)*p[1] + m(1,2)*p[2],
@@ -634,7 +634,7 @@ Q_DECL_CONSTEXPR inline Point_3<T> operator*(const Matrix_3<T>& m, const Point_3
 /// \brief Computes the product of two matrices.
 /// \relates Matrix_3
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_3<T> operator*(const Matrix_3<T>& a, const Matrix_3<T>& b)
+constexpr inline Matrix_3<T> operator*(const Matrix_3<T>& a, const Matrix_3<T>& b)
 {
 #if 1
     return Matrix_3<T>(
@@ -667,7 +667,7 @@ Q_DECL_CONSTEXPR inline Matrix_3<T> operator*(const Matrix_3<T>& a, const Matrix
 /// \brief Computes the sum of two matrices.
 /// \relates Matrix_3
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_3<T> operator+(const Matrix_3<T>& a, const Matrix_3<T>& b)
+constexpr inline Matrix_3<T> operator+(const Matrix_3<T>& a, const Matrix_3<T>& b)
 {
     return Matrix_3<T>(a[0] + b[0], a[1] + b[1], a[2] + b[2]);
 }
@@ -675,7 +675,7 @@ Q_DECL_CONSTEXPR inline Matrix_3<T> operator+(const Matrix_3<T>& a, const Matrix
 /// \brief Computes the difference of two matrices.
 /// \relates Matrix_3
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_3<T> operator-(const Matrix_3<T>& a, const Matrix_3<T>& b)
+constexpr inline Matrix_3<T> operator-(const Matrix_3<T>& a, const Matrix_3<T>& b)
 {
     return Matrix_3<T>(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 }
@@ -683,7 +683,7 @@ Q_DECL_CONSTEXPR inline Matrix_3<T> operator-(const Matrix_3<T>& a, const Matrix
 /// \brief Multiplies a matrix with a scalar value.
 /// \relates Matrix_3
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_3<T> operator*(const Matrix_3<T>& a, T s)
+constexpr inline Matrix_3<T> operator*(const Matrix_3<T>& a, T s)
 {
 #if 1
     return Matrix_3<T>(
@@ -705,7 +705,7 @@ Q_DECL_CONSTEXPR inline Matrix_3<T> operator*(const Matrix_3<T>& a, T s)
 /// \brief Multiplies a matrix with a scalar value.
 /// \relates Matrix_3
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_3<T> operator*(T s, const Matrix_3<T>& a) {
+constexpr inline Matrix_3<T> operator*(T s, const Matrix_3<T>& a) {
     return a * s;
 }
 

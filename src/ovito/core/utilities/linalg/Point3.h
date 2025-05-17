@@ -118,7 +118,7 @@ public:
     Point_3() noexcept = default;
 
     /// Constructs a point with all three components initialized to the given value.
-    Q_DECL_CONSTEXPR explicit Point_3(T val) noexcept :
+    constexpr explicit Point_3(T val) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{val,val,val}} {}
 #else
@@ -126,7 +126,7 @@ public:
 #endif
 
     /// Initializes the coordinates of the point with the given values.
-    Q_DECL_CONSTEXPR Point_3(T x, T y, T z) noexcept :
+    constexpr Point_3(T x, T y, T z) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{x, y, z}} {}
 #else
@@ -134,7 +134,7 @@ public:
 #endif
 
     /// Initializes the point to the origin. All coordinates are set to zero.
-    Q_DECL_CONSTEXPR Point_3(Origin) noexcept :
+    constexpr Point_3(Origin) noexcept :
 #ifndef OVITO_USE_SYCL
         base_type{{T(0), T(0), T(0)}} {}
 #else
@@ -142,11 +142,11 @@ public:
 #endif
 
     /// Initializes the point from an array of three coordinates.
-    Q_DECL_CONSTEXPR explicit Point_3(const base_type& a) noexcept : base_type(a) {}
+    constexpr explicit Point_3(const base_type& a) noexcept : base_type(a) {}
 
     /// Casts the point to another coordinate type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Point_3<U>, const Point_3<T>&> {
+    constexpr auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Point_3<U>, const Point_3<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Point_3<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()));
         else
@@ -156,22 +156,22 @@ public:
     ///////////////////////////// Assignment operators ///////////////////////////
 
     /// Adds a vector to this point.
-    Q_DECL_CONSTEXPR Point_3& operator+=(const Vector_3<T>& v) { x() += v.x(); y() += v.y(); z() += v.z(); return *this; }
+    constexpr Point_3& operator+=(const Vector_3<T>& v) { x() += v.x(); y() += v.y(); z() += v.z(); return *this; }
 
     /// Subtracts a vector from this point.
-    Q_DECL_CONSTEXPR Point_3& operator-=(const Vector_3<T>& v) { x() -= v.x(); y() -= v.y(); z() -= v.z(); return *this; }
+    constexpr Point_3& operator-=(const Vector_3<T>& v) { x() -= v.x(); y() -= v.y(); z() -= v.z(); return *this; }
 
     /// Multiplies all coordinates of the point with a scalar value.
-    Q_DECL_CONSTEXPR Point_3& operator*=(T s) { x() *= s; y() *= s; z() *= s; return *this; }
+    constexpr Point_3& operator*=(T s) { x() *= s; y() *= s; z() *= s; return *this; }
 
     /// Divides all coordinates of the point by a scalar value.
-    Q_DECL_CONSTEXPR Point_3& operator/=(T s) { x() /= s; y() /= s; z() /= s; return *this; }
+    constexpr Point_3& operator/=(T s) { x() /= s; y() /= s; z() /= s; return *this; }
 
     /// Sets all coordinates of the point to zero.
-    Q_DECL_CONSTEXPR Point_3& operator=(Origin) { z() = y() = x() = T(0); return *this; }
+    constexpr Point_3& operator=(Origin) { z() = y() = x() = T(0); return *this; }
 
     /// Converts a point to a vector.
-    Q_DECL_CONSTEXPR const Vector_3<T>& operator-(Origin) const {
+    constexpr const Vector_3<T>& operator-(Origin) const {
         // Implement this as a simple cast to Vector3 for best performance.
         OVITO_STATIC_ASSERT(sizeof(Vector_3<T>) == sizeof(Point_3<T>));
         return reinterpret_cast<const Vector_3<T>&>(*this);
@@ -180,77 +180,77 @@ public:
     //////////////////////////// Component access //////////////////////////
 
     /// \brief Returns the value of the X coordinate of this point.
-    Q_DECL_CONSTEXPR T x() const { return (*this)[0]; }
+    constexpr T x() const { return (*this)[0]; }
 
     /// \brief Returns the value of the Y coordinate of this point.
-    Q_DECL_CONSTEXPR T y() const { return (*this)[1]; }
+    constexpr T y() const { return (*this)[1]; }
 
     /// \brief Returns the value of the Z coordinate of this point.
-    Q_DECL_CONSTEXPR T z() const { return (*this)[2]; }
+    constexpr T z() const { return (*this)[2]; }
 
     /// \brief Returns a reference to the X coordinate of this point.
-    Q_DECL_CONSTEXPR T& x() { return (*this)[0]; }
+    constexpr T& x() { return (*this)[0]; }
 
     /// \brief Returns a reference to the Y coordinate of this point.
-    Q_DECL_CONSTEXPR T& y() { return (*this)[1]; }
+    constexpr T& y() { return (*this)[1]; }
 
     /// \brief Returns a reference to the Z coordinate of this point.
-    Q_DECL_CONSTEXPR T& z() { return (*this)[2]; }
+    constexpr T& z() { return (*this)[2]; }
 
 #ifdef OVITO_USE_SYCL
     // Workaround for missing data() method in SYCL's marray class template.
-    Q_DECL_CONSTEXPR T* data() noexcept { return &(*this)[0]; }
-    Q_DECL_CONSTEXPR const T* data() const noexcept { return &(*this)[0]; }
+    constexpr T* data() noexcept { return &(*this)[0]; }
+    constexpr const T* data() const noexcept { return &(*this)[0]; }
 #endif
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
     /// \brief Compares two points for exact equality.
     /// \return \c true if all coordinates are equal; \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator==(const Point_3& p) const { return (p.x()==x()) && (p.y()==y()) && (p.z()==z()); }
+    constexpr bool operator==(const Point_3& p) const { return (p.x()==x()) && (p.y()==y()) && (p.z()==z()); }
 
     /// \brief Compares two points for inequality.
     /// \return \c true if any of the coordinates is not equal; \c false if all are equal.
-    Q_DECL_CONSTEXPR bool operator!=(const Point_3& p) const { return (p.x()!=x()) || (p.y()!=y()) || (p.z()!=z()); }
+    constexpr bool operator!=(const Point_3& p) const { return (p.x()!=x()) || (p.y()!=y()) || (p.z()!=z()); }
 
     /// \brief Tests whether this point is at the origin, i.e. all of its coordinates are zero.
     /// \return \c true if all of the coordinates are exactly zero; \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator==(Origin) const { return (x()==T(0)) && (y()==T(0)) && (z()==T(0)); }
+    constexpr bool operator==(Origin) const { return (x()==T(0)) && (y()==T(0)) && (z()==T(0)); }
 
     /// \brief Tests whether the point is not at the origin, i.e. any of the coordinates is nonzero.
     /// \return \c true if any of the coordinates is nonzero; \c false if this is the origin point.
-    Q_DECL_CONSTEXPR bool operator!=(Origin) const { return (x()!=T(0)) || (y()!=T(0)) || (z()!=T(0)); }
+    constexpr bool operator!=(Origin) const { return (x()!=T(0)) || (y()!=T(0)) || (z()!=T(0)); }
 
     /// \brief Tests if two points are equal within a specified tolerance.
     /// \param p The second point.
     /// \param tolerance A non-negative threshold for the equality test. The two points are considered equal if
     ///        the absolute differences in their X, Y, and Z coordinates are all smaller than this tolerance.
     /// \return \c true if this point is equal to the second point within the specified tolerance; \c false otherwise.
-    Q_DECL_CONSTEXPR bool equals(const Point_3& p, T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool equals(const Point_3& p, T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(p.x() - x()) <= tolerance && std::abs(p.y() - y()) <= tolerance && std::abs(p.z() - z()) <= tolerance;
     }
 
     /// \brief Tests whether this point is at the origin within a specified tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute values of the point's coordinates are all below \a tolerance.
-    Q_DECL_CONSTEXPR bool isOrigin(T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool isOrigin(T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance && std::abs(z()) <= tolerance;
     }
 
     ///////////////////////////////// Utilities ////////////////////////////////
 
     /// \brief Returns the index of the coordinate with the maximum value.
-    Q_DECL_CONSTEXPR inline size_type maxComponent() const {
+    constexpr inline size_type maxComponent() const {
         return ((x() >= y()) ? ((x() >= z()) ? 0 : 2) : ((y() >= z()) ? 1 : 2));
     }
 
     /// \brief Returns the index of the coordinate with the minimum value.
-    Q_DECL_CONSTEXPR inline size_type minComponent() const {
+    constexpr inline size_type minComponent() const {
         return ((x() <= y()) ? ((x() <= z()) ? 0 : 2) : ((y() <= z()) ? 1 : 2));
     }
 
     /// \brief Returns the midpoint that is located halfway between this point and another point.
-    Q_DECL_CONSTEXPR inline Point_3 midpoint(const Point_3& other) const {
+    constexpr inline Point_3 midpoint(const Point_3& other) const {
         return Point_3(T(0.5) * (x() + other.x()), T(0.5) * (y() + other.y()), T(0.5) * (z() + other.z()));
     }
 
@@ -272,14 +272,14 @@ public:
 /// \brief Computes the sum of a point and a vector.
 /// \relates Point_3
 template<typename T>
-Q_DECL_CONSTEXPR Point_3<T> operator+(const Point_3<T>& a, const Vector_3<T>& b) {
+constexpr Point_3<T> operator+(const Point_3<T>& a, const Vector_3<T>& b) {
     return Point_3<T>( a.x() + b.x(), a.y() + b.y(), a.z() + b.z() );
 }
 
 /// \brief Converts a vector to a point.
 /// \relates Point_3
 template<typename T>
-Q_DECL_CONSTEXPR const Point_3<T>& operator+(typename Point_3<T>::Origin, const Vector_3<T>& b) {
+constexpr const Point_3<T>& operator+(typename Point_3<T>::Origin, const Vector_3<T>& b) {
     // Use cast for best performance.
     OVITO_STATIC_ASSERT(sizeof(Vector_3<T>) == sizeof(Point_3<T>));
     return reinterpret_cast<const Point_3<T>&>(b);
@@ -288,42 +288,42 @@ Q_DECL_CONSTEXPR const Point_3<T>& operator+(typename Point_3<T>::Origin, const 
 /// \brief Computes the sum of a vector and a point.
 /// \relates Point_3
 template<typename T>
-Q_DECL_CONSTEXPR Point_3<T> operator+(const Vector_3<T>& a, const Point_3<T>& b) {
+constexpr Point_3<T> operator+(const Vector_3<T>& a, const Point_3<T>& b) {
     return b + a;
 }
 
 /// \brief Subtracts a vector from a point.
 /// \relates Point_3
 template<typename T>
-Q_DECL_CONSTEXPR Point_3<T> operator-(const Point_3<T>& a, const Vector_3<T>& b) {
+constexpr Point_3<T> operator-(const Point_3<T>& a, const Vector_3<T>& b) {
     return Point_3<T>( a.x() - b.x(), a.y() - b.y(), a.z() - b.z() );
 }
 
 /// \brief Computes the vector connecting to two points.
 /// \relates Point_3
 template<typename T>
-Q_DECL_CONSTEXPR Vector_3<T> operator-(const Point_3<T>& a, const Point_3<T>& b) {
+constexpr Vector_3<T> operator-(const Point_3<T>& a, const Point_3<T>& b) {
     return Vector_3<T>( a.x() - b.x(), a.y() - b.y(), a.z() - b.z() );
 }
 
 /// \brief Computes the component-wise product of a point and a scalar value.
 /// \relates Point_3
 template<typename T>
-Q_DECL_CONSTEXPR Point_3<T> operator*(const Point_3<T>& a, T s) {
+constexpr Point_3<T> operator*(const Point_3<T>& a, T s) {
     return Point_3<T>( a.x() * s, a.y() * s, a.z() * s );
 }
 
 /// \brief Computes the component-wise product of a point and a scalar value.
 /// \relates Point_3
 template<typename T>
-Q_DECL_CONSTEXPR Point_3<T> operator*(T s, const Point_3<T>& a) {
+constexpr Point_3<T> operator*(T s, const Point_3<T>& a) {
     return Point_3<T>( a.x() * s, a.y() * s, a.z() * s );
 }
 
 /// \brief Computes the component-wise division of a point by a scalar value.
 /// \relates Point_3
 template<typename T>
-Q_DECL_CONSTEXPR Point_3<T> operator/(const Point_3<T>& a, T s) {
+constexpr Point_3<T> operator/(const Point_3<T>& a, T s) {
     return Point_3<T>( a.x() / s, a.y() / s, a.z() / s );
 }
 
