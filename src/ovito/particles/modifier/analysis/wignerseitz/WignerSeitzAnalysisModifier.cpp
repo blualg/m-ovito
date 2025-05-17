@@ -157,8 +157,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform(PipelineFlo
         throw Exception(tr("Reference configuration for Wigner-Seitz analysis contains no atomic sites."));
 
     // Prepare the closest-point query structure.
-    NearestNeighborFinder neighborTree(0);
-    neighborTree.prepare(refPositions(), refCell(), {});
+    NearestNeighborFinder neighborTree(0, refPositions(), refCell().get(), {});
 
     // Determine the number of components of the occupancy property.
     int ncomponents = 1;

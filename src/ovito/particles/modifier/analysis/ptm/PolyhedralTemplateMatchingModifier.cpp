@@ -119,12 +119,10 @@ PolyhedralTemplateMatchingModifier::PTMEngine::PTMEngine(PropertyPtr structures,
     _deformationGradients(outputDeformationGradient ? Particles::OOClass().createStandardProperty(DataBuffer::Initialized, particleCount, Particles::ElasticDeformationGradientProperty) : nullptr),
     _orderingTypes(particleTypes ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::Int32, 1, QStringLiteral("Ordering Type")) : nullptr),
     _correspondences(outputOrientation ? Particles::OOClass().createUserProperty(DataBuffer::Initialized, particleCount, Property::Int64, 1, QStringLiteral("Correspondences")) : nullptr),    // only output correspondences if orientations are selected
-    _rmsdHistogram(DataTable::OOClass().createUserProperty(DataBuffer::Initialized, 100, Property::Int64, 1, tr("Count")))
+    _rmsdHistogram(DataTable::OOClass().createUserProperty(DataBuffer::Initialized, 100, Property::Int64, 1, tr("Count"))),
+    _outputDeformationGradient(outputDeformationGradient),
+    _particleTypes(particleTypes)
 {
-    _algorithm->setCalculateDefGradient(outputDeformationGradient);
-    _algorithm->setIdentifyOrdering(particleTypes);
-    _algorithm->setRmsdCutoff(0.0); // Note: We do our own RMSD threshold filtering in postProcessStructureTypes().
-
     // Attach ordering types to output particle property.
     if(_orderingTypes) {
         // Create deep copies of the elements types, because data objects owned by the modifier should
@@ -144,13 +142,17 @@ void PolyhedralTemplateMatchingModifier::PTMEngine::identifyStructures(const Par
     if(simulationCell && simulationCell->is2D())
         throw Exception(tr("The PTM algorithm does not support 2d simulation cells."));
 
+    // Initialize the PTM algorithm object.
+    _algorithm.emplace(particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
+
+    _algorithm->setCalculateDefGradient(_outputDeformationGradient);
+    _algorithm->setIdentifyOrdering(std::move(_particleTypes));
+    _algorithm->setRmsdCutoff(0.0); // Note: We do our own RMSD threshold filtering in postProcessStructureTypes().
+
     // Specify the structure types the PTM should look for.
     for(int i = 0; i < PTMAlgorithm::NUM_STRUCTURE_TYPES; i++) {
         _algorithm->setStructureTypeIdentification(static_cast<PTMAlgorithm::StructureType>(i), typeIdentificationEnabled(i));
     }
-
-    // Initialize the algorithm object.
-    _algorithm->prepare(particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
     // Get access to the particle selection flags.
     BufferReadAccess<SelectionIntType> selectionAcc(selection);

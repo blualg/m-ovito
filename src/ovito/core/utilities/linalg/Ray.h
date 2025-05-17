@@ -71,27 +71,27 @@ public:
     /// \brief Initializes the ray with a base point and a direction vector.
     /// \param b A point through which the ray passes.
     /// \param d The ray's direction vector.
-    Q_DECL_CONSTEXPR Ray_3(const Point_3<T>& b, const Vector_3<T>& d) : base(b), dir(d) {}
+    constexpr Ray_3(const Point_3<T>& b, const Vector_3<T>& d) : base(b), dir(d) {}
 
     /// \brief Initializes the ray from two points.
     /// \param a The first point on the ray
     /// \param b The second point on the ray.
     ///
     /// The direction of the ray is initialized to the vector connecting \a a and \a b.
-    Q_DECL_CONSTEXPR Ray_3(const Point_3<T>& a, const Point_3<T>& b) : base(a), dir(b - a) {}
+    constexpr Ray_3(const Point_3<T>& a, const Point_3<T>& b) : base(a), dir(b - a) {}
 
     ////////////////////////////////// Queries ///////////////////////////////////
 
     /// \brief Returns a point on the ray at the specified position.
     /// \param t Specifies the position along the ray.
     /// \return The point (#base + #dir * \a t).
-    Q_DECL_CONSTEXPR Point_3<T> point(T t) const { return base + dir * t; }
+    constexpr Point_3<T> point(T t) const { return base + dir * t; }
 
     /////////////////////////////// Unary operators //////////////////////////////
 
     /// \brief Flips the ray's direction.
     /// \return A new ray with a reversed direction vector.
-    Q_DECL_CONSTEXPR Ray_3 operator-() const { return Ray_3(base, -dir); }
+    constexpr Ray_3 operator-() const { return Ray_3(base, -dir); }
 
     ////////////////////////////////// Utilities /////////////////////////////////
 
@@ -108,7 +108,7 @@ public:
 ///         The direction vector is automatically normalized after the transformation.
 /// \relates Ray_3
 template<typename T>
-Q_DECL_CONSTEXPR inline Ray_3<T> operator*(const AffineTransformationT<T>& tm, const Ray_3<T>& ray) {
+constexpr inline Ray_3<T> operator*(const AffineTransformationT<T>& tm, const Ray_3<T>& ray) {
     return { tm * ray.base, (tm * ray.dir).normalized() };
 }
 

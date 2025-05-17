@@ -27,14 +27,6 @@
 namespace Ovito {
 
 /******************************************************************************
-* Creates the algorithm object.
-******************************************************************************/
-PTMAlgorithm::PTMAlgorithm() : NearestNeighborFinder(MAX_INPUT_NEIGHBORS)
-{
-    ptm_initialize_global();
-}
-
-/******************************************************************************
 * Constructs a new kernel from the given algorithm object, which must have
 * previously been initialized by a call to PTMAlgorithm::prepare().
 ******************************************************************************/

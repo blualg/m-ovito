@@ -104,7 +104,7 @@ public:
             bool identifyPlanarDefects = true);
 
     /// Identifies the atomic structures.
-    void identifyStructures(TaskProgress& progress);
+    void identifyStructures(TaskProgress& progress, const SimulationCell* simulationCell);
 
     /// Combines adjacent atoms to clusters.
     void buildClusters(TaskProgress& progress);
@@ -122,7 +122,7 @@ public:
     const ConstPropertyPtr& positions() const { return _positions; }
 
     /// Returns the input simulation cell.
-    const DataOORef<const SimulationCell>& cell() const { return _simCell; }
+    const SimulationCellData& cell() const { return _simCell; }
 
     /// Returns the array of atom structure types.
     const PropertyPtr& structureTypes() const { return _structureTypes; }
@@ -219,7 +219,7 @@ private:
     BufferReadAccessAndRef<SelectionIntType> _particleSelection;
     ClusterGraph* _clusterGraph;
     std::atomic<FloatType> _maximumNeighborDistance;
-    DataOORef<const SimulationCell> _simCell;
+    const SimulationCellData _simCell;
     std::vector<Matrix3> _preferredCrystalOrientations;
 
     static CoordinationStructure _coordinationStructures[NUM_COORD_TYPES];

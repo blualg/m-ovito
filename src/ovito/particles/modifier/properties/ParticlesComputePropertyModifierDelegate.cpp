@@ -218,9 +218,9 @@ Future<PipelineFlowState> ParticlesComputePropertyModifierDelegate::performCompu
         progress.setText(tr("Computing property '%1'").arg(outputProperty->name()));
 
         // Prepare the neighbor finder (only used when cutoff neighbor mode is active).
-        CutoffNeighborFinder neighborFinder;
+        std::optional<CutoffNeighborFinder> neighborFinder;
         if(visitNeighbors && !bonds)
-            neighborFinder.prepare(cutoff, positions, neighborEvaluator->simCell(), {});
+            neighborFinder.emplace(cutoff, positions, neighborEvaluator->simCell(), nullptr);
 
         // Prepare bonds enumerator (only used when bonded neighbor mode is active).
         std::optional<ParticleBondMap> bondsMap;
@@ -276,8 +276,9 @@ Future<PipelineFlowState> ParticlesComputePropertyModifierDelegate::performCompu
                     // Determine number of neighbors (only if this value is being referenced in the expressions).
                     int nneigh = 0;
                     if(!bonds) {
+                        OVITO_ASSERT(neighborFinder.has_value());
                         // Count neighbors within cutoff radius.
-                        for(CutoffNeighborFinder::Query neighQuery(neighborFinder, i); !neighQuery.atEnd(); neighQuery.next())
+                        for(CutoffNeighborFinder::Query neighQuery(*neighborFinder, i); !neighQuery.atEnd(); neighQuery.next())
                             nneigh++;
                     }
                     else if(bondsMap) {
@@ -301,7 +302,8 @@ Future<PipelineFlowState> ParticlesComputePropertyModifierDelegate::performCompu
                     if(visitNeighbors) {
                         // Compute and add neighbor terms.
                         if(!bonds) {
-                            for(CutoffNeighborFinder::Query neighQuery(neighborFinder, i); !neighQuery.atEnd(); neighQuery.next()) {
+                            OVITO_ASSERT(neighborFinder.has_value());
+                            for(CutoffNeighborFinder::Query neighQuery(*neighborFinder, i); !neighQuery.atEnd(); neighQuery.next()) {
                                 *wd.distanceVar = neighQuery.distance();
                                 *wd.deltaX = neighQuery.delta().x();
                                 *wd.deltaY = neighQuery.delta().y();

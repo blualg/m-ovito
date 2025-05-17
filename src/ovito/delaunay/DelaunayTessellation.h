@@ -293,7 +293,7 @@ public:
     }
 
     /// Returns the simulation cell geometry.
-    const SimulationCell* simCell() const { return _simCell; }
+    const SimulationCellData& simCell() const { return _simCell; }
 
 private:
 
@@ -319,7 +319,7 @@ private:
     size_type _numPrimaryTetrahedra = 0;
 
     /// The simulation cell (optional).
-    DataOORef<const SimulationCell> _simCell;
+    SimulationCellData _simCell;
 };
 
 }  // End of namespace Ovito

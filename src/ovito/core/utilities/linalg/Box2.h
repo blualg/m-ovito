@@ -97,7 +97,7 @@ public:
 
     /// \brief Casts the box to a box with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Box_2<U>, const Box_2<T>&> {
+    constexpr auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Box_2<U>, const Box_2<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             if(!isEmpty())
                 return Box_2<U>(minc.template toDataType<U>(), maxc.template toDataType<U>());
@@ -113,7 +113,7 @@ public:
     ///
     /// The box is considered empty if one of the upper boundary coordinates is smaller than
     /// the corresponding lower boundary coordinate.
-    Q_DECL_CONSTEXPR bool isEmpty() const {
+    constexpr bool isEmpty() const {
         return (minc.x() > maxc.x()) || (minc.y() > maxc.y());
     }
 
@@ -135,20 +135,20 @@ public:
     }
 
     /// \brief Computes the width of the box.
-    Q_DECL_CONSTEXPR T width() const { return maxc.x() - minc.x(); }
+    constexpr T width() const { return maxc.x() - minc.x(); }
 
     /// \brief Computes the height of the box.
-    Q_DECL_CONSTEXPR T height() const { return maxc.y() - minc.y(); }
+    constexpr T height() const { return maxc.y() - minc.y(); }
 
     /// \brief Computes the center of the box.
-    Q_DECL_CONSTEXPR Point_2<T> center() const {
+    constexpr Point_2<T> center() const {
         return Point_2<T>((minc.x() + maxc.x()) / 2, (minc.y() + maxc.y()) / 2);
     }
 
     /// \brief Computes the size of the box.
     /// \return The difference between the upper and lower boundary coordinates.
     /// \sa width(), height()
-    Q_DECL_CONSTEXPR Vector_2<T> size() const {
+    constexpr Vector_2<T> size() const {
         return maxc - minc;
     }
 
@@ -156,12 +156,12 @@ public:
     /// \param dimension The dimension (0 - 2).
     /// \return The difference between the upper and lower boundary of the box in the given dimension.
     /// \sa size(), width(), height()
-    Q_DECL_CONSTEXPR T size(typename Point_2<T>::size_type dimension) const {
+    constexpr T size(typename Point_2<T>::size_type dimension) const {
         return maxc[dimension] - minc[dimension];
     }
 
     /// \brief Compares two bxoes for equality.
-    Q_DECL_CONSTEXPR bool operator==(const Box_2<T>& other) const { return minc == other.minc && maxc == other.maxc; }
+    constexpr bool operator==(const Box_2<T>& other) const { return minc == other.minc && maxc == other.maxc; }
 
     /// Conversion operator to a Qt rectangle.
     operator QRectF() const {
@@ -173,7 +173,7 @@ public:
     /// \brief Checks whether a point is located inside the box.
     /// \param p The input point.
     /// \return \c true if the point \a p is inside or on the boundaries of the box; \c false if it is outside the box.
-    Q_DECL_CONSTEXPR bool contains(const Point_2<T>& p) const {
+    constexpr bool contains(const Point_2<T>& p) const {
         return (p.x() >= minc.x() && p.x() <= maxc.x() && p.y() >= minc.y() && p.y() <= maxc.y());
     }
 
@@ -181,7 +181,7 @@ public:
     /// \param p The input point.
     /// \param epsilon This threshold is used to test whether the point is on the boundary of the box.
     /// \return -1 if \a p is outside the box; 0 if \a p is on the boundary of the box within the specified tolerance; +1 if inside the box.
-    Q_DECL_CONSTEXPR int classifyPoint(const Point_2<T>& p, T epsilon = FloatTypeEpsilon<T>()) const {
+    constexpr int classifyPoint(const Point_2<T>& p, T epsilon = FloatTypeEpsilon<T>()) const {
         return
                 (p.x() > maxc.x() + epsilon || p.y() > maxc.y() + epsilon) ||
                 (p.x() < minc.x() - epsilon || p.y() < minc.y() - epsilon)
@@ -193,7 +193,7 @@ public:
     /// \brief Tests if another box is contained in this box.
     /// \param b The other box.
     /// \return \c true if the box \a b is completely inside this box.
-    Q_DECL_CONSTEXPR bool containsBox(const Box_2<T>& b) const {
+    constexpr bool containsBox(const Box_2<T>& b) const {
         return (b.minc.x() >= minc.x() && b.maxc.x() <= maxc.x()) &&
             (b.minc.y() >= minc.y() && b.maxc.y() <= maxc.y());
     }
@@ -202,7 +202,7 @@ public:
     /// \param b The other box.
     /// \return \c true if the box \a b is not completely outside of this box;
     ///         \c false if the two boxes do not overlap or are empty.
-    Q_DECL_CONSTEXPR bool intersects(const Box_2<T>& b) const {
+    constexpr bool intersects(const Box_2<T>& b) const {
         return (maxc.x() > b.minc.x() && minc.x() < b.maxc.x() &&
                 maxc.y() > b.minc.y() && minc.y() < b.maxc.y() &&
                 !isEmpty() && !b.isEmpty());

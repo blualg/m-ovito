@@ -101,8 +101,7 @@ void CommonNeighborAnalysisModifier::AdaptiveCNAAlgorithm::identifyStructures(co
     progress.setText(tr("Performing adaptive common neighbor analysis"));
 
     // Prepare the neighbor finder.
-    NearestNeighborFinder neighFinder(MAX_NEIGHBORS);
-    neighFinder.prepare(particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
+    NearestNeighborFinder neighFinder(MAX_NEIGHBORS, particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
     // Perform analysis on each particle.
     BufferReadAccess<SelectionIntType> selectionAcc(selection);
@@ -127,8 +126,7 @@ void CommonNeighborAnalysisModifier::IntervalCNAAlgorithm::identifyStructures(co
     progress.setText(tr("Performing interval common neighbor analysis"));
 
     // Prepare the neighbor finder.
-    NearestNeighborFinder neighFinder(MAX_NEIGHBORS);
-    neighFinder.prepare(particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
+    NearestNeighborFinder neighFinder(MAX_NEIGHBORS, particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
     // Perform analysis on each particle.
     BufferReadAccess<SelectionIntType> selectionAcc(selection);
@@ -178,8 +176,7 @@ void CommonNeighborAnalysisModifier::FixedCNAAlgorithm::identifyStructures(const
 
 #else
     // Prepare the neighbor finder.
-    CutoffNeighborFinder neighborFinder;
-    neighborFinder.prepare(_cutoff, particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
+    CutoffNeighborFinder neighborFinder(_cutoff, particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
     // Perform analysis on each particle.
     BufferReadAccess<SelectionIntType> selectionAcc(selection);

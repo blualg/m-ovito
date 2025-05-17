@@ -25,8 +25,8 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/core/utilities/MemoryPool.h>
+#include <ovito/delaunay/DelaunayTessellationSpatialQuery.h>
 #include "InterfaceMesh.h"
-#include "DelaunayTessellationSpatialQuery.h"
 
 namespace Ovito {
 
@@ -41,6 +41,7 @@ public:
                       bool markCoreAtoms)
         : _mesh(mesh),
           _network(network),
+          _simCell(mesh.domain()),
           _clusterGraph(network->clusterGraph()),
           _maxBurgersCircuitSize(maxTrialCircuitSize),
           _maxExtendedBurgersCircuitSize(maxTrialCircuitSize + maxCircuitElongation),
@@ -61,7 +62,7 @@ public:
     DislocationNetwork* network() { return _network; }
 
     /// Returns the simulation cell.
-    const SimulationCell* cell() const { return mesh().domain(); }
+    const SimulationCellData& cell() const { return _simCell; }
 
     /// Performs a dislocation search on the interface mesh by generating
     /// trial Burgers circuits. Identified dislocation segments are converted to
@@ -112,12 +113,12 @@ private:
     /// the vector (B-A) is not a wrapped vector.
     Vector3 calculateShiftVector(const Point3& a, const Point3& b) const
     {
-        if(cell()) {
-            Vector3 d = cell()->absoluteToReduced(b - a);
-            d.x() = cell()->hasPbc(0) ? std::floor(d.x() + FloatType(0.5)) : FloatType(0);
-            d.y() = cell()->hasPbc(1) ? std::floor(d.y() + FloatType(0.5)) : FloatType(0);
-            d.z() = cell()->hasPbc(2) ? std::floor(d.z() + FloatType(0.5)) : FloatType(0);
-            return cell()->reducedToAbsolute(d);
+        if(cell().hasPbc()) {
+            Vector3 d = cell().absoluteToReduced(b - a);
+            d.x() = cell().hasPbc(0) ? std::floor(d.x() + FloatType(0.5)) : FloatType(0);
+            d.y() = cell().hasPbc(1) ? std::floor(d.y() + FloatType(0.5)) : FloatType(0);
+            d.z() = cell().hasPbc(2) ? std::floor(d.z() + FloatType(0.5)) : FloatType(0);
+            return cell().reducedToAbsolute(d);
         }
         else {
             return b - a;
@@ -130,6 +131,9 @@ private:
 
     /// The extracted network of dislocation segments.
     DislocationNetwork* _network;
+
+    /// The simulation cell.
+    SimulationCellData _simCell;
 
     /// The cluster graph.
     const ClusterGraph* _clusterGraph;

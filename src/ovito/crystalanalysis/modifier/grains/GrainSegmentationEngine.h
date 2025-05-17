@@ -357,7 +357,7 @@ public:
     const ConstPropertyPtr& positions() const { return _positions; }
 
     /// Returns the simulation cell data.
-    const DataOORef<const SimulationCell>& cell() const { return _simCell; }
+    const SimulationCellData& cell() const { return _simCell; }
 
     // Returns the merge distances for the scatter plot
     const PropertyPtr& mergeDistance() const { return _mergeDistance; }
@@ -476,7 +476,7 @@ private:
     ConstPropertyPtr _positions;
 
     /// The simulation cell geometry.
-    DataOORef<const SimulationCell> _simCell;
+    const SimulationCellData _simCell;
 
     // The merge distances
     PropertyPtr _mergeDistance;

@@ -85,7 +85,7 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
                                std::move(_preferredCrystalOrientations), !_onlyPerfectDislocations);
     _tessellation.emplace();
     _elasticMapping.emplace(*_structureAnalysis, *_tessellation);
-    _interfaceMesh.emplace(*_elasticMapping);
+    _interfaceMesh.emplace(*_elasticMapping, simulationCell);
     _dislocationTracer.emplace(*_interfaceMesh, _maxTrialCircuitSize, _maxCircuitElongation, dislocationNetwork(), _markCoreAtoms);
     setAtomClusters(_structureAnalysis->atomClusters());
     if(_markCoreAtoms) {
@@ -94,7 +94,7 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     else {
         progress.beginSubSteps({35, 6, 1, 220, 60, 1, 53, 190, 146, 20, 4, 4});
     }
-    _structureAnalysis->identifyStructures(progress);
+    _structureAnalysis->identifyStructures(progress, simulationCell);
 
     progress.nextSubStep();
     _structureAnalysis->buildClusters(progress);
@@ -131,7 +131,7 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
 
     progress.nextSubStep();
     FloatType ghostLayerSize = FloatType(3.5) * _structureAnalysis->maximumNeighborDistance();
-    _tessellation->generateTessellation(_structureAnalysis->cell(), BufferReadAccess<Point3>(positions).cbegin(),
+    _tessellation->generateTessellation(simulationCell, BufferReadAccess<Point3>(positions).cbegin(),
                                         _structureAnalysis->atomCount(), ghostLayerSize,
                                         false,  // flag coverDomainWithFiniteTets
                                         selection ? BufferReadAccess<SelectionIntType>(selection).cbegin() : nullptr,

@@ -130,7 +130,7 @@ private:
         const ConstPropertyPtr& positions() const { return _positions; }
 
         /// Returns the simulation cell data.
-        const DataOORef<const SimulationCell>& cell() const { return _simCell; }
+        const SimulationCellData& cell() const { return _simCell; }
 
         /// Returns the property storage that contains the particle selection (optional).
         const ConstPropertyPtr& selection() const { return _selection; }
@@ -142,7 +142,7 @@ private:
 
     protected:
 
-        DataOORef<const SimulationCell> _simCell;
+        const SimulationCellData _simCell;
         const bool _sortBySize;
         const bool _unwrapParticleCoordinates;
         const bool _colorParticlesByCluster;

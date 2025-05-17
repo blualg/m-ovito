@@ -164,8 +164,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
     progress.setText(tr("Computing atomic strain tensors"));
 
     // Prepare the neighbor list for the reference configuration.
-    CutoffNeighborFinder neighborFinder;
-    neighborFinder.prepare(_cutoff, refPositions(), refCell(), {});
+    CutoffNeighborFinder neighborFinder(_cutoff, refPositions(), refCell().get(), {});
 
     // Prepare the output data arrays.
     BufferWriteAccess<SelectionIntType, access_mode::discard_write> invalidParticlesArray(invalidParticles());

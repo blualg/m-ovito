@@ -86,7 +86,6 @@ void GrainSegmentationEngine1::perform()
 
     // Release data that is no longer needed.
     _positions.reset();
-    _simCell.reset();
 
     //if(!_outputBondsToPipeline)
     //  decltype(_neighborBonds){}.swap(_neighborBonds);
@@ -99,8 +98,7 @@ void GrainSegmentationEngine1::createNeighborBonds(TaskProgress& progress)
 {
     progress.setText(GrainSegmentationModifier::tr("Grain segmentation - building neighbor lists"));
 
-    PTMNeighborFinder neighFinder(false);
-    neighFinder.prepare(positions(), cell(), nullptr, structureTypes(), orientations(), correspondences());
+    PTMNeighborFinder neighFinder(false, positions(), cell(), nullptr, structureTypes(), orientations(), correspondences());
 
     // Perform analysis on each particle.
     EnumerableThreadSpecific<PTMNeighborFinder::Query> neighQueries;
@@ -136,8 +134,8 @@ void GrainSegmentationEngine1::createNeighborBonds(TaskProgress& progress)
                 // Check if neighbor vector spans more than half of a periodic simulation cell.
                 Vector3 neighborVector = neighQuery.neighbors()[j].delta;
                 for(size_t dim = 0; dim < 3; dim++) {
-                    if(cell()->hasPbc(dim)) {
-                        if(std::abs(cell()->reciprocalCellMatrix().prodrow(neighborVector, dim)) >= FloatType(0.5)+FLOATTYPE_EPSILON) {
+                    if(cell().hasPbc(dim)) {
+                        if(std::abs(cell().reciprocalCellMatrix().prodrow(neighborVector, dim)) >= FloatType(0.5)+FLOATTYPE_EPSILON) {
                             static const QString axes[3] = { QStringLiteral("X"), QStringLiteral("Y"), QStringLiteral("Z") };
                             throw Exception(GrainSegmentationModifier::tr("Simulation box is too short along cell vector %1 (%2) to perform analysis. "
                                     "Please extend it first using the 'Replicate' modifier.").arg(dim+1).arg(axes[dim]));
@@ -190,8 +188,7 @@ void GrainSegmentationEngine1::rotateInterfaceAtoms(TaskProgress& progress)
     progress.setText(GrainSegmentationModifier::tr("Grain segmentation - rotating minority atoms"));
 
     // Construct local neighbor list builder.
-    PTMNeighborFinder neighFinder(false);
-    neighFinder.prepare(positions(), cell(), nullptr, structureTypes(), orientations(), correspondences());
+    PTMNeighborFinder neighFinder(false, positions(), cell(), nullptr, structureTypes(), orientations(), correspondences());
     PTMNeighborFinder::Query neighQuery(neighFinder);
 
     // TODO: replace comparator with a lambda function
@@ -707,8 +704,8 @@ void GrainSegmentationEngine1::applyResults(PipelineFlowState& state, const OOWe
                 // Determine PBC bond shift using minimum image convention.
                 Vector3 delta = positionsArray[bond.index1] - positionsArray[bond.index2];
                 for(size_t dim = 0; dim < 3; dim++) {
-                    if(cell() && cell()->pbcFlags()[dim])
-                        bond.pbcShift[dim] = (int)std::floor(cell()->inverseMatrix().prodrow(delta, dim) + FloatType(0.5));
+                    if(cell().pbcFlags()[dim])
+                        bond.pbcShift[dim] = (int)std::floor(cell().reciprocalCellMatrix().prodrow(delta, dim) + FloatType(0.5));
                     else
                         bond.pbcShift[dim] = 0;
                 }

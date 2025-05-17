@@ -317,9 +317,8 @@ void ParticleImporter::FrameLoader::generateBonds(TaskProgress& progress)
     FloatType minCutoffSquared = 1e-10 * maxCutoff * maxCutoff;
     progress.setText(tr("Generating bonds"));
 
-    // Prepare the neighbor list.
-    CutoffNeighborFinder neighborFinder;
-    neighborFinder.prepare(maxCutoff, positionProperty, state().getObject<SimulationCell>(), {});
+    // Prepare the neighbor finder.
+    CutoffNeighborFinder neighborFinder(maxCutoff, positionProperty, state().getObject<SimulationCell>(), {});
 
     BufferReadAccess<int32_t> particleTypesArray(typeProperty);
 

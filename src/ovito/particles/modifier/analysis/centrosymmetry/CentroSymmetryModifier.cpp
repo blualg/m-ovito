@@ -115,8 +115,7 @@ Future<PipelineFlowState> CentroSymmetryModifier::evaluateModifier(const Modifie
         progress.setText(tr("Computing centrosymmetry parameters"));
 
         // Prepare the neighbor list.
-        NearestNeighborFinder neighFinder(nneighbors);
-        neighFinder.prepare(particles->expectProperty(Particles::PositionProperty), state.getObject<SimulationCell>(), selection);
+        NearestNeighborFinder neighFinder(nneighbors, particles->expectProperty(Particles::PositionProperty), state.getObject<SimulationCell>(), selection);
 
         // Create output array.
         Property* cspProperty = particles->createProperty(DataBuffer::Uninitialized, Particles::CentroSymmetryProperty);

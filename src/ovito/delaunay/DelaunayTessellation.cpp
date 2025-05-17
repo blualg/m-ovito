@@ -45,11 +45,13 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
     double lengthScale;
     if(simCell) {
         lengthScale = (simCell->matrix().column(0) + simCell->matrix().column(1) + simCell->matrix().column(2)).length();
+        _simCell = simCell;
     }
     else {
         Box3 bbox;
         bbox.addPoints(positions, numPoints);
         lengthScale = bbox.size().length();
+        _simCell = bbox;
     }
     double epsilon = 1e-10 * lengthScale;
 
@@ -57,8 +59,6 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
     // Use a fixed seed value for the sake of reproducibility.
     std::mt19937 rng(4);
     boost::random::uniform_real_distribution<double> displacement(-epsilon, epsilon);
-
-    _simCell = simCell;
 
     // Build the list of input points.
     _inputPointIndices.clear();

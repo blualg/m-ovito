@@ -98,7 +98,7 @@ public:
 
     /// \brief Casts the box to a box with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Box_3<U>, const Box_3<T>&> {
+    constexpr auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Box_3<U>, const Box_3<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             if(!isEmpty())
                 return Box_3<U>(minc.template toDataType<U>(), maxc.template toDataType<U>());
@@ -114,7 +114,7 @@ public:
     ///
     /// The box is considered empty if one of the upper boundary coordinates is smaller than
     /// the corresponding lower boundary coordinate.
-    Q_DECL_CONSTEXPR bool isEmpty() const {
+    constexpr bool isEmpty() const {
         return (minc.x() > maxc.x()) || (minc.y() > maxc.y()) || (minc.z() > maxc.z());
     }
 
@@ -125,31 +125,31 @@ public:
     }
 
     /// \brief Computes the center of the box.
-    Q_DECL_CONSTEXPR Point_3<T> center() const {
+    constexpr Point_3<T> center() const {
         return Point_3<T>((minc.x() + maxc.x()) / 2, (minc.y() + maxc.y()) / 2, (minc.z() + maxc.z()) / 2);
     }
 
     /// \brief Computes the size of the box.
     /// \return The difference between the upper and lower boundary coordinates.
-    Q_DECL_CONSTEXPR Vector_3<T> size() const {
+    constexpr Vector_3<T> size() const {
         return maxc - minc;
     }
 
     /// \brief Returns the size of the box in the given dimension.
     /// \param dimension The dimension (0 - 2).
     /// \return The difference between the upper and lower boundary of the box in the given dimension.
-    Q_DECL_CONSTEXPR T size(typename Point_3<T>::size_type dimension) const {
+    constexpr T size(typename Point_3<T>::size_type dimension) const {
         return maxc[dimension] - minc[dimension];
     }
 
     /// Returns the box size in X direction (maxc.x() - minc.x()) of the box.
-    Q_DECL_CONSTEXPR T sizeX() const { return maxc.x() - minc.x(); }
+    constexpr T sizeX() const { return maxc.x() - minc.x(); }
 
     /// Returns the box size in Y direction (maxc.y() - minc.y()) of the box.
-    Q_DECL_CONSTEXPR T sizeY() const { return maxc.y() - minc.y(); }
+    constexpr T sizeY() const { return maxc.y() - minc.y(); }
 
     /// Returns the box size in Z direction (maxc.z() - minc.z()) of the box.
-    Q_DECL_CONSTEXPR T sizeZ() const { return maxc.z() - minc.z(); }
+    constexpr T sizeZ() const { return maxc.z() - minc.z(); }
 
     /// \brief Returns the position of one of the eight corners of the box.
     /// \param i The index of the corner in the range 0 to 7.
@@ -163,14 +163,14 @@ public:
     }
 
     /// \brief Compares two bxoes for equality.
-    Q_DECL_CONSTEXPR bool operator==(const Box_3<T>& other) const { return minc == other.minc && maxc == other.maxc; }
+    constexpr bool operator==(const Box_3<T>& other) const { return minc == other.minc && maxc == other.maxc; }
 
     /////////////////////////////// Classification ///////////////////////////////
 
     /// \brief Checks whether a point is located inside the box.
     /// \param p The input point.
     /// \return \c true if the point \a p is inside or on the boundaries of the box; \c false if it is outside the box.
-    Q_DECL_CONSTEXPR bool contains(const Point_3<T>& p) const {
+    constexpr bool contains(const Point_3<T>& p) const {
         return p.x() >= minc.x() && p.x() <= maxc.x() &&
                p.y() >= minc.y() && p.y() <= maxc.y() &&
                p.z() >= minc.z() && p.z() <= maxc.z();

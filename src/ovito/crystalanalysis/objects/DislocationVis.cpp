@@ -62,9 +62,9 @@ Future<std::shared_ptr<const RenderableDislocationLines>> DislocationVis::transf
     return asyncLaunch([dislocations = DataOORef<const DislocationNetwork>(dislocations)]() {
 
         // Get the simulation cell (must be 3D).
-        const SimulationCell* cellObject = dislocations->domain();
-        if(!cellObject || cellObject->is2D())
+        if(!dislocations->domain() || dislocations->domain()->is2D())
             throw Exception(tr("Display of the dislocation line network requires a 3D simulation cell."));
+        const SimulationCellData simulationCell(dislocations->domain());
 
         // Generate the list of clipped line segments.
         std::vector<RenderableDislocationLines::Segment> outputSegments;
@@ -89,7 +89,7 @@ Future<std::shared_ptr<const RenderableDislocationLines>> DislocationVis::transf
                     continue;
                 }
             }
-            clipDislocationLine(segment->line, *cellObject, dislocations->cuttingPlanes(), [segmentIndex, &outputSegments, &b](const Point3& p1, const Point3& p2, bool isInitialSegment) {
+            clipDislocationLine(segment->line, simulationCell, dislocations->cuttingPlanes(), [segmentIndex, &outputSegments, &b](const Point3& p1, const Point3& p2, bool isInitialSegment) {
                 outputSegments.push_back({ { p1, p2 }, b.localVec(), b.cluster()->id, segmentIndex });
             });
             segmentIndex++;
@@ -422,7 +422,7 @@ void DislocationVis::renderOverlayMarker(const DataObject* dataObject, const Pip
 /******************************************************************************
 * Clips a dislocation line at the periodic box boundaries.
 ******************************************************************************/
-void DislocationVis::clipDislocationLine(const std::deque<Point3>& line, const SimulationCell& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback)
+void DislocationVis::clipDislocationLine(const std::deque<Point3>& line, const SimulationCellData& simulationCell, const QVector<Plane3>& clippingPlanes, const std::function<void(const Point3&, const Point3&, bool)>& segmentCallback)
 {
     bool isInitialSegment = true;
     auto clippingFunction = [&clippingPlanes, &segmentCallback, &isInitialSegment](Point3 p1, Point3 p2) {

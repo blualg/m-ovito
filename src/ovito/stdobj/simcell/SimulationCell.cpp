@@ -136,7 +136,7 @@ void SimulationCell::updateEditableProxies(PipelineFlowState& state, ConstDataOb
 * Wraps the input coordinates at the periodic boundaries of the cell.
 * The wrapped coordinates are returned as a new DataBuffer object.
 ******************************************************************************/
-ConstPropertyPtr SimulationCell::wrapPoints(const Property* inputPositions) const
+ConstPropertyPtr SimulationCellData::wrapPoints(const Property* inputPositions) const
 {
     // Check the input data type and component count.
     OVITO_ASSERT(inputPositions);
@@ -144,15 +144,16 @@ ConstPropertyPtr SimulationCell::wrapPoints(const Property* inputPositions) cons
     OVITO_ASSERT(inputPositions->componentCount() == 3);
 
     // If PBCs are turned off, we have nothing to do and can return the input coordinates as is.
-    if(!hasPbcCorrected())
+    if(!hasPbc())
         return inputPositions;
 
     // Create a new buffer to store the wrapped coordinates.
     PropertyPtr outputPositions = inputPositions->cloneWithoutData(inputPositions->size());
 
-    const AffineTransformation cellMatrix = this->cellMatrix();
-    const AffineTransformation reciprocalCellMatrix = this->reciprocalCellMatrix();
-    const auto pbcFlags = this->pbcFlagsCorrected();
+    // Make local copies of the cell matrix and the reciprocal cell matrix to help with code optimization.
+    const auto cellMatrix = this->cellMatrix();
+    const auto reciprocalCellMatrix = this->reciprocalCellMatrix();
+    const auto pbcFlags = this->pbcFlags();
 
 #ifdef OVITO_USE_SYCL
     if(inputPositions->size() != 0) {

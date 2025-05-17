@@ -66,8 +66,7 @@ void IdentifyDiamondModifier::DiamondIdentificationAlgorithm::identifyStructures
     progress.setText(tr("Finding nearest neighbors"));
 
     // Prepare the neighbor list builder.
-    NearestNeighborFinder neighborFinder(4);
-    neighborFinder.prepare(particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
+    NearestNeighborFinder neighborFinder(4, particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
     // This data structure stores information about a single neighbor.
     struct NeighborInfo {

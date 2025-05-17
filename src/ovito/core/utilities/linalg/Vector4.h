@@ -82,28 +82,28 @@ public:
     Vector_4() noexcept = default;
 
     /// Constructs a vector with all four components initialized to the given value.
-    Q_DECL_CONSTEXPR explicit Vector_4(T val) noexcept : std::array<T, 4>{{val,val,val,val}} {}
+    constexpr explicit Vector_4(T val) noexcept : std::array<T, 4>{{val,val,val,val}} {}
 
         /// Initializes the components of the vector with the given values.
-    Q_DECL_CONSTEXPR Vector_4(T x, T y, T z, T w) noexcept : std::array<T, 4>{{x, y, z, w}} {}
+    constexpr Vector_4(T x, T y, T z, T w) noexcept : std::array<T, 4>{{x, y, z, w}} {}
 
         /// Initializes the vector to the null vector. All components are set to zero.
-    Q_DECL_CONSTEXPR Vector_4(Zero) noexcept : std::array<T, 4>{{T(0), T(0), T(0), T(0)}} {}
+    constexpr Vector_4(Zero) noexcept : std::array<T, 4>{{T(0), T(0), T(0), T(0)}} {}
 
     /// Initializes the vector from an array.
-    Q_DECL_CONSTEXPR explicit Vector_4(const std::array<T, 4>& a) noexcept : std::array<T, 4>(a) {}
+    constexpr explicit Vector_4(const std::array<T, 4>& a) noexcept : std::array<T, 4>(a) {}
 
     /// Initializes the 4-vector from a 3-vector.
     /// \param v Specifies the xyz components of the new vector.
     /// \param w The w component of the new vector.
-    Q_DECL_CONSTEXPR explicit Vector_4(const Vector_3<T>& v, T w) noexcept : std::array<T, 4>{{v.x(), v.y(), v.z(), w}} {}
+    constexpr explicit Vector_4(const Vector_3<T>& v, T w) noexcept : std::array<T, 4>{{v.x(), v.y(), v.z(), w}} {}
 
     /// Conversion constructor from a Qt vector.
-    Q_DECL_CONSTEXPR explicit Vector_4(const QVector4D& v) noexcept : std::array<T, 4>{{T(v.x()), T(v.y()), T(v.z()), T(v.w())}} {}
+    constexpr explicit Vector_4(const QVector4D& v) noexcept : std::array<T, 4>{{T(v.x()), T(v.y()), T(v.z()), T(v.w())}} {}
 
     /// Casts the vector to another component type \a U.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Vector_4<U>, const Vector_4<T>&> {
+    constexpr auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Vector_4<U>, const Vector_4<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Vector_4<U>(static_cast<U>(x()), static_cast<U>(y()), static_cast<U>(z()), static_cast<U>(w()));
         else
@@ -113,107 +113,107 @@ public:
     /////////////////////////////// Unary operators //////////////////////////////
 
     /// Returns the reverse vector (-x(), -y(), -z(), -w()).
-    Q_DECL_CONSTEXPR Vector_4 operator-() const { return Vector_4{-x(), -y(), -z(), -w()}; }
+    constexpr Vector_4 operator-() const { return Vector_4{-x(), -y(), -z(), -w()}; }
 
     /// Conversion operator to a Qt vector.
-    Q_DECL_CONSTEXPR explicit operator QVector4D() const { return QVector4D(x(), y(), z(), w()); }
+    constexpr explicit operator QVector4D() const { return QVector4D(x(), y(), z(), w()); }
 
     ///////////////////////////// Assignment operators ///////////////////////////
 
     /// Increments the components of this vector by the components of another vector.
-    Q_DECL_CONSTEXPR Vector_4& operator+=(const Vector_4& v) { x() += v.x(); y() += v.y(); z() += v.z(); w() += v.w(); return *this; }
+    constexpr Vector_4& operator+=(const Vector_4& v) { x() += v.x(); y() += v.y(); z() += v.z(); w() += v.w(); return *this; }
 
     /// Decrements the components of this vector by the components of another vector.
-    Q_DECL_CONSTEXPR Vector_4& operator-=(const Vector_4& v) { x() -= v.x(); y() -= v.y(); z() -= v.z(); w() -= v.w(); return *this; }
+    constexpr Vector_4& operator-=(const Vector_4& v) { x() -= v.x(); y() -= v.y(); z() -= v.z(); w() -= v.w(); return *this; }
 
     /// Multiplies each component of the vector with a scalar.
-    Q_DECL_CONSTEXPR Vector_4& operator*=(T s) { x() *= s; y() *= s; z() *= s; w() *= s; return *this; }
+    constexpr Vector_4& operator*=(T s) { x() *= s; y() *= s; z() *= s; w() *= s; return *this; }
 
     /// Divides each component of the vector by a scalar.
-    Q_DECL_CONSTEXPR Vector_4& operator/=(T s) { x() /= s; y() /= s; z() /= s; w() /= s; return *this; }
+    constexpr Vector_4& operator/=(T s) { x() /= s; y() /= s; z() /= s; w() /= s; return *this; }
 
     /// Sets all components of the vector to zero.
-    Q_DECL_CONSTEXPR Vector_4& operator=(Zero) { setZero(); return *this; }
+    constexpr Vector_4& operator=(Zero) { setZero(); return *this; }
 
     /// Sets all components of the vector to zero.
-    Q_DECL_CONSTEXPR void setZero() { this->fill(T(0)); }
+    constexpr void setZero() { this->fill(T(0)); }
 
     //////////////////////////// Component access //////////////////////////
 
     /// Returns the value of the X component of this vector.
-    Q_DECL_CONSTEXPR T x() const { return (*this)[0]; }
+    constexpr T x() const { return (*this)[0]; }
 
     /// Returns the value of the Y component of this vector.
-    Q_DECL_CONSTEXPR T y() const { return (*this)[1]; }
+    constexpr T y() const { return (*this)[1]; }
 
     /// Returns the value of the Z component of this vector.
-    Q_DECL_CONSTEXPR T z() const { return (*this)[2]; }
+    constexpr T z() const { return (*this)[2]; }
 
     /// Returns the value of the W component of this vector.
-    Q_DECL_CONSTEXPR T w() const { return (*this)[3]; }
+    constexpr T w() const { return (*this)[3]; }
 
     /// Returns a reference to the X component of this vector.
-    Q_DECL_CONSTEXPR T& x() { return (*this)[0]; }
+    constexpr T& x() { return (*this)[0]; }
 
     /// Returns a reference to the Y component of this vector.
-    Q_DECL_CONSTEXPR T& y() { return (*this)[1]; }
+    constexpr T& y() { return (*this)[1]; }
 
     /// Returns a reference to the Z component of this vector.
-    Q_DECL_CONSTEXPR T& z() { return (*this)[2]; }
+    constexpr T& z() { return (*this)[2]; }
 
     /// Returns a reference to the W component of this vector.
-    Q_DECL_CONSTEXPR T& w() { return (*this)[3]; }
+    constexpr T& w() { return (*this)[3]; }
 
     ////////////////////////////////// Comparison ////////////////////////////////
 
     /// \brief Compares two vectors for exact equality.
     /// \return \c true if all components are equal; \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator==(const Vector_4& v) const { return (v.x()==x()) && (v.y()==y()) && (v.z()==z()) && (v.w()==w()); }
+    constexpr bool operator==(const Vector_4& v) const { return (v.x()==x()) && (v.y()==y()) && (v.z()==z()) && (v.w()==w()); }
 
     /// \brief Compares two vectors for inequality.
     /// \return \c true if any of the components are not equal; \c false if all are equal.
-    Q_DECL_CONSTEXPR bool operator!=(const Vector_4& v) const { return (v.x()!=x()) || (v.y()!=y()) || (v.z()!=z()) || (v.w()!=w()); }
+    constexpr bool operator!=(const Vector_4& v) const { return (v.x()!=x()) || (v.y()!=y()) || (v.z()!=z()) || (v.w()!=w()); }
 
     /// \brief Tests if the vector is the null vector, i.e. if all components are zero.
     /// \return \c true if all components are exactly zero; \c false otherwise
-    Q_DECL_CONSTEXPR bool operator==(Zero) const { return (x()==T(0)) && (y()==T(0)) && (z()==T(0)) && (w()==T(0)); }
+    constexpr bool operator==(Zero) const { return (x()==T(0)) && (y()==T(0)) && (z()==T(0)) && (w()==T(0)); }
 
     /// \brief Tests if the vector is not a null vector, i.e. if any of the components is nonzero.
     /// \return \c true if any component is nonzero; \c false if all components are exactly zero.
-    Q_DECL_CONSTEXPR bool operator!=(Zero) const { return (x()!=T(0)) || (y()!=T(0)) || (z()!=T(0)) || (w()!=T(0)); }
+    constexpr bool operator!=(Zero) const { return (x()!=T(0)) || (y()!=T(0)) || (z()!=T(0)) || (w()!=T(0)); }
 
     /// \brief Tests if two vectors are equal within a given tolerance.
     /// \param v The vector to compare to this vector.
     /// \param tolerance A non-negative threshold for the equality test. The two vectors are considered equal if
     ///        the differences in the four components are all less than this tolerance value.
     /// \return \c true if this vector is equal to \a v within the given tolerance; \c false otherwise.
-    Q_DECL_CONSTEXPR bool equals(const Vector_4& v, T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool equals(const Vector_4& v, T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(v.x() - x()) <= tolerance && std::abs(v.y() - y()) <= tolerance && std::abs(v.z() - z()) <= tolerance && std::abs(v.w() - w()) <= tolerance;
     }
 
     /// \brief Test if the vector is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute vector components are all smaller than \a tolerance.
-    Q_DECL_CONSTEXPR bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
         return std::abs(x()) <= tolerance && std::abs(y()) <= tolerance && std::abs(z()) <= tolerance && std::abs(w()) <= tolerance;
     }
 
     ///////////////////////////////// Computations ////////////////////////////////
 
     /// Computes the inner dot product of this vector with the vector \a b.
-    Q_DECL_CONSTEXPR T dot(const Vector_4& b) const { return x()*b.x() + y()*b.y() + z()*b.z() + w()*b.w(); }
+    constexpr T dot(const Vector_4& b) const { return x()*b.x() + y()*b.y() + z()*b.z() + w()*b.w(); }
 
     /// Computes the squared length of the vector.
-    Q_DECL_CONSTEXPR T squaredLength() const { return x()*x() + y()*y() + z()*z() + w()*w(); }
+    constexpr T squaredLength() const { return x()*x() + y()*y() + z()*z() + w()*w(); }
 
     /// Computes the length of the vector.
-    Q_DECL_CONSTEXPR T length() const { return static_cast<T>(sqrt(squaredLength())); }
+    constexpr T length() const { return static_cast<T>(sqrt(squaredLength())); }
 
     /// \brief Normalizes this vector by dividing it by its length, making it a unit vector.
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa normalized(), normalizeSafely()
-    Q_DECL_CONSTEXPR inline void normalize() {
+    constexpr inline void normalize() {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector4::normalize", "Cannot normalize a vector with zero length.");
         *this /= length();
     }
@@ -223,7 +223,7 @@ public:
     /// \warning Do not call this function if the vector has length zero to avoid division by zero.
     /// In debug builds, a zero vector will be detected and reported. In release builds, the behavior is undefined.
     /// \sa normalize(), normalizeSafely()
-    Q_DECL_CONSTEXPR inline Vector_4 normalized() const {
+    constexpr inline Vector_4 normalized() const {
         OVITO_ASSERT_MSG(*this != Zero(), "Vector4::normalize", "Cannot normalize a vector with zero length.");
         return *this / length();
     }
@@ -233,7 +233,7 @@ public:
     /// This method rescales this vector to unit length if its original length is greater than \a epsilon.
     /// Otherwise it does nothing.
     /// \sa normalize(), normalized()
-    Q_DECL_CONSTEXPR inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
+    constexpr inline void normalizeSafely(T epsilon = FloatTypeEpsilon<T>()) {
         T l = length();
         if(l > epsilon)
             *this /= l;
@@ -242,12 +242,12 @@ public:
     ///////////////////////////////// Utilities ////////////////////////////////
 
     /// \brief Returns the index of the component with the maximum value.
-    Q_DECL_CONSTEXPR inline size_type maxComponent() const {
+    constexpr inline size_type maxComponent() const {
         return std::distance(std::array<T, 4>::begin(), std::max_element(std::array<T, 4>::begin(), std::array<T, 4>::end()));
     }
 
     /// \brief Returns the index of the component with the minimum value.
-    Q_DECL_CONSTEXPR inline size_type minComponent() const {
+    constexpr inline size_type minComponent() const {
         return std::distance(std::array<T, 4>::begin(), std::min_element(std::array<T, 4>::begin(), std::array<T, 4>::end()));
     }
 
@@ -260,35 +260,35 @@ public:
 /// \brief Computes the sum of two vectors.
 /// \relates Vector_4
 template<typename T>
-Q_DECL_CONSTEXPR Vector_4<T> operator+(const Vector_4<T>& a, const Vector_4<T>& b) {
+constexpr Vector_4<T> operator+(const Vector_4<T>& a, const Vector_4<T>& b) {
     return Vector_4<T>( a.x() + b.x(), a.y() + b.y(), a.z() + b.z(), a.w() + b.w() );
 }
 
 /// \brief Computes the difference of two vectors.
 /// \relates Vector_4
 template<typename T>
-Q_DECL_CONSTEXPR Vector_4<T> operator-(const Vector_4<T>& a, const Vector_4<T>& b) {
+constexpr Vector_4<T> operator-(const Vector_4<T>& a, const Vector_4<T>& b) {
     return Vector_4<T>( a.x() - b.x(), a.y() - b.y(), a.z() - b.z(), a.w() - b.w() );
 }
 
 /// \brief Computes the product of a vector and a scalar value.
 /// \relates Vector_4
 template<typename T>
-Q_DECL_CONSTEXPR Vector_4<T> operator*(const Vector_4<T>& a, T s) {
+constexpr Vector_4<T> operator*(const Vector_4<T>& a, T s) {
     return Vector_4<T>( a.x() * s, a.y() * s, a.z() * s, a.w() * s );
 }
 
 /// \brief Computes the product of a scalar value and a vector.
 /// \relates Vector_4
 template<typename T>
-Q_DECL_CONSTEXPR Vector_4<T> operator*(T s, const Vector_4<T>& a) {
+constexpr Vector_4<T> operator*(T s, const Vector_4<T>& a) {
     return Vector_4<T>( a.x() * s, a.y() * s, a.z() * s, a.w() * s );
 }
 
 /// \brief Computes the division of a vector by a scalar value.
 /// \relates Vector_4
 template<typename T>
-Q_DECL_CONSTEXPR Vector_4<T> operator/(const Vector_4<T>& a, T s) {
+constexpr Vector_4<T> operator/(const Vector_4<T>& a, T s) {
     return Vector_4<T>( a.x() / s, a.y() / s, a.z() / s, a.w() / s );
 }
 

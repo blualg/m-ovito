@@ -101,9 +101,12 @@ private:
 
     private:
 
+        bool _outputDeformationGradient;
+        ConstPropertyPtr _particleTypes;
+
         /// The internal PTM algorithm object.
-        /// Store it in an optional<> so that it can be released early.
-        std::optional<PTMAlgorithm> _algorithm{std::in_place};
+        /// Wrap it in an optional<> so that it can be constructed late and released early.
+        std::optional<PTMAlgorithm> _algorithm;
 
         // Modifier outputs:
         const PropertyPtr _rmsd;

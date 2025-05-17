@@ -580,7 +580,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::determineVertexColors()
 ******************************************************************************/
 bool SurfaceMeshVis::RenderableSurfaceBuilder::buildSurfaceTriangleMesh(const boost::dynamic_bitset<>& faceSubset, bool renderFacesTwoSided)
 {
-    if(cell() && cell()->is2D())
+    if(cell().is2D())
         throw Exception(tr("Cannot generate surface triangle mesh when domain is two-dimensional."));
 
     // Create accessor for the input mesh data.
@@ -602,20 +602,20 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::buildSurfaceTriangleMesh(const bo
     }
 
     // Convert vertex positions to reduced coordinates and transfer them to the output mesh.
-    OVITO_ASSERT(outputMesh()->vertices().size() == inputMeshData.vertexCount());
-    if(cell()) {
+    if(cell().hasPbc()) {
+        OVITO_ASSERT(outputMesh()->vertices().size() == inputMeshData.vertexCount());
         BufferReadAccess<Point3> vertexPositions(inputMeshData.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
         SurfaceMesh::vertex_index vidx = 0;
         for(Point3& p : outputMesh()->vertices()) {
-            p = cell()->absoluteToReduced(vertexPositions[vidx++]);
+            p = cell().absoluteToReduced(vertexPositions[vidx++]);
             OVITO_ASSERT(std::isfinite(p.x()) && std::isfinite(p.y()) && std::isfinite(p.z()));
         }
+        this_task::throwIfCanceled();
     }
-    this_task::throwIfCanceled();
 
     // Wrap mesh at periodic boundaries.
     for(size_t dim = 0; dim < 3; dim++) {
-        if(!cell() || cell()->hasPbc(dim) == false)
+        if(cell().hasPbc(dim) == false)
             continue;
 
         // Make sure all vertices are located inside the periodic box.
@@ -655,15 +655,14 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::buildSurfaceTriangleMesh(const bo
     }
 
     // Convert vertex positions back from reduced coordinates to absolute coordinates.
-    if(cell()) {
-        const AffineTransformation cellMatrix = cell()->matrix();
+    if(cell().hasPbc()) {
         for(Point3& p : outputMesh()->vertices())
-            p = cellMatrix * p;
+            p = cell().reducedToAbsolute(p);
     }
     this_task::throwIfCanceled();
 
     // Clip mesh at cutting planes and non-periodic cell boundaries.
-    if(!inputMesh()->cuttingPlanes().empty() || (cell() && _clipAtDomainBoundaries)) {
+    if(!inputMesh()->cuttingPlanes().empty() || (inputMesh()->domain() && _clipAtDomainBoundaries)) {
 
         // Store mapping of original faces to output faces in material index field of TriangleMesh.
         auto of = _originalFaceMap.begin();
@@ -676,16 +675,16 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::buildSurfaceTriangleMesh(const bo
             this_task::throwIfCanceled();
         }
 
-        if(cell() && _clipAtDomainBoundaries) {
+        if(inputMesh()->domain() && _clipAtDomainBoundaries) {
             for(size_t dim = 0; dim < 3; dim++) {
-                if(cell()->hasPbc(dim))
+                if(cell().hasPbc(dim))
                     continue;
 
-                Vector3 normal = cell()->cellNormalVector(dim);
-                outputMesh()->clipAtPlane(Plane3(cell()->cellOrigin(), -normal));
+                Vector3 normal = cell().cellNormalVector(dim);
+                outputMesh()->clipAtPlane(Plane3(cell().cellOrigin(), -normal));
                 this_task::throwIfCanceled();
 
-                outputMesh()->clipAtPlane(Plane3(cell()->cellOrigin() + cell()->cellMatrix().column(dim), normal));
+                outputMesh()->clipAtPlane(Plane3(cell().cellOrigin() + cell().cellMatrix().column(dim), normal));
                 this_task::throwIfCanceled();
             }
         }
@@ -709,7 +708,7 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::buildSurfaceTriangleMesh(const bo
 ******************************************************************************/
 void SurfaceMeshVis::RenderableSurfaceBuilder::buildCapTriangleMesh(const boost::dynamic_bitset<>& faceSubset)
 {
-    OVITO_ASSERT(cell());
+    OVITO_ASSERT(inputMesh()->domain());
 
     // Create the output mesh object.
     _capPolygonsMesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
@@ -722,10 +721,10 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::buildCapTriangleMesh(const boost:
     // Access the 'Filled' property of volumetric regions if it is defined for the input surface mesh.
     BufferReadAccess<SelectionIntType> isFilledProperty(inputMeshData.regionProperty(SurfaceMeshRegions::IsFilledProperty));
     bool hasRegions = isFilledProperty && faceRegions;
-    bool flipCapNormal = (cell()->matrix().determinant() < 0);
+    bool flipCapNormal = (cell().cellMatrix().determinant() < 0);
 
     // Convert vertex positions to reduced coordinates.
-    AffineTransformation invCellMatrix = cell()->inverseMatrix();
+    AffineTransformation invCellMatrix = cell().reciprocalCellMatrix();
     if(flipCapNormal)
         invCellMatrix.column(0) = -invCellMatrix.column(0);
 
@@ -747,7 +746,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::buildCapTriangleMesh(const boost:
     for(size_t dim = 0; dim < 3; dim++) {
 
         // Are periodic boundary conditions enabled for the current simulation cell direction?
-        bool periodic = cell()->hasPbc(dim);
+        bool periodic = cell().hasPbc(dim);
 
         // Skip non-periodic boundaries unless clipping of the mesh at non-periodic boundaries has been enabled.
         if(!periodic && !_clipAtDomainBoundaries)
@@ -824,12 +823,12 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::buildCapTriangleMesh(const boost:
                             throw Exception(tr("Surface mesh does not represent a proper closed manifold."));
                         if(!_clipAtDomainBoundaries) {
                             sliceContourAtPeriodicBoundaries(contour,
-                                std::array<bool,2>{{ cell()->hasPbc((dim+1)%3), cell()->hasPbc((dim+2)%3) }},
+                                std::array<bool,2>{{ cell().hasPbc((dim+1)%3), cell().hasPbc((dim+2)%3) }},
                                 openContours, closedContours);
                         }
                         else {
                             sliceAndClipContour(contour,
-                                std::array<bool,2>{{ cell()->hasPbc((dim+1)%3), cell()->hasPbc((dim+2)%3) }},
+                                std::array<bool,2>{{ cell().hasPbc((dim+1)%3), cell().hasPbc((dim+2)%3) }},
                                 openContours, closedContours);
                         }
                         break;
@@ -919,9 +918,9 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::buildCapTriangleMesh(const boost:
                 int& isInside = (faceMode != CapPolygonTessellator::BackFace) ? isBoxCornerInside3DRegion[0] : isBoxCornerInside3DRegion[dim+1];
                 if(isInside == -1) {
                     if(closedContours.empty()) {
-                        Point3 corner = cell()->cellOrigin();
+                        Point3 corner = cell().cellOrigin();
                         if(faceMode == CapPolygonTessellator::BackFace)
-                            corner += cell()->cellMatrix().column(dim);
+                            corner += cell().cellMatrix().column(dim);
                         if(std::optional<std::pair<SurfaceMesh::region_index, FloatType>> region = inputMeshData.locatePoint(corner, 0, faceSubset)) {
                             if(hasRegions) {
                                 if(region->first >= 0 && region->first < isFilledProperty.size()) {
@@ -1028,11 +1027,9 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::splitFace(int faceIndex, int oldV
         else {
             Vector3 delta = outputMesh()->vertex(vi2) - outputMesh()->vertex(vi1);
             delta[dim] -= FloatType(1);
-            if(cell()) {
-                for(size_t d = dim + 1; d < 3; d++) {
-                    if(cell()->hasPbc(d))
-                        delta[d] -= std::floor(delta[d] + FloatType(0.5));
-                }
+            for(size_t d = dim + 1; d < 3; d++) {
+                if(cell().hasPbc(d))
+                    delta[d] -= std::floor(delta[d] + FloatType(0.5));
             }
             FloatType t;
             if(delta[dim] != 0)
@@ -1118,7 +1115,6 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::splitFace(int faceIndex, int oldV
 ******************************************************************************/
 std::vector<Point2> SurfaceMeshVis::RenderableSurfaceBuilder::traceContour(const SurfaceMeshTopology& inputMeshTopology, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim, CapPolygonTessellator::FaceMode faceMode) const
 {
-    OVITO_ASSERT(cell());
     size_t dim1 = (dim + 1) % 3;
     size_t dim2 = (dim + 2) % 3;
     std::vector<Point2> contour;
@@ -1139,11 +1135,11 @@ std::vector<Point2> SurfaceMeshVis::RenderableSurfaceBuilder::traceContour(const
             delta[dim] -= FloatType(1);
         }
 
-        if(cell()->hasPbc(dim1)) {
+        if(cell().hasPbc(dim1)) {
             FloatType& c = delta[dim1];
             c -= std::floor(c + FloatType(0.5));
         }
-        if(cell()->hasPbc(dim2)) {
+        if(cell().hasPbc(dim2)) {
             FloatType& c = delta[dim2];
             c -= std::floor(c + FloatType(0.5));
         }

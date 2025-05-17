@@ -66,11 +66,11 @@ public:
     /// \brief Initializes a Scaling with the scaling factors and the coordinate system.
     /// \param scaling The scaling factors in x, y and z directions of the axis system specified by \a orientation.
     /// \param orientation The orientation of the axis system the scaling is applied in.
-    Q_DECL_CONSTEXPR ScalingT(const Vector_3<T>& scaling, const QuaternionT<T>& orientation) : S(scaling), Q(orientation) {}
+    constexpr ScalingT(const Vector_3<T>& scaling, const QuaternionT<T>& orientation) : S(scaling), Q(orientation) {}
 
     /// \brief Initializes the object to the identity.
     /// The Scaling structure is initialized with the scaling factors (1,1,1), i.e. no scaling at all.
-    Q_DECL_CONSTEXPR ScalingT(Identity) : S(T(1)), Q(typename QuaternionT<T>::Identity()) {}
+    constexpr ScalingT(Identity) : S(T(1)), Q(typename QuaternionT<T>::Identity()) {}
 
     /////////////////////////////// Unary operators //////////////////////////////
 
@@ -123,22 +123,22 @@ public:
     /// \brief Compares two scaling structures for equality.
     /// \param s The scaling to compare with.
     /// \return \c true if each of the components are equal; \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator==(const ScalingT& s) const { return (s.S==S) && (s.Q==Q); }
+    constexpr bool operator==(const ScalingT& s) const { return (s.S==S) && (s.Q==Q); }
 
     /// \brief Compares two scaling structures for inequality.
     /// \param s The scaling to compare with.
     /// \return \c true if any of the components are not equal; \c false if all are equal.
-    Q_DECL_CONSTEXPR bool operator!=(const ScalingT& s) const { return (s.S!=S) || (s.Q!=Q); }
+    constexpr bool operator!=(const ScalingT& s) const { return (s.S!=S) || (s.Q!=Q); }
 
     /// \brief Returns whether this is the identity.
     /// \return \c true if the scaling in each of the three spatial directions is 1;
     ///         \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator==(Identity) const { return (S == Vector_3<T>(1)); }
+    constexpr bool operator==(Identity) const { return (S == Vector_3<T>(1)); }
 
     /// \brief Returns whether this is not the identity.
     /// \return \c true if the scaling in any of the three spatial directions is not 1;
     ///         \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator!=(Identity) const { return (S != Vector_3<T>(1)); }
+    constexpr bool operator!=(Identity) const { return (S != Vector_3<T>(1)); }
 
     ///////////////////////////////// Interpolation //////////////////////////////
 
