@@ -25,8 +25,8 @@
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/core/utilities/MemoryPool.h>
+#include <ovito/delaunay/DelaunayTessellationSpatialQuery.h>
 #include "InterfaceMesh.h"
-#include "DelaunayTessellationSpatialQuery.h"
 
 namespace Ovito {
 

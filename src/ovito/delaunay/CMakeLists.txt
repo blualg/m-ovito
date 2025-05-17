@@ -24,6 +24,7 @@
 OVITO_STANDARD_PLUGIN(Delaunay
     SOURCES
         DelaunayTessellation.cpp
+        DelaunayTessellationSpatialQuery.cpp
     PLUGIN_DEPENDENCIES
         Mesh StdObj
     LIB_DEPENDENCIES
