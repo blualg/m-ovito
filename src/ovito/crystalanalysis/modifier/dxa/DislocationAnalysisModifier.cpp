@@ -30,6 +30,7 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "DislocationAnalysisModifier.h"
 #include "DislocationAnalysisEngine.h"
+#include "DislocationAnalysisEngine2.h"
 
 namespace Ovito {
 
@@ -47,6 +48,7 @@ DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, lineSmoothingEnabled);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, lineSmoothingLevel);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, lineCoarseningEnabled);
 DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, linePointInterval);
+DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, useNewAlgorithm);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, dislocationVis);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, defectMeshVis);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, interfaceMeshVis);
@@ -61,6 +63,7 @@ SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, lineSmoothingEnabled, "Lin
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, lineSmoothingLevel, "Line smoothing level");
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, lineCoarseningEnabled, "Line coarsening enabled");
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, linePointInterval, "Line point spacing");
+SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, useNewAlgorithm, "New DXA algorithm");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DislocationAnalysisModifier, maxTrialCircuitSize, IntegerParameterUnit, 3);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DislocationAnalysisModifier, circuitStretchability, IntegerParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DislocationAnalysisModifier, defectMeshSmoothingLevel, IntegerParameterUnit, 0);
@@ -210,11 +213,20 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisM
         interfaceMesh->setVisElement(interfaceMeshVis());
     }
 
-    return std::make_shared<DislocationAnalysisEngine>(
-        std::move(structures), particles->elementCount(), inputCrystalStructure(), maxTrialCircuitSize(), circuitStretchability(),
-        selectionProperty, grainProperty, std::move(preferredCrystalOrientations), onlyPerfectDislocations(), markCoreAtoms(),
-        defectMeshSmoothingLevel(), std::move(dislocations), std::move(defectMesh), std::move(interfaceMesh),
-        lineSmoothingEnabled() ? lineSmoothingLevel() : 0, lineCoarseningEnabled() ? linePointInterval() : 0);
+    if(!useNewAlgorithm()) {
+        return std::make_shared<DislocationAnalysisEngine>(
+            std::move(structures), particles->elementCount(), inputCrystalStructure(), maxTrialCircuitSize(), circuitStretchability(),
+            selectionProperty, grainProperty, std::move(preferredCrystalOrientations), onlyPerfectDislocations(), markCoreAtoms(),
+            defectMeshSmoothingLevel(), std::move(dislocations), std::move(defectMesh), std::move(interfaceMesh),
+            lineSmoothingEnabled() ? lineSmoothingLevel() : 0, lineCoarseningEnabled() ? linePointInterval() : 0);
+    }
+    else {
+        return std::make_shared<DislocationAnalysisEngine2>(
+            std::move(structures), particles->elementCount(), inputCrystalStructure(), maxTrialCircuitSize(), circuitStretchability(),
+            selectionProperty, grainProperty, std::move(preferredCrystalOrientations), onlyPerfectDislocations(), markCoreAtoms(),
+            defectMeshSmoothingLevel(), std::move(dislocations), std::move(defectMesh), std::move(interfaceMesh),
+            lineSmoothingEnabled() ? lineSmoothingLevel() : 0, lineCoarseningEnabled() ? linePointInterval() : 0);
+    }
 }
 
 /******************************************************************************

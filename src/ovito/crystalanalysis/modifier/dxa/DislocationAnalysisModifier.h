@@ -101,6 +101,9 @@ private:
 
     /// The visualization element for rendering the dislocations.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<DislocationVis>, dislocationVis, setDislocationVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
+
+   /// Enables the new experimental DXA algorithm.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, useNewAlgorithm, setUseNewAlgorithm);
 };
 
 }   // End of namespace
