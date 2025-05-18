@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/data/DataVis.h>
 #include <ovito/core/rendering/CylinderPrimitive.h>
 #include <ovito/core/rendering/FrameGraph.h>
+#include "Lines.h"
 
 namespace Ovito {
 

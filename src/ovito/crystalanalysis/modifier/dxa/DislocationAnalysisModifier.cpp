@@ -52,6 +52,7 @@ DEFINE_PROPERTY_FIELD(DislocationAnalysisModifier, useNewAlgorithm);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, dislocationVis);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, defectMeshVis);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, interfaceMeshVis);
+DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, dislocationSegmentsVis);
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, inputCrystalStructure, "Input crystal structure");
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, maxTrialCircuitSize, "Trial circuit length");
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, circuitStretchability, "Circuit stretchability");
@@ -94,6 +95,11 @@ void DislocationAnalysisModifier::initializeObject(ObjectInitializationFlags fla
         interfaceMeshVis()->setReverseOrientation(true);
         interfaceMeshVis()->setCapTransparency(0.5);
         interfaceMeshVis()->setObjectTitle(tr("Interface mesh"));
+
+        setDislocationSegmentsVis(OORef<LinesVis>::create(flags));
+        dislocationSegmentsVis()->setWrappedLines(true);
+        dislocationSegmentsVis()->setShadingMode(LinesVis::ShadingMode::NormalShading);
+        dislocationSegmentsVis()->setObjectTitle(tr("Dislocation segments"));
 
         // Create the structure types.
         ParticleType::PredefinedStructureType predefTypes[] = {
@@ -196,24 +202,24 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisM
     dislocations->setDomain(simCell);
     dislocations->setVisElement(dislocationVis());
 
-    // Create an empty surface mesh object.
-    DataOORef<SurfaceMesh> defectMesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Defect mesh"));
-    defectMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-defect-mesh")));
-    defectMesh->setCreatedByNode(request.modificationNode());
-    defectMesh->setDomain(simCell);
-    defectMesh->setVisElement(defectMeshVis());
-
-    // Create an empty surface mesh object for the optional interface mesh.
-    DataOORef<SurfaceMesh> interfaceMesh;
-    if(outputInterfaceMesh()) {
-        interfaceMesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Interface mesh"));
-        interfaceMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-interface-mesh")));
-        interfaceMesh->setCreatedByNode(request.modificationNode());
-        interfaceMesh->setDomain(simCell);
-        interfaceMesh->setVisElement(interfaceMeshVis());
-    }
-
     if(!useNewAlgorithm()) {
+        // Create an empty surface mesh object.
+        DataOORef<SurfaceMesh> defectMesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Defect mesh"));
+        defectMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-defect-mesh")));
+        defectMesh->setCreatedByNode(request.modificationNode());
+        defectMesh->setDomain(simCell);
+        defectMesh->setVisElement(defectMeshVis());
+
+        // Create an empty surface mesh object for the optional interface mesh.
+        DataOORef<SurfaceMesh> interfaceMesh;
+        if(outputInterfaceMesh()) {
+            interfaceMesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Interface mesh"));
+            interfaceMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-interface-mesh")));
+            interfaceMesh->setCreatedByNode(request.modificationNode());
+            interfaceMesh->setDomain(simCell);
+            interfaceMesh->setVisElement(interfaceMeshVis());
+        }
+
         return std::make_shared<DislocationAnalysisEngine>(
             std::move(structures), particles->elementCount(), inputCrystalStructure(), maxTrialCircuitSize(), circuitStretchability(),
             selectionProperty, grainProperty, std::move(preferredCrystalOrientations), onlyPerfectDislocations(), markCoreAtoms(),
@@ -221,11 +227,18 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisM
             lineSmoothingEnabled() ? lineSmoothingLevel() : 0, lineCoarseningEnabled() ? linePointInterval() : 0);
     }
     else {
+        // Create an empty lines object.
+        DataOORef<Lines> dislocationSegments = DataOORef<Lines>::create(ObjectInitializationFlag::DontCreateVisElement);
+        dislocationSegments->setIdentifier(input.generateUniqueIdentifier<Lines>(QStringLiteral("dxa-dislocation-segments")));
+        dislocationSegments->setCreatedByNode(request.modificationNode());
+        dislocationSegments->setVisElement(dislocationSegmentsVis());
+
         return std::make_shared<DislocationAnalysisEngine2>(
-            std::move(structures), particles->elementCount(), inputCrystalStructure(), maxTrialCircuitSize(), circuitStretchability(),
-            selectionProperty, grainProperty, std::move(preferredCrystalOrientations), onlyPerfectDislocations(), markCoreAtoms(),
-            defectMeshSmoothingLevel(), std::move(dislocations), std::move(defectMesh), std::move(interfaceMesh),
-            lineSmoothingEnabled() ? lineSmoothingLevel() : 0, lineCoarseningEnabled() ? linePointInterval() : 0);
+            std::move(structures), particles->elementCount(), inputCrystalStructure(),
+            selectionProperty, grainProperty, std::move(preferredCrystalOrientations),
+            std::move(dislocations), std::move(dislocationSegments),
+            lineSmoothingEnabled() ? lineSmoothingLevel() : 0,
+            lineCoarseningEnabled() ? linePointInterval() : 0);
     }
 }
 

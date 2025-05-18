@@ -99,10 +99,7 @@ public:
         Vector3 physicalVector;
 
         /// The ideal vector in the reference configuration assigned to this edge.
-        Vector3 clusterVector;
-
-        /// The cluster transition when going from the cluster of node 1 to the cluster of node 2.
-        ClusterTransition* clusterTransition;
+        EdgeVector clusterVector;
 
         /// The Burgers circuit going through this edge.
         /// This field is used by the DislocationTracer class.
@@ -167,14 +164,10 @@ public:
 
     /// Returns the mapping from the physical configuration of the system
     /// to the stress-free imaginary configuration.
-    ElasticMapping& elasticMapping() { return _elasticMapping; }
-
-    /// Returns the mapping from the physical configuration of the system
-    /// to the stress-free imaginary configuration.
     const ElasticMapping& elasticMapping() const { return _elasticMapping; }
 
     /// Returns the underlying tessellation of the atomistic system.
-    DelaunayTessellation& tessellation() { return elasticMapping().tessellation(); }
+    DelaunayTessellation& tessellation() const { return const_cast<DelaunayTessellation&>(elasticMapping().tessellation()); }
 
     /// Returns the structure analysis object.
     const StructureAnalysis& structureAnalysis() const { return elasticMapping().structureAnalysis(); }
@@ -208,7 +201,7 @@ private:
 
     /// The underlying mapping from the physical configuration of the system
     /// to the stress-free imaginary configuration.
-    ElasticMapping& _elasticMapping;
+    const ElasticMapping& _elasticMapping;
 
     /// Extra per-vertex info kept by the interface mesh.
     std::vector<Vertex> _vertices;

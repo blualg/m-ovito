@@ -102,7 +102,8 @@ void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
             }
 
             // Transfer cluster vector from Delaunay edge to interface mesh edge.
-            std::tie(_edges[edge].clusterVector, _edges[edge].clusterTransition) = elasticMapping().getEdgeClusterVector(vertexIndices[i], vertexIndices[(i+1)%3]);
+            _edges[edge].clusterVector = elasticMapping().getEdgeClusterVector(vertexIndices[i], vertexIndices[(i+1) % 3]);
+            OVITO_ASSERT(_edges[edge].clusterVector.isValid());
         }
     };
 
@@ -162,9 +163,9 @@ void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
         for(Edge* edge = vertex.edges(); edge != nullptr; edge = edge->nextVertexEdge()) {
             OVITO_ASSERT(edge->oppositeEdge()->oppositeEdge() == edge);
             OVITO_ASSERT(edge->physicalVector.equals(-edge->oppositeEdge()->physicalVector, CA_ATOM_VECTOR_EPSILON));
-            OVITO_ASSERT(edge->clusterTransition == edge->oppositeEdge()->clusterTransition->reverse);
-            OVITO_ASSERT(edge->clusterTransition->reverse == edge->oppositeEdge()->clusterTransition);
-            OVITO_ASSERT(edge->clusterVector.equals(-edge->oppositeEdge()->clusterTransition->transform(edge->oppositeEdge()->clusterVector), CA_LATTICE_VECTOR_EPSILON));
+            OVITO_ASSERT(edge->clusterVector.transition() == edge->oppositeEdge()->clusterVector.transition()->reverse);
+            OVITO_ASSERT(edge->clusterVector.transition()->reverse == edge->oppositeEdge()->clusterVector.transition());
+            OVITO_ASSERT(edge->clusterVector.vec().equals((-edge->oppositeEdge()->clusterVector).vec(), CA_LATTICE_VECTOR_EPSILON));
             OVITO_ASSERT(edge->nextFaceEdge()->prevFaceEdge() == edge);
             OVITO_ASSERT(edge->prevFaceEdge()->nextFaceEdge() == edge);
             OVITO_ASSERT(edge->nextFaceEdge()->nextFaceEdge() == edge->prevFaceEdge());

@@ -141,9 +141,9 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     progress.nextSubStep();
     _elasticMapping->generateTessellationEdges(progress);
 
-    // Assign each vertex to a cluster.
+    // Assign each atom to a cluster.
     progress.nextSubStep();
-    _elasticMapping->assignVerticesToClusters(progress);
+    _elasticMapping->assignAtomsToClusters(progress);
 
     // Determine the ideal vector corresponding to each edge of the tessellation.
     progress.nextSubStep();

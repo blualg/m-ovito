@@ -131,59 +131,64 @@ public:
     size_type numberOfVertices() const { return _dt->nb_vertices(); }
 
     /// Returns the beginning of the iterator range over all Delaunay tetrahedra.
-    CellIterator begin_cells() const { return boost::make_counting_iterator<size_type>(0); }
+    inline CellIterator begin_cells() const { return boost::make_counting_iterator<size_type>(0); }
 
     /// Returns the end of the iterator range over all Delaunay tetrahedra.
-    CellIterator end_cells() const { return boost::make_counting_iterator<size_type>(_dt->nb_cells()); }
+    inline CellIterator end_cells() const { return boost::make_counting_iterator<size_type>(_dt->nb_cells()); }
 
     /// Returns the iterator range over all Delaunay tetrahedra.
-    auto cells() const { return boost::make_iterator_range(begin_cells(), end_cells()); }
+    inline auto cells() const { return boost::make_iterator_range(begin_cells(), end_cells()); }
 
     void setCellIndex(CellHandle cell, qint64 value) {
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         _cellInfo[cell].index = value;
     }
 
-    qint64 getCellIndex(CellHandle cell) const {
+    inline qint64 getCellIndex(CellHandle cell) const {
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         return _cellInfo[cell].index;
     }
 
-    void setUserField(CellHandle cell, int value) {
+    inline void setUserField(CellHandle cell, int value) {
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         _cellInfo[cell].userField = value;
     }
 
-    int getUserField(CellHandle cell) const {
+    inline int getUserField(CellHandle cell) const {
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         return _cellInfo[cell].userField;
     }
 
     /// Determines whether the given tessellation cell connects four physical vertices.
     /// Returns false if one of the four vertices is the infinite vertex.
-    bool isFiniteCell(CellHandle cell) const {
+    inline bool isFiniteCell(CellHandle cell) const {
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         return _dt->cell_is_finite(cell);
     }
 
     /// Determines whether the given Delaunay vertex is a ghost vertex or a primary vertex.
     /// This method must not be called for the infinite vertex.
-    bool isGhostVertex(VertexHandle vertex) const {
+    inline bool isGhostVertex(VertexHandle vertex) const {
         OVITO_ASSERT(vertex >= 0 && vertex < numberOfVertices());
         return vertex >= _primaryVertexCount;
     }
 
     /// Returns true if the given cell is a ghost cell or an infinite cell.
-    bool isGhostCell(CellHandle cell) const {
+    inline bool isGhostCell(CellHandle cell) const {
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         return _cellInfo[cell].isGhost;
     }
 
     /// Returns the i-th vertex of the given Delaunay cell.
-    VertexHandle cellVertex(CellHandle cell, size_type localIndex) const {
+    inline VertexHandle cellVertex(CellHandle cell, size_type localIndex) const {
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         OVITO_ASSERT(localIndex >= 0 && localIndex < 4);
         return _dt->cell_vertex(cell, localIndex);
+    }
+
+    /// Returns the four vertices of the given Delaunay cell.
+    std::array<VertexHandle, 4> cellVertices(CellHandle cell) const {
+        return std::array<VertexHandle, 4>{{ cellVertex(cell, 0), cellVertex(cell, 1), cellVertex(cell, 2), cellVertex(cell, 3) }};
     }
 
     /// Returns the spatial coordinates of the given Delaunay vertex.

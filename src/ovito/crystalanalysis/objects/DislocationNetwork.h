@@ -98,7 +98,7 @@ protected:
 
 private:
 
-    /// Smoothes the sampling points of a dislocation line.
+    /// Smoothens the sampling points of a dislocation line.
     static void smoothDislocationLine(int smoothingLevel, std::deque<Point3>& line, bool isLoop);
 
     /// Removes some of the sampling points from a dislocation line.

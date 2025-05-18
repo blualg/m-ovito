@@ -276,8 +276,8 @@ void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize, TaskProgr
         startNode.burgersSearchStruct = start;
 
         // This is the cluster we work in.
-        OVITO_ASSERT(startNode.edges()->clusterTransition);
-        Q_DECL_UNUSED Cluster* cluster = startNode.edges()->clusterTransition->cluster1;
+        OVITO_ASSERT(startNode.edges()->clusterVector.isValid());
+        Q_DECL_UNUSED Cluster* cluster = startNode.edges()->clusterVector.transition()->cluster1;
         OVITO_ASSERT(cluster && cluster->id != 0);
 
         bool foundBurgersCircuit = false;
@@ -305,7 +305,7 @@ void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize, TaskProgr
 
                 // Calculate reference lattice coordinates of the neighboring vertex.
                 Point3 neighborCoord = current->latticeCoord;
-                neighborCoord += current->tm * edge->clusterVector;
+                neighborCoord += current->tm * edge->clusterVector.vec();
 
                 // If this neighbor has been assigned reference lattice coordinates before,
                 // then perform the Burgers circuit test now by comparing the previous to the new coordinates.
@@ -317,7 +317,7 @@ void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize, TaskProgr
                     if(burgersVector.isZero(CA_LATTICE_VECTOR_EPSILON) == false) {
                         // Found circuit with non-zero Burgers vector.
                         // Check if circuit encloses disclination.
-                        Matrix3 frankRotation = current->tm * edge->clusterTransition->reverse->tm;
+                        Matrix3 frankRotation = current->tm * edge->clusterVector.transition()->reverse->tm;
                         if(frankRotation.equals(neighborStruct->tm, CA_TRANSITION_MATRIX_EPSILON)) {
                             // Stop as soon as a valid Burgers circuit has been found.
                             if(createBurgersCircuit(edge, maxBurgersCircuitSize)) {
@@ -334,10 +334,10 @@ void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize, TaskProgr
                     neighborStruct->latticeCoord = neighborCoord;
                     neighborStruct->predecessorEdge = edge;
                     neighborStruct->recursiveDepth = current->recursiveDepth + 1;
-                    if(edge->clusterTransition->isSelfTransition())
+                    if(edge->clusterVector.transition()->isSelfTransition())
                         neighborStruct->tm = current->tm;
                     else
-                        neighborStruct->tm = current->tm * edge->clusterTransition->reverse->tm;
+                        neighborStruct->tm = current->tm * edge->clusterVector.transition()->reverse->tm;
                     neighborStruct->nextToProcess = nullptr;
                     neighbor->burgersSearchStruct = neighborStruct;
                     OVITO_ASSERT(end_of_queue->nextToProcess == nullptr);
@@ -438,9 +438,9 @@ bool DislocationTracer::createBurgersCircuit(InterfaceMesh::Edge* edge, int maxB
     Vector3 b = Vector3::Zero();
     do {
         edgeSum += e->physicalVector;
-        b += frankRotation * e->clusterVector;
-        if(e->clusterTransition->isSelfTransition() == false)
-            frankRotation = frankRotation * e->clusterTransition->reverse->tm;
+        b += frankRotation * e->clusterVector.vec();
+        if(e->clusterVector.transition()->isSelfTransition() == false)
+            frankRotation = frankRotation * e->clusterVector.transition()->reverse->tm;
         e = e->nextCircuitEdge;
     }
     while(e != forwardCircuit->firstEdge);
@@ -479,7 +479,7 @@ bool DislocationTracer::createBurgersCircuit(InterfaceMesh::Edge* edge, int maxB
 
     OVITO_ASSERT(!forwardCircuit->calculateBurgersVector().localVec().isZero(CA_LATTICE_VECTOR_EPSILON));
     OVITO_ASSERT(!b.isZero(CA_LATTICE_VECTOR_EPSILON));
-    createAndTraceSegment(ClusterVector(b, forwardCircuit->firstEdge->clusterTransition->cluster1), forwardCircuit, maxBurgersCircuitSize);
+    createAndTraceSegment(ClusterVector(b, forwardCircuit->firstEdge->clusterVector.transition()->cluster1), forwardCircuit, maxBurgersCircuitSize);
 
     return true;
 }
@@ -568,8 +568,8 @@ BurgersCircuit* DislocationTracer::buildReverseCircuit(BurgersCircuit* forwardCi
         OVITO_ASSERT(facet1->circuit == nullptr || facet1->circuit == backwardCircuit);
         OVITO_ASSERT(facet2->circuit == nullptr || facet2->circuit == backwardCircuit);
         OVITO_ASSERT(edge1->vertex2() == edge2->vertex1());
-        OVITO_ASSERT((edge1->clusterVector + oppositeEdge1->clusterTransition->tm * oppositeEdge1->clusterVector).isZero(CA_LATTICE_VECTOR_EPSILON));
-        OVITO_ASSERT((edge2->clusterVector + oppositeEdge2->clusterTransition->tm * oppositeEdge2->clusterVector).isZero(CA_LATTICE_VECTOR_EPSILON));
+        OVITO_ASSERT((edge1->clusterVector.vec() + oppositeEdge1->clusterVector.transition()->tm * oppositeEdge1->clusterVector.vec()).isZero(CA_LATTICE_VECTOR_EPSILON));
+        OVITO_ASSERT((edge2->clusterVector.vec() + oppositeEdge2->clusterVector.transition()->tm * oppositeEdge2->clusterVector.vec()).isZero(CA_LATTICE_VECTOR_EPSILON));
 
         if(facet1 != facet2) {
             InterfaceMesh::Edge* innerEdge1 = oppositeEdge1->prevFaceEdge()->oppositeEdge();
@@ -1363,14 +1363,18 @@ void DislocationTracer::createSecondarySegment(InterfaceMesh::Edge* firstEdge, B
 
         circuitEnd->nextCircuitEdge = edge;
         edgeSum += edge->physicalVector;
-        burgersVector += frankRotation * edge->clusterVector;
-        if(!baseCluster) baseCluster = edge->clusterTransition->cluster1;
-        if(!edge->clusterTransition->isSelfTransition()) frankRotation = frankRotation * edge->clusterTransition->reverse->tm;
-        if(edge == circuitStart) break;
+        burgersVector += frankRotation * edge->clusterVector.vec();
+        if(!baseCluster)
+            baseCluster = edge->clusterVector.transition()->cluster1;
+        if(!edge->clusterVector.transition()->isSelfTransition())
+            frankRotation = frankRotation * edge->clusterVector.transition()->reverse->tm;
+        if(edge == circuitStart)
+            break;
         circuitEnd = edge;
         edgeCount++;
 
-        if(edgeCount > maxCircuitLength) break;
+        if(edgeCount > maxCircuitLength)
+            break;
     }
 
     // Create secondary segment only for dislocations (b != 0) and small enough dislocation cores.

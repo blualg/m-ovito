@@ -79,13 +79,15 @@ public:
 
     /// Translates this lattice vector to the frame of reference of another cluster.
     /// Returns true if operation was successful.
-    /// Returns false if the transformation could not be computed.
+    /// Returns false if the transformation could not be computed because the two clusters are not connected.
     bool transformToCluster(Cluster* otherCluster, ClusterGraph& graph) {
         OVITO_ASSERT(otherCluster != nullptr);
         OVITO_ASSERT(this->cluster() != nullptr);
-        if(this->cluster() == otherCluster) return true;
+        if(this->cluster() == otherCluster)
+            return true;
         ClusterTransition* t = graph.determineClusterTransition(this->cluster(), otherCluster);
-        if(!t) return false;
+        if(!t)
+            return false;
         this->_vec = t->tm * this->localVec();
         this->_cluster = otherCluster;
         return true;
@@ -97,6 +99,11 @@ public:
     /// Not-equal comparison operator.
     bool operator!=(const ClusterVector& other) const { return _vec != other._vec || _cluster != other._cluster; }
 
+    /// Prints a cluster vector to an output stream.
+    friend inline std::ostream& operator<<(std::ostream& stream, const ClusterVector& v) {
+        return stream << v.localVec() << "[cluster " << v.cluster()->id << "]";
+    }
+
 private:
 
     /// The XYZ components of the vector in the local lattice coordinate system.
@@ -106,11 +113,5 @@ private:
     /// This may be NULL if the vector's components are (0,0,0).
     Cluster* _cluster;
 };
-
-/// Outputs a cluster vector to the console.
-inline std::ostream& operator<<(std::ostream& stream, const ClusterVector& v)
-{
-    return stream << v.localVec() << "[cluster " << v.cluster()->id << "]";
-}
 
 }   // End of namespace

@@ -49,7 +49,7 @@ public:
 
     /// Constructs a new memory pool.
     /// \param pageSize Controls the number of objects per memory page allocated by this pool.
-    MemoryPool(size_t pageSize = 1024) : _lastPageNumber(pageSize), _pageSize(pageSize) {}
+    MemoryPool(size_t pageSize = 1048576 / sizeof(T)) : _lastPageNumber(pageSize), _pageSize(pageSize) { OVITO_ASSERT(pageSize > 0); }
 
     /// Releases the memory reserved by this pool and destroys all allocated object instances.
     ~MemoryPool() { clear(); }
@@ -104,6 +104,24 @@ public:
         std::swap(_lastPageNumber, other._lastPageNumber);
         std::swap(_pageSize, other._pageSize);
         std::swap(_alloc, other._alloc);
+    }
+
+    /// Returns the number of object instances currently allocated by this memory pool.
+    size_t count() const {
+        return _pages.empty() ? 0 : (_pages.size() - 1) * _pageSize + _lastPageNumber;
+    }
+
+    /// Calls the given function for each object instance in the memory pool.
+    template<typename Functor>
+    void visitAll(Functor&& func) {
+        for(auto page : _pages) {
+            T* p = page;
+            T* pend = p + _pageSize;
+            if(page == _pages.back())
+                pend = p + _lastPageNumber;
+            for(; p != pend; ++p)
+                func(p);
+        }
     }
 
 private:

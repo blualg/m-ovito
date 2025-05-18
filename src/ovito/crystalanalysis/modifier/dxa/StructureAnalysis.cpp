@@ -39,7 +39,7 @@ StructureAnalysis::LatticeStructure StructureAnalysis::_latticeStructures[NUM_LA
 /// Fast sorting function for an array of (bounded) integers.
 /// Sorts values in descending order.
 template<typename iterator>
-void bitmapSort(iterator begin, iterator end, int max)
+static void bitmapSort(iterator begin, iterator end, int max)
 {
     OVITO_ASSERT(max <= 32);
     OVITO_ASSERT(end >= begin);

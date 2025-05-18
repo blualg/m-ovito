@@ -79,7 +79,7 @@ private:
         /// Number of steps between this atom and the start atom of the recursive walk.
         int distance;
 
-        /// Linked list.
+        /// Linked list pointer.
         PathNode* nextToProcess = nullptr;
     };
 

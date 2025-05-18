@@ -61,7 +61,7 @@ public:
     };
 
     /// The maximum number of neighbor atoms taken into account for the common neighbor analysis.
-    enum { MAX_NEIGHBORS = 16 };
+    constexpr static int MAX_NEIGHBORS = 16;
 
     struct CoordinationStructure {
         int numNeighbors;

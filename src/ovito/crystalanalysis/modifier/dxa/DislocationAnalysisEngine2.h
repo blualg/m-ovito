@@ -26,6 +26,7 @@
 #include <ovito/delaunay/DelaunayTessellation.h>
 #include <ovito/particles/modifier/analysis/StructureIdentificationModifier.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
+#include <ovito/stdobj/lines/Lines.h>
 #include "StructureAnalysis.h"
 #include "ElasticMapping.h"
 #include "InterfaceMesh.h"
@@ -40,12 +41,12 @@ class DislocationAnalysisEngine2 : public StructureIdentificationModifier::Algor
 {
 public:
     /// Constructor.
-    DislocationAnalysisEngine2(PropertyPtr structures, size_t particleCount, int inputCrystalStructure, int maxTrialCircuitSize,
-                              int maxCircuitElongation, ConstPropertyPtr particleSelection, ConstPropertyPtr crystalClusters,
-                              std::vector<Matrix3> preferredCrystalOrientations, bool onlyPerfectDislocations, bool markCoreAtoms,
-                              int defectMeshSmoothingLevel, DataOORef<DislocationNetwork> dislocationNetwork,
-                              DataOORef<SurfaceMesh> defectMesh, DataOORef<SurfaceMesh> outputInterfaceMesh, int lineSmoothingLevel,
-                              FloatType linePointInterval);
+    DislocationAnalysisEngine2(PropertyPtr structures, size_t particleCount, int inputCrystalStructure,
+                              ConstPropertyPtr particleSelection, ConstPropertyPtr crystalClusters,
+                              std::vector<Matrix3> preferredCrystalOrientations,
+                              DataOORef<DislocationNetwork> dislocationNetwork,
+                              DataOORef<Lines> dislocationSegments,
+                              int lineSmoothingLevel, FloatType linePointInterval);
 
     /// Performs the atomic structure classification.
     virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
@@ -68,10 +69,7 @@ public:
     const DataOORef<DislocationNetwork>& dislocationNetwork() const { return _dislocationNetwork; }
 
     /// Returns the total volume of the input simulation cell.
-    FloatType simCellVolume() const { return _simCellVolume; }
-
-    /// Returns the computed interface mesh.
-    const InterfaceMesh& interfaceMesh() const { return *_interfaceMesh; }
+    FloatType simulationCellVolume() const { return _simulationCellVolume; }
 
     /// Gives access to the elastic mapping computation engine.
     ElasticMapping& elasticMapping() { return *_elasticMapping; }
@@ -79,50 +77,33 @@ public:
     /// Returns the input particle property that stores the cluster assignment of atoms.
     const ConstPropertyPtr& crystalClusters() const { return _crystalClusters; }
 
-    /// Computes statistical information on the identified dislocation lines and outputs it to the pipeline as data tables and global
-    /// attributes.
-    static FloatType generateDislocationStatistics(const OOWeakRef<const PipelineNode>& pipelineNode, PipelineFlowState& state,
-                                                   const DislocationNetwork* dislocationsObj, bool replaceDataObjects,
-                                                   const MicrostructurePhase* defaultStructure);
-
 private:
-    /// Create the output dislocation ID atom property and assign determined values
-    void assignCoreAtomDislocationIDs(size_t numParticles);
+
+    /// Extracts the dislocation lines segments from the elastic mapping.
+    void extractDislocationSegments(TaskProgress& progress);
 
 private:
     int _inputCrystalStructure;
-    bool _onlyPerfectDislocations;
-    bool _markCoreAtoms;
-    int _defectMeshSmoothingLevel;
     int _lineSmoothingLevel;
-    int _maxTrialCircuitSize;
-    int _maxCircuitElongation;
     FloatType _linePointInterval;
     std::vector<Matrix3> _preferredCrystalOrientations;
     std::optional<StructureAnalysis> _structureAnalysis;
     std::optional<DelaunayTessellation> _tessellation;
     std::optional<ElasticMapping> _elasticMapping;
-    std::optional<InterfaceMesh> _interfaceMesh;
-    std::optional<DislocationTracer> _dislocationTracer;
     ConstPropertyPtr _crystalClusters;
-
-    /// The defect mesh produced by the modifier.
-    DataOORef<SurfaceMesh> _defectMesh;
-
-    /// This stores the interface mesh produced by the modifier for visualization purposes.
-    DataOORef<SurfaceMesh> _outputInterfaceMesh;
 
     /// This stores the atom-to-cluster assignments computed by the modifier.
     PropertyPtr _atomClusters;
 
-    /// This stores the cached atom-to-dislocation assignments computed by the modifier.
-    PropertyPtr _atomDislocations;
+    /// The dislocation line segments computed by the modifier.
+    DataOORef<Lines> _dislocationSegments;
 
     /// The dislocations computed by the modifier.
     DataOORef<DislocationNetwork> _dislocationNetwork;
 
     /// The total volume of the input simulation cell.
-    FloatType _simCellVolume;
+    /// This is used to compute the dislocation density.
+    FloatType _simulationCellVolume;
 };
 
 }  // namespace Ovito
