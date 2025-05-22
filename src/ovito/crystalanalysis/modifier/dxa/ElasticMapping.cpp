@@ -29,12 +29,6 @@
 
 namespace Ovito {
 
-/// Pairs of cell vertices that form the six edges of a tetrahedron.
-static constexpr int CellEdgeVertices[6][2] = {{0,1}, {0,2}, {0,3}, {1,2}, {1,3}, {2,3}};
-
-/// Triplets of edges that form the Burgers circuits for each face of a tetrahedron.
-static constexpr int CellEdgeCircuits[4][3] = {{0,4,2}, {1,5,2}, {0,3,1}, {3,5,4}};
-
 /******************************************************************************
 * Builds the list of edges in the tetrahedral tessellation.
 ******************************************************************************/
@@ -68,11 +62,12 @@ void ElasticMapping::generateTessellationEdges(TaskProgress& progress)
                 // which span more than half the simulation cell.
                 const Point3& p1 = tessellation().vertexPosition(cellVertices[CellEdgeVertices[edgeIndex][0]]);
                 const Point3& p2 = tessellation().vertexPosition(cellVertices[CellEdgeVertices[edgeIndex][1]]);
-                if(structureAnalysis().cell().isWrappedVector(p1 - p2))
+                Vector3 delta = p2 - p1;
+                if(structureAnalysis().cell().isWrappedVector(delta))
                     continue;
 
                 // Register a new edge.
-                TessellationEdge* edge = _edgePool.construct(atom1, atom2);
+                TessellationEdge* edge = _edgePool.construct(atom1, atom2, delta);
                 // Insert into the linked list of edges leaving vertex 1 and arriving at vertex 2.
                 edge->nextOutboundEdge = std::exchange(_atomOutboundEdges[atom1], edge);
                 edge->nextInboundEdge = std::exchange(_atomInboundEdges[atom2], edge);
@@ -198,6 +193,51 @@ void ElasticMapping::assignIdealVectorsToEdges(int crystalPathSteps, TaskProgres
 }
 
 /******************************************************************************
+* Guesses ideal vectors for those edges of the Delaunay tessellation,
+* which are not yet assigned a vector.
+******************************************************************************/
+void ElasticMapping::complementUnassignedEdges(TaskProgress& progress)
+{
+    _edgePool.visitAll([&](TessellationEdge* edge) {
+        if(edge->vector.isValid())
+            return; // Edge already has a valid vector.
+
+        Cluster* cluster1 = clusterOfAtom(edge->atom1);
+        Cluster* cluster2 = clusterOfAtom(edge->atom2);
+        ClusterTransition* transition = clusterGraph()->determineClusterTransition(cluster1, cluster2);
+        if(!transition)
+            return; // No connection between the two clusters.
+
+        FloatType minDeviation = std::numeric_limits<FloatType>::max();
+        for(Cluster* cluster : { cluster1, cluster2 }) {
+            OVITO_ASSERT(cluster->id != 0);
+            qDebug() << (cluster->orientation.inverse() * edge->physicalVector);
+
+            // Get the lattice structure of the crystallite cluster.
+            const StructureAnalysis::LatticeStructure& structure = structureAnalysis().latticeStructure(cluster->structure);
+            for(const Vector3& latticeVector : structure.latticeVectors) {
+                const Vector3 transformedLatticeVector = cluster->orientation * latticeVector;
+                FloatType deviation = (transformedLatticeVector - edge->physicalVector).squaredLength();
+                qDebug() << "  Transformed lattice vector: " << latticeVector << "  Deviation: " << deviation;
+
+                // Threshold for the deviation between the ideal vector and the physical interatomic vector.
+                // The threshold is set to 1/2 of the length of the ideal vector.
+                constexpr FloatType LATTICE_VECTOR_DEVIATION_THRESHOLD = 0.5 * 0.5;
+
+                if(deviation < minDeviation && deviation < LATTICE_VECTOR_DEVIATION_THRESHOLD * transformedLatticeVector.squaredLength()) {
+                    minDeviation = deviation;
+                    // Assign the ideal lattice vector to the edge.
+                    edge->vector = EdgeVector((cluster == cluster1) ? latticeVector : transition->reverseTransform(latticeVector), transition);
+                }
+            }
+
+            if(cluster1 == cluster2)
+                break; // Both atoms belong to the same cluster. We can skip the second iteration.
+        }
+    });
+}
+
+/******************************************************************************
 * Determines whether the elastic mapping from the physical configuration
 * of the crystal to the imaginary, stress-free configuration is compatible
 * within the given tessellation cell. Returns false if the mapping is incompatible
@@ -215,9 +255,7 @@ bool ElasticMapping::isElasticMappingCompatible(DelaunayTessellation::CellHandle
     // Retrieve the cluster vectors assigned to the six edges of the tetrahedron.
     EdgeVector edgeVectors[6];
     for(int edgeIndex = 0; edgeIndex < 6; edgeIndex++) {
-        size_t atom1 = tessellation().inputPointIndex(cellVertices[CellEdgeVertices[edgeIndex][0]]);
-        size_t atom2 = tessellation().inputPointIndex(cellVertices[CellEdgeVertices[edgeIndex][1]]);
-        edgeVectors[edgeIndex] = getEdgeClusterVector(atom1, atom2);
+        edgeVectors[edgeIndex] = getEdgeClusterVector(cellVertices, edgeIndex);
         if(!edgeVectors[edgeIndex].isValid())
             return false; // Edge has no valid cluster vector.
     }

@@ -97,6 +97,10 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
     // Assign ideal lattice vectors to the edges of the Delaunay tessellation.
     _elasticMapping->assignIdealVectorsToEdges(4, progress);
 
+    /// Guess ideal vectors for those edges of the Delaunay tessellation,
+    /// which are not yet assigned a vector.
+    _elasticMapping->complementUnassignedEdges(progress);
+
     // Free some memory that is no longer needed.
     _structureAnalysis->freeNeighborLists();
 
@@ -160,13 +164,61 @@ void DislocationAnalysisEngine2::extractDislocationSegments(TaskProgress& progre
     OVITO_ASSERT(_dislocationSegments->elementCount() == 0);
     OVITO_ASSERT(_dislocationSegments->properties().empty());
 
-    for(DelaunayTessellation::CellHandle cell : _tessellation->cells()) {
-        if(!_tessellation->isGhostCell(cell))
-            continue;
-        for(int face = 0; face < 4; face++) {
+    PropertyFactory<Point3> linePosition1Access(Lines::OOClass(), 0, Lines::Position1Property);
+    PropertyFactory<Point3> linePosition2Access(Lines::OOClass(), 0, Lines::Position2Property);
 
+    for(DelaunayTessellation::CellHandle cell : tessellation().cells()) {
+        if(tessellation().isGhostCell(cell))
+            continue;
+
+        // Get the four Delaunay vertices of the current tetrahedral cell.
+        const std::array<DelaunayTessellation::VertexHandle, 4> cellVertices = tessellation().cellVertices(cell);
+
+        // Retrieve the lattice vectors assigned to the six edges of the tetrahedron.
+        EdgeVector edgeVectors[6];
+        for(int edgeIndex = 0; edgeIndex < 6; edgeIndex++)
+            edgeVectors[edgeIndex] = elasticMapping().getEdgeClusterVector(cellVertices, edgeIndex);
+
+        // Perform Burgers circuit test on each of the four faces of the tetrahedron.
+        for(int face = 0; face < 4; face++) {
+            const EdgeVector& e1 = edgeVectors[ElasticMapping::CellEdgeCircuits[face][0]];
+            const EdgeVector& e2 = edgeVectors[ElasticMapping::CellEdgeCircuits[face][1]];
+            const EdgeVector& e3 = edgeVectors[ElasticMapping::CellEdgeCircuits[face][2]];
+            if(!e1.isValid() || !e2.isValid() || !e3.isValid())
+                continue; // One of the edges has no valid cluster vector.
+
+            // Perform Burgers circuit test on the face.
+            // Calculate b = e1 + e2 - e3.
+            // Third edge must be flipped, because it's oriented in the opposite direction.
+            Vector3 burgersVector = e1.vec() + e1.transition()->reverseTransform(e2.vec()) - e3.vec();
+            if(burgersVector.isZero(CA_LATTICE_VECTOR_EPSILON))
+                continue; // Burgers circuit test passed.
+
+            // Perform disclination test on the face.
+            ClusterTransition* t1 = e1.transition();
+            ClusterTransition* t2 = e2.transition();
+            ClusterTransition* t3 = e3.transition();
+            if(!t1->isSelfTransition() || !t2->isSelfTransition() || !t3->isSelfTransition()) {
+                Matrix3 frankRotation = t3->reverse->tm * t2->tm * t1->tm;
+                if(!frankRotation.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON))
+                    continue; // Disclination test failed.
+            }
+
+            // Create a new dislocation segment.
+            Point3 p0 = tessellation().vertexPosition(cellVertices[face]);
+            Vector3 p1 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(face, 0)]) - Point3::Origin();
+            Vector3 p2 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(face, 1)]) - Point3::Origin();
+            Vector3 p3 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(face, 2)]) - Point3::Origin();
+            Vector3 sum = p1 + p2 + p3;
+            Point3 faceCenter = Point3::Origin() + sum / FloatType(3);
+            Point3 cellCenter = (p0 + sum) / FloatType(4);
+            linePosition1Access.push_back(faceCenter);
+            linePosition2Access.push_back(cellCenter);
         }
     }
+
+    _dislocationSegments->addProperty(linePosition1Access.take());
+    _dislocationSegments->addProperty(linePosition2Access.take());
 }
 
 }  // namespace Ovito

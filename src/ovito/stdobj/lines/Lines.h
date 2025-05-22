@@ -53,7 +53,7 @@ public:
     OVITO_CLASS_META(Lines, OOMetaClass);
 
 public:
-    /// \brief The list of standard properties.
+    /// The list of standard properties.
     enum Type
     {
         ColorProperty = Property::GenericColorProperty,

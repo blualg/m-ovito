@@ -44,7 +44,7 @@ private:
     struct TessellationEdge {
 
         /// Constructor.
-        TessellationEdge(size_t a1, size_t a2) : atom1(a1), atom2(a2) {}
+        TessellationEdge(size_t a1, size_t a2, const Vector3& delta) : atom1(a1), atom2(a2), physicalVector(delta) {}
 
         /// The index of the atom this edge is originating from.
         size_t atom1;
@@ -55,6 +55,9 @@ private:
         /// The vector corresponding to this edge in the stress-free reference configuration.
         EdgeVector vector;
 
+        /// The physical vector connecting the two atoms in the current configuration.
+        Vector3 physicalVector;
+
         /// The next edge in the linked list of edges leaving atom 1.
         TessellationEdge* nextOutboundEdge;
 
@@ -63,6 +66,12 @@ private:
     };
 
 public:
+
+    /// Pairs of cell vertices that form the six edges of a tetrahedron.
+    static constexpr int CellEdgeVertices[6][2] = {{0,1}, {0,2}, {0,3}, {1,2}, {1,3}, {2,3}};
+
+    /// Triplets of edges that form the Burgers circuits for each face of a tetrahedron.
+    static constexpr int CellEdgeCircuits[4][3] = {{3,5,4}, {1,5,2}, {0,4,2}, {0,3,1}};
 
     /// Constructor.
     ElasticMapping(StructureAnalysis& structureAnalysis, DelaunayTessellation& tessellation) :
@@ -95,6 +104,10 @@ public:
     /// Determines the ideal vector corresponding to each edge of the tessellation.
     void assignIdealVectorsToEdges(int crystalPathSteps, TaskProgress& progress);
 
+    /// Guesses ideal vectors for those edges of the Delaunay tessellation,
+    /// which are not yet assigned a vector.
+    void complementUnassignedEdges(TaskProgress& progress);
+
     /// Determines whether the elastic mapping from the physical configuration
     /// of the crystal to the imaginary, stress-free configuration is compatible
     /// within the given Delaunay cell. Returns false if the mapping is incompatible
@@ -107,12 +120,19 @@ public:
         return _atomClusters[atomIndex];
     }
 
-    /// Returns the lattice vector assigned to a single Delaunay edge.
+    /// Returns the lattice vector assigned to a Delaunay edge.
     EdgeVector getEdgeClusterVector(size_t atomIndex1, size_t atomIndex2) const {
         TessellationEdge* edge = findEdge(atomIndex1, atomIndex2);
         if(!edge || !edge->vector.isValid())
             return { Vector3::Zero(), nullptr };
         return (edge->atom1 == atomIndex1) ? edge->vector : -edge->vector;
+    }
+
+    /// Returns the lattice vector assigned to an edge of a Delaunay cell.
+    EdgeVector getEdgeClusterVector(const std::array<DelaunayTessellation::VertexHandle, 4>& cellVertices, int localEdgeIndex) const {
+        size_t atom1 = tessellation().inputPointIndex(cellVertices[CellEdgeVertices[localEdgeIndex][0]]);
+        size_t atom2 = tessellation().inputPointIndex(cellVertices[CellEdgeVertices[localEdgeIndex][1]]);
+        return getEdgeClusterVector(atom1, atom2);
     }
 
 private:

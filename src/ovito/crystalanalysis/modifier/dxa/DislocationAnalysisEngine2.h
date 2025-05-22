@@ -71,8 +71,11 @@ public:
     /// Returns the total volume of the input simulation cell.
     FloatType simulationCellVolume() const { return _simulationCellVolume; }
 
+    /// Returns the Delaunay tessellation.
+    const DelaunayTessellation& tessellation() const { OVITO_ASSERT(_tessellation.has_value()); return *_tessellation; }
+
     /// Gives access to the elastic mapping computation engine.
-    ElasticMapping& elasticMapping() { return *_elasticMapping; }
+    ElasticMapping& elasticMapping() { OVITO_ASSERT(_elasticMapping.has_value()); return *_elasticMapping; }
 
     /// Returns the input particle property that stores the cluster assignment of atoms.
     const ConstPropertyPtr& crystalClusters() const { return _crystalClusters; }
