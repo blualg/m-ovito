@@ -172,17 +172,15 @@ void FrameBufferWindow::showRenderingProgress(SharedFuture<void> renderingFuture
 
     // Start watching the rendering task. Re-enable the window after rendering is done.
     _renderingFuture.finally(ObjectExecutor(&_mainWindow), [self = QPointer<FrameBufferWindow>(this)]() noexcept {
-        if(!self.isNull()) {
-            self->_renderingFuture.reset();
-            self->onRenderingFinished();
-        }
+        if(!self.isNull())
+            self->onRenderingFinished(std::move(self->_renderingFuture));
     });
 }
 
 /******************************************************************************
 * Is called when the rendering process ended.
 ******************************************************************************/
-void FrameBufferWindow::onRenderingFinished()
+void FrameBufferWindow::onRenderingFinished(SharedFuture<void> future)
 {
     disconnect(_taskProgressUpdateConnection);
 
@@ -201,10 +199,16 @@ void FrameBufferWindow::onRenderingFinished()
     _cancelRenderingAction->setEnabled(false);
     _cancelRenderingAction->setVisible(false);
     _centralLayout->widget(1)->setVisible(false);
+
+    // Check for exceptions thrown during rendering and display them to the user.
+    if(future && future.isFinished() && !future.isCanceled()) {
+        try { future.task()->throwPossibleException(); }
+        catch(const Exception& ex) { _mainWindow.reportError(ex); }
+    }
 }
 
 /******************************************************************************
-* This opens the file dialog and lets the suer save the current contents of the frame buffer
+* This opens the file dialog and lets the user save the current contents of the frame buffer
 * to an image file.
 ******************************************************************************/
 void FrameBufferWindow::saveImage()
