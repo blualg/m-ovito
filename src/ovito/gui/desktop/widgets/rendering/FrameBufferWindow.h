@@ -80,9 +80,6 @@ public Q_SLOTS:
 
 protected Q_SLOTS:
 
-    /// Is called when the rendering process ended.
-    void onRenderingFinished();
-
     /// Is called during rendering whenever progress is made.
     void onTaskProgressUpdate();
 
@@ -92,6 +89,9 @@ protected:
     virtual void closeEvent(QCloseEvent* event) override;
 
 private:
+
+    /// Is called when the rendering process ended.
+    void onRenderingFinished(SharedFuture<void> future);
 
     /// The main window this child window is associated with.
     MainWindow& _mainWindow;
