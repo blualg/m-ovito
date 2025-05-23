@@ -64,7 +64,7 @@ public:
 
 private:
     /// The data object containing the line segments.
-    OORef<Lines> _linesObj;
+    DataOORef<const Lines> _linesObj;
 
     /// This array is used to map sub-object picking IDs back to line segments.
     std::vector<int> _subobjToSegmentMap;
