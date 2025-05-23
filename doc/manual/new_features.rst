@@ -13,6 +13,7 @@ Version 3.12.4 (xx-May-2025)
 ----------------------------
 
 - Fix: (very rare) bug in 2d polygon tessellation code used by the surface mesh visual element, which could lead to an infinite loop in pathological cases
+- |ovito-pro| Fixed OSPRay library loading error on Linux: ``[ERROR] Load of ospray_module_denoiser failed``
 
 .. sidebar::
 
