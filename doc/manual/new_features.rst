@@ -9,12 +9,12 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.12.4>`__
 
 ----------------------------
-Version 3.12.4 (xx-May-2025)
+Version 3.12.4 (26-May-2025)
 ----------------------------
 
-- :ref:`scene_objects.lines` objects: Fixed hover information display in status bar for wrapped line segments
-- Fix: (very rare) bug in 2d polygon tessellation code used by the surface mesh visual element, which could lead to an infinite loop in pathological cases
 - |ovito-pro| Fixed OSPRay library loading error on Linux: ``[ERROR] Load of ospray_module_denoiser failed``
+- :ref:`scene_objects.lines` objects: Fixed hover information display in status bar for PBC wrapped line segments
+- Fix: (very rare) bug in 2d polygon tessellation code used by the surface mesh visual element, which could lead to an infinite loop in pathological cases
 
 .. sidebar::
 
