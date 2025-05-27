@@ -28,7 +28,7 @@
 #include <ovito/mesh/surface/SurfaceMesh.h>
 #include <ovito/stdobj/lines/Lines.h>
 #include "StructureAnalysis.h"
-#include "ElasticMapping.h"
+#include "ElasticMapping2.h"
 #include "InterfaceMesh.h"
 #include "DislocationTracer.h"
 
@@ -75,7 +75,7 @@ public:
     const DelaunayTessellation& tessellation() const { OVITO_ASSERT(_tessellation.has_value()); return *_tessellation; }
 
     /// Gives access to the elastic mapping computation engine.
-    ElasticMapping& elasticMapping() { OVITO_ASSERT(_elasticMapping.has_value()); return *_elasticMapping; }
+    ElasticMapping2& elasticMapping() { OVITO_ASSERT(_elasticMapping.has_value()); return *_elasticMapping; }
 
     /// Returns the input particle property that stores the cluster assignment of atoms.
     const ConstPropertyPtr& crystalClusters() const { return _crystalClusters; }
@@ -84,10 +84,10 @@ private:
 
     /// Extracts the dislocation lines segments from the elastic mapping.
     void extractDislocationSegments(TaskProgress& progress, PropertyFactory<Point3>& linePosition1Access,
-                                    PropertyFactory<Point3>& linePosition2Access, PropertyFactory<Vector3>& burgersVectorAccess,
+                                    PropertyFactory<Point3>& linePosition2Access, PropertyFactory<Vector3>& burgersVectorAccess, PropertyFactory<ColorG>& lineColorAccess,
                                     PropertyFactory<int>& stageAccess, int stage);
 
-    void extractInterfaceMesh(int stage);
+    void extractInterfaceMesh(FloatType alpha, int stage);
 
 private:
     int _inputCrystalStructure;
@@ -96,7 +96,7 @@ private:
     std::vector<Matrix3> _preferredCrystalOrientations;
     std::optional<StructureAnalysis> _structureAnalysis;
     std::optional<DelaunayTessellation> _tessellation;
-    std::optional<ElasticMapping> _elasticMapping;
+    std::optional<ElasticMapping2> _elasticMapping;
     ConstPropertyPtr _crystalClusters;
 
     /// This stores the atom-to-cluster assignments computed by the modifier.

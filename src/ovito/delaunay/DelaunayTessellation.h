@@ -244,6 +244,11 @@ public:
         return -1;
     }
 
+    /// For backward compatibility, this method is equivalent to findVertexInCell().
+    int localVertexIndex(CellHandle cell, VertexHandle vertex) const {
+        return findVertexInCell(cell, vertex);
+    }
+
     /// For a given input point index, determines the corresponding local vertex index within a Delaunay cell.
     int findInputPointInCell(CellHandle cell, size_t pointIndex) const {
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());

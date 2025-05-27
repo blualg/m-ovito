@@ -39,129 +39,55 @@ class ElasticMapping
 {
 private:
 
-    /// Data structure associated with an edge of the tessellation.
+    /// Data structure associated with each edge of the tessellation.
     struct TessellationEdge {
 
         /// Constructor.
-        TessellationEdge(int atom1, int atom2) : atom1(atom1), atom2(atom2) {}
+        TessellationEdge(size_t v1, size_t v2) : vertex1(v1), vertex2(v2) {}
 
-        /// The index of the atom this edge is originating from.
-        int atom1;
+        /// The vertex this edge is originating from.
+        size_t vertex1;
 
-        /// The index of the atom this edge is going to.
-        int atom2;
+        /// The vertex this edge is pointing to.
+        size_t vertex2;
 
         /// The vector corresponding to this edge in the stress-free reference configuration.
-        Vector3 vector = Vector3::Zero();
+        Vector3 clusterVector;
 
-        /// The crystal cluster transition when going from atom1 to atom2.
-        ClusterTransition* transition = nullptr;
+        /// The transition matrix when going from the cluster of vertex 1 to the cluster of vertex 2.
+        ClusterTransition* clusterTransition = nullptr;
 
-        /// Indicates that this edge if part of the good crystal region.
-        bool isGood = false;
+        /// The next edge in the linked-list of edges leaving vertex 1.
+        TessellationEdge* nextLeavingEdge;
 
-        /// The next edge in the linked list of edges leaving atom 1.
-        TessellationEdge* nextOutboundEdge;
+        /// The next edge in the linked-list of edges arriving at vertex 1.
+        TessellationEdge* nextArrivingEdge;
 
-        /// The next edge in the linked list of edges arriving at atom 2.
-        TessellationEdge* nextInboundEdge;
+        /// Returns true if this edge has been assigned an ideal vector in the coordinate system of the local cluster.
+        bool hasClusterVector() const { return clusterTransition != nullptr; }
+
+        /// Assigns a vector to this edge.
+        /// Also stores the cluster transition that connects the two clusters of the two vertices.
+        void assignClusterVector(const Vector3& v, ClusterTransition* transition) {
+            clusterVector = v;
+            clusterTransition = transition;
+        }
+
+        /// Removes the assigned cluster vector.
+        void clearClusterVector() {
+            clusterTransition = nullptr;
+        }
     };
 
 public:
 
-    class OrientedEdge
-    {
-    public:
-        /// Default constructor.
-        OrientedEdge() = default;
-
-        /// Constructor.
-        OrientedEdge(TessellationEdge* edge, bool isFlipped) : _edge(edge), _isFlipped(isFlipped) {}
-
-        /// Returns the atom index of the first atom connected by this edge.
-        auto atom1() const { OVITO_ASSERT(_edge != nullptr); return _isFlipped ? _edge->atom2 : _edge->atom1; }
-
-        /// Returns the atom index of the second atom connected by this edge.
-        auto atom2() const { OVITO_ASSERT(_edge != nullptr); return _isFlipped ? _edge->atom1 : _edge->atom2; }
-
-        /// Returns the cluster vector assigned to this edge, possibly flipped.
-        Vector3 vector() const {
-            OVITO_ASSERT(_edge != nullptr);
-            return _isFlipped ? -_edge->vector : _edge->vector;
-        }
-
-        /// Returns the cluster transition associated with this edge, possibly flipped.
-        ClusterTransition* transition() const {
-            OVITO_ASSERT(_edge != nullptr);
-            ClusterTransition* t = _edge->transition;
-            return (_isFlipped && t) ? t->reverse : t;
-        }
-
-        /// Returns true if this edge has an assigned cluster vector.
-        bool hasEdgeVector() const {
-            OVITO_ASSERT(_edge != nullptr);
-            return _edge->transition != nullptr;
-        }
-
-        /// Sets the edge vector assigned to this edge, possibly flipped.
-        void setEdgeVector(const Vector3& v, ClusterTransition* transition) {
-            OVITO_ASSERT(_edge != nullptr);
-            if(!_isFlipped) {
-                _edge->vector = v;
-                _edge->transition = transition;
-            }
-            else if(transition) {
-                _edge->vector = transition->transform(-v);
-                _edge->transition = transition->reverse;
-            }
-            else {
-                _edge->vector = -v;
-                _edge->transition = nullptr; // No transition defined for this edge.
-            }
-        }
-
-        /// Sets the edge vector assigned to this edge, possibly flipped.
-        void setEdgeVector(const std::pair<Vector3, ClusterTransition*>& edgeVectorAndTransition) {
-            setEdgeVector(edgeVectorAndTransition.first, edgeVectorAndTransition.second);
-        }
-
-        /// Returns true if this edge is valid, i.e. if it is associated with a tessellation edge.
-        operator bool() const { return _edge != nullptr; }
-
-        /// Returns the underlying tessellation edge.
-        TessellationEdge* undirectedEdge() const { return _edge; }
-
-        /// Returns the inverse edge.
-        OrientedEdge operator-() const {
-            return OrientedEdge(_edge, !_isFlipped);
-        }
-
-        /// Computes the sum of this edge vector and another edge vector.
-        std::pair<Vector3, ClusterTransition*> concatenate(const OrientedEdge& other, ClusterGraph* clusterGraph) const {
-            OVITO_ASSERT(hasEdgeVector() && other.hasEdgeVector());
-            return { vector() + transition()->reverseTransform(other.vector()), clusterGraph->concatenateClusterTransitions(transition(), other.transition()) };
-        }
-
-        bool connectsAtoms(int atomIndex1, int atomIndex2) const {
-            return (_edge != nullptr) && ((atom1() == atomIndex1 && atom2() == atomIndex2) ||
-                                          (atom1() == atomIndex2 && atom2() == atomIndex1));
-        }
-
-    private:
-        TessellationEdge* _edge = nullptr; ///< Pointer to the underlying undirected tessellation edge.
-        bool _isFlipped = false; // Indicates whether the edge is oriented from atom1 to atom2 (false) or the other way around (true).
-    };
-        /// Pairs of cell vertices that form the six edges of a tetrahedron.
-    static constexpr int CellEdgeVertices[6][2] = {{0,1}, {0,2}, {0,3}, {1,2}, {1,3}, {2,3}};
-
     /// Constructor.
     ElasticMapping(StructureAnalysis& structureAnalysis, DelaunayTessellation& tessellation) :
         _structureAnalysis(structureAnalysis),
-        _tessellation(tessellation),
-        _clusterGraph(structureAnalysis.clusterGraph()),
-        _atomOutboundEdges(structureAnalysis.atomCount(), nullptr),
-        _atomInboundEdges(structureAnalysis.atomCount(), nullptr),
-        _atomClusters(structureAnalysis.atomCount(), nullptr)
+        _tessellation(tessellation), _clusterGraph(structureAnalysis.clusterGraph()), _edgeCount(0),
+        _edgePool(16384),
+        _vertexEdges(structureAnalysis.atomCount(), std::pair<TessellationEdge*,TessellationEdge*>(nullptr,nullptr)),
+        _vertexClusters(structureAnalysis.atomCount(), nullptr)
     {}
 
     /// Returns the structure analysis object.
@@ -176,95 +102,52 @@ public:
     /// Returns the cluster graph.
     const DataOORef<ClusterGraph>& clusterGraph() const { return _clusterGraph; }
 
-    /// Builds an explicit list of all Delaunay edges.
+    /// Builds the list of edges in the tetrahedral tessellation.
     void generateTessellationEdges(TaskProgress& progress);
 
-    /// Assigns each atom to a crystal cluster.
-    void assignAtomsToClusters(TaskProgress& progress);
+    /// Assigns each tessellation vertex to a cluster.
+    void assignVerticesToClusters(TaskProgress& progress);
 
     /// Determines the ideal vector corresponding to each edge of the tessellation.
     void assignIdealVectorsToEdges(int crystalPathSteps, TaskProgress& progress);
 
-    /// Narrows down the bad tessellation region by complementing the lattice vectors of unassigned Delaunay edges.
-    bool complementEdgeVectors();
-
-    /// Returns the cluster to which an atom has been assigned (may be nullptr).
-    Cluster* clusterOfAtom(size_t atomIndex) const {
-        OVITO_ASSERT(atomIndex < _atomClusters.size());
-        return _atomClusters[atomIndex];
-    }
-
-    /// Looks up the edge connecting two atoms and returns it as an oriented edge.
-    /// If the edge is not found, returns an invalid OrientedEdge.
-    OrientedEdge getOrientedEdge(size_t atomIndex1, size_t atomIndex2) const {
-        TessellationEdge* edge = findEdge(atomIndex1, atomIndex2);
-        if(!edge)
-            return OrientedEdge(nullptr, false);
-        return OrientedEdge(edge, edge->atom1 != atomIndex1);
-    }
-
-    /// Looks up one of the six local edges of the given Delaunay cell and returns it as an oriented edge.
-    OrientedEdge getOrientedEdge(const std::array<DelaunayTessellation::VertexHandle, 4>& cellVertices, int localEdgeIndex) const {
-        size_t atom1 = tessellation().inputPointIndex(cellVertices[CellEdgeVertices[localEdgeIndex][0]]);
-        size_t atom2 = tessellation().inputPointIndex(cellVertices[CellEdgeVertices[localEdgeIndex][1]]);
-        return getOrientedEdge(atom1, atom2);
-    }
-
-    /// Returns the six oriented edges of a Delaunay cell.
-    std::array<OrientedEdge, 6> getOrientedEdges(DelaunayTessellation::CellHandle cell) const {
-        // Get the four vertices of the current Delaunay cell.
-        const std::array<DelaunayTessellation::VertexHandle, 4> cellVertices = tessellation().cellVertices(cell);
-        // Retrieve the six edges of the tetrahedron.
-        std::array<OrientedEdge, 6> edges;
-        for(int i = 0; i < 6; i++)
-            edges[i] = getOrientedEdge(cellVertices, i);
-        return edges;
-    }
-
-    /// Returns the three oriented edges of a facet of a Delaunay cell.
-    static std::array<OrientedEdge, 3> getFacetCircuitEdges(const std::array<OrientedEdge, 6>& cellEdges, int facetIndex) {
-        switch(facetIndex) {
-            case 0: return { cellEdges[3], cellEdges[5], -cellEdges[4] };
-            case 1: return { cellEdges[2], -cellEdges[5], -cellEdges[1] };
-            case 2: return { cellEdges[0], cellEdges[4], -cellEdges[2] };
-            case 3: return { cellEdges[1], -cellEdges[3], -cellEdges[0] };
-            default: OVITO_ASSERT(false); return {};
-        }
-    }
-
     /// Determines whether the elastic mapping from the physical configuration
     /// of the crystal to the imaginary, stress-free configuration is compatible
-    /// within the given Delaunay cell. Returns false if the mapping is incompatible
+    /// within the given tessellation cell. Returns false if the mapping is incompatible
     /// or cannot be determined.
-    bool isElasticMappingCompatible(DelaunayTessellation::CellHandle cell) const {
-        // Must be a valid tessellation cell to determine the mapping.
-        if(!tessellation().isFiniteCell(cell))
-            return false;
-        return isElasticMappingCompatible(getOrientedEdges(cell));
+    bool isElasticMappingCompatible(DelaunayTessellation::CellHandle cell) const;
+
+    /// Returns the cluster to which a vertex of the tessellation has been assigned (may be NULL).
+    Cluster* clusterOfVertex(size_t vertexIndex) const {
+        OVITO_ASSERT(vertexIndex < _vertexClusters.size());
+        return _vertexClusters[vertexIndex];
     }
 
-    /// Determines whether the elastic mapping from the physical configuration
-    /// of the crystal to the imaginary, stress-free configuration is compatible
-    /// within the given Delaunay cell. Returns false if the mapping is incompatible
-    /// or cannot be determined.
-    bool isElasticMappingCompatible(const std::array<OrientedEdge, 6>& cellEdges) const;
-
-    /// Extracts the Delaunay edges with no lattice vector from the elastic mapping.
-    void extractUnassignedEdges(TaskProgress& progress, PropertyFactory<Point3>& edgePosition1Access,
-                                 PropertyFactory<Point3>& edgePosition2Access, PropertyFactory<int64_t*>& edgeAtomAccess, PropertyFactory<int>& edgeStageAccess,
-                                 int stage);
+    /// Returns the lattice vector assigned to a tessellation edge.
+    std::pair<Vector3, ClusterTransition*> getEdgeClusterVector(size_t vertexIndex1, size_t vertexIndex2) const {
+        TessellationEdge* tessEdge = findEdge(vertexIndex1, vertexIndex2);
+        OVITO_ASSERT(tessEdge != nullptr);
+        OVITO_ASSERT(tessEdge->hasClusterVector());
+        if(tessEdge->vertex1 == vertexIndex1)
+            return std::make_pair(tessEdge->clusterVector, tessEdge->clusterTransition);
+        else
+            return std::make_pair(tessEdge->clusterTransition->transform(-tessEdge->clusterVector), tessEdge->clusterTransition->reverse);
+    }
 
 private:
 
-    /// Looks up the tessellation edge connecting two atoms.
-    /// Returns nullptr if the two atoms are not connected by a Delaunay edge.
-    TessellationEdge* findEdge(size_t atomIndex1, size_t atomIndex2) const {
-        OVITO_ASSERT(atomIndex1 < _atomOutboundEdges.size());
-        OVITO_ASSERT(atomIndex2 < _atomOutboundEdges.size());
-        for(TessellationEdge* e = _atomOutboundEdges[atomIndex1]; e != nullptr; e = e->nextOutboundEdge)
-            if(e->atom2 == atomIndex2) return e;
-        for(TessellationEdge* e = _atomInboundEdges[atomIndex1]; e != nullptr; e = e->nextInboundEdge)
-            if(e->atom1 == atomIndex2) return e;
+    /// Returns the number of tessellation edges.
+    size_t edgeCount() const { return _edgeCount; }
+
+    /// Looks up the tessellation edge connecting two tessellation vertices.
+    /// Returns NULL if the vertices are not connected by an edge.
+    TessellationEdge* findEdge(size_t vertexIndex1, size_t vertexIndex2) const {
+        OVITO_ASSERT(vertexIndex1 < _vertexEdges.size());
+        OVITO_ASSERT(vertexIndex2 < _vertexEdges.size());
+        for(TessellationEdge* e = _vertexEdges[vertexIndex1].first; e != nullptr; e = e->nextLeavingEdge)
+            if(e->vertex2 == vertexIndex2) return e;
+        for(TessellationEdge* e = _vertexEdges[vertexIndex1].second; e != nullptr; e = e->nextArrivingEdge)
+            if(e->vertex1 == vertexIndex2) return e;
         return nullptr;
     }
 
@@ -279,17 +162,17 @@ private:
     /// The cluster graph.
     DataOORef<ClusterGraph> _clusterGraph;
 
-    /// Stores the head of the linked lists of outbound edges of each atom.
-    std::vector<TessellationEdge*> _atomOutboundEdges;
-
-    /// Stores the head of the linked lists of inbound edges of each atom.
-    std::vector<TessellationEdge*> _atomInboundEdges;
+    /// Stores the heads of the linked lists of leaving/arriving edges of each vertex.
+    std::vector<std::pair<TessellationEdge*,TessellationEdge*>> _vertexEdges;
 
     /// Memory pool for the creation of TessellationEdge structure instances.
     MemoryPool<TessellationEdge> _edgePool;
 
-    /// Stores the cluster assigned to each atom.
-    std::vector<Cluster*> _atomClusters;
+    /// Number of tessellation edges on the local processor.
+    size_t _edgeCount;
+
+    /// Stores the cluster assigned to each vertex atom of the tessellation.
+    std::vector<Cluster*> _vertexClusters;
 };
 
 }   // End of namespace

@@ -84,6 +84,7 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
     _structureAnalysis->buildClusters(progress);
     _structureAnalysis->connectClusters(progress);
 
+    progress.setText(DislocationAnalysisModifier::tr("DXA: Generating Delaunay tessellation"));
     FloatType ghostLayerSize = FloatType(3.5) * _structureAnalysis->maximumNeighborDistance();
     _tessellation->generateTessellation(simulationCell, BufferReadAccess<Point3>(positions).cbegin(),
                                         _structureAnalysis->atomCount(), ghostLayerSize,
@@ -91,17 +92,25 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
                                         selection ? BufferReadAccess<SelectionIntType>(selection).cbegin() : nullptr,
                                         progress);
 
+    /// Create a lookup map that allows to retrieve the primary Delaunay cell image that belongs to a
+    /// triangular face formed by three particles. In addition, use the alpha criterion to identify
+    /// tetrahedra that are outside the crystalline region and should be ignored in the analysis.
+    constexpr FloatType alphaFactor = 3.5; // This factor is used to choose the alpha value proportional to the maximum interatomic distance in the crystal lattice.
+    const FloatType alpha = alphaFactor * _structureAnalysis->maximumNeighborDistance();
+    progress.setText(DislocationAnalysisModifier::tr("DXA: Classifying tetrahedra"));
+    _elasticMapping->classifyTetrahedra(alpha, progress);
+
     // Build a list of Delaunay edges.
+    progress.setText(DislocationAnalysisModifier::tr("DXA: Generating list of Delaunay edges"));
     _elasticMapping->generateTessellationEdges(progress);
 
     // Assign each atom to a crystal cluster.
+    progress.setText(DislocationAnalysisModifier::tr("DXA: Assigning atoms to clusters"));
     _elasticMapping->assignAtomsToClusters(progress);
 
     // Assign ideal lattice vectors to the edges of the Delaunay tessellation.
+    progress.setText(DislocationAnalysisModifier::tr("DXA: Assigning ideal lattice vectors to edges"));
     _elasticMapping->assignIdealVectorsToEdges(4, progress);
-
-    // Fix edges of compatible tetrahedra and clear the lattice vectors of all other edges.
-    //_elasticMapping->unassignBadTetrahedraEdges(progress);
 
     // Free some memory that is no longer needed.
     _structureAnalysis->freeNeighborLists();
@@ -112,6 +121,7 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
     PropertyFactory<Point3> linePosition1Access(Lines::OOClass(), 0, Lines::Position1Property);
     PropertyFactory<Point3> linePosition2Access(Lines::OOClass(), 0, Lines::Position2Property);
     PropertyFactory<Vector3> burgersVectorAccess(Lines::OOClass(), 0, QStringLiteral("Burgers Vector"), QStringList() << "X" << "Y" << "Z");
+    PropertyFactory<ColorG> segmentColorAccess(Lines::OOClass(), 0, Lines::ColorProperty);
     PropertyFactory<int> segmentStageAccess(Lines::OOClass(), 0, QStringLiteral("Stage"));
 
     PropertyFactory<Point3> edgePosition1Access(Lines::OOClass(), 0, Lines::Position1Property);
@@ -121,9 +131,10 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
 
     int stage = 0;
     auto dumpSnapshot = [&]() {
-        extractDislocationSegments(progress, linePosition1Access, linePosition2Access, burgersVectorAccess, segmentStageAccess, stage);
+        progress.setText(DislocationAnalysisModifier::tr("DXA: Dumping snapshot %1").arg(stage + 1));
+        extractDislocationSegments(progress, linePosition1Access, linePosition2Access, burgersVectorAccess, segmentColorAccess, segmentStageAccess, stage);
         _elasticMapping->extractUnassignedEdges(progress, edgePosition1Access, edgePosition2Access, edgeAtomAccess, edgeStageAccess, stage);
-        extractInterfaceMesh(stage);
+        extractInterfaceMesh(alpha, stage);
         stage++;
     };
 
@@ -131,6 +142,7 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
         dumpSnapshot();
         this_task::throwIfCanceled();
 
+        progress.setText(DislocationAnalysisModifier::tr("DXA: Complementing elastic mapping"));
         if(!_elasticMapping->complementEdgeVectors())
             break;
 
@@ -144,6 +156,7 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
     _dislocationSegments->addProperty(linePosition1Access.take());
     _dislocationSegments->addProperty(linePosition2Access.take());
     _dislocationSegments->addProperty(burgersVectorAccess.take());
+    _dislocationSegments->addProperty(segmentColorAccess.take());
     _dislocationSegments->addProperty(segmentStageAccess.take());
 
     _unassignedEdges->addProperty(edgePosition1Access.take());
@@ -209,12 +222,12 @@ std::vector<int64_t> DislocationAnalysisEngine2::computeStructureStatistics(cons
  * Extracts the dislocation lines segments from the elastic mapping.
  ******************************************************************************/
 void DislocationAnalysisEngine2::extractDislocationSegments(TaskProgress& progress, PropertyFactory<Point3>& linePosition1Access,
-                                                            PropertyFactory<Point3>& linePosition2Access, PropertyFactory<Vector3>& burgersVectorAccess,
+                                                            PropertyFactory<Point3>& linePosition2Access, PropertyFactory<Vector3>& burgersVectorAccess, PropertyFactory<ColorG>& lineColorAccess,
                                                             PropertyFactory<int>& stageAccess, int stage)
 {
     size_t numberOfSegments = 0;
     for(DelaunayTessellation::CellHandle cell : tessellation().cells()) {
-        if(tessellation().isGhostCell(cell))
+        if(!elasticMapping().isFilledCell(cell))
             continue;
 
         this_task::throwIfCanceled();
@@ -223,20 +236,24 @@ void DislocationAnalysisEngine2::extractDislocationSegments(TaskProgress& progre
         const std::array<DelaunayTessellation::VertexHandle, 4> cellVertices = tessellation().cellVertices(cell);
 
         // Get the six oriented edges of the Delaunay cell.
-        std::array<ElasticMapping::OrientedEdge, 6> cellEdges = elasticMapping().getOrientedEdges(cell);
+        const std::array<ElasticMapping2::OrientedEdge, 6> cellEdges = elasticMapping().getOrientedEdges(cell);
 
         // Perform Burgers circuit test on each of the four facets of the tetrahedron.
         for(int facet = 0; facet < 4; facet++) {
-            std::array<ElasticMapping::OrientedEdge, 3> facetEdges = ElasticMapping::getFacetCircuitEdges(cellEdges, facet);
+            const std::array<ElasticMapping2::OrientedEdge, 3> facetEdges = ElasticMapping2::getFacetCircuitEdges(cellEdges, facet);
             if(!facetEdges[0] || !facetEdges[1] || !facetEdges[2])
                 continue; // Skip if one of the edges is missing.
+            if(facetEdges[0].isBlocked() || facetEdges[1].isBlocked() || facetEdges[2].isBlocked())
+                continue; // Skip if one of the edges is blocked.
             if(!facetEdges[0].hasEdgeVector() && !facetEdges[1].hasEdgeVector() && !facetEdges[2].hasEdgeVector())
                 continue; // Skip facet if none of the edges are valid.
 
             // Perform Burgers circuit test on the face.
             Vector3 burgersVector = Vector3::Zero();
-            if(facetEdges[0].hasEdgeVector())
+            Cluster* cluster = elasticMapping().clusterOfAtom(facetEdges[0].atom1());
+            if(facetEdges[0].hasEdgeVector()) {
                 burgersVector += facetEdges[0].vector();
+            }
             if(facetEdges[1].hasEdgeVector()) {
                 if(facetEdges[0].hasEdgeVector())
                     burgersVector += facetEdges[0].transition()->reverseTransform(facetEdges[1].vector());
@@ -273,13 +290,19 @@ void DislocationAnalysisEngine2::extractDislocationSegments(TaskProgress& progre
             linePosition1Access.push_back(faceCenter);
             linePosition2Access.push_back(cellCenter);
             burgersVectorAccess.push_back(burgersVector);
+            ParticleType::PredefinedStructureType structureType = ParticleType::PredefinedStructureType::OTHER;
+            if(cluster->structure == StructureAnalysis::LATTICE_FCC)
+                structureType = ParticleType::PredefinedStructureType::FCC;
+            else if(cluster->structure == StructureAnalysis::LATTICE_BCC)
+                structureType = ParticleType::PredefinedStructureType::BCC;
+            lineColorAccess.push_back(MicrostructurePhase::getBurgersVectorColor(structureType, burgersVector).toDataType<GraphicsFloatType>());
             stageAccess.push_back(stage);
             numberOfSegments++;
         }
     }
 }
 
-void DislocationAnalysisEngine2::extractInterfaceMesh(int stage)
+void DislocationAnalysisEngine2::extractInterfaceMesh(FloatType alpha, int stage)
 {
     SurfaceMeshBuilder meshBuilder(_interfaceMesh);
     auto oldFaceCount = meshBuilder.faceCount();
@@ -294,7 +317,6 @@ void DislocationAnalysisEngine2::extractInterfaceMesh(int stage)
     };
 
     // Construct a one-sided surface mesh.
-    double alpha = 5.0 * _structureAnalysis->maximumNeighborDistance();
     ManifoldConstructionHelper manifoldConstructor(const_cast<DelaunayTessellation&>(elasticMapping().tessellation()), meshBuilder, alpha, false, _structureAnalysis->positions(), TaskProgress::Ignore);
     manifoldConstructor.construct(tetrahedronRegion);
 

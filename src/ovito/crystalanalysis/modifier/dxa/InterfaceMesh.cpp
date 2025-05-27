@@ -102,10 +102,8 @@ void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
             }
 
             // Transfer cluster vector from Delaunay edge to interface mesh edge.
-            ElasticMapping::OrientedEdge orientedEdge = elasticMapping().getOrientedEdge(vertexIndices[i], vertexIndices[(i+1) % 3]);
-            OVITO_ASSERT(orientedEdge && orientedEdge.hasEdgeVector());
-            _edges[edge].clusterVector = orientedEdge.vector();
-            _edges[edge].clusterTransition = orientedEdge.transition();
+            std::tie(_edges[edge].clusterVector, _edges[edge].clusterTransition) = elasticMapping().getEdgeClusterVector(vertexIndices[i], vertexIndices[(i+1) % 3]);
+            OVITO_ASSERT(_edges[edge].clusterTransition);
         }
     };
 
