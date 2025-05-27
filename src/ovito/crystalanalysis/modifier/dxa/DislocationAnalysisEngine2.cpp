@@ -24,6 +24,7 @@
 #include <ovito/crystalanalysis/objects/DislocationNetwork.h>
 #include <ovito/crystalanalysis/objects/ClusterGraph.h>
 #include <ovito/mesh/surface/SurfaceMesh.h>
+#include <ovito/delaunay/ManifoldConstructionHelper.h>
 #include <ovito/stdobj/table/DataTable.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/DataSet.h>
@@ -40,7 +41,7 @@ DislocationAnalysisEngine2::DislocationAnalysisEngine2(PropertyPtr structures, s
                                                      ConstPropertyPtr particleSelection,
                                                      ConstPropertyPtr crystalClusters, std::vector<Matrix3> preferredCrystalOrientations,
                                                      DataOORef<DislocationNetwork> dislocationNetwork,
-                                                     DataOORef<Lines> dislocationSegments,
+                                                     DataOORef<Lines> dislocationSegments, DataOORef<Lines> unassignedEdges, DataOORef<SurfaceMesh> interfaceMesh,
                                                      int lineSmoothingLevel, FloatType linePointInterval)
     : StructureIdentificationModifier::Algorithm(std::move(structures)),
       _inputCrystalStructure(inputCrystalStructure),
@@ -49,7 +50,9 @@ DislocationAnalysisEngine2::DislocationAnalysisEngine2(PropertyPtr structures, s
       _preferredCrystalOrientations(std::move(preferredCrystalOrientations)),
       _crystalClusters(std::move(crystalClusters)),
       _dislocationNetwork(std::move(dislocationNetwork)),
-      _dislocationSegments(std::move(dislocationSegments))
+      _dislocationSegments(std::move(dislocationSegments)),
+      _unassignedEdges(std::move(unassignedEdges)),
+      _interfaceMesh(std::move(interfaceMesh))
 {
 }
 
@@ -97,15 +100,56 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
     // Assign ideal lattice vectors to the edges of the Delaunay tessellation.
     _elasticMapping->assignIdealVectorsToEdges(4, progress);
 
-    /// Guess ideal vectors for those edges of the Delaunay tessellation,
-    /// which are not yet assigned a vector.
-    _elasticMapping->complementUnassignedEdges(progress);
+    // Fix edges of compatible tetrahedra and clear the lattice vectors of all other edges.
+    //_elasticMapping->unassignBadTetrahedraEdges(progress);
 
     // Free some memory that is no longer needed.
     _structureAnalysis->freeNeighborLists();
 
-    // Extract dislocation line segments.
-    extractDislocationSegments(progress);
+    OVITO_ASSERT(_dislocationSegments->elementCount() == 0);
+    OVITO_ASSERT(_dislocationSegments->properties().empty());
+
+    PropertyFactory<Point3> linePosition1Access(Lines::OOClass(), 0, Lines::Position1Property);
+    PropertyFactory<Point3> linePosition2Access(Lines::OOClass(), 0, Lines::Position2Property);
+    PropertyFactory<Vector3> burgersVectorAccess(Lines::OOClass(), 0, QStringLiteral("Burgers Vector"), QStringList() << "X" << "Y" << "Z");
+    PropertyFactory<int> segmentStageAccess(Lines::OOClass(), 0, QStringLiteral("Stage"));
+
+    PropertyFactory<Point3> edgePosition1Access(Lines::OOClass(), 0, Lines::Position1Property);
+    PropertyFactory<Point3> edgePosition2Access(Lines::OOClass(), 0, Lines::Position2Property);
+    PropertyFactory<int> edgeStageAccess(Lines::OOClass(), 0, QStringLiteral("Stage"));
+    PropertyFactory<int64_t*> edgeAtomAccess(Lines::OOClass(), 0, QStringLiteral("Atoms"), 2, QStringList() << "Atom 1" << "Atom 2");
+
+    int stage = 0;
+    auto dumpSnapshot = [&]() {
+        extractDislocationSegments(progress, linePosition1Access, linePosition2Access, burgersVectorAccess, segmentStageAccess, stage);
+        _elasticMapping->extractUnassignedEdges(progress, edgePosition1Access, edgePosition2Access, edgeAtomAccess, edgeStageAccess, stage);
+        extractInterfaceMesh(stage);
+        stage++;
+    };
+
+    for(;;) {
+        dumpSnapshot();
+        this_task::throwIfCanceled();
+
+        if(!_elasticMapping->complementEdgeVectors())
+            break;
+
+        if(stage >= 10) {
+            qWarning() << "WARNING: Number of required DXA iterations exceeds limit, stopping.";
+            dumpSnapshot();
+            break;
+        }
+    }
+
+    _dislocationSegments->addProperty(linePosition1Access.take());
+    _dislocationSegments->addProperty(linePosition2Access.take());
+    _dislocationSegments->addProperty(burgersVectorAccess.take());
+    _dislocationSegments->addProperty(segmentStageAccess.take());
+
+    _unassignedEdges->addProperty(edgePosition1Access.take());
+    _unassignedEdges->addProperty(edgePosition2Access.take());
+    _unassignedEdges->addProperty(edgeStageAccess.take());
+    _unassignedEdges->addProperty(edgeAtomAccess.take());
 
     // Post-process dislocation lines.
     if(_lineSmoothingLevel > 0 || _linePointInterval > 0)
@@ -138,6 +182,11 @@ std::vector<int64_t> DislocationAnalysisEngine2::computeStructureStatistics(cons
 
     // Output dislocation segments.
     state.addObject(_dislocationSegments);
+    // Output unassigned edges.
+    state.addObject(_unassignedEdges);
+
+    // Output the interface mesh.
+    state.addObjectWithUniqueId<SurfaceMesh>(_interfaceMesh);
 
     // Output particle properties.
     if(atomClusters()) {
@@ -159,66 +208,104 @@ std::vector<int64_t> DislocationAnalysisEngine2::computeStructureStatistics(cons
 /******************************************************************************
  * Extracts the dislocation lines segments from the elastic mapping.
  ******************************************************************************/
-void DislocationAnalysisEngine2::extractDislocationSegments(TaskProgress& progress)
+void DislocationAnalysisEngine2::extractDislocationSegments(TaskProgress& progress, PropertyFactory<Point3>& linePosition1Access,
+                                                            PropertyFactory<Point3>& linePosition2Access, PropertyFactory<Vector3>& burgersVectorAccess,
+                                                            PropertyFactory<int>& stageAccess, int stage)
 {
-    OVITO_ASSERT(_dislocationSegments->elementCount() == 0);
-    OVITO_ASSERT(_dislocationSegments->properties().empty());
-
-    PropertyFactory<Point3> linePosition1Access(Lines::OOClass(), 0, Lines::Position1Property);
-    PropertyFactory<Point3> linePosition2Access(Lines::OOClass(), 0, Lines::Position2Property);
-
+    size_t numberOfSegments = 0;
     for(DelaunayTessellation::CellHandle cell : tessellation().cells()) {
         if(tessellation().isGhostCell(cell))
             continue;
 
+        this_task::throwIfCanceled();
+
         // Get the four Delaunay vertices of the current tetrahedral cell.
         const std::array<DelaunayTessellation::VertexHandle, 4> cellVertices = tessellation().cellVertices(cell);
 
-        // Retrieve the lattice vectors assigned to the six edges of the tetrahedron.
-        EdgeVector edgeVectors[6];
-        for(int edgeIndex = 0; edgeIndex < 6; edgeIndex++)
-            edgeVectors[edgeIndex] = elasticMapping().getEdgeClusterVector(cellVertices, edgeIndex);
+        // Get the six oriented edges of the Delaunay cell.
+        std::array<ElasticMapping::OrientedEdge, 6> cellEdges = elasticMapping().getOrientedEdges(cell);
 
-        // Perform Burgers circuit test on each of the four faces of the tetrahedron.
-        for(int face = 0; face < 4; face++) {
-            const EdgeVector& e1 = edgeVectors[ElasticMapping::CellEdgeCircuits[face][0]];
-            const EdgeVector& e2 = edgeVectors[ElasticMapping::CellEdgeCircuits[face][1]];
-            const EdgeVector& e3 = edgeVectors[ElasticMapping::CellEdgeCircuits[face][2]];
-            if(!e1.isValid() || !e2.isValid() || !e3.isValid())
-                continue; // One of the edges has no valid cluster vector.
+        // Perform Burgers circuit test on each of the four facets of the tetrahedron.
+        for(int facet = 0; facet < 4; facet++) {
+            std::array<ElasticMapping::OrientedEdge, 3> facetEdges = ElasticMapping::getFacetCircuitEdges(cellEdges, facet);
+            if(!facetEdges[0] || !facetEdges[1] || !facetEdges[2])
+                continue; // Skip if one of the edges is missing.
+            if(!facetEdges[0].hasEdgeVector() && !facetEdges[1].hasEdgeVector() && !facetEdges[2].hasEdgeVector())
+                continue; // Skip facet if none of the edges are valid.
 
             // Perform Burgers circuit test on the face.
-            // Calculate b = e1 + e2 - e3.
-            // Third edge must be flipped, because it's oriented in the opposite direction.
-            Vector3 burgersVector = e1.vec() + e1.transition()->reverseTransform(e2.vec()) - e3.vec();
+            Vector3 burgersVector = Vector3::Zero();
+            if(facetEdges[0].hasEdgeVector())
+                burgersVector += facetEdges[0].vector();
+            if(facetEdges[1].hasEdgeVector()) {
+                if(facetEdges[0].hasEdgeVector())
+                    burgersVector += facetEdges[0].transition()->reverseTransform(facetEdges[1].vector());
+                else if(facetEdges[2].hasEdgeVector())
+                    burgersVector += facetEdges[2].transition()->transform(facetEdges[1].transition()->transform(facetEdges[1].vector()));
+                else
+                    burgersVector = facetEdges[1].vector();
+            }
+            if(facetEdges[2].hasEdgeVector())
+                burgersVector += facetEdges[2].transition()->transform(facetEdges[2].vector());
             if(burgersVector.isZero(CA_LATTICE_VECTOR_EPSILON))
                 continue; // Burgers circuit test passed.
 
             // Perform disclination test on the face.
-            ClusterTransition* t1 = e1.transition();
-            ClusterTransition* t2 = e2.transition();
-            ClusterTransition* t3 = e3.transition();
-            if(!t1->isSelfTransition() || !t2->isSelfTransition() || !t3->isSelfTransition()) {
-                Matrix3 frankRotation = t3->reverse->tm * t2->tm * t1->tm;
-                if(!frankRotation.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON))
-                    continue; // Disclination test failed.
+            if(facetEdges[0].hasEdgeVector() && facetEdges[1].hasEdgeVector() && facetEdges[2].hasEdgeVector()) {
+                ClusterTransition* t1 = facetEdges[0].transition();
+                ClusterTransition* t2 = facetEdges[1].transition();
+                ClusterTransition* t3 = facetEdges[2].transition();
+                if(!t1->isSelfTransition() || !t2->isSelfTransition() || !t3->isSelfTransition()) {
+                    Matrix3 frankRotation = t3->tm * t2->tm * t1->tm;
+                    if(!frankRotation.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON))
+                        continue; // Disclination test failed.
+                }
             }
 
             // Create a new dislocation segment.
-            Point3 p0 = tessellation().vertexPosition(cellVertices[face]);
-            Vector3 p1 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(face, 0)]) - Point3::Origin();
-            Vector3 p2 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(face, 1)]) - Point3::Origin();
-            Vector3 p3 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(face, 2)]) - Point3::Origin();
+            Point3 p0 = tessellation().vertexPosition(cellVertices[facet]);
+            Vector3 p1 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(facet, 0)]) - Point3::Origin();
+            Vector3 p2 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(facet, 1)]) - Point3::Origin();
+            Vector3 p3 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(facet, 2)]) - Point3::Origin();
             Vector3 sum = p1 + p2 + p3;
             Point3 faceCenter = Point3::Origin() + sum / FloatType(3);
             Point3 cellCenter = (p0 + sum) / FloatType(4);
             linePosition1Access.push_back(faceCenter);
             linePosition2Access.push_back(cellCenter);
+            burgersVectorAccess.push_back(burgersVector);
+            stageAccess.push_back(stage);
+            numberOfSegments++;
         }
     }
+}
 
-    _dislocationSegments->addProperty(linePosition1Access.take());
-    _dislocationSegments->addProperty(linePosition2Access.take());
+void DislocationAnalysisEngine2::extractInterfaceMesh(int stage)
+{
+    SurfaceMeshBuilder meshBuilder(_interfaceMesh);
+    auto oldFaceCount = meshBuilder.faceCount();
+
+    // Create the 'good' region (region 0).
+    meshBuilder.mutableRegions()->setElementCount(1);
+    OVITO_ASSERT(meshBuilder.regionCount() == 1);
+
+    // Determines if a tetrahedron belongs to the good or bad crystal region.
+    auto tetrahedronRegion = [this](DelaunayTessellation::CellHandle cell) {
+        return elasticMapping().isElasticMappingCompatible(cell) ? 0 : SurfaceMesh::InvalidIndex;
+    };
+
+    // Construct a one-sided surface mesh.
+    double alpha = 5.0 * _structureAnalysis->maximumNeighborDistance();
+    ManifoldConstructionHelper manifoldConstructor(const_cast<DelaunayTessellation&>(elasticMapping().tessellation()), meshBuilder, alpha, false, _structureAnalysis->positions(), TaskProgress::Ignore);
+    manifoldConstructor.construct(tetrahedronRegion);
+
+    // Assign faces to regions, one per stage.
+    BufferWriteAccess<SurfaceMesh::region_index, access_mode::read_write> faceRegions;
+    if(!meshBuilder.faceProperty(SurfaceMeshFaces::RegionProperty))
+        faceRegions = meshBuilder.createFaceProperty(DataBuffer::Initialized, SurfaceMeshFaces::RegionProperty);
+    else
+        faceRegions = meshBuilder.mutableFaceProperty(SurfaceMeshFaces::RegionProperty);
+
+    std::fill(faceRegions.begin() + oldFaceCount, faceRegions.end(), stage);
 }
 
 }  // namespace Ovito

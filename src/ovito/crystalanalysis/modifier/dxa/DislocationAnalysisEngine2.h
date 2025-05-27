@@ -45,7 +45,7 @@ public:
                               ConstPropertyPtr particleSelection, ConstPropertyPtr crystalClusters,
                               std::vector<Matrix3> preferredCrystalOrientations,
                               DataOORef<DislocationNetwork> dislocationNetwork,
-                              DataOORef<Lines> dislocationSegments,
+                              DataOORef<Lines> dislocationSegments, DataOORef<Lines> unassignedEdges, DataOORef<SurfaceMesh> interfaceMesh,
                               int lineSmoothingLevel, FloatType linePointInterval);
 
     /// Performs the atomic structure classification.
@@ -83,7 +83,11 @@ public:
 private:
 
     /// Extracts the dislocation lines segments from the elastic mapping.
-    void extractDislocationSegments(TaskProgress& progress);
+    void extractDislocationSegments(TaskProgress& progress, PropertyFactory<Point3>& linePosition1Access,
+                                    PropertyFactory<Point3>& linePosition2Access, PropertyFactory<Vector3>& burgersVectorAccess,
+                                    PropertyFactory<int>& stageAccess, int stage);
+
+    void extractInterfaceMesh(int stage);
 
 private:
     int _inputCrystalStructure;
@@ -100,6 +104,12 @@ private:
 
     /// The dislocation line segments computed by the modifier.
     DataOORef<Lines> _dislocationSegments;
+
+    /// The unassigned Delaunay edges.
+    DataOORef<Lines> _unassignedEdges;
+
+    /// The interface mesh computed by the algorithm.
+    DataOORef<SurfaceMesh> _interfaceMesh;
 
     /// The dislocations computed by the modifier.
     DataOORef<DislocationNetwork> _dislocationNetwork;

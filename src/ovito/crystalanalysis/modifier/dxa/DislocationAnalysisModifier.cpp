@@ -53,6 +53,7 @@ DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, dislocationVis);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, defectMeshVis);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, interfaceMeshVis);
 DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, dislocationSegmentsVis);
+DEFINE_REFERENCE_FIELD(DislocationAnalysisModifier, unassignedEdgesVis);
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, inputCrystalStructure, "Input crystal structure");
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, maxTrialCircuitSize, "Trial circuit length");
 SET_PROPERTY_FIELD_LABEL(DislocationAnalysisModifier, circuitStretchability, "Circuit stretchability");
@@ -77,6 +78,11 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(DislocationAnalysisModifier, linePointInter
 void DislocationAnalysisModifier::initializeObject(ObjectInitializationFlags flags)
 {
     StructureIdentificationModifier::initializeObject(flags);
+
+    setUnassignedEdgesVis(OORef<LinesVis>::create(flags));
+    unassignedEdgesVis()->setWrappedLines(true);
+    unassignedEdgesVis()->setShadingMode(LinesVis::ShadingMode::NormalShading);
+    unassignedEdgesVis()->setObjectTitle(tr("Unassigned edges"));
 
     if(!flags.testFlag(ObjectInitializationFlag::DontInitializeObject)) {
         // Create the vis elements.
@@ -227,16 +233,27 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisM
             lineSmoothingEnabled() ? lineSmoothingLevel() : 0, lineCoarseningEnabled() ? linePointInterval() : 0);
     }
     else {
-        // Create an empty lines object.
         DataOORef<Lines> dislocationSegments = DataOORef<Lines>::create(ObjectInitializationFlag::DontCreateVisElement);
         dislocationSegments->setIdentifier(input.generateUniqueIdentifier<Lines>(QStringLiteral("dxa-dislocation-segments")));
         dislocationSegments->setCreatedByNode(request.modificationNode());
         dislocationSegments->setVisElement(dislocationSegmentsVis());
 
+        DataOORef<Lines> unassignedEdges = DataOORef<Lines>::create(ObjectInitializationFlag::DontCreateVisElement);
+        unassignedEdges->setIdentifier(input.generateUniqueIdentifier<Lines>(QStringLiteral("dxa-unassigned-edges")));
+        unassignedEdges->setCreatedByNode(request.modificationNode());
+        unassignedEdges->setVisElement(unassignedEdgesVis());
+
+        DataOORef<SurfaceMesh> interfaceMesh;
+        interfaceMesh = DataOORef<SurfaceMesh>::create(ObjectInitializationFlag::DontCreateVisElement, tr("Interface mesh"));
+        interfaceMesh->setIdentifier(input.generateUniqueIdentifier<SurfaceMesh>(QStringLiteral("dxa-interface-mesh")));
+        interfaceMesh->setCreatedByNode(request.modificationNode());
+        interfaceMesh->setDomain(simCell);
+        interfaceMesh->setVisElement(interfaceMeshVis());
+
         return std::make_shared<DislocationAnalysisEngine2>(
             std::move(structures), particles->elementCount(), inputCrystalStructure(),
             selectionProperty, grainProperty, std::move(preferredCrystalOrientations),
-            std::move(dislocations), std::move(dislocationSegments),
+            std::move(dislocations), std::move(dislocationSegments), std::move(unassignedEdges), std::move(interfaceMesh),
             lineSmoothingEnabled() ? lineSmoothingLevel() : 0,
             lineCoarseningEnabled() ? linePointInterval() : 0);
     }

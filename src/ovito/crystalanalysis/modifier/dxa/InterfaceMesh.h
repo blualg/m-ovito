@@ -99,7 +99,10 @@ public:
         Vector3 physicalVector;
 
         /// The ideal vector in the reference configuration assigned to this edge.
-        EdgeVector clusterVector;
+        Vector3 clusterVector;
+
+        /// The cluster transition when going from the cluster of node 1 to the cluster of node 2.
+        ClusterTransition* clusterTransition;
 
         /// The Burgers circuit going through this edge.
         /// This field is used by the DislocationTracer class.

@@ -62,12 +62,11 @@ void ElasticMapping::generateTessellationEdges(TaskProgress& progress)
                 // which span more than half the simulation cell.
                 const Point3& p1 = tessellation().vertexPosition(cellVertices[CellEdgeVertices[edgeIndex][0]]);
                 const Point3& p2 = tessellation().vertexPosition(cellVertices[CellEdgeVertices[edgeIndex][1]]);
-                Vector3 delta = p2 - p1;
-                if(structureAnalysis().cell().isWrappedVector(delta))
+                if(structureAnalysis().cell().isWrappedVector(p2 - p1))
                     continue;
 
                 // Register a new edge.
-                TessellationEdge* edge = _edgePool.construct(atom1, atom2, delta);
+                TessellationEdge* edge = _edgePool.construct(atom1, atom2);
                 // Insert into the linked list of edges leaving vertex 1 and arriving at vertex 2.
                 edge->nextOutboundEdge = std::exchange(_atomOutboundEdges[atom1], edge);
                 edge->nextInboundEdge = std::exchange(_atomInboundEdges[atom2], edge);
@@ -156,16 +155,9 @@ void ElasticMapping::assignIdealVectorsToEdges(int crystalPathSteps, TaskProgres
     // connecting a given pair of atoms (which don't have to be nearest neighbors).
     CrystalPathFinder pathFinder(_structureAnalysis, crystalPathSteps);
 
-    // Set up progress reporting.
-    progress.setMaximum(_edgePool.count());
-    size_t progressCounter = 0;
-
     // Iterate over all edges of the tessellation.
-    _edgePool.visitAll([&](TessellationEdge* edge) {
-        OVITO_ASSERT(!edge->vector.isValid());
-
-        // Update progress indicator.
-        progress.setValueIntermittent(progressCounter++);
+    _edgePool.visitAll(progress, [&](TessellationEdge* edge) {
+        OVITO_ASSERT(!edge->transition);
 
         Cluster* cluster1 = clusterOfAtom(edge->atom1);
         Cluster* cluster2 = clusterOfAtom(edge->atom2);
@@ -187,54 +179,138 @@ void ElasticMapping::assignIdealVectorsToEdges(int crystalPathSteps, TaskProgres
         // in which case the transition is not defined.
         if(ClusterTransition* transition = clusterGraph()->determineClusterTransition(cluster1, cluster2)) {
             // Assign cluster vector to the edge.
-            edge->vector = EdgeVector(idealVector->localVec(), transition);
+            edge->vector = idealVector->localVec();
+            edge->transition = transition;
         }
     });
 }
 
 /******************************************************************************
-* Guesses ideal vectors for those edges of the Delaunay tessellation,
-* which are not yet assigned a vector.
+* Narrows down the bad tessellation region by complementing the lattice vectors of unassigned Delaunay edges.
 ******************************************************************************/
-void ElasticMapping::complementUnassignedEdges(TaskProgress& progress)
+bool ElasticMapping::complementEdgeVectors()
 {
-    _edgePool.visitAll([&](TessellationEdge* edge) {
-        if(edge->vector.isValid())
-            return; // Edge already has a valid vector.
+    std::deque<std::tuple<DelaunayTessellation::CellHandle, std::array<OrientedEdge, 3>>> queue;
+    size_t numAssignedEdges = 0;
 
-        Cluster* cluster1 = clusterOfAtom(edge->atom1);
-        Cluster* cluster2 = clusterOfAtom(edge->atom2);
-        ClusterTransition* transition = clusterGraph()->determineClusterTransition(cluster1, cluster2);
-        if(!transition)
-            return; // No connection between the two clusters.
+    auto pushEdgeToQueue = [&](DelaunayTessellation::CellHandle cell, std::array<OrientedEdge, 3> facetEdges) {
+        OVITO_ASSERT(facetEdges[0].atom2() == facetEdges[1].atom1());
+        OVITO_ASSERT(facetEdges[1].atom2() == facetEdges[2].atom1());
+        OVITO_ASSERT(facetEdges[2].atom2() == facetEdges[0].atom1());
+        if(facetEdges[0].hasEdgeVector() || !facetEdges[1].hasEdgeVector())
+            return;
+        if(facetEdges[2].hasEdgeVector()) {
+            // Infer edge vector from sum of the other two edges.
+            facetEdges[0].setEdgeVector((-facetEdges[2]).concatenate(-facetEdges[1], clusterGraph()));
+        }
+        else {
+            // Set edge vector to the reverse of the second edge.
+            ClusterTransition* transition = clusterGraph()->determineClusterTransition(clusterOfAtom(facetEdges[0].atom1()), clusterOfAtom(facetEdges[0].atom2()));
+            if(!transition)
+                return; // No cluster transition defined for this edge.
+            facetEdges[0].setEdgeVector(transition->reverseTransform((-facetEdges[1]).vector()), transition);
+            OVITO_ASSERT(facetEdges[0].concatenate(facetEdges[1], clusterGraph()).first.isZero(CA_LATTICE_VECTOR_EPSILON));
+        }
+        OVITO_ASSERT(facetEdges[0].transition()->cluster1 == clusterOfAtom(facetEdges[0].atom1()));
+        OVITO_ASSERT(facetEdges[0].transition()->cluster2 == clusterOfAtom(facetEdges[0].atom2()));
+        numAssignedEdges++;
+        queue.push_back({cell, facetEdges});
+    };
 
-        FloatType minDeviation = std::numeric_limits<FloatType>::max();
-        for(Cluster* cluster : { cluster1, cluster2 }) {
-            OVITO_ASSERT(cluster->id != 0);
-            qDebug() << (cluster->orientation.inverse() * edge->physicalVector);
+    auto processNextEdgeFromQueue = [&]() {
+        auto [cell, edges] = queue.front();
+        queue.pop_front();
+        OVITO_ASSERT(edges[0].hasEdgeVector() && edges[1].hasEdgeVector());
+        // The two atoms that form the edge we will circulate around.
+        const size_t atom1 = edges[0].atom1();
+        const size_t atom2 = edges[0].atom2();
+        OVITO_ASSERT(atom1 != atom2);
+        OVITO_ASSERT(edges[0].atom2() == edges[1].atom1());
+        OVITO_ASSERT(edges[1].atom2() == edges[2].atom1());
+        OVITO_ASSERT(edges[2].atom2() == edges[0].atom1());
+        const DelaunayTessellation::CellHandle startCell = cell;
+        constexpr int tab_next_around_edge[4][4] = {
+                {5, 2, 3, 1},
+                {3, 5, 0, 2},
+                {1, 3, 5, 0},
+                {2, 0, 1, 5}};
+        do {
+            // Find original edge vertices in current cell.
+            int localVertex1 = tessellation().findInputPointInCell(cell, atom1);
+            int localVertex2 = tessellation().findInputPointInCell(cell, atom2);
+            OVITO_ASSERT(localVertex1 >= 0 && localVertex1 < 4);
+            OVITO_ASSERT(localVertex2 >= 0 && localVertex2 < 4);
+            // The current facet we are at.
+            int facet = tab_next_around_edge[localVertex1][localVertex2];
 
-            // Get the lattice structure of the crystallite cluster.
-            const StructureAnalysis::LatticeStructure& structure = structureAnalysis().latticeStructure(cluster->structure);
-            for(const Vector3& latticeVector : structure.latticeVectors) {
-                const Vector3 transformedLatticeVector = cluster->orientation * latticeVector;
-                FloatType deviation = (transformedLatticeVector - edge->physicalVector).squaredLength();
-                qDebug() << "  Transformed lattice vector: " << latticeVector << "  Deviation: " << deviation;
-
-                // Threshold for the deviation between the ideal vector and the physical interatomic vector.
-                // The threshold is set to 1/2 of the length of the ideal vector.
-                constexpr FloatType LATTICE_VECTOR_DEVIATION_THRESHOLD = 0.5 * 0.5;
-
-                if(deviation < minDeviation && deviation < LATTICE_VECTOR_DEVIATION_THRESHOLD * transformedLatticeVector.squaredLength()) {
-                    minDeviation = deviation;
-                    // Assign the ideal lattice vector to the edge.
-                    edge->vector = EdgeVector((cluster == cluster1) ? latticeVector : transition->reverseTransform(latticeVector), transition);
+            // Get the six oriented edges of the current Delaunay cell.
+            std::array<OrientedEdge, 6> cellEdges = getOrientedEdges(cell);
+            // Get the three oriented edges of the current facet.
+            std::array<OrientedEdge, 3> facetEdges = getFacetCircuitEdges(cellEdges, facet);
+            if(facetEdges[0] && facetEdges[1] && facetEdges[2]) {
+                OVITO_ASSERT(facetEdges[0].atom2() == facetEdges[1].atom1());
+                OVITO_ASSERT(facetEdges[1].atom2() == facetEdges[2].atom1());
+                OVITO_ASSERT(facetEdges[2].atom2() == facetEdges[0].atom1());
+                while(facetEdges[1].atom1() != atom1) {
+                    std::rotate(facetEdges.begin(), facetEdges.begin() + 1, facetEdges.end());
+                }
+                OVITO_ASSERT(facetEdges[1].atom1() == atom1 && facetEdges[1].atom2() == atom2);
+                OVITO_ASSERT(facetEdges[1].undirectedEdge() == edges[0].undirectedEdge());
+                if(facetEdges[2].hasEdgeVector()) {
+                    std::array<OrientedEdge, 3> reversedFacetEdges = { -facetEdges[0], -facetEdges[2], -facetEdges[1] };
+                    pushEdgeToQueue(tessellation().cellAdjacent(cell, facet), reversedFacetEdges);
                 }
             }
-
-            if(cluster1 == cluster2)
-                break; // Both atoms belong to the same cluster. We can skip the second iteration.
+            // Circulate around edge.
+            cell = tessellation().cellAdjacent(cell, facet);
         }
-    });
+        while(cell != startCell);
+    };
+
+    for(DelaunayTessellation::CellHandle cell : tessellation().cells()) {
+        if(tessellation().isGhostCell(cell))
+            continue;
+
+        // Get the six oriented edges of the Delaunay cell.
+        std::array<OrientedEdge, 6> cellEdges = getOrientedEdges(cell);
+
+        // Skip this cell if all six edges are good.
+        if(std::ranges::all_of(cellEdges, [](const OrientedEdge& edge) { return edge.hasEdgeVector(); }))
+            continue;
+
+        // Consider each of the four facets of the tetrahedron.
+        for(int facet = 0; facet < 4; facet++) {
+            std::array<OrientedEdge, 3> facetEdges = getFacetCircuitEdges(cellEdges, facet);
+            if(!facetEdges[0] || !facetEdges[1] || !facetEdges[2])
+                continue; // Skip if one of the edges is missing.
+            OVITO_ASSERT(facetEdges[0].atom2() == facetEdges[1].atom1());
+            OVITO_ASSERT(facetEdges[1].atom2() == facetEdges[2].atom1());
+            OVITO_ASSERT(facetEdges[2].atom2() == facetEdges[0].atom1());
+
+            // Consider each of the three edges of the facet.
+            for(int edge = 0; edge < 3; edge++) {
+                if(!facetEdges[0].hasEdgeVector() && facetEdges[1].hasEdgeVector()) {
+                    bool skipEdge = !facetEdges[2].hasEdgeVector();
+                    if(skipEdge) {
+                        skipEdge = false;
+                        for(TessellationEdge* e = _atomOutboundEdges[facetEdges[0].atom1()]; e != nullptr && !skipEdge; e = e->nextOutboundEdge)
+                            skipEdge |= (e->transition != nullptr);
+                        for(TessellationEdge* e = _atomInboundEdges[facetEdges[0].atom1()]; e != nullptr && !skipEdge; e = e->nextInboundEdge)
+                            skipEdge |= (e->transition != nullptr);
+                    }
+                    if(!skipEdge) {
+                        pushEdgeToQueue(cell, facetEdges);
+                        while(!queue.empty()) {
+                            processNextEdgeFromQueue();
+                        }
+                    }
+                }
+                std::rotate(facetEdges.begin(), facetEdges.begin() + 1, facetEdges.end());
+            }
+        }
+    }
+    qInfo() << "Assigned" << numAssignedEdges << "new edges";
+    return numAssignedEdges != 0;
 }
 
 /******************************************************************************
@@ -243,48 +319,64 @@ void ElasticMapping::complementUnassignedEdges(TaskProgress& progress)
 * within the given tessellation cell. Returns false if the mapping is incompatible
 * or cannot be determined at all.
 ******************************************************************************/
-bool ElasticMapping::isElasticMappingCompatible(DelaunayTessellation::CellHandle cell) const
+bool ElasticMapping::isElasticMappingCompatible(const std::array<OrientedEdge, 6>& cellEdges) const
 {
-    // Must be a valid tessellation cell to determine the mapping.
-    if(!tessellation().isFiniteCell(cell))
-        return false;
+    // Perform the Burgers circuit test on each of the four facets of the tetrahedron.
+    for(int facet = 0; facet < 4; facet++) {
+        std::array<OrientedEdge, 3> facetEdges = getFacetCircuitEdges(cellEdges, facet);
+        if(!facetEdges[0] || !facetEdges[1] || !facetEdges[2])
+            return false; // Skip if one of the edges is missing.
 
-    // Get the four Delaunay vertices of the current cell.
-    const std::array<DelaunayTessellation::VertexHandle, 4> cellVertices = tessellation().cellVertices(cell);
+        OVITO_ASSERT(facetEdges[0].atom2() == facetEdges[1].atom1());
+        OVITO_ASSERT(facetEdges[1].atom2() == facetEdges[2].atom1());
+        OVITO_ASSERT(facetEdges[2].atom2() == facetEdges[0].atom1());
 
-    // Retrieve the cluster vectors assigned to the six edges of the tetrahedron.
-    EdgeVector edgeVectors[6];
-    for(int edgeIndex = 0; edgeIndex < 6; edgeIndex++) {
-        edgeVectors[edgeIndex] = getEdgeClusterVector(cellVertices, edgeIndex);
-        if(!edgeVectors[edgeIndex].isValid())
-            return false; // Edge has no valid cluster vector.
-    }
-
-    // Perform the Burgers circuit test on each of the four faces of the tetrahedron.
-    for(int face = 0; face < 4; face++) {
-        const EdgeVector& e1 = edgeVectors[CellEdgeCircuits[face][0]];
-        const EdgeVector& e2 = edgeVectors[CellEdgeCircuits[face][1]];
-        const EdgeVector& e3 = edgeVectors[CellEdgeCircuits[face][2]];
+        ClusterTransition* t1 = facetEdges[0].transition();
+        ClusterTransition* t2 = facetEdges[1].transition();
+        ClusterTransition* t3 = facetEdges[2].transition();
+        if(!t1 || !t2 || !t3) {
+            // Skip if one of the edges has no assigned cluster vector.
+            return false;
+        }
 
         // Perform Burgers circuit test on the face.
-        // Calculate b = e1 + e2 - e3.
-        // Third edge must be flipped, because it's oriented in the opposite direction.
-        Vector3 burgersVector = e1.vec() + e1.transition()->reverseTransform(e2.vec()) - e3.vec();
-        if(!burgersVector.isZero(CA_LATTICE_VECTOR_EPSILON))
+        // Calculation is performed in the frame of the first vertex' lattice cluster.
+        Vector3 burgersVector = facetEdges[0].vector() + t1->reverseTransform(facetEdges[1].vector()) + t3->transform(facetEdges[2].vector());
+        if(!burgersVector.isZero(CA_LATTICE_VECTOR_EPSILON)) {
             return false;
+        }
 
         // Perform disclination test on the face.
-        ClusterTransition* t1 = e1.transition();
-        ClusterTransition* t2 = e2.transition();
-        ClusterTransition* t3 = e3.transition();
         if(!t1->isSelfTransition() || !t2->isSelfTransition() || !t3->isSelfTransition()) {
-            Matrix3 frankRotation = t3->reverse->tm * t2->tm * t1->tm;
-            if(!frankRotation.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON))
+            Matrix3 frankRotation = t3->tm * t2->tm * t1->tm;
+            if(!frankRotation.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON)) {
                 return false;
+            }
         }
     }
 
     return true;
+}
+
+/******************************************************************************
+ * Extracts the Delaunay edges with no lattice vector from the elastic mapping.
+ ******************************************************************************/
+void ElasticMapping::extractUnassignedEdges(TaskProgress& progress, PropertyFactory<Point3>& edgePosition1Access,
+                                 PropertyFactory<Point3>& edgePosition2Access, PropertyFactory<int64_t*>& edgeAtomAccess, PropertyFactory<int>& edgeStageAccess,
+                                 int stage)
+{
+    // Iterate over all edges of the tessellation.
+    size_t count = 0;
+    BufferReadAccess<Point3> positions(structureAnalysis().positions());
+    _edgePool.visitAll(progress, [&](TessellationEdge* edge) {
+        if(!edge->transition) {
+            edgePosition1Access.push_back(positions[edge->atom1]);
+            edgePosition2Access.push_back(positions[edge->atom2]);
+            edgeAtomAccess.push_back(std::array<int64_t,2>{{(int64_t)edge->atom1, (int64_t)edge->atom2}});
+            edgeStageAccess.push_back(stage);
+            count++;
+        }
+    });
 }
 
 }   // End of namespace

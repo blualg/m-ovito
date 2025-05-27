@@ -76,14 +76,14 @@ struct BurgersCircuit
         InterfaceMesh::Edge* edge = firstEdge;
         do {
             OVITO_ASSERT(edge != nullptr);
-            b += tm * edge->clusterVector.vec();
-            if(!edge->clusterVector.transition()->isSelfTransition()) {
-                tm = tm * edge->clusterVector.transition()->reverse->tm;
+            b += tm * edge->clusterVector;
+            if(!edge->clusterTransition->isSelfTransition()) {
+                tm = tm * edge->clusterTransition->reverse->tm;
             }
             edge = edge->nextCircuitEdge;
         }
         while(edge != firstEdge);
-        return ClusterVector(b, firstEdge->clusterVector.transition()->cluster1);
+        return ClusterVector(b, firstEdge->clusterTransition->cluster1);
     }
 
     /// Calculates the center of mass of the circuit.

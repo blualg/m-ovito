@@ -29,6 +29,7 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/utilities/concurrent/TaskProgress.h>
 
 namespace Ovito {
 
@@ -106,12 +107,12 @@ public:
         std::swap(_alloc, other._alloc);
     }
 
-    /// Returns the number of object instances currently allocated by this memory pool.
+    /// Returns the number of elements currently allocated by this memory pool.
     size_t count() const {
         return _pages.empty() ? 0 : (_pages.size() - 1) * _pageSize + _lastPageNumber;
     }
 
-    /// Calls the given function for each object instance in the memory pool.
+    /// Calls the given function for each element in the memory pool.
     template<typename Functor>
     void visitAll(Functor&& func) {
         for(auto page : _pages) {
@@ -122,6 +123,19 @@ public:
             for(; p != pend; ++p)
                 func(p);
         }
+    }
+
+    /// Calls the given function for each element in the memory pool
+    /// with progress reporting.
+    template<typename Functor>
+    void visitAll(TaskProgress& progress, Functor&& func) {
+        progress.setMaximum(count());
+        size_t progressCounter = 0;
+        visitAll([&](T* p) {
+            progress.setValueIntermittent(progressCounter++);
+            func(p);
+        });
+        progress.setValueIntermittent(progressCounter);
     }
 
 private:

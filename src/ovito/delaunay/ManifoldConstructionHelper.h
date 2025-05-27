@@ -680,10 +680,14 @@ private:
         _faceLookupMap.clear();
 
         // Create the vertex coordinates array, which will dynamically grow.
-        BufferWriteAccessAndRef<Point3, access_mode::discard_write> vertexPositions = SurfaceMeshVertices::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshVertices::PositionProperty);
+        BufferWriteAccessAndRef<Point3, access_mode::write> vertexPositions = DataOORef<DataBuffer>(_mesh.mutableVertexProperty(SurfaceMeshVertices::PositionProperty));
+        if(!vertexPositions)
+            vertexPositions = SurfaceMeshVertices::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshVertices::PositionProperty);
 
         // Create the per-face region array, which will dynamically grow.
-        BufferWriteAccessAndRef<SurfaceMesh::region_index, access_mode::discard_write> faceRegions = SurfaceMeshFaces::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshFaces::RegionProperty);
+        BufferWriteAccessAndRef<SurfaceMesh::region_index, access_mode::write> faceRegions = DataOORef<DataBuffer>(_mesh.mutableFaceProperty(SurfaceMeshFaces::RegionProperty));
+        if(!faceRegions)
+            faceRegions = SurfaceMeshFaces::OOClass().createStandardProperty(DataBuffer::Uninitialized, 0, SurfaceMeshFaces::RegionProperty);
 
         _progress.setMaximum(_numFilledCells);
         SurfaceMeshTopology* topo = _mesh.mutableTopology();
@@ -810,7 +814,7 @@ private:
             OVITO_ASSERT(circulator != circulator_start);
             do {
                 // Look for the first cell while going around the edge that belongs to a different region.
-                if(_tessellation.getUserField((*circulator).first) != region)
+                if(_tessellation.getUserField(circulator.cell()) != region)
                     break;
                 --circulator;
             }
@@ -822,7 +826,7 @@ private:
             OVITO_ASSERT(circulator != circulator_start);
             for(;;) {
                 // Look for the first cell while going around the edge in reverse direction that belongs to the same region.
-                if(_tessellation.getUserField((*circulator).first) == region)
+                if(_tessellation.getUserField(circulator.cell()) == region)
                     break;
                 ++circulator;
             }

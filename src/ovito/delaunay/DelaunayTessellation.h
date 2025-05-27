@@ -59,18 +59,16 @@ public:
 
         FacetCirculator(const DelaunayTessellation& tess, CellHandle cell, int s, int t, CellHandle start, int f) :
             _tess(tess), _s(tess.cellVertex(cell, s)), _t(tess.cellVertex(cell, t)) {
-            int i = tess.localVertexIndex(start, _s);
-            int j = tess.localVertexIndex(start, _t);
-
+            int i = tess.findVertexInCell(start, _s);
+            int j = tess.findVertexInCell(start, _t);
             OVITO_ASSERT(f != i && f != j);
-
             if(f == next_around_edge(i,j))
                 _pos = start;
             else
                 _pos = tess.cellAdjacent(start, f); // other cell with same facet
         }
         FacetCirculator& operator--() {
-            _pos = _tess.cellAdjacent(_pos, next_around_edge(_tess.localVertexIndex(_pos, _t), _tess.localVertexIndex(_pos, _s)));
+            _pos = _tess.cellAdjacent(_pos, next_around_edge(_tess.findVertexInCell(_pos, _t), _tess.findVertexInCell(_pos, _s)));
             return *this;
         }
         FacetCirculator operator--(int) {
@@ -79,7 +77,7 @@ public:
             return tmp;
         }
         FacetCirculator& operator++() {
-            _pos = _tess.cellAdjacent(_pos, next_around_edge(_tess.localVertexIndex(_pos, _s), _tess.localVertexIndex(_pos, _t)));
+            _pos = _tess.cellAdjacent(_pos, next_around_edge(_tess.findVertexInCell(_pos, _s), _tess.findVertexInCell(_pos, _t)));
             return *this;
         }
         FacetCirculator operator++(int) {
@@ -88,18 +86,19 @@ public:
             return tmp;
         }
         Facet operator*() const {
-            return Facet(_pos, next_around_edge(_tess.localVertexIndex(_pos, _s), _tess.localVertexIndex(_pos, _t)));
+            return Facet(_pos, next_around_edge(_tess.findVertexInCell(_pos, _s), _tess.findVertexInCell(_pos, _t)));
         }
         Facet operator->() const {
-            return Facet(_pos, next_around_edge(_tess.localVertexIndex(_pos, _s), _tess.localVertexIndex(_pos, _t)));
+            return **this;
         }
-        bool operator==(const FacetCirculator& ccir) const
-        {
+        bool operator==(const FacetCirculator& ccir) const {
             return _pos == ccir._pos && _s == ccir._s && _t == ccir._t;
         }
-        bool operator!=(const FacetCirculator& ccir) const
-        {
-            return ! (*this == ccir);
+        bool operator!=(const FacetCirculator& ccir) const {
+            return !(*this == ccir);
+        }
+        CellHandle cell() const {
+            return _pos;
         }
 
     private:
@@ -234,11 +233,22 @@ public:
 
     /// For a given (global) Delaunay vertex, determines the corresponding local vertex index within a Delaunay cell index.
     /// The Delaunay vertex to be searched for must not be the infinite vertex.
-    int localVertexIndex(CellHandle cell, VertexHandle vertex) const {
+    int findVertexInCell(CellHandle cell, VertexHandle vertex) const {
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         OVITO_ASSERT(vertex < numberOfVertices());
         for(int iv = 0; iv < 4; iv++) {
             if(cellVertex(cell, iv) == vertex) {
+                return iv;
+            }
+        }
+        return -1;
+    }
+
+    /// For a given input point index, determines the corresponding local vertex index within a Delaunay cell.
+    int findInputPointInCell(CellHandle cell, size_t pointIndex) const {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
+        for(int iv = 0; iv < 4; iv++) {
+            if(inputPointIndex(cellVertex(cell, iv)) == pointIndex) {
                 return iv;
             }
         }
@@ -286,10 +296,18 @@ public:
     }
 
     FacetCirculator incidentFacets(CellHandle cell, int i, int j) const {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
+        OVITO_ASSERT(i >= 0 && i < 4);
+        OVITO_ASSERT(j >= 0 && j < 4);
+        OVITO_ASSERT(i != j);
         return FacetCirculator(*this, cell, i, j);
     }
 
     FacetCirculator incidentFacets(CellHandle cell, int i, int j, CellHandle start, int f) const {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
+        OVITO_ASSERT(i >= 0 && i < 4);
+        OVITO_ASSERT(j >= 0 && j < 4);
+        OVITO_ASSERT(i != j);
         return FacetCirculator(*this, cell, i, j, start, f);
     }
 

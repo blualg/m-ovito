@@ -106,6 +106,9 @@ private:
     /// The visualization element for rendering the dislocation line segments.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<LinesVis>, dislocationSegmentsVis, setDislocationSegmentsVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
 
+    /// The visualization element for rendering the unassigned Delaunay edges.
+    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<LinesVis>, unassignedEdgesVis, setUnassignedEdgesVis, PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES | PROPERTY_FIELD_MEMORIZE);
+
    /// Enables the new experimental DXA algorithm.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, useNewAlgorithm, setUseNewAlgorithm);
 };
