@@ -39,9 +39,7 @@ public:
     PseudoColorMapping() = default;
 
     /// Constructor.
-    PseudoColorMapping(FloatType minValue, FloatType maxValue, OORef<ColorCodingGradient> gradient) : _minValue(minValue), _maxValue(maxValue), _gradient(std::move(gradient)) {
-        OVITO_ASSERT(_gradient);
-    }
+    PseudoColorMapping(FloatType minValue, FloatType maxValue, OORef<ColorCodingGradient> gradient) : _minValue(minValue), _maxValue(maxValue), _gradient(std::move(gradient)) {}
 
     /// Returns true if this is not the null mapping.
     bool isValid() const { return (bool)_gradient && std::isfinite(_minValue) && std::isfinite(_maxValue); }

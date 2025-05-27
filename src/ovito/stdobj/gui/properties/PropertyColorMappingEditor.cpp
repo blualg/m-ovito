@@ -155,10 +155,16 @@ void PropertyColorMappingEditor::updateColorGradient()
     // Create the color legend image.
     int legendHeight = 128;
     QImage image(1, legendHeight, QImage::Format_RGB32);
-    for(int y = 0; y < legendHeight; y++) {
-        FloatType t = (FloatType)y / (legendHeight - 1);
-        Color color = mod->colorGradient()->valueToColor(1.0 - t);
-        image.setPixel(0, y, QColor(color).rgb());
+    if(mod->colorGradient()) {
+        for(int y = 0; y < legendHeight; y++) {
+            FloatType t = (FloatType)y / (legendHeight - 1);
+            Color color = mod->colorGradient()->valueToColor(1.0 - t);
+            image.setPixel(0, y, QColor(color).rgb());
+        }
+    }
+    else {
+        // If no color gradient is set, fill the image with a gray color.
+        image.fill(Qt::gray);
     }
     _colorLegendLabel->setPixmap(QPixmap::fromImage(image));
 

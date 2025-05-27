@@ -83,9 +83,10 @@ Future<PipelineFlowState> ExpandSelectionModifier::evaluateModifier(const Modifi
     if(request.interactiveMode()) {
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
-                state.expectMutableObject<Particles>()->tryToAdoptProperties(cachedParticles, {
+                Particles* mutableParticles = state.expectMutableObject<Particles>();
+                mutableParticles->tryToAdoptProperties(cachedParticles, {
                     cachedParticles->getProperty(Particles::SelectionProperty),
-                }, {particles});
+                }, {mutableParticles});
             }
             // Adopt all global attributes computed by the modifier from the cached state.
             state.adoptAttributesFrom(cachedState, request.modificationNode());

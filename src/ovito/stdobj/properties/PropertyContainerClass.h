@@ -220,12 +220,14 @@ public:
 
     /// Constructor allocating a new uninitialized user property array of the given size and name.
     template<bool IsEnabled = !ComponentWise>
-    PropertyFactory(const std::enable_if_t<IsEnabled, PropertyContainerClass>& containerClazz, size_t elementCount, const QString& propertyName) :
+    PropertyFactory(const std::enable_if_t<IsEnabled, PropertyContainerClass>& containerClazz, size_t elementCount, const QString& propertyName, QStringList componentNames = QStringList()) :
         base_class(containerClazz.createUserProperty(
             DataBuffer::Uninitialized, elementCount,
             DataBufferPrimitiveType<element_type>::value,
             DataBufferPrimitiveComponentCount<element_type>::value,
-            propertyName)) {}
+            propertyName,
+            0, // type = user property
+            std::move(componentNames))) {}
 
     /// Constructor allocating a new uninitialized vector user property array of the given size and name.
     template<bool IsEnabled = ComponentWise>

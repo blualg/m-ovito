@@ -425,7 +425,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
     auto coloredCorners = std::make_unique<ParticlePrimitive>(corners);
 
     // Update the color mapping.
-    coloredSegments->setPseudoColorMapping(colorMapping()->pseudoColorMapping());
+    if(colorMapping())
+        coloredSegments->setPseudoColorMapping(colorMapping()->pseudoColorMapping());
 
     // Convert the pseudocolors of the corner spheres to RGB colors if necessary.
     if(cornerPseudoColors && coloredSegments->pseudoColorMapping().isValid()) {
