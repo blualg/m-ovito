@@ -24,8 +24,6 @@
 #include <ovito/core/utilities/concurrent/Task.h>
 #include "ElasticMapping2.h"
 #include "CrystalPathFinder.h"
-#include "DislocationTracer.h"
-#include "DislocationAnalysisEngine.h"
 
 namespace Ovito {
 
@@ -59,9 +57,10 @@ void ElasticMapping2::classifyTetrahedra(FloatType alpha, TaskProgress& progress
         }
     };
 
-    progress.setMaximum(tessellation().numberOfTetrahedra());
     _filledCells.resize(tessellation().numberOfTetrahedra());
+    _primaryFacetLookupMap.reserve(tessellation().numberOfPrimaryTetrahedra() * 4);
 
+    progress.setMaximum(tessellation().numberOfTetrahedra());
     for(DelaunayTessellation::CellHandle cell : tessellation().cells()) {
         // Update progress indicator.
         progress.setValueIntermittent(cell);
@@ -86,17 +85,17 @@ void ElasticMapping2::classifyTetrahedra(FloatType alpha, TaskProgress& progress
         // Loop over the 4 facets of the cell.
         for(int f = 0; f < 4; f++) {
             // Get the 3 vertices of the facet.
-            std::array<AtomIndex, 3> vertices = {
+            std::array<AtomIndex, 3> facetVertices = {
                 cellAtoms[DelaunayTessellation::cellFacetVertexIndex(f, 0)],
                 cellAtoms[DelaunayTessellation::cellFacetVertexIndex(f, 1)],
                 cellAtoms[DelaunayTessellation::cellFacetVertexIndex(f, 2)]
             };
 
             // Bring vertices into a well-defined order, which can be used as lookup key.
-            reorderFaceVertices(vertices);
+            reorderFacetVertices(facetVertices);
 
             // Add facet and its adjacent cell to the lookup map.
-            _primaryFacetLookupMap.emplace(vertices, std::make_pair(cell, f));
+            _primaryFacetLookupMap.emplace(facetVertices, std::make_pair(cell, f));
         }
     }
 }
@@ -139,7 +138,7 @@ void ElasticMapping2::generateTessellationEdges(TaskProgress& progress)
 
                 // Register a new edge.
                 TessellationEdge* edge = _edgePool.construct(atom1, atom2);
-                // Insert into the linked list of edges leaving vertex 1 and arriving at vertex 2.
+                // Insert into the linked list of edges outbound on vertex 1 and inbound on vertex 2.
                 edge->nextOutboundEdge = std::exchange(_atomOutboundEdges[atom1], edge);
                 edge->nextInboundEdge = std::exchange(_atomInboundEdges[atom2], edge);
             }
@@ -159,14 +158,14 @@ void ElasticMapping2::assignAtomsToClusters(TaskProgress& progress)
     // reference vectors assigned to the edges incident on that atom.
 
     // List of atoms that have not been assigned to a cluster yet.
-    const size_t atomCount = structureAnalysis().atomCount();
-    std::vector<size_t> unassignedAtoms;
+    const AtomIndex atomCount = structureAnalysis().atomCount();
+    std::vector<AtomIndex> unassignedAtoms;
     unassignedAtoms.reserve(atomCount);
 
     // First, apply most obvious choice:
     // If an atom has been assigned to a cluster by the structural analysis,
     // then we simply adopt this assignment.
-    for(size_t atomIndex = 0; atomIndex < atomCount; atomIndex++) {
+    for(AtomIndex atomIndex = 0; atomIndex < atomCount; atomIndex++) {
         Cluster* cluster = structureAnalysis().atomCluster(atomIndex);
         _atomClusters[atomIndex] = cluster;
         if(cluster->id == 0)
@@ -178,7 +177,7 @@ void ElasticMapping2::assignAtomsToClusters(TaskProgress& progress)
     // This is performed by repeatedly copying the cluster assignment
     // from the already assigned atoms to their unassigned neighbors connected by Delaunay edges.
     while(!unassignedAtoms.empty()) {
-        size_t remainingAtomCount = 0;
+        AtomIndex remainingAtomCount = 0;
         for(auto atomIndex : unassignedAtoms) {
             Cluster*& assignedCluster = _atomClusters[atomIndex];
             OVITO_ASSERT(assignedCluster->id == 0);
@@ -219,7 +218,8 @@ void ElasticMapping2::assignAtomsToClusters(TaskProgress& progress)
 }
 
 /******************************************************************************
-* Determines the ideal vector corresponding to each edge of the tessellation.
+* Guesses a lattice vector for each edge of the tessellation from the
+* results of the atomistic crystal structure analysis.
 ******************************************************************************/
 void ElasticMapping2::assignIdealVectorsToEdges(int crystalPathSteps, TaskProgress& progress)
 {
@@ -250,14 +250,15 @@ void ElasticMapping2::assignIdealVectorsToEdges(int crystalPathSteps, TaskProgre
             if(idealVector.has_value() && idealVector->transformToCluster(cluster1, *clusterGraph())) {
                 // Assign cluster vector to the edge.
                 edge->vector = idealVector->localVec();
-                edge->hasClusterVector = true;
+                edge->hasEdgeVector = true;
             }
         }
     });
 }
 
 /******************************************************************************
-* Narrows down the bad tessellation region by complementing the lattice vectors of unassigned Delaunay edges.
+* Narrows down the bad tessellation region by complementing the lattice vectors
+* of unassigned Delaunay edges.
 ******************************************************************************/
 bool ElasticMapping2::complementEdgeVectors()
 {
@@ -294,7 +295,7 @@ bool ElasticMapping2::complementEdgeVectors()
                     vertices[i] = static_cast<AtomIndex>(tessellation().inputPointIndex(tessellation().cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(facet, i))));
 
                 // Bring vertices into a well-defined order, which can be used as lookup key.
-                reorderFaceVertices(vertices);
+                reorderFacetVertices(vertices);
 
                 // Perform lookup.
                 auto iter = _primaryFacetLookupMap.find(vertices);
@@ -368,9 +369,9 @@ bool ElasticMapping2::complementEdgeVectors()
                     else {
                         bool skipEdge = false;
                         for(TessellationEdge* e = _atomOutboundEdges[facetEdges[0].atom1()]; e != nullptr && !skipEdge; e = e->nextOutboundEdge)
-                            skipEdge |= e->hasClusterVector;
+                            skipEdge |= e->hasEdgeVector;
                         for(TessellationEdge* e = _atomInboundEdges[facetEdges[0].atom1()]; e != nullptr && !skipEdge; e = e->nextInboundEdge)
-                            skipEdge |= e->hasClusterVector;
+                            skipEdge |= e->hasEdgeVector;
                         if(!skipEdge) {
                             // If the third edge doesn't have an edge vector yet, arbitrarily assume it is zero.
                             facetEdges[0].setEdgeVector(-facetEdges[0].transition()->reverseTransform(facetEdges[1].vector()));
@@ -396,10 +397,8 @@ bool ElasticMapping2::complementEdgeVectors()
 }
 
 /******************************************************************************
-* Determines whether the elastic mapping from the physical configuration
-* of the crystal to the imaginary, stress-free configuration is compatible
-* within the given tessellation cell. Returns false if the mapping is incompatible
-* or cannot be determined at all.
+* Determines whether the tetrahedron formed by the six edges is dislocation-free, i.e. whether
+* their assigned lattice vectors are all compatible.
 ******************************************************************************/
 bool ElasticMapping2::isElasticMappingCompatible(const std::array<OrientedEdge, 6>& cellEdges) const
 {
@@ -413,24 +412,24 @@ bool ElasticMapping2::isElasticMappingCompatible(const std::array<OrientedEdge, 
         OVITO_ASSERT(facetEdges[1].atom2() == facetEdges[2].atom1());
         OVITO_ASSERT(facetEdges[2].atom2() == facetEdges[0].atom1());
 
-        ClusterTransition* t1 = facetEdges[0].transition();
-        ClusterTransition* t2 = facetEdges[1].transition();
-        ClusterTransition* t3 = facetEdges[2].transition();
-        if(!t1 || !t2 || !t3) {
+        ClusterTransition* t0 = facetEdges[0].transition();
+        ClusterTransition* t1 = facetEdges[1].transition();
+        ClusterTransition* t2 = facetEdges[2].transition();
+        if(!t0 || !t1 || !t2) {
             // Skip if one of the edges has no assigned cluster transition.
             return false;
         }
 
         // Perform Burgers circuit test on the face.
         // Calculation is performed in the frame of the first vertex' lattice cluster.
-        Vector3 burgersVector = facetEdges[0].vector() + t1->reverseTransform(facetEdges[1].vector()) + t3->transform(facetEdges[2].vector());
+        Vector3 burgersVector = facetEdges[0].vector() + t0->reverseTransform(facetEdges[1].vector()) + t2->transform(facetEdges[2].vector());
         if(!burgersVector.isZero(CA_LATTICE_VECTOR_EPSILON)) {
             return false;
         }
 
         // Perform disclination test on the face.
-        if(!t1->isSelfTransition() || !t2->isSelfTransition() || !t3->isSelfTransition()) {
-            Matrix3 frankRotation = t3->tm * t2->tm * t1->tm;
+        if(!t0->isSelfTransition() || !t1->isSelfTransition() || !t2->isSelfTransition()) {
+            Matrix3 frankRotation = t2->tm * t1->tm * t0->tm;
             if(!frankRotation.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON)) {
                 return false;
             }
@@ -441,8 +440,9 @@ bool ElasticMapping2::isElasticMappingCompatible(const std::array<OrientedEdge, 
 }
 
 /******************************************************************************
- * Extracts the Delaunay edges with no lattice vector from the elastic mapping.
- ******************************************************************************/
+* Extracts the Delaunay edges with no lattice vector from the elastic mapping.
+* Note: This method is only used for debugging purposes.
+******************************************************************************/
 void ElasticMapping2::extractUnassignedEdges(TaskProgress& progress, PropertyFactory<Point3>& edgePosition1Access,
                                  PropertyFactory<Point3>& edgePosition2Access, PropertyFactory<int64_t*>& edgeAtomAccess, PropertyFactory<int>& edgeStageAccess,
                                  int stage)
@@ -450,7 +450,7 @@ void ElasticMapping2::extractUnassignedEdges(TaskProgress& progress, PropertyFac
     // Iterate over all edges of the tessellation.
     BufferReadAccess<Point3> positions(structureAnalysis().positions());
     _edgePool.visitAll(progress, [&](TessellationEdge* edge) {
-        if(edge->transition && !edge->hasClusterVector) {
+        if(edge->transition && !edge->hasEdgeVector) {
             edgePosition1Access.push_back(positions[edge->atom1]);
             edgePosition2Access.push_back(positions[edge->atom2]);
             edgeAtomAccess.push_back(std::array<int64_t,2>{{(int64_t)edge->atom1, (int64_t)edge->atom2}});

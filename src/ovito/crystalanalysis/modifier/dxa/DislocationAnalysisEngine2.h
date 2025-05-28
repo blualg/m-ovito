@@ -44,9 +44,7 @@ public:
     DislocationAnalysisEngine2(PropertyPtr structures, size_t particleCount, int inputCrystalStructure,
                               ConstPropertyPtr particleSelection, ConstPropertyPtr crystalClusters,
                               std::vector<Matrix3> preferredCrystalOrientations,
-                              DataOORef<DislocationNetwork> dislocationNetwork,
-                              DataOORef<Lines> dislocationSegments, DataOORef<Lines> unassignedEdges, DataOORef<SurfaceMesh> interfaceMesh,
-                              int lineSmoothingLevel, FloatType linePointInterval);
+                              DataOORef<Lines> dislocationSegments, DataOORef<Lines> unassignedEdges, DataOORef<SurfaceMesh> interfaceMesh);
 
     /// Performs the atomic structure classification.
     virtual void identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection) override;
@@ -62,11 +60,8 @@ public:
     /// Assigns the array of atom cluster IDs.
     void setAtomClusters(PropertyPtr prop) { _atomClusters = std::move(prop); }
 
-    /// Returns the created cluster graph.
-    decltype(auto) clusterGraph() const { return dislocationNetwork()->clusterGraph(); }
-
-    /// Returns the extracted dislocations.
-    const DataOORef<DislocationNetwork>& dislocationNetwork() const { return _dislocationNetwork; }
+    /// Returns the cluster graph.
+    ClusterGraph* clusterGraph() const { return _clusterGraph; }
 
     /// Returns the total volume of the input simulation cell.
     FloatType simulationCellVolume() const { return _simulationCellVolume; }
@@ -99,6 +94,8 @@ private:
     std::optional<ElasticMapping2> _elasticMapping;
     ConstPropertyPtr _crystalClusters;
 
+    DataOORef<ClusterGraph> _clusterGraph;
+
     /// This stores the atom-to-cluster assignments computed by the modifier.
     PropertyPtr _atomClusters;
 
@@ -110,9 +107,6 @@ private:
 
     /// The interface mesh computed by the algorithm.
     DataOORef<SurfaceMesh> _interfaceMesh;
-
-    /// The dislocations computed by the modifier.
-    DataOORef<DislocationNetwork> _dislocationNetwork;
 
     /// The total volume of the input simulation cell.
     /// This is used to compute the dislocation density.

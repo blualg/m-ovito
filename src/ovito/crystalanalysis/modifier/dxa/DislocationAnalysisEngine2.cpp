@@ -40,19 +40,15 @@ namespace Ovito {
 DislocationAnalysisEngine2::DislocationAnalysisEngine2(PropertyPtr structures, size_t particleCount, int inputCrystalStructure,
                                                      ConstPropertyPtr particleSelection,
                                                      ConstPropertyPtr crystalClusters, std::vector<Matrix3> preferredCrystalOrientations,
-                                                     DataOORef<DislocationNetwork> dislocationNetwork,
-                                                     DataOORef<Lines> dislocationSegments, DataOORef<Lines> unassignedEdges, DataOORef<SurfaceMesh> interfaceMesh,
-                                                     int lineSmoothingLevel, FloatType linePointInterval)
+                                                     DataOORef<Lines> dislocationSegments, DataOORef<Lines> unassignedEdges, DataOORef<SurfaceMesh> interfaceMesh)
     : StructureIdentificationModifier::Algorithm(std::move(structures)),
       _inputCrystalStructure(inputCrystalStructure),
-      _lineSmoothingLevel(lineSmoothingLevel),
-      _linePointInterval(linePointInterval),
       _preferredCrystalOrientations(std::move(preferredCrystalOrientations)),
       _crystalClusters(std::move(crystalClusters)),
-      _dislocationNetwork(std::move(dislocationNetwork)),
       _dislocationSegments(std::move(dislocationSegments)),
       _unassignedEdges(std::move(unassignedEdges)),
-      _interfaceMesh(std::move(interfaceMesh))
+      _interfaceMesh(std::move(interfaceMesh)),
+      _clusterGraph(DataOORef<ClusterGraph>::create())
 {
 }
 
@@ -75,14 +71,20 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
 
     const Property* positions = particles->expectProperty(Particles::PositionProperty);
     _structureAnalysis.emplace(positions, simulationCell, (StructureAnalysis::LatticeStructureType)_inputCrystalStructure, selection,
-                               const_cast<ClusterGraph*>(_dislocationNetwork->clusterGraph()), structures(),
+                               _clusterGraph, structures(),
                                std::move(_preferredCrystalOrientations));
+    QElapsedTimer timer;
     _tessellation.emplace();
     _elasticMapping.emplace(*_structureAnalysis, *_tessellation);
     setAtomClusters(_structureAnalysis->atomClusters());
+
+    timer.start();
     _structureAnalysis->identifyStructures(progress, simulationCell);
+    qInfo() << "Structure identification took" << timer.restart() << "ms";
     _structureAnalysis->buildClusters(progress);
+    qInfo() << "Building clusters took" << timer.restart() << "ms";
     _structureAnalysis->connectClusters(progress);
+    qInfo() << "Connecting clusters took" << timer.restart() << "ms";
 
     progress.setText(DislocationAnalysisModifier::tr("DXA: Generating Delaunay tessellation"));
     FloatType ghostLayerSize = FloatType(3.5) * _structureAnalysis->maximumNeighborDistance();
@@ -91,6 +93,7 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
                                         false,  // flag coverDomainWithFiniteTets
                                         selection ? BufferReadAccess<SelectionIntType>(selection).cbegin() : nullptr,
                                         progress);
+    qInfo() << "Generating Delaunay tessellation took" << timer.restart() << "ms";
 
     /// Create a lookup map that allows to retrieve the primary Delaunay cell image that belongs to a
     /// triangular face formed by three particles. In addition, use the alpha criterion to identify
@@ -99,18 +102,22 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
     const FloatType alpha = alphaFactor * _structureAnalysis->maximumNeighborDistance();
     progress.setText(DislocationAnalysisModifier::tr("DXA: Classifying tetrahedra"));
     _elasticMapping->classifyTetrahedra(alpha, progress);
+    qInfo() << "Classifying tetrahedra took" << timer.restart() << "ms";
 
     // Build a list of Delaunay edges.
     progress.setText(DislocationAnalysisModifier::tr("DXA: Generating list of Delaunay edges"));
     _elasticMapping->generateTessellationEdges(progress);
+    qInfo() << "Generating list of Delaunay edges took" << timer.restart() << "ms";
 
     // Assign each atom to a crystal cluster.
     progress.setText(DislocationAnalysisModifier::tr("DXA: Assigning atoms to clusters"));
     _elasticMapping->assignAtomsToClusters(progress);
+    qInfo() << "Assigning atoms to clusters took" << timer.restart() << "ms";
 
     // Assign ideal lattice vectors to the edges of the Delaunay tessellation.
     progress.setText(DislocationAnalysisModifier::tr("DXA: Assigning ideal lattice vectors to edges"));
     _elasticMapping->assignIdealVectorsToEdges(4, progress);
+    qInfo() << "Assigning ideal lattice vectors to edges took" << timer.restart() << "ms";
 
     // Free some memory that is no longer needed.
     _structureAnalysis->freeNeighborLists();
@@ -132,26 +139,39 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
     int stage = 0;
     auto dumpSnapshot = [&]() {
         progress.setText(DislocationAnalysisModifier::tr("DXA: Dumping snapshot %1").arg(stage + 1));
+        timer.restart();
         extractDislocationSegments(progress, linePosition1Access, linePosition2Access, burgersVectorAccess, segmentColorAccess, segmentStageAccess, stage);
+        qInfo() << "Extracting dislocation segments took" << timer.restart() << "ms";
         _elasticMapping->extractUnassignedEdges(progress, edgePosition1Access, edgePosition2Access, edgeAtomAccess, edgeStageAccess, stage);
+        qInfo() << "Extracting unassigned edges took" << timer.restart() << "ms";
         extractInterfaceMesh(alpha, stage);
+        qInfo() << "Extracting interface mesh took" << timer.restart() << "ms";
         stage++;
     };
 
+#if 1
+    dumpSnapshot();
+    progress.setText(DislocationAnalysisModifier::tr("DXA: Complementing elastic mapping"));
+    _elasticMapping->complementEdgeVectors();
+    qInfo() << "Complementing edge vectors took" << timer.restart() << "ms";
+    dumpSnapshot();
+#else
     for(;;) {
-        dumpSnapshot();
         this_task::throwIfCanceled();
 
         progress.setText(DislocationAnalysisModifier::tr("DXA: Complementing elastic mapping"));
+        timer.restart();
         if(!_elasticMapping->complementEdgeVectors())
             break;
+        qInfo() << "Complementing edge vectors took" << timer.restart() << "ms";
 
         if(stage >= 10) {
             qWarning() << "WARNING: Number of required DXA iterations exceeds limit, stopping.";
-            dumpSnapshot();
             break;
         }
     }
+    dumpSnapshot();
+#endif
 
     _dislocationSegments->addProperty(linePosition1Access.take());
     _dislocationSegments->addProperty(linePosition2Access.take());
@@ -163,10 +183,6 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
     _unassignedEdges->addProperty(edgePosition2Access.take());
     _unassignedEdges->addProperty(edgeStageAccess.take());
     _unassignedEdges->addProperty(edgeAtomAccess.take());
-
-    // Post-process dislocation lines.
-    if(_lineSmoothingLevel > 0 || _linePointInterval > 0)
-        dislocationNetwork()->smoothDislocationLines(_lineSmoothingLevel, _linePointInterval, progress);
 
     // Release data that is no longer needed.
     _structureAnalysis.reset();
@@ -183,15 +199,6 @@ std::vector<int64_t> DislocationAnalysisEngine2::computeStructureStatistics(cons
                                                                            const std::any& modifierParameters) const
 {
     std::vector<int64_t> typeCounts = StructureIdentificationModifier::Algorithm::computeStructureStatistics(structures, state, createdByNode, modifierParameters);
-
-    // Output dislocations.
-    while(!dislocationNetwork()->crystalStructures().empty())
-        dislocationNetwork()->removeCrystalStructure(dislocationNetwork()->crystalStructures().size() - 1);
-    for(const ElementType* stype : structures->elementTypes())
-        dislocationNetwork()->addCrystalStructure(static_object_cast<MicrostructurePhase>(stype));
-#if 0
-    state.addObject(dislocationNetwork());
-#endif
 
     // Output dislocation segments.
     state.addObject(_dislocationSegments);

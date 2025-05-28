@@ -98,14 +98,18 @@ struct OVITO_CRYSTALANALYSIS_EXPORT ClusterTransition
 
     /// Transforms a vector from the coordinate space of cluster 1 to the coordinate space of cluster 2.
     Vector3 transform(const Vector3& v) const {
-        if(isSelfTransition()) return v;
-        else return (tm * v);
+        if(isSelfTransition())
+            return v;
+        else
+            return tm * v;
     }
 
     /// Back-transforms a vector from the coordinate space of cluster 2 to the coordinate space of cluster 1.
     Vector3 reverseTransform(const Vector3& v) const {
-        if(isSelfTransition()) return v;
-        else return (reverse->tm * v);
+        if(isSelfTransition())
+            return v;
+        else
+            return reverse->tm * v;
     }
 };
 
