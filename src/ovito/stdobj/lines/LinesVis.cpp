@@ -63,14 +63,17 @@ QString LinesPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId
     if(!linesObj())
         return str;
 
-    for(size_t i = 0; i < 2; ++i) {
+    // Is the Lines object vertex-based or segment-based?
+    bool isSegmentBasedLines = (linesObj()->getProperty(Lines::Position1Property) && linesObj()->getProperty(Lines::Position2Property));
+
+    for(size_t i = 0; i < (isSegmentBasedLines ? 1 : 2); ++i) {
         int index = segmentIndexFromSubObjectID(subobjectId) + i;
-        if(index == -1) {
+        if(index == -1 || index >= linesObj()->elementCount())
             return str;
-        }
 
         if(!str.isEmpty()) str += " ";
-        str += (i == 0) ? tr("<section>Head:</section> ") : tr("<sep><section>Tail:</section> ");
+        if(!isSegmentBasedLines)
+           str += (i == 0) ? tr("<section>Head:</section> ") : tr("<sep><section>Tail:</section> ");
         str += QStringLiteral("<key>Index:</key> ");
         str += QString::number(index);
         str += QStringLiteral("</val>");
@@ -250,8 +253,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                     BufferFactory<GraphicsFloatType> segmentPseudoColors =
                         pseudoColorArray ? BufferFactory<GraphicsFloatType>(0) : BufferFactory<GraphicsFloatType>{};
 
-                    // subObject index map to allow picking in the viewport
-                    int subobjIndex = 0;
+                    // For building sub-object index map to allow picking in the viewport.
+                    int lineIndex = 0;
 
                     // corner selection
                     BufferFactory<SelectionIntType> cornerSelection =
@@ -281,7 +284,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                         };
 
                         // Loop over all rows
-                        for(size_t row = 0; row < pos1Property.size(); ++row) {
+                        for(size_t row = 0; row < pos1Property.size(); ++row, lineIndex++) {
                             if(sampleTime && sampleTime[row] > endFrame) {
                                 continue;
                             }
@@ -289,6 +292,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                                      [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
                                          baseSegmentPoints.push_back(p1.toDataType<GraphicsFloatType>());
                                          headSegmentPoints.push_back(p2.toDataType<GraphicsFloatType>());
+                                         subobjToSegmentMap.push_back(lineIndex);
                                          if(selectionProperty) {
                                              segmentSelection.push_back(selectionProperty[row]);
                                          }
@@ -309,11 +313,10 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                                 clipPoint(pos2Property[row], simulationCell, lines->cuttingPlanes(),
                                           [&clipPointCallback, row](const Point3& p) { clipPointCallback(p, row); });
                             }
-                            subobjIndex++;
                         }
                     }
                     else if(posProperty.valid() && posProperty.size() >= 2) {
-                        subobjToSegmentMap.reserve(subobjToSegmentMap.size() + posProperty.size());
+                        subobjToSegmentMap.reserve(posProperty.size());
 
                         const Point3* pos = posProperty.cbegin();
                         // Lines does not have sample time. It's only valid for TrajectoryLines
@@ -322,7 +325,6 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                         size_t inputColorIndex = 0;
 
                         // segment callback used by the "clipLines" function
-                        // TODO: this can be a templated lambda with (colorOffset) in c++20
                         const auto clipPointCallback = [&](const Point3& p1, int colorOffset) {
                             OVITO_ASSERT(colorOffset < 2);
                             cornerPoints.push_back(p1.toDataType<GraphicsFloatType>());
@@ -340,13 +342,14 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
 
                         // Don't increment sampleTime if timeProperty is not present
                         for(const auto* pos_end = pos + posProperty.size() - 1; pos != pos_end;
-                            ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr) {
+                            ++pos, (sampleTime) ? ++sampleTime : nullptr, (id) ? ++id : nullptr, lineIndex++) {
                             // Use short circuit to avoid dereferencing nullptr
                             if((!id || id[0] == id[1]) && (!sampleTime || sampleTime[1] <= endFrame)) {
                                 clipLine(pos[0], pos[1], simulationCell, lines->cuttingPlanes(),
                                          [&](const Point3& p1, const Point3& p2, GraphicsFloatType t1, GraphicsFloatType t2) {
                                              baseSegmentPoints.push_back(p1.toDataType<GraphicsFloatType>());
                                              headSegmentPoints.push_back(p2.toDataType<GraphicsFloatType>());
+                                             subobjToSegmentMap.push_back(lineIndex);
                                              if(selectionProperty) {
                                                  segmentSelection.push_back(selectionProperty[inputColorIndex] ||
                                                                             selectionProperty[inputColorIndex + 1]);
@@ -379,12 +382,12 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                                                   [&clipPointCallback](const Point3& p) { clipPointCallback(p, 1); });
                                     }
                                 }
-                                subobjToSegmentMap.push_back(subobjIndex);
                             }
-                            subobjIndex++;
                             inputColorIndex++;
                         }
+                        OVITO_ASSERT(lineIndex == posProperty.size() - 1);
                     }
+                    OVITO_ASSERT(subobjToSegmentMap.size() == baseSegmentPoints.size());
 
                     // Create rendering primitive for the line segments.
                     segments.setShape(CylinderPrimitive::CylinderShape);
