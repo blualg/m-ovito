@@ -679,7 +679,6 @@ void VoxelGridVis::renderGridBoundary(FrameGraph& frameGraph, const SceneNode* s
 ******************************************************************************/
 void VoxelGridVis::renderGridVolume(FrameGraph& frameGraph, const SceneNode* sceneNode, const VoxelGrid* gridObj, const Property* pseudoColorProperty, int pseudoColorPropertyComponent, PipelineStatus& status)
 {
-    OVITO_ASSERT(pseudoColorProperty);
     OVITO_ASSERT(gridObj->domain() && !gridObj->domain()->is2D());
 
     if(!pseudoColorProperty) {
