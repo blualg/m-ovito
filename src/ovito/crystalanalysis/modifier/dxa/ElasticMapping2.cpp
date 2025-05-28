@@ -262,13 +262,19 @@ void ElasticMapping2::assignIdealVectorsToEdges(int crystalPathSteps, TaskProgre
 ******************************************************************************/
 bool ElasticMapping2::complementEdgeVectors()
 {
-    std::deque<std::tuple<DelaunayTessellation::CellHandle, int, int>> queue;
+    // Queue of newly assigned edges to be processed.
+    // Each entry in the queue is a tuple of (cell, atom1, atom2).
+    std::deque<std::tuple<DelaunayTessellation::CellHandle, AtomIndex, AtomIndex>> queue;
+
+    // Counts the total number of newly assigned edges.
     size_t numAssignedEdges = 0;
 
+    /// Helper function that handles the next edge from the processing queue.
+    /// It circulates around the edge in the tessellation and assigns vectors to
+    /// adjacent edges that are missing a lattice vector. These newly assigned edges
+    /// then get added to the queue for recursive processing.
     auto processNextEdgeFromQueue = [&]() {
-        const DelaunayTessellation::CellHandle startCell = std::get<0>(queue.front());
-        const auto atom1 = std::get<1>(queue.front());
-        const auto atom2 = std::get<2>(queue.front());
+        const auto [startCell, atom1, atom2] = queue.front();
         queue.pop_front();
         constexpr int tab_next_around_edge[4][4] = {
                 {5, 2, 3, 1},
@@ -277,16 +283,15 @@ bool ElasticMapping2::complementEdgeVectors()
                 {2, 0, 1, 5}};
         DelaunayTessellation::CellHandle cell = startCell;
         do {
-            // Find original edge vertices in current cell.
+            // Find the two edge vertices in the current cell.
             int localVertex1 = tessellation().findInputPointInCell(cell, atom1);
             int localVertex2 = tessellation().findInputPointInCell(cell, atom2);
-            OVITO_ASSERT(localVertex1 >= 0 && localVertex1 < 4);
-            OVITO_ASSERT(localVertex2 >= 0 && localVertex2 < 4);
+            OVITO_ASSERT(localVertex1 >= 0 && localVertex1 < 4 && localVertex2 >= 0 && localVertex2 < 4);
             // The current facet we are at.
             int facet;
             std::tie(cell, facet) = tessellation().mirrorFacet(cell, tab_next_around_edge[localVertex1][localVertex2]);
 
-            // Map the current cell to its primary image.
+            // If the current cell is a ghost cell, switch over to its primary image.
             if(tessellation().isGhostCell(cell)) {
 
                 // Get the 3 vertices of the facet.
@@ -335,6 +340,7 @@ bool ElasticMapping2::complementEdgeVectors()
         this_task::throwIfCanceled();
     };
 
+    // Visit all triangular facets of the tessellation and find edges that are missing a lattice vector.
     for(DelaunayTessellation::CellHandle cell : tessellation().cells()) {
         // Skip invalid cells (those not connecting four physical atoms), ghost cells, and empty cells.
         if(!isFilledCell(cell))
@@ -359,9 +365,9 @@ bool ElasticMapping2::complementEdgeVectors()
             // Consider each of the three edges of the facet.
             for(int edge = 0; edge < 3; edge++) {
                 if(!facetEdges[0].hasEdgeVector() && !facetEdges[0].isBlocked() && facetEdges[1].hasEdgeVector()) {
-                    // Only process this edge of the current triangle facet if:
-                    //   1. the two other edges have valid vectors OR
-                    //   2. it ends at a Delaunay vertex who's adjacent edges are ALL without a valid vector.
+                    // Only process this edge if:
+                    //   1. the two other edges of the facet have valid vectors OR
+                    //   2. it ends at a Delaunay vertex who's incident edges are ALL without a valid vector.
                     if(facetEdges[2].hasEdgeVector()) {
                         // Infer edge vector from sum of the other two edges to form a facet with a zero Burgers vector.
                         facetEdges[0].setEdgeVector(-facetEdges[0].transition()->reverseTransform(facetEdges[1].vector()) - facetEdges[2].transition()->transform(facetEdges[2].vector()));
