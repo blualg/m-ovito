@@ -80,16 +80,18 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     sublayout2->setColumnStretch(1, 1);
     layout->addWidget(container2, 2, 0, 1, 2);
 
-    QLabel* label = new QLabel(tr("<p style=\"font-size: small;\">Note: Volume rendering is only supported by <a href=\"settings\">VisRTX renderer</a>.</p>"));
-    //label->setWordWrap(true);
-    label->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
-    connect(label, &QLabel::linkActivated, this, [this]() {
-        mainWindow().actionManager()->openHelpTopic(QStringLiteral("manual:rendering.visrtx_renderer"));
-    });
-    sublayout2->addWidget(label, 0, 0, 1, 2, Qt::AlignRight);
-
     OpacityFunctionParameterUI* opacityFunctionUI = createParamUI<OpacityFunctionParameterUI>(PROPERTY_FIELD(VoxelGridVis::opacityFunction), PROPERTY_FIELD(VoxelGridVis::colorMapping));
-    sublayout2->addWidget(opacityFunctionUI->plotWidget(), 1, 0, 1, 2);
+    sublayout2->addWidget(opacityFunctionUI->plotWidget(), 0, 0, 1, 2);
+    QLabel* label = new QLabel(tr("<p style=\"font-size: small;\">Note: Volume rendering only supported by <a href=\"visrtx\">VisRTX</a> and <a href=\"ospray\">OSPRay</a> renderer.</p>"));
+    label->setWordWrap(true);
+    label->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
+    connect(label, &QLabel::linkActivated, this, [this](const QString& link) {
+        if(link == "visrtx")
+            mainWindow().actionManager()->openHelpTopic(QStringLiteral("manual:rendering.visrtx_renderer"));
+        else if(link == "ospray")
+            mainWindow().actionManager()->openHelpTopic(QStringLiteral("manual:rendering.ospray_renderer"));
+    });
+    sublayout2->addWidget(label, 1, 0, 1, 2);
 
     connect(this, &PropertiesEditor::contentsChanged, this, [this, container1, container2]() {
         if(VoxelGridVis* vis = static_object_cast<VoxelGridVis>(editObject())) {
