@@ -132,11 +132,15 @@ The table lists the licenses of the included components and, if they are used un
     - Apache 2.0
     -
 
-  * - `Intel Open Image Denoise <https://openimagedenoise.github.io/>`__
+  * - `Intel Open Image Denoise <https://github.com/RenderKit/oidn>`__
     - Apache 2.0
     -
 
-  * - `Intel RenderKit common C++/CMake infrastructure <https://github.com/ospray/rkcommon>`__
+  * - `Intel RenderKit common C++/CMake infrastructure <https://github.com/RenderKit/rkcommon>`__
+    - Apache 2.0
+    -
+
+  * - `Intel Open VKL <https://github.com/RenderKit/openvkl>`__
     - Apache 2.0
     -
 
