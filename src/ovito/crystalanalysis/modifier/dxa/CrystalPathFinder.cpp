@@ -40,7 +40,7 @@ std::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size
     if(cluster1->id != 0) {
         qint64 neighborIndex = structureAnalysis().findNeighbor(atomIndex1, atomIndex2);
         if(neighborIndex != -1) {
-            const Vector3& refv = structureAnalysis().neighborLatticeVector(atomIndex1, neighborIndex);
+            const Cluster::VecType& refv = structureAnalysis().neighborLatticeVector(atomIndex1, neighborIndex);
             return std::optional<ClusterVector>(ClusterVector(refv, cluster1));
         }
     }
@@ -49,7 +49,7 @@ std::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size
     else if(cluster2->id != 0) {
         qint64 neighborIndex = structureAnalysis().findNeighbor(atomIndex2, atomIndex1);
         if(neighborIndex != -1) {
-            const Vector3& refv = structureAnalysis().neighborLatticeVector(atomIndex2, neighborIndex);
+            const Cluster::VecType& refv = structureAnalysis().neighborLatticeVector(atomIndex2, neighborIndex);
             return std::optional<ClusterVector>(ClusterVector(-refv, cluster2));
         }
     }
@@ -59,7 +59,7 @@ std::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size
 
     _nodePool.clear(true);
 
-    PathNode start(atomIndex1, Vector3::Zero());
+    PathNode start(atomIndex1, ClusterVector::VecType::Zero());
     start.distance = 0;
 
     // Mark the head atom as visited.
@@ -88,7 +88,7 @@ std::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size
             if(current->distance >= _maxPathLength - 1 && neighbor != atomIndex2)
                 continue;
 
-            ClusterVector step{Vector3::Zero()};
+            ClusterVector step{ClusterVector::VecType::Zero()};
             if(currentCluster->id != 0) {
                 step = ClusterVector(structureAnalysis().neighborLatticeVector(currentAtom, neighborIndex), currentCluster);
             }
@@ -143,7 +143,7 @@ std::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size
         }
     }
 
-    // Cleanup visit flags.
+    // Clean up visit flags.
     for(PathNode* current = &start; current != nullptr; current = current->nextToProcess)
         _visitedAtoms.reset(current->atomIndex);
 

@@ -85,10 +85,10 @@ public:
     const BurgersVectorFamily* defaultBurgersVectorFamily() const { return !burgersVectorFamilies().empty() ? burgersVectorFamilies().front() : nullptr; }
 
     /// Returns the display color to be used for a given Burgers vector.
-    static Color getBurgersVectorColor(const QString& latticeName, const Vector3& b);
+    static Color getBurgersVectorColor(const QString& latticeName, const Cluster::VecType& b);
 
     /// Returns the display color to be used for a given Burgers vector.
-    static Color getBurgersVectorColor(ParticleType::PredefinedStructureType structureType, const Vector3& b);
+    static Color getBurgersVectorColor(ParticleType::PredefinedStructureType structureType, const Cluster::VecType& b);
 
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
     virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const override;

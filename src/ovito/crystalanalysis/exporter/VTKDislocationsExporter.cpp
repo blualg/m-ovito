@@ -132,7 +132,7 @@ OORef<FileExportJob> VTKDislocationsExporter::createExportJob(const QString& fil
             segment = renderableLines->lineSegments().begin();
             for(auto c : polyVertexCounts) {
                 const DislocationSegment* dislocation = dislocations->segments()[segment->dislocationIndex];
-                Vector3 transformedVector = dislocation->burgersVector.toSpatialVector();
+                auto transformedVector = dislocation->burgersVector.toSpatialVector();
                 textStream() << transformedVector.x() << " " << transformedVector.y() << " " << transformedVector.z() << "\n";
                 segment += c - 1;
             }

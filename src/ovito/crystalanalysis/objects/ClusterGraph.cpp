@@ -126,10 +126,10 @@ Cluster* ClusterGraph::findCluster(int id) const
 * same transformation matrix already exists.
 * The reverse transition B->A will also be created automatically.
 ******************************************************************************/
-ClusterTransition* ClusterGraph::createClusterTransition(Cluster* clusterA, Cluster* clusterB, const Matrix3& tm, int distance)
+ClusterTransition* ClusterGraph::createClusterTransition(Cluster* clusterA, Cluster* clusterB, const ClusterTransition::MatType& tm, int distance)
 {
     // Handle trivial case (the self-transition).
-    if(clusterA == clusterB && tm.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON)) {
+    if(clusterA == clusterB && tm.equals(ClusterTransition::MatType::Identity(), CA_TRANSITION_MATRIX_EPSILON)) {
         return createSelfTransition(clusterA);
     }
     OVITO_ASSERT(distance >= 1);

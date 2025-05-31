@@ -79,10 +79,13 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
     setAtomClusters(_structureAnalysis->atomClusters());
 
     timer.start();
+    progress.setText(DislocationAnalysisModifier::tr("DXA: Identifying structures"));
     _structureAnalysis->identifyStructures(progress, simulationCell);
     qInfo() << "Structure identification took" << timer.restart() << "ms";
+    progress.setText(DislocationAnalysisModifier::tr("DXA: Building clusters"));
     _structureAnalysis->buildClusters(progress);
     qInfo() << "Building clusters took" << timer.restart() << "ms";
+    progress.setText(DislocationAnalysisModifier::tr("DXA: Connecting clusters"));
     _structureAnalysis->connectClusters(progress);
     qInfo() << "Connecting clusters took" << timer.restart() << "ms";
 
@@ -127,7 +130,7 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
 
     PropertyFactory<Point3> linePosition1Access(Lines::OOClass(), 0, Lines::Position1Property);
     PropertyFactory<Point3> linePosition2Access(Lines::OOClass(), 0, Lines::Position2Property);
-    PropertyFactory<Vector3> burgersVectorAccess(Lines::OOClass(), 0, QStringLiteral("Burgers Vector"), QStringList() << "X" << "Y" << "Z");
+    PropertyFactory<Cluster::VecType> burgersVectorAccess(Lines::OOClass(), 0, QStringLiteral("Burgers Vector"), QStringList() << "X" << "Y" << "Z");
     PropertyFactory<ColorG> segmentColorAccess(Lines::OOClass(), 0, Lines::ColorProperty);
     PropertyFactory<int> segmentStageAccess(Lines::OOClass(), 0, QStringLiteral("Stage"));
 
@@ -149,29 +152,19 @@ void DislocationAnalysisEngine2::identifyStructures(const Particles* particles, 
         stage++;
     };
 
-#if 1
-    dumpSnapshot();
-    progress.setText(DislocationAnalysisModifier::tr("DXA: Complementing elastic mapping"));
-    _elasticMapping->complementEdgeVectors();
-    qInfo() << "Complementing edge vectors took" << timer.restart() << "ms";
-    dumpSnapshot();
-#else
+    progress.setText(DislocationAnalysisModifier::tr("DXA: Build Delaunay facet lookup map"));
+    _elasticMapping->buildFacetLookupMap(progress);
+    qInfo() << "Building Delaunay facet lookup map took" << timer.restart() << "ms";
+
     for(;;) {
         this_task::throwIfCanceled();
-
+        dumpSnapshot();
         progress.setText(DislocationAnalysisModifier::tr("DXA: Complementing elastic mapping"));
         timer.restart();
-        if(!_elasticMapping->complementEdgeVectors())
+        if(!_elasticMapping->complementEdgeVectors(progress))
             break;
         qInfo() << "Complementing edge vectors took" << timer.restart() << "ms";
-
-        if(stage >= 10) {
-            qWarning() << "WARNING: Number of required DXA iterations exceeds limit, stopping.";
-            break;
-        }
     }
-    dumpSnapshot();
-#endif
 
     _dislocationSegments->addProperty(linePosition1Access.take());
     _dislocationSegments->addProperty(linePosition2Access.take());
@@ -229,84 +222,29 @@ std::vector<int64_t> DislocationAnalysisEngine2::computeStructureStatistics(cons
  * Extracts the dislocation lines segments from the elastic mapping.
  ******************************************************************************/
 void DislocationAnalysisEngine2::extractDislocationSegments(TaskProgress& progress, PropertyFactory<Point3>& linePosition1Access,
-                                                            PropertyFactory<Point3>& linePosition2Access, PropertyFactory<Vector3>& burgersVectorAccess, PropertyFactory<ColorG>& lineColorAccess,
+                                                            PropertyFactory<Point3>& linePosition2Access, PropertyFactory<Cluster::VecType>& burgersVectorAccess, PropertyFactory<ColorG>& lineColorAccess,
                                                             PropertyFactory<int>& stageAccess, int stage)
 {
-    size_t numberOfSegments = 0;
-    for(DelaunayTessellation::CellHandle cell : tessellation().cells()) {
-        if(!elasticMapping().isFilledCell(cell))
-            continue;
-
-        this_task::throwIfCanceled();
-
-        // Get the four Delaunay vertices of the current tetrahedral cell.
+    elasticMapping().extractDislocationSegments(progress, [&](DelaunayTessellation::CellHandle cell, int facet, Cluster* cluster, const Cluster::VecType& burgersVector) {
         const std::array<DelaunayTessellation::VertexHandle, 4> cellVertices = tessellation().cellVertices(cell);
-
-        // Get the six oriented edges of the Delaunay cell.
-        const std::array<ElasticMapping2::OrientedEdge, 6> cellEdges = elasticMapping().getOrientedEdges(cell);
-
-        // Perform Burgers circuit test on each of the four facets of the tetrahedron.
-        for(int facet = 0; facet < 4; facet++) {
-            const std::array<ElasticMapping2::OrientedEdge, 3> facetEdges = ElasticMapping2::getFacetCircuitEdges(cellEdges, facet);
-            if(!facetEdges[0] || !facetEdges[1] || !facetEdges[2])
-                continue; // Skip if one of the edges is missing.
-            if(facetEdges[0].isBlocked() || facetEdges[1].isBlocked() || facetEdges[2].isBlocked())
-                continue; // Skip if one of the edges is blocked.
-            if(!facetEdges[0].hasEdgeVector() && !facetEdges[1].hasEdgeVector() && !facetEdges[2].hasEdgeVector())
-                continue; // Skip facet if none of the edges are valid.
-
-            // Perform Burgers circuit test on the face.
-            Vector3 burgersVector = Vector3::Zero();
-            Cluster* cluster = elasticMapping().clusterOfAtom(facetEdges[0].atom1());
-            if(facetEdges[0].hasEdgeVector()) {
-                burgersVector += facetEdges[0].vector();
-            }
-            if(facetEdges[1].hasEdgeVector()) {
-                if(facetEdges[0].hasEdgeVector())
-                    burgersVector += facetEdges[0].transition()->reverseTransform(facetEdges[1].vector());
-                else if(facetEdges[2].hasEdgeVector())
-                    burgersVector += facetEdges[2].transition()->transform(facetEdges[1].transition()->transform(facetEdges[1].vector()));
-                else
-                    burgersVector = facetEdges[1].vector();
-            }
-            if(facetEdges[2].hasEdgeVector())
-                burgersVector += facetEdges[2].transition()->transform(facetEdges[2].vector());
-            if(burgersVector.isZero(CA_LATTICE_VECTOR_EPSILON))
-                continue; // Burgers circuit test passed.
-
-            // Perform disclination test on the face.
-            if(facetEdges[0].hasEdgeVector() && facetEdges[1].hasEdgeVector() && facetEdges[2].hasEdgeVector()) {
-                ClusterTransition* t1 = facetEdges[0].transition();
-                ClusterTransition* t2 = facetEdges[1].transition();
-                ClusterTransition* t3 = facetEdges[2].transition();
-                if(!t1->isSelfTransition() || !t2->isSelfTransition() || !t3->isSelfTransition()) {
-                    Matrix3 frankRotation = t3->tm * t2->tm * t1->tm;
-                    if(!frankRotation.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON))
-                        continue; // Disclination test failed.
-                }
-            }
-
-            // Create a new dislocation segment.
-            Point3 p0 = tessellation().vertexPosition(cellVertices[facet]);
-            Vector3 p1 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(facet, 0)]) - Point3::Origin();
-            Vector3 p2 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(facet, 1)]) - Point3::Origin();
-            Vector3 p3 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(facet, 2)]) - Point3::Origin();
-            Vector3 sum = p1 + p2 + p3;
-            Point3 faceCenter = Point3::Origin() + sum / FloatType(3);
-            Point3 cellCenter = (p0 + sum) / FloatType(4);
-            linePosition1Access.push_back(faceCenter);
-            linePosition2Access.push_back(cellCenter);
-            burgersVectorAccess.push_back(burgersVector);
-            ParticleType::PredefinedStructureType structureType = ParticleType::PredefinedStructureType::OTHER;
-            if(cluster->structure == StructureAnalysis::LATTICE_FCC)
-                structureType = ParticleType::PredefinedStructureType::FCC;
-            else if(cluster->structure == StructureAnalysis::LATTICE_BCC)
-                structureType = ParticleType::PredefinedStructureType::BCC;
-            lineColorAccess.push_back(MicrostructurePhase::getBurgersVectorColor(structureType, burgersVector).toDataType<GraphicsFloatType>());
-            stageAccess.push_back(stage);
-            numberOfSegments++;
-        }
-    }
+        Point3 p0 = tessellation().vertexPosition(cellVertices[facet]);
+        Vector3 p1 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(facet, 0)]) - Point3::Origin();
+        Vector3 p2 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(facet, 1)]) - Point3::Origin();
+        Vector3 p3 = tessellation().vertexPosition(cellVertices[DelaunayTessellation::cellFacetVertexIndex(facet, 2)]) - Point3::Origin();
+        Vector3 sum = p1 + p2 + p3;
+        Point3 faceCenter = Point3::Origin() + sum / FloatType(3);
+        Point3 cellCenter = (p0 + sum) / FloatType(4);
+        linePosition1Access.push_back(faceCenter);
+        linePosition2Access.push_back(cellCenter);
+        burgersVectorAccess.push_back(burgersVector);
+        ParticleType::PredefinedStructureType structureType = ParticleType::PredefinedStructureType::OTHER;
+        if(cluster->structure == StructureAnalysis::LATTICE_FCC)
+            structureType = ParticleType::PredefinedStructureType::FCC;
+        else if(cluster->structure == StructureAnalysis::LATTICE_BCC)
+            structureType = ParticleType::PredefinedStructureType::BCC;
+        lineColorAccess.push_back(MicrostructurePhase::getBurgersVectorColor(structureType, burgersVector).toDataType<GraphicsFloatType>());
+        stageAccess.push_back(stage);
+    });
 }
 
 void DislocationAnalysisEngine2::extractInterfaceMesh(FloatType alpha, int stage)

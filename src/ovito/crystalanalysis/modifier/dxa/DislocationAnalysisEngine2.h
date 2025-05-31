@@ -79,7 +79,7 @@ private:
 
     /// Extracts the dislocation lines segments from the elastic mapping.
     void extractDislocationSegments(TaskProgress& progress, PropertyFactory<Point3>& linePosition1Access,
-                                    PropertyFactory<Point3>& linePosition2Access, PropertyFactory<Vector3>& burgersVectorAccess, PropertyFactory<ColorG>& lineColorAccess,
+                                    PropertyFactory<Point3>& linePosition2Access, PropertyFactory<Cluster::VecType>& burgersVectorAccess, PropertyFactory<ColorG>& lineColorAccess,
                                     PropertyFactory<int>& stageAccess, int stage);
 
     void extractInterfaceMesh(FloatType alpha, int stage);

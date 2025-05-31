@@ -42,7 +42,7 @@ public:
         std::array<Point3, 2> verts;
 
         /// The Burgers vector of the segment.
-        Vector3 burgersVector;
+        Cluster::VecType burgersVector;
 
         /// The crystallite the dislocation segment is embedded in.
         int region;

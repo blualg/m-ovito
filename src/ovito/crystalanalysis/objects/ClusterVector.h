@@ -30,10 +30,10 @@
 namespace Ovito {
 
 /// Two lattice space vectors are considered equal if they don't differ by more than this value.
-#define CA_LATTICE_VECTOR_EPSILON                   Ovito::FloatType(1e-3)
+#define CA_LATTICE_VECTOR_EPSILON                   1e-3f
 
 /// Two world-space vectors are considered equal if they don't differ by more than this value.
-#define CA_ATOM_VECTOR_EPSILON                      Ovito::FloatType(1e-4)
+#define CA_ATOM_VECTOR_EPSILON                      1e-4f
 
 /**
  * A Cartesian vector in the stress-free reference configuration of a cluster.
@@ -48,20 +48,22 @@ class OVITO_CRYSTALANALYSIS_EXPORT ClusterVector
 {
 public:
 
+    using VecType = Ovito::Vector3F;  ///< Type alias for a 3D vector.
+
     /// Initializes the vector to the null vector (0,0,0).
     /// All three components are set to zero. Optionally, a cluster may be associated with the vector,
     /// which determines the frame of reference.
-    ClusterVector(Vector3::Zero NULL_VECTOR, Cluster* cluster = nullptr) : _vec(NULL_VECTOR), _cluster(cluster) {}
+    ClusterVector(VecType::Zero NULL_VECTOR, Cluster* cluster = nullptr) : _vec(NULL_VECTOR), _cluster(cluster) {}
 
     /// Initializes the cluster vector to the given Cartesian vector, which is expressed in the frame of
     /// reference of the given cluster.
-    explicit ClusterVector(const Vector3& vec, Cluster* cluster) : _vec(vec), _cluster(cluster) {}
+    explicit ClusterVector(const VecType& vec, Cluster* cluster) : _vec(vec), _cluster(cluster) {}
 
     /// Returns the XYZ components of the vector expressed in the local coordinate system of the associated cluster.
-    const Vector3& localVec() const { return _vec; }
+    const VecType& localVec() const { return _vec; }
 
     /// Returns a reference to the XYZ components of the vector expressed in the local coordinate system of the associated cluster.
-    Vector3& localVec() { return _vec; }
+    VecType& localVec() { return _vec; }
 
     /// Returns the cluster that provides the local frame of reference this reference configuration vector is expressed in.
     Cluster* cluster() const { return _cluster; }
@@ -74,7 +76,7 @@ public:
     /// Transforms the cluster vector to a spatial vector using the orientation matrix of the cluster.
     Vector3 toSpatialVector() const {
         OVITO_ASSERT(cluster() != nullptr);
-        return cluster()->orientation * localVec();
+        return (cluster()->orientation * localVec()).toDataType<FloatType>();
     }
 
     /// Translates this lattice vector to the frame of reference of another cluster.
@@ -107,7 +109,7 @@ public:
 private:
 
     /// The XYZ components of the vector in the local lattice coordinate system.
-    Vector3 _vec;
+    VecType _vec;
 
     /// The cluster which serves as the frame of reference for this vector.
     /// This may be NULL if the vector's components are (0,0,0).

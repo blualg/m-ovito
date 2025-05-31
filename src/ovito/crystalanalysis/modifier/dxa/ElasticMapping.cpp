@@ -150,7 +150,7 @@ void ElasticMapping::assignIdealVectorsToEdges(int crystalPathSteps, TaskProgres
                 continue;
 
             // Translate vector to the frame of the vertex cluster.
-            Vector3 localVec;
+            Cluster::VecType localVec;
             if(idealVector->cluster() == cluster1)
                 localVec = idealVector->localVec();
             else {
@@ -196,7 +196,7 @@ bool ElasticMapping::isElasticMappingCompatible(DelaunayTessellation::CellHandle
         return false;
 
     // Retrieve the cluster vectors assigned to the six edges of the tetrahedron.
-    std::pair<Vector3, ClusterTransition*> edgeVectors[6];
+    std::pair<Cluster::VecType, ClusterTransition*> edgeVectors[6];
     for(int edgeIndex = 0; edgeIndex < 6; edgeIndex++) {
         size_t vertex1 = tessellation().inputPointIndex(tessellation().cellVertex(cell, edgeVertices[edgeIndex][0]));
         size_t vertex2 = tessellation().inputPointIndex(tessellation().cellVertex(cell, edgeVertices[edgeIndex][1]));
@@ -217,7 +217,7 @@ bool ElasticMapping::isElasticMappingCompatible(DelaunayTessellation::CellHandle
 
     // Perform the Burgers circuit test on each of the four faces of the tetrahedron.
     for(int face = 0; face < 4; face++) {
-        Vector3 burgersVector = edgeVectors[circuits[face][0]].first;
+        Cluster::VecType burgersVector = edgeVectors[circuits[face][0]].first;
         burgersVector += edgeVectors[circuits[face][0]].second->reverseTransform(edgeVectors[circuits[face][1]].first);
         burgersVector -= edgeVectors[circuits[face][2]].first;
         if(!burgersVector.isZero(CA_LATTICE_VECTOR_EPSILON)) {
@@ -231,8 +231,8 @@ bool ElasticMapping::isElasticMappingCompatible(DelaunayTessellation::CellHandle
         ClusterTransition* t2 = edgeVectors[circuits[face][1]].second;
         ClusterTransition* t3 = edgeVectors[circuits[face][2]].second;
         if(!t1->isSelfTransition() || !t2->isSelfTransition() || !t3->isSelfTransition()) {
-            Matrix3 frankRotation = t3->reverse->tm * t2->tm * t1->tm;
-            if(!frankRotation.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON))
+            Cluster::MatType frankRotation = t3->reverse->tm * t2->tm * t1->tm;
+            if(!frankRotation.equals(Cluster::MatType::Identity(), CA_TRANSITION_MATRIX_EPSILON))
                 return false;
         }
     }

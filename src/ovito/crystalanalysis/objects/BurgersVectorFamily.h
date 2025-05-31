@@ -25,6 +25,7 @@
 
 #include <ovito/crystalanalysis/CrystalAnalysis.h>
 #include <ovito/stdobj/properties/ElementType.h>
+#include <ovito/crystalanalysis/objects/Cluster.h>
 
 namespace Ovito {
 
@@ -41,7 +42,7 @@ public:
     void initializeObject(ObjectInitializationFlags flags, int id = 0, const QString& name = tr("Other"));
 
     /// Checks if the given Burgers vector is a member of this family.
-    bool isMember(const Vector3& v, const MicrostructurePhase* latticeStructure) const;
+    bool isMember(const Cluster::VecType& v, const MicrostructurePhase* latticeStructure) const;
 
 private:
 

@@ -268,13 +268,15 @@ void CAImporter::FrameLoader::loadFile()
                         throw Exception(tr("Failed to parse file. Invalid cluster atom count in line %1.").arg(stream.lineNumber()));
                     if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &cluster->centerOfMass.x(), &cluster->centerOfMass.y(), &cluster->centerOfMass.z()) != 3)
                         throw Exception(tr("Failed to parse file. Invalid cluster center of mass in line %1.").arg(stream.lineNumber()));
+                    Matrix3 orientation = Matrix3::Identity();
                     if(sscanf(stream.readLine(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
                             " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING
                             " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
-                            &cluster->orientation(0,0), &cluster->orientation(0,1), &cluster->orientation(0,2),
-                            &cluster->orientation(1,0), &cluster->orientation(1,1), &cluster->orientation(1,2),
-                            &cluster->orientation(2,0), &cluster->orientation(2,1), &cluster->orientation(2,2)) != 9)
+                            &orientation(0,0), &orientation(0,1), &orientation(0,2),
+                            &orientation(1,0), &orientation(1,1), &orientation(1,2),
+                            &orientation(2,0), &orientation(2,1), &orientation(2,2)) != 9)
                         throw Exception(tr("Failed to parse file. Invalid cluster orientation matrix in line %1.").arg(stream.lineNumber()));
+                    cluster->orientation = orientation.toDataType<Cluster::MatType::element_type>();
                 }
                 else {
                     int patternId = 0, clusterId = 0, atomCount = 0;
@@ -318,7 +320,7 @@ void CAImporter::FrameLoader::loadFile()
                         throw Exception(tr("Failed to parse file. Invalid cluster id: %1.").arg(clusterId));
                     cluster->atomCount = atomCount;
                     cluster->centerOfMass = centerOfMass;
-                    cluster->orientation = orientation;
+                    cluster->orientation = orientation.toDataType<Cluster::MatType::element_type>();
                     cluster->color = color;
                 }
             }
@@ -343,7 +345,7 @@ void CAImporter::FrameLoader::loadFile()
                         &tm(1,0), &tm(1,1), &tm(1,2),
                         &tm(2,0), &tm(2,1), &tm(2,2)) != 9)
                     throw Exception(tr("Failed to parse file. Invalid cluster transition matrix in line %1.").arg(stream.lineNumber()));
-                clusterGraph->createClusterTransition(clusterGraph->clusters()[clusterIndex1+1], clusterGraph->clusters()[clusterIndex2+1], tm);
+                clusterGraph->createClusterTransition(clusterGraph->clusters()[clusterIndex1+1], clusterGraph->clusters()[clusterIndex2+1], tm.toDataType<ClusterTransition::MatType::element_type>());
             }
         }
         else if(stream.lineStartsWith("DISLOCATIONS ")) {
@@ -386,7 +388,7 @@ void CAImporter::FrameLoader::loadFile()
                 if(!cluster)
                     throw Exception(tr("Failed to parse file. Invalid cluster reference in line %1.").arg(stream.lineNumber()));
 
-                DislocationSegment* segment = dislocations->createSegment(ClusterVector(burgersVector, cluster));
+                DislocationSegment* segment = dislocations->createSegment(ClusterVector(burgersVector.toDataType<Cluster::VecType::value_type>(), cluster));
 
                 // Read polyline.
                 int numPoints;

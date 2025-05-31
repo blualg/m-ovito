@@ -111,7 +111,7 @@ void ElasticStrainEngine::identifyStructures(const Particles* particles, const S
             Cluster* parentCluster = nullptr;
             if(localCluster->parentTransition != nullptr) {
                 parentCluster = localCluster->parentTransition->cluster2;
-                idealUnitCellTM = idealUnitCellTM * localCluster->parentTransition->tm;
+                idealUnitCellTM = idealUnitCellTM * localCluster->parentTransition->tm.toDataType<FloatType>();
             }
             else if(localCluster->structure == _inputCrystalStructure) {
                 parentCluster = localCluster;
@@ -128,7 +128,7 @@ void ElasticStrainEngine::identifyStructures(const Particles* particles, const S
                 for(int n = 0; n < numneigh; n++) {
                     int neighborAtomIndex = _structureAnalysis->getNeighbor(particleIndex, n);
                     // Add vector pair to matrices for computing the elastic deformation gradient.
-                    Vector3 latticeVector = idealUnitCellTM * _structureAnalysis->neighborLatticeVector(particleIndex, n);
+                    Vector3 latticeVector = idealUnitCellTM * _structureAnalysis->neighborLatticeVector(particleIndex, n).toDataType<FloatType>();
                     Vector3 spatialVector = positionsArray[neighborAtomIndex] - positionsArray[particleIndex];
                     if(simulationCell)
                         spatialVector = simulationCell->wrapVector(spatialVector);

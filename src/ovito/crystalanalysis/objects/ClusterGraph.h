@@ -57,7 +57,7 @@ public:
     /// Creates a new cluster transition between two clusters A and B.
     /// This will create a new pair of directed edges in the cluster graph unless a transition with same transformation matrix already exists.
     /// The reverse transition B->A will also be created automatically.
-    ClusterTransition* createClusterTransition(Cluster* clusterA, Cluster* clusterB, const Matrix3& tm, int distance = 1);
+    ClusterTransition* createClusterTransition(Cluster* clusterA, Cluster* clusterB, const ClusterTransition::MatType& tm, int distance = 1);
 
     /// Determines the transformation matrix that transforms vectors from cluster A to cluster B.
     /// For this, the cluster graph is searched for the shortest path connecting the two cluster nodes.

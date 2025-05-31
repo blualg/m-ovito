@@ -31,8 +31,7 @@ struct Cluster;
 struct ClusterTransition;
 
 /// Two transitions matrices are considered equal if their elements don't differ by more than this value.
-#define CA_TRANSITION_MATRIX_EPSILON                Ovito::FloatType(1e-4)
-
+#define CA_TRANSITION_MATRIX_EPSILON                1e-4f
 
 /**
  * A cluster transition T_12 is a transformation matrix that connects the
@@ -54,6 +53,9 @@ struct ClusterTransition;
  */
 struct OVITO_CRYSTALANALYSIS_EXPORT ClusterTransition
 {
+    using MatType = Ovito::Matrix3F; ///< Type alias for a 3x3 matrix.
+    using VecType = Ovito::Vector3F;  ///< Type alias for a 3D vector.
+
     /// The first cluster.
     /// The transition matrix transforms vectors from this cluster to the coordinate system of cluster 2.
     Cluster* cluster1;
@@ -64,7 +66,7 @@ struct OVITO_CRYSTALANALYSIS_EXPORT ClusterTransition
 
     /// The transformation matrix that transforms vectors from the reference frame of cluster 1 to the frame
     /// of cluster 2.
-    Matrix3 tm;
+    MatType tm;
 
     /// Pointer to the reverse transition from cluster 2 to cluster 1.
     /// The transformation matrix of the reverse transition is the inverse of this transition's matrix.
@@ -91,13 +93,13 @@ struct OVITO_CRYSTALANALYSIS_EXPORT ClusterTransition
     /// The transformation matrix of an identity transition is always the identity matrix.
     bool isSelfTransition() const {
         OVITO_ASSERT((reverse != this) || (cluster1 == cluster2));
-        OVITO_ASSERT((reverse != this) || tm.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON));
+        OVITO_ASSERT((reverse != this) || tm.equals(MatType::Identity(), CA_TRANSITION_MATRIX_EPSILON));
         OVITO_ASSERT((reverse != this) || (distance == 0));
         return reverse == this;
     }
 
     /// Transforms a vector from the coordinate space of cluster 1 to the coordinate space of cluster 2.
-    Vector3 transform(const Vector3& v) const {
+    VecType transform(const VecType& v) const {
         if(isSelfTransition())
             return v;
         else
@@ -105,7 +107,7 @@ struct OVITO_CRYSTALANALYSIS_EXPORT ClusterTransition
     }
 
     /// Back-transforms a vector from the coordinate space of cluster 2 to the coordinate space of cluster 1.
-    Vector3 reverseTransform(const Vector3& v) const {
+    VecType reverseTransform(const VecType& v) const {
         if(isSelfTransition())
             return v;
         else
@@ -133,6 +135,9 @@ struct OVITO_CRYSTALANALYSIS_EXPORT ClusterTransition
  */
 struct OVITO_CRYSTALANALYSIS_EXPORT Cluster
 {
+    using MatType = ClusterTransition::MatType;  ///< Type alias for a 3x3 matrix.
+    using VecType = ClusterTransition::VecType;  ///< Type alias for a 3D vector.
+
     /// The identifier of the cluster.
     int id;
 
@@ -166,7 +171,7 @@ struct OVITO_CRYSTALANALYSIS_EXPORT Cluster
     /// Transformation matrix that transforms vectors from the cluster's internal coordinate space
     /// to the global simulation frame. Note that this describes the (average) orientation of the
     /// atom group in the simulation coordinate system.
-    Matrix3 orientation = Matrix3::Identity();
+    MatType orientation = MatType::Identity();
 
     /// An additional symmetry transformation applied to the orientation of this cluster to align it
     /// with one of the preferred crystal orientation as much as possible.

@@ -155,7 +155,7 @@ struct DislocationSegment
     /// Constructs a new dislocation segment with the given Burgers vector
     /// and connecting the two dislocation nodes.
     DislocationSegment(const ClusterVector& b, DislocationNode* forwardNode, DislocationNode* backwardNode) : burgersVector(b) {
-        OVITO_ASSERT(b.localVec() != Vector3::Zero());
+        OVITO_ASSERT(!b.localVec().isZero());
         nodes[0] = forwardNode;
         nodes[1] = backwardNode;
         forwardNode->segment = this;

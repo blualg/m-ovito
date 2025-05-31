@@ -73,7 +73,7 @@ Future<PipelineFlowState> DislocationAffineTransformationModifierDelegate::apply
                 if(!tm.isTranslationMatrix()) {
                     ClusterGraph* clusterGraph = outputDislocations->makeMutable(outputDislocations->clusterGraph());
                     for(Cluster* cluster : clusterGraph->clusters()) {
-                        cluster->orientation = tm.linear() * cluster->orientation;
+                        cluster->orientation = tm.linear().toDataType<Cluster::MatType::element_type>() * cluster->orientation;
                     }
                 }
 

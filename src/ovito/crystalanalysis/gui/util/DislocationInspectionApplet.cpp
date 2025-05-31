@@ -128,7 +128,7 @@ QVariant DislocationInspectionApplet::DislocationTableModel::data(const QModelIn
             DislocationSegment* segment = _dislocationObj->segments()[index.row()];
             switch(index.column()) {
             case 0: return _dislocationObj->segments()[index.row()]->id;
-            case 1: return DislocationVis::formatBurgersVector(segment->burgersVector.localVec(), _dislocationObj->structureById(segment->burgersVector.cluster()->structure));
+            case 1: return DislocationVis::formatBurgersVector(segment->burgersVector.localVec().toDataType<FloatType>(), _dislocationObj->structureById(segment->burgersVector.cluster()->structure));
             case 2: { Vector3 b = segment->burgersVector.toSpatialVector();
                     return QStringLiteral("%1 %2 %3")
                                 .arg(QLocale::c().toString(b.x(), 'f', 4), 7)

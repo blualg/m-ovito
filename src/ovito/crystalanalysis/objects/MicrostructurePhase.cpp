@@ -41,7 +41,7 @@ SET_PROPERTY_FIELD_LABEL(MicrostructurePhase, burgersVectorFamilies, "Burgers ve
 /******************************************************************************
 * Returns the display color to be used for a given Burgers vector.
 ******************************************************************************/
-Color MicrostructurePhase::getBurgersVectorColor(const QString& latticeName, const Vector3& b)
+Color MicrostructurePhase::getBurgersVectorColor(const QString& latticeName, const Cluster::VecType& b)
 {
     if(latticeName == ParticleType::getPredefinedStructureTypeName(ParticleType::PredefinedStructureType::BCC)) {
         return getBurgersVectorColor(ParticleType::PredefinedStructureType::BCC, b);
@@ -55,10 +55,10 @@ Color MicrostructurePhase::getBurgersVectorColor(const QString& latticeName, con
 /******************************************************************************
 * Returns the display color to be used for a given Burgers vector.
 ******************************************************************************/
-Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructureType structureType, const Vector3& b)
+Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructureType structureType, const Cluster::VecType& b)
 {
     if(structureType == ParticleType::PredefinedStructureType::BCC) {
-        static const Color predefinedLineColors[] = {
+        static constexpr Color predefinedLineColors[] = {
                 Color(0.4f,1.0f,0.4f),
                 Color(1.0f,0.2f,0.2f),
                 Color(0.4f,0.4f,1.0f),
@@ -67,7 +67,7 @@ Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructu
                 Color(1.0f,0.4f,1.0f),
                 Color(0.7f,0.0f,1.0f)
         };
-        static const Vector3 burgersVectors[] = {
+        static constexpr Cluster::VecType burgersVectors[] = {
                 { FloatType(0.5), FloatType(0.5), FloatType(0.5) },
                 { FloatType(-0.5), FloatType(0.5), FloatType(0.5) },
                 { FloatType(0.5), FloatType(-0.5), FloatType(0.5) },
@@ -83,7 +83,7 @@ Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructu
         }
     }
     else if(structureType == ParticleType::PredefinedStructureType::FCC) {
-        static const Color predefinedLineColors[] = {
+        static constexpr Color predefinedLineColors[] = {
                 Color(230.0/255.0, 25.0/255.0, 75.0/255.0),
                 Color(245.0/255.0, 130.0/255.0, 48.0/255.0),
                 Color(255.0/255.0, 225.0/255.0, 25.0/255.0),
@@ -104,7 +104,7 @@ Color MicrostructurePhase::getBurgersVectorColor(ParticleType::PredefinedStructu
                 Color(0.5f,0.5f,0.5f),
                 Color(0.5f,0.5f,0.5f),
         };
-        static const Vector3 burgersVectors[] = {
+        static constexpr Cluster::VecType burgersVectors[] = {
                 { FloatType(1.0/6.0), FloatType(-2.0/6.0), FloatType(-1.0/6.0) },
                 { FloatType(1.0/6.0), FloatType(-2.0/6.0), FloatType(1.0/6.0) },
                 { FloatType(1.0/6.0), FloatType(-1.0/6.0), FloatType(2.0/6.0) },

@@ -52,7 +52,7 @@ private:
         size_t vertex2;
 
         /// The vector corresponding to this edge in the stress-free reference configuration.
-        Vector3 clusterVector;
+        Cluster::VecType clusterVector;
 
         /// The transition matrix when going from the cluster of vertex 1 to the cluster of vertex 2.
         ClusterTransition* clusterTransition = nullptr;
@@ -68,7 +68,7 @@ private:
 
         /// Assigns a vector to this edge.
         /// Also stores the cluster transition that connects the two clusters of the two vertices.
-        void assignClusterVector(const Vector3& v, ClusterTransition* transition) {
+        void assignClusterVector(const Cluster::VecType& v, ClusterTransition* transition) {
             clusterVector = v;
             clusterTransition = transition;
         }
@@ -85,7 +85,6 @@ public:
     ElasticMapping(StructureAnalysis& structureAnalysis, DelaunayTessellation& tessellation) :
         _structureAnalysis(structureAnalysis),
         _tessellation(tessellation), _clusterGraph(structureAnalysis.clusterGraph()), _edgeCount(0),
-        _edgePool(16384),
         _vertexEdges(structureAnalysis.atomCount(), std::pair<TessellationEdge*,TessellationEdge*>(nullptr,nullptr)),
         _vertexClusters(structureAnalysis.atomCount(), nullptr)
     {}
@@ -124,7 +123,7 @@ public:
     }
 
     /// Returns the lattice vector assigned to a tessellation edge.
-    std::pair<Vector3, ClusterTransition*> getEdgeClusterVector(size_t vertexIndex1, size_t vertexIndex2) const {
+    std::pair<Cluster::VecType, ClusterTransition*> getEdgeClusterVector(size_t vertexIndex1, size_t vertexIndex2) const {
         TessellationEdge* tessEdge = findEdge(vertexIndex1, vertexIndex2);
         OVITO_ASSERT(tessEdge != nullptr);
         OVITO_ASSERT(tessEdge->hasClusterVector());

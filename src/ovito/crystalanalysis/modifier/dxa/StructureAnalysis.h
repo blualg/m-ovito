@@ -65,14 +65,14 @@ public:
 
     struct CoordinationStructure {
         int numNeighbors;
-        std::vector<Vector3> latticeVectors;
+        std::vector<Cluster::VecType> latticeVectors;
         CommonNeighborAnalysisModifier::NeighborBondArray neighborArray;
         int cnaSignatures[MAX_NEIGHBORS];
         int commonNeighbors[MAX_NEIGHBORS][2];
     };
 
     struct SymmetryPermutation {
-        Matrix3 transformation;
+        Cluster::MatType transformation;
         std::array<int, MAX_NEIGHBORS> permutation;
         std::vector<int> product;
         std::vector<int> inverseProduct;
@@ -80,7 +80,7 @@ public:
 
     struct LatticeStructure {
         const CoordinationStructure* coordStructure = nullptr;
-        std::vector<Vector3> latticeVectors;
+        std::vector<Cluster::VecType> latticeVectors;
         Matrix3 primitiveCell;
         Matrix3 primitiveCellInverse;
         int maxNeighbors;
@@ -178,7 +178,7 @@ public:
     }
 
     /// Returns the ideal lattice vector associated with a neighbor bond.
-    const Vector3& neighborLatticeVector(int centralAtomIndex, int neighborIndex) const {
+    const Cluster::VecType& neighborLatticeVector(int centralAtomIndex, int neighborIndex) const {
         int structureType = _structureTypesArray[centralAtomIndex];
         const LatticeStructure& latticeStructure = _latticeStructures[structureType];
         OVITO_ASSERT(neighborIndex >= 0 && neighborIndex < _coordinationStructures[structureType].numNeighbors);

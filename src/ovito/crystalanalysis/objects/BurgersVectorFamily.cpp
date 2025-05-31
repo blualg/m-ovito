@@ -46,7 +46,7 @@ void BurgersVectorFamily::initializeObject(ObjectInitializationFlags flags, int 
 /******************************************************************************
 * Checks if the given Burgers vector is a member of this family.
 ******************************************************************************/
-bool BurgersVectorFamily::isMember(const Vector3& v, const MicrostructurePhase* latticeStructure) const
+bool BurgersVectorFamily::isMember(const Cluster::VecType& v, const MicrostructurePhase* latticeStructure) const
 {
     if(burgersVector() == Vector3::Zero())
         return false;

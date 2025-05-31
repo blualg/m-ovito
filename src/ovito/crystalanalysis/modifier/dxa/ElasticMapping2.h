@@ -47,7 +47,7 @@ private:
     struct TessellationEdge {
 
         /// Constructor.
-        TessellationEdge(AtomIndex atom1, AtomIndex atom2) : atom1(atom1), atom2(atom2) {}
+        TessellationEdge(AtomIndex atom1, AtomIndex atom2, DelaunayTessellation::CellHandle adjacentCell) : atom1(atom1), atom2(atom2), adjacentCell(adjacentCell) {}
 
         /// The index of the atom this edge is originating from.
         AtomIndex atom1;
@@ -56,10 +56,13 @@ private:
         AtomIndex atom2;
 
         /// The vector corresponding to this edge in the stress-free reference configuration.
-        Vector3 vector = Vector3::Zero();
+        Cluster::VecType vector = Cluster::VecType::Zero();
 
         /// The crystal cluster transition when going from atom1 to atom2.
         ClusterTransition* transition = nullptr;
+
+        /// A Delaunay cell adjacent to this edge.
+        DelaunayTessellation::CellHandle adjacentCell;
 
         /// Indicates that this edge has been assigned a valid lattice vector.
         bool hasEdgeVector = false;
@@ -97,7 +100,7 @@ public:
         }
 
         /// Returns the cluster vector assigned to this edge, possibly flipped.
-        Vector3 vector() const {
+        Cluster::VecType vector() const {
             OVITO_ASSERT(*this);
             return !_isFlipped ? undirectedEdge()->vector : -undirectedEdge()->transition->transform(undirectedEdge()->vector);
         }
@@ -117,7 +120,7 @@ public:
         }
 
         /// Sets the edge vector assigned to this edge, possibly flipped.
-        void setEdgeVector(const Vector3& v) {
+        void setEdgeVector(const Vector3F& v) {
             OVITO_ASSERT(*this);
             OVITO_ASSERT(!hasEdgeVector());
             OVITO_ASSERT(!isBlocked());
@@ -187,8 +190,12 @@ public:
     /// results of the atomistic crystal structure analysis.
     void assignIdealVectorsToEdges(int crystalPathSteps, TaskProgress& progress);
 
+    /// Builds the lookup map that allows to retrieve the primary Delaunay
+    /// cell belonging to a given triangular facet formed by three atoms.
+    void buildFacetLookupMap(TaskProgress& progress);
+
     /// Narrows down the bad tessellation region by complementing the lattice vectors of unassigned Delaunay edges.
-    bool complementEdgeVectors();
+    bool complementEdgeVectors(TaskProgress& progress);
 
     /// Returns the cluster to which an atom has been assigned (may be nullptr).
     Cluster* clusterOfAtom(AtomIndex atomIndex) const {
@@ -262,6 +269,11 @@ public:
         return _filledCells[cell];
     }
 
+    /// Extracts the dislocation lines segments.
+    /// Invokes the callback function for each segment found.
+    void extractDislocationSegments(TaskProgress& progress,
+            const std::function<void(DelaunayTessellation::CellHandle, int, Cluster*, const Cluster::VecType&)>& callback) const;
+
     /// Extracts the Delaunay edges with no lattice vector from the elastic mapping.
     /// Note: This method is only used for debugging purposes.
     void extractUnassignedEdges(TaskProgress& progress, PropertyFactory<Point3>& edgePosition1Access,
@@ -312,6 +324,9 @@ private:
 
     /// Memory pool for the creation of TessellationEdge structure instances.
     MemoryPool<TessellationEdge> _edgePool;
+
+    /// List of edges that have not been assigned a lattice vector yet and which are not blocked.
+    std::vector<TessellationEdge*> _unassignedEdges;
 
     /// Stores the cluster assigned to each atom.
     std::vector<Cluster*> _atomClusters;

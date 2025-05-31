@@ -225,10 +225,10 @@ struct BurgersCircuitSearchStruct
     InterfaceMesh::Vertex* node;
 
     /// The coordinates of this node in the unstrained reference crystal it was mapped to.
-    Point3 latticeCoord;
+    Point_3<Cluster::VecType::value_type> latticeCoord;
 
     /// The matrix that transforms local lattice vectors to the reference frame of the start node.
-    Matrix3 tm;
+    Cluster::MatType tm;
 
     /// Number of steps between this node and the start node of the recursive walk.
     int recursiveDepth;
@@ -267,7 +267,7 @@ void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize, TaskProgr
         // The first node is the seed of our recursive walk.
         // It is mapped to the origin of the reference lattice.
         BurgersCircuitSearchStruct* start = structPool.construct();
-        start->latticeCoord = Point3::Origin();
+        start->latticeCoord = Point_3<Cluster::VecType::value_type>::Origin();
         start->predecessorEdge = nullptr;
         start->recursiveDepth = 0;
         start->nextToProcess = nullptr;
@@ -304,7 +304,7 @@ void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize, TaskProgr
                 InterfaceMesh::Vertex* neighbor = edge->vertex2();
 
                 // Calculate reference lattice coordinates of the neighboring vertex.
-                Point3 neighborCoord = current->latticeCoord;
+                Point_3<Cluster::VecType::value_type> neighborCoord = current->latticeCoord;
                 neighborCoord += current->tm * edge->clusterVector;
 
                 // If this neighbor has been assigned reference lattice coordinates before,
@@ -313,11 +313,11 @@ void DislocationTracer::findPrimarySegments(int maxBurgersCircuitSize, TaskProgr
                 if(neighborStruct != nullptr) {
 
                     // Compute Burgers vector of the current circuit.
-                    Vector3 burgersVector = neighborStruct->latticeCoord - neighborCoord;
+                    Cluster::VecType burgersVector = neighborStruct->latticeCoord - neighborCoord;
                     if(burgersVector.isZero(CA_LATTICE_VECTOR_EPSILON) == false) {
                         // Found circuit with non-zero Burgers vector.
                         // Check if circuit encloses disclination.
-                        Matrix3 frankRotation = current->tm * edge->clusterTransition->reverse->tm;
+                        Cluster::MatType frankRotation = current->tm * edge->clusterTransition->reverse->tm;
                         if(frankRotation.equals(neighborStruct->tm, CA_TRANSITION_MATRIX_EPSILON)) {
                             // Stop as soon as a valid Burgers circuit has been found.
                             if(createBurgersCircuit(edge, maxBurgersCircuitSize)) {
@@ -434,8 +434,8 @@ bool DislocationTracer::createBurgersCircuit(InterfaceMesh::Edge* edge, int maxB
     // The sum should be zero for valid closed circuits.
     InterfaceMesh::Edge* e = forwardCircuit->firstEdge;
     Vector3 edgeSum = Vector3::Zero();
-    Matrix3 frankRotation = Matrix3::Identity();
-    Vector3 b = Vector3::Zero();
+    Cluster::MatType frankRotation = Cluster::MatType::Identity();
+    Cluster::VecType b = Cluster::VecType::Zero();
     do {
         edgeSum += e->physicalVector;
         b += frankRotation * e->clusterVector;
@@ -444,7 +444,7 @@ bool DislocationTracer::createBurgersCircuit(InterfaceMesh::Edge* edge, int maxB
         e = e->nextCircuitEdge;
     }
     while(e != forwardCircuit->firstEdge);
-    OVITO_ASSERT(frankRotation.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON));
+    OVITO_ASSERT(frankRotation.equals(Cluster::MatType::Identity(), CA_TRANSITION_MATRIX_EPSILON));
 
     // Make sure new circuit does not intersect other circuits.
     bool intersects = intersectsOtherCircuits(forwardCircuit);
@@ -1335,10 +1335,10 @@ void DislocationTracer::createSecondarySegment(InterfaceMesh::Edge* firstEdge, B
 
     // Create circuit along the border of the hole.
     int edgeCount = 1;
-    Vector3 burgersVector = Vector3::Zero();
+    Cluster::VecType burgersVector = Cluster::VecType::Zero();
     Vector3 edgeSum = Vector3::Zero();
     Cluster* baseCluster = nullptr;
-    Matrix3 frankRotation = Matrix3::Identity();
+    Cluster::MatType frankRotation = Cluster::MatType::Identity();
     int numCircuits = 1;
     InterfaceMesh::Edge* circuitStart = firstEdge->oppositeEdge();
     InterfaceMesh::Edge* circuitEnd = circuitStart;
@@ -1379,7 +1379,7 @@ void DislocationTracer::createSecondarySegment(InterfaceMesh::Edge* firstEdge, B
 
     // Create secondary segment only for dislocations (b != 0) and small enough dislocation cores.
     if(numCircuits == 1 || edgeCount > maxCircuitLength || burgersVector.isZero(CA_LATTICE_VECTOR_EPSILON) ||
-       edgeSum.isZero(CA_ATOM_VECTOR_EPSILON) == false || !frankRotation.equals(Matrix3::Identity(), CA_TRANSITION_MATRIX_EPSILON)) {
+       edgeSum.isZero(CA_ATOM_VECTOR_EPSILON) == false || !frankRotation.equals(Cluster::MatType::Identity(), CA_TRANSITION_MATRIX_EPSILON)) {
         // Discard unused circuit.
         edge = circuitStart;
         for(;;) {

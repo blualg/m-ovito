@@ -220,7 +220,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> DislocationVis::render(cons
                 auto cornerColorsIter = cornerColors.begin();
                 ColorG lineColor;
                 Vector3 normalizedBurgersVector;
-                Vector3 lastBurgersVector = Vector3::Zero();
+                Cluster::VecType lastBurgersVector = Cluster::VecType::Zero();
                 int lastRegion = -1;
                 int lastDislocationIndex = -1;
                 const DislocationSegment* lastInputDislocationSegment = nullptr;
@@ -618,7 +618,7 @@ QString DislocationPickInfo::infoString(const Pipeline* pipeline, uint32_t subob
         if(segmentIndex >= 0 && segmentIndex < dislocationObj()->segments().size()) {
             DislocationSegment* segment = dislocationObj()->segments()[segmentIndex];
             const MicrostructurePhase* structure = dislocationObj()->structureById(segment->burgersVector.cluster()->structure);
-            QString formattedBurgersVector = DislocationVis::formatBurgersVector(segment->burgersVector.localVec(), structure);
+            QString formattedBurgersVector = DislocationVis::formatBurgersVector(segment->burgersVector.localVec().toDataType<FloatType>(), structure);
             str = tr("<key>True Burgers vector:</key> <val>%1</val>").arg(formattedBurgersVector);
             Vector3 transformedVector = segment->burgersVector.toSpatialVector();
             str += tr("<sep><key>Spatial Burgers vector:</key> <val>[%1 %2 %3]</val>")

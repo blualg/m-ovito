@@ -71,8 +71,8 @@ struct BurgersCircuit
     /// Note that this method is for debugging purposes only since the Burgers vector is
     /// already known and stored in the DislocationSegment this circuit belongs to.
     ClusterVector calculateBurgersVector() const {
-        Vector3 b = Vector3::Zero();
-        Matrix3 tm = Matrix3::Identity();
+        Cluster::VecType b = Cluster::VecType::Zero();
+        Cluster::MatType tm = Cluster::MatType::Identity();
         InterfaceMesh::Edge* edge = firstEdge;
         do {
             OVITO_ASSERT(edge != nullptr);
