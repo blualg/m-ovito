@@ -58,7 +58,7 @@ public:
 
 public:
 
-    /// Returns the lotitleng name of this phase.
+    /// Returns the title of this phase.
     const QString& longName() const { return name(); }
 
     /// Assigns a long title to this phase.

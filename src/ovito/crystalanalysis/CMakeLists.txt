@@ -31,11 +31,9 @@ SET(SourceFiles
     objects/MicrostructurePhase.cpp
     modifier/dxa/DislocationAnalysisModifier.cpp
     modifier/dxa/DislocationAnalysisEngine.cpp
-    modifier/dxa/DislocationAnalysisEngine2.cpp
     modifier/dxa/StructureAnalysis.cpp
     modifier/dxa/CrystalPathFinder.cpp
     modifier/dxa/ElasticMapping.cpp
-    modifier/dxa/ElasticMapping2.cpp
     modifier/dxa/InterfaceMesh.cpp
     modifier/dxa/DislocationTracer.cpp
     modifier/elasticstrain/ElasticStrainModifier.cpp
