@@ -177,8 +177,8 @@ struct OVITO_CRYSTALANALYSIS_EXPORT Cluster
     /// with one of the preferred crystal orientation as much as possible.
     int symmetryTransformation = 0;
 
-    /// The center of mass of the cluster. This is computed from the atoms
-    /// that are part of the cluster.
+    /// The center of mass of the cluster.
+    /// Note: This is currently not computed by OVITO, but may be loaded from a CA file produced by an external code (e.g. CAT).
     Point3 centerOfMass = Point3::Origin();
 
     /// The visualization color of the atom cluster.

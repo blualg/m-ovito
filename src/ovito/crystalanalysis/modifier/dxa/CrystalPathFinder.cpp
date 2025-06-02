@@ -37,7 +37,7 @@ std::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size
     Cluster* cluster2 = structureAnalysis().atomCluster(atomIndex2);
 
     // Test if atom 2 is a direct neighbor of atom 1.
-    if(cluster1->id != 0) {
+    if(cluster1->structure != StructureAnalysis::LATTICE_OTHER) {
         qint64 neighborIndex = structureAnalysis().findNeighbor(atomIndex1, atomIndex2);
         if(neighborIndex != -1) {
             const Cluster::VecType& refv = structureAnalysis().neighborLatticeVector(atomIndex1, neighborIndex);
@@ -46,7 +46,7 @@ std::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size
     }
 
     // Test if atom 1 is a direct neighbor of atom 2.
-    else if(cluster2->id != 0) {
+    else if(cluster2->structure != StructureAnalysis::LATTICE_OTHER) {
         qint64 neighborIndex = structureAnalysis().findNeighbor(atomIndex2, atomIndex1);
         if(neighborIndex != -1) {
             const Cluster::VecType& refv = structureAnalysis().neighborLatticeVector(atomIndex2, neighborIndex);
@@ -89,13 +89,13 @@ std::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size
                 continue;
 
             ClusterVector step{ClusterVector::VecType::Zero()};
-            if(currentCluster->id != 0) {
+            if(currentCluster->structure != StructureAnalysis::LATTICE_OTHER) {
                 step = ClusterVector(structureAnalysis().neighborLatticeVector(currentAtom, neighborIndex), currentCluster);
             }
             else {
                 // Do a reverse neighbor search.
                 Cluster* neighborCluster = structureAnalysis().atomCluster(neighbor);
-                if(neighborCluster->id == 0) continue;
+                if(neighborCluster->structure == StructureAnalysis::LATTICE_OTHER) continue;
 
                 int numNeighbors2 = structureAnalysis().numberOfNeighbors(neighbor);
                 for(int neighborIndex2 = 0; neighborIndex2 < numNeighbors2; neighborIndex2++) {

@@ -88,7 +88,7 @@ void ElasticStrainEngine::identifyStructures(const Particles* particles, const S
     _structureAnalysis->connectClusters(progress);
 
     progress.nextSubStep();
-    _structureAnalysis->formSuperClusters();
+    _structureAnalysis->formSuperClusters(progress);
 
     progress.nextSubStep();
 

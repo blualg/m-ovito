@@ -77,6 +77,9 @@ public:
 
 private:
 
+    /// Marks atoms that are part of perfect crystalline regions and can be omitted from the Delaunay construction.
+    PropertyPtr markPerfectCrystallineRegions(TaskProgress& progress, const Property* selection);
+
     /// Extracts the dislocation lines segments from the elastic mapping.
     void extractDislocationSegments(TaskProgress& progress, PropertyFactory<Point3>& linePosition1Access,
                                     PropertyFactory<Point3>& linePosition2Access, PropertyFactory<Cluster::VecType>& burgersVectorAccess, PropertyFactory<ColorG>& lineColorAccess,
@@ -86,8 +89,7 @@ private:
 
 private:
     int _inputCrystalStructure;
-    int _lineSmoothingLevel;
-    FloatType _linePointInterval;
+    int _minClusterSize = 5; // Minimum number of atoms in crystal clusters to be considered for dislocation analysis.
     std::vector<Matrix3> _preferredCrystalOrientations;
     std::optional<StructureAnalysis> _structureAnalysis;
     std::optional<DelaunayTessellation> _tessellation;
@@ -98,6 +100,8 @@ private:
 
     /// This stores the atom-to-cluster assignments computed by the modifier.
     PropertyPtr _atomClusters;
+
+    PropertyPtr _delaunayAtomBuffer;
 
     /// The dislocation line segments computed by the modifier.
     DataOORef<Lines> _dislocationSegments;

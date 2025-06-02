@@ -113,7 +113,10 @@ public:
     void connectClusters(TaskProgress& progress);
 
     /// Combines clusters to super clusters.
-    void formSuperClusters();
+    void formSuperClusters(TaskProgress& progress);
+
+    /// Dissolves small crystal clusters that are smaller than the given minimum size.
+    void dissolveSmallClusters(TaskProgress& progress, int minClusterSize);
 
     /// Returns the number of input atoms.
     int atomCount() const { return positions()->size(); }

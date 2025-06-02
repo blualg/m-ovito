@@ -424,24 +424,30 @@ private:
             // Alpha-shape criterion: This determines whether the Delaunay tetrahedron is part of a filled region.
             bool isFilledTetrehedron = false;
             if(_tessellation.isFiniteCell(cell)) {
-                if(auto alphaTestResult = _tessellation.alphaTest(cell, _alpha)) {
-                    isFilledTetrehedron = *alphaTestResult;
+                if(_alpha != 0) {
+                    if(auto alphaTestResult = _tessellation.alphaTest(cell, _alpha)) {
+                        isFilledTetrehedron = *alphaTestResult;
+                    }
+                    else {
+                        // If the alpha test is inconclusive (which may happen if the element is a sliver tetrahedron),
+                        // then we check the surrounding tetrahedra. Only if all four neighbors are classified as filled or inconclusive,
+                        // then we accept the sliver tetrahedron as filled too.
+                        int f = 0;
+                        for(; f < 4; f++) {
+                            DelaunayTessellation::CellHandle adjacentCell = _tessellation.mirrorFacet(cell, f).first;
+                            if(!_tessellation.isFiniteCell(adjacentCell))
+                                break;
+                            auto adjacentAlphaTestResult = _tessellation.alphaTest(adjacentCell, _alpha);
+                            if(adjacentAlphaTestResult.has_value() && !adjacentAlphaTestResult.value())
+                                break;
+                        }
+                        if(f == 4)
+                            isFilledTetrehedron = true;
+                    }
                 }
                 else {
-                    // If the alpha test is inconclusive (which may happen if the element is a sliver tetrahedron),
-                    // then we check the surrounding tetrahedra. Only if all four neighbors are classified as filled or inconclusive,
-                    // then we accept the sliver tetrahedron as filled too.
-                    int f = 0;
-                    for(; f < 4; f++) {
-                        DelaunayTessellation::CellHandle adjacentCell = _tessellation.mirrorFacet(cell, f).first;
-                        if(!_tessellation.isFiniteCell(adjacentCell))
-                            break;
-                        auto adjacentAlphaTestResult = _tessellation.alphaTest(adjacentCell, _alpha);
-                        if(adjacentAlphaTestResult.has_value() && !adjacentAlphaTestResult.value())
-                            break;
-                    }
-                    if(f == 4)
-                        isFilledTetrehedron = true;
+                    // If alpha is zero, then all finite tetrahedra are considered filled.
+                    isFilledTetrehedron = true;
                 }
             }
 

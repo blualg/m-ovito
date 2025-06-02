@@ -37,10 +37,12 @@ namespace Ovito {
  */
 class ElasticMapping2
 {
-private:
+public:
 
     /// Data type used for atom indices.
     using AtomIndex = int;
+
+private:
 
     /// Data structure associated with each edge of the Delaunay tessellation.
     /// Both directions, A->B and B->A, are represented by the same TessellationEdge instance.

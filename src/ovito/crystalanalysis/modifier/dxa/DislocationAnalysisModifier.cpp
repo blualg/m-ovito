@@ -104,6 +104,7 @@ void DislocationAnalysisModifier::initializeObject(ObjectInitializationFlags fla
 
         setDislocationSegmentsVis(OORef<LinesVis>::create(flags));
         dislocationSegmentsVis()->setWrappedLines(true);
+        dislocationSegmentsVis()->setRoundedCaps(true);
         dislocationSegmentsVis()->setShadingMode(LinesVis::ShadingMode::NormalShading);
         dislocationSegmentsVis()->setObjectTitle(tr("Dislocation segments"));
 

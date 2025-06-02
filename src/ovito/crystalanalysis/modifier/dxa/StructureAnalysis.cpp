@@ -768,13 +768,15 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
 ******************************************************************************/
 void StructureAnalysis::buildClusters(TaskProgress& progress)
 {
-    progress.setMaximum(positions()->size());
+    const size_t atomCount = positions()->size();
+    progress.setMaximum(atomCount);
 
     qlonglong progressCounter = 0;
     BufferReadAccess<Point3> positionsArray(positions());
+    std::deque<int> atomsToVisit;
 
     // Iterate over atoms, looking for those that have not been visited yet.
-    for(size_t seedAtomIndex = 0; seedAtomIndex < positions()->size(); seedAtomIndex++) {
+    for(size_t seedAtomIndex = 0; seedAtomIndex < atomCount; seedAtomIndex++) {
         if(_atomClustersArray[seedAtomIndex] != 0) continue;
         int coordStructureType = _structureTypesArray[seedAtomIndex];
 
@@ -798,7 +800,8 @@ void StructureAnalysis::buildClusters(TaskProgress& progress)
         Matrix_3<double> orientationW = Matrix_3<double>::Zero();
 
         // Add neighboring atoms to the cluster.
-        std::deque<int> atomsToVisit(1, seedAtomIndex);
+        OVITO_ASSERT(atomsToVisit.empty());
+        atomsToVisit.push_back(seedAtomIndex);
         do {
             int currentAtomIndex = atomsToVisit.front();
             atomsToVisit.pop_front();
@@ -916,7 +919,7 @@ void StructureAnalysis::buildClusters(TaskProgress& progress)
     }
 
     // Reorient atoms to align clusters with global coordinate system.
-    for(size_t atomIndex = 0; atomIndex < positions()->size(); atomIndex++) {
+    for(size_t atomIndex = 0; atomIndex < atomCount; atomIndex++) {
         int clusterId = _atomClustersArray[atomIndex];
         if(clusterId == 0) continue;
         Cluster* cluster = clusterGraph()->findCluster(clusterId);
@@ -936,9 +939,10 @@ void StructureAnalysis::buildClusters(TaskProgress& progress)
 ******************************************************************************/
 void StructureAnalysis::connectClusters(TaskProgress& progress)
 {
-    progress.setMaximum(positions()->size());
+    const size_t atomCount = positions()->size();
+    progress.setMaximum(atomCount);
 
-    for(size_t atomIndex = 0; atomIndex < positions()->size(); atomIndex++) {
+    for(size_t atomIndex = 0; atomIndex < atomCount; atomIndex++) {
         int clusterId = _atomClustersArray[atomIndex];
         if(clusterId == 0)
             continue;
@@ -1036,12 +1040,11 @@ void StructureAnalysis::connectClusters(TaskProgress& progress)
 /******************************************************************************
 * Combines clusters to super clusters.
 ******************************************************************************/
-void StructureAnalysis::formSuperClusters()
+void StructureAnalysis::formSuperClusters(TaskProgress& progress)
 {
     size_t oldTransitionCount = clusterGraph()->clusterTransitions().size();
 
-    for(size_t clusterIndex = 0; clusterIndex < clusterGraph()->clusters().size(); clusterIndex++) {
-        Cluster* cluster = clusterGraph()->clusters()[clusterIndex];
+    for(Cluster* cluster : clusterGraph()->clusters()) {
         cluster->rank = 0;
         if(cluster->id == 0) continue;
 
@@ -1085,7 +1088,7 @@ void StructureAnalysis::formSuperClusters()
 
     size_t newTransitionCount = clusterGraph()->clusterTransitions().size();
 
-    auto getParentGrain = [this](Cluster* c) {
+    auto getParentCluster = [this](Cluster* c) {
         if(c->parentTransition == nullptr) return c;
         ClusterTransition* newParentTransition = c->parentTransition;
         Cluster* parent = newParentTransition->cluster2;
@@ -1103,8 +1106,8 @@ void StructureAnalysis::formSuperClusters()
         OVITO_ASSERT(t->distance == 2);
         OVITO_ASSERT(t->cluster1->structure == _inputCrystalType && t->cluster2->structure == _inputCrystalType);
 
-        Cluster* parentCluster1 = getParentGrain(t->cluster1);
-        Cluster* parentCluster2 = getParentGrain(t->cluster2);
+        Cluster* parentCluster1 = getParentCluster(t->cluster1);
+        Cluster* parentCluster2 = getParentCluster(t->cluster2);
         if(parentCluster1 == parentCluster2) continue;
 
         this_task::throwIfCanceled();
@@ -1129,11 +1132,33 @@ void StructureAnalysis::formSuperClusters()
         }
     }
 
-    // Compress paths.
+    // Compress paths and compute total number of atoms in each cluster.
     for(Cluster* cluster : clusterGraph()->clusters()) {
-        getParentGrain(cluster);
+        Cluster* parentCluster = getParentCluster(cluster);
+        if(parentCluster != cluster)
+            parentCluster->atomCount += cluster->atomCount;
     }
+
     this_task::throwIfCanceled();
+}
+
+/******************************************************************************
+* Dissolves small crystal clusters that are smaller than the given minimum size.
+******************************************************************************/
+void StructureAnalysis::dissolveSmallClusters(TaskProgress& progress, int minClusterSize)
+{
+    for(Cluster* cluster : clusterGraph()->clusters()) {
+        // Total number of atoms is store in the parent cluster.
+        auto clusterSize = cluster->atomCount;
+        if(cluster->parentTransition != nullptr)
+            clusterSize = cluster->parentTransition->cluster2->atomCount;
+
+        if(cluster->structure == LATTICE_OTHER || clusterSize >= minClusterSize)
+            continue; // Leave cluster intact.
+
+        // Dissolve the cluster by resetting its structure type.
+        cluster->structure = LATTICE_OTHER;
+    }
 }
 
 }   // End of namespace

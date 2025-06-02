@@ -33,10 +33,6 @@
 #include "DislocationAnalysisEngine.h"
 #include "DislocationAnalysisModifier.h"
 
-#if 0
-#include <fstream>
-#endif
-
 namespace Ovito {
 
 /******************************************************************************
@@ -102,33 +98,6 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     progress.nextSubStep();
     _structureAnalysis->connectClusters(progress);
 
-#if 0
-    Point3 corners[8];
-    corners[0] = _structureAnalysis.cell().reducedToAbsolute(Point3(0,0,0));
-    corners[1] = _structureAnalysis.cell().reducedToAbsolute(Point3(1,0,0));
-    corners[2] = _structureAnalysis.cell().reducedToAbsolute(Point3(1,1,0));
-    corners[3] = _structureAnalysis.cell().reducedToAbsolute(Point3(0,1,0));
-    corners[4] = _structureAnalysis.cell().reducedToAbsolute(Point3(0,0,1));
-    corners[5] = _structureAnalysis.cell().reducedToAbsolute(Point3(1,0,1));
-    corners[6] = _structureAnalysis.cell().reducedToAbsolute(Point3(1,1,1));
-    corners[7] = _structureAnalysis.cell().reducedToAbsolute(Point3(0,1,1));
-
-    std::ofstream stream("cell.vtk");
-    stream << "# vtk DataFile Version 3.0" << std::endl;
-    stream << "# Simulation cell" << std::endl;
-    stream << "ASCII" << std::endl;
-    stream << "DATASET UNSTRUCTURED_GRID" << std::endl;
-    stream << "POINTS 8 double" << std::endl;
-    for(int i = 0; i < 8; i++)
-        stream << corners[i].x() << " " << corners[i].y() << " " << corners[i].z() << std::endl;
-
-    stream << std::endl << "CELLS 1 9" << std::endl;
-    stream << "8 0 1 2 3 4 5 6 7" << std::endl;
-
-    stream << std::endl << "CELL_TYPES 1" << std::endl;
-    stream << "12" << std::endl;  // Hexahedron
-#endif
-
     progress.nextSubStep();
     FloatType ghostLayerSize = FloatType(3.5) * _structureAnalysis->maximumNeighborDistance();
     _tessellation->generateTessellation(simulationCell, BufferReadAccess<Point3>(positions).cbegin(),
@@ -164,80 +133,6 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     if(_markCoreAtoms) {
         assignCoreAtomDislocationIDs(particles->elementCount());
     }
-#if 0
-
-    auto isWrappedFacet = [this](const InterfaceMesh::Face* f) -> bool {
-        InterfaceMesh::edge_index e = f->edges();
-        do {
-            Vector3 v = e->vertex1()->pos() - e->vertex2()->pos();
-            if(_structureAnalysis.cell().isWrappedVector(v))
-                return true;
-            e = e->nextFaceEdge();
-        }
-        while(e != f->edges());
-        return false;
-    };
-
-    // Count facets which are not crossing the periodic boundaries.
-    size_t numFacets = 0;
-    for(const InterfaceMesh::Face* f : _interfaceMesh.faces()) {
-        if(isWrappedFacet(f) == false)
-            numFacets++;
-    }
-
-    std::ofstream stream("mesh.vtk");
-    stream << "# vtk DataFile Version 3.0\n";
-    stream << "# Interface mesh\n";
-    stream << "ASCII\n";
-    stream << "DATASET UNSTRUCTURED_GRID\n";
-    stream << "POINTS " << _interfaceMesh.vertices().size() << " float\n";
-    for(const InterfaceMesh::Vertex* n : _interfaceMesh.vertices()) {
-        const Point3& pos = n->pos();
-        stream << pos.x() << " " << pos.y() << " " << pos.z() << "\n";
-    }
-    stream << "\nCELLS " << numFacets << " " << (numFacets*4) << "\n";
-    for(const InterfaceMesh::Face* f : _interfaceMesh.faces()) {
-        if(isWrappedFacet(f) == false) {
-            stream << f->edgeCount();
-            InterfaceMesh::edge_index e = f->edges();
-            do {
-                stream << " " << e->vertex1()->index();
-                e = e->nextFaceEdge();
-            }
-            while(e != f->edges());
-            stream << "\n";
-        }
-    }
-
-    stream << "\nCELL_TYPES " << numFacets << "\n";
-    for(size_t i = 0; i < numFacets; i++)
-        stream << "5\n";    // Triangle
-
-    stream << "\nCELL_DATA " << numFacets << "\n";
-
-    stream << "\nSCALARS dislocation_segment int 1\n";
-    stream << "\nLOOKUP_TABLE default\n";
-    for(const InterfaceMesh::Face* f : _interfaceMesh.faces()) {
-        if(isWrappedFacet(f) == false) {
-            if(f->circuit != NULL && (f->circuit->isDangling == false || f->testFlag(1))) {
-                DislocationSegment* segment = f->circuit->dislocationNode->segment;
-                while(segment->replacedWith != NULL) segment = segment->replacedWith;
-                stream << segment->id << "\n";
-            }
-            else
-                stream << "-1\n";
-        }
-    }
-
-    stream << "\nSCALARS is_primary_segment int 1\n";
-    stream << "\nLOOKUP_TABLE default\n";
-    for(const InterfaceMesh::Face* f : _interfaceMesh.faces()) {
-        if(isWrappedFacet(f) == false)
-            stream << f->testFlag(1) << "\n";
-    }
-
-    stream.close();
-#endif
 
     // Generate the defect mesh.
     progress.nextSubStep();
@@ -245,10 +140,6 @@ void DislocationAnalysisEngine::identifyStructures(const Particles* particles, c
     _interfaceMesh->generateDefectMesh(*_dislocationTracer, defectMeshBuilder);
 #ifdef OVITO_DEBUG
     _defectMesh->verifyMeshIntegrity();
-#endif
-
-#if 0
-    _tessellation.dumpToVTKFile("tessellation.vtk");
 #endif
 
     progress.nextSubStep();

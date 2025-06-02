@@ -34,10 +34,12 @@ namespace Ovito {
 ******************************************************************************/
 void ElasticMapping2::classifyTetrahedra(FloatType alpha, TaskProgress& progress)
 {
-    // A helper method that decides which tetrahedra are considered filled and which are not.
+    // A helper method that decides using the alpha-shape criterion which tetrahedra are filled and which are not.
     auto isInteriorTetrahedron = [&](DelaunayTessellation::CellHandle cell) -> bool {
         if(tessellation().isGhostCell(cell))
             return false; // Skip ghost cells.
+
+        // Check if the tetrahedron is filled using the alpha-shape criterion.
         if(auto alphaTestResult = tessellation().alphaTest(cell, alpha)) {
             return *alphaTestResult;
         }
@@ -109,14 +111,6 @@ void ElasticMapping2::generateTessellationEdges(TaskProgress& progress)
                 continue;
             // Check if the edge already exists in the list of edges.
             if(!findEdge(atom1, atom2)) {
-#if 0
-                // Avoid creating long edges that violate the minimum image convention, i.e.,
-                // which span more than half the simulation cell.
-                const Point3& p1 = tessellation().vertexPosition(cellVertices[CellEdgeVertices[edgeIndex][0]]);
-                const Point3& p2 = tessellation().vertexPosition(cellVertices[CellEdgeVertices[edgeIndex][1]]);
-                if(structureAnalysis().cell().isWrappedVector(p2 - p1))
-                    continue;
-#endif
                 // Register a new edge.
                 TessellationEdge* edge = _edgePool.construct(atom1, atom2, cell);
                 // Insert into the linked list of edges outbound on vertex 1 and inbound on vertex 2.
@@ -149,7 +143,7 @@ void ElasticMapping2::assignAtomsToClusters(TaskProgress& progress)
     for(AtomIndex atomIndex = 0; atomIndex < atomCount; atomIndex++) {
         Cluster* cluster = structureAnalysis().atomCluster(atomIndex);
         _atomClusters[atomIndex] = cluster;
-        if(cluster->id == 0)
+        if(cluster->structure == StructureAnalysis::LATTICE_OTHER)
             unassignedAtoms.push_back(atomIndex);
     }
     this_task::throwIfCanceled();
@@ -161,28 +155,28 @@ void ElasticMapping2::assignAtomsToClusters(TaskProgress& progress)
         AtomIndex remainingAtomCount = 0;
         for(auto atomIndex : unassignedAtoms) {
             Cluster*& assignedCluster = _atomClusters[atomIndex];
-            OVITO_ASSERT(assignedCluster->id == 0);
+            OVITO_ASSERT(assignedCluster->structure == StructureAnalysis::LATTICE_OTHER);
 
             // Check if the atom is connected to a cluster by an outbound edge.
             for(TessellationEdge* e = _atomOutboundEdges[atomIndex]; e != nullptr; e = e->nextOutboundEdge) {
                 OVITO_ASSERT(e->atom1 == atomIndex);
-                if(Cluster* cluster2 = clusterOfAtom(e->atom2); cluster2->id != 0) {
+                if(Cluster* cluster2 = clusterOfAtom(e->atom2); cluster2->structure != StructureAnalysis::LATTICE_OTHER) {
                     assignedCluster = cluster2;
                     break;
                 }
             }
-            if(assignedCluster->id != 0)
+            if(assignedCluster->structure != StructureAnalysis::LATTICE_OTHER)
                 continue;
 
             // Check if the atom is connected to a cluster by an inbound edge.
             for(TessellationEdge* e = _atomInboundEdges[atomIndex]; e != nullptr; e = e->nextInboundEdge) {
                 OVITO_ASSERT(e->atom2 == atomIndex);
-                if(Cluster* cluster1 = clusterOfAtom(e->atom1); cluster1->id != 0) {
+                if(Cluster* cluster1 = clusterOfAtom(e->atom1); cluster1->structure != StructureAnalysis::LATTICE_OTHER) {
                     assignedCluster = cluster1;
                     break;
                 }
             }
-            if(assignedCluster->id != 0)
+            if(assignedCluster->structure != StructureAnalysis::LATTICE_OTHER)
                 continue;
 
             // The atom is not connected to a cluster by any edge. Keep it in the list of unassigned atoms.
@@ -216,7 +210,7 @@ void ElasticMapping2::assignIdealVectorsToEdges(int crystalPathSteps, TaskProgre
         Cluster* cluster1 = clusterOfAtom(edge->atom1);
         Cluster* cluster2 = clusterOfAtom(edge->atom2);
         OVITO_ASSERT(cluster1 && cluster2);
-        if(cluster1->id == 0 || cluster2->id == 0)
+        if(cluster1->structure == StructureAnalysis::LATTICE_OTHER || cluster2->structure == StructureAnalysis::LATTICE_OTHER)
             return; // One of the atoms is not part of any crystal cluster.
 
         // Assign a cluster transition to the edge.
