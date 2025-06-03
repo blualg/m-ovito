@@ -18,6 +18,7 @@ Version 3.13.0 (xx-xxx-2025)
 - Allow for more flexible syntax in the Quantum Espresso file reader (`forum post <https://www.ovito.org/forum/topic/quantum-espresso-output/#postid-5009>`__)
 - |ovito-python| Add ``return_distances`` parameter to :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` method.
 - :ref:`Global attribute <usage.global_attributes>` identifiers starting with ``'.'`` are hidden in the GUI.
+- Fix :ref:`particles.modifiers.DeleteSelectedModifier` modifier not working for mulitple :ref:`scene_objects.lines` or :ref:`scene_objects.vector` objects in a pipeline.
 
 .. sidebar::
 
