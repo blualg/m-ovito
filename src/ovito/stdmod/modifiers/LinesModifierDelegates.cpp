@@ -68,18 +68,20 @@ Future<PipelineFlowState> LinesDeleteSelectedModifierDelegate::apply(
         size_t numSelected = 0;
 
         // Get the lines (vertex) selection.
-        if(const Lines* inputLines = state.getObject<Lines>()) {
-            inputLines->verifyIntegrity();
-            numLines += inputLines->elementCount();
-            if(ConstPropertyPtr selProperty = inputLines->getProperty(Lines::SelectionProperty)) {
-                // Make sure we can safely modify the lines object.
-                Lines* outputLines = state.makeMutable(inputLines);
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
+            if(const Lines* inputLines = dynamic_object_cast<Lines>(state.data()->objects()[i])) {
+                inputLines->verifyIntegrity();
+                numLines += inputLines->elementCount();
+                if(ConstPropertyPtr selProperty = inputLines->getProperty(Lines::SelectionProperty)) {
+                    // Make sure we can safely modify the lines object.
+                    Lines* outputLines = state.makeMutable(inputLines);
 
-                // Remove selection property.
-                outputLines->removeProperty(selProperty);
+                    // Remove selection property.
+                    outputLines->removeProperty(selProperty);
 
-                // Delete the selected line vertices.
-                numSelected += outputLines->deleteElements(std::move(selProperty));
+                    // Delete the selected line vertices.
+                    numSelected += outputLines->deleteElements(std::move(selProperty));
+                }
             }
         }
 
@@ -87,7 +89,7 @@ Future<PipelineFlowState> LinesDeleteSelectedModifierDelegate::apply(
         QString statusMessage = tr("%1 of %2 lines deleted (%3%)")
                                     .arg(numSelected)
                                     .arg(numLines)
-                                    .arg((FloatType)numSelected * 100 / (FloatType)std::max(numLines, (size_t)1), 0, 'f', 1);
+                                    .arg((FloatType)numSelected * (FloatType)100 / (FloatType)std::max(numLines, (size_t)1), 0, 'f', 1);
         state.combineStatus(statusMessage);
 
         return std::move(state);

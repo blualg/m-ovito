@@ -48,6 +48,7 @@ DEFINE_PROPERTY_FIELD(HistogramModifier, yAxisRangeStart);
 DEFINE_PROPERTY_FIELD(HistogramModifier, yAxisRangeEnd);
 DEFINE_PROPERTY_FIELD(HistogramModifier, sourceProperty);
 DEFINE_PROPERTY_FIELD(HistogramModifier, onlySelectedElements);
+DEFINE_PROPERTY_FIELD(HistogramModifier, normalizationMode);
 SET_PROPERTY_FIELD_LABEL(HistogramModifier, numberOfBins, "Number of histogram bins");
 SET_PROPERTY_FIELD_LABEL(HistogramModifier, selectInRange, "Select value range");
 SET_PROPERTY_FIELD_LABEL(HistogramModifier, selectionRangeStart, "Selection range start");
@@ -60,6 +61,7 @@ SET_PROPERTY_FIELD_LABEL(HistogramModifier, yAxisRangeStart, "Y-range start");
 SET_PROPERTY_FIELD_LABEL(HistogramModifier, yAxisRangeEnd, "Y-range end");
 SET_PROPERTY_FIELD_LABEL(HistogramModifier, sourceProperty, "Source property");
 SET_PROPERTY_FIELD_LABEL(HistogramModifier, onlySelectedElements, "Use only selected elements");
+SET_PROPERTY_FIELD_LABEL(HistogramModifier, normalizationMode, "Normalization mode");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(HistogramModifier, numberOfBins, IntegerParameterUnit, 1, 100000);
 
 /******************************************************************************
@@ -170,6 +172,7 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
             intervalEnd = xAxisRangeEnd(),
             fixXAxisRange = fixXAxisRange(),
             numberOfBins = std::max(1, numberOfBins()),
+            normalizationMode = normalizationMode(),
             table,
             createdByNode = request.modificationNodeWeak()]() mutable
     {
@@ -177,9 +180,9 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
 
         // Allocate output array for histogram.
         table->setElementCount(numberOfBins);
-        Property* histogram = table->createProperty((property->size() != 0) ? DataBuffer::Uninitialized : DataBuffer::Initialized, tr("Count"), Property::Int64);
-        table->setY(histogram);
+        Property* histogram = table->createProperty((property->size() != 0) ? DataBuffer::Uninitialized : DataBuffer::Initialized, QStringLiteral("Count"), Property::Int64);
         size_t histogramSizeMin1 = histogram->size() - 1;
+        FloatType binSize = 0;
 
         if(property->size() > 0) {
 #ifdef OVITO_USE_SYCL
@@ -234,6 +237,7 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
                     intervalStart = static_cast<FloatType>(intervalBuf.first.get_host_access(sycl::read_only)[0]);
                     intervalEnd = static_cast<FloatType>(intervalBuf.second.get_host_access(sycl::read_only)[0]);
                 }
+                binSize = (intervalEnd - intervalStart) / histogram->size();
 
                 // Element selection.
                 if(outputSelection) {
@@ -276,6 +280,7 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
             if(!fixXAxisRange) {
                 std::tie(intervalStart, intervalEnd) = property->minMax(vecComponent, inputSelection);
             }
+            binSize = (intervalEnd - intervalStart) / histogram->size();
 
             property->forAnyType([&](auto _) {
                 using T = decltype(_);
@@ -283,7 +288,6 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
                 BufferReadAccess<T*> accessor(property);
                 // Perform binning.
                 if(intervalEnd > intervalStart) {
-                    FloatType binSize = (intervalEnd - intervalStart) / histogram->size();
                     const SelectionIntType* sel = inputSelectionAcc ? inputSelectionAcc.cbegin() : nullptr;
                     for(auto v : accessor.componentRange(vecComponent)) {
                         if(sel && !*sel++) continue;
@@ -318,6 +322,33 @@ Future<PipelineFlowState> HistogramModifier::evaluateModifier(const ModifierEval
         }
         table->setIntervalStart(intervalStart);
         table->setIntervalEnd(intervalEnd);
+
+        // Normalize histogram.
+        if(normalizationMode == NormalizationMode::RelativeFrequency) {
+            Property* relativeFrequency = table->createProperty(DataBuffer::Uninitialized, QStringLiteral("Relative Frequency"), Property::FloatDefault);
+            BufferReadAccess<int64_t> countAcc(histogram);
+            BufferWriteAccess<FloatType, access_mode::discard_write> relFreqAcc(relativeFrequency);
+            int64_t totalCount = std::max((int64_t)1, std::accumulate(countAcc.cbegin(), countAcc.cend(), (int64_t)0));
+            std::transform(countAcc.cbegin(), countAcc.cend(), relFreqAcc.begin(),
+                [&](int64_t count) { return (FloatType)count / totalCount; });
+            table->setY(relativeFrequency);
+        }
+        else if(normalizationMode == NormalizationMode::ProbabilityDensity) {
+            Property* probabilityDensity = table->createProperty(DataBuffer::Uninitialized, QStringLiteral("Probability Density"), Property::FloatDefault);
+            if(binSize != 0) {
+                BufferReadAccess<int64_t> countAcc(histogram);
+                BufferWriteAccess<FloatType, access_mode::discard_write> densityAcc(probabilityDensity);
+                int64_t totalCount = std::max((int64_t)1, std::accumulate(countAcc.cbegin(), countAcc.cend(), (int64_t)0));
+                FloatType normalization = totalCount * binSize;
+                std::transform(countAcc.cbegin(), countAcc.cend(), densityAcc.begin(),
+                    [&](int64_t count) { return (FloatType)count / normalization; });
+            }
+            else probabilityDensity->fillZero();
+            table->setY(probabilityDensity);
+        }
+        else {
+            table->setY(histogram);
+        }
 
         QString statusMessage;
         if(outputSelection) {

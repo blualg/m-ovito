@@ -158,11 +158,11 @@ public:
 public:
 
     /// Constructor.
-    explicit InterfaceMesh(ElasticMapping& elasticMapping) :
+    explicit InterfaceMesh(ElasticMapping& elasticMapping, const SimulationCell* simulationCell) :
         DataOORef<SurfaceMesh>(DataOORef<SurfaceMesh>::create()),
         SurfaceMeshBuilder(this->get()),
         _elasticMapping(elasticMapping) {
-            setDomain(elasticMapping.structureAnalysis().cell());
+            setDomain(simulationCell);
         }
 
     /// Returns the mapping from the physical configuration of the system

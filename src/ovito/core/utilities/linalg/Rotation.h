@@ -99,17 +99,17 @@ public:
     /// \param axis The axis of rotation. It is automatically normalized to a unit vector unless \a normalize is \c false.
     /// \param angle The angle of rotation in radians.
     /// \param normalize Controls the automatic normalization of the axis vector.
-    Q_DECL_CONSTEXPR RotationT(const Vector_3<T>& axis, T angle, bool normalize = true) : _axis(normalize ? axis.normalized() : axis), _angle(angle) {}
+    constexpr RotationT(const Vector_3<T>& axis, T angle, bool normalize = true) : _axis(normalize ? axis.normalized() : axis), _angle(angle) {}
 
     /// \brief Constructs a the null rotation.
     /// The axis vector is set to (0,0,1) vector and the angle to zero.
-    Q_DECL_CONSTEXPR RotationT(Identity) : _axis{T(0),T(0),T(1)}, _angle(T(0)) {}
+    constexpr RotationT(Identity) : _axis{T(0),T(0),T(1)}, _angle(T(0)) {}
 
     /// \brief Initializes the object from the rotational part of a matrix.
     /// \param tm A pure rotation matrix.
     ///
     /// The rotation angle calculated from the matrix will be in the range [-pi, +pi].
-    Q_DECL_CONSTEXPR explicit RotationT(const AffineTransformationT<T>& tm) {
+    constexpr explicit RotationT(const AffineTransformationT<T>& tm) {
         _axis.x() = tm(2,1) - tm(1,2);
         _axis.y() = tm(0,2) - tm(2,0);
         _axis.z() = tm(1,0) - tm(0,1);
@@ -129,7 +129,7 @@ public:
     /// \param q The input quaternion.
     ///
     /// The rotation angle calculated from the quaternion will be in the range [0, 2*pi].
-    Q_DECL_CONSTEXPR explicit RotationT(const QuaternionT<T>& q) {
+    constexpr explicit RotationT(const QuaternionT<T>& q) {
         T scaleSquared = q.x()*q.x() + q.y()*q.y() + q.z()*q.z();
         if(scaleSquared <= FloatTypeEpsilon<T>()) {
             _angle = T(0);
@@ -150,7 +150,7 @@ public:
     /// \brief Constructs a rotation that rotates one vector such that it becomes parallel with a second vector.
     /// \param a The vector to be rotated. Can be of any length, but must not be the null vector.
     /// \param b The target vector. Can be of any length, but must not be the null vector.
-    Q_DECL_CONSTEXPR RotationT(const Vector_3<T>& a, const Vector_3<T>& b) {
+    constexpr RotationT(const Vector_3<T>& a, const Vector_3<T>& b) {
         Vector_3<T> an = a.normalized();
         Vector_3<T> bn = b.normalized();
         T cos = an.dot(bn);
@@ -171,31 +171,31 @@ public:
     /////////////////////////////// Component access //////////////////////////////
 
     /// \brief Returns the axis of rotation (a unit vector).
-    Q_DECL_CONSTEXPR const Vector_3<T>& axis() const { return _axis; }
+    constexpr const Vector_3<T>& axis() const { return _axis; }
 
     /// \brief Returns the angle of rotation in radians.
-    Q_DECL_CONSTEXPR T angle() const { return _angle; }
+    constexpr T angle() const { return _angle; }
 
     /// \brief Changes the axis of rotation.
     /// \param axis The new axis of rotation. Must be a unit vector.
-    Q_DECL_CONSTEXPR void setAxis(const Vector_3<T>& axis) { _axis = axis; }
+    constexpr void setAxis(const Vector_3<T>& axis) { _axis = axis; }
 
     /// \brief Changes the angle of rotation.
     /// \param angle The new angle in radians.
-    Q_DECL_CONSTEXPR void setAngle(T angle) { _angle = angle; }
+    constexpr void setAngle(T angle) { _angle = angle; }
 
     /////////////////////////////// Unary operators //////////////////////////////
 
     /// \brief Returns the inverse of this rotation.
     /// \return A rotation with the same axis vector but an inverted rotation angle.
-    Q_DECL_CONSTEXPR RotationT inverse() const  { return RotationT(_axis, -_angle, false); }
+    constexpr RotationT inverse() const  { return RotationT(_axis, -_angle, false); }
 
     /// \brief Converts the axis-angle representation to a quaternion representation.
     /// \return A quaternion that represents the same rotation as this object.
     ///
     /// Note that any extra revolutions are lost during the conversion, because quaternions
     /// cannot represent multiple revolutions.
-    Q_DECL_CONSTEXPR explicit operator QuaternionT<T>() const {
+    constexpr explicit operator QuaternionT<T>() const {
         T omega = _angle * T(0.5);
         T s = std::sin(omega);
         return QuaternionT<T>(_axis.x() * s, _axis.y() * s, _axis.z() * s, std::cos(omega)).normalized();
@@ -206,21 +206,21 @@ public:
     /// \brief Adds the given rotation to this rotation.
     /// \param r2 The rotation to add to this rotation.
     /// The new rotation is equal to \c r2*(*this).
-    Q_DECL_CONSTEXPR RotationT& operator+=(const RotationT& r2) { *this = r2 * (*this); return *this; }
+    constexpr RotationT& operator+=(const RotationT& r2) { *this = r2 * (*this); return *this; }
 
     /// \brief Adds the inverse of another rotation to this rotation.
     /// \param r2 The rotation to subtract from this rotation.
     /// The new rotation is equal to \c (*this)*r2.inverse().
-    Q_DECL_CONSTEXPR RotationT& operator-=(const RotationT& r2) { *this = (*this) * r2.inverse(); return *this; }
+    constexpr RotationT& operator-=(const RotationT& r2) { *this = (*this) * r2.inverse(); return *this; }
 
     /// \brief Sets the rotation to the identity rotation.
-    Q_DECL_CONSTEXPR void setIdentity() {
+    constexpr void setIdentity() {
         _axis = Vector_3<T>(T(0),T(0),T(1));
         _angle = T(0);
     }
 
     /// \brief Sets the rotation to the identity rotation.
-    Q_DECL_CONSTEXPR RotationT& operator=(Identity) {
+    constexpr RotationT& operator=(Identity) {
         setIdentity();
         return *this;
     }
@@ -231,21 +231,21 @@ public:
     /// \param r The rotation to compare with.
     /// \return \c true if the axis and the angle of the two rotations are either both equal or both equal to their opposite;
     ///         \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator==(const RotationT& r) const { return ((r._axis==_axis) && (r._angle==_angle)) || ((r._axis==-_axis) && (r._angle==-_angle)); }
+    constexpr bool operator==(const RotationT& r) const { return ((r._axis==_axis) && (r._angle==_angle)) || ((r._axis==-_axis) && (r._angle==-_angle)); }
 
     /// \brief Returns whether two rotations are the not same.
     /// \param r The rotation to compare with.
     /// \return \c true if the axis or the angle of both rotations are neither equal or opposite;
     ///         \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator!=(const RotationT& r) const { return !(*this == r); }
+    constexpr bool operator!=(const RotationT& r) const { return !(*this == r); }
 
     /// \brief Returns whether the angle of rotation is zero.
     /// \return \c true if the angle is zero; \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator==(Identity) const { return (_angle == T(0)); }
+    constexpr bool operator==(Identity) const { return (_angle == T(0)); }
 
     /// \brief Returns whether the angle of rotation is not zero.
     /// \return \c true if the angle is not zero; \c false otherwise.
-    Q_DECL_CONSTEXPR bool operator!=(Identity) const { return (_angle != T(0)); }
+    constexpr bool operator!=(Identity) const { return (_angle != T(0)); }
 
     /// \brief Tests whether two rotations are equal within a specified tolerance.
     /// \param r The rotation to compare with.
@@ -253,7 +253,7 @@ public:
     ///        the absolute differences in the X, Y, and Z components of the rotation vector and the angle are all smaller than this tolerance value.
     ///        Note that rotations with equal but opposite axis and angle are also considered equal.
     /// \return \c true if this rotation is equal to the rotation \a r within the given tolerance.
-    Q_DECL_CONSTEXPR bool equals(const RotationT& r, T tolerance = FloatTypeEpsilon<T>()) const {
+    constexpr bool equals(const RotationT& r, T tolerance = FloatTypeEpsilon<T>()) const {
         return (std::abs(angle() - r.angle()) <= tolerance && axis().equals( r.axis(), tolerance)) ||
                (std::abs(angle() + r.angle()) <= tolerance && axis().equals(-r.axis(), tolerance));
     }
@@ -265,7 +265,7 @@ public:
     /// \param rot2 The second rotation.
     /// \param t The parameter for the linear interpolation in the range [0,1].
     /// \return A linear interpolation between \a rot1 and \a rot2.
-    Q_DECL_CONSTEXPR static RotationT interpolate(const RotationT& rot1, const RotationT& rot2, T t) {
+    constexpr static RotationT interpolate(const RotationT& rot1, const RotationT& rot2, T t) {
         OVITO_ASSERT(t >= 0 && t <= 1);
 
         RotationT _rot2;
@@ -318,7 +318,7 @@ public:
     /// \param in Controls the tangential direction at \a rot2.
     /// \param t The interpolation parameter in the range [0,1].
     /// \return The interpolated rotation between \a rot1 and \a rot2.
-    Q_DECL_CONSTEXPR static RotationT interpolateQuad(const RotationT& rot1, const RotationT& rot2, const RotationT& out, const RotationT& in, T t) {
+    constexpr static RotationT interpolateQuad(const RotationT& rot1, const RotationT& rot2, const RotationT& out, const RotationT& in, T t) {
         RotationT slerpP = interpolate(rot1, rot2, t);
         RotationT slerpQ = interpolate(out, in, t);
         T Ti = T(2) * t * (T(1) - t);
@@ -327,13 +327,13 @@ public:
 
     /// \brief Constructs a rotation from three Euler angles.
     /// \param eulerAngles The input Euler angles.
-    Q_DECL_CONSTEXPR static RotationT fromEuler(const Vector_3<T>& eulerAngles, typename Matrix_3<T>::EulerAxisSequence axisSequence = Matrix_3<T>::szyx) {
+    constexpr static RotationT fromEuler(const Vector_3<T>& eulerAngles, typename Matrix_3<T>::EulerAxisSequence axisSequence = Matrix_3<T>::szyx) {
         OVITO_ASSERT(axisSequence == Matrix_3<T>::szyx);    // TODO: Other orders not implemented yet!
         return RotationT(Vector3(1,0,0), eulerAngles[2]) * RotationT(Vector3(0,1,0), eulerAngles[1]) * RotationT(Vector3(0,0,1), eulerAngles[0]);
     }
 
     /// \brief Converts the rotation to three Euler angles.
-    Q_DECL_CONSTEXPR Vector_3<T> toEuler(typename Matrix_3<T>::EulerAxisSequence axisSequence) const {
+    constexpr Vector_3<T> toEuler(typename Matrix_3<T>::EulerAxisSequence axisSequence) const {
         if(*this == Identity()) return typename Vector_3<T>::Zero();
         Vector_3<T> euler = Matrix_3<T>::rotation(*this).toEuler(axisSequence);
 
@@ -374,7 +374,7 @@ public:
     ///
     /// The rotation axis is aligned with to the v's direction
     /// The rotation angle is equal to the length of v.
-    Q_DECL_CONSTEXPR static RotationT fromRodriguesVector(const Vector_3<T>& v)
+    constexpr static RotationT fromRodriguesVector(const Vector_3<T>& v)
     {
         if(v.squaredLength() < FloatTypeEpsilon<T>() * FloatTypeEpsilon<T>()) {
             return RotationT::Identity();
@@ -383,7 +383,7 @@ public:
     }
 
     /// \brief Converts the rotation to a Rodrigues vector.
-    Q_DECL_CONSTEXPR Vector_3<T> toRodriguesVector() const { return _axis * _angle; }
+    constexpr Vector_3<T> toRodriguesVector() const { return _axis * _angle; }
 
     ////////////////////////////////// Utilities /////////////////////////////////
 
@@ -391,20 +391,20 @@ public:
     /// \return The rounded value of \c angle divided by 2*pi.
     /// \sa setRevolutions()
     /// \sa addRevolutions()
-    Q_DECL_CONSTEXPR int revolutions() const { return (int)(_angle/T(FLOATTYPE_PI*2)); }
+    constexpr int revolutions() const { return (int)(_angle/T(FLOATTYPE_PI*2)); }
 
     /// \brief Sets the number of revolutions.
     /// \param n The new number of revolutions. This can be negative.
     /// \sa revolutions()
     /// \sa addRevolutions()
-    Q_DECL_CONSTEXPR void setRevolutions(int n) { _angle = std::fmod(_angle, T(2*FLOATTYPE_PI)) + (T(2*FLOATTYPE_PI)*n); }
+    constexpr void setRevolutions(int n) { _angle = std::fmod(_angle, T(2*FLOATTYPE_PI)) + (T(2*FLOATTYPE_PI)*n); }
 
     /// \brief Adds the given number of revolutions.
     /// \param n The number of revolutions to add to the angle. This can be negative.
     ///
     /// The rotation angle is increased by \c n*2*pi.
     /// \sa revolutions()
-    Q_DECL_CONSTEXPR void addRevolutions(int n) { _angle += T(2*FLOATTYPE_PI) * n; }
+    constexpr void addRevolutions(int n) { _angle += T(2*FLOATTYPE_PI) * n; }
 
     /// \brief Returns a string representation of this rotation.
     /// \return A string that contains the components of the rotation structure.
@@ -414,7 +414,7 @@ public:
 
 private:
 
-    Q_DECL_CONSTEXPR static inline Vector_3<T> interpolateAxis(T time, const Vector_3<T>& axis0, const Vector_3<T>& axis1) {
+    constexpr static inline Vector_3<T> interpolateAxis(T time, const Vector_3<T>& axis0, const Vector_3<T>& axis1) {
         // assert:  axis0 and axis1 are unit length
         // assert:  axis0.dot(axis1) >= 0
         // assert:  0 <= time <= 1
@@ -432,7 +432,7 @@ private:
         return (coeff0 * axis0 + coeff1 * axis1);
     }
 
-    Q_DECL_CONSTEXPR static inline QuaternionT<T> slerpExtraSpins(T t, const QuaternionT<T>& p, const QuaternionT<T>& q, int iExtraSpins) {
+    constexpr static inline QuaternionT<T> slerpExtraSpins(T t, const QuaternionT<T>& p, const QuaternionT<T>& q, int iExtraSpins) {
         T fCos = p.dot(q);
         OVITO_ASSERT(fCos >= T(0));
 
@@ -463,7 +463,7 @@ private:
 /// \return A new rotation that is equal to first applying \a r2 and then applying \a r1.
 /// \relates RotationT
 template<typename T>
-Q_DECL_CONSTEXPR inline RotationT<T> operator*(const RotationT<T>& r1, const RotationT<T>& r2) {
+constexpr inline RotationT<T> operator*(const RotationT<T>& r1, const RotationT<T>& r2) {
     if(r1 == typename RotationT<T>::Identity()) return r2;
     if(r2 == typename RotationT<T>::Identity()) return r1;
     QuaternionT<T> q1 = (QuaternionT<T>)r1;

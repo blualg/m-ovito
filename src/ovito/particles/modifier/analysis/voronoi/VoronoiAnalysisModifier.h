@@ -125,7 +125,7 @@ private:
         /// Returns the generated nearest neighbor bonds.
         std::vector<Bond>& bonds() { return _bonds; }
 
-        const SimulationCell* simCell() const { return _simCell; }
+        const SimulationCellData& simCell() const { return _simCell; }
         const ConstPropertyPtr& positions() const { return _positions; }
         const ConstPropertyPtr& selection() const { return _selection; }
         const OOWeakRef<const PipelineNode>& createdByNode() const { return _createdByNode; }
@@ -135,7 +135,7 @@ private:
         const FloatType _edgeThreshold;
         const FloatType _faceThreshold;
         const FloatType _relativeFaceThreshold;
-        DataOORef<const SimulationCell> _simCell;
+        const SimulationCellData _simCell;
         ConstPropertyPtr _radii;
         ConstPropertyPtr _positions;
         ConstPropertyPtr _selection;

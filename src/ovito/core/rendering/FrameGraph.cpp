@@ -40,6 +40,7 @@ void LinePrimitive::__key_function() {}
 void TextPrimitive::__key_function() {}
 void MarkerPrimitive::__key_function() {}
 void ImagePrimitive::__key_function() {}
+void VolumePrimitive::__key_function() {}
 #endif
 
 /******************************************************************************

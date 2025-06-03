@@ -764,8 +764,16 @@ static void WalkDirtyRegions( GLUtesselator *tess, ActiveRegion *regUp )
 {
   ActiveRegion *regLo = RegionBelow(regUp);
   GLUhalfEdge *eUp, *eLo;
+  int loopCounter = 0;
 
-  for( ;; ) {
+  for(;; loopCounter++) {
+    // OVITO: added this to avoid infinite loops
+    // Certain pathological cases can cause the code to loop
+    // forever, so we need to break out of the loop after a
+    // certain maximum number of iterations.
+    if(loopCounter == 100000) {
+      longjmp(tess->env,1);
+    }
     /* Find the lowest dirty region (we walk from the bottom up). */
     while( regLo->dirty ) {
       regUp = regLo;

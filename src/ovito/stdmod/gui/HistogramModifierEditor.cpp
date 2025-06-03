@@ -25,6 +25,7 @@
 #include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
+#include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
@@ -78,6 +79,14 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
     gridlayout->addWidget(numBinsPUI->label(), 0, 0);
     gridlayout->addLayout(numBinsPUI->createFieldLayout(), 0, 1);
 
+    // Normalization mode parameter.
+    VariantComboBoxParameterUI* normalizationModeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(HistogramModifier::normalizationMode));
+    normalizationModeUI->comboBox()->addItem(tr("Absolute count"), QVariant::fromValue((int)HistogramModifier::NormalizationMode::AbsoluteCount));
+    normalizationModeUI->comboBox()->addItem(tr("Relative frequency"), QVariant::fromValue((int)HistogramModifier::NormalizationMode::RelativeFrequency));
+    normalizationModeUI->comboBox()->addItem(tr("Probability density"), QVariant::fromValue((int)HistogramModifier::NormalizationMode::ProbabilityDensity));
+    gridlayout->addWidget(new QLabel(tr("Normalization mode:")), 1, 0);
+    gridlayout->addWidget(normalizationModeUI->comboBox(), 1, 1);
+
     layout->addLayout(gridlayout);
 
     _plotWidget = new DataTablePlotWidget();
@@ -89,7 +98,6 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
     _selectionRangeIndicator->attach(_plotWidget);
     _selectionRangeIndicator->hide();
 
-    layout->addWidget(new QLabel(tr("Histogram:")));
     layout->addWidget(_plotWidget);
 
     OpenDataInspectorButton* openDataInspectorBtn = new OpenDataInspectorButton(this, tr("Show in data inspector"));

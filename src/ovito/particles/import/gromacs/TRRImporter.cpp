@@ -29,8 +29,6 @@
 #include <xdrfile/xdrfile.h>
 #include <xdrfile/xdrfile_trr.h>
 
-#include <algorithm>
-
 namespace Ovito {
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(TRRImporter);
@@ -186,7 +184,6 @@ void TRRImporter::FrameLoader::loadFile()
         BufferWriteAccess<Point3, access_mode::discard_write> posProperty = particles()->createProperty(Particles::PositionProperty);
         // Convert nm to angstrom
         std::ranges::transform(trrFrame.xyz, posProperty.begin(), [](const Point3F& p) { return (p * 10.0f).toDataType<FloatType>(); });
-        posProperty.reset();
     }
 
     if(((uint8_t)trrFrame.hasProp & (uint8_t)TRRFile::Frame::Property::VELOCITY) == (uint8_t)TRRFile::Frame::Property::VELOCITY) {
@@ -194,18 +191,16 @@ void TRRImporter::FrameLoader::loadFile()
         // convert nm/ps to angstrom/ps
         std::ranges::transform(trrFrame.velocity, velProperty.begin(),
                                [](const Vector3F& p) { return (p * 10.0f).toDataType<FloatType>(); });
-        velProperty.reset();
     }
 
     if(((uint8_t)trrFrame.hasProp & (uint8_t)TRRFile::Frame::Property::FORCE) == (uint8_t)TRRFile::Frame::Property::FORCE) {
         BufferWriteAccess<Vector3, access_mode::discard_write> forceProperty = particles()->createProperty(Particles::ForceProperty);
         // 1 kJ/mol = 1.03642697E-02 eV (from https://wild.life.nctu.edu.tw/class/common/energy-conversion-table-in-E-format.html)
-        constexpr float kJ_Mol_eV = 1.03642697E-02;
+        constexpr float kJ_Mol_eV = 1.03642697E-02f;
         constexpr float kJ_Mol_nm_to_eV_A = kJ_Mol_eV * 0.1f;
         // convert kJ/mol/nm to eV/A
         std::ranges::transform(trrFrame.force, forceProperty.begin(),
                                [](const Vector3F& p) { return (p * kJ_Mol_nm_to_eV_A).toDataType<FloatType>(); });
-        forceProperty.reset();
     }
 
     // Convert cell vectors from nanometers to angstroms.

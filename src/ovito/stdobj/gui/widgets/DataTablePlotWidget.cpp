@@ -34,6 +34,7 @@
 #include <qwt/qwt_plot_zoomer.h>
 #include <qwt/qwt_plot_magnifier.h>
 #include <qwt/qwt_plot_panner.h>
+#include <qwt/qwt_painter.h>
 
 namespace Ovito {
 
@@ -43,6 +44,7 @@ namespace Ovito {
 DataTablePlotWidget::DataTablePlotWidget(QWidget* parent) : QwtPlot(parent)
 {
     setCanvasBackground(Qt::white);
+    QwtPainter::setRoundingAlignment(false);
 
     // Show a grid in the background of the plot.
     QwtPlotGrid* plotGrid = new QwtPlotGrid();

@@ -64,8 +64,7 @@ void AcklandJonesModifier::AcklandJonesAnalysisAlgorithm::identifyStructures(con
     progress.setText(tr("Performing Ackland-Jones analysis"));
 
     // Prepare the neighbor finder.
-    NearestNeighborFinder neighborFinder(14);
-    neighborFinder.prepare(particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
+    NearestNeighborFinder neighborFinder(14, particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
     // Perform analysis on each particle.
     BufferReadAccess<SelectionIntType> selectionAcc(selection);

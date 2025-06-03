@@ -56,7 +56,7 @@ public:
 
     /// Constructor.
     ManifoldConstructionHelper(DelaunayTessellation& tessellation, SurfaceMeshBuilder& outputMesh, FloatType alpha, bool createRegions,
-            const Property* positions, TaskProgress& progress) : _tessellation(tessellation), _mesh(outputMesh), _alpha(alpha), _createRegions(createRegions), _positions(positions), _progress(progress) { OVITO_ASSERT(_tessellation.simCell()); }
+            const Property* positions, TaskProgress& progress) : _tessellation(tessellation), _mesh(outputMesh), _alpha(alpha), _createRegions(createRegions), _positions(positions), _progress(progress) {}
 
     /// Returns the number of filled regions that have been identified.
     SurfaceMesh::size_type filledRegionCount() const { return _filledRegionCount; }
@@ -115,9 +115,9 @@ public:
         _emptyRegionCount = 0;
 
         // Flags indicating which periodic cell directions are connected by a surface through the cell boundary.
-        const SimulationCell* simCell = _tessellation.simCell();
+        const SimulationCellData simCell = _tessellation.simCell();
         bool surfaceCrossesBoundaries[3] = { false, false, false };
-        bool detectBoundaryCrossings = simCell->hasPbc();
+        bool detectBoundaryCrossings = simCell.hasPbc();
 
         // Stack of faces to visit. Used for implementing recursive algorithm.
         std::deque<SurfaceMesh::face_index> facesToProcess;
@@ -159,11 +159,11 @@ public:
                         const Point3& p2 = vertexPositions[_mesh.vertex2(edge)];
                         Vector3 delta = p2 - p1;
                         for(size_t dim = 0; dim < 3; dim++) {
-                            if(!surfaceCrossesBoundaries[dim] && simCell->hasPbc(dim)) {
+                            if(!surfaceCrossesBoundaries[dim] && simCell.hasPbc(dim)) {
                                 // The edge is crossing the periodic boundary if it spans more than half of the simulation cell in that direction.
-                                if(std::abs(simCell->inverseMatrix().prodrow(delta, dim)) >= FloatType(0.5)) {
+                                if(std::abs(simCell.reciprocalCellMatrix().prodrow(delta, dim)) >= FloatType(0.5)) {
                                     surfaceCrossesBoundaries[dim] = true;
-                                    detectBoundaryCrossings = (simCell->hasPbc(0) && !surfaceCrossesBoundaries[0]) || (simCell->hasPbc(1) && !surfaceCrossesBoundaries[1]) || (simCell->hasPbc(2) && !surfaceCrossesBoundaries[2]);
+                                    detectBoundaryCrossings = (simCell.hasPbc(0) && !surfaceCrossesBoundaries[0]) || (simCell.hasPbc(1) && !surfaceCrossesBoundaries[1]) || (simCell.hasPbc(2) && !surfaceCrossesBoundaries[2]);
                                 }
                             }
                         }
@@ -287,9 +287,9 @@ public:
 
                 // Detect whether the region is an exterior empty region, i.e. it is adjacent to the open boundaries of the simulation cell.
                 touchesOpenBoundaries |=
-                    (cellCrossesBoundaries[0] && !_tessellation.simCell()->pbcX()) ||
-                    (cellCrossesBoundaries[1] && !_tessellation.simCell()->pbcY()) ||
-                    (cellCrossesBoundaries[2] && !_tessellation.simCell()->pbcZ());
+                    (cellCrossesBoundaries[0] && !simCell.hasPbc(0)) ||
+                    (cellCrossesBoundaries[1] && !simCell.hasPbc(1)) ||
+                    (cellCrossesBoundaries[2] && !simCell.hasPbc(2));
 
                 // Stop at cells that are completely outside of the simulation box.
                 if(overlapVolume == 0)
@@ -300,7 +300,7 @@ public:
                 // that is not crossed by the surface mesh. In this case, we need to merge the two empty
                 // regions that were created separately on either side of the simulation box boundary.
                 for(size_t dim = 0; dim < 3; dim++) {
-                    if(cellCrossesBoundaries[dim] && !surfaceCrossesBoundaries[dim] && simCell->hasPbc(dim)) {
+                    if(cellCrossesBoundaries[dim] && !surfaceCrossesBoundaries[dim] && simCell.hasPbc(dim)) {
                         if(splitPeriodicRegion == SurfaceMesh::InvalidIndex)
                             splitPeriodicRegion = emptyRegion;
                         else
@@ -395,8 +395,8 @@ public:
         // Create a single space-filling empty region if there is no filled region at all.
         if(_emptyRegionCount == 0 && _filledRegionCount == 0) {
             regionGrower.grow(1);
-            BufferWriteAccess<FloatType, access_mode::discard_write>{regionPropertyVolume}[0] = simCell->volume3D();
-            BufferWriteAccess<SelectionIntType, access_mode::discard_write>{regionPropertyIsExterior}[0] = (!simCell->pbcX() || !simCell->pbcY() || !simCell->pbcZ());
+            BufferWriteAccess<FloatType, access_mode::discard_write>{regionPropertyVolume}[0] = simCell.volume3D();
+            BufferWriteAccess<SelectionIntType, access_mode::discard_write>{regionPropertyIsExterior}[0] = (!simCell.hasPbc(0) || !simCell.hasPbc(1) || !simCell.hasPbc(2));
             _emptyRegionCount = 1;
         }
 
@@ -545,7 +545,7 @@ private:
                         // Note that we reverse their order to find the opposite face.
                         std::array<size_t, 3> vertices;
                         for(int v = 0; v < 3; v++)
-                            vertices[v] = _tessellation.vertexIndex(_tessellation.cellVertex(currentCell, DelaunayTessellation::cellFacetVertexIndex(f, 2-v)));
+                            vertices[v] = _tessellation.inputPointIndex(_tessellation.cellVertex(currentCell, DelaunayTessellation::cellFacetVertexIndex(f, 2-v)));
 
                         // Bring vertices into a well-defined order, which can be used as lookup key to find the adjacent tetrahedron.
                         reorderFaceVertices(vertices);
@@ -616,7 +616,7 @@ private:
                     // Get the 3 vertices of the first face of the tet.
                     std::array<size_t, 3> vertices;
                     for(int v = 0; v < 3; v++)
-                        vertices[v] = _tessellation.vertexIndex(_tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(0, v)));
+                        vertices[v] = _tessellation.inputPointIndex(_tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(0, v)));
 
                     // Bring vertices into a well-defined order, which can be used as lookup key.
                     reorderFaceVertices(vertices);
@@ -655,14 +655,14 @@ private:
                 // Get the 3 vertices of the facet.
                 std::array<size_t, 3> vertices;
                 for(int v = 0; v < 3; v++)
-                    vertices[v] = _tessellation.vertexIndex(_tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(f, v)));
+                    vertices[v] = _tessellation.inputPointIndex(_tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(f, v)));
 
                 // Bring vertices into a well-defined order, which can be used as lookup key.
                 reorderFaceVertices(vertices);
 
                 OVITO_ASSERT(_cellLookupMap.find(vertices) == _cellLookupMap.end());
 
-                // Add facet and its adjacent cell to the loopup map.
+                // Add facet and its adjacent cell to the lookup map.
                 _cellLookupMap.emplace(vertices, cell);
             }
         }
@@ -672,6 +672,8 @@ private:
     template<typename PrepareMeshFaceFunc, typename PrepareMeshVertexFunc>
     void createInterfaceFacets(PrepareMeshFaceFunc&& prepareMeshFaceFunc, PrepareMeshVertexFunc&& prepareMeshVertexFunc)
     {
+        const SimulationCellData simCell = _tessellation.simCell();
+
         // Stores the triangle mesh vertices created for the vertices of the tetrahedral mesh.
         std::vector<SurfaceMesh::vertex_index> vertexMap(_positions.size(), SurfaceMesh::InvalidIndex);
         _tetrahedraFaceList.clear();
@@ -706,7 +708,7 @@ private:
             Vector3 ad = unwrappedVerts[0] - unwrappedVerts[3];
             Vector3 bd = unwrappedVerts[1] - unwrappedVerts[3];
             Vector3 cd = unwrappedVerts[2] - unwrappedVerts[3];
-            if(_tessellation.simCell()->isWrappedVector(ad) || _tessellation.simCell()->isWrappedVector(bd) || _tessellation.simCell()->isWrappedVector(cd))
+            if(simCell.isWrappedVector(ad) || simCell.isWrappedVector(bd) || simCell.isWrappedVector(cd))
                 throw Exception("Cannot construct manifold. Simulation cell length is too small for the given probe sphere radius parameter.");
 
             // Iterate over the four faces of the tetrahedron cell.
@@ -725,7 +727,7 @@ private:
                 std::array<size_t,3> vertexIndices;
                 for(int v = 0; v < 3; v++) {
                     vertexHandles[v] = _tessellation.cellVertex(cell, DelaunayTessellation::cellFacetVertexIndex(f, _flipOrientation ? v : (2-v)));
-                    size_t vertexIndex = vertexIndices[v] = _tessellation.vertexIndex(vertexHandles[v]);
+                    size_t vertexIndex = vertexIndices[v] = _tessellation.inputPointIndex(vertexHandles[v]);
                     OVITO_ASSERT(vertexIndex < vertexMap.size());
                     if(vertexMap[vertexIndex] == SurfaceMesh::InvalidIndex) {
                         vertexMap[vertexIndex] = topo->createVertex();
@@ -749,7 +751,7 @@ private:
                     std::array<size_t,3> reverseVertexIndices;
                     for(int v = 0; v < 3; v++) {
                         vertexHandles[v] = _tessellation.cellVertex(adjacentCell, DelaunayTessellation::cellFacetVertexIndex(mirrorFacet.second, _flipOrientation ? v : (2-v)));
-                        size_t vertexIndex = reverseVertexIndices[v] = _tessellation.vertexIndex(vertexHandles[v]);
+                        size_t vertexIndex = reverseVertexIndices[v] = _tessellation.inputPointIndex(vertexHandles[v]);
                         OVITO_ASSERT(vertexIndex < vertexMap.size());
                         OVITO_ASSERT(vertexMap[vertexIndex] != SurfaceMesh::InvalidIndex);
                         facetVertices[v] = vertexMap[vertexIndex];
@@ -798,7 +800,7 @@ private:
             vertexIndex1 = DelaunayTessellation::cellFacetVertexIndex(f, (e+1)%3);
             vertexIndex2 = DelaunayTessellation::cellFacetVertexIndex(f, e);
         }
-        DelaunayTessellation::FacetCirculator circulator_start = _tessellation.incident_facets(cell, vertexIndex1, vertexIndex2, cell, f);
+        DelaunayTessellation::FacetCirculator circulator_start = _tessellation.incidentFacets(cell, vertexIndex1, vertexIndex2, cell, f);
         DelaunayTessellation::FacetCirculator circulator = circulator_start;
         OVITO_ASSERT((*circulator).first == cell);
         OVITO_ASSERT((*circulator).second == f);
@@ -933,7 +935,7 @@ private:
             std::array<size_t,3> faceVerts;
             for(size_t i = 0; i < 3; i++) {
                 int vertexIndex = DelaunayTessellation::cellFacetVertexIndex(facet.second, _flipOrientation ? i : (2-i));
-                faceVerts[i] = _tessellation.vertexIndex(_tessellation.cellVertex(cell, vertexIndex));
+                faceVerts[i] = _tessellation.inputPointIndex(_tessellation.cellVertex(cell, vertexIndex));
             }
             reorderFaceVertices(faceVerts);
             if(auto item = _faceLookupMap.find(faceVerts); item != _faceLookupMap.end())
@@ -963,7 +965,7 @@ private:
         Point3 reducedVertexPositions[4];
         for(int v = 0; v < 4; v++) {
             const Point3& vpos = vertexPositions[v] = _tessellation.vertexPosition(_tessellation.cellVertex(cell, v));
-            const Point3& rp = reducedVertexPositions[v] = _tessellation.simCell()->absoluteToReduced(vpos);
+            const Point3& rp = reducedVertexPositions[v] = _tessellation.simCell().absoluteToReduced(vpos);
             if(rp.x() < 0.0 || rp.x() > 1.0) {
                 isCompletelyInsideBox = false;
                 outsideDir[0] = true;
@@ -1124,7 +1126,7 @@ private:
             }
         }
 
-        return (convexVolume / 6.0) * _tessellation.simCell()->volume3D();
+        return (convexVolume / 6.0) * _tessellation.simCell().volume3D();
     }
 
 private:

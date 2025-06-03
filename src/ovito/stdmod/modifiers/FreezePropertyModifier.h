@@ -75,6 +75,12 @@ private:
 
     /// Animation frame at which the frozen property is taken.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(int{0}, freezeTime, setFreezeTime);
+
+    /// Accept newly added elements that did not exist at the time when the property was frozen.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, tolerateNewElements, setTolerateNewElements);
+
+    /// Option to select newly appearing elements that did not exist at the time when the property was frozen.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, selectNewElements, setSelectNewElements);
 };
 
 /**
@@ -118,7 +124,7 @@ private:
     /// A copy of the element identifiers, taken at the time when the property values were saved.
     DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(DataOORef<const Property>, identifiers, setIdentifiers, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_SAVE_RECOMPUTABLE_DATA);
 
-    /// The cached visalization elements that are attached to the output property.
+    /// The cached visualization elements that are attached to the output property.
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(OORef<DataVis>, cachedVisElements, setCachedVisElements, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_CHANGE_MESSAGE | PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_DONT_PROPAGATE_MESSAGES);
 
     /// The validity interval of the frozen property.

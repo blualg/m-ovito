@@ -311,9 +311,8 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
         Bonds* bonds = particles->makeBondsMutable();
         bonds->verifyIntegrity();
 
-        // Prepare the neighbor list.
-        CutoffNeighborFinder neighborFinder;
-        neighborFinder.prepare(maxCutoff, particles->expectProperty(Particles::PositionProperty), state.getObject<SimulationCell>(), {});
+        // Prepare the neighbor finder.
+        CutoffNeighborFinder neighborFinder(maxCutoff, particles->expectProperty(Particles::PositionProperty), state.getObject<SimulationCell>(), {});
 
         // The lower bond length cutoff squared.
         FloatType minCutoffSquared = minCutoff * minCutoff;

@@ -301,18 +301,18 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
     if(_periodicImageBondProperty && _periodicImageBondProperty->size() == bondTopology()->size()) {
         OVITO_ASSERT(_unwrappedPositions);
 
-        if(!cell() || !cell()->hasPbcCorrected()) {
+        if(!cell().hasPbc()) {
             // No wrapping of bonds needed if simulation cell is non-periodic.
             _periodicImageBondProperty.reset();
         }
         else {
-            const std::array<bool, 3> pbcFlags = cell()->pbcFlagsCorrected();
+            const std::array<bool, 3> pbcFlags = cell().pbcFlags();
 
             // If any particles have been unwrapped by the modifier, update the PBC vectors
             // of the incident bonds accordingly.
             BufferReadAccess<Point3> positionsArray(positions());
             BufferReadAccess<Point3> unwrappedPositionsArray(_unwrappedPositions);
-            const AffineTransformation inverseSimCell = cell()->inverseMatrix();
+            const AffineTransformation inverseSimCell = cell().reciprocalCellMatrix();
             BufferWriteAccess<Vector3I, access_mode::read_write> pbcArray(_periodicImageBondProperty);
             Vector3I* pbcVec = pbcArray.begin();
             for(const ParticleIndexPair& bond : BufferReadAccess<ParticleIndexPair>(bondTopology())) {
@@ -386,8 +386,7 @@ void ClusterAnalysisModifier::ClusterAnalysisEngine::perform()
 void ClusterAnalysisModifier::CutoffClusterAnalysisEngine::doClustering(std::vector<Point3>& centersOfMass, TaskProgress& progress)
 {
     // Prepare the neighbor finder.
-    CutoffNeighborFinder neighborFinder;
-    neighborFinder.prepare(cutoff(), positions(), cell(), selection());
+    CutoffNeighborFinder neighborFinder(cutoff(), positions(), cell(), selection());
 
     size_t particleCount = positions()->size();
     progress.setMaximum(particleCount);
@@ -525,8 +524,7 @@ void ClusterAnalysisModifier::BondClusterAnalysisEngine::doClustering(std::vecto
                 toProcess.push_back(neighborIndex);
 
                 if(unwrappedCoordinates) {
-                    Vector3 delta = unwrappedCoordinates[neighborIndex] - unwrappedCoordinates[currentParticle];
-                    if(cell()) delta = cell()->wrapVector(delta);
+                    Vector3 delta = cell().wrapVector(unwrappedCoordinates[neighborIndex] - unwrappedCoordinates[currentParticle]);
                     unwrappedCoordinates[neighborIndex] = unwrappedCoordinates[currentParticle] + delta;
                     FloatType weight = particleMassesData ? particleMassesData[neighborIndex] : FloatType(1);
                     centerOfMass += weight * (unwrappedCoordinates[neighborIndex] - Point3::Origin());

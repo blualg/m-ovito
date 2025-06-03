@@ -26,7 +26,11 @@ OVITO_STANDARD_PLUGIN(GridGui
         modifier/CreateIsosurfaceModifierEditor.cpp
         objects/VoxelGridVisEditor.cpp
         objects/VoxelGridInspectionApplet.cpp
-    PLUGIN_DEPENDENCIES Grid StdObjGui
+        objects/OpacityFunctionParameterUI.cpp
+    PLUGIN_DEPENDENCIES
+        Grid StdObj StdObjGui
+    LIB_DEPENDENCIES
+        Qwt
     GUI_PLUGIN
     HAS_NO_EXPORTS
 )

@@ -32,6 +32,7 @@
 #include "CylinderPrimitive.h"
 #include "MeshPrimitive.h"
 #include "MarkerPrimitive.h"
+#include "VolumePrimitive.h"
 
 namespace Ovito {
 

@@ -177,14 +177,8 @@ VectorVis::VectorData Lines::getVectorVisData(const ConstDataObjectPath& path, c
                             simulationCell
                         },
                         [&](ConstDataBufferPtr& filteredPositions, ConstDataBufferPtr& filteredVectors) {
-                            if(simulationCell) {
-                                // Use wrapped point positions.
-                                filteredPositions = simulationCell->wrapPoints(positions);
-                            }
-                            else {
-                                // Use unwrapped point positions
-                                filteredPositions = positions;
-                            }
+                            // Use wrapped point positions.
+                            filteredPositions = SimulationCellData(simulationCell).wrapPoints(positions);
 
                             if(cuttingPlanes().empty()) {
                                 // Use vectors as they are.
@@ -193,7 +187,7 @@ VectorVis::VectorData Lines::getVectorVisData(const ConstDataObjectPath& path, c
                             else {
                                 BufferReadAccess<Vector3> vecInAcc{vectorProperty};
                                 BufferWriteAccessAndRef<Vector3, access_mode::discard_write> vecOutAcc{vectorProperty->cloneWithoutData(vectorProperty->size())};
-                                // Cull points at the clipping planes. Culled points get hidden by setting their correponding vector to zero.
+                                // Cull points at the clipping planes. Culled points get hidden by setting their corresponding vector to zero.
                                 size_t i = 0;
                                 for(const Point3& p : BufferReadAccess<Point3>{filteredPositions}) {
                                     if(isPointCulled(p))

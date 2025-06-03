@@ -161,9 +161,9 @@ public:
 
     /// Executes a functor and catches any exceptions thrown during its execution.
     /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
-    template<typename Function>
+    template<bool Isolated = false, typename Function>
     bool handleExceptions(Function&& func) const {
-        return mainWindow().handleExceptions(std::forward<Function>(func));
+        return mainWindow().handleExceptions<Isolated>(std::forward<Function>(func));
     }
 
     /// Executes a functor provided by the caller that performs undoable actions in an interactive context.

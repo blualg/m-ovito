@@ -252,13 +252,13 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 {
     size_t vecComponent = std::max(size_t(0), propertyVectorComponent);
     int numberOfGridPoints = nX * nY * nZ;
-    bool is2D = cell()->is2D();
+    bool is2D = cell().is2D();
 
     // Allocate real space grid.
     std::vector<FloatType> gridData(numberOfGridPoints, 0);
 
     // Get periodic boundary flag.
-    const std::array<bool, 3> pbc = cell()->pbcFlagsCorrected();
+    const std::array<bool, 3> pbc = cell().pbcFlags();
 
     if(!property || property->size() > 0) {
         BufferReadAccess<Point3> positionsArray(positions());
@@ -329,7 +329,7 @@ std::vector<std::complex<FloatType>> SpatialCorrelationFunctionModifier::Correla
 
     // Convert real-valued input data to complex data type, because KISS FFT expects an array of complex numbers.
     const int dims[3] = { nX, nY, nZ };
-    kiss_fftnd_cfg kiss = kiss_fftnd_alloc(dims, cell()->is2D() ? 2 : 3, false, 0, 0);
+    kiss_fftnd_cfg kiss = kiss_fftnd_alloc(dims, cell().is2D() ? 2 : 3, false, 0, 0);
     std::vector<kiss_fft_cpx> in(nX * nY * nZ);
     auto rDataIter = rData.begin();
     for(kiss_fft_cpx& c : in) {
@@ -355,7 +355,7 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
     OVITO_ASSERT(nX * nY * nZ == cData.size());
 
     const int dims[3] = { nX, nY, nZ };
-    kiss_fftnd_cfg kiss = kiss_fftnd_alloc(dims,  cell()->is2D() ? 2 : 3, true, 0, 0);
+    kiss_fftnd_cfg kiss = kiss_fftnd_alloc(dims,  cell().is2D() ? 2 : 3, true, 0, 0);
     std::vector<kiss_fft_cpx> out(nX * nY * nZ);
     OVITO_STATIC_ASSERT(sizeof(kiss_fft_cpx) == sizeof(std::complex<FloatType>));
 
@@ -381,13 +381,13 @@ std::vector<FloatType> SpatialCorrelationFunctionModifier::CorrelationAnalysisEn
 void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCorrelation()
 {
     // Get reciprocal cell.
-    const AffineTransformation& cellMatrix = cell()->matrix();
-    const AffineTransformation& reciprocalCellMatrix = cell()->inverseMatrix();
+    const AffineTransformation& cellMatrix = cell().cellMatrix();
+    const AffineTransformation& reciprocalCellMatrix = cell().reciprocalCellMatrix();
 
     // Note: Cell vectors are in columns. Those are 3-vectors.
     int nX = std::max(1, (int)(cellMatrix.column(0).length() / fftGridSpacing()));
     int nY = std::max(1, (int)(cellMatrix.column(1).length() / fftGridSpacing()));
-    int nZ = !cell()->is2D() ? std::max(1, (int)(cellMatrix.column(2).length() / fftGridSpacing())) : 1;
+    int nZ = !cell().is2D() ? std::max(1, (int)(cellMatrix.column(2).length() / fftGridSpacing())) : 1;
     size_t ntotal = (size_t)nX * (size_t)nY * (size_t)nZ;
     // The current version of the KISSFFT library does not support FFT grids with more than 2^31 bins.
     // The current version of the KISSFFT library does not support FFT grids with more than 2^31 bins.
@@ -441,7 +441,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     FloatType cellFaceDistance2 = 1 / std::sqrt(recCell2.x()*recCell2.x() + recCell2.y()*recCell2.y() + recCell2.z()*recCell2.z());
     FloatType cellFaceDistance3 = 1 / std::sqrt(recCell3.x()*recCell3.x() + recCell3.y()*recCell3.y() + recCell3.z()*recCell3.z());
 
-    FloatType minCellFaceDistance = !cell()->is2D()
+    FloatType minCellFaceDistance = !cell().is2D()
         ? std::min({cellFaceDistance1, cellFaceDistance2, cellFaceDistance3})
         : std::min({cellFaceDistance1, cellFaceDistance2});
 
@@ -454,7 +454,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
         numberOfWavevectorBins = 1 / (2 * minReciprocalSpaceVector * fftGridSpacing());
     }
     else {
-        OVITO_ASSERT(cell()->is2D() == false);
+        OVITO_ASSERT(cell().is2D() == false);
         dir1 = (_averagingDirection+1) % 3;
         dir2 = (_averagingDirection+2) % 3;
         numberOfWavevectorBins = n[dir1] * n[dir2];
@@ -491,7 +491,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
                     int iX = SimulationCell::modulo(binIndexX+nX/2, nX)-nX/2;
                     int iY = SimulationCell::modulo(binIndexY+nY/2, nY)-nY/2;
                     int iZ = SimulationCell::modulo(binIndexZ+nZ/2, nZ)-nZ/2;
-                    OVITO_ASSERT(!cell()->is2D() || iZ == 0);
+                    OVITO_ASSERT(!cell().is2D() || iZ == 0);
                     // This is the reciprocal space vector (without a factor of 2*pi).
                     Vector4 wavevector = FloatType(iX)*reciprocalCellMatrix.row(0) +
                                          FloatType(iY)*reciprocalCellMatrix.row(1) +
@@ -516,7 +516,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     }
 
     // Compute averages and normalize reciprocal-space correlation function.
-    FloatType normalizationFactor = (cell()->is2D() ? cell()->volume2D() : cell()->volume3D()) / (sourceProperty1()->size() * sourceProperty2()->size());
+    FloatType normalizationFactor = (cell().is2D() ? cell().volume2D() : cell().volume3D()) / (sourceProperty1()->size() * sourceProperty2()->size());
     for(int wavevectorBinIndex = 0; wavevectorBinIndex < numberOfWavevectorBins; wavevectorBinIndex++) {
         if(numberOfValues[wavevectorBinIndex] != 0)
             reciprocalSpaceCorrelationData[wavevectorBinIndex] *= normalizationFactor / numberOfValues[wavevectorBinIndex];
@@ -558,7 +558,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
                 FloatType fracX = FloatType(SimulationCell::modulo(binIndexX+nX/2, nX)-nX/2)/nX;
                 FloatType fracY = FloatType(SimulationCell::modulo(binIndexY+nY/2, nY)-nY/2)/nY;
                 FloatType fracZ = FloatType(SimulationCell::modulo(binIndexZ+nZ/2, nZ)-nZ/2)/nZ;
-                OVITO_ASSERT(!cell()->is2D() || fracZ == 0.0);
+                OVITO_ASSERT(!cell().is2D() || fracZ == 0.0);
                 // This is the real space vector.
                 Vector3 distance = fracX*cellMatrix.column(0) +
                                    fracY*cellMatrix.column(1) +
@@ -600,8 +600,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
     _neighRDF = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, neighCorrelation()->size(), DataBuffer::FloatDefault, 1, tr("Neighbor g(r)"));
 
     // Prepare the neighbor list.
-    CutoffNeighborFinder neighborListBuilder;
-    neighborListBuilder.prepare(neighCutoff(), positions(), cell(), {});
+    CutoffNeighborFinder neighborListBuilder(neighCutoff(), positions(), cell(), {});
 
     // Get pointers to data.
     RawBufferReadAccess dataAccess1 = sourceProperty1();
@@ -647,8 +646,8 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
     nextSubStep();
 
     // Normalize short-ranged real-space correlation function.
-    if(!cell()->is2D()) {
-        FloatType normalizationFactor = 3 * cell()->volume3D() / (4 * FLOATTYPE_PI * sourceProperty1()->size() * sourceProperty2()->size());
+    if(!cell().is2D()) {
+        FloatType normalizationFactor = 3 * cell().volume3D() / (4 * FLOATTYPE_PI * sourceProperty1()->size() * sourceProperty2()->size());
         for(size_t distanceBinIndex = 0; distanceBinIndex < neighCorrelation()->size(); distanceBinIndex++) {
             FloatType distance = distanceBinIndex * gridSpacing;
             FloatType distance2 = distance + gridSpacing;
@@ -657,7 +656,7 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeNeigh
         }
     }
     else {
-        FloatType normalizationFactor = cell()->volume2D() / (FLOATTYPE_PI * sourceProperty1()->size() * sourceProperty2()->size());
+        FloatType normalizationFactor = cell().volume2D() / (FLOATTYPE_PI * sourceProperty1()->size() * sourceProperty2()->size());
         for(size_t distanceBinIndex = 0; distanceBinIndex < neighCorrelation()->size(); distanceBinIndex++) {
             FloatType distance = distanceBinIndex * gridSpacing;
             FloatType distance2 = distance + gridSpacing;
@@ -726,7 +725,6 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::perform()
     _positions.reset();
     _sourceProperty1.reset();
     _sourceProperty2.reset();
-    _simCell.reset();
 }
 
 /******************************************************************************

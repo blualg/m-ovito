@@ -51,6 +51,8 @@ private:
     BooleanParameterUI* _pbczPUI;
     QLineEdit* _boxSizeFields[3];
     QLineEdit* _cellVectorFields[4][3];
+    QPalette _nonzeroPalette;
+    QPalette _zeroPalette;
 };
 
 }   // End of namespace

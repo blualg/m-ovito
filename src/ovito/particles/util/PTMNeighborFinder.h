@@ -45,14 +45,13 @@ class OVITO_PARTICLES_EXPORT PTMNeighborFinder : private NearestNeighborFinder
 public:
 
     //// Constructor.
-    PTMNeighborFinder(bool all_properties);
-
-    /// \brief Prepares the tree data structure.
-    /// \throw Exception on error.
-    void prepare(BufferReadAccess<Point3> positions, const SimulationCell* cell, BufferReadAccess<SelectionIntType> selection,
-                 ConstDataBufferPtr structuresArray,
-                 ConstDataBufferPtr orientationsArray,
-                 ConstDataBufferPtr correspondencesArray);
+    PTMNeighborFinder(bool all_properties,
+                BufferReadAccess<Point3> positions,
+                const SimulationCellData& cell,
+                BufferReadAccess<SelectionIntType> selection,
+                ConstDataBufferPtr structuresArray,
+                ConstDataBufferPtr orientationsArray,
+                ConstDataBufferPtr correspondencesArray);
 
     /// Returns the number of input particles in the system for which the NearestNeighborFinder was created.
     using NearestNeighborFinder::particleCount;

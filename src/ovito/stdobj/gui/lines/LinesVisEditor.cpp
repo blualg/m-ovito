@@ -68,12 +68,10 @@ void LinesVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     // Coloring mode.
     layout->addWidget(new QLabel(tr("Line coloring:")), row++, 0, 1, 3);
     _coloringModeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(LinesVis::coloringMode));
-    layout->addWidget(_coloringModeUI->addRadioButton(LinesVis::UniformColoring, tr("Uniform:")), row++, 1);
-    layout->addWidget(_coloringModeUI->addRadioButton(LinesVis::PseudoColoring, tr("Color mapping")), row++, 1, 1, 2);
-
-    // Line uniform color.
+    layout->addWidget(_coloringModeUI->addRadioButton(LinesVis::UniformColoring, tr("Uniform:")), row, 1);
     _lineColorUI = createParamUI<ColorParameterUI>(PROPERTY_FIELD(LinesVis::lineColor));
     layout->addWidget(_lineColorUI->colorPicker(), row++, 2);
+    layout->addWidget(_coloringModeUI->addRadioButton(LinesVis::PseudoColoring, tr("Color mapping")), row++, 1, 1, 2);
 
     // Line end caps
     BooleanParameterUI* lineEndCapUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(LinesVis::roundedCaps));

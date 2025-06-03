@@ -460,12 +460,11 @@ void StructureAnalysis::initializeListOfStructures()
 /******************************************************************************
 * Identifies the atomic structures.
 ******************************************************************************/
-void StructureAnalysis::identifyStructures(TaskProgress& progress)
+void StructureAnalysis::identifyStructures(TaskProgress& progress, const SimulationCell* simulationCell)
 {
     // Prepare the neighbor list.
     int maxNeighborListSize = std::min((int)_neighborListsSize + 1, (int)MAX_NEIGHBORS);
-    NearestNeighborFinder neighFinder(maxNeighborListSize);
-    neighFinder.prepare(positions(), cell(), _particleSelection.buffer());
+    NearestNeighborFinder neighFinder(maxNeighborListSize, positions(), simulationCell, _particleSelection.buffer());
 
     // Identify local structure around each particle.
     _maximumNeighborDistance = 0;
@@ -739,12 +738,10 @@ void StructureAnalysis::determineLocalStructure(NearestNeighborFinder& neighList
             for(int i = 0; i < nn; i++) {
                 const Vector3& neighborVector = neighborVectors[neighborMapping[i]];
                 // Check if neighbor vectors spans more than half of a periodic simulation cell.
-                if(cell()) {
-                    for(size_t dim = 0; dim < 3; dim++) {
-                        if(cell()->hasPbc(dim)) {
-                            if(std::abs(cell()->inverseMatrix().prodrow(neighborVector, dim)) >= FloatType(0.5)+FLOATTYPE_EPSILON)
-                                StructureAnalysis::generateCellTooSmallError(dim);
-                        }
+                for(size_t dim = 0; dim < 3; dim++) {
+                    if(cell().hasPbc(dim)) {
+                        if(std::abs(cell().reciprocalCellMatrix().prodrow(neighborVector, dim)) >= FloatType(0.5)+FLOATTYPE_EPSILON)
+                            StructureAnalysis::generateCellTooSmallError(dim);
                     }
                 }
                 setNeighbor(particleIndex, i, neighborIndices[neighborMapping[i]]);
@@ -823,8 +820,7 @@ void StructureAnalysis::buildClusters(TaskProgress& progress)
 
                 // Add vector pair to matrices for computing the cluster orientation.
                 const Vector3& latticeVector = latticeStructure.latticeVectors[permutation[neighborIndex]];
-                Vector3 spatialVector = positionsArray[neighborAtomIndex] - positionsArray[currentAtomIndex];
-                if(cell()) spatialVector = cell()->wrapVector(spatialVector);
+                Vector3 spatialVector = cell().wrapVector(positionsArray[neighborAtomIndex] - positionsArray[currentAtomIndex]);
                 for(size_t i = 0; i < 3; i++) {
                     for(size_t j = 0; j < 3; j++) {
                         orientationV(i,j) += (double)(latticeVector[j] * latticeVector[i]);

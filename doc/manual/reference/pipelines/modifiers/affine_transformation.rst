@@ -4,20 +4,20 @@ Affine transformation
 ---------------------
 
 .. image:: /images/modifiers/affine_transformation_panel.png
-  :width: 30%
+  :width: 35%
   :align: right
 
 This modifier applies an affine transformation to the system or specific parts of it. It may be used to translate, scale, rotate or shear
-the particles, the simulation cell and/or other elements. The transformation can either be specified explicitly in terms of a 3x3
-matrix plus a translation vector, or implicitly by prescribing a fixed target shape for the simulation cell.
+the particles, the simulation cell and/or other elements. The transformation can either be specified explicitly in terms of a 3-by-3
+matrix plus a translation vector, or implicitly by prescribing a constant target shape for the simulation cell.
 
-Given a 3x3 linear transformation matrix :math:`\mathbf{M}`
+Given a 3-by-3 linear transformation matrix :math:`\mathbf{M}`
 and a translation vector :math:`\mathbf{t}`, which together describe a general affine transformation,
 the transformed position of a particle at the original Cartesian position :math:`\mathbf{x}`
 is computed as :math:`\mathbf{x}' =  \mathbf{M} \cdot \mathbf{x} + \mathbf{t}`.
 This notation uses column vectors.
 
-The button :guilabel:`Enter rotation` opens a dialog box which lets you specify a rotation
+The button :guilabel:`Enter rotation` opens a dialog box which lets you specify a 3D rotation
 axis, a rotation angle and a center of rotation. Based on these inputs, OVITO computes the corresponding
 affine transformation for you.
 
@@ -30,23 +30,23 @@ in terms of the three vectors that span the simulation cell (after they have bee
 linear matrix :math:`\mathbf{M}`).
 
 In other words, activating this option changes the affine transformation equation to :math:`\mathbf{x}' =  \mathbf{M} \cdot (\mathbf{x} + \mathbf{H} \cdot \mathbf{t})`
-with :math:`\mathbf{H}` being the 3x3 cell matrix formed by the three edge vectors of the original simulation cell.
+with :math:`\mathbf{H}` being the 3-by-3 cell matrix formed by the three edge vectors of the original simulation cell.
 
 Transform to target cell
 """"""""""""""""""""""""
 
-The :guilabel:`Transform to target cell` option lets the modifier dynamically compute the affine transformation
-based the original shape of the simulation cell and a specified target cell shape. The automatically determined transformation
-maps the existing simulation cell exactly onto the given target cell shape. All contents of the simulation cell (e.g. particles, surface meshes, etc.) will be mapped into the new
-cell shape accordingly, unless you turn off their transformation (see next section).
+In :guilabel:`Target cell` mode, the modifier dynamically computes the affine transformation to be applied to the system
+from the current shape of the :ref:`simulation cell <scene_objects.simulation_cell>` and the specified target shape.
+The contents of the simulation box (e.g. particles, surface meshes, etc.) will be mapped to the new cell shape accordingly, unless you turn off their transformation (see next section).
 
-Note that you can use this option to replace a varying simulation cell loaded from the input trajectory file(s)
-with a constant cell shape of your choice.
+.. tip::
+
+  Use this option to replace a time-varying cell, e.g. from a constant-pressure simulation, with a constant cell shape of your choice.
 
 Transformed elements
 """"""""""""""""""""
 
-You can select the types of data elements the modifier should transform:
+You can select the types of data elements the modifier should touch:
 
 .. table::
   :widths: auto
@@ -64,7 +64,7 @@ You can select the types of data elements the modifier should transform:
   :ref:`Dislocations <scene_objects.dislocations>`                Applies the transformation to :ref:`dislocation lines <scene_objects.dislocations>` and their Burgers vectors.
   =============================================================== =================================================================================
 
-The option :guilabel:`Transform only selected particles/vertices` restricts the function to the subset of currently selected particles or vertices of meshes and lines.
+The option :guilabel:`Transform only selected particles/vertices` restricts the function to the subset of currently selected particles or vertices of :ref:`meshes <scene_objects.surface_mesh>` and :ref:`lines <scene_objects.lines>`.
 
 .. seealso::
 

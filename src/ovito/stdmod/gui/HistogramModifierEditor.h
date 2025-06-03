@@ -54,7 +54,7 @@ private:
     /// The graph widget to display the histogram.
     DataTablePlotWidget* _plotWidget;
 
-    /// The plot item for indicating the seletion range.
+    /// The plot item for indicating the selection range.
     QwtPlotZoneItem* _selectionRangeIndicator;
 };
 

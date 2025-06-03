@@ -76,7 +76,7 @@ public:
 
     /// \brief Constructor that initializes 9 elements of the matrix to the given values. All other elements are set to zero.
     /// \note Values are given in row-major order, i.e. row by row.
-    Q_DECL_CONSTEXPR Matrix_4(T m11, T m12, T m13,
+    constexpr Matrix_4(T m11, T m12, T m13,
                        T m21, T m22, T m23,
                        T m31, T m32, T m33) noexcept
         : std::array<Vector_4<T>,4>{{{m11,m21,m31,T(0)},{m12,m22,m32,T(0)},{m13,m23,m33,T(0)}, typename Vector_4<T>::Zero()}} {}
@@ -84,7 +84,7 @@ public:
     /// \brief Constructor that initializes the 12 elements of the 3x4 submatrix to the given values.
     ///        All other elements are set to zero.
     /// \note Elements need to be specified in row-major order, i.e. row by row.
-    Q_DECL_CONSTEXPR Matrix_4(
+    constexpr Matrix_4(
                         T m11, T m12, T m13, T m14,
                         T m21, T m22, T m23, T m24,
                         T m31, T m32, T m33, T m34) noexcept
@@ -96,7 +96,7 @@ public:
 
     /// \brief Constructor that initializes 16 elements of the matrix to the given values.
     /// \note Elements need to be specified in row-major order, i.e. row by row.
-    Q_DECL_CONSTEXPR Matrix_4(
+    constexpr Matrix_4(
                         T m11, T m12, T m13, T m14,
                         T m21, T m22, T m23, T m24,
                         T m31, T m32, T m33, T m34,
@@ -109,7 +109,7 @@ public:
 
     /// \brief Initializes the 4x4 matrix from a 3x3 matrix.
     /// The lower matrix row and the right column are initialized to (0,0,0,1).
-    Q_DECL_CONSTEXPR explicit Matrix_4(const Matrix_3<T>& tm) noexcept
+    constexpr explicit Matrix_4(const Matrix_3<T>& tm) noexcept
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(tm(0,0),tm(1,0),tm(2,0),T(0)),
             Vector_4<T>(tm(0,1),tm(1,1),tm(2,1),T(0)),
@@ -117,12 +117,12 @@ public:
             Vector_4<T>(   T(0),   T(0),   T(0),T(1))}} {}
 
     /// \brief Constructor that initializes the matrix from four column vectors.
-    Q_DECL_CONSTEXPR Matrix_4(const Vector_4<T>& c1, const Vector_4<T>& c2, const Vector_4<T>& c3, const Vector_4<T>& c4) noexcept
+    constexpr Matrix_4(const Vector_4<T>& c1, const Vector_4<T>& c2, const Vector_4<T>& c3, const Vector_4<T>& c4) noexcept
         : std::array<Vector_4<T>,4>{{c1, c2, c3, c4}} {}
 
     /// \brief Initializes the 4x4 matrix from a 3x4 matrix.
     /// The lower matrix row is initialized to (0,0,0,1).
-    Q_DECL_CONSTEXPR explicit Matrix_4(const AffineTransformationT<T>& tm) noexcept
+    constexpr explicit Matrix_4(const AffineTransformationT<T>& tm) noexcept
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(tm(0,0),tm(1,0),tm(2,0),T(0)),
             Vector_4<T>(tm(0,1),tm(1,1),tm(2,1),T(0)),
@@ -131,7 +131,7 @@ public:
 
     /// \brief Constructor that initializes the top 3x4 submatrix from four column 3-vectors.
     /// The lower matrix row is initialized to (0,0,0,1).
-    Q_DECL_CONSTEXPR Matrix_4(const Vector_3<T>& c1, const Vector_3<T>& c2, const Vector_3<T>& c3, const Vector_3<T>& c4) noexcept
+    constexpr Matrix_4(const Vector_3<T>& c1, const Vector_3<T>& c2, const Vector_3<T>& c3, const Vector_3<T>& c4) noexcept
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(c1[0],c1[1],c1[2],T(0)),
             Vector_4<T>(c2[0],c2[1],c2[2],T(0)),
@@ -140,7 +140,7 @@ public:
 
     /// \brief Initializes the matrix to the null matrix.
     /// All matrix elements are set to zero by this constructor.
-    Q_DECL_CONSTEXPR Matrix_4(Zero) noexcept
+    constexpr Matrix_4(Zero) noexcept
         : std::array<Vector_4<T>,4>{{
             typename Vector_4<T>::Zero(),
             typename Vector_4<T>::Zero(),
@@ -149,7 +149,7 @@ public:
 
     /// \brief Initializes the matrix to the identity matrix.
     /// All diagonal elements are set to one, and all off-diagonal elements are set to zero.
-    Q_DECL_CONSTEXPR Matrix_4(Identity) noexcept
+    constexpr Matrix_4(Identity) noexcept
         : std::array<Vector_4<T>,4>{{
             Vector_4<T>(T(1),T(0),T(0),T(0)),
             Vector_4<T>(T(0),T(1),T(0),T(0)),
@@ -158,7 +158,7 @@ public:
 
     /// \brief Casts the matrix to a matrix with another data type.
     template<typename U>
-    Q_DECL_CONSTEXPR auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Matrix_4<U>, const Matrix_4<T>&> {
+    constexpr auto toDataType() const noexcept -> std::conditional_t<!std::is_same_v<T,U>, Matrix_4<U>, const Matrix_4<T>&> {
         if constexpr(!std::is_same_v<T,U>)
             return Matrix_4<U>(
                 static_cast<U>((*this)(0,0)), static_cast<U>((*this)(0,1)), static_cast<U>((*this)(0,2)), static_cast<U>((*this)(0,3)),
@@ -170,51 +170,51 @@ public:
     }
 
     /// \brief Returns the number of rows of this matrix.
-    static Q_DECL_CONSTEXPR size_type row_count() { return 4; }
+    static constexpr size_type row_count() { return 4; }
 
     /// \brief Returns the number of columns of this matrix.
-    static Q_DECL_CONSTEXPR size_type col_count() { return 4; }
+    static constexpr size_type col_count() { return 4; }
 
     /// \brief Returns the value of a matrix element.
     /// \param row The row of the element to return.
     /// \param col The column of the element to return.
     /// \return The value of the matrix element.
-    inline Q_DECL_CONSTEXPR T operator()(size_type row, size_type col) const {
+    inline constexpr T operator()(size_type row, size_type col) const {
         return (*this)[col][row];
     }
 
     /// \brief Returns a reference to a matrix element.
     /// \param row The row of the element to return.
     /// \param col The column of the element to return.
-    inline Q_DECL_CONSTEXPR T& operator()(size_type row, size_type col) {
+    inline constexpr T& operator()(size_type row, size_type col) {
         return (*this)[col][row];
     }
 
     /// \brief Returns a column vector in the matrix.
     /// \param col The index of the column to return.
     /// \return The i-th column of the matrix as a vector.
-    inline Q_DECL_CONSTEXPR const column_type& column(size_type col) const {
+    inline constexpr const column_type& column(size_type col) const {
         return (*this)[col];
     }
 
     /// \brief Returns a reference to a column vector of the matrix.
     /// \param col The column to return.
     /// \return The i-th column of the matrix as a vector reference. Modifying the vector modifies the matrix.
-    inline Q_DECL_CONSTEXPR column_type& column(size_type col) {
+    inline constexpr column_type& column(size_type col) {
         return (*this)[col];
     }
 
     /// \brief Returns a row from the matrix.
     /// \param row The row to return.
     /// \return The i-th row of the matrix as a vector.
-    Q_DECL_CONSTEXPR Vector_4<T> row(size_type row) const {
+    constexpr Vector_4<T> row(size_type row) const {
         return { (*this)[0][row], (*this)[1][row], (*this)[2][row], (*this)[3][row] };
     }
 
     /// \brief Replaces a row of the matrix.
     /// \param row The row to replace.
     /// \param v The new row vector.
-    Q_DECL_CONSTEXPR void setRow(size_type row, const Vector_4<T>& v) {
+    constexpr void setRow(size_type row, const Vector_4<T>& v) {
         (*this)[0][row] = v[0];
         (*this)[1][row] = v[1];
         (*this)[2][row] = v[2];
@@ -222,31 +222,31 @@ public:
     }
 
     /// Returns a pointer to the 16 elements of the matrix (stored in column-major order).
-    Q_DECL_CONSTEXPR const element_type* elements() const {
+    constexpr const element_type* elements() const {
         OVITO_STATIC_ASSERT(sizeof(*this) == sizeof(element_type)*16);
         return column(0).data();
     }
 
     /// Returns a pointer to the 16 elements of the matrix (stored in column-major order).
-    Q_DECL_CONSTEXPR element_type* elements() {
+    constexpr element_type* elements() {
         OVITO_STATIC_ASSERT(sizeof(*this) == sizeof(element_type)*16);
         return column(0).data();
     }
 
     /// \brief Sets all components of the matrix to zero.
-    Q_DECL_CONSTEXPR void setZero() {
+    constexpr void setZero() {
         for(size_type i = 0; i < col_count(); i++)
             column(i).setZero();
     }
 
     /// \brief Sets all components of the matrix to zero.
-    Q_DECL_CONSTEXPR Matrix_4& operator=(Zero) {
+    constexpr Matrix_4& operator=(Zero) {
         setZero();
         return *this;
     }
 
     /// \brief Sets the matrix to the identity matrix.
-    Q_DECL_CONSTEXPR void setIdentity() {
+    constexpr void setIdentity() {
         (*this)[0][0] = T(1); (*this)[0][1] = T(0); (*this)[0][2] = T(0); (*this)[0][3] = T(0);
         (*this)[1][0] = T(0); (*this)[1][1] = T(1); (*this)[1][2] = T(0); (*this)[1][3] = T(0);
         (*this)[2][0] = T(0); (*this)[2][1] = T(0); (*this)[2][2] = T(1); (*this)[2][3] = T(0);
@@ -254,7 +254,7 @@ public:
     }
 
     /// \brief Sets the matrix to the identity matrix.
-    Q_DECL_CONSTEXPR Matrix_4& operator=(Identity) {
+    constexpr Matrix_4& operator=(Identity) {
         setIdentity();
         return *this;
     }
@@ -266,7 +266,7 @@ public:
     /// \param tolerance A non-negative threshold for the equality test. The two matrices are considered equal if
     ///        the element-wise differences are all less than this tolerance value.
     /// \return \c true if this matrix is equal to \a m within the given tolerance; \c false otherwise.
-    inline Q_DECL_CONSTEXPR bool equals(const Matrix_4& m, T tolerance = FloatTypeEpsilon<T>()) const {
+    inline constexpr bool equals(const Matrix_4& m, T tolerance = FloatTypeEpsilon<T>()) const {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).equals(m.column(i), tolerance)) return false;
         return true;
@@ -275,7 +275,7 @@ public:
     /// \brief Test if the matrix is zero within a given tolerance.
     /// \param tolerance A non-negative threshold.
     /// \return \c true if the absolute value of each matrix element is all smaller than \a tolerance.
-    inline Q_DECL_CONSTEXPR bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
+    inline constexpr bool isZero(T tolerance = FloatTypeEpsilon<T>()) const {
         for(size_type i = 0; i < col_count(); i++)
             if(!column(i).isZero(tolerance)) return false;
         return true;
@@ -284,7 +284,7 @@ public:
     ////////////////////////////////// Computations ///////////////////////////////////
 
     /// \brief Computes the determinant of the matrix.
-    Q_DECL_CONSTEXPR inline T determinant() const {
+    constexpr inline T determinant() const {
         return ((*this)[0][3] * (*this)[1][2] * (*this)[2][1] * (*this)[3][0]-(*this)[0][2] * (*this)[1][3] * (*this)[2][1] * (*this)[3][0]-(*this)[0][3] * (*this)[1][1] * (*this)[2][2] * (*this)[3][0]+(*this)[0][1] * (*this)[1][3] * (*this)[2][2] * (*this)[3][0]+
                 (*this)[0][2] * (*this)[1][1] * (*this)[2][3] * (*this)[3][0]-(*this)[0][1] * (*this)[1][2] * (*this)[2][3] * (*this)[3][0]-(*this)[0][3] * (*this)[1][2] * (*this)[2][0] * (*this)[3][1]+(*this)[0][2] * (*this)[1][3] * (*this)[2][0] * (*this)[3][1]+
                 (*this)[0][3] * (*this)[1][0] * (*this)[2][2] * (*this)[3][1]-(*this)[0][0] * (*this)[1][3] * (*this)[2][2] * (*this)[3][1]-(*this)[0][2] * (*this)[1][0] * (*this)[2][3] * (*this)[3][1]+(*this)[0][0] * (*this)[1][2] * (*this)[2][3] * (*this)[3][1]+
@@ -295,7 +295,7 @@ public:
 
     /// \brief Computes the inverse of the matrix.
     /// \throw Exception if matrix is not invertible because it is singular.
-    Q_DECL_CONSTEXPR Matrix_4 inverse() const {
+    constexpr Matrix_4 inverse() const {
 
         T det = determinant();
         OVITO_ASSERT_MSG(det != T(0), "Matrix4::inverse()", "Singular matrix cannot be inverted: Determinant is zero.");
@@ -347,7 +347,7 @@ public:
     ///////////////////////////// Generation //////////////////////////////////
 
     /// \brief Generates a translation matrix.
-    static Q_DECL_CONSTEXPR Matrix_4<T> translation(const Vector_3<T>& t) {
+    static constexpr Matrix_4<T> translation(const Vector_3<T>& t) {
         return { T(1), T(0), T(0), t.x(),
                  T(0), T(1), T(0), t.y(),
                  T(0), T(0), T(1), t.z(),
@@ -355,7 +355,7 @@ public:
     }
 
     /// \brief Generates a perspective projection matrix.
-    static Q_DECL_CONSTEXPR Matrix_4<T> perspective(T fovy, T aspect, T znear, T zfar) {
+    static constexpr Matrix_4<T> perspective(T fovy, T aspect, T znear, T zfar) {
         T f = tan(fovy * T(0.5));
         OVITO_ASSERT(f != T(0));
         OVITO_ASSERT(zfar > znear);
@@ -366,7 +366,7 @@ public:
     }
 
     /// \brief Generates an orthogonal projection matrix.
-    static Q_DECL_CONSTEXPR Matrix_4<T> ortho(T left, T right, T bottom, T top, T znear, T zfar) {
+    static constexpr Matrix_4<T> ortho(T left, T right, T bottom, T top, T znear, T zfar) {
         OVITO_ASSERT(znear < zfar);
         OVITO_ASSERT(right != left);
         OVITO_ASSERT(top != bottom);
@@ -377,7 +377,7 @@ public:
     }
 
     /// \brief Generates a perspective projection matrix.
-    static Q_DECL_CONSTEXPR Matrix_4<T> frustum(T left, T right, T bottom, T top, T znear, T zfar) {
+    static constexpr Matrix_4<T> frustum(T left, T right, T bottom, T top, T znear, T zfar) {
         OVITO_ASSERT(znear < zfar);
         OVITO_ASSERT(right != left);
         OVITO_ASSERT(top != bottom);
@@ -391,10 +391,10 @@ public:
 private:
 
     // Computes the determinant of a 2x2 sub-matrix. This is for internal use only.
-    static Q_DECL_CONSTEXPR inline T det2x2(T a, T b, T c, T d) { return (a * d - b * c); }
+    static constexpr inline T det2x2(T a, T b, T c, T d) { return (a * d - b * c); }
 
     // Computes the determinant of a 3x3 sub-matrix. This is for internal use only.
-    static Q_DECL_CONSTEXPR inline T det3x3(T a1, T a2, T a3, T b1, T b2, T b3, T c1, T c2, T c3) {
+    static constexpr inline T det3x3(T a1, T a2, T a3, T b1, T b2, T b3, T c1, T c2, T c3) {
         return (a1 * det2x2( b2, b3, c2, c3 )
             - b1 * det2x2( a2, a3, c2, c3 )
             + c1 * det2x2( a2, a3, b2, b3 ));
@@ -405,7 +405,7 @@ private:
 /// \brief Computes the product of a 4x4 matrix and a Vector4.
 /// \relates Matrix_4
 template<typename T>
-Q_DECL_CONSTEXPR inline Vector_4<T> operator*(const Matrix_4<T>& a, const Vector_4<T>& v)
+constexpr inline Vector_4<T> operator*(const Matrix_4<T>& a, const Vector_4<T>& v)
 {
     return {
         a(0,0)*v[0] + a(0,1)*v[1] + a(0,2)*v[2] + a(0,3)*v[3],
@@ -418,7 +418,7 @@ Q_DECL_CONSTEXPR inline Vector_4<T> operator*(const Matrix_4<T>& a, const Vector
 /// \brief Computes the product of a 4x4 matrix and a Vector3 (which is assumed to be a 4-vector with the last element equal to 0).
 /// \relates Matrix_4
 template<typename T>
-Q_DECL_CONSTEXPR inline Vector_3<T> operator*(const Matrix_4<T>& a, const Vector_3<T>& v)
+constexpr inline Vector_3<T> operator*(const Matrix_4<T>& a, const Vector_3<T>& v)
 {
     const T s = a(3,0)*v[0] + a(3,1)*v[1] + a(3,2)*v[2] + a(3,3);
     OVITO_ASSERT(s != 0);
@@ -432,7 +432,7 @@ Q_DECL_CONSTEXPR inline Vector_3<T> operator*(const Matrix_4<T>& a, const Vector
 /// \brief Computes the product of a 4x4 matrix and a Point3 (which is assumed to be a 4-vector with the last element equal to 1).
 /// \relates Matrix_4
 template<typename T>
-Q_DECL_CONSTEXPR inline Point_3<T> operator*(const Matrix_4<T>& a, const Point_3<T>& v)
+constexpr inline Point_3<T> operator*(const Matrix_4<T>& a, const Point_3<T>& v)
 {
     const T s = a(3,0)*v[0] + a(3,1)*v[1] + a(3,2)*v[2] + a(3,3);
     OVITO_ASSERT(s != 0);
@@ -446,7 +446,7 @@ Q_DECL_CONSTEXPR inline Point_3<T> operator*(const Matrix_4<T>& a, const Point_3
 /// \brief Computes the product of a 4x4 matrix and the origin Point3 (which is assumed to be a 4-vector with the last element equal to 1).
 /// \relates Matrix_4
 template<typename T>
-Q_DECL_CONSTEXPR inline Point_3<T> operator*(const Matrix_4<T>& a, typename Point_3<T>::Origin o)
+constexpr inline Point_3<T> operator*(const Matrix_4<T>& a, typename Point_3<T>::Origin o)
 {
     const T s = a(3,3);
     OVITO_ASSERT(s != 0);
@@ -460,7 +460,7 @@ Q_DECL_CONSTEXPR inline Point_3<T> operator*(const Matrix_4<T>& a, typename Poin
 /// Computes the product of two 4x4 matrices.
 /// \relates Matrix_4
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_4<T> operator*(const Matrix_4<T>& a, const Matrix_4<T>& b)
+constexpr inline Matrix_4<T> operator*(const Matrix_4<T>& a, const Matrix_4<T>& b)
 {
     Matrix_4<T> res;
     for(typename Matrix_4<T>::size_type i = 0; i < 4; i++) {
@@ -474,7 +474,7 @@ Q_DECL_CONSTEXPR inline Matrix_4<T> operator*(const Matrix_4<T>& a, const Matrix
 /// Computes the product of a 4x4 matrix and a 3x4 Matrix.
 /// \relates Matrix_4
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_4<T> operator*(const Matrix_4<T>& a, const AffineTransformationT<T>& b)
+constexpr inline Matrix_4<T> operator*(const Matrix_4<T>& a, const AffineTransformationT<T>& b)
 {
     Matrix_4<T> res;
     for(typename Matrix_4<T>::size_type i = 0; i < 4; i++) {
@@ -489,7 +489,7 @@ Q_DECL_CONSTEXPR inline Matrix_4<T> operator*(const Matrix_4<T>& a, const Affine
 /// Multiplies a 4x4 matrix with a scalar.
 /// \relates Matrix_4
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_4<T> operator*(const Matrix_4<T>& a, T s)
+constexpr inline Matrix_4<T> operator*(const Matrix_4<T>& a, T s)
 {
     return { a.column(0)*s, a.column(1)*s, a.column(2)*s, a.column(3)*s };
 }
@@ -497,7 +497,7 @@ Q_DECL_CONSTEXPR inline Matrix_4<T> operator*(const Matrix_4<T>& a, T s)
 /// Multiplies a 4x4 matrix with a scalar.
 /// \relates Matrix_4
 template<typename T>
-Q_DECL_CONSTEXPR inline Matrix_4<T> operator*(T s, const Matrix_4<T>& a)
+constexpr inline Matrix_4<T> operator*(T s, const Matrix_4<T>& a)
 {
     return a * s;
 }

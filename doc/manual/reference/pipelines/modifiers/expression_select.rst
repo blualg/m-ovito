@@ -174,19 +174,27 @@ for the two possibilities:
 Additional expression examples
 """"""""""""""""""""""""""""""
 
-Select particles within a cylindrical region of radius 10:
-
-.. code-block:: none
-
-  sqrt(Position.X*Position.X + Position.Y*Position.Y) <= 10.0
-
 Select all particles in the upper half of the simulation box:
 
 .. code-block:: none
 
   ReducedPosition.Z > 0.5
 
-Given an existing selection of particles (represented by a non-zero ``Selection`` property), filter the set
+Select particles within a cylindrical region of radius 10, centered at the simulation origin and extending infinitely in the Z direction:
+
+.. code-block:: none
+
+  sqrt(Position.X*Position.X + Position.Y*Position.Y) <= 10
+
+Select all particles within a spherical region of radius 8.5 around the simulation cell center, i.e., at reduced coordinates (0.5, 0.5, 0.5):
+
+.. code-block:: none
+
+  ((ReducedPosition.X - 0.5) * CellSize.X)^2 +
+  ((ReducedPosition.Y - 0.5) * CellSize.Y)^2 +
+  ((ReducedPosition.Z - 0.5) * CellSize.Z)^2   <= 8.5 ^ 2
+
+Given some existing selection of particles (represented by a non-zero ``Selection`` property), filter the set
 to include only those with a positive charge:
 
 .. code-block:: none

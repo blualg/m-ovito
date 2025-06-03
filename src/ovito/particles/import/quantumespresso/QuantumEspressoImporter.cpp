@@ -35,16 +35,13 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(QuantumEspressoImporter);
 OVITO_CLASSINFO(QuantumEspressoImporter, "DisplayName", "QE");
 
 /******************************************************************************
-* Determines if a character is a normal letter.
-******************************************************************************/
-static bool isalpha_ascii(char c)
-{
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
+ * Determines if a character is a normal letter.
+ ******************************************************************************/
+static bool isalpha_ascii(char c) { return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'); }
 
 /******************************************************************************
-* Checks if the given file has format that can be read by this importer.
-******************************************************************************/
+ * Checks if the given file has format that can be read by this importer.
+ ******************************************************************************/
 bool QuantumEspressoImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
     // Open input file.
@@ -79,8 +76,8 @@ bool QuantumEspressoImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
 }
 
 /******************************************************************************
-* Parses the given input file.
-******************************************************************************/
+ * Parses the given input file.
+ ******************************************************************************/
 void QuantumEspressoImporter::FrameLoader::loadFile()
 {
     // Open file for reading.
@@ -118,45 +115,61 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
                 if(line[0] == '/') {
                     break;
                 }
-                else if(boost::algorithm::starts_with(line, "celldm(1)")) {
-                    // Extract 'alat' parameter value.
-                    line += 9;
-                    if(*line == '=' || *line <= ' ') {
-                        if(sscanf(line, "= " FLOATTYPE_SCANF_STRING, &alat) != 1)
-                            throw Exception(tr("Invalid celldm(1) value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-                        alat *= bohr2angstrom;
+                static const QRegularExpression ibravRe(QStringLiteral(R"(ibrav\s*=(.*?)(?:,|$))"));
+                QRegularExpressionMatch match = ibravRe.match(line);
+                if(match.hasMatch()) {
+                    bool ok;
+                    ibrav = match.captured(1).toInt(&ok);
+                    if(!ok) {
+                        throw Exception(
+                            tr("Invalid 'ibrav' value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
                     }
                 }
-                else if(boost::algorithm::starts_with(line, "A")) {
-                    // Extract 'alat' parameter value.
-                    line += 1;
-                    if(*line == '=' || *line <= ' ') {
-                        if(sscanf(line, "= " FLOATTYPE_SCANF_STRING, &alat) != 1)
-                            throw Exception(tr("Invalid A value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+
+                static const QRegularExpression celldmRe(QStringLiteral(R"(celldm\(1\)\s*=(.*?)(?:,|$))"));
+                // Fortran uses d instead of e to denote exponentials, qt's toDouble() only accepts e
+                static const QRegularExpression exponentialRe(QStringLiteral("d|D"));
+                match = celldmRe.match(line);
+                if(match.hasMatch()) {
+                    bool ok;
+                    alat = match.captured(1).replace(exponentialRe, QStringLiteral("e")).toDouble(&ok);
+                    alat *= bohr2angstrom;
+                    if(!ok) {
+                        throw Exception(
+                            tr("Invalid 'celldm(1)' value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
                     }
                 }
-                else if(boost::algorithm::starts_with(line, "nat")) {
-                    // Extract 'nat' parameter value.
-                    line += 3;
-                    if(*line == '=' || *line <= ' ') {
-                        if(sscanf(line, "=%i" , &natoms) != 1 || natoms <= 0)
-                            throw Exception(tr("Invalid 'nat' value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+
+                static const QRegularExpression aRe(QStringLiteral(R"(A\s*=(.*?)(?:,|$))"));
+                match = aRe.match(line);
+                if(match.hasMatch()) {
+                    bool ok;
+                    alat = match.captured(1).replace(exponentialRe, QStringLiteral("e")).toDouble(&ok);
+                    if(!ok) {
+                        throw Exception(
+                            tr("Invalid 'A' value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
                     }
                 }
-                else if(boost::algorithm::starts_with(line, "ntyp")) {
-                    // Extract 'ntyp' parameter value.
-                    line += 4;
-                    if(*line == '=' || *line <= ' ') {
-                        if(sscanf(line, "=%i" , &ntypes) != 1 || ntypes <= 0)
-                            throw Exception(tr("Invalid 'ntyp' value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+
+                static const QRegularExpression natRe(QStringLiteral(R"(nat\s*=(.*?)(?:,|$))"));
+                match = natRe.match(line);
+                if(match.hasMatch()) {
+                    bool ok;
+                    natoms = match.captured(1).toInt(&ok);
+                    if(!ok) {
+                        throw Exception(
+                            tr("Invalid 'nat' value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
                     }
                 }
-                else if(boost::algorithm::starts_with(line, "ibrav")) {
-                    // Extract 'ibrav' parameter value.
-                    line += 5;
-                    if(*line == '=' || *line <= ' ') {
-                        if(sscanf(line, "=%i" , &ibrav) != 1)
-                            throw Exception(tr("Invalid 'ibrav' value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+
+                static const QRegularExpression ntypRe(QStringLiteral(R"(ntyp\s*=(.*?)(?:,|$))"));
+                match = ntypRe.match(line);
+                if(match.hasMatch()) {
+                    bool ok;
+                    ntypes = match.captured(1).toInt(&ok);
+                    if(!ok) {
+                        throw Exception(
+                            tr("Invalid 'ntyp' value in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
                     }
                 }
             }
@@ -176,7 +189,8 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
 
                 // Parse atomic mass.
                 if(sscanf(token_end, FLOATTYPE_SCANF_STRING, &type_masses[i]) != 1)
-                    throw Exception(tr("Invalid atom type definition in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+                    throw Exception(
+                        tr("Invalid atom type definition in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
             }
         }
         else if(stream.lineStartsWithToken("ATOMIC_POSITIONS")) {
@@ -202,7 +216,8 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
                 scaling = bohr2angstrom;
             }
             else {
-                throw Exception(tr("Unit type used in line %1 of QE file is not supported: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+                throw Exception(
+                    tr("Unit type used in line %1 of QE file is not supported: %2").arg(stream.lineNumber()).arg(stream.lineString()));
             }
 
             // Create particle properties.
@@ -229,13 +244,14 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
                 while(*token_end > ' ') ++token_end;
                 int typeId = addNamedType(Particles::OOClass(), typeProperty, QLatin1String(line, token_end))->numericId();
                 typeAccess[i] = typeId;
-                if(typeId >= 1 && typeId <= type_masses.size())
-                    massAccess[i] = type_masses[typeId-1];
+                if(typeId >= 1 && typeId <= type_masses.size()) massAccess[i] = type_masses[typeId - 1];
 
                 // Parse atomic coordinates.
                 Point3 pos;
-                if(sscanf(token_end, FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &pos.x(), &pos.y(), &pos.z()) != 3)
-                    throw Exception(tr("Invalid atomic coordinates in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+                if(sscanf(token_end, FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &pos.x(), &pos.y(),
+                          &pos.z()) != 3)
+                    throw Exception(
+                        tr("Invalid atomic coordinates in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
                 posAccess[i] = pos * scaling;
             }
         }
@@ -258,7 +274,8 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
                 scaling = bohr2angstrom;
             }
             else {
-                throw Exception(tr("Unit type used in line %1 of QE file is not supported: %2").arg(stream.lineNumber()).arg(stream.lineString()));
+                throw Exception(
+                    tr("Unit type used in line %1 of QE file is not supported: %2").arg(stream.lineNumber()).arg(stream.lineString()));
             }
             // Read cell matrix.
             AffineTransformation cell = AffineTransformation::Identity();
@@ -267,9 +284,9 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
                 // Convert Fortran number format to C format:
                 for(char& c : line)
                     if(c == 'd' || c == 'D') c = 'e';
-                if(sscanf(line.c_str(),
-                        FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING,
-                        &cell(0,i), &cell(1,i), &cell(2,i)) != 3 || cell.column(i) == Vector3::Zero())
+                if(sscanf(line.c_str(), FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING " " FLOATTYPE_SCANF_STRING, &cell(0, i),
+                          &cell(1, i), &cell(2, i)) != 3 ||
+                   cell.column(i) == Vector3::Zero())
                     throw Exception(tr("Invalid cell vector in line %1 of QE file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
             }
             simulationCell()->setCellMatrix(cell * scaling);
@@ -279,24 +296,25 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
     this_task::throwIfCanceled();
 
     // Make sure some atoms have been defined in the file.
-    if(natoms <= 0 || ntypes <= 0)
-        throw Exception(tr("Invalid Quantum Espresso file. No atoms defined."));
+    if(natoms <= 0 || ntypes <= 0) throw Exception(tr("Invalid Quantum Espresso file. No atoms defined."));
 
     if(!hasCellVectors) {
         Matrix3 cell;
         switch(ibrav) {
             case 0: throw Exception(tr("Invalid 'ibrav' value in QE file: ibrav==0 requires a CELL_PARAMETERS card."));
-            case 1: // SC:
+            case 1:  // SC:
                 cell = Matrix3(Vector3(alat, 0, 0), Vector3(0, alat, 0), Vector3(0, 0, alat));
                 break;
-            case 2: // FCC:
-                cell = Matrix3(Vector3(-alat/2, 0, alat/2), Vector3(0, alat/2, alat/2), Vector3(-alat/2, alat/2, 0));
+            case 2:  // FCC:
+                cell = Matrix3(Vector3(-alat / 2, 0, alat / 2), Vector3(0, alat / 2, alat / 2), Vector3(-alat / 2, alat / 2, 0));
                 break;
-            case 3: // BCC:
-                cell = Matrix3(Vector3(alat/2, alat/2, alat/2), Vector3(-alat/2, alat/2, alat/2), Vector3(-alat/2, -alat/2, alat/2));
+            case 3:  // BCC:
+                cell = Matrix3(Vector3(alat / 2, alat / 2, alat / 2), Vector3(-alat / 2, alat / 2, alat / 2),
+                               Vector3(-alat / 2, -alat / 2, alat / 2));
                 break;
-            case -3: // BCC, more symmetric axis:
-                cell = Matrix3(Vector3(-alat/2, alat/2, alat/2), Vector3(alat/2, -alat/2, alat/2), Vector3(alat/2, alat/2, -alat/2));
+            case -3:  // BCC, more symmetric axis:
+                cell = Matrix3(Vector3(-alat / 2, alat / 2, alat / 2), Vector3(alat / 2, -alat / 2, alat / 2),
+                               Vector3(alat / 2, alat / 2, -alat / 2));
                 break;
             default: throw Exception(tr("Unsupported 'ibrav' value in QE file: %1").arg(ibrav));
         }
@@ -306,8 +324,7 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
     if(convertToAbsoluteCoordinates) {
         // Convert all atom coordinates from reduced to absolute (Cartesian) format.
         const AffineTransformation simCell = simulationCell()->cellMatrix();
-        for(Point3& p : posAccess)
-            p = simCell * p;
+        for(Point3& p : posAccess) p = simCell * p;
     }
 
     state().setStatus(tr("Number of particles: %1").arg(natoms));
@@ -316,4 +333,4 @@ void QuantumEspressoImporter::FrameLoader::loadFile()
     ParticleImporter::FrameLoader::loadFile();
 }
 
-}   // End of namespace
+}  // namespace Ovito

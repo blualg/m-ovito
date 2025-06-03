@@ -180,8 +180,7 @@ void ExpandSelectionModifier::ExpandSelectionNearestEngine::expandSelection(Task
         throw Exception(tr("Invalid parameter. The expand selection modifier can expand the selection only to the %1 nearest neighbors of particles. This limit is set at compile time.").arg(MAX_NEAREST_NEIGHBORS));
 
     // Prepare the neighbor list.
-    NearestNeighborFinder neighFinder(_numNearestNeighbors);
-    neighFinder.prepare(positions(), simCell(), {});
+    NearestNeighborFinder neighFinder(_numNearestNeighbors, positions(), simCell(), {});
 
     OVITO_ASSERT(inputSelection() != outputSelection());
     BufferReadAccess<SelectionIntType> inputSelectionArray(inputSelection());
@@ -246,9 +245,8 @@ void ExpandSelectionModifier::ExpandSelectionBondedEngine::expandSelection(TaskP
 ******************************************************************************/
 void ExpandSelectionModifier::ExpandSelectionCutoffEngine::expandSelection(TaskProgress& progress)
 {
-    // Prepare the neighbor list.
-    CutoffNeighborFinder neighborListBuilder;
-    neighborListBuilder.prepare(_cutoffRange, positions(), simCell(), {});
+    // Prepare the neighbor finder.
+    CutoffNeighborFinder neighborListBuilder(_cutoffRange, positions(), simCell(), {});
 
     BufferWriteAccess<SelectionIntType, access_mode::write> outputSelectionArray(outputSelection());
     BufferReadAccess<SelectionIntType> inputSelectionArray(inputSelection());

@@ -69,18 +69,20 @@ Future<PipelineFlowState> VectorsDeleteSelectedModifierDelegate::apply(
         size_t numSelected = 0;
 
         // Get the vectors (base points) selection.
-        if(const Vectors* inputVectors = state.getObject<Vectors>()) {
-            inputVectors->verifyIntegrity();
-            numVectors += inputVectors->elementCount();
-            if(ConstPropertyPtr selProperty = inputVectors->getProperty(Vectors::SelectionProperty)) {
-                // Make sure we can safely modify the vectors object.
-                Vectors* outputVectors = state.makeMutable(inputVectors);
+        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
+            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(state.data()->objects()[i])) {
+                inputVectors->verifyIntegrity();
+                numVectors += inputVectors->elementCount();
+                if(ConstPropertyPtr selProperty = inputVectors->getProperty(Vectors::SelectionProperty)) {
+                    // Make sure we can safely modify the vectors object.
+                    Vectors* outputVectors = state.makeMutable(inputVectors);
 
-                // Remove selection property.
-                outputVectors->removeProperty(selProperty);
+                    // Remove selection property.
+                    outputVectors->removeProperty(selProperty);
 
-                // Delete the selected vector base points / positions.
-                numSelected += outputVectors->deleteElements(std::move(selProperty));
+                    // Delete the selected vector base points / positions.
+                    numSelected += outputVectors->deleteElements(std::move(selProperty));
+                }
             }
         }
 
@@ -88,7 +90,7 @@ Future<PipelineFlowState> VectorsDeleteSelectedModifierDelegate::apply(
         QString statusMessage = tr("%1 of %2 vectors deleted (%3%)")
                                     .arg(numSelected)
                                     .arg(numVectors)
-                                    .arg((FloatType)numSelected * 100 / (FloatType)std::max(numVectors, (size_t)1), 0, 'f', 1);
+                                    .arg((FloatType)numSelected * (FloatType)100 / (FloatType)std::max(numVectors, (size_t)1), 0, 'f', 1);
         state.combineStatus(statusMessage);
 
         return std::move(state);

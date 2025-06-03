@@ -68,9 +68,8 @@ void ChillPlusModifier::ChillPlusAlgorithm::identifyStructures(const Particles* 
     TaskProgress progress(this_task::ui());
     progress.setText(tr("Computing q_lm values in Chill+ analysis"));
 
-    // Prepare the neighbor list.
-    CutoffNeighborFinder neighborFinder;
-    neighborFinder.prepare(cutoff(), particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
+    // Prepare the neighbor finder.
+    CutoffNeighborFinder neighborFinder(cutoff(), particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
     BufferReadAccess<SelectionIntType> selectionAcc(selection);
     BufferWriteAccess<int32_t, access_mode::discard_write> structureAcc(structures());

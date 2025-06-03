@@ -130,7 +130,7 @@ OVITO can read the following file formats:
     -
 
   * - FHI-aims
-    - Geometry and log-file formats used by the *ab initio* simulation package `FHI-aims <https://aimsclub.fhi-berlin.mpg.de/index.php>`__.
+    - Geometry and log-file formats used by the *ab initio* simulation package `FHI-aims <https://fhi-aims.org>`__.
     - :ref:`particles <scene_objects.particles>`
     -
 
@@ -141,10 +141,8 @@ OVITO can read the following file formats:
     - :ref:`Details <file_formats.input.gsd>`
 
   * - CASTEP
-    - File format used by the `CASTEP <http://www.castep.org>`__ *ab initio* code. OVITO can read the |castep formats|_.
-
-        .. |castep formats| replace:: :file:`.cell`, :file:`.md` and :file:`.geom` formats
-        .. _castep formats: http://www.tcm.phy.cam.ac.uk/castep/documentation/WebHelp/content/modules/castep/expcastepfileformats.htm
+    - File format used by the `CASTEP <http://www.castep.org>`__ *ab initio* code.
+      OVITO can read the `.cell, .md, .geom file formats <https://www.tcm.phy.cam.ac.uk/castep/documentation/WebHelp/content/modules/castep/expcastepfileformats.htm>`__.
     - :ref:`particles <scene_objects.particles>`
     -
 
@@ -159,7 +157,7 @@ OVITO can read the following file formats:
     - :ref:`Details <file_formats.input.cube>`
 
   * - IMD
-    - File format used by the molecular dynamics code `IMD <http://imd.itap.physik.uni-stuttgart.de/>`__.
+    - File format used by the molecular dynamics code `IMD <https://sfb716.icp.uni-stuttgart.de/forschung/software/imd/index.en.html>`__.
     - :ref:`particles <scene_objects.particles>`
     -
 
@@ -240,6 +238,7 @@ OVITO can read the following file formats:
     - :ref:`particles <scene_objects.particles>`
     -
 
-*OVITO Pro* additionally provides the option for you to write :ref:`custom file readers in Python <writing_custom_file_readers>` to import more formats.
+:ref:`OVITO Pro <credits.ovito_pro>` provides the option for you to write a :ref:`custom file reader in Python <writing_custom_file_readers>`
+to import a format not listed above.
 
 .. seealso:: :py:func:`ovito.io.import_file` (Python API)

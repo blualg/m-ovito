@@ -64,7 +64,7 @@ void FloatParameterUI::updatePropertyValue()
 void FloatParameterUI::updateUI()
 {
     if(editObject() && spinner() && !spinner()->isDragging()) {
-        handleExceptions([&] {
+        handleExceptions<true>([&] {
             if(isReferenceFieldUI()) {
                 if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
                     spinner()->setFloatValue(ctrl->getFloatValue(currentAnimationTime().value_or(AnimationTime(0))));

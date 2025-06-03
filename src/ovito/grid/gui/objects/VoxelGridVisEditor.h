@@ -25,6 +25,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include "OpacityFunctionParameterUI.h"
 
 namespace Ovito {
 

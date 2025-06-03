@@ -255,7 +255,6 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             coverDomainWithFiniteTets,
             selection() ? BufferReadAccess<SelectionIntType>(selection()).cbegin() : nullptr,
             progress);
-    OVITO_ASSERT(tessellation.simCell());
 
     progress.nextSubStep();
 
@@ -289,7 +288,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             // We need a tie-breaker in case the four vertex atoms belong to different grains.
             int64_t result = 0;
             for(int v = 0; v < 4; v++) {
-                size_t particleIndex = tessellation.vertexIndex(tessellation.cellVertex(cell, v));
+                size_t particleIndex = tessellation.inputPointIndex(tessellation.cellVertex(cell, v));
                 int64_t clusterId = particleGrains[particleIndex];
                 if(clusterId > result)
                     result = clusterId;
@@ -378,7 +377,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
                     OVITO_ASSERT(regionId >= 0 && regionId < filledRegionCount + emptyRegionCount);
                     OVITO_ASSERT(regionId < regionParticleLists.size());
                     for(int v = 0; v < 4; v++) {
-                        size_t particleIndex = tessellation.vertexIndex(tessellation.cellVertex(cell, v));
+                        size_t particleIndex = tessellation.inputPointIndex(tessellation.cellVertex(cell, v));
                         OVITO_ASSERT(particleIndex < regionIds.size() || particleIndex == std::numeric_limits<size_t>::max());
                         if(particleIndex != std::numeric_limits<size_t>::max()) {
                             // Keep track of the number of particles visited so far.
@@ -405,7 +404,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
                 if(particleRegionId == -1) {
                     progress.setValueIntermittent(++numVisitedParticles);
 
-                    DelaunayTessellation::CellHandle cell = tessellation.locate(tessellation.simCell()->wrapPoint(pos), queryHint);
+                    DelaunayTessellation::CellHandle cell = tessellation.locate(tessellation.simCell().wrapPoint(pos), queryHint);
                     OVITO_ASSERT(cell >= 0 && cell < tessellation.numberOfTetrahedra());
 
                     if(int regionId = tessellation.getUserField(cell); regionId >= 0) {
@@ -571,8 +570,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     std::vector<FloatType> densityData(gridDims[0] * gridDims[1] * gridDims[2], FloatType(0));
 
     // Set up a particle neighbor finder to speed up density field computation.
-    CutoffNeighborFinder neighFinder;
-    neighFinder.prepare(cutoffSize, positions(), mesh()->domain(), selection());
+    CutoffNeighborFinder neighFinder(cutoffSize, positions(), mesh()->domain(), selection());
     progress.nextSubStep();
 
     // Set up a matrix that converts grid coordinates to spatial coordinates.

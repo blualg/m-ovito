@@ -55,13 +55,9 @@ public:
     /// Indicates whether this parameter UI is representing a PropertyField based property.
     bool isPropertyFieldUI() const { return !_propField->isReferenceField(); }
 
-    /// This method is called when parameter object has been assigned to the reference field of the editable object
-    /// this parameter UI is bound to.
-    ///
-    /// It is also called when the editable object itself has
-    /// been replaced in the editor. The parameter UI should react to this change appropriately and
-    /// show the property value for the new edit object in the UI. New implementations of this
-    /// method must call the base implementation before any other action is taken.
+    /// This method is called whenever the child parameter object or the parent object are replaced.
+    /// The parameter UI class should react to this change appropriately and show the property value for the
+    /// new edited object in the UI. Child implementations of this method must call the base implementation before any other action is taken.
     virtual void resetUI() override;
 
     /// Returns the menu tool button associated to this PropertyParameterUI

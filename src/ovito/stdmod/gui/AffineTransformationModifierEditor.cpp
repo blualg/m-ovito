@@ -43,20 +43,20 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
     // Create the first rollout.
     QWidget* rollout = rollout = createRollout(tr("Transformation"), rolloutParams, "manual:particles.modifiers.affine_transformation");
 
-    QVBoxLayout* topLayout = new QVBoxLayout(rollout);
-    topLayout->setContentsMargins(8,8,8,8);
-    topLayout->setSpacing(4);
+    QGridLayout* layout = new QGridLayout(rollout);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(2);
+    layout->setColumnMinimumWidth(0, 30);
+    layout->setColumnStretch(1, 1);
+    layout->setColumnStretch(2, 1);
+    layout->setColumnStretch(3, 1);
 
     BooleanRadioButtonParameterUI* relativeModeUI = createParamUI<BooleanRadioButtonParameterUI>(PROPERTY_FIELD(AffineTransformationModifier::relativeMode));
 
+    int layoutRow = 0;
     relativeModeUI->buttonTrue()->setText(tr("Transformation matrix:"));
-    topLayout->addWidget(relativeModeUI->buttonTrue());
-
-    QGridLayout* layout = new QGridLayout();
-    layout->setContentsMargins(30,4,4,4);
-    layout->setHorizontalSpacing(0);
-    layout->setVerticalSpacing(2);
-    topLayout->addLayout(layout);
+    layout->addWidget(relativeModeUI->buttonTrue(), layoutRow++, 0, 1, 4);
+    layout->setRowMinimumHeight(layoutRow++, 4);
 
     QGridLayout* sublayout = new QGridLayout();
     sublayout->setContentsMargins(0,0,0,0);
@@ -71,7 +71,7 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
     enterRotationAction->setEnabled(false);
     connect(relativeModeUI->buttonTrue(), &QRadioButton::toggled, enterRotationAction, &QAction::setEnabled);
     connect(enterRotationAction, &QAction::triggered, this, &AffineTransformationModifierEditor::onEnterRotation);
-    layout->addLayout(sublayout, 0, 0, 1, 8);
+    layout->addLayout(sublayout, layoutRow++, 1, 1, 3);
 
     // Override automatic increment step sizes for the cell parameters.
     _relativeMatrixUnits.emplace(mainWindow().unitsManager().floatIdentityUnit());
@@ -79,11 +79,23 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
     _relativeTranslationUnits[1].emplace(mainWindow().unitsManager().floatIdentityUnit());
     _relativeTranslationUnits[2].emplace(mainWindow().unitsManager().floatIdentityUnit());
 
-    for(int col = 0; col < 3; col++) {
-        layout->setColumnStretch(col*3 + 0, 1);
-        if(col < 2)
-            layout->setColumnMinimumWidth(col*3 + 2, 4);
-        for(int row = 0; row < 4; row++) {
+    for(int row = 0; row < 4; row++) {
+        if(row == 3) {
+            QHBoxLayout* hboxsublayout = new QHBoxLayout();
+            hboxsublayout->setContentsMargins(0,4,0,0);
+            hboxsublayout->setSpacing(4);
+            hboxsublayout->addWidget(new QLabel(tr("Translation:")));
+            BooleanParameterUI* translationReducedCoordinatesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AffineTransformationModifier::translationReducedCoordinates));
+            connect(relativeModeUI->buttonTrue(), &QRadioButton::toggled, translationReducedCoordinatesUI, &BooleanParameterUI::setEnabled);
+            translationReducedCoordinatesUI->checkBox()->setText(tr("In reduced cell coordinates"));
+            hboxsublayout->addWidget(translationReducedCoordinatesUI->checkBox(), 1, Qt::AlignRight | Qt::AlignVCenter);
+            connect(translationReducedCoordinatesUI, &BooleanParameterUI::valueEntered, this, &AffineTransformationModifierEditor::onReducedCoordinatesOptionChanged);
+            layout->addLayout(hboxsublayout, layoutRow++, 1, 1, 3);
+        }
+        for(int col = 0; col < 3; col++) {
+            QHBoxLayout* sublayout = new QHBoxLayout();
+            sublayout->setContentsMargins(0,0,0,0);
+            sublayout->setSpacing(0);
             QLineEdit* lineEdit = new EnterLineEdit(rollout);
             SpinnerWidget* spinner = new SpinnerWidget(rollout);
             lineEdit->setEnabled(false);
@@ -102,67 +114,55 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
             }
             spinner->setTextBox(lineEdit);
 
-            int gridRow = (row == 3) ? 5 : (row+1);
-            layout->addWidget(lineEdit, gridRow, col*3 + 0);
-            layout->addWidget(spinner, gridRow, col*3 + 1);
+            sublayout->addWidget(lineEdit, 1);
+            sublayout->addWidget(spinner);
+            layout->addLayout(sublayout, layoutRow, col+1);
 
             spinner->enableAutomaticUndo(mainWindow(), tr("Change parameter"));
             connect(spinner, &SpinnerWidget::valueChanged, this, &AffineTransformationModifierEditor::onSpinnerValueChanged);
             connect(relativeModeUI->buttonTrue(), &QRadioButton::toggled, spinner, &SpinnerWidget::setEnabled);
             connect(relativeModeUI->buttonTrue(), &QRadioButton::toggled, lineEdit, &QLineEdit::setEnabled);
         }
+        layoutRow++;
     }
 
-    QHBoxLayout* hboxsublayout = new QHBoxLayout();
-    hboxsublayout->setContentsMargins(0,4,0,0);
-    hboxsublayout->setSpacing(4);
+    layout->setRowMinimumHeight(layoutRow++, 6);
+    relativeModeUI->buttonFalse()->setText(tr("Target cell:"));
+    layout->addWidget(relativeModeUI->buttonFalse(), layoutRow++, 0, 1, 4);
+    layout->setRowMinimumHeight(layoutRow++, 6);
 
-    hboxsublayout->addWidget(new QLabel(tr("Translation:")));
-    layout->addLayout(hboxsublayout, 4, 0, 1, 8);
-
-    BooleanParameterUI* translationReducedCoordinatesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AffineTransformationModifier::translationReducedCoordinates));
-    connect(relativeModeUI->buttonTrue(), &QRadioButton::toggled, translationReducedCoordinatesUI, &BooleanParameterUI::setEnabled);
-    translationReducedCoordinatesUI->checkBox()->setText(tr("In reduced cell coordinates"));
-    hboxsublayout->addWidget(translationReducedCoordinatesUI->checkBox(), 1, Qt::AlignRight | Qt::AlignVCenter);
-    connect(translationReducedCoordinatesUI, &BooleanParameterUI::valueEntered, this, &AffineTransformationModifierEditor::onReducedCoordinatesOptionChanged);
-
-    relativeModeUI->buttonFalse()->setText(tr("Transform to target cell:"));
-    topLayout->addWidget(relativeModeUI->buttonFalse());
-
-    layout = new QGridLayout();
-    layout->setContentsMargins(30,4,4,4);
-    layout->setHorizontalSpacing(0);
-    layout->setVerticalSpacing(2);
-    layout->setColumnStretch(0, 1);
-    layout->setColumnStretch(2, 1);
-    layout->setColumnStretch(4, 1);
-    layout->setColumnMinimumWidth(1, 4);
-    layout->setColumnMinimumWidth(3, 4);
-    topLayout->addLayout(layout);
     AffineTransformationParameterUI* destinationCellUI;
-
+    layout->addWidget(new QLabel(tr("New cell vectors:")), layoutRow++, 1, 1, 3);
+    layout->addWidget(new QLabel(tr("<b>a</b>:")), layoutRow+0, 0, 1, 1, Qt::AlignRight);
+    layout->addWidget(new QLabel(tr("<b>b</b>:")), layoutRow+1, 0, 1, 1, Qt::AlignRight);
+    layout->addWidget(new QLabel(tr("<b>c</b>:")), layoutRow+2, 0, 1, 1, Qt::AlignRight);
     for(size_t v = 0; v < 3; v++) {
-        layout->addWidget(new QLabel(tr("Cell vector %1:").arg(v+1)), v*2, 0, 1, 8);
         for(size_t r = 0; r < 3; r++) {
             destinationCellUI = createParamUI<AffineTransformationParameterUI>(PROPERTY_FIELD(AffineTransformationModifier::targetCell), r, v);
             destinationCellUI->setEnabled(false);
-            layout->addLayout(destinationCellUI->createFieldLayout(), v*2+1, r*2);
+            layout->addLayout(destinationCellUI->createFieldLayout(), layoutRow, r+1);
             connect(relativeModeUI->buttonFalse(), &QRadioButton::toggled, destinationCellUI, &AffineTransformationParameterUI::setEnabled);
             absoluteCellSpinners[r][v] = destinationCellUI->spinner();
             _absoluteCellUnits[r][v].emplace(mainWindow().unitsManager().getUnit(destinationCellUI->parameterUnitType()));
             destinationCellUI->spinner()->setUnit(&_absoluteCellUnits[r][v].value());
+            destinationCellUI->textBox()->setPlaceholderText(_absoluteCellUnits[r][v]->formatValue(0));
+            destinationCellUI->spinner()->setStandardValue(0);
         }
+        layoutRow++;
     }
 
-    layout->addWidget(new QLabel(tr("Cell origin:")), 6, 0, 1, 8);
+    layout->addWidget(new QLabel(tr("New cell origin:")), layoutRow++, 1, 1, 3);
+    layout->addWidget(new QLabel(tr("<b>o</b>:")), layoutRow, 0, 1, 1, Qt::AlignRight);
     for(size_t r = 0; r < 3; r++) {
         destinationCellUI = createParamUI<AffineTransformationParameterUI>(PROPERTY_FIELD(AffineTransformationModifier::targetCell), r, 3);
         destinationCellUI->setEnabled(false);
-        layout->addLayout(destinationCellUI->createFieldLayout(), 7, r*2);
+        layout->addLayout(destinationCellUI->createFieldLayout(), layoutRow, r+1);
         connect(relativeModeUI->buttonFalse(), &QRadioButton::toggled, destinationCellUI, &AffineTransformationParameterUI::setEnabled);
         absoluteCellSpinners[r][3] = destinationCellUI->spinner();
         _absoluteOriginUnits[r].emplace(mainWindow().unitsManager().getUnit(destinationCellUI->parameterUnitType()));
         destinationCellUI->spinner()->setUnit(&_absoluteOriginUnits[r].value());
+        destinationCellUI->textBox()->setPlaceholderText(_absoluteOriginUnits[r]->formatValue(0));
+        destinationCellUI->spinner()->setStandardValue(0);
     }
 
     // Update spinner values when a new object has been loaded into the editor.
@@ -172,7 +172,7 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
     rollout = createRollout(tr("Operate on"), rolloutParams.after(rollout), "manual:particles.modifiers.slice");
 
     // Create the rollout contents.
-    topLayout = new QVBoxLayout(rollout);
+    QVBoxLayout* topLayout = new QVBoxLayout(rollout);
     topLayout->setContentsMargins(4,4,4,4);
     topLayout->setSpacing(12);
 
@@ -320,7 +320,7 @@ void AffineTransformationModifierEditor::onEnterRotation()
 
         QGridLayout* layout = new QGridLayout();
         layout->setContentsMargins(0,0,0,0);
-        layout->addWidget(new QLabel(tr("Rotation axis:")), 0, 0, 1, 8);
+        layout->addWidget(new QLabel(tr("3D rotation axis (xyz):")), 0, 0, 1, 8);
         layout->setColumnStretch(0, 1);
         layout->setColumnStretch(3, 1);
         layout->setColumnStretch(6, 1);
@@ -346,14 +346,14 @@ void AffineTransformationModifierEditor::onEnterRotation()
         layout->addWidget(axisSpinnerY, 1, 4);
         layout->addWidget(axisEditZ, 1, 6);
         layout->addWidget(axisSpinnerZ, 1, 7);
-        layout->addWidget(new QLabel(tr("Angle:")), 2, 0, 1, 8);
+        layout->addWidget(new QLabel(tr("Angle (degrees):")), 2, 0, 1, 8);
         QLineEdit* angleEdit = new EnterLineEdit();
         SpinnerWidget* angleSpinner = new SpinnerWidget();
         angleSpinner->setTextBox(angleEdit);
         angleSpinner->setUnit(mainWindow().unitsManager().angleUnit());
         layout->addWidget(angleEdit, 3, 0);
         layout->addWidget(angleSpinner, 3, 1);
-        layout->addWidget(new QLabel(tr("Center of rotation:")), 4, 0, 1, 8);
+        layout->addWidget(new QLabel(tr("Center of rotation (xyz):")), 4, 0, 1, 8);
         QLineEdit* centerEditX = new EnterLineEdit();
         QLineEdit* centerEditY = new EnterLineEdit();
         QLineEdit* centerEditZ = new EnterLineEdit();

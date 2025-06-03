@@ -34,11 +34,14 @@
 // bPointCell cannot be defined inside of DelaunayTessellationSpatialQuery
 // since BOOST_GEOMETRY_REGISTER_POINT_3D needs to be placed before bBox but also be in
 // global namespace
-namespace Ovito::DelaunayTessellationSpatialQueryImpl {
+namespace Ovito::DelaunayTessellationSpatialQueryImpl
+{
+
 struct bPointCell {
     Point3 point;
     size_t cell;
 };
+
 }  // End of namespace Ovito::DelaunayTessellationSpatialQueryImpl
 
 // Adds the bPointCell type to boost geometry
@@ -50,7 +53,7 @@ namespace Ovito {
 
 /// Create spatial querys on a Delaunay Tessellation finding all tetrahedrons
 /// where their respective bounding boxes intersect with a target bounding bounding box
-class DelaunayTessellationSpatialQuery
+class OVITO_DELAUNAY_EXPORT DelaunayTessellationSpatialQuery
 {
 public:
     using bPoint = DelaunayTessellationSpatialQueryImpl::bPointCell;
