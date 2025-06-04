@@ -1106,6 +1106,43 @@ Box3 DataBuffer::boundingBox3Indexed(const DataBuffer& indices) const
 }
 
 /******************************************************************************
+* Computes the axis-aligned bounding box of a sub-set of the 3d coordinates stored in the buffer.
+******************************************************************************/
+Box3 DataBuffer::boundingBox3Masked(const DataBuffer& mask) const
+{
+    OVITO_ASSERT(mask.size() == size());
+    OVITO_ASSERT(mask.dataType() == Int8 && mask.componentCount() == 1);
+#ifdef OVITO_USE_SYCL
+    OVITO_ASSERT(false); // TODO
+#else
+    if(mask.size() == this->size() && mask.dataType() == Int8 && mask.componentCount() == 1) {
+        if(dataType() == Float32 && componentCount() == 3) {
+            Box_3<float> bb;
+            BufferReadAccess<int8_t> maskAcc(&mask);
+            auto s = maskAcc.cbegin();
+            for(const auto& p : BufferReadAccess<Point_3<float>>(this)) {
+                if(*s++)
+                    bb.addPoint(p);
+            }
+            return bb.toDataType<FloatType>();
+        }
+        else if(dataType() == Float64 && componentCount() == 3) {
+            Box_3<double> bb;
+            BufferReadAccess<int8_t> maskAcc(&mask);
+            auto s = maskAcc.cbegin();
+            for(const auto& p : BufferReadAccess<Point_3<double>>(this)) {
+                if(*s++)
+                    bb.addPoint(p);
+            }
+            return bb.toDataType<FloatType>();
+        }
+    }
+#endif
+    OVITO_ASSERT(false); // Unsupported data type or component count
+    return {};
+}
+
+/******************************************************************************
 * Returns the number of non-zero entries in the array.
 ******************************************************************************/
 size_t DataBuffer::nonzeroCount() const

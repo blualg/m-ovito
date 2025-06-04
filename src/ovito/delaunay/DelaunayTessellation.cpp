@@ -29,123 +29,24 @@ namespace Ovito {
 /******************************************************************************
 * Generates the tessellation.
 ******************************************************************************/
-void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, TaskProgress& progress)
+void DelaunayTessellation::generateTessellation(const SimulationCell* cell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, TaskProgress& progress)
 {
     progress.setMaximum(0);
 
-    // Initialize the Geogram library (in a thread-safe way).
-    static std::mutex geogramMutex;
-    {
-        std::lock_guard<std::mutex> lock(geogramMutex);
-        GEO::initialize(GEO::GEOGRAM_NO_HANDLER);
-        GEO::set_assert_mode(GEO::ASSERT_ABORT);
-    }
+    // Set up the simulation cell geometry.
+    initializeSimulationCell(cell, positions, numPoints, selectedPoints);
 
-    // Make the magnitude of the random perturbations dependent on the size of the system.
-    double lengthScale;
-    if(simCell) {
-        lengthScale = (simCell->matrix().column(0) + simCell->matrix().column(1) + simCell->matrix().column(2)).length();
-        _simCell = simCell;
-    }
-    else {
-        Box3 bbox;
-        bbox.addPoints(positions, numPoints);
-        lengthScale = bbox.size().length();
-        _simCell = bbox;
-    }
-    double epsilon = 1e-10 * lengthScale;
+    // Compile the list of primary input points.
+    compileInputPointList(positions, numPoints, selectedPoints);
 
-    // Set up random number generator to generate random perturbations.
-    // Use a fixed seed value for the sake of reproducibility.
-    std::mt19937 rng(4);
-    boost::random::uniform_real_distribution<double> displacement(-epsilon, epsilon);
-
-    // Build the list of input points.
-    _inputPointIndices.clear();
-    _pointData.clear();
-    _inputPointIndices.reserve(numPoints);
-
-    for(size_t i = 0; i < numPoints; i++, ++positions) {
-
-        // Skip points which are not included.
-        if(selectedPoints && !*selectedPoints++)
-            continue;
-
-        // Add a small random perturbation to the particle positions to make the Delaunay triangulation more robust
-        // against singular input data, e.g. all particles positioned on ideal crystal lattice sites.
-        Point3 wp = simCell ? simCell->wrapPoint(*positions) : *positions;
-        _pointData.emplace_back(
-            (double)wp.x() + displacement(rng),
-            (double)wp.y() + displacement(rng),
-            (double)wp.z() + displacement(rng));
-
-        _inputPointIndices.push_back(i);
-
-        this_task::throwIfCanceled();
-    }
-    _primaryVertexCount = _inputPointIndices.size();
-
-    if(simCell && simCell->hasPbc() && ghostLayerSize > 0) {
-        // Determine how many periodic copies of the input particles are needed in each cell direction
-        // to ensure a consistent periodic topology in the border region.
-        Vector3I stencilCount;
-        FloatType cuts[3][2];
-        Vector3 cellNormals[3];
-        for(size_t dim = 0; dim < 3; dim++) {
-            cellNormals[dim] = simCell->cellNormalVector(dim);
-            cuts[dim][0] = cellNormals[dim].dot(simCell->reducedToAbsolute(Point3(0,0,0)) - Point3::Origin());
-            cuts[dim][1] = cellNormals[dim].dot(simCell->reducedToAbsolute(Point3(1,1,1)) - Point3::Origin());
-
-            if(simCell->hasPbc(dim)) {
-                stencilCount[dim] = (int)std::ceil(ghostLayerSize / simCell->matrix().column(dim).dot(cellNormals[dim]));
-                cuts[dim][0] -= ghostLayerSize;
-                cuts[dim][1] += ghostLayerSize;
-            }
-            else {
-                stencilCount[dim] = 0;
-                cuts[dim][0] -= ghostLayerSize;
-                cuts[dim][1] += ghostLayerSize;
-            }
-        }
-
-        // Create ghost images of input vertices.
-        for(int ix = -stencilCount[0]; ix <= +stencilCount[0]; ix++) {
-            for(int iy = -stencilCount[1]; iy <= +stencilCount[1]; iy++) {
-                for(int iz = -stencilCount[2]; iz <= +stencilCount[2]; iz++) {
-                    if(ix == 0 && iy == 0 && iz == 0) continue;
-
-                    Vector3 shift = simCell->reducedToAbsolute(Vector3(ix,iy,iz));
-                    for(size_t vertexIndex = 0; vertexIndex < _primaryVertexCount; vertexIndex++) {
-                        this_task::throwIfCanceled();
-
-                        Point3 pimage = _pointData[vertexIndex] + shift;
-                        bool isClipped = false;
-                        for(size_t dim = 0; dim < 3; dim++) {
-                            if(simCell->hasPbc(dim)) {
-                                FloatType d = cellNormals[dim].dot(pimage - Point3::Origin());
-                                if(d < cuts[dim][0] || d > cuts[dim][1]) {
-                                    isClipped = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if(!isClipped) {
-                            _pointData.push_back(pimage);
-                            _inputPointIndices.push_back(_inputPointIndices[vertexIndex]);
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // Create ghost images of the input points if periodic boundary conditions are enabled.
+    createGhostPointLayer(ghostLayerSize);
 
     // In order to cover the simulation box completely with finite tetrahedra, add 8 extra input points to the Delaunay tessellation,
     // far away from the simulation cell and real particles. These 8 points form a convex hull, whose interior will get completely tessellated.
     if(coverDomainWithFiniteTets) {
-        OVITO_ASSERT(simCell);
-
         // Compute bounding box of input points and simulation cell.
-        Box3 bb = Box3(Point3(0), Point3(1)).transformed(simCell->matrix());
+        Box3 bb = Box3(Point3(0), Point3(1)).transformed(simCell().cellMatrix());
         bb.addPoints(_pointData.data(), _pointData.size());
         // Add extra padding.
         bb = bb.padBox(ghostLayerSize);
@@ -157,22 +58,179 @@ void DelaunayTessellation::generateTessellation(const SimulationCell* simCell, c
         }
     }
 
-    // Create the internal Delaunay generator object.
-    _dt = GEO::Delaunay::create(3, "BDEL");
-    _dt->set_keeps_infinite(true);
-    _dt->set_reorder(true);
+    // Actually construct the Delaunay tessellation by calling Geogram.
+    constructDelaunayTessellation(progress);
+
+    // Classify tessellation cells into primary and ghost cells.
+    identifyPrimaryAndGhostCells();
+}
+
+/******************************************************************************
+* Initializes the internal simulation cell information.
+* Generates an ad-hoc simulation cell from the axis-aligned bounding box of
+* the input points if no simulation cell is provided.
+******************************************************************************/
+void DelaunayTessellation::initializeSimulationCell(const SimulationCell* simCell, const Point3* points, size_t numPoints, const SelectionIntType* pointMask)
+{
+    if(simCell) {
+        _simCell = simCell;
+    }
+    else {
+        Box3 bbox;
+        if(!pointMask) {
+            bbox.addPoints(points, numPoints);
+        }
+        else {
+            for(size_t i = 0; i < numPoints; i++) {
+                if(pointMask[i])
+                    bbox.addPoint(points[i]);
+            }
+        }
+        _simCell = bbox;
+    }
+}
+
+/******************************************************************************
+* Copies the input points into the internal point list and applies a small random perturbation to each point.
+******************************************************************************/
+void DelaunayTessellation::compileInputPointList(const Point3* points, size_t numPoints, const SelectionIntType* pointMask)
+{
+    // Make the magnitude of the random perturbations dependent on the size of the system.
+    const double lengthScale = (simCell().cellVector1() + simCell().cellVector2() + simCell().cellVector3()).length();
+    const double epsilon = 1e-10 * lengthScale;
+
+    // Set up random number generator to generate random perturbations.
+    // Use a fixed seed value for the sake of reproducibility.
+    std::mt19937 rng(4);
+    boost::random::uniform_real_distribution<double> displacement(-epsilon, epsilon);
+
+    // Build the list of input points.
+    _inputPointIndices.clear();
+    _pointData.clear();
+    _inputPointIndices.reserve(numPoints);
+
+    for(size_t i = 0; i < numPoints; i++, ++points) {
+
+        // Skip points which are not included.
+        if(pointMask && !*pointMask++)
+            continue;
+
+        // Add a small random perturbation to the particle positions to make the Delaunay triangulation more robust
+        // against singular input data, e.g. all particles positioned on ideal crystal lattice sites.
+        const Point3 wp = simCell().wrapPoint(*points);
+        _pointData.emplace_back(
+            (double)wp.x() + displacement(rng),
+            (double)wp.y() + displacement(rng),
+            (double)wp.z() + displacement(rng));
+
+        _inputPointIndices.push_back(i);
+
+        this_task::throwIfCanceled();
+    }
+    _primaryVertexCount = _inputPointIndices.size();
+}
+
+/******************************************************************************
+* Creates ghost images of the input points if periodic boundary conditions are enabled.
+******************************************************************************/
+void DelaunayTessellation::createGhostPointLayer(FloatType ghostLayerSize)
+{
+    if(!simCell().hasPbc())
+        return; // No periodic boundary conditions, no ghost points needed.
+    if(ghostLayerSize <= 0)
+        return; // No ghost layer requested.
+
+    // Determine how many periodic copies of the input particles are needed in each cell direction
+    // to cover the ghost layer of the simulation cell.
+    Vector3I stencilCount;
+    FloatType cuts[3][2];
+    Vector3 cellNormals[3];
+    for(size_t dim = 0; dim < 3; dim++) {
+        if(simCell().hasPbc(dim)) {
+            cellNormals[dim] = simCell().cellNormalVector(dim);
+            cuts[dim][0] = cellNormals[dim].dot(simCell().reducedToAbsolute(Point3(0,0,0)) - Point3::Origin()) - ghostLayerSize;
+            cuts[dim][1] = cellNormals[dim].dot(simCell().reducedToAbsolute(Point3(1,1,1)) - Point3::Origin()) + ghostLayerSize;
+            stencilCount[dim] = (int)std::ceil(ghostLayerSize / simCell().cellMatrix().column(dim).dot(cellNormals[dim]));
+        }
+        else {
+            stencilCount[dim] = 0;
+        }
+    }
+
+    // Create ghost images of input vertices.
+    for(int ix = -stencilCount[0]; ix <= +stencilCount[0]; ix++) {
+        for(int iy = -stencilCount[1]; iy <= +stencilCount[1]; iy++) {
+            for(int iz = -stencilCount[2]; iz <= +stencilCount[2]; iz++) {
+                if(ix == 0 && iy == 0 && iz == 0) continue;
+
+                Vector3 shift = simCell().reducedToAbsolute(Vector3(ix,iy,iz));
+                for(size_type vertexIndex = 0; vertexIndex < primaryVertexCount(); vertexIndex++) {
+                    this_task::throwIfCanceled();
+
+                    // Create a shifted ghost image of the input point.
+                    Point3 pimage = this->points()[vertexIndex] + shift;
+                    bool isClipped = false;
+                    for(size_t dim = 0; dim < 3; dim++) {
+                        if(simCell().hasPbc(dim)) {
+                            FloatType d = cellNormals[dim].dot(pimage - Point3::Origin());
+                            if(d < cuts[dim][0] || d > cuts[dim][1]) {
+                                isClipped = true;
+                                break;
+                            }
+                        }
+                    }
+                    if(!isClipped) {
+                        addGhostPoint(pimage, inputPointIndex(vertexIndex));
+                    }
+                }
+            }
+        }
+    }
+}
+
+/******************************************************************************
+* Calls Geogram to construct the actual Delaunay tessellation.
+******************************************************************************/
+void DelaunayTessellation::constructDelaunayTessellation(TaskProgress& progress)
+{
+    // Create the internal Geogram Delaunay generator object.
+    if(!_dt) {
+
+        // Globally initializes the Geogram library.
+        static std::mutex geogramMutex;
+        {
+            std::lock_guard<std::mutex> lock(geogramMutex);
+            GEO::initialize(GEO::GEOGRAM_NO_HANDLER);
+            GEO::set_assert_mode(GEO::ASSERT_ABORT);
+        }
+
+        _dt = GEO::Delaunay::create(3, "BDEL");
+        _dt->set_keeps_infinite(true);
+        _dt->set_reorder(true);
+    }
+
+    // Install a callback function to report progress during tessellation construction.
     if(&progress != &TaskProgress::Ignore) {
         _dt->set_progress_callback([&progress](GEO::index_t value, GEO::index_t maxProgress) {
             progress.setMaximum(maxProgress, false);
             progress.setValueIntermittent(value);
         });
     }
+    else {
+        _dt->set_progress_callback(nullptr);
+    }
 
     // Construct Delaunay tessellation.
     _dt->set_vertices(_pointData.size(), reinterpret_cast<const double*>(_pointData.data()));
-    this_task::throwIfCanceled();
 
-    // Classify tessellation cells as either primary or ghost cells.
+    this_task::throwIfCanceled();
+}
+
+/******************************************************************************
+* Classifies tessellation cells as either primary or ghost cells.
+******************************************************************************/
+void DelaunayTessellation::identifyPrimaryAndGhostCells()
+{
     // Infinite cells are also considered ghost cells.
     _numPrimaryTetrahedra = 0;
     _cellInfo.resize(_dt->nb_cells());
@@ -236,6 +294,8 @@ static inline double determinant(double a00, double a01, double a02,
 ******************************************************************************/
 std::optional<bool> DelaunayTessellation::alphaTest(CellHandle cell, FloatType alpha) const
 {
+    OVITO_ASSERT(isFiniteCell(cell)); // Circum sphere can only be computed for finite cells.
+
     auto v0 = _dt->vertex_ptr(cellVertex(cell, 0));
     auto v1 = _dt->vertex_ptr(cellVertex(cell, 1));
     auto v2 = _dt->vertex_ptr(cellVertex(cell, 2));
@@ -262,17 +322,6 @@ std::optional<bool> DelaunayTessellation::alphaTest(CellHandle cell, FloatType a
     FloatType nomin = (num_x*num_x + num_y*num_y + num_z*num_z);
     FloatType denom = (4 * den * den);
 
-#if 0
-    // Code is only used for debugging purposes:
-    std::array<int,4> searchVertexIds1 = {180620, 458358, 474869, 1603607};
-    std::array<int,4> vertexIds;
-    for(int v = 0; v < 4; v++)
-        vertexIds[v] = cellVertex(cell, v);
-    std::sort(vertexIds.begin(), vertexIds.end());
-    if(vertexIds == searchVertexIds1)
-        qInfo() << "Found element 1 " << "nomin=" << nomin << "denom=" << denom << "(nomin / denom)=" << (nomin / denom) << "alpha=" << alpha;
-#endif
-
     // Detect degenerate sliver elements, for which we cannot compute a reliable alpha value.
     if(std::abs(denom) < 1e-9 && std::abs(nomin) < 1e-9) {
         return std::nullopt; // Indeterminate result
@@ -280,4 +329,74 @@ std::optional<bool> DelaunayTessellation::alphaTest(CellHandle cell, FloatType a
 
     return (nomin / denom) < alpha;
 }
+
+/******************************************************************************
+* Compute the center and radius of the circumscribed sphere of the given (finite) Delaunay cell.
+* The circum sphere is the sphere that passes through all four vertices of the tetrahedron.
+******************************************************************************/
+std::pair<Point3, FloatType> DelaunayTessellation::circumSphere(CellHandle cell) const
+{
+    OVITO_ASSERT(isFiniteCell(cell)); // Circum sphere can only be computed for finite cells.
+
+    // Get the coordinates of the four vertices
+    const double* v0 = _dt->vertex_ptr(cellVertex(cell, 0));
+    const double* v1 = _dt->vertex_ptr(cellVertex(cell, 1));
+    const double* v2 = _dt->vertex_ptr(cellVertex(cell, 2));
+    const double* v3 = _dt->vertex_ptr(cellVertex(cell, 3));
+
+    // Let a = v0, b = v1, c = v2, d = v3
+    // Compute vectors relative to a
+    double bax[3] = { v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2] };
+    double cax[3] = { v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2] };
+    double dax[3] = { v3[0] - v0[0], v3[1] - v0[1], v3[2] - v0[2] };
+
+    // Compute squared lengths
+    double balen2 = bax[0]*bax[0] + bax[1]*bax[1] + bax[2]*bax[2];
+    double calen2 = cax[0]*cax[0] + cax[1]*cax[1] + cax[2]*cax[2];
+    double dalen2 = dax[0]*dax[0] + dax[1]*dax[1] + dax[2]*dax[2];
+
+    // Compute cross products
+    double cross_cd[3] = {
+        cax[1]*dax[2] - cax[2]*dax[1],
+        cax[2]*dax[0] - cax[0]*dax[2],
+        cax[0]*dax[1] - cax[1]*dax[0]
+    };
+    double cross_db[3] = {
+        dax[1]*bax[2] - dax[2]*bax[1],
+        dax[2]*bax[0] - dax[0]*bax[2],
+        dax[0]*bax[1] - dax[1]*bax[0]
+    };
+    double cross_bc[3] = {
+        bax[1]*cax[2] - bax[2]*cax[1],
+        bax[2]*cax[0] - bax[0]*cax[2],
+        bax[0]*cax[1] - bax[1]*cax[0]
+    };
+
+    // Compute denominator (6 times the volume of the tetrahedron)
+    double denom = 2.0 * (
+        bax[0] * (cax[1]*dax[2] - cax[2]*dax[1]) -
+        bax[1] * (cax[0]*dax[2] - cax[2]*dax[0]) +
+        bax[2] * (cax[0]*dax[1] - cax[1]*dax[0])
+    );
+
+    // If denom is zero, the points are coplanar or degenerate
+    if(std::abs(denom) < 1e-16)
+        return { Point3(v0[0], v0[1], v0[2]), 0.0 };
+
+    // Compute circumcenter relative to a (v0)
+    double cx = (balen2 * (cross_cd[0]) + calen2 * (cross_db[0]) + dalen2 * (cross_bc[0])) / denom;
+    double cy = (balen2 * (cross_cd[1]) + calen2 * (cross_db[1]) + dalen2 * (cross_bc[1])) / denom;
+    double cz = (balen2 * (cross_cd[2]) + calen2 * (cross_db[2]) + dalen2 * (cross_bc[2])) / denom;
+
+    Point3 center(v0[0] + cx, v0[1] + cy, v0[2] + cz);
+
+    // Compute radius
+    double dx = center.x() - v0[0];
+    double dy = center.y() - v0[1];
+    double dz = center.z() - v0[2];
+    FloatType radius = std::sqrt(dx*dx + dy*dy + dz*dz);
+
+    return { center, radius };
+}
+
 }  // namespace Ovito

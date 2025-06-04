@@ -332,6 +332,9 @@ public:
     /// Computes the axis-aligned bounding box of a sub-set of the 3d coordinates stored in the buffer.
     Box3 boundingBox3Indexed(const DataBuffer& indices) const;
 
+    /// Computes the axis-aligned bounding box of a sub-set of the 3d coordinates stored in the buffer.
+    Box3 boundingBox3Masked(const DataBuffer& mask) const;
+
     /// Based on a selection flag array as input, computes the mapping of original indices to a packed array.
     ConstDataBufferPtr computePackedMapping() const;
 

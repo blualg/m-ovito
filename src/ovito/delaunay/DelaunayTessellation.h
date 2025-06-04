@@ -118,7 +118,7 @@ public:
     };
 
     /// Generates the Delaunay tessellation.
-    void generateTessellation(const SimulationCell* simCell, const Point3* positions, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* selectedPoints, TaskProgress& progress);
+    void generateTessellation(const SimulationCell* simCell, const Point3* points, size_t numPoints, FloatType ghostLayerSize, bool coverDomainWithFiniteTets, const SelectionIntType* pointMask, TaskProgress& progress);
 
     /// Returns the total number of tetrahedra in the tessellation, including ghost tetrahedra and infinite tetrahedra.
     size_type numberOfTetrahedra() const { return _dt->nb_cells(); }
@@ -165,6 +165,18 @@ public:
         return _dt->cell_is_finite(cell);
     }
 
+    /// Determines whether the given tessellation facet connects three physical vertices.
+    /// Returns false if one of the three vertices is the infinite vertex.
+    inline bool isFiniteFacet(CellHandle cell, int facetIndex) const {
+        OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
+        OVITO_ASSERT(facetIndex >= 0 && facetIndex < 4);
+        for(int v = 0; v < 3; v++) {
+            if(_dt->cell_vertex(cell, cellFacetVertexIndex(facetIndex, v)) == -1)
+                return false;
+        }
+        return true;
+    }
+
     /// Determines whether the given Delaunay vertex is a ghost vertex or a primary vertex.
     /// This method must not be called for the infinite vertex.
     inline bool isGhostVertex(VertexHandle vertex) const {
@@ -182,6 +194,7 @@ public:
     inline VertexHandle cellVertex(CellHandle cell, size_type localIndex) const {
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         OVITO_ASSERT(localIndex >= 0 && localIndex < 4);
+        OVITO_ASSERT(_dt->cell_vertex(cell, localIndex) >= 0); // The request vertex must not be the infinite vertex.
         return _dt->cell_vertex(cell, localIndex);
     }
 
@@ -209,6 +222,10 @@ public:
     /// Returns true if the cell passes the alpha test, false if not.
     /// Returns none if the cell is a degenerate sliver element, for which an alpha value cannot be computed.
     std::optional<bool> alphaTest(CellHandle cell, FloatType alpha) const;
+
+    /// Compute the center and radius of the circumscribed sphere of the given (finite) Delaunay cell.
+    /// The circum sphere is the sphere that passes through all four vertices of the tetrahedron.
+    std::pair<Point3, FloatType> circumSphere(CellHandle cell) const;
 
     /// Returns the input point index corresponding to the given Delaunay vertex.
     /// This method must not be called for the infinite vertex.
@@ -322,6 +339,33 @@ public:
 
     /// Returns the simulation cell geometry.
     const SimulationCellData& simCell() const { return _simCell; }
+
+protected:
+
+    /// Initializes the internal simulation cell information.
+    /// Generates an ad-hoc simulation cell from the axis-aligned bounding box of the input points if no simulation cell is provided.
+    void initializeSimulationCell(const SimulationCell* simCell, const Point3* points, size_t numPoints, const SelectionIntType* pointMask);
+
+    /// Copies the input points into the internal point list and applies a small random perturbation to each point.
+    void compileInputPointList(const Point3* points, size_t numPoints, const SelectionIntType* pointMask);
+
+    /// Creates ghost images of the input points if periodic boundary conditions are enabled.
+    void createGhostPointLayer(FloatType ghostLayerSize);
+
+    /// Calls Geogram to construct the actual Delaunay tessellation.
+    void constructDelaunayTessellation(TaskProgress& progress);
+
+    /// Classifies tessellation cells as either primary or ghost cells.
+    void identifyPrimaryAndGhostCells();
+
+    /// Returns the number of primary (non-ghost) vertices.
+    size_type primaryVertexCount() const { return _primaryVertexCount; }
+
+    /// Adds a ghost image point to the internal point list (before Delaunay construction).
+    void addGhostPoint(const Point3& point, size_t inputPointIndex) {
+        _pointData.push_back(point);
+        _inputPointIndices.push_back(inputPointIndex);
+    }
 
 private:
 
