@@ -68,11 +68,25 @@ Sun-sky light
 Material
 """"""""
 
+The OSPRay renderer supports two material types: Diffuse and Metal.
+These correspond to the *OBJ* and *Alloy* materials described in the
+`OSPRay documentation <https://www.ospray.org/documentation.html#materials>`__ ,
+respectively.
+
+Diffuse
+#######
+
 Specular brightness
   Controls the specular reflectivity of the material (default value: 2%).
 
 Shininess
   This specular Phong exponent is usually in the range between 2.0 and 10000.0 (default value: 10.0).
+
+Metal
+#####
+
+Roughness
+   Controls how polished and reflective the material appears (default value: 10%).
 
 Post-processing effects
 """""""""""""""""""""""

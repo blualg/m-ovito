@@ -23,7 +23,6 @@ because this environment lacks the NVIDIA OptiX™ driver components required by
   to the `OVITO developers <https://gitlab.com/stuko/ovito/-/issues>`__. Missing features and capabilities:
 
     - Meshes with per-vertex transparency values
-    - Meshes with :ref:`highlighted edges (wireframes) <visual_elements.surface_mesh>`
     - Materials with adjustable specular reflection parameters
     - Flat-shaded primitives
 
