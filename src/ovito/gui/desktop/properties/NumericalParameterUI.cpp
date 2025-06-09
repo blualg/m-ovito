@@ -146,6 +146,23 @@ void NumericalParameterUI::setEnabled(bool enabled)
 }
 
 /******************************************************************************
+* Shows or hides all widgets.
+******************************************************************************/
+void NumericalParameterUI::setVisible(bool visible)
+{
+    if(spinner())
+        spinner()->setVisible(visible);
+    if(textBox())
+        textBox()->setVisible(visible);
+    if(label())
+        label()->setVisible(visible);
+    if(animateButton())
+        animateButton()->setVisible(visible);
+    if(menuToolButton())
+        menuToolButton()->setVisible(visible);
+}
+
+/******************************************************************************
 * Creates a QLayout that contains the text box and the spinner widget.
 ******************************************************************************/
 QLayout* NumericalParameterUI::createFieldLayout()

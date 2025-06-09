@@ -68,13 +68,16 @@ Sun-sky light
 Material
 """"""""
 
-The OSPRay renderer supports two material types: Diffuse and Metal.
-These correspond to the *OBJ* and *Alloy* materials described in the
-`OSPRay documentation <https://www.ospray.org/documentation.html#materials>`__ ,
+The OSPRay renderer supports two material types: Standard and Metallic.
+These correspond to the *OBJ* and *Alloy* materials described in the `documentation of OSPRay <https://www.ospray.org/documentation.html#materials>`__,
 respectively.
 
-Diffuse
-#######
+.. image:: /images/rendering/ospray_material_standard_example.png
+    :width: 22%
+    :align: right
+
+Standard material
+#################
 
 Specular brightness
   Controls the specular reflectivity of the material (default value: 2%).
@@ -82,11 +85,17 @@ Specular brightness
 Shininess
   This specular Phong exponent is usually in the range between 2.0 and 10000.0 (default value: 10.0).
 
-Metal
-#####
+.. image:: /images/rendering/ospray_material_metallic_example.png
+    :width: 22%
+    :align: right
+
+Metallic material
+#################
 
 Roughness
-   Controls how polished and reflective the material appears (default value: 10%).
+   Controls the variation of microfacets and thus how polished the metal will look (default value: 40%).
+   A value of 0% gives a perfectly polished mirror surface, while a value of 100% gives a completely rough surface.
+
 
 Post-processing effects
 """""""""""""""""""""""
@@ -107,7 +116,7 @@ Outlines
     Variable Width Mode
       In this mode, the outline width increases linearly from the minimum to the maximum width
       as the depth difference between overlapping objects varies from the minimum to the maximum depth difference.
-      When switching from Uniform Width Mode to Variable Width Mode, any missing values for
+      When switching from *Uniform Width Mode* to *Variable Width Mode*, any missing values for
       depth or line width will be automatically set to their default values.
 
   Custom Color

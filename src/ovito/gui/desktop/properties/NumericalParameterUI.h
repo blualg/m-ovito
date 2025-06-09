@@ -97,6 +97,9 @@ public Q_SLOTS:
     /// this property UI is bound to. This method must be implemented by derived classes.
     virtual void updatePropertyValue() = 0;
 
+    /// Shows or hides all widgets.
+    void setVisible(bool visible);
+
 protected:
 
     /// The spinner UI component.
