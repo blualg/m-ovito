@@ -88,6 +88,12 @@ public:
     /// Sets the opacity function.
     void setOpacityFunction(DataOORef<const OpacityFunction> opacityFunction) { _opacityFunction = std::move(opacityFunction); }
 
+    /// Returns the distance after which a 'opacity' fraction of light traveling through the volume is absorbed.
+    FloatType absorptionUnitDistance() const { return _absorptionUnitDistance; }
+
+    /// Sets the distance after which a 'opacity' fraction of light traveling through the volume is absorbed.
+    void setAbsorptionUnitDistance(FloatType distance) { _absorptionUnitDistance = distance; }
+
 private:
 
     /// The dimensions of the regular grid, i.e, the number of vertices (data points) in each direction.
@@ -107,6 +113,9 @@ private:
 
     /// Opacity gradient.
     DataOORef<const OpacityFunction> _opacityFunction;
+
+    /// The distance after which a 'opacity' fraction of light traveling through the volume is absorbed.
+    FloatType _absorptionUnitDistance = 1;
 };
 
 }   // End of namespace

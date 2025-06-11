@@ -37,6 +37,7 @@ DEFINE_REFERENCE_FIELD(VoxelGridVis, transparencyController);
 DEFINE_PROPERTY_FIELD(VoxelGridVis, highlightGridLines);
 DEFINE_PROPERTY_FIELD(VoxelGridVis, interpolateColors);
 DEFINE_PROPERTY_FIELD(VoxelGridVis, representationMode);
+DEFINE_PROPERTY_FIELD(VoxelGridVis, absorptionUnitDistance);
 DEFINE_REFERENCE_FIELD(VoxelGridVis, colorMapping);
 DEFINE_REFERENCE_FIELD(VoxelGridVis, opacityFunction);
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, transparencyController, "Transparency");
@@ -45,7 +46,9 @@ SET_PROPERTY_FIELD_LABEL(VoxelGridVis, interpolateColors, "Interpolation");
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, colorMapping, "Color mapping");
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, representationMode, "Representation mode");
 SET_PROPERTY_FIELD_LABEL(VoxelGridVis, opacityFunction, "Opacity function");
+SET_PROPERTY_FIELD_LABEL(VoxelGridVis, absorptionUnitDistance, "Absorption unit distance");
 SET_PROPERTY_FIELD_UNITS_AND_RANGE(VoxelGridVis, transparencyController, PercentParameterUnit, 0, 1);
+SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(VoxelGridVis, absorptionUnitDistance, WorldParameterUnit, 0);
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(VoxelGridPickInfo);
 
@@ -770,6 +773,7 @@ void VoxelGridVis::renderGridVolume(FrameGraph& frameGraph, const SceneNode* sce
     volume->setFieldData(std::move(volumeData), pseudoColorPropertyComponent);
     volume->setDomain(cellMatrix);
     volume->setDimensions(newGridDims);
+    volume->setAbsorptionUnitDistance(absorptionUnitDistance());
 
     // Add the volume to the frame graph.
     frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(volume), sceneNode->getWorldTransform(frameGraph.time()), boundingBox, sceneNode);

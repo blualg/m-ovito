@@ -82,7 +82,12 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
 
     OpacityFunctionParameterUI* opacityFunctionUI = createParamUI<OpacityFunctionParameterUI>(PROPERTY_FIELD(VoxelGridVis::opacityFunction), PROPERTY_FIELD(VoxelGridVis::colorMapping));
     sublayout2->addWidget(opacityFunctionUI->plotWidget(), 0, 0, 1, 2);
-    QLabel* label = new QLabel(tr("<p style=\"font-size: small;\">Note: Volume rendering only supported by <a href=\"visrtx\">VisRTX</a> and <a href=\"ospray\">OSPRay</a> renderer.</p>"));
+
+    //FloatParameterUI* absorptionUnitDistanceUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(VoxelGridVis::absorptionUnitDistance));
+    //sublayout2->addWidget(absorptionUnitDistanceUI->label(), 1, 0);
+    //sublayout2->addLayout(absorptionUnitDistanceUI->createFieldLayout(), 1, 1);
+
+    QLabel* label = new QLabel(tr("<p style=\"font-size: small;\">Note: Volume rendering is only supported by <a href=\"visrtx\">VisRTX</a> and <a href=\"ospray\">OSPRay</a> renderers.</p>"));
     label->setWordWrap(true);
     label->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
     connect(label, &QLabel::linkActivated, this, [this](const QString& link) {
