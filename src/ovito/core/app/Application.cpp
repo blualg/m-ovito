@@ -241,14 +241,18 @@ bool Application::initialize(int& argc, char** argv)
     // Force "C" locale, which will be used to parse numbers, e.g. from simulation data files.
     // QCoreApplication requires a UTF-8 locale and will print a warning to the terminal during initialization otherwise.
     // Note: On macOS, C.UTF-8 is not available, so we use en_US.UTF-8 instead.
-#ifndef Q_OS_MACOS
-    qputenv("LC_ALL", "C.UTF-8");
-#else
+#ifndef Q_OS_WIN
+#if defined(Q_OS_MACOS)
     qputenv("LC_ALL", "en_US.UTF-8");
+#else
+    qputenv("LC_ALL", "C.UTF-8");
 #endif
-
     // Activate the locale selected by the LC_ALL environment variable.
     std::setlocale(LC_ALL, "");
+#else
+    // Reactivate the "C" locale (just in case someone else has changed it).
+    std::setlocale(LC_ALL, "C");
+#endif
     QLocale::setDefault(QLocale::c());
 
     // Double-check if a "C"-like locale is active. Otherwise, parsing of floating-point numbers from text files
