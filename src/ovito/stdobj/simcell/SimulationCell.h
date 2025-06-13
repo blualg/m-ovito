@@ -271,7 +271,8 @@ public:
     ///
     /// This function can handle negative numbers k. This allows mapping any number k that is
     /// outside the interval [0,n) back into the interval. Use this to implement periodic boundary conditions.
-    constexpr static inline FloatType modulo(FloatType k, FloatType n) {
+    static inline FloatType modulo(FloatType k, FloatType n)
+    {
         k = std::fmod(k, n);
         return (k < 0) ? k+n : k;
     }
@@ -335,11 +336,13 @@ public:
     constexpr SimulationCellData() = default;
 
     /// Constructor that copies the cell information from an existing SimulationCell object.
-    constexpr SimulationCellData(const SimulationCell& cell) :
-        _cellMatrix(cell.cellMatrix()),
-        _reciprocalCellMatrix(cell.reciprocalCellMatrix()),
-        _pbcFlags(cell.pbcFlagsCorrected()),
-        _is2D(cell.is2D()) {}
+    SimulationCellData(const SimulationCell& cell)
+        : _cellMatrix(cell.cellMatrix()),
+          _reciprocalCellMatrix(cell.reciprocalCellMatrix()),
+          _pbcFlags(cell.pbcFlagsCorrected()),
+          _is2D(cell.is2D())
+    {
+    }
 
     /// Constructor that copies the cell information from a SimulationCell object if available.
     constexpr SimulationCellData(const SimulationCell* cell) :
@@ -368,7 +371,7 @@ public:
     constexpr bool is2D() const { return _is2D; }
 
     /// Computes the (positive) volume of the three-dimensional cell.
-    constexpr FloatType volume3D() const { return std::abs(cellMatrix().determinant()); }
+    FloatType volume3D() const { return std::abs(cellMatrix().determinant()); }
 
     /// Computes the (positive) volume of the two-dimensional cell.
     constexpr FloatType volume2D() const { return cellMatrix().column(0).cross(cellMatrix().column(1)).length(); }

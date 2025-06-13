@@ -95,6 +95,9 @@ private:
 
     /// Opacity transfer function for volume rendering.
     DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const OpacityFunction>, opacityFunction, setOpacityFunction);
+
+    /// Controls the distance after which a 'opacity' fraction of light traveling through the volume is absorbed.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{1}, absorptionUnitDistance, setAbsorptionUnitDistance);
 };
 
 /**

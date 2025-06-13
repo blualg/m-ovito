@@ -44,9 +44,6 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
     QCoreApplication::setOrganizationDomain("ovito.org");
     QCoreApplication::setApplicationVersion(QStringLiteral(OVITO_VERSION_STRING));
 
-    // OVITO prefers the "C" locale over the system's default locale.
-    QLocale::setDefault(QLocale::c());
-
     // Register command line arguments.
     _cmdLineParser.setApplicationDescription(tr("OVITO - Open Visualization Tool"));
     registerCommandLineParameters(_cmdLineParser);

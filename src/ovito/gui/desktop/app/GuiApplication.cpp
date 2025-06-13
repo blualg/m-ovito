@@ -108,9 +108,6 @@ QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& 
         qtApp = StandaloneApplication::createQtApplicationImpl(supportGui, argc, argv);
     }
     else {
-        // OVITO prefers the "C" locale over the system's default locale.
-        QLocale::setDefault(QLocale::c());
-
 #ifndef Q_OS_MACOS
         QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::RoundPreferFloor);
 #endif

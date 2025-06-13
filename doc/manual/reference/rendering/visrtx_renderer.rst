@@ -118,7 +118,7 @@ Outlines
     Variable Width Mode
       In this mode, the outline width increases linearly from the minimum to the maximum width
       as the depth difference between overlapping objects varies from the minimum to the maximum depth difference.
-      When switching from Uniform Width Mode to Variable Width Mode, any missing values for
+      When switching from *Uniform Width Mode* to *Variable Width Mode*, any missing values for
       depth or line width will be automatically set to their default values.
 
   Custom Color

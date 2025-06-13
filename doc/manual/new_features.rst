@@ -12,24 +12,26 @@ Changelog
 Version 3.13.0 (xx-xxx-2025)
 ----------------------------
 
+- Added materials selection to :ref:`rendering.ospray_renderer`
 - :ref:`particles.modifiers.histogram` modifier: Added new option to select the bin normalization mode: (1) absolute count, (2) relative frequency, (3) probability density
 - :ref:`particles.modifiers.freeze_property` modifier: Added support for simulations with varying number of particles.
   The modifier now provides a new option to handle previously unknown particles that were not present in the initial simulation frame.
 - Allow for more flexible syntax in the Quantum Espresso file reader (`forum post <https://www.ovito.org/forum/topic/quantum-espresso-output/#postid-5009>`__)
 - |ovito-python| Add ``return_distances`` parameter to :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` method.
 - :ref:`Global attribute <usage.global_attributes>` identifiers starting with ``'.'`` are hidden in the GUI.
+- Fix :ref:`particles.modifiers.delete_selected_particles` modifier not working for mulitple :ref:`scene_objects.lines` or :ref:`scene_objects.vectors` objects in a pipeline.
 
 .. sidebar::
 
   * `Download this version <https://www.ovito.org/download_history/#3.12.4>`__
 
 ----------------------------
-Version 3.12.4 (xx-May-2025)
+Version 3.12.4 (26-May-2025)
 ----------------------------
 
-- :ref:`scene_objects.lines` objects: Fixed hover information display in status bar for wrapped line segments
-- Fix: (very rare) bug in 2d polygon tessellation code used by the surface mesh visual element, which could lead to an infinite loop in pathological cases
 - |ovito-pro| Fixed OSPRay library loading error on Linux: ``[ERROR] Load of ospray_module_denoiser failed``
+- :ref:`scene_objects.lines` objects: Fixed hover information display in status bar for PBC wrapped line segments
+- Fix: (very rare) bug in 2d polygon tessellation code used by the surface mesh visual element, which could lead to an infinite loop in pathological cases
 
 .. sidebar::
 

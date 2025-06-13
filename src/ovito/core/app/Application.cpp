@@ -238,8 +238,31 @@ bool Application::initialize(int& argc, char** argv)
         defaultQtMessageHandler = qInstallMessageHandler(qtMessageOutput);
     }
 
-    // Activate default "C" locale, which will be used to parse numbers in strings.
+    // Force "C" locale, which will be used to parse numbers, e.g. from simulation data files.
+    // QCoreApplication requires a UTF-8 locale and will print a warning to the terminal during initialization otherwise.
+    // Note: On macOS, C.UTF-8 is not available, so we use en_US.UTF-8 instead.
+#ifndef Q_OS_WIN
+#if defined(Q_OS_MACOS)
+    qputenv("LC_ALL", "en_US.UTF-8");
+#else
+    qputenv("LC_ALL", "C.UTF-8");
+#endif
+    // Activate the locale selected by the LC_ALL environment variable.
+    std::setlocale(LC_ALL, "");
+#else
+    // Reactivate the "C" locale (just in case someone else has changed it).
     std::setlocale(LC_ALL, "C");
+#endif
+    QLocale::setDefault(QLocale::c());
+
+    // Double-check if a "C"-like locale is active. Otherwise, parsing of floating-point numbers from text files
+    // using the sscanf() function may fail.
+    FloatType d;
+    if(sscanf("1234.56", FLOATTYPE_SCANF_STRING, &d) != 1 || d != FloatType(1234.56)) {
+        qWarning() << "Failed to set the C locale for parsing floating-point numbers with decimal points. "
+                "Please check your system's locale settings or set the LC_ALL environment variable to C.UTF-8. "
+                "Otherwise, OVITO is not able to read & write simulation data files correctly.";
+    }
 
     // Suppress console messages "qt.network.ssl: QSslSocket: cannot resolve ..."
     QLoggingCategory::setFilterRules(QStringLiteral("qt.network.ssl.warning=false"));
@@ -354,8 +377,17 @@ void Application::createQtApplication(bool supportGui)
             }
         }
 
-        // Restore default "C" locale, which, in the meantime, may have been changed by QCoreApplication.
-        std::setlocale(LC_NUMERIC, "C");
+        // OVITO prefers the "C" locale over the system's default locale.
+        QLocale::setDefault(QLocale::c());
+
+        // Double-check if a "C"-like locale is active. Otherwise, parsing of floating-point numbers from text files
+        // using the sscanf() function may fail.
+        FloatType d;
+        if(sscanf("1234.56", FLOATTYPE_SCANF_STRING, &d) != 1 || d != FloatType(1234.56)) {
+            throw Exception(tr("Failed to set the C locale for parsing floating-point numbers with decimal points. "
+                    "Please check your system's locale settings or set the LC_ALL environment variable to C.UTF-8. "
+                    "Otherwise, OVITO is not able to read & write simulation data files correctly."));
+        }
     }
     else {
         // If called from a worker thread, we need to perform the creation of the Qt app in the main thread
