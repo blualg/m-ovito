@@ -19,10 +19,10 @@ Version 3.13.0 (xx-xxx-2025)
 - Allow for more flexible syntax in the Quantum Espresso file reader (`forum post <https://www.ovito.org/forum/topic/quantum-espresso-output/#postid-5009>`__)
 - |ovito-python| Add ``return_distances`` parameter to :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` method.
 - :ref:`Global attribute <usage.global_attributes>` identifiers starting with ``'.'`` are hidden in the GUI.
-- Fix :ref:`particles.modifiers.delete_selected_particles` modifier not working for mulitple :ref:`scene_objects.lines` or :ref:`scene_objects.vectors` objects in a pipeline.
+- Fix :ref:`particles.modifiers.delete_selected_particles` modifier not working for multiple :ref:`scene_objects.lines` or :ref:`scene_objects.vectors` objects in a pipeline.
 - |ovito-pro| Fix bug with the :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_up` in the Python code generator
 - |ovito-pro| Cleanup redundant code output for visual elements in the Python code generator
-- |ovito-python| Make OVITO's objects hashable in Python
+- |ovito-python| Added ``__hash__`` method to OVITO objects
 
 .. sidebar::
 
