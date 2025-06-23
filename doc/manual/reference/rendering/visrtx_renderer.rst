@@ -92,6 +92,58 @@ Latitude & Longitude
 Brightness
   Irradiance of the direct light source (default value: 0.5).
 
+
+Material
+""""""""
+
+VisRTX renderer supports two material types: *Standard* and *Physically Based*.
+
+.. image:: /images/rendering/visrtx_renderer_standard_material.png
+    :width: 30%
+    :align: right
+
+Standard material
+#################
+
+The *Standard* corresponds to the *matte* material in the
+`ANARI specification <https://registry.khronos.org/ANARI/specs/1.0/ANARI-1.0.htm>`__,
+which reflects light uniformly into the hemisphere. It is suitable for most purposes.
+
+Physically based material
+#########################
+
+The *Physically Based* material offers more in-depth control over the material's appearance.
+It behaves similar to glTF's *pbrMetallicRoughness* material. It consists of a mixture of a metallic
+and a dielectric / diffuse material model. The ratio between both models is
+controlled using the *metalness* attribute.
+
+Roughness
+   Controls the variation of microfacets and thus how polished the metal will look (default value: 60%).
+   A value of 0% gives a perfectly polished mirror surface, while a value of 100% gives a completely rough surface.
+
+Metalness
+   A value in the range 0% to 100% controlling the mixture of dielectric / diffuse and metallic materials in the *Principled* material (default value: 0%).
+   A value of 0% corresponds to a fully dielectric / diffuse material, while a value of 1% gives a completely metallic material.
+   Due to limitations of the current VisRTX implementation, high metalness values may result in
+   dark reflections and/or visual artifacts.
+
+.. |material-image-1| image:: /images/rendering/visrtx_renderer_metal_material_r10-m0.png
+   :width: 100%
+   :align: middle
+.. |material-image-2| image:: /images/rendering/visrtx_renderer_metal_material_r30-m0.png
+   :width: 100%
+   :align: middle
+.. |material-image-3| image:: /images/rendering/visrtx_renderer_metal_material_r60-m0.png
+   :width: 100%
+   :align: middle
+
+============================= ============================= =============================
+|material-image-1|            |material-image-2|            |material-image-3|
+============================= ============================= =============================
+Roughness: 10%                Roughness: 30%                Roughness: 60%
+Metalness: 0%                 Metalness: 0%                 Metalness: 0%
+============================= ============================= =============================
+
 Post-processing effects
 """""""""""""""""""""""
 
