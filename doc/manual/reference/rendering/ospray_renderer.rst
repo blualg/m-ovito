@@ -65,8 +65,8 @@ Sun-sky light
   The radiance values are calculated using the Hošek-Wilkie sky model and solar radiance function.
   The zenith of the sky as well as the sun are positioned along the positive Z axis of the scene and are independent of the camera orientation.
 
-Material
-""""""""
+Material type
+"""""""""""""
 
 The OSPRay renderer supports two material types: *Standard* and *Principled*.
 These correspond to the *OBJ* and *Principled* materials described in the `documentation of OSPRay <https://www.ospray.org/documentation.html#materials>`__,
@@ -79,37 +79,25 @@ respectively.
 Standard material
 #################
 
-The *Standard* material type uses the *Phong* reflection model, which is suitable for most purposes. 
-It supports specular highlights, which are controlled by the *shininess* and *standard_specular_brightness*.
+The *Standard* material type is based on the Phong reflection model, which is suitable for many purposes.
+It supports specular highlights, controlled by the following parameters:
 
 Specular brightness
-  Controls the specular reflectivity of the material (default value: 2%).
+  The specular reflectivity of the material (default value: 2%).
 
 Shininess
-  This specular Phong exponent is usually in the range between 2.0 and 10000.0 (default value: 10.0).
+  Specular Phong exponent, which is usually in the range between 2.0 and 10000.0 (default value: 10.0).
 
 Principled material
 ###################
 
-The *Principled* material type is capable of reproducing a wide variety of materials (e.g., plastic, metal, glass)
-It consists of a mixture of a metallic and a dielectric / diffuse material model. The ratio between both models is 
+The *Principled* material type can reproduce a wide variety of materials, e.g. plastic, metal, and glass.
+It consists of a mixture of a metallic and a dielectric/diffuse material model. The relative contribution of these models is
 controlled using the *metalness* parameter.
-The `blender wiki <https://docs.blender.org/manual/en/latest/render/shader_nodes/shader/principled.html>`__ offers 
-a good visual overview over the effects of the different parameters going into this material model.
 
-Roughness
-   Controls the variation of microfacets and thus how polished the metal will look (default value: 30%).
-   A value of 0% gives a perfectly polished mirror surface, while a value of 100% gives a completely rough surface.
-
-Metalness
-   A value in the range 0% to 100% controlling the mixture of dielectric / diffuse and metallic materials in the *Principled* material (default value: 10%).
-   A value of 0% corresponds to a fully dielectric / diffuse material, while a value of 1% gives a completely metallic material.
-
-Specular brightness
-  Controls the specular reflectivity of the dielectric / diffuse component of the material (default value: 80%).
-
-Index of refraction
-  Controls the index of refraction (IoR) for specular reflection. For most materials, the IoR is between 1.0 (air) and 4.0 (germanium). (default value: 1.0)
+The table below shows how the *Principled* material behaves for different parameter settings.
+The `Blender wiki <https://docs.blender.org/manual/en/latest/render/shader_nodes/shader/principled.html>`__ also offers
+a good visual overview of the various parameters of the *Principled* material and how they affect the appearance.
 
 .. |material-image-1| image:: /images/rendering/ospray_renderer_princ_material_r10-m100-sb80-ior1.png
    :width: 100%
@@ -121,14 +109,27 @@ Index of refraction
    :width: 100%
    :align: middle
 
-============================= ============================= ============================= 
+============================= ============================= =============================
 |material-image-1|            |material-image-2|            |material-image-3|
 ============================= ============================= =============================
 Roughness: 10%                Roughness: 30%                Roughness: 50%
 Metalness: 100%               Metalness: 10%                Metalness: 30%
 Specular brightness 80%       Specular brightness 80%       Specular brightness 80%
 Index of refraction: 1.0      Index of refraction: 1.0      Index of refraction: 0.1
-============================= ============================= ============================= 
+============================= ============================= =============================
+
+Roughness
+  Controls the variation of microfacets and thus how polished the metal looks (default value: 30%).
+  A value of 0% gives a perfectly polished mirror surface, while a value of 100% gives a completely rough surface.
+
+Metalness
+  Gradually switches from a dielectric/diffuse material to a metallic material (default value: 10%).
+
+Specular brightness
+  Controls the specular reflectivity of the dielectric/diffuse component of the material (default value: 80%).
+
+Index of refraction
+  Controls the index of refraction (IoR) for specular reflection. For most materials, the IoR is between 1.0 (air) and 4.0 (germanium). Default value: 1.0
 
 Post-processing effects
 """""""""""""""""""""""
