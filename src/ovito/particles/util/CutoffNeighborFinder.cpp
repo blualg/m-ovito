@@ -93,6 +93,16 @@ CutoffNeighborFinder::CutoffNeighborFinder(FloatType cutoffRadius, BufferReadAcc
     qint64 binCount = (qint64)_binDim[0] * (qint64)_binDim[1] * (qint64)_binDim[2];
     OVITO_ASSERT(binCount > 0 && binCount < (qint64)0xFFFFFFFF);
 
+    // Deliberately choose a smaller bin size if the cutoff radius is as large as the entire simulation cell.
+    // This is to avoid having a single bin that contains all particles, which would lead to
+    // performance issues when searching for neighbors.
+    if(binCount == 1) {
+        _binDim[0] = _binDim[1] = _binDim[2] = 4;
+        if(simCell().is2D())
+            _binDim[2] = 1;
+        binCount = _binDim[0] * _binDim[1] * _binDim[2];
+    }
+
     // Compute bin cell.
     for(size_t i = 0; i < 3; i++) {
         binCell.column(i) = cellMatrix.column(i) / _binDim[i];

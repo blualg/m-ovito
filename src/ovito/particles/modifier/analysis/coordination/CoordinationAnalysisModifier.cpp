@@ -286,13 +286,23 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
         // Prepare the neighbor list.
         CutoffNeighborFinder neighborFinder(cutoff, particles->expectProperty(Particles::PositionProperty), simulationCell, selection);
 
+        // Estimate average number of particles within cutoff range.
+        double density = (double)neighborFinder.particleCount() / neighborFinder.simulationCellVolume();
+        double estimatedNeighborCount = density * (
+            !neighborFinder.simCell().is2D() ?
+                (FLOATTYPE_PI * cutoff * cutoff * cutoff * (4.0 / 3.0)) :
+                (FLOATTYPE_PI * cutoff * cutoff));
+        size_t chunkSize = 4096;
+        if(estimatedNeighborCount > 1.0)
+            chunkSize = std::clamp<size_t>((4096 * 32) / estimatedNeighborCount, 8, chunkSize);
+
         BufferWriteAccess<int32_t, access_mode::discard_write> coordinationData(coordinationNumbers);
         BufferReadAccess<int32_t> particleTypeData(particleTypes);
         BufferReadAccess<SelectionIntType> selectionData(selection);
 
         // Parallel calculation loop:
         EnumerableThreadSpecific<std::vector<size_t>> threadLocalRDFs;
-        parallelForInnerOuter(particleCount, 4096, progress, [&](auto&& iterate) {
+        parallelForInnerOuter(particleCount, chunkSize, progress, [&](auto&& iterate) {
             std::vector<size_t>& threadLocalRDF = threadLocalRDFs.create(binCount * rdfCount, 0);
             iterate([&](size_t i) {
                 int coordination = 0;
