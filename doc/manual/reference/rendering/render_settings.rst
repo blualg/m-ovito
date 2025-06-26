@@ -65,8 +65,9 @@ Save to file
   in the frame buffer window. Use the :guilabel:`Choose...` button to pick an output filename.
   When rendering an animation sequence, all animation frames will be written to a single movie
   file if you pick a video format such as AVI or MPEG. If you choose an image format (e.g. PNG, JPEG),
-  OVITO will instead produce a sequence of image files, one per frame. In this case, the frame number will automatically 
-  be appended to the base filename you picked.
+  OVITO will instead produce a sequence of image files, one per frame. In this case, the frame number will 
+  automatically be appended to the base filename you provide. Alternatively, if the filename contains a "*"
+  wildcard character, it will be replaced by the frame number.
 
 Background
   You can choose between a uniform background color and a transparent background.

@@ -151,6 +151,23 @@ Future<void> RenderSettings::render(const ViewportConfiguration& viewportConfigu
 
     return render(std::move(viewportLayout), animationSettings, outputFrameBuffer);
 }
+/******************************************************************************
+ * Formats the image filename and replaces whildcards with the current frame number.
+ ******************************************************************************/
+QString RenderSettings::formatImageFilename(const QString& filename, int frameNumber)
+{
+    QFileInfo fileInfo{filename};
+    if(fileInfo.completeBaseName().contains("*")) {
+        // Wildcard - replace with frame number
+        return fileInfo.path() + QChar('/') + fileInfo.completeBaseName().replace("*", QString("%1").arg(frameNumber, 4, 10, QChar('0'))) +
+               QChar('.') + fileInfo.suffix();
+    }
+    else {
+        // No wildcard - use old formatting
+        return fileInfo.path() + QChar('/') + fileInfo.baseName() + QString("%1.").arg(frameNumber, 4, 10, QChar('0')) +
+               fileInfo.completeSuffix();
+    }
+}
 
 /******************************************************************************
 * This is the high-level rendering function, which invokes the renderer to
@@ -282,8 +299,10 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
 
             // Append frame number to filename when rendering an animation.
             if(renderingRangeType() != RenderSettings::CURRENT_FRAME && renderingRangeType() != RenderSettings::CUSTOM_FRAME) {
-                QFileInfo fileInfo(outputFilename);
-                outputFilename = fileInfo.path() + QChar('/') + fileInfo.baseName() + QString("%1.").arg(frameNumber, 4, 10, QChar('0')) + fileInfo.completeSuffix();
+                // Format output filename.
+                qDebug() << "imageFilename" << outputFilename;
+                outputFilename = formatImageFilename(outputFilename, frameNumber);
+                qDebug() << "outputFilename" << outputFilename;
 
                 // Check for existing image file and skip frame.
                 if(skipExistingImages() && QFileInfo(outputFilename).isFile())
