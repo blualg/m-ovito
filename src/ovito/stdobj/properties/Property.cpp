@@ -492,4 +492,21 @@ QString Property::makePropertyNameValid(const QString& name)
     return mangledName;
 }
 
+/******************************************************************************
+* Performs name mangling if necessary to turn the given name into a valid vector property component name.
+******************************************************************************/
+QString Property::makeComponentNameValid(const QString& name)
+{
+    QString mangledName = name.trimmed();
+    mangledName.replace(QChar('.'), QChar('_'));
+    mangledName.replace(QChar('/'), QChar('_'));
+    mangledName.replace(QChar(':'), QChar('_'));
+    mangledName.replace(QChar(' '), QChar('_'));
+    // Remove all underscores from the end of the name, because they interfere with
+    // the "underscore notation" in OVITO's Python API (PropertyContainer dict lookup).
+    while(mangledName.endsWith(QChar('_')))
+        mangledName.chop(1);
+    return mangledName;
+}
+
 }   // End of namespace

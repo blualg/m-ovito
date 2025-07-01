@@ -24,6 +24,7 @@ Version 3.13.0 (xx-xxx-2025)
 - |ovito-pro| Cleanup redundant code output for visual elements in the Python code generator
 - |ovito-python| Added ``__hash__`` method to OVITO objects
 - Allow wildcards in the output image filename when rendering an animation. "*" is replaced with the current frame number.
+- Aspherix file reader: Added support for data arrays with named vector components
 
 .. sidebar::
 
