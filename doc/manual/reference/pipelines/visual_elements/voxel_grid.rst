@@ -45,6 +45,8 @@ using a modifier in the pipeline (only in *boundary* representation mode).
 Parameters
 """"""""""
 
+.. _visual_elements.voxel_grid.boundary_parameters:
+
 Boundary representation
 =======================
 
@@ -68,6 +70,8 @@ Color mapping
 .. image:: /images/visual_elements/voxel_grid_panel_volume.jpg
   :width: 30%
   :align: right
+
+.. _visual_elements.voxel_grid.volume_parameters:
 
 Volume representation
 =====================

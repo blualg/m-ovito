@@ -9,23 +9,68 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.13.0>`__
 
 ----------------------------
-Version 3.13.0 (xx-xxx-2025)
+Version 3.13.0 (03-Jul-2025)
 ----------------------------
 
-- |ovito-pro| Added materials selection to :ref:`rendering.ospray_renderer`
-- |ovito-pro| Switched to physically-based material model in :ref:`rendering.visrtx_renderer`
-- :ref:`particles.modifiers.histogram` modifier: Added new option to select the bin normalization mode: (1) absolute count, (2) relative frequency, (3) probability density
-- :ref:`particles.modifiers.freeze_property` modifier: Added support for simulations with varying number of particles.
-  The modifier now provides a new option to handle previously unknown particles that were not present in the initial simulation frame.
-- Allow for more flexible syntax in the Quantum Espresso file reader (`forum post <https://www.ovito.org/forum/topic/quantum-espresso-output/#postid-5009>`__)
-- |ovito-python| Add ``return_distances`` parameter to :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` method.
-- :ref:`Global attribute <usage.global_attributes>` identifiers starting with ``'.'`` are hidden in the GUI.
-- Fix :ref:`particles.modifiers.delete_selected_particles` modifier not working for multiple :ref:`scene_objects.lines` or :ref:`scene_objects.vectors` objects in a pipeline.
+- |ovito-pro| :ref:`New modifier <particles.modifiers.structure_factor>` for calculating the `structure factor <https://en.wikipedia.org/wiki/Structure_factor>`__ of a particle system:
+
+  .. image:: /images/modifiers/structure_factor_debye-direct-comparison_cut.png
+    :width: 50%
+    :align: center
+
+- The :ref:`particles.modifiers.histogram` modifier received a new option for selecting the bin **normalization mode**:
+
+    1. **Absolute count**: Output the number of elements in each bin.
+    2. **Relative frequency**: Normalize the bin counts to the total number of input elements. Useful for comparing histograms with different numbers of input elements.
+    3. **Probability density**: Normalize the bin counts to the total number of input elements *and* the bin width. This option is useful for comparing histograms with different bin widths.
+
+- |ovito-pro| The :ref:`rendering.ospray_renderer` and :ref:`rendering.visrtx_renderer` now can do volume renderings of
+  :ref:`voxel grids <scene_objects.voxel_grid>`, which lets you visualize volumetric data such as electron density
+  or coarse-grained particle property fields.
+  For this, the :ref:`visual_elements.voxel_grid` visual element has been extended with a new *Volume* representation mode
+  and an editor for the :ref:`opacity transfer function <visual_elements.voxel_grid.volume_parameters>`:
+
+  .. image:: /images/visual_elements/voxel_grid_example_volume_with_transfer.png
+    :width: 80%
+    :align: center
+
+- |ovito-pro| The :ref:`rendering.ospray_renderer` now lets you choose a material shading model.
+  The new *Principled* material implements a physically-based shading model for scene objects,
+  which allows for more realistic rendering of materials with different surface properties (e.g. plastic, metal, glass):
+
+  .. image:: /images/rendering/ospray_renderer_princ_material_r10-m100-sb80-ior1.png
+    :width: 30%
+
+  .. image:: /images/rendering/ospray_renderer_princ_material_r50-m30-sb80-ior0pt1.png
+    :width: 30%
+
+- |ovito-pro| The :ref:`rendering.visrtx_renderer` now uses a physically-based shading model for scene objects,
+  which also allows for more realistic rendering of materials with different surface properties (e.g. metallic materials).
+
+  .. image:: /images/rendering/visrtx_renderer_metal_material_r60-m0.png
+    :width: 30%
+
+  .. image:: /images/rendering/visrtx_renderer_metal_material_r30-m0.png
+    :width: 30%
+
+- The :ref:`particles.modifiers.freeze_property` modifier can now gracefully handle :ref:`simulations with varying number of particles <particles.modifiers.freeze_property.varying_particle_numbers>`.
+  It provides a new option to accept unknown particles that were not present in the initial simulation frame.
+
+- Aspherix file reader: Added support for data arrays with vector component names
+- Quantum Espresso file reader: Support more flexible file syntax (see `forum discussion <https://www.ovito.org/forum/topic/quantum-espresso-output/#postid-5009>`__)
+- Fix: :ref:`particles.modifiers.delete_selected_particles` modifier not working for multiple :ref:`scene_objects.lines` or :ref:`scene_objects.vectors` objects in the data collection.
+- :ref:`Global attribute <usage.global_attributes>` identifiers starting with a ``.`` are now hidden in the :ref:`data inspector panel <data_inspector.attributes>`.
 - |ovito-pro| Fix bug with the :py:attr:`~ovito.vis.ViewportOverlayInterface.Canvas.camera_up` in the Python code generator
 - |ovito-pro| Cleanup redundant code output for visual elements in the Python code generator
-- |ovito-python| Added ``__hash__`` method to OVITO objects
-- Allow wildcards in the output image filename when rendering an animation. "*" is replaced with the current frame number.
-- Aspherix file reader: Added support for data arrays with named vector components
+- |ovito-python| The :py:meth:`Viewport.render_anim() <ovito.vis.Viewport.render_anim>` method now gives you more control over the generated filename sequence
+  when rendering an image file series. The wildcard character ``'*'`` in the *filename* parameter gets replaced with the current numeric frame number::
+
+    vp.render_anim("image_*.png", size=(640,480))
+
+- |ovito-python| Added ``return_distances`` parameter to :py:meth:`ovito.data.SurfaceMesh.locate_point() <ovito.data.SurfaceMesh.locate_point>` method.
+- |ovito-python| Added ``__hash__`` method to OVITO object classes, which allows using OVITO objects as dictionary keys
+- |ovito-python| Fixed a `locale issue <https://matsci.org/t/accessing-python-lammps-instance-from-ovito/63850/8>`__ on Linux systems where the ``LC_*`` environment variables are set to a non-English locale.
+- |ovito-python| Added preliminary API for computing 3D Delaunay tessellations: :py:class:`ovito.data.DelaunayTessellation`
 
 .. sidebar::
 

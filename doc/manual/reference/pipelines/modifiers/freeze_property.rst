@@ -21,6 +21,8 @@ By default, the modifier samples the input property at frame 0 of the animation.
   Make sure all other modifiers that dynamically remove particles are placed *after* the *Freeze Property* modifier. That's because
   the *Freeze Property* modifier needs to "see" all particles in the input data to copy their property values.
 
+.. _particles.modifiers.freeze_property.varying_particle_numbers:
+
 Simulations with changing particle numbers
 """"""""""""""""""""""""""""""""""""""""""
 
