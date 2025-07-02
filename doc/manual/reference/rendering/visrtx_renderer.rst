@@ -11,7 +11,7 @@ global illumination effects and shadows. Compared to CPU-based ray-tracing
 engines like :ref:`Tachyon <rendering.tachyon_renderer>` or :ref:`OSPRay <rendering.ospray_renderer>`,
 this renderer can achieve near real-time performance on modern GPU hardware.
 
-**VisRTX requires NVIDIA hardware with CUDA support and a current NVIDIA graphics driver (CUDA 12.0+).**
+**VisRTX requires NVIDIA hardware with CUDA support and a current NVIDIA graphics driver (CUDA 12.6+).**
 The renderer is not available on the macOS platform and doesn't work on *Windows Subsystem for Linux* (WSL),
 because this environment lacks the NVIDIA OptiX™ driver components required by VisRTX.
 
@@ -44,7 +44,7 @@ Parameters
 ----------
 
 .. image:: /images/rendering/visrtx_renderer_panel.*
-  :width: 30%
+  :width: 35%
   :align: right
 
 Quality settings
@@ -96,10 +96,9 @@ Brightness
 Material
 """"""""
 
-Since OVITO 3.13 the VisRTX renderer uses a physically-based material model to render scene objects.
-It behaves similar to glTF's "*pbrMetallicRoughness*" material and consists of a mixture of a metallic
-and a dielectric/diffuse material model. The ratio between both models is
-determined by the *Metalness* parameter.
+The VisRTX renderer uses a physically-based material model to render scene objects since OVITO 3.13.
+This model behaves similar to glTF's "*pbrMetallicRoughness*" material and consists of a mixture of a metallic
+and a dielectric/diffuse component. The ratio between both contributions is determined by the *Metalness* parameter.
 
 Roughness
    Controls the variation of microfacets and thus how polished the metal will look (default value: 100%).
