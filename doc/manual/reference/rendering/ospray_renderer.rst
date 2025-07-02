@@ -72,6 +72,8 @@ The OSPRay renderer supports two material types: *Standard* and *Principled*.
 These correspond to the *OBJ* and *Principled* materials described in the `documentation of OSPRay <https://www.ospray.org/documentation.html#materials>`__,
 respectively.
 
+The selected material type and its settings are applied globally to all scene objects.
+
 .. image:: /images/rendering/ospray_renderer_standard_material.png
     :width: 30%
     :align: right

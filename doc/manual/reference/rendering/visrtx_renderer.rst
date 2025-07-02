@@ -100,6 +100,8 @@ The VisRTX renderer uses a physically-based material model to render scene objec
 This model behaves similar to glTF's "*pbrMetallicRoughness*" material and consists of a mixture of a metallic
 and a dielectric/diffuse component. The ratio between both contributions is determined by the *Metalness* parameter.
 
+The material settings are applied globally to all scene objects.
+
 Roughness
    Controls the variation of microfacets and thus how polished the metal will look (default value: 100%).
    A value of 0% gives a perfectly polished mirror surface, while a value of 100% gives a completely matte surface.
