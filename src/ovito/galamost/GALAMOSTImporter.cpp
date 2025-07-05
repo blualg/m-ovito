@@ -290,7 +290,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                     generateBondPeriodicImageProperty();
                 }
                 else {
-                    xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
+                    xml.skipCurrentElement();
                 }
             }
         }
