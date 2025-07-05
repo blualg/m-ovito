@@ -6,6 +6,17 @@ Changelog
 
 .. sidebar::
 
+  * `Download this version <https://www.ovito.org/download_history/#3.13.1>`__
+
+----------------------------
+Version 3.13.1 (xx-xxx-2025)
+----------------------------
+
+- GALAMOST file reader: Added support for ``<force>`` and ``<virial>`` tags
+- Added usage example to :ref:`Spatial Binning <particles.modifiers.bin_and_reduce.type_counting>` modifier documentation, demonstrating how to compute the local stoichiometry of a particle system.
+
+.. sidebar::
+
   * `Download this version <https://www.ovito.org/download_history/#3.13.0>`__
 
 ----------------------------
