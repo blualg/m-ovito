@@ -11,7 +11,7 @@ global illumination effects and shadows. Compared to CPU-based ray-tracing
 engines like :ref:`Tachyon <rendering.tachyon_renderer>` or :ref:`OSPRay <rendering.ospray_renderer>`,
 this renderer can achieve near real-time performance on modern GPU hardware.
 
-**VisRTX requires NVIDIA hardware with CUDA support and a current NVIDIA graphics driver (CUDA 12.0+).**
+**VisRTX requires NVIDIA hardware with CUDA support and a current NVIDIA graphics driver (CUDA 12.6+).**
 The renderer is not available on the macOS platform and doesn't work on *Windows Subsystem for Linux* (WSL),
 because this environment lacks the NVIDIA OptiX™ driver components required by VisRTX.
 
@@ -44,7 +44,7 @@ Parameters
 ----------
 
 .. image:: /images/rendering/visrtx_renderer_panel.*
-  :width: 30%
+  :width: 35%
   :align: right
 
 Quality settings
@@ -91,6 +91,43 @@ Latitude & Longitude
 
 Brightness
   Irradiance of the direct light source (default value: 0.5).
+
+
+Material
+""""""""
+
+The VisRTX renderer uses a physically-based material model to render scene objects since OVITO 3.13.
+This model behaves similar to glTF's "*pbrMetallicRoughness*" material and consists of a mixture of a metallic
+and a dielectric/diffuse component. The ratio between both contributions is determined by the *Metalness* parameter.
+
+The material settings are applied globally to all scene objects.
+
+Roughness
+   Controls the variation of microfacets and thus how polished the metal will look (default value: 100%).
+   A value of 0% gives a perfectly polished mirror surface, while a value of 100% gives a completely matte surface.
+
+Metalness
+   A value in the range 0-100% controlling the mixture of dielectric/diffuse and metallic model contributions.
+   The default value of 0% corresponds to a fully dielectric/diffuse material, while a value of 100% gives a completely metallic material.
+   Due to limitations of the current VisRTX implementation, high metalness values may result in
+   dark reflections and/or visual artifacts.
+
+.. |material-image-1| image:: /images/rendering/visrtx_renderer_metal_material_r10-m0.png
+   :width: 100%
+   :align: middle
+.. |material-image-2| image:: /images/rendering/visrtx_renderer_metal_material_r30-m0.png
+   :width: 100%
+   :align: middle
+.. |material-image-3| image:: /images/rendering/visrtx_renderer_metal_material_r60-m0.png
+   :width: 100%
+   :align: middle
+
+============================= ============================= =============================
+|material-image-1|            |material-image-2|            |material-image-3|
+============================= ============================= =============================
+Roughness: 10%                Roughness: 30%                Roughness: 60%
+Metalness: 0%                 Metalness: 0%                 Metalness: 0%
+============================= ============================= =============================
 
 Post-processing effects
 """""""""""""""""""""""

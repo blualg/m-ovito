@@ -78,7 +78,7 @@ private:
     /// Controls the triclinic data file format.
     /// If true, the triclinic box is restricted (old lammps format).
     /// If false, the new triclinic box format is used.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, restrictedTriclinic, setRestrictedTriclinic, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, restrictedTriclinic, setRestrictedTriclinic, PROPERTY_FIELD_MEMORIZE);
 };
 
 }   // End of namespace

@@ -387,8 +387,19 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
         else convertToDataType = Property::FloatDefault;
     }
 
+    // Parse optional list of vector component names.
+    QStringList componentNames;
+    for(int c = 0; c < numComponents; ++c) {
+        QString componentName = xml.attributes().value(QStringLiteral("ComponentName%1").arg(c)).toString();
+        if(componentName.isEmpty()) {
+            componentNames.clear();
+            break;
+        }
+        componentNames.push_back(Property::makeComponentNameValid(componentName));
+    }
+
     // Create destination property. Initially with zero elements, will be resized later when the size of the VTK data array is known.
-    PropertyPtr property = DataOORef<Property>::create(DataBuffer::Uninitialized, 0, convertToDataType, numComponents, Property::makePropertyNameValid(name));
+    PropertyPtr property = DataOORef<Property>::create(DataBuffer::Uninitialized, 0, convertToDataType, numComponents, Property::makePropertyNameValid(name), 0, std::move(componentNames));
 
     // Delegate parsing of payload to sub-routine.
     if(!parseVTKDataArray(property.get(), vtkHeaderType, xml))

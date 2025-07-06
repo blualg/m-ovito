@@ -267,6 +267,17 @@ Property* ParaViewVTPParticleParticleContactsImporter::FrameLoader::createLinesP
     int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
     auto name = xml.attributes().value("Name");
 
+    // Parse optional list of vector component names.
+    QStringList componentNames;
+    for(int c = 0; c < numComponents; ++c) {
+        QString componentName = xml.attributes().value(QStringLiteral("ComponentName%1").arg(c)).toString();
+        if(componentName.isEmpty()) {
+            componentNames.clear();
+            break;
+        }
+        componentNames.push_back(Property::makeComponentNameValid(componentName));
+    }
+
     if(name.compare(QLatin1String("Points"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
         return lines->createProperty(propertyAccessMode, Lines::PositionProperty);
     }
@@ -289,7 +300,7 @@ Property* ParaViewVTPParticleParticleContactsImporter::FrameLoader::createLinesP
         return lines->createProperty(propertyAccessMode, QStringLiteral("Torque"), Property::FloatDefault, numComponents, QStringList() << "X" << "Y" << "Z");
     }
     else if(name.compare(QLatin1String("particle_history"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-        return lines->createProperty(propertyAccessMode, QStringLiteral("Particle History"), Property::FloatDefault, numComponents);
+        return lines->createProperty(propertyAccessMode, QStringLiteral("Particle History"), Property::FloatDefault, numComponents, std::move(componentNames));
     }
     else if(name.compare(QLatin1String("id1"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
         return lines->createProperty(propertyAccessMode, QStringLiteral("Particle Identifier 1"), Property::IntIdentifier, numComponents);
@@ -298,7 +309,7 @@ Property* ParaViewVTPParticleParticleContactsImporter::FrameLoader::createLinesP
         return lines->createProperty(propertyAccessMode, QStringLiteral("Particle Identifier 2"), Property::IntIdentifier, numComponents);
     }
     else {
-        return lines->createProperty(propertyAccessMode, Property::makePropertyNameValid(name.toString()), Property::FloatDefault, numComponents);
+        return lines->createProperty(propertyAccessMode, Property::makePropertyNameValid(name.toString()), Property::FloatDefault, numComponents, std::move(componentNames));
     }
 }
 

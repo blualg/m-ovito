@@ -255,7 +255,18 @@ Property* ParaViewVTIGridImporter::FrameLoader::createGridPropertyForDataArray(V
     int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
     auto name = xml.attributes().value("Name");
 
-    return gridObj->createProperty(Property::makePropertyNameValid(name.toString()), Property::FloatDefault, numComponents);
+    // Parse optional list of vector component names.
+    QStringList componentNames;
+    for(int c = 0; c < numComponents; ++c) {
+        QString componentName = xml.attributes().value(QStringLiteral("ComponentName%1").arg(c)).toString();
+        if(componentName.isEmpty()) {
+            componentNames.clear();
+            break;
+        }
+        componentNames.push_back(Property::makeComponentNameValid(componentName));
+    }
+
+    return gridObj->createProperty(Property::makePropertyNameValid(name.toString()), Property::FloatDefault, numComponents, std::move(componentNames));
 }
 
 }   // End of namespace

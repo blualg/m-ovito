@@ -166,14 +166,20 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                 else if(xml.name().compare(QStringLiteral("mass")) == 0) {
                     parsePropertyData(xml, particles()->createProperty(Particles::MassProperty));
                 }
+                else if(xml.name().compare(QStringLiteral("force")) == 0) {
+                    parsePropertyData(xml, particles()->createProperty(Particles::ForceProperty));
+                }
                 else if(xml.name().compare(QStringLiteral("diameter")) == 0) {
                     Property* property = parsePropertyData(xml, particles()->createProperty(Particles::RadiusProperty));
-                    // Convert diamater values into radii.
+                    // Convert diameter values into radii.
                     for(auto& radius : BufferWriteAccess<GraphicsFloatType, access_mode::read_write>(property))
                         radius /= 2;
                 }
                 else if(xml.name().compare(QStringLiteral("charge")) == 0) {
                     parsePropertyData(xml, particles()->createProperty(Particles::ChargeProperty));
+                }
+                else if(xml.name().compare(QStringLiteral("virial")) == 0) {
+                    parsePropertyData(xml, particles()->createProperty(QStringLiteral("Virial"), Property::FloatDefault));
                 }
                 else if(xml.name().compare(QStringLiteral("quaternion")) == 0) {
                     Property* property = parsePropertyData(xml, particles()->createProperty(Particles::OrientationProperty));
@@ -284,7 +290,7 @@ void GALAMOSTImporter::FrameLoader::loadFile()
                     generateBondPeriodicImageProperty();
                 }
                 else {
-                    xml.raiseError(tr("Unexpected XML element <%1>.").arg(xml.name().toString()));
+                    xml.skipCurrentElement();
                 }
             }
         }

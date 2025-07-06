@@ -249,6 +249,9 @@ public:
     /// Performs name mangling if necessary to turn the given name into a valid property name.
     static QString makePropertyNameValid(const QString& name);
 
+    /// Performs name mangling if necessary to turn the given name into a valid vector property component name.
+    static QString makeComponentNameValid(const QString& name);
+
 protected:
 
     /// Saves the class' contents to the given stream.

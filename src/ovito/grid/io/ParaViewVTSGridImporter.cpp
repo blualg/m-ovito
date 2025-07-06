@@ -192,8 +192,19 @@ void ParaViewVTSGridImporter::FrameLoader::loadFile()
                     // Parse name of grid property.
                     auto name = xml.attributes().value("Name");
 
+                    // Parse optional list of vector component names.
+                    QStringList componentNames;
+                    for(int c = 0; c < numComponents; ++c) {
+                        QString componentName = xml.attributes().value(QStringLiteral("ComponentName%1").arg(c)).toString();
+                        if(componentName.isEmpty()) {
+                            componentNames.clear();
+                            break;
+                        }
+                        componentNames.push_back(Property::makeComponentNameValid(componentName));
+                    }
+
                     // Create voxel grid property that receives the values.
-                    Property* property = gridObj->createProperty(Property::makePropertyNameValid(name.toString()), dataType, numComponents);
+                    Property* property = gridObj->createProperty(Property::makePropertyNameValid(name.toString()), dataType, numComponents, std::move(componentNames));
 
                     // Parse values from XML file.
                     if(!ParaViewVTPMeshImporter::parseVTKDataArray(property, vtkHeaderType, xml))

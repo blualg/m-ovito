@@ -297,6 +297,17 @@ Property* ParaViewVTPParticleImporter::FrameLoader::createPropertyForDataArray(Q
     int numComponents = std::max(1, xml.attributes().value("NumberOfComponents").toInt());
     auto name = xml.attributes().value("Name");
 
+    // Parse optional list of vector component names.
+    QStringList componentNames;
+    for(int c = 0; c < numComponents; ++c) {
+        QString componentName = xml.attributes().value(QStringLiteral("ComponentName%1").arg(c)).toString();
+        if(componentName.isEmpty()) {
+            componentNames.clear();
+            break;
+        }
+        componentNames.push_back(Property::makeComponentNameValid(componentName));
+    }
+
     if(!_isBodiesFile) {
         if(name.compare(QLatin1String("connectivity"), Qt::CaseInsensitive) == 0 || name.compare(QLatin1String("offsets"), Qt::CaseInsensitive) == 0) {
             return nullptr;
@@ -340,7 +351,7 @@ Property* ParaViewVTPParticleImporter::FrameLoader::createPropertyForDataArray(Q
             return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Density"), Property::FloatDefault);
         }
         else if(name.compare(QLatin1String("tensor"), Qt::CaseInsensitive) == 0 && numComponents == 9) {
-            return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Tensor"), Property::FloatDefault, 9);
+            return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Tensor"), Property::FloatDefault, 9, std::move(componentNames));
         }
         else if(name.compare(QLatin1String("shapex"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
             vectorComponent = 0;
@@ -368,29 +379,29 @@ Property* ParaViewVTPParticleImporter::FrameLoader::createPropertyForDataArray(Q
             return nullptr;
         }
         else if(name.compare(QLatin1String("points"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-            return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Position"), Property::FloatDefault, numComponents);
+            return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Position"), Property::FloatDefault, numComponents, std::move(componentNames));
         }
         else if(name.compare(QLatin1String("f"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-            return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Force"), Property::FloatDefault, numComponents);
+            return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Force"), Property::FloatDefault, numComponents, std::move(componentNames));
         }
         else if(name.compare(QLatin1String("v"), Qt::CaseInsensitive) == 0 && numComponents == 3) {
-            return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Velocity"), Property::FloatDefault, numComponents);
+            return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Velocity"), Property::FloatDefault, numComponents, std::move(componentNames));
         }
         else if(name.compare(QLatin1String("atomtype"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
             return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Atom Type"), Property::Int32, numComponents);
         }
         else if(name.compare(QLatin1String("nspheres"), Qt::CaseInsensitive) == 0 || name.compare(QLatin1String("type"), Qt::CaseInsensitive) == 0) {
-            return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, name, Property::Int32, numComponents);
+            return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, name, Property::Int32, numComponents, std::move(componentNames));
         }
         else if(name.compare(QLatin1String("id"), Qt::CaseInsensitive) == 0 && numComponents == 1) {
-            Property* idProperty = container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Identifier"), Property::IntIdentifier, numComponents);
+            Property* idProperty = container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, QStringLiteral("Identifier"), Property::IntIdentifier, numComponents, std::move(componentNames));
             if(DataTable* bodiesTable = dynamic_object_cast<DataTable>(container))
                 bodiesTable->setX(idProperty);
             return idProperty;
         }
     }
 
-    return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::makePropertyNameValid(name.toString()), Property::FloatDefault, numComponents);
+    return container->createProperty(preserveExistingData ? DataBuffer::Initialized : DataBuffer::Uninitialized, Property::makePropertyNameValid(name.toString()), Property::FloatDefault, numComponents, std::move(componentNames));
 }
 
 /******************************************************************************

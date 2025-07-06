@@ -94,6 +94,27 @@ void VoxelGridVis::loadFromStreamComplete(ObjectLoadStream& stream)
 }
 
 /******************************************************************************
+* Returns the opacity mapping function after making it mutable.
+******************************************************************************/
+OpacityFunction* VoxelGridVis::mutableOpacityFunction()
+{
+    const OpacityFunction* func = opacityFunction();
+    if(!func) {
+        setOpacityFunction(DataOORef<OpacityFunction>::create());
+        return const_cast<OpacityFunction*>(opacityFunction());
+    }
+    if(func->isSafeToModify())
+        return const_cast<OpacityFunction*>(func);
+
+    DataOORef<OpacityFunction> newFunc = DataOORef<OpacityFunction>::makeCopy(func);
+    setOpacityFunction(std::move(newFunc));
+    OVITO_ASSERT(!newFunc);
+    OVITO_ASSERT(opacityFunction()->isSafeToModify());
+
+    return const_cast<OpacityFunction*>(opacityFunction());
+}
+
+/******************************************************************************
 * Computes the bounding box of the displayed data.
 ******************************************************************************/
 Box3 VoxelGridVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
@@ -773,7 +794,11 @@ void VoxelGridVis::renderGridVolume(FrameGraph& frameGraph, const SceneNode* sce
     volume->setFieldData(std::move(volumeData), pseudoColorPropertyComponent);
     volume->setDomain(cellMatrix);
     volume->setDimensions(newGridDims);
-    volume->setAbsorptionUnitDistance(absorptionUnitDistance());
+
+    constexpr FloatType unitDistanceFraction = 0.05; // Fraction of volume diameter to use as default unit distance for absorption.
+    volume->setAbsorptionUnitDistance(
+        absorptionUnitDistance() != 0 ? absorptionUnitDistance() :
+        unitDistanceFraction * (cellMatrix.column(0) + cellMatrix.column(1) + cellMatrix.column(2)).length());
 
     // Add the volume to the frame graph.
     frameGraph.addCommandGroup(FrameGraph::SceneLayer).addPrimitive(std::move(volume), sceneNode->getWorldTransform(frameGraph.time()), boundingBox, sceneNode);

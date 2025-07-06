@@ -63,6 +63,9 @@ public:
     /// Sets the transparency parameter.
     void setTransparency(FloatType t) { if(transparencyController()) transparencyController()->setFloatValue(AnimationTime(0), t); }
 
+    /// Returns the opacity mapping function after making it mutable.
+    OpacityFunction* mutableOpacityFunction();
+
 protected:
 
     /// This method is called once for this object after it has been completely loaded from a stream.
@@ -97,7 +100,7 @@ private:
     DECLARE_MODIFIABLE_REFERENCE_FIELD(DataOORef<const OpacityFunction>, opacityFunction, setOpacityFunction);
 
     /// Controls the distance after which a 'opacity' fraction of light traveling through the volume is absorbed.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{1}, absorptionUnitDistance, setAbsorptionUnitDistance);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{0}, absorptionUnitDistance, setAbsorptionUnitDistance);
 };
 
 /**
