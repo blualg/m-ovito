@@ -31,7 +31,9 @@ Element-wise RDFs
   :align: right
 
 The option :guilabel:`Compute partial RDFs` lets the modifier compute separate radial distribution functions
-for all pair-wise combinations of particle types or chemical elements. The computed partial RDFs will be normalized such that the
+for all pair-wise combinations of particle types.
+
+The computed partial RDFs are normalized such that the
 summation of the partial RDFs, weighted by the product of the two corresponding elemental concentrations, yields the total
 RDF. For example, for a binary system with two particle species :math:`\alpha` and :math:`\beta`,
 the modifier computes a set of three partials functions :math:`g_{\alpha \alpha}`, :math:`g_{\alpha \beta}`
@@ -43,13 +45,18 @@ Here, :math:`c_{\alpha}` and :math:`c_{\beta}` denote the concentrations of the 
 species in the system and the factor 2 in the mixed term appears due to :math:`g_{\alpha \beta}(r)` and
 :math:`g_{\beta \alpha}(r)` being identical.
 
-Only selected particles
-"""""""""""""""""""""""
+Computing RDF for a subset of particles
+"""""""""""""""""""""""""""""""""""""""
 
-The option :guilabel:`Use only selected particles` restricts the calculation to the currently selected particles.
-This is useful if you want to calculate the RDF only for a specific part of a system. If this option is enabled, unselected particles
-will be treated as if they did not exist during the calculation. Their ``Coordination`` values will be set to zero,
-they will not be counted in the coordination numbers of other particles, and they are ignored in the normalization of the RDF.
+The option :guilabel:`Use only selected particles` restricts the calculation to the currently selected subset of particles.
+
+This is useful if you want to calculate the RDF only for a part of the system or certain particle species.
+If this option is enabled, unselected particles will be treated as if they did not exist during the calculation. Their ``Coordination`` values will be set to zero,
+they will not be counted in the coordination numbers of other particles, and they are ignored in the normalization of the RDF(s).
+
+If the option :guilabel:`Compute partial RDFs` is enabled too, the modifier will skip element combinations for which no particles are selected,
+i.e., for which a partial RDF would be zero.
+
 
 Time-averaged RDF
 """""""""""""""""
