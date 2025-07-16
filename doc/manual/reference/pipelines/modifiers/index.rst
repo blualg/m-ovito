@@ -23,6 +23,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.dislocation_analysis`            Identifies dislocation defects in a crystal.
   :ref:`particles.modifiers.displacement_vectors`            Calculates the displacements of particles based on an initial and a deformed configuration.
   :ref:`particles.modifiers.elastic_strain`                  Calculates the atomic-level elastic strain tensors in crystalline systems.
+  :ref:`particles.modifiers.find_rings`                      Finds all rings in the bond topology of a particle system.
   :ref:`particles.modifiers.grain_segmentation`              Determines the grain structure in a polycrystalline microstructure.
   :ref:`particles.modifiers.histogram`                       Computes the histogram of a property.
   :ref:`particles.modifiers.scatter_plot`                    Generates a scatter plot of two properties.
@@ -158,6 +159,7 @@ combine several modifiers to accomplish more complex tasks.
   dislocation_analysis
   displacement_vectors
   elastic_strain
+  find_rings
   expand_selection
   expression_select
   freeze_property
