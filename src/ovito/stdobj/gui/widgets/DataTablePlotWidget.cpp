@@ -297,14 +297,14 @@ void DataTablePlotWidget::updateDataPlot()
 
         // Populate Y array
         if(y) {
-            if(y->componentCount() > 1) {
-                throw Exception(tr("Multi-component Y data not supported for bar charts."));
+            if(y->componentCount() != 1) {
+                qWarning() << "Warning: Multi-component Y-data property not supported for bar charts.";
             }
             y->forAnyType([&](auto _) {
                 using T = decltype(_);
-                BufferReadAccess<T> yarray(y);
+                BufferReadAccess<T*> yarray(y);
                 for(int i = 0; i < y->size(); i++) {
-                    ycoords.push_back((double)yarray.get(i));
+                    ycoords.push_back((double)yarray.get(i, 0));
                 }
             });
         }
