@@ -294,18 +294,47 @@ void DataTablePlotWidget::updateDataPlot()
         }
         QVector<double> ycoords;
         QStringList labels;
-        RawBufferReadAccess yarray(y);
-        for(int i = 0; i < y->size(); i++) {
-            const ElementType* type = y->elementType(i);
-            if(!type && x) type = x->elementType(i);
-            if(type) {
-                ycoords.push_back(yarray.get<double>(i, 0));
-                labels.push_back(type->name());
+
+        // Populate Y array
+        if(y) {
+            if(y->componentCount() > 1) {
+                throw Exception(tr("Multi-component Y data not supported for bar charts."));
+            }
+            y->forAnyType([&](auto _) {
+                using T = decltype(_);
+                BufferReadAccess<T> yarray(y);
+                for(int i = 0; i < y->size(); i++) {
+                    ycoords.push_back((double)yarray.get(i));
+                }
+            });
+        }
+
+        // Populate X array
+        // X or Y is typed -> old default behavior: use element types as bar coordinates
+        if((x && x->isTypedProperty()) || (y && y->isTypedProperty())) {
+            for(int i = 0; i < y->size(); i++) {
+                const ElementType* type = y->elementType(i);
+                if(!type && x) type = x->elementType(i);
+                if(type) {
+                    labels.push_back(type->name());
+                }
             }
         }
+        else if(x && x->componentCount() == 1 &&
+                (x->dataType() == DataBuffer::Int8 || x->dataType() == DataBuffer::Int32 || x->dataType() == DataBuffer::Int64)) {
+            // X is integer -> use it as bar coordinates
+            x->forAnyType([&](auto _) {
+                using T = decltype(_);
+                BufferReadAccess<T> xarray(x);
+                for(int i = 0; i < y->size(); i++) {
+                    labels.push_back(QString::number(xarray.get(i)));
+                }
+            });
+        }
+
         setAxisMaxMinor(QwtPlot::xBottom, 0);
         setAxisMaxMajor(QwtPlot::xBottom, labels.size());
-        _barChart->setSamples(std::move(ycoords));
+        _barChart->setSamples(ycoords);
         _barChartScaleDraw->setLabels(std::move(labels));
 
         // Extra call to replot() needed here as a workaround for a layout bug in QwtPlot.
