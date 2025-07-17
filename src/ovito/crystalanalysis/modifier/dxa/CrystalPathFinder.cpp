@@ -38,7 +38,7 @@ std::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size
 
     // Test if atom 2 is a direct neighbor of atom 1.
     if(cluster1->structure != StructureAnalysis::LATTICE_OTHER) {
-        qint64 neighborIndex = structureAnalysis().findNeighbor(atomIndex1, atomIndex2);
+        auto neighborIndex = structureAnalysis().findNeighbor(atomIndex1, atomIndex2);
         if(neighborIndex != -1) {
             const Cluster::VecType& refv = structureAnalysis().neighborLatticeVector(atomIndex1, neighborIndex);
             return std::optional<ClusterVector>(ClusterVector(refv, cluster1));
@@ -47,7 +47,7 @@ std::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size
 
     // Test if atom 1 is a direct neighbor of atom 2.
     else if(cluster2->structure != StructureAnalysis::LATTICE_OTHER) {
-        qint64 neighborIndex = structureAnalysis().findNeighbor(atomIndex2, atomIndex1);
+        auto neighborIndex = structureAnalysis().findNeighbor(atomIndex2, atomIndex1);
         if(neighborIndex != -1) {
             const Cluster::VecType& refv = structureAnalysis().neighborLatticeVector(atomIndex2, neighborIndex);
             return std::optional<ClusterVector>(ClusterVector(-refv, cluster2));
@@ -79,7 +79,7 @@ std::optional<ClusterVector> CrystalPathFinder::findPath(size_t atomIndex1, size
         for(int neighborIndex = 0; neighborIndex < numNeighbors; neighborIndex++) {
 
             // Resolve pattern node neighbor to actual neighbor atom.
-            qint64 neighbor = structureAnalysis().getNeighbor(currentAtom, neighborIndex);
+            auto neighbor = structureAnalysis().getNeighbor(currentAtom, neighborIndex);
 
             // Skip neighbor atom if it has been visited before.
             if(_visitedAtoms.test(neighbor)) continue;

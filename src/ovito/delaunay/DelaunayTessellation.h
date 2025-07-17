@@ -254,9 +254,9 @@ public:
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         OVITO_ASSERT(vertex < numberOfVertices());
         for(int iv = 0; iv < 4; iv++) {
-            if(cellVertex(cell, iv) == vertex) {
+            auto v = _dt->cell_vertex(cell, iv);
+            if(v == vertex)
                 return iv;
-            }
         }
         return -1;
     }
@@ -270,7 +270,15 @@ public:
     int findInputPointInCell(CellHandle cell, size_t pointIndex) const {
         OVITO_ASSERT(cell >= 0 && cell < numberOfTetrahedra());
         for(int iv = 0; iv < 4; iv++) {
-            if(inputPointIndex(cellVertex(cell, iv)) == pointIndex) {
+            auto v = _dt->cell_vertex(cell, iv);
+            if(v >= 0 && inputPointIndex(v) == pointIndex) {
+#ifdef OVITO_DEBUG
+                // Verify that the point index is unique within the cell.
+                for(int jv = iv + 1; jv < 4; jv++) {
+                    auto v2 = _dt->cell_vertex(cell, jv);
+                    OVITO_ASSERT(v2 < 0 || inputPointIndex(v2) != pointIndex);
+                }
+#endif
                 return iv;
             }
         }
