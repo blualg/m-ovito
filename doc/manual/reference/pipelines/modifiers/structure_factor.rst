@@ -37,7 +37,7 @@ The following figure shows a comparison between the two supported calculation me
   :align: center
 
 The following figure shows total :math:`S(k)` and partial :math:`S_{\alpha\beta}(k)` structure factors calculated using this OVITO function (direct method),
-the `freud  <https://freud.readthedocs.io/en/latest/>`__ Python package (direct method), and an implementation from :ref:`[LE2022] <particles.modifiers.structure_factor.references>` (Debye method).
+the `freud  <https://freud.readthedocs.io/en/latest/>`__ Python package (direct method), and an implementation from :ref:`[LE2024] <particles.modifiers.structure_factor.references>` (Debye method).
 The analyzed input structure was taken from the same paper:
 
 .. image:: /images/modifiers/structure_factor_method-comparison.png
@@ -173,7 +173,7 @@ Detailed description of the calculation and normalization of :math:`S(k)` and :m
 
 We acknowledge the helpful contributions of `Linus C. Erhard <https://scholar.google.com/citations?user=1P2FElEAAAAJ&hl>`__ to the development and verification of this OVITO function. See also:
 
-- [LE2022] Erhard, L. C., Rohrer, J., Albe, K., & Deringer, V. L. (2022). A machine-learned interatomic potential for silica and its relation to empirical models. In npj Computational Materials (Vol. 8, Issue 1). Springer Science and Business Media LLC. https://doi.org/10.1038/s41524-022-00768-w
+- [LE2024] Erhard, L. C., Rohrer, J., Albe, K. & Deringer, V. L. Modelling atomic and nanoscale structure in the silicon-oxygen system through active machine learning. Nat Commun 15, (2024) https://doi.org/10.1038/s41467-024-45840-9
 
 .. seealso::
 
