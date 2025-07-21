@@ -456,14 +456,12 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
 void LinesVis::clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
                         const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback)
 {
-    auto clippingFunction = [&clippingPlanes, &segmentCallback](Point3 p1, Point3 p2, GraphicsFloatType t1, GraphicsFloatType t2) {
-        bool isClipped = false;
+    auto clippingFunction = [&](Point3 p1, Point3 p2, GraphicsFloatType t1, GraphicsFloatType t2) {
         for(const Plane3& plane : clippingPlanes) {
             FloatType c1 = plane.pointDistance(p1);
             FloatType c2 = plane.pointDistance(p2);
-            if(c1 >= 0 && c2 >= 0.0) {
-                isClipped = true;
-                break;
+            if(c1 >= 0 && c2 >= 0) {
+                return; // Completely clipped by the plane
             }
             else if(c1 > FLOATTYPE_EPSILON && c2 < -FLOATTYPE_EPSILON) {
                 p1 += (p2 - p1) * (c1 / (c1 - c2));
@@ -474,9 +472,7 @@ void LinesVis::clipLine(const Point3& v1, const Point3& v2, const SimulationCell
                 t2 += (t1 - t2) * (c2 / (c2 - c1));
             }
         }
-        if(!isClipped) {
-            segmentCallback(p1, p2, t1, t2);
-        }
+        segmentCallback(p1, p2, t1, t2);
     };
 
     if(simulationCell) {
@@ -535,7 +531,8 @@ void LinesVis::clipLine(const Point3& v1, const Point3& v2, const SimulationCell
                 rp2[crossDim] -= crossDir;
                 t1 = t2;
             }
-        } while(smallestT != FLOATTYPE_MAX);
+        }
+        while(smallestT != FLOATTYPE_MAX);
 
         clippingFunction(simulationCell->reducedToAbsolute(rp1), simulationCell->reducedToAbsolute(rp2), t1, 1);
     }
