@@ -25,6 +25,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/rendering/MeshPrimitive.h>
 #include <ovito/core/utilities/SortZipped.h>
+#include <ovito/core/dataset/data/mesh/TriangleMeshVis.h>
 #include "OpenGLRenderingJob.h"
 #include "OpenGLShaderHelper.h"
 
@@ -161,7 +162,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
         shader.setUniformValue("color_range_max", maxValue);
 
         // Upload color map as a 1-d OpenGL texture.
-        colorMapTexture = &uploadColorMap(primitive.pseudoColorMapping().gradient());
+        colorMapTexture = &uploadColorMap(primitive.pseudoColorMapping().gradient(), primitive.discreteColorMapBinCount());
         colorMapTexture->bind();
     }
 

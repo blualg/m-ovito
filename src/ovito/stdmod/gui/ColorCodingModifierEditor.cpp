@@ -34,6 +34,7 @@
 #include <ovito/core/oo/OvitoClass.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "ColorCodingModifierEditor.h"
+#include <ovito/core/rendering/ColormapHelper.h>
 
 namespace Ovito {
 
@@ -101,10 +102,12 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout2->setColumnStretch(1, 1);
     layout1->addLayout(layout2);
 
+    int row = 0;
+
     // End value parameter.
     _endValueUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ColorCodingModifier::endValue));
-    layout2->addWidget(_endValueUI->label(), 0, 0);
-    layout2->addLayout(_endValueUI->createFieldLayout(), 0, 1);
+    layout2->addWidget(_endValueUI->label(), row, 0);
+    layout2->addLayout(_endValueUI->createFieldLayout(), row++, 1);
 
     // Insert color map display.
     class ColorMapWidget : public QLabel
@@ -129,12 +132,12 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     _colorLegendLabel = new ColorMapWidget(rollout, this);
     _colorLegendLabel->setScaledContents(true);
     _colorLegendLabel->setMouseTracking(true);
-    layout2->addWidget(_colorLegendLabel, 1, 1);
+    layout2->addWidget(_colorLegendLabel, row++, 1);
 
     // Start value parameter.
     _startValueUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ColorCodingModifier::startValue));
-    layout2->addWidget(_startValueUI->label(), 2, 0);
-    layout2->addLayout(_startValueUI->createFieldLayout(), 2, 1);
+    layout2->addWidget(_startValueUI->label(), row, 0);
+    layout2->addLayout(_startValueUI->createFieldLayout(), row++, 1);
 
     // Export color scale button.
     QToolButton* exportBtn = new QToolButton(rollout);
@@ -147,10 +150,13 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
 
     // Auto-adjust range.
     BooleanParameterUI* autoAdjustRangePUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorCodingModifier::autoAdjustRange));
-    layout2->addWidget(autoAdjustRangePUI->checkBox(), 3, 1);
+    layout2->addWidget(autoAdjustRangePUI->checkBox(), row++, 1);
     // Symmetric range
     BooleanParameterUI* symmetricRangePUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorCodingModifier::symmetricRange));
-    layout2->addWidget(symmetricRangePUI->checkBox(), 4, 1);
+    layout2->addWidget(symmetricRangePUI->checkBox(), row++, 1);
+    // Discrete colormap
+    BooleanParameterUI* discreteColormapPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorCodingModifier::discreteColormap));
+    layout2->addWidget(discreteColormapPUI->checkBox(), row++, 1);
 
     layout1->addSpacing(8);
     _adjustRangeBtn = new QPushButton(tr("Adjust range"), rollout);
@@ -176,6 +182,9 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout1->addWidget(keepSelectionPUI->checkBox());
     connect(onlySelectedPUI->checkBox(), &QCheckBox::toggled, keepSelectionPUI, &BooleanParameterUI::setEnabled);
     keepSelectionPUI->setEnabled(false);
+
+    // Update color gradient display when settings are changed (required for discrete colormap).
+    connect(this, &ColorCodingModifierEditor::contentsChanged, this, &ColorCodingModifierEditor::updateColorGradient);
 }
 
 /******************************************************************************
@@ -184,28 +193,31 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
 void ColorCodingModifierEditor::updateColorGradient()
 {
     ColorCodingModifier* mod = static_object_cast<ColorCodingModifier>(editObject());
-    if(!mod) return;
+    // Validate input
+    if(!mod || !mod->colorGradient()) return;
+
+    // Get the index of the currently selected color gradient in the combo box.
+    const int index = _colorGradientList->findData(QVariant::fromValue(&mod->colorGradient()->getOOClass()));
 
     // Create the color legend image.
-    int legendHeight = 128;
-    QImage image(1, legendHeight, QImage::Format_RGB32);
-    for(int y = 0; y < legendHeight; y++) {
-        FloatType t = (FloatType)y / (legendHeight - 1);
-        Color color = mod->colorGradient()->valueToColor(1.0 - t);
-        image.setPixel(0, y, QColor(color).rgb());
+    constexpr int legendHeight = 128;
+
+    // Create the color legend image or reuse cached one.
+    // binCount < 0 indicates that the color gradient is not a discrete colormap.
+    const int binCount =
+        (mod->discreteColormap()) ? DiscreteColormap::binCount((FloatType)mod->startValue(), (FloatType)mod->endValue()) : -1;
+    const std::pair<int, int> key{index, binCount};
+    if(!_colorGradientCache.contains(key)) {
+        _colorGradientCache.emplace(key, Colormap::generateImage<legendHeight>(mod->colorGradient(), binCount));
     }
-    _colorLegendLabel->setPixmap(QPixmap::fromImage(image));
+    _colorLegendLabel->setPixmap(QPixmap::fromImage(_colorGradientCache.value(key)));
 
     // Select the right entry in the color gradient selector.
     bool isCustomMap = false;
-    if(mod->colorGradient()) {
-        int index = _colorGradientList->findData(QVariant::fromValue(&mod->colorGradient()->getOOClass()));
-        if(index >= 0)
-            _colorGradientList->setCurrentIndex(index);
-        else
-            isCustomMap = true;
-    }
-    else _colorGradientList->setCurrentIndex(-1);
+    if(index >= 0)
+        _colorGradientList->setCurrentIndex(index);
+    else
+        isCustomMap = true;
 
     if(isCustomMap) {
         if(!_gradientListContainCustomItem) {

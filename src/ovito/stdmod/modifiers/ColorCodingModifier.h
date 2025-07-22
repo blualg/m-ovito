@@ -178,6 +178,10 @@ private:
     /// This is intended to be used with diverging colormaps like blue-white-red.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, symmetricRange, setSymmetricRange);
 
+    /// Use a discrete color map generating one color value for each integer value in the range
+    /// Values will be binned into these integer bins
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, discreteColormap, discreteColormap);
+
     friend class ColorCodingModifierDelegate;
 };
 

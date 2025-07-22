@@ -90,6 +90,9 @@ private:
     /// The list of available color gradients.
     QComboBox* _colorGradientList;
 
+    /// Cache for the color gradient preview images
+    QHash<std::pair<int, int>, QImage> _colorGradientCache;
+
     /// Indicates the combo box already contains an item for a custom color map.
     bool _gradientListContainCustomItem;
 

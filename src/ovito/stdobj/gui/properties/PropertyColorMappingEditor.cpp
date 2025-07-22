@@ -33,6 +33,7 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/oo/OvitoClass.h>
 #include "PropertyColorMappingEditor.h"
+#include <ovito/core/rendering/ColormapHelper.h>
 
 namespace Ovito {
 
@@ -128,6 +129,9 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
     BooleanParameterUI* symmetricRangePUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(PropertyColorMapping::symmetricRange));
     layout2->addWidget(symmetricRangePUI->checkBox(), 3, 1);
     connect(symmetricRangePUI->checkBox(), &QCheckBox::toggled, _startValueUI, &FloatParameterUI::setDisabled);
+    // Discrete colormap
+    BooleanParameterUI* discreteColormapPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(PropertyColorMapping::discreteColormap));
+    layout2->addWidget(discreteColormapPUI->checkBox(), 4, 1);
 
     layout1->addSpacing(8);
 
@@ -142,6 +146,9 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
 
     // Update color legend if another color mapping object has been loaded into the editor.
     connect(this, &PropertiesEditor::contentsReplaced, this, &PropertyColorMappingEditor::updateColorGradient);
+
+    // Update color gradient display when settings are changed (required for discrete colormap).
+    connect(this, &PropertyColorMappingEditor::contentsChanged, this, &PropertyColorMappingEditor::updateColorGradient);
 }
 
 /******************************************************************************
@@ -150,28 +157,31 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
 void PropertyColorMappingEditor::updateColorGradient()
 {
     PropertyColorMapping* mod = static_object_cast<PropertyColorMapping>(editObject());
-    if(!mod) return;
+    // Validate input
+    if(!mod || !mod->colorGradient()) return;
+
+    // Get the index of the currently selected color gradient in the combo box.
+    const int index = _colorGradientList->findData(QVariant::fromValue(&mod->colorGradient()->getOOClass()));
 
     // Create the color legend image.
-    int legendHeight = 128;
-    QImage image(1, legendHeight, QImage::Format_RGB32);
-    for(int y = 0; y < legendHeight; y++) {
-        FloatType t = (FloatType)y / (legendHeight - 1);
-        Color color = mod->colorGradient()->valueToColor(1.0 - t);
-        image.setPixel(0, y, QColor(color).rgb());
+    constexpr int legendHeight = 128;
+
+    // Create the color legend image or reuse cached one.
+    // binCount < 0 indicates that the color gradient is not a discrete colormap.
+    const int binCount =
+        (mod->discreteColormap()) ? DiscreteColormap::binCount((FloatType)mod->startValue(), (FloatType)mod->endValue()) : -1;
+    const std::pair<int, int> key{index, binCount};
+    if(!_colorGradientCache.contains(key)) {
+        _colorGradientCache.emplace(key, Colormap::generateImage<legendHeight>(mod->colorGradient(), binCount));
     }
-    _colorLegendLabel->setPixmap(QPixmap::fromImage(image));
+    _colorLegendLabel->setPixmap(QPixmap::fromImage(_colorGradientCache.value(key)));
 
     // Select the right entry in the color gradient selector.
     bool isCustomMap = false;
-    if(mod->colorGradient()) {
-        int index = _colorGradientList->findData(QVariant::fromValue(&mod->colorGradient()->getOOClass()));
-        if(index >= 0)
-            _colorGradientList->setCurrentIndex(index);
-        else
-            isCustomMap = true;
-    }
-    else _colorGradientList->setCurrentIndex(-1);
+    if(index >= 0)
+        _colorGradientList->setCurrentIndex(index);
+    else
+        isCustomMap = true;
 
     if(isCustomMap) {
         if(!_gradientListContainCustomItem) {

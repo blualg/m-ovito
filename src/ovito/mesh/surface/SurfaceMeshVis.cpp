@@ -30,6 +30,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/app/Application.h>
+#include <ovito/core/rendering/ColormapHelper.h>
 #include "SurfaceMeshVis.h"
 #include "SurfaceMesh.h"
 #include "SurfaceMeshReadAccess.h"
@@ -225,6 +226,11 @@ std::variant<PipelineStatus, Future<PipelineStatus>> SurfaceMeshVis::render(cons
             auto coloredSurface = std::make_unique<MeshPrimitive>(surfacePrimitive);
             // Update the color mapping.
             coloredSurface->setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());
+            // Set the number of bins for discrete color mapping.
+            const int binCount = (surfaceColorMapping()->discreteColormap())
+                                     ? DiscreteColormap::binCount(surfaceColorMapping()->startValue(), surfaceColorMapping()->endValue())
+                                     : -1;
+            coloredSurface->setDiscreteColorMapBinCount(binCount);
             frameGraph->addPrimitive(commandGroup, std::move(coloredSurface), sceneNode, pickInfo);
         }
 

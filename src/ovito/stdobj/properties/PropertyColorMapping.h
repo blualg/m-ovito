@@ -75,6 +75,10 @@ private:
     /// Controls whether the value range of the color map is automatically symmetrized (centered) around 0.
     /// This is intended to be used with diverging color maps like blue-white-red.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, symmetricRange, setSymmetricRange);
+
+    /// Use a discrete color map generating one color value for each integer value in the range
+    /// Values will be binned into these integer bins
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, discreteColormap, discreteColormap);
 };
 
 }   // End of namespace

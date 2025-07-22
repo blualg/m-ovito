@@ -31,7 +31,7 @@
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/app/PluginManager.h>
 #include "ColorCodingModifier.h"
-#include <chrono>
+#include <ovito/core/rendering/ColormapHelper.h>
 
 namespace Ovito {
 
@@ -67,6 +67,7 @@ DEFINE_PROPERTY_FIELD(ColorCodingModifier, keepSelection);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, autoAdjustRange);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, symmetricRange);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, sourceProperty);
+DEFINE_PROPERTY_FIELD(ColorCodingModifier, discreteColormap);
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, startValue, "Start value");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, endValue, "End value");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, colorGradient, "Color gradient");
@@ -75,6 +76,7 @@ SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, keepSelection, "Keep selection");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, autoAdjustRange, "Automatic range");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, symmetricRange, "Symmetric range");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property");
+SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, discreteColormap, "Discrete colormap");
 
 /******************************************************************************
 * Constructor.
@@ -222,7 +224,8 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
     return asyncLaunch([request, state = std::move(state), containerPath = std::move(containerPath), selection = std::move(selection),
                         property = std::move(property), vectorComponent, outputColorPropertyId = outputColorPropertyId(), startValue,
                         endValue, autoAdjustRange = modifier->autoAdjustRange(), symmetricRange = modifier->symmetricRange(),
-                        gradient = OORef<ColorCodingGradient>(modifier->colorGradient())]() mutable {
+                        gradient = OORef<ColorCodingGradient>(modifier->colorGradient()),
+                        discreteColormap = modifier->discreteColormap()]() mutable {
         // Create the color output property.
         PropertyContainer* container = static_object_cast<PropertyContainer>(containerPath.back());
         PropertyPtr colors = container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized,
@@ -261,10 +264,8 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
         }
 
         // Clamp to finite range.
-        if(!std::isfinite(startValue))
-            startValue = std::numeric_limits<FloatType>::lowest();
-        if(!std::isfinite(endValue))
-            endValue = std::numeric_limits<FloatType>::max();
+        if(!std::isfinite(startValue)) startValue = std::numeric_limits<FloatType>::lowest();
+        if(!std::isfinite(endValue)) endValue = std::numeric_limits<FloatType>::max();
         const FloatType intervalRange = endValue - startValue;
 
 #ifdef OVITO_USE_SYCL
@@ -273,13 +274,13 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
             ConstDataBufferPtr colorMap = gradient->getColorMap();
 
             this_task::ui()->taskManager().syclQueue().submit([&](sycl::handler& cgh) {
-
                 // Access selection flags array (optional).
                 SyclBufferAccess<const SelectionIntType, access_mode::read> selectionAcc(selection, cgh);
                 // Access color lookup table.
                 SyclBufferAccess<const ColorG, access_mode::read> colorMapAcc(colorMap, cgh);
                 // Access output array.
-                SyclBufferAccess<ColorG, access_mode::write> outputAcc(colors, cgh, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
+                SyclBufferAccess<ColorG, access_mode::write> outputAcc(colors, cgh,
+                                                                       selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
 
                 // Duplicate templated code for different input data types.
                 property->forAnyType([&](auto _) {
@@ -297,18 +298,25 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
                                 t = (value - startValue) / intervalRange;
                             }
                             else {
-                                if(value == startValue) t = GraphicsFloatType(0.5);
-                                else if(value > startValue) t = 1;
-                                else t = 0;
+                                if(value == startValue)
+                                    t = GraphicsFloatType(0.5);
+                                else if(value > startValue)
+                                    t = 1;
+                                else
+                                    t = 0;
                             }
 
                             // Clamp value.
                             if(sycl::isnan(t))
                                 t = 0;
-                            else if(t ==  std::numeric_limits<GraphicsFloatType>::infinity()) t = 1;
-                            else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
-                            else if(t < 0) t = 0;
-                            else if(t > 1) t = 1;
+                            else if(t == std::numeric_limits<GraphicsFloatType>::infinity())
+                                t = 1;
+                            else if(t == -std::numeric_limits<GraphicsFloatType>::infinity())
+                                t = 0;
+                            else if(t < 0)
+                                t = 0;
+                            else if(t > 1)
+                                t = 1;
 
                             // Map scalar to RGB color. Perform linear interpolation of two adjacent colors.
                             GraphicsFloatType x = t * (GraphicsFloatType)(colorMapAcc.size() - 1);
@@ -325,6 +333,10 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
             });
         }
 #else
+
+        // Get bin count for discrete colormap.
+        const int binCount = discreteColormap ? DiscreteColormap::binCount(startValue, endValue) : 0;
+
         BufferWriteAccess<ColorG, access_mode::write> colorAcc(colors, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
         BufferReadAccess<SelectionIntType> selectionAcc(selection);
 
@@ -353,6 +365,8 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
                 else if(t == -std::numeric_limits<GraphicsFloatType>::infinity()) t = 0;
                 else if(t < 0) t = 0;
                 else if(t > 1) t = 1;
+
+                t = (discreteColormap) ? DiscreteColormap::mapValue(t, binCount) : t;
 
                 // Map scalar to RGB color.
                 colorAcc[i] = gradient->valueToColor(t);

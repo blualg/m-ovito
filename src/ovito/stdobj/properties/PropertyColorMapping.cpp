@@ -36,11 +36,13 @@ DEFINE_PROPERTY_FIELD(PropertyColorMapping, startValue);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, endValue);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, symmetricRange);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, sourceProperty);
+DEFINE_PROPERTY_FIELD(PropertyColorMapping, discreteColormap);
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, startValue, "Start value");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, endValue, "End value");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, symmetricRange, "Symmetric range");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, colorGradient, "Color gradient");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, sourceProperty, "Source property");
+SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, discreteColormap, "Discrete colormap");
 
 /******************************************************************************
 * Constructor.
