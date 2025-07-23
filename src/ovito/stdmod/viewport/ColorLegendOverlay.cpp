@@ -278,8 +278,6 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
 
     if(sourcePipeline) {
         if(modifier()) {
-            qDebug() << "Rendering color legend for ColorCodingModifier:" << modifier()->sourceProperty().nameWithComponent();
-
             // Get modifier's parameters.
             _autoTitleText = modifier()->sourceProperty().nameWithComponent();
 
@@ -314,8 +312,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
                         endValue = maxValue.value<FloatType>();
                     }
                     // Bin count for discrete colormap. -1 indicates that no discrete colormap is used.
-                    const int numDiscreteColors = modifier()->useDiscreteColormap() ? DiscreteColormap::binCount(startValue, endValue) : -1;
-                    qDebug() << "auto range" << "numDiscreteColors:" << numDiscreteColors;
+                    const int numDiscreteColors = modifier()->useDiscreteColormap() && minValue.isValid() && maxValue.isValid()
+                                                      ? DiscreteColormap::binCount(startValue, endValue)
+                                                      : -1;
                     if(modifier())
                         drawColorCodingColorMap(*frameGraph, commandGroup, colorBarRect, legendSize,
                                                 PseudoColorMapping(startValue, endValue, modifier()->colorGradient()), numDiscreteColors);
@@ -325,8 +324,9 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
             else {
                 // Bin count for discrete colormap. -1 indicates that no discrete colormap is used.
                 const int numDiscreteColors =
-                    modifier()->useDiscreteColormap() ? DiscreteColormap::binCount(modifier()->startValue(), modifier()->endValue()) : -1;
-                qDebug() << "fixed range" << "numDiscreteColors:" << numDiscreteColors;
+                    modifier()->useDiscreteColormap() && std::isfinite(modifier()->startValue()) && std::isfinite(modifier()->endValue())
+                        ? DiscreteColormap::binCount(modifier()->startValue(), modifier()->endValue())
+                        : -1;
                 drawColorCodingColorMap(frameGraph, commandGroup, colorBarRect, legendSize,
                                         PseudoColorMapping(modifier()->startValue(), modifier()->endValue(), modifier()->colorGradient()),
                                         numDiscreteColors);
@@ -335,7 +335,13 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
         }
         else if(colorMapping()) {
             _autoTitleText = colorMapping()->sourceProperty().nameWithComponent();
-            drawColorCodingColorMap(frameGraph, commandGroup, colorBarRect, legendSize, colorMapping()->pseudoColorMapping());
+            // Bin count for discrete colormap. -1 indicates that no discrete colormap is used.
+            const int numDiscreteColors = colorMapping()->useDiscreteColormap() && std::isfinite(colorMapping()->startValue()) &&
+                                                  std::isfinite(colorMapping()->endValue())
+                                              ? DiscreteColormap::binCount(colorMapping()->startValue(), colorMapping()->endValue())
+                                              : -1;
+            drawColorCodingColorMap(frameGraph, commandGroup, colorBarRect, legendSize, colorMapping()->pseudoColorMapping(),
+                                    numDiscreteColors);
             return {};
         }
         else if(sourceProperty()) {
