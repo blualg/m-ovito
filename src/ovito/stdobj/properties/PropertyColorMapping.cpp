@@ -25,6 +25,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
+#include <ovito/core/rendering/ColormapHelper.h>
 #include "PropertyColorMapping.h"
 
 namespace Ovito {
@@ -83,7 +84,10 @@ void PropertyColorMapping::initializeObject(ObjectInitializationFlags flags)
 ******************************************************************************/
 PseudoColorMapping PropertyColorMapping::pseudoColorMapping() const
 {
-    return PseudoColorMapping(startValue(), endValue(), colorGradient());
+    if(useDiscreteColormap() && std::isfinite(startValue()) && std::isfinite(endValue()))
+        return {startValue(), endValue(), colorGradient(), DiscreteColormap::binCount(startValue(), endValue())};
+    else
+        return {startValue(), endValue(), colorGradient()};
 }
 
 /******************************************************************************
