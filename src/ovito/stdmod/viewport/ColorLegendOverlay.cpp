@@ -800,7 +800,7 @@ void ColorLegendOverlay::drawColorCodingColorMap(FrameGraph& frameGraph, FrameGr
             // If the first tick is in the position of the minValue or maxValue it will be hidden.
             // Therefore we need to increase the num_ticks by 1 to get all required ticks drawn correctly.
             numTicks += ((tickStart == mapping.minValue()) || (tickStart == mapping.maxValue()));
-            for(int i{0}; i < numTicks; i++) {
+            for(int i{0}; i <= numTicks; i++) {
                 FloatType tickValue = tickStart + i * tickStep;
                 // Fix tick values close to 0 being formatted as 5.5e-17 instead of 0 with the
                 // default format specifier "%g".
