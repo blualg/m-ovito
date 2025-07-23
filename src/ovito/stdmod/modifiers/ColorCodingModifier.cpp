@@ -76,7 +76,7 @@ SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, keepSelection, "Keep selection");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, autoAdjustRange, "Automatic range");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, symmetricRange, "Symmetric range");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property");
-SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, useDiscreteColormap, "Use discrete colormap");
+SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, useDiscreteColormap, "Discretize");
 
 /******************************************************************************
 * Constructor.
