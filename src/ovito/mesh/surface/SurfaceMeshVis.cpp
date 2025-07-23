@@ -228,7 +228,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> SurfaceMeshVis::render(cons
             coloredSurface->setPseudoColorMapping(surfaceColorMapping()->pseudoColorMapping());
             // Set the number of bins for discrete color mapping.
             const int numDiscreteColors =
-                (surfaceColorMapping()->discreteColormap())
+                (surfaceColorMapping()->useDiscreteColormap())
                     ? DiscreteColormap::binCount(surfaceColorMapping()->startValue(), surfaceColorMapping()->endValue())
                     : -1;
             coloredSurface->setDiscreteColorMapBinCount(numDiscreteColors);
