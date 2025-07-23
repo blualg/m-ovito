@@ -29,6 +29,7 @@
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/rendering/ColormapHelper.h>
 
 #include <algorithm>
 #include "ColorLegendOverlay.h"
@@ -277,6 +278,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
 
     if(sourcePipeline) {
         if(modifier()) {
+            qDebug() << "Rendering color legend for ColorCodingModifier:" << modifier()->sourceProperty().nameWithComponent();
+
             // Get modifier's parameters.
             _autoTitleText = modifier()->sourceProperty().nameWithComponent();
 
@@ -310,19 +313,29 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
                         startValue = minValue.value<FloatType>();
                         endValue = maxValue.value<FloatType>();
                     }
+                    // Bin count for discrete colormap. -1 indicates that no discrete colormap is used.
+                    const int numDiscreteColors = modifier()->useDiscreteColormap() ? DiscreteColormap::binCount(startValue, endValue) : -1;
+                    qDebug() << "auto range" << "numDiscreteColors:" << numDiscreteColors;
                     if(modifier())
-                        drawContinuousColorMap(*frameGraph, commandGroup, colorBarRect, legendSize, PseudoColorMapping(startValue, endValue, modifier()->colorGradient()));
+                        drawColorCodingColorMap(*frameGraph, commandGroup, colorBarRect, legendSize,
+                                                PseudoColorMapping(startValue, endValue, modifier()->colorGradient()), numDiscreteColors);
                     return {};
                 });
             }
             else {
-                drawContinuousColorMap(frameGraph, commandGroup, colorBarRect, legendSize, PseudoColorMapping(modifier()->startValue(), modifier()->endValue(), modifier()->colorGradient()));
+                // Bin count for discrete colormap. -1 indicates that no discrete colormap is used.
+                const int numDiscreteColors =
+                    modifier()->useDiscreteColormap() ? DiscreteColormap::binCount(modifier()->startValue(), modifier()->endValue()) : -1;
+                qDebug() << "fixed range" << "numDiscreteColors:" << numDiscreteColors;
+                drawColorCodingColorMap(frameGraph, commandGroup, colorBarRect, legendSize,
+                                        PseudoColorMapping(modifier()->startValue(), modifier()->endValue(), modifier()->colorGradient()),
+                                        numDiscreteColors);
                 return {};
             }
         }
         else if(colorMapping()) {
             _autoTitleText = colorMapping()->sourceProperty().nameWithComponent();
-            drawContinuousColorMap(frameGraph, commandGroup, colorBarRect, legendSize, colorMapping()->pseudoColorMapping());
+            drawColorCodingColorMap(frameGraph, commandGroup, colorBarRect, legendSize, colorMapping()->pseudoColorMapping());
             return {};
         }
         else if(sourceProperty()) {
@@ -352,7 +365,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
                 }
 
                 _autoTitleText = typedProperty->objectTitle();
-                drawDiscreteColorMap(*frameGraph, commandGroup, colorBarRect, legendSize, typedProperty);
+                drawTypedPropertyColorMap(*frameGraph, commandGroup, colorBarRect, legendSize, typedProperty);
                 return {};
             });
         }
@@ -496,7 +509,9 @@ namespace {
 /******************************************************************************
 * Draws the color legend for a Color Coding modifier.
 ******************************************************************************/
-void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping)
+void ColorLegendOverlay::drawColorCodingColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup,
+                                                 const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping,
+                                                 int numDiscreteColors)
 {
     const qreal devicePixelRatio = frameGraph.devicePixelRatio();
 
@@ -529,9 +544,8 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
 
     // Look up the image primitive for the color bar in the cache.
     const auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
-        RendererResourceKey<struct ColorBarImageCache, OORef<ColorCodingGradient>, FloatType, int, bool, Color, QSizeF>{
-            mapping.gradient(), devicePixelRatio, orientation(), borderEnabled(), borderColor(),
-            colorBarRect.size()},
+        RendererResourceKey<struct ColorBarImageCache, OORef<ColorCodingGradient>, FloatType, int, bool, Color, QSizeF, int>{
+            mapping.gradient(), devicePixelRatio, orientation(), borderEnabled(), borderColor(), colorBarRect.size(), numDiscreteColors},
         [&](QImage& image, QPointF& offset) {
             // Render the color bar into an image texture.
             // Allocate the image buffer.
@@ -544,6 +558,8 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
             if(orientation() == Qt::Vertical) {
                 for(int y = 0; y < gradientSize.height(); y++) {
                     FloatType t = (FloatType)y / (FloatType)std::max(1, gradientSize.height() - 1);
+                    // numDiscreteColors <= 0 indicates that the color gradient is not a discrete colormap.
+                    t = (numDiscreteColors <= 0) ? t : DiscreteColormap::mapValue(t, numDiscreteColors);
                     unsigned int color = QColor(mapping.gradient()->valueToColor(1.0 - t)).rgb();
                     for(int x = 0; x < gradientSize.width(); x++) {
                         image.setPixel(x + borderWidth, y + borderWidth, color);
@@ -553,6 +569,8 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
             else {
                 for(int x = 0; x < gradientSize.width(); x++) {
                     FloatType t = (FloatType)x / (FloatType)std::max(1, gradientSize.width() - 1);
+                    // numDiscreteColors <= 0 indicates that the color gradient is not a discrete colormap.
+                    t = (numDiscreteColors <= 0) ? t : DiscreteColormap::mapValue(t, numDiscreteColors);
                     unsigned int color = QColor(mapping.gradient()->valueToColor(t)).rgb();
                     for(int y = 0; y < gradientSize.height(); y++) {
                         image.setPixel(x + borderWidth, y + borderWidth, color);
@@ -915,7 +933,8 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
 /******************************************************************************
 * Draws the color legend for a typed property.
 ******************************************************************************/
-void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect, FloatType legendSize, const Property* property)
+void ColorLegendOverlay::drawTypedPropertyColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup,
+                                                   const QRectF& colorBarRect, FloatType legendSize, const Property* property)
 {
     const qreal devicePixelRatio = frameGraph.devicePixelRatio();
 
