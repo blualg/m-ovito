@@ -53,8 +53,6 @@ inline T mapValue(T t, V binCount)
     const T binSize = (T)1 / (T)(binCount - 1);
     const T binIndex = std::trunc(t * (T)binCount);
 
-    const T left = binIndex * binSize;
-    const T right = binIndex + binSize;
     return binIndex * binSize;
 }
 
