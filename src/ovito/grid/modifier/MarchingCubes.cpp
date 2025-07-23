@@ -37,7 +37,7 @@ MarchingCubes::MarchingCubes(SurfaceMeshBuilder& outputMesh, int size_x, int siz
     : _outputMesh(outputMesh),
       _vertexGrower(outputMesh),
       _faceGrower(outputMesh),
-      _pbcFlags(outputMesh.domain()->pbcFlags()),
+      _pbcFlags(outputMesh.domain().pbcFlags()),
       _infiniteDomain(infiniteDomain),
       _outputCellCoordinates(outputCellCoordinates),
       _size_x(size_x + (_pbcFlags[0] ? 0 : 1)),
@@ -47,7 +47,6 @@ MarchingCubes::MarchingCubes(SurfaceMeshBuilder& outputMesh, int size_x, int siz
       _cubeVerts(_size_x * _size_y * _size_z * 3, SurfaceMesh::InvalidIndex),
       _lowerIsSolid(lowerIsSolid)
 {
-    OVITO_ASSERT(outputMesh.domain());
     OVITO_ASSERT(outputMesh.vertexCount() == 0);
     OVITO_ASSERT(outputMesh.faceCount() == 0);
     OVITO_ASSERT(outputMesh.regionCount() == 0);
@@ -388,7 +387,7 @@ void MarchingCubes::handleSpaceFillingRegion()
         isFilledProperty[0] = 1;
     }
     else {
-        isExteriorProperty[0] = !(_outputMesh.domain()->pbcFlags()[0] && _outputMesh.domain()->pbcFlags()[1] && _outputMesh.domain()->pbcFlags()[2]);
+        isExteriorProperty[0] = !(_outputMesh.hasPbc(0) && _outputMesh.hasPbc(1) && _outputMesh.hasPbc(2));
         isFilledProperty[0] = 0;
     }
     _outputMesh.setSpaceFillingRegion(0);

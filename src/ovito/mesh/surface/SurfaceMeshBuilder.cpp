@@ -798,7 +798,7 @@ SurfaceMeshBuilder::AggregateVolumes SurfaceMeshBuilder::computeAggregateVolumes
 void SurfaceMeshBuilder::setExternalRegionVolumeInfinityIfNonPeriodic()
 {
     // If the domain is 3d periodic, do nothing.
-    if(domain()->pbcX() && domain()->pbcY() && domain()->pbcZ())
+    if(domain().hasPbc(0) && domain().hasPbc(1) && domain().hasPbc(2))
         return;
 
     BufferReadAccess<SelectionIntType> isFilled = expectRegionProperty(SurfaceMeshRegions::IsFilledProperty);

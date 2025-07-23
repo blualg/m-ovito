@@ -639,7 +639,7 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::buildSurfaceTriangleMesh(const bo
         std::vector<Point3> newVertices;
         std::vector<ColorAG> newVertexColors;
         std::vector<FloatType> newVertexPseudoColors;
-        std::map<std::pair<int,int>,std::tuple<int,int,FloatType>> newVertexLookupMap;
+        std::map<std::pair<int,int>, std::tuple<int,int,FloatType>> newVertexLookupMap;
         for(int findex = 0; findex < oldFaceCount; findex++) {
             if(!splitFace(findex, oldVertexCount, newVertices, newVertexColors, newVertexPseudoColors, newVertexLookupMap, dim)) {
                 return false;
@@ -986,7 +986,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::buildCapTriangleMesh(const boost:
 * Splits a triangle face at a periodic boundary.
 ******************************************************************************/
 bool SurfaceMeshVis::RenderableSurfaceBuilder::splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorAG>& newVertexColors,
-        std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim)
+        std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>, std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim)
 {
     TriMeshFace& face = outputMesh()->face(faceIndex);
     OVITO_ASSERT(face.vertex(0) != face.vertex(1));
@@ -1003,19 +1003,27 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::splitFace(int faceIndex, int oldV
     OVITO_ASSERT(z[0] - z[2] == -(z[2] - z[0]));
 
     if(std::abs(zd[0]) < FloatType(0.5) && std::abs(zd[1]) < FloatType(0.5) && std::abs(zd[2]) < FloatType(0.5))
-        return true;    // Face does not cross the periodic boundary.
+        return true;    // Face does not cross the periodic boundary. Render it as is.
 
-    // Create four new vertices (or use existing ones created during splitting of adjacent faces).
+    // Check PBC validity of the face. If only one edge spans more than half the periodic box and two edges do not,
+    // the face is likely invalid and cannot be displayed. A proper face split by a periodic boundary has two edges crossing the periodic boundary
+    // and one edge that does not cross the periodic boundary.
     int properEdge = -1;
-    int newVertexIndices[3][2];
-    Vector3G interpolatedNormals[3];
     for(int i = 0; i < 3; i++) {
         if(std::abs(zd[i]) < FloatType(0.5)) {
             if(properEdge != -1)
                 return false;       // The simulation box may be too small or invalid.
             properEdge = i;
-            continue;
         }
+    }
+    OVITO_ASSERT(properEdge != -1);
+
+    // Create four new vertices (or use existing ones created during splitting of adjacent faces).
+    int newVertexIndices[3][2];
+    Vector3G interpolatedNormals[3];
+    for(int i = 0; i < 3; i++) {
+        if(i == properEdge)
+            continue;
         int vi1 = face.vertex(i);
         int vi2 = face.vertex((i+1)%3);
         int oi1, oi2;
@@ -1079,13 +1087,12 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::splitFace(int faceIndex, int oldV
             interpolatedNormals[i].normalizeSafely();
         }
     }
-    OVITO_ASSERT(properEdge != -1);
 
     // Build output triangles.
     int originalVertices[3] = { face.vertex(0), face.vertex(1), face.vertex(2) };
     bool originalEdgeVisibility[3] = { face.edgeVisible(0), face.edgeVisible(1), face.edgeVisible(2) };
-    int pe1 = (properEdge+1)%3;
-    int pe2 = (properEdge+2)%3;
+    int pe1 = (properEdge + 1) % 3;
+    int pe2 = (properEdge + 2) % 3;
     face.setVertices(originalVertices[properEdge], originalVertices[pe1], newVertexIndices[pe2][1]);
     face.setEdgeVisibility(originalEdgeVisibility[properEdge], false, originalEdgeVisibility[pe2]);
 

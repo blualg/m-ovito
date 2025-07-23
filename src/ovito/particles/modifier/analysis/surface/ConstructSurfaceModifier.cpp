@@ -508,10 +508,9 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
                 meshBuilder.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsFilledProperty)};
             BufferWriteAccess<FloatType, access_mode::discard_write> surfaceArea{
                 meshBuilder.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::SurfaceAreaProperty)};
-            volumeProperty[0] = meshBuilder.domain()->volume3D();
+            volumeProperty[0] = meshBuilder.domain().volume3D();
             isFilledProperty[0] = 0;
-            isExteriorProperty[0] =
-                !(meshBuilder.domain()->pbcFlags()[0] && meshBuilder.domain()->pbcFlags()[1] && meshBuilder.domain()->pbcFlags()[2]);
+            isExteriorProperty[0] = !(meshBuilder.hasPbc(0) && meshBuilder.hasPbc(1) && meshBuilder.hasPbc(2));
             surfaceArea[0] = 0;
             meshBuilder.setSpaceFillingRegion(0);
         }
@@ -681,7 +680,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
             else if(SurfaceMeshVertices::OOClass().standardPropertyTypeId(particleProperty->name()) != 0) {
                 // Input property name is that of a standard property for mesh vertices.
                 // Must rename the property to avoid conflict, because user properties may not have a standard property name.
-                QString newPropertyName = particleProperty->name() + tr("_particles");
+                QString newPropertyName = particleProperty->name() + QStringLiteral("_particles");
                 vertexProperty = meshBuilder.createVertexProperty(DataBuffer::Initialized, newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), particleProperty->componentNames());
             }
             else {

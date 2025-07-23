@@ -130,16 +130,7 @@ private:
         virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
 
         /// Returns the data for the given role and section in the header with the specified orientation.
-        virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override {
-            if(orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-                OVITO_ASSERT(section >= 0 && section < _properties.size());
-                return _properties[section]->name();
-            }
-            else if(orientation == Qt::Vertical && role == Qt::DisplayRole) {
-                return _applet->headerColumnText(section);
-            }
-            return QAbstractTableModel::headerData(section, orientation, role);
-        }
+        virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
         /// Replaces the contents of this data model.
         void setContents(const PropertyContainer* container);

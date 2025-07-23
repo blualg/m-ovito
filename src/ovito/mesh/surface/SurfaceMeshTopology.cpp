@@ -284,7 +284,7 @@ void SurfaceMeshTopology::flipFaces()
 /******************************************************************************
 * Converts the half-edge mesh to a triangle mesh.
 * Note that the SurfaceMeshTopology structure holds only the mesh topology and no
-* vertex coordinates. Thus, it is the respondisbility of the caller to assign
+* vertex coordinates. Thus, it is the responsibility of the caller to assign
 * coordinates to the vertices of the generated TriMesh.
 ******************************************************************************/
 void SurfaceMeshTopology::convertToTriMesh(TriangleMesh& output) const
@@ -672,7 +672,7 @@ void SurfaceMeshTopology::deleteVertex(vertex_index vertex)
 }
 
 /******************************************************************************
-* Inserts a vertex in the midle of an existing edge.
+* Inserts a vertex in the middle of an existing edge.
 ******************************************************************************/
 void SurfaceMeshTopology::splitEdge(edge_index edge, vertex_index vertex)
 {
