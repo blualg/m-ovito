@@ -40,15 +40,16 @@ inline T mapValue(T t, V binCount)
 {
     static_assert(std::is_floating_point_v<T>, "T must be a floating point type.");
     static_assert(std::is_integral_v<V>, "V must be an integral type.");
-    OVITO_ASSERT(binCount > 0);
 
+    if(binCount <= 1) {
+        return (T)0.5;
+    }
     if(t >= (T)1) {
         return (T)1;
     }
     if(t <= 0) {
         return (T)0;
     }
-
     const T binSize = (T)1 / (T)(binCount - 1);
     const T binIndex = std::trunc(t * (T)binCount);
 

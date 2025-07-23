@@ -42,7 +42,7 @@ SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, endValue, "End value");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, symmetricRange, "Symmetric range");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, colorGradient, "Color gradient");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, sourceProperty, "Source property");
-SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, useDiscreteColormap, "Use discrete colormap");
+SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, useDiscreteColormap, "Discretize");
 
 /******************************************************************************
 * Constructor.
