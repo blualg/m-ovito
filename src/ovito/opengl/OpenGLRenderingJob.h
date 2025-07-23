@@ -166,7 +166,7 @@ protected:
     const OpenGLTexture& uploadImage(const QImage& image);
 
     /// Creates a 1-D OpenGL texture object for a ColorCodingGradient.
-    const OpenGLTexture& uploadColorMap(const ColorCodingGradient* gradient, int binCount = -1);
+    const OpenGLTexture& uploadColorMap(const ColorCodingGradient* gradient, int numDiscreteColors = -1);
 
     /// Returns the frame graph we are currently rendering.
     const FrameGraph* frameGraph() const { OVITO_ASSERT(_frameGraph); return _frameGraph; }

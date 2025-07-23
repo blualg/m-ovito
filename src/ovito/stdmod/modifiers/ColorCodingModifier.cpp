@@ -67,7 +67,7 @@ DEFINE_PROPERTY_FIELD(ColorCodingModifier, keepSelection);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, autoAdjustRange);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, symmetricRange);
 DEFINE_PROPERTY_FIELD(ColorCodingModifier, sourceProperty);
-DEFINE_PROPERTY_FIELD(ColorCodingModifier, discreteColormap);
+DEFINE_PROPERTY_FIELD(ColorCodingModifier, useDiscreteColormap);
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, startValue, "Start value");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, endValue, "End value");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, colorGradient, "Color gradient");
@@ -76,7 +76,7 @@ SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, keepSelection, "Keep selection");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, autoAdjustRange, "Automatic range");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, symmetricRange, "Symmetric range");
 SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, sourceProperty, "Source property");
-SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, discreteColormap, "Discrete colormap");
+SET_PROPERTY_FIELD_LABEL(ColorCodingModifier, useDiscreteColormap, "Use discrete colormap");
 
 /******************************************************************************
 * Constructor.
@@ -225,7 +225,7 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
                         property = std::move(property), vectorComponent, outputColorPropertyId = outputColorPropertyId(), startValue,
                         endValue, autoAdjustRange = modifier->autoAdjustRange(), symmetricRange = modifier->symmetricRange(),
                         gradient = OORef<ColorCodingGradient>(modifier->colorGradient()),
-                        discreteColormap = modifier->discreteColormap()]() mutable {
+                        useDiscreteColormap = modifier->useDiscreteColormap()]() mutable {
         // Create the color output property.
         PropertyContainer* container = static_object_cast<PropertyContainer>(containerPath.back());
         PropertyPtr colors = container->createProperty(selection ? DataBuffer::Initialized : DataBuffer::Uninitialized,
@@ -335,7 +335,7 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
 #else
 
         // Get bin count for discrete colormap.
-        const int binCount = discreteColormap ? DiscreteColormap::binCount(startValue, endValue) : 0;
+        const int numDiscreteColors = useDiscreteColormap ? DiscreteColormap::binCount(startValue, endValue) : -1;
 
         BufferWriteAccess<ColorG, access_mode::write> colorAcc(colors, selection ? DataBuffer::Initialized : DataBuffer::Uninitialized);
         BufferReadAccess<SelectionIntType> selectionAcc(selection);
@@ -366,7 +366,8 @@ Future<PipelineFlowState> ColorCodingModifierDelegate::apply(const ModifierEvalu
                 else if(t < 0) t = 0;
                 else if(t > 1) t = 1;
 
-                t = (discreteColormap) ? DiscreteColormap::mapValue(t, binCount) : t;
+                // Map t to the discrete values for discrete colormap.
+                t = (useDiscreteColormap) ? DiscreteColormap::mapValue(t, numDiscreteColors) : t;
 
                 // Map scalar to RGB color.
                 colorAcc[i] = gradient->valueToColor(t);

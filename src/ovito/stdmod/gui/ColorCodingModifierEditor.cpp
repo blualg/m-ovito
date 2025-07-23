@@ -155,7 +155,7 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     BooleanParameterUI* symmetricRangePUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorCodingModifier::symmetricRange));
     layout2->addWidget(symmetricRangePUI->checkBox(), row++, 1);
     // Discrete colormap
-    BooleanParameterUI* discreteColormapPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorCodingModifier::discreteColormap));
+    BooleanParameterUI* discreteColormapPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorCodingModifier::useDiscreteColormap));
     layout2->addWidget(discreteColormapPUI->checkBox(), row++, 1);
 
     layout1->addSpacing(8);
@@ -204,11 +204,11 @@ void ColorCodingModifierEditor::updateColorGradient()
 
     // Create the color legend image or reuse cached one.
     // binCount < 0 indicates that the color gradient is not a discrete colormap.
-    const int binCount =
-        (mod->discreteColormap()) ? DiscreteColormap::binCount((FloatType)mod->startValue(), (FloatType)mod->endValue()) : -1;
-    const std::pair<int, int> key{index, binCount};
+    const int numDiscreteColors =
+        (mod->useDiscreteColormap()) ? DiscreteColormap::binCount((FloatType)mod->startValue(), (FloatType)mod->endValue()) : -1;
+    const std::pair<int, int> key{index, numDiscreteColors};
     if(!_colorGradientCache.contains(key)) {
-        _colorGradientCache.emplace(key, Colormap::generateImage<legendHeight>(mod->colorGradient(), binCount));
+        _colorGradientCache.emplace(key, Colormap::generateImage<legendHeight>(mod->colorGradient(), numDiscreteColors));
     }
     _colorLegendLabel->setPixmap(QPixmap::fromImage(_colorGradientCache.value(key)));
 

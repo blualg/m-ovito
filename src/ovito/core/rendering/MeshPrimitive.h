@@ -113,7 +113,7 @@ public:
     int discreteColorMapBinCount() const { return _discreteColorMapBinCount; }
 
     /// Sets the number of bins for discrete color mapping.
-    void setDiscreteColorMapBinCount(int binCount) { _discreteColorMapBinCount = binCount; }
+    void setDiscreteColorMapBinCount(int numDiscreteColors) { _discreteColorMapBinCount = numDiscreteColors; }
 
     /// Activates rendering of multiple instances of the mesh.
     void setInstancedRendering(ConstDataBufferPtr perInstanceTMs, ConstDataBufferPtr perInstanceColors) {

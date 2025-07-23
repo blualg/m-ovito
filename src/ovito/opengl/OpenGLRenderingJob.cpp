@@ -1059,12 +1059,12 @@ const OpenGLTexture& OpenGLRenderingJob::uploadImage(const QImage& image)
 /******************************************************************************
  * Creates a 1-D OpenGL texture object for a ColorCodingGradient.
  ******************************************************************************/
-const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradient* gradient, int binCount)
+const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradient* gradient, int numDiscreteColors)
 {
     // Check if this color map has already been uploaded to the GPU.
     return currentResourceFrame().lookup<OpenGLTexture>(
         RendererResourceKey<struct ColorMapCache, OORef<const ColorCodingGradient>, const QOpenGLContextGroup*, int>{
-            gradient, QOpenGLContextGroup::currentContextGroup(), binCount},
+            gradient, QOpenGLContextGroup::currentContextGroup(), numDiscreteColors},
         [&](OpenGLTexture& texture) {
             // Sample the color gradient to produce a row of RGB pixel data.
             int resolution;
@@ -1076,7 +1076,7 @@ const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradien
                 for(int x = 0; x < resolution; x++) {
                     auto t = (float)x / ((float)resolution - 1);
                     // Use discrete color mapping if the bin count is > 0
-                    t = (binCount <= 0) ? t : DiscreteColormap::mapValue(t, binCount);
+                    t = (numDiscreteColors <= 0) ? t : DiscreteColormap::mapValue(t, numDiscreteColors);
                     auto c = gradient->valueToColor(t);
                     pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
                     pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
@@ -1091,7 +1091,7 @@ const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradien
             // Create the 1-d texture object.
             texture.create(QOpenGLTexture::Target2D);
             texture.setWrapMode(QOpenGLTexture::ClampToEdge);
-            const QOpenGLTexture::Filter minMagFilter = (binCount <= 0) ? QOpenGLTexture::Linear : QOpenGLTexture::Nearest;
+            const QOpenGLTexture::Filter minMagFilter = (numDiscreteColors <= 0) ? QOpenGLTexture::Linear : QOpenGLTexture::Nearest;
             texture.setMinMagFilters(minMagFilter, minMagFilter);  // Note: Other modes may cause artifacts, e.g., at cylinder ends.
             texture.setData(
                 QOpenGLTexture::RGB8_UNorm, QOpenGLTexture::RGB, QOpenGLTexture::UInt8,

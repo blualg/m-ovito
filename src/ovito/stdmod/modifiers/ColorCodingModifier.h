@@ -180,7 +180,7 @@ private:
 
     /// Use a discrete color map generating one color value for each integer value in the range
     /// Values will be binned into these integer bins
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, discreteColormap, discreteColormap);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useDiscreteColormap, setUseDiscreteColormap);
 
     friend class ColorCodingModifierDelegate;
 };
