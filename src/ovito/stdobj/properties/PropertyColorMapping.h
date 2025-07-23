@@ -48,15 +48,13 @@ public:
     /// Determines the min/max range of values stored in the given property array.
     std::optional<std::pair<FloatType, FloatType>> determineValueRange(const Property* pseudoColorProperty, int pseudoColorPropertyComponent) const;
 
+    /// Swaps the minimum and maximum values to reverse the color scale.
+    void reverseRange();
+
 protected:
 
     /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
-
-public Q_SLOTS:
-
-    /// Swaps the minimum and maximum values to reverse the color scale.
-    void reverseRange();
 
 private:
 
@@ -76,8 +74,7 @@ private:
     /// This is intended to be used with diverging color maps like blue-white-red.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, symmetricRange, setSymmetricRange);
 
-    /// Use a discrete color map generating one color value for each integer value in the range
-    /// Values will be binned into these integer bins
+    /// Use a discrete version of the color map with one color value per integer value in the value range.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useDiscreteColormap, setUseDiscreteColormap);
 };
 
