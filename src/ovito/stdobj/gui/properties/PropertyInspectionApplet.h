@@ -133,7 +133,7 @@ private:
         virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
         /// Replaces the contents of this data model.
-        void setContents(const PropertyContainer* container);
+        int setContents(const PropertyContainer* container);
 
         /// Returns the list of properties managed by this table model.
         const std::vector<ConstPropertyPtr>& properties() const { return _properties; }

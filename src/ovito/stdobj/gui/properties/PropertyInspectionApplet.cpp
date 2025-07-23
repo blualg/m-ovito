@@ -53,6 +53,8 @@ void PropertyInspectionApplet::createBaseWidgets()
     _filterModel = new PropertyFilterModel(this, _tableView);
     _filterModel->setSourceModel(_tableModel);
     _tableView->setModel(_filterModel);
+    _tableView->horizontalHeader()->setResizeContentsPrecision(64); // Limit the number of rows taken into account when auto-resizing columns.
+    _tableView->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     _cleanupHandler.add(_tableView);
 
     // Clear filter expression whenever a different scene pipeline or data object is selected by the user.
@@ -68,9 +70,14 @@ void PropertyInspectionApplet::createBaseWidgets()
 void PropertyInspectionApplet::onCurrentContainerChanged()
 {
     mainWindow().handleExceptions([&]() {
-        _tableModel->setContents(selectedContainerObject());
+        int oldColumnCount = _tableModel->setContents(selectedContainerObject());
         _filterModel->setContentsBegin();
         _filterModel->setContentsEnd();
+
+        // Adjust the widths of the newly added columns.
+        for(int i = oldColumnCount; i < _tableModel->columnCount(); i++) {
+            _tableView->resizeColumnToContents(i);
+        }
 
         // Update the list of variables that can be referenced in the filter expression.
         if(selectedContainerObject() && currentState()) {
@@ -112,7 +119,7 @@ bool PropertyInspectionApplet::selectDataObject(const PipelineNode* createdByNod
 /******************************************************************************
 * Replaces the contents of this data model.
 ******************************************************************************/
-void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyContainer* container)
+int PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyContainer* container)
 {
     OVITO_ASSERT(this_task::get());
 
@@ -131,12 +138,13 @@ void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCon
     if(!newProperties.empty())
         newRowCount = (int)std::min(newProperties.front()->size(), (size_t)std::numeric_limits<int>::max());
 
-    // Try to preserve the columns of the model as far as possible.
+    // Try to preserve the existing columns of the model as far as possible.
     auto iter_pair = std::mismatch(_properties.begin(), _properties.end(), newProperties.begin(), newProperties.end(),
         [](const Property* prop1, const Property* prop2) {
-            return prop1->typeId() == prop2->typeId() && prop1->name() == prop2->name();
+            return prop1->typeId() == prop2->typeId() && prop1->name() == prop2->name() && prop1->componentNames() == prop2->componentNames();
         });
 
+    // Remove columns from the model that are no longer present in the new list.
     if(iter_pair.first != _properties.end()) {
         beginRemoveColumns(QModelIndex(), iter_pair.first - _properties.begin(), _properties.size()-1);
         _properties.erase(iter_pair.first, _properties.end());
@@ -144,6 +152,7 @@ void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCon
     }
 
     OVITO_ASSERT(_properties.size() <= newProperties.size());
+    int oldColumnCount = _properties.size();
     if(!_properties.empty()) {
         if(oldRowCount > newRowCount) {
             beginRemoveRows(QModelIndex(), newRowCount, oldRowCount-1);
@@ -163,8 +172,9 @@ void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCon
             dataChanged(index(0, 0), index(changedRows-1, _properties.size()-1));
         }
 
+        // Insert new columns that are present in the new list but not in the existing model.
         if(newProperties.size() > _properties.size()) {
-            beginInsertColumns(QModelIndex(), _properties.size(), newProperties.size()-1);
+            beginInsertColumns(QModelIndex(), _properties.size(), newProperties.size() - 1);
             _properties.insert(_properties.end(), std::make_move_iterator(newProperties.begin() + _properties.size()), std::make_move_iterator(newProperties.end()));
             endInsertColumns();
         }
@@ -176,6 +186,7 @@ void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCon
     }
 
     OVITO_ASSERT(rowCount() == newRowCount);
+    return oldColumnCount;
 }
 
 /******************************************************************************
