@@ -25,6 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
+#include <ovito/core/rendering/ColormapHelper.h>
 
 namespace Ovito {
 
@@ -39,12 +40,17 @@ public:
     PseudoColorMapping() = default;
 
     /// Constructor.
-    PseudoColorMapping(FloatType minValue, FloatType maxValue, OORef<ColorCodingGradient> gradient) : _minValue(minValue), _maxValue(maxValue), _gradient(std::move(gradient)) {
+    PseudoColorMapping(FloatType minValue, FloatType maxValue, OORef<ColorCodingGradient> gradient, int discreteColorMapBinCount = -1)
+        : _minValue(minValue), _maxValue(maxValue), _gradient(std::move(gradient)), _discreteColorMapBinCount(discreteColorMapBinCount)
+    {
         OVITO_ASSERT(_gradient);
     }
 
     /// Returns true if this is not the null mapping.
     bool isValid() const { return (bool)_gradient && std::isfinite(_minValue) && std::isfinite(_maxValue); }
+
+    /// Returns the number of bins for discrete color mapping.
+    int discreteColorMapBinCount() const { return _discreteColorMapBinCount; }
 
     /// Returns the lower bound of the mapping interval.
     FloatType minValue() const { return _minValue; }
@@ -77,12 +83,14 @@ public:
         else if(t == -std::numeric_limits<T>::infinity()) t = T(0);
         else if(t < T(0)) t = T(0);
         else if(t > T(1)) t = T(1);
+        t = (_discreteColorMapBinCount <= 0) ? t : DiscreteColormap::mapValue(t, _discreteColorMapBinCount);
         return gradient()->valueToColor(t);
     }
 
     /// Comparison operator. Is required so PseudoColorMapping can be used as key value in the vis cache.
     bool operator==(const PseudoColorMapping& other) const {
-        return _minValue == other._minValue && _maxValue == other._maxValue && _gradient == other._gradient;
+        return _minValue == other._minValue && _maxValue == other._maxValue && _gradient == other._gradient &&
+               _discreteColorMapBinCount == other._discreteColorMapBinCount;
     }
 
 private:
@@ -95,6 +103,9 @@ private:
 
     /// The color gradient.
     OORef<ColorCodingGradient> _gradient;
+
+    /// Number of bins for discrete color mapping.
+    int _discreteColorMapBinCount = -1;
 };
 
 }   // End of namespace

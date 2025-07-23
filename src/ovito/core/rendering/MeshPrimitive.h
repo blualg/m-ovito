@@ -110,11 +110,6 @@ public:
         _pseudoColorMapping = mapping;
     }
 
-    int discreteColorMapBinCount() const { return _discreteColorMapBinCount; }
-
-    /// Sets the number of bins for discrete color mapping.
-    void setDiscreteColorMapBinCount(int numDiscreteColors) { _discreteColorMapBinCount = numDiscreteColors; }
-
     /// Activates rendering of multiple instances of the mesh.
     void setInstancedRendering(ConstDataBufferPtr perInstanceTMs, ConstDataBufferPtr perInstanceColors) {
         OVITO_ASSERT(perInstanceTMs);
@@ -202,9 +197,6 @@ private:
 
     /// The mapping from pseudo-color values at the mesh vertices to RGB colors.
     PseudoColorMapping _pseudoColorMapping;
-
-    /// Number of bins for discrete color mapping.
-    int _discreteColorMapBinCount = -1;
 
     /// Controls the rendering of edge wireframe.
     bool _emphasizeEdges = false;

@@ -44,6 +44,7 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
     if(primitive.pseudoColorMapping().isValid() && !isPickingPass() && primitive.colors() && primitive.colors()->componentCount() == 1)
         renderWithPseudoColorMapping = true;
     const OpenGLTexture* colorMapTexture = nullptr;
+    qDebug() << "renderWithPseudoColorMapping" << renderWithPseudoColorMapping;
 
     // Activate the right OpenGL shader program.
     OpenGLShaderHelper shader(this);
@@ -153,7 +154,7 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
         // The color and transparency arrays may contain either 1 or 2 values per cylinder primitive.
         // In case two are given, linear interpolation along the primitive will be performed by the
         // renderer (for cylinders but not arrows).
-
+        qDebug() << "primitive.colors()" << primitive.colors();
         // Upload RGB or pseudo-colors.
         if(primitive.colors() && !renderWithPseudoColorMapping && primitive.colors()->componentCount() == 3) {
             QOpenGLBuffer rgbBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance);
@@ -217,7 +218,8 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
             shader.setUniformValue("color_range_max", maxValue);
 
             // Upload color map as a 1-d OpenGL texture.
-            colorMapTexture = &uploadColorMap(primitive.pseudoColorMapping().gradient());
+            colorMapTexture =
+                &uploadColorMap(primitive.pseudoColorMapping().gradient(), primitive.pseudoColorMapping().discreteColorMapBinCount());
             colorMapTexture->bind();
         }
         else {
