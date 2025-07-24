@@ -87,7 +87,8 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     //sublayout2->addWidget(absorptionUnitDistanceUI->label(), 1, 0);
     //sublayout2->addLayout(absorptionUnitDistanceUI->createFieldLayout(), 1, 1);
 
-    QLabel* label = new QLabel(tr("<p style=\"font-size: small;\">Note: Volume rendering is only supported by <a href=\"visrtx\">VisRTX</a> and <a href=\"ospray\">OSPRay</a> renderers.</p>"));
+    QLabel* label = new QLabel(tr(
+        R"(<p style="font-size: small;">Note: Volume rendering is only supported by <a href="visrtx">VisRTX</a> and <a href="ospray">OSPRay</a> renderers.</p>)"));
     label->setWordWrap(true);
     label->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
     connect(label, &QLabel::linkActivated, this, [this](const QString& link) {
@@ -110,7 +111,8 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     });
 
     // Open a sub-editor for the property color mapping.
-    SubObjectParameterUI* colorMappingParamUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(VoxelGridVis::colorMapping), rolloutParams.after(rollout));
+    SubObjectParameterUI* colorMappingParamUI = createParamUI<SubObjectParameterUI>(
+        PROPERTY_FIELD(VoxelGridVis::colorMapping), rolloutParams.after(rollout).setEditorHint("HideDiscretizationOption"));
 
     // Whenever the pipeline input of the vis element changes, update the list of available
     // properties in the color mapping editor.

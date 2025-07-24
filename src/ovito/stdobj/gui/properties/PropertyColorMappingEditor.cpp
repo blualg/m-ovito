@@ -129,9 +129,13 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
     BooleanParameterUI* symmetricRangePUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(PropertyColorMapping::symmetricRange));
     layout2->addWidget(symmetricRangePUI->checkBox(), 3, 1);
     connect(symmetricRangePUI->checkBox(), &QCheckBox::toggled, _startValueUI, &FloatParameterUI::setDisabled);
+
     // Discrete colormap
-    BooleanParameterUI* discreteColormapPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(PropertyColorMapping::useDiscreteColormap));
-    layout2->addWidget(discreteColormapPUI->checkBox(), 4, 1);
+    if(!rolloutParams.editorHints().contains("HideDiscretizationOption")) {
+        BooleanParameterUI* discreteColormapPUI =
+            createParamUI<BooleanParameterUI>(PROPERTY_FIELD(PropertyColorMapping::useDiscreteColormap));
+        layout2->addWidget(discreteColormapPUI->checkBox(), 4, 1);
+    }
 
     layout1->addSpacing(8);
 

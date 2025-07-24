@@ -1071,10 +1071,11 @@ const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradien
             std::vector<uint8_t> pixelData;
 
             if(gradient) {
-                resolution = 256;
+                // Set the resolution to the number of discrete colors if specified, otherwise use 256.
+                resolution = (numDiscreteColors <= 0) ? 256 : std::min(256, numDiscreteColors);
                 pixelData.resize(resolution * 3);
                 for(int x = 0; x < resolution; x++) {
-                    auto t = (float)x / ((float)resolution - 1);
+                    float t = (float)x / float(resolution - 1);
                     // Use discrete color mapping if the bin count is > 0
                     t = (numDiscreteColors <= 0) ? t : DiscreteColormap::mapValue(t, numDiscreteColors);
                     auto c = gradient->valueToColor(t);
@@ -1091,6 +1092,8 @@ const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradien
             // Create the 1-d texture object.
             texture.create(QOpenGLTexture::Target2D);
             texture.setWrapMode(QOpenGLTexture::ClampToEdge);
+            // Use nearest filter for discrete color map to avoid color interpolation
+            // Use linear in all other cases to avoid artifacts.
             const QOpenGLTexture::Filter minMagFilter = (numDiscreteColors <= 0) ? QOpenGLTexture::Linear : QOpenGLTexture::Nearest;
             texture.setMinMagFilters(minMagFilter, minMagFilter);  // Note: Other modes may cause artifacts, e.g., at cylinder ends.
             texture.setData(
