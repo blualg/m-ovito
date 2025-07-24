@@ -85,8 +85,12 @@ Automatic range
   With this option turned on the modifier will dynamically adjust the start and end value parameters to the current min/max range of input property values.
 
 Symmetric range
-When this option is enabled, the modifier will automatically adjust the value range to be symmetric around 0.
-Manually setting the maximum value will also adjust the minimum value to match.
+  When this option is enabled, the modifier automatically adjusts the value range to be symmetric around zero.
+  Manually setting the maximum value will also adjust the minimum value to match symmetrically.
+
+Discretize
+  Enabling this option discretizes the color map, assigning one color per integer step within the specified value range.
+  The start and end values of the range are rounded to the nearest integer.
 
 Color only selected elements
   This option restricts the assignment of colors to currently selected particles or bonds. The colors of unselected particles or bonds will remain unchanged.
