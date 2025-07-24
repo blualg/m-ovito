@@ -248,7 +248,8 @@ void SurfaceMeshReadAccess::convertToTriMesh(TriangleMesh& outputMesh, bool smoo
 
     // Transfer faces from surface mesh to output triangle mesh.
     for(face_index face = 0; face < faceCount; face++) {
-        if(!faceSubset.empty() && !faceSubset[face]) continue;
+        if(!faceSubset.empty() && !faceSubset[face])
+            continue;
 
         // Determine whether opposite triangles should be created for the current source face.
         bool createOppositeFace = autoGenerateOppositeFaces && (!hasOppositeFace(face) || (!faceSubset.empty() && !faceSubset[oppositeFace(face)]));
