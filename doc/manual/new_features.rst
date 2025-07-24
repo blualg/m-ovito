@@ -9,14 +9,19 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.13.1>`__
 
 ----------------------------
+Version 3.14.0 (xx-xxx-2025)
+----------------------------
+
+- |ovito-pro| Implement :ref:`Find Rings modifier <particles.modifiers.find_rings>` - a high performance implementation of the `Ring Finder Python extension <https://github.com/ovito-org/RingFinder>`__  .
+- Extend color coding modifier, property mapping and color legend overlay to support discrete color mappings.
+- Fix bug where the last tick mark was missing in the color legend overlay.
+
+----------------------------
 Version 3.13.1 (xx-xxx-2025)
 ----------------------------
 
 - GALAMOST file reader: Added support for ``<force>`` and ``<virial>`` tags
 - Added usage example to :ref:`Spatial Binning <particles.modifiers.bin_and_reduce.type_counting>` modifier documentation, demonstrating how to compute the local stoichiometry of a particle system.
-- |ovito-pro| Implement :ref:`Find Rings modifier <particles.modifiers.find_rings>` - a high performance implementation of the `Ring Finder Python extension <https://github.com/ovito-org/RingFinder>`__  .
-- Extend color coding modifier, property mapping and color legend overlay to support discrete color mappings.
-- Fix bug where the last tick mark was missing in the color legend overlay.
 
 .. sidebar::
 
