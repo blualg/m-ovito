@@ -27,7 +27,9 @@
 
 namespace Ovito {
 namespace DiscreteColorMap {
-/// Returns the bin count in a discrete colormap.
+
+/// Computes the number of different levels in a discrete colormap such that
+/// each integer value in the range [startValue, endValue] is mapped to a unique color.
 template<typename T>
 inline int binCount(T startValue, T endValue)
 {
