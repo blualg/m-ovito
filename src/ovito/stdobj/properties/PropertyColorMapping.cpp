@@ -25,7 +25,7 @@
 #include <ovito/core/dataset/DataSet.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/PluginManager.h>
-#include <ovito/core/rendering/ColormapHelper.h>
+#include <ovito/core/rendering/ColorMapHelper.h>
 #include "PropertyColorMapping.h"
 
 namespace Ovito {
@@ -37,13 +37,13 @@ DEFINE_PROPERTY_FIELD(PropertyColorMapping, startValue);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, endValue);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, symmetricRange);
 DEFINE_PROPERTY_FIELD(PropertyColorMapping, sourceProperty);
-DEFINE_PROPERTY_FIELD(PropertyColorMapping, useDiscreteColormap);
+DEFINE_PROPERTY_FIELD(PropertyColorMapping, useDiscreteColorMap);
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, startValue, "Start value");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, endValue, "End value");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, symmetricRange, "Symmetric range");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, colorGradient, "Color gradient");
 SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, sourceProperty, "Source property");
-SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, useDiscreteColormap, "Discretize");
+SET_PROPERTY_FIELD_LABEL(PropertyColorMapping, useDiscreteColorMap, "Discretize");
 
 /******************************************************************************
 * Constructor.
@@ -84,8 +84,8 @@ void PropertyColorMapping::initializeObject(ObjectInitializationFlags flags)
 ******************************************************************************/
 PseudoColorMapping PropertyColorMapping::pseudoColorMapping() const
 {
-    if(useDiscreteColormap() && std::isfinite(startValue()) && std::isfinite(endValue()))
-        return {startValue(), endValue(), colorGradient(), DiscreteColormap::binCount(startValue(), endValue())};
+    if(useDiscreteColorMap() && std::isfinite(startValue()) && std::isfinite(endValue()))
+        return {startValue(), endValue(), colorGradient(), DiscreteColorMap::binCount(startValue(), endValue())};
     else
         return {startValue(), endValue(), colorGradient()};
 }

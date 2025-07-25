@@ -162,8 +162,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
         shader.setUniformValue("color_range_max", maxValue);
 
         // Upload color map as a 1-d OpenGL texture.
-        colorMapTexture =
-            &uploadColorMap(primitive.pseudoColorMapping().gradient(), primitive.pseudoColorMapping().discreteColorMapBinCount());
+        colorMapTexture = &uploadColorMap(primitive.pseudoColorMapping());
         colorMapTexture->bind();
     }
 

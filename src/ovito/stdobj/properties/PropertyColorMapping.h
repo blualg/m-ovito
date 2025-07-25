@@ -75,7 +75,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, symmetricRange, setSymmetricRange);
 
     /// Use a discrete version of the color map with one color value per integer value in the value range.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useDiscreteColormap, setUseDiscreteColormap);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, useDiscreteColorMap, setUseDiscreteColorMap);
 };
 
 }   // End of namespace

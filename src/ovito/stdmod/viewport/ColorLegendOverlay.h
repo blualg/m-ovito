@@ -88,9 +88,10 @@ private:
 
     using DiscreteColorMapLabels = std::vector<std::tuple<int, QString, Color>>;
     /// Converts a typed property into an array to be used as input for drawDiscreteColorMap
-    static DiscreteColorMapLabels getDiscreteColorMapLabels(const Property* property);
+    [[nodiscard]] static DiscreteColorMapLabels getDiscreteColorMapLabels(const Property* property);
     /// Converts a given number of discrete colors into an array to be used as input for drawDiscreteColorMap
-    static DiscreteColorMapLabels getDiscreteColorMapLabels(const ColorCodingGradient* gradient, FloatType startValue, FloatType endValue);
+    [[nodiscard]] DiscreteColorMapLabels getDiscreteColorMapLabels(const ColorCodingGradient* gradient, FloatType startValue,
+                                                                   FloatType endValue, bool reverse = false) const;
 
     /// Draws the color legend for a typed property.
     void drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect,

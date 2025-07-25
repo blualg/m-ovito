@@ -25,7 +25,7 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
 #include <ovito/core/rendering/FrameGraph.h>
-#include <ovito/core/rendering/ColormapHelper.h>
+#include <ovito/core/rendering/ColorMapHelper.h>
 #include "OpenGLRenderingJob.h"
 #include "OpenGLRenderingFrameBuffer.h"
 #include "OpenGLHelpers.h"
@@ -1059,26 +1059,30 @@ const OpenGLTexture& OpenGLRenderingJob::uploadImage(const QImage& image)
 /******************************************************************************
  * Creates a 1-D OpenGL texture object for a ColorCodingGradient.
  ******************************************************************************/
-const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradient* gradient, int numDiscreteColors)
+const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const PseudoColorMapping& pseudoColorMapping)
 {
+    // Bin count of the discrete color map.
+    // Use discrete color mapping if the bin count is > 0
+    const int numDiscreteColors = pseudoColorMapping.discreteColorMapBinCount();
+
     // Check if this color map has already been uploaded to the GPU.
     return currentResourceFrame().lookup<OpenGLTexture>(
         RendererResourceKey<struct ColorMapCache, OORef<const ColorCodingGradient>, const QOpenGLContextGroup*, int>{
-            gradient, QOpenGLContextGroup::currentContextGroup(), numDiscreteColors},
+            pseudoColorMapping.gradient(), QOpenGLContextGroup::currentContextGroup(), pseudoColorMapping.discreteColorMapBinCount()},
         [&](OpenGLTexture& texture) {
             // Sample the color gradient to produce a row of RGB pixel data.
             int resolution;
             std::vector<uint8_t> pixelData;
 
-            if(gradient) {
+            if(pseudoColorMapping.gradient()) {
                 // Set the resolution to the number of discrete colors if specified, otherwise use 256.
                 resolution = (numDiscreteColors <= 0) ? 256 : std::min(256, numDiscreteColors);
-                pixelData.resize(resolution * 3);
+                pixelData.resize((size_t)resolution * 3);
                 for(int x = 0; x < resolution; x++) {
                     float t = (float)x / float(resolution - 1);
                     // Use discrete color mapping if the bin count is > 0
-                    t = (numDiscreteColors <= 0) ? t : DiscreteColormap::mapValue(t, numDiscreteColors);
-                    auto c = gradient->valueToColor(t);
+                    t = (numDiscreteColors <= 0) ? t : DiscreteColorMap::mapValue(t, numDiscreteColors);
+                    auto c = pseudoColorMapping.gradient()->valueToColor(t);
                     pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
                     pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
                     pixelData[x * 3 + 2] = (uint8_t)(255 * c.b());

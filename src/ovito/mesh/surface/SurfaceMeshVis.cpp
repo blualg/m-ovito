@@ -30,7 +30,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/rendering/ColormapHelper.h>
+#include <ovito/core/rendering/ColorMapHelper.h>
 #include "SurfaceMeshVis.h"
 #include "SurfaceMesh.h"
 #include "SurfaceMeshReadAccess.h"

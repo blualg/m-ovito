@@ -29,7 +29,7 @@
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
-#include <ovito/core/rendering/ColormapHelper.h>
+#include <ovito/core/rendering/ColorMapHelper.h>
 
 #include <algorithm>
 #include "ColorLegendOverlay.h"
@@ -311,9 +311,11 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
                         startValue = minValue.value<FloatType>();
                         endValue = maxValue.value<FloatType>();
                     }
-                    if(modifier() && modifier()->useDiscreteColormap() && minValue.isValid() && maxValue.isValid()) {
-                        drawDiscreteColorMap(*frameGraph, commandGroup, colorBarRect, legendSize,
-                                             getDiscreteColorMapLabels(modifier()->colorGradient(), startValue, endValue));
+                    if(modifier() && modifier()->useDiscreteColorMap() && minValue.isValid() && maxValue.isValid()) {
+                        // Reverse discrete colormap if vertical orientation is used to match the continuous colormap's direction.
+                        drawDiscreteColorMap(
+                            *frameGraph, commandGroup, colorBarRect, legendSize,
+                            getDiscreteColorMapLabels(modifier()->colorGradient(), startValue, endValue, orientation() == Qt::Vertical));
                     }
                     else if(modifier()) {
                         drawContinuousColorMap(*frameGraph, commandGroup, colorBarRect, legendSize,
@@ -323,10 +325,11 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
                 });
             }
             else {
-                if(modifier()->useDiscreteColormap()) {
-                    drawDiscreteColorMap(
-                        frameGraph, commandGroup, colorBarRect, legendSize,
-                        getDiscreteColorMapLabels(modifier()->colorGradient(), modifier()->startValue(), modifier()->endValue()));
+                if(modifier()->useDiscreteColorMap() && std::isfinite(modifier()->startValue()) && std::isfinite(modifier()->endValue())) {
+                    // Reverse discrete colormap if vertical orientation is used to match the continuous colormap's direction.
+                    drawDiscreteColorMap(frameGraph, commandGroup, colorBarRect, legendSize,
+                                         getDiscreteColorMapLabels(modifier()->colorGradient(), modifier()->startValue(),
+                                                                   modifier()->endValue(), orientation() == Qt::Vertical));
                 }
                 else {
                     drawContinuousColorMap(
@@ -338,11 +341,13 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
         }
         else if(colorMapping()) {
             _autoTitleText = colorMapping()->sourceProperty().nameWithComponent();
-            if(colorMapping()->useDiscreteColormap() && std::isfinite(colorMapping()->startValue()) &&
+            if(colorMapping()->useDiscreteColorMap() && std::isfinite(colorMapping()->startValue()) &&
                std::isfinite(colorMapping()->endValue())) {
-                drawDiscreteColorMap(frameGraph, commandGroup, colorBarRect, legendSize,
-                                     getDiscreteColorMapLabels(colorMapping()->pseudoColorMapping().gradient(),
-                                                               colorMapping()->startValue(), colorMapping()->endValue()));
+                // Reverse discrete colormap if vertical orientation is used to match the continuous colormap's direction.
+                drawDiscreteColorMap(
+                    frameGraph, commandGroup, colorBarRect, legendSize,
+                    getDiscreteColorMapLabels(colorMapping()->pseudoColorMapping().gradient(), colorMapping()->startValue(),
+                                              colorMapping()->endValue(), orientation() == Qt::Vertical));
             }
             else {
                 drawContinuousColorMap(frameGraph, commandGroup, colorBarRect, legendSize, colorMapping()->pseudoColorMapping());
@@ -949,15 +954,26 @@ ColorLegendOverlay::DiscreteColorMapLabels ColorLegendOverlay::getDiscreteColorM
 }
 
 ColorLegendOverlay::DiscreteColorMapLabels ColorLegendOverlay::getDiscreteColorMapLabels(const ColorCodingGradient* gradient,
-                                                                                         FloatType startValue, FloatType endValue)
+                                                                                         FloatType startValue, FloatType endValue,
+                                                                                         bool reverse) const
 {
-    const int numDiscreteColors = DiscreteColormap::binCount(startValue, endValue);
-    const int offset = (int)std::round(startValue);
+    const int numDiscreteColors = DiscreteColorMap::binCount(startValue, endValue);
+    const int offset = (int)std::round(std::min(startValue, endValue));
     DiscreteColorMapLabels labels;
     labels.reserve(numDiscreteColors);
+
+    // Format the numbers matching continuous color maps.
+    QByteArray format = valueFormatString().toUtf8();
+    if(format.contains("%s")) {
+        format.clear();
+    }
+
     for(int i = 0; i < numDiscreteColors; ++i) {
-        FloatType t = DiscreteColormap::mapValue((FloatType)i / FloatType(numDiscreteColors - 1), numDiscreteColors);
-        labels.emplace_back(i, QString::number(offset + i), gradient->valueToColor(t));
+        FloatType t = DiscreteColorMap::mapValue((FloatType)i / FloatType(numDiscreteColors - 1), numDiscreteColors);
+        labels.emplace_back(i, QString::asprintf(format.constData(), FloatType(offset + i)), gradient->valueToColor(t));
+    }
+    if(reverse) {
+        std::ranges::reverse(labels);
     }
     return labels;
 }

@@ -26,12 +26,13 @@
 #include <ovito/core/rendering/ColorCodingGradient.h>
 
 namespace Ovito {
-namespace DiscreteColormap {
+namespace DiscreteColorMap {
 /// Returns the bin count in a discrete colormap.
 template<typename T>
 inline int binCount(T startValue, T endValue)
 {
-    return (int)std::round(std::abs(endValue - startValue)) + 1;
+    // Protect against overflow
+    return (int)std::min(std::round(std::abs(endValue - startValue)), (T)255) + 1;
 }
 
 /// Maps the color value t [0,1] to its discrete value based on the discrete colormap bin count.
@@ -56,9 +57,9 @@ inline T mapValue(T t, V binCount)
     return binIndex * binSize;
 }
 
-}  // namespace DiscreteColormap
+}  // namespace DiscreteColorMap
 
-namespace Colormap {
+namespace ColorMap {
 
 /// Generates a color gradient image for the given color map.
 /// binCount <= 0 indicates that the color gradient is not a discrete colormap.
@@ -69,13 +70,13 @@ QImage generateImage(const ColorCodingGradient* gradient, int binCount = -1)
     for(int y = 0; y < legendHeight; y++) {
         FloatType t = (FloatType)y / (legendHeight - 1);
         // binCount <= 0 indicates that the color gradient is not a discrete colormap.
-        t = (binCount <= 0) ? t : DiscreteColormap::mapValue(t, binCount);
+        t = (binCount <= 0) ? t : DiscreteColorMap::mapValue(t, binCount);
         const Color color = gradient->valueToColor(1.0 - t);
         image.setPixel(0, y, QColor(color).rgb());
     }
     return image;
 }
 
-}  // namespace Colormap
+}  // namespace ColorMap
 
 }  // namespace Ovito

@@ -34,7 +34,7 @@
 #include <ovito/core/oo/OvitoClass.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include "ColorCodingModifierEditor.h"
-#include <ovito/core/rendering/ColormapHelper.h>
+#include <ovito/core/rendering/ColorMapHelper.h>
 
 namespace Ovito {
 
@@ -75,9 +75,10 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout1->addWidget(_colorGradientList);
     _colorGradientList->setIconSize(QSize(48,16));
     connect(_colorGradientList, qOverload<int>(&QComboBox::activated), this, &ColorCodingModifierEditor::onColorGradientSelected);
-    std::vector<OvitoClassPtr> sortedColormapClassList = PluginManager::instance().listClasses(ColorCodingGradient::OOClass());
-    boost::sort(sortedColormapClassList, [](OvitoClassPtr a, OvitoClassPtr b) { return QString::localeAwareCompare(a->displayName(), b->displayName()) < 0; });
-    for(OvitoClassPtr clazz : sortedColormapClassList) {
+    std::vector<OvitoClassPtr> sortedColorMapClassList = PluginManager::instance().listClasses(ColorCodingGradient::OOClass());
+    boost::sort(sortedColorMapClassList,
+                [](OvitoClassPtr a, OvitoClassPtr b) { return QString::localeAwareCompare(a->displayName(), b->displayName()) < 0; });
+    for(OvitoClassPtr clazz : sortedColorMapClassList) {
         if(clazz == &ColorCodingImageGradient::OOClass() || clazz == &ColorCodingTableGradient::OOClass())
             continue;
         _colorGradientList->addItem(iconFromColorMapClass(clazz), clazz->displayName(), QVariant::fromValue(clazz));
@@ -155,8 +156,8 @@ void ColorCodingModifierEditor::createUI(const RolloutInsertionParameters& rollo
     BooleanParameterUI* symmetricRangePUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorCodingModifier::symmetricRange));
     layout2->addWidget(symmetricRangePUI->checkBox(), row++, 1);
     // Discrete colormap
-    BooleanParameterUI* discreteColormapPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorCodingModifier::useDiscreteColormap));
-    layout2->addWidget(discreteColormapPUI->checkBox(), row++, 1);
+    BooleanParameterUI* discreteColorMapPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ColorCodingModifier::useDiscreteColorMap));
+    layout2->addWidget(discreteColorMapPUI->checkBox(), row++, 1);
 
     layout1->addSpacing(8);
     _adjustRangeBtn = new QPushButton(tr("Adjust range"), rollout);
@@ -203,12 +204,12 @@ void ColorCodingModifierEditor::updateColorGradient()
     constexpr int legendHeight = 128;
 
     // Create the color legend image or reuse cached one.
-    // binCount < 0 indicates that the color gradient is not a discrete colormap.
+    // binCount <= 0 indicates that the color gradient is not a discrete colormap.
     const int numDiscreteColors =
-        (mod->useDiscreteColormap()) ? DiscreteColormap::binCount((FloatType)mod->startValue(), (FloatType)mod->endValue()) : -1;
+        (mod->useDiscreteColorMap()) ? DiscreteColorMap::binCount((FloatType)mod->startValue(), (FloatType)mod->endValue()) : 0;
     const std::pair<int, int> key{index, numDiscreteColors};
     if(!_colorGradientCache.contains(key)) {
-        _colorGradientCache.emplace(key, Colormap::generateImage<legendHeight>(mod->colorGradient(), numDiscreteColors));
+        _colorGradientCache.emplace(key, ColorMap::generateImage<legendHeight>(mod->colorGradient(), numDiscreteColors));
     }
     _colorLegendLabel->setPixmap(QPixmap::fromImage(_colorGradientCache.value(key)));
 
@@ -442,17 +443,13 @@ void ColorCodingModifierEditor::onExportColorScale()
 
     SaveImageFileDialog fileDialog(_colorLegendLabel, tr("Save color map"));
     if(fileDialog.exec()) {
-
         // Create the color legend image.
-        int legendWidth = 32;
-        int legendHeight = 256;
-        QImage image(1, legendHeight, QImage::Format_RGB32);
-        for(int y = 0; y < legendHeight; y++) {
-            FloatType t = (FloatType)y / (FloatType)(legendHeight - 1);
-            Color color = mod->colorGradient()->valueToColor(1.0 - t);
-            image.setPixel(0, y, QColor(color).rgb());
-        }
-
+        constexpr int legendWidth = 32;
+        constexpr int legendHeight = 256;
+        // binCount <= 0 indicates that the color gradient is not a discrete colormap.
+        const int numDiscreteColors =
+            (mod->useDiscreteColorMap()) ? DiscreteColorMap::binCount((FloatType)mod->startValue(), (FloatType)mod->endValue()) : 0;
+        QImage image = ColorMap::generateImage<legendWidth>(mod->colorGradient(), numDiscreteColors);
         QString imageFilename = fileDialog.imageInfo().filename();
         if(!image.scaled(legendWidth, legendHeight, Qt::IgnoreAspectRatio, Qt::FastTransformation).save(imageFilename, fileDialog.imageInfo().format())) {
             mainWindow().reportError(tr("Failed to save image to file '%1'.").arg(imageFilename));

@@ -25,7 +25,7 @@
 
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
-#include <ovito/core/rendering/ColormapHelper.h>
+#include <ovito/core/rendering/ColorMapHelper.h>
 
 namespace Ovito {
 
@@ -40,7 +40,7 @@ public:
     PseudoColorMapping() = default;
 
     /// Constructor.
-    PseudoColorMapping(FloatType minValue, FloatType maxValue, OORef<ColorCodingGradient> gradient, int discreteColorMapBinCount = -1)
+    PseudoColorMapping(FloatType minValue, FloatType maxValue, OORef<ColorCodingGradient> gradient, int discreteColorMapBinCount = 0)
         : _minValue(minValue), _maxValue(maxValue), _gradient(std::move(gradient)), _discreteColorMapBinCount(discreteColorMapBinCount)
     {
         OVITO_ASSERT(_gradient);
@@ -83,7 +83,7 @@ public:
         else if(t == -std::numeric_limits<T>::infinity()) t = T(0);
         else if(t < T(0)) t = T(0);
         else if(t > T(1)) t = T(1);
-        t = (_discreteColorMapBinCount <= 0) ? t : DiscreteColormap::mapValue(t, _discreteColorMapBinCount);
+        t = (_discreteColorMapBinCount <= 0) ? t : DiscreteColorMap::mapValue(t, _discreteColorMapBinCount);
         return gradient()->valueToColor(t);
     }
 
@@ -105,7 +105,7 @@ private:
     OORef<ColorCodingGradient> _gradient;
 
     /// Number of bins for discrete color mapping.
-    int _discreteColorMapBinCount = -1;
+    int _discreteColorMapBinCount = 0;
 };
 
 }   // End of namespace

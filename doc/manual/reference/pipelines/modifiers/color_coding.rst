@@ -89,8 +89,7 @@ Symmetric range
   Manually setting the maximum value will also adjust the minimum value to match symmetrically.
 
 Discretize
-  Enabling this option discretizes the color map, assigning one color per integer step within the specified value range.
-  The start and end values of the range are rounded to the nearest integer.
+  The selected color gradient is divided into a number of steps, determined by the integer distance between the start and end values.
 
 Color only selected elements
   This option restricts the assignment of colors to currently selected particles or bonds. The colors of unselected particles or bonds will remain unchanged.
