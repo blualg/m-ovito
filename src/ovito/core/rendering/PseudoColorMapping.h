@@ -50,6 +50,8 @@ public:
     bool isValid() const { return (bool)_gradient && std::isfinite(_minValue) && std::isfinite(_maxValue); }
 
     /// Returns the number of bins for discrete color mapping.
+    /// A positive value indicates that the color map is discretized into this many intervals with uniform colors.
+    /// A value of zero indicates that the color map is not discretized.
     int discreteColorMapBinCount() const { return _discreteColorMapBinCount; }
 
     /// Returns the lower bound of the mapping interval.

@@ -7,6 +7,8 @@ Find rings |ovito-pro|
   :width: 35%
   :align: right
 
+.. versionadded:: 3.14.0
+
 This modifier identifies ring structures within a specified size range in particle systems that contain :ref:`bonds <scene_objects.bonds>`. These can be loaded from a file or generated using the :ref:`Create Bonds modifier <particles.modifiers.create_bonds>`.
 
 In this context, a ring is a closed loop of particles, each connected to its neighbors by bonds. Rings cannot contain bridges—this means the shortest path between any two particles within a ring must pass only through other particles in the same ring. See the schematic below:

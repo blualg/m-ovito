@@ -62,7 +62,7 @@ of one row of pixels of the imported image to generate the user-defined color ma
 Color legend
 """"""""""""
 
-If you want to include the color map of the modifier in rendered images or animations as a legend, add the
+To include the color map in rendered images or animations as a legend, add the
 :ref:`Color legend <viewport_layers>` layer to the active viewport.
 
 Parameters
@@ -89,6 +89,7 @@ Symmetric range
   Manually setting the maximum value will also adjust the minimum value to match symmetrically.
 
 Discretize
+  This option activates a discrete color map, useful for visualizing categorical data or discrete integer values.
   The selected color gradient is divided into a number of steps, determined by the integer distance between the start and end values.
 
 Color only selected elements
