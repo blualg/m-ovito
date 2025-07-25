@@ -300,9 +300,7 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
             // Append frame number to filename when rendering an animation.
             if(renderingRangeType() != RenderSettings::CURRENT_FRAME && renderingRangeType() != RenderSettings::CUSTOM_FRAME) {
                 // Format output filename.
-                qDebug() << "imageFilename" << outputFilename;
                 outputFilename = formatImageFilename(outputFilename, frameNumber);
-                qDebug() << "outputFilename" << outputFilename;
 
                 // Check for existing image file and skip frame.
                 if(skipExistingImages() && QFileInfo(outputFilename).isFile())

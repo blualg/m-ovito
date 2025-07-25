@@ -990,10 +990,6 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph
                                               const QRectF& colorBarRect, FloatType legendSize,
                                               const DiscreteColorMapLabels& colorMapLabels)
 {
-    for(const auto& label : colorMapLabels) {
-        qDebug() << std::get<int>(label) << std::get<QString>(label) << std::get<Color>(label);
-    }
-
     const qreal devicePixelRatio = frameGraph.devicePixelRatio();
 
     // Compute bounding box of the entire legend to draw the background rectangle.
