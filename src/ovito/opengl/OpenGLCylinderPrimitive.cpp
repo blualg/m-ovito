@@ -226,9 +226,9 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
 
 #ifdef Q_OS_MACOS
             // Upload a null color map to satisfy the picky OpenGL driver on macOS, which complains about
-            // no texture being bound when a sampler1D is defined in the fragment shader.
+            // no texture being bound when a sampler is defined in the fragment shader.
             if(!isPickingPass() && primitive.shape() == CylinderPrimitive::CylinderShape) {
-                colorMapTexture = &uploadColorMap(nullptr);
+                colorMapTexture = &uploadColorMap(PseudoColorMapping());
                 colorMapTexture->bind();
             }
 #endif
