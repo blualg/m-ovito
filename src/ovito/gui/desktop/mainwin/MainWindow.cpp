@@ -374,6 +374,7 @@ void MainWindow::createMainMenu()
     helpMenu->setObjectName(QStringLiteral("HelpMenu"));
     helpMenu->addAction(actionManager()->getAction(ACTION_HELP_SHOW_ONLINE_HELP));
     helpMenu->addAction(actionManager()->getAction(ACTION_HELP_SHOW_SCRIPTING_HELP));
+    helpMenu->addAction(actionManager()->getAction(ACTION_HELP_REQUEST_FEATURE));
     helpMenu->addSeparator();
     helpMenu->addAction(actionManager()->getAction(ACTION_HELP_GRAPHICS_SYSINFO));
 #ifndef  Q_OS_MACOS

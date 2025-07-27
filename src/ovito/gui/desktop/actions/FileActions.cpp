@@ -90,6 +90,23 @@ void WidgetActionManager::on_HelpShowScriptingReference_triggered()
 }
 
 /******************************************************************************
+* Handles the ACTION_HELP_SHOW_SCRIPTING_HELP command.
+******************************************************************************/
+void WidgetActionManager::on_HelpRequestFeature_triggered()
+{
+#if defined(OVITO_BUILD_PROFESSIONAL)
+    QUrl url(QStringLiteral("https://www.ovito.org/feature_request/"));
+#elif defined(OVITO_BUILD_BASIC)
+    QUrl url(QStringLiteral("https://www.ovito.org/feature_request/"));
+#else
+    QUrl url(QStringLiteral("https://www.ovito.org/feature_request/"));
+#endif
+    if(!QDesktopServices::openUrl(url)) {
+        userInterface().reportError(QStringLiteral("Failed to launch browser to display the OVITO website. The requested URL was:\n%1").arg(url.toDisplayString()));
+    }
+}
+
+/******************************************************************************
 * Handles the ACTION_HELP_GRAPHICS_SYSINFO command.
 ******************************************************************************/
 void WidgetActionManager::on_HelpSystemInfo_triggered()

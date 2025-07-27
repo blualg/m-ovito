@@ -55,6 +55,8 @@ namespace Ovito {
 #define ACTION_HELP_SHOW_SCRIPTING_HELP "HelpShowScriptingReference"
 /// This action displays graphics hardware information.
 #define ACTION_HELP_GRAPHICS_SYSINFO    "HelpSystemInfo"
+/// This action opens the feature request form.
+#define ACTION_HELP_REQUEST_FEATURE     "HelpRequestFeature"
 
 /// This action undoes the last operation.
 #define ACTION_EDIT_UNDO                "EditUndo"
