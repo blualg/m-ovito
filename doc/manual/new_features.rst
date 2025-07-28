@@ -15,6 +15,7 @@ Version 3.14.0 (xx-xxx-2025)
 - |ovito-pro| Implement :ref:`Find Rings modifier <particles.modifiers.find_rings>` - a high performance implementation of the `Ring Finder Python extension <https://github.com/ovito-org/RingFinder>`__  .
 - Extend color coding modifier, property mapping and color legend overlay to support discrete color mappings.
 - Fix bug where the last tick mark was missing in the color legend overlay.
+- Add submit feature request button
 
 ----------------------------
 Version 3.13.1 (xx-xxx-2025)

@@ -95,9 +95,9 @@ void WidgetActionManager::on_HelpShowScriptingReference_triggered()
 void WidgetActionManager::on_HelpRequestFeature_triggered()
 {
 #if defined(OVITO_BUILD_PROFESSIONAL)
-    QUrl url(QStringLiteral("https://www.ovito.org/feature_request/"));
+    QUrl url(QStringLiteral("https://www.ovito.org/feature_request/?p"));
 #elif defined(OVITO_BUILD_BASIC)
-    QUrl url(QStringLiteral("https://www.ovito.org/feature_request/"));
+    QUrl url(QStringLiteral("https://www.ovito.org/feature_request/?b"));
 #else
     QUrl url(QStringLiteral("https://www.ovito.org/feature_request/"));
 #endif
