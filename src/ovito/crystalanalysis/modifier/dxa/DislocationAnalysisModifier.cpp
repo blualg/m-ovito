@@ -168,7 +168,9 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisM
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
 
-    const SimulationCell* simCell = input.expectObject<SimulationCell>();
+    const SimulationCell* simCell = input.getObject<SimulationCell>();
+    if(!simCell)
+        throw Exception(tr("The DXA modifier requires a simulation cell to be defined."));
     if(simCell->is2D())
         throw Exception(tr("The DXA modifier does not support 2d simulation cells."));
 

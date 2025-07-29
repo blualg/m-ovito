@@ -16,6 +16,9 @@ Version 3.14.0 (xx-xxx-2025)
 - Extend color coding modifier, property mapping and color legend overlay to support discrete color mappings.
 - Fix bug where the last tick mark was missing in the color legend overlay.
 - Add submit feature request button
+- Added the :guilabel:`Generate bounding box if needed` option to the file reader settings.
+  This option allows OVITO to automatically generate a simulation cell that tightly encloses all particles in an axis-aligned bounding box
+  if the imported simulation file does not contain any simulation cell information. Otherwise, OVITO will work without *any* simulation cell by default.
 
 ----------------------------
 Version 3.13.1 (xx-xxx-2025)

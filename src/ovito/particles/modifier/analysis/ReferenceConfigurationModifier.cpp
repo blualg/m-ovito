@@ -251,41 +251,41 @@ ReferenceConfigurationModifier::Engine::Engine(
     AffineMappingType affineMapping, bool useMinimumImageConvention) :
     _positions(std::move(positions)),
     _refPositions(std::move(refPositions)),
+    _simCell(simCell),
+    _simCellRef(simCellRef),
     _identifiers(std::move(identifiers)),
     _refIdentifiers(std::move(refIdentifiers)),
     _affineMapping(affineMapping),
     _useMinimumImageConvention(useMinimumImageConvention)
 {
-    // Clone the input simulation cells, because we need to slightly adjust for the computation.
-    CloneHelper cloneHelper;
-    _simCell = cloneHelper.cloneObject(simCell, false);
-    _simCellRef = cloneHelper.cloneObject(simCellRef, false);
-
-    // Automatically disable PBCs in Z direction for 2D systems.
-    if(_simCell->is2D()) {
-        _simCell->setPbcFlags(_simCell->hasPbc(0), _simCell->hasPbc(1), false);
-        // Make sure the matrix is invertible.
-        AffineTransformation m = _simCell->matrix();
-        m.column(2) = Vector3(0,0,1);
-        _simCell->setCellMatrix(m);
-        m = _simCellRef->matrix();
-        m.column(2) = Vector3(0,0,1);
-        _simCellRef->setCellMatrix(m);
-    }
-
-    if(affineMapping != NO_MAPPING) {
-        if(cell()->volume3D() < FLOATTYPE_EPSILON || refCell()->volume3D() < FLOATTYPE_EPSILON)
-            throw Exception(tr("Simulation cell is degenerate in either the deformed or the reference configuration."));
-    }
-
     // PBCs flags of the current configuration always override PBCs flags
     // of the reference config.
-    _simCellRef->setPbcFlags(_simCell->pbcFlags());
-    _simCellRef->setIs2D(_simCell->is2D());
+    _simCellRef.setPbcFlags(_simCell.pbcFlags());
+    _simCellRef.setIs2D(_simCell.is2D());
+
+    // Check that the simulation cells are valid.
+    if(_affineMapping != NO_MAPPING) {
+        if(simCellRef == nullptr && simCell == nullptr) {
+            _affineMapping = NO_MAPPING; // No simulation cells are available, so we cannot compute a valid affine mapping.
+        }
+        else {
+            if(cell().isDegenerate())
+                throw Exception(tr("Cannot compute affine cell mapping. Simulation cell is degenerate or missing in the deformed configuration."));
+            if(refCell().isDegenerate())
+                throw Exception(tr("Cannot compute affine cell mapping. Simulation cell is degenerate or missing in the reference configuration."));
+        }
+    }
 
     // Precompute matrices for transforming points/vector between the two configurations.
-    _refToCurTM = cell()->matrix() * refCell()->inverseMatrix();
-    _curToRefTM = refCell()->matrix() * cell()->inverseMatrix();
+    if(!cell().isDegenerate() && !refCell().isDegenerate()) {
+        _refToCurTM = cell().cellMatrix() * refCell().reciprocalCellMatrix();
+        _curToRefTM = refCell().cellMatrix() * cell().reciprocalCellMatrix();
+    }
+    else {
+        // If one of the simulation cells is degenerate, we cannot compute a valid transformation matrix.
+        _refToCurTM.setIdentity();
+        _curToRefTM.setIdentity();
+    }
 }
 
 /******************************************************************************

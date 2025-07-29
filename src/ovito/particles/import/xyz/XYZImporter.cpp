@@ -478,37 +478,27 @@ void XYZImporter::FrameLoader::loadFile()
         hasSimulationCell = true;
     }
 
-    if(!hasSimulationCell || _autoRescaleCoordinates) {
+    if(!hasSimulationCell) {
+        generateBoundingBox();
+    }
+    else if(_autoRescaleCoordinates && numParticlesLong != 0 && particles()->getProperty(Particles::PositionProperty)) {
         BufferWriteAccess<Point3, access_mode::read_write> posProperty = particles()->getMutableProperty(Particles::PositionProperty);
-        if(posProperty && numParticlesLong != 0) {
-            Box3 boundingBox;
-            boundingBox.addPoints(posProperty);
+        Box3 boundingBox;
+        boundingBox.addPoints(posProperty);
 
-            if(!hasSimulationCell) {
-                // If the input file does not contain simulation cell info,
-                // use bounding box of particles as simulation cell.
-                simulationCell()->setCellMatrix(AffineTransformation(
-                        Vector3(boundingBox.sizeX(), 0, 0),
-                        Vector3(0, boundingBox.sizeY(), 0),
-                        Vector3(0, 0, boundingBox.sizeZ()),
-                        boundingBox.minc - Point3::Origin()));
-            }
-            else if(_autoRescaleCoordinates) {
-                // Determine if coordinates are given in reduced format and need to be rescaled to absolute format.
-                // Assume reduced format if all coordinates are within the [0,1] or [-0.5,+0.5] range (plus some small epsilon).
-                if(Box3(Point3(FloatType(-0.01)), Point3(FloatType(1.01))).containsBox(boundingBox)) {
-                    // Convert all atom coordinates from reduced to absolute (Cartesian) format.
-                    const AffineTransformation simCell = simulationCell()->cellMatrix();
-                    for(Point3& p : posProperty)
-                        p = simCell * p;
-                }
-                else if(Box3(Point3(FloatType(-0.51)), Point3(FloatType(0.51))).containsBox(boundingBox)) {
-                    // Convert all atom coordinates from reduced to absolute (Cartesian) format.
-                    const AffineTransformation simCell = simulationCell()->cellMatrix();
-                    for(Point3& p : posProperty)
-                        p = simCell * (p + Vector3(FloatType(0.5)));
-                }
-            }
+        // Determine if coordinates are given in reduced format and need to be rescaled to absolute format.
+        // Assume reduced format if all coordinates are within the [0,1] or [-0.5,+0.5] range (plus some small epsilon).
+        if(Box3(Point3(FloatType(-0.01)), Point3(FloatType(1.01))).containsBox(boundingBox)) {
+            // Convert all atom coordinates from reduced to absolute (Cartesian) format.
+            const AffineTransformation simCell = simulationCell()->cellMatrix();
+            for(Point3& p : posProperty)
+                p = simCell * p;
+        }
+        else if(Box3(Point3(FloatType(-0.51)), Point3(FloatType(0.51))).containsBox(boundingBox)) {
+            // Convert all atom coordinates from reduced to absolute (Cartesian) format.
+            const AffineTransformation simCell = simulationCell()->cellMatrix();
+            for(Point3& p : posProperty)
+                p = simCell * (p + Vector3(FloatType(0.5)));
         }
     }
 

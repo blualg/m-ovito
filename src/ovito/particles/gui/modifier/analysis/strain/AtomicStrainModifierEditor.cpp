@@ -74,25 +74,32 @@ void AtomicStrainModifierEditor::createUI(const RolloutInsertionParameters& roll
     sublayout->addWidget(affineMappingUI->addRadioButton(ReferenceConfigurationModifier::TO_CURRENT_CELL, tr("To current")), 1, 1);
 
     BooleanParameterUI* useMinimumImageConventionUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ReferenceConfigurationModifier::useMinimumImageConvention));
-    layout->addWidget(useMinimumImageConventionUI->checkBox());
+    sublayout->addWidget(useMinimumImageConventionUI->checkBox(), 2, 0, 1, 2);
+
+    QGroupBox* outputGroupBox = new QGroupBox(tr("Output options"));
+    layout->addWidget(outputGroupBox);
+
+    sublayout = new QGridLayout(outputGroupBox);
+    sublayout->setContentsMargins(4,4,4,4);
+    sublayout->setSpacing(4);
 
     BooleanParameterUI* calculateDeformationGradientsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::calculateDeformationGradients));
-    layout->addWidget(calculateDeformationGradientsUI->checkBox());
+    sublayout->addWidget(calculateDeformationGradientsUI->checkBox(), 0, 0);
 
     BooleanParameterUI* calculateStrainTensorsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::calculateStrainTensors));
-    layout->addWidget(calculateStrainTensorsUI->checkBox());
+    sublayout->addWidget(calculateStrainTensorsUI->checkBox(), 1, 0);
 
     BooleanParameterUI* calculateNonaffineSquaredDisplacementsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::calculateNonaffineSquaredDisplacements));
-    layout->addWidget(calculateNonaffineSquaredDisplacementsUI->checkBox());
+    sublayout->addWidget(calculateNonaffineSquaredDisplacementsUI->checkBox(), 2, 0);
 
     BooleanParameterUI* calculateRotationsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::calculateRotations));
-    layout->addWidget(calculateRotationsUI->checkBox());
+    sublayout->addWidget(calculateRotationsUI->checkBox(), 3, 0);
 
     BooleanParameterUI* calculateStretchTensorsUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::calculateStretchTensors));
-    layout->addWidget(calculateStretchTensorsUI->checkBox());
+    sublayout->addWidget(calculateStretchTensorsUI->checkBox(), 4, 0);
 
     BooleanParameterUI* selectInvalidParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::selectInvalidParticles));
-    layout->addWidget(selectInvalidParticlesUI->checkBox());
+    sublayout->addWidget(selectInvalidParticlesUI->checkBox(), 5, 0);
 
     QGroupBox* referenceFrameGroupBox = new QGroupBox(tr("Reference frame"));
     layout->addWidget(referenceFrameGroupBox);
@@ -148,6 +155,11 @@ void AtomicStrainModifierEditor::createUI(const RolloutInsertionParameters& roll
     createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(AtomicStrainModifier::referenceConfiguration), RolloutInsertionParameters().setTitle(tr("Reference: %1")));
 
     connect(this, &PropertiesEditor::contentsChanged, this, &AtomicStrainModifierEditor::onContentsChanged);
+
+    // Whenever the pipeline input of the modifier changes, update the state of the UI.
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, [this, mappingGroupBox]() {
+        mappingGroupBox->setEnabled(getPipelineInput().getObject<SimulationCell>() != nullptr);
+    });
 }
 
 

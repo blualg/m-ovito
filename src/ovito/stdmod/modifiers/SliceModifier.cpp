@@ -412,7 +412,7 @@ std::tuple<Plane3, FloatType> SliceModifier::slicingPlane(AnimationTime time, Ti
             plane = cell->cellMatrix() * plane;
         }
         else {
-            throw Exception(tr("Slicing plane was specified in reduced cell coordinates but there is no simulation cell."));
+            throw Exception(tr("Slicing plane was specified in reduced cell coordinates but no simulation cell is defined."));
         }
     }
     else {
@@ -572,7 +572,9 @@ Future<PipelineFlowState> SliceModifier::evaluateModifier(const ModifierEvaluati
                 return state;
 
             // Compute intersection polygon of slicing plane with simulation cell.
-            const SimulationCell* cellObj = state.expectObject<SimulationCell>();
+            const SimulationCell* cellObj = state.getObject<SimulationCell>();
+            if(!cellObj)
+                throw Exception(tr("Cannot visualize slicing plane when no simulation cell is defined."));
             const AffineTransformation& cellMatrix = cellObj->cellMatrix();
 
             // Create an output mesh for visualizing the cutting plane.
@@ -638,11 +640,11 @@ void SliceModifier::centerPlaneInSimulationCell(ModificationNode* node, Animatio
     if(!node)
         return;
 
+    const PipelineFlowState& input = node->evaluateInput(PipelineEvaluationRequest(time, false, true)).blockForResult();
+
     // Get the simulation cell from the input object to center the slicing plane in
     // the center of the simulation cell.
-    const PipelineFlowState& input = node->evaluateInput(PipelineEvaluationRequest(time, false, true)).blockForResult();
     if(const SimulationCell* cell = input.getObject<SimulationCell>()) {
-
         FloatType centerDistance;
         if(!reducedCoordinates()) {
             Point3 centerPoint = cell->cellMatrix() * Point3(0.5, 0.5, 0.5);
@@ -656,6 +658,9 @@ void SliceModifier::centerPlaneInSimulationCell(ModificationNode* node, Animatio
         }
 
         setDistance(centerDistance);
+    }
+    else {
+        throw Exception(tr("Cannot center slicing plane because no simulation cell is defined."));
     }
 }
 

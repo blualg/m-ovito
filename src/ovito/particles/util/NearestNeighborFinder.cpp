@@ -39,9 +39,15 @@ NearestNeighborFinder::NearestNeighborFinder(int numNeighbors, BufferReadAccess<
     OVITO_ASSERT(posProperty);
     OVITO_ASSERT(this_task::get());
 
+    // If it is non-periodic and degenerate, replace the box with a non-degenerate one
+    // constructed from the bounding box of the particle positions.
+    if(_simCell.isDegenerate() && !_simCell.hasPbc()) {
+        _simCell = SimulationCellData(posProperty, _simCell.is2D());
+    }
+
     OVITO_ASSERT(!_simCell.is2D() || !_simCell.cellMatrix().column(2).isZero());
     if(_simCell.volume3D() <= FLOATTYPE_EPSILON || _simCell.isDegenerate())
-        throw Exception("Simulation cell is degenerate.");
+        throw Exception("Simulation cell is degenerate or missing.");
 
     _cellVectorLengthsSquared[0] = _simCell.cellMatrix().column(0).squaredLength();
     _cellVectorLengthsSquared[1] = _simCell.cellMatrix().column(1).squaredLength();

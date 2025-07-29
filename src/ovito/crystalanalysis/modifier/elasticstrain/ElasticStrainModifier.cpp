@@ -85,8 +85,8 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> ElasticStrainModifie
     // Get modifier inputs.
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
-    const SimulationCell* simCell = input.expectObject<SimulationCell>();
-    if(simCell->is2D())
+    const SimulationCell* simCell = input.getObject<SimulationCell>();
+    if(simCell && simCell->is2D())
         throw Exception(tr("The elastic strain calculation modifier does not support 2d simulation cells."));
 
     // Build list of preferred crystal orientations.

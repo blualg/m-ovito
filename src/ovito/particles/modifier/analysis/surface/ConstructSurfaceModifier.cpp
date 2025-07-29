@@ -138,8 +138,8 @@ Future<PipelineFlowState> ConstructSurfaceModifier::evaluateModifier(const Modif
         grainProperty.reset();
 
     // Get simulation cell.
-    const SimulationCell* simCell = state.expectObject<SimulationCell>();
-    if(simCell->is2D())
+    const SimulationCell* simCell = state.getObject<SimulationCell>();
+    if(simCell && simCell->is2D())
         throw Exception(tr("The construct surface mesh modifier does not support 2d simulation cells."));
 
     // Collect the set of particle properties that should be transferred over to the surface mesh vertices.
@@ -199,6 +199,13 @@ Future<PipelineFlowState> ConstructSurfaceModifier::evaluateModifier(const Modif
             state = std::move(state),
             engine = std::move(engine)]() mutable
     {
+        // Create an ad-hoc simulation cell if the input particles do not have one.
+        if(!engine->mesh()->domain()) {
+            // Compute bounding box that is large enough to contain the input particles.
+            SimulationCellData cellData(engine->positions());
+            engine->mesh()->setDomain(DataOORef<SimulationCell>::create(ObjectInitializationFlag::DontCreateVisElement, cellData.cellMatrix(), false, false, false));
+        }
+
         engine->perform();
         this_task::throwIfCanceled();
         engine->applyResults(state);
@@ -214,12 +221,11 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     TaskProgress progress(this_task::ui());
     progress.setText(tr("Constructing surface mesh"));
 
-    OVITO_ASSERT(mesh()->domain());
-
     if(probeSphereRadius() <= 0)
         throw Exception(tr("Radius parameter must be positive."));
 
-    if(mesh()->domain()->volume3D() <= FLOATTYPE_EPSILON*FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)
+    OVITO_ASSERT(mesh()->domain());
+    if(!mesh()->domain() || mesh()->domain()->isDegenerate())
         throw Exception(tr("Simulation cell is degenerate (volume of parallelepiped is zero)."));
 
     double alpha = probeSphereRadius() * probeSphereRadius();
@@ -490,10 +496,9 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     TaskProgress progress(this_task::ui());
     progress.setText(tr("Constructing surface mesh"));
 
-    OVITO_ASSERT(mesh()->domain());
-
     // Check input data.
-    if(mesh()->domain()->volume3D() <= FLOATTYPE_EPSILON*FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)
+    OVITO_ASSERT(mesh()->domain());
+    if(!mesh()->domain() || mesh()->domain()->isDegenerate())
         throw Exception(tr("Simulation cell is degenerate."));
 
     if(positions()->size() == 0) {

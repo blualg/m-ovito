@@ -179,14 +179,7 @@ void XSFImporter::FrameLoader::loadFile()
 
             // If the input file does not contain simulation cell info,
             // Use the axis-aligned bounding box of particles as a simulation cell.
-            Box3 boundingBox;
-            boundingBox.addPoints(posAccess);
-            simulationCell()->setCellMatrix(AffineTransformation(
-                    Vector3(boundingBox.sizeX(), 0, 0),
-                    Vector3(0, boundingBox.sizeY(), 0),
-                    Vector3(0, 0, boundingBox.sizeZ()),
-                    boundingBox.minc - Point3::Origin()));
-            simulationCell()->setPbcFlags(false, false, false);
+            generateBoundingBox();
         }
 
         if(boost::algorithm::starts_with(line, "CRYSTAL")) {

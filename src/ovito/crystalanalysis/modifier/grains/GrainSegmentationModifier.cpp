@@ -136,8 +136,8 @@ Future<PipelineFlowState> GrainSegmentationModifier::evaluateModifier(const Modi
             throw Exception(tr("Grain segmentation requires lattice orientation information. Please activate the 'Lattice orientations' option of the PTM modifier."));
         const Property* correspondenceProperty = particles->expectProperty(QStringLiteral("Correspondences"), Property::Int64);
 
-        const SimulationCell* simCell = state.expectObject<SimulationCell>();
-        if(simCell->is2D())
+        const SimulationCell* simCell = state.getObject<SimulationCell>();
+        if(simCell && simCell->is2D())
             throw Exception(tr("The grain segmentation modifier does not support 2d simulation cells."));
 
         // Initialize PTM library.

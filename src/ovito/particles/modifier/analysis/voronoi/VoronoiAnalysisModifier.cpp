@@ -171,7 +171,9 @@ Future<PipelineFlowState> VoronoiAnalysisModifier::evaluateModifier(const Modifi
     const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // Get simulation cell.
-    const SimulationCell* inputCell = state.expectObject<SimulationCell>();
+    const SimulationCell* inputCell = state.getObject<SimulationCell>();
+    if(!inputCell)
+        throw Exception(tr("The Voronoi analysis modifier requires a simulation cell to be defined."));
     if(inputCell->is2D())
         throw Exception(tr("The Voronoi modifier does not support 2d simulation cells."));
 

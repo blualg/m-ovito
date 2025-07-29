@@ -436,9 +436,11 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
     // according to AMBER specification.
     std::array<bool,3> pbc;
     bool isCellOrthogonal = true;
-    for (int i = 0; i < 3; i++) {
-        if (std::abs(l[i]) < 1e-12)  pbc[i] = false;
-        else pbc[i] = true;
+    for(int i = 0; i < 3; i++) {
+        if(std::abs(l[i]) < 1e-12)
+            pbc[i] = false;
+        else
+            pbc[i] = true;
         if(std::abs(a[i] - 90.0) > 1e-12 || std::abs(d[i]) > 1e-12)
             isCellOrthogonal = false;
     }
@@ -625,14 +627,15 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
 
     progress.endSubSteps();
 
-    // If the input file does not contain simulation cell size, use bounding box of particles as simulation cell.
-    if(!pbc[0] || !pbc[1] || !pbc[2]) {
-
+    // If the input file does not contain the simulation cell dimensions, use bounding box of particles as simulation cell.
+    if(!pbc[0] && !pbc[1] && !pbc[2]) {
+        generateBoundingBox();
+    }
+    else if(!pbc[0] || !pbc[1] || !pbc[2]) { // Special handling of mixed boundary conditions, where the simulation box size is known only in some dimensions.
         BufferReadAccess<Point3> posProperty = particles()->getProperty(Particles::PositionProperty);
         if(posProperty && posProperty.size() != 0) {
             Box3 boundingBox;
             boundingBox.addPoints(posProperty);
-
             AffineTransformation cell = simulationCell()->cellMatrix();
             for(size_t dim = 0; dim < 3; dim++) {
                 if(!pbc[dim]) {

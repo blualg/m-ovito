@@ -32,19 +32,27 @@ In `its simplest form <https://en.wikipedia.org/wiki/XYZ_file_format>`__, an XYZ
 The first line specifies the number of atoms and the second line is used to store an arbitrary comment text (may be an empty line).
 Each of the following atom lines consist of the species name and the atom's Cartesian xyz coordinates.
 
-.. note::
-
-    Since this basic XYZ file format doesn't contain any information about the simulation cell,
-    OVITO automatically computes an ad-hoc bounding box enclosing all atoms and assumes non-periodic boundary conditions.
-    This tight simulation box will typically not reflect the actual simulation cell used in the original simulation.
-    If possible, use the :ref:`extended XYZ file format <file_formats.input.xyz.extended_format>` to import
-    the true cell geometry into OVITO.
-
 This reader is able to load gzipped XYZ files (".gz" suffix) and zstd compressed files (".zst" suffix).
 
 XYZ files may store simulation trajectories. Multiple frames are simply stored back-to-back in one file,
 i.e., the next two-line header directly follows after the atoms list of the preceding frame. OVITO automatically
 detects if the loaded XYZ file contains more than one frame.
+
+.. _file_formats.input.xyz.simulation_cell:
+
+Simulation cell and boundary conditions
+"""""""""""""""""""""""""""""""""""""""
+
+Since the basic XYZ file format doesn't contain any information about a simulation cell or boundary conditions,
+OVITO assumes that the XYZ file describes a non-periodic system.
+
+The file reader option :guilabel:`Generate bounding box if needed` can be enabled to instruct OVITO to create a tight :ref:`simulation cell <scene_objects.simulation_cell>`
+by computing the axis-aligned bounding box of the loaded particle coordinates during import.
+
+This ad-hoc cell is useful for visualizing the atomic positions in a non-periodic system, but it is
+not suitable for periodic systems, since the generated bounding box will not match the original simulation cell geometry of the simulation.
+In such cases, the :ref:`extended XYZ file format <file_formats.input.xyz.extended_format>` should be used instead for data exchange with OVITO, because
+it stores the true simulation cell geometry and periodic boundary conditions.
 
 .. _file_formats.input.xyz.auxiliary_columns:
 
@@ -195,13 +203,16 @@ Python parameters
 
 The XYZ file reader accepts the following optional keyword parameters in a call to the :py:func:`~ovito.io.import_file` or :py:meth:`~ovito.pipeline.FileSource.load` Python functions.
 
-.. py:function:: import_file(location, columns = None, rescale_reduced_coords = False, sort_particles = False)
+.. py:function:: import_file(location, columns = None, bounding_box = False, rescale_reduced_coords = False, sort_particles = False)
   :noindex:
 
   :param columns: A list of OVITO particle property names, one for each data column in the xyz file. Overrides the mapping
                   that otherwise gets set up automatically as described above. List entries may be set to ``None``
                   to skip individual file columns during parsing.
   :type columns: list[str | None] | None
+  :param bounding_box: If set to ``True`` and the imported XYZ file does not contain a simulation cell definition, the file reader will generate an ad-hoc :py:class:`~ovito.data.SimulationCell` by
+                       computing the :ref:`axis-aligned bounding box <file_formats.input.xyz.simulation_cell>` of the loaded particle coordinates.
+  :type bounding_box: bool
   :param rescale_reduced_coords: If set to ``True``, and if the XYZ file contains the dimensions of the simulation cell,
                                  and if all atomic coordinates are either in the range :math:`[0,1]` or the range :math:`[-0.5,+0.5]`, the file reader
                                  will convert the reduced coordinates to Cartesian coordinates.
@@ -212,3 +223,6 @@ The XYZ file reader accepts the following optional keyword parameters in a call 
 
 .. versionchanged:: 3.10.0
   New default value ``rescale_reduced_coords=False``.
+
+.. versionchanged:: 3.14.0
+  New default value ``bounding_box=False``.

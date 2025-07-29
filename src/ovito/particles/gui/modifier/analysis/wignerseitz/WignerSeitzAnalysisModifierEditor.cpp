@@ -135,6 +135,11 @@ void WignerSeitzAnalysisModifierEditor::createUI(const RolloutInsertionParameter
     createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(WignerSeitzAnalysisModifier::referenceConfiguration), RolloutInsertionParameters().setTitle(tr("Reference: %1")));
 
     connect(this, &PropertiesEditor::contentsChanged, this, &WignerSeitzAnalysisModifierEditor::onContentsChanged);
+
+    // Whenever the pipeline input of the modifier changes, update the state of the UI.
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, [this, mappingGroupBox]() {
+        mappingGroupBox->setEnabled(getPipelineInput().getObject<SimulationCell>() != nullptr);
+    });
 }
 
 /******************************************************************************

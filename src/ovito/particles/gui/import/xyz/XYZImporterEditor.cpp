@@ -114,6 +114,10 @@ void XYZImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
     BooleanParameterUI* rescaleReducedUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(XYZImporter::autoRescaleCoordinates));
     sublayout->addWidget(rescaleReducedUI->checkBox());
 
+    // Generate bounding box option.
+    BooleanParameterUI* generateBoundingBoxUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::generateBoundingBox));
+    sublayout->addWidget(generateBoundingBoxUI->checkBox());
+
     // Sort particles
     BooleanParameterUI* sortParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::sortParticles));
     sublayout->addWidget(sortParticlesUI->checkBox());

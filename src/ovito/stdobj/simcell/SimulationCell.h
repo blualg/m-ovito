@@ -26,6 +26,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/simcell/SimulationCellVis.h>
 #include <ovito/core/dataset/data/DataObject.h>
+#include <ovito/core/dataset/data/BufferAccess.h>
 
 namespace Ovito {
 
@@ -360,6 +361,28 @@ public:
         _reciprocalCellMatrix(_cellMatrix.inverse()),
         _is2D(is2D) {}
 
+    /// Constructor that constructs an ad-hoc simulation cell from the bounding box of a set of points.
+    SimulationCellData(const BufferReadAccess<Point3>& positions, bool is2D = false, FloatType minimumBoxSize = 1) : _is2D(is2D) {
+        OVITO_ASSERT(minimumBoxSize > 0);
+        if(positions && positions.size() != 0) {
+            Box3 box = positions.buffer()->boundingBox3();
+            OVITO_ASSERT(!box.isEmpty());
+            if(box.sizeX() < minimumBoxSize) box.maxc.x() = box.minc.x() + minimumBoxSize;
+            if(box.sizeY() < minimumBoxSize) box.maxc.y() = box.minc.y() + minimumBoxSize;
+            if(box.sizeZ() < minimumBoxSize) box.maxc.z() = box.minc.z() + minimumBoxSize;
+            _cellMatrix = AffineTransformation(
+                    Vector3(box.sizeX(), 0, 0),
+                    Vector3(0, box.sizeY(), 0),
+                    Vector3(0, 0, box.sizeZ()),
+                    box.minc - Point3::Origin());
+            _reciprocalCellMatrix = _cellMatrix.inverse();
+        }
+        else {
+            _cellMatrix = AffineTransformation::scaling(minimumBoxSize);
+            _reciprocalCellMatrix = AffineTransformation::scaling(FloatType(1) / minimumBoxSize);
+        }
+    }
+
     /// Returns the cell matrix.
     constexpr const AffineTransformation& cellMatrix() const { return _cellMatrix; }
 
@@ -369,6 +392,10 @@ public:
 
     /// Returns whether this simulation cell is 2D.
     constexpr bool is2D() const { return _is2D; }
+
+    /// Change the dimensionality of the simulation cell.
+    /// This method does not change the cell matrix, but only the is2D flag.
+    constexpr void setIs2D(bool is2D) { _is2D = is2D; }
 
     /// Computes the (positive) volume of the three-dimensional cell.
     FloatType volume3D() const { return std::abs(cellMatrix().determinant()); }
@@ -384,6 +411,9 @@ public:
 
     /// Returns whether the simulation cell has periodic boundary conditions applied in at least one direction.
     constexpr bool hasPbc() const { return hasPbc(0) || hasPbc(1) || hasPbc(2); }
+
+    /// Sets the periodic boundary flags in all three spatial directions.
+    constexpr void setPbcFlags(const std::array<bool,3>& flags) { _pbcFlags = flags; }
 
     /// Returns the first edge vector of the cell.
     constexpr const Vector3& cellVector1() const { return cellMatrix().column(0); }

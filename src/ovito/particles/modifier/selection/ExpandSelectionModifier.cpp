@@ -75,15 +75,12 @@ void ExpandSelectionModifier::preevaluateModifier(const ModifierEvaluationReques
 ******************************************************************************/
 Future<PipelineFlowState> ExpandSelectionModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
 {
-    // Get the input particles.
-    const Particles* particles = state.expectObject<Particles>();
-    particles->verifyIntegrity();
-
     // In interactive mode, do not perform a real computation. Instead, reuse old results if available in the pipeline cache.
     if(request.interactiveMode()) {
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             if(const Particles* cachedParticles = cachedState.getObject<Particles>()) {
-                state.expectMutableObject<Particles>()->tryToAdoptProperties(cachedParticles, {
+                Particles* particles = state.expectMutableObject<Particles>();
+                particles->tryToAdoptProperties(cachedParticles, {
                     cachedParticles->getProperty(Particles::SelectionProperty),
                 }, {particles});
             }
@@ -94,6 +91,10 @@ Future<PipelineFlowState> ExpandSelectionModifier::evaluateModifier(const Modifi
     }
 
     // Get the particle positions.
+    // Get the input particles.
+    const Particles* particles = state.expectObject<Particles>();
+    particles->verifyIntegrity();
+
     const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // Get the current particle selection.

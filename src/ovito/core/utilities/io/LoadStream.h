@@ -170,6 +170,9 @@ public:
     /// \brief Returns the revision version number of the program that wrote the current file.
     quint32 applicationRevisionVersion() const { return _applicationRevisionVersion; }
 
+    /// \brief Returns the encoded version of the application that wrote the current file as a single integer value.
+    quint32 applicationVersion() const { return QT_VERSION_CHECK(applicationMajorVersion(), applicationMinorVersion(), applicationRevisionVersion()); }
+
 private:
 
     /// Checks the status of the underlying input stream and throws an exception if an error has occurred.

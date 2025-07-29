@@ -21,22 +21,22 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/particles/gui/ParticlesGui.h>
-#include <ovito/particles/import/dcd/DCDImporter.h>
+#include <ovito/particles/import/fhi_aims/FHIAimsImporter.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include "DCDImporterEditor.h"
+#include "FHIAimsImporterEditor.h"
 
 namespace Ovito {
 
-IMPLEMENT_CREATABLE_OVITO_CLASS(DCDImporterEditor);
-SET_OVITO_OBJECT_EDITOR(DCDImporter, DCDImporterEditor);
+IMPLEMENT_CREATABLE_OVITO_CLASS(FHIAimsImporterEditor);
+SET_OVITO_OBJECT_EDITOR(FHIAimsImporter, FHIAimsImporterEditor);
 
 /******************************************************************************
 * Sets up the UI widgets of the editor.
 ******************************************************************************/
-void DCDImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
+void FHIAimsImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 {
     // Create a rollout.
-    QWidget* rollout = createRollout(tr("DCD reader"), rolloutParams);
+    QWidget* rollout = createRollout(tr("FHI-aims reader"), rolloutParams);
 
     // Create the rollout contents.
     QVBoxLayout* layout = new QVBoxLayout(rollout);
@@ -51,10 +51,6 @@ void DCDImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
     // Generate bounding box option.
     BooleanParameterUI* generateBoundingBoxUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::generateBoundingBox));
     sublayout->addWidget(generateBoundingBoxUI->checkBox());
-
-    // Center simulation cell.
-    BooleanParameterUI* recenterCellUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::recenterCell));
-    sublayout->addWidget(recenterCellUI->checkBox());
 }
 
 }   // End of namespace

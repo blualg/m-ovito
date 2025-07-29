@@ -71,6 +71,10 @@ void AMBERNetCDFImporterEditor::createUI(const RolloutInsertionParameters& rollo
     sublayout->setContentsMargins(4,4,4,4);
     layout->addWidget(optionsBox);
 
+    // Generate bounding box option.
+    BooleanParameterUI* generateBoundingBoxUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::generateBoundingBox));
+    sublayout->addWidget(generateBoundingBoxUI->checkBox());
+
     // Sort particles
     BooleanParameterUI* sortParticlesUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::sortParticles));
     sublayout->addWidget(sortParticlesUI->checkBox());

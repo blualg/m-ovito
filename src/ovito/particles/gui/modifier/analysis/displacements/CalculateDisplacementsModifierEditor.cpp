@@ -119,6 +119,11 @@ void CalculateDisplacementsModifierEditor::createUI(const RolloutInsertionParame
     createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(CalculateDisplacementsModifier::referenceConfiguration), rolloutParams.after(rollout).setTitle(tr("Reference: %1")));
 
     connect(this, &PropertiesEditor::contentsChanged, this, &CalculateDisplacementsModifierEditor::onContentsChanged);
+
+    // Whenever the pipeline input of the modifier changes, update the state of the UI.
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, [this, mappingGroupBox]() {
+        mappingGroupBox->setEnabled(getPipelineInput().getObject<SimulationCell>() != nullptr);
+    });
 }
 
 /******************************************************************************

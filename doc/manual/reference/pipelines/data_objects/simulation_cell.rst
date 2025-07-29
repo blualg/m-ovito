@@ -15,8 +15,11 @@ including boundary conditions (PBC flags). The simulation cell loaded from the i
 corresponding :ref:`visual element <visual_elements.simulation_cell>`. This visual element controls
 how the simulation cell appears in rendered images.
 
-If the imported simulation file does not specify cell dimensions, OVITO automatically generates an ad-hoc simulation cell that
-encloses all particles in an axis-aligned bounding box.
+If the imported simulation file does not contain any simulation cell information, the corresponding entry will be missing in the pipeline editor
+and OVITO will assume non-periodic boundary conditions by default.
+If desired, you can then turn on the option :guilabel:`Generate bounding box if needed` in the
+:ref:`file reader settings <file_formats.input.xyz.simulation_cell>` to let OVITO automatically generate a simulation cell that
+tightly encloses all particles in an axis-aligned bounding box.
 
 Dimensionality
 """"""""""""""

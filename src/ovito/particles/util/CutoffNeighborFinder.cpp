@@ -47,13 +47,7 @@ CutoffNeighborFinder::CutoffNeighborFinder(FloatType cutoffRadius, BufferReadAcc
         if(simCell().hasPbc())
             throw Exception("Invalid input: Periodic simulation cell is degenerate.");
         // If needed, create an ad-hoc simulation cell that is non-periodic and non-degenerate.
-        Box3 boundingBox;
-        boundingBox.addPoints(positions);
-        if(boundingBox.isEmpty()) boundingBox.addPoint(Point3::Origin());
-        if(boundingBox.sizeX() <= FLOATTYPE_EPSILON) boundingBox.maxc.x() = boundingBox.minc.x() + cutoffRadius/2;
-        if(boundingBox.sizeY() <= FLOATTYPE_EPSILON) boundingBox.maxc.y() = boundingBox.minc.y() + cutoffRadius/2;
-        if(boundingBox.sizeZ() <= FLOATTYPE_EPSILON) boundingBox.maxc.z() = boundingBox.minc.z() + cutoffRadius/2;
-        _simCell = SimulationCellData(boundingBox, simCell().is2D());
+        _simCell = SimulationCellData(positions, simCell().is2D(), cutoffRadius / 2);
     }
     OVITO_ASSERT(!simCell().is2D() || !simCell().cellMatrix().column(2).isZero());
 

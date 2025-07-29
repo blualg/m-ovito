@@ -102,7 +102,7 @@ private:
         /// Returns the property storage that contains the identifier of the site each atom has been assigned to.
         const PropertyPtr& siteIdentifiers() const { return _siteIdentifiers; }
 
-        /// Replaces the property storage for the indeitifier of the site each atom has been assigned to.
+        /// Replaces the property storage for the identifier of the site each atom has been assigned to.
         void setSiteIdentifiers(PropertyPtr prop) { _siteIdentifiers = std::move(prop); }
 
         /// Returns the reference state.

@@ -61,12 +61,13 @@ private Q_SLOTS:
 
 private:
 
-    SpinnerWidget* relativeCellSpinners[3][4];
-    SpinnerWidget* absoluteCellSpinners[3][4];
+    SpinnerWidget* _relativeCellSpinners[3][4];
+    SpinnerWidget* _absoluteCellSpinners[3][4];
     std::optional<PrescribedScaleUnit> _relativeTranslationUnits[3];
     std::optional<PrescribedScaleUnit> _relativeMatrixUnits;
     std::optional<PrescribedScaleUnit> _absoluteCellUnits[3][3];
     std::optional<PrescribedScaleUnit> _absoluteOriginUnits[3];
+    BooleanRadioButtonParameterUI* _relativeModeUI;
 };
 
 }   // End of namespace

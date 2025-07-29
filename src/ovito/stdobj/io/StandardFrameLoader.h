@@ -42,6 +42,9 @@ public:
     /// Returns the simulation cell object, newly creating it first if necessary.
     SimulationCell* simulationCell();
 
+    /// Removes any existing simulation cell object from the state.
+    void removeSimulationCell();
+
     /// Returns true if the file reader has already loaded a simulation cell definition.
     bool hasSimulationCell() const { return _simulationCell != nullptr; }
 

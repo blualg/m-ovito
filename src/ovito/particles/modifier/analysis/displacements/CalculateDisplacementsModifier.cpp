@@ -95,12 +95,6 @@ std::unique_ptr<ReferenceConfigurationModifier::Engine> CalculateDisplacementsMo
     refParticles->verifyIntegrity();
     const Property* refPosProperty = refParticles->expectProperty(Particles::PositionProperty);
 
-    // Get the simulation cells.
-    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
-    const SimulationCell* refCell = referenceState.getObject<SimulationCell>();
-    if(!refCell)
-        throw Exception(tr("Reference configuration does not contain simulation cell info."));
-
     // Get particle identifiers.
     const Property* identifierProperty = particles->getProperty(Particles::IdentifierProperty);
     const Property* refIdentifierProperty = refParticles->getProperty(Particles::IdentifierProperty);
@@ -113,8 +107,8 @@ std::unique_ptr<ReferenceConfigurationModifier::Engine> CalculateDisplacementsMo
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     return std::make_unique<DisplacementEngine>(
             std::move(displacements), std::move(displacementMagnitudes),
-            posProperty, inputCell,
-            refPosProperty, refCell,
+            posProperty, input.getObject<SimulationCell>(),
+            refPosProperty, referenceState.getObject<SimulationCell>(),
             identifierProperty, refIdentifierProperty,
             affineMapping(), useMinimumImageConvention());
 }
@@ -133,17 +127,17 @@ void CalculateDisplacementsModifier::DisplacementEngine::perform(PipelineFlowSta
     BufferReadAccess<Point3> positionsAcc(positions());
     BufferReadAccess<Point3> refPositionsArray(refPositions());
 
-    const auto refCellPbcFlags = refCell()->pbcFlagsCorrected();
-    const auto refCellMatrix = refCell()->matrix();
+    const auto refCellPbcFlags = refCell().pbcFlags();
+    const auto refCellMatrix = refCell().cellMatrix();
 
     // Compute displacement vectors.
     if(affineMapping() != NO_MAPPING) {
-        const AffineTransformation reduced_to_absolute = (affineMapping() == TO_REFERENCE_CELL) ? refCellMatrix : cell()->matrix();
+        const AffineTransformation reduced_to_absolute = (affineMapping() == TO_REFERENCE_CELL) ? refCellMatrix : cell().cellMatrix();
         parallelFor(displacements()->size(), 1024, TaskProgress::Ignore, [&](size_t i) {
             const Point3& p = positionsAcc[i];
             auto index = currentToRefIndexMap()[i];
-            Point3 reduced_current_pos = cell()->inverseMatrix() * p;
-            Point3 reduced_reference_pos = refCell()->inverseMatrix() * refPositionsArray[index];
+            Point3 reduced_current_pos = cell().reciprocalCellMatrix() * p;
+            Point3 reduced_reference_pos = refCell().reciprocalCellMatrix() * refPositionsArray[index];
             Vector3 delta = reduced_current_pos - reduced_reference_pos;
             if(useMinimumImageConvention()) {
                 for(size_t k = 0; k < 3; k++) {

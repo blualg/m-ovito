@@ -363,13 +363,12 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
 
         // Helper function that normalizes a RDF histogram.
         auto normalizeRDF = [&](size_t type1Count, size_t type2Count, size_t component = 0, FloatType prefactor = 1) {
-            OVITO_ASSERT(simulationCell);
-            bool is2D = simulationCell->is2D();
+            bool is2D = neighborFinder.simCell().is2D();
             if(!is2D) {
-                prefactor *= FloatType(4.0/3.0) * FLOATTYPE_PI * type1Count / simulationCell->volume3D() * type2Count;
+                prefactor *= FloatType(4.0/3.0) * FLOATTYPE_PI * type1Count / neighborFinder.simCell().volume3D() * type2Count;
             }
             else {
-                prefactor *= FLOATTYPE_PI * type1Count / simulationCell->volume2D() * type2Count;
+                prefactor *= FLOATTYPE_PI * type1Count / neighborFinder.simCell().volume2D() * type2Count;
             }
             if(prefactor == 0.0)
                 return;
@@ -397,34 +396,42 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
 #endif
         };
 
-        if(simulationCell) {
-            if(!computePartialRDF) {
-                if(selection)
-                    particleCount = selection->nonzeroCount();
-                normalizeRDF(particleCount, particleCount);
+        if(!simulationCell) {
+            state.combineStatus(PipelineStatus::Warning,
+                tr("A simulation cell volume is required for correct RDF normalization. "
+                    "Using bounding box of particles likely leads to incorrect results."));
+        }
+        else if(simulationCell->isDegenerate()) {
+            state.combineStatus(PipelineStatus::Warning, tr("RDF calculation requires a non-zero simulation cell volume. Current box is degenerate."));
+            return std::move(state);
+        }
+
+        if(!computePartialRDF) {
+            if(selection)
+                particleCount = selection->nonzeroCount();
+            normalizeRDF(particleCount, particleCount);
+        }
+        else {
+            // Count number of particles of each type.
+            BufferReadAccess<SelectionIntType> selectionAcc(selection);
+
+            std::vector<size_t> particleCounts(typeCount, 0);
+            const SelectionIntType* sel = selectionAcc ? selectionAcc.begin() : nullptr;
+            for(auto t : BufferReadAccess<int32_t>(particleTypes)) {
+                if(sel && !(*sel++))
+                    continue;
+                size_t typeIndex = uniqueTypeIds.index_of(uniqueTypeIds.find(t));
+                if(typeIndex < typeCount)
+                    particleCounts[typeIndex]++;
             }
-            else {
-                // Count number of particles of each type.
-                BufferReadAccess<SelectionIntType> selectionAcc(selection);
+            this_task::throwIfCanceled();
 
-                std::vector<size_t> particleCounts(typeCount, 0);
-                const SelectionIntType* sel = selectionAcc ? selectionAcc.begin() : nullptr;
-                for(auto t : BufferReadAccess<int32_t>(particleTypes)) {
-                    if(sel && !(*sel++))
-                        continue;
-                    size_t typeIndex = uniqueTypeIds.index_of(uniqueTypeIds.find(t));
-                    if(typeIndex < typeCount)
-                        particleCounts[typeIndex]++;
-                }
-                this_task::throwIfCanceled();
-
-                // Normalize RDFs.
-                size_t component = 0;
-                for(size_t i = 0; i < particleCounts.size(); i++) {
-                    for(size_t j = i; j < particleCounts.size(); j++) {
-                        normalizeRDF(particleCounts[i], particleCounts[j], component++, (i == j) ? 1 : 2);
-                        this_task::throwIfCanceled();
-                    }
+            // Normalize RDFs.
+            size_t component = 0;
+            for(size_t i = 0; i < particleCounts.size(); i++) {
+                for(size_t j = i; j < particleCounts.size(); j++) {
+                    normalizeRDF(particleCounts[i], particleCounts[j], component++, (i == j) ? 1 : 2);
+                    this_task::throwIfCanceled();
                 }
             }
         }
