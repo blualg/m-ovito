@@ -26,6 +26,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.find_rings`                      Finds all rings in the bond topology of a particle system.
   :ref:`particles.modifiers.grain_segmentation`              Determines the grain structure in a polycrystalline microstructure.
   :ref:`particles.modifiers.histogram`                       Computes the histogram of a property.
+  :ref:`particles.modifiers.reduce_property` |ovito-pro|     Applies common reduction operations to properties.
   :ref:`particles.modifiers.scatter_plot`                    Generates a scatter plot of two properties.
   :ref:`particles.modifiers.bin_and_reduce` |ovito-pro|      Aggregates a particle property over a one-, two- or three-dimensional bin grid.
   :ref:`particles.modifiers.correlation_function`            Calculates the spatial cross-correlation function between two particle properties.
