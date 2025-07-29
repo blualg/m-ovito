@@ -1,7 +1,7 @@
 .. _particles.modifiers.reduce_property:
 
 Reduce property modifier |ovito-pro|
----------------------------
+------------------------------------
 
 This modifier performs a reduction operation on a selected data property. Properties can be taken from the following containers:
 
@@ -60,13 +60,13 @@ Parameters
 """"""""""
 
 Operate on
-  Selects whether to bin data from :ref:`particles <scene_objects.particles>` or any other :ref:`data object <scene_objects.data_objects>` listed in the table above. Default: :ref:`particles <scene_objects.particles>`
+  Selects whether to bin data from :ref:`particles <scene_objects.particles>` or any other data objects listed in the table above. Default: :ref:`particles <scene_objects.particles>`
 
 Input property
   The particle property to apply the reduction operation to.
 
 Use only selected elements
-  Restricts the computation to the currently selected subset of particles. Requires a selection in the current :ref:`data object <scene_objects.data_objects>`. Default: *False*
+  Restricts the computation to the currently selected subset of particles. Requires a selection in the current data objects. Default: *False*
 
 Reduction operation
   Determines how data is aggregated per bin. Options are listed as ``<ReductionOperation>`` in the table above. Default: *Mean*

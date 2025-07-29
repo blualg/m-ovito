@@ -182,6 +182,7 @@ combine several modifiers to accomplish more complex tasks.
   slice
   smooth_trajectory
   bin_and_reduce
+  reduce_property
   correlation_function
   structure_factor
   time_averaging
