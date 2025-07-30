@@ -13,6 +13,9 @@ OVITO User Manual
   * :ref:`file_formats.output`
   * :ref:`Python API <scripting_manual>`
 
+  | Missing something in OVITO?
+  | `Send us a feature request! <https://ovito.org/feature_request/>`__
+
 .. toctree::
   :maxdepth: 1
   :includehidden:
