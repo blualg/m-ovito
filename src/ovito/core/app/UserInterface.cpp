@@ -85,11 +85,13 @@ void UserInterface::shutdown()
     }
     catch(OperationCanceled) {
         qWarning() << "Warning: Shutdown cancelled unexpectedly";
+        return;
     }
     catch(const Exception& ex) {
         qWarning() << "Warning: Exception caught during shutdown";
         reportError(ex, true);
     }
+    _selfGuard.reset();  // Clear self guard to allow the object to be deleted.
 }
 
 /******************************************************************************
