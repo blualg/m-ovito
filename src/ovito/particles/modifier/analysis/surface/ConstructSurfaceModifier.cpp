@@ -807,9 +807,9 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(Pipeline
     state.addAttribute(QStringLiteral("ConstructSurfaceMesh.surface_area"), QVariant::fromValue(surfaceArea()), _createdByNode);
 
     if(identifyRegions()) {
-        const SimulationCell& simCell = *(state.expectObject<SimulationCell>());
-        bool periodic = simCell.pbcX() && simCell.pbcY() && simCell.pbcZ();
-        FloatType totalCellVolume = (periodic) ? simCell.volume3D() : std::numeric_limits<FloatType>::quiet_NaN();
+        const SimulationCell* simCell = state.getObject<SimulationCell>();
+        bool periodic = simCell && (simCell->pbcX() && simCell->pbcY() && simCell->pbcZ());
+        FloatType totalCellVolume = periodic ? simCell->volume3D() : std::numeric_limits<FloatType>::quiet_NaN();
 
         // Output more global attributes.
         state.addAttribute(QStringLiteral("ConstructSurfaceMesh.cell_volume"), QVariant::fromValue(totalCellVolume), _createdByNode);
