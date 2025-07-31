@@ -67,10 +67,16 @@ public:
     void initializeObject(ObjectInitializationFlags flags, PlotMode plotMode = Line, const QString& title = QString(), ConstPropertyPtr y = {}, ConstPropertyPtr x = {});
 
     /// Assigns a property array as x-coordinates of the data points (for the purpose of plotting).
-    void setX(const Property* property);
+    void setX(ConstPropertyPtr property);
+
+    /// Overload used for Python bindings.
+    void setXPYTHON(const Property* property) { setX(property); }
 
     /// Assigns a property array as y-coordinates of the data points (for the purpose of plotting).
-    void setY(const Property* property);
+    void setY(ConstPropertyPtr property);
+
+    /// Overload used for Python bindings.
+    void setYPYTHON(const Property* property) { setY(property); }
 
     /// Returns the data array containing the x-coordinates of the data points.
     /// If no explicit x-coordinate data is available, the array is dynamically generated

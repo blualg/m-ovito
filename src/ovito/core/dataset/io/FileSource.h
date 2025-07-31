@@ -47,7 +47,7 @@ public:
 	/// \param importer The importer object that will parse the input file.
 	/// \param autodetectFileSequences Enables the automatic detection of file sequences.
 	/// \param keepExistingDataCollection Tells the file source to maintain the existing data objects and visual elements when importing a new file.
-	void setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection = false);
+	void setSource(std::vector<QUrl> sourceUrls, OORef<FileSourceImporter> importer, bool autodetectFileSequences, bool keepExistingDataCollection = false);
 
 	/// \brief This triggers a reload of input data from the external file for the given frame or all frames.
 	/// \param refetchFiles Clears the remote file cache so that file data will be retrieved again from the remote location.

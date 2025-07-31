@@ -74,22 +74,22 @@ void DataTable::initializeObject(ObjectInitializationFlags flags, PlotMode plotM
 /******************************************************************************
 * Assigns a property array as x-coordinates of the data points (for the purpose of plotting).
 ******************************************************************************/
-void DataTable::setX(const Property* property)
+void DataTable::setX(ConstPropertyPtr property)
 {
     _x.set(this, PROPERTY_FIELD(x), property);
-    if(property && !properties().contains(const_cast<Property*>(property))) {
-        addProperty(property);
+    if(property && !properties().contains(const_cast<Property*>(property.get()))) {
+        addProperty(std::move(property));
     }
 }
 
 /******************************************************************************
 * Assigns a property array as y-coordinates of the data points (for the purpose of plotting).
 ******************************************************************************/
-void DataTable::setY(const Property* property)
+void DataTable::setY(ConstPropertyPtr property)
 {
     _y.set(this, PROPERTY_FIELD(y), property);
-    if(property && !properties().contains(const_cast<Property*>(property))) {
-        addProperty(property);
+    if(property && !properties().contains(const_cast<Property*>(property.get()))) {
+        addProperty(std::move(property));
     }
 }
 

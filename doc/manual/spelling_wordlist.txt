@@ -135,8 +135,9 @@ omnidirectional
 OpenGL
 openSUSE
 orientable
-OSPRay 
+OSPRay
 ovito
+ovitos
 oxDNA
 parallelepiped
 parallelized

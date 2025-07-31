@@ -77,8 +77,8 @@ public:
 
     /// Adds an additional root-level data object to this state.
     /// The object must not already be part of the state.
-    void addObject(const DataObject* obj) {
-        mutableData()->addObject(obj);
+    void addObject(DataOORef<const DataObject> obj) {
+        mutableData()->addObject(std::move(obj));
     }
 
     /// Removes a root-level data object from this state.

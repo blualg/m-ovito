@@ -200,9 +200,9 @@ public:
     void setSpaceFillingRegion(region_index region) { mutableMesh()->setSpaceFillingRegion(region); }
 
     /// Replaces the simulation box of the mesh.
-    void setDomain(const SimulationCell* domain) {
-        mutableMesh()->setDomain(domain);
-        _domain = domain;
+    void setDomain(DataOORef<const SimulationCell> domain) {
+        _domain = domain.get();
+        mutableMesh()->setDomain(std::move(domain));
     }
 
     /// Returns the surface mesh topology after making sure it is mutable.
@@ -296,21 +296,21 @@ public:
     }
 
     /// Attaches an existing property object to the vertices of the mesh.
-    void addVertexProperty(const Property* property) {
+    void addVertexProperty(ConstPropertyPtr property) {
         OVITO_ASSERT(!property->isStandardProperty() || vertices()->getProperty(property->typeId()) == nullptr);
-        mutableVertices()->addProperty(property);
+        mutableVertices()->addProperty(std::move(property));
     }
 
     /// Attaches an existing property object to the faces of the mesh.
-    void addFaceProperty(const Property* property) {
+    void addFaceProperty(ConstPropertyPtr property) {
         OVITO_ASSERT(!property->isStandardProperty() || faces()->getProperty(property->typeId()) == nullptr);
-        mutableFaces()->addProperty(property);
+        mutableFaces()->addProperty(std::move(property));
     }
 
     /// Attaches an existing property object to the regions of the mesh.
-    void addRegionProperty(const Property* property) {
+    void addRegionProperty(ConstPropertyPtr property) {
         OVITO_ASSERT(!property->isStandardProperty() || regions()->getProperty(property->typeId()) == nullptr);
-        mutableRegions()->addProperty(property);
+        mutableRegions()->addProperty(std::move(property));
     }
 
     /// Adds a new standard face property to the mesh.

@@ -97,9 +97,9 @@ public:
     static OORef<DataSet> createFromFile(const QString& filePath);
 
     /// \brief Appends an object to this dataset's list of global objects - unless the object is already in the list.
-    void addGlobalObject(const RefTarget* target) {
+    void addGlobalObject(OORef<RefTarget> target) {
         if(!_globalObjects.contains(target))
-            _globalObjects.push_back(this, PROPERTY_FIELD(globalObjects), target);
+            _globalObjects.push_back(this, PROPERTY_FIELD(globalObjects), std::move(target));
     }
 
     /// \brief Removes an object from this dataset's list of global objects.

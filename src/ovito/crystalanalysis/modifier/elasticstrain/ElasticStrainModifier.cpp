@@ -67,7 +67,7 @@ void ElasticStrainModifier::initializeObject(ObjectInitializationFlags flags)
         };
         OVITO_STATIC_ASSERT(std::size(predefTypes) == StructureAnalysis::NUM_LATTICE_TYPES);
         for(int id = 0; id < StructureAnalysis::NUM_LATTICE_TYPES; id++) {
-            DataOORef<MicrostructurePhase> stype = DataOORef<MicrostructurePhase>::create(flags);
+            OORef<MicrostructurePhase> stype = OORef<MicrostructurePhase>::create(flags);
             stype->setNumericId(id);
             stype->setDimensionality(MicrostructurePhase::Dimensionality::Volumetric);
             stype->setName(ParticleType::getPredefinedStructureTypeName(predefTypes[id]));

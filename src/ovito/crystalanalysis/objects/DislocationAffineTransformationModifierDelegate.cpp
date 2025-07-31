@@ -58,32 +58,30 @@ Future<PipelineFlowState> DislocationAffineTransformationModifierDelegate::apply
             state = std::move(state),
             tm = modifier->effectiveAffineTransformation(originalState)]() mutable {
 
-        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            if(const DislocationNetwork* inputDislocations = dynamic_object_cast<DislocationNetwork>(state.data()->objects()[i])) {
-                DislocationNetwork* outputDislocations = state.makeMutable(inputDislocations);
+        state.data()->visitObjectsOfType<DislocationNetwork>([&](const DislocationNetwork* inputDislocations) {
+            DislocationNetwork* outputDislocations = state.makeMutable(inputDislocations);
 
-                // Apply transformation to the vertices of the dislocation lines.
-                for(DislocationSegment* segment : outputDislocations->segments()) {
-                    for(Point3& vertex : segment->line) {
-                        vertex = tm * vertex;
-                    }
+            // Apply transformation to the vertices of the dislocation lines.
+            for(DislocationSegment* segment : outputDislocations->segments()) {
+                for(Point3& vertex : segment->line) {
+                    vertex = tm * vertex;
                 }
-
-                // Apply transformation to the crystal orientations of the clusters.
-                if(!tm.isTranslationMatrix()) {
-                    ClusterGraph* clusterGraph = outputDislocations->makeMutable(outputDislocations->clusterGraph());
-                    for(Cluster* cluster : clusterGraph->clusters()) {
-                        cluster->orientation = tm.linear() * cluster->orientation;
-                    }
-                }
-
-                // Apply transformation to the cutting planes attached to the dislocation network.
-                QVector<Plane3> cuttingPlanes = outputDislocations->cuttingPlanes();
-                for(Plane3& plane : cuttingPlanes)
-                    plane = tm * plane;
-                outputDislocations->setCuttingPlanes(std::move(cuttingPlanes));
             }
-        }
+
+            // Apply transformation to the crystal orientations of the clusters.
+            if(!tm.isTranslationMatrix()) {
+                ClusterGraph* clusterGraph = outputDislocations->makeMutable(outputDislocations->clusterGraph());
+                for(Cluster* cluster : clusterGraph->clusters()) {
+                    cluster->orientation = tm.linear() * cluster->orientation;
+                }
+            }
+
+            // Apply transformation to the cutting planes attached to the dislocation network.
+            QVector<Plane3> cuttingPlanes = outputDislocations->cuttingPlanes();
+            for(Plane3& plane : cuttingPlanes)
+                plane = tm * plane;
+            outputDislocations->setCuttingPlanes(std::move(cuttingPlanes));
+        });
 
         return std::move(state);
     });

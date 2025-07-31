@@ -72,7 +72,7 @@ TimeInterval KeyframeController::validityInterval(AnimationTime time)
 /******************************************************************************
 * Inserts a new animation key into this controller's list of keys.
 ******************************************************************************/
-int KeyframeController::insertKey(AnimationKey* key, int insertionPos)
+int KeyframeController::insertKey(OORef<AnimationKey> key, int insertionPos)
 {
     OVITO_CHECK_OBJECT_POINTER(key);
     OVITO_ASSERT(keys().contains(key) == false);
@@ -83,11 +83,11 @@ int KeyframeController::insertKey(AnimationKey* key, int insertionPos)
             if(keys()[index]->time() >= key->time()) {
                 if(keys()[index]->time() == key->time()) {
                     // Replace existing key.
-                    _keys.set(this, PROPERTY_FIELD(keys), index, key);
+                    _keys.set(this, PROPERTY_FIELD(keys), index, std::move(key));
                 }
                 else {
                     // Insert new key.
-                    _keys.insert(this, PROPERTY_FIELD(keys), index, key);
+                    _keys.insert(this, PROPERTY_FIELD(keys), index, std::move(key));
                 }
                 OVITO_ASSERT(areKeysSorted());
                 return index;
@@ -95,11 +95,11 @@ int KeyframeController::insertKey(AnimationKey* key, int insertionPos)
         }
 
         // Insert new key at the end.
-        _keys.push_back(this, PROPERTY_FIELD(keys), key);
+        _keys.push_back(this, PROPERTY_FIELD(keys), std::move(key));
         return _keys.size() - 1;
     }
     else {
-        _keys.insert(this, PROPERTY_FIELD(keys), insertionPos, key);
+        _keys.insert(this, PROPERTY_FIELD(keys), insertionPos, std::move(key));
         OVITO_ASSERT(areKeysSorted());
         return insertionPos;
     }

@@ -185,7 +185,7 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             // Adopt all root-level data objects from the cached DataCollection which were created by us.
             for(const DataObject* obj : cachedState.data()->objects()) {
-                if(obj->createdByNode().lock() == request.modificationNode()) {
+                if(obj->createdByNode().lock().get() == request.modificationNode()) {
                     state.addObject(obj);
                 }
             }

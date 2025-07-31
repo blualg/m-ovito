@@ -267,7 +267,7 @@ void PropertyReferenceParameterUI::updatePropertyValue()
             }
             else return;
 
-            if(self.lock())
+            if(!self.expired())
                Q_EMIT valueEntered();
         });
     }

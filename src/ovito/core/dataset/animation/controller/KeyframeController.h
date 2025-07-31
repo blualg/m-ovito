@@ -65,7 +65,7 @@ public:
 protected:
 
     /// Inserts a new animation key into this controller's list of keys.
-    int insertKey(AnimationKey* key, int insertionPos = -1);
+    int insertKey(OORef<AnimationKey> key, int insertionPos = -1);
 
     /// This updates the keys after their times or values have changed.
     virtual void updateKeys() {}

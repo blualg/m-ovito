@@ -34,7 +34,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parent, Pipeline* sourcePipeline, QVector<OORef<PipelineNode>> pipelineNodes) :
+CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parent, Pipeline* sourcePipeline, std::vector<OORef<PipelineNode>> pipelineNodes) :
     QDialog(parent), _mainWindow(mainWindow), _sourcePipeline(sourcePipeline), _pipelineNodes(std::move(pipelineNodes))
 {
     setWindowTitle(tr("Copy Pipeline Items"));
@@ -119,7 +119,7 @@ void CopyPipelineItemDialog::onAccept()
 
         OORef<PipelineNode> precedingNode;
         for(auto node = _pipelineNodes.crbegin(); node != _pipelineNodes.crend(); ++node) {
-            if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(*node)) {
+            if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(node->get())) {
                 // Copy modification node.
                 OORef<ModificationNode> clonedModNode = cloneHelper.cloneObject(modNode, false);
                 clonedModNode->setInput(nullptr); // avoid cyclic reference errors

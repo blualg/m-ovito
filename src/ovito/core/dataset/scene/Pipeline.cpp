@@ -490,7 +490,7 @@ void Pipeline::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
     // Save list of weak references to vis elements that have been replaced with local copies.
     stream.writeSizeT(replacedVisElements().size());
     for(const auto& weakRef : replacedVisElements()) {
-        stream.saveObject(weakRef.lock(), excludeRecomputableData);
+        stream.saveObject(weakRef.lock().get(), excludeRecomputableData);
     }
     stream.endChunk();
 }

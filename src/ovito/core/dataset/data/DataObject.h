@@ -89,9 +89,9 @@ public:
 
     /// \brief Attaches a visualization elements to this data object that will be responsible for rendering the
     ///        data.
-    void addVisElement(DataVis* vis) {
+    void addVisElement(OORef<DataVis> vis) {
         OVITO_ASSERT(vis != nullptr);
-        _visElements.push_back(this, PROPERTY_FIELD(visElements), vis);
+        _visElements.push_back(this, PROPERTY_FIELD(visElements), std::move(vis));
     }
 
     /// \brief Attaches a visualization element to this data object that will be responsible for rendering the
@@ -108,10 +108,10 @@ public:
 
     /// \brief Attaches a visual element to this data object that will be responsible for rendering the
     ///        data. Any existing visual elements will be replaced.
-    void setVisElement(DataVis* vis) {
+    void setVisElement(OORef<DataVis> vis) {
         _visElements.clear(this, PROPERTY_FIELD(visElements));
         if(vis)
-            _visElements.push_back(this, PROPERTY_FIELD(visElements), vis);
+            _visElements.push_back(this, PROPERTY_FIELD(visElements), std::move(vis));
     }
 
     /// \brief Returns the first visualization element attached to this data object or NULL if there is

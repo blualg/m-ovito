@@ -1510,7 +1510,7 @@ PipelineNode* PipelineListModel::makeElementIndependentImpl(PipelineNode* pipeli
     // When arriving at the selected ModificationNode, duplicate the modifier too
     // in case it is being shared by multiple pipelines.
     while(currentNode) {
-        if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(currentNode)) {
+        if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(currentNode.get())) {
 
             // Clone all modification nodes along the way if they are shared by multiple pipeline branches.
             if(modNode->pipelines(true).size() > 1) {

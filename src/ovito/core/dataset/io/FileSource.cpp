@@ -77,7 +77,7 @@ static int countNumberOfFiles(const QVector<FileSourceImporter::Frame>& frames)
 /******************************************************************************
 * Sets the source location for importing data.
 ******************************************************************************/
-void FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection)
+void FileSource::setSource(std::vector<QUrl> sourceUrls, OORef<FileSourceImporter> importer, bool autodetectFileSequences, bool keepExistingDataCollection)
 {
     OVITO_ASSERT(this_task::get());
     OVITO_ASSERT(this_task::isMainThread());
@@ -133,11 +133,10 @@ void FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
     public:
         SetSourceOperation(FileSource* obj) : _obj(obj), _oldUrls(obj->sourceUrls()), _oldImporter(obj->importer()) {}
         void undo() override {
-            std::vector<QUrl> urls = _obj->sourceUrls();
-            OORef<FileSourceImporter> importer = _obj->importer();
-            _obj->setSource(std::move(_oldUrls), _oldImporter, false);
-            _oldUrls = std::move(urls);
-            _oldImporter = importer;
+            _obj->setSource(
+                std::exchange(_oldUrls, _obj->sourceUrls()),
+                std::exchange(_oldImporter, _obj->importer()),
+                false);
         }
     private:
         std::vector<QUrl> _oldUrls;
@@ -147,7 +146,7 @@ void FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
     pushIfUndoRecording<SetSourceOperation>(this);
 
     _sourceUrls.set(this, PROPERTY_FIELD(sourceUrls), std::move(sourceUrls));
-    _importer.set(this, PROPERTY_FIELD(importer), importer);
+    _importer.set(this, PROPERTY_FIELD(importer), std::move(importer));
 
     // Discard previously loaded data.
     if(!keepExistingDataCollection && !isUndoingOrRedoing()) {

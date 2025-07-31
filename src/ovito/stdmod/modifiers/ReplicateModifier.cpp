@@ -90,61 +90,57 @@ Future<PipelineFlowState> LinesReplicateModifierDelegate::apply(const ModifierEv
         const SimulationCell* cell = state.expectObject<SimulationCell>();
         const AffineTransformation& cellMatrix = cell->matrix();
 
-        // Loop over all lines objects in the data collection
-        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            // Replicate the Lines.
-            if(const Lines* inputLines = dynamic_object_cast<Lines>(state.data()->objects()[i])) {
+        // Process all lines objects in the data collection.
+        state.data()->visitObjectsOfType<Lines>([&](const Lines* inputLines) {
+            // Skip if there's nothing to do
+            if(numCopies <= 1 || inputLines->elementCount() == 0)
+                return;
 
-                // Skip if there's nothing to do
-                if(numCopies <= 1 || !inputLines || inputLines->elementCount() == 0)
-                    continue;
+            // Extend lines property arrays.
+            size_t oldVertexCount = inputLines->elementCount();
+            size_t newVertexCount = oldVertexCount * numCopies;
 
-                // Extend lines property arrays.
-                size_t oldVertexCount = inputLines->elementCount();
-                size_t newVertexCount = oldVertexCount * numCopies;
+            // Ensure that the lines can be modified.
+            Lines* outputLines = state.makeMutable(inputLines);
+            outputLines->replicate(numCopies);
 
-                // Ensure that the lines can be modified.
-                Lines* outputLines = state.makeMutable(inputLines);
-                outputLines->replicate(numCopies);
+            // Replicate lines (vertex) property values.
+            for(Property* property : outputLines->makePropertiesMutable()) {
+                OVITO_ASSERT(property->size() == newVertexCount);
 
-                // Replicate lines (vertex) property values.
-                for(Property* property : outputLines->makePropertiesMutable()) {
-                    OVITO_ASSERT(property->size() == newVertexCount);
-
-                    // Shift vertex positions by the periodicity vector.
-                    if(property->typeId() == Lines::PositionProperty) {
-                        BufferWriteAccess<Point3, access_mode::read_write> positionArray(property);
-                        Point3* p = positionArray.begin();
-                        for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
-                            for(int imageY = newImages.minc.y(); imageY <= newImages.maxc.y(); imageY++) {
-                                for(int imageZ = newImages.minc.z(); imageZ <= newImages.maxc.z(); imageZ++) {
-                                    if(imageX != 0 || imageY != 0 || imageZ != 0) {
-                                        const Vector3 imageDelta = cellMatrix * Vector3(imageX, imageY, imageZ);
-                                        for(size_t i = 0; i < oldVertexCount; i++) {
-                                            *p++ += imageDelta;
-                                        }
+                // Shift vertex positions by the periodicity vector.
+                if(property->typeId() == Lines::PositionProperty) {
+                    BufferWriteAccess<Point3, access_mode::read_write> positionArray(property);
+                    Point3* p = positionArray.begin();
+                    for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
+                        for(int imageY = newImages.minc.y(); imageY <= newImages.maxc.y(); imageY++) {
+                            for(int imageZ = newImages.minc.z(); imageZ <= newImages.maxc.z(); imageZ++) {
+                                if(imageX != 0 || imageY != 0 || imageZ != 0) {
+                                    const Vector3 imageDelta = cellMatrix * Vector3(imageX, imageY, imageZ);
+                                    for(size_t i = 0; i < oldVertexCount; i++) {
+                                        *p++ += imageDelta;
                                     }
-                                    else {
-                                        p += oldVertexCount;
-                                    }
+                                }
+                                else {
+                                    p += oldVertexCount;
                                 }
                             }
                         }
                     }
-                    else if(property->typeId() == Lines::SectionProperty) {
-                        BufferWriteAccess<int64_t, access_mode::read_write> sectionsArray(property);
-                        auto minmax = std::minmax_element(sectionsArray.cbegin(), sectionsArray.cbegin() + oldVertexCount);
-                        auto minSec = *minmax.first;
-                        auto maxSec = *minmax.second;
-                        for(size_t c = 1; c < numCopies; c++) {
-                            auto offset = (maxSec - minSec + 1) * c;
-                            for(auto id = sectionsArray.begin() + c * oldVertexCount, id_end = id + oldVertexCount; id != id_end; ++id)
-                                *id += offset;
-                        }
+                }
+                else if(property->typeId() == Lines::SectionProperty) {
+                    BufferWriteAccess<int64_t, access_mode::read_write> sectionsArray(property);
+                    auto minmax = std::minmax_element(sectionsArray.cbegin(), sectionsArray.cbegin() + oldVertexCount);
+                    auto minSec = *minmax.first;
+                    auto maxSec = *minmax.second;
+                    for(size_t c = 1; c < numCopies; c++) {
+                        auto offset = (maxSec - minSec + 1) * c;
+                        for(auto id = sectionsArray.begin() + c * oldVertexCount, id_end = id + oldVertexCount; id != id_end; ++id)
+                            *id += offset;
                     }
                 }
             }
-        }
+        });
 
         return std::move(state);
     });
@@ -184,50 +180,47 @@ Future<PipelineFlowState> VectorsReplicateModifierDelegate::apply(
         const SimulationCell* cell = state.expectObject<SimulationCell>();
         const AffineTransformation& cellMatrix = cell->matrix();
 
-        // Loop over all lines objects in the data collection
-        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            // Replicate the Lines.
-            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(state.data()->objects()[i])) {
-                // Skip if there's nothing to do
-                if(numCopies <= 1 || !inputVectors || inputVectors->elementCount() == 0) {
-                    continue;
-                }
+        // Process all vectors objects in the data collection
+        state.data()->visitObjectsOfType<Vectors>([&](const Vectors* inputVectors) {
+            // Skip if there's nothing to do
+            if(numCopies <= 1 || inputVectors->elementCount() == 0)
+                return;
 
-                // Extend vectors property arrays.
-                size_t oldVectorsCount = inputVectors->elementCount();
-                size_t newVectorsCount = oldVectorsCount * numCopies;
+            // Extend vectors property arrays.
+            size_t oldVectorsCount = inputVectors->elementCount();
+            size_t newVectorsCount = oldVectorsCount * numCopies;
 
-                // Ensure that the lines can be modified.
-                Vectors* outputVectors = state.makeMutable(inputVectors);
-                outputVectors->replicate(numCopies);
+            // Ensure that the lines can be modified.
+            Vectors* outputVectors = state.makeMutable(inputVectors);
+            outputVectors->replicate(numCopies);
 
-                // Replicate lines (vertex) property values.
-                for(Property* property : outputVectors->makePropertiesMutable()) {
-                    OVITO_ASSERT(property->size() == newVectorsCount);
+            // Replicate lines (vertex) property values.
+            for(Property* property : outputVectors->makePropertiesMutable()) {
+                OVITO_ASSERT(property->size() == newVectorsCount);
 
-                    // Shift vertex positions by the periodicity vector.
-                    if(property->typeId() == Vectors::PositionProperty) {
-                        BufferWriteAccess<Point3, access_mode::read_write> positionArray(property);
-                        Point3* p = positionArray.begin();
-                        for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
-                            for(int imageY = newImages.minc.y(); imageY <= newImages.maxc.y(); imageY++) {
-                                for(int imageZ = newImages.minc.z(); imageZ <= newImages.maxc.z(); imageZ++) {
-                                    if(imageX != 0 || imageY != 0 || imageZ != 0) {
-                                        const Vector3 imageDelta = cellMatrix * Vector3(imageX, imageY, imageZ);
-                                        for(size_t i = 0; i < oldVectorsCount; i++) {
-                                            *p++ += imageDelta;
-                                        }
+                // Shift vertex positions by the periodicity vector.
+                if(property->typeId() == Vectors::PositionProperty) {
+                    BufferWriteAccess<Point3, access_mode::read_write> positionArray(property);
+                    Point3* p = positionArray.begin();
+                    for(int imageX = newImages.minc.x(); imageX <= newImages.maxc.x(); imageX++) {
+                        for(int imageY = newImages.minc.y(); imageY <= newImages.maxc.y(); imageY++) {
+                            for(int imageZ = newImages.minc.z(); imageZ <= newImages.maxc.z(); imageZ++) {
+                                if(imageX != 0 || imageY != 0 || imageZ != 0) {
+                                    const Vector3 imageDelta = cellMatrix * Vector3(imageX, imageY, imageZ);
+                                    for(size_t i = 0; i < oldVectorsCount; i++) {
+                                        *p++ += imageDelta;
                                     }
-                                    else {
-                                        p += oldVectorsCount;
-                                    }
+                                }
+                                else {
+                                    p += oldVectorsCount;
                                 }
                             }
                         }
                     }
                 }
             }
-        }
+        });
+
         return std::move(state);
     });
 }

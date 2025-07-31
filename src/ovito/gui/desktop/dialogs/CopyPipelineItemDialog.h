@@ -37,7 +37,7 @@ class CopyPipelineItemDialog : public QDialog
 public:
 
     /// Constructor.
-    CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parentWindow, Pipeline* sourcePipeline, QVector<OORef<PipelineNode>> pipelineNodes);
+    CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parentWindow, Pipeline* sourcePipeline, std::vector<OORef<PipelineNode>> pipelineNodes);
 
 private Q_SLOTS:
 
@@ -53,7 +53,7 @@ private:
     OORef<Pipeline> _sourcePipeline;
 
     /// The pipeline nodes to be copied.
-    QVector<OORef<PipelineNode>> _pipelineNodes;
+    std::vector<OORef<PipelineNode>> _pipelineNodes;
 
     /// Target pipeline selector.
     QComboBox* _destinationPipelineList;

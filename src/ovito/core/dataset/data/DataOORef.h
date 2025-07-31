@@ -143,15 +143,42 @@ public:
         DataOORef(rhs).swap(*this);
     }
 
-    inline T* get() const noexcept {
+    void reset(const DataOORef& rhs) {
+        DataOORef(rhs).swap(*this);
+    }
+
+    template<class U>
+    void reset(const DataOORef<U>& rhs) {
+        DataOORef(rhs).swap(*this);
+    }
+
+    void reset(DataOORef&& rhs) noexcept {
+        DataOORef(std::move(rhs)).swap(*this);
+    }
+
+    template<class U>
+    void reset(DataOORef<U>&& rhs) noexcept {
+        DataOORef(std::move(rhs)).swap(*this);
+    }
+
+    template<class U>
+    void reset(OORef<U>&& rhs) noexcept {
+        DataOORef(std::move(rhs)).swap(*this);
+    }
+
+    inline T* get() const& noexcept {
         return _ref.get();
     }
 
-    inline operator T*() const noexcept {
+    /// Allow implicit conversion from l-value smart pointer to a raw pointer.
+    inline operator T*() const& noexcept {
         return _ref.get();
     }
 
-    inline operator const OORef<T>&() const noexcept {
+    /// Disallow inadvertent conversion from r-value smart pointer to a dangling raw pointer.
+    operator T*() && = delete;
+
+    inline operator const OORef<T>&() const& noexcept {
         return _ref;
     }
 

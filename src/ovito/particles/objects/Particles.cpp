@@ -983,7 +983,7 @@ Color Particles::OOMetaClass::getElementTypeDefaultColor(const OwnerPropertyRef&
 std::pair<size_t, ConstDataObjectPath> Particles::OOMetaClass::elementFromPickResult(const ViewportWindow::PickResult& pickResult) const
 {
     // Check if a particle was picked.
-    if(const ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(pickResult.pickInfo())) {
+    if(const ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(pickResult.pickInfo().get())) {
         const Particles* particles = pickInfo->particles();
         size_t particleIndex = pickInfo->particleIndexFromSubObjectID(pickResult.subobjectId());
         if(particleIndex < particles->elementCount())

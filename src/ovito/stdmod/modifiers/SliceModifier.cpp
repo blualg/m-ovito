@@ -108,42 +108,40 @@ Future<PipelineFlowState> LinesSliceModifierDelegate::apply(const ModifierEvalua
         QString statusMessage;
 
         // Loop over all lines objects in data collection
-        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            if(const Lines* inputLines = dynamic_object_cast<Lines>(state.data()->objects()[i])) {
-                // Make sure we can safely modify the lines object.
-                Lines* outputLines = state.makeMutable(inputLines);
+        state.data()->visitObjectsOfType<Lines>([&](const Lines* inputLines) {
+            // Make sure we can safely modify the lines object.
+            Lines* outputLines = state.makeMutable(inputLines);
 
-                if(!createSelection) {
-                    QVector<Plane3> planes = outputLines->cuttingPlanes();
-                    if(sliceWidth <= 0) {
-                        planes.push_back(plane);
-                    }
-                    else {
-                        planes.push_back(Plane3(plane.normal, plane.dist + sliceWidth));
-                        planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth));
-                    }
-                    outputLines->setCuttingPlanes(std::move(planes));
+            if(!createSelection) {
+                QVector<Plane3> planes = outputLines->cuttingPlanes();
+                if(sliceWidth <= 0) {
+                    planes.push_back(plane);
                 }
                 else {
-                    // Create a line vertex selection.
-                    BufferReadAccess<Point3> vertexPositionProperty = outputLines->expectProperty(Lines::PositionProperty);
-                    BufferWriteAccess<SelectionIntType, access_mode::discard_read_write> vertexSelectionProperty = outputLines->createProperty(Lines::SelectionProperty);
-                    size_t numSelectedVertices = 0;
-                    boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
-                        bool selectionState =
-                            (sliceWidth <= 0) ?
-                                (plane.pointDistance(pos) > 0) :
-                                (invert == (plane.classifyPoint(pos, sliceWidth) == 0));
-                        if(selectionState)
-                            numSelectedVertices++;
-                        return selectionState ? 1 : 0;
-                    });
-                    if(!statusMessage.isEmpty())
-                        statusMessage += QChar('\n');
-                    statusMessage += tr("%1 of %2 line vertices selected").arg(numSelectedVertices).arg(outputLines->elementCount());
+                    planes.push_back(Plane3(plane.normal, plane.dist + sliceWidth));
+                    planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth));
                 }
+                outputLines->setCuttingPlanes(std::move(planes));
             }
-        }
+            else {
+                // Create a line vertex selection.
+                BufferReadAccess<Point3> vertexPositionProperty = outputLines->expectProperty(Lines::PositionProperty);
+                BufferWriteAccess<SelectionIntType, access_mode::discard_read_write> vertexSelectionProperty = outputLines->createProperty(Lines::SelectionProperty);
+                size_t numSelectedVertices = 0;
+                boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
+                    bool selectionState =
+                        (sliceWidth <= 0) ?
+                            (plane.pointDistance(pos) > 0) :
+                            (invert == (plane.classifyPoint(pos, sliceWidth) == 0));
+                    if(selectionState)
+                        numSelectedVertices++;
+                    return selectionState ? 1 : 0;
+                });
+                if(!statusMessage.isEmpty())
+                    statusMessage += QChar('\n');
+                statusMessage += tr("%1 of %2 line vertices selected").arg(numSelectedVertices).arg(outputLines->elementCount());
+            }
+        });
 
         state.setStatus(statusMessage);
         return std::move(state);
@@ -183,30 +181,27 @@ Future<PipelineFlowState> VectorsSliceModifierDelegate::apply(
 
     return asyncLaunch([state = std::move(state), plane, sliceWidth, invert = modifier->inverse(),
                         createSelection = modifier->createSelection(), applyToSelection]() mutable {
-        // Loop over all vectors objects in the data collection
-        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            // Slice the vectors.
-            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(state.data()->objects()[i])) {
-                inputVectors->verifyIntegrity();
+        // Process all vectors objects in the data collection
+        state.data()->visitObjectsOfType<Vectors>([&](const Vectors* inputVectors) {
+            inputVectors->verifyIntegrity();
 
-                // Create mask array to be computed.
-                DataOORef<DataBuffer> maskBuffer = DataBufferPtr::create(
-                    ObjectInitializationFlag::NoFlags, DataBuffer::Uninitialized, inputVectors->elementCount(), DataBuffer::IntSelection);
+            // Create mask array to be computed.
+            DataOORef<DataBuffer> maskBuffer = DataBufferPtr::create(
+                ObjectInitializationFlag::NoFlags, DataBuffer::Uninitialized, inputVectors->elementCount(), DataBuffer::IntSelection);
 
-                // Get the input basis points.
-                ConstPropertyPtr positionProperty = inputVectors->expectProperty(Vectors::PositionProperty);
+            // Get the input basis points.
+            ConstPropertyPtr positionProperty = inputVectors->expectProperty(Vectors::PositionProperty);
 
-                // Number of marked/selected particles.
-                size_t numMarked = SliceModifier::sliceCoordinatesToMask(plane, sliceWidth, invert, positionProperty, maskBuffer, nullptr);
+            // Number of marked/selected particles.
+            size_t numMarked = SliceModifier::sliceCoordinatesToMask(plane, sliceWidth, invert, positionProperty, maskBuffer, nullptr);
 
-                // Make sure we can safely modify the vectors object.
-                Vectors* outputVectors = state.makeMutable(inputVectors);
-                if(createSelection == false) {
-                    outputVectors->deleteElements(std::move(maskBuffer), numMarked);
-                }
-                outputVectors->verifyIntegrity();
+            // Make sure we can safely modify the vectors object.
+            Vectors* outputVectors = state.makeMutable(inputVectors);
+            if(createSelection == false) {
+                outputVectors->deleteElements(std::move(maskBuffer), numMarked);
             }
-        }
+            outputVectors->verifyIntegrity();
+        });
         return std::move(state);
     });
 }
@@ -519,7 +514,8 @@ void SliceModifier::planeQuadIntersection(const Point3 corners[8], const std::ar
     for(int i = 0; i < 4; i++) {
         Ray3 edge(corners[quadVerts[i]], corners[quadVerts[(i+1)%4]]);
         FloatType t = plane.intersectionT(edge, FLOATTYPE_EPSILON);
-        if(t < 0 || t > 1) continue;
+        if(t < 0 || t > 1)
+            continue;
         if(!hasP1) {
             p1 = edge.point(t);
             hasP1 = true;

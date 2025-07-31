@@ -98,8 +98,7 @@ void CoordinationAnalysisModifierEditor::plotRDF()
 {
     handleExceptions([&]() {
         // Look up the data table in the modifier's pipeline output.
-        OORef<DataTable> table =
-            getPipelineOutput().getObjectBy<DataTable>(modificationNode(), CoordinationAnalysisModifier::OOMetaClass::tableName);
+        DataOORef<const DataTable> table = getPipelineOutput().getObjectBy<DataTable>(modificationNode(), CoordinationAnalysisModifier::OOMetaClass::tableName);
 
         // Determine X plotting range.
         if(table) {
@@ -118,7 +117,7 @@ void CoordinationAnalysisModifierEditor::plotRDF()
             }
             _rdfPlot->setAxisScale(QwtPlot::xBottom, std::floor(minX * 9.0 / table->intervalEnd()) / 10.0 * table->intervalEnd(), table->intervalEnd());
         }
-        _rdfPlot->setTable(table);
+        _rdfPlot->setTable(std::move(table));
     });
 }
 

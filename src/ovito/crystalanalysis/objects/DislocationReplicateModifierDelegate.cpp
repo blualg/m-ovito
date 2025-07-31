@@ -58,62 +58,60 @@ Future<PipelineFlowState> DislocationReplicateModifierDelegate::apply(const Modi
         int nPBC[3] = { newImages.sizeX() + 1, newImages.sizeY() + 1, newImages.sizeZ() + 1};
         size_t numCopies = (size_t)nPBC[0] * (size_t)nPBC[1] * (size_t)nPBC[2];
 
-        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            if(const DislocationNetwork* existingDislocations = dynamic_object_cast<DislocationNetwork>(state.data()->objects()[i])) {
+        state.data()->visitObjectsOfType<DislocationNetwork>([&](const DislocationNetwork* existingDislocations) {
+            // For periodic replication, a domain is needed.
+            if(!existingDislocations->domain())
+                return;
 
-                // For periodic replication, a domain is needed.
-                if(!existingDislocations->domain())
-                    continue;
+            AffineTransformation simCell = existingDislocations->domain()->cellMatrix();
+            AffineTransformation inverseSimCell;
+            if(!simCell.inverse(inverseSimCell))
+                return;
 
-                AffineTransformation simCell = existingDislocations->domain()->cellMatrix();
-                AffineTransformation inverseSimCell;
-                if(!simCell.inverse(inverseSimCell))
-                    continue;
+            // Create the output copy of the input dislocation object.
+            DislocationNetwork* newDislocations = state.makeMutable(existingDislocations);
 
-                // Create the output copy of the input dislocation object.
-                DislocationNetwork* newDislocations = state.makeMutable(existingDislocations);
-
-                // Shift existing vertices so that they form the first image at grid position (0,0,0).
-                const Vector3 imageDelta = simCell * Vector3(newImages.minc.x(), newImages.minc.y(), newImages.minc.z());
-                if(!imageDelta.isZero()) {
-                    for(DislocationSegment* segment : newDislocations->segments()) {
-                        for(Point3& p : segment->line)
-                            p += imageDelta;
-                    }
+            // Shift existing vertices so that they form the first image at grid position (0,0,0).
+            const Vector3 imageDelta = simCell * Vector3(newImages.minc.x(), newImages.minc.y(), newImages.minc.z());
+            if(!imageDelta.isZero()) {
+                for(DislocationSegment* segment : newDislocations->segments()) {
+                    for(Point3& p : segment->line)
+                        p += imageDelta;
                 }
-
-                // Replicate lines.
-                size_t oldSegmentCount = newDislocations->segments().size();
-                for(int imageX = 0; imageX < nPBC[0]; imageX++) {
-                    for(int imageY = 0; imageY < nPBC[1]; imageY++) {
-                        for(int imageZ = 0; imageZ < nPBC[2]; imageZ++) {
-                            if(imageX == 0 && imageY == 0 && imageZ == 0) continue;
-                            // Shift vertex positions by the periodicity vector.
-                            const Vector3 imageDelta = simCell * Vector3(imageX, imageY, imageZ);
-                            for(size_t i = 0; i < oldSegmentCount; i++) {
-                                DislocationSegment* oldSegment = newDislocations->segments()[i];
-                                DislocationSegment* newSegment = newDislocations->createSegment(oldSegment->burgersVector);
-                                newSegment->line = oldSegment->line;
-                                newSegment->coreSize = oldSegment->coreSize;
-                                for(Point3& p : newSegment->line)
-                                    p += imageDelta;
-                            }
-                            // TODO: Replicate nodal connectivity.
-                        }
-                    }
-                }
-                OVITO_ASSERT(newDislocations->segments().size() == oldSegmentCount * numCopies);
-
-                // Extend the periodic domain the dislocation network is embedded in.
-                simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);
-                simCell.translation() += (FloatType)newImages.minc.y() * simCell.column(1);
-                simCell.translation() += (FloatType)newImages.minc.z() * simCell.column(2);
-                simCell.column(0) *= (newImages.sizeX() + 1);
-                simCell.column(1) *= (newImages.sizeY() + 1);
-                simCell.column(2) *= (newImages.sizeZ() + 1);
-                newDislocations->mutableDomain()->setCellMatrix(simCell);
             }
-        }
+
+            // Replicate lines.
+            size_t oldSegmentCount = newDislocations->segments().size();
+            for(int imageX = 0; imageX < nPBC[0]; imageX++) {
+                for(int imageY = 0; imageY < nPBC[1]; imageY++) {
+                    for(int imageZ = 0; imageZ < nPBC[2]; imageZ++) {
+                        if(imageX == 0 && imageY == 0 && imageZ == 0)
+                            continue;
+                        // Shift vertex positions by the periodicity vector.
+                        const Vector3 imageDelta = simCell * Vector3(imageX, imageY, imageZ);
+                        for(size_t i = 0; i < oldSegmentCount; i++) {
+                            DislocationSegment* oldSegment = newDislocations->segments()[i];
+                            DislocationSegment* newSegment = newDislocations->createSegment(oldSegment->burgersVector);
+                            newSegment->line = oldSegment->line;
+                            newSegment->coreSize = oldSegment->coreSize;
+                            for(Point3& p : newSegment->line)
+                                p += imageDelta;
+                        }
+                        // TODO: Replicate nodal connectivity.
+                    }
+                }
+            }
+            OVITO_ASSERT(newDislocations->segments().size() == oldSegmentCount * numCopies);
+
+            // Extend the periodic domain the dislocation network is embedded in.
+            simCell.translation() += (FloatType)newImages.minc.x() * simCell.column(0);
+            simCell.translation() += (FloatType)newImages.minc.y() * simCell.column(1);
+            simCell.translation() += (FloatType)newImages.minc.z() * simCell.column(2);
+            simCell.column(0) *= (newImages.sizeX() + 1);
+            simCell.column(1) *= (newImages.sizeY() + 1);
+            simCell.column(2) *= (newImages.sizeZ() + 1);
+            newDislocations->mutableDomain()->setCellMatrix(simCell);
+        });
 
         return std::move(state);
     });

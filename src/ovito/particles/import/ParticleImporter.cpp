@@ -577,7 +577,7 @@ Future<OORef<Pipeline>> ParticleImporter::importFurtherFiles(OORef<Scene> scene,
         // Create a modifier for injecting the trajectory data into the existing pipeline.
         OORef<LoadTrajectoryModifier> loadTrjMod = OORef<LoadTrajectoryModifier>::create();
         loadTrjMod->setTrajectorySource(std::move(fileSource));
-        pipeline->applyModifier(scene->animationSettings()->currentTime(), true, std::move(loadTrjMod));
+        pipeline->applyModifier(scene->animationSettings()->currentTime(), true, loadTrjMod);
 
         if(sourceUrlsAndImporters.empty())
             return Future<OORef<Pipeline>>::createImmediateEmpty();

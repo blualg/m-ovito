@@ -389,10 +389,12 @@ void Property::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPa
 ******************************************************************************/
 const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name, OvitoClassPtr elementTypeClass)
 {
+    OVITO_CHECK_OBJECT_POINTER(this);
+
     if(const ElementType* existingType = elementType(id))
         return existingType;
 
-    // If the caller did not specify an element type class, let the PropertyConatiner class
+    // If the caller did not specify an element type class, let the PropertyContainer class
     // determine the right element type class for the given property.
     if(elementTypeClass == nullptr) {
         elementTypeClass = containerClass.typedPropertyElementClass(typeId());

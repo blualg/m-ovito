@@ -740,17 +740,15 @@ void MeshParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockI
         // Remove meshes from those trajectory frames where the VTM file does not list them.
         // But instead of deleting the mesh objects from the data collection just clear their contents,
         // such that visual element settings are preserved across frames even if a mesh temporarily disappears.
-        for(qsizetype i = 0; i < request.state.data()->objects().size(); i++) {
-            if(const SurfaceMesh* mesh = dynamic_object_cast<SurfaceMesh>(request.state.data()->objects()[i])) {
-                if(mesh->vertices()->elementCount() != 0 || mesh->faces()->elementCount() != 0) {
-                    SurfaceMesh* mutableMesh = request.state.mutableData()->makeMutable(mesh);
-                    mutableMesh->makeTopologyMutable()->clear();
-                    mutableMesh->makeVerticesMutable()->setElementCount(0);
-                    mutableMesh->makeFacesMutable()->setElementCount(0);
-                    mutableMesh->makeRegionsMutable()->setElementCount(0);
-                }
+        request.state.data()->visitObjectsOfType<SurfaceMesh>([&](const SurfaceMesh* mesh) {
+            if(mesh->vertices()->elementCount() != 0 || mesh->faces()->elementCount() != 0) {
+                SurfaceMesh* mutableMesh = request.state.mutableData()->makeMutable(mesh);
+                mutableMesh->makeTopologyMutable()->clear();
+                mutableMesh->makeVerticesMutable()->setElementCount(0);
+                mutableMesh->makeFacesMutable()->setElementCount(0);
+                mutableMesh->makeRegionsMutable()->setElementCount(0);
             }
-        }
+        });
     }
 }
 

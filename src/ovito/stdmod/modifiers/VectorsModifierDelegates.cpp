@@ -52,7 +52,8 @@ OVITO_CLASSINFO(VectorsDeleteSelectedModifierDelegate, "DisplayName", "Vectors")
  ******************************************************************************/
 QVector<DataObjectReference> VectorsDeleteSelectedModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<Vectors>()) return {DataObjectReference(&Vectors::OOClass())};
+    if(input.containsObject<Vectors>())
+        return {DataObjectReference(&Vectors::OOClass())};
     return {};
 }
 
@@ -68,23 +69,23 @@ Future<PipelineFlowState> VectorsDeleteSelectedModifierDelegate::apply(
         size_t numVectors = 0;
         size_t numSelected = 0;
 
-        // Get the vectors (base points) selection.
-        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(state.data()->objects()[i])) {
-                inputVectors->verifyIntegrity();
-                numVectors += inputVectors->elementCount();
-                if(ConstPropertyPtr selProperty = inputVectors->getProperty(Vectors::SelectionProperty)) {
-                    // Make sure we can safely modify the vectors object.
-                    Vectors* outputVectors = state.makeMutable(inputVectors);
+        // Process all Vectors objects in the data collection.
+        state.data()->visitObjectsOfType<Vectors>([&](const Vectors* inputVectors) {
+            inputVectors->verifyIntegrity();
+            numVectors += inputVectors->elementCount();
 
-                    // Remove selection property.
-                    outputVectors->removeProperty(selProperty);
+            // Get the vectors (base points) selection.
+            if(ConstPropertyPtr selProperty = inputVectors->getProperty(Vectors::SelectionProperty)) {
+                // Make sure we can safely modify the vectors object.
+                Vectors* outputVectors = state.makeMutable(inputVectors);
 
-                    // Delete the selected vector base points / positions.
-                    numSelected += outputVectors->deleteElements(std::move(selProperty));
-                }
+                // Remove selection property.
+                outputVectors->removeProperty(selProperty);
+
+                // Delete the selected vector base points / positions.
+                numSelected += outputVectors->deleteElements(std::move(selProperty));
             }
-        }
+        });
 
         // Report some statistics:
         QString statusMessage = tr("%1 of %2 vectors deleted (%3%)")
