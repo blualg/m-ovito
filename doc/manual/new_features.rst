@@ -20,6 +20,8 @@ Version 3.14.0 (xx-xxx-2025)
   This option allows OVITO to automatically generate a simulation cell that tightly encloses all particles in an axis-aligned bounding box
   if the imported simulation file does not contain any simulation cell information. Otherwise, OVITO will work without *any* simulation cell by default.
 - Implement :ref:`Reduce Property modifier <particles.modifiers.reduce_property>` - a high performance implementation of the `Reduce Property Python extension <https://github.com/ovito-org/ReduceProperty>`__ .
+- Fix dynamic sorting of "Quick command search" not working.
+- Change sorting of "Quick command search" from "most used all time" to "most recent use".
 
 ----------------------------
 Version 3.13.1 (xx-xxx-2025)
