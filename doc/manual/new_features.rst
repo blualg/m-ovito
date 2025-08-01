@@ -16,6 +16,7 @@ Version 3.14.0 (xx-xxx-2025)
 - |ovito-pro| Added the :ref:`particles.modifiers.find_rings` modifier - a high performance implementation of the `Ring Finder Python extension <https://github.com/ovito-org/RingFinder>`__  .
 - |ovito-pro| Added the :ref:`particles.modifiers.reduce_property` modifier - a high performance implementation of the `Reduce Property Python extension <https://github.com/ovito-org/ReduceProperty>`__ .
 - |ovito-pro| Added the :ref:`particles.modifiers.time_difference` modifier: Computes the delta of a particle property between the current frame and a reference frame.
+- |ovito-pro| Activate material choice for the :ref:`rendering.visrtx_renderer`.
 - Added a :menuselection:`Request a Feature` function to the :menuselection:`Help` menu.
 - Added the :guilabel:`Generate bounding box if needed` option to the file reader settings.
   This option allows OVITO to automatically generate a simulation cell that tightly encloses all particles in an axis-aligned bounding box

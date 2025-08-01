@@ -92,12 +92,29 @@ Latitude & Longitude
 Brightness
   Irradiance of the direct light source (default value: 0.5).
 
-
 Material
 """"""""
+VisRTX supports two material types: *Standard* and *Physically Based*. The Standard
+material renders faster, making it ideal for real-time interactive workflows.
+The Physically Based model provides additional parameters for fine-tuning the
+appearance of your rendered objects.
 
-The VisRTX renderer uses a physically-based material model to render scene objects since OVITO 3.13.
-This model behaves similar to glTF's "*pbrMetallicRoughness*" material and consists of a mixture of a metallic
+Standard material
+#################
+
+The *Standard* corresponds to the *matte* material in the
+`ANARI specification <https://registry.khronos.org/ANARI/specs/1.0/ANARI-1.0.htm>`__,
+which reflects light uniformly into the hemisphere. It is suitable for most purposes
+and the current default in OVITO.
+
+.. figure:: /images/rendering/visrtx_renderer_matte_material.*
+  :align: left
+  :figwidth: 30%
+
+Physically based material
+#########################
+
+This physically-based material model behaves similar to glTF's "*pbrMetallicRoughness*" material and consists of a mixture of a metallic
 and a dielectric/diffuse component. The ratio between both contributions is determined by the *Metalness* parameter.
 
 The material settings are applied globally to all scene objects.
