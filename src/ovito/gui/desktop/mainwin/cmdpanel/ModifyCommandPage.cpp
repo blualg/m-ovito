@@ -181,12 +181,12 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
         std::vector<OORef<PipelineNode>> nodes;
         for(RefTarget* obj : _pipelineListModel->selectedObjects()) {
             if(PipelineNode* pnode = dynamic_object_cast<PipelineNode>(obj)) {
-                if(std::ranges::find(nodes, pnode) == nodes.end())
+                if(std::find(nodes.begin(), nodes.end(), pnode) == nodes.end())
                     nodes.push_back(pnode);
             }
             else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(obj)) {
                 for(ModificationNode* modNode : group->nodes()) {
-                    if(std::ranges::find(nodes, modNode) == nodes.end())
+                    if(std::find(nodes.begin(), nodes.end(), modNode) == nodes.end())
                         nodes.push_back(modNode);
                 }
             }
