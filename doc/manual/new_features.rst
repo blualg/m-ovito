@@ -6,23 +6,29 @@ Changelog
 
 .. sidebar::
 
-  * `Download this version <https://www.ovito.org/download_history/#3.13.1>`__
+  * `Download this version <https://www.ovito.org/download_history/#3.14.0>`__
 
 ----------------------------
 Version 3.14.0 (xx-xxx-2025)
 ----------------------------
 
-- |ovito-pro| Implement :ref:`Find Rings modifier <particles.modifiers.find_rings>` - a high performance implementation of the `Ring Finder Python extension <https://github.com/ovito-org/RingFinder>`__  .
 - Extend color coding modifier, property mapping and color legend overlay to support discrete color mappings.
-- Fix bug where the last tick mark was missing in the color legend overlay.
-- Add submit feature request button
+- |ovito-pro| Added the :ref:`particles.modifiers.find_rings` modifier - a high performance implementation of the `Ring Finder Python extension <https://github.com/ovito-org/RingFinder>`__  .
+- |ovito-pro| Added the :ref:`particles.modifiers.reduce_property` modifier - a high performance implementation of the `Reduce Property Python extension <https://github.com/ovito-org/ReduceProperty>`__ .
+- |ovito-pro| Added the :ref:`particles.modifiers.time_difference` modifier: Computes the delta of a particle property between the current frame and a reference frame.
+- Added a :menuselection:`Request a Feature` function to the :menuselection:`Help` menu.
 - Added the :guilabel:`Generate bounding box if needed` option to the file reader settings.
   This option allows OVITO to automatically generate a simulation cell that tightly encloses all particles in an axis-aligned bounding box
   if the imported simulation file does not contain any simulation cell information. Otherwise, OVITO will work without *any* simulation cell by default.
-- |ovito-pro| Implement :ref:`Reduce Property modifier <particles.modifiers.reduce_property>` - a high performance implementation of the `Reduce Property Python extension <https://github.com/ovito-org/ReduceProperty>`__ .
-- Fix dynamic sorting of "Quick command search" not working.
-- Change sorting of "Quick command search" from "most used all time" to "most recent use".
-- |ovito-pro| Implement :ref:`Time difference modifier <particles.modifiers.time_difference>`: Computes the difference in a particle property between the current frame and a reference frame.
+- Fix: Last tick mark missing in the color legend overlay.
+- Fix: dynamic sorting of "Quick command search" field not working.
+- Changed ordering of "Quick command search" items from "all time use" to "most recent use".
+- LAMMPS data file reader: Added support for atom styles spin,sph,rheo,rheo/thermal,bpm/sphere
+- :ref:`particles.modifiers.coordination_analysis` modifier: Added calculation of the ``Per Type Coordination`` property
+
+.. sidebar::
+
+  * `Download this version <https://www.ovito.org/download_history/#3.13.1>`__
 
 ----------------------------
 Version 3.13.1 (xx-xxx-2025)
