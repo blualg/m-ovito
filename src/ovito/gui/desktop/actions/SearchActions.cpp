@@ -100,7 +100,7 @@ protected:
 private:
 
     /// Keeps track of how frequently each action has been invoked by the user.
-    std::map<QString, uint64_t> _useCounts;
+    std::map<QString, qulonglong> _useCounts;
 };
 
 void WidgetActionManager::setupCommandSearch()
