@@ -32,6 +32,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.correlation_function`            Calculates the spatial cross-correlation function between two particle properties.
   :ref:`particles.modifiers.structure_factor` |ovito-pro|    Calculates the structure factor :math:`S(k)` for a system of particles.
   :ref:`particles.modifiers.time_averaging` |ovito-pro|      Computes the average of some time-dependent input quantity over the entire trajectory.
+  :ref:`particles.modifiers.time_difference` |ovito-pro|     Calculates the difference in a particle property between the current frame and a reference frame.
   :ref:`particles.modifiers.time_series` |ovito-pro|         Plots the value of a global attribute as function of simulation time.
   :ref:`particles.modifiers.voronoi_analysis`                Computes the coordination number, atomic volume, and Voronoi index of particles from their Voronoi polyhedra.
   :ref:`particles.modifiers.wigner_seitz_analysis`           Identifies point defects (vacancies and interstitials) in a crystal lattice.
@@ -186,6 +187,7 @@ combine several modifiers to accomplish more complex tasks.
   correlation_function
   structure_factor
   time_averaging
+  time_difference
   time_series
   unwrap_trajectories
   voronoi_analysis
