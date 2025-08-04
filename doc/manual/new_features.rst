@@ -12,6 +12,7 @@ Changelog
 Version 3.13.1 (xx-xxx-2025)
 ----------------------------
 
+- |ovito-pro| Activate material choice for the :ref:`rendering.visrtx_renderer`.
 - :ref:`particles.modifiers.coordination_analysis` modifier: Can now break down the computed coordination numbers into different particle types, which is useful for analyzing the composition of local neighborhoods in multi-component systems
 - :ref:`GALAMOST file reader <file_formats.input>`: Added support for ``<force>`` and ``<virial>`` tags and graceful handling of unknown tags in the XML file
 - :ref:`LAMMPS data file reader/writer <file_formats.input.lammps_data>`: Added support for atom styles `spin`, `sph`, `rheo`, `rheo/thermal`, `bpm/sphere`
