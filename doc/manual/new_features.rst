@@ -12,10 +12,12 @@ Changelog
 Version 3.13.1 (xx-xxx-2025)
 ----------------------------
 
-- GALAMOST file reader: Added support for ``<force>`` and ``<virial>`` tags
+- :ref:`particles.modifiers.coordination_analysis` modifier: Can now break down the computed coordination numbers into different particle types, which is useful for analyzing the composition of local neighborhoods in multi-component systems
+- :ref:`GALAMOST file reader <file_formats.input>`: Added support for ``<force>`` and ``<virial>`` tags and graceful handling of unknown tags in the XML file
+- :ref:`LAMMPS data file reader/writer <file_formats.input.lammps_data>`: Added support for atom styles `spin`, `sph`, `rheo`, `rheo/thermal`, `bpm/sphere`
 - Added usage example to :ref:`Spatial Binning <particles.modifiers.bin_and_reduce.type_counting>` modifier documentation, demonstrating how to compute the local stoichiometry of a particle system.
-- Improve performance of the :py:class:`ovito.data.Lines` visual element.
-- Fix: LAMMPS dump file exporter outputs invalid general triclinic simulation cell info.
+- Improved performance of the :py:class:`ovito.data.Lines` visual element
+- Fix: LAMMPS dump file exporter outputs invalid general triclinic simulation cell info
 
 .. sidebar::
 
