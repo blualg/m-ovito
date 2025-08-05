@@ -237,7 +237,8 @@ void ReaxFFBondImporter::FrameLoader::loadFile()
         // Create bond property for the bond order.
         BufferWriteAccess<FloatType, access_mode::discard_write> bondOrderProperty = bonds()->createProperty(QStringLiteral("Bond Order"), Property::FloatDefault);
         std::transform(reaxBonds.cbegin(), reaxBonds.cend(), bondOrderProperty.begin(), [](const ReaxFFBond& bond) { return bond.bondOrder; });
-
+    }
+    {
         // Create particle properties.
         setParticleCount(reaxAtoms.size());
         BufferWriteAccess<int64_t, access_mode::discard_write> identifierProperty = particles()->createProperty(Particles::IdentifierProperty);
