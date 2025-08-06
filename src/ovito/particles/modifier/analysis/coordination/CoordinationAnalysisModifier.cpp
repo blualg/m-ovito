@@ -89,13 +89,13 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
     if(request.interactiveMode()) {
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             if(DataOORef<const Particles> cachedParticles = cachedState.getObject<Particles>()) {
+                if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(request.modificationNode(), CoordinationAnalysisModifier::OOMetaClass::tableName)) {
+                    state.addObject(cachedTable);
+                }
                 if(const Property* cachedCoordination = cachedParticles->getProperty(Particles::CoordinationProperty)) {
-                    if(const DataTable* cachedTable = cachedState.getObjectBy<DataTable>(
-                           request.modificationNode(), CoordinationAnalysisModifier::OOMetaClass::tableName)) {
-                        state.addObject(cachedTable);
-                    }
-                    return asyncLaunch([state = std::move(state), particles, cachedCoordination, cachedParticles = std::move(cachedParticles)]() mutable {
-                        particles->tryToAdoptProperties(cachedParticles, {cachedCoordination}, {particles});
+                    const Property* cachedTypeCoordination = cachedParticles->getProperty(QStringLiteral("Per Type Coordination"));
+                    return asyncLaunch([state = std::move(state), particles, cachedCoordination, cachedTypeCoordination, cachedParticles = std::move(cachedParticles)]() mutable {
+                        particles->tryToAdoptProperties(cachedParticles, {cachedCoordination, cachedTypeCoordination}, {particles});
                         return std::move(state);
                     });
                 }
@@ -115,11 +115,11 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
 
     // Get particle types if partial RDF calculation has been requested.
     const Property* particleTypes = nullptr;
-    boost::container::flat_map<int,QString> uniqueTypes;
+    boost::container::flat_map<int, QString> uniqueTypes;
     if(computePartialRDF()) {
         particleTypes = particles->getProperty(Particles::TypeProperty);
         if(!particleTypes)
-            throw Exception(tr("Calculation of partial RDFs requires the '%1' property, but particles don't have types assigned.").arg(Particles::OOClass().standardPropertyName(Particles::TypeProperty)));
+            throw Exception(tr("Calculation of partial RDFs requires the '%1' particle property, which is not present in the input particle system.").arg(Particles::OOClass().standardPropertyName(Particles::TypeProperty)));
 
         // Build the set of unique particle type IDs.
         for(const ElementType* pt : particleTypes->elementTypes()) {
@@ -178,29 +178,36 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
         if(computePartialRDF && uniqueTypeIds.empty())
             throw Exception(tr("Cannot compute partial RDFs, because input comprises zero particle types."));
 
-        size_t componentCount = computePartialRDF ? (uniqueTypeIds.size() * (uniqueTypeIds.size()+1) / 2) : 1;
-        QStringList componentNames;
+        size_t rdfComponentCount = computePartialRDF ? (uniqueTypeIds.size() * (uniqueTypeIds.size()+1) / 2) : 1;
+        QStringList coordinationComponentNames;
+        QStringList rdfComponentNames;
         if(computePartialRDF) {
             for(auto t1 = uniqueTypes.cbegin(); t1 != uniqueTypes.cend(); ++t1) {
+                coordinationComponentNames.push_back(t1->second);
                 for(auto t2 = t1; t2 != uniqueTypes.cend(); ++t2) {
-                    componentNames.push_back(QStringLiteral("%1-%2").arg(t1->second, t2->second));
+                    rdfComponentNames.push_back(QStringLiteral("%1-%2").arg(t1->second, t2->second));
                 }
             }
         }
 
+        // Create output property arrays.
         Property* coordinationNumbers = particles->createProperty(DataBuffer::Uninitialized, Particles::CoordinationProperty);
-        PropertyPtr rdfY = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, rdfSampleCount, Property::FloatDefault, componentCount, QStringLiteral("g(r)"), 0, std::move(componentNames));
+        PropertyPtr partialCoordinationNumbers;
+        if(computePartialRDF)
+            partialCoordinationNumbers = particles->createProperty(DataBuffer::Uninitialized, QStringLiteral("Per Type Coordination"), Property::Int32, uniqueTypeIds.size(), std::move(coordinationComponentNames));
+        PropertyPtr rdfY = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, rdfSampleCount, Property::FloatDefault, rdfComponentCount, QStringLiteral("g(r)"), 0, std::move(rdfComponentNames));
 
         size_t particleCount = particles->elementCount();
         const size_t typeCount = computePartialRDF ? uniqueTypeIds.size() : 1;
         const size_t binCount = rdfSampleCount;
-        const size_t rdfCount = componentCount;
+        const size_t rdfCount = rdfComponentCount;
         const FloatType rdfBinSize = cutoff / binCount;
 
         // Get simulation cell.
         const SimulationCell* simulationCell = state.getObject<SimulationCell>();
 
 #ifdef OVITO_USE_SYCL
+        OVITO_ASSERT(!partialCoordinationNumbers);
 
         // Prepare the neighbor finder.
         SyclCutoffNeighborFinder neighborFinder;
@@ -297,8 +304,12 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
             chunkSize = std::clamp<size_t>((4096 * 32) / estimatedNeighborCount, 8, chunkSize);
 
         BufferWriteAccess<int32_t, access_mode::discard_write> coordinationData(coordinationNumbers);
+        BufferWriteAccess<int32_t*, access_mode::discard_read_write> partialCoordinationData(partialCoordinationNumbers);
         BufferReadAccess<int32_t> particleTypeData(particleTypes);
         BufferReadAccess<SelectionIntType> selectionData(selection);
+
+        if(partialCoordinationData)
+            std::ranges::fill(partialCoordinationData, 0);
 
         // Parallel calculation loop:
         EnumerableThreadSpecific<std::vector<size_t>> threadLocalRDFs;
@@ -314,6 +325,7 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
                             if(computePartialRDF) {
                                 size_t typeIndex2 = uniqueTypeIds.index_of(uniqueTypeIds.find(particleTypeData[neighQuery.current()]));
                                 if(typeIndex2 < typeCount) {
+                                    partialCoordinationData.value(i, typeIndex2)++;
                                     auto [lowerIndex, upperIndex] = std::minmax(typeIndex1, typeIndex2);
                                     size_t rdfIndex = (typeCount * lowerIndex) - ((lowerIndex - 1) * lowerIndex) / 2 + upperIndex - lowerIndex;
                                     OVITO_ASSERT(rdfIndex < rdfCount);
@@ -344,6 +356,7 @@ Future<PipelineFlowState> CoordinationAnalysisModifier::evaluateModifier(const M
         particleTypeData.reset();
         selectionData.reset();
         coordinationData.reset();
+        partialCoordinationData.reset();
         rdfData.reset();
 #endif
         this_task::throwIfCanceled();

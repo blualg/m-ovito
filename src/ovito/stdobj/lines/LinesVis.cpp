@@ -158,6 +158,132 @@ Box3 LinesVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPat
     return bbox;
 }
 
+namespace {
+/******************************************************************************
+ * Clips a linear line segment at the periodic box boundaries or cutting planes.
+ ******************************************************************************/
+template<typename SegmentCallback>
+void clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
+              SegmentCallback&& segmentCallback)
+{
+    auto clippingFunction = [&clippingPlanes, &segmentCallback](Point3 p1, Point3 p2, GraphicsFloatType t1, GraphicsFloatType t2) {
+        bool isClipped = false;
+        for(const Plane3& plane : clippingPlanes) {
+            FloatType c1 = plane.pointDistance(p1);
+            FloatType c2 = plane.pointDistance(p2);
+            if(c1 >= 0 && c2 >= 0.0) {
+                isClipped = true;
+                break;
+            }
+            else if(c1 > FLOATTYPE_EPSILON && c2 < -FLOATTYPE_EPSILON) {
+                p1 += (p2 - p1) * (c1 / (c1 - c2));
+                t1 += (t2 - t1) * (c1 / (c1 - c2));
+            }
+            else if(c1 < -FLOATTYPE_EPSILON && c2 > FLOATTYPE_EPSILON) {
+                p2 += (p1 - p2) * (c2 / (c2 - c1));
+                t2 += (t1 - t2) * (c2 / (c2 - c1));
+            }
+        }
+        if(!isClipped) {
+            segmentCallback(p1, p2, t1, t2);
+        }
+    };
+
+    if(simulationCell) {
+        Point3 rp1 = simulationCell->absoluteToReduced(v1);
+        Vector3 shiftVector = Vector3::Zero();
+        for(size_t dim = 0; dim < 3; dim++) {
+            if(simulationCell->hasPbcCorrected(dim)) {
+                while(rp1[dim] >= 1) {
+                    rp1[dim] -= 1;
+                    shiftVector[dim] -= 1;
+                }
+                while(rp1[dim] < 0) {
+                    rp1[dim] += 1;
+                    shiftVector[dim] += 1;
+                }
+            }
+        }
+        Point3 rp2 = simulationCell->absoluteToReduced(v2) + shiftVector;
+        FloatType t1 = 0;
+        FloatType smallestT;
+        std::array<bool, 3> clippedDimensions = {false, false, false};
+        do {
+            size_t crossDim;
+            FloatType crossDir;
+            smallestT = FLOATTYPE_MAX;
+            for(size_t dim = 0; dim < 3; dim++) {
+                if(simulationCell->hasPbcCorrected(dim) && !clippedDimensions[dim]) {
+                    int d = (int)std::floor(rp2[dim]) - (int)std::floor(rp1[dim]);
+                    if(d == 0) continue;
+                    FloatType t;
+                    if(d > 0)
+                        t = (std::ceil(rp1[dim]) - rp1[dim]) / (rp2[dim] - rp1[dim]);
+                    else
+                        t = (std::floor(rp1[dim]) - rp1[dim]) / (rp2[dim] - rp1[dim]);
+                    if(t >= 0 && t < smallestT) {
+                        smallestT = t;
+                        crossDim = dim;
+                        crossDir = (d > 0) ? 1 : -1;
+                    }
+                }
+            }
+            if(smallestT != FLOATTYPE_MAX) {
+                clippedDimensions[crossDim] = true;
+                Point3 intersection = rp1 + smallestT * (rp2 - rp1);
+                intersection[crossDim] = std::round(intersection[crossDim]);
+                FloatType t2 = ((FloatType(1) - smallestT) * t1) + smallestT;
+                Point3 rp1abs = simulationCell->reducedToAbsolute(rp1);
+                Point3 intabs = simulationCell->reducedToAbsolute(intersection);
+                if(!intabs.equals(rp1abs)) {
+                    OVITO_ASSERT(t2 <= FloatType(1) + FLOATTYPE_EPSILON);
+                    clippingFunction(rp1abs, intabs, t1, t2);
+                }
+                shiftVector[crossDim] -= crossDir;
+                rp1 = intersection;
+                rp1[crossDim] -= crossDir;
+                rp2[crossDim] -= crossDir;
+                t1 = t2;
+            }
+        } while(smallestT != FLOATTYPE_MAX);
+
+        clippingFunction(simulationCell->reducedToAbsolute(rp1), simulationCell->reducedToAbsolute(rp2), t1, 1);
+    }
+    else {
+        clippingFunction(v1, v2, 0, 1);
+    }
+}
+
+/******************************************************************************
+ * Clips a point at the periodic box boundaries or cutting planes.
+ ******************************************************************************/
+template<typename SegmentCallback>
+void clipPoint(const Point3& v1, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
+               SegmentCallback&& segmentCallback)
+{
+    auto clippingFunction = [&clippingPlanes, &segmentCallback](const Point3& p1) {
+        bool isClipped = false;
+        for(const Plane3& plane : clippingPlanes) {
+            if(plane.classifyPoint(p1) > 0) {
+                isClipped = true;
+                break;
+            }
+        }
+        if(!isClipped) {
+            segmentCallback(p1);
+        }
+    };
+
+    if(simulationCell) {
+        clippingFunction(simulationCell->wrapPoint(v1));
+    }
+    else {
+        clippingFunction(v1);
+    }
+}
+
+}  // namespace
+
 /******************************************************************************
  * Lets the visualization element render the data object.
  ******************************************************************************/
@@ -178,8 +304,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
     if(coloringMode() == PseudoColoring && colorMapping() && colorMapping()->sourceProperty() && !lines->getProperty(Lines::ColorProperty)) {
         QString errorDescr;
         std::tie(pseudoColorProperty, pseudoColorPropertyComponent) = colorMapping()->sourceProperty().findInContainerWithComponent(lines, errorDescr);
-        if(!pseudoColorProperty)
-            status = PipelineStatus(PipelineStatus::Error, std::move(errorDescr));
+        if(!pseudoColorProperty) status = PipelineStatus(PipelineStatus::Error, errorDescr);
     }
 
     // The key type used for caching the rendering primitive:
@@ -351,8 +476,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                                              headSegmentPoints.push_back(p2.toDataType<GraphicsFloatType>());
                                              subobjToSegmentMap.push_back(lineIndex);
                                              if(selectionProperty) {
-                                                 segmentSelection.push_back(selectionProperty[inputColorIndex] ||
-                                                                            selectionProperty[inputColorIndex + 1]);
+                                                 segmentSelection.push_back(SelectionIntType(selectionProperty[inputColorIndex] ||
+                                                                                             selectionProperty[inputColorIndex + 1]));
                                              }
                                              if(colorProperty) {
                                                  segmentColors.push_back((GraphicsFloatType(1) - t1) * colorProperty[inputColorIndex] +
@@ -365,8 +490,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
                                                      inputColorIndex + 0, pseudoColorPropertyComponent);
                                                  GraphicsFloatType ps2 = pseudoColorArray.get<GraphicsFloatType>(
                                                      inputColorIndex + 1, pseudoColorPropertyComponent);
-                                                 segmentPseudoColors.push_back((GraphicsFloatType(1) - t1) * ps1 + t1 * ps2);
-                                                 segmentPseudoColors.push_back((GraphicsFloatType(1) - t2) * ps1 + t2 * ps2);
+                                                 segmentPseudoColors.push_back(((GraphicsFloatType(1) - t1) * ps1) + (t1 * ps2));
+                                                 segmentPseudoColors.push_back(((GraphicsFloatType(1) - t2) * ps1) + (t2 * ps2));
                                              }
                                          });
                                 if(!roundedCaps() && (pos + 1 != pos_end) && (!id || id[1] == (id + 1)[1]) &&
@@ -447,127 +572,6 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
     frameGraph.addPrimitive(commandGroup, std::move(coloredCorners), sceneNode); // No picking info for corner spheres
 
     return status;
-}
-
-/******************************************************************************
- * Clips a linear line segment at the periodic box boundaries or cutting planes.
- ******************************************************************************/
-void LinesVis::clipLine(const Point3& v1, const Point3& v2, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
-                        const std::function<void(const Point3&, const Point3&, GraphicsFloatType, GraphicsFloatType)>& segmentCallback)
-{
-    auto clippingFunction = [&clippingPlanes, &segmentCallback](Point3 p1, Point3 p2, GraphicsFloatType t1, GraphicsFloatType t2) {
-        bool isClipped = false;
-        for(const Plane3& plane : clippingPlanes) {
-            FloatType c1 = plane.pointDistance(p1);
-            FloatType c2 = plane.pointDistance(p2);
-            if(c1 >= 0 && c2 >= 0.0) {
-                isClipped = true;
-                break;
-            }
-            else if(c1 > FLOATTYPE_EPSILON && c2 < -FLOATTYPE_EPSILON) {
-                p1 += (p2 - p1) * (c1 / (c1 - c2));
-                t1 += (t2 - t1) * (c1 / (c1 - c2));
-            }
-            else if(c1 < -FLOATTYPE_EPSILON && c2 > FLOATTYPE_EPSILON) {
-                p2 += (p1 - p2) * (c2 / (c2 - c1));
-                t2 += (t1 - t2) * (c2 / (c2 - c1));
-            }
-        }
-        if(!isClipped) {
-            segmentCallback(p1, p2, t1, t2);
-        }
-    };
-
-    if(simulationCell) {
-        Point3 rp1 = simulationCell->absoluteToReduced(v1);
-        Vector3 shiftVector = Vector3::Zero();
-        for(size_t dim = 0; dim < 3; dim++) {
-            if(simulationCell->hasPbcCorrected(dim)) {
-                while(rp1[dim] >= 1) {
-                    rp1[dim] -= 1;
-                    shiftVector[dim] -= 1;
-                }
-                while(rp1[dim] < 0) {
-                    rp1[dim] += 1;
-                    shiftVector[dim] += 1;
-                }
-            }
-        }
-        Point3 rp2 = simulationCell->absoluteToReduced(v2) + shiftVector;
-        FloatType t1 = 0;
-        FloatType smallestT;
-        bool clippedDimensions[3] = {false, false, false};
-        do {
-            size_t crossDim;
-            FloatType crossDir;
-            smallestT = FLOATTYPE_MAX;
-            for(size_t dim = 0; dim < 3; dim++) {
-                if(simulationCell->hasPbcCorrected(dim) && !clippedDimensions[dim]) {
-                    int d = (int)std::floor(rp2[dim]) - (int)std::floor(rp1[dim]);
-                    if(d == 0) continue;
-                    FloatType t;
-                    if(d > 0)
-                        t = (std::ceil(rp1[dim]) - rp1[dim]) / (rp2[dim] - rp1[dim]);
-                    else
-                        t = (std::floor(rp1[dim]) - rp1[dim]) / (rp2[dim] - rp1[dim]);
-                    if(t >= 0 && t < smallestT) {
-                        smallestT = t;
-                        crossDim = dim;
-                        crossDir = (d > 0) ? 1 : -1;
-                    }
-                }
-            }
-            if(smallestT != FLOATTYPE_MAX) {
-                clippedDimensions[crossDim] = true;
-                Point3 intersection = rp1 + smallestT * (rp2 - rp1);
-                intersection[crossDim] = std::round(intersection[crossDim]);
-                FloatType t2 = (FloatType(1) - smallestT) * t1 + smallestT;
-                Point3 rp1abs = simulationCell->reducedToAbsolute(rp1);
-                Point3 intabs = simulationCell->reducedToAbsolute(intersection);
-                if(!intabs.equals(rp1abs)) {
-                    OVITO_ASSERT(t2 <= FloatType(1) + FLOATTYPE_EPSILON);
-                    clippingFunction(rp1abs, intabs, t1, t2);
-                }
-                shiftVector[crossDim] -= crossDir;
-                rp1 = intersection;
-                rp1[crossDim] -= crossDir;
-                rp2[crossDim] -= crossDir;
-                t1 = t2;
-            }
-        } while(smallestT != FLOATTYPE_MAX);
-
-        clippingFunction(simulationCell->reducedToAbsolute(rp1), simulationCell->reducedToAbsolute(rp2), t1, 1);
-    }
-    else {
-        clippingFunction(v1, v2, 0, 1);
-    }
-}
-
-/******************************************************************************
- * Clips a point at the periodic box boundaries or cutting planes.
- ******************************************************************************/
-void LinesVis::clipPoint(const Point3& v1, const SimulationCell* simulationCell, const QVector<Plane3>& clippingPlanes,
-                         const std::function<void(const Point3&)>& segmentCallback)
-{
-    auto clippingFunction = [&clippingPlanes, &segmentCallback](const Point3& p1) {
-        bool isClipped = false;
-        for(const Plane3& plane : clippingPlanes) {
-            if(plane.classifyPoint(p1) > 0) {
-                isClipped = true;
-                break;
-            }
-        }
-        if(!isClipped) {
-            segmentCallback(p1);
-        }
-    };
-
-    if(simulationCell) {
-        clippingFunction(simulationCell->wrapPoint(v1));
-    }
-    else {
-        clippingFunction(v1);
-    }
 }
 
 }  // namespace Ovito

@@ -144,7 +144,7 @@ protected:
         const SimulationCellData& cell() const { return _simCell; }
 
         /// Splits a triangle face at a periodic boundary.
-        bool splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorAG>& newVertexColors, std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim);
+        bool splitFace(int faceIndex, int oldVertexCount, std::map<std::pair<int,int>,std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim);
 
         /// Traces the closed contour of the surface-boundary intersection.
         std::vector<Point2> traceContour(const SurfaceMeshTopology& inputMeshTopology, SurfaceMesh::edge_index firstEdge, const std::vector<Point3>& reducedPos, std::vector<bool>& visitedFaces, size_t dim, CapPolygonTessellator::FaceMode faceMode) const;

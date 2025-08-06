@@ -177,8 +177,8 @@ OVITO can read the following file formats:
     - :ref:`Details <file_formats.input.ase_trajectory>`
 
   * - GALAMOST
-    - XML-based file format used by the *GALAMOST* molecular dynamics code (which has been discontinued). The file format is also
-      used by the `PYGAMD <https://github.com/youliangzhu/pygamd-v1>`__ and the `DL_MESO <https://dl-sdg.github.io/RESOURCES/TUTORIALS/dlm_7.html#trajectxml>`__ simulation codes.
+    - XML-based file format used by the simulation codes *GALAMOST* (discontinued),
+      `PYGAMD <https://github.com/youliangzhu/pygamd-v1>`__, and `DL_MESO <https://dl-sdg.github.io/RESOURCES/TUTORIALS/dlm_7.html#trajectxml>`__.
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`
     -
 

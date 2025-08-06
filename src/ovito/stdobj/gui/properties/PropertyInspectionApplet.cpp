@@ -284,6 +284,31 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
 }
 
 /******************************************************************************
+* Returns the data for the given role and section in the header with the specified orientation.
+******************************************************************************/
+QVariant PropertyInspectionApplet::PropertyTableModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if(orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+        OVITO_ASSERT(section >= 0 && section < _properties.size());
+        const Property* property = _properties[section];
+        QString name = property->name();
+        if(property->componentNames().empty() == false) {
+            name += QStringLiteral(" [");
+            for(qsizetype i = 0; i < property->componentNames().size(); i++) {
+                if(i != 0) name += QStringLiteral(" ");
+                name += property->componentNames()[i];
+            }
+            name += QStringLiteral("]");
+        }
+        return name;
+    }
+    else if(orientation == Qt::Vertical && role == Qt::DisplayRole) {
+        return _applet->headerColumnText(section);
+    }
+    return QAbstractTableModel::headerData(section, orientation, role);
+}
+
+/******************************************************************************
 * Is called when the uer has changed the filter expression.
 ******************************************************************************/
 void PropertyInspectionApplet::onFilterExpressionEntered()

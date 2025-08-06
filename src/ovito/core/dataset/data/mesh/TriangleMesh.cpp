@@ -93,11 +93,19 @@ void TriangleMesh::clear()
 ******************************************************************************/
 void TriangleMesh::setVertexCount(int n)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+    _vertices.resizeForOverwrite(n);
+    if(_hasVertexColors)
+        _vertexColors.resizeForOverwrite(n);
+    if(_hasVertexPseudoColors)
+        _vertexPseudoColors.resizeForOverwrite(n);
+#else
     _vertices.resize(n);
     if(_hasVertexColors)
         _vertexColors.resize(n);
     if(_hasVertexPseudoColors)
         _vertexPseudoColors.resize(n);
+#endif
 }
 
 /******************************************************************************

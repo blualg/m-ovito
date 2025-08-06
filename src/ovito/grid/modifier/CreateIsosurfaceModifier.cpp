@@ -284,19 +284,19 @@ Future<PipelineFlowState> CreateIsosurfaceModifier::evaluateModifier(const Modif
         mc.generateIsosurface(isolevel, progress);
 
         // Copy field values from voxel grid to surface mesh vertices.
-        transferPropertiesFromGridToMesh(meshBuilder, auxiliaryProperties, *meshBuilder.domain(), gridShape, gridType, progress);
+        transferPropertiesFromGridToMesh(meshBuilder, auxiliaryProperties, *meshBuilder.mesh()->domain(), gridShape, gridType, progress);
         this_task::throwIfCanceled();
 
         // Adjust for non-periodic point-based grids.
         VoxelGrid::GridDimensions mcShape = gridShape;
         if(gridType == VoxelGrid::GridType::PointData) {
-            if(!meshBuilder.domain()->hasPbcCorrected(0) && mcShape[0] >= 2) mcShape[0]--;
-            if(!meshBuilder.domain()->hasPbcCorrected(1) && mcShape[1] >= 2) mcShape[1]--;
-            if(!meshBuilder.domain()->hasPbcCorrected(2) && mcShape[2] >= 2) mcShape[2]--;
+            if(!meshBuilder.hasPbc(0) && mcShape[0] >= 2) mcShape[0]--;
+            if(!meshBuilder.hasPbc(1) && mcShape[1] >= 2) mcShape[1]--;
+            if(!meshBuilder.hasPbc(2) && mcShape[2] >= 2) mcShape[2]--;
         }
 
         // Transform mesh vertices from orthogonal grid space to world space.
-        const AffineTransformation tm = meshBuilder.domain()->cellMatrix() * Matrix3(
+        const AffineTransformation tm = meshBuilder.domain().cellMatrix() * Matrix3(
             FloatType(1) / mcShape[0], 0, 0,
             0, FloatType(1) / mcShape[1], 0,
             0, 0, FloatType(1) / mcShape[2]) *
