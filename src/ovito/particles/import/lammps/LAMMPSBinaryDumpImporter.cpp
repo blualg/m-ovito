@@ -142,6 +142,11 @@ struct LAMMPSBinaryDumpHeader
 ******************************************************************************/
 bool LAMMPSBinaryDumpImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
+    // Check file extension. Must be either .bin or .lammpsbin according to the LAMMPS documentation.
+    const QString filename = file.sourceUrl().fileName();
+    if(!filename.endsWith(QStringLiteral(".bin"), Qt::CaseInsensitive) && !filename.endsWith(QStringLiteral(".lammpsbin"), Qt::CaseInsensitive))
+        return false;
+
     // Open input file for reading.
     std::unique_ptr<QIODevice> device = file.createIODevice();
     if(!device->open(QIODevice::ReadOnly))
