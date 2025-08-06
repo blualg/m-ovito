@@ -147,7 +147,11 @@ bool LAMMPSBinaryDumpImporter::OOMetaClass::checkFileFormat(const FileHandle& fi
     if(!device->open(QIODevice::ReadOnly))
         return false;
 
-    return LAMMPSBinaryDumpHeader().parse(*device);
+    LAMMPSBinaryDumpHeader header;
+    if(!header.parse(*device))
+        return false;
+
+    return true;
 }
 
 /******************************************************************************
@@ -285,7 +289,7 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
             for(int i = 0; i < 3; i++) {
                 bbox[i][0] = readDouble(input);
                 bbox[i][1] = readDouble(input);
-                if(bbox[i][0] > bbox[i][1])
+                if(bbox[i][1] - bbox[i][0] < 1e-8)
                     isValid = false;
                 for(int j = 0; j < 2; j++) {
                     if(!std::isfinite(bbox[i][j]) || bbox[i][j] < -1e9 || bbox[i][j] > 1e9)
