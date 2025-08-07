@@ -100,35 +100,34 @@ material is faster, making it ideal for real-time interactive workflows.
 The physically-based model provides additional parameters for tuning the
 look of rendered objects.
 
+The material settings are applied globally to all scene objects.
+
 Standard material
 #################
+
+.. figure:: /images/rendering/visrtx_renderer_matte_material.*
+  :align: right
+  :figwidth: 30%
+
+  Standard material
 
 The *Standard* material corresponds to the *matte* material from the
 `ANARI specification <https://registry.khronos.org/ANARI/specs/1.0/ANARI-1.0.html#object_types_material_matte>`__,
 which reflects light uniformly into the hemisphere. It is suitable for most purposes
 and is the current default choice in OVITO Pro.
 
-.. figure:: /images/rendering/visrtx_renderer_matte_material.*
-  :align: left
-  :figwidth: 30%
-
 Physically-based material
 #########################
 
-This material model behaves similar to glTF's "*pbrMetallicRoughness*" material and consists of a mixture of a metallic
+This material model behaves similar to glTF's *pbrMetallicRoughness* material and consists of a mixture of a metallic
 and a dielectric/diffuse component. The ratio between both contributions is determined by the *Metalness* parameter.
 
-The material settings are applied globally to all scene objects.
-
 Roughness
-   Controls the variation of microfacets and thus how polished the metal will look (default value: 100%).
+   Controls the variation of microfacets and thus how polished the metal will look (default value: 45%).
    A value of 0% gives a perfectly polished mirror surface, while a value of 100% gives a completely matte surface.
 
 Metalness
-   A value in the range 0-100% controlling the mixture of dielectric/diffuse and metallic model contributions.
-   The default value of 0% corresponds to a fully dielectric/diffuse material, while a value of 100% gives a completely metallic material.
-   Due to limitations of the current VisRTX implementation, high metalness values may result in
-   dark reflections and/or visual artifacts.
+   A value in the range 0-100% controlling the mixture of dielectric/diffuse and metallic model contributions (default value: 40%).
 
 .. |material-image-1| image:: /images/rendering/visrtx_renderer_metal_material_r10-m0.png
    :width: 100%
@@ -143,16 +142,18 @@ Metalness
 ============================= ============================= =============================
 |material-image-1|            |material-image-2|            |material-image-3|
 ============================= ============================= =============================
-Roughness: 10%                Roughness: 30%                Roughness: 60%
-Metalness: 0%                 Metalness: 0%                 Metalness: 0%
+Roughness: 20%                Roughness: 45%                Roughness: 60%
+Metalness: 0%                 Metalness: 40%                Metalness: 100%
 ============================= ============================= =============================
 
 Post-processing effects
 """""""""""""""""""""""
 
 Outlines
-  Enables depth-aware outlines. They can be used either in the interactive viewport or
-  VisRTX final frame rendering.
+  Enables the drawing of outlines along object edges. The outlines are *depth-aware*,
+  meaning that they are only drawn when the depth difference between two overlapping objects
+  exceeds a certain threshold. Optionally, the width of the outlines can be adjusted
+  based on the depth difference, which can help to improve visibility of outlines in complex scenes.
 
   .. figure:: /images/rendering/visrtx_viewport_outlines.*
     :figwidth: 49%
