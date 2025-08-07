@@ -54,7 +54,21 @@ bool ParaViewVTUSimulationCellImporter::OOMetaClass::checkFileFormat(const FileH
     if(xml.attributes().value("type").compare(QStringLiteral("UnstructuredGrid")) != 0)
         return false;
 
-    return !xml.hasError();
+    // Continue until we reach the <Piece> element.
+    while(xml.readNextStartElement()) {
+        if(xml.name().compare(QStringLiteral("Piece")) == 0) {
+            // Number of points must be 8 and number of cells 1 for a simulation cell file.
+            if(xml.attributes().value("NumberOfPoints").toULongLong() == 8 && xml.attributes().value("NumberOfCells").toULongLong() == 1)
+                return !xml.hasError();
+            break;
+        }
+        else if(xml.name().compare(QStringLiteral("FieldData")) == 0) {
+            // Skip <FieldData> elements.
+            xml.skipCurrentElement();
+        }
+    }
+
+    return false;
 }
 
 /******************************************************************************
