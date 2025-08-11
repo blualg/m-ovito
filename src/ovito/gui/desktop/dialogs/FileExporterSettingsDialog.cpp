@@ -200,9 +200,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
 
     // Update the exporter whenever the user selects a new data object.
     connect(_dataObjectBox, qOverload<int>(&QComboBox::currentIndexChanged), this, [this]() {
-        _mainWindow.handleExceptions([&] {
-            _exporter->setDataObjectToExport(_dataObjectBox->currentData().value<DataObjectReference>());
-        });
+        _mainWindow.handleExceptions([&] { _exporter->setDataObjectToExport(_dataObjectBox->currentData().value<DataObjectReference>()); });
     });
 
     // Show the optional UI of the exporter.
@@ -240,7 +238,7 @@ void FileExporterSettingsDialog::updateDataObjectList()
                         for(const ConstDataObjectPath& dataPath : state.data()->getObjectsRecursive(*clazz)) {
                             if(_exporter->isSuitableDataObject(dataPath)) {
                                 QString title = dataPath.back()->objectTitle();
-                                DataObjectReference dataRef(clazz, dataPath.toString(), title);
+                                DataObjectReference dataRef(dataPath);
                                 _dataObjectBox->addItem(title, QVariant::fromValue(dataRef));
                                 if(dataRef == _exporter->dataObjectToExport())
                                     _dataObjectBox->setCurrentIndex(_dataObjectBox->count() - 1);

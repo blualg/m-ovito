@@ -26,6 +26,7 @@ Version 3.14.0 (xx-xxx-2025)
 - Changed ordering of "Quick command search" items from "all time use" to "most recent use".
 - LAMMPS data file reader: Added support for atom styles spin,sph,rheo,rheo/thermal,bpm/sphere
 - :ref:`particles.modifiers.coordination_analysis` modifier: Added calculation of the ``Per Type Coordination`` property
+- Add export table to surfaces tab in the data inspector
 
 .. sidebar::
 

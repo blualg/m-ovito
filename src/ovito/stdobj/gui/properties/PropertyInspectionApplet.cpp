@@ -27,6 +27,10 @@
 #include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
+#include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
+#include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include "PropertyInspectionApplet.h"
 
 namespace Ovito {
@@ -114,6 +118,59 @@ bool PropertyInspectionApplet::selectDataObject(const PipelineNode* createdByNod
         return true;
     }
     return false;
+}
+
+/******************************************************************************
+ * Exports the current data table to a text file.
+ ******************************************************************************/
+void PropertyInspectionApplet::exportDataToFile(const DataObjectReference& dataObjectRef, OORef<FileExporter>&& exporter,
+                                                const QString& filterString) const
+{
+    OVITO_ASSERT_MSG(this_task::get(), "PropertyInspectionApplet::exportDataToFile",
+                     "This method must be called from a mainWindow().handleExceptions context.");
+
+    // Let the user select a destination file.
+    HistoryFileDialog dialog("export", &mainWindow(), tr("Export Table"));
+    dialog.setNameFilter(filterString);
+    dialog.setOption(QFileDialog::DontUseNativeDialog);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setFileMode(QFileDialog::AnyFile);
+
+    // Go to the last directory used.
+    QSettings settings;
+    settings.beginGroup("file/export");
+    QString lastExportDirectory = settings.value("last_export_dir").toString();
+    if(!lastExportDirectory.isEmpty()) dialog.setDirectory(lastExportDirectory);
+
+    if(!dialog.exec() || dialog.selectedFiles().empty()) return;
+    QString exportFile = dialog.selectedFiles().front();
+
+    // Remember directory for the next time...
+    settings.setValue("last_export_dir", dialog.directory().absolutePath());
+
+    // Export to selected file.
+    // Pass output filename to exporter.
+    exporter->setOutputFilename(exportFile);
+
+    // Set pipeline to be exported.
+    exporter->setSceneToExport(currentSceneNode()->scene());
+    exporter->setPipelineToExport(currentPipeline());
+
+    // If the exporter supports it, automatically choose the data object(s) to be exported.
+    exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentSceneNode()->scene());
+
+    // Set data table to be exported.
+    exporter->setDataObjectToExport(dataObjectRef);
+
+    // Let the user adjust the export settings.
+    FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter, &mainWindow());
+    if(settingsDialog.exec() != QDialog::Accepted) return;
+
+    // Let the exporter do its job.
+    Future<void> future = exporter->performExport();
+
+    // Show a progress dialog while the operation is in progress. The dialog will self-destruct when the operation is done.
+    ProgressDialog::showForFuture(std::move(future), mainWindow(), tr("File export"));
 }
 
 /******************************************************************************
@@ -246,7 +303,7 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
                 if(property->dataType() == Property::Int32) {
                     BufferReadAccess<int32_t*> data(property);
                     str += QString::number(data.get(elementIndex, component));
-                    if(property->elementTypes().empty() == false) {
+                    if(!property->elementTypes().empty()) {
                         if(const ElementType* ptype = property->elementType(data.get(elementIndex, component))) {
                             if(!ptype->name().isEmpty())
                                 str += QStringLiteral(" (%1)").arg(ptype->name());

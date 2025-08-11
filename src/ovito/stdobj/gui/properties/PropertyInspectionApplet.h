@@ -105,6 +105,10 @@ private Q_SLOTS:
     /// Is called when an error during filter evaluation occurred.
     void onFilterStatusChanged(const QString& msgText);
 
+protected:
+    /// Action handler.
+    void exportDataToFile(const DataObjectReference& dataObject, OORef<FileExporter>&& exporter, const QString& filterString) const;
+
 private:
 
     /// A table model for displaying the property data.
@@ -198,6 +202,10 @@ private:
 
         friend PropertyInspectionApplet;
     };
+
+protected:
+    // Export button for the table view.
+    QAction* _exportTableToFileAction;
 
 private:
 
