@@ -26,8 +26,9 @@ Version 3.14.0 (xx-xxx-2025)
 - Changed ordering of "Quick command search" items from "all time use" to "most recent use".
 - LAMMPS data file reader: Added support for atom styles spin,sph,rheo,rheo/thermal,bpm/sphere
 - :ref:`particles.modifiers.coordination_analysis` modifier: Added calculation of the ``Per Type Coordination`` property
-- Add export table to surfaces tab in the data inspector
-- Rename "Table of Values" to "Table of Global Attributes" in the file export dialog for clarity
+- Added file export function to *Surfaces* tab of data inspector
+- Renamed export format "Table of Values" to "Table of Global Attributes" for clarity
+- Aspherix PVD file reader: Read in simulation time as global attribute ``Time``, not ``Timestep``
 
 .. sidebar::
 

@@ -45,7 +45,7 @@ class OVITO_STDOBJ_EXPORT DataTableExporter : public FileExporter
         virtual QString fileFilter() const override { return QStringLiteral("*.txt"); }
 
         /// Returns the filter description that is displayed in the drop-down box of the file dialog.
-        virtual QString fileFilterDescription() const override { return tr("Table Data"); }
+        virtual QString fileFilterDescription() const override { return tr("Tabular Data"); }
     };
 
     OVITO_CLASS_META(DataTableExporter, OOMetaClass)
