@@ -79,10 +79,10 @@ OORef<FileExportJob> DataTableExporter::createExportJob(const QString& filePath,
 
             // Write header
             if(!container->title().isEmpty()) {
-                textStream() << "# " << container->title() << " (" << (quint64)row_count << " data points):\n";
+                textStream() << "# " << container->title() << " (" << (quint64)row_count << " " << container->getOOMetaClass().elementDescriptionName() << "):\n";
             }
             else if(!container->getOOClass().displayName().isEmpty()) {
-                textStream() << "# " << container->getOOClass().displayName() << " (" << (quint64)row_count << " data points):\n";
+                textStream() << "# " << container->getOOClass().displayName() << " (" << (quint64)row_count << " " << container->getOOMetaClass().elementDescriptionName() << "):\n";
             }
             textStream() << "#";
             auto formatColumnName = [](const QString& name) { return name.contains(QChar(' ')) ? (QChar('"') + name + QChar('"')) : name; };

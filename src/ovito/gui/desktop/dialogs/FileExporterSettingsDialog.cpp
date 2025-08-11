@@ -237,9 +237,8 @@ void FileExporterSettingsDialog::updateDataObjectList()
                         OVITO_ASSERT(clazz != nullptr);
                         for(const ConstDataObjectPath& dataPath : state.data()->getObjectsRecursive(*clazz)) {
                             if(_exporter->isSuitableDataObject(dataPath)) {
-                                QString title = dataPath.back()->objectTitle();
                                 DataObjectReference dataRef(dataPath);
-                                _dataObjectBox->addItem(title, QVariant::fromValue(dataRef));
+                                _dataObjectBox->addItem(dataRef.dataTitleOrPath(), QVariant::fromValue(dataRef));
                                 if(dataRef == _exporter->dataObjectToExport())
                                     _dataObjectBox->setCurrentIndex(_dataObjectBox->count() - 1);
                             }

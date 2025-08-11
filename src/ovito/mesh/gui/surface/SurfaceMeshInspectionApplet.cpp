@@ -97,7 +97,7 @@ QWidget* SurfaceMeshInspectionApplet::createWidget()
     });
 
     toolbar->addSeparator();
-    _exportTableToFileAction = new QAction(QIcon::fromTheme("file_save_as"), tr("Export data plot"), this);
+    _exportTableToFileAction = new QAction(QIcon::fromTheme("file_save_as"), tr("Export tabular data to file"), this);
     connect(_exportTableToFileAction, &QAction::triggered, this, [this]() {
         const QString filterString =
             QStringLiteral("%1 (%2)").arg(DataTableExporter::OOClass().fileFilterDescription(), DataTableExporter::OOClass().fileFilter());
