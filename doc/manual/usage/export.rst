@@ -29,7 +29,7 @@ Plotting the value(s) of one or more global attributes as functions of time can 
 modifier of OVITO Pro.
 
 You can export global attribute values to a text file using OVITO's file export function described above.
-Make sure to select the "*Table of Values*" :ref:`export format <file_formats.output>`. This output format yields a tabular data file
+Make sure to select the "*Table of Global Attributes*" :ref:`export format <file_formats.output>`. This output format yields a tabular data file
 with one row per animation frame and one column per global attribute.
 
 .. seealso::

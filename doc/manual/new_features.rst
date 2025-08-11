@@ -27,6 +27,7 @@ Version 3.14.0 (xx-xxx-2025)
 - LAMMPS data file reader: Added support for atom styles spin,sph,rheo,rheo/thermal,bpm/sphere
 - :ref:`particles.modifiers.coordination_analysis` modifier: Added calculation of the ``Per Type Coordination`` property
 - Add export table to surfaces tab in the data inspector
+- Rename "Table of Values" to "Table of Global Attributes" in the file export dialog for clarity
 
 .. sidebar::
 

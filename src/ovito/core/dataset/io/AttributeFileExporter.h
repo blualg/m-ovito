@@ -44,7 +44,7 @@ class OVITO_CORE_EXPORT AttributeFileExporter : public FileExporter
         virtual QString fileFilter() const override { return QStringLiteral("*"); }
 
         /// Returns the filter description that is displayed in the drop-down box of the file dialog.
-        virtual QString fileFilterDescription() const override { return tr("Table of values"); }
+        virtual QString fileFilterDescription() const override { return tr("Table of Global Attributes"); }
     };
 
     OVITO_CLASS_META(AttributeFileExporter, OOMetaClass)

@@ -62,7 +62,7 @@ OVITO can export data in the following file formats:
     - :ref:`particles <scene_objects.particles>`, :ref:`bonds <scene_objects.bonds>`, angles, dihedrals, impropers, :ref:`global attributes <usage.global_attributes>`
     -
 
-  * - Table of values
+  * - Table of Global Attributes
     - A simple tabular text file with scalar quantities computed by OVITO's data pipeline.
     - :ref:`global attributes <usage.global_attributes>`
     -
