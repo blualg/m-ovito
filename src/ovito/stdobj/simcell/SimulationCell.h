@@ -457,6 +457,14 @@ public:
     /// Converts a point given in absolute coordinates to a point in reduced cell coordinates.
     constexpr Point3 absoluteToReduced(const Point3& absPoint) const { return reciprocalCellMatrix() * absPoint; }
 
+    /// Converts a point given in absolute coordinates to a point in reduced cell coordinates and maps it to the [0,1) range.
+    constexpr Point3 absoluteToReducedAndWrap(const Point3& absPoint) const {
+        Point3 rp = absoluteToReduced(absPoint);
+        for(size_t dim = 0; dim < 3; dim++)
+            rp[dim] -= hasPbc(dim) * std::floor(rp[dim]);
+        return rp;
+    }
+
     /// Converts a vector given in reduced cell coordinates to a vector in absolute coordinates.
     constexpr Vector3 reducedToAbsolute(const Vector3& reducedVec) const { return cellMatrix() * reducedVec; }
 

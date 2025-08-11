@@ -119,11 +119,11 @@ OORef<FileExportJob> LAMMPSDumpExporter::createExportJob(const QString& filePath
                 textStream() << (simulationCell->pbcZ() ? " pp" : " ff");
                 textStream() << '\n';
                 textStream() << simulationCell->cellVector1()[0] << " " << simulationCell->cellVector1()[1] << " "
-                            << simulationCell->cellVector1()[2] << simulationCell->cellOrigin()[0] << "\n";
+                            << simulationCell->cellVector1()[2] << " " << simulationCell->cellOrigin()[0] << "\n";
                 textStream() << simulationCell->cellVector2()[0] << " " << simulationCell->cellVector2()[1] << " "
-                            << simulationCell->cellVector2()[2] << simulationCell->cellOrigin()[1] << "\n";
+                            << simulationCell->cellVector2()[2] << " " << simulationCell->cellOrigin()[1] << "\n";
                 textStream() << simulationCell->cellVector3()[0] << " " << simulationCell->cellVector3()[1] << " "
-                            << simulationCell->cellVector3()[2] << simulationCell->cellOrigin()[2] << "\n";
+                            << simulationCell->cellVector3()[2] << " " << simulationCell->cellOrigin()[2] << "\n";
             }
             textStream() << "ITEM: ATOMS";
 

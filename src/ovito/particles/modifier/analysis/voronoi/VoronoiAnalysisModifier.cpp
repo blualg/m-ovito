@@ -821,6 +821,9 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         // Transfer edges from vertices that are going to be deleted to remaining vertices.
         for(SurfaceMesh::edge_index edge = 0; edge < polyhedraMesh.edgeCount(); edge++) {
             SurfaceMesh::vertex_index new_vertex = parents[polyhedraMesh.vertex2(edge)];
+            // Find root of the vertex and compress path.
+            while(new_vertex != parents[new_vertex])
+                new_vertex = parents[new_vertex];
             polyhedraMesh.transferFaceBoundaryToVertex(edge, new_vertex);
             this_task::throwIfCanceled();
         }

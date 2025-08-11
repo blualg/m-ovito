@@ -182,8 +182,11 @@ IF(ZLIB_FOUND)
     # Use zstd library if available.
     IF(zstd_FOUND)
         TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZSTD_SUPPORT)
-        # Use shared library version of zstd when building the Conda package. Otherwise, use the static library to avoid an extra deployment step.
+        # Use shared library version of zstd when building the Conda package or when building against the system version of zstd on Linux platforms.
+        # Otherwise, use the static library to avoid an extra deployment step. The static lib must have been built with the -fPIC option.
         IF(OVITO_BUILD_CONDA)
+            TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd)
+        ELSEIF(NOT OVITO_REDISTRIBUTABLE_PACKAGE AND UNIX AND NOT APPLE)
             TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd)
         ELSE()
             TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd_static)

@@ -415,11 +415,11 @@ Future<std::shared_ptr<const RenderableSurfaceMesh>> SurfaceMeshVis::transformSu
         // If the input mesh contains pairs of faces, we have to use back-face culling during rendering.
         bool renderFacesTwoSided;
         if(faceSubset.empty()) {
-            renderFacesTwoSided = boost::algorithm::none_of(inputMesh->topology()->facesRange(),
+            renderFacesTwoSided = std::ranges::none_of(inputMesh->topology()->facesRange(),
                 std::bind(&SurfaceMeshTopology::hasOppositeFace, inputMesh->topology(), std::placeholders::_1));
         }
         else {
-            renderFacesTwoSided = boost::algorithm::none_of(inputMesh->topology()->facesRange(),
+            renderFacesTwoSided = std::ranges::none_of(inputMesh->topology()->facesRange(),
                 [&, topology=inputMesh->topology()](SurfaceMesh::face_index face) { return faceSubset[face] && topology->hasOppositeFace(face) && faceSubset[topology->oppositeFace(face)]; });
         }
         this_task::throwIfCanceled();
@@ -559,7 +559,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::determineVertexColors()
         OVITO_ASSERT(colorProperty.size() == outputMesh()->vertexCount());
         if(colorProperty.size() == outputMesh()->vertexCount()) {
             outputMesh()->setHasVertexColors(true);
-            boost::copy(colorProperty, outputMesh()->vertexColors().begin());
+            std::ranges::copy(colorProperty, outputMesh()->vertexColors().begin());
         }
     }
     else if(_colorMappingMode == VertexPseudoColoring && _pseudoColorProperty) {
@@ -590,6 +590,7 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::buildSurfaceTriangleMesh(const bo
     // Transfer vertices and faces from half-edge mesh structure to triangle mesh structure.
     _outputMesh = DataOORef<TriangleMesh>::create(ObjectInitializationFlag::DontCreateVisElement);
     inputMeshData.convertToTriMesh(*_outputMesh, _smoothShading, faceSubset, &_originalFaceMap, !renderFacesTwoSided);
+    OVITO_ASSERT(outputMesh()->vertices().size() == inputMeshData.vertexCount());
     this_task::throwIfCanceled();
 
     // Assign mesh vertex colors if available.
@@ -602,61 +603,41 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::buildSurfaceTriangleMesh(const bo
         this_task::throwIfCanceled();
     }
 
-    // Convert vertex positions to reduced coordinates and transfer them to the output mesh.
     if(cell().hasPbc()) {
-        OVITO_ASSERT(outputMesh()->vertices().size() == inputMeshData.vertexCount());
-        BufferReadAccess<Point3> vertexPositions(inputMeshData.expectVertexProperty(SurfaceMeshVertices::PositionProperty));
-        SurfaceMesh::vertex_index vidx = 0;
+
+        // Convert vertex positions to reduced coordinates.
         for(Point3& p : outputMesh()->vertices()) {
-            p = cell().absoluteToReduced(vertexPositions[vidx++]);
+            p = cell().absoluteToReducedAndWrap(p);
             OVITO_ASSERT(std::isfinite(p.x()) && std::isfinite(p.y()) && std::isfinite(p.z()));
         }
         this_task::throwIfCanceled();
-    }
 
-    // Wrap mesh at periodic boundaries.
-    for(size_t dim = 0; dim < 3; dim++) {
-        if(cell().hasPbc(dim) == false)
-            continue;
+        // Split and wrap triangles at periodic boundaries.
+        for(size_t dim = 0; dim < 3; dim++) {
+            if(cell().hasPbc(dim) == false)
+                continue;
 
-        // Make sure all vertices are located inside the periodic box.
-        for(Point3& p : outputMesh()->vertices()) {
-            OVITO_ASSERT(std::isfinite(p[dim]));
-            p[dim] -= std::floor(p[dim]);
-            OVITO_ASSERT(p[dim] >= FloatType(0) && p[dim] <= FloatType(1));
-        }
-        this_task::throwIfCanceled();
-
-        // Split triangle faces at periodic boundaries.
-        auto oldFaceCount = outputMesh()->faceCount();
-        auto oldVertexCount = outputMesh()->vertexCount();
-        std::vector<Point3> newVertices;
-        std::vector<ColorAG> newVertexColors;
-        std::vector<FloatType> newVertexPseudoColors;
-        std::map<std::pair<int,int>, std::tuple<int,int,FloatType>> newVertexLookupMap;
-        for(int findex = 0; findex < oldFaceCount; findex++) {
-            if(!splitFace(findex, oldVertexCount, newVertices, newVertexColors, newVertexPseudoColors, newVertexLookupMap, dim)) {
-                return false;
+#ifdef OVITO_DEBUG
+            // Make sure all vertices are located inside the periodic box.
+            for(const Point3& p : outputMesh()->vertices()) {
+                OVITO_ASSERT(std::isfinite(p[dim]));
+                OVITO_ASSERT(p[dim] >= FloatType(0) && p[dim] <= FloatType(1));
             }
-        }
-        this_task::throwIfCanceled();
+#endif
 
-        // Insert newly created vertices into mesh.
-        outputMesh()->setVertexCount(oldVertexCount + newVertices.size());
-        std::copy(newVertices.cbegin(), newVertices.cend(), outputMesh()->vertices().begin() + oldVertexCount);
-        if(outputMesh()->hasVertexColors()) {
-            OVITO_ASSERT(newVertexColors.size() == newVertices.size());
-            std::copy(newVertexColors.cbegin(), newVertexColors.cend(), outputMesh()->vertexColors().begin() + oldVertexCount);
+            // Split triangle faces at periodic boundaries.
+            auto oldFaceCount = outputMesh()->faceCount();
+            auto oldVertexCount = outputMesh()->vertexCount();
+            std::map<std::pair<int,int>, std::tuple<int,int,FloatType>> newVertexLookupMap;
+            for(int findex = 0; findex < oldFaceCount; findex++) {
+                if(!splitFace(findex, oldVertexCount, newVertexLookupMap, dim)) {
+                    return false;
+                }
+            }
+            this_task::throwIfCanceled();
         }
-        if(outputMesh()->hasVertexPseudoColors()) {
-            OVITO_ASSERT(newVertexPseudoColors.size() == newVertices.size());
-            std::copy(newVertexPseudoColors.cbegin(), newVertexPseudoColors.cend(), outputMesh()->vertexPseudoColors().begin() + oldVertexCount);
-        }
-        this_task::throwIfCanceled();
-    }
 
-    // Convert vertex positions back from reduced coordinates to absolute coordinates.
-    if(cell().hasPbc()) {
+        // Convert vertex positions back from reduced coordinates to absolute coordinates.
         for(Point3& p : outputMesh()->vertices())
             p = cell().reducedToAbsolute(p);
     }
@@ -979,8 +960,7 @@ void SurfaceMeshVis::RenderableSurfaceBuilder::buildCapTriangleMesh(const boost:
 /******************************************************************************
 * Splits a triangle face at a periodic boundary.
 ******************************************************************************/
-bool SurfaceMeshVis::RenderableSurfaceBuilder::splitFace(int faceIndex, int oldVertexCount, std::vector<Point3>& newVertices, std::vector<ColorAG>& newVertexColors,
-        std::vector<FloatType>& newVertexPseudoColors, std::map<std::pair<int,int>, std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim)
+bool SurfaceMeshVis::RenderableSurfaceBuilder::splitFace(int faceIndex, int oldVertexCount, std::map<std::pair<int,int>, std::tuple<int,int,FloatType>>& newVertexLookupMap, size_t dim)
 {
     TriMeshFace& face = outputMesh()->face(faceIndex);
     OVITO_ASSERT(face.vertex(0) != face.vertex(1));
@@ -1002,24 +982,24 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::splitFace(int faceIndex, int oldV
     // Check PBC validity of the face. If only one edge spans more than half the periodic box and two edges do not,
     // the face is likely invalid and cannot be displayed. A proper face split by a periodic boundary has two edges crossing the periodic boundary
     // and one edge that does not cross the periodic boundary.
-    int properEdge = -1;
-    for(int i = 0; i < 3; i++) {
-        if(std::abs(zd[i]) < FloatType(0.5)) {
-            if(properEdge != -1)
+    int shortEdge = -1; // Index of the edge that does not cross the periodic boundary.
+    for(int e = 0; e < 3; e++) {
+        if(std::abs(zd[e]) < FloatType(0.5)) {
+            if(shortEdge != -1)
                 return false;       // The simulation box may be too small or invalid.
-            properEdge = i;
+            shortEdge = e;
         }
     }
-    OVITO_ASSERT(properEdge != -1);
+    OVITO_ASSERT(shortEdge != -1);
 
     // Create four new vertices (or use existing ones created during splitting of adjacent faces).
     int newVertexIndices[3][2];
     Vector3G interpolatedNormals[3];
     for(int i = 0; i < 3; i++) {
-        if(i == properEdge)
+        if(i == shortEdge)
             continue;
         int vi1 = face.vertex(i);
-        int vi2 = face.vertex((i+1)%3);
+        int vi2 = face.vertex((i+1) % 3);
         int oi1, oi2;
         if(zd[i] <= FloatType(-0.5)) {
             std::swap(vi1, vi2);
@@ -1028,55 +1008,57 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::splitFace(int faceIndex, int oldV
         else {
             oi1 = 0; oi2 = 1;
         }
-        auto entry = newVertexLookupMap.find(std::make_pair(vi1, vi2));
-        if(entry != newVertexLookupMap.end()) {
+        FloatType t;
+        if(auto entry = newVertexLookupMap.find(std::make_pair(vi1, vi2)); entry != newVertexLookupMap.end()) {
             newVertexIndices[i][oi1] = std::get<0>(entry->second);
             newVertexIndices[i][oi2] = std::get<1>(entry->second);
+            t = std::get<2>(entry->second);
         }
         else {
             Vector3 delta = outputMesh()->vertex(vi2) - outputMesh()->vertex(vi1);
             delta[dim] -= FloatType(1);
             for(size_t d = dim + 1; d < 3; d++) {
                 if(cell().hasPbc(d))
-                    delta[d] -= std::floor(delta[d] + FloatType(0.5));
+                    delta[d] -= std::round(delta[d]);
             }
-            FloatType t;
             if(delta[dim] != 0)
                 t = outputMesh()->vertex(vi1)[dim] / (-delta[dim]);
             else
                 t = FloatType(0.5);
             OVITO_ASSERT(std::isfinite(t));
             Point3 p = delta * t + outputMesh()->vertex(vi1);
-            newVertexIndices[i][oi1] = oldVertexCount + (int)newVertices.size();
-            newVertexIndices[i][oi2] = oldVertexCount + (int)newVertices.size() + 1;
-            entry = newVertexLookupMap.emplace(std::make_pair(vi1, vi2), std::make_tuple(newVertexIndices[i][oi1], newVertexIndices[i][oi2], t)).first;
-            newVertices.push_back(p);
+            // Wrap the new vertex position into the periodic box - but only for subsequent dimensions.
+            for(size_t dim2 = dim + 1; dim2 < 3; dim2++)
+                p[dim2] -= cell().hasPbc(dim2) * std::floor(p[dim2]);
+            newVertexIndices[i][oi1] = outputMesh()->addVertex(p);
             p[dim] += FloatType(1);
-            newVertices.push_back(p);
+            newVertexIndices[i][oi2] = outputMesh()->addVertex(p);
+            newVertexLookupMap.emplace(
+                std::make_pair(vi1, vi2),
+                std::make_tuple(newVertexIndices[i][oi1], newVertexIndices[i][oi2], t));
             // Compute the color at the intersection point by interpolating the colors of the two existing vertices.
             if(outputMesh()->hasVertexColors()) {
                 const ColorAG& color1 = outputMesh()->vertexColor(vi1);
                 const ColorAG& color2 = outputMesh()->vertexColor(vi2);
                 ColorAG interp_color(color1.r() + (color2.r() - color1.r()) * static_cast<GraphicsFloatType>(t),
-                                    color1.g() + (color2.g() - color1.g()) * static_cast<GraphicsFloatType>(t),
-                                    color1.b() + (color2.b() - color1.b()) * static_cast<GraphicsFloatType>(t),
-                                    color1.a() + (color2.a() - color1.a()) * static_cast<GraphicsFloatType>(t));
-                newVertexColors.push_back(interp_color);
-                newVertexColors.push_back(interp_color);
+                                     color1.g() + (color2.g() - color1.g()) * static_cast<GraphicsFloatType>(t),
+                                     color1.b() + (color2.b() - color1.b()) * static_cast<GraphicsFloatType>(t),
+                                     color1.a() + (color2.a() - color1.a()) * static_cast<GraphicsFloatType>(t));
+                outputMesh()->setVertexColor(newVertexIndices[i][oi1], interp_color);
+                outputMesh()->setVertexColor(newVertexIndices[i][oi2], interp_color);
             }
             if(outputMesh()->hasVertexPseudoColors()) {
                 FloatType pseudocolor1 = outputMesh()->vertexPseudoColor(vi1);
                 FloatType pseudocolor2 = outputMesh()->vertexPseudoColor(vi2);
                 FloatType interp_pseudocolor = pseudocolor1 + (pseudocolor2 - pseudocolor1) * t;
-                newVertexPseudoColors.push_back(interp_pseudocolor);
-                newVertexPseudoColors.push_back(interp_pseudocolor);
+                outputMesh()->setVertexPseudoColor(newVertexIndices[i][oi1], interp_pseudocolor);
+                outputMesh()->setVertexPseudoColor(newVertexIndices[i][oi2], interp_pseudocolor);
             }
         }
         // Compute interpolated normal vector at intersection point.
         if(_smoothShading) {
             const Vector3G& n1 = outputMesh()->faceVertexNormal(faceIndex, (i+oi1)%3);
             const Vector3G& n2 = outputMesh()->faceVertexNormal(faceIndex, (i+oi2)%3);
-            GraphicsFloatType t = std::get<2>(entry->second);
             interpolatedNormals[i] = n1 * t + n2 * (GraphicsFloatType(1) - t);
             interpolatedNormals[i].normalizeSafely();
         }
@@ -1085,10 +1067,10 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::splitFace(int faceIndex, int oldV
     // Build output triangles.
     int originalVertices[3] = { face.vertex(0), face.vertex(1), face.vertex(2) };
     bool originalEdgeVisibility[3] = { face.edgeVisible(0), face.edgeVisible(1), face.edgeVisible(2) };
-    int pe1 = (properEdge + 1) % 3;
-    int pe2 = (properEdge + 2) % 3;
-    face.setVertices(originalVertices[properEdge], originalVertices[pe1], newVertexIndices[pe2][1]);
-    face.setEdgeVisibility(originalEdgeVisibility[properEdge], false, originalEdgeVisibility[pe2]);
+    int pe1 = (shortEdge + 1) % 3;
+    int pe2 = (shortEdge + 2) % 3;
+    face.setVertices(originalVertices[shortEdge], originalVertices[pe1], newVertexIndices[pe2][1]);
+    face.setEdgeVisibility(originalEdgeVisibility[shortEdge], false, originalEdgeVisibility[pe2]);
 
     int materialIndex = face.materialIndex();
     OVITO_ASSERT(_originalFaceMap.size() == outputMesh()->faceCount());
@@ -1110,8 +1092,8 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::splitFace(int faceIndex, int oldV
         *n++ = interpolatedNormals[pe1];
         *n++ = outputMesh()->faceVertexNormal(faceIndex, pe2);
         *n   = interpolatedNormals[pe2];
-        n = outputMesh()->normals().begin() + faceIndex*3;
-        std::rotate(n, n + properEdge, n + 3);
+        n = outputMesh()->normals().begin() + faceIndex * 3;
+        std::rotate(n, n + shortEdge, n + 3);
         outputMesh()->setFaceVertexNormal(faceIndex, 2, interpolatedNormals[pe2]);
     }
 
@@ -1593,7 +1575,7 @@ bool SurfaceMeshVis::RenderableSurfaceBuilder::isCornerInside2DRegion(const std:
                 closestDistanceSq = distanceSq;
                 closestVertex = v1;
 
-                // Compute pseuso-normal at vertex.
+                // Compute pseudo-normal at vertex.
                 auto v0 = (v1 == contour.begin()) ? std::prev(contour.end()) : std::prev(v1);
                 Vector2 edge1 = (*v2) - (*v1);
                 Vector2 edge2 = (*v1) - (*v0);

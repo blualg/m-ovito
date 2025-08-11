@@ -34,12 +34,18 @@ Version 3.14.0 (xx-xxx-2025)
   * `Download this version <https://www.ovito.org/download_history/#3.13.1>`__
 
 ----------------------------
-Version 3.13.1 (xx-xxx-2025)
+Version 3.13.1 (08-Aug-2025)
 ----------------------------
 
-- GALAMOST file reader: Added support for ``<force>`` and ``<virial>`` tags
-- Added usage example to :ref:`Spatial Binning <particles.modifiers.bin_and_reduce.type_counting>` modifier documentation, demonstrating how to compute the local stoichiometry of a particle system.
-- Improve performance of the :py:class:`ovito.data.Lines` visual element.
+- :ref:`particles.modifiers.coordination_analysis` modifier: Can now break down the computed coordination numbers into different particle types, which is useful for analyzing the local neighborhood's chemical composition
+- :ref:`LAMMPS data file reader/writer <file_formats.input.lammps_data>`: Added support for atom styles `spin`, `sph`, `rheo`, `rheo/thermal`, `bpm/sphere`
+- :ref:`GALAMOST file reader <file_formats.input>`: Added support for ``<force>`` and ``<virial>`` tags and graceful handling of unknown tags in the XML file
+- VTK XML file reader: Added support for reading surface meshes extracted by ParaView's `Extract Surface` filter
+- Improved rendering performance of the :py:class:`ovito.data.Lines` visual element
+- Fix: LAMMPS dump file exporter outputs invalid general triclinic simulation cell info
+- Recognition criteria for binary LAMMPS dump files have been made stricter so that auto-detection of DCD files is not disrupted and misclassification is less likely
+- |ovito-pro| :ref:`rendering.visrtx_renderer`: Users can now choose between the fast `standard` material and the visually richer `physically-based` material
+- |ovito-pro| Added usage example to :ref:`Spatial Binning <particles.modifiers.bin_and_reduce.type_counting>` modifier documentation, demonstrating how to compute the local stoichiometry of a particle system
 
 .. sidebar::
 
