@@ -179,6 +179,29 @@ Missing OpenGL system libraries
     This should allow you to at least run Python scripts that import the OVITO Python module. The OVITO desktop application
     will still not work, however, because your system is lacking true OpenGL graphics support.
 
+OpenGL initialization fails
+  .. error::
+
+    You may see the following messages when running :command:`ovito` in the terminal:
+
+    .. code-block:: shell
+
+      $ bin/ovito
+      QXcbIntegration: Cannot create platform OpenGL context, neither GLX nor EGL are enabled
+      QRhiGles2: Failed to create temporary context
+      QXcbIntegration: Cannot create platform offscreen surface, neither GLX nor EGL are enabled
+      QXcbIntegration: Cannot create platform OpenGL context, neither GLX nor EGL are enabled
+      QRhiGles2: Failed to create context
+      Failed to create QRhi for QBackingStoreRhiSupport
+
+  .. admonition:: Solution
+
+    Run :command:`ovito` with the environment variable ``QT_XCB_GL_INTEGRATION=xcb_egl``:
+
+    .. code-block:: shell
+
+      $ QT_XCB_GL_INTEGRATION=xcb_egl bin/ovito
+
 LD_LIBRARY_PATH overrides OVITO's bundled Qt libraries
   .. error::
 
