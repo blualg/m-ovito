@@ -417,9 +417,9 @@ AnimationTime ModificationNode::sourceFrameToAnimationTime(int frame) const
 /******************************************************************************
  * Returns the human-readable labels associated with the animation frames.
  ******************************************************************************/
-QMap<int, QString> ModificationNode::animationFrameLabels() const
+QMap<int, AnimationFrameLabel> ModificationNode::animationFrameLabels() const
 {
-    QMap<int, QString> labels = input() ? input()->animationFrameLabels() : PipelineNode::animationFrameLabels();
+    QMap<int, AnimationFrameLabel> labels = input() ? input()->animationFrameLabels() : PipelineNode::animationFrameLabels();
     if(modifierAndGroupEnabled())
         return modifier()->animationFrameLabels(std::move(labels));
     return labels;

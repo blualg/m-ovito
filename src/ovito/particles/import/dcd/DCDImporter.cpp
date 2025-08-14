@@ -296,7 +296,7 @@ void DCDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
     Frame frame(fileHandle);
     for(int i = 0; i < nframes; i++) {
         frame.byteOffset = i;
-        frame.label = tr("Timestep %1").arg(header.istart + i * header.nsavc);
+        frame.label.setToTimestep(header.istart + i * header.nsavc);
         frames.push_back(frame);
     }
 }

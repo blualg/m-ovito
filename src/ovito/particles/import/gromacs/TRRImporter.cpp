@@ -152,7 +152,7 @@ void TRRImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
         if(file.eof()) break;
 
         // Create a new record for the timestep.
-        frame.label = tr("Timestep %1").arg(trrFrame.step);
+        frame.label.setToTimestep(trrFrame.step);
         frames.push_back(frame);
     }
 }

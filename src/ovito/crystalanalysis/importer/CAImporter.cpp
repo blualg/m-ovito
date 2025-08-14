@@ -66,7 +66,6 @@ void CAImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<File
     progress.setMaximum(stream.underlyingSize());
 
     Frame frame(fileHandle);
-    QString filename = fileHandle.sourceUrl().fileName();
     int frameNumber = 0;
 
     while(!stream.eof() && !this_task::isCanceled()) {
@@ -82,7 +81,7 @@ void CAImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<File
 
         // Create a new record for the frame.
         frame.lineNumber = stream.lineNumber();
-        frame.label = QStringLiteral("%1 (Frame %2)").arg(filename).arg(frameNumber++);
+        frame.label.setFrameOfFile(frameNumber++);
         frames.push_back(frame);
         stream.recordSeekPoint();
 

@@ -37,6 +37,7 @@ DEFINE_PROPERTY_FIELD(AnimationSettings, playbackSpeed);
 DEFINE_PROPERTY_FIELD(AnimationSettings, loopPlayback);
 DEFINE_PROPERTY_FIELD(AnimationSettings, playbackEveryNthFrame);
 DEFINE_PROPERTY_FIELD(AnimationSettings, autoAdjustInterval);
+DEFINE_PROPERTY_FIELD(AnimationSettings, preferSimulationTimeDisplay);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AnimationSettings, playbackEveryNthFrame, IntegerParameterUnit, 1);
 
 /******************************************************************************
@@ -56,8 +57,8 @@ void AnimationSettings::propertyChanged(const PropertyFieldDescriptor* field)
 void AnimationSettings::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
     RefTarget::saveToStream(stream, excludeRecomputableData);
-    stream.beginChunk(0x01);
-    stream << _namedFrames;
+    stream.beginChunk(0x02);
+    stream << _frameLabels;
     stream.endChunk();
 }
 
@@ -67,8 +68,18 @@ void AnimationSettings::saveToStream(ObjectSaveStream& stream, bool excludeRecom
 void AnimationSettings::loadFromStream(ObjectLoadStream& stream)
 {
     RefTarget::loadFromStream(stream);
-    stream.expectChunk(0x01);
-    stream >> _namedFrames;
+    int version = stream.expectChunkRange(0x01, 1);
+    if(version >= 1) {
+        stream >> _frameLabels;
+    }
+    else {
+        // For backward compatibility with OVITO 3.13.
+        QMap<int, QString> namedFrames;
+        stream >> namedFrames;
+        for(auto it = namedFrames.constBegin(); it != namedFrames.constEnd(); ++it) {
+            _frameLabels.insert(it.key(), AnimationFrameLabel::parse(it.value()));
+        }
+    }
     stream.closeChunk();
 }
 
@@ -81,7 +92,7 @@ OORef<RefTarget> AnimationSettings::clone(bool deepCopy, CloneHelper& cloneHelpe
     OORef<AnimationSettings> clone = static_object_cast<AnimationSettings>(RefTarget::clone(deepCopy, cloneHelper));
 
     // Copy internal data.
-    clone->_namedFrames = this->_namedFrames;
+    clone->_frameLabels = this->_frameLabels;
 
     return clone;
 }
@@ -197,7 +208,7 @@ void AnimationSettings::adjustAnimationInterval()
 
     int firstFrame = std::numeric_limits<int>::max();
     int lastFrame = std::numeric_limits<int>::lowest();
-    _namedFrames.clear();
+    _frameLabels.clear();
 
     // Visit all scenes that reference this animation settings object.
     visitDependents([&](RefMaker* dependent) {
@@ -216,12 +227,12 @@ void AnimationSettings::adjustAnimationInterval()
 
                         // Save the list of the named animation frames.
                         // Merge with other list(s) from other scene objects if there are any.
-                        if(_namedFrames.empty())
-                            _namedFrames = head->animationFrameLabels();
+                        if(_frameLabels.empty())
+                            _frameLabels = head->animationFrameLabels();
                         else {
                             auto additionalLabels = head->animationFrameLabels();
                             if(!additionalLabels.empty())
-                                _namedFrames.insert(additionalLabels);
+                                _frameLabels.insert(additionalLabels);
                         }
                     }
                 }

@@ -82,7 +82,7 @@ public:
     virtual AnimationTime sourceFrameToAnimationTime(int frame) const;
 
     /// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
-    virtual QMap<int, QString> animationFrameLabels() const { return {}; }
+    virtual QMap<int, AnimationFrameLabel> animationFrameLabels() const { return {}; }
 
     /// Returns the data collection that is managed by this object (if it is a data source).
     /// The returned data collection will be displayed under the data source in the pipeline editor.

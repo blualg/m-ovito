@@ -37,7 +37,7 @@ class OVITO_GUI_EXPORT AnimationTimeSpinner : public SpinnerWidget
 
 public:
 
-    /// Constructs the spinner control.
+    /// Constructor.
     AnimationTimeSpinner(MainWindow& mainWindow, QWidget* parent = 0);
 
 protected Q_SLOTS:
@@ -50,6 +50,38 @@ protected Q_SLOTS:
 
     /// Is called when the spinner value has been changed by the user.
     void onSpinnerValueChanged();
+
+private:
+
+    MainWindow& _mainWindow;
+};
+
+
+/**
+ * \brief This custom ParameterUnit formats the values displayed by the AnimationTimeSpinner.
+ */
+class OVITO_CORE_EXPORT AnimationTimeSpinnerUnit : public IntegerParameterUnit
+{
+    Q_OBJECT
+
+public:
+
+    /// \brief Constructor.
+    AnimationTimeSpinnerUnit(QObject* parent, MainWindow& mainWindow);
+
+    /// \brief Converts the given string to a time value.
+    /// \param valueString This is a string representation of a value as it might have
+    ///                    been produced by formatValue() or entered by the user.
+    /// \return The parsed value in TimeTicks.
+    /// \throw Exception when the value could not be parsed.
+    /// \sa formatValue()
+    virtual FloatType parseString(const QString& valueString) override;
+
+    /// \brief Converts a time value to a string.
+    /// \param value The time value to be converted. This is in TimeTicks units.
+    /// \return The string representation of the value. This can be converted back using parseString().
+    /// \sa parseString()
+    virtual QString formatValue(FloatType value) override;
 
 private:
 

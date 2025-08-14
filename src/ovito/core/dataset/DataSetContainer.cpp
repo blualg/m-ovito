@@ -126,6 +126,9 @@ bool DataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& e
             else if(changedEvent.field() == PROPERTY_FIELD(AnimationSettings::firstFrame) || changedEvent.field() == PROPERTY_FIELD(AnimationSettings::lastFrame)) {
                 Q_EMIT animationIntervalChanged(activeAnimationSettings()->firstFrame(), activeAnimationSettings()->lastFrame());
             }
+            else if(changedEvent.field() == PROPERTY_FIELD(AnimationSettings::preferSimulationTimeDisplay)) {
+                Q_EMIT timeFormatChanged();
+            }
         }
     }
     else if(source == activeSelectionSet()) {

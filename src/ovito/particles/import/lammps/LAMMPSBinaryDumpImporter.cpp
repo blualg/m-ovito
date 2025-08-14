@@ -201,7 +201,7 @@ void LAMMPSBinaryDumpImporter::discoverFramesInFile(const FileHandle& fileHandle
         }
 
         // Create a new record for the timestep.
-        frame.label = tr("Timestep %1").arg(header.ntimestep);
+        frame.label.setToTimestep(header.ntimestep);
         frames.push_back(frame);
     }
 }

@@ -129,9 +129,9 @@ void GSDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
     for(uint64_t i = 0; i < nFrames; i++) {
         uint64_t simulationStep = gsd.readOptionalScalar<uint64_t>("configuration/step", i, std::numeric_limits<uint64_t>::max());
         if(simulationStep != std::numeric_limits<uint64_t>::max())
-            frame.label = QStringLiteral("Timestep %1").arg(simulationStep);
+            frame.label.setToTimestep(simulationStep);
         else
-            frame.label = QStringLiteral("Frame %1").arg(i);
+            frame.label.setFrameOfFile(i);
         frame.byteOffset = i;
         frames.push_back(frame);
     }

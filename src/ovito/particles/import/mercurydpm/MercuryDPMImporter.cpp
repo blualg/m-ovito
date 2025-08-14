@@ -82,7 +82,6 @@ void MercuryDPMImporter::discoverFramesInFile(const FileHandle& fileHandle, QVec
     progress.setMaximum(stream.underlyingSize());
 
     int frameNumber = 0;
-    QString filename = fileHandle.sourceUrl().fileName();
     Frame frame(fileHandle);
 
     while(!stream.eof() && !this_task::isCanceled()) {
@@ -107,7 +106,7 @@ void MercuryDPMImporter::discoverFramesInFile(const FileHandle& fileHandle, QVec
             throw Exception(tr("Invalid header line %1 in MercuryDPM data file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
 
         // Create a new record for the time step.
-        frame.label = QStringLiteral("Time %1").arg(time);
+        frame.label.setToTime(time);
         frames.push_back(frame);
 
         // Skip particle data.

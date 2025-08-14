@@ -152,7 +152,7 @@ void AMBERNetCDFImporter::discoverFramesInFile(const FileHandle& fileHandle, QVe
     Frame frame(fileHandle);
     for(size_t i = 0; i < nFrames; i++) {
         frame.lineNumber = i;
-        frame.label = tr("Frame %1").arg(i);
+        frame.label.setFrameOfFile(i);
         frames.push_back(frame);
     }
 }

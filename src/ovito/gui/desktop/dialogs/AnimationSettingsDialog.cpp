@@ -125,6 +125,25 @@ AnimationSettingsDialog::AnimationSettingsDialog(MainWindow& mainWindow, QWidget
         });
     });
 
+    QGroupBox* timelineBox = new QGroupBox(tr("Timeline display"));
+    layout1->addWidget(timelineBox);
+
+    contentLayout = new QGridLayout(timelineBox);
+    contentLayout->setColumnStretch(0, 1);
+
+    preferSimulationTimeGroup = new QButtonGroup(this);
+    QRadioButton* displayTrajectoryFrameBtn = new QRadioButton(tr("Frame numbers"));
+    preferSimulationTimeGroup->addButton(displayTrajectoryFrameBtn, 0);
+    contentLayout->addWidget(displayTrajectoryFrameBtn, 0, 0);
+    QRadioButton* displaySimulationTimeBtn = new QRadioButton(tr("Simulation timesteps (if available)"));
+    preferSimulationTimeGroup->addButton(displaySimulationTimeBtn, 1);
+    contentLayout->addWidget(displaySimulationTimeBtn, 1, 0);
+    connect(preferSimulationTimeGroup, &QButtonGroup::buttonToggled, this, [this]() {
+        preferSimulationTimeModified = _mainWindow.performActions(*this, [&] {
+            _animSettings->setPreferSimulationTimeDisplay(preferSimulationTimeGroup->checkedId() == 1);
+        });
+    });
+
     animIntervalBox = new QGroupBox(tr("Custom animation interval"));
     animIntervalBox->setCheckable(true);
     layout1->addWidget(animIntervalBox);
@@ -185,6 +204,8 @@ void AnimationSettingsDialog::onOk()
         PROPERTY_FIELD(AnimationSettings::playbackSpeed)->memorizeDefaultValue(_animSettings);
     if(loopPlaybackModified)
         PROPERTY_FIELD(AnimationSettings::loopPlayback)->memorizeDefaultValue(_animSettings);
+    if(preferSimulationTimeModified)
+        PROPERTY_FIELD(AnimationSettings::preferSimulationTimeDisplay)->memorizeDefaultValue(_animSettings);
 
     commit();
     accept();
@@ -204,6 +225,7 @@ void AnimationSettingsDialog::updateUI()
     animStartSpinner->setEnabled(!_animSettings->autoAdjustInterval());
     animEndSpinner->setEnabled(!_animSettings->autoAdjustInterval());
     everyNthFrameSpinner->setIntValue(_animSettings->playbackEveryNthFrame());
+    preferSimulationTimeGroup->button(_animSettings->preferSimulationTimeDisplay() ? 1 : 0)->setChecked(true);
 }
 
 /******************************************************************************

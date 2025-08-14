@@ -32,8 +32,6 @@
 
 namespace Ovito {
 
-using namespace std;
-
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
@@ -85,7 +83,8 @@ void AnimationTimeSlider::changeEvent(QEvent* event)
 void AnimationTimeSlider::paintEvent(QPaintEvent* event)
 {
     QFrame::paintEvent(event);
-    if(!animSettings()) return;
+    if(!animSettings())
+        return;
 
     // Show slider only if there is more than one animation frame.
     int numFrames = animSettings()->numberOfFrames();
@@ -100,17 +99,13 @@ void AnimationTimeSlider::paintEvent(QPaintEvent* event)
 
         painter.setPen(QPen(QColor(180,180,220)));
         for(int frame = startFrame; frame <= endFrame; frame += frameStep) {
-            QString labelText = QString::number(frame);
-            painter.drawText(frameToPos(frame) - thumbWidth/2, clientRect.y(), thumbWidth, clientRect.height(), Qt::AlignCenter, labelText);
+            painter.drawText(frameToPos(frame) - thumbWidth/2, clientRect.y(), thumbWidth, clientRect.height(), Qt::AlignCenter, tickLabel(frame));
         }
 
         QStyleOptionButton btnOption;
         btnOption.initFrom(this);
         btnOption.rect = thumbRectangle();
-        if(animSettings()->firstFrame() == 0)
-            btnOption.text = QStringLiteral("%1 / %2").arg(animSettings()->currentFrame()).arg(animSettings()->lastFrame());
-        else
-            btnOption.text = QString::number(animSettings()->currentFrame());
+        btnOption.text = thumbText(animSettings()->currentFrame());
         btnOption.state = ((_dragPos >= 0) ? QStyle::State_Sunken : QStyle::State_Raised) | QStyle::State_Enabled;
         btnOption.palette = _sliderPalette;
         painter.drawPrimitive(QStyle::PE_PanelButtonCommand, btnOption);
@@ -122,11 +117,30 @@ void AnimationTimeSlider::paintEvent(QPaintEvent* event)
 /******************************************************************************
 * Computes the maximum width of a frame tick label.
 ******************************************************************************/
-int AnimationTimeSlider::maxTickLabelWidth()
+int AnimationTimeSlider::maxTickLabelWidth() const
 {
-    if(!animSettings()) return 0;
-    QString label = QString::number(animSettings()->lastFrame());
-    return fontMetrics().boundingRect(label).width() + 20;
+    if(!animSettings())
+        return 0;
+
+    // Compute the maximum width of a frame tick label.
+    const auto& metrics = fontMetrics();
+    int maxWidth = 0;
+
+    QString label = tickLabel(animSettings()->lastFrame());
+    maxWidth = metrics.boundingRect(label).width();
+
+    // When showing named frames, consider a few more frames in addition to the
+    // last one - to account for the fact that the length of the labels may not
+    // be monotonically increasing in this case.
+    if(animSettings()->preferSimulationTimeDisplay()) {
+        const auto& frameLabels = animSettings()->frameLabels();
+        if(!frameLabels.empty()) {
+            for(int frame = std::max(animSettings()->firstFrame(), animSettings()->lastFrame() - 5); frame < animSettings()->lastFrame(); ++frame) {
+                maxWidth = std::max(maxWidth, metrics.boundingRect(tickLabel(frame)).width());
+            }
+        }
+    }
+    return maxWidth + 20;
 }
 
 /******************************************************************************
@@ -239,8 +253,8 @@ void AnimationTimeSlider::mouseMoveEvent(QMouseEvent* event)
 {
     event->accept();
 
-    AnimationSettings* anim = animSettings();
-    if(!anim) return;
+    AnimationSettings* settings = animSettings();
+    if(!settings) return;
 
     int newPos;
     int thumbSize = thumbWidth();
@@ -251,36 +265,62 @@ void AnimationTimeSlider::mouseMoveEvent(QMouseEvent* event)
         newPos = ViewportInputMode::getMousePosition(event).x() - _dragPos;
 
     int rectWidth = frameRect().width() - 2*frameWidth();
-    int newFrame = ((qint64)newPos * (qint64)(animSettings()->numberOfFrames()) / (qint64)(rectWidth - thumbSize)) + animSettings()->firstFrame();
+    int newFrame = ((qint64)newPos * (qint64)(settings->numberOfFrames()) / (qint64)(rectWidth - thumbSize)) + settings->firstFrame();
 
     // Clamp new frame to animation interval.
-    newFrame = std::clamp(newFrame, anim->firstFrame(), anim->lastFrame());
+    newFrame = std::clamp(newFrame, settings->firstFrame(), settings->lastFrame());
 
     if(_dragPos >= 0) {
 
-        if(newFrame == anim->currentFrame())
+        if(newFrame == settings->currentFrame())
             return;
 
         _mainWindow.handleExceptions([&] {
             // Set new time.
-            anim->setCurrentFrame(newFrame);
+            settings->setCurrentFrame(newFrame);
         });
 
         update();
     }
-    else if(anim->lastFrame() > anim->firstFrame()) {
-        if(thumbRectangle().contains(event->pos()) == false) {
-            FloatType fraction = (FloatType)(newFrame - anim->firstFrame())
-                    / std::max(1, anim->numberOfFrames() - 1);
+    if(!settings->isSingleFrame()) {
+        if(_dragPos >= 0 || thumbRectangle().contains(event->pos()) == false) {
+            FloatType fraction = (FloatType)(newFrame - settings->firstFrame())
+                    / std::max(1, settings->numberOfFrames() - 1);
             QRect clientRect = frameRect();
             clientRect.adjust(frameWidth(), frameWidth(), -frameWidth(), -frameWidth());
             int clientWidth = clientRect.width() - thumbWidth();
             QPoint pos(clientRect.x() + (int)(fraction * clientWidth) + thumbWidth() / 2, clientRect.height() / 2);
-            QString frameName = anim->namedFrames()[newFrame];
+
+            // Determine the text to be displayed by the tooltip.
+            const auto& frameLabels = settings->frameLabels();
+            auto iter = frameLabels.upperBound(newFrame);
+            if(iter == frameLabels.end() || iter.key() != newFrame) {
+                if(iter != frameLabels.begin())
+                    --iter;  // Get the previous frame if the current one is not named.
+                else
+                    iter = frameLabels.end();
+            }
             QString tooltipText;
-            if(!frameName.isEmpty())
-                tooltipText = QString("%1 - %2").arg(newFrame).arg(frameName);
-            else
+            if(iter != frameLabels.end()) {
+                if(frameLabels.size() == settings->numberOfFrames() && iter.value().type == AnimationFrameLabel::LabelType::FilenameAndFrame) {
+                    // Tooltip text format: <Filename> (<Frame>)
+                    tooltipText = iter.value().toDisplayString();
+                }
+                else {
+                    const QString frameName = iter.value().toDisplayString();
+                    if(!frameName.isEmpty()) {
+                        if(settings->preferSimulationTimeDisplay()) {
+                            // Tooltip text format: <Label> - <Frame>
+                            tooltipText = QStringLiteral("%1 - Frame %2").arg(frameName).arg(newFrame);
+                        }
+                        else {
+                            // Tooltip text format: <Frame> - <Label>
+                            tooltipText = QStringLiteral("%1 - %2").arg(newFrame).arg(frameName);
+                        }
+                    }
+                }
+            }
+            if(tooltipText.isEmpty() && _dragPos < 0)
                 tooltipText = QString::number(newFrame);
             QToolTip::showText(mapToGlobal(pos), tooltipText, this);
         }
@@ -293,15 +333,36 @@ void AnimationTimeSlider::mouseMoveEvent(QMouseEvent* event)
 ******************************************************************************/
 int AnimationTimeSlider::thumbWidth() const
 {
+    const AnimationSettings* settings = animSettings();
     int standardWidth = 70;
+
     // Expand the thumb width for animations with a large number of frames.
-    if(animSettings()) {
-        int nframes = animSettings()->lastFrame() - animSettings()->firstFrame();
-        if(nframes > 1) {
-            standardWidth += 10 * (int)std::log10(nframes);
+    if(settings) {
+        int maxWidth = 0;
+        if(settings->preferSimulationTimeDisplay()) {
+            // Compute the maximum width of a label.
+            const auto& metrics = fontMetrics();
+            // When showing named frames, consider a few more frames in addition to the
+            // last one - to account for the fact that the length of the labels may not
+            // be monotonically increasing in this case.
+            const auto& frameLabels = animSettings()->frameLabels();
+            if(!frameLabels.empty()) {
+                for(int frame = std::max(animSettings()->firstFrame(), animSettings()->lastFrame() - 5); frame <= animSettings()->lastFrame(); ++frame) {
+                    maxWidth = std::max(maxWidth, metrics.boundingRect(thumbText(frame)).width());
+                }
+            }
+        }
+
+        if(maxWidth != 0) {
+            standardWidth = std::max(standardWidth, maxWidth + 20);
+        }
+        else {
+            int nframes = settings->numberOfFrames();
+            if(nframes > 1)
+                standardWidth += 10 * (int)std::log10(nframes);
         }
     }
-    int clientWidth = frameRect().width() - 2*frameWidth();
+    int clientWidth = frameRect().width() - 2 * frameWidth();
     return std::min(clientWidth / 2, standardWidth);
 }
 
@@ -321,6 +382,79 @@ QRect AnimationTimeSlider::thumbRectangle()
     int thumbSize = thumbWidth();
     int thumbPos = (int)((clientRect.width() - thumbSize) * fraction);
     return QRect(thumbPos + clientRect.x(), clientRect.y(), thumbSize, clientRect.height());
+}
+
+/******************************************************************************
+* Computes the text to display on the thumb widget.
+******************************************************************************/
+QString AnimationTimeSlider::thumbText(int frame) const
+{
+    const AnimationSettings* settings = animSettings();
+    if(settings && settings->preferSimulationTimeDisplay()) {
+        const auto& frameLabels = settings->frameLabels();
+        auto iter = frameLabels.upperBound(frame);
+        if(iter == frameLabels.end() || iter.key() != frame) {
+            if(iter != frameLabels.begin())
+                --iter;  // Get the previous frame if the current one is not named.
+            else
+                iter = frameLabels.end();
+        }
+        if(iter != frameLabels.end()) {
+            const AnimationFrameLabel& label = iter.value();
+            switch(label.type) {
+                case AnimationFrameLabel::LabelType::Time:
+                    return QString::number(label.numericLabel);
+                case AnimationFrameLabel::LabelType::Timestep:
+                case AnimationFrameLabel::LabelType::Index:
+                    return QString::number((qlonglong)label.numericLabel);
+                case AnimationFrameLabel::LabelType::String:
+                    if(!label.stringLabel.isEmpty())
+                        return label.stringLabel;
+                default:
+                    break; // Fall through
+            }
+        }
+    }
+
+    if(settings && settings->firstFrame() == 0)
+        return QStringLiteral("%1 / %2").arg(frame).arg(settings->lastFrame());
+    else
+        return QString::number(frame);
+}
+
+/******************************************************************************
+* Computes the text to display next to a timeline tick.
+******************************************************************************/
+QString AnimationTimeSlider::tickLabel(int frame) const
+{
+    const AnimationSettings* settings = animSettings();
+    if(settings && settings->preferSimulationTimeDisplay()) {
+        const auto& frameLabels = settings->frameLabels();
+        auto iter = frameLabels.upperBound(frame);
+        if(iter == frameLabels.end() || iter.key() != frame) {
+            if(iter != frameLabels.begin())
+                --iter;  // Get the previous frame if the current one is not named.
+            else
+                iter = frameLabels.end();
+        }
+        if(iter != frameLabels.end()) {
+            const AnimationFrameLabel& label = iter.value();
+            switch(label.type) {
+                case AnimationFrameLabel::LabelType::Time:
+                    return QString::number(label.numericLabel);
+                case AnimationFrameLabel::LabelType::Timestep:
+                case AnimationFrameLabel::LabelType::Index:
+                    return QString::number((qlonglong)label.numericLabel);
+                case AnimationFrameLabel::LabelType::String:
+                    if(!label.stringLabel.isEmpty())
+                        return label.stringLabel;
+                default:
+                    break; // Fall through
+            }
+        }
+    }
+
+    return QString::number(frame);
 }
 
 /******************************************************************************

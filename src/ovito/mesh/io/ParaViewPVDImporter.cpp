@@ -94,7 +94,7 @@ void ParaViewPVDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVe
                 // Register trajectory frame.
                 Frame frame(std::move(url));
                 frame.parserData = QVariant::fromValue(time);
-                frame.label = tr("Time %1").arg(xml.attributes().value("timestep"));
+                frame.label.setToTime(xml.attributes().value("timestep").toDouble());
                 frames.push_back(std::move(frame));
             }
 

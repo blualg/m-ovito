@@ -30,8 +30,6 @@
 
 namespace Ovito {
 
-using namespace std;
-
 /******************************************************************************
 * The constructor of the AnimationTrackBar class.
 ******************************************************************************/
@@ -73,9 +71,11 @@ void AnimationTrackBar::paintEvent(QPaintEvent* event)
     QFrame::paintEvent(event);
 
     // Paint track bar only if there is more than one animation frame.
-    if(!animSettings()) return;
+    if(!animSettings())
+        return;
     int numFrames = animSettings()->numberOfFrames();
-    if(numFrames <= 1) return;
+    if(numFrames <= 1)
+        return;
 
     QPainter painter(this);
 

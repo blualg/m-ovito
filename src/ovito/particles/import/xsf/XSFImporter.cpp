@@ -92,10 +92,9 @@ void XSFImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
     }
 
     Frame frame(fileHandle);
-    QString filename = fileHandle.sourceUrl().fileName();
     for(int i = 0; i < nFrames; i++) {
         frame.lineNumber = i;
-        frame.label = tr("%1 (Frame %2)").arg(filename).arg(i);
+        frame.label.setFrameOfFile(i);
         frames.push_back(frame);
     }
 }

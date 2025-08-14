@@ -94,7 +94,6 @@ void XYZImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
     QRegularExpression ws_re(QStringLiteral("\\s+"));
 
     int frameNumber = 0;
-    QString filename = fileHandle.sourceUrl().fileName();
     Frame frame(fileHandle);
 
     while(!stream.eof() && !this_task::isCanceled()) {
@@ -122,7 +121,7 @@ void XYZImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
         }
 
         // Create a new record for the time step.
-        frame.label = QStringLiteral("%1 (Frame %2)").arg(filename).arg(frameNumber++);
+        frame.label.setFrameOfFile(frameNumber++);
         frames.push_back(frame);
 
         // Skip comment line.

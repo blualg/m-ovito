@@ -198,11 +198,7 @@ void FileSourcePlaybackRateEditor::updateFramesList()
     if(!fileSource)
         return;
 
-    QStringList stringList;
-    stringList.reserve(fileSource->frames().size());
-    for(const FileSourceImporter::Frame& frame : fileSource->frames())
-        stringList.push_back(frame.label);
-    _framesListModel->setStringList(std::move(stringList));
+    _framesListModel->setStringList(fileSource->humanReadableFrameLabels());
     if(fileSource->restrictToFrame() >= 0)
         _framesListBox->setCurrentIndex(fileSource->restrictToFrame());
     else

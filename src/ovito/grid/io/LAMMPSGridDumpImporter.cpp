@@ -85,7 +85,7 @@ void LAMMPSGridDumpImporter::discoverFramesInFile(const FileHandle& fileHandle, 
                     throw Exception(tr("LAMMPS grid dump file parsing error. Invalid timestep number (line %1):\n%2").arg(stream.lineNumber()).arg(stream.lineString()));
                 frame.byteOffset = byteOffset;
                 frame.lineNumber = lineNumber;
-                frame.label = QStringLiteral("Timestep %1").arg(timestep);
+                frame.label.setToTimestep(timestep);
                 frames.push_back(frame);
                 stream.recordSeekPoint();
                 break;

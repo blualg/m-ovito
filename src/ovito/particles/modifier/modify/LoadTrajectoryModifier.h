@@ -75,10 +75,10 @@ public:
     }
 
     /// Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
-    virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const override {
+    virtual QMap<int, AnimationFrameLabel> animationFrameLabels(QMap<int, AnimationFrameLabel> inputLabels) const override {
         if(trajectorySource())
             inputLabels.insert(trajectorySource()->animationFrameLabels());
-        return inputLabels;
+        return std::move(inputLabels);
     }
 
     /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.

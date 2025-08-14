@@ -138,7 +138,7 @@ void XTCImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
             break;
 
         // Create a new record for the timestep.
-        frame.label = tr("Timestep %1").arg(xtcFrame.step);
+        frame.label.setToTimestep(xtcFrame.step);
         frames.push_back(frame);
     }
 }

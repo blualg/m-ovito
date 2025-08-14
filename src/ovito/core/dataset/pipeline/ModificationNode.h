@@ -109,7 +109,7 @@ public:
     virtual AnimationTime sourceFrameToAnimationTime(int frame) const override;
 
     /// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
-    virtual QMap<int, QString> animationFrameLabels() const override;
+    virtual QMap<int, AnimationFrameLabel> animationFrameLabels() const override;
 
     /// \brief Returns a short piece of information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene) const override;

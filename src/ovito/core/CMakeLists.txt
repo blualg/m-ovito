@@ -64,6 +64,7 @@ SET(SourceFiles
     oo/RefTarget.cpp
     oo/RefTargetListener.cpp
     dataset/animation/AnimationSettings.cpp
+    dataset/animation/AnimationFrameLabel.cpp
     dataset/animation/controller/Controller.cpp
     dataset/animation/controller/ConstantControllers.cpp
     dataset/animation/controller/KeyframeController.cpp

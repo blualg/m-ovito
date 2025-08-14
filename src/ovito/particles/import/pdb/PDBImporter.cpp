@@ -149,7 +149,7 @@ void PDBImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
             static const QRegularExpression cp2k_re(QStringLiteral(R"(REMARK\s+Step\s+(\d+))"));
             QRegularExpressionMatch match = cp2k_re.match(stream.lineString());
             if(match.hasMatch())
-                frame.label = QStringLiteral("Timestep %1").arg(match.captured(1));
+                frame.label.setToTimestep(match.captured(1).toLongLong());
         }
         else if(stream.lineStartsWithToken("END")) {
             if(frames.empty())

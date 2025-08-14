@@ -68,7 +68,6 @@ void FHIAimsLogFileImporter::discoverFramesInFile(const FileHandle& fileHandle, 
     QRegularExpression ws_re(QStringLiteral("\\s+"));
 
     Frame frame(fileHandle);
-    QString filename = fileHandle.sourceUrl().fileName();
     int frameNumber = 0;
 
     while(!stream.eof() && !this_task::isCanceled()) {
@@ -77,7 +76,7 @@ void FHIAimsLogFileImporter::discoverFramesInFile(const FileHandle& fileHandle, 
             stream.readLine();
             frame.byteOffset = stream.byteOffset();
             frame.lineNumber = stream.lineNumber();
-            frame.label = tr("%1 (Frame %2)").arg(filename).arg(frameNumber++);
+            frame.label.setFrameOfFile(frameNumber++);
             frames.push_back(frame);
             stream.recordSeekPoint();
         }

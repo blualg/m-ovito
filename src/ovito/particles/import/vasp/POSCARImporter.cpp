@@ -105,7 +105,6 @@ void POSCARImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
     int frameNumber = 0;
     QStringList atomTypeNames;
     QVector<int> atomCounts;
-    QString filename = fileHandle.sourceUrl().fileName();
 
     // Read frames.
     Frame frame(fileHandle);
@@ -113,7 +112,7 @@ void POSCARImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
         frame.byteOffset = stream.byteOffset();
         frame.lineNumber = stream.lineNumber();
         frame.parserData = QVariant::fromValue(true);
-        frame.label = QStringLiteral("%1 (Frame %2)").arg(filename).arg(frameNumber++);
+        frame.label.setFrameOfFile(frameNumber++);
         stream.recordSeekPoint();
 
         // Read comment line

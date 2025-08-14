@@ -29,6 +29,7 @@ Version 3.14.0 (xx-xxx-2025)
 - Added file export function to *Surfaces* tab of data inspector
 - Renamed export format "Table of Values" to "Table of Global Attributes" for clarity
 - Aspherix PVD file reader: Read in simulation time as global attribute ``Time``, not ``Timestep``
+- OVITO's timeline can now display simulation timesteps instead of frame numbers, see newly added option in the :ref:`animation.animation_settings_dialog`
 
 .. sidebar::
 

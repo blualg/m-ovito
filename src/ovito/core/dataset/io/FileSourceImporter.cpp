@@ -37,6 +37,8 @@
 #include "FileSourceImporter.h"
 #include "FileSource.h"
 
+#include <QStringBuilder>
+
 namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(FileSourceImporter);
@@ -350,7 +352,6 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
         QVector<FileSourceImporter::Frame>{});
 }
 
-
 /******************************************************************************
 * Scans the given external path (which may be a directory and a wild-card pattern,
 * or a single file containing multiple frames) to find all available animation frames.
@@ -364,7 +365,7 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
         // Check if filename is a wildcard pattern.
         // If yes, find all matching files and scan each one of them.
         if(isWildcardPattern(sourceUrl)) {
-            return findWildcardMatches(sourceUrl)
+            return findWildcardMatchesResolved(sourceUrl)
                 .then(ObjectExecutor(this), [this](const std::vector<QUrl>& fileList) {
                     return discoverFrames(fileList);
                 });
@@ -380,23 +381,25 @@ Future<QVector<FileSourceImporter::Frame>> FileSourceImporter::discoverFrames(co
         if(isWildcardPattern(sourceUrl)) {
             // Find all files matching the file pattern.
             return findWildcardMatches(sourceUrl)
-                .then(ObjectExecutor(this), [](const std::vector<QUrl>& fileList) {
-                    // Turn the file list into a frame list.
+                .then(ObjectExecutor(this), [sourceUrl](const QStringList& entries) {
+
+                    // Resolve list of matches into complete URLs.
+                    std::vector<QUrl> urlList = FileSourceImporter::resolveWildcardMatches(sourceUrl, entries);
+                    OVITO_ASSERT(urlList.size() == entries.size());
+
+                    // Turn the file list into a animation frames list.
+                    // Label each frame with the timestep number inferred from the numeric part of the filename.
                     QVector<Frame> frames;
-                    frames.reserve(fileList.size());
-                    for(const QUrl& url : fileList) {
-                        QFileInfo fileInfo(url.path());
-                        QDateTime dateTime = url.isLocalFile() ? fileInfo.lastModified() : QDateTime();
-                        frames.push_back(Frame(url, 0, 1, dateTime, fileInfo.fileName()));
-                    }
+                    frames.reserve(entries.size());
+                    auto it = entries.cbegin();
+                    for(QUrl& url : urlList)
+                        frames.emplace_back(std::move(url), (it++)->toLongLong());
                     return frames;
                 });
         }
         else {
             // Build just a single frame from the source URL.
-            QFileInfo fileInfo(sourceUrl.path());
-            QDateTime dateTime = sourceUrl.isLocalFile() ? fileInfo.lastModified() : QDateTime();
-            return QVector<Frame>{{ Frame(sourceUrl, 0, 1, dateTime, fileInfo.fileName()) }};
+            return QVector<Frame>{{ Frame(sourceUrl, 0, 1) }};
         }
     }
 }
@@ -468,125 +471,134 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
 }
 
 /******************************************************************************
-* Returns the list of files that match the given wildcard pattern.
+* Queries the filesystem and returns a list of files matching the given wildcard pattern.
+* The filename pattern must contain exactly one '*' wildcard character, which represents a sequence of digits of arbitrary length.
+* The function returns the numeric part extracted from each matching filename.
 ******************************************************************************/
-Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatches(const QUrl& sourceUrl)
+Future<QStringList> FileSourceImporter::findWildcardMatches(const QUrl& urlPattern)
 {
     OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(isWildcardPattern(urlPattern));
 
-    // Determine whether the filename contains a wildcard character.
-    if(!isWildcardPattern(sourceUrl)) {
-        // It's not a wildcard pattern. Register just a single frame.
-        return std::vector<QUrl>{ sourceUrl };
+    const QFileInfo fileInfo(urlPattern.path());
+    const QString pattern = fileInfo.fileName();
+
+    // Scan the directory for files matching the wildcard pattern.
+    if(urlPattern.isLocalFile()) {
+        QDir directory = QFileInfo(urlPattern.toLocalFile()).dir();
+
+        // Search the full file list for matches and extract the numeric parts of the filenames.
+        QStringList entries;
+        for(const QString& filename : directory.entryList(QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden, QDir::Name)) {
+            if(auto result = matchesWildcardPattern(pattern, filename); result.has_value())
+                entries << result->toString();
+        }
+
+        // Numeric sorting of the entries.
+        std::ranges::sort(entries, [](const QString& a, const QString& b) {
+            return a.toLongLong() < b.toLongLong();
+        });
+
+        return Future<QStringList>::createImmediate(std::move(entries));
     }
     else {
-        QFileInfo fileInfo(sourceUrl.path());
-        QString pattern = fileInfo.fileName();
+        // Remove the filename part and keep the directory part of the URL.
+        QUrl directoryUrl = urlPattern;
+        directoryUrl.setPath(fileInfo.path());
 
-        QDir directory;
-        bool isLocalPath = false;
-        Future<QStringList> entriesFuture;
+        // Retrieve list of files in remote directory.
+        return Application::instance()->fileManager().listDirectoryContents(directoryUrl).then([pattern](QStringList&& remoteFileList) {
 
-        // Scan the directory for files matching the wildcard pattern.
-        if(sourceUrl.isLocalFile()) {
-
+            // Search the full file list for matches and extract the numeric parts of the filenames.
             QStringList entries;
-            isLocalPath = true;
-            directory = QFileInfo(sourceUrl.toLocalFile()).dir();
-            for(const QString& filename : directory.entryList(QDir::Files|QDir::NoDotAndDotDot|QDir::Hidden, QDir::Name)) {
-                if(matchesWildcardPattern(pattern, filename))
-                    entries << filename;
+            for(const QString& filename : remoteFileList) {
+                if(auto result = matchesWildcardPattern(pattern, filename); result.has_value())
+                    entries << result->toString();
             }
-            entriesFuture = Future<QStringList>::createImmediate(std::move(entries));
-        }
-        else {
 
-            directory = fileInfo.dir();
-            QUrl directoryUrl = sourceUrl;
-            directoryUrl.setPath(fileInfo.path());
-
-            // Retrieve list of files in remote directory.
-            Future<QStringList> remoteFileListFuture = Application::instance()->fileManager().listDirectoryContents(directoryUrl);
-
-            // Filter file names.
-            entriesFuture = remoteFileListFuture.then([pattern](QStringList&& remoteFileList) {
-                QStringList entries;
-                for(const QString& filename : remoteFileList) {
-                    if(matchesWildcardPattern(pattern, filename))
-                        entries << filename;
-                }
-                return entries;
+            // Numeric sorting of the entries.
+            std::ranges::sort(entries, [](const QString& a, const QString& b) {
+                return a.toLongLong() < b.toLongLong();
             });
-        }
 
-        // Sort the file list.
-        return entriesFuture.then([isLocalPath, sourceUrl, directory](QStringList&& entries) {
-
-            // A file called "abc9.xyz" must come before a file named "abc10.xyz", which is not
-            // the default lexicographic ordering.
-            QMap<QString, QString> sortedFilenames;
-            for(QString& oldName : entries) {
-                // Generate a new name from the original filename that yields the correct ordering.
-                QString newName;
-                QString number;
-                for(QChar c : oldName) {
-                    if(!c.isDigit()) {
-                        if(!number.isEmpty()) {
-                            newName.append(number.rightJustified(12, '0'));
-                            number.clear();
-                        }
-                        newName.append(c);
-                    }
-                    else number.append(c);
-                }
-                if(!number.isEmpty())
-                    newName.append(number.rightJustified(12, '0'));
-                if(!sortedFilenames.contains(newName))
-                    sortedFilenames[newName] = std::move(oldName);
-                else
-                    sortedFilenames[oldName] = oldName;
-            }
-
-            // Generate final list of frames.
-            std::vector<QUrl> urls;
-            urls.reserve(sortedFilenames.size());
-            for(auto iter = sortedFilenames.constBegin(); iter != sortedFilenames.constEnd(); ++iter) {
-                QFileInfo fileInfo(directory, iter.value());
-                QUrl url = sourceUrl;
-                if(isLocalPath)
-                    url = QUrl::fromLocalFile(fileInfo.filePath());
-                else
-                    url.setPath(fileInfo.filePath());
-                urls.push_back(url);
-            }
-
-            return urls;
+            return entries;
         });
     }
 }
 
 /******************************************************************************
-* Checks if a filename matches to the given wildcard pattern.
+* Queries the filesystem and returns a list of files matching the given wildcard pattern.
+* The filename pattern can contain exactly one '*' wildcard character, which represents a sequence of digits of arbitrary length.
+* This version of the function returns the list of fully resolved file URLs.
 ******************************************************************************/
-bool FileSourceImporter::matchesWildcardPattern(const QString& pattern, const QString& filename)
+Future<std::vector<QUrl>> FileSourceImporter::findWildcardMatchesResolved(const QUrl& urlPattern)
 {
-    QString::const_iterator p = pattern.constBegin();
-    QString::const_iterator f = filename.constBegin();
-    while(p != pattern.constEnd() && f != filename.constEnd()) {
+    OVITO_ASSERT(this_task::get());
+
+    // Determine whether the filename contains a wildcard character.
+    if(!isWildcardPattern(urlPattern)) {
+        // It's not a wildcard pattern. Return just a single file.
+        return std::vector<QUrl>{ urlPattern };
+    }
+
+    // Call subroutine to obtain a list of matching entries.
+    // Then resolve them into full file URLs.
+    return findWildcardMatches(urlPattern).then([urlPattern](QStringList&& entries) {
+        return FileSourceImporter::resolveWildcardMatches(urlPattern, entries);
+    });
+}
+
+/******************************************************************************
+* Given a URL pattern and a list of entries, resolves the wildcard matches into full file URLs.
+******************************************************************************/
+std::vector<QUrl> FileSourceImporter::resolveWildcardMatches(const QUrl& urlPattern, const QStringList& entries)
+{
+    const QString  pattern = urlPattern.path();
+    qsizetype wildcardPos = pattern.indexOf(QChar('*'));
+    OVITO_ASSERT(wildcardPos >= 0);
+    const QStringView headPart = QStringView(pattern).first(wildcardPos);
+    const QStringView tailPart = QStringView(pattern).mid(wildcardPos + 1);
+
+    // Generate final list of URLs.
+    std::vector<QUrl> urls;
+    urls.reserve(entries.size());
+    for(const QString& numericPart : entries) {
+        QUrl url = urlPattern;
+        url.setPath(headPart % numericPart % tailPart);
+        urls.push_back(std::move(url));
+    }
+
+    return urls;
+}
+
+/******************************************************************************
+* Checks if a filename matches to the given wildcard pattern.
+* If yes, returns the numeric part extracted from the filename.
+******************************************************************************/
+std::optional<QStringView> FileSourceImporter::matchesWildcardPattern(const QStringView pattern, const QStringView filename)
+{
+    QStringView::const_iterator p = pattern.cbegin();
+    QStringView::const_iterator f = filename.cbegin();
+    QStringView numericPart;
+    while(p != pattern.cend() && f != filename.cend()) {
         if(*p == QChar('*')) {
             if(!f->isDigit())
-                return false;
+                return std::nullopt;
+            size_t numBegin = std::distance(filename.cbegin(), f);
             do { ++f; }
-            while(f != filename.constEnd() && f->isDigit());
+            while(f != filename.cend() && f->isDigit());
+            numericPart = filename.sliced(numBegin, std::distance(filename.cbegin(), f) - numBegin);
             ++p;
             continue;
         }
         else if(*p != *f)
-            return false;
+            return std::nullopt;
         ++p;
         ++f;
     }
-    return p == pattern.constEnd() && f == filename.constEnd();
+    if(p == pattern.cend() && f == filename.cend())
+        return numericPart;
+    return std::nullopt;
 }
 
 /******************************************************************************
@@ -607,7 +619,16 @@ LoadStream& operator>>(LoadStream& stream, FileSourceImporter::Frame& frame)
 {
     stream.expectChunk(0x03);
 
-    stream >> frame.sourceFile >> frame.byteOffset >> frame.lineNumber >> frame.lastModificationTime >> frame.label;
+    stream >> frame.sourceFile >> frame.byteOffset >> frame.lineNumber >> frame.lastModificationTime;
+    if(stream.formatVersion() >= 30014) {
+        stream >> frame.label;
+    }
+    else {
+        // For backward compatibility with OVITO 3.13.
+        QString oldLabel;
+        stream >> oldLabel;
+        frame.label = AnimationFrameLabel::parse(oldLabel);
+    }
     if(stream.formatVersion() >= 30010) {
         stream >> frame.parserData;
     }

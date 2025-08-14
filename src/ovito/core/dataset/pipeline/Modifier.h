@@ -119,7 +119,7 @@ public:
     virtual AnimationTime sourceFrameToAnimationTime(int frame, AnimationTime inputTime) const { return inputTime; }
 
     /// Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
-    virtual QMap<int, QString> animationFrameLabels(QMap<int, QString> inputLabels) const { return inputLabels; }
+    virtual QMap<int, AnimationFrameLabel> animationFrameLabels(QMap<int, AnimationFrameLabel> inputLabels) const { return std::move(inputLabels); }
 
 protected:
 

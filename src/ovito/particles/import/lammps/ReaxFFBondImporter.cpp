@@ -116,7 +116,7 @@ void ReaxFFBondImporter::discoverFramesInFile(const FileHandle& fileHandle, QVec
     progress.setMaximum(stream.underlyingSize());
 
     Frame frame(fileHandle);
-    QString filename = fileHandle.sourceUrl().fileName();
+    int frameNumber = 0;
 
     bool inCommentSection = true;
     while(!stream.eof() && !this_task::isCanceled()) {
@@ -130,6 +130,7 @@ void ReaxFFBondImporter::discoverFramesInFile(const FileHandle& fileHandle, QVec
             }
         }
         else if(inCommentSection) {
+            frame.label.setFrameOfFile(frameNumber++);
             frames.push_back(frame);
             stream.recordSeekPoint();
             inCommentSection = false;

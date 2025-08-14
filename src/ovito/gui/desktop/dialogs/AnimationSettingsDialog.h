@@ -71,10 +71,12 @@ private:
     QComboBox* playbackSpeedBox;
     QCheckBox* loopPlaybackBox;
     QGroupBox* animIntervalBox;
+    QButtonGroup* preferSimulationTimeGroup;
 
     bool framesPerSecondModified = false;
     bool playbackSpeedModified = false;
     bool loopPlaybackModified = false;
+    bool preferSimulationTimeModified = false;
 };
 
 }   // End of namespace

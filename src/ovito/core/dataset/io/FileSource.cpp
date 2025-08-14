@@ -313,14 +313,14 @@ AnimationTime FileSource::sourceFrameToAnimationTime(int frame) const
 /******************************************************************************
 * Returns the human-readable labels associated with the animation frames.
 ******************************************************************************/
-QMap<int, QString> FileSource::animationFrameLabels() const
+QMap<int, AnimationFrameLabel> FileSource::animationFrameLabels() const
 {
     // Check if the cached list of frame labels is still available.
     // If not, rebuild the list here.
     if(_frameLabels.empty() && restrictToFrame() < 0) {
         int frameIndex = 0;
         for(const FileSourceImporter::Frame& frame : _frames) {
-            if(frame.label.isEmpty())
+            if(frame.label.type == AnimationFrameLabel::LabelType::None)
                 break;
             // Convert local source frame index to global animation frame number.
             _frameLabels.insert(FileSource::sourceFrameToAnimationTime(frameIndex).frame(), frame.label);
@@ -745,6 +745,19 @@ OORef<RefTarget> FileSource::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     clone->_frameLabels = this->_frameLabels;
     clone->_numberOfFiles = this->_numberOfFiles;
     return clone;
+}
+
+/******************************************************************************
+* Builds a list of human-readable frame labels, which can be displayed in the UI.
+******************************************************************************/
+QStringList FileSource::humanReadableFrameLabels() const
+{
+    QStringList labels;
+    labels.reserve(frames().size());
+    for(const auto& frame : frames()) {
+        labels.push_back(frame.label.toDisplayString());
+    }
+    return labels;
 }
 
 }   // End of namespace
