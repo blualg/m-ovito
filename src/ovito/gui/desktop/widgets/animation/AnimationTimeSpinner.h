@@ -60,7 +60,7 @@ private:
 /**
  * \brief This custom ParameterUnit formats the values displayed by the AnimationTimeSpinner.
  */
-class OVITO_CORE_EXPORT AnimationTimeSpinnerUnit : public IntegerParameterUnit
+class OVITO_GUI_EXPORT AnimationTimeSpinnerUnit : public IntegerParameterUnit
 {
     Q_OBJECT
 
