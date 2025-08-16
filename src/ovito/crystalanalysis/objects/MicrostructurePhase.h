@@ -74,7 +74,7 @@ public:
         family->setColor(color);
         family->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ElementType::name), SHADOW_PROPERTY_FIELD(ElementType::color), SHADOW_PROPERTY_FIELD(BurgersVectorFamily::burgersVector)});
         addBurgersVectorFamily(family);
-        return family;
+        return family.get();
     }
 
     /// Removes a family from this lattice pattern's list of Burgers vector families.

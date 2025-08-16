@@ -49,7 +49,7 @@ private:
         Storage& operator=(const Storage&) = delete;
 
         void* _ptr;
-        std::aligned_storage<sizeof(_ptr), alignof(void*)>::type _buffer;
+        alignas(sizeof(_ptr)) std::byte _buffer[sizeof(_ptr)];
     };
 
     template<typename _Tp, typename _Safe = std::is_nothrow_move_constructible<_Tp>, bool _Fits = (sizeof(_Tp) <= sizeof(Storage)) && (alignof(_Tp) <= alignof(Storage))>

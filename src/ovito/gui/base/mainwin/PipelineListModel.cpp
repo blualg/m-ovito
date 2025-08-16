@@ -1544,9 +1544,9 @@ PipelineNode* PipelineListModel::makeElementIndependentImpl(PipelineNode* pipeli
                     predecessorModNode->setInput(clonedNode);
                 else
                     selectedPipeline()->setHead(clonedNode);
-                return clonedNode;
+                return clonedNode.get();
             }
-            return currentNode;
+            return currentNode.get();
         }
         else {
             OVITO_ASSERT(false);

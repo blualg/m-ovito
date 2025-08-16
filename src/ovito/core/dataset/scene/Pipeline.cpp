@@ -320,7 +320,7 @@ ModificationNode* Pipeline::applyModifier(AnimationTime time, bool interactiveMo
     node->setInput(head());
     modifier->initializeModifier(ModifierInitializationRequest(time, false, interactiveMode, node));
     setHead(node);
-    return node;
+    return node.get();
 }
 
 /******************************************************************************

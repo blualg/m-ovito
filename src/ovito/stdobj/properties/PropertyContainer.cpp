@@ -370,7 +370,7 @@ Property* PropertyContainer::createProperty(DataBuffer::BufferInitialization ini
         // Create a new property object.
         PropertyPtr newProperty = getOOMetaClass().createStandardProperty(init, elementCount(), typeId, containerPath);
         addProperty(newProperty);
-        return newProperty;
+        return newProperty.get();
     }
 }
 
@@ -398,7 +398,7 @@ Property* PropertyContainer::createProperty(DataBuffer::BufferInitialization ini
         // Create a new property object.
         PropertyPtr newProperty = getOOMetaClass().createUserProperty(init, elementCount(), dataType, componentCount, name, 0, std::move(componentNames));
         addProperty(newProperty);
-        return newProperty;
+        return newProperty.get();
     }
 }
 

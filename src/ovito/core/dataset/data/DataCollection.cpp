@@ -159,7 +159,7 @@ DataObject* DataCollection::makeMutable(const DataObject* obj)
         OORef<DataObject> clone = CloneHelper::cloneSingleObject(obj, false);
         if(replaceObject(obj, clone)) {
             OVITO_ASSERT(clone->isSafeToModify());
-            return clone;
+            return clone.get();
         }
     }
     return const_cast<DataObject*>(obj);
