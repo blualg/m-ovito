@@ -185,6 +185,11 @@ class OVITO_STDMOD_EXPORT ComputePropertyModificationNode : public ModificationN
 {
     OVITO_CLASS(ComputePropertyModificationNode)
 
+public:
+
+    /// Replaces all references to the given visual element in the pipeline with new compatible objects.
+    virtual void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) override;
+
 private:
 
     /// The cached visualization elements that are attached to the output property.

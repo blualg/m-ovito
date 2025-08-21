@@ -63,6 +63,10 @@ public:
     /// \brief Returns all pipelines that produced this visualization element.
     /// \param onlyScenePipelines If true, pipelines which are currently not part of the scene are ignored.
     QSet<Pipeline*> pipelines(bool onlyScenePipelines) const;
+
+    /// \brief Replaces this visual element with a shared visual element
+    /// by telling all dependents to update their references.
+    virtual void replaceWithSharedElement(DataVis* sharedVis) const;
 };
 
 }   // End of namespace

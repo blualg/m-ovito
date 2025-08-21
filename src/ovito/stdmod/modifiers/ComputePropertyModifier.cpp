@@ -381,4 +381,16 @@ Future<PipelineFlowState> ComputePropertyModifierDelegate::performComputation(
     });
 }
 
+/******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void ComputePropertyModificationNode::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    auto index = cachedVisElements().indexOf(visElement);
+    if(index != -1)
+        _cachedVisElements.set(this, PROPERTY_FIELD(cachedVisElements), index, getReplacement({}));
+
+    ModificationNode::replaceVisualElement(visElement, getReplacement);
+}
+
 }   // End of namespace

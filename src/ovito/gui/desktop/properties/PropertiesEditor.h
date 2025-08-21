@@ -140,10 +140,18 @@ public:
     QVector<ModificationNode*> modificationNodes() const;
 
     /// For an editor of a DataVis element, returns the DataObject which the DataVis element is attached to.
+    /// If the DataVis element is attached to more than one DataObject, an arbitrary one is returned.
     ConstDataObjectRef getVisDataObject() const;
 
+    /// For an editor of a DataVis element, returns all DataObjects which the DataVis element is attached to.
+    std::vector<ConstDataObjectRef> getVisDataObjects() const;
+
     /// For an editor of a DataVis element, returns the data collection path to the DataObject which the DataVis element is attached to.
+    /// If the DataVis element is attached to more than one DataObject, the path for an arbitrary one is returned.
     ConstDataObjectRefPath getVisDataObjectPath() const;
+
+    /// For an editor of a DataVis element, returns the data collection paths to the DataObjects which the DataVis element is attached to.
+    std::vector<ConstDataObjectRefPath> getVisDataObjectPaths() const;
 
     /// Returns the current animation time of the scene the object being edited belongs to.
     AnimationTime currentAnimationTime() const;

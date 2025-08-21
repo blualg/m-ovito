@@ -141,6 +141,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
     _pipelineWidget->addAction(separator);
     _pipelineWidget->addAction(actionManager->getAction(ACTION_PIPELINE_COPY_ITEM));
     _pipelineWidget->addAction(actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
+    _pipelineWidget->addAction(actionManager->getAction(ACTION_PIPELINE_GROUP_VIS_ELEMENTS));
     separator = new QAction(_pipelineWidget);
     separator->setSeparator(true);
     _pipelineWidget->addAction(separator);

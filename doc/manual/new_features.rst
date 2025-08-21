@@ -30,6 +30,7 @@ Version 3.14.0 (xx-xxx-2025)
 - Renamed export format "Table of Values" to "Table of Global Attributes" for clarity
 - Aspherix PVD file reader: Read in simulation time as global attribute ``Time``, not ``Timestep``
 - OVITO's timeline can now display simulation timesteps instead of frame numbers, see newly added option in the :ref:`animation.animation_settings_dialog`
+- Pipeline editor: New function for creating shared visual elements - allows easy synchronization of visual settings for multiple objects
 
 .. sidebar::
 

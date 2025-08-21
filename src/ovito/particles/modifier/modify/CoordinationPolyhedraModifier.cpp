@@ -60,6 +60,15 @@ void CoordinationPolyhedraModifier::initializeObject(ObjectInitializationFlags f
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void CoordinationPolyhedraModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(surfaceMeshVis() == visElement)
+        setSurfaceMeshVis(static_object_cast<SurfaceMeshVis>(getReplacement(tr("Polyhedra"))));
+}
+
+/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool CoordinationPolyhedraModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const

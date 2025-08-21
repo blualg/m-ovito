@@ -38,7 +38,7 @@ class OVITO_GUI_EXPORT AnimationTimeSpinner : public SpinnerWidget
 public:
 
     /// Constructor.
-    AnimationTimeSpinner(MainWindow& mainWindow, QWidget* parent = 0);
+    AnimationTimeSpinner(MainWindow& mainWindow, QWidget* parent = nullptr);
 
 protected Q_SLOTS:
 
@@ -56,9 +56,8 @@ private:
     MainWindow& _mainWindow;
 };
 
-
 /**
- * \brief This custom ParameterUnit formats the values displayed by the AnimationTimeSpinner.
+ * \brief A custom ParameterUnit that formats the values displayed by the AnimationTimeSpinner.
  */
 class OVITO_GUI_EXPORT AnimationTimeSpinnerUnit : public IntegerParameterUnit
 {

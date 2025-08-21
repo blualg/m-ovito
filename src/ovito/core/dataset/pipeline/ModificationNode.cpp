@@ -507,4 +507,15 @@ bool ModificationNode::shouldRefreshViewportsAfterEvaluation()
     return modifier() && modifier()->shouldRefreshViewportsAfterEvaluation();
 }
 
+/******************************************************************************
+ * Replaces all references to the given visual element in the pipeline with new compatible objects.
+ ******************************************************************************/
+void ModificationNode::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(modifier())
+        modifier()->replaceVisualElement(visElement, getReplacement);
+    if(input())
+        input()->replaceVisualElement(visElement, getReplacement);
+}
+
 }  // namespace Ovito

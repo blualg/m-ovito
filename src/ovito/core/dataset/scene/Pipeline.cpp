@@ -86,16 +86,20 @@ void Pipeline::invalidatePipelineCache(TimeInterval keepInterval)
 * Helper function that recursively collects all visual elements attached to a
 * data object and its children and stores them in an output vector.
 ******************************************************************************/
-void Pipeline::collectVisElements(const DataObject* dataObj, std::vector<DataVis*>& visElements)
+void Pipeline::collectVisElements(const DataObject* dataObj, std::vector<std::pair<DataVis*, QStringList>>& visElements)
 {
     for(DataVis* vis : dataObj->visElements()) {
-        if(boost::find(visElements, vis) == visElements.end())
-            visElements.push_back(vis);
+        auto iter = std::ranges::find_if(visElements, [vis](const auto& item) {
+            return item.first == vis;
+        });
+        if(iter == visElements.end())
+            visElements.emplace_back(vis, QStringList() << dataObj->objectTitle());
+        else
+            iter->second << dataObj->objectTitle();
     }
 
     dataObj->visitSubObjects([&visElements](const DataObject* subObject) {
         collectVisElements(subObject, visElements);
-        return false;
     });
 }
 
@@ -104,14 +108,16 @@ void Pipeline::collectVisElements(const DataObject* dataObj, std::vector<DataVis
 ******************************************************************************/
 void Pipeline::updateVisElementList(const PipelineFlowState& state)
 {
+    OVITO_ASSERT(_visElementDataObjectTitles.size() == visElements().size() || _visElementDataObjectTitles.empty());
+
     // Collect all visual elements from the current pipeline state.
-    std::vector<DataVis*> newVisElements;
+    std::vector<std::pair<DataVis*, QStringList>> newVisElements;
     if(state.data())
         collectVisElements(state.data(), newVisElements);
 
-    // Perform the replacement of vis elements.
+    // Perform the replacement of vis elements according to the replacement map.
     if(!replacedVisElements().empty()) {
-        for(DataVis*& vis : newVisElements) {
+        for(auto& [vis, _] : newVisElements) {
             DataVis* oldVis = vis;
             vis = getReplacementVisElement(vis);
             if(vis != oldVis) {
@@ -120,26 +126,64 @@ void Pipeline::updateVisElementList(const PipelineFlowState& state)
                     _visElements.set(this, PROPERTY_FIELD(visElements), index, vis);
             }
         }
-    }
 
-    // To maintain a stable ordering, first discard those elements from the old list which are not in the new list.
-    for(int i = visElements().size() - 1; i >= 0; i--) {
-        DataVis* vis = visElements()[i];
-        if(std::find(newVisElements.begin(), newVisElements.end(), vis) == newVisElements.end()) {
-            _visElements.remove(this, PROPERTY_FIELD(visElements), i);
+        // Remove duplicates of a vis elements from the list, which may occur due to replacements with the same element.
+        for(int i = 0; i < newVisElements.size(); i++) {
+            auto& [vis, titles] = newVisElements[i];
+            auto iter = std::ranges::find_if(newVisElements, [vis](const auto& item) { return item.first == vis; });
+            if(iter != newVisElements.begin() + i) {
+                OVITO_ASSERT(iter != newVisElements.end());
+                // Duplicate found, remove it. Also join titles lists.
+                iter->second << titles;
+                newVisElements.erase(newVisElements.begin() + i);
+                i--;
+            }
         }
     }
 
-    // Now add any new visual elements to the end of the list.
-    for(DataVis* vis : newVisElements) {
-        OVITO_CHECK_OBJECT_POINTER(vis);
-        if(!visElements().contains(vis))
-            _visElements.push_back(this, PROPERTY_FIELD(visElements), vis);
+    // To maintain a stable ordering, first discard those elements from the old list which are not in the new list.
+    for(auto i = visElements().size(); i--; ) {
+        DataVis* vis = visElements()[i];
+        OVITO_ASSERT(std::ranges::count(visElements(), vis) == 1);
+        if(std::ranges::find_if(newVisElements, [vis](const auto& item) { return item.first == vis; }) == newVisElements.end()) {
+            if(_visElementDataObjectTitles.size() == visElements().size())
+                _visElementDataObjectTitles.erase(_visElementDataObjectTitles.begin() + i);
+            _visElements.remove(this, PROPERTY_FIELD(visElements), i);
+        }
     }
+    _visElementDataObjectTitles.resize(_visElements.size());
+
+    // Now add any new visual elements to the end of the list.
+    for(auto& [vis, titles] : newVisElements) {
+        OVITO_CHECK_OBJECT_POINTER(vis);
+        OVITO_ASSERT(std::ranges::count_if(newVisElements, [vis](const auto& item) { return item.first == vis; }) == 1);
+        auto index = visElements().indexOf(vis);
+        if(index == -1) {
+            _visElements.push_back(this, PROPERTY_FIELD(visElements), vis);
+            _visElementDataObjectTitles.push_back(std::move(titles));
+        }
+        else {
+            _visElementDataObjectTitles[index] = std::move(titles);
+        }
+    }
+
+    // Consistency checks.
+    OVITO_ASSERT(visElements().size() == newVisElements.size());
+    OVITO_ASSERT(visElements().size() == _visElementDataObjectTitles.size());
 
     // Since this method was invoked after a completed pipeline evaluation, inform all vis elements that their input state has changed.
     for(DataVis* vis : visElements())
         vis->notifyDependents(ReferenceEvent::PipelineInputChanged);
+}
+
+/******************************************************************************
+* Returns the titles of all data objects associated with a visual element produced by this pipeline.
+******************************************************************************/
+const QStringList* Pipeline::getDataObjectTitlesForVisElement(DataVis* vis) const
+{
+    OVITO_ASSERT(visElements().size() == _visElementDataObjectTitles.size() || _visElementDataObjectTitles.empty());
+    auto index = visElements().indexOf(vis);
+    return (index != -1 && index < _visElementDataObjectTitles.size()) ? &_visElementDataObjectTitles[index] : nullptr;
 }
 
 /******************************************************************************
@@ -198,7 +242,6 @@ bool Pipeline::referenceEvent(RefTarget* source, const ReferenceEvent& event)
     }
     else if(_visElements.contains(source)) {
         if(event.type() == ReferenceEvent::TargetChanged) {
-
             // Recompute bounding box of scene node when a visual element changes.
             notifyDependents(Pipeline::BoundingBoxChanged);
 
@@ -409,7 +452,6 @@ void Pipeline::getDataObjectBoundingBox(AnimationTime time, const DataObject* da
             isOnStack = true;
         }
         getDataObjectBoundingBox(time, subObject, state, validity, bb, dataObjectPath);
-        return false;
     });
 
     // Pop the data object from the stack.
@@ -456,11 +498,23 @@ void Pipeline::requestObjectDeletion()
 ******************************************************************************/
 void Pipeline::referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex)
 {
-    if(field == PROPERTY_FIELD(replacementVisElements)) {
+    if(field == PROPERTY_FIELD(replacementVisElements) && !isBeingLoaded()) {
         // Reset pipeline cache if a new replacement for a visual element is assigned.
         invalidatePipelineCache();
     }
     RefTarget::referenceInserted(field, newTarget, listIndex);
+}
+
+/******************************************************************************
+* Is called when a RefTarget has been removed from a VectorReferenceField.
+******************************************************************************/
+void Pipeline::referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex)
+{
+    if(field == PROPERTY_FIELD(replacementVisElements) && !isBeingDeleted()) {
+        // Reset pipeline cache if a replacement for a visual element is removed.
+        invalidatePipelineCache();
+    }
+    RefTarget::referenceRemoved(field, oldTarget, listIndex);
 }
 
 /******************************************************************************
@@ -537,7 +591,7 @@ void Pipeline::loadFromStreamComplete(ObjectLoadStream& stream)
     OVITO_ASSERT(!isUndoRecording());
 
     // Remove null entries from the replacedVisElements and replacementVisElements lists due to expired weak references.
-    if(boost::algorithm::any_of(replacedVisElements(), std::mem_fn(&OOWeakRef<DataVis>::expired))) {
+    if(std::ranges::any_of(replacedVisElements(), std::mem_fn(&OOWeakRef<DataVis>::expired))) {
         auto newReplacedVisElements = replacedVisElements();
         for(int i = (int)newReplacedVisElements.size() - 1; i >= 0; i--) {
             if(newReplacedVisElements[i].expired()) {
@@ -663,7 +717,7 @@ DataVis* Pipeline::getReplacementVisElement(DataVis* vis) const
 {
     OVITO_ASSERT(vis);
     OVITO_ASSERT(replacementVisElements().size() == replacedVisElements().size());
-    auto it = boost::find(replacedVisElements(), vis);
+    auto it = std::ranges::find(replacedVisElements(), vis);
     if(it != replacedVisElements().end())
         return replacementVisElements()[std::distance(replacedVisElements().begin(), it)];
     else
@@ -714,6 +768,36 @@ DataVis* Pipeline::makeVisElementIndependent(DataVis* visElement)
 }
 
 /******************************************************************************
+* Replaces all references to the given visual element in the pipeline with new compatible objects.
+******************************************************************************/
+void Pipeline::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    OVITO_ASSERT(visElement != nullptr);
+
+    for(int index = 0; index < replacementVisElements().size(); index++) {
+        if(replacementVisElements()[index] == visElement) {
+            // Make sure the scene gets notified that the pipeline is changing if the operation is being undone.
+            pushIfUndoRecording<TargetChangedUndoOperation>(this);
+
+            // Adopt title of replaced visual element.
+            OORef<DataVis> replacedVisElement = replacedVisElements()[index].lock();
+            QString title = replacedVisElement ? replacedVisElement->objectTitle() : QString();
+
+            _replacementVisElements.set(this, PROPERTY_FIELD(replacementVisElements), index, getReplacement(title));
+
+            // Make sure the scene gets notified that the pipeline is changing if the operation is being redone.
+            pushIfUndoRecording<TargetChangedRedoOperation>(this);
+
+            notifyTargetChanged();
+        }
+    }
+
+    // Perform the replacement operation recursively in all nodes of the pipeline.
+    if(head())
+        head()->replaceVisualElement(visElement, getReplacement);
+}
+
+/******************************************************************************
 * Helper function that recursively finds all data objects which the given
 * vis element is associated with.
 ******************************************************************************/
@@ -721,8 +805,7 @@ void Pipeline::collectDataObjectsForVisElement(ConstDataObjectPath& path, DataVi
 {
     // Check if this vis element we are looking for is among the vis elements attached to the current data object.
     for(DataVis* otherVis : path.back()->visElements()) {
-        otherVis = getReplacementVisElement(otherVis);
-        if(otherVis == vis) {
+        if(getReplacementVisElement(otherVis) == vis) {
             dataObjectPaths.push_back(path);
             break;
         }
@@ -733,7 +816,6 @@ void Pipeline::collectDataObjectsForVisElement(ConstDataObjectPath& path, DataVi
         path.push_back(subObject);
         collectDataObjectsForVisElement(path, vis, dataObjectPaths);
         path.pop_back();
-        return false;
     });
 }
 

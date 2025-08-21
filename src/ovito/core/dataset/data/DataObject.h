@@ -153,30 +153,39 @@ public:
     /// \brief Visits the direct sub-objects of this data object
     ///        and invokes the given visitor function for every sub-object.
     ///
-    /// \param fn A functor that takes a DataObject pointer as argument and returns a bool to
-    ///           indicate whether visiting of further sub-objects should continue.
-    template<class Function>
-    bool visitSubObjects(Function fn) const {
+    /// \param fn A functor that takes a DataObject pointer as argument and returns either a bool
+    ///           (to indicate whether visiting of further sub-objects should continue) or void.
+    template<typename Function>
+    auto visitSubObjects(Function fn) const {
+        using ReturnType = std::invoke_result_t<Function, const DataObject*>;
+        static_assert(std::is_same_v<ReturnType, void> || std::is_same_v<ReturnType, bool>, "The visitor function must return either void or bool.");
         for(const PropertyFieldDescriptor* field : getOOMetaClass().propertyFields()) {
             if(field->isReferenceField() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
                 if(!field->isVector()) {
                     if(const DataObject* subObject = static_object_cast<DataObject>(getReferenceFieldTarget(field))) {
-                        if(fn(subObject))
-                            return true;
+                        if constexpr (std::is_same_v<ReturnType, bool>) {
+                            if(fn(subObject))
+                                return true;
+                        }
+                        else fn(subObject);
                     }
                 }
                 else {
                     int count = getVectorReferenceFieldSize(field);
                     for(int i = 0; i < count; i++) {
                         if(const DataObject* subObject = static_object_cast<DataObject>(getVectorReferenceFieldTarget(field, i))) {
-                            if(fn(subObject))
-                                return true;
+                            if constexpr (std::is_same_v<ReturnType, bool>) {
+                                if(fn(subObject))
+                                    return true;
+                            }
+                            else fn(subObject);
                         }
                     }
                 }
             }
         }
-        return false;
+        if constexpr (std::is_same_v<ReturnType, bool>)
+            return false;
     }
 
     /// Duplicates the given sub-object from this container object if it is shared with others.
@@ -203,6 +212,9 @@ public:
 
     /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
     virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const;
+
+    /// Replaces all references to the given visual element in this DataObject and its sub-objects.
+    bool replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) const;
 
 #ifdef OVITO_DEBUG
     /// Enables or disables reference tracking for this DataObject for debugging purposes.

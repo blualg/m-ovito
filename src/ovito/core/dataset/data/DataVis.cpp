@@ -48,4 +48,19 @@ QSet<Pipeline*> DataVis::pipelines(bool onlyScenePipelines) const
     return pipelinesList;
 }
 
+/******************************************************************************
+* Replaces this visual element with a shared visual element
+* by telling all dependents to update their references.
+******************************************************************************/
+void DataVis::replaceWithSharedElement(DataVis* sharedVis) const
+{
+    // Must be a compatible visual element.
+    OVITO_ASSERT(&sharedVis->getOOMetaClass() == &getOOMetaClass());
+
+    for(Pipeline* pipeline : pipelines(true)) {
+        // Ask the pipeline nodes to update references they have to this visual element with the shared one.
+        pipeline->replaceVisualElement(const_cast<DataVis*>(this), [sharedVis](const QString&) -> OORef<DataVis> { return sharedVis; });
+    }
+}
+
 }   // End of namespace

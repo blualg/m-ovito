@@ -39,10 +39,8 @@ class OVITO_STDOBJGUI_EXPORT PropertyColorMappingEditor : public PropertiesEdito
 
 public:
 
-    /// Sets the property container containing the input properties the user can choose from.
-    void setPropertyContainer(const PropertyContainer* container) {
-        _sourcePropertyUI->setContainer(container);
-    }
+    /// Sets the property container(s) containing the input properties the user can choose from.
+    void setPropertyContainers(std::vector<DataOORef<const PropertyContainer>> containers);
 
 protected:
 

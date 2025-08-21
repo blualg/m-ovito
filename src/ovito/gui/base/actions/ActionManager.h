@@ -110,6 +110,8 @@ namespace Ovito {
 #define ACTION_PIPELINE_RENAME_ITEM         "PipelineItemRename"
 /// Copies/clones a modifier or source from one pipeline to another.
 #define ACTION_PIPELINE_COPY_ITEM           "PipelineItemCopyTo"
+/// Unites several compatible visual elements into one element.
+#define ACTION_PIPELINE_GROUP_VIS_ELEMENTS  "PipelineGroupVisElements"
 
 /// This action deletes the currently selected viewport layer.
 #define ACTION_VIEWPORT_LAYER_DELETE            "ViewportLayerDelete"

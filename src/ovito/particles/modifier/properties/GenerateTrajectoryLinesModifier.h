@@ -72,6 +72,11 @@ public:
     /// Main function generating the trajectory lines.
     [[nodiscard]] Future<DataOORef<const Lines>> generateTrajectoryLines(ModifierEvaluationRequest request) const;
 
+    /// Asks the modifier to replace a visual element owned by this modifier with a new compatible object, which is created
+    /// on demand by the provided callback function. The callback function accepts an optional human-readable title, which will
+    /// be used for the new visual element.
+    virtual void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) override;
+
 protected:
 
     /// This method is called once for this object after it has been completely loaded from a stream.

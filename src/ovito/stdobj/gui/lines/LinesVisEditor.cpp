@@ -101,32 +101,45 @@ void LinesVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
  ******************************************************************************/
 void LinesVisEditor::updateColoringOptions()
 {
-    // Retrieve the Lines data object this vis element is associated with.
-    DataOORef<const Lines> linesObject = dynamic_object_cast<const Lines>(getVisDataObject());
+    bool enableUniformColor = false;
+    bool enablePseudoColoring = false;
+    bool enableUniformColoringOption = false;
+    bool enablePseudoColoringOption = false;
+    bool enableShowUpToCurrentTime = false;
 
-    // Do lines have explicit RGB colors assigned ("Color" property exists)?
-    bool hasExplicitColors = (linesObject && linesObject->getProperty(Lines::ColorProperty));
+    std::vector<DataOORef<const PropertyContainer>> colorMappingContainers;
+    LinesVis::ColoringMode coloringMode = editObject() ? static_object_cast<LinesVis>(editObject())->coloringMode() : LinesVis::UniformColoring;
 
-    LinesVis::ColoringMode coloringMode =
-        editObject() ? static_object_cast<LinesVis>(editObject())->coloringMode() : LinesVis::UniformColoring;
-    if(linesObject && coloringMode == LinesVis::PseudoColoring && !hasExplicitColors) {
-        _colorMappingParamUI->setEnabled(true);
-        _lineColorUI->setEnabled(false);
-        // Set trajectory lines as property container containing the available properties the user can choose from.
-        static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor())->setPropertyContainer(linesObject);
+    // Inspect all Lines objects this vis element is associated with.
+    for(const DataObject* dataObject : getVisDataObjects()) {
+        if(const Lines* linesObject = dynamic_object_cast<Lines>(dataObject)) {
+
+            // Do lines have explicit RGB colors assigned ("Color" property exists)?
+            if(!linesObject->getProperty(Lines::ColorProperty)) {
+                if(coloringMode == LinesVis::PseudoColoring) {
+                    enablePseudoColoring = true;
+                    colorMappingContainers.push_back(linesObject);
+                }
+                else {
+                    enableUniformColor = true;
+                }
+
+                enablePseudoColoringOption |= !linesObject->properties().isEmpty();
+                enableUniformColoringOption = true;
+            }
+
+            // Enable "Show up to current time only" option only if the lines have the "Time" property.
+            enableShowUpToCurrentTime |= (bool)linesObject->getProperty(Lines::SampleTimeProperty);
+        }
     }
-    else {
-        _colorMappingParamUI->setEnabled(false);
-        _lineColorUI->setEnabled(!hasExplicitColors);
-    }
 
-    _coloringModeUI->buttonGroup()
-        ->button(LinesVis::PseudoColoring)
-        ->setEnabled(linesObject && !linesObject->properties().isEmpty() && !hasExplicitColors);
-    _coloringModeUI->buttonGroup()->button(LinesVis::UniformColoring)->setEnabled(linesObject && !hasExplicitColors);
-
-    // Enable "Show up to current time only" option only if the lines have the "Time" property.
-    _showUpToCurrentTimeUI->setEnabled(linesObject && linesObject->getProperty(Lines::SampleTimeProperty));
+    _lineColorUI->setEnabled(enableUniformColor);
+    _colorMappingParamUI->setEnabled(enablePseudoColoring);
+    if(PropertyColorMappingEditor* colorMappingEditor = static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor()))
+        colorMappingEditor->setPropertyContainers(std::move(colorMappingContainers));
+    _coloringModeUI->buttonGroup()->button(LinesVis::UniformColoring)->setEnabled(enableUniformColoringOption);
+    _coloringModeUI->buttonGroup()->button(LinesVis::PseudoColoring)->setEnabled(enablePseudoColoringOption);
+    _showUpToCurrentTimeUI->setEnabled(enableShowUpToCurrentTime);
 }
 
 }  // namespace Ovito

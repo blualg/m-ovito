@@ -102,6 +102,9 @@ public:
     /// Computes the bounding box of the data object.
     virtual Box3 boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval) override;
 
+    /// Replaces this visual element with a shared visual element by telling all dependents to update their references.
+    virtual void replaceWithSharedElement(DataVis* sharedVis) const override;
+
 public:
     Q_PROPERTY(Ovito::LinesVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)
 

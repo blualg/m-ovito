@@ -94,6 +94,31 @@ void VoxelGridVis::loadFromStreamComplete(ObjectLoadStream& stream)
 }
 
 /******************************************************************************
+* Replaces this visual element with a shared visual element
+* by telling all dependents to update their references.
+******************************************************************************/
+void VoxelGridVis::replaceWithSharedElement(DataVis* sharedVis) const
+{
+    // Update references to the vis element's PropertyColorMapping sub-object.
+    // For example, a ColorLegendOverlay may directly reference the PropertyColorMapping.
+    if(colorMapping()) {
+        OORef<PropertyColorMapping> sharedColorMapping = static_object_cast<VoxelGridVis>(sharedVis)->colorMapping();
+        colorMapping()->visitDependents([&](RefMaker* dependent) {
+            if(dependent == this)
+                return; // Don't touch our own reference
+            // Check if the dependent is a reference target to exclude unwanted types, i.e., we don't want to
+            // replace references held by PropertiesEditor objects.
+            if(RefTarget* rt = dynamic_object_cast<RefTarget>(dependent)) {
+                rt->replaceReferencesTo(colorMapping(), sharedColorMapping);
+            }
+        });
+    }
+
+    // Call base class implementation to update all references to this visual element.
+    DataVis::replaceWithSharedElement(sharedVis);
+}
+
+/******************************************************************************
 * Returns the opacity mapping function after making it mutable.
 ******************************************************************************/
 OpacityFunction* VoxelGridVis::mutableOpacityFunction()

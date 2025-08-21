@@ -281,7 +281,8 @@ private:
     /// Contains the list of defined "types" if this is a typed property.
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const ElementType>, elementTypes, setElementTypes);
 
-    /// The user-interface title of this property.
+    /// The optional title of this property, which is shown in the GUI.
+    /// If not set, the property's identifier is used as title.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, title, setTitle);
 
     /// The kind of this property (non-zero = predefined standard property; zero = a user-defined property).

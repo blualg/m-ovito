@@ -71,7 +71,7 @@ public:
     /// Sets the output filename of the rendered image.
     void setImageFilename(const QString& filename);
 
-    /// Formats the image filename and replaces whildcards with the current frame number.
+    /// Formats the image filename and replaces wildcards with the current frame number.
     static QString formatImageFilename(const QString& filename, int frameNumber);
 
     /// Returns whether errors that occur within a data pipeline lead to an abortion of the rendering process.

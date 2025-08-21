@@ -357,6 +357,15 @@ void SliceModifier::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void SliceModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(planeVis() == visElement)
+        setPlaneVis(static_object_cast<TriangleMeshVis>(getReplacement(tr("Plane"))));
+}
+
+/******************************************************************************
 * Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool SliceModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
@@ -667,7 +676,7 @@ void SliceModifier::centerPlaneInSimulationCell(ModificationNode* node, Animatio
 QVariant SliceModifier::getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const
 {
     Vector3 normal = this->normal();
-    return tr("(%1 %2 %3), %4").arg(normal.x(), 0, 'g', 1).arg(normal.y(), 0, 'g', 1).arg(normal.z(), 0, 'g', 1).arg(distance(), 0, 'g', 6);
+    return QStringLiteral("(%1 %2 %3), %4").arg(normal.x(), 0, 'g', 1).arg(normal.y(), 0, 'g', 1).arg(normal.z(), 0, 'g', 1).arg(distance(), 0, 'g', 6);
 }
 
 }   // End of namespace

@@ -62,6 +62,15 @@ void CalculateDisplacementsModifier::initializeObject(ObjectInitializationFlags 
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void CalculateDisplacementsModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(vectorVis() == visElement)
+        setVectorVis(static_object_cast<VectorVis>(getReplacement(tr("Displacements"))));
+}
+
+/******************************************************************************
 * Adopts existing computation results for an interactive pipeline evaluation.
 ******************************************************************************/
 Future<PipelineFlowState> CalculateDisplacementsModifier::reuseCachedState(const ModifierEvaluationRequest& request, Particles* particles, PipelineFlowState&& output, const PipelineFlowState& cachedState)

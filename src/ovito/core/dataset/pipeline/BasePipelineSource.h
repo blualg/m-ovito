@@ -40,6 +40,9 @@ public:
     /// The returned data objects will be displayed as sub-objects of the data source in the pipeline editor.
     virtual const DataCollection* getSourceDataCollection() const override { return dataCollection(); }
 
+    /// Replaces all references to the given visual element in the pipeline with new compatible objects.
+    virtual void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) override;
+
 protected:
 
     /// Creates a copy of this object.

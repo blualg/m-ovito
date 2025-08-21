@@ -152,7 +152,7 @@ Future<void> RenderSettings::render(const ViewportConfiguration& viewportConfigu
     return render(std::move(viewportLayout), animationSettings, outputFrameBuffer);
 }
 /******************************************************************************
- * Formats the image filename and replaces whildcards with the current frame number.
+ * Formats the image filename and replaces wildcards with the current frame number.
  ******************************************************************************/
 QString RenderSettings::formatImageFilename(const QString& filename, int frameNumber)
 {

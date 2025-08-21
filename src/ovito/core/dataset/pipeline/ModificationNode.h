@@ -136,6 +136,9 @@ public:
     /// This cache can be used to enable fast interactive updates after parameter changes that do not invalidate the entire result.
     FutureCache<DataOORef<const DataCollection>>& partialResultsCache() { return _partialResultsCache; }
 
+    /// Replaces all references to the given visual element in the pipeline with new compatible objects.
+    virtual void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) override;
+
 protected:
 
     /// Is called by the pipeline system before a new modifier evaluation begins to query the validity interval and evaluation result type of the pipeline stage.

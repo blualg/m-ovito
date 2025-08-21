@@ -836,14 +836,14 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
     // Some properties get an attached visual element.
     if(type == Particles::DisplacementProperty) {
         OORef<VectorVis> vis = OORef<VectorVis>::create();
-        vis->setObjectTitle(tr("Displacements"));
+        vis->setObjectTitle(standardPropertyTitle(type));
         vis->setEnabled(false);
         vis->freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ActiveObject::title), SHADOW_PROPERTY_FIELD(ActiveObject::isEnabled)});
         property->addVisElement(std::move(vis));
     }
     else if(type == Particles::ForceProperty) {
         OORef<VectorVis> vis = OORef<VectorVis>::create();
-        vis->setObjectTitle(tr("Forces"));
+        vis->setObjectTitle(standardPropertyTitle(type));
         vis->setEnabled(false);
         vis->setReverseArrowDirection(false);
         vis->setArrowPosition(VectorVis::Base);
@@ -852,7 +852,7 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
     }
     else if(type == Particles::VelocityProperty) {
         OORef<VectorVis> vis = OORef<VectorVis>::create();
-        vis->setObjectTitle(tr("Velocities"));
+        vis->setObjectTitle(standardPropertyTitle(type));
         vis->setEnabled(false);
         vis->setReverseArrowDirection(false);
         vis->setArrowPosition(VectorVis::Base);
@@ -861,7 +861,7 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
     }
     else if(type == Particles::DipoleOrientationProperty) {
         OORef<VectorVis> vis = OORef<VectorVis>::create();
-        vis->setObjectTitle(tr("Dipoles"));
+        vis->setObjectTitle(standardPropertyTitle(type));
         vis->setEnabled(false);
         vis->setReverseArrowDirection(false);
         vis->setArrowPosition(VectorVis::Center);
@@ -914,12 +914,12 @@ void Particles::OOMetaClass::initialize()
     registerStandardProperty(StrainTensorProperty, tr("Strain Tensor"), Property::FloatDefault, symmetricTensorList);
     registerStandardProperty(DeformationGradientProperty, tr("Deformation Gradient"), Property::FloatDefault, tensorList);
     registerStandardProperty(OrientationProperty, tr("Orientation"), Property::FloatGraphics, quaternionList);
-    registerStandardProperty(ForceProperty, tr("Force"), Property::FloatDefault, xyzList);
+    registerStandardProperty(ForceProperty, tr("Force"), Property::FloatDefault, xyzList, nullptr, tr("Forces"));
     registerStandardProperty(MassProperty, tr("Mass"), Property::FloatDefault, emptyList);
     registerStandardProperty(ChargeProperty, tr("Charge"), Property::FloatDefault, emptyList);
     registerStandardProperty(PeriodicImageProperty, tr("Periodic Image"), Property::Int32, xyzList);
     registerStandardProperty(TransparencyProperty, tr("Transparency"), Property::FloatGraphics, emptyList);
-    registerStandardProperty(DipoleOrientationProperty, tr("Dipole Orientation"), Property::FloatDefault, xyzList);
+    registerStandardProperty(DipoleOrientationProperty, tr("Dipole Orientation"), Property::FloatDefault, xyzList, nullptr, tr("Dipoles"));
     registerStandardProperty(DipoleMagnitudeProperty, tr("Dipole Magnitude"), Property::FloatDefault, emptyList);
     registerStandardProperty(AngularVelocityProperty, tr("Angular Velocity"), Property::FloatDefault, xyzList);
     registerStandardProperty(AngularMomentumProperty, tr("Angular Momentum"), Property::FloatDefault, xyzList);
