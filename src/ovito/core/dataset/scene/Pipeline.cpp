@@ -144,7 +144,7 @@ void Pipeline::updateVisElementList(const PipelineFlowState& state)
     // To maintain a stable ordering, first discard those elements from the old list which are not in the new list.
     for(auto i = visElements().size(); i--; ) {
         DataVis* vis = visElements()[i];
-        OVITO_ASSERT(std::ranges::count(visElements(), vis) == 1);
+        OVITO_ASSERT(visElements().count(vis) == 1);
         if(std::ranges::find_if(newVisElements, [vis](const auto& item) { return item.first == vis; }) == newVisElements.end()) {
             if(_visElementDataObjectTitles.size() == visElements().size())
                 _visElementDataObjectTitles.erase(_visElementDataObjectTitles.begin() + i);
