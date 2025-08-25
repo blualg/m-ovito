@@ -134,7 +134,7 @@ public:
 
     /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override {
-        return QStringLiteral("%1 x %2 x %3").arg(numImagesX()).arg(numImagesY()).arg(numImagesZ());
+        return QStringLiteral("%1 ⨉ %2 ⨉ %3").arg(numImagesX()).arg(numImagesY()).arg(numImagesZ());
     }
 
 protected:

@@ -41,6 +41,7 @@ DEFINE_REFERENCE_FIELD(DelegatingModifier, delegate);
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(MultiDelegatingModifier);
 DEFINE_VECTOR_REFERENCE_FIELD(MultiDelegatingModifier, delegates);
+SET_PROPERTY_FIELD_CHANGE_EVENT(MultiDelegatingModifier, delegates, ReferenceEvent::ObjectStatusChanged);
 
 /******************************************************************************
 * Returns the modifier to which this delegate belongs.
@@ -208,6 +209,41 @@ Future<PipelineFlowState> MultiDelegatingModifier::applyDelegates(const Modifier
     }
 
     return future;
+}
+
+/******************************************************************************
+* Is called when a RefTarget referenced by this object generated an event.
+******************************************************************************/
+bool MultiDelegatingModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)
+{
+    if(event.type() == ReferenceEvent::TargetChanged && delegates().contains(source) && !isBeingLoaded()) {
+        // Changes to the modifier's delegates may affect the result of MultiDelegatingModifier::getPipelineEditorShortInfo().
+        notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
+
+    return Modifier::referenceEvent(source, event);
+}
+
+/******************************************************************************
+* Returns a short piece of information (typically a string or color) to be
+* displayed next to the object's title in the pipeline editor.
+******************************************************************************/
+QVariant MultiDelegatingModifier::getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const
+{
+    OVITO_ASSERT(this_task::get());
+    OVITO_ASSERT(scene);
+
+    QStringList shortInfos;
+    for(ModifierDelegate* delegate : delegates()) {
+        if(delegate && delegate->isEnabled()) {
+            QString info = delegate->getPipelineEditorShortInfo(scene, node);
+            if(!info.isEmpty())
+                shortInfos.push_back(std::move(info));
+        }
+    }
+    if(!shortInfos.empty())
+        return shortInfos.join(QStringLiteral(", "));
+    return {};
 }
 
 }   // End of namespace

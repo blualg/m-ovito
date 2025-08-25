@@ -84,6 +84,10 @@ public:
     /// Returns the modifier owning this delegate.
     Modifier* modifier() const;
 
+    /// Returns a short string to be displayed next to the modifier in the pipeline editor GUI.
+    /// Strings from multiple delegates will be concatenated into a single, comma-separated string.
+    virtual QString getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const { return inputDataObject().dataTitleOrPath(); }
+
 private:
 
     /// Indicates whether this delegate is active or not.
@@ -187,6 +191,10 @@ public:
     /// Constructor.
     using Modifier::Modifier;
 
+    /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline
+    /// editor list.
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override;
+
 protected:
 
     /// Is called by the pipeline system before a new modifier evaluation begins.
@@ -200,6 +208,9 @@ protected:
 
     /// Lets the registered modifier delegates operate on a pipeline flow state.
     [[nodiscard]] Future<PipelineFlowState> applyDelegates(const ModifierEvaluationRequest& request, PipelineFlowState&& input, const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs = {});
+
+    /// Is called when a RefTarget referenced by this object generated an event.
+    virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
 protected:
 
