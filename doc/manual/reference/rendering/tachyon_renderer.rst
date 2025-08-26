@@ -40,17 +40,14 @@ Sample count
   A higher sample number leads to a more even shading but requires more computation time.
 
 Depth of field
-  This option enables `depth-of-field <http://en.wikipedia.org/wiki/Depth_of_field>`__ (DOF) rendering, which
-  blurs objects that are not in the camera's focus. Note that depth-of-field rendering only works for viewports with a perspective projection!
-  Furthermore, anti-aliasing must be enabled for DOF to work, and the number of anti-aliasing samples affects the quality of the blurring.
+  When `depth-of-field rendering <http://en.wikipedia.org/wiki/Depth_of_field>`__ is active, only objects located exactly at the distance from the camera specified by
+  the *focal length* will appear sharp. Objects closer to or farther from the camera will appear blurred.
 
-Focal length
-  This parameter sets the focus distance of the camera. Only objects at this distance from the camera will appear sharp when depth-of-field rendering is active.
-  Objects closer to or further from the camera will appear blurred. If you want a specific object to be in focus, use the :guilabel:`Pick in viewport` button
-  and click on that object in the viewport to be rendered. The focal length parameter will be automatically adjusted so that the picked location is in focus.
+  To focus on a specific object, use the :guilabel:`Pick in viewport` button
+  and click on the desired object in the viewport to be rendered. The *focal length* parameter will be automatically adjusted so that the picked location is in focus.
+  The *aperture* radius controls how blurred out-of-focus objects will appear.
 
-Aperture
-  The aperture of the camera. This parameter controls the strength of the depth-of-field effect, i.e., how much objects are blurred that are out of focus.
+  Note that the focal blur effect requires a perspective projection; it does not work in :ref:`viewports <usage.viewports>` using a parallel projection.
 
 .. seealso::
 
