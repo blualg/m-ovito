@@ -83,18 +83,18 @@ void ParaViewPVDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVe
             // Do nothing. Parse child elements.
         }
         else if(xml.name().compare(QStringLiteral("DataSet")) == 0) {
-
             // Get value of 'file' attribute.
             QString file = xml.attributes().value("file").toString();
             if(!file.isEmpty()) {
                 // Resolve file path.
                 QUrl url = fileHandle.sourceUrl().resolved(QUrl(file));
-                // Parse 'timestep' attribute.
-                double timestep = xml.attributes().value("timestep").toDouble();
+                // Parse 'timestep' attribute, which contains the simulation time.
+                double time = xml.attributes().value("timestep").toDouble();
 
+                // Register trajectory frame.
                 Frame frame(std::move(url));
-                frame.parserData = QVariant::fromValue(timestep);
-                frame.label = tr("Timestep %1").arg(xml.attributes().value("timestep"));
+                frame.parserData = QVariant::fromValue(time);
+                frame.label.setToTime(xml.attributes().value("timestep").toDouble());
                 frames.push_back(std::move(frame));
             }
 
@@ -130,15 +130,15 @@ Future<PipelineFlowState> ParaViewPVDImporter::loadFrame(const LoadOperationRequ
         return request.state;
 
     // Fetch 'timestep' attribute from PVD file.
-    double timestep = request.frame.parserData.value<double>();
+    double time = request.frame.parserData.value<double>();
 
     // Keep a reference to the child importer.
     _childImporter.set(this, PROPERTY_FIELD(childImporter), fsImporter);
 
     // Delegate file parsing to sub-importer.
-    return fsImporter->loadFrame(request).then([timestep, pipelineNode = request.pipelineNode](PipelineFlowState state) {
-        // Inject 'timestep' attribute from PVD file into the pipeline state.
-        state.setAttribute(QStringLiteral("Timestep"), timestep, pipelineNode);
+    return fsImporter->loadFrame(request).then([time, pipelineNode = request.pipelineNode](PipelineFlowState state) {
+        // Inject simulation time value from PVD file into the pipeline state.
+        state.setAttribute(QStringLiteral("Time"), time, pipelineNode);
         return state;
     });
 }

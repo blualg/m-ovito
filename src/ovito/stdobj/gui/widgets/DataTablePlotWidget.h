@@ -57,7 +57,7 @@ public:
     const DataOORef<const DataTable>& table() const { return _table; }
 
     /// Sets the data table to be plotted.
-    void setTable(const DataTable* table, bool forceUpdate = false);
+    void setTable(DataOORef<const DataTable> table, bool forceUpdate = false);
 
     /// Returns whether the plot widget accepts and handles mouse navigation input.
     bool mouseNavigationEnabled() const { return _mouseNavigationEnabled; }

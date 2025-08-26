@@ -62,7 +62,7 @@ protected:
         using StandardFrameLoader::StandardFrameLoader;
 
         /// Constructor.
-        FrameLoader(const LoadOperationRequest& request, bool recenterCell) : StandardFrameLoader::StandardFrameLoader(request), _recenterCell(recenterCell) {}
+        FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool generateBoundingBox = false) : StandardFrameLoader::StandardFrameLoader(request), _recenterCell(recenterCell), _generateBoundingBox(generateBoundingBox) {}
 
         /// Returns the particles container object, newly creating it first if necessary.
         Particles* particles();
@@ -97,11 +97,14 @@ protected:
         /// Determines the PBC shift vectors for bonds based on the minimum image convention.
         void generateBondPeriodicImageProperty();
 
+        /// Automatically generates a simulation cell based on the axis-aligned bounding box of the particles.
+        void generateBoundingBox();
+
         /// Generates ad-hoc bonds between atoms based on their van der Waals radii.
         void generateBonds(TaskProgress& progress);
 
         /// If the particles are centered on the coordinate origin but the current simulation cell corner is positioned at (0,0,0),
-        /// the this method centers the cell at (0,0,0), leaving the particle coordinates unchanged.
+        /// then this method centers the cell at (0,0,0), leaving the particle coordinates unchanged.
         void correctOffcenterCell();
 
         /// Indicates that the particles data object was newly created by this file reader.
@@ -155,6 +158,10 @@ protected:
         /// Controls the dynamic centering of the simulation cell during import.
         bool _recenterCell = false;
 
+        /// Controls the generation of an ad-hoc simulation cell based on the axis-aligned bounding box of the particles
+        /// in case the imported files does not contain simulation cell information.
+        bool _generateBoundingBox = false;
+
         /// Indicates that the particles data object was newly created by this file reader.
         bool _areParticlesNewlyCreated = false;
 
@@ -181,6 +188,9 @@ protected:
     /// Is called when importing multiple files of different formats.
     virtual Future<OORef<Pipeline>> importFurtherFiles(OORef<Scene> scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode, Pipeline* pipeline) override;
 
+    /// Loads the class' contents from the given stream.
+    virtual void loadFromStream(ObjectLoadStream& stream) override;
+
 private:
 
     /// Controls sorting of the input particle with respect to IDs.
@@ -189,8 +199,12 @@ private:
     /// Controls the generation of atomic ad-hoc bonds during data import.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, generateBonds, setGenerateBonds);
 
-    /// Controls the dynamic recentering of simulation cell to the coordinate origin.
+    /// Controls the dynamic re-centering of simulation cell to the coordinate origin.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, recenterCell, setRecenterCell);
+
+    /// Controls the generation of an ad-hoc simulation cell based on the axis-aligned bounding box of the particles
+    /// in case the imported files does not contain simulation cell information.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, generateBoundingBox, setGenerateBoundingBox);
 };
 
 }   // End of namespace

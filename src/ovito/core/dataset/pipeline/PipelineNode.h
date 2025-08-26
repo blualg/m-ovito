@@ -82,7 +82,7 @@ public:
     virtual AnimationTime sourceFrameToAnimationTime(int frame) const;
 
     /// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
-    virtual QMap<int, QString> animationFrameLabels() const { return {}; }
+    virtual QMap<int, AnimationFrameLabel> animationFrameLabels() const { return {}; }
 
     /// Returns the data collection that is managed by this object (if it is a data source).
     /// The returned data collection will be displayed under the data source in the pipeline editor.
@@ -100,6 +100,9 @@ public:
     /// Decides whether a preliminary viewport update is performed after this pipeline object has been
     /// evaluated but before the rest of the pipeline is complete.
     virtual bool shouldRefreshViewportsAfterEvaluation() { return false; }
+
+    /// Replaces all references to the given visual element in the pipeline with new compatible objects.
+    virtual void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) = 0;
 
 protected:
 

@@ -48,12 +48,8 @@ public:
     };
     Q_ENUM(CNAMode);
 
-#ifndef Q_CC_MSVC
     /// The maximum number of neighbor atoms taken into account for the common neighbor analysis.
     static constexpr int MAX_NEIGHBORS = 14;
-#else
-    enum { MAX_NEIGHBORS = 14 };
-#endif
 
     /// The structure types recognized by the common neighbor analysis.
     enum StructureType {
@@ -68,7 +64,7 @@ public:
     Q_ENUM(StructureType);
 
     /// Pair of neighbor atoms that form a bond (bit-wise storage).
-    typedef unsigned int CNAPairBond;
+    using CNAPairBond = unsigned int;
 
     /**
      * A bit-flag array indicating which pairs of neighbors are bonded

@@ -172,7 +172,7 @@ void ModifierDelegateParameterUI::populateComboBox(StableComboBox* comboBox, Pro
                     items.back()->setIcon(StableComboBox::warningIcon());
                 }
                 else if(comboBox->count() != 0) {
-                    items.push_back(std::make_unique<QStandardItem>(tr("‹Please select a data object›")));
+                    items.push_back(std::make_unique<QStandardItem>(tr("‹Please select a data element›")));
                 }
                 indexToBeSelected = (int)items.size() - 1;
             }
@@ -184,7 +184,7 @@ void ModifierDelegateParameterUI::populateComboBox(StableComboBox* comboBox, Pro
         }
         else {
             if(!items.empty())
-                items.push_back(std::make_unique<QStandardItem>(tr("‹Please select a data object›")));
+                items.push_back(std::make_unique<QStandardItem>(tr("‹Please select a data element›")));
             else
                 items.push_back(std::make_unique<QStandardItem>(tr("‹None›")));
             indexToBeSelected = (int)items.size() - 1;

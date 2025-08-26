@@ -42,9 +42,11 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(ParticleImporter);
 DEFINE_PROPERTY_FIELD(ParticleImporter, sortParticles);
 DEFINE_PROPERTY_FIELD(ParticleImporter, generateBonds);
 DEFINE_PROPERTY_FIELD(ParticleImporter, recenterCell);
+DEFINE_PROPERTY_FIELD(ParticleImporter, generateBoundingBox);
 SET_PROPERTY_FIELD_LABEL(ParticleImporter, sortParticles, "Sort particles by ID");
 SET_PROPERTY_FIELD_LABEL(ParticleImporter, generateBonds, "Generate bonds");
 SET_PROPERTY_FIELD_LABEL(ParticleImporter, recenterCell, "Center simulation box on coordinate origin");
+SET_PROPERTY_FIELD_LABEL(ParticleImporter, generateBoundingBox, "Generate bounding box if needed");
 
 /******************************************************************************
 * Is called when the value of a property of this object has changed.
@@ -53,12 +55,25 @@ void ParticleImporter::propertyChanged(const PropertyFieldDescriptor* field)
 {
     FileSourceImporter::propertyChanged(field);
 
-    if(field == PROPERTY_FIELD(sortParticles) || field == PROPERTY_FIELD(generateBonds) || field == PROPERTY_FIELD(recenterCell)) {
+    if(field == PROPERTY_FIELD(sortParticles) || field == PROPERTY_FIELD(generateBonds) || field == PROPERTY_FIELD(recenterCell) || field == PROPERTY_FIELD(generateBoundingBox)) {
         if(!isBeingLoaded()) {
             // Reload input file(s) when these options are changed by the user.
             // But there is no need to refetch the data file(s) from the remote location. Re-parsing the cached files is sufficient.
             requestReload();
         }
+    }
+}
+
+/******************************************************************************
+ * Loads the class' contents from the given stream.
+ *****************************************************************************/
+void ParticleImporter::loadFromStream(ObjectLoadStream& stream)
+{
+    FileSourceImporter::loadFromStream(stream);
+
+    // For backward compatibility with OVITO 3.13.x:
+    if(stream.applicationVersion() < QT_VERSION_CHECK(3, 14, 0)) {
+        setGenerateBoundingBox(true);
     }
 }
 
@@ -242,6 +257,30 @@ void ParticleImporter::FrameLoader::setImproperCount(size_t count)
 }
 
 /******************************************************************************
+* Automatically generates a simulation cell based on the axis-aligned bounding
+* box of the particles.
+******************************************************************************/
+void ParticleImporter::FrameLoader::generateBoundingBox()
+{
+    if(_generateBoundingBox && particles()->elementCount() != 0) {
+        if(BufferReadAccess<Point3> posAccess = particles()->getProperty(Particles::PositionProperty)) {
+            Box3 boundingBox;
+            boundingBox.addPoints(posAccess);
+            simulationCell()->setCellMatrix(AffineTransformation(
+                    Vector3(boundingBox.sizeX(), 0, 0),
+                    Vector3(0, boundingBox.sizeY(), 0),
+                    Vector3(0, 0, boundingBox.sizeZ()),
+                    boundingBox.minc - Point3::Origin()));
+            simulationCell()->setPbcFlags(false, false, false);
+            return;
+        }
+    }
+
+    // Remove the existing simulation cell if it is undefined.
+    removeSimulationCell();
+}
+
+/******************************************************************************
 * Determines the PBC shift vectors for bonds using the minimum image convention.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::generateBondPeriodicImageProperty()
@@ -386,7 +425,7 @@ void ParticleImporter::FrameLoader::computeVelocityMagnitude()
 
 /******************************************************************************
 * If the particles are centered on the coordinate origin but the current simulation cell corner is positioned at (0,0,0),
-* the this method centers the cell at (0,0,0), leaving the particle coordinates unchanged.
+* then this method centers the cell at (0,0,0), leaving the particle coordinates unchanged.
 ******************************************************************************/
 void ParticleImporter::FrameLoader::correctOffcenterCell()
 {
@@ -443,11 +482,13 @@ void ParticleImporter::FrameLoader::recenterSimulationCell()
         return;
 
     SimulationCell* simulationCell = state().getMutableObject<SimulationCell>();
-    if(!simulationCell) return;
+    if(!simulationCell)
+        return;
 
     AffineTransformation cellMatrix = simulationCell->cellMatrix();
     Vector3 offset = cellMatrix * Point3(0.5, 0.5, 0.5) - Point3::Origin();
-    if(offset == Vector3::Zero()) return;
+    if(offset == Vector3::Zero())
+        return;
 
     cellMatrix.translation() -= offset;
     simulationCell->setCellMatrix(cellMatrix);
@@ -536,7 +577,7 @@ Future<OORef<Pipeline>> ParticleImporter::importFurtherFiles(OORef<Scene> scene,
         // Create a modifier for injecting the trajectory data into the existing pipeline.
         OORef<LoadTrajectoryModifier> loadTrjMod = OORef<LoadTrajectoryModifier>::create();
         loadTrjMod->setTrajectorySource(std::move(fileSource));
-        pipeline->applyModifier(scene->animationSettings()->currentTime(), true, std::move(loadTrjMod));
+        pipeline->applyModifier(scene->animationSettings()->currentTime(), true, loadTrjMod);
 
         if(sourceUrlsAndImporters.empty())
             return Future<OORef<Pipeline>>::createImmediateEmpty();

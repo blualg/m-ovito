@@ -6,14 +6,51 @@ Changelog
 
 .. sidebar::
 
+  * `Download this version <https://www.ovito.org/download_history/#3.14.0>`__
+
+----------------------------
+Version 3.14.0 (xx-xxx-2025)
+----------------------------
+
+- Extend color coding modifier, property mapping and color legend overlay to support discrete color mappings.
+- |ovito-pro| Added the :ref:`particles.modifiers.find_rings` modifier - a high performance implementation of the `Ring Finder Python extension <https://github.com/ovito-org/RingFinder>`__  .
+- |ovito-pro| Added the :ref:`particles.modifiers.reduce_property` modifier - a high performance implementation of the `Reduce Property Python extension <https://github.com/ovito-org/ReduceProperty>`__ .
+- |ovito-pro| Added the :ref:`particles.modifiers.difference_between_frames` modifier: Computes the delta of a particle property between the current frame and a reference frame.
+- |ovito-pro| Activate material choice for the :ref:`rendering.visrtx_renderer`.
+- Added a :menuselection:`Request a Feature` function to the :menuselection:`Help` menu.
+- Added the :guilabel:`Generate bounding box if needed` option to the file reader settings.
+  This option allows OVITO to automatically generate a simulation cell that tightly encloses all particles in an axis-aligned bounding box
+  if the imported simulation file does not contain any simulation cell information. Otherwise, OVITO will work without *any* simulation cell by default.
+- Fix: Last tick mark missing in the color legend overlay.
+- Fix: dynamic sorting of "Quick command search" field not working.
+- Changed ordering of "Quick command search" items from "all time use" to "most recent use".
+- LAMMPS data file reader: Added support for atom styles spin,sph,rheo,rheo/thermal,bpm/sphere
+- :ref:`particles.modifiers.coordination_analysis` modifier: Added calculation of the ``Per Type Coordination`` property
+- Added file export function to *Surfaces* tab of data inspector
+- Renamed export format "Table of Values" to "Table of Global Attributes" for clarity
+- Aspherix PVD file reader: Read in simulation time as global attribute ``Time``, not ``Timestep``
+- OVITO's timeline can now display simulation timesteps instead of frame numbers, see newly added option in the :ref:`animation.animation_settings_dialog`
+- Pipeline editor: New function for creating shared visual elements - allows easy synchronization of visual settings for multiple objects
+- Added new color gradient resembling the new 'Fast' color map from ParaView.
+- |ovito-pro| :ref:`rendering.visrtx_renderer`: Added depth-of-field rendering (focal blur) effect.
+
+.. sidebar::
+
   * `Download this version <https://www.ovito.org/download_history/#3.13.1>`__
 
 ----------------------------
-Version 3.13.1 (xx-xxx-2025)
+Version 3.13.1 (08-Aug-2025)
 ----------------------------
 
-- GALAMOST file reader: Added support for ``<force>`` and ``<virial>`` tags
-- Added usage example to :ref:`Spatial Binning <particles.modifiers.bin_and_reduce.type_counting>` modifier documentation, demonstrating how to compute the local stoichiometry of a particle system.
+- :ref:`particles.modifiers.coordination_analysis` modifier: Can now break down the computed coordination numbers into different particle types, which is useful for analyzing the local neighborhood's chemical composition
+- :ref:`LAMMPS data file reader/writer <file_formats.input.lammps_data>`: Added support for atom styles `spin`, `sph`, `rheo`, `rheo/thermal`, `bpm/sphere`
+- :ref:`GALAMOST file reader <file_formats.input>`: Added support for ``<force>`` and ``<virial>`` tags and graceful handling of unknown tags in the XML file
+- VTK XML file reader: Added support for reading surface meshes extracted by ParaView's `Extract Surface` filter
+- Improved rendering performance of the :py:class:`ovito.data.Lines` visual element
+- Fix: LAMMPS dump file exporter outputs invalid general triclinic simulation cell info
+- Recognition criteria for binary LAMMPS dump files have been made stricter so that auto-detection of DCD files is not disrupted and misclassification is less likely
+- |ovito-pro| :ref:`rendering.visrtx_renderer`: Users can now choose between the fast `standard` material and the visually richer `physically-based` material
+- |ovito-pro| Added usage example to :ref:`Spatial Binning <particles.modifiers.bin_and_reduce.type_counting>` modifier documentation, demonstrating how to compute the local stoichiometry of a particle system
 
 .. sidebar::
 

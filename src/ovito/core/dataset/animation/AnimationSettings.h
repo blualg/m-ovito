@@ -27,6 +27,7 @@
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/oo/RefTarget.h>
 #include "TimeInterval.h"
+#include "AnimationFrameLabel.h"
 
 namespace Ovito {
 
@@ -52,21 +53,16 @@ class OVITO_CORE_EXPORT AnimationSettings : public RefTarget
 
 public:
 
-    /// \brief Returns the time that corresponds to the current frame at which the time slider is positioned.
+    /// Returns the time that corresponds to the current frame at which the time slider is positioned.
     AnimationTime currentTime() const { return AnimationTime::fromFrame(currentFrame()); }
 
-    /// \brief Returns the list of names assigned to animation frames.
-    const QMap<int,QString>& namedFrames() const { return _namedFrames; }
+    /// Returns the labels assigned by the trajectory file loader to individual animation frames.
+    const QMap<int, AnimationFrameLabel>& frameLabels() const { return _frameLabels; }
 
-    /// \brief Converts a time value to its string representation.
-    /// \param time Some animation time value.
-    /// \return A human-readable representation of the time value (usually the animation frame number).
+    /// Converts a time value to its string representation, i.e., a human-readable representation of the time value (usually the animation frame number).
     QString timeToString(AnimationTime time);
 
-    /// \brief Converts a string entered by a user to a time value.
-    /// \param stringValue The string representation of a time value (typically the animation frame number).
-    /// \return The animation time.
-    /// \throw Exception when a parsing error occurs.
+    /// Converts a string entered by a user to a time value. Throws an exception when a parsing error occurs.
     AnimationTime stringToTime(const QString& stringValue);
 
     /// Returns whether the current animation interval consists of a one static frame only.
@@ -77,16 +73,16 @@ public:
 
 public Q_SLOTS:
 
-    /// \brief Sets the current animation time to the start of the animation interval.
+    /// Sets the current animation time to the start of the animation interval.
     void jumpToAnimationStart();
 
-    /// \brief Sets the current animation time to the end of the animation interval.
+    /// Sets the current animation time to the end of the animation interval.
     void jumpToAnimationEnd();
 
-    /// \brief Jumps to the next animation frame.
+    /// Jumps to the next animation frame.
     void jumpToNextFrame();
 
-    /// \brief Jumps to the previous animation frame.
+    /// Jumps to the previous animation frame.
     void jumpToPreviousFrame();
 
     /// Sets whether the animation is played back in a loop in the interactive viewports.
@@ -98,16 +94,16 @@ public Q_SLOTS:
 
 protected:
 
-    /// \brief Is called when the value of a non-animatable property field of this RefMaker has changed.
+    /// Is called when the value of a non-animatable property field of this RefMaker has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
-    /// \brief Saves the class' contents to an output stream.
+    /// Saves the class' contents to an output stream.
     virtual void saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const override;
 
-    /// \brief Loads the class' contents from an input stream.
+    /// Loads the class' contents from an input stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
 
-    /// \brief Creates a copy of this object.
+    /// Creates a copy of this object.
     virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
 
 private:
@@ -140,8 +136,11 @@ private:
     /// trajectories in the scene.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, autoAdjustInterval, setAutoAdjustInterval);
 
-    /// List of names assigned to animation frames.
-    QMap<int,QString> _namedFrames;
+    /// Controls whether the timeline preferentially shows simulation time values (if available) or zero-based trajectory frame numbers.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, preferSimulationTimeDisplay, setPreferSimulationTimeDisplay, PROPERTY_FIELD_MEMORIZE);
+
+    /// List of labels assigned to animation frames.
+    QMap<int, AnimationFrameLabel> _frameLabels;
 };
 
 }   // End of namespace

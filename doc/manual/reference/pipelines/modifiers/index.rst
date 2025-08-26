@@ -13,27 +13,30 @@ combine several modifiers to accomplish more complex tasks.
   :width: 100%
   :widths: 28 72
 
-  ========================================================== ==========================================================
+  ================================================================= ==========================================================
   Analysis
-  =====================================================================================================================
-  :ref:`particles.modifiers.atomic_strain`                   Calculates local strain tensors based on the relative motion of neighboring particles.
-  :ref:`particles.modifiers.bond_analysis` |ovito-pro|       Computes bond angle and bond length distributions.
-  :ref:`particles.modifiers.cluster_analysis`                Decomposes a particle system into clusters of particles.
-  :ref:`particles.modifiers.coordination_analysis`           Determines the number of neighbors of each particle and computes the radial distribution function for the system.
-  :ref:`particles.modifiers.dislocation_analysis`            Identifies dislocation defects in a crystal.
-  :ref:`particles.modifiers.displacement_vectors`            Calculates the displacements of particles based on an initial and a deformed configuration.
-  :ref:`particles.modifiers.elastic_strain`                  Calculates the atomic-level elastic strain tensors in crystalline systems.
-  :ref:`particles.modifiers.grain_segmentation`              Determines the grain structure in a polycrystalline microstructure.
-  :ref:`particles.modifiers.histogram`                       Computes the histogram of a property.
-  :ref:`particles.modifiers.scatter_plot`                    Generates a scatter plot of two properties.
-  :ref:`particles.modifiers.bin_and_reduce` |ovito-pro|      Aggregates a particle property over a one-, two- or three-dimensional bin grid.
-  :ref:`particles.modifiers.correlation_function`            Calculates the spatial cross-correlation function between two particle properties.
-  :ref:`particles.modifiers.structure_factor` |ovito-pro|    Calculates the structure factor :math:`S(k)` for a system of particles.
-  :ref:`particles.modifiers.time_averaging` |ovito-pro|      Computes the average of some time-dependent input quantity over the entire trajectory.
-  :ref:`particles.modifiers.time_series` |ovito-pro|         Plots the value of a global attribute as function of simulation time.
-  :ref:`particles.modifiers.voronoi_analysis`                Computes the coordination number, atomic volume, and Voronoi index of particles from their Voronoi polyhedra.
-  :ref:`particles.modifiers.wigner_seitz_analysis`           Identifies point defects (vacancies and interstitials) in a crystal lattice.
-  ========================================================== ==========================================================
+  ================================================================= ==========================================================
+  :ref:`particles.modifiers.atomic_strain`                          Calculates local strain tensors based on the relative motion of neighboring particles.
+  :ref:`particles.modifiers.bond_analysis` |ovito-pro|              Computes bond angle and bond length distributions.
+  :ref:`particles.modifiers.cluster_analysis`                       Decomposes a particle system into clusters of particles.
+  :ref:`particles.modifiers.coordination_analysis`                  Determines the number of neighbors of each particle and computes the radial distribution function for the system.
+  :ref:`particles.modifiers.difference_between_frames` |ovito-pro|  Calculates numeric differences between the current and a reference frame.
+  :ref:`particles.modifiers.dislocation_analysis`                   Identifies dislocation defects in a crystal.
+  :ref:`particles.modifiers.displacement_vectors`                   Calculates the displacements of particles based on an initial and a deformed configuration.
+  :ref:`particles.modifiers.elastic_strain`                         Calculates the atomic-level elastic strain tensors in crystalline systems.
+  :ref:`particles.modifiers.find_rings`                             Finds all rings in the bond topology of a particle system.
+  :ref:`particles.modifiers.grain_segmentation`                     Determines the grain structure in a polycrystalline microstructure.
+  :ref:`particles.modifiers.histogram`                              Computes the histogram of a property.
+  :ref:`particles.modifiers.reduce_property` |ovito-pro|            Applies common reduction operations to properties.
+  :ref:`particles.modifiers.scatter_plot`                           Generates a scatter plot of two properties.
+  :ref:`particles.modifiers.bin_and_reduce` |ovito-pro|             Aggregates a particle property over a one-, two- or three-dimensional bin grid.
+  :ref:`particles.modifiers.correlation_function`                   Calculates the spatial cross-correlation function between two particle properties.
+  :ref:`particles.modifiers.structure_factor` |ovito-pro|           Calculates the structure factor :math:`S(k)` for a system of particles.
+  :ref:`particles.modifiers.time_averaging` |ovito-pro|             Computes the average of some time-dependent input quantity over the entire trajectory.
+  :ref:`particles.modifiers.time_series` |ovito-pro|                Plots the value of a global attribute as function of simulation time.
+  :ref:`particles.modifiers.voronoi_analysis`                       Computes the coordination number, atomic volume, and Voronoi index of particles from their Voronoi polyhedra.
+  :ref:`particles.modifiers.wigner_seitz_analysis`                  Identifies point defects (vacancies and interstitials) in a crystal lattice.
+  ================================================================= ==========================================================
 
 .. table::
   :width: 100%
@@ -155,9 +158,11 @@ combine several modifiers to accomplish more complex tasks.
   create_bonds
   create_isosurface
   delete_selected_particles
+  difference_between_frames
   dislocation_analysis
   displacement_vectors
   elastic_strain
+  find_rings
   expand_selection
   expression_select
   freeze_property
@@ -179,6 +184,7 @@ combine several modifiers to accomplish more complex tasks.
   slice
   smooth_trajectory
   bin_and_reduce
+  reduce_property
   correlation_function
   structure_factor
   time_averaging

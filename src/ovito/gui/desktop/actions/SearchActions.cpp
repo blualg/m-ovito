@@ -43,9 +43,7 @@ public:
         saveUseCounts();
     }
 
-    void actionTriggered(QAction* action) {
-        _useCounts[action->objectName()]++;
-    }
+    void actionTriggered(QAction* action) { _useCounts[action->objectName()] = QDateTime::currentSecsSinceEpoch(); }
 
 protected:
 
@@ -62,8 +60,7 @@ protected:
         auto useCountLeft = _useCounts.find(actionLeft->objectName());
         auto useCountRight = _useCounts.find(actionRight->objectName());
         if(useCountLeft != _useCounts.end() && useCountRight != _useCounts.end()) {
-            if(useCountLeft->second > useCountRight->second) return true;
-            if(useCountLeft->second < useCountRight->second) return false;
+            return useCountLeft->second > useCountRight->second;
         }
         else if(useCountLeft != _useCounts.end() && useCountLeft->second > 0) {
             return true;
@@ -103,7 +100,7 @@ protected:
 private:
 
     /// Keeps track of how frequently each action has been invoked by the user.
-    std::map<QString, int> _useCounts;
+    std::map<QString, qulonglong> _useCounts;
 };
 
 void WidgetActionManager::setupCommandSearch()

@@ -44,7 +44,7 @@ public:
         PipelineEvaluationRequest(time, throwOnError, interactiveMode), _modificationNode(const_cast<ModificationNode*>(node)) {}
 
     /// Returns the modification node being evaluated.
-    const OORef<ModificationNode>& modificationNode() const { return _modificationNode; }
+    ModificationNode* modificationNode() const { return _modificationNode; }
 
     /// Returns a weak reference to the modification node being evaluated.
     OOWeakRef<const PipelineNode> modificationNodeWeak() const { return _modificationNode; }

@@ -31,6 +31,8 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+
+#include <algorithm>
 #ifdef OVITO_USE_SYCL
     #include <ovito/core/utilities/concurrent/SyclParallelFor.h>
     #include <ovito/particles/util/SyclCutoffNeighborFinder.h>
@@ -320,15 +322,7 @@ void CommonNeighborAnalysisModifier::BondCNAAlgorithm::identifyStructures(const 
 int CommonNeighborAnalysisModifier::findCommonNeighbors(const NeighborBondArray& neighborArray, int neighborIndex, unsigned int& commonNeighbors)
 {
     commonNeighbors = neighborArray.neighborArray[neighborIndex];
-#ifndef Q_CC_MSVC
-    // Count the number of bits set in neighbor bit-field.
-    return __builtin_popcount(commonNeighbors);
-#else
-    // Count the number of bits set in neighbor bit-field.
-    unsigned int v = commonNeighbors - ((commonNeighbors >> 1) & 0x55555555);
-    v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-    return ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
-#endif
+    return std::popcount(commonNeighbors);
 }
 
 /******************************************************************************
@@ -402,15 +396,14 @@ int CommonNeighborAnalysisModifier::calcMaxChainLength(CNAPairBond* neighborBond
             clusterSize += getAdjacentBonds(nextAtom, neighborBonds, numBonds, atomsToProcess, atomsProcessed);
         }
         while(atomsToProcess);
-        if(clusterSize > maxChainLength)
-            maxChainLength = clusterSize;
+        maxChainLength = std::max(clusterSize, maxChainLength);
     }
     return maxChainLength;
 }
 
 CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CNAAlgorithm::analyzeSmallSignature(NeighborBondArray& neighborArray)
 {
-    int nn = 12;
+    constexpr int nn = 12;
     int n421 = 0;
     int n422 = 0;
     int n555 = 0;
@@ -446,7 +439,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CN
 
 CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CNAAlgorithm::analyzeLargeSignature(NeighborBondArray& neighborArray)
 {
-    int nn = 14;
+    constexpr int nn = 14;
     int n444 = 0;
     int n666 = 0;
     for(int ni = 0; ni < nn; ni++) {
@@ -490,7 +483,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CN
     if(typeIdentificationEnabled(FCC) || typeIdentificationEnabled(HCP) || typeIdentificationEnabled(ICO)) {
 
         // Number of neighbors to analyze.
-        int nn = 12; // For FCC, HCP and Icosahedral atoms
+        constexpr int nn = 12;  // For FCC, HCP and Icosahedral atoms
 
         // Early rejection of under-coordinated atoms:
         if(numNeighbors < nn)
@@ -520,7 +513,7 @@ CommonNeighborAnalysisModifier::StructureType CommonNeighborAnalysisModifier::CN
     if(typeIdentificationEnabled(BCC)) {
 
         // Number of neighbors to analyze.
-        int nn = 14; // For BCC atoms
+        constexpr int nn = 14;  // For BCC atoms
 
         // Early rejection of under-coordinated atoms:
         if(numNeighbors < nn)

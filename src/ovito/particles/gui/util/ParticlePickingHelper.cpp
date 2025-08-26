@@ -41,7 +41,7 @@ bool ParticlePickingHelper::pickParticle(ViewportWindow* vpwin, const QPoint& cl
     if(std::optional<ViewportWindow::PickResult> vpPickResult = vpwin->pick(clickPoint)) {
 
         // Check if that was a particle.
-        ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(vpPickResult->pickInfo());
+        ParticlePickInfo* pickInfo = dynamic_object_cast<ParticlePickInfo>(vpPickResult->pickInfo().get());
         if(pickInfo) {
             const Particles* particles = pickInfo->particles();
             BufferReadAccess<Point3> posProperty = particles->expectProperty(Particles::PositionProperty);

@@ -44,24 +44,31 @@ OORef<FileExportJob> DataTableExporter::createExportJob(const QString& filePath,
             // Perform the following in a worker thread.
             co_await ExecutorAwaiter(ThreadPoolExecutor());
 
-            // Look up the DataTable to be exported in the pipeline state.
             DataObjectReference objectRef(&DataTable::OOClass(), dataObjectToExport().dataPath());
-            const DataTable* table = static_object_cast<DataTable>(state.getLeafObject(objectRef));
-            if(!table) {
-                throw Exception(tr("The pipeline output does not contain the data table to be exported (animation frame: %1; object key: %2). Available data tables: (%3)")
-                    .arg(frameNumber).arg(objectRef.dataPath()).arg(getAvailableDataObjectList(state, DataTable::OOClass())));
+            const DataObject* containerObject = state.getLeafObject(dataObjectToExport());
+
+            // Look up the DataTable to be exported in the pipeline state.
+            // Data tables have some special export settings.
+            const DataTable* table = dynamic_object_cast<const DataTable>(containerObject);
+            if(table) {
+                table->verifyIntegrity();
             }
-            table->verifyIntegrity();
+            const PropertyContainer* container = dynamic_object_cast<const PropertyContainer>(containerObject);
+            if(!container) {
+                throw Exception(
+                    tr("The pipeline output does not contain the property container to be exported (animation frame: %1; object key: %2)")
+                        .arg(frameNumber)
+                        .arg(objectRef.dataPath()));
+            }
+            container->verifyIntegrity();
 
             // Make sure the X property exists in the property container.
             // If not, create a temporary property for export.
+            ConstPropertyPtr xstorage = table ? table->getXValues() : nullptr;
+            ConstPropertyPtr ystorage = table ? table->y() : nullptr;
+            if(container->properties().empty()) throw Exception(tr("Data table to be exported contains no valid data columns."));
 
-            ConstPropertyPtr xstorage = table->getXValues();
-            ConstPropertyPtr ystorage = table->y();
-            if(table->properties().empty())
-                throw Exception(tr("Data table to be exported contains no valid data columns."));
-
-            size_t row_count = table->elementCount();
+            size_t row_count = container->elementCount();
             int xDataType = xstorage ? xstorage->dataType() : 0;
 
             BufferReadAccess<int8_t*> xaccessInt8(xDataType == Property::Int8 ? xstorage : nullptr);
@@ -70,17 +77,25 @@ OORef<FileExportJob> DataTableExporter::createExportJob(const QString& filePath,
             BufferReadAccess<float*> xaccessFloat32(xDataType == Property::Float32 ? xstorage : nullptr);
             BufferReadAccess<double*> xaccessFloat64(xDataType == Property::Float64 ? xstorage : nullptr);
 
-            if(!table->title().isEmpty())
-                textStream() << "# " << table->title() << " (" << (quint64)row_count << " data points):\n";
-            textStream() << "# ";
-            auto formatColumnName = [](const QString& name) {
-                return name.contains(QChar(' ')) ? (QChar('"') + name + QChar('"')) : name;
-            };
-            if(!xstorage)
-                textStream() << formatColumnName(table->axisLabelX());
-            else
-                textStream() << formatColumnName(xstorage->name());
+            // Write header
+            if(!container->title().isEmpty()) {
+                textStream() << "# " << container->title() << " (" << (quint64)row_count << " " << container->getOOMetaClass().elementDescriptionName() << "):\n";
+            }
+            else if(!container->getOOClass().displayName().isEmpty()) {
+                textStream() << "# " << container->getOOClass().displayName() << " (" << (quint64)row_count << " " << container->getOOMetaClass().elementDescriptionName() << "):\n";
+            }
+            textStream() << "#";
+            auto formatColumnName = [](const QString& name) { return name.contains(QChar(' ')) ? (QChar('"') + name + QChar('"')) : name; };
 
+            // Add special table x-column
+            if(table && !xstorage) {
+                textStream() << " " << formatColumnName(table->axisLabelX());
+            }
+            else if(table) {
+                textStream() << " " << formatColumnName(xstorage->name());
+            }
+
+            // Add special table y-column
             if(ystorage) {
                 if(ystorage->componentNames().size() == ystorage->componentCount()) {
                     for(size_t col = 0; col < ystorage->componentCount(); col++) {
@@ -96,13 +111,12 @@ OORef<FileExportJob> DataTableExporter::createExportJob(const QString& filePath,
             std::vector<RawBufferReadAccess> outputProperties;
             if(ystorage)
                 outputProperties.emplace_back(ystorage);
-            for(const Property* property : table->properties()) {
-                if(property == table->x() || property == table->y())
-                    continue;
+            for(const Property* property : container->properties()) {
+                if(table && (property == table->x() || property == table->y())) continue;
                 outputProperties.emplace_back(property);
                 if(property->componentNames().size() == property->componentCount()) {
                     for(size_t col = 0; col < property->componentCount(); col++) {
-                        textStream() << " " << formatColumnName(QStringLiteral("%1.%2").arg(property->name()).arg(property->componentNames()[col]));
+                        textStream() << " " << formatColumnName(property->nameWithComponent(col));
                     }
                 }
                 else {
@@ -113,29 +127,31 @@ OORef<FileExportJob> DataTableExporter::createExportJob(const QString& filePath,
             textStream() << "\n";
 
             for(size_t row = 0; row < row_count; row++) {
-                // Write the X column.
-                if(table->plotMode() == DataTable::BarChart) {
-                    const ElementType* type = ystorage ? ystorage->elementType(row) : nullptr;
-                    if(!type && xstorage)
-                        type = xstorage->elementType(row);
-                    if(type) {
-                        textStream() << formatColumnName(type->name()) << " ";
+                // Write the table x column.
+                if(table) {
+                    if(table->plotMode() == DataTable::BarChart) {
+                        const ElementType* type = ystorage ? ystorage->elementType(row) : nullptr;
+                        if(!type && xstorage) type = xstorage->elementType(row);
+                        if(type) {
+                            textStream() << formatColumnName(type->name()) << " ";
+                        }
+                        else
+                            continue;
                     }
-                    else continue;
-                }
-                else {
-                    if(xaccessInt8)
-                        textStream() << static_cast<qint32>(xaccessInt8.get(row, 0)) << " ";
-                    else if(xaccessInt32)
-                        textStream() << static_cast<qint32>(xaccessInt32.get(row, 0)) << " ";
-                    else if(xaccessInt64)
-                        textStream() << static_cast<qint64>(xaccessInt64.get(row, 0)) << " ";
-                    else if(xaccessFloat32)
-                        textStream() << xaccessFloat32.get(row, 0) << " ";
-                    else if(xaccessFloat64)
-                        textStream() << xaccessFloat64.get(row, 0) << " ";
-                    else
-                        textStream() << "<?> ";
+                    else {
+                        if(xaccessInt8)
+                            textStream() << static_cast<qint32>(xaccessInt8.get(row, 0)) << " ";
+                        else if(xaccessInt32)
+                            textStream() << static_cast<qint32>(xaccessInt32.get(row, 0)) << " ";
+                        else if(xaccessInt64)
+                            textStream() << static_cast<qint64>(xaccessInt64.get(row, 0)) << " ";
+                        else if(xaccessFloat32)
+                            textStream() << xaccessFloat32.get(row, 0) << " ";
+                        else if(xaccessFloat64)
+                            textStream() << xaccessFloat64.get(row, 0) << " ";
+                        else
+                            textStream() << "<?> ";
+                    }
                 }
                 // Write the data column(s).
                 for(const auto& array : outputProperties) {
@@ -158,8 +174,7 @@ OORef<FileExportJob> DataTableExporter::createExportJob(const QString& filePath,
             }
         }
     };
-
     return OORef<Job>::create(this, filePath, true);
 }
 
-}   // End of namespace
+}  // namespace Ovito

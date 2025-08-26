@@ -63,7 +63,7 @@ public:
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-        return std::make_unique<FrameLoader>(request, recenterCell(), generateBonds());
+        return std::make_unique<FrameLoader>(request, recenterCell(), generateBoundingBox(), generateBonds());
     }
 
 private:
@@ -74,7 +74,7 @@ private:
     public:
 
         /// Constructor.
-        FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool generateBonds) : ParticleImporter::FrameLoader::FrameLoader(request, recenterCell), _generateBonds(generateBonds) {}
+        FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool generateBoundingBox, bool generateBonds) : ParticleImporter::FrameLoader::FrameLoader(request, recenterCell, generateBoundingBox), _generateBonds(generateBonds) {}
 
     protected:
 

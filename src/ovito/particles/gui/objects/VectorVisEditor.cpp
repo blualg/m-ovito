@@ -130,37 +130,52 @@ void VectorVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 ******************************************************************************/
 void VectorVisEditor::updateColoringOptions()
 {
-    // Retrieve the PropertyContainer containing the vector property this vis element is associated with.
-    ConstDataObjectRefPath path = getVisDataObjectPath();
-
-    // Get input data.
-    DataOORef<const PropertyContainer> container;
-    // Check last element in path:
-    container = path.lastAs<PropertyContainer>();
-    // If last element is not the container - check second to last element:
-    if(!container) container = path.lastAs<const PropertyContainer>(1);
-
-    // Do the vector arrows, which are associated with the particles, have explicit RGB colors assigned ("Vector Color" property exists)?
-    // Do the vector arrows, which are associated with the particles, have explicit transparency values assigned ("Vector Transparency" property exists)?
-    auto [hasExplicitColors, hasExplicitTransparencies] =
-        container ? container->hasVectorVisColorsAndTransparencies() : std::array<bool, 2>{{false, false}};
+    bool enablePseudoColoringOption = false;
+    bool enableUniformColoringOption = false;
+    bool enableTransparencyOption = false;
+    bool enableColorMapping = false;
+    bool enableUniformColor = false;
 
     VectorVis::ColoringMode coloringMode = editObject() ? static_object_cast<VectorVis>(editObject())->coloringMode() : VectorVis::UniformColoring;
-    if(container && coloringMode == VectorVis::PseudoColoring && !hasExplicitColors) {
-        _colorMappingParamUI->setEnabled(true);
-        _arrowColorUI->setEnabled(false);
-        // Set property container containing the available properties the user can choose from.
-        static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor())->setPropertyContainer(container);
-    }
-    else {
-        _colorMappingParamUI->setEnabled(false);
-        _arrowColorUI->setEnabled(!hasExplicitColors);
+
+    // Inspect all data objects this vis element is associated with.
+    std::vector<DataOORef<const PropertyContainer>> colorMappingContainers;
+    for(const ConstDataObjectRefPath& path : getVisDataObjectPaths()) {
+
+        // Retrieve the PropertyContainer containing the vector property this vis element is associated with.
+        DataOORef<const PropertyContainer> container;
+        // Check last element in path:
+        container = path.lastAs<PropertyContainer>();
+        // If last element is not the container - check second to last element:
+        if(!container)
+            container = path.lastAs<const PropertyContainer>(1);
+        if(container) {
+            // Do the vector arrows, which are associated with the particles, have explicit RGB colors assigned ("Vector Color" property exists)?
+            // Do the vector arrows, which are associated with the particles, have explicit transparency values assigned ("Vector Transparency" property exists)?
+            auto [hasExplicitColors, hasExplicitTransparencies] = container->hasVectorVisColorsAndTransparencies();
+
+            if(!hasExplicitColors) {
+                if(coloringMode == VectorVis::PseudoColoring) {
+                    enableColorMapping = true;
+                    colorMappingContainers.push_back(container);
+                }
+                else {
+                    enableUniformColor = true;
+                }
+                enablePseudoColoringOption |= !container->properties().isEmpty();
+                enableUniformColoringOption = true;
+            }
+            enableTransparencyOption |= !hasExplicitTransparencies;
+        }
     }
 
-    _coloringModeUI->buttonGroup()->button(VectorVis::PseudoColoring)->setEnabled(container && !container->properties().isEmpty() && !hasExplicitColors);
-    _coloringModeUI->buttonGroup()->button(VectorVis::UniformColoring)->setEnabled(editObject() && !hasExplicitColors);
-
-    _transparencyUI->setEnabled(!hasExplicitTransparencies);
+    _colorMappingParamUI->setEnabled(enableColorMapping);
+    if(PropertyColorMappingEditor* colorMappingEditor = static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor()))
+        colorMappingEditor->setPropertyContainers(std::move(colorMappingContainers));
+    _arrowColorUI->setEnabled(enableUniformColor);
+    _coloringModeUI->buttonGroup()->button(VectorVis::PseudoColoring)->setEnabled(enablePseudoColoringOption);
+    _coloringModeUI->buttonGroup()->button(VectorVis::UniformColoring)->setEnabled(enableUniformColoringOption);
+    _transparencyUI->setEnabled(enableTransparencyOption);
 }
 
 }   // End of namespace

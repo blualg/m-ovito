@@ -109,7 +109,7 @@ public:
     virtual AnimationTime sourceFrameToAnimationTime(int frame) const override;
 
     /// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
-    virtual QMap<int, QString> animationFrameLabels() const override;
+    virtual QMap<int, AnimationFrameLabel> animationFrameLabels() const override;
 
     /// \brief Returns a short piece of information (typically a string or color) to be displayed next to the object's title in the pipeline editor.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene) const override;
@@ -135,6 +135,9 @@ public:
     /// Returns the node's cache for partial modifier results.
     /// This cache can be used to enable fast interactive updates after parameter changes that do not invalidate the entire result.
     FutureCache<DataOORef<const DataCollection>>& partialResultsCache() { return _partialResultsCache; }
+
+    /// Replaces all references to the given visual element in the pipeline with new compatible objects.
+    virtual void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) override;
 
 protected:
 

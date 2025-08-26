@@ -296,7 +296,7 @@ void DCDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
     Frame frame(fileHandle);
     for(int i = 0; i < nframes; i++) {
         frame.byteOffset = i;
-        frame.label = tr("Timestep %1").arg(header.istart + i * header.nsavc);
+        frame.label.setToTimestep(header.istart + i * header.nsavc);
         frames.push_back(frame);
     }
 }
@@ -417,6 +417,7 @@ void DCDImporter::FrameLoader::loadFile()
     for(Point3& p : posProperty) {
         p = Point3(*iter_x++, *iter_y++, *iter_z++);
     }
+    posProperty.reset();
 
     if((header.charmm & DCDHeader::DCD_IS_CHARMM) && (header.charmm & DCDHeader::DCD_HAS_EXTRA_BLOCK)) {
         AffineTransformation cell = AffineTransformation::Identity();
@@ -476,18 +477,10 @@ void DCDImporter::FrameLoader::loadFile()
         simulationCell()->setPbcFlags(true, true, true);
     }
     else {
-        Box3 boundingBox;
-        boundingBox.addPoints(posProperty);
         // If the input file does not contain simulation cell info,
         // use bounding box of particles as simulation cell.
-        simulationCell()->setCellMatrix(AffineTransformation(
-                Vector3(boundingBox.sizeX(), 0, 0),
-                Vector3(0, boundingBox.sizeY(), 0),
-                Vector3(0, 0, boundingBox.sizeZ()),
-                boundingBox.minc - Point3::Origin()));
-        simulationCell()->setPbcFlags(false, false, false);
+        generateBoundingBox();
     }
-    posProperty.reset();
 
     int timestep = header.istart + header.nsavc * frame().byteOffset;
     state().setAttribute(QStringLiteral("Timestep"), QVariant::fromValue(timestep), pipelineNode());

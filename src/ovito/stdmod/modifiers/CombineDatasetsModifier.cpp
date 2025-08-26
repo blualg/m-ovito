@@ -61,6 +61,15 @@ void CombineDatasetsModifier::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void CombineDatasetsModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(secondaryDataSource())
+        secondaryDataSource()->replaceVisualElement(visElement, getReplacement);
+}
+
+/******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
 Future<PipelineFlowState> CombineDatasetsModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
@@ -182,10 +191,10 @@ void CombineDatasetsModifierDelegate::mergeElementTypes(Property* property1, con
             if(!type1 || type1->name() != type2->name())
                 type1 = property1->elementType(type2->name());
             if(type1 == nullptr) {
-                OORef<ElementType> type2clone = cloneHelper.cloneObject(type2, false);
+                DataOORef<ElementType> type2clone = cloneHelper.cloneObject(type2, false);
                 type2clone->setNumericId(property1->generateUniqueElementTypeId());
-                property1->addElementType(type2clone);
                 typeMap.insert(std::make_pair(type2->numericId(), type2clone->numericId()));
+                property1->addElementType(std::move(type2clone));
             }
             else if(type1->numericId() != type2->numericId()) {
                 typeMap.insert(std::make_pair(type2->numericId(), type1->numericId()));
@@ -194,15 +203,15 @@ void CombineDatasetsModifierDelegate::mergeElementTypes(Property* property1, con
         else {
             const ElementType* type1 = property1->elementType(type2->numericId());
             if(!type1) {
-                OORef<ElementType> type2clone = cloneHelper.cloneObject(type2, false);
-                property1->addElementType(type2clone);
+                DataOORef<ElementType> type2clone = cloneHelper.cloneObject(type2, false);
                 OVITO_ASSERT(type2clone->numericId() == type2->numericId());
+                property1->addElementType(std::move(type2clone));
             }
             else if(!type1->name().isEmpty()) {
-                OORef<ElementType> type2clone = cloneHelper.cloneObject(type2, false);
+                DataOORef<ElementType> type2clone = cloneHelper.cloneObject(type2, false);
                 type2clone->setNumericId(property1->generateUniqueElementTypeId());
-                property1->addElementType(type2clone);
                 typeMap.insert(std::make_pair(type2->numericId(), type2clone->numericId()));
+                property1->addElementType(std::move(type2clone));
             }
         }
     }

@@ -39,7 +39,7 @@ OVITO_CLASSINFO(WrapPeriodicImagesModifier, "ModifierCategory", "Modification");
 ******************************************************************************/
 bool WrapPeriodicImagesModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<Particles>();
+    return input.containsObject<Particles>() && input.containsObject<SimulationCell>();
 }
 
 /******************************************************************************

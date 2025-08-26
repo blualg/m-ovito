@@ -103,7 +103,7 @@ AffineTransformation AffineTransformationModifier::effectiveAffineTransformation
     else {
         const SimulationCell* simCell = state.getObject<SimulationCell>();
         if(!simCell || simCell->cellMatrix().determinant() == 0 || simCell->isDegenerate())
-            throw Exception(tr("Input simulation cell does not exist or is degenerate. Transformation to target cell would be singular."));
+            throw Exception(tr("Input simulation cell is not defined or is degenerate. Transformation to target cell would be singular."));
 
         tm = targetCell() * state.expectObject<SimulationCell>()->inverseMatrix();
     }
@@ -353,14 +353,12 @@ Future<PipelineFlowState> SimulationCellAffineTransformationModifierDelegate::ap
 
     if(!modifier->selectionOnly()) {
         // Transform the domains of PeriodicDomainDataObjects.
-        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            if(const PeriodicDomainObject* existingObject = dynamic_object_cast<PeriodicDomainObject>(state.data()->objects()[i])) {
-                if(existingObject->domain()) {
-                    PeriodicDomainObject* newObject = state.makeMutable(existingObject);
-                    newObject->mutableDomain()->setCellMatrix(modifier->effectiveAffineTransformation(originalState) * existingObject->domain()->cellMatrix());
-                }
+        state.data()->visitObjectsOfType<PeriodicDomainObject>([&](const PeriodicDomainObject* existingObject) {
+            if(existingObject->domain()) {
+                PeriodicDomainObject* newObject = state.makeMutable(existingObject);
+                newObject->mutableDomain()->setCellMatrix(modifier->effectiveAffineTransformation(originalState) * newObject->domain()->cellMatrix());
             }
-        }
+        });
     }
 
     return std::move(state);
@@ -393,25 +391,22 @@ Future<PipelineFlowState> LinesAffineTransformationModifierDelegate::apply(const
             tm = modifier->effectiveAffineTransformation(originalState),
             selectionOnly = modifier->selectionOnly()]() mutable {
 
-        // Loop over all lines objects in the data collection
-        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            // Transform the line vertices.
-            if(const Lines* inputLines = dynamic_object_cast<Lines>(state.data()->objects()[i])) {
-                // Get the input line coordinates (as strong reference to force creation of a mutable clone below).
-                ConstPropertyPtr inputPositionProperty = inputLines->expectProperty(Lines::PositionProperty);
+        // Process all lines objects in the data collection.
+        state.data()->visitObjectsOfType<Lines>([&](const Lines* inputLines) {
+            // Get the input line coordinates (as strong reference to force creation of a mutable clone below).
+            ConstPropertyPtr inputPositionProperty = inputLines->expectProperty(Lines::PositionProperty);
 
-                // Make sure we can safely modify the lines object.
-                Lines* outputLines = state.makeMutable(inputLines);
+            // Make sure we can safely modify the lines object.
+            Lines* outputLines = state.makeMutable(inputLines);
 
-                // Create an uninitialized copy of the position property.
-                Property* outputPositionProperty = outputLines->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
+            // Create an uninitialized copy of the position property.
+            Property* outputPositionProperty = outputLines->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
 
-                // Let the modifier class do the actual coordinate transformation work.
-                // Note: "Selection" property is currently not supported by Lines objects.
-                OVITO_ASSERT(Lines::OOClass().isValidStandardPropertyId(Property::GenericSelectionProperty) == false);
-                AffineTransformationModifier::transformCoordinates(tm, selectionOnly, inputPositionProperty, outputPositionProperty, nullptr);
-            }
-        }
+            // Let the modifier class do the actual coordinate transformation work.
+            // Note: "Selection" property is currently not supported by Lines objects.
+            OVITO_ASSERT(Lines::OOClass().isValidStandardPropertyId(Property::GenericSelectionProperty) == false);
+            AffineTransformationModifier::transformCoordinates(tm, selectionOnly, inputPositionProperty, outputPositionProperty, nullptr);
+        });
 
         return std::move(state);
     });
@@ -445,37 +440,34 @@ Future<PipelineFlowState> VectorsAffineTransformationModifierDelegate::apply(
     // The actual work can be performed in a separate thread.
     return asyncLaunch([state = std::move(state), tm = modifier->effectiveAffineTransformation(originalState),
                         selectionOnly = modifier->selectionOnly()]() mutable {
-        // Loop over all vectors objects in the data collection
-        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            // Transform the vectors.
-            if(const Vectors* inputVectors = dynamic_object_cast<Vectors>(state.data()->objects()[i])) {
-                // Make sure we can safely modify the vectors object.
-                Vectors* outputVectors = state.makeMutable(inputVectors);
+        // Process all vectors objects in the data collection
+        state.data()->visitObjectsOfType<Vectors>([&](const Vectors* inputVectors) {
+            // Make sure we can safely modify the vectors object.
+            Vectors* outputVectors = state.makeMutable(inputVectors);
 
-                // Transform the basis points
+            // Transform the basis points
 
-                // Get the input basis points (as strong reference to force creation of a mutable clone below).
-                ConstPropertyPtr inputPositionProperty = outputVectors->expectProperty(Vectors::PositionProperty);
+            // Get the input basis points (as strong reference to force creation of a mutable clone below).
+            ConstPropertyPtr inputPositionProperty = outputVectors->expectProperty(Vectors::PositionProperty);
 
-                // Create an uninitialized copy of the position property.
-                Property* outputPositionProperty = outputVectors->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
+            // Create an uninitialized copy of the position property.
+            Property* outputPositionProperty = outputVectors->makePropertyMutable(inputPositionProperty, DataBuffer::Uninitialized);
 
-                // Let the modifier class do the actual coordinate transformation work.
-                AffineTransformationModifier::transformCoordinates(tm, selectionOnly, inputPositionProperty, outputPositionProperty,
-                                                                   nullptr);
+            // Let the modifier class do the actual coordinate transformation work.
+            AffineTransformationModifier::transformCoordinates(tm, selectionOnly, inputPositionProperty, outputPositionProperty,
+                                                                nullptr);
 
-                // Transform the directions
+            // Transform the directions
 
-                // Get the input line coordinates (as strong reference to force creation of a mutable clone below).
-                ConstPropertyPtr inputDirectionProperty = outputVectors->expectProperty(Vectors::DirectionProperty);
+            // Get the input line coordinates (as strong reference to force creation of a mutable clone below).
+            ConstPropertyPtr inputDirectionProperty = outputVectors->expectProperty(Vectors::DirectionProperty);
 
-                // Create an uninitialized copy of the position property.
-                Property* outputDirectionProperty = outputVectors->makePropertyMutable(inputDirectionProperty, DataBuffer::Uninitialized);
+            // Create an uninitialized copy of the position property.
+            Property* outputDirectionProperty = outputVectors->makePropertyMutable(inputDirectionProperty, DataBuffer::Uninitialized);
 
-                // Let the modifier class do the actual coordinate transformation work.
-                AffineTransformationModifier::transformVectors(tm, selectionOnly, inputDirectionProperty, outputDirectionProperty, nullptr);
-            }
-        }
+            // Let the modifier class do the actual coordinate transformation work.
+            AffineTransformationModifier::transformVectors(tm, selectionOnly, inputDirectionProperty, outputDirectionProperty, nullptr);
+        });
 
         return std::move(state);
     });

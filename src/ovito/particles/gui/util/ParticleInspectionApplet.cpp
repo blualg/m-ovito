@@ -57,16 +57,16 @@ QWidget* ParticleInspectionApplet::createWidget()
     _measuringModeAction = new QAction(QIcon::fromTheme("particles_measure_distances"), tr("Show distances and angles"), this);
     _measuringModeAction->setCheckable(true);
 
-    QToolBar* toolbar = new QToolBar();
-    toolbar->setOrientation(Qt::Horizontal);
-    toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    toolbar->setIconSize(QSize(18,18));
-    toolbar->addAction(pickModeAction);
-    toolbar->addAction(_measuringModeAction);
-    toolbar->addAction(resetFilterAction());
-    layout->addWidget(toolbar, 0, 0);
+    QToolBar* horizontalToolbar = new QToolBar();
+    horizontalToolbar->setOrientation(Qt::Horizontal);
+    horizontalToolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
+    horizontalToolbar->setIconSize(QSize(18, 18));
+    horizontalToolbar->addAction(pickModeAction);
+    horizontalToolbar->addAction(_measuringModeAction);
+    horizontalToolbar->addAction(resetFilterAction());
+    layout->addWidget(horizontalToolbar, 0, 0);
 
-    QWidget* pickModeButton = toolbar->widgetForAction(pickModeAction);
+    QWidget* pickModeButton = horizontalToolbar->widgetForAction(pickModeAction);
     connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton](bool active) {
         if(active) {
             QToolTip::showText(pickModeButton->mapToGlobal(pickModeButton->rect().bottomRight()),

@@ -46,11 +46,11 @@ bool DataCollection::contains(const DataObject* obj) const
 * Adds an additional root-level data object to this collection.
 * The object must not already be part of the collection.
 ******************************************************************************/
-void DataCollection::addObject(const DataObject* obj)
+void DataCollection::addObject(DataOORef<const DataObject> obj)
 {
     OVITO_CHECK_OBJECT_POINTER(obj);
     OVITO_ASSERT_MSG(!contains(obj), "DataCollection::addObject", "Cannot add the same data object more than once.");
-    _objects.push_back(this, PROPERTY_FIELD(objects), obj);
+    _objects.push_back(this, PROPERTY_FIELD(objects), std::move(obj));
 }
 
 /******************************************************************************
@@ -157,10 +157,9 @@ DataObject* DataCollection::makeMutable(const DataObject* obj)
     OVITO_ASSERT(contains(obj));
     if(!isSafeToModifySubObject(obj)) {
         OORef<DataObject> clone = CloneHelper::cloneSingleObject(obj, false);
-        DataObject* clonedObj = clone.get();
-        if(replaceObject(obj, std::move(clone))) {
-            OVITO_ASSERT(clonedObj->isSafeToModify());
-            return clonedObj;
+        if(replaceObject(obj, clone)) {
+            OVITO_ASSERT(clone->isSafeToModify());
+            return clone;
         }
     }
     return const_cast<DataObject*>(obj);
@@ -253,7 +252,6 @@ void DataCollection::getObjectsRecursiveImpl(ConstDataObjectPath& path, const Da
         path.push_back(subObject);
         getObjectsRecursiveImpl(path, objectClass, results);
         path.pop_back();
-        return false;
     });
 }
 
@@ -534,7 +532,7 @@ AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant v
 }
 
 /******************************************************************************
-* Inserts a new global attribute into the pipeline state overwritting any
+* Inserts a new global attribute into the pipeline state overwriting any
 * existing attribute with the same name.
 ******************************************************************************/
 AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode)

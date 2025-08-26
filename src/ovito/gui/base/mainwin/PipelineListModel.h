@@ -148,8 +148,14 @@ public:
     /// Deletes a modification node from the pipeline.
     void deleteModificationNode(ModificationNode* node);
 
-    /// Helper method that determines if the given object is part of more than one pipeline.
-    static bool isSharedObject(RefTarget* obj);
+    /// Determines whether an object (e.g. modifier, vis element, or source) is part of more than one pipeline in the scene.
+    bool isSharedObject(RefTarget* obj) const;
+
+    /// Determines whether an object is a visual element that is shared by more than one data object in the same pipeline.
+    int isSharedVisualElement(DataVis* visElement) const;
+
+    /// Determines whether the given objects are all visual elements of the same class that can be collapsed into a single visual element.
+    bool canShareVisualElements(const QVector<RefTarget*>& objects) const;
 
     /// Executes a drag-and-drop operation within the pipeline editor.
     Q_INVOKABLE bool performDragAndDropOperation(const QVector<int>& indexList, int row, bool dryRun);
@@ -202,6 +208,11 @@ public Q_SLOTS:
     void setChecked(int index, bool checked) {
         setData(this->index(index, 0), QVariant::fromValue(checked ? Qt::Checked : Qt::Unchecked), Qt::CheckStateRole);
     }
+
+    /// Combines several compatible visual elements by replacing them all with a single instance
+    /// or performs the reverse operation, creating several independent instances of the
+    /// selected visual element.
+    void shareOrSplitVisualElements();
 
 private Q_SLOTS:
 
@@ -323,6 +334,9 @@ private:
 
     /// Action that renames selected pipeline item(s).
     QAction* _renamePipelineItemAction;
+
+    /// Action that groups or splits selected visual elements.
+    QAction* _shareOrSplitVisualElementsAction;
 };
 
 }   // End of namespace

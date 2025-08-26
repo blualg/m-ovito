@@ -406,7 +406,7 @@ Property* PropertyContainer::createProperty(DataBuffer::BufferInitialization ini
 * Adds a property object to the container, replacing any preexisting property
 * in the container with the same type.
 ******************************************************************************/
-const Property* PropertyContainer::createProperty(const Property* property)
+const Property* PropertyContainer::createProperty(ConstPropertyPtr property)
 {
     OVITO_CHECK_POINTER(property);
     OVITO_ASSERT(isSafeToModify());
@@ -439,14 +439,15 @@ const Property* PropertyContainer::createProperty(const Property* property)
         }
     }
 
+    const Property* ptr = property.get();
     if(existingProperty) {
         replaceReferencesTo(existingProperty, property);
     }
     else {
-        OVITO_ASSERT(properties().contains(const_cast<Property*>(property)) == false);
-        addProperty(property);
+        OVITO_ASSERT(properties().contains(const_cast<Property*>(ptr)) == false);
+        addProperty(std::move(property));
     }
-    return property;
+    return ptr;
 }
 
 /******************************************************************************

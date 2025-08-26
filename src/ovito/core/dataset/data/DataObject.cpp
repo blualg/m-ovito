@@ -290,6 +290,28 @@ void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObject
     }
 }
 
+/******************************************************************************
+* Replaces all references to the given visual element in this DataObject and its sub-objects.
+******************************************************************************/
+bool DataObject::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) const
+{
+    bool wasReplaced = false;
+
+    auto index = visElements().indexOf(visElement);
+    if(index != -1) {
+        DataObject* self = const_cast<DataObject*>(this);
+        self->_visElements.set(self, PROPERTY_FIELD(visElements), index, getReplacement(objectTitle()));
+        wasReplaced = true;
+    }
+
+    visitSubObjects([&](const DataObject* subObject) {
+        wasReplaced |= subObject->replaceVisualElement(visElement, getReplacement);
+    });
+
+    return wasReplaced;
+}
+
+
 #ifdef OVITO_DEBUG
 void DataObject::trackReferenceIncrement() const
 {

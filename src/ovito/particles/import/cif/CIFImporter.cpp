@@ -145,6 +145,7 @@ void CIFImporter::FrameLoader::loadFile()
         }
         this_task::throwIfCanceled();
         typePropertyAccess.reset();
+        posProperty.reset();
 
         // Parse the optional site occupancy information.
         if(hasOccupancy) {
@@ -190,19 +191,12 @@ void CIFImporter::FrameLoader::loadFile()
             }
             simulationCell()->setCellMatrix(cell);
         }
-        else if(posProperty.size() != 0) {
+        else {
             // Use bounding box of atomic coordinates as non-periodic simulation cell.
-            Box3 boundingBox;
-            boundingBox.addPoints(posProperty);
-            simulationCell()->setPbcFlags(false, false, false);
-            simulationCell()->setCellMatrix(AffineTransformation(
-                    Vector3(boundingBox.sizeX(), 0, 0),
-                    Vector3(0, boundingBox.sizeY(), 0),
-                    Vector3(0, 0, boundingBox.sizeZ()),
-                    boundingBox.minc - Point3::Origin()));
+            generateBoundingBox();
         }
 
-        state().setStatus(tr("Number of atoms: %1").arg(posProperty.size()));
+        state().setStatus(tr("Number of atoms: %1").arg(particles()->elementCount()));
     }
     catch(const Exception&) {
         throw;

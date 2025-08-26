@@ -122,8 +122,10 @@ ElementSelectionSet* ManualSelectionModifier::getSelectionSet(ModificationNode* 
         throw Exception(tr("Manual selection modifier is not associated with a ManualSelectionModificationNode."));
 
     ElementSelectionSet* selectionSet = myModApp->selectionSet();
-    if(!selectionSet && createIfNotExist)
-        myModApp->setSelectionSet(selectionSet = OORef<ElementSelectionSet>::create());
+    if(!selectionSet && createIfNotExist) {
+        myModApp->setSelectionSet(OORef<ElementSelectionSet>::create());
+        selectionSet = myModApp->selectionSet();
+    }
 
     return selectionSet;
 }

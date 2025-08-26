@@ -141,7 +141,7 @@ public:
     public: \
         static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(name) { return &name##__propdescr_instance; } \
         Ovito::ReferenceField<type> _##name; \
-        inline typename std::pointer_traits<type>::element_type* name() const { return _##name.get(); } \
+        inline typename std::pointer_traits<type>::element_type* name() const { OVITO_CHECK_OBJECT_POINTER(this); return _##name.get(); } \
     private:
 
 /// Adds a reference field to a class definition.
@@ -157,8 +157,8 @@ public:
 #define DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(type, name, setterName, flags) \
     DECLARE_REFERENCE_FIELD_FLAGS(type, name, flags) \
     public: \
-        template<typename U> inline void setterName(U&& newValue) { _##name.set(this, PROPERTY_FIELD(name), std::forward<U>(newValue)); } \
-        inline void setterName##PYTHON(typename std::pointer_traits<type>::element_type* newValue) { _##name.set(this, PROPERTY_FIELD(name), newValue); } \
+        template<typename U> inline void setterName(U&& newValue) { OVITO_CHECK_OBJECT_POINTER(this); _##name.set(this, PROPERTY_FIELD(name), std::forward<U>(newValue)); } \
+        inline void setterName##PYTHON(typename std::pointer_traits<type>::element_type* newValue) { OVITO_CHECK_OBJECT_POINTER(this); _##name.set(this, PROPERTY_FIELD(name), newValue); } \
     private:
 
 /// Adds a settable reference field to a class definition.
@@ -179,7 +179,7 @@ public:
     public: \
         static inline Ovito::NativePropertyFieldDescriptor* PROPERTY_FIELD(name) { return &name##__propdescr_instance; } \
         Ovito::VectorReferenceField<type> _##name; \
-        inline decltype(std::declval<Ovito::VectorReferenceField<type>>().targets()) name() const { return _##name.targets(); } \
+        inline decltype(std::declval<Ovito::VectorReferenceField<type>>().targets()) name() const { OVITO_CHECK_OBJECT_POINTER(this); return _##name.targets(); } \
     private:
 
 /// Adds a vector reference field to a class definition.
@@ -195,8 +195,8 @@ public:
 #define DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD_FLAGS(type, name, setterName, flags) \
     DECLARE_VECTOR_REFERENCE_FIELD_FLAGS(type, name, flags) \
     public: \
-        template<typename U> inline void setterName(U&& newList) { _##name.setTargets(this, PROPERTY_FIELD(name), std::forward<U>(newList)); } \
-        inline void setterName(std::initializer_list<type> newList) { _##name.setTargets(this, PROPERTY_FIELD(name), newList); } \
+        template<typename U> inline void setterName(U&& newList) { OVITO_CHECK_OBJECT_POINTER(this); _##name.setTargets(this, PROPERTY_FIELD(name), std::forward<U>(newList)); } \
+        inline void setterName(std::initializer_list<type> newList) { OVITO_CHECK_OBJECT_POINTER(this); _##name.setTargets(this, PROPERTY_FIELD(name), newList); } \
     private:
 
 /// Adds a vector reference field to a class definition that is settable.
@@ -247,7 +247,7 @@ public:
             return &fieldname##__propdescr_instance; \
         } \
         Ovito::PropertyField<std::remove_reference_t<decltype(init_value)>, flags> _##fieldname{init_value}; \
-        inline std::add_const_t<std::remove_reference_t<decltype(init_value)>>& fieldname() const noexcept { return _##fieldname; } \
+        inline std::add_const_t<std::remove_reference_t<decltype(init_value)>>& fieldname() const noexcept { OVITO_CHECK_OBJECT_POINTER(this); return _##fieldname; } \
     private:
 
 #define DEFINE_PROPERTY_FIELD(classname, fieldname) \
@@ -284,7 +284,7 @@ public:
 /// The third parameter is the name of the setter method to be created for this property field.
 #define DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(init_value, fieldname, setterName, flags) \
     public: \
-        void setterName(std::add_const_t<std::remove_reference_t<decltype(init_value)>>& value) { _##fieldname.set(this, PROPERTY_FIELD(fieldname), value); } \
+        void setterName(std::add_const_t<std::remove_reference_t<decltype(init_value)>>& value) { OVITO_CHECK_OBJECT_POINTER(this); _##fieldname.set(this, PROPERTY_FIELD(fieldname), value); } \
         DECLARE_PROPERTY_FIELD_FLAGS(init_value, fieldname, flags)
 
 /// Adds a settable property field to a class definition.
@@ -308,9 +308,9 @@ public:
             return &fieldname##__propdescr_instance; \
         } \
         Ovito::RuntimePropertyField<std::remove_reference_t<decltype(init_value)>, flags> _##fieldname{init_value}; \
-        std::add_const_t<std::remove_reference_t<decltype(init_value)>>& fieldname() const { return _##fieldname; } \
-        void setterName(std::add_const_t<std::remove_reference_t<decltype(init_value)>>& value) { _##fieldname.set(this, PROPERTY_FIELD(fieldname), value); } \
-        void setterName(std::remove_reference_t<decltype(init_value)>&& value) { _##fieldname.set(this, PROPERTY_FIELD(fieldname), std::move(value)); } \
+        std::add_const_t<std::remove_reference_t<decltype(init_value)>>& fieldname() const { OVITO_CHECK_OBJECT_POINTER(this); return _##fieldname; } \
+        void setterName(std::add_const_t<std::remove_reference_t<decltype(init_value)>>& value) { OVITO_CHECK_OBJECT_POINTER(this); _##fieldname.set(this, PROPERTY_FIELD(fieldname), value); } \
+        void setterName(std::remove_reference_t<decltype(init_value)>&& value) { OVITO_CHECK_OBJECT_POINTER(this); _##fieldname.set(this, PROPERTY_FIELD(fieldname), std::move(value)); } \
     private:
 
 #define DEFINE_RUNTIME_PROPERTY_FIELD(classname, fieldname) \

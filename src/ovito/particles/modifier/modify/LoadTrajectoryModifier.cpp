@@ -62,6 +62,15 @@ bool LoadTrajectoryModifier::OOMetaClass::isApplicableTo(const DataCollection& i
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void LoadTrajectoryModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(trajectorySource())
+        trajectorySource()->replaceVisualElement(visElement, getReplacement);
+}
+
+/******************************************************************************
  * Is called by the pipeline system before a new modifier evaluation begins.
  ******************************************************************************/
 void LoadTrajectoryModifier::preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const

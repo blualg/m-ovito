@@ -72,6 +72,7 @@ QWidget* GlobalAttributesInspectionApplet::createWidget()
     _tableView->verticalHeader()->hide();
     _tableView->horizontalHeader()->resizeSection(0, 180);
     _tableView->horizontalHeader()->setStretchLastSection(true);
+    _tableView->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
     layout->addWidget(_tableView, 1);
     layout->addWidget(toolbar, 0);

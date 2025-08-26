@@ -54,6 +54,7 @@ private Q_SLOTS:
     void on_HelpSystemInfo_triggered();
     void on_HelpShowOnlineHelp_triggered();
     void on_HelpShowScriptingReference_triggered();
+    void on_HelpRequestFeature_triggered();
     void on_FileOpen_triggered();
     void on_FileSave_triggered();
     void on_FileSaveAs_triggered();

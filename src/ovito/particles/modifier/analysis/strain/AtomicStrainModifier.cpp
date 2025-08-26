@@ -99,15 +99,17 @@ std::unique_ptr<ReferenceConfigurationModifier::Engine> AtomicStrainModifier::cr
     const Property* refPosProperty = refParticles->expectProperty(Particles::PositionProperty);
 
     // Get the simulation cells.
-    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
+    const SimulationCell* inputCell = input.getObject<SimulationCell>();
     const SimulationCell* refCell = referenceState.getObject<SimulationCell>();
-    if(!refCell)
-        throw Exception(tr("Reference configuration does not contain simulation cell info."));
+    if(refCell && !inputCell)
+        throw Exception(tr("Input configuration does not have a simulation cell."));
+    if(inputCell && !refCell)
+        throw Exception(tr("Reference configuration does not have a simulation cell."));
 
-    // Vaildate the simulation cells.
-    if((!inputCell->is2D() && inputCell->volume3D() < FLOATTYPE_EPSILON) || (inputCell->is2D() && inputCell->volume2D() < FLOATTYPE_EPSILON))
+    // Validate the simulation cells.
+    if(inputCell && inputCell->isDegenerate())
         throw Exception(tr("Simulation cell is degenerate in the deformed configuration."));
-    if((!inputCell->is2D() && refCell->volume3D() < FLOATTYPE_EPSILON) || (inputCell->is2D() && refCell->volume2D() < FLOATTYPE_EPSILON))
+    if(refCell && refCell->isDegenerate())
         throw Exception(tr("Simulation cell is degenerate in the reference configuration."));
 
     // Get particle identifiers.
@@ -138,10 +140,10 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
     BufferWriteAccess<Vector3, access_mode::discard_write> displacementsArray(displacements());
     BufferReadAccess<Point3> positionsArray(positions());
     BufferReadAccess<Point3> refPositionsArray(refPositions());
-    const auto refCellPbcFlags = refCell()->pbcFlagsCorrected();
-    const auto refCellMatrix = refCell()->matrix();
-    const auto refCellInverseMatrix = refCell()->inverseMatrix();
-    const auto cellInverseMatrix = cell()->inverseMatrix();
+    const auto refCellPbcFlags = refCell().pbcFlags();
+    const auto refCellMatrix = refCell().cellMatrix();
+    const auto refCellInverseMatrix = refCell().reciprocalCellMatrix();
+    const auto cellInverseMatrix = cell().reciprocalCellMatrix();
     parallelFor(displacements()->size(), 1024, progress, [&](size_t i) {
         auto index = refToCurrentIndexMap()[i];
         if(index == std::numeric_limits<size_t>::max()) {
@@ -155,7 +157,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
         if(useMinimumImageConvention()) {
             for(size_t k = 0; k < 3; k++) {
                 if(refCellPbcFlags[k])
-                    delta[k] -= std::floor(delta[k] + FloatType(0.5));
+                    delta[k] -= std::round(delta[k]);
             }
         }
         displacementsArray[i] = refCellMatrix * delta;
@@ -164,7 +166,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
     progress.setText(tr("Computing atomic strain tensors"));
 
     // Prepare the neighbor list for the reference configuration.
-    CutoffNeighborFinder neighborFinder(_cutoff, refPositions(), refCell().get(), {});
+    CutoffNeighborFinder neighborFinder(_cutoff, refPositions(), refCell(), {});
 
     // Prepare the output data arrays.
     BufferWriteAccess<SelectionIntType, access_mode::discard_write> invalidParticlesArray(invalidParticles());
@@ -194,7 +196,8 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
             const Vector3& center_displacement = displacementsArray[particleIndexReference];
             for(CutoffNeighborFinder::Query neighQuery(neighborFinder, particleIndexReference); !neighQuery.atEnd(); neighQuery.next()) {
                 size_t neighborIndexCurrent = refToCurrentIndexMap()[neighQuery.current()];
-                if(neighborIndexCurrent == std::numeric_limits<size_t>::max()) continue;
+                if(neighborIndexCurrent == std::numeric_limits<size_t>::max())
+                    continue;
                 const Vector3& neigh_displacement = displacementsArray[neighQuery.current()];
                 Vector3 delta_ref = neighQuery.delta();
                 Vector3 delta_cur = delta_ref + neigh_displacement - center_displacement;
@@ -217,7 +220,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
         }
 
         // Special handling for 2D systems.
-        if(cell()->is2D()) {
+        if(cell().is2D()) {
             // Assume plane strain.
             V(2,2) = W(2,2) = 1;
             V(0,2) = V(1,2) = V(2,0) = V(2,1) = 0;
@@ -227,7 +230,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
         // Check if matrix can be inverted.
         Matrix_3<double> inverseV;
         double detThreshold = (double)sumSquaredDistance * 1e-12;
-        if(numNeighbors < 2 || (!cell()->is2D() && numNeighbors < 3) || !V.inverse(inverseV, detThreshold) || std::abs(W.determinant()) <= detThreshold) {
+        if(numNeighbors < 2 || (!cell().is2D() && numNeighbors < 3) || !V.inverse(inverseV, detThreshold) || std::abs(W.determinant()) <= detThreshold) {
             if(invalidParticlesArray)
                 invalidParticlesArray[particleIndex] = 1;
             if(deformationGradientsArray)
@@ -312,7 +315,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
         // Calculate von Mises shear strain.
         double xydiff = strain.xx() - strain.yy();
         double shearStrain;
-        if(!cell()->is2D()) {
+        if(!cell().is2D()) {
             double xzdiff = strain.xx() - strain.zz();
             double yzdiff = strain.yy() - strain.zz();
             shearStrain = sqrt(strain.xy()*strain.xy() + strain.xz()*strain.xz() + strain.yz()*strain.yz() +
@@ -326,7 +329,7 @@ void AtomicStrainModifier::AtomicStrainEngine::perform(PipelineFlowState& state)
 
         // Calculate volumetric component.
         double volumetricStrain;
-        if(!cell()->is2D()) {
+        if(!cell().is2D()) {
             volumetricStrain = (strain(0,0) + strain(1,1) + strain(2,2)) / 3.0;
         }
         else {

@@ -154,25 +154,25 @@ public:
     bool areOppositeFaces(face_index face1, face_index face2) const { return topology()->areOppositeFaces(face1, face2); }
 
     /// Returns the simulation domain the surface mesh is embedded in.
-    const SimulationCell* domain() const { return _domain; }
+    const SimulationCellData& domain() const { return _domain; }
 
     /// Returns whether the mesh's domain has periodic boundary conditions applied in the given direction.
-    bool hasPbc(size_t dim) const { return domain() ? domain()->hasPbc(dim) : false; }
+    bool hasPbc(size_t dim) const { return domain().hasPbc(dim); }
 
     /// Wraps a vector at periodic boundaries of the simulation cell.
     Vector3 wrapVector(const Vector3& v) const {
-        return domain() ? domain()->wrapVector(v) : v;
+        return domain().wrapVector(v);
     }
 
     /// Wraps a point at periodic boundaries of the simulation cell.
     Point3 wrapPoint(const Point3& p) const {
-        return domain() ? domain()->wrapPoint(p) : p;
+        return domain().wrapPoint(p);
     }
 
     /// Returns the vector corresponding to an half-edge of the surface mesh.
     Vector3 edgeVector(edge_index edge, const BufferReadAccess<Point3>& vertexPositions) const {
         Vector3 delta = vertexPositions[vertex2(edge)] - vertexPositions[vertex1(edge)];
-        return domain() ? domain()->wrapVector(delta) : delta;
+        return domain().wrapVector(delta);
     }
 
     /// Determines which spatial region contains the given point in space.
@@ -258,7 +258,7 @@ protected:
     const SurfaceMeshVertices* _vertices; ///< The vertex properties of the surface mesh.
     const SurfaceMeshFaces* _faces; ///< The face properties of the surface mesh.
     const SurfaceMeshRegions* _regions; ///< The region properties of the surface mesh.
-    const SimulationCell* _domain; ///< The simulation cell object of the surface mesh.
+    SimulationCellData _domain; ///< The simulation cell of the surface mesh.
 };
 
 }   // End of namespace

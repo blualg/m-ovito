@@ -81,7 +81,6 @@ void CastepMDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVecto
     }
 
     Frame frame(fileHandle);
-    QString filename = fileHandle.sourceUrl().fileName();
     int frameNumber = 0;
 
     while(!stream.eof()) {
@@ -89,7 +88,7 @@ void CastepMDImporter::discoverFramesInFile(const FileHandle& fileHandle, QVecto
         frame.lineNumber = stream.lineNumber();
         stream.readLine();
         if(stream.lineEndsWith("<-- h")) {
-            frame.label = tr("%1 (Frame %2)").arg(filename).arg(frameNumber++);
+            frame.label.setFrameOfFile(frameNumber++);
             frames.push_back(frame);
             stream.recordSeekPoint();
             // Skip the two other lines of the cell matrix

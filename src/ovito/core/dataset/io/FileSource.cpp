@@ -77,7 +77,7 @@ static int countNumberOfFiles(const QVector<FileSourceImporter::Frame>& frames)
 /******************************************************************************
 * Sets the source location for importing data.
 ******************************************************************************/
-void FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection)
+void FileSource::setSource(std::vector<QUrl> sourceUrls, OORef<FileSourceImporter> importer, bool autodetectFileSequences, bool keepExistingDataCollection)
 {
     OVITO_ASSERT(this_task::get());
     OVITO_ASSERT(this_task::isMainThread());
@@ -133,11 +133,10 @@ void FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
     public:
         SetSourceOperation(FileSource* obj) : _obj(obj), _oldUrls(obj->sourceUrls()), _oldImporter(obj->importer()) {}
         void undo() override {
-            std::vector<QUrl> urls = _obj->sourceUrls();
-            OORef<FileSourceImporter> importer = _obj->importer();
-            _obj->setSource(std::move(_oldUrls), _oldImporter, false);
-            _oldUrls = std::move(urls);
-            _oldImporter = importer;
+            _obj->setSource(
+                std::exchange(_oldUrls, _obj->sourceUrls()),
+                std::exchange(_oldImporter, _obj->importer()),
+                false);
         }
     private:
         std::vector<QUrl> _oldUrls;
@@ -147,7 +146,7 @@ void FileSource::setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* imp
     pushIfUndoRecording<SetSourceOperation>(this);
 
     _sourceUrls.set(this, PROPERTY_FIELD(sourceUrls), std::move(sourceUrls));
-    _importer.set(this, PROPERTY_FIELD(importer), importer);
+    _importer.set(this, PROPERTY_FIELD(importer), std::move(importer));
 
     // Discard previously loaded data.
     if(!keepExistingDataCollection && !isUndoingOrRedoing()) {
@@ -314,14 +313,14 @@ AnimationTime FileSource::sourceFrameToAnimationTime(int frame) const
 /******************************************************************************
 * Returns the human-readable labels associated with the animation frames.
 ******************************************************************************/
-QMap<int, QString> FileSource::animationFrameLabels() const
+QMap<int, AnimationFrameLabel> FileSource::animationFrameLabels() const
 {
     // Check if the cached list of frame labels is still available.
     // If not, rebuild the list here.
     if(_frameLabels.empty() && restrictToFrame() < 0) {
         int frameIndex = 0;
         for(const FileSourceImporter::Frame& frame : _frames) {
-            if(frame.label.isEmpty())
+            if(frame.label.type == AnimationFrameLabel::LabelType::None)
                 break;
             // Convert local source frame index to global animation frame number.
             _frameLabels.insert(FileSource::sourceFrameToAnimationTime(frameIndex).frame(), frame.label);
@@ -746,6 +745,19 @@ OORef<RefTarget> FileSource::clone(bool deepCopy, CloneHelper& cloneHelper) cons
     clone->_frameLabels = this->_frameLabels;
     clone->_numberOfFiles = this->_numberOfFiles;
     return clone;
+}
+
+/******************************************************************************
+* Builds a list of human-readable frame labels, which can be displayed in the UI.
+******************************************************************************/
+QStringList FileSource::humanReadableFrameLabels() const
+{
+    QStringList labels;
+    labels.reserve(frames().size());
+    for(const auto& frame : frames()) {
+        labels.push_back(frame.label.toDisplayString());
+    }
+    return labels;
 }
 
 }   // End of namespace

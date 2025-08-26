@@ -149,7 +149,7 @@ void PDBImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
             static const QRegularExpression cp2k_re(QStringLiteral(R"(REMARK\s+Step\s+(\d+))"));
             QRegularExpressionMatch match = cp2k_re.match(stream.lineString());
             if(match.hasMatch())
-                frame.label = QStringLiteral("Timestep %1").arg(match.captured(1));
+                frame.label.setToTimestep(match.captured(1).toLongLong());
         }
         else if(stream.lineStartsWithToken("END")) {
             if(frames.empty())
@@ -279,6 +279,7 @@ void PDBImporter::FrameLoader::loadFile()
             }
         }
         this_task::throwIfCanceled();
+        posAccess.reset();
         typeAccess.reset();
         atomNameAccess.reset();
         residueTypeAccess.reset();
@@ -347,16 +348,9 @@ void PDBImporter::FrameLoader::loadFile()
             }
             simulationCell()->setCellMatrix(cell);
         }
-        else if(posAccess.size() != 0) {
+        else {
             // Use bounding box of atomic coordinates as non-periodic simulation cell.
-            Box3 boundingBox;
-            boundingBox.addPoints(posAccess);
-            simulationCell()->setPbcFlags(false, false, false);
-            simulationCell()->setCellMatrix(AffineTransformation(
-                    Vector3(boundingBox.sizeX(), 0, 0),
-                    Vector3(0, boundingBox.sizeY(), 0),
-                    Vector3(0, 0, boundingBox.sizeZ()),
-                    boundingBox.minc - Point3::Origin()));
+            generateBoundingBox();
         }
         state().setStatus(tr("Number of atoms: %1").arg(natoms));
     }

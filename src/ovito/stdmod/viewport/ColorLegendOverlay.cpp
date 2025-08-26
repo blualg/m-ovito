@@ -29,6 +29,7 @@
 #include <ovito/core/dataset/scene/Scene.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/rendering/ColorMapHelper.h>
 
 #include <algorithm>
 #include "ColorLegendOverlay.h"
@@ -310,19 +311,45 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
                         startValue = minValue.value<FloatType>();
                         endValue = maxValue.value<FloatType>();
                     }
-                    if(modifier())
-                        drawContinuousColorMap(*frameGraph, commandGroup, colorBarRect, legendSize, PseudoColorMapping(startValue, endValue, modifier()->colorGradient()));
+                    if(modifier() && modifier()->useDiscreteColorMap() && minValue.isValid() && maxValue.isValid()) {
+                        // Reverse discrete colormap if vertical orientation is used to match the continuous colormap's direction.
+                        drawDiscreteColorMap(*frameGraph, commandGroup, colorBarRect, legendSize,
+                                             getDiscreteColorMapLabels(modifier()->colorGradient(), startValue, endValue, orientation()));
+                    }
+                    else if(modifier()) {
+                        drawContinuousColorMap(*frameGraph, commandGroup, colorBarRect, legendSize,
+                                               PseudoColorMapping(startValue, endValue, modifier()->colorGradient()));
+                    }
                     return {};
                 });
             }
             else {
-                drawContinuousColorMap(frameGraph, commandGroup, colorBarRect, legendSize, PseudoColorMapping(modifier()->startValue(), modifier()->endValue(), modifier()->colorGradient()));
+                if(modifier()->useDiscreteColorMap() && std::isfinite(modifier()->startValue()) && std::isfinite(modifier()->endValue())) {
+                    // Reverse discrete colormap if vertical orientation is used to match the continuous colormap's direction.
+                    drawDiscreteColorMap(frameGraph, commandGroup, colorBarRect, legendSize,
+                                         getDiscreteColorMapLabels(modifier()->colorGradient(), modifier()->startValue(),
+                                                                   modifier()->endValue(), orientation()));
+                }
+                else {
+                    drawContinuousColorMap(
+                        frameGraph, commandGroup, colorBarRect, legendSize,
+                        PseudoColorMapping(modifier()->startValue(), modifier()->endValue(), modifier()->colorGradient()));
+                }
                 return {};
             }
         }
         else if(colorMapping()) {
             _autoTitleText = colorMapping()->sourceProperty().nameWithComponent();
-            drawContinuousColorMap(frameGraph, commandGroup, colorBarRect, legendSize, colorMapping()->pseudoColorMapping());
+            if(colorMapping()->useDiscreteColorMap() && std::isfinite(colorMapping()->startValue()) &&
+               std::isfinite(colorMapping()->endValue())) {
+                // Reverse discrete colormap if vertical orientation is used to match the continuous colormap's direction.
+                drawDiscreteColorMap(frameGraph, commandGroup, colorBarRect, legendSize,
+                                     getDiscreteColorMapLabels(colorMapping()->pseudoColorMapping().gradient(),
+                                                               colorMapping()->startValue(), colorMapping()->endValue(), orientation()));
+            }
+            else {
+                drawContinuousColorMap(frameGraph, commandGroup, colorBarRect, legendSize, colorMapping()->pseudoColorMapping());
+            }
             return {};
         }
         else if(sourceProperty()) {
@@ -352,7 +379,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> ColorLegendOverlay::render(
                 }
 
                 _autoTitleText = typedProperty->objectTitle();
-                drawDiscreteColorMap(*frameGraph, commandGroup, colorBarRect, legendSize, typedProperty);
+                drawDiscreteColorMap(*frameGraph, commandGroup, colorBarRect, legendSize, getDiscreteColorMapLabels(typedProperty));
                 return {};
             });
         }
@@ -496,7 +523,8 @@ namespace {
 /******************************************************************************
 * Draws the color legend for a Color Coding modifier.
 ******************************************************************************/
-void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping)
+void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup,
+                                                const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping)
 {
     const qreal devicePixelRatio = frameGraph.devicePixelRatio();
 
@@ -530,8 +558,7 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
     // Look up the image primitive for the color bar in the cache.
     const auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
         RendererResourceKey<struct ColorBarImageCache, OORef<ColorCodingGradient>, FloatType, int, bool, Color, QSizeF>{
-            mapping.gradient(), devicePixelRatio, orientation(), borderEnabled(), borderColor(),
-            colorBarRect.size()},
+            mapping.gradient(), devicePixelRatio, orientation(), borderEnabled(), borderColor(), colorBarRect.size()},
         [&](QImage& image, QPointF& offset) {
             // Render the color bar into an image texture.
             // Allocate the image buffer.
@@ -776,7 +803,7 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
             // If the first tick is in the position of the minValue or maxValue it will be hidden.
             // Therefore we need to increase the num_ticks by 1 to get all required ticks drawn correctly.
             numTicks += ((tickStart == mapping.minValue()) || (tickStart == mapping.maxValue()));
-            for(int i{0}; i < numTicks; i++) {
+            for(int i{0}; i <= numTicks; i++) {
                 FloatType tickValue = tickStart + i * tickStep;
                 // Fix tick values close to 0 being formatted as 5.5e-17 instead of 0 with the
                 // default format specifier "%g".
@@ -912,29 +939,66 @@ void ColorLegendOverlay::drawContinuousColorMap(FrameGraph& frameGraph, FrameGra
     }
 }
 
+ColorLegendOverlay::DiscreteColorMapLabels ColorLegendOverlay::getDiscreteColorMapLabels(const Property* property)
+{
+    OVITO_ASSERT(property->isTypedProperty());
+    DiscreteColorMapLabels labels;
+    for(const ElementType* type : property->elementTypes()) {
+        if(type && type->enabled()) {
+            labels.emplace_back(type->numericId(), type->objectTitle(), type->color());
+        }
+    }
+    std::ranges::sort(labels, [](const auto& lhs, const auto& rhs) { return std::get<int>(lhs) < std::get<int>(rhs); });
+    return labels;
+}
+
+ColorLegendOverlay::DiscreteColorMapLabels ColorLegendOverlay::getDiscreteColorMapLabels(const ColorCodingGradient* gradient,
+                                                                                         FloatType startValue, FloatType endValue,
+                                                                                         int orientation) const
+{
+    const int numDiscreteColors = DiscreteColorMap::binCount(startValue, endValue);
+    const int offset = (int)std::round(std::min(startValue, endValue));
+    DiscreteColorMapLabels labels;
+    labels.reserve(numDiscreteColors);
+
+    // Format the numbers matching continuous color maps.
+    QByteArray format = valueFormatString().toUtf8();
+    if(format.contains("%s")) {
+        format.clear();
+    }
+
+    const bool reverseMapping = startValue > endValue;
+    const bool reverseLabelsOrder = (orientation == Qt::Vertical) ^ reverseMapping;
+
+    for(int i = 0; i < numDiscreteColors; ++i) {
+        FloatType t = DiscreteColorMap::mapValue(static_cast<FloatType>(i) / (numDiscreteColors - 1), numDiscreteColors);
+        labels.emplace_back(i, QString::asprintf(format.constData(), FloatType(offset + i)),
+                            gradient->valueToColor(reverseMapping ? (1.0 - t) : t));
+    }
+
+    if(reverseLabelsOrder) {
+        std::ranges::reverse(labels);
+    }
+
+    return labels;
+}
+
 /******************************************************************************
 * Draws the color legend for a typed property.
 ******************************************************************************/
-void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect, FloatType legendSize, const Property* property)
+void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup,
+                                              const QRectF& colorBarRect, FloatType legendSize,
+                                              const DiscreteColorMapLabels& colorMapLabels)
 {
     const qreal devicePixelRatio = frameGraph.devicePixelRatio();
 
     // Compute bounding box of the entire legend to draw the background rectangle.
     QRectF boundingBox;
 
-    // Compile the list of type colors.
-    std::vector<std::tuple<int, QString, Color>> typeColorsLabels;
-    for(const ElementType* type : property->elementTypes()) {
-        if(type && type->enabled()) {
-            typeColorsLabels.emplace_back(type->numericId(), type->objectTitle(), type->color());
-        }
-    }
-    std::ranges::sort(typeColorsLabels, [](const auto& lhs, const auto& rhs) { return std::get<int>(lhs) < std::get<int>(rhs); });
-
     // Look up the image primitive for the color bar in the cache.
     const auto& [image, offset] = frameGraph.visCache().lookup<std::tuple<QImage, QPointF>>(
-        RendererResourceKey<struct TypeColorsImageCache, decltype(typeColorsLabels), FloatType, int, bool, Color, QSizeF>{
-            typeColorsLabels,
+        RendererResourceKey<struct TypeColorsImageCache, DiscreteColorMapLabels, FloatType, int, bool, Color, QSizeF>{
+            colorMapLabels,
             devicePixelRatio,
             orientation(),
             borderEnabled(),
@@ -951,24 +1015,24 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph
                 image.fill((QColor)borderColor());
 
             // Create the color gradient image.
-            if(!typeColorsLabels.empty()) {
+            if(!colorMapLabels.empty()) {
                 QPainter painter(&image);
                 if(orientation() == Qt::Vertical) {
-                    int effectiveSize = gradientSize.height() - borderWidth * (typeColorsLabels.size() - 1);
-                    for(size_t i = 0; i < typeColorsLabels.size(); i++) {
-                        QRect rect(borderWidth, borderWidth + (i * effectiveSize / typeColorsLabels.size()) + i * borderWidth,
+                    int effectiveSize = gradientSize.height() - borderWidth * (colorMapLabels.size() - 1);
+                    for(size_t i = 0; i < colorMapLabels.size(); i++) {
+                        QRect rect(borderWidth, borderWidth + (i * effectiveSize / colorMapLabels.size()) + i * borderWidth,
                                    gradientSize.width(), 0);
-                        rect.setBottom(borderWidth + ((i + 1) * effectiveSize / typeColorsLabels.size()) + i * borderWidth - 1);
-                        painter.fillRect(rect, QColor(std::get<Color>(typeColorsLabels[i])));
+                        rect.setBottom(borderWidth + ((i + 1) * effectiveSize / colorMapLabels.size()) + i * borderWidth - 1);
+                        painter.fillRect(rect, QColor(std::get<Color>(colorMapLabels[i])));
                     }
                 }
                 else {
-                    int effectiveSize = gradientSize.width() - borderWidth * (typeColorsLabels.size() - 1);
-                    for(size_t i = 0; i < typeColorsLabels.size(); i++) {
-                        QRect rect(borderWidth + (i * effectiveSize / typeColorsLabels.size()) + i * borderWidth, borderWidth, 0,
+                    int effectiveSize = gradientSize.width() - borderWidth * (colorMapLabels.size() - 1);
+                    for(size_t i = 0; i < colorMapLabels.size(); i++) {
+                        QRect rect(borderWidth + (i * effectiveSize / colorMapLabels.size()) + i * borderWidth, borderWidth, 0,
                                    gradientSize.height());
-                        rect.setRight(borderWidth + ((i + 1) * effectiveSize / typeColorsLabels.size()) + i * borderWidth - 1);
-                        painter.fillRect(rect, QColor(std::get<Color>(typeColorsLabels[i])));
+                        rect.setRight(borderWidth + ((i + 1) * effectiveSize / colorMapLabels.size()) + i * borderWidth - 1);
+                        painter.fillRect(rect, QColor(std::get<Color>(colorMapLabels[i])));
                     }
                 }
             }
@@ -985,7 +1049,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph
     boundingBox |= colorBarImageRect;
 
     // Count the number of element types that are enabled.
-    int numTypes = typeColorsLabels.size();
+    int numTypes = colorMapLabels.size();
 
     const qreal fontSize = legendSize * std::max(FloatType(0), this->fontSize());
     const qreal textMargin = 0.2 * legendSize / std::max(FloatType(0.01), aspectRatio());
@@ -1092,7 +1156,7 @@ void ColorLegendOverlay::drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph
     labelPrimitive.setTextFormat(Qt::AutoText);
 
     std::vector<std::unique_ptr<TextPrimitive>> labels;
-    for(const auto& colorLabel : typeColorsLabels) {
+    for(const auto& colorLabel : colorMapLabels) {
         labelPrimitive.setText(std::get<QString>(colorLabel));
         labelPrimitive.setPositionWindow(labelPos);
         boundingBox |= labelPrimitive.computeBounds(devicePixelRatio);

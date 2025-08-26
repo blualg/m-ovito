@@ -111,6 +111,9 @@ public:
     /// Provides access to the cached ID-to-index map.
     std::unordered_map<IdentifierIntType, size_t>& idmap() { return _idmap; }
 
+    /// Replaces all references to the given visual element in the pipeline with new compatible objects.
+    virtual void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) override;
+
 protected:
 
     /// Is called when a RefTarget referenced by this object generated an event.

@@ -46,7 +46,7 @@ SET_MODIFICATION_NODE_TYPE(UnwrapTrajectoriesModifier, UnwrapTrajectoriesModific
 ******************************************************************************/
 bool UnwrapTrajectoriesModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
 {
-    return input.containsObject<Particles>();
+    return input.containsObject<Particles>() && input.containsObject<SimulationCell>();
 }
 
 /******************************************************************************
@@ -371,7 +371,7 @@ void UnwrapTrajectoriesModificationNode::WorkingData::operator()(int frame, cons
     // Get simulation cell geometry and boundary conditions.
     const SimulationCell* cell = state.getObject<SimulationCell>();
     if(!cell)
-        throw Exception(tr("Input contains no simulation cell information at trajectory frame %1.").arg(frame));
+        throw Exception(tr("Unwrap operation requires a simulation cell. None defined at trajectory frame %1.").arg(frame));
     if(!cell->hasPbcCorrected())
         throw Exception(tr("No periodic boundary conditions set for the simulation cell."));
     AffineTransformation reciprocalCellMatrix = cell->inverseMatrix();

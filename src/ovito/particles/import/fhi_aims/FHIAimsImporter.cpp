@@ -134,6 +134,7 @@ void FHIAimsImporter::FrameLoader::loadFile()
         }
     }
     typeAccess.reset();
+    posProperty.reset();
 
     // Since we created particle types on the go while reading the particles, the ordering of the type list
     // depends on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
@@ -148,14 +149,7 @@ void FHIAimsImporter::FrameLoader::loadFile()
     else {
         // If the input file does not contain simulation cell info,
         // Use bounding box of particles as simulation cell.
-        Box3 boundingBox;
-        boundingBox.addPoints(posProperty);
-        simulationCell()->setCellMatrix(AffineTransformation(
-                Vector3(boundingBox.sizeX(), 0, 0),
-                Vector3(0, boundingBox.sizeY(), 0),
-                Vector3(0, 0, boundingBox.sizeZ()),
-                boundingBox.minc - Point3::Origin()));
-        simulationCell()->setPbcFlags(false, false, false);
+        generateBoundingBox();
     }
 
     state().setStatus(tr("%1 atoms").arg(totalAtomCount));

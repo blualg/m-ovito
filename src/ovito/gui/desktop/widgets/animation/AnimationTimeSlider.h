@@ -51,17 +51,23 @@ public:
     /// Converts a distance in pixels to a time difference.
     int distanceToFrameDifference(int distance);
 
-    /// Computes the current position of the slider thumb.
+    /// Computes the current position of the slider thumb widget.
     QRect thumbRectangle();
 
-    /// Computes the width of the thumb.
+    /// Computes the width of the thumb widget.
     int thumbWidth() const;
+
+    /// Computes the text to display on the thumb widget.
+    QString thumbText(int frame) const;
+
+    /// Computes the text to display next to a timeline tick.
+    QString tickLabel(int frame) const;
 
     /// Computes the time ticks to draw.
     std::tuple<int,int,int> tickRange(int tickWidth);
 
     /// Computes the maximum width of a frame tick label.
-    int maxTickLabelWidth();
+    int maxTickLabelWidth() const;
 
     /// Returns the recommended size of the widget.
     virtual QSize sizeHint() const override;

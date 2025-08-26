@@ -353,6 +353,7 @@ QVector<ModificationNode*> PropertiesEditor::modificationNodes() const
 /******************************************************************************
 * For an editor of a DataVis element, returns the data collection path to
 * the DataObject which the DataVis element is attached to.
+* If the DataVis element is attached to more than one DataObject, an arbitrary one is returned.
 ******************************************************************************/
 ConstDataObjectRefPath PropertiesEditor::getVisDataObjectPath() const
 {
@@ -377,14 +378,51 @@ ConstDataObjectRefPath PropertiesEditor::getVisDataObjectPath() const
 }
 
 /******************************************************************************
+* For an editor of a DataVis element, returns the data collection paths to
+* the DataObjects which the DataVis element is attached to.
+******************************************************************************/
+std::vector<ConstDataObjectRefPath> PropertiesEditor::getVisDataObjectPaths() const
+{
+    std::vector<ConstDataObjectRefPath> list;
+    if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
+        for(Pipeline* pipeline : vis->pipelines(true)) {
+            const PipelineFlowState& state = pipeline->getCachedPipelineOutput(currentAnimationTime());
+            for(const ConstDataObjectPath& path : pipeline->getDataObjectsForVisElement(state, vis)) {
+                list.emplace_back(path.begin(), path.end());
+            }
+        }
+    }
+    if(parentEditor()) {
+        auto parentPaths = parentEditor()->getVisDataObjectPaths();
+        list.insert(list.end(), std::make_move_iterator(parentPaths.begin()), std::make_move_iterator(parentPaths.end()));
+    }
+    return list;
+}
+
+/******************************************************************************
 * For an editor of a DataVis element, returns the DataObject to which the
 * DataVis element is attached.
+* If the DataVis element is attached to more than one DataObject, the path for
+* an arbitrary one is returned.
 ******************************************************************************/
 ConstDataObjectRef PropertiesEditor::getVisDataObject() const
 {
     if(ConstDataObjectRefPath path = getVisDataObjectPath(); !path.empty())
         return std::move(path.back());
     return {};
+}
+
+/******************************************************************************
+* For an editor of a DataVis element, returns all DataObjects which the DataVis element is attached to.
+******************************************************************************/
+std::vector<ConstDataObjectRef> PropertiesEditor::getVisDataObjects() const
+{
+    std::vector<ConstDataObjectRefPath> paths = getVisDataObjectPaths();
+    std::vector<ConstDataObjectRef> result;
+    result.reserve(paths.size());
+    for(const ConstDataObjectRefPath& path : paths)
+        result.emplace_back(std::move(path.back()));
+    return result;
 }
 
 /******************************************************************************

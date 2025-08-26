@@ -116,7 +116,7 @@ void ReaxFFBondImporter::discoverFramesInFile(const FileHandle& fileHandle, QVec
     progress.setMaximum(stream.underlyingSize());
 
     Frame frame(fileHandle);
-    QString filename = fileHandle.sourceUrl().fileName();
+    int frameNumber = 0;
 
     bool inCommentSection = true;
     while(!stream.eof() && !this_task::isCanceled()) {
@@ -130,6 +130,7 @@ void ReaxFFBondImporter::discoverFramesInFile(const FileHandle& fileHandle, QVec
             }
         }
         else if(inCommentSection) {
+            frame.label.setFrameOfFile(frameNumber++);
             frames.push_back(frame);
             stream.recordSeekPoint();
             inCommentSection = false;
@@ -237,7 +238,8 @@ void ReaxFFBondImporter::FrameLoader::loadFile()
         // Create bond property for the bond order.
         BufferWriteAccess<FloatType, access_mode::discard_write> bondOrderProperty = bonds()->createProperty(QStringLiteral("Bond Order"), Property::FloatDefault);
         std::transform(reaxBonds.cbegin(), reaxBonds.cend(), bondOrderProperty.begin(), [](const ReaxFFBond& bond) { return bond.bondOrder; });
-
+    }
+    {
         // Create particle properties.
         setParticleCount(reaxAtoms.size());
         BufferWriteAccess<int64_t, access_mode::discard_write> identifierProperty = particles()->createProperty(Particles::IdentifierProperty);

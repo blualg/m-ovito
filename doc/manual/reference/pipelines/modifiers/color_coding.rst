@@ -62,7 +62,7 @@ of one row of pixels of the imported image to generate the user-defined color ma
 Color legend
 """"""""""""
 
-If you want to include the color map of the modifier in rendered images or animations as a legend, add the
+To include the color map in rendered images or animations as a legend, add the
 :ref:`Color legend <viewport_layers>` layer to the active viewport.
 
 Parameters
@@ -85,8 +85,12 @@ Automatic range
   With this option turned on the modifier will dynamically adjust the start and end value parameters to the current min/max range of input property values.
 
 Symmetric range
-When this option is enabled, the modifier will automatically adjust the value range to be symmetric around 0.
-Manually setting the maximum value will also adjust the minimum value to match.
+  When this option is enabled, the modifier automatically adjusts the value range to be symmetric around zero.
+  Manually setting the maximum value will also adjust the minimum value to match symmetrically.
+
+Discretize
+  This option activates a discrete color map, useful for visualizing categorical data or discrete integer values.
+  The selected color gradient is divided into a number of steps, determined by the integer distance between the start and end values.
 
 Color only selected elements
   This option restricts the assignment of colors to currently selected particles or bonds. The colors of unselected particles or bonds will remain unchanged.

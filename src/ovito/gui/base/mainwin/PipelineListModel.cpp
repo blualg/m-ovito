@@ -31,6 +31,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
+#include <ovito/core/app/undo/RefTargetOperations.h>
 #include "PipelineListModel.h"
 
 namespace Ovito {
@@ -88,6 +89,8 @@ QT_WARNING_POP
     connect(_makeElementIndependentAction, &QAction::triggered, this, &PipelineListModel::makeElementIndependent);
     _copyItemToPipelineAction = userInterface.actionManager()->createCommandAction(ACTION_PIPELINE_COPY_ITEM, tr("Copy To..."), "modify_pipeline_copy_item_to", tr("Copy an item to another pipeline or within the current pipeline."));
     _renamePipelineItemAction = userInterface.actionManager()->createCommandAction(ACTION_PIPELINE_RENAME_ITEM, tr("Rename..."), "edit_rename_pipeline_item", tr("Rename the selected pipeline entry."));
+    _shareOrSplitVisualElementsAction = userInterface.actionManager()->createCommandAction(ACTION_PIPELINE_GROUP_VIS_ELEMENTS, tr("Replace With Shared Element"), nullptr, tr("Combine several visual elements into one."));
+    connect(_shareOrSplitVisualElementsAction, &QAction::triggered, this, &PipelineListModel::shareOrSplitVisualElements);
 
     updateActions();
 }
@@ -337,7 +340,6 @@ void PipelineListModel::createListItemsForSubobjects(const DataObject* dataObj, 
         // Recursively visit the sub-objects of the data object.
         dataObj->visitSubObjects([&](const DataObject* subObject) {
             createListItemsForSubobjects(subObject, parentItem);
-            return false;
         });
     }
 }
@@ -633,9 +635,34 @@ void PipelineListModel::multiData(const QModelIndex& index, QModelRoleDataSpan r
         else if(role == StatusInfoRole) {
             if(dynamic_object_cast<ActiveObject>(item->object())) {
                 if(SceneNode* sceneNode = selectedSceneNode()) {
-                    if(_userInterface.handleExceptions<true>([&] {
+                    _userInterface.handleExceptions<true>([&] {
                         roleData.setData(item->shortInfo(sceneNode));
-                    })) continue;
+                    });
+                    if(!roleData.data().isValid()) {
+                        // For shared visual elements, display the list of data objects they are attached to (only if it is more than one).
+                        if(item->object() && item->itemType() == PipelineListItem::VisualElement && selectedPipeline()) {
+                            if(const QStringList* titles = selectedPipeline()->getDataObjectTitlesForVisElement(static_object_cast<DataVis>(item->object()))) {
+                                if(titles->size() > 1) {
+                                    QStringList newTitles;
+                                    // Check if all titles start with the same prefix, e.g. "Mesh: ...".
+                                    if(auto idx = titles->front().indexOf(": "); idx > 0) {
+                                        QString prefix = titles->front().left(idx + 2);
+                                        if(std::ranges::all_of(*titles, [&](const QString& s) { return s.startsWith(prefix); })) {
+                                            // All titles start with the same prefix, so we can remove it from all titles.
+                                            std::ranges::transform(*titles, std::back_inserter(newTitles), [&](const QString& title) {
+                                                return title.mid(prefix.length());
+                                            });
+                                            titles = &newTitles;
+                                        }
+                                    }
+                                    // Join all titles into one info string.
+                                    roleData.setData(titles->join(QStringLiteral(", ")));
+                                }
+                            }
+                        }
+                    }
+                    if(roleData.data().isValid())
+                        continue;
                 }
             }
         }
@@ -906,6 +933,21 @@ void PipelineListModel::updateActions()
         isSharedObject(currentObject)
         && (dynamic_object_cast<ModificationNode>(currentObject) == nullptr || static_object_cast<ModificationNode>(currentObject)->modifierGroup() == nullptr || static_object_cast<ModificationNode>(currentObject)->pipelines(true).size() == 1));
 
+    if(DataVis* visElement = dynamic_object_cast<DataVis>(currentObject); visElement && isSharedVisualElement(visElement)) {
+        _shareOrSplitVisualElementsAction->setText(tr("Split Into Multiple Elements"));
+        _shareOrSplitVisualElementsAction->setEnabled(true);
+        _shareOrSplitVisualElementsAction->setVisible(true);
+    }
+    else if(objects.size() >= 1 && std::ranges::all_of(objects, [](RefTarget* obj) { return dynamic_object_cast<DataVis>(obj) != nullptr; })) {
+        _shareOrSplitVisualElementsAction->setText(tr("Collapse Into One Element"));
+        _shareOrSplitVisualElementsAction->setEnabled(canShareVisualElements(objects));
+        _shareOrSplitVisualElementsAction->setVisible(true);
+    }
+    else {
+        _shareOrSplitVisualElementsAction->setEnabled(false);
+        _shareOrSplitVisualElementsAction->setVisible(false);
+    }
+
     _copyItemToPipelineAction->setEnabled(boost::algorithm::any_of(objects, [](RefTarget* obj) {
         return dynamic_object_cast<PipelineNode>(obj) || dynamic_object_cast<ModifierGroup>(obj);
     }));
@@ -962,14 +1004,14 @@ void PipelineListModel::updateActions()
             return modNode && modNode->modifierGroup() == nullptr; }))
     {
         // Do all selected modifier nodes form a contiguous sequence?
-        bool isContinguousSequence = true;
+        bool isContiguousSequence = true;
         for(auto obj = std::next(objects.cbegin()); obj != objects.cend(); ++obj) {
             if(static_object_cast<ModificationNode>(*obj) != static_object_cast<ModificationNode>(*std::prev(obj))->input()) {
-                isContinguousSequence = false;
+                isContiguousSequence = false;
                 break;
             }
         }
-        if(isContinguousSequence) {
+        if(isContiguousSequence) {
             _toggleModifierGroupAction->setEnabled(true);
         }
     }
@@ -978,6 +1020,9 @@ void PipelineListModel::updateActions()
         _toggleModifierGroupAction->setChecked(true);
         _toggleModifierGroupAction->setText(tr("Ungroup Modifiers"));
     }
+    _toggleModifierGroupAction->setVisible(!objects.empty() && std::ranges::any_of(objects, [](RefTarget* obj) {
+            return dynamic_object_cast<ModificationNode>(obj) || dynamic_object_cast<ModifierGroup>(obj);
+        }));
 }
 
 /******************************************************************************
@@ -1231,9 +1276,10 @@ bool PipelineListModel::moveModifierRange(OORef<ModificationNode> head, OORef<Mo
 }
 
 /******************************************************************************
-* Helper method that determines if the given object is part of more than one pipeline.
+* Determines whether an object (e.g. modifier, vis element, or source) is
+* part of more than one pipeline in the scene.
 ******************************************************************************/
-bool PipelineListModel::isSharedObject(RefTarget* obj)
+bool PipelineListModel::isSharedObject(RefTarget* obj) const
 {
     if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(obj)) {
         if(modNode->modifier()) {
@@ -1510,7 +1556,7 @@ PipelineNode* PipelineListModel::makeElementIndependentImpl(PipelineNode* pipeli
     // When arriving at the selected ModificationNode, duplicate the modifier too
     // in case it is being shared by multiple pipelines.
     while(currentNode) {
-        if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(currentNode)) {
+        if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(currentNode.get())) {
 
             // Clone all modification nodes along the way if they are shared by multiple pipeline branches.
             if(modNode->pipelines(true).size() > 1) {
@@ -1601,6 +1647,96 @@ void PipelineListModel::toggleModifierGroup()
         });
     }
     refreshList();
+}
+
+/******************************************************************************
+* Determines whether an object is a visual element that is shared by more
+* than one data object in the same pipeline.
+******************************************************************************/
+int PipelineListModel::isSharedVisualElement(DataVis* visElement) const
+{
+    OVITO_ASSERT(visElement);
+
+    if(!selectedPipeline())
+        return 0;
+
+    if(const QStringList* titles = selectedPipeline()->getDataObjectTitlesForVisElement(visElement)) {
+        if(titles->size() > 1)
+            return titles->size();
+    }
+    return 0;
+}
+
+/******************************************************************************
+* Determines whether the given objects are all visual elements of the same
+* class that can be collapsed into a single visual element.
+******************************************************************************/
+bool PipelineListModel::canShareVisualElements(const QVector<RefTarget*>& objects) const
+{
+    if(objects.size() < 2)
+        return false;
+
+    DataVis* masterObject = dynamic_object_cast<DataVis>(objects.front());
+    if(!masterObject)
+        return false;
+
+    // Check if all objects share the same uniform DataVis class.
+    OvitoClassPtr visElementClass = &masterObject->getOOMetaClass();
+    for(const RefTarget* obj : objects) {
+        if(&obj->getOOMetaClass() != visElementClass)
+            return false;
+    }
+
+    return true;
+}
+
+/******************************************************************************
+* Combines several compatible visual elements by replacing them all with a single instance
+* or performs the reverse operation, creating several independent instances of the
+* selected visual element.
+******************************************************************************/
+void PipelineListModel::shareOrSplitVisualElements()
+{
+    const QVector<RefTarget*> objects = selectedObjects();
+    if(objects.empty())
+        return;
+
+    if(canShareVisualElements(objects)) {
+        _userInterface.performTransaction(tr("Replace with shared visual element"), [&]() {
+            OVITO_ASSERT(objects.size() > 1);
+            DataVis* masterObject = static_object_cast<DataVis>(objects.front());
+            masterObject->setTitle({}); // Discard user-defined title
+            for(OORef<RefTarget> obj : objects) {
+                if(obj != masterObject) {
+                    // Tell this visual element to replace itself with the master element.
+                    // Some visual element types implement special logic to do this correctly,
+                    // e.g., if they own a PropertyColorMapping sub-object, they update direct references
+                    // to this sub-object too.
+                    static_object_cast<DataVis>(obj)->replaceWithSharedElement(masterObject);
+                }
+            }
+        });
+    }
+    else if(objects.size() == 1) {
+        if(OORef<DataVis> visElement = dynamic_object_cast<DataVis>(objects.front())) {
+            if(isSharedVisualElement(visElement)) {
+                _userInterface.performTransaction(tr("Split into multiple visual elements"), [&]() {
+                    selectedPipeline()->replaceVisualElement(visElement, [visElement, first=true](const QString& title) mutable -> OORef<DataVis> {
+                        if(first) {
+                            first = false;
+                            visElement->setTitle(title);
+                            return visElement;
+                        }
+                        else {
+                            OORef<DataVis> clone = CloneHelper::cloneSingleObject(visElement, true);
+                            clone->setTitle(title);
+                            return clone;
+                        }
+                    });
+                });
+            }
+        }
+    }
 }
 
 }   // End of namespace

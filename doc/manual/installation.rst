@@ -19,7 +19,7 @@ Windows:
 Linux:
   Ubuntu 21.04+, ALT Linux 10+, RHEL 9+, Debian 11+, Fedora 34+, or compatible distributions with glibc >= 2.28, running on x86_64 processors.
 macOS:
-  macOS 11.0+, Apple Silicon (arm64).
+  macOS 14.0+, Apple Silicon (arm64).
 
 .. _installation.instructions:
 
@@ -165,7 +165,7 @@ Missing OpenGL system libraries
       # On Ubuntu/Debian systems:
       sudo apt install libopengl0 libgl1-mesa-glx libegl1
       # On CentOS/RHEL systems:
-      sudo yum install libglvnd-opengl libglvnd-glx
+      sudo yum install libglvnd-opengl libglvnd-glx libglvnd-egl
 
     If an installation of the required system libraries is not possible due to restrictions on the target machine, you can
     set up a local :ref:`conda environment and install the OVITO Pro package <installation.anaconda>`. Next, install
@@ -178,6 +178,29 @@ Missing OpenGL system libraries
 
     This should allow you to at least run Python scripts that import the OVITO Python module. The OVITO desktop application
     will still not work, however, because your system is lacking true OpenGL graphics support.
+
+OpenGL initialization fails
+  .. error::
+
+    You may see the following messages when running :command:`ovito` in the terminal:
+
+    .. code-block:: shell
+
+      $ bin/ovito
+      QXcbIntegration: Cannot create platform OpenGL context, neither GLX nor EGL are enabled
+      QRhiGles2: Failed to create temporary context
+      QXcbIntegration: Cannot create platform offscreen surface, neither GLX nor EGL are enabled
+      QXcbIntegration: Cannot create platform OpenGL context, neither GLX nor EGL are enabled
+      QRhiGles2: Failed to create context
+      Failed to create QRhi for QBackingStoreRhiSupport
+
+  .. admonition:: Solution
+
+    Run :command:`ovito` with the environment variable ``QT_XCB_GL_INTEGRATION=xcb_egl``:
+
+    .. code-block:: shell
+
+      $ QT_XCB_GL_INTEGRATION=xcb_egl bin/ovito
 
 LD_LIBRARY_PATH overrides OVITO's bundled Qt libraries
   .. error::

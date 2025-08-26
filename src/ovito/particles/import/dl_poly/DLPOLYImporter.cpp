@@ -138,7 +138,7 @@ void DLPOLYImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<
             double ttime;
             if(sscanf(stream.line(), "timestep %u %llu %i %i %lg %lg", &nstep, &megatm, &keytrj, &imcon, &tstep, &ttime) != 6 || megatm != expectedAtomCount)
                 throw Exception(tr("Invalid timestep record in line %1 of DL_POLY file: %2").arg(stream.lineNumber()).arg(stream.lineString()));
-            frame.label = QStringLiteral("Time: %1 ps").arg(ttime);
+            frame.label.setToTime(ttime);
             frames.push_back(frame);
 
             // Skip simulation cell.

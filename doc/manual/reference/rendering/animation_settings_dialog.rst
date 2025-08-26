@@ -12,36 +12,32 @@ The *Animation Settings* dialog can be opened from the animation toolbar:
 .. image:: /images/animation_settings_dialog/animation_settings_button.*
   :width: 25%
 
-The dialog lets you manage animation-related settings, e.g. the playback frame rate and the length of the
-current animation. Note that a more detailed introduction to OVITO's animation system can be found
-:ref:`here <usage.animation>`.
+This dialog controls animation parameters such as playback frame rate and animation length.
+For a complete overview of OVITO's animation system, see :ref:`usage.animation`.
 
 Settings
 """"""""
 
 Frames per second
-  The playback speed of the animation in frames per second. This value determines both the frame rate of
-  movie files rendered by OVITO and the playback of the animation in the interactive viewports.
+  Sets the animation frame rate (FPS). This affects both movie file export and viewport playback.
+  Note, however, that realtime rendering in the viewport may not be able to keep up with high frame rates.
 
 Playback speed
-  Controls the playback speed of the animation in OVITO's interactive viewports.
-  This factor is multiplied by the frame rate (FPS) described
-  parameter above. Note that the effective playback speed may be much slower if
-  loading, computing, and displaying the next frame takes a long time.
+  Multiplies the set FPS to control viewport playback speed.
+  Actual speed may be slower if frame loading, computing, or rendering take significant time.
 
 Every Nth frame
-  Lets OVITO skip some animation frames during playback in the interactive viewports.
-  Use this to accelerate the playback of a long trajectory, where loading and computing every
-  frame would take too much time.
+  Skips frames during viewport playback to improve performance, useful for long trajectories.
 
 Loop playback
-  Controls whether animation playback in the viewport happens in a repeating loop.
-  If turned off, playback stops when the end of the animation is reached.
+  Enables or disables continuous looping in the viewport.
+  When off, playback stops at the animation's end.
+
+Timeline display
+  Chooses how timeline labels are shown: frame numbers (0, 1, 2, …) or simulation timesteps / simulated time from loaded trajectories.
 
 Custom animation interval
-  This option lets you override the length of the animation interval shown in
-  the timeline of OVITO. Normally, this interval is automatically adjusted
-  to the length of the loaded simulation sequence(s).
-  Setting a custom animation length is useful, for example, if the simulation
-  dataset consists of just a static frame (not a trajectory) but you would like to create a
-  :ref:`camera animation <usage.animation>` moving around the dataset.
+  Overrides the natural animation length in the timeline.
+  Normally, OVITO matches this length to the loaded simulation trajectory sequence.
+  Use this option for static datasets to create camera animations or other time-based effects,
+  see :ref:`usage.animation` and :ref:`tutorials.turntable_animation`.

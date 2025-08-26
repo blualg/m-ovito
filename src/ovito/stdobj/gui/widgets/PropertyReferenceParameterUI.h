@@ -84,11 +84,11 @@ public:
     /// Sets the reference to the property container from which the user can select a property.
     void setContainerRef(const PropertyContainerReference& containerRef);
 
-    /// Returns the container from which properties can be selected.
-    const DataOORef<const PropertyContainer>& container() const { return _container; }
+    /// Returns the container(s) from which properties can be selected.
+    const std::vector<DataOORef<const PropertyContainer>>& containers() const { return _containers; }
 
-    /// Sets the concrete container from which properties can be selected.
-    void setContainer(const PropertyContainer* container);
+    /// Sets the concrete container(s) from which properties can be selected.
+    void setContainers(std::vector<DataOORef<const PropertyContainer>> containers);
 
     /// Specifies the dynamic property field that selects the container from which properties can be selected.
     void setContainerField(const PropertyFieldDescriptor* field) {
@@ -130,8 +130,8 @@ private:
 
     /// Returns the type of property container from which the user can choose a property.
     const PropertyContainerClass* containerClass() const {
-        if(container())
-            return &container()->getOOMetaClass();
+        if(!containers().empty())
+            return &containers().front()->getOOMetaClass();
         else
             return containerRef().dataClass();
     }
@@ -150,8 +150,8 @@ protected:
     /// Data object reference to the container from which properties can be selected.
     PropertyContainerReference _containerRef;
 
-    /// The current container instance from which properties can be selected.
-    DataOORef<const PropertyContainer> _container;
+    /// The current container(s) from which properties can be selected.
+    std::vector<DataOORef<const PropertyContainer>> _containers;
 
     /// The dynamic property field that selects the container from which properties can be selected.
     const PropertyFieldDescriptor* _containerField = nullptr;

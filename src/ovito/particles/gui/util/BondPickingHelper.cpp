@@ -42,7 +42,7 @@ bool BondPickingHelper::pickBond(ViewportWindow* vpwin, const QPoint& clickPoint
     if(std::optional<ViewportWindow::PickResult> vpPickResult = vpwin->pick(clickPoint)) {
 
         // Check if that was a bond.
-        if(BondPickInfo* pickInfo = dynamic_object_cast<BondPickInfo>(vpPickResult->pickInfo())) {
+        if(BondPickInfo* pickInfo = dynamic_object_cast<BondPickInfo>(vpPickResult->pickInfo().get())) {
             if(pickInfo->particles()->bonds()) {
                 size_t bondIndex = vpPickResult->subobjectId() / 2;
                 const Property* topologyProperty = pickInfo->particles()->bonds()->getTopology();

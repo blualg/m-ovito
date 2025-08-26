@@ -38,7 +38,7 @@ BaseSceneRendererEditor::BaseSceneRendererEditor()
             return;
         handleExceptions([&]() {
             for(const auto& [id, label, windowClass, rendererClass] : ViewportWindow::listInteractiveWindowImplementations()) {
-                if(ViewportWindow::getInteractiveWindowRenderer(id) == editObject) {
+                if(ViewportWindow::getInteractiveWindowRenderer(id).get() == editObject) {
                     Q_EMIT editingInteractiveRenderer();
                     return;
                 }

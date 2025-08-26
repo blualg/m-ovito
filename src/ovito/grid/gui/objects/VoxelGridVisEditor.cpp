@@ -87,7 +87,8 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     //sublayout2->addWidget(absorptionUnitDistanceUI->label(), 1, 0);
     //sublayout2->addLayout(absorptionUnitDistanceUI->createFieldLayout(), 1, 1);
 
-    QLabel* label = new QLabel(tr("<p style=\"font-size: small;\">Note: Volume rendering is only supported by <a href=\"visrtx\">VisRTX</a> and <a href=\"ospray\">OSPRay</a> renderers.</p>"));
+    QLabel* label = new QLabel(tr(
+        R"(<p style="font-size: small;">Note: Volume rendering is only supported by <a href="visrtx">VisRTX</a> and <a href="ospray">OSPRay</a> renderers.</p>)"));
     label->setWordWrap(true);
     label->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
     connect(label, &QLabel::linkActivated, this, [this](const QString& link) {
@@ -110,26 +111,37 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     });
 
     // Open a sub-editor for the property color mapping.
-    SubObjectParameterUI* colorMappingParamUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(VoxelGridVis::colorMapping), rolloutParams.after(rollout));
+    _colorMappingParamUI = createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(VoxelGridVis::colorMapping), rolloutParams.after(rollout));
 
     // Whenever the pipeline input of the vis element changes, update the list of available
     // properties in the color mapping editor.
-    connect(this, &PropertiesEditor::pipelineInputChanged, colorMappingParamUI, [this,colorMappingParamUI]() {
-        // Retrieve the VoxelGrid object this vis element is associated with.
-        DataOORef<const PropertyContainer> container = dynamic_object_cast<const PropertyContainer>(getVisDataObject());
-        // We only show the color mapping panel if the VoxelGrid does not contain the RGB "Color" property.
-        if(container && !container->getProperty(Property::GenericColorProperty)) {
-            // Show color mapping panel.
-            colorMappingParamUI->setEnabled(true);
-            // Set it as property container containing the available properties the user can choose from.
-            static_object_cast<PropertyColorMappingEditor>(colorMappingParamUI->subEditor())->setPropertyContainer(container);
+    connect(this, &PropertiesEditor::pipelineInputChanged, this, &VoxelGridVisEditor::updateColoringOptions);
+}
+
+/******************************************************************************
+ * Updates the coloring controls shown in the UI.
+ ******************************************************************************/
+void VoxelGridVisEditor::updateColoringOptions()
+{
+    bool enableColorMapping = false;
+
+    // Inspect all VoxelGrid objects this vis element is associated with.
+    std::vector<DataOORef<const PropertyContainer>> colorMappingContainers;
+    for(const DataObject* dataObject : getVisDataObjects()) {
+        if(const PropertyContainer* container = dynamic_object_cast<PropertyContainer>(dataObject)) {
+            // We only show the color mapping panel if the VoxelGrid does not contain the RGB "Color" property.
+            if(!container->getProperty(Property::GenericColorProperty)) {
+                // Show color mapping panel.
+                enableColorMapping = true;
+                // Set it as property container containing the available properties the user can choose from.
+                colorMappingContainers.push_back(container);
+            }
         }
-        else {
-            // If the "Color" property is present, hide the color mapping panel, because the explicit RGB color values
-            // take precedence during rendering of the voxel grid.
-            colorMappingParamUI->setEnabled(false);
-        }
-    });
+    }
+
+    _colorMappingParamUI->setEnabled(enableColorMapping);
+    if(PropertyColorMappingEditor* colorMappingEditor = static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor()))
+        colorMappingEditor->setPropertyContainers(std::move(colorMappingContainers));
 }
 
 }   // End of namespace

@@ -25,6 +25,7 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/ColorCodingGradient.h>
 #include <ovito/core/rendering/FrameGraph.h>
+#include <ovito/core/rendering/ColorMapHelper.h>
 #include "OpenGLRenderingJob.h"
 #include "OpenGLRenderingFrameBuffer.h"
 #include "OpenGLHelpers.h"
@@ -1058,21 +1059,30 @@ const OpenGLTexture& OpenGLRenderingJob::uploadImage(const QImage& image)
 /******************************************************************************
  * Creates a 1-D OpenGL texture object for a ColorCodingGradient.
  ******************************************************************************/
-const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradient* gradient)
+const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const PseudoColorMapping& pseudoColorMapping)
 {
+    // Bin count of the discrete color map.
+    // Use discrete color mapping if the bin count is > 0
+    const int numDiscreteColors = pseudoColorMapping.discreteColorMapBinCount();
+
     // Check if this color map has already been uploaded to the GPU.
     return currentResourceFrame().lookup<OpenGLTexture>(
-        RendererResourceKey<struct ColorMapCache, OORef<const ColorCodingGradient>, const QOpenGLContextGroup*>{gradient, QOpenGLContextGroup::currentContextGroup()},
+        RendererResourceKey<struct ColorMapCache, OORef<const ColorCodingGradient>, const QOpenGLContextGroup*, int>{
+            pseudoColorMapping.gradient(), QOpenGLContextGroup::currentContextGroup(), pseudoColorMapping.discreteColorMapBinCount()},
         [&](OpenGLTexture& texture) {
             // Sample the color gradient to produce a row of RGB pixel data.
             int resolution;
             std::vector<uint8_t> pixelData;
 
-            if(gradient) {
-                resolution = 256;
-                pixelData.resize(resolution * 3);
+            if(pseudoColorMapping.gradient()) {
+                // Set the resolution to the number of discrete colors if specified, otherwise use 256.
+                resolution = (numDiscreteColors <= 0) ? 256 : std::min(256, numDiscreteColors);
+                pixelData.resize((size_t)resolution * 3);
                 for(int x = 0; x < resolution; x++) {
-                    auto c = gradient->valueToColor((float)x / (resolution - 1));
+                    float t = (float)x / float(resolution - 1);
+                    // Use discrete color mapping if the bin count is > 0
+                    t = (numDiscreteColors <= 0) ? t : DiscreteColorMap::mapValue(t, numDiscreteColors);
+                    auto c = pseudoColorMapping.gradient()->valueToColor(t);
                     pixelData[x * 3 + 0] = (uint8_t)(255 * c.r());
                     pixelData[x * 3 + 1] = (uint8_t)(255 * c.g());
                     pixelData[x * 3 + 2] = (uint8_t)(255 * c.b());
@@ -1086,7 +1096,10 @@ const OpenGLTexture& OpenGLRenderingJob::uploadColorMap(const ColorCodingGradien
             // Create the 1-d texture object.
             texture.create(QOpenGLTexture::Target2D);
             texture.setWrapMode(QOpenGLTexture::ClampToEdge);
-            texture.setMinMagFilters(QOpenGLTexture::Linear, QOpenGLTexture::Linear); // Note: Other modes may cause artifacts, e.g., at cylinder ends.
+            // Use nearest filter for discrete color map to avoid color interpolation
+            // Use linear in all other cases to avoid artifacts.
+            const QOpenGLTexture::Filter minMagFilter = (numDiscreteColors <= 0) ? QOpenGLTexture::Linear : QOpenGLTexture::Nearest;
+            texture.setMinMagFilters(minMagFilter, minMagFilter);  // Note: Other modes may cause artifacts, e.g., at cylinder ends.
             texture.setData(
                 QOpenGLTexture::RGB8_UNorm, QOpenGLTexture::RGB, QOpenGLTexture::UInt8,
                 resolution, 1,

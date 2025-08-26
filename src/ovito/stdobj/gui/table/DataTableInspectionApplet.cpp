@@ -25,10 +25,7 @@
 #include <ovito/stdobj/io/DataTableExporter.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
-#include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
-#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/core/app/Application.h>
-#include <ovito/core/dataset/DataSetContainer.h>
 #include "DataTableInspectionApplet.h"
 
 namespace Ovito {
@@ -72,7 +69,32 @@ QWidget* DataTableInspectionApplet::createWidget()
     toolbar->addSeparator();
 
     _exportTableToFileAction = new QAction(QIcon::fromTheme("file_save_as"), tr("Export data plot"), this);
-    connect(_exportTableToFileAction, &QAction::triggered, this, &DataTableInspectionApplet::exportDataToFile);
+    connect(_exportTableToFileAction, &QAction::triggered, this, [this]() {
+        const DataTable* table = plotWidget()->table();
+        if(!table) {
+            return;
+        }
+        // Generate filter string for file dialog.
+        const QString filterString = (_stackedWidget->currentIndex() == 0)
+                                         ? QStringLiteral("%1 (%2)").arg(DataTablePlotExporter::OOClass().fileFilterDescription(),
+                                                                         DataTablePlotExporter::OOClass().fileFilter())
+                                         : QStringLiteral("%1 (%2)").arg(DataTableExporter::OOClass().fileFilterDescription(),
+                                                                         DataTableExporter::OOClass().fileFilter());
+        // Create exporter service.
+        mainWindow().handleExceptions([&] {
+            if(_stackedWidget->currentIndex() == 0) {
+                exportDataToFile(DataObjectReference(&DataTable::OOClass(), table->identifier(), table->title()),
+                                 OORef<DataTablePlotExporter>::create(), filterString);
+            }
+            else if(_stackedWidget->currentIndex() == 1) {
+                exportDataToFile(DataObjectReference(&DataTable::OOClass(), table->identifier(), table->title()),
+                                 OORef<DataTableExporter>::create(), filterString);
+            }
+            else {
+                OVITO_ASSERT_MSG(false, "DataTableInspectionApplet::_exportTableToFileAction", "Stacked widget index out of range.");
+            }
+        });
+    });
     toolbar->addAction(_exportTableToFileAction);
 
     _stackedWidget = new QStackedWidget();
@@ -152,10 +174,11 @@ bool DataTableInspectionApplet::selectDataObject(const PipelineNode* createdByNo
     return result;
 }
 
+#if 0
 /******************************************************************************
 * Exports the current data table to a text file.
 ******************************************************************************/
-void DataTableInspectionApplet::exportDataToFile()
+void DataTableInspectionApplet::exportDataToFile() const
 {
     const DataTable* table = plotWidget()->table();
     if(!table)
@@ -221,5 +244,6 @@ void DataTableInspectionApplet::exportDataToFile()
         ProgressDialog::showForFuture(std::move(future), mainWindow(), tr("File export"));
     });
 }
+#endif
 
 }   // End of namespace

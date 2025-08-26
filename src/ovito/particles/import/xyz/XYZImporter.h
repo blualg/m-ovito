@@ -65,7 +65,7 @@ public:
 
     /// Creates an asynchronous loader object that loads the data for the given frame from the external file.
     virtual FileSourceImporter::FrameLoaderPtr createFrameLoader(const LoadOperationRequest& request) override {
-        return std::make_unique<FrameLoader>(request, recenterCell(), sortParticles(), columnMapping(), autoRescaleCoordinates());
+        return std::make_unique<FrameLoader>(request, recenterCell(), generateBoundingBox(), sortParticles(), columnMapping(), autoRescaleCoordinates());
     }
 
     /// Inspects the header of the given file and returns the number of file columns.
@@ -79,8 +79,8 @@ private:
     public:
 
         /// Normal constructor.
-        FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool sortParticles, const ParticleInputColumnMapping& columnMapping, bool autoRescaleCoordinates)
-          : ParticleImporter::FrameLoader(request, recenterCell),
+        FrameLoader(const LoadOperationRequest& request, bool recenterCell, bool generateBoundingBox, bool sortParticles, const ParticleInputColumnMapping& columnMapping, bool autoRescaleCoordinates)
+          : ParticleImporter::FrameLoader(request, recenterCell, generateBoundingBox),
             _sortParticles(sortParticles),
             _columnMapping(columnMapping),
             _autoRescaleCoordinates(autoRescaleCoordinates) {}

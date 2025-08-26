@@ -56,6 +56,7 @@ namespace Ovito
     class TriangleMeshVis;
     class Controller;
     class AnimationSettings;
+    struct AnimationFrameLabel;
     class LookAtController;
     class KeyframeController;
     class PRSTransformationController;

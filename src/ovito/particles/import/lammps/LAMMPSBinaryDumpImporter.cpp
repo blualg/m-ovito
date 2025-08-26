@@ -142,12 +142,21 @@ struct LAMMPSBinaryDumpHeader
 ******************************************************************************/
 bool LAMMPSBinaryDumpImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
 {
+    // Check file extension. Must be either .bin or .lammpsbin according to the LAMMPS documentation.
+    const QString filename = file.sourceUrl().fileName();
+    if(!filename.endsWith(QStringLiteral(".bin"), Qt::CaseInsensitive) && !filename.endsWith(QStringLiteral(".lammpsbin"), Qt::CaseInsensitive))
+        return false;
+
     // Open input file for reading.
     std::unique_ptr<QIODevice> device = file.createIODevice();
     if(!device->open(QIODevice::ReadOnly))
         return false;
 
-    return LAMMPSBinaryDumpHeader().parse(*device);
+    LAMMPSBinaryDumpHeader header;
+    if(!header.parse(*device))
+        return false;
+
+    return true;
 }
 
 /******************************************************************************
@@ -192,7 +201,7 @@ void LAMMPSBinaryDumpImporter::discoverFramesInFile(const FileHandle& fileHandle
         }
 
         // Create a new record for the timestep.
-        frame.label = tr("Timestep %1").arg(header.ntimestep);
+        frame.label.setToTimestep(header.ntimestep);
         frames.push_back(frame);
     }
 }
@@ -285,7 +294,7 @@ bool LAMMPSBinaryDumpHeader::parse(QIODevice& input)
             for(int i = 0; i < 3; i++) {
                 bbox[i][0] = readDouble(input);
                 bbox[i][1] = readDouble(input);
-                if(bbox[i][0] > bbox[i][1])
+                if(bbox[i][1] - bbox[i][0] < 1e-8)
                     isValid = false;
                 for(int j = 0; j < 2; j++) {
                     if(!std::isfinite(bbox[i][j]) || bbox[i][j] < -1e9 || bbox[i][j] > 1e9)

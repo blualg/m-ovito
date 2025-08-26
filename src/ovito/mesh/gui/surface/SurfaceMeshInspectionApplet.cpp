@@ -22,7 +22,9 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
+#include <ovito/stdobj/io/DataTableExporter.h>
 #include "SurfaceMeshInspectionApplet.h"
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 
 namespace Ovito {
 
@@ -93,6 +95,37 @@ QWidget* SurfaceMeshInspectionApplet::createWidget()
     connect(_switchToRegionsAction, &QAction::triggered, this, [this]() {
         _stackedWidget->setCurrentIndex(2);
     });
+
+    toolbar->addSeparator();
+    _exportTableToFileAction = new QAction(QIcon::fromTheme("file_save_as"), tr("Export tabular data to file"), this);
+    connect(_exportTableToFileAction, &QAction::triggered, this, [this]() {
+        const QString filterString =
+            QStringLiteral("%1 (%2)").arg(DataTableExporter::OOClass().fileFilterDescription(), DataTableExporter::OOClass().fileFilter());
+
+        std::vector<ConstDataObjectPath> path;
+        if(_stackedWidget->currentIndex() == 0 && _verticesApplet) {
+            path = _verticesApplet->getDataObjectPaths();
+        }
+        else if(_stackedWidget->currentIndex() == 1 && _facesApplet) {
+            path = _facesApplet->getDataObjectPaths();
+        }
+        else if(_stackedWidget->currentIndex() == 2 && _regionsApplet) {
+            path = _regionsApplet->getDataObjectPaths();
+        }
+        else {
+            OVITO_ASSERT_MSG(false, "SurfaceMeshInspectionApplet::_exportTableToFileAction", "Stacked widget index out of range.");
+        }
+
+        mainWindow().handleExceptions([&] {
+            if(path.size() == 1 && !path[0].empty()) {
+                exportDataToFile(path[0], OORef<DataTableExporter>::create(), filterString);
+            }
+            else {
+                throw Exception(tr("Selected data object could not be uniquely identified."));
+            }
+        });
+    });
+    toolbar->addAction(_exportTableToFileAction);
 
     connect(this, &DataInspectionApplet::currentObjectChanged, this, &SurfaceMeshInspectionApplet::onCurrentDataObjectChanged);
 

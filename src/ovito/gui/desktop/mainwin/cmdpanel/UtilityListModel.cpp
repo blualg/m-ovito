@@ -331,7 +331,7 @@ void UtilityListModel::datasetReplaced(DataSet* dataset)
 
     // Adopt deserialized utility objects from the state file.
     for(const auto& obj : dataset->globalObjects()) {
-        if(UtilityObject* utility = dynamic_object_cast<UtilityObject>(obj)) {
+        if(UtilityObject* utility = dynamic_object_cast<UtilityObject>(obj.get())) {
             // Replace any existing utility of the same class.
             auto iter = boost::find_if(_utilityObjects, [&](const auto& utility2) { return utility->getOOMetaClass().isMemberUtility(utility2); });
             if(iter != _utilityObjects.end())

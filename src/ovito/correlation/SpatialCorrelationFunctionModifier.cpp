@@ -185,7 +185,7 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
         if(PipelineFlowState cachedState = request.modificationNode()->getCachedPipelineNodeOutput(request.time(), true)) {
             // Adopt all root-level data objects from the cached DataCollection which were created by us.
             for(const DataObject* obj : cachedState.data()->objects()) {
-                if(obj->createdByNode().lock() == request.modificationNode()) {
+                if(obj->createdByNode().lock().get() == request.modificationNode()) {
                     state.addObject(obj);
                 }
             }
@@ -214,9 +214,11 @@ Future<PipelineFlowState> SpatialCorrelationFunctionModifier::evaluateModifier(c
         throw Exception(std::move(errorDescription));
 
     // Get simulation cell.
-    const SimulationCell* inputCell = state.expectObject<SimulationCell>();
+    const SimulationCell* inputCell = state.getObject<SimulationCell>();
+    if(!inputCell)
+        throw Exception(tr("No simulation cell defined. The spatial correlation function cannot be computed without a simulation cell."));
     if((inputCell->is2D() ? inputCell->volume2D() : inputCell->volume3D()) < FLOATTYPE_EPSILON)
-        throw Exception(tr("Simulation cell is degenerate. Cannot compute correlation function."));
+        throw Exception(tr("Simulation cell is degenerate. Cannot compute spatial correlation function."));
 
     // Create engine object. Pass all relevant modifier parameters to the engine as well as the input data.
     auto engine = std::make_unique<CorrelationAnalysisEngine>(

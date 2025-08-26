@@ -121,7 +121,7 @@ private:
     /// Timer used to throttle UI updates due to status and activity state changes.
     QBasicTimer _statusAndActivityTimer;
 
-    /// Indicates whether the object is currently doing a computation.
+    /// Indicates whether the object is currently performing a computation.
     bool _isObjectActive = false;
 
     /// Indicates that the UI of the item needs to be updated.

@@ -88,6 +88,15 @@ void ConstructSurfaceModifier::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void ConstructSurfaceModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(surfaceMeshVis() == visElement)
+        setSurfaceMeshVis(static_object_cast<SurfaceMeshVis>(getReplacement({})));
+}
+
+/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool ConstructSurfaceModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
@@ -138,8 +147,8 @@ Future<PipelineFlowState> ConstructSurfaceModifier::evaluateModifier(const Modif
         grainProperty.reset();
 
     // Get simulation cell.
-    const SimulationCell* simCell = state.expectObject<SimulationCell>();
-    if(simCell->is2D())
+    const SimulationCell* simCell = state.getObject<SimulationCell>();
+    if(simCell && simCell->is2D())
         throw Exception(tr("The construct surface mesh modifier does not support 2d simulation cells."));
 
     // Collect the set of particle properties that should be transferred over to the surface mesh vertices.
@@ -199,6 +208,13 @@ Future<PipelineFlowState> ConstructSurfaceModifier::evaluateModifier(const Modif
             state = std::move(state),
             engine = std::move(engine)]() mutable
     {
+        // Create an ad-hoc simulation cell if the input particles do not have one.
+        if(!engine->mesh()->domain()) {
+            // Compute bounding box that is large enough to contain the input particles.
+            SimulationCellData cellData(engine->positions());
+            engine->mesh()->setDomain(DataOORef<SimulationCell>::create(ObjectInitializationFlag::DontCreateVisElement, cellData.cellMatrix(), false, false, false));
+        }
+
         engine->perform();
         this_task::throwIfCanceled();
         engine->applyResults(state);
@@ -214,12 +230,11 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
     TaskProgress progress(this_task::ui());
     progress.setText(tr("Constructing surface mesh"));
 
-    OVITO_ASSERT(mesh()->domain());
-
     if(probeSphereRadius() <= 0)
         throw Exception(tr("Radius parameter must be positive."));
 
-    if(mesh()->domain()->volume3D() <= FLOATTYPE_EPSILON*FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)
+    OVITO_ASSERT(mesh()->domain());
+    if(!mesh()->domain() || mesh()->domain()->isDegenerate())
         throw Exception(tr("Simulation cell is degenerate (volume of parallelepiped is zero)."));
 
     double alpha = probeSphereRadius() * probeSphereRadius();
@@ -490,10 +505,9 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     TaskProgress progress(this_task::ui());
     progress.setText(tr("Constructing surface mesh"));
 
-    OVITO_ASSERT(mesh()->domain());
-
     // Check input data.
-    if(mesh()->domain()->volume3D() <= FLOATTYPE_EPSILON*FLOATTYPE_EPSILON*FLOATTYPE_EPSILON)
+    OVITO_ASSERT(mesh()->domain());
+    if(!mesh()->domain() || mesh()->domain()->isDegenerate())
         throw Exception(tr("Simulation cell is degenerate."));
 
     if(positions()->size() == 0) {
@@ -508,10 +522,9 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
                 meshBuilder.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::IsFilledProperty)};
             BufferWriteAccess<FloatType, access_mode::discard_write> surfaceArea{
                 meshBuilder.createRegionProperty(DataBuffer::Uninitialized, SurfaceMeshRegions::SurfaceAreaProperty)};
-            volumeProperty[0] = meshBuilder.domain()->volume3D();
+            volumeProperty[0] = meshBuilder.domain().volume3D();
             isFilledProperty[0] = 0;
-            isExteriorProperty[0] =
-                !(meshBuilder.domain()->pbcFlags()[0] && meshBuilder.domain()->pbcFlags()[1] && meshBuilder.domain()->pbcFlags()[2]);
+            isExteriorProperty[0] = !(meshBuilder.hasPbc(0) && meshBuilder.hasPbc(1) && meshBuilder.hasPbc(2));
             surfaceArea[0] = 0;
             meshBuilder.setSpaceFillingRegion(0);
         }
@@ -681,7 +694,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
             else if(SurfaceMeshVertices::OOClass().standardPropertyTypeId(particleProperty->name()) != 0) {
                 // Input property name is that of a standard property for mesh vertices.
                 // Must rename the property to avoid conflict, because user properties may not have a standard property name.
-                QString newPropertyName = particleProperty->name() + tr("_particles");
+                QString newPropertyName = particleProperty->name() + QStringLiteral("_particles");
                 vertexProperty = meshBuilder.createVertexProperty(DataBuffer::Initialized, newPropertyName, particleProperty->dataType(), particleProperty->componentCount(), particleProperty->componentNames());
             }
             else {
@@ -803,9 +816,9 @@ void ConstructSurfaceModifier::ConstructSurfaceEngineBase::applyResults(Pipeline
     state.addAttribute(QStringLiteral("ConstructSurfaceMesh.surface_area"), QVariant::fromValue(surfaceArea()), _createdByNode);
 
     if(identifyRegions()) {
-        const SimulationCell& simCell = *(state.expectObject<SimulationCell>());
-        bool periodic = simCell.pbcX() && simCell.pbcY() && simCell.pbcZ();
-        FloatType totalCellVolume = (periodic) ? simCell.volume3D() : std::numeric_limits<FloatType>::quiet_NaN();
+        const SimulationCell* simCell = state.getObject<SimulationCell>();
+        bool periodic = simCell && (simCell->pbcX() && simCell->pbcY() && simCell->pbcZ());
+        FloatType totalCellVolume = periodic ? simCell->volume3D() : std::numeric_limits<FloatType>::quiet_NaN();
 
         // Output more global attributes.
         state.addAttribute(QStringLiteral("ConstructSurfaceMesh.cell_volume"), QVariant::fromValue(totalCellVolume), _createdByNode);

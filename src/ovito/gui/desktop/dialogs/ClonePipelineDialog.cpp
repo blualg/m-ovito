@@ -445,7 +445,7 @@ void ClonePipelineDialog::onAccept()
             else if(s->cloneMode() == CloneMode::Copy) {
                 for(auto pnode = s->pipelineNodes.crbegin(); pnode != s->pipelineNodes.crend(); ++pnode) {
                     OORef<PipelineNode> clonedNode = cloneHelper.cloneObject(*pnode, false);
-                    if(ModificationNode* clonedModNode = dynamic_object_cast<ModificationNode>(clonedNode)) {
+                    if(ModificationNode* clonedModNode = dynamic_object_cast<ModificationNode>(clonedNode.get())) {
                         clonedModNode->setInput(precedingNode);
                         clonedModNode->setModifier(cloneHelper.cloneObject(clonedModNode->modifier(), true));
                     }

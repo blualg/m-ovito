@@ -92,12 +92,10 @@ void InterfaceMesh::createMesh(FloatType maximumNeighborDistance, BufferReadAcce
             _edges[edge].physicalVector = vertexPositions[(i+1)%3] - vertexPositions[i];
 
             // Check if edge is spanning more than half of a periodic simulation cell.
-            if(this->domain()) {
-                for(size_t dim = 0; dim < 3; dim++) {
-                    if(this->domain()->hasPbc(dim)) {
-                        if(std::abs(this->domain()->inverseMatrix().prodrow(_edges[edge].physicalVector, dim)) >= FloatType(0.5) + FLOATTYPE_EPSILON)
-                            StructureAnalysis::generateCellTooSmallError(dim);
-                    }
+            for(size_t dim = 0; dim < 3; dim++) {
+                if(this->hasPbc(dim)) {
+                    if(std::abs(this->domain().reciprocalCellMatrix().prodrow(_edges[edge].physicalVector, dim)) >= FloatType(0.5) + FLOATTYPE_EPSILON)
+                        StructureAnalysis::generateCellTooSmallError(dim);
                 }
             }
 
@@ -199,7 +197,7 @@ void InterfaceMesh::generateDefectMesh(const DislocationTracer& tracer, SurfaceM
     BufferReadAccess<Point3> vertexPositions(expectVertexProperty(SurfaceMeshVertices::PositionProperty));
     defectMesh.createVerticesRange(vertexPositions);
     defectMesh.setSpaceFillingRegion(spaceFillingRegion());
-    defectMesh.setDomain(domain());
+    defectMesh.setDomain(mesh()->domain());
 
     SurfaceMeshBuilder::VertexGrower vertexGrower(defectMesh);
     SurfaceMeshBuilder::FaceGrower faceGrower(defectMesh);

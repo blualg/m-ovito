@@ -61,6 +61,10 @@ bool ParaViewVTPMeshImporter::OOMetaClass::checkFileFormat(const FileHandle& fil
                 return !xml.hasError();
             break;
         }
+        else if(xml.name().compare(QStringLiteral("FieldData")) == 0) {
+            // Skip <FieldData> elements.
+            xml.skipCurrentElement();
+        }
     }
 
     return false;
@@ -366,7 +370,10 @@ PropertyPtr ParaViewVTPMeshImporter::FrameLoader::parseDataArray(QXmlStreamReade
         return {};
     }
     else if(format != "binary" && format != "ascii") {
-        xml.raiseError(tr("Invalid value of 'format' attribute in <%1> element: %2").arg(xml.name().toString()).arg(format));
+        if(format == "appended")
+            xml.raiseError(tr("OVITO does not support <%1> elements using the 'appended' data format. Please re-export your VTK file to use data modes 'ascii' or 'binary', or contact the OVITO developers to request an extension of the file reader.").arg(xml.name().toString()));
+        else
+            xml.raiseError(tr("Invalid format type: '%1'. OVITO only supports VTK data modes 'ascii' and 'binary'.").arg(format));
         return {};
     }
 
@@ -456,7 +463,7 @@ bool ParaViewVTPMeshImporter::parseVTKDataArray(DataBuffer* buffer, int vtkHeade
         isBinary = false;
     }
     else if(format == "appended") {
-        xml.raiseError(tr("OVITO does not support <%1> elements using the 'appended' formats yet. Please contact the developers to request an extension of the file reader.").arg(xml.name().toString()));
+        xml.raiseError(tr("OVITO does not support <%1> elements using the 'appended' data format. Please re-export your VTK file to use data modes 'ascii' or 'binary', or contact the OVITO developers to request an extension of the file reader.").arg(xml.name().toString()));
         return false;
     }
     else {
@@ -740,17 +747,15 @@ void MeshParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockI
         // Remove meshes from those trajectory frames where the VTM file does not list them.
         // But instead of deleting the mesh objects from the data collection just clear their contents,
         // such that visual element settings are preserved across frames even if a mesh temporarily disappears.
-        for(qsizetype i = 0; i < request.state.data()->objects().size(); i++) {
-            if(const SurfaceMesh* mesh = dynamic_object_cast<SurfaceMesh>(request.state.data()->objects()[i])) {
-                if(mesh->vertices()->elementCount() != 0 || mesh->faces()->elementCount() != 0) {
-                    SurfaceMesh* mutableMesh = request.state.mutableData()->makeMutable(mesh);
-                    mutableMesh->makeTopologyMutable()->clear();
-                    mutableMesh->makeVerticesMutable()->setElementCount(0);
-                    mutableMesh->makeFacesMutable()->setElementCount(0);
-                    mutableMesh->makeRegionsMutable()->setElementCount(0);
-                }
+        request.state.data()->visitObjectsOfType<SurfaceMesh>([&](const SurfaceMesh* mesh) {
+            if(mesh->vertices()->elementCount() != 0 || mesh->faces()->elementCount() != 0) {
+                SurfaceMesh* mutableMesh = request.state.mutableData()->makeMutable(mesh);
+                mutableMesh->makeTopologyMutable()->clear();
+                mutableMesh->makeVerticesMutable()->setElementCount(0);
+                mutableMesh->makeFacesMutable()->setElementCount(0);
+                mutableMesh->makeRegionsMutable()->setElementCount(0);
             }
-        }
+        });
     }
 }
 

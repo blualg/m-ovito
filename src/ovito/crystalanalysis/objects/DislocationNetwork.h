@@ -59,7 +59,7 @@ public:
     void smoothDislocationLines(int lineSmoothingLevel, FloatType linePointInterval, TaskProgress& progress);
 
     /// Adds a new crystal structures to the list.
-    void addCrystalStructure(const MicrostructurePhase* structure) { _crystalStructures.push_back(this, PROPERTY_FIELD(crystalStructures), structure); }
+    void addCrystalStructure(DataOORef<const MicrostructurePhase> structure) { _crystalStructures.push_back(this, PROPERTY_FIELD(crystalStructures), std::move(structure)); }
 
     /// Removes a crystal structure.
     void removeCrystalStructure(int index) { _crystalStructures.remove(this, PROPERTY_FIELD(crystalStructures), index); }
@@ -98,7 +98,7 @@ protected:
 
 private:
 
-    /// Smoothens the sampling points of a dislocation line.
+    /// Smooths the sampling points of a dislocation line.
     static void smoothDislocationLine(int smoothingLevel, std::deque<Point3>& line, bool isLoop);
 
     /// Removes some of the sampling points from a dislocation line.

@@ -48,6 +48,10 @@ void CIFImporterEditor::createUI(const RolloutInsertionParameters& rolloutParams
     sublayout->setContentsMargins(4,4,4,4);
     layout->addWidget(optionsBox);
 
+    // Generate bounding box option.
+    BooleanParameterUI* generateBoundingBoxUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::generateBoundingBox));
+    sublayout->addWidget(generateBoundingBoxUI->checkBox());
+
     // Center simulation cell.
     BooleanParameterUI* recenterCellUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(ParticleImporter::recenterCell));
     sublayout->addWidget(recenterCellUI->checkBox());

@@ -93,11 +93,11 @@ public:
     void setName(const QStringView name) { setIdentifier(name.toString()); }
 
     /// Returns the kind of this property (standard or user-defined).
-    int typeId() const { return _typeId; }
+    int typeId() const { OVITO_CHECK_OBJECT_POINTER(this); return _typeId; }
 
     /// Changes the type identifier of this property. Note that this method is only for internal use.
     /// Normally, you should not change the type ID of a property after it has been created.
-    void setTypeId(int newTypeId) { _typeId = newTypeId; }
+    void setTypeId(int newTypeId) { OVITO_CHECK_OBJECT_POINTER(this); _typeId = newTypeId; }
 
     /// Indicates whether this property is a standard property (and not a user-defined property).
     bool isStandardProperty() const { return typeId() != 0; }
@@ -118,14 +118,19 @@ public:
     bool isTypedProperty() const { return !elementTypes().empty() && dataType() == DataBuffer::Int32 && componentCount() == 1; }
 
     /// Appends an element type to the list of types.
-    const ElementType* addElementType(const ElementType* type) {
-        OVITO_ASSERT(elementTypes().contains(const_cast<ElementType*>(type)) == false);
-        _elementTypes.push_back(this, PROPERTY_FIELD(elementTypes), type);
-        return type;
+    const ElementType* addElementType(DataOORef<const ElementType> type) {
+        OVITO_CHECK_OBJECT_POINTER(this);
+        OVITO_CHECK_OBJECT_POINTER(type);
+        OVITO_ASSERT(elementTypes().contains(const_cast<ElementType*>(type.get())) == false);
+        const ElementType* ptr = type.get();
+        _elementTypes.push_back(this, PROPERTY_FIELD(elementTypes), std::move(type));
+        return ptr;
     }
 
     /// Inserts an element type into the list of types.
     void insertElementType(qsizetype index, DataOORef<const ElementType> type) {
+        OVITO_CHECK_OBJECT_POINTER(this);
+        OVITO_CHECK_OBJECT_POINTER(type);
         OVITO_ASSERT(elementTypes().contains(type) == false);
         _elementTypes.insert(this, PROPERTY_FIELD(elementTypes), index, std::move(type));
     }
@@ -137,6 +142,7 @@ public:
     /// Creates and returns a new element type with the given name and assigns a new unique ID to it.
     /// If an element type with the given name already exists in this property's element type list, it will be returned instead.
     const ElementType* addNamedType(const PropertyContainerClass& containerClass, const QString& name, OvitoClassPtr elementTypeClass = {}) {
+        OVITO_CHECK_OBJECT_POINTER(this);
         if(const ElementType* existingType = elementType(name))
             return existingType;
         return addNumericType(containerClass, generateUniqueElementTypeId(), name, elementTypeClass);
@@ -145,6 +151,7 @@ public:
     /// Creates and returns a new element type with the given name and assigns a new unique ID to it.
     /// If an element type with the given name already exists in this property's element type list, it will be returned instead.
     const ElementType* addNamedType(const PropertyContainerClass& containerClass, const QLatin1String& name, OvitoClassPtr elementTypeClass = {}) {
+        OVITO_CHECK_OBJECT_POINTER(this);
         if(const ElementType* existingType = elementType(name))
             return existingType;
         return addNumericType(containerClass, generateUniqueElementTypeId(), name, elementTypeClass);
@@ -152,6 +159,7 @@ public:
 
     /// Returns the element type with the given ID, or NULL if no such type exists.
     const ElementType* elementType(int id) const {
+        OVITO_CHECK_OBJECT_POINTER(this);
         for(const ElementType* type : elementTypes())
             if(type->numericId() == id)
                 return type;
@@ -160,6 +168,7 @@ public:
 
     /// Returns the element type with the given human-readable name, or NULL if no such type exists.
     const ElementType* elementType(const QString& name) const {
+        OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(!name.isEmpty());
         for(const ElementType* type : elementTypes())
             if(type->name() == name)
@@ -169,6 +178,7 @@ public:
 
     /// Returns the element type with the given human-readable name, or NULL if no such type exists.
     const ElementType* elementType(const QLatin1String& name) const {
+        OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(name.size() != 0);
         for(const ElementType* type : elementTypes())
             if(type->name() == name)
@@ -271,7 +281,8 @@ private:
     /// Contains the list of defined "types" if this is a typed property.
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const ElementType>, elementTypes, setElementTypes);
 
-    /// The user-interface title of this property.
+    /// The optional title of this property, which is shown in the GUI.
+    /// If not set, the property's identifier is used as title.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{}, title, setTitle);
 
     /// The kind of this property (non-zero = predefined standard property; zero = a user-defined property).

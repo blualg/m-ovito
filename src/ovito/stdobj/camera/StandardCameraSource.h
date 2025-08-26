@@ -70,6 +70,9 @@ public:
     /// Lets the source generate a camera object for the given animation time.
     virtual DataOORef<const AbstractCameraObject> cameraObject(AnimationTime time) const override;
 
+    /// Replaces all references to the given visual element in the pipeline with new compatible objects.
+    virtual void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) override;
+
 protected:
 
     /// Called by the pipeline system before a new evaluation begins to query the validity interval and evaluation result type of this pipeline stage.

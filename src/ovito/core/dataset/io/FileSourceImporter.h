@@ -45,16 +45,26 @@ public:
         /// Default constructor.
         Frame() = default;
 
-        /// Constructor.
-        Frame(const FileHandle& fileHandle, qint64 offset = 0, int linenum = 1, const QString& name = QString()) :
-                sourceFile(fileHandle.sourceUrl()), byteOffset(offset), lineNumber(linenum), label(name.isEmpty() ? fileHandle.sourceUrl().fileName() : name) {
+        /// Constructor taking a FileHandle.
+        Frame(const FileHandle& fileHandle, qint64 offset = 0, int linenum = 1) :
+                sourceFile(fileHandle.sourceUrl()), byteOffset(offset), lineNumber(linenum) {
+            label.setToFilename(fileHandle.sourceUrl().fileName());
             if(!fileHandle.localFilePath().isEmpty())
                 lastModificationTime = QFileInfo(fileHandle.localFilePath()).lastModified();
         }
 
-        /// Constructor.
-        Frame(const QUrl& url, qint64 offset = 0, int linenum = 1, const QDateTime& modTime = QDateTime(), const QString& name = QString()) :
-            sourceFile(url), byteOffset(offset), lineNumber(linenum), lastModificationTime(modTime), label(name) {}
+        /// Constructor taking a QUrl.
+        Frame(const QUrl& url, qint64 offset = 0, int linenum = 1, const QDateTime& modTime = QDateTime()) :
+            sourceFile(url), byteOffset(offset), lineNumber(linenum), lastModificationTime(modTime) {
+            label.setToFilename(url.fileName());
+        }
+
+        /// Constructor taking a QUrl and a timestep frame label.
+        Frame(QUrl&& url, qlonglong timestep) : sourceFile(std::move(url)) {
+            label.setToTimestep(timestep);
+            if(sourceFile.isLocalFile())
+                lastModificationTime = QFileInfo(sourceFile.path()).lastModified();
+        }
 
         /// The source file that contains the data of the animation frame.
         QUrl sourceFile;
@@ -70,7 +80,7 @@ public:
         QDateTime lastModificationTime;
 
         /// The name or label of the source frame.
-        QString label;
+        AnimationFrameLabel label;
 
         /// Auxiliary field that can be used by the file parser to store additional info about the frame.
         QVariant parserData;
@@ -177,11 +187,11 @@ public:
 
     ///////////////////////////// from FileImporter /////////////////////////////
 
-    /// \brief Asks the importer if the option to replace the currently selected object
-    ///        with the new file(s) is available.
+    /// Asks the importer if the option to replace the currently selected object
+    /// with the new file(s) is available.
     virtual bool isReplaceExistingPossible(Scene* scene, const std::vector<QUrl>& sourceUrls) override;
 
-    /// \brief Imports the given file(s) into the scene.
+    /// Imports the given file(s) into the scene.
     virtual Future<OORef<Pipeline>> importFileSet(OORef<Scene> scene, std::vector<std::pair<QUrl, OORef<FileImporter>>> sourceUrlsAndImporters, ImportMode importMode, bool autodetectFileSequences, MultiFileImportMode multiFileImportMode) override;
 
     //////////////////////////// Specific methods ////////////////////////////////
@@ -212,18 +222,22 @@ public:
     Future<QVector<Frame>> discoverFrames(const QUrl& sourceUrl);
 
     /// Scans the given data file to find all available animation frames.
-    ///
-    /// \param fileHandle The data file to scan for animation frames.
-    /// \return A Future that will yield the list of discovered animation frames.
     virtual Future<QVector<Frame>> discoverFrames(const FileHandle& fileHandle);
 
-    /// \brief Returns the list of files that match the given wildcard pattern.
-    static Future<std::vector<QUrl>> findWildcardMatches(const QUrl& sourceUrl);
+    /// Queries the filesystem and returns a list of files matching the given wildcard pattern.
+    /// The filename pattern must contain exactly one '*' wildcard character, which represents a sequence of digits of arbitrary length.
+    /// The function returns the numeric part extracted from each matching filename.
+    static Future<QStringList> findWildcardMatches(const QUrl& urlPattern);
 
-    /// \brief Sends a request to the FileSource owning this importer to reload the input file.
+    /// Queries the filesystem and returns a list of files matching the given wildcard pattern.
+    /// The filename pattern can contain exactly one '*' wildcard character, which represents a sequence of digits of arbitrary length.
+    /// This version of the function returns the list of fully resolved file URLs.
+    static Future<std::vector<QUrl>> findWildcardMatchesResolved(const QUrl& urlPattern);
+
+    /// Sends a request to the FileSource owning this importer to reload the input file.
     void requestReload(bool refetchFiles = false, int frame = -1);
 
-    /// \brief Sends a request to the FileSource owning this importer to refresh the animation frame sequence.
+    /// Sends a request to the FileSource owning this importer to refresh the animation frame sequence.
     void requestFramesUpdate(bool refetchCurrentFile = false);
 
     /// Loads the data for the given frame from the external file.
@@ -246,7 +260,7 @@ public:
 
 protected:
 
-    /// \brief Is called when the value of a property of this object has changed.
+    /// Is called when the value of a property of this object has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
 
     /// This method is called when the pipeline scene node for the FileSource is created.
@@ -255,7 +269,11 @@ protected:
     virtual Future<void> setupPipeline(OORef<Pipeline> pipeline, OORef<FileSource> importObj) { return {}; }
 
     /// Checks if a filename matches to the given wildcard pattern.
-    static bool matchesWildcardPattern(const QString& pattern, const QString& filename);
+    /// If yes, returns the numeric part extracted from the filename.
+    static std::optional<QStringView> matchesWildcardPattern(const QStringView pattern, const QStringView filename);
+
+    /// Given a URL pattern and a list of entries, resolves the wildcard matches into full file URLs.
+    static std::vector<QUrl> resolveWildcardMatches(const QUrl& urlPattern, const QStringList& entries);
 
     /// Determines whether the input file should be scanned to discover all contained frames.
     /// The default implementation returns the value of isMultiTimestepFile().

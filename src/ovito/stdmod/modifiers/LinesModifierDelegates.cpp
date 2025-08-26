@@ -67,23 +67,22 @@ Future<PipelineFlowState> LinesDeleteSelectedModifierDelegate::apply(
         size_t numLines = 0;
         size_t numSelected = 0;
 
-        // Get the lines (vertex) selection.
-        for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-            if(const Lines* inputLines = dynamic_object_cast<Lines>(state.data()->objects()[i])) {
-                inputLines->verifyIntegrity();
-                numLines += inputLines->elementCount();
-                if(ConstPropertyPtr selProperty = inputLines->getProperty(Lines::SelectionProperty)) {
-                    // Make sure we can safely modify the lines object.
-                    Lines* outputLines = state.makeMutable(inputLines);
+        // Process each line object in the data collection.
+        state.data()->visitObjectsOfType<Lines>([&](const Lines* inputLines) {
+            inputLines->verifyIntegrity();
+            numLines += inputLines->elementCount();
+            // Get the lines (vertex) selection.
+            if(ConstPropertyPtr selProperty = inputLines->getProperty(Lines::SelectionProperty)) {
+                // Make sure we can safely modify the lines object.
+                Lines* outputLines = state.makeMutable(inputLines);
 
-                    // Remove selection property.
-                    outputLines->removeProperty(selProperty);
+                // Remove selection property.
+                outputLines->removeProperty(selProperty);
 
-                    // Delete the selected line vertices.
-                    numSelected += outputLines->deleteElements(std::move(selProperty));
-                }
+                // Delete the selected line vertices.
+                numSelected += outputLines->deleteElements(std::move(selProperty));
             }
-        }
+        });
 
         // Report some statistics:
         QString statusMessage = tr("%1 of %2 lines deleted (%3%)")

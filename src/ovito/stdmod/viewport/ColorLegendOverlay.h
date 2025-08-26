@@ -83,17 +83,24 @@ protected:
 private:
 
     /// Draws the color legend for a Color Coding modifier.
-    void drawContinuousColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect, FloatType legendSize, const PseudoColorMapping& mapping);
+    void drawContinuousColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect,
+                                FloatType legendSize, const PseudoColorMapping& mapping);
 
-	/// Draws the color legend for a typed property.
-	void drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect, FloatType legendSize, const Property* property);
+    using DiscreteColorMapLabels = std::vector<std::tuple<int, QString, Color>>;
+    /// Converts a typed property into an array to be used as input for drawDiscreteColorMap
+    [[nodiscard]] static DiscreteColorMapLabels getDiscreteColorMapLabels(const Property* property);
+    /// Converts a given number of discrete colors into an array to be used as input for drawDiscreteColorMap
+    [[nodiscard]] DiscreteColorMapLabels getDiscreteColorMapLabels(const ColorCodingGradient* gradient, FloatType startValue,
+                                                                   FloatType endValue, int orientation) const;
+
+    /// Draws the color legend for a typed property.
+    void drawDiscreteColorMap(FrameGraph& frameGraph, FrameGraph::RenderingCommandGroup& commandGroup, const QRectF& colorBarRect,
+                              FloatType legendSize, const DiscreteColorMapLabels& colorMapLabels);
 
     // Determine the starting value and the tick spacing for a given color bar length and character size
     [[nodiscard]] std::tuple<FloatType, FloatType> getAutomaticTickPositions(FloatType lowerLimit, FloatType upperLimit,
-                                                                             const FloatType lenColorbar,
-                                                                             const QFontMetricsF& fontMetrics,
-                                                                             const QByteArray& labelFormat,
-                                                                             const int maxIter = 50) const;
+                                                                             const FloatType lenColorbar, const QFontMetricsF& fontMetrics,
+                                                                             const QByteArray& labelFormat, const int maxIter = 50) const;
 
     // Determine the starting value for a given tick spacing.
     [[nodiscard]] static FloatType getUserDefinedTickPositions(FloatType lowerLimit, FloatType upperLimit, const FloatType inter);
@@ -148,10 +155,10 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QString{QStringLiteral("%g")}, valueFormatString, setValueFormatString);
 
     /// Controls the text color.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0,0,0}), textColor, setTextColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0, 0, 0}), textColor, setTextColor, PROPERTY_FIELD_MEMORIZE);
 
     /// The text outline color.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{1,1,1}), outlineColor, setOutlineColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{1, 1, 1}), outlineColor, setOutlineColor, PROPERTY_FIELD_MEMORIZE);
 
     /// Controls the outlining of the font.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, outlineEnabled, setOutlineEnabled, PROPERTY_FIELD_MEMORIZE);
@@ -163,7 +170,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, borderEnabled, setBorderEnabled, PROPERTY_FIELD_MEMORIZE);
 
     /// The border color.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0,0,0}), borderColor, setBorderColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{0, 0, 0}), borderColor, setBorderColor, PROPERTY_FIELD_MEMORIZE);
 
     // Toggle tick marks.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, ticksEnabled, setTicksEnabled, PROPERTY_FIELD_MEMORIZE);
@@ -180,10 +187,10 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, backgroundEnabled, setBackgroundEnabled, PROPERTY_FIELD_MEMORIZE);
 
     // Background color.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{1,1,1}), backgroundColor, setBackgroundColor, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS((Color{1, 1, 1}), backgroundColor, setBackgroundColor, PROPERTY_FIELD_MEMORIZE);
 
-    /// The automatically chosen texts of the title and numeric labels. These strings are determined during rendering of the overlay and will
-    /// subsequently be displayed in the GUI panel as placeholder texts in the input fields.
+    /// The automatically chosen texts of the title and numeric labels. These strings are determined during rendering of the overlay and
+    /// will subsequently be displayed in the GUI panel as placeholder texts in the input fields.
     QString _autoTitleText, _autoLabel1Text, _autoLabel2Text;
 
     friend class ColorLegendOverlayEditor;

@@ -118,7 +118,7 @@ private:
 /**
  * \brief Data inspector page for surface meshes.
  */
-class SurfaceMeshInspectionApplet : public DataInspectionApplet
+class SurfaceMeshInspectionApplet : public PropertyInspectionApplet
 {
     OVITO_CLASS(SurfaceMeshInspectionApplet)
     Q_OBJECT

@@ -49,19 +49,17 @@ Future<PipelineFlowState> VoxelGridAffineTransformationModifierDelegate::apply(c
 {
     AffineTransformationModifier* modifier = static_object_cast<AffineTransformationModifier>(request.modifier());
 
-    // Transform the spatial domains of VoxelGrid objects.
-    for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-        if(const VoxelGrid* existingObject = dynamic_object_cast<VoxelGrid>(state.data()->objects()[i])) {
-            if(existingObject->domain()) {
+    // Transform the spatial domains of all VoxelGrid objects.
+    state.data()->visitObjectsOfType<VoxelGrid>([&](const VoxelGrid* existingObject) {
+        if(existingObject->domain()) {
 
-                // Determine transformation matrix.
-                const AffineTransformation tm = modifier->effectiveAffineTransformation(originalState);
+            // Determine transformation matrix.
+            const AffineTransformation tm = modifier->effectiveAffineTransformation(originalState);
 
-                VoxelGrid* newObject = state.makeMutable(existingObject);
-                newObject->mutableDomain()->setCellMatrix(tm * existingObject->domain()->cellMatrix());
-            }
+            VoxelGrid* newObject = state.makeMutable(existingObject);
+            newObject->mutableDomain()->setCellMatrix(tm * existingObject->domain()->cellMatrix());
         }
-    }
+    });
 
     return std::move(state);
 }

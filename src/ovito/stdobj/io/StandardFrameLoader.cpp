@@ -46,6 +46,17 @@ SimulationCell* StandardFrameLoader::simulationCell()
 }
 
 /******************************************************************************
+* Removes any existing simulation cell object from the state.
+******************************************************************************/
+void StandardFrameLoader::removeSimulationCell()
+{
+    if(const SimulationCell* cell = state().getObject<SimulationCell>())
+        state().removeObject(cell);
+    _simulationCell = nullptr;
+    _isSimulationCellNewlyCreated = false;
+}
+
+/******************************************************************************
 * Finalizes the data loaded by a sub-class.
 ******************************************************************************/
 void StandardFrameLoader::loadFile()

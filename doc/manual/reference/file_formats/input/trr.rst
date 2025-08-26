@@ -13,9 +13,9 @@ This file format is used by the *GROMACS* molecular dynamics code. A format spec
 
 .. important::
 
-  The file reader automatically converts atom coordinates and cell vectors from nanometers to Angstroms during import into OVITO, multiplying all values by a factor of 10. 
-  Velocities are converted from :math:`\mathrm{nm}/\mathrm{ps}` to :math:`:\text{Å}/\mathrm{ps}`, multiplying veclocities by a factor of 10. 
-  Forces are converted from :math:`\mathrm{kJ} \mathrm{mol}^{-1} \mathrm{nm}^{-1}` to :math:`\mathrm{eV}/\text{Å}` using a factor of 0.00103643. 
+  The file reader automatically converts atom coordinates and cell vectors from nanometers to Angstroms during import into OVITO, multiplying all values by a factor of 10.
+  Velocities are converted from :math:`\mathrm{nm}/\mathrm{ps}` to :math:`:\text{Å}/\mathrm{ps}`, multiplying velocities by a factor of 10.
+  Forces are converted from :math:`\mathrm{kJ} \mathrm{mol}^{-1} \mathrm{nm}^{-1}` to :math:`\mathrm{eV}/\text{Å}` using a factor of 0.00103643.
 
 .. _file_formats.input.trr.python:
 

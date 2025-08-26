@@ -130,7 +130,7 @@ Exporting computation results
 
 Total number of clusters
   To export the total number of clusters found by the modifier to a text file (possibly as a function of time),
-  use OVITO's standard :ref:`file export function <usage.export>`. Select the output format **Table of values**
+  use OVITO's standard :ref:`file export function <usage.export>`. Select the output format **Table of Global Attributes**
   and make sure that the ``ClusterAnalysis.cluster_count`` global attribute is selected for export.
 
 Size of the largest clusters

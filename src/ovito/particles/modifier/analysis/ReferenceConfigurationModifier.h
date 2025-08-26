@@ -120,13 +120,15 @@ protected:
         const ConstPropertyPtr& refIdentifiers() const { return _refIdentifiers; }
 
         /// Returns the simulation cell data.
-        const DataOORef<SimulationCell>& cell() const { return _simCell; }
+        const SimulationCellData& cell() const { return _simCell; }
 
         /// Returns the reference simulation cell data.
-        const DataOORef<SimulationCell>& refCell() const { return _simCellRef; }
+        const SimulationCellData& refCell() const { return _simCellRef; }
 
+        /// The affine mapping type used in the calculation of displacement vectors.
         AffineMappingType affineMapping() const { return _affineMapping; }
 
+        /// Indicates whether the minimum image convention is used when calculating displacements.
         bool useMinimumImageConvention() const { return _useMinimumImageConvention; }
 
         /// Returns the matrix for transforming points/vectors from the reference configuration to the current configuration.
@@ -143,16 +145,16 @@ protected:
 
     private:
 
-        DataOORef<SimulationCell> _simCell;
-        DataOORef<SimulationCell> _simCellRef;
+        SimulationCellData _simCell;
+        SimulationCellData _simCellRef;
         AffineTransformation _refToCurTM;
         AffineTransformation _curToRefTM;
         ConstPropertyPtr _positions;
         ConstPropertyPtr _refPositions;
         ConstPropertyPtr _identifiers;
         ConstPropertyPtr _refIdentifiers;
-        const AffineMappingType _affineMapping;
-        const bool _useMinimumImageConvention;
+        AffineMappingType _affineMapping;
+        bool _useMinimumImageConvention;
         std::vector<size_t> _currentToRefIndexMap;
         std::vector<size_t> _refToCurrentIndexMap;
     };

@@ -41,7 +41,7 @@ Future<OORef<FileImporter>> FileImporter::autodetectFileFormat(const QUrl& url, 
         throw Exception(tr("Invalid path or URL."));
 
     // Resolve filename if it contains a wildcard.
-    return FileSourceImporter::findWildcardMatches(url).then([existingImporterHint = std::move(existingImporterHint)](std::vector<QUrl>&& urls) {
+    return FileSourceImporter::findWildcardMatchesResolved(url).then([existingImporterHint = std::move(existingImporterHint)](std::vector<QUrl>&& urls) {
         if(urls.empty())
             throw Exception(tr("There are no files in the directory matching the filename pattern."));
 

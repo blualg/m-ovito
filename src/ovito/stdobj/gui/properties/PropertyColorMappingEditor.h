@@ -39,10 +39,8 @@ class OVITO_STDOBJGUI_EXPORT PropertyColorMappingEditor : public PropertiesEdito
 
 public:
 
-    /// Sets the property container containing the input properties the user can choose from.
-    void setPropertyContainer(const PropertyContainer* container) {
-        _sourcePropertyUI->setContainer(container);
-    }
+    /// Sets the property container(s) containing the input properties the user can choose from.
+    void setPropertyContainers(std::vector<DataOORef<const PropertyContainer>> containers);
 
 protected:
 
@@ -89,6 +87,9 @@ private:
 
     /// The list of available color gradients.
     QComboBox* _colorGradientList;
+
+    /// Cache for the color gradient preview images
+    QHash<std::pair<int, int>, QImage> _colorGradientCache;
 
     /// Indicates the combo box already contains an item for a custom color map.
     bool _gradientListContainCustomItem;

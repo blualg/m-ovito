@@ -447,7 +447,7 @@ void SceneNode::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableD
     // Save list of weak references to viewports in which the node is hidden.
     stream.writeSizeT(hiddenInViewports().size());
     for(const auto& vpWeakRef : hiddenInViewports()) {
-        stream.saveObject(vpWeakRef.lock(), excludeRecomputableData);
+        stream.saveObject(vpWeakRef.lock().get(), excludeRecomputableData);
     }
     stream.endChunk();
 }

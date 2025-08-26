@@ -401,7 +401,7 @@ Color Bonds::OOMetaClass::getElementTypeDefaultColor(const OwnerPropertyRef& pro
 std::pair<size_t, ConstDataObjectPath> Bonds::OOMetaClass::elementFromPickResult(const ViewportWindow::PickResult& pickResult) const
 {
     // Check if a bond was picked.
-    if(BondPickInfo* pickInfo = dynamic_object_cast<BondPickInfo>(pickResult.pickInfo())) {
+    if(BondPickInfo* pickInfo = dynamic_object_cast<BondPickInfo>(pickResult.pickInfo().get())) {
         size_t bondIndex = pickResult.subobjectId() / 2;
         if(pickInfo->particles()->bonds() && bondIndex < pickInfo->particles()->bonds()->elementCount()) {
             return std::make_pair(bondIndex, ConstDataObjectPath{{pickInfo->particles(), pickInfo->particles()->bonds()}});

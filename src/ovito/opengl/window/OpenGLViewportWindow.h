@@ -56,6 +56,9 @@ public:
     /// Returns the current frame graph being rendered by OpenGL.
     const OORef<FrameGraph>& frameGraph() const { return _frameGraph; }
 
+    /// Returns the rendering job that renders the object picking offscreen pass.
+    const OORef<PickingOpenGLRenderingJob>& pickingRenderingJob() const { return _pickingRenderingJob; }
+
 protected:
 
     /// Creates the Qt widget that is associated with this viewport window.

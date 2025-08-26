@@ -78,7 +78,7 @@ void VoroTopModifier::loadFilterDefinition(const QString& filepath)
 void VoroTopModifier::VoroTopAnalysisAlgorithm::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
 {
     if(!simulationCell)
-        throw Exception(tr("The VoroTop algorithm requires a simulation cell geometry."));
+        throw Exception(tr("The VoroTop algorithm requires a simulation cell to be defined."));
     if(simulationCell->is2D())
         throw Exception(tr("The VoroTop algorithm does not support 2d simulation cells."));
 

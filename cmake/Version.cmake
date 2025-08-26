@@ -24,8 +24,8 @@
 
 # This is the canonical program version number:
 SET(OVITO_VERSION_MAJOR         "3")
-SET(OVITO_VERSION_MINOR         "13")
-SET(OVITO_VERSION_REVISION      "1")
+SET(OVITO_VERSION_MINOR         "14")
+SET(OVITO_VERSION_REVISION      "0")
 
 # The following version number is used to tag the file format of .ovito session state files.
 #
@@ -40,7 +40,8 @@ SET(OVITO_VERSION_REVISION      "1")
 # Format version 30011 - OVITO ver>=3.9.3: Renamed and/or merged several classes, added RemoteExportSettings to dataset
 # Format version 30012 - OVITO ver>=3.11.0: Added reference field flag PROPERTY_FIELD_DONT_SAVE_TARGET
 # Format version 30013 - OVITO ver>=3.12.0: Removed weak reference fields. Serialized classes can be tagged as "nonessential". Split Pipeline class from SceneNode class.
-SET(OVITO_FILE_FORMAT_VERSION   "30013")
+# Format version 30014 - OVITO ver>=3.14.0: Use AnimationFrameLabel class instead of QString to store animation frame labels.
+SET(OVITO_FILE_FORMAT_VERSION   "30014")
 
 # The application's default version string:
 SET(OVITO_VERSION_STRING "${OVITO_VERSION_MAJOR}.${OVITO_VERSION_MINOR}.${OVITO_VERSION_REVISION}")

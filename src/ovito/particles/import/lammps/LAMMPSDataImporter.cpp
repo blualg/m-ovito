@@ -971,7 +971,13 @@ QString LAMMPSDataImporter::atomStyleName(LAMMPSAtomStyle atomStyle)
         QStringLiteral("template"),
         QStringLiteral("tri"),
         QStringLiteral("wavepacket"),
-        QStringLiteral("hybrid")
+        QStringLiteral("hybrid"),
+        // Added in OVITO 3.13.1:
+        QStringLiteral("spin"),
+        QStringLiteral("sph"),
+        QStringLiteral("rheo"),
+        QStringLiteral("rheo/thermal"),
+        QStringLiteral("bpm/sphere")
     };
     OVITO_STATIC_ASSERT(AtomStyle_COUNT == std::size(styleNames));
     OVITO_ASSERT((int)atomStyle < AtomStyle_COUNT);
@@ -1384,6 +1390,101 @@ ParticleInputColumnMapping LAMMPSDataImporter::createAtomsColumnMapping(LAMMPSAt
             }
         }
         break;
+    case AtomStyle_Spin:
+        columnMapping.resize(9);
+        columnMapping[0].columnName = "atom-ID";
+        columnMapping[1].columnName = "atom-type";
+        columnMapping[2].columnName = "x";
+        columnMapping[3].columnName = "y";
+        columnMapping[4].columnName = "z";
+        columnMapping[5].columnName = "spx";
+        columnMapping[6].columnName = "spy";
+        columnMapping[7].columnName = "spz";
+        columnMapping[8].columnName = "sp";
+        columnMapping.mapColumnToStandardProperty(0, Particles::IdentifierProperty);
+        columnMapping.mapColumnToStandardProperty(1, Particles::TypeProperty);
+        columnMapping.mapColumnToStandardProperty(2, Particles::PositionProperty, 0);
+        columnMapping.mapColumnToStandardProperty(3, Particles::PositionProperty, 1);
+        columnMapping.mapColumnToStandardProperty(4, Particles::PositionProperty, 2);
+        columnMapping.mapColumnToUserProperty(5, QStringLiteral("Magnetic Spin"), DataBuffer::FloatDefault, 0);
+        columnMapping.mapColumnToUserProperty(6, QStringLiteral("Magnetic Spin"), DataBuffer::FloatDefault, 1);
+        columnMapping.mapColumnToUserProperty(7, QStringLiteral("Magnetic Spin"), DataBuffer::FloatDefault, 2);
+        columnMapping.mapColumnToUserProperty(8, QStringLiteral("Magnetic Spin Magnitude"), DataBuffer::FloatDefault);
+        break;
+    case AtomStyle_SPH:
+        columnMapping.resize(8);
+        columnMapping[0].columnName = "atom-ID";
+        columnMapping[1].columnName = "atom-type";
+        columnMapping[2].columnName = "rho";
+        columnMapping[3].columnName = "esph";
+        columnMapping[4].columnName = "cv";
+        columnMapping[5].columnName = "x";
+        columnMapping[6].columnName = "y";
+        columnMapping[7].columnName = "z";
+        columnMapping.mapColumnToStandardProperty(0, Particles::IdentifierProperty);
+        columnMapping.mapColumnToStandardProperty(1, Particles::TypeProperty);
+        columnMapping.mapColumnToUserProperty(2, QStringLiteral("Density"), DataBuffer::FloatDefault);
+        columnMapping.mapColumnToUserProperty(3, QStringLiteral("epsh"), DataBuffer::FloatDefault);
+        columnMapping.mapColumnToUserProperty(4, QStringLiteral("cv"), DataBuffer::FloatDefault);
+        columnMapping.mapColumnToStandardProperty(5, Particles::PositionProperty, 0);
+        columnMapping.mapColumnToStandardProperty(6, Particles::PositionProperty, 1);
+        columnMapping.mapColumnToStandardProperty(7, Particles::PositionProperty, 2);
+        break;
+    case AtomStyle_Rheo:
+        columnMapping.resize(7);
+        columnMapping[0].columnName = "atom-ID";
+        columnMapping[1].columnName = "atom-type";
+        columnMapping[2].columnName = "status";
+        columnMapping[3].columnName = "rho";
+        columnMapping[4].columnName = "x";
+        columnMapping[5].columnName = "y";
+        columnMapping[6].columnName = "z";
+        columnMapping.mapColumnToStandardProperty(0, Particles::IdentifierProperty);
+        columnMapping.mapColumnToStandardProperty(1, Particles::TypeProperty);
+        columnMapping.mapColumnToUserProperty(2, QStringLiteral("status"), DataBuffer::FloatDefault);
+        columnMapping.mapColumnToUserProperty(3, QStringLiteral("Density"), DataBuffer::FloatDefault);
+        columnMapping.mapColumnToStandardProperty(4, Particles::PositionProperty, 0);
+        columnMapping.mapColumnToStandardProperty(5, Particles::PositionProperty, 1);
+        columnMapping.mapColumnToStandardProperty(6, Particles::PositionProperty, 2);
+        break;
+    case AtomStyle_RheoThermal:
+        columnMapping.resize(8);
+        columnMapping[0].columnName = "atom-ID";
+        columnMapping[1].columnName = "atom-type";
+        columnMapping[2].columnName = "status";
+        columnMapping[3].columnName = "rho";
+        columnMapping[4].columnName = "energy";
+        columnMapping[5].columnName = "x";
+        columnMapping[6].columnName = "y";
+        columnMapping[7].columnName = "z";
+        columnMapping.mapColumnToStandardProperty(0, Particles::IdentifierProperty);
+        columnMapping.mapColumnToStandardProperty(1, Particles::TypeProperty);
+        columnMapping.mapColumnToUserProperty(2, QStringLiteral("status"), DataBuffer::FloatDefault);
+        columnMapping.mapColumnToUserProperty(3, QStringLiteral("Density"), DataBuffer::FloatDefault);
+        columnMapping.mapColumnToUserProperty(4, QStringLiteral("energy"), DataBuffer::FloatDefault);
+        columnMapping.mapColumnToStandardProperty(5, Particles::PositionProperty, 0);
+        columnMapping.mapColumnToStandardProperty(6, Particles::PositionProperty, 1);
+        columnMapping.mapColumnToStandardProperty(7, Particles::PositionProperty, 2);
+        break;
+    case AtomStyle_BPMSphere:
+        columnMapping.resize(8);
+        columnMapping[0].columnName = "atom-ID";
+        columnMapping[1].columnName = "molecule-ID";
+        columnMapping[2].columnName = "atom-type";
+        columnMapping[3].columnName = "diameter";
+        columnMapping[4].columnName = "density";
+        columnMapping[5].columnName = "x";
+        columnMapping[6].columnName = "y";
+        columnMapping[7].columnName = "z";
+        columnMapping.mapColumnToStandardProperty(0, Particles::IdentifierProperty);
+        columnMapping.mapColumnToStandardProperty(1, Particles::MoleculeProperty);
+        columnMapping.mapColumnToStandardProperty(2, Particles::TypeProperty);
+        columnMapping.mapColumnToStandardProperty(3, Particles::RadiusProperty);
+        columnMapping.mapColumnToUserProperty(4, QStringLiteral("Density"), DataBuffer::FloatDefault);
+        columnMapping.mapColumnToStandardProperty(5, Particles::PositionProperty, 0);
+        columnMapping.mapColumnToStandardProperty(6, Particles::PositionProperty, 1);
+        columnMapping.mapColumnToStandardProperty(7, Particles::PositionProperty, 2);
+        break;
     case AtomStyle_Unknown:
         break;
     default:
@@ -1417,6 +1518,7 @@ ParticleInputColumnMapping LAMMPSDataImporter::createVelocitiesColumnMapping(LAM
     columnMapping.mapColumnToStandardProperty(3, Particles::VelocityProperty, 2);
     switch(atomStyle) {
     case AtomStyle_Sphere:
+    case AtomStyle_BPMSphere:
         columnMapping.resize(7);
         columnMapping[4].columnName = "wx";
         columnMapping[5].columnName = "wy";

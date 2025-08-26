@@ -7,11 +7,16 @@
     max-width: 950px !important;
 }
 
-/* Remove padding of the sidebar and slightly reduce its width. */
+/* Reduce padding of the sidebar and slightly reduce its width. */
 .rst-content .sidebar {
     padding: 0px;
     width: 33%;
     border: 0px none;
+}
+
+/* Add some padding to text in the sidebar panel. */
+.rst-content .sidebar .line-block {
+    margin: 6px 6px;
 }
 
 /* Adjust title bar of the sidebar panel to the zero padding style. */

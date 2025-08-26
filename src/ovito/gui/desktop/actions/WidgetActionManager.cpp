@@ -52,6 +52,7 @@ WidgetActionManager::WidgetActionManager(QObject* parent, MainWindow& mainWindow
     connect(getAction(ACTION_HELP_GRAPHICS_SYSINFO), &QAction::triggered, this, &WidgetActionManager::on_HelpSystemInfo_triggered);
     connect(getAction(ACTION_HELP_SHOW_ONLINE_HELP), &QAction::triggered, this, &WidgetActionManager::on_HelpShowOnlineHelp_triggered);
     connect(getAction(ACTION_HELP_SHOW_SCRIPTING_HELP), &QAction::triggered, this, &WidgetActionManager::on_HelpShowScriptingReference_triggered);
+    connect(getAction(ACTION_HELP_REQUEST_FEATURE), &QAction::triggered, this, &WidgetActionManager::on_HelpRequestFeature_triggered);
     connect(getAction(ACTION_FILE_OPEN), &QAction::triggered, this, &WidgetActionManager::on_FileOpen_triggered);
     connect(getAction(ACTION_FILE_SAVE), &QAction::triggered, this, &WidgetActionManager::on_FileSave_triggered);
     connect(getAction(ACTION_FILE_SAVEAS), &QAction::triggered, this, &WidgetActionManager::on_FileSaveAs_triggered);

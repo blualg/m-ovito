@@ -67,9 +67,6 @@ private Q_SLOTS:
     /// Is called when the user selects a different container object from the list.
     void onCurrentContainerChanged(const DataObject* dataObject);
 
-    /// Action handler.
-    void exportDataToFile();
-
 private:
 
     /// The plotting widget.
@@ -78,7 +75,6 @@ private:
     QStackedWidget* _stackedWidget;
     QAction* _switchToPlotAction;
     QAction* _switchToTableAction;
-    QAction* _exportTableToFileAction;
 };
 
 }   // End of namespace

@@ -27,6 +27,10 @@
 #include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/dialogs/HistoryFileDialog.h>
+#include <ovito/gui/desktop/dialogs/FileExporterSettingsDialog.h>
+#include <ovito/core/dataset/DataSetContainer.h>
+#include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include "PropertyInspectionApplet.h"
 
 namespace Ovito {
@@ -53,6 +57,8 @@ void PropertyInspectionApplet::createBaseWidgets()
     _filterModel = new PropertyFilterModel(this, _tableView);
     _filterModel->setSourceModel(_tableModel);
     _tableView->setModel(_filterModel);
+    _tableView->horizontalHeader()->setResizeContentsPrecision(64); // Limit the number of rows taken into account when auto-resizing columns.
+    _tableView->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     _cleanupHandler.add(_tableView);
 
     // Clear filter expression whenever a different scene pipeline or data object is selected by the user.
@@ -68,9 +74,14 @@ void PropertyInspectionApplet::createBaseWidgets()
 void PropertyInspectionApplet::onCurrentContainerChanged()
 {
     mainWindow().handleExceptions([&]() {
-        _tableModel->setContents(selectedContainerObject());
+        int oldColumnCount = _tableModel->setContents(selectedContainerObject());
         _filterModel->setContentsBegin();
         _filterModel->setContentsEnd();
+
+        // Adjust the widths of the newly added columns.
+        for(int i = oldColumnCount; i < _tableModel->columnCount(); i++) {
+            _tableView->resizeColumnToContents(i);
+        }
 
         // Update the list of variables that can be referenced in the filter expression.
         if(selectedContainerObject() && currentState()) {
@@ -110,9 +121,62 @@ bool PropertyInspectionApplet::selectDataObject(const PipelineNode* createdByNod
 }
 
 /******************************************************************************
+ * Exports the current data table to a text file.
+ ******************************************************************************/
+void PropertyInspectionApplet::exportDataToFile(const DataObjectReference& dataObjectRef, OORef<FileExporter>&& exporter,
+                                                const QString& filterString) const
+{
+    OVITO_ASSERT_MSG(this_task::get(), "PropertyInspectionApplet::exportDataToFile",
+                     "This method must be called from a mainWindow().handleExceptions context.");
+
+    // Let the user select a destination file.
+    HistoryFileDialog dialog("export", &mainWindow(), tr("Export Table"));
+    dialog.setNameFilter(filterString);
+    dialog.setOption(QFileDialog::DontUseNativeDialog);
+    dialog.setAcceptMode(QFileDialog::AcceptSave);
+    dialog.setFileMode(QFileDialog::AnyFile);
+
+    // Go to the last directory used.
+    QSettings settings;
+    settings.beginGroup("file/export");
+    QString lastExportDirectory = settings.value("last_export_dir").toString();
+    if(!lastExportDirectory.isEmpty()) dialog.setDirectory(lastExportDirectory);
+
+    if(!dialog.exec() || dialog.selectedFiles().empty()) return;
+    QString exportFile = dialog.selectedFiles().front();
+
+    // Remember directory for the next time...
+    settings.setValue("last_export_dir", dialog.directory().absolutePath());
+
+    // Export to selected file.
+    // Pass output filename to exporter.
+    exporter->setOutputFilename(exportFile);
+
+    // Set pipeline to be exported.
+    exporter->setSceneToExport(currentSceneNode()->scene());
+    exporter->setPipelineToExport(currentPipeline());
+
+    // If the exporter supports it, automatically choose the data object(s) to be exported.
+    exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentSceneNode()->scene());
+
+    // Set data table to be exported.
+    exporter->setDataObjectToExport(dataObjectRef);
+
+    // Let the user adjust the export settings.
+    FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter, &mainWindow());
+    if(settingsDialog.exec() != QDialog::Accepted) return;
+
+    // Let the exporter do its job.
+    Future<void> future = exporter->performExport();
+
+    // Show a progress dialog while the operation is in progress. The dialog will self-destruct when the operation is done.
+    ProgressDialog::showForFuture(std::move(future), mainWindow(), tr("File export"));
+}
+
+/******************************************************************************
 * Replaces the contents of this data model.
 ******************************************************************************/
-void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyContainer* container)
+int PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyContainer* container)
 {
     OVITO_ASSERT(this_task::get());
 
@@ -131,12 +195,13 @@ void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCon
     if(!newProperties.empty())
         newRowCount = (int)std::min(newProperties.front()->size(), (size_t)std::numeric_limits<int>::max());
 
-    // Try to preserve the columns of the model as far as possible.
+    // Try to preserve the existing columns of the model as far as possible.
     auto iter_pair = std::mismatch(_properties.begin(), _properties.end(), newProperties.begin(), newProperties.end(),
         [](const Property* prop1, const Property* prop2) {
-            return prop1->typeId() == prop2->typeId() && prop1->name() == prop2->name();
+            return prop1->typeId() == prop2->typeId() && prop1->name() == prop2->name() && prop1->componentNames() == prop2->componentNames();
         });
 
+    // Remove columns from the model that are no longer present in the new list.
     if(iter_pair.first != _properties.end()) {
         beginRemoveColumns(QModelIndex(), iter_pair.first - _properties.begin(), _properties.size()-1);
         _properties.erase(iter_pair.first, _properties.end());
@@ -144,6 +209,7 @@ void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCon
     }
 
     OVITO_ASSERT(_properties.size() <= newProperties.size());
+    int oldColumnCount = _properties.size();
     if(!_properties.empty()) {
         if(oldRowCount > newRowCount) {
             beginRemoveRows(QModelIndex(), newRowCount, oldRowCount-1);
@@ -163,8 +229,9 @@ void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCon
             dataChanged(index(0, 0), index(changedRows-1, _properties.size()-1));
         }
 
+        // Insert new columns that are present in the new list but not in the existing model.
         if(newProperties.size() > _properties.size()) {
-            beginInsertColumns(QModelIndex(), _properties.size(), newProperties.size()-1);
+            beginInsertColumns(QModelIndex(), _properties.size(), newProperties.size() - 1);
             _properties.insert(_properties.end(), std::make_move_iterator(newProperties.begin() + _properties.size()), std::make_move_iterator(newProperties.end()));
             endInsertColumns();
         }
@@ -176,6 +243,7 @@ void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCon
     }
 
     OVITO_ASSERT(rowCount() == newRowCount);
+    return oldColumnCount;
 }
 
 /******************************************************************************
@@ -235,7 +303,7 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
                 if(property->dataType() == Property::Int32) {
                     BufferReadAccess<int32_t*> data(property);
                     str += QString::number(data.get(elementIndex, component));
-                    if(property->elementTypes().empty() == false) {
+                    if(!property->elementTypes().empty()) {
                         if(const ElementType* ptype = property->elementType(data.get(elementIndex, component))) {
                             if(!ptype->name().isEmpty())
                                 str += QStringLiteral(" (%1)").arg(ptype->name());
@@ -281,6 +349,31 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
         }
     }
     return {};
+}
+
+/******************************************************************************
+* Returns the data for the given role and section in the header with the specified orientation.
+******************************************************************************/
+QVariant PropertyInspectionApplet::PropertyTableModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if(orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+        OVITO_ASSERT(section >= 0 && section < _properties.size());
+        const Property* property = _properties[section];
+        QString name = property->name();
+        if(property->componentNames().empty() == false) {
+            name += QStringLiteral(" [");
+            for(qsizetype i = 0; i < property->componentNames().size(); i++) {
+                if(i != 0) name += QStringLiteral(" ");
+                name += property->componentNames()[i];
+            }
+            name += QStringLiteral("]");
+        }
+        return name;
+    }
+    else if(orientation == Qt::Vertical && role == Qt::DisplayRole) {
+        return _applet->headerColumnText(section);
+    }
+    return QAbstractTableModel::headerData(section, orientation, role);
 }
 
 /******************************************************************************

@@ -99,7 +99,7 @@ void DislocationAnalysisModifier::initializeObject(ObjectInitializationFlags fla
             ParticleType::PredefinedStructureType::CUBIC_DIAMOND, ParticleType::PredefinedStructureType::HEX_DIAMOND};
         OVITO_STATIC_ASSERT(std::size(predefTypes) == StructureAnalysis::NUM_LATTICE_TYPES);
         for(int id = 0; id < StructureAnalysis::NUM_LATTICE_TYPES; id++) {
-            DataOORef<MicrostructurePhase> stype = DataOORef<MicrostructurePhase>::create(flags);
+            OORef<MicrostructurePhase> stype = OORef<MicrostructurePhase>::create(flags);
             stype->setNumericId(id);
             stype->setDimensionality(MicrostructurePhase::Dimensionality::Volumetric);
             stype->setName(ParticleType::getPredefinedStructureTypeName(predefTypes[id]));
@@ -159,6 +159,17 @@ void DislocationAnalysisModifier::initializeObject(ObjectInitializationFlags fla
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void DislocationAnalysisModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(defectMeshVis() == visElement)
+        setDefectMeshVis(static_object_cast<SurfaceMeshVis>(getReplacement(tr("Defect mesh"))));
+    if(interfaceMeshVis() == visElement)
+        setInterfaceMeshVis(static_object_cast<SurfaceMeshVis>(getReplacement(tr("Interface mesh"))));
+}
+
+/******************************************************************************
  * Creates the engine that will perform the structure identification.
  ******************************************************************************/
 std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisModifier::createAlgorithm(
@@ -168,7 +179,9 @@ std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisM
     const Particles* particles = input.expectObject<Particles>();
     particles->verifyIntegrity();
 
-    const SimulationCell* simCell = input.expectObject<SimulationCell>();
+    const SimulationCell* simCell = input.getObject<SimulationCell>();
+    if(!simCell)
+        throw Exception(tr("The DXA modifier requires a simulation cell to be defined."));
     if(simCell->is2D())
         throw Exception(tr("The DXA modifier does not support 2d simulation cells."));
 

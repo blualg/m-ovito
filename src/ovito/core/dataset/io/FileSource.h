@@ -47,7 +47,7 @@ public:
 	/// \param importer The importer object that will parse the input file.
 	/// \param autodetectFileSequences Enables the automatic detection of file sequences.
 	/// \param keepExistingDataCollection Tells the file source to maintain the existing data objects and visual elements when importing a new file.
-	void setSource(std::vector<QUrl> sourceUrls, FileSourceImporter* importer, bool autodetectFileSequences, bool keepExistingDataCollection = false);
+	void setSource(std::vector<QUrl> sourceUrls, OORef<FileSourceImporter> importer, bool autodetectFileSequences, bool keepExistingDataCollection = false);
 
 	/// \brief This triggers a reload of input data from the external file for the given frame or all frames.
 	/// \param refetchFiles Clears the remote file cache so that file data will be retrieved again from the remote location.
@@ -73,7 +73,7 @@ public:
 	virtual AnimationTime sourceFrameToAnimationTime(int frame) const override;
 
 	/// \brief Returns the human-readable labels associated with the animation frames (e.g. the simulation timestep numbers).
-	virtual QMap<int, QString> animationFrameLabels() const override;
+	virtual QMap<int, AnimationFrameLabel> animationFrameLabels() const override;
 
 	/// Returns the title of this object.
 	virtual QString objectTitle() const override;
@@ -81,6 +81,9 @@ public:
 	/// \brief Scans the external data file(s) to find all contained frames.
 	/// This method is an implementation detail. Please use the high-level method updateListOfFrames() instead.
 	SharedFuture<QVector<FileSourceImporter::Frame>> requestFrameList(bool forceRescan);
+
+	/// Builds a list of human-readable frame labels, which can be displayed in the UI.
+	QStringList humanReadableFrameLabels() const;
 
 	/// Returns the name of the file loaded by the file source for the current animation frame.
 	/// The filename is displayed in the UI panel of the FileSource.
@@ -163,7 +166,7 @@ private:
 	bool _framesValid = false;
 
 	/// The human-readable labels associated with trajectory frames (e.g. the simulation timestep numbers).
-	mutable QMap<int, QString> _frameLabels;
+	mutable QMap<int, AnimationFrameLabel> _frameLabels;
 
 	/// The number of different source files from which the trajectory frames get loaded.
 	int _numberOfFiles = 0;

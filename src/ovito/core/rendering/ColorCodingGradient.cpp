@@ -41,6 +41,8 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingViridisGradient);
 OVITO_CLASSINFO(ColorCodingViridisGradient, "DisplayName", "Viridis");
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingMagmaGradient);
 OVITO_CLASSINFO(ColorCodingMagmaGradient, "DisplayName", "Magma");
+IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingFastGradient);
+OVITO_CLASSINFO(ColorCodingFastGradient, "DisplayName", "Fast");
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingCyclicHSVGradient);
 OVITO_CLASSINFO(ColorCodingCyclicHSVGradient, "DisplayName", "Cyclic Rainbow");
 IMPLEMENT_CREATABLE_OVITO_CLASS(ColorCodingTableGradient);

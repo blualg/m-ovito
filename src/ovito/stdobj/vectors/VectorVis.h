@@ -92,6 +92,9 @@ public:
     /// Sets the transparency parameter.
     void setTransparency(FloatType t) { transparencyController()->setFloatValue(AnimationTime(0), t); }
 
+    /// Replaces this visual element with a shared visual element by telling all dependents to update their references.
+    virtual void replaceWithSharedElement(DataVis* sharedVis) const override;
+
 public:
 
     Q_PROPERTY(Ovito::VectorVis::ShadingMode shadingMode READ shadingMode WRITE setShadingMode)

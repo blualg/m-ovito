@@ -114,9 +114,16 @@ public:
     /// If there is no replacement, the original vis element is returned.
     DataVis* getReplacementVisElement(DataVis* vis) const;
 
+    /// Replaces all references to the given visual element in the pipeline with new compatible objects.
+    void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement);
+
     /// Gathers a list of data objects from the given pipeline flow state (which should have been produced by this pipeline)
     /// that are associated with the given vis element. This method takes into account replacement vis elements.
     std::vector<ConstDataObjectPath> getDataObjectsForVisElement(const PipelineFlowState& state, DataVis* vis) const;
+
+    /// Returns the titles of all data objects associated with a visual element produced by this pipeline.
+    /// This method only returns a string list after the pipeline has been fully evaluated.
+    const QStringList* getDataObjectTitlesForVisElement(DataVis* vis) const;
 
     /// Computes the axis-aligned bounding box of the pipeline's visual output in local coordinates.
     Box3 localBoundingBox(AnimationTime time, TimeInterval& validity) const;
@@ -137,6 +144,9 @@ protected:
 
     /// Is called when a RefTarget has been added to a VectorReferenceField of this RefMaker.
     virtual void referenceInserted(const PropertyFieldDescriptor* field, RefTarget* newTarget, int listIndex) override;
+
+    /// Is called when a RefTarget has been removed from a VectorReferenceField.
+    virtual void referenceRemoved(const PropertyFieldDescriptor* field, RefTarget* oldTarget, int listIndex) override;
 
     /// Is called when the value of a non-animatable property field of this RefMaker has changed.
     virtual void propertyChanged(const PropertyFieldDescriptor* field) override;
@@ -163,7 +173,7 @@ private:
 
     /// Helper function that recursively collects all visual elements attached to a
     /// data object and its children and stores them in an output vector.
-    static void collectVisElements(const DataObject* dataObj, std::vector<DataVis*>& visElements);
+    static void collectVisElements(const DataObject* dataObj, std::vector<std::pair<DataVis*, QStringList>>& visElements);
 
     /// Helper function that recursively finds all data objects which the given vis element is associated with.
     void collectDataObjectsForVisElement(ConstDataObjectPath& path, DataVis* vis, std::vector<ConstDataObjectPath>& dataObjectPaths) const;
@@ -202,6 +212,9 @@ private:
     /// The Pipeline class has been split from the SceneNode base class. A separate SceneNode must now be created when loading a Pipeline from a state file.
     /// This field holds the SceneNode that is automatically being created for this pipeline during serialization of legacy state files.
     OORef<SceneNode> _deserializationSceneNode;
+
+    /// Stores the titles of data objects associated with each visual element.
+    std::vector<QStringList> _visElementDataObjectTitles;
 
     friend class PipelineCache;
 };

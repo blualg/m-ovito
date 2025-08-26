@@ -7,14 +7,20 @@ Coordination analysis
   :width: 30%
   :align: right
 
-This modifier computes two kinds of output:
+This modifier computes two things for a particle system:
 
 Coordination numbers
-  For each particle, it counts the number of other particles within a given cutoff distance. This neighbor count, the so-called *coordination number* of the particle,
+  For each particle, it counts the number of surrounding particles within a given cutoff distance. This neighbor count, the so-called *coordination number* of the particle,
   is stored in the ``Coordination`` output property by the modifier. The computed coordination numbers are available
   to subsequent modifiers in the OVITO data pipeline. For example, you could select all particles having a certain minimum number of neighbors using
   the :ref:`particles.modifiers.expression_select` modifier or visualize the computed coordination numbers using the
   :ref:`particles.modifiers.color_coding` modifier.
+
+  Optionally, the modifier can also compute the coordination numbers separately for each particle type in the system.
+  In this case, the modifier outputs a second property called ``Per Type Coordination``, which
+  contains the number of neighbors for each particle, grouped by type of the neighbors. This is useful for
+  analyzing the local structure of multi-component systems, such as alloys or mixtures of different particle species.
+  To enable this feature, check the option :guilabel:`Compute partial RDFs` described below.
 
 Radial pair distribution function
   The modifier also computes the radial pair distribution function (radial PDF, or simply RDF) for the particle system.
@@ -50,13 +56,12 @@ Computing RDF for a subset of particles
 
 The option :guilabel:`Use only selected particles` restricts the calculation to the currently selected subset of particles.
 
-This is useful if you want to calculate the RDF only for a part of the system or certain particle species.
+This is useful if you want to calculate the coordination numbers of the RDF only for a part of the system or certain particle species.
 If this option is enabled, unselected particles will be treated as if they did not exist during the calculation. Their ``Coordination`` values will be set to zero,
 they will not be counted in the coordination numbers of other particles, and they are ignored in the normalization of the RDF(s).
 
 If the option :guilabel:`Compute partial RDFs` is enabled too, the modifier will skip element combinations for which no particles are selected,
 i.e., for which a partial RDF would be zero.
-
 
 Time-averaged RDF
 """""""""""""""""

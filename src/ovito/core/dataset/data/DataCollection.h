@@ -50,7 +50,7 @@ public:
 
     /// Adds an additional root-level data object to this collection.
     /// The object must not already be part of the collection.
-    void addObject(const DataObject* obj);
+    void addObject(DataOORef<const DataObject> obj);
 
     /// Inserts an additional root-level data object into this collection.
     /// The object must not already be part of the collection.
@@ -65,6 +65,23 @@ public:
     /// Replaces a root-level data object in this collection with a different one.
     /// If the new object is a nullptr, the old object is simply removed from the collection.
     bool replaceObject(const DataObject* oldObj, const DataObject* newObj);
+
+    /// Returns the i-th object from the data collection.
+    const DataObject* getObject(qsizetype index) const {
+        OVITO_ASSERT(index >= 0 && index < _objects.size());
+        return objects()[index].get();
+    }
+
+    /// Calls the given visitor function for each root-level data object in this collection.
+    template<typename DataObjectClass, typename Visitor>
+    void visitObjectsOfType(Visitor&& visitor) const {
+        // Note: using index-based access, because the visitor may modify the collection.
+        for(qsizetype i = 0; i < objects().size(); i++) {
+            if(const DataObjectClass* obj = dynamic_object_cast<DataObjectClass>(getObject(i))) {
+                visitor(obj);
+            }
+        }
+    }
 
     /// Finds the first root-level object of the given class type in this collection.
     /// Return nullptr if not found.
@@ -321,10 +338,11 @@ public:
     /// assigns the given data source object, and finally inserts the data object into this collection.
     template<class DataObjectType, typename... Args>
     DataObjectType* createObject(OOWeakRef<const PipelineNode> createdByNode, Args&&... args) {
-        OORef<DataObjectType> obj = OORef<DataObjectType>::create(std::forward<Args>(args)...);
+        DataOORef<DataObjectType> obj = DataOORef<DataObjectType>::create(std::forward<Args>(args)...);
         obj->setCreatedByNode(std::move(createdByNode));
-        addObject(obj);
-        return obj;
+        DataObjectType* ptr = obj.get();
+        addObject(std::move(obj));
+        return ptr;
     }
 
     /// Instantiates a new data object, passes the given parameters to its class constructor,
@@ -360,11 +378,12 @@ public:
 
     /// Adds a data object to this collection while making sure the object gets a unique identifier.
     template<class DataObjectType>
-    void addObjectWithUniqueId(const DataObjectType* obj) {
+    void addObjectWithUniqueId(DataOORef<const DataObjectType> obj) {
+        OVITO_ASSERT(obj);
         OVITO_ASSERT(!obj->identifier().isEmpty());
         QString uniqueId = generateUniqueIdentifier<DataObjectType>(obj->identifier());
         if(uniqueId == obj->identifier()) {
-            addObject(obj);
+            addObject(std::move(obj));
         }
         else {
             DataOORef<DataObjectType> clone = DataOORef<DataObjectType>::makeCopy(obj);

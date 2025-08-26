@@ -74,9 +74,10 @@ public:
 
     /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor
     /// list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override
-    {
-        return tr("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel());
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override {
+        if(sourceProperty())
+            return QStringLiteral("%1=%2").arg(sourceProperty().nameWithComponent()).arg(isolevel());
+        return {};
     }
 
     /// Transfers voxel grid properties to the vertices of a surfaces mesh.

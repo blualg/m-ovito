@@ -68,9 +68,6 @@ ElasticStrainEngine::ElasticStrainEngine(
 ******************************************************************************/
 void ElasticStrainEngine::identifyStructures(const Particles* particles, const SimulationCell* simulationCell, const Property* selection)
 {
-    if(!simulationCell || simulationCell->is2D())
-        throw Exception(ElasticStrainModifier::tr("The elastic strain calculation requires a 3d simulation cell."));
-
     TaskProgress progress(this_task::ui());
     progress.setText(ElasticStrainModifier::tr("Calculating elastic strain tensors"));
 

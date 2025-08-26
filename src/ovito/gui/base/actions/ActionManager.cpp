@@ -60,6 +60,7 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
     createCommandAction(ACTION_HELP_SHOW_ONLINE_HELP, tr("User Manual"), "help_user_manual", tr("Open the OVITO user manual."), QKeySequence::HelpContents);
     createCommandAction(ACTION_HELP_SHOW_SCRIPTING_HELP, tr("Scripting Reference"), "help_scripting_manual", tr("Open the OVITO Python API documentation."));
     createCommandAction(ACTION_HELP_GRAPHICS_SYSINFO, tr("System Information..."), "help_system_info", tr("Display system and graphics hardware information."));
+    createCommandAction(ACTION_HELP_REQUEST_FEATURE, tr("Request a Feature"), nullptr, tr("Request a new feature for OVITO."));
 
     QAction* undoAction = createCommandAction(ACTION_EDIT_UNDO, tr("Undo"), "edit_undo", tr("Reverse the last action."), QKeySequence::Undo);
     QAction* redoAction = createCommandAction(ACTION_EDIT_REDO, tr("Redo"), "edit_redo", tr("Restore the previously reversed action."), QKeySequence::Redo);

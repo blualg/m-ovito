@@ -165,7 +165,7 @@ void DataObjectReferenceParameterUI::updatePropertyValue()
 
             editObject()->setPropertyFieldValue(propertyField(), QVariant::fromValue(ref));
 
-            if(self.lock())
+            if(!self.expired())
                 Q_EMIT valueEntered();
         });
     }

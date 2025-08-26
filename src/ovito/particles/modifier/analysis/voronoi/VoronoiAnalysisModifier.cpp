@@ -117,6 +117,15 @@ void VoronoiAnalysisModifier::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void VoronoiAnalysisModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(polyhedraVis() == visElement)
+        setPolyhedraVis(static_object_cast<SurfaceMeshVis>(getReplacement(tr("Voronoi polyhedra"))));
+}
+
+/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool VoronoiAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const
@@ -171,7 +180,9 @@ Future<PipelineFlowState> VoronoiAnalysisModifier::evaluateModifier(const Modifi
     const Property* posProperty = particles->expectProperty(Particles::PositionProperty);
 
     // Get simulation cell.
-    const SimulationCell* inputCell = state.expectObject<SimulationCell>();
+    const SimulationCell* inputCell = state.getObject<SimulationCell>();
+    if(!inputCell)
+        throw Exception(tr("The Voronoi analysis modifier requires a simulation cell to be defined."));
     if(inputCell->is2D())
         throw Exception(tr("The Voronoi modifier does not support 2d simulation cells."));
 
@@ -819,6 +830,9 @@ void VoronoiAnalysisModifier::VoronoiAnalysisEngine::perform()
         // Transfer edges from vertices that are going to be deleted to remaining vertices.
         for(SurfaceMesh::edge_index edge = 0; edge < polyhedraMesh.edgeCount(); edge++) {
             SurfaceMesh::vertex_index new_vertex = parents[polyhedraMesh.vertex2(edge)];
+            // Find root of the vertex and compress path.
+            while(new_vertex != parents[new_vertex])
+                new_vertex = parents[new_vertex];
             polyhedraMesh.transferFaceBoundaryToVertex(edge, new_vertex);
             this_task::throwIfCanceled();
         }

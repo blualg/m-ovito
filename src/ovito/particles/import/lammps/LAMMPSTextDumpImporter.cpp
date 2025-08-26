@@ -94,7 +94,7 @@ void LAMMPSTextDumpImporter::discoverFramesInFile(const FileHandle& fileHandle, 
                     frame.byteOffset = byteOffset;
                     frame.lineNumber = lineNumber;
                 }
-                frame.label = QStringLiteral("Timestep %1").arg(timestep);
+                frame.label.setToTimestep(timestep);
                 frames.push_back(frame);
                 stream.recordSeekPoint();
                 break;

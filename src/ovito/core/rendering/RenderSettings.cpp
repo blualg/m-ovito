@@ -152,7 +152,7 @@ Future<void> RenderSettings::render(const ViewportConfiguration& viewportConfigu
     return render(std::move(viewportLayout), animationSettings, outputFrameBuffer);
 }
 /******************************************************************************
- * Formats the image filename and replaces whildcards with the current frame number.
+ * Formats the image filename and replaces wildcards with the current frame number.
  ******************************************************************************/
 QString RenderSettings::formatImageFilename(const QString& filename, int frameNumber)
 {
@@ -300,9 +300,7 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
             // Append frame number to filename when rendering an animation.
             if(renderingRangeType() != RenderSettings::CURRENT_FRAME && renderingRangeType() != RenderSettings::CUSTOM_FRAME) {
                 // Format output filename.
-                qDebug() << "imageFilename" << outputFilename;
                 outputFilename = formatImageFilename(outputFilename, frameNumber);
-                qDebug() << "outputFilename" << outputFilename;
 
                 // Check for existing image file and skip frame.
                 if(skipExistingImages() && QFileInfo(outputFilename).isFile())

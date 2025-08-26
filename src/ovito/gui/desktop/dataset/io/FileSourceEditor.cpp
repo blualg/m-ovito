@@ -491,11 +491,7 @@ void FileSourceEditor::updateFramesList()
         _fileSeriesLabel->setText(tr("Found %1 matching files").arg(fileSource->numberOfFiles()));
 
     if(_framesListBox) {
-        QStringList stringList;
-        stringList.reserve(fileSource->frames().size());
-        for(const FileSourceImporter::Frame& frame : fileSource->frames())
-            stringList.push_back(frame.label);
-        _framesListModel->setStringList(std::move(stringList));
+        _framesListModel->setStringList(fileSource->humanReadableFrameLabels());
         _framesListBox->setCurrentIndex(fileSource->dataCollectionFrame());
         _framesListBox->setEnabled(_framesListBox->count() > 1);
     }

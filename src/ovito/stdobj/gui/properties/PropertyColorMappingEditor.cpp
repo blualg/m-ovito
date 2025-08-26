@@ -33,6 +33,7 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/oo/OvitoClass.h>
 #include "PropertyColorMappingEditor.h"
+#include <ovito/core/rendering/ColorMapHelper.h>
 
 namespace Ovito {
 
@@ -61,9 +62,10 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
     layout1->addWidget(_colorGradientList);
     _colorGradientList->setIconSize(QSize(48,16));
     connect(_colorGradientList, qOverload<int>(&QComboBox::activated), this, &PropertyColorMappingEditor::onColorGradientSelected);
-    std::vector<OvitoClassPtr> sortedColormapClassList = PluginManager::instance().listClasses(ColorCodingGradient::OOClass());
-    boost::sort(sortedColormapClassList, [](OvitoClassPtr a, OvitoClassPtr b) { return QString::localeAwareCompare(a->displayName(), b->displayName()) < 0; });
-    for(OvitoClassPtr clazz : sortedColormapClassList) {
+    std::vector<OvitoClassPtr> sortedColorMapClassList = PluginManager::instance().listClasses(ColorCodingGradient::OOClass());
+    boost::sort(sortedColorMapClassList,
+                [](OvitoClassPtr a, OvitoClassPtr b) { return QString::localeAwareCompare(a->displayName(), b->displayName()) < 0; });
+    for(OvitoClassPtr clazz : sortedColorMapClassList) {
         if(clazz == &ColorCodingImageGradient::OOClass() || clazz == &ColorCodingTableGradient::OOClass())
             continue;
         _colorGradientList->addItem(iconFromColorMapClass(clazz), clazz->displayName(), QVariant::fromValue(clazz));
@@ -129,6 +131,10 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
     layout2->addWidget(symmetricRangePUI->checkBox(), 3, 1);
     connect(symmetricRangePUI->checkBox(), &QCheckBox::toggled, _startValueUI, &FloatParameterUI::setDisabled);
 
+    // Discrete colormap
+    BooleanParameterUI* discreteColorMapPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(PropertyColorMapping::useDiscreteColorMap));
+    layout2->addWidget(discreteColorMapPUI->checkBox(), 4, 1);
+
     layout1->addSpacing(8);
 
     _adjustRangeBtn = new QPushButton(tr("Adjust range"), rollout);
@@ -142,6 +148,17 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
 
     // Update color legend if another color mapping object has been loaded into the editor.
     connect(this, &PropertiesEditor::contentsReplaced, this, &PropertyColorMappingEditor::updateColorGradient);
+
+    // Update color gradient display when settings are changed (required for discrete colormap).
+    connect(this, &PropertyColorMappingEditor::contentsChanged, this, &PropertyColorMappingEditor::updateColorGradient);
+}
+
+/******************************************************************************
+* Sets the property container(s) containing the input properties the user can choose from.
+******************************************************************************/
+void PropertyColorMappingEditor::setPropertyContainers(std::vector<DataOORef<const PropertyContainer>> containers)
+{
+    _sourcePropertyUI->setContainers(std::move(containers));
 }
 
 /******************************************************************************
@@ -150,34 +167,31 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
 void PropertyColorMappingEditor::updateColorGradient()
 {
     PropertyColorMapping* mod = static_object_cast<PropertyColorMapping>(editObject());
-    if(!mod) return;
+    // Validate input
+    if(!mod || !mod->colorGradient()) return;
+
+    // Get the index of the currently selected color gradient in the combo box.
+    const int index = _colorGradientList->findData(QVariant::fromValue(&mod->colorGradient()->getOOClass()));
 
     // Create the color legend image.
-    int legendHeight = 128;
-    QImage image(1, legendHeight, QImage::Format_RGB32);
-    if(mod->colorGradient()) {
-        for(int y = 0; y < legendHeight; y++) {
-            FloatType t = (FloatType)y / (legendHeight - 1);
-            Color color = mod->colorGradient()->valueToColor(1.0 - t);
-            image.setPixel(0, y, QColor(color).rgb());
-        }
+    constexpr int legendHeight = 128;
+
+    // Create the color legend image or reuse cached one.
+    // binCount <= 0 indicates that the color gradient is not a discrete colormap.
+    const int numDiscreteColors =
+        (mod->useDiscreteColorMap()) ? DiscreteColorMap::binCount((FloatType)mod->startValue(), (FloatType)mod->endValue()) : 0;
+    const std::pair<int, int> key{index, numDiscreteColors};
+    if(!_colorGradientCache.contains(key)) {
+        _colorGradientCache.emplace(key, ColorMap::generateImage<legendHeight>(mod->colorGradient(), numDiscreteColors));
     }
-    else {
-        // If no color gradient is set, fill the image with a gray color.
-        image.fill(Qt::gray);
-    }
-    _colorLegendLabel->setPixmap(QPixmap::fromImage(image));
+    _colorLegendLabel->setPixmap(QPixmap::fromImage(_colorGradientCache.value(key)));
 
     // Select the right entry in the color gradient selector.
     bool isCustomMap = false;
-    if(mod->colorGradient()) {
-        int index = _colorGradientList->findData(QVariant::fromValue(&mod->colorGradient()->getOOClass()));
-        if(index >= 0)
-            _colorGradientList->setCurrentIndex(index);
-        else
-            isCustomMap = true;
-    }
-    else _colorGradientList->setCurrentIndex(-1);
+    if(index >= 0)
+        _colorGradientList->setCurrentIndex(index);
+    else
+        isCustomMap = true;
 
     if(isCustomMap) {
         if(!_gradientListContainCustomItem) {
@@ -215,24 +229,28 @@ bool PropertyColorMappingEditor::referenceEvent(RefTarget* source, const Referen
 ******************************************************************************/
 std::optional<std::pair<FloatType, FloatType>> PropertyColorMappingEditor::determineValueRange() const
 {
+    std::optional<std::pair<FloatType, FloatType>> result;
+
     // Get the color mapping object.
-    PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject());
-    if(!mapping)
-        return {};
-
-    // Get the property container.
-    const PropertyContainer* container = _sourcePropertyUI->container();
-    if(!container)
-        return {};
-
-    // Look up the selected property.
-    QString errorDescr;
-    auto [pseudoColorProperty, pseudoColorPropertyComponent] = mapping->sourceProperty().findInContainerWithComponent(container, errorDescr);
-    if(!pseudoColorProperty)
-        return {};
-
-    // Determine min/max value range.
-    return mapping->determineValueRange(pseudoColorProperty, pseudoColorPropertyComponent);
+    if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject())) {
+        // Visit each property container.
+        for(const PropertyContainer* container : _sourcePropertyUI->containers()) {
+            // Look up the selected property.
+            QString errorDescr;
+            auto [pseudoColorProperty, pseudoColorPropertyComponent] = mapping->sourceProperty().findInContainerWithComponent(container, errorDescr);
+            if(pseudoColorProperty) {
+                // Determine min/max value range.
+                if(auto range = mapping->determineValueRange(pseudoColorProperty, pseudoColorPropertyComponent)) {
+                    // Unite ranges from all containers.
+                    if(!result)
+                        result = range;
+                    else
+                        result = std::make_pair(std::min(result->first, range->first), std::max(result->second, range->second));
+                }
+            }
+        }
+    }
+    return result;
 }
 
 /******************************************************************************
@@ -318,21 +336,19 @@ void PropertyColorMappingEditor::onReverseRange()
 void PropertyColorMappingEditor::onExportColorScale()
 {
     PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject());
-    if(!mapping || !mapping->colorGradient()) return;
+    if(!mapping || !mapping->pseudoColorMapping().gradient()) return;
 
     SaveImageFileDialog fileDialog(_colorLegendLabel, tr("Save color map"));
     if(fileDialog.exec()) {
-
         // Create the color legend image.
-        int legendWidth = 32;
-        int legendHeight = 256;
-        QImage image(1, legendHeight, QImage::Format_RGB32);
-        for(int y = 0; y < legendHeight; y++) {
-            FloatType t = (FloatType)y / (FloatType)(legendHeight - 1);
-            Color color = mapping->colorGradient()->valueToColor(1.0 - t);
-            image.setPixel(0, y, QColor(color).rgb());
-        }
-
+        constexpr int legendWidth = 32;
+        constexpr int legendHeight = 256;
+        // binCount <= 0 indicates that the color gradient is not a discrete colormap.
+        const int numDiscreteColors =
+            (mapping->useDiscreteColorMap() && mapping->pseudoColorMapping().isValid())
+                ? DiscreteColorMap::binCount(mapping->pseudoColorMapping().minValue(), mapping->pseudoColorMapping().maxValue())
+                : 0;
+        QImage image = ColorMap::generateImage<legendWidth>(mapping->pseudoColorMapping().gradient(), numDiscreteColors);
         QString imageFilename = fileDialog.imageInfo().filename();
         if(!image.scaled(legendWidth, legendHeight, Qt::IgnoreAspectRatio, Qt::FastTransformation).save(imageFilename, fileDialog.imageInfo().format())) {
             mainWindow().reportError(tr("Failed to save image to file '%1'.").arg(imageFilename));

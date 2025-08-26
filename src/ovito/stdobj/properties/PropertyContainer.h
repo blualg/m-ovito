@@ -49,25 +49,25 @@ public:
     virtual QString objectTitle() const override;
 
     /// Appends a new property to the list of properties.
-    void addProperty(const Property* property) {
+    void addProperty(ConstPropertyPtr property) {
         OVITO_ASSERT(property);
         OVITO_ASSERT(isSafeToModify());
-        OVITO_ASSERT(properties().contains(const_cast<Property*>(property)) == false);
+        OVITO_ASSERT(properties().contains(const_cast<Property*>(property.get())) == false);
         if(properties().empty())
             _elementCount.set(this, PROPERTY_FIELD(elementCount), property->size());
         OVITO_ASSERT(property->size() == elementCount());
-        _properties.push_back(this, PROPERTY_FIELD(properties), const_cast<Property*>(property));
+        _properties.push_back(this, PROPERTY_FIELD(properties), std::move(property));
     }
 
     /// Inserts a new property into the list of properties.
-    void insertProperty(int index, const Property* property) {
+    void insertProperty(int index, ConstPropertyPtr property) {
         OVITO_ASSERT(property);
         OVITO_ASSERT(isSafeToModify());
-        OVITO_ASSERT(properties().contains(const_cast<Property*>(property)) == false);
+        OVITO_ASSERT(properties().contains(const_cast<Property*>(property.get())) == false);
         if(properties().empty())
             _elementCount.set(this, PROPERTY_FIELD(elementCount), property->size());
         OVITO_ASSERT(property->size() == elementCount());
-        _properties.insert(this, PROPERTY_FIELD(properties), index, const_cast<Property*>(property));
+        _properties.insert(this, PROPERTY_FIELD(properties), index, std::move(property));
     }
 
     /// Removes a property from this container.
@@ -212,7 +212,7 @@ public:
     }
 
     /// Adds a property object to the container, replacing any preexisting property in the container with the same type.
-    const Property* createProperty(const Property* property);
+    const Property* createProperty(ConstPropertyPtr property);
 
     /// Sets the current number of data elements stored in the container.
     /// The lengths of the property arrays will be adjusted accordingly.

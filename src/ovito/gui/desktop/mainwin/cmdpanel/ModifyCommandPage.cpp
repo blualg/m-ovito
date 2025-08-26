@@ -141,6 +141,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
     _pipelineWidget->addAction(separator);
     _pipelineWidget->addAction(actionManager->getAction(ACTION_PIPELINE_COPY_ITEM));
     _pipelineWidget->addAction(actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
+    _pipelineWidget->addAction(actionManager->getAction(ACTION_PIPELINE_GROUP_VIS_ELEMENTS));
     separator = new QAction(_pipelineWidget);
     separator->setSeparator(true);
     _pipelineWidget->addAction(separator);
@@ -178,15 +179,15 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
 
     connect(actionManager->getAction(ACTION_PIPELINE_COPY_ITEM), &QAction::triggered, [&]() {
         // Collect all currently selected pipeline nodes.
-        QVector<OORef<PipelineNode>> nodes;
+        std::vector<OORef<PipelineNode>> nodes;
         for(RefTarget* obj : _pipelineListModel->selectedObjects()) {
             if(PipelineNode* pnode = dynamic_object_cast<PipelineNode>(obj)) {
-                if(!nodes.contains(pnode))
+                if(std::find(nodes.begin(), nodes.end(), pnode) == nodes.end())
                     nodes.push_back(pnode);
             }
             else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(obj)) {
                 for(ModificationNode* modNode : group->nodes()) {
-                    if(!nodes.contains(modNode))
+                    if(std::find(nodes.begin(), nodes.end(), modNode) == nodes.end())
                         nodes.push_back(modNode);
                 }
             }

@@ -96,6 +96,9 @@ private:
     /// Label that displays the color gradient picture.
     QLabel* _colorLegendLabel;
 
+    /// Cache for the color gradient preview images
+    QHash<std::pair<int, int>, QImage> _colorGradientCache;
+
     PropertyReferenceParameterUI* _sourcePropertyUI;
     FloatParameterUI* _startValueUI;
     FloatParameterUI* _endValueUI;

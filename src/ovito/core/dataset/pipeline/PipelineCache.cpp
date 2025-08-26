@@ -285,7 +285,7 @@ PipelineEvaluationResult PipelineCache::evaluatePipelineImpl(const PipelineEvalu
                 if(Pipeline* pipeline = dynamic_object_cast<Pipeline>(ownerObject())) {
                     // Let the pipeline update its list of vis elements.
                     if(isNotPreliminaryResult) {
-                        // Only gather vis elements that are present in the pipeline output at the animation time currently shown in the GUI.
+                        // Gather vis elements that are present in the pipeline output.
                         pipeline->updateVisElementList(state);
                     }
                 }

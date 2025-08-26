@@ -77,6 +77,15 @@ void GenerateTrajectoryLinesModifier::initializeObject(ObjectInitializationFlags
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void GenerateTrajectoryLinesModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(trajectoryVis() == visElement)
+        setTrajectoryVis(static_object_cast<LinesVis>(getReplacement(tr("Trajectory lines"))));
+}
+
+/******************************************************************************
 * This method is called by the system when the modifier has been inserted into a pipeline.
 ******************************************************************************/
 void GenerateTrajectoryLinesModifier::initializeModifier(const ModifierInitializationRequest& request)

@@ -90,17 +90,19 @@ std::unique_ptr<ReferenceConfigurationModifier::Engine> WignerSeitzAnalysisModif
     const Property* refPosProperty = refParticles->expectProperty(Particles::PositionProperty);
 
     // Get simulation cells.
-    const SimulationCell* inputCell = input.expectObject<SimulationCell>();
+    const SimulationCell* inputCell = input.getObject<SimulationCell>();
     const SimulationCell* refCell = referenceState.getObject<SimulationCell>();
-    if(!refCell)
-        throw Exception(tr("Reference configuration has no simulation cell."));
+    if(refCell && !inputCell)
+        throw Exception(tr("Input configuration does not have a simulation cell."));
+    if(inputCell && !refCell)
+        throw Exception(tr("Reference configuration does not have a simulation cell."));
 
     // Validate simulation cells.
-    if(inputCell->is2D())
-        throw Exception(tr("Wigner-Seitz analysis is not supported for 2d systems."));
-    if(inputCell->volume3D() < FLOATTYPE_EPSILON)
+    if(inputCell && inputCell->is2D())
+        throw Exception(tr("Wigner-Seitz analysis is not supported for 2D systems."));
+    if(inputCell && inputCell->isDegenerate())
         throw Exception(tr("Simulation cell is degenerate in the current configuration."));
-    if(refCell->volume3D() < FLOATTYPE_EPSILON)
+    if(refCell && refCell->isDegenerate())
         throw Exception(tr("Simulation cell is degenerate in the reference configuration."));
 
     // Get the particle types of the current configuration.
@@ -157,7 +159,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform(PipelineFlo
         throw Exception(tr("Reference configuration for Wigner-Seitz analysis contains no atomic sites."));
 
     // Prepare the closest-point query structure.
-    NearestNeighborFinder neighborTree(0, refPositions(), refCell().get(), {});
+    NearestNeighborFinder neighborTree(0, refPositions(), refCell(), {});
 
     // Determine the number of components of the occupancy property.
     int ncomponents = 1;
@@ -176,7 +178,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform(PipelineFlo
 
     AffineTransformation tm;
     if(affineMapping() == TO_REFERENCE_CELL)
-        tm = refCell()->matrix() * cell()->inverseMatrix();
+        tm = refCell().cellMatrix() * cell().reciprocalCellMatrix();
 
     // Create array for atomic counting.
     size_t arraySize = refPositions()->size() * ncomponents;

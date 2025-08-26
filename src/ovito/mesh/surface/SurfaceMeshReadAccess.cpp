@@ -248,12 +248,13 @@ void SurfaceMeshReadAccess::convertToTriMesh(TriangleMesh& outputMesh, bool smoo
 
     // Transfer faces from surface mesh to output triangle mesh.
     for(face_index face = 0; face < faceCount; face++) {
-        if(!faceSubset.empty() && !faceSubset[face]) continue;
+        if(!faceSubset.empty() && !faceSubset[face])
+            continue;
 
         // Determine whether opposite triangles should be created for the current source face.
         bool createOppositeFace = autoGenerateOppositeFaces && (!hasOppositeFace(face) || (!faceSubset.empty() && !faceSubset[oppositeFace(face)]));
 
-        // Go around the edges of the face to triangulate the general polygon (assuming it is convex).
+        // Go around the edges of the face to triangulate the polygon (assuming it is convex).
         edge_index faceEdge = firstFaceEdge(face);
         vertex_index baseVertex = vertex2(faceEdge);
         edge_index edge1 = nextFaceEdge(faceEdge);

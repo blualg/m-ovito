@@ -76,6 +76,7 @@ private:
     BooleanRadioButtonParameterUI* _reducedCoordinatesPUI;
     VectorParameterUI* _normalPUI[3];
     FloatParameterUI* _distancePUI;
+    QPushButton* _centerPlaneBtn;
     std::optional<PrescribedScaleUnit> _distanceUnit;
     std::optional<PrescribedScaleUnit> _slabWidthUnit;
     std::optional<PrescribedScaleUnit> _normalVectorUnit;

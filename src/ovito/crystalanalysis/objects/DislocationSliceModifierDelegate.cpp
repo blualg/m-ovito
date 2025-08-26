@@ -58,20 +58,18 @@ Future<PipelineFlowState> DislocationSliceModifierDelegate::apply(const Modifier
     FloatType sliceWidth;
     std::tie(plane, sliceWidth) = modifier->slicingPlane(request.time(), state.mutableStateValidity(), state);
 
-    for(qsizetype i = 0; i < state.data()->objects().size(); i++) {
-        if(const DislocationNetwork* inputDislocations = dynamic_object_cast<DislocationNetwork>(state.data()->objects()[i])) {
-            QVector<Plane3> planes = inputDislocations->cuttingPlanes();
-            if(sliceWidth <= 0) {
-                planes.push_back(plane);
-            }
-            else {
-                planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth/2));
-                planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth/2));
-            }
-            DislocationNetwork* outputDislocations = state.makeMutable(inputDislocations);
-            outputDislocations->setCuttingPlanes(std::move(planes));
+    state.data()->visitObjectsOfType<DislocationNetwork>([&](const DislocationNetwork* inputDislocations) {
+        QVector<Plane3> planes = inputDislocations->cuttingPlanes();
+        if(sliceWidth <= 0) {
+            planes.push_back(plane);
         }
-    }
+        else {
+            planes.push_back(Plane3( plane.normal,  plane.dist + sliceWidth/2));
+            planes.push_back(Plane3(-plane.normal, -plane.dist + sliceWidth/2));
+        }
+        DislocationNetwork* outputDislocations = state.makeMutable(inputDislocations);
+        outputDislocations->setCuttingPlanes(std::move(planes));
+    });
 
     return std::move(state);
 }

@@ -291,6 +291,35 @@ public:
 };
 
 /**
+ * \brief A color gradient that looks like ParaView's 'Fast' map.
+ */
+class OVITO_CORE_EXPORT ColorCodingFastGradient : public ColorCodingGradient
+{
+    OVITO_CLASS(ColorCodingFastGradient)
+
+public:
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<double> valueToColor(double t) const override {
+        return ColorCodingFastGradient::valueToColor(static_cast<float>(t)).toDataType<double>();
+    }
+
+    /// \brief Converts a scalar value to a color value.
+    /// \param t A value between 0 and 1.
+    /// \return The color that visualizes the given scalar value.
+    virtual ColorT<float> valueToColor(float t) const override {
+        OVITO_ASSERT(t >= 0.0f && t <= 1.0f);
+        t *= (std::size(colormap_fast_data) - 1);
+        auto t0 = std::floor(t);
+        auto c1 = colormap_fast_data[(size_t)t0];
+        auto c2 = colormap_fast_data[(size_t)std::ceil(t)];
+        return ColorT<float>(c1[0], c1[1], c1[2]) * (1.0f - (t - t0)) + ColorT<float>(c2[0], c2[1], c2[2]) * (t - t0);
+    }
+};
+
+/**
  * \brief Uses a color table to convert scalar values to a color.
  */
 class OVITO_CORE_EXPORT ColorCodingTableGradient : public ColorCodingGradient

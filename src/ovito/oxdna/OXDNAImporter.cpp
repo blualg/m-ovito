@@ -76,7 +76,6 @@ void OXDNAImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<F
     progress.setMaximum(stream.underlyingSize());
 
     Frame frame(fileHandle);
-    QString filename = fileHandle.sourceUrl().fileName();
     int frameNumber = 0;
 
     frame.byteOffset = stream.byteOffset();
@@ -100,7 +99,7 @@ void OXDNAImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<F
             break;
 
         // Create a new record for the time step.
-        frame.label = tr("%1 (Frame %2)").arg(filename).arg(frameNumber++);
+        frame.label.setFrameOfFile(frameNumber++);
         frames.push_back(frame);
 
         // Skip nucleotide lines.

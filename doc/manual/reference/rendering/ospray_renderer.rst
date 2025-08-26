@@ -43,10 +43,12 @@ Denoising filter
   methods such as path tracing.
 
 Depth of field
-  Only objects exactly at a distance from the camera specified by the *focal length* will appear sharp when depth-of-field rendering is active.
-  Objects closer to or further from the camera will appear blurred. If you want a specific object to be in the focus, use the :guilabel:`Pick in viewport` button
-  and click on that object in the viewport to be rendered. The *focal length* parameter will be automatically adjusted so that the picked location is in focus.
-  The *aperture* radius controls how blurred objects will appear that are out of focus (default: 0.5).
+  When `depth-of-field rendering <http://en.wikipedia.org/wiki/Depth_of_field>`__ is active, only objects located exactly at the distance from the camera specified by the *focal length* will appear sharp.
+  Objects closer to or farther from the camera will appear blurred. To focus on a specific object, use the :guilabel:`Pick in viewport` button
+  and click on the desired object in the viewport to be rendered. The *focal length* parameter will be automatically adjusted so that the picked location is in focus.
+  The *aperture* radius controls how blurred out-of-focus objects will appear (default: 0.5).
+
+  Note that the focal blur effect requires a perspective projection; it does not work in :ref:`viewports <usage.viewports>` using a parallel projection.
 
 Light sources
 """""""""""""
@@ -74,9 +76,11 @@ respectively.
 
 The selected material type and its settings are applied globally to all scene objects.
 
-.. image:: /images/rendering/ospray_renderer_standard_material.png
-    :width: 30%
-    :align: right
+.. figure:: /images/rendering/ospray_renderer_standard_material.png
+  :figwidth: 30%
+  :align: right
+
+  Standard material
 
 Standard material
 #################
@@ -137,7 +141,10 @@ Post-processing effects
 """""""""""""""""""""""
 
 Outlines
-  Enables depth-aware outlines in the rendered image.
+  Enables the drawing of outlines along object edges. The outlines are *depth-aware*,
+  meaning that they are only drawn when the depth difference between two overlapping objects
+  exceeds a certain threshold. Optionally, the width of the outlines can be adjusted
+  based on the depth difference, which can help to improve visibility of outlines in complex scenes.
 
   .. image:: /images/rendering/ospray_render_outlines.*
       :width: 50%

@@ -130,10 +130,13 @@ public:
     template<class U>
     OORef(OORef<U>&& rhs) noexcept : base_type{std::move(rhs)} {}
 
-    /// Allow implicit conversion from smart pointer to raw object pointer.
-    inline operator T*() const noexcept {
+    /// Allow implicit conversion from l-value smart pointer to raw object pointer.
+    inline operator T*() const& noexcept {
         return base_type::get();
     }
+
+    /// Disallow inadvertent conversion from r-value smart pointer to a dangling raw pointer.
+    operator T*() && = delete;
 
     template<class U>
     inline OORef& operator=(const OORef<U>& rhs) {

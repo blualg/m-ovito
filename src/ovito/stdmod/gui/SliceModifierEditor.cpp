@@ -124,9 +124,9 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
     layout->addWidget(visualizePlanePUI->checkBox());
 
     layout->addSpacing(8);
-    QPushButton* centerPlaneBtn = new QPushButton(tr("Center in simulation cell"), rollout);
-    connect(centerPlaneBtn, &QPushButton::clicked, this, &SliceModifierEditor::onCenterOfBox);
-    layout->addWidget(centerPlaneBtn);
+    _centerPlaneBtn = new QPushButton(tr("Center in simulation cell"), rollout);
+    connect(_centerPlaneBtn, &QPushButton::clicked, this, &SliceModifierEditor::onCenterOfBox);
+    layout->addWidget(_centerPlaneBtn);
 
     // Add buttons for view alignment functions.
     QPushButton* alignViewToPlaneBtn = new QPushButton(tr("Align view to plane"), rollout);
@@ -199,6 +199,10 @@ void SliceModifierEditor::updateParameterUnitScales()
         if(!usingReducedCoords)
             distanceScale = cellDiameter;
         slabWidthScale = 0.1 * cellDiameter;
+        _centerPlaneBtn->setEnabled(true);
+    }
+    else {
+        _centerPlaneBtn->setEnabled(false);
     }
 
     _distanceUnit->setScaleReference(distanceScale);

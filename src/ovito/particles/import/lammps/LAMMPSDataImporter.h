@@ -82,6 +82,13 @@ public:
         AtomStyle_Wavepacket,
         AtomStyle_Hybrid,
 
+        // Added in OVITO 3.13.1:
+        AtomStyle_Spin,
+        AtomStyle_SPH,
+        AtomStyle_Rheo,
+        AtomStyle_RheoThermal, // rheo/thermal
+        AtomStyle_BPMSphere, // bpm/sphere
+
         AtomStyle_COUNT, // End-of-list marker
     };
     Q_ENUM(LAMMPSAtomStyle);
