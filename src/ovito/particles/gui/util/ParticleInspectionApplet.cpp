@@ -289,6 +289,8 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
         std::array<Point3G,4> vertices;
         auto outVertex = vertices.begin();
         for(auto& element : _pickedElements) {
+            if(!element.sceneNode->isInScene() || !element.sceneNode->pipeline())
+                continue;
             PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
             const PipelineFlowState flowState = element.sceneNode->pipeline()->evaluatePipeline(request).blockForResult();
             if(const Particles* particles = flowState.getObject<Particles>()) {
