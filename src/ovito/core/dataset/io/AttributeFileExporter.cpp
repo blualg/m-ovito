@@ -80,14 +80,18 @@ OORef<FileExportJob> AttributeFileExporter::createExportJob(const QString& fileP
         }
 
         /// Produces the data to be exported for a trajectory frame.
-        virtual SCFuture<any_moveonly> getExportableFrameData(int frameNumber, TaskProgress& progress) override {
+        virtual SCFuture<boost::anys::unique_any> getExportableFrameData(int frameNumber, TaskProgress& progress) override
+        {
             co_return co_await static_cast<const AttributeFileExporter*>(exporter())->getAttributesMap(frameNumber);
         }
 
         /// Writes the exportable data of a single trajectory frame to the output file.
-        virtual SCFuture<void> exportFrameData(any_moveonly&& frameData, int frameNumber, const QString& filePath, TaskProgress& progress) override {
+        virtual SCFuture<void> exportFrameData(boost::anys::unique_any frameData, int frameNumber, const QString& filePath,
+                                               TaskProgress& progress) override
+        {
             // The exportable frame data.
-            QVariantMap attrMap = any_cast<QVariantMap>(std::move(frameData));
+            OVITO_ASSERT(frameData.has_value());
+            QVariantMap attrMap = boost::anys::any_cast<QVariantMap>(frameData);
 
             // Write the values of all attributes marked for export to the output file.
             for(const QString& attrName : static_cast<const AttributeFileExporter*>(exporter())->attributesToExport()) {

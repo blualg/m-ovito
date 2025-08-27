@@ -22,9 +22,9 @@
 
 #pragma once
 
-
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/MoveOnlyAny.h>
+
+#include <algorithm>
 
 namespace Ovito {
 
@@ -149,8 +149,7 @@ public:
                 }
 
                 // Keep track of the frame in which the requested resource was accessed most recently.
-                if(std::find(entry.frames.begin(), entry.frames.end(), resourceFrame) == entry.frames.end())
-                    entry.frames.push_back(resourceFrame);
+                if(std::ranges::find(entry.frames, resourceFrame) == entry.frames.end()) entry.frames.push_back(resourceFrame);
                 // Return reference to the value.
                 return any_cast<Value&>(entry.value);
             }
@@ -158,7 +157,7 @@ public:
 
         // Create a new key-value pair with a default-constructed value.
         _entries.emplace_back(std::forward<Key>(key), resourceFrame);
-        any_moveonly& value = _entries.back().value;
+        boost::anys::unique_any& value = _entries.back().value;
         Value& v = value.emplace<Value>();
         // Let the initializer function initialize the value.
         // Note: The initializer may perform more cache lookups, that's why we are using a recursive mutex here.
@@ -230,8 +229,8 @@ private:
 
     struct CacheEntry {
         template<typename Key> CacheEntry(Key&& _key, ResourceFrameHandle _frame) noexcept : key(std::forward<Key>(_key)) { frames.push_back(_frame); }
-        Ovito::any_moveonly key;
-        Ovito::any_moveonly value;
+        boost::anys::unique_any key;
+        boost::anys::unique_any value;
         QVarLengthArray<ResourceFrameHandle, 6> frames;
 
         // A cache entry cannot be copied.
