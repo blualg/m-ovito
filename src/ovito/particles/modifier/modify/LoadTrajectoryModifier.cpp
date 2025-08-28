@@ -241,20 +241,30 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
             // Topology dataset and trajectory data must contain the same number of particles.
             // Also prevent a common mistake: User forgot to dump atom IDs to the trajectory file.
             if(trajectoryParticles->elementCount() != particles->elementCount()) {
-                throw Exception(tr("Cannot apply trajectories to current particle dataset. Numbers of particles in the trajectory file and in the topology file do not match."));
+                throw Exception(tr(
+                    "Cannot map trajectories to current particle dataset, because particles do not have "
+                    "identifiers and the numbers of particles in the trajectory file and in the topology file do not match."));
             }
             else if(topoIdentifierProperty) {
-                // We make an exception if topology identifiers are in sorted order forming a consecutive sequence.
+                // We make an exception if topology identifiers are in sorted order forming a consecutive integer sequence.
                 // Gromacs GRO files, for example, contain atom numbers (IDs) and Gromacs XTC files do not.
                 // This exception has been introduced to support this particular combination of topology & trajectory files.
                 IdentifierIntType idx = 1;
                 for(const auto& id : topoIdentifierProperty) {
-                    if(id != idx++)
-                        throw Exception(tr("Particles in the topology dataset have identifiers but trajectory particles do not. This likely is a mistake. Please ensure the trajectory file contains identifiers too."));
+                    if(id != idx++) {
+                        throw Exception(tr(
+                            "The particle identifiers in the topology dataset do not form a contiguous range of integers starting at 1, and the trajectory particles have no identifiers. "
+                            "The association of trajectories with their corresponding particles is ambiguous in this situation. "
+                            "Please ensure that either the trajectory file also contains identifiers, or that the particles in the topology dataset "
+                            "are sorted and have consecutive identifiers. The topology file reader may offer an option to sort particles by ID."));
+                    }
                 }
             }
             else if(trajIdentifierProperty) {
-                throw Exception(tr("Particles in the trajectory dataset have identifiers but topology particles do not. This likely is a mistake. Please ensure the topology file contains identifiers too."));
+                throw Exception(tr(
+                    "The particles in the trajectory file have identifiers but the particles in the topology file do not. "
+                    "The association of trajectories with corresponding particles is ambiguous in this situation. "
+                    "Please ensure that the topology file contains identifiers too, or synthesize identifiers from particle indices using the 'Compute Property' modifier first."));
             }
 
             // When particle identifiers are not available, use trivial 1-to-1 mapping.
