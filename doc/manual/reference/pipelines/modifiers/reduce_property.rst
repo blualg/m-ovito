@@ -44,6 +44,10 @@ and the available reduction operations are:
 +--------------------------+-----------------------------------------------+
 | Standard deviation       | Sample standard deviation                     |
 +--------------------------+-----------------------------------------------+
+| Argmin                   | Index of the minimum value                    |
++--------------------------+-----------------------------------------------+
+| Argmax                   | Index of the maximum value                    |
++--------------------------+-----------------------------------------------+
 
 If the property has multiple components (e.g., *Position*), the operation is applied to each component individually.
 By default, the modifier operates on a particle property. You can change this behavior by setting the *Operate on* parameter.
@@ -54,7 +58,9 @@ This can be seen in the following code snippet:
 Data output options
 """""""""""""""""""
 
-The result is stored in the :ref:`Attributes <data_inspector.attributes>` tab in the command panel using the key format: ``ReducePropertyModifier.<ReductionOperation>.<PropertyContainer>.<PropertyName>.<Component>``. The ``.<Component>`` label is included only if the property has more than one component.
+The result is stored in the :ref:`Attributes <data_inspector.attributes>` tab in the command panel using the key format: 
+``ReducePropertyModifier.<PropertyContainer>.<ReductionOperation>.<PropertyName>.<Component>``. The ``.<Component>`` 
+label is included only if the property has more than one component.
 
 Parameters
 """"""""""
