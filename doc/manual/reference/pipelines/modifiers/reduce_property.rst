@@ -1,40 +1,29 @@
 .. _particles.modifiers.reduce_property:
 
-Reduce property modifier |ovito-pro|
-------------------------------------
+Reduce property |ovito-pro|
+---------------------------
 
-This modifier performs a reduction operation on a selected data property. Properties can be taken from the following containers:
+.. image:: /images/modifiers/reduce_property_panel.png
+  :width: 30%
+  :align: right
 
-+------------------------------------------------------+--------------------------------------------------+
-| Object                                               | ``<PropertyContainer>``                          |
-+======================================================+==================================================+
-| :ref:`Particles <scene_objects.particles>`           | "Particles"                                      |
-+------------------------------------------------------+--------------------------------------------------+
-| :ref:`Bonds <scene_objects.bonds>`                   | "Bonds"                                          |
-+------------------------------------------------------+--------------------------------------------------+
-| :ref:`Surface mesh <scene_objects.surface_mesh>`     | "SurfaceMeshVertices"                            |
-|                                                      | "SurfaceMeshFaces"                               |
-|                                                      | "SurfaceMeshRegions"                             |
-+------------------------------------------------------+--------------------------------------------------+
-| :ref:`Voxel grid <scene_objects.voxel_grid>`         | "VoxelGrid"                                      |
-+------------------------------------------------------+--------------------------------------------------+
-| :ref:`Lines <scene_objects.lines>`                   | "Lines"                                          |
-+------------------------------------------------------+--------------------------------------------------+
-| :ref:`Vectors <scene_objects.vectors>`               | "Vectors"                                        |
-+------------------------------------------------------+--------------------------------------------------+
+.. versionadded:: 3.14.0
 
-and the available reduction operations are:
+This modifier reduces a selected data property to a single value by applying a specified *reduction operation* over all data elements.
+For example, the modifier allows computing the mean value of a property across all particles.
+
+The following reduction operations are available:
 
 +--------------------------+-----------------------------------------------+
-| ``<ReductionOperation>`` | Description                                   |
+| Reduction operation      | Description                                   |
 +==========================+===============================================+
-| Minimum                  | Minimum value                                 |
+| Minimum                  | Lowest value                                  |
 +--------------------------+-----------------------------------------------+
-| Maximum                  | Maximum value                                 |
+| Maximum                  | Highest value                                 |
 +--------------------------+-----------------------------------------------+
 | Sum                      | Sum of all values                             |
 +--------------------------+-----------------------------------------------+
-| Non-zero                 | Count of non-zero values                      |
+| Non-zero count           | Number of elements with non-zero values       |
 +--------------------------+-----------------------------------------------+
 | Mean                     | Arithmetic mean                               |
 +--------------------------+-----------------------------------------------+
@@ -44,38 +33,31 @@ and the available reduction operations are:
 +--------------------------+-----------------------------------------------+
 | Standard deviation       | Sample standard deviation                     |
 +--------------------------+-----------------------------------------------+
-| Argmin                   | Index of the minimum value                    |
+| Argmin                   | Zero-based index of the lowest value          |
 +--------------------------+-----------------------------------------------+
-| Argmax                   | Index of the maximum value                    |
+| Argmax                   | Zero-based index of the highest value         |
 +--------------------------+-----------------------------------------------+
 
-If the property has multiple components (e.g., *Position*), the operation is applied to each component individually.
-By default, the modifier operates on a particle property. You can change this behavior by setting the *Operate on* parameter.
-This can be seen in the following code snippet:
+The modifier can operate on the following kinds of data elements:
 
-  .. versionadded:: 3.14.0
+- :ref:`Particles <scene_objects.particles>`
+- :ref:`Bonds <scene_objects.bonds>`
+- :ref:`Surface mesh vertices/faces/regions <scene_objects.surface_mesh>`
+- :ref:`Voxel grids <scene_objects.voxel_grid>`
+- :ref:`Data tables <scene_objects.data_table>`
+- :ref:`Lines <scene_objects.lines>`
+- :ref:`Vectors <scene_objects.vectors>`
 
-Data output options
-"""""""""""""""""""
+If the selected input property has multiple components, the reduction operation is applied to each vector component individually.
 
-The result is stored in the :ref:`Attributes <data_inspector.attributes>` tab in the command panel using the key format: 
-``ReducePropertyModifier.<PropertyContainer>.<ReductionOperation>.<PropertyName>.<Component>``. The ``.<Component>`` 
-label is included only if the property has more than one component.
+The option :guilabel:`Use only selected elements` restricts the computation to the currently selected subset of elements.
+Note that the *Argmin* and *Argmax* operations still return an index into the full list of elements in this case.
 
-Parameters
-""""""""""
+The modifier stores the computed value as a :ref:`global attribute <usage.global_attributes>`, which can be accessed in the
+:ref:`data inspector <data_inspector.attributes>` panel of OVITO.
 
-Operate on
-  Selects whether to bin data from :ref:`particles <scene_objects.particles>` or any other data objects listed in the table above. Default: :ref:`particles <scene_objects.particles>`
-
-Input property
-  The particle property to apply the reduction operation to.
-
-Use only selected elements
-  Restricts the computation to the currently selected subset of particles. Requires a selection in the current data objects. Default: *False*
-
-Reduction operation
-  Determines how data is aggregated per bin. Options are listed as ``<ReductionOperation>`` in the table above. Default: *Mean*
+The reduction is computed only for the current trajectory frame. To compute an average over multiple frames, you can additionally use the
+:ref:`particles.modifiers.time_averaging` modifier.
 
 .. seealso::
 
