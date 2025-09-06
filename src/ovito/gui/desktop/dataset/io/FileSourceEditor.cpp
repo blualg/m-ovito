@@ -167,12 +167,9 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     gridlayout1->setColumnMinimumWidth(0, maxLabelWidth);
     gridlayout2->setColumnMinimumWidth(0, maxLabelWidth);
 
-    QGroupBox* statusBox = new QGroupBox(tr("Status"), rollout);
-    layout->addWidget(statusBox);
-    sublayout = new QVBoxLayout(statusBox);
-    sublayout->setContentsMargins(4,4,4,4);
     _statusLabel = new StatusWidget(rollout);
-    sublayout->addWidget(_statusLabel);
+    layout->addSpacing(6);
+    layout->addWidget(_statusLabel);
 
     // Show settings editor of importer class.
     createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(FileSource::importer), rolloutParams.after(rollout));

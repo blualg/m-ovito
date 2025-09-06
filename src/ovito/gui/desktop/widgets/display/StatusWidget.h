@@ -29,20 +29,16 @@
 namespace Ovito {
 
 /**
- * \brief A widget that displays information from the PipelineStatus class.
+ * \brief A widget that displays a PipelineStatus structure.
  */
-class OVITO_GUI_EXPORT StatusWidget : public QScrollArea
+class OVITO_GUI_EXPORT StatusWidget : public QWidget
 {
     Q_OBJECT
 
 public:
 
-    /// \brief Constructs the widget.
-    /// \param parent The parent widget for the new widget.
+    /// Constructor.
     explicit StatusWidget(QWidget* parent = nullptr);
-
-    /// Returns the current status displayed by the widget.
-    const PipelineStatus& status() const { return _status; }
 
     /// Sets the status to be displayed by the widget.
     void setStatus(const PipelineStatus& status);
@@ -50,27 +46,47 @@ public:
     /// Resets the widget to not display any status.
     void clearStatus() { setStatus({}); }
 
-    /// Returns the minimum size of the widget.
-    virtual QSize minimumSizeHint() const override;
-
-    /// Returns the preferred size of the widget.
-    virtual QSize sizeHint() const override;
+    /// Returns the color indicating the current status.
+    QColor statusColor() const;
 
 Q_SIGNALS:
 
     /// Emitted when the user clicks on a link in the status text.
     void linkActivated(const QString& link);
 
+private Q_SLOTS:
+
+    /// Shows the tooltip popup.
+    void showTooltipPopup();
+
+protected:
+
+    /// Paints the widget's border.
+    virtual void paintEvent(QPaintEvent* event) override;
+
+    /// Event filter to watch the internal label and the tooltip popup for
+    /// enter/leave events.
+    bool eventFilter(QObject* watched, QEvent* event) override;
+
+    /// Open the tooltip immediately when the widget is clicked.
+    virtual void mousePressEvent(QMouseEvent* event) override;
+
 private:
 
-    /// The current status displayed by the widget.
-    PipelineStatus _status;
+    /// The current status type displayed by the widget.
+    PipelineStatus::StatusType _statusType = PipelineStatus::StatusType::Success;
 
     /// The internal text label.
     QLabel* _textLabel;
 
-    /// The internal icon label.
-    QLabel* _iconLabel;
+    /// The internal status indicator.
+    QWidget* _statusIndicator;
+
+    // Tooltip support
+    QTimer* _tooltipTimer = nullptr;
+    QWidget* _tooltipPopup = nullptr;
+    QLabel* _tooltipPopupLabel = nullptr;
+    static constexpr int _tooltipDelayMs = 500; ///< hover delay in milliseconds
 };
 
 }   // End of namespace

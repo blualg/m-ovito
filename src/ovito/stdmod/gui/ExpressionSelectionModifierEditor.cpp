@@ -26,6 +26,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/ModifierDelegateParameterUI.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
+#include <ovito/gui/desktop/app/GuiApplication.h>
 #include "ExpressionSelectionModifierEditor.h"
 
 namespace Ovito {
@@ -90,7 +91,11 @@ void ExpressionSelectionModifierEditor::updateEditorFields()
     ExpressionSelectionModifier* mod = static_object_cast<ExpressionSelectionModifier>(editObject());
     if(!mod) return;
 
-    variableNamesList->setText(mod->inputVariableTable() + QStringLiteral("<p></p>"));
+    QString descriptionStyle = GuiApplication::instance()->usingDarkTheme()
+        ? QStringLiteral("color: #aaa; font-style: italic;")
+        : QStringLiteral("color: #555; font-style: italic;");
+    variableNamesList->setText(
+        QStringLiteral("%1<p></p>").arg(mod->inputVariableTable()).replace(QStringLiteral("DESCRIPTION_STYLE_PLACEHOLDER"), descriptionStyle));
     container()->updateRolloutsLater();
     expressionEdit->setWordList(mod->inputVariableNames());
 }
