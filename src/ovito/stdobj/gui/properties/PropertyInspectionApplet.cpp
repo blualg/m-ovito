@@ -310,22 +310,13 @@ QVariant PropertyInspectionApplet::PropertyTableModel::data(const QModelIndex& i
                         }
                     }
                 }
-                else if(property->dataType() == Property::Int64) {
-                    BufferReadAccess<int64_t*> data(property);
-                    str += QString::number(data.get(elementIndex, component));
+                else {
+                    property->forAnyType([&](auto type) {
+                        BufferReadAccess<decltype(type)*> accessor(property);
+                        str += QString::number(accessor.get(elementIndex, component));
+                    });
                 }
-                else if(property->dataType() == Property::Int8) {
-                    BufferReadAccess<int8_t*> data(property);
-                    str += QString::number(data.get(elementIndex, component));
-                }
-                else if(property->dataType() == Property::Float32) {
-                    BufferReadAccess<float*> data(property);
-                    str += QString::number(data.get(elementIndex, component));
-                }
-                else if(property->dataType() == Property::Float64) {
-                    BufferReadAccess<double*> data(property);
-                    str += QString::number(data.get(elementIndex, component));
-                }
+
             }
             return str;
         }
