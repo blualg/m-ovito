@@ -21,8 +21,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/actions/ActionManager.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 #include <ovito/core/dataset/DataSetContainer.h>
@@ -34,8 +34,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* parent, Pipeline* sourcePipeline, std::vector<OORef<PipelineNode>> pipelineNodes) :
-    QDialog(parent), _mainWindow(mainWindow), _sourcePipeline(sourcePipeline), _pipelineNodes(std::move(pipelineNodes))
+CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindowUI& ui, QWidget* parent, Pipeline* sourcePipeline, std::vector<OORef<PipelineNode>> pipelineNodes) :
+    QDialog(parent), UserInterfaceComponent<MainWindowUI>(ui), _sourcePipeline(sourcePipeline), _pipelineNodes(std::move(pipelineNodes))
 {
     setWindowTitle(tr("Copy Pipeline Items"));
 
@@ -50,7 +50,7 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* 
     gridLayout->addWidget(_destinationPipelineList, 0, 1);
 
     // Build the list of scene pipelines.
-    if(Scene* scene = _mainWindow.datasetContainer().activeScene()) {
+    if(Scene* scene = datasetContainer().activeScene()) {
         scene->visitPipelines([&](SceneNode* sceneNode) -> bool {
             QString itemLabel = sceneNode->objectTitle();
             if(sceneNode->pipeline() == sourcePipeline)
@@ -98,8 +98,8 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::Help, Qt::Horizontal, this);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &CopyPipelineItemDialog::onAccept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &CopyPipelineItemDialog::reject);
-    connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
-        mainWindow.actionManager()->openHelpTopic("manual:clone_pipeline.copy_pipeline_items_dialog");
+    connect(buttonBox, &QDialogButtonBox::helpRequested, this, [this]() {
+        actionManager()->openHelpTopic("manual:clone_pipeline.copy_pipeline_items_dialog");
     });
     mainLayout->addWidget(buttonBox);
 }
@@ -110,12 +110,13 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindow& mainWindow, QWidget* 
 void CopyPipelineItemDialog::onAccept()
 {
     setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
-    _mainWindow.performTransaction(tr("Copy pipeline item"), [this]() {
+
+    performTransaction(tr("Copy pipeline item"), [this]() {
         OORef<Pipeline> destinationPipeline = static_object_cast<Pipeline>(_destinationPipelineList->currentData().value<OORef<OvitoObject>>());
         CloneHelper cloneHelper;
 
         // Do not create any animation keys during cloning.
-        AnimationSuspender animSuspender(_mainWindow);
+        AnimationSuspender animSuspender(ui());
 
         OORef<PipelineNode> precedingNode;
         for(auto node = _pipelineNodes.crbegin(); node != _pipelineNodes.crend(); ++node) {

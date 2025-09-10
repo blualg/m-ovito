@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/gui/desktop/widgets/general/EnterLineEdit.h>
 #include <ovito/gui/base/actions/ActionManager.h>
@@ -36,7 +35,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the dialog window.
 ******************************************************************************/
-ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption) : QDialog(parent), _mainWindow(mainWindow)
+ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindowUI& ui, const std::vector<const FileImporterClass*>& importerTypes, QWidget* parent, const QString& caption) : QDialog(parent), UserInterfaceComponent<MainWindowUI>(ui)
 {
     setWindowTitle(caption);
 
@@ -165,7 +164,7 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindow& mainWindow, const std
 ******************************************************************************/
 void ImportRemoteFileDialog::onHelp()
 {
-    _mainWindow.actionManager()->openHelpTopic(QStringLiteral("manual:usage.import.remote"));
+    actionManager()->openHelpTopic(QStringLiteral("manual:usage.import.remote"));
 }
 
 /******************************************************************************
@@ -182,7 +181,7 @@ void ImportRemoteFileDialog::selectFile(const QUrl& url)
 ******************************************************************************/
 void ImportRemoteFileDialog::onOk()
 {
-    try {
+    handleExceptions([&]() {
         QUrl url = QUrl::fromUserInput(_urlEdit->currentText());
         if(!url.isValid())
             throw Exception(tr("The entered URL is invalid."));
@@ -216,10 +215,7 @@ void ImportRemoteFileDialog::onOk()
 
         // Close dialog box.
         accept();
-    }
-    catch(const Exception& ex) {
-        _mainWindow.reportError(ex, this);
-    }
+    });
 }
 
 /******************************************************************************

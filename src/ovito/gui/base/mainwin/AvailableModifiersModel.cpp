@@ -104,15 +104,15 @@ bool ModifierAction::updateState(const PipelineFlowState& input)
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-AvailableModifiersModel::AvailableModifiersModel(QObject* parent, UserInterface& userInterface, PipelineListModel* pipelineListModel) : QAbstractListModel(parent), _userInterface(userInterface), _pipelineListModel(pipelineListModel)
+AvailableModifiersModel::AvailableModifiersModel(QObject* parent, UserInterface& ui, PipelineListModel* pipelineListModel) : QAbstractListModel(parent), UserInterfaceComponent<UserInterface>(ui), _pipelineListModel(pipelineListModel)
 {
-    OVITO_ASSERT(userInterface.actionManager());
+    OVITO_ASSERT(actionManager());
 
     // Register this instance.
     _allModels.push_back(this);
 
     // Update the state of this model's actions whenever the ActionManager requests it.
-    connect(userInterface.actionManager(), &ActionManager::actionUpdateRequested, this, &AvailableModifiersModel::updateActionState);
+    connect(actionManager(), &ActionManager::actionUpdateRequested, this, &AvailableModifiersModel::updateActionState);
 
     // Initialize UI colors.
     updateColorPalette(QGuiApplication::palette());
@@ -134,8 +134,8 @@ QT_WARNING_POP
         _actions.push_back(action);
 
         // Register it with the global ActionManager.
-        userInterface.actionManager()->addAction(action);
-        OVITO_ASSERT(action->parent() == userInterface.actionManager());
+        actionManager()->addAction(action);
+        OVITO_ASSERT(action->parent() == actionManager());
 
         // Handle the insertion action.
         connect(action, &QAction::triggered, this, &AvailableModifiersModel::insertModifier);
@@ -167,8 +167,8 @@ QT_WARNING_POP
         _actionsPerCategory.back().push_back(action);
 
         // Register it with the global ActionManager.
-        userInterface.actionManager()->addAction(action);
-        OVITO_ASSERT(action->parent() == userInterface.actionManager());
+        actionManager()->addAction(action);
+        OVITO_ASSERT(action->parent() == actionManager());
 
         // Handle the action.
         connect(action, &QAction::triggered, this, &AvailableModifiersModel::insertModifier);
@@ -357,7 +357,7 @@ void AvailableModifiersModel::insertModifier()
     OVITO_ASSERT(action);
 
     // Instantiate the new modifier(s) and insert them into the pipeline.
-    _userInterface.performTransaction(tr("Insert modifier"), [&]() {
+    performTransaction(tr("Insert modifier"), [&]() {
 
         if(action->modifierClass()) {
             // Create an instance of the modifier.
@@ -380,7 +380,7 @@ void AvailableModifiersModel::insertModifier()
         }
 
         // Show the modify tab of the command panel.
-        _userInterface.actionManager()->getAction(ACTION_COMMAND_PANEL_MODIFY)->trigger();
+        actionManager()->getAction(ACTION_COMMAND_PANEL_MODIFY)->trigger();
     });
 }
 
@@ -406,7 +406,7 @@ void AvailableModifiersModel::refreshTemplates()
             auto iter = std::find(_actions.begin(), _actions.end(), action);
             OVITO_ASSERT(iter != _actions.end());
             _actions.erase(iter);
-            _userInterface.actionManager()->deleteAction(action);
+            actionManager()->deleteAction(action);
         }
         templateActions.clear();
     }
@@ -420,8 +420,8 @@ void AvailableModifiersModel::refreshTemplates()
             templateActions.push_back(action);
 
             // Register it with the ActionManager.
-            _userInterface.actionManager()->addAction(action);
-            OVITO_ASSERT(action->parent() == _userInterface.actionManager());
+            actionManager()->addAction(action);
+            OVITO_ASSERT(action->parent() == actionManager());
 
             // Handle the action.
             connect(action, &QAction::triggered, this, &AvailableModifiersModel::insertModifier);
@@ -456,10 +456,10 @@ void AvailableModifiersModel::updateActionState()
     // Obtain pipeline output at the selected stage.
     if(currentItem) {
         if(PipelineNode* pipelineNode = dynamic_object_cast<PipelineNode>(currentItem->object())) {
-            inputState = pipelineNode->getCachedPipelineNodeOutput(_userInterface.datasetContainer().currentAnimationTime());
+            inputState = pipelineNode->getCachedPipelineNodeOutput(currentAnimationTime());
         }
         else if(Pipeline* pipeline = _pipelineListModel->selectedPipeline()) {
-            inputState = pipeline->getCachedPipelineOutput(_userInterface.datasetContainer().currentAnimationTime());
+            inputState = pipeline->getCachedPipelineOutput(currentAnimationTime());
         }
     }
 
@@ -529,7 +529,7 @@ void AvailableModifiersModel::extensionClassAdded(OvitoClassPtr cls)
     ModifierAction* action = ModifierAction::createForClass(clazz);
 
     // Register it with the global ActionManager.
-    _userInterface.actionManager()->addAction(action);
+    actionManager()->addAction(action);
 
     // Handle the insertion action.
     connect(action, &QAction::triggered, this, &AvailableModifiersModel::insertModifier);

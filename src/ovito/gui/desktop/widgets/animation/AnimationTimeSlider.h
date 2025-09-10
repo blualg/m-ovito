@@ -24,7 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 
@@ -33,14 +33,14 @@ namespace Ovito {
 /**
  * A slider widget that lets the user control the current animation time.
  */
-class AnimationTimeSlider : public QFrame
+class AnimationTimeSlider : public QFrame, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    AnimationTimeSlider(MainWindow& mainWindow, QWidget* parentWindow = nullptr);
+    AnimationTimeSlider(MainWindowUI& ui, QWidget* parentWindow = nullptr);
 
     /// Computes the x position within the widget corresponding to the given animation frame.
     int frameToPos(int frame);
@@ -74,9 +74,6 @@ public:
 
     /// Returns the minimum size of the widget.
     virtual QSize minimumSizeHint() const override { return sizeHint(); }
-
-    /// Returns the animation settings that is currently active.
-    AnimationSettings* animSettings() const { return _mainWindow.datasetContainer().activeAnimationSettings(); }
 
 protected:
 
@@ -121,9 +118,6 @@ private:
 
     /// The palette used to the draw the slider.
     QPalette _sliderPalette;
-
-    /// The main window.
-    MainWindow& _mainWindow;
 };
 
 }   // End of namespace

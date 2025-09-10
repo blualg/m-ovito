@@ -59,12 +59,10 @@
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(MainWindow);
-
 /******************************************************************************
-* Constructor.
+* Initializes the main window.
 ******************************************************************************/
-MainWindow::MainWindow()
+void MainWindow::initializeWindow()
 {
     _baseWindowTitle = tr("%1 (Open Visualization Tool)").arg(Application::applicationName());
 #if defined(OVITO_DEVELOPMENT_BUILD_DATE)
@@ -79,22 +77,10 @@ MainWindow::MainWindow()
     // Disable context menus in toolbars.
     setContextMenuPolicy(Qt::NoContextMenu);
 
-    // Create input manager.
-    setViewportInputManager(new ViewportInputManager(this, *this));
-
-    // Create an undo stack.
-    setUndoStack(new UndoStack(*this, this));
-
-    // Create actions.
-    setActionManager(new WidgetActionManager(this, *this));
-
-    // Reset undo stack whenever a new dataset is loaded.
-    connect(&datasetContainer(), &DataSetContainer::dataSetChanged, undoStack(), &UndoStack::clear);
-
     // Let GUI application services register their actions.
     for(const auto& service : StandaloneApplication::instance()->applicationServices()) {
         if(auto gui_service = dynamic_object_cast<GuiApplicationService>(service))
-            gui_service->registerActions(*actionManager(), *this);
+            gui_service->registerActions(ui());
     }
 
     // Create the main menu
@@ -103,9 +89,6 @@ MainWindow::MainWindow()
     // Create the main toolbar.
     createMainToolbar();
 
-    // Store current state of ACTION_AUTO_KEY_MODE_TOGGLE in a member variable for quick access in isAutoGenerateAnimationKeysEnabled().
-    connect(actionManager()->getAction(ACTION_AUTO_KEY_MODE_TOGGLE), &QAction::toggled, this, [&](bool checked) { _autoKeyModeOn = checked; });
-
     // Create the viewports panel and the data inspector panel.
     QSplitter* dataInspectorSplitter = new QSplitter();
     dataInspectorSplitter->setOrientation(Qt::Vertical);
@@ -113,7 +96,7 @@ MainWindow::MainWindow()
     dataInspectorSplitter->setHandleWidth(0);
     _viewportsPanel = new ViewportsPanel(*this);
     dataInspectorSplitter->addWidget(_viewportsPanel);
-    _dataInspector = new DataInspectorPanel(*this);
+    _dataInspector = new DataInspectorPanel(ui());
     dataInspectorSplitter->addWidget(_dataInspector);
     dataInspectorSplitter->setStretchFactor(0, 1);
     dataInspectorSplitter->setStretchFactor(1, 0);
@@ -129,9 +112,9 @@ MainWindow::MainWindow()
     animationPanel->setLayout(animationPanelLayout);
 
     // Create animation time slider
-    AnimationTimeSlider* timeSlider = new AnimationTimeSlider(*this);
+    AnimationTimeSlider* timeSlider = new AnimationTimeSlider(ui());
     animationPanelLayout->addWidget(timeSlider);
-    AnimationTrackBar* trackBar = new AnimationTrackBar(*this, timeSlider);
+    AnimationTrackBar* trackBar = new AnimationTrackBar(ui(), timeSlider);
     animationPanelLayout->addWidget(trackBar);
 
     // Create status bar.
@@ -151,7 +134,7 @@ MainWindow::MainWindow()
     taskDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     _statusBarLayout->addWidget(taskDisplay, 1);
 
-    _coordinateDisplay = new CoordinateDisplayWidget(*this, animationPanel);
+    _coordinateDisplay = new CoordinateDisplayWidget(ui(), animationPanel);
     _coordinateDisplay->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Preferred);
     _statusBarLayout->addWidget(_coordinateDisplay);
     _statusBarLayout->addStrut(std::max(_coordinateDisplay->sizeHint().height(), taskDisplay->sizeHint().height()));
@@ -177,7 +160,7 @@ MainWindow::MainWindow()
     };
     QLineEdit* timeEditBox = new TimeEditBox();
     timeEditBox->setToolTip(tr("Current Animation Time"));
-    AnimationTimeSpinner* currentTimeSpinner = new AnimationTimeSpinner(*this);
+    AnimationTimeSpinner* currentTimeSpinner = new AnimationTimeSpinner(ui());
     currentTimeSpinner->setTextBox(timeEditBox);
     animationTimeSpinnerLayout->addWidget(timeEditBox, 1);
     animationTimeSpinnerLayout->addWidget(currentTimeSpinner);
@@ -217,7 +200,7 @@ MainWindow::MainWindow()
     viewportControlPanel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
 
     // Create the command panel.
-    _commandPanel = new CommandPanel(*this, this);
+    _commandPanel = new CommandPanel(ui(), this);
 
     // Create the bottom docking widget.
     QWidget* bottomDockWidget = new QWidget();
@@ -263,8 +246,14 @@ MainWindow::MainWindow()
 ******************************************************************************/
 MainWindow::~MainWindow()
 {
-    OVITO_ASSERT(datasetContainer().currentSet() == nullptr);
-    OVITO_ASSERT(!_progressTasksHead && !_progressTasksTail);
+    OVITO_ASSERT(ui().mainWindow() == this);
+    OVITO_ASSERT(dataset() == nullptr);
+
+    // Detach widget from UI object.
+    ui()._mainWindow = nullptr;
+    ui().setViewportInputManager(nullptr);
+    ui().setActionManager(nullptr);
+    ui().setUndoStack(nullptr);
 }
 
 /******************************************************************************
@@ -432,7 +421,7 @@ void MainWindow::createMainToolbar()
 bool MainWindow::event(QEvent* event)
 {
     if(event->type() == QEvent::StatusTip) {
-        showStatusBarMessage(static_cast<QStatusTipEvent*>(event)->tip());
+        ui().showStatusBarMessage(static_cast<QStatusTipEvent*>(event)->tip());
         return true;
     }
 #if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
@@ -461,7 +450,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
     bool successfulShutdown = handleExceptions([&] {
         // Let the user save changes made to the current dataset.
         if(isVisible())
-            askForSaveChanges();
+            ui().askForSaveChanges();
 
         // Don't allow user to interact with the window anymore.
         setEnabled(false);
@@ -473,22 +462,11 @@ void MainWindow::closeEvent(QCloseEvent* event)
         });
 #endif
 
-        // Inform listeners that this window is being closed.
-        Q_EMIT closingWindow();
-
         // Stop all running tasks in this window and release program session objects.
-        shutdown();
-
-        // Save window geometry and layout in user settings file.
-        if(isVisible()) {
-            saveMainWindowGeometry();
-            saveLayout();
+        if(!ui().shutdown()) {
+            setEnabled(true); // Reenable window if shutdown has been canceled.
+            this_task::cancelAndThrow();
         }
-
-        if(_frameBufferWindow)
-            _frameBufferWindow->close();
-
-        event->accept();
     });
 
     // Swallow close event if the user chose to cancel the shutdown.
@@ -511,49 +489,10 @@ void MainWindow::moveEvent(QMoveEvent* event)
     if(newScreen && newScreen != _currentScreen) {
         // Remember the current screen.
         _currentScreen = newScreen;
-        updateViewports();
+        ui().updateViewports();
     }
 
     QMainWindow::moveEvent(event);
-}
-
-/******************************************************************************
-* Closes the user interface and shuts down the entire application after displaying an error message.
-******************************************************************************/
-void MainWindow::exitWithFatalError(const Exception& ex)
-{
-    OVITO_ASSERT(this_task::isMainThread());
-
-    // Avoid reentrance.
-    if(_exitingDueToFatalError)
-        return;
-
-    // Set flag.
-    _exitingDueToFatalError = true;
-
-    // Display fatal error message to the user.
-    reportError(ex, true);
-
-    // The event loop may not be running yet. Use a timer to execute the following
-    // once we enter the event loop - similar to a queued signal/slot connection.
-    QTimer::singleShot(0, [weakPtr = OOWeakRef<MainWindow>(this)]() {
-        if(auto self = weakPtr.lock()) {
-            if(!self->close()) { // Ask user if closing the window is ok. If not...
-                // ... forcibly close the window anyway.
-                Q_EMIT self->closingWindow();
-                self->shutdown();
-            }
-        }
-        QCoreApplication::exit(1);
-    });
-}
-
-/******************************************************************************
-* Gives the active viewport the input focus.
-******************************************************************************/
-void MainWindow::setViewportInputFocus()
-{
-    viewportsPanel()->setFocus(Qt::OtherFocusReason);
 }
 
 /******************************************************************************
@@ -605,9 +544,9 @@ void MainWindow::dropEvent(QDropEvent* event)
         for(const QUrl& url : event->mimeData()->urls()) {
             if(url.fileName().endsWith(".ovito", Qt::CaseInsensitive)) {
                 if(url.isLocalFile()) {
-                    askForSaveChanges();
+                    ui().askForSaveChanges();
                     OORef<DataSet> dataset = DataSet::createFromFile(url.toLocalFile());
-                    if(checkLoadedDataset(dataset))
+                    if(ui().checkLoadedDataset(dataset))
                         datasetContainer().setCurrentSet(std::move(dataset));
                     importUrls.clear();
                     return;
@@ -620,7 +559,7 @@ void MainWindow::dropEvent(QDropEvent* event)
     });
     if(success && !importUrls.empty()) {
         performTransaction(tr("Import data"), [&] {
-            importFiles(std::move(importUrls));
+            ui().importFiles(std::move(importUrls));
         });
     }
 }
@@ -636,24 +575,6 @@ bool MainWindow::openDataInspector(PipelineNode* createdByNode, const QString& o
         return true;
     }
     return false;
-}
-
-/******************************************************************************
-* Displays a message string in the window's status bar.
-******************************************************************************/
-void MainWindow::showStatusBarMessage(const QString& message, int timeout)
-{
-    _statusBar->showMessage(message, timeout);
-}
-
-/******************************************************************************
-* Hides any messages currently displayed in the window's status bar.
-******************************************************************************/
-void MainWindow::clearStatusBarMessage()
-{
-    // Conditional call to clearMessage() because clearMessage() always repaints the status bar, even it is not showing any message (as of Qt 6.3.2).
-    if(!_statusBar->currentMessage().isEmpty())
-        _statusBar->clearMessage();
 }
 
 /******************************************************************************
@@ -692,11 +613,6 @@ void MainWindow::showRenderingProgress(const std::shared_ptr<FrameBuffer>& frame
 ******************************************************************************/
 void MainWindow::reportError(const Exception& ex, bool blocking)
 {
-    OVITO_ASSERT(QThread::currentThread() == this->thread());
-
-    // Always display errors in the terminal window too.
-    UserInterface::reportError(ex, blocking);
-
     if(!blocking) {
         // Deferred display of the error message after execution returns to the main event loop.
         if(_errorList.empty())
@@ -733,11 +649,11 @@ void MainWindow::reportError(const Exception& exception, QWidget* window)
     // Display the message box to the user.
     showMessageBoxImpl(
         window,
-        MessageBoxIcon::CriticalIcon,
+        UserInterface::MessageBoxIcon::CriticalIcon,
         tr("Error - %1").arg(Application::applicationName()),
         exception.message(),
-        MessageBoxButton::Ok,
-        MessageBoxButton::NoButton,
+        UserInterface::MessageBoxButton::Ok,
+        UserInterface::MessageBoxButton::NoButton,
         detailText);
 }
 
@@ -746,10 +662,10 @@ void MainWindow::reportError(const Exception& exception, QWidget* window)
 ******************************************************************************/
 void MainWindow::showErrorMessages()
 {
-    // Kepp window alive while showing error messages.
-    auto selfGuard = shared_from_this();
+    // For detection destruction of the main window.
+    QPointer<MainWindow> self = this;
 
-    while(!_errorList.empty()) {
+    while(!_errorList.empty() && !self.isNull()) {
         // Show next exception from queue.
         reportError(_errorList.front(), this);
         _errorList.pop_front();
@@ -760,25 +676,25 @@ void MainWindow::showErrorMessages()
 * Displays a modal message box to the user. Blocks until the user closes the message box.
 * This method wraps the QMessageBox class of the Qt library.
 ******************************************************************************/
-UserInterface::MessageBoxButton MainWindow::showMessageBoxImpl(QWidget* window, MessageBoxIcon icon, const QString& title, const QString& text, int buttons, MessageBoxButton defaultButton, const QString& detailedText)
+UserInterface::MessageBoxButton MainWindow::showMessageBoxImpl(QWidget* window, UserInterface::MessageBoxIcon icon, const QString& title, const QString& text, int buttons, UserInterface::MessageBoxButton defaultButton, const QString& detailedText)
 {
     OVITO_ASSERT(QThread::currentThread() == this->thread());
 
     // Verify that our enum values match the corresponding values of the QMessageBox class, which allows us to perform a direct cast.
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Ok) == QMessageBox::Ok);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Cancel) == QMessageBox::Cancel);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Discard) == QMessageBox::Discard);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Yes) == QMessageBox::Yes);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::No) == QMessageBox::No);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Apply) == QMessageBox::Apply);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Abort) == QMessageBox::Abort);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Retry) == QMessageBox::Retry);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(MessageBoxButton::Ignore) == QMessageBox::Ignore);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(MessageBoxIcon::NoIcon) == QMessageBox::NoIcon);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(MessageBoxIcon::InformationIcon) == QMessageBox::Information);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(MessageBoxIcon::WarningIcon) == QMessageBox::Warning);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(MessageBoxIcon::CriticalIcon) == QMessageBox::Critical);
-    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(MessageBoxIcon::QuestionIcon) == QMessageBox::Question);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(UserInterface::MessageBoxButton::Ok) == QMessageBox::Ok);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(UserInterface::MessageBoxButton::Cancel) == QMessageBox::Cancel);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(UserInterface::MessageBoxButton::Discard) == QMessageBox::Discard);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(UserInterface::MessageBoxButton::Yes) == QMessageBox::Yes);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(UserInterface::MessageBoxButton::No) == QMessageBox::No);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(UserInterface::MessageBoxButton::Apply) == QMessageBox::Apply);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(UserInterface::MessageBoxButton::Abort) == QMessageBox::Abort);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(UserInterface::MessageBoxButton::Retry) == QMessageBox::Retry);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::StandardButtons>(UserInterface::MessageBoxButton::Ignore) == QMessageBox::Ignore);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(UserInterface::MessageBoxIcon::NoIcon) == QMessageBox::NoIcon);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(UserInterface::MessageBoxIcon::InformationIcon) == QMessageBox::Information);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(UserInterface::MessageBoxIcon::WarningIcon) == QMessageBox::Warning);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(UserInterface::MessageBoxIcon::CriticalIcon) == QMessageBox::Critical);
+    OVITO_STATIC_ASSERT(static_cast<QMessageBox::Icon>(UserInterface::MessageBoxIcon::QuestionIcon) == QMessageBox::Question);
 
     // Prepare a message box dialog.
     QPointer<MessageDialog> msgbox = new MessageDialog();
@@ -835,7 +751,7 @@ UserInterface::MessageBoxButton MainWindow::showMessageBoxImpl(QWidget* window, 
 void MainWindow::openNewWindow(const QStringList& arguments)
 {
     // This is a workaround for a bug in Qt 6.4 on macOS platform. The displayed menu bar does not automatically follow
-    // the main window that is currently active. That's why we simply start up another independent instance of the application.
+    // the main window that is currently active. That's why we launch another independent instance of the app instead.
 #if defined(Q_OS_MACOS) && QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
     // Get the path to the ovito executable.
     QString execPath = Application::instance()->applicationFilePath();
@@ -851,6 +767,7 @@ void MainWindow::openNewWindow(const QStringList& arguments)
     OORef<MainWindow> mainWin = OORef<MainWindow>::create();
     mainWin->keepAliveUntilShutdown();
     mainWin->show();
+    mainWin->restoreMainWindowGeometry();
     mainWin->restoreLayout();
     if(!mainWin->handleExceptions([&]() {
         GuiApplication::initializeUserInterface(*mainWin, arguments);
@@ -858,436 +775,6 @@ void MainWindow::openNewWindow(const QStringList& arguments)
         mainWin->shutdown();
     }
 #endif
-}
-
-/******************************************************************************
-* Checks (or even modifies) the contents of a DataSet after it has been loaded from a file.
-* Returns false if loading the DataSet was rejected by the application.
-******************************************************************************/
-bool MainWindow::checkLoadedDataset(DataSet* dataset)
-{
-    if(!UserInterface::checkLoadedDataset(dataset))
-        return false;
-
-#ifndef OVITO_BUILD_PROFESSIONAL
-    // Since version 3.8.0, OVITO Basic no longer supports multiple pipelines in the same scene.
-    // Check if the state file contains more than one pipeline and inform user by displaying a dialog window.
-    // Let the user pick one of the pipelines to be loaded and remove all others from the scene.
-    if(ViewportConfiguration* viewportConfig = dataset->viewportConfig()) {
-        if(Viewport* vp = viewportConfig->activeViewport()) {
-            if(Scene* scene = vp->scene()) {
-                std::vector<OORef<SceneNode>> fileSourcePipelines;
-                QStringList itemsList;
-                scene->visitPipelines([&](SceneNode* sceneNode) {
-                    if(dynamic_object_cast<FileSource>(sceneNode->pipeline()->source())) {
-                        fileSourcePipelines.emplace_back(sceneNode);
-                        itemsList.push_back(sceneNode->objectTitle());
-                    }
-                    return true;
-                });
-                if(fileSourcePipelines.size() >= 2) {
-                    QDialog dlg(this);
-                    dlg.setWindowTitle(tr("Multiple pipelines found"));
-                    QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
-                    mainLayout->setSpacing(2);
-                    QLabel* label = new QLabel(tr(
-                        "<html><p>The OVITO session file contains %1 pipelines.</p>"
-                        "<p><i>OVITO Pro</i> is required since version 3.8.0 to work with "
-                        "multiple pipelines in the same scene. Please pick one of the pipelines "
-                        "below to load only that pipeline in <i>OVITO Basic</i> now - or open the session "
-                        "file in <i>OVITO Pro</i> to load all pipelines together.</p></html>"
-                    ).arg(fileSourcePipelines.size()));
-                    label->setWordWrap(true);
-                    label->setMinimumWidth(440);
-                    mainLayout->addWidget(label);
-                    mainLayout->addSpacing(6);
-                    mainLayout->addWidget(new QLabel(tr("Available pipelines:")));
-                    QListWidget* listWidget = new QListWidget();
-                    mainLayout->addWidget(listWidget);
-                    listWidget->addItems(itemsList);
-                    listWidget->setCurrentRow(0);
-                    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dlg);
-                    connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-                    connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
-                    connect(listWidget, &QListWidget::itemSelectionChanged, &dlg, [&]() { buttonBox->button(QDialogButtonBox::Ok)->setEnabled(!listWidget->selectedItems().empty()); });
-                    mainLayout->addWidget(buttonBox);
-                    if(dlg.exec() == QDialog::Accepted) {
-                        QList<QListWidgetItem*> selectedItems = listWidget->selectedItems();
-                        if(selectedItems.empty())
-                            return false; // Abort loading of the DataSet.
-                        int keepIndex = listWidget->row(selectedItems.front());
-                        scene->selection()->setNode(fileSourcePipelines[keepIndex]);
-                        for(const auto& sceneNode : fileSourcePipelines) {
-                            if(sceneNode != fileSourcePipelines[keepIndex]) {
-                                sceneNode->requestObjectDeletion();
-                            }
-                        }
-                    }
-                    else {
-                        return false; // Abort loading of the DataSet.
-                    }
-                }
-            }
-        }
-    }
-#endif
-
-    return true;
-}
-
-/******************************************************************************
-* Save the current dataset.
-******************************************************************************/
-bool MainWindow::fileSave()
-{
-    OVITO_ASSERT(this_task::get());
-    OORef<DataSet> dataset = datasetContainer().currentSet();
-
-    if(!dataset)
-        return false;
-
-    // Ask the user for a filename if there is no one set.
-    if(dataset->filePath().isEmpty())
-        return fileSaveAs();
-
-    // Save dataset to file.
-    return handleExceptions([&] {
-        dataset->saveToFile(dataset->filePath());
-        undoStack()->setClean();
-    });
-}
-
-/******************************************************************************
-* This is the implementation of the "Save As" action.
-* Returns true, if the scene has been saved.
-******************************************************************************/
-bool MainWindow::fileSaveAs(const QString& filename)
-{
-    OVITO_ASSERT(this_task::get());
-    OORef<DataSet> dataset = datasetContainer().currentSet();
-
-    if(!dataset)
-        return false;
-
-    if(filename.isEmpty()) {
-
-        QFileDialog dialog(this, tr("Save Session State"));
-        dialog.setNameFilter(tr("OVITO State Files (*.ovito);;All Files (*)"));
-        dialog.setAcceptMode(QFileDialog::AcceptSave);
-        dialog.setFileMode(QFileDialog::AnyFile);
-        dialog.setDefaultSuffix("ovito");
-
-        QSettings settings;
-        settings.beginGroup("file/scene");
-
-        if(dataset->filePath().isEmpty()) {
-            if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
-                QString defaultPath = settings.value("last_directory").toString();
-                if(!defaultPath.isEmpty())
-                    dialog.setDirectory(defaultPath);
-            }
-        }
-        else {
-#ifndef Q_OS_LINUX
-            dialog.selectFile(dataset->filePath());
-#else
-            // Workaround for bug in QFileDialog on Linux (Qt 6.2.4) crashing in exec() when selectFile() is called before (OVITO issue #216).
-            dialog.setDirectory(QFileInfo(dataset->filePath()).dir());
-#endif
-        }
-
-        TaskManager::setNativeDialogActive(true);
-        auto dlgResult = dialog.exec();
-        TaskManager::setNativeDialogActive(false);
-
-        if(dlgResult != QDialog::Accepted)
-            return false;
-
-        QStringList files = dialog.selectedFiles();
-        if(files.isEmpty())
-            return false;
-        QString newFilename = files.front();
-
-        if(HistoryFileDialog::keepWorkingDirectoryHistoryEnabled()) {
-            // Remember directory for the next time...
-            settings.setValue("last_directory", dialog.directory().absolutePath());
-        }
-
-        dataset->setFilePath(newFilename);
-    }
-    else {
-        dataset->setFilePath(filename);
-    }
-    return fileSave();
-}
-
-/******************************************************************************
-* If the scene has been changed this will ask the user if he wants
-* to save the changes.
-******************************************************************************/
-void MainWindow::askForSaveChanges()
-{
-    OVITO_ASSERT(this_task::get());
-    OORef<DataSet> dataset = datasetContainer().currentSet();
-
-    if(!dataset || dataset->filePath().isEmpty() || undoStack()->isClean())
-        return;
-
-    QString message;
-    if(dataset->filePath().isEmpty() == false) {
-        message = tr("The current session state has been modified. Do you want to save the changes?");
-        message += QString("\n\nFile: %1").arg(dataset->filePath());
-    }
-    else {
-        message = tr("The current program session has not been saved. Do you want to save it?");
-    }
-
-    QMessageBox::StandardButton result = MessageDialog::question(this, tr("Save changes"),
-        message,
-        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel);
-    if(result == QMessageBox::Cancel) {
-        this_task::cancelAndThrow();
-    }
-    else if(result != QMessageBox::No) {
-        // Save scene first.
-        fileSave();
-    }
-}
-
-/******************************************************************************
-* Imports a given file into the scene.
-******************************************************************************/
-void MainWindow::importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType, const QString& importerFormat)
-{
-    OVITO_ASSERT(this_task::get());
-    OVITO_ASSERT(!urls.empty());
-
-    // Create a reference to the active scene to keep it alive during this long-running operation.
-    OORef<DataSet> dataset = datasetContainer().currentSet();
-    OORef<Scene> scene = datasetContainer().activeScene();
-    if(!dataset || !scene)
-        throw Exception(tr("Cannot import because there is no active scene."));
-
-    std::vector<std::pair<QUrl, OORef<FileImporter>>> urlImporters;
-    for(const QUrl& url : urls) {
-        if(!url.isValid())
-            throw Exception(tr("Failed to import file. URL is not valid: %1").arg(url.toString()));
-
-        OORef<FileImporter> importer;
-        if(!importerType) {
-
-            // Detect file format.
-            Future<OORef<FileImporter>> importerFuture = FileImporter::autodetectFileFormat(url);
-            importer = importerFuture.blockForResult();
-            if(!importer)
-                throw Exception(tr("Could not auto-detect the format of the file %1. The file format might not be supported.").arg(url.fileName()));
-        }
-        else {
-            importer = static_object_cast<FileImporter>(importerType->createInstance());
-            if(!importer)
-                throw Exception(tr("Failed to import file. Could not initialize import service."));
-            importer->setSelectedFileFormat(importerFormat);
-        }
-
-        urlImporters.push_back(std::make_pair(url, std::move(importer)));
-    }
-
-    // Order URLs and their corresponding importers.
-    std::stable_sort(urlImporters.begin(), urlImporters.end(), [](const auto& a, const auto& b) {
-        int pa = a.second->importerPriority();
-        int pb = b.second->importerPriority();
-        if(pa > pb) return true;
-        if(pa < pb) return false;
-        return a.second->getOOClass().name() < b.second->getOOClass().name();
-    });
-
-    // Display the optional UI (which is provided by the corresponding FileImporterEditor class) for each importer.
-    for(const auto& item : urlImporters) {
-        const QUrl& url = item.first;
-        const OORef<FileImporter>& importer = item.second;
-        for(OvitoClassPtr clazz = &importer->getOOClass(); clazz != nullptr; clazz = clazz->superClass()) {
-            OvitoClassPtr editorClass = PropertiesEditor::registry().getEditorClass(clazz);
-            if(editorClass && editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
-                OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance());
-                if(editor) {
-                    editor->inspectNewFile(importer, url, *this);
-                    this_task::throwIfCanceled();
-                }
-            }
-        }
-    }
-
-    // Determine how the file's data should be inserted into the current scene.
-    FileImporter::ImportMode importMode = FileImporter::ResetScene;
-
-    OORef<FileImporter> importer = urlImporters.front().second;
-    if(importer->isReplaceExistingPossible(scene, urls)) {
-        // Ask user if the existing pipeline should be preserved or reset.
-        MessageDialog msgBox(QMessageBox::Question, tr("Import file"),
-                tr("Do you want to reset the existing pipeline?"),
-                QMessageBox::Yes | QMessageBox::Cancel, this);
-#ifdef OVITO_BUILD_PROFESSIONAL
-        msgBox.setInformativeText(tr(
-            "<p>Select <b>Yes</b> to start over and discard the existing pipeline before importing the new file.</p>"
-            "<p>Select <b>No</b> to keep modifiers in the current pipeline and replace the input data with the selected file.</p>"
-            "<p>Select <b>Add to scene</b> to create an additional pipeline and visualize multiple datasets.</p>"));
-#else
-        msgBox.setInformativeText(tr(
-            "<p>Select <b>Yes</b> to start over and discard the existing pipeline before importing the new file.</p>"
-            "<p>Select <b>No</b> to keep modifiers in the current pipeline and replace the input data with the selected file.</p>"
-            "<p>Select <b>Add to scene</b> to create an additional pipeline and visualize multiple datasets (requires <a href=\"https://www.ovito.org/about/ovito-pro/\">OVITO Pro</a>).</p>"));
-#endif
-        msgBox.addButton(tr("No"), QMessageBox::NoRole);
-        QPushButton* addToSceneButton = msgBox.addButton(tr("Add to scene"), QMessageBox::NoRole);
-#ifndef OVITO_BUILD_PROFESSIONAL
-        addToSceneButton->setEnabled(false);
-#else
-        (void)addToSceneButton;
-#endif
-        msgBox.setDefaultButton(QMessageBox::Yes);
-        msgBox.setEscapeButton(QMessageBox::Cancel);
-        msgBox.exec();
-
-        if(msgBox.clickedButton() == msgBox.button(QMessageBox::Cancel)) {
-            this_task::cancelAndThrow(); // Operation canceled by user.
-        }
-        else if(msgBox.clickedButton() == msgBox.button(QMessageBox::Yes)) {
-            importMode = FileImporter::ResetScene;
-            // Ask user if current scene should be saved before it is replaced by the imported data.
-            askForSaveChanges();
-        }
-        else if(msgBox.clickedButton() == addToSceneButton) {
-            importMode = FileImporter::AddToScene;
-        }
-        else {
-            // No button
-            importMode = FileImporter::ReplaceSelected;
-        }
-    }
-    else if(scene->children().empty() == false) {
-        // Ask user if the current scene should be completely replaced by the imported data.
-        QMessageBox::StandardButton result = MessageDialog::question(this, tr("Import file"),
-            tr("Do you want to keep the existing objects in the current scene?"),
-            QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Cancel);
-
-        if(result == QMessageBox::Cancel) {
-            this_task::cancelAndThrow(); // Operation canceled by user.
-        }
-        else if(result == QMessageBox::No) {
-            importMode = FileImporter::ResetScene;
-
-            // Ask user if current scene should be saved before it is replaced by the imported data.
-            askForSaveChanges();
-        }
-        else {
-            importMode = FileImporter::AddToScene;
-        }
-    }
-
-    Future<OORef<Pipeline>> future = importer->importFileSet(scene, std::move(urlImporters), importMode, true, ImportFileDialog::multiFileImportMode());
-    ProgressDialog::blockForFuture(std::move(future), *this, tr("Importing data"));
-
-    if(importMode == FileImporter::ResetScene) {
-        undoStack()->clear();
-        dataset->setFilePath({});
-    }
-}
-
-/******************************************************************************
-* Registers a new task progress record with this user interface.
-* This method gets called when a new TaskProgress instance is created from a running task.
-******************************************************************************/
-std::mutex* MainWindow::taskProgressBegin(TaskProgress* progress)
-{
-    std::lock_guard<std::mutex> lock(_progressTaskListMutex);
-    if(!_progressTasksHead)
-        _progressTasksHead = progress;
-    progress->setPrevInList(_progressTasksTail);
-    progress->setNextInList(nullptr);
-    if(_progressTasksTail)
-        _progressTasksTail->setNextInList(progress);
-    _progressTasksTail = progress;
-    return &_progressTaskListMutex;
-}
-
-/******************************************************************************
-* Unregisters a task progress record from this user interface.
-* This method gets called when a previously registered task finishes.
-******************************************************************************/
-void MainWindow::taskProgressEnd(TaskProgress* progress)
-{
-    // Note: Mutex is already locked by the TaskProgress class.
-    if(_progressTasksHead == progress)
-        _progressTasksHead = progress->nextInList();
-    if(_progressTasksTail == progress)
-        _progressTasksTail = progress->prevInList();
-    if(TaskProgress* prev = progress->prevInList())
-        prev->setNextInList(progress->nextInList());
-    if(TaskProgress* next = progress->nextInList())
-        next->setPrevInList(progress->prevInList());
-    notifyProgressTasksChanged();
-}
-
-/******************************************************************************
-* Informs the user interface that a task's progress state has changed.
-******************************************************************************/
-void MainWindow::taskProgressChanged(TaskProgress* progress)
-{
-    // Note: Mutex is already locked by the TaskProgress class.
-    notifyProgressTasksChanged();
-}
-
-/******************************************************************************
-* Notifies all registered listeners that the progress state of the registered tasks has changed.
-******************************************************************************/
-void MainWindow::notifyProgressTasksChanged()
-{
-    // The following timer code ensures that the GUI task display is updated only once every 100 ms.
-    // It also ensures that the UI update is done in the main thread and that short-lived
-    // tasks don't show up in the GUI at all.
-    if(!_progressUpdateScheduled.exchange(true)) {
-        QTimer::singleShot(100, this, [this]() {
-            _progressUpdateScheduled.store(false);
-            Q_EMIT taskProgressUpdate();
-        });
-    }
-}
-
-/******************************************************************************
-* Lets the caller visit all registered worker tasks that are in progress.
-******************************************************************************/
-void MainWindow::visitRunningTasks(std::function<void(const QString&,int,int)> visitor)
-{
-    std::lock_guard<std::mutex> lock(_progressTaskListMutex);
-    for(TaskProgress* taskProgress = _progressTasksHead; taskProgress != nullptr; taskProgress = taskProgress->nextInList()) {
-        // Compute overall progress, taking into account nested sub-steps of the task.
-        auto [totalProgressValue, totalProgressMaximum] = taskProgress->computeTotalProgress();
-        // Call visitor function.
-        visitor(taskProgress->text(), totalProgressValue, totalProgressMaximum);
-    }
-}
-
-/******************************************************************************
-* Waits for the pipelines in the current scene to be fully evaluated, then executes the given operation.
-* A progress dialog may be displayed while waiting for the scene preparation to complete.
-******************************************************************************/
-void MainWindow::scheduleOperationAfterScenePreparation(Scene* scene, const QString& waitingMessage, operation_function&& operation)
-{
-    // Create a temporary scene preparation object that takes care of evaluating the scene pipelines.
-    OORef<ScenePreparation> sceneProp = OORef<ScenePreparation>::create(*this, scene);
-
-    // Show a progress dialog while waiting. The dialog will self-destruct afterwards.
-    ProgressDialog* progressDialog = new ProgressDialog(sceneProp->future(), *this, waitingMessage);
-
-    // Keep the scene preparation object alive until it has done its job.
-    sceneProp->future().finally([sceneProp]() noexcept {});
-
-    // Schedule execution of the operation upon completion of the scene preparation.
-    progressDialog->whenDone([this, operation=std::move(operation)]() mutable noexcept {
-        handleExceptions([&] {
-            operation();
-        });
-    });
 }
 
 /******************************************************************************

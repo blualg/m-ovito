@@ -33,14 +33,14 @@ namespace Ovito {
 /******************************************************************************
 * The constructor of the dialog.
 ******************************************************************************/
-ModalPropertiesEditorDialog::ModalPropertiesEditorDialog(RefTarget* object, OORef<PropertiesEditor> editor, QWidget* parent, MainWindow& mainWindow, const QString& dialogTitle, const QString& undoString, const QString& helpTopic) :
-    QDialog(parent), _editor(std::move(editor)), UndoableTransaction(mainWindow, undoString)
+ModalPropertiesEditorDialog::ModalPropertiesEditorDialog(RefTarget* object, OORef<PropertiesEditor> editor, QWidget* parent, MainWindowUI& userInterface, const QString& dialogTitle, const QString& undoString, const QString& helpTopic) :
+    QDialog(parent), _editor(std::move(editor)), UndoableTransaction(userInterface, undoString)
 {
     setWindowTitle(dialogTitle);
 
     QVBoxLayout* layout = new QVBoxLayout(this);
 
-    PropertiesPanel* propertiesPanel = new PropertiesPanel(mainWindow, this);
+    PropertiesPanel* propertiesPanel = new PropertiesPanel(userInterface, this);
     propertiesPanel->setVisible(false);
     _editor->initialize(propertiesPanel, RolloutInsertionParameters().insertInto(this), nullptr);
     _editor->handleExceptions([&]() {
@@ -57,8 +57,8 @@ ModalPropertiesEditorDialog::ModalPropertiesEditorDialog(RefTarget* object, OORe
         commit();
         accept();
     });
-    connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [helpTopic, &mainWindow]() {
-        mainWindow.actionManager()->openHelpTopic(helpTopic);
+    connect(buttonBox, &QDialogButtonBox::helpRequested, this, [helpTopic, &userInterface]() {
+        userInterface.actionManager()->openHelpTopic(helpTopic);
     });
 }
 

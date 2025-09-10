@@ -47,7 +47,7 @@ PropertiesEditor::Registry& PropertiesEditor::registry()
 /******************************************************************************
 * Creates a PropertiesEditor for an object.
 ******************************************************************************/
-OORef<PropertiesEditor> PropertiesEditor::create(MainWindow& mainWindow, RefTarget* obj)
+OORef<PropertiesEditor> PropertiesEditor::create(MainWindowUI& ui, RefTarget* obj)
 {
     OVITO_CHECK_POINTER(obj);
     try {
@@ -62,7 +62,7 @@ OORef<PropertiesEditor> PropertiesEditor::create(MainWindow& mainWindow, RefTarg
         }
     }
     catch(Exception& ex) {
-        mainWindow.reportError(ex.prependGeneralMessage(tr("Failed to create editor component for the '%1' object.").arg(obj->objectTitle())));
+        ui.reportError(ex.prependGeneralMessage(tr("Failed to create editor component for the '%1' object.").arg(obj->objectTitle())));
     }
     return nullptr;
 }
@@ -76,7 +76,7 @@ void PropertiesEditor::initialize(PropertiesPanel* container, const RolloutInser
     OVITO_ASSERT_MSG(_container == nullptr, "PropertiesEditor::initialize()", "Editor can only be initialized once.");
     OVITO_ASSERT_MSG(_parentEditor == nullptr, "PropertiesEditor::initialize()", "Editor can only be initialized once.");
     _container = container;
-    _mainWindow = &container->mainWindow();
+    setUserInterface(container->ui());
     _parentEditor = parentEditor;
     // Forward signals emitted by the parent editor.
     if(parentEditor) {
@@ -221,16 +221,16 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor* field, R
 {
     if(field == PROPERTY_FIELD(editObject)) {
         if(oldTarget) {
-            oldTarget->editingStopped(mainWindow());
+            oldTarget->editingStopped(ui());
         }
         Q_EMIT contentsReplaced(editObject());
         Q_EMIT contentsChanged(editObject());
         if(newTarget) {
-            newTarget->editingStarted(mainWindow());
+            newTarget->editingStarted(ui());
         }
         if(!isBeingDeleted()) {
-            emitPipelineInputChangedSignal(this, mainWindow());
-            emitPipelineOutputChangedSignal(this, mainWindow());
+            emitPipelineInputChangedSignal(this, ui());
+            emitPipelineOutputChangedSignal(this, ui());
         }
     }
     RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
@@ -423,24 +423,6 @@ std::vector<ConstDataObjectRef> PropertiesEditor::getVisDataObjects() const
     for(const ConstDataObjectRefPath& path : paths)
         result.emplace_back(std::move(path.back()));
     return result;
-}
-
-/******************************************************************************
-* Returns the current animation time.
-******************************************************************************/
-AnimationTime PropertiesEditor::currentAnimationTime() const
-{
-    if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings())
-        return anim->currentTime();
-    return AnimationTime(0);
-}
-
-/******************************************************************************
-* Returns the viewport that is currently selected.
-******************************************************************************/
-Viewport* PropertiesEditor::activeViewport() const
-{
-    return mainWindow().datasetContainer().activeViewport();
 }
 
 }   // End of namespace

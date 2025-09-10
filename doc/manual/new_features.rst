@@ -22,14 +22,6 @@ A discretized color map can now be enabled to visualize integer properties:
 .. image:: /images/new_features/discrete_colormap_legend.jpg
   :width: 25%
 
-.. rubric:: New modifier: Find rings |ovito-pro|
-
-
-
-.. image:: /images/new_features/discrete_colormap_settings.jpg
-  :width: 35%
-
-
 - |ovito-pro| Added the :ref:`particles.modifiers.find_rings` modifier - a high performance implementation of the `Ring Finder Python extension <https://github.com/ovito-org/RingFinder>`__  .
 - |ovito-pro| Added the :ref:`particles.modifiers.reduce_property` modifier - a high performance implementation of the `Reduce Property Python extension <https://github.com/ovito-org/ReduceProperty>`__ .
 - |ovito-pro| Added the :ref:`particles.modifiers.difference_between_frames` modifier: Computes the delta of a particle property between the current frame and a reference frame.

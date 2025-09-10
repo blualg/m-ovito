@@ -58,14 +58,14 @@ private:
 /**
  * A Qt list model that list all available utility applets.
  */
-class OVITO_GUI_EXPORT UtilityListModel : public QAbstractListModel
+class OVITO_GUI_EXPORT UtilityListModel : public QAbstractListModel, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    UtilityListModel(QObject* parent, MainWindow& mainWindow);
+    UtilityListModel(QObject* parent, MainWindowUI& ui);
 
     /// Returns the number of rows in the model.
     virtual int rowCount(const QModelIndex& parent) const override;
@@ -126,9 +126,6 @@ private:
 
     /// The display strings as shown by the model.
     std::vector<QString> _modelStrings;
-
-    /// The main window.
-    MainWindow& _mainWindow;
 
     /// Font used for category header items.
     QFont _categoryFont;

@@ -68,7 +68,7 @@ public:
                         _editor->onElementPicked(*pickResult, indexAndContainer.first, indexAndContainer.second);
                     }
                     else {
-                        inputManager()->userInterface().showStatusBarMessage(tr("You did not click on an element of type '%1'.").arg(mod->subject().dataClass()->elementDescriptionName()), 1000);
+                        ui().showStatusBarMessage(tr("You did not click on an element of type '%1'.").arg(mod->subject().dataClass()->elementDescriptionName()), 1000);
                     }
                 }
             }
@@ -176,11 +176,11 @@ protected:
         ManualSelectionModifier* mod = static_object_cast<ManualSelectionModifier>(_editor->editObject());
         if(mod && mod->subject()) {
 #ifndef Q_OS_MACOS
-            inputManager()->userInterface().showStatusBarMessage(
+            ui().showStatusBarMessage(
                     tr("Draw a fence around a group of %1 to select. Use CONTROL or ALT keys to extend or reduce existing selection set.")
                     .arg(mod->subject().dataClass()->elementDescriptionName()));
 #else
-            inputManager()->userInterface().showStatusBarMessage(
+            ui().showStatusBarMessage(
                     tr("Draw a fence around a group of %1 to select. Use COMMAND or ALT keys to extend or reduce existing selection set.")
                     .arg(mod->subject().dataClass()->elementDescriptionName()));
 #endif
@@ -191,7 +191,7 @@ protected:
     /// This is called by the system after the input handler is no longer the active handler.
     virtual void deactivated(bool temporary) override {
         _fence.clear();
-        inputManager()->userInterface().clearStatusBarMessage();
+        ui().clearStatusBarMessage();
         inputManager()->removeViewportGizmo(this);
         ViewportInputMode::deactivated(temporary);
     }
@@ -238,12 +238,12 @@ void ManualSelectionModifierEditor::createUI(const RolloutInsertionParameters& r
 
     OORef<PickElementMode> pickElementMode = OORef<PickElementMode>::create(this);
     connect(this, &QObject::destroyed, pickElementMode, &ViewportInputMode::removeMode);
-    ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Pick"), this, std::move(pickElementMode));
+    ViewportModeAction* pickModeAction = new ViewportModeAction(ui(), tr("Pick"), this, std::move(pickElementMode));
     sublayout->addWidget(new ViewportModeButton(pickModeAction));
 
     OORef<FenceSelectionMode> fenceMode = OORef<FenceSelectionMode>::create(this);
     connect(this, &QObject::destroyed, fenceMode, &ViewportInputMode::removeMode);
-    ViewportModeAction* fenceModeAction = new ViewportModeAction(mainWindow(), tr("Fence selection"), this, std::move(fenceMode));
+    ViewportModeAction* fenceModeAction = new ViewportModeAction(ui(), tr("Fence selection"), this, std::move(fenceMode));
     sublayout->addWidget(new ViewportModeButton(fenceModeAction));
 
     // Deactivate input modes when editor is reset.
@@ -371,7 +371,7 @@ void ManualSelectionModifierEditor::onElementPicked(const ViewportWindow::PickRe
                 break;
             }
             else {
-                mainWindow().showStatusBarMessage(tr("Cannot select this element, because it doesn't exist in the modifier's input data."), 2000);
+                ui().showStatusBarMessage(tr("Cannot select this element, because it doesn't exist in the modifier's input data."), 2000);
             }
         }
     });

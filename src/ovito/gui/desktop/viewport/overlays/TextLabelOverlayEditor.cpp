@@ -93,7 +93,7 @@ void TextLabelOverlayEditor::createUI(const RolloutInsertionParameters& rolloutP
 
     OORef<MoveOverlayInputMode> moveOverlayMode = OORef<MoveOverlayInputMode>::create(this);
     connect(this, &QObject::destroyed, moveOverlayMode, &ViewportInputMode::removeMode);
-    ViewportModeAction* moveOverlayAction = new ViewportModeAction(mainWindow(), tr("Move"), this, std::move(moveOverlayMode));
+    ViewportModeAction* moveOverlayAction = new ViewportModeAction(ui(), tr("Move"), this, std::move(moveOverlayMode));
     moveOverlayAction->setIcon(QIcon::fromTheme("edit_mode_move"));
     moveOverlayAction->setToolTip(tr("Reposition the label in the viewport using the mouse"));
     positionLayout->addWidget(new ViewportModeButton(moveOverlayAction), 2, 1, 1, 2, Qt::AlignRight | Qt::AlignTop);

@@ -26,7 +26,7 @@
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/gui/desktop/properties/PropertiesPanel.h>
 #include <ovito/gui/desktop/properties/DefaultPropertiesEditor.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/io/FileExporter.h>
 #include "FileExporterSettingsDialog.h"
@@ -36,8 +36,8 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, Scene& scene, FileExporter* exporter, QWidget* parent)
-    : QDialog(parent), _mainWindow(mainWindow), _exporter(exporter)
+FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindowUI& ui, Scene& scene, FileExporter* exporter, QWidget* parent)
+    : QDialog(parent), UserInterfaceComponent<MainWindowUI>(ui), _exporter(exporter)
 {
     OVITO_ASSERT(exporter->sceneToExport() == &scene);
 
@@ -87,7 +87,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
 
     frameRangeLayout->addWidget(new QLabel(tr("From frame:")));
     _startTimeSpinner = new SpinnerWidget();
-    _startTimeSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
+    _startTimeSpinner->setUnit(unitsManager().integerIdentityUnit());
     _startTimeSpinner->setIntValue(scene.animationSettings()->firstFrame());
     _startTimeSpinner->setTextBox(new ShortLineEdit());
     _startTimeSpinner->setMinValue(scene.animationSettings()->firstFrame());
@@ -97,7 +97,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
     frameRangeLayout->addSpacing(8);
     frameRangeLayout->addWidget(new QLabel(tr("To:")));
     _endTimeSpinner = new SpinnerWidget();
-    _endTimeSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
+    _endTimeSpinner->setUnit(unitsManager().integerIdentityUnit());
     _endTimeSpinner->setIntValue(scene.animationSettings()->lastFrame());
     _endTimeSpinner->setTextBox(new ShortLineEdit());
     _endTimeSpinner->setMinValue(scene.animationSettings()->firstFrame());
@@ -107,7 +107,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
     frameRangeLayout->addSpacing(8);
     frameRangeLayout->addWidget(new QLabel(tr("Every Nth frame:")));
     _nthFrameSpinner = new SpinnerWidget();
-    _nthFrameSpinner->setUnit(mainWindow.unitsManager().integerIdentityUnit());
+    _nthFrameSpinner->setUnit(unitsManager().integerIdentityUnit());
     _nthFrameSpinner->setIntValue(_exporter->everyNthFrame());
     _nthFrameSpinner->setTextBox(new ShortLineEdit());
     _nthFrameSpinner->setMinValue(1);
@@ -190,7 +190,7 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
 
     // Update exporter whenever a new source pipeline has been selected by the user.
     connect(_sceneNodeBox, qOverload<int>(&QComboBox::currentIndexChanged), this, [this]() {
-        _mainWindow.handleExceptions([&] {
+        handleExceptions([&] {
             _exporter->setPipelineToExport(static_object_cast<SceneNode>(_sceneNodeBox->currentData().value<OORef<OvitoObject>>())->pipeline());
         });
     });
@@ -200,13 +200,13 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindow& mainWindow, S
 
     // Update the exporter whenever the user selects a new data object.
     connect(_dataObjectBox, qOverload<int>(&QComboBox::currentIndexChanged), this, [this]() {
-        _mainWindow.handleExceptions([&] { _exporter->setDataObjectToExport(_dataObjectBox->currentData().value<DataObjectReference>()); });
+        handleExceptions([&] { _exporter->setDataObjectToExport(_dataObjectBox->currentData().value<DataObjectReference>()); });
     });
 
     // Show the optional UI of the exporter.
-    if(OORef<PropertiesEditor> editor = PropertiesEditor::create(mainWindow, exporter)) {
+    if(OORef<PropertiesEditor> editor = PropertiesEditor::create(ui, exporter)) {
         if(editor->getOOMetaClass() != DefaultPropertiesEditor::OOClass()) {
-            PropertiesPanel* propPanel = new PropertiesPanel(mainWindow, this);
+            PropertiesPanel* propPanel = new PropertiesPanel(ui, this);
             propPanel->setFrameStyle(QFrame::NoFrame);
             _mainLayout->addWidget(propPanel);
             propPanel->setEditObject(exporter);
@@ -228,7 +228,7 @@ void FileExporterSettingsDialog::updateDataObjectList()
     // Update the data objects list.
     _dataObjectBox->clear();
 
-    _mainWindow.handleExceptions([&] {
+    handleExceptions([&] {
         std::vector<DataObjectClassPtr> objClasses = _exporter->exportableDataObjectClass();
         if(!objClasses.empty() && _exporter->sceneToExport()) {
             if(Pipeline* pipeline = _exporter->pipelineToExport()) {
@@ -272,7 +272,7 @@ void FileExporterSettingsDialog::onOk()
 {
     setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
 
-    _mainWindow.handleExceptions([&] {
+    handleExceptions([&] {
         _exporter->setExportTrajectory(_rangeButtonGroup->checkedId() == 1);
         _exporter->setUseWildcardFilename(_fileGroupButtonGroup ? (_fileGroupButtonGroup->checkedId() == 1) : _exporter->exportTrajectory());
         _exporter->setWildcardFilename(_wildcardTextbox->text());

@@ -112,7 +112,7 @@ void ViewportSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
 void ViewportSettingsPage::showConfigureViewportGraphicsDialog()
 {
     if(!_configureViewportGraphicsDialog)
-        _configureViewportGraphicsDialog = new ConfigureViewportGraphicsDialog(mainWindow(), settingsDialog());
+        _configureViewportGraphicsDialog = new ConfigureViewportGraphicsDialog(ui(), settingsDialog());
     _configureViewportGraphicsDialog->show();
     _configureViewportGraphicsDialog->raise();
 }

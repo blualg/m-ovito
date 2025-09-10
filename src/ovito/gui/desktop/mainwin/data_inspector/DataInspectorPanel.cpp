@@ -32,14 +32,15 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-DataInspectorPanel::DataInspectorPanel(MainWindow& mainWindow) :
-    _mainWindow(mainWindow),
+DataInspectorPanel::DataInspectorPanel(MainWindowUI& ui) :
+    UserInterfaceComponent<MainWindowUI>(ui),
     _waitingForSceneAnim(":/gui/mainwin/inspector/waiting.gif"),
-    _scenePreparation(OORef<ScenePreparation>::create(mainWindow))
+    _scenePreparation(OORef<ScenePreparation>::create(ui))
 {
     // Create data inspection applets.
     for(OvitoClassPtr clazz : PluginManager::instance().listClasses(DataInspectionApplet::OOClass())) {
         OORef<DataInspectionApplet> applet = static_object_cast<DataInspectionApplet>(clazz->createInstance());
+        applet->setUserInterface(ui);
         applet->setInspectorPanel(this);
         _applets.push_back(std::move(applet));
     }
@@ -331,7 +332,7 @@ bool DataInspectorPanel::updatePipelineOutput()
 {
     _pipelineOutput.reset();
     if(selectedPipeline()) {
-        if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
+        if(AnimationSettings* anim = activeAnimationSettings()) {
             _pipelineOutput = selectedPipeline()->getCachedPipelineOutput(anim->currentTime(), false);
         }
     }

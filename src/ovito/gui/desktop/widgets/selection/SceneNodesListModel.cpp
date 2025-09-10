@@ -299,7 +299,7 @@ void SceneNodesListModel::activateItem(int index)
     int pipelineIndex = index - firstSceneNodeIndex();
     if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
         if(SceneNode* node = sceneNodes()[pipelineIndex]) {
-            _mainWindow.performTransaction(tr("Select pipeline"), [&]() {
+            _mainWindow.ui().performTransaction(tr("Select pipeline"), [&]() {
                 if(SelectionSet* selection = _mainWindow.datasetContainer().activeSelectionSet())
                     selection->setNode(node);
             });
@@ -328,7 +328,7 @@ void SceneNodesListModel::deleteItem(int index)
     int pipelineIndex = index - firstSceneNodeIndex();
     if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
         if(OORef<SceneNode> node = sceneNodes()[pipelineIndex]) {
-            _mainWindow.performTransaction(tr("Delete pipeline"), [&]() {
+            _mainWindow.ui().performTransaction(tr("Delete pipeline"), [&]() {
                 bool wasSelected = node->isSelected();
                 node->requestObjectDeletion();
 

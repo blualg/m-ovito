@@ -74,7 +74,7 @@ void ColorParameterUI::resetUI()
 
     if(isReferenceFieldUI() && editObject()) {
         // Update the displayed value when the animation time has changed.
-        connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &ColorParameterUI::updateUI, Qt::UniqueConnection);
+        connect(&datasetContainer(), &DataSetContainer::currentFrameChanged, this, &ColorParameterUI::updateUI, Qt::UniqueConnection);
     }
 }
 
@@ -86,7 +86,7 @@ void ColorParameterUI::updateUI()
     if(editObject() && colorPicker()) {
         if(isReferenceFieldUI()) {
             if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                colorPicker()->setColor(ctrl->getColorValue(currentAnimationTime().value_or(AnimationTime(0))));
+                colorPicker()->setColor(ctrl->getColorValue(currentAnimationTime()));
             }
         }
         else if(isPropertyFieldUI()) {
@@ -126,7 +126,7 @@ void ColorParameterUI::onColorPickerChanged()
         performTransaction(tr("Change color"), [this]() {
             if(isReferenceFieldUI()) {
                 if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                    ctrl->setColorValue(currentAnimationTime().value_or(AnimationTime(0)), colorPicker()->color());
+                    ctrl->setColorValue(currentAnimationTime(), colorPicker()->color());
                 }
             }
             else if(isPropertyFieldUI()) {

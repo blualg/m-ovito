@@ -29,17 +29,17 @@ namespace Ovito {
 /******************************************************************************
 * Creates a progress dialog for the currently running task.
 ******************************************************************************/
-void ProgressDialog::showForCurrentTask(MainWindow& mainWindow, QWidget* parent, const QString& dialogTitle)
+void ProgressDialog::showForCurrentTask(MainWindowUI& ui, QWidget* parent, const QString& dialogTitle)
 {
     OVITO_ASSERT(this_task::isMainThread());
     OVITO_ASSERT(this_task::get());
-    new ProgressDialog(this_task::get()->shared_from_this(), {}, mainWindow, parent, dialogTitle);
+    new ProgressDialog(this_task::get()->shared_from_this(), {}, ui, parent, dialogTitle);
 }
 
 /******************************************************************************
 * Initializes the dialog window.
 ******************************************************************************/
-ProgressDialog::ProgressDialog(TaskPtr task, detail::TaskDependency taskDependency, MainWindow& mainWindow, QWidget* parent, const QString& dialogTitle) : QDialog(parent), _mainWindow(mainWindow), _task(std::move(task)), _taskDependency(std::move(taskDependency))
+ProgressDialog::ProgressDialog(TaskPtr task, detail::TaskDependency taskDependency, MainWindowUI& ui, QWidget* parent, const QString& dialogTitle) : QDialog(parent), UserInterfaceComponent<MainWindowUI>(ui), _task(std::move(task)), _taskDependency(std::move(taskDependency))
 {
     OVITO_ASSERT(_task || _taskDependency);
     OVITO_ASSERT(!_task || !_taskDependency);
@@ -49,7 +49,7 @@ ProgressDialog::ProgressDialog(TaskPtr task, detail::TaskDependency taskDependen
     setWindowTitle(dialogTitle);
 
     // If the main window is closing down, cancel the operation being in progress (by dropping the dependency on it).
-    connect(&mainWindow, &MainWindow::closingWindow, this, &ProgressDialog::reject);
+    connect(ui.mainWindow(), &MainWindow::closingWindow, this, &ProgressDialog::reject);
 
     // Display the dialog only after a short waiting period.
     // This is to prevent the dialog from showing up at all for short tasks that terminate very quickly.
@@ -59,7 +59,7 @@ ProgressDialog::ProgressDialog(TaskPtr task, detail::TaskDependency taskDependen
     });
 
     // Close dialog as soon as the operation completes.
-    (_task ? _task : _taskDependency.get())->finally(ObjectExecutor(&mainWindow), [self=QPointer<ProgressDialog>(this)](Task& task) noexcept {
+    (_task ? _task : _taskDependency.get())->finally(ObjectExecutor(&ui), [self=QPointer<ProgressDialog>(this)](Task& task) noexcept {
         if(!self.isNull()) {
             // Check for errors that may have occurred during the operation and show them to the user.
             if(!task.isCanceled()) {
@@ -67,10 +67,11 @@ ProgressDialog::ProgressDialog(TaskPtr task, detail::TaskDependency taskDependen
                     task.throwPossibleException();
                 }
                 catch(const Exception& ex) {
-                    MainWindow& mainWindow = self->_mainWindow; // Capture the main window reference, because "self" may be destroyed when the dialog is closed.
+                    OORef<MainWindowUI> userInterface = &self->ui(); // Capture the main reference, because "self" may be destroyed when the dialog is closed.
+                    bool reportErrors = self->_reportErrors;
                     self->reject(); // Close the dialog.
-                    if(self->_reportErrors)
-                        mainWindow.reportError(ex);
+                    if(reportErrors)
+                        userInterface->reportError(ex);
                     return;
                 }
             }
@@ -124,7 +125,7 @@ void ProgressDialog::showEvent(QShowEvent* event)
     connect(buttonBox, &QDialogButtonBox::rejected, this, &ProgressDialog::reject);
 
     // Update the list of tasks if their status or number changes.
-    connect(&_mainWindow, &MainWindow::taskProgressUpdate, this, &ProgressDialog::updateTaskList);
+    connect(ui().mainWindow(), &MainWindow::taskProgressUpdate, this, &ProgressDialog::updateTaskList);
 
     // Build the initial list of tasks.
     updateTaskList();
@@ -155,7 +156,7 @@ void ProgressDialog::updateTaskList()
     size_t index = 0;
     QVBoxLayout* layout = qobject_cast<QVBoxLayout*>(this->layout());
 
-    _mainWindow.visitRunningTasks([&](const QString& text, int progressValue, int progressMaximum) {
+    ui().visitRunningTasks([&](const QString& text, int progressValue, int progressMaximum) {
         if(text.isEmpty())
             return;
         QLabel* statusLabel;

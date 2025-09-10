@@ -38,7 +38,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(OverlayTemplatesPage);
 ******************************************************************************/
 QVector<QTreeWidgetItem*> OverlayTemplatesPage::populateAvailableObjectsList(QTreeWidget* objectListWidget, QComboBox* nameBox)
 {
-    OverlayListModel* overlayModel = mainWindow().commandPanel()->overlayPage()->overlayListModel();
+    OverlayListModel* overlayModel = ui().mainWindow()->commandPanel()->overlayPage()->overlayListModel();
     ViewportOverlay* selectedOverlay = overlayModel->selectedLayer();
     QVector<QTreeWidgetItem*> itemList;
 

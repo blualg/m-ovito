@@ -30,7 +30,7 @@ namespace Ovito {
 /**
  * This dialog box lets the user make a copy of a pipeline scene node.
  */
-class ClonePipelineDialog : public QDialog
+class ClonePipelineDialog : public QDialog, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
@@ -44,7 +44,7 @@ public:
     };
 
     /// Constructor.
-    ClonePipelineDialog(MainWindow& mainWindow, SceneNode* sceneNode, QWidget* parentWindow = nullptr);
+    ClonePipelineDialog(MainWindowUI& ui, SceneNode* sceneNode, QWidget* parentWindow = nullptr);
 
 private Q_SLOTS:
 
@@ -78,9 +78,6 @@ private:
         void setCloneMode(CloneMode mode) { return actionGroup->actions()[mode]->setChecked(true); }
         bool isModifier() const { return !modNodes.empty(); }
     };
-
-    /// The parent window.
-    MainWindow& _mainWindow;
 
     /// The graphics scene showing the pipeline graph.
     QGraphicsScene _pipelineScene;

@@ -115,7 +115,7 @@ void FilenameParameterUI::onPickFilename()
         if(fileDialog.exec()) {
             QStringList selectedFiles = fileDialog.selectedFiles();
             if(!selectedFiles.empty()) {
-                ProgressDialog::showForCurrentTask(mainWindow(), editor()->parentWindow());
+                ProgressDialog::showForCurrentTask(ui(), editor()->parentWindow());
                 if(isPropertyFieldUI() && editObject()) {
                     editObject()->setPropertyFieldValue(propertyField(), selectedFiles.join(QDir::listSeparator()));
                 }

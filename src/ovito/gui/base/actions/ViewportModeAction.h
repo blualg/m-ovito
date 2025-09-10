@@ -30,14 +30,14 @@ namespace Ovito {
 /**
  * An Qt action that activates a ViewportInputMode.
  */
-class OVITO_GUIBASE_EXPORT ViewportModeAction : public QAction
+class OVITO_GUIBASE_EXPORT ViewportModeAction : public QAction, public UserInterfaceComponent<UserInterface>
 {
     Q_OBJECT
 
 public:
 
     /// \brief Initializes the action object.
-    ViewportModeAction(UserInterface& userInterface, const QString& text, QObject* parent, OORef<ViewportInputMode> inputMode, const QColor& highlightColor = QColor());
+    ViewportModeAction(UserInterface& ui, const QString& text, QObject* parent, OORef<ViewportInputMode> inputMode, const QColor& highlightColor = QColor());
 
     /// Returns the highlight color for the button controls.
     const QColor& highlightColor() const { return _highlightColor; }
@@ -69,9 +69,6 @@ private:
 
     /// The highlight color for the button controls.
     QColor _highlightColor;
-
-    /// The viewport input manager.
-    ViewportInputManager& _viewportInputManager;
 };
 
 }   // End of namespace

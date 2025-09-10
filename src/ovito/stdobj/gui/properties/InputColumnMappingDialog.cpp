@@ -35,8 +35,9 @@ enum {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const InputColumnMapping& mapping, QWidget* parent, const QString& fileName) : QDialog(parent),
-    _mainWindow(mainWindow),
+InputColumnMappingDialog::InputColumnMappingDialog(MainWindowUI& ui, const InputColumnMapping& mapping, QWidget* parent, const QString& fileName) :
+    QDialog(parent),
+    UserInterfaceComponent<MainWindowUI>(ui),
     _containerClass(mapping.containerClass())
 {
     OVITO_ASSERT(_containerClass);
@@ -127,7 +128,7 @@ InputColumnMappingDialog::InputColumnMappingDialog(MainWindow& mainWindow, const
 void InputColumnMappingDialog::onOk()
 {
     setFocus(); // Remove focus from child widgets to commit newly entered values in text widgets etc.
-    _mainWindow.handleExceptions([&]() {
+    handleExceptions([&]() {
         // First, validate the current mapping.
         mapping().validate();
 
@@ -296,7 +297,7 @@ InputColumnMapping InputColumnMappingDialog::mapping() const
  *****************************************************************************/
 void InputColumnMappingDialog::onSavePreset()
 {
-    _mainWindow.handleExceptions([&]() {
+    handleExceptions([&]() {
         // Get current mapping.
         InputColumnMapping m = mapping();
         m.validate();
@@ -351,7 +352,7 @@ void InputColumnMappingDialog::onSavePreset()
  *****************************************************************************/
 void InputColumnMappingDialog::onLoadPreset()
 {
-    _mainWindow.handleExceptions([&]() {
+    handleExceptions([&]() {
         // Load list of presets.
         QSettings settings;
         settings.beginGroup("inputcolumnmapping");

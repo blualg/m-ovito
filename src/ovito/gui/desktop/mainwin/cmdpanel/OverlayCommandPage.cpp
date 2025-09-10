@@ -25,7 +25,7 @@
 #include <ovito/core/app/undo/UndoableOperation.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/PluginManager.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/gui/desktop/dialogs/OverlayTemplatesPage.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/mainwin/OverlayListModel.h>
@@ -39,19 +39,19 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the command panel page.
 ******************************************************************************/
-OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) : QWidget(parent), _mainWindow(mainWindow)
+OverlayCommandPage::OverlayCommandPage(MainWindowUI& ui, QWidget* parent) : QWidget(parent), UserInterfaceComponent<MainWindowUI>(ui)
 {
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->setContentsMargins(2,2,2,2);
     layout->setSpacing(4);
 
-    _overlayListModel = new OverlayListModel(this, mainWindow);
+    _overlayListModel = new OverlayListModel(this, ui);
     connect(_overlayListModel, &OverlayListModel::selectedItemChanged, this, &OverlayCommandPage::onItemSelectionChanged, Qt::QueuedConnection);
 
     _newLayerBox = new QComboBox(this);
     layout->addWidget(_newLayerBox);
     _newLayerBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    _newLayerBox->setModel(new AvailableOverlaysModel(this, mainWindow, _overlayListModel));
+    _newLayerBox->setModel(new AvailableOverlaysModel(this, ui, _overlayListModel));
     _newLayerBox->setMaxVisibleItems(0xFFFF);
     connect(_newLayerBox, qOverload<int>(&QComboBox::activated), this, &OverlayCommandPage::onInsertNewOverlay);
 
@@ -75,10 +75,10 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
         virtual void contextMenuEvent(QContextMenuEvent* event) override {
             QMenu menu;
             if(OverlayListItem* currentItem = _commandPanelPage->overlayListModel()->selectedItem()) {
-                menu.addAction(_commandPanelPage->_mainWindow.actionManager()->getAction(ACTION_VIEWPORT_LAYER_RENAME));
+                menu.addAction(_commandPanelPage->actionManager()->getAction(ACTION_VIEWPORT_LAYER_RENAME));
                 menu.addSeparator();
             }
-            if(QAction* deleteAction = _commandPanelPage->_mainWindow.actionManager()->getAction(ACTION_VIEWPORT_LAYER_DELETE)) {
+            if(QAction* deleteAction = _commandPanelPage->actionManager()->getAction(ACTION_VIEWPORT_LAYER_DELETE)) {
                 menu.addAction(deleteAction);
             }
             menu.exec(event->globalPos());
@@ -105,31 +105,30 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
     editToolbar->setOrientation(Qt::Vertical);
     subLayout->addWidget(editToolbar);
 
-    ActionManager* actionManager = mainWindow.actionManager();
-    _deleteLayerAction = actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_DELETE, tr("Delete Layer"), "modify_delete_modifier", tr("Remove the selected viewport layer from the stack."));
+    _deleteLayerAction = actionManager()->createCommandAction(ACTION_VIEWPORT_LAYER_DELETE, tr("Delete Layer"), "modify_delete_modifier", tr("Remove the selected viewport layer from the stack."));
     _deleteLayerAction->setEnabled(false);
     connect(_deleteLayerAction, &QAction::triggered, this, &OverlayCommandPage::onDeleteLayer);
     editToolbar->addAction(_deleteLayerAction);
 
     editToolbar->addSeparator();
 
-    _moveLayerUpAction = actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_UP, tr("Move Layer Up"), "overlay_move_up", tr("Move the selected viewport layer up in the stack."));
+    _moveLayerUpAction = actionManager()->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_UP, tr("Move Layer Up"), "overlay_move_up", tr("Move the selected viewport layer up in the stack."));
     connect(_moveLayerUpAction, &QAction::triggered, this, &OverlayCommandPage::onLayerMoveUp);
     editToolbar->addAction(_moveLayerUpAction);
-    _moveLayerDownAction = actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_DOWN, tr("Move Layer Down"), "overlay_move_down", tr("Move the selected viewport layer down in the stack."));
+    _moveLayerDownAction = actionManager()->createCommandAction(ACTION_VIEWPORT_LAYER_MOVE_DOWN, tr("Move Layer Down"), "overlay_move_down", tr("Move the selected viewport layer down in the stack."));
     connect(_moveLayerDownAction, &QAction::triggered, this, &OverlayCommandPage::onLayerMoveDown);
     editToolbar->addAction(_moveLayerDownAction);
 
-    QAction* renameLayerAction = actionManager->createCommandAction(ACTION_VIEWPORT_LAYER_RENAME, tr("Rename..."), "edit_rename_pipeline_item", tr("Give the selected viewport layer a different name."));
+    QAction* renameLayerAction = actionManager()->createCommandAction(ACTION_VIEWPORT_LAYER_RENAME, tr("Rename..."), "edit_rename_pipeline_item", tr("Give the selected viewport layer a different name."));
     connect(renameLayerAction, &QAction::triggered, this, [this]() {
         _overlayListWidget->edit(_overlayListWidget->currentIndex());
     });
 
     editToolbar->addSeparator();
 
-    QAction* manageOverlayTemplatesAction = actionManager->createCommandAction(ACTION_MODIFIER_MANAGE_OVERLAY_TEMPLATES, tr("Manage Viewport Layer Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved viewport layer templates."));
-    connect(manageOverlayTemplatesAction, &QAction::triggered, [&mainWindow]() {
-        ApplicationSettingsDialog dlg(mainWindow, &OverlayTemplatesPage::OOClass());
+    QAction* manageOverlayTemplatesAction = actionManager()->createCommandAction(ACTION_MODIFIER_MANAGE_OVERLAY_TEMPLATES, tr("Manage Viewport Layer Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved viewport layer templates."));
+    connect(manageOverlayTemplatesAction, &QAction::triggered, this, [this]() {
+        ApplicationSettingsDialog dlg(this->ui(), &OverlayTemplatesPage::OOClass());
         dlg.exec();
     });
     editToolbar->addAction(manageOverlayTemplatesAction);
@@ -137,12 +136,12 @@ OverlayCommandPage::OverlayCommandPage(MainWindow& mainWindow, QWidget* parent) 
     layout->addWidget(_splitter, 1);
 
     // Create the properties panel.
-    _propertiesPanel = new PropertiesPanel(mainWindow);
+    _propertiesPanel = new PropertiesPanel(ui);
     _propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
     _splitter->addWidget(_propertiesPanel);
     _splitter->setStretchFactor(1,1);
 
-    connect(&_mainWindow.datasetContainer(), &DataSetContainer::activeViewportChanged, this, &OverlayCommandPage::onActiveViewportChanged);
+    connect(&datasetContainer(), &DataSetContainer::activeViewportChanged, this, &OverlayCommandPage::onActiveViewportChanged);
 }
 
 /******************************************************************************
@@ -184,7 +183,7 @@ void OverlayCommandPage::onInsertNewOverlay(int index)
     QComboBox* selector = static_cast<QComboBox*>(sender());
     AvailableOverlaysModel* model = static_cast<AvailableOverlaysModel*>(selector->model());
     if(index == model->getMoreExtensionsItemIndex()) {
-        if(QAction* action = _mainWindow.actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_OVERLAYS))
+        if(QAction* action = actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_OVERLAYS))
             action->trigger();
         else
             QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
@@ -235,7 +234,7 @@ void OverlayCommandPage::onItemSelectionChanged()
 void OverlayCommandPage::onDeleteLayer()
 {
     if(ViewportOverlay* layer = selectedLayer()) {
-        _mainWindow.performTransaction(tr("Delete layer"), [layer]() {
+        performTransaction(tr("Delete layer"), [layer]() {
             layer->requestObjectDeletion();
         });
     }
@@ -249,7 +248,7 @@ void OverlayCommandPage::onLayerDoubleClicked(const QModelIndex& index)
     if(OverlayListItem* item = overlayListModel()->item(index.row())) {
         if(ViewportOverlay* layer = item->overlay()) {
             // Toggle enabled state of layer.
-            _mainWindow.performTransaction(tr("Toggle layer visibility"), [layer]() {
+            performTransaction(tr("Toggle layer visibility"), [layer]() {
                 layer->setEnabled(!layer->isEnabled());
             });
         }
@@ -267,7 +266,7 @@ void OverlayCommandPage::onLayerMoveUp()
     OORef<ViewportOverlay> layer = selectedItem->overlay();
     if(!layer) return;
 
-    _mainWindow.performTransaction(tr("Move layer up"), [&]() {
+    performTransaction(tr("Move layer up"), [&]() {
         int overlayIndex = vp->overlays().indexOf(layer);
         int underlayIndex = vp->underlays().indexOf(layer);
         if(overlayIndex >= 0 && overlayIndex < vp->overlays().size() - 1) {
@@ -301,7 +300,7 @@ void OverlayCommandPage::onLayerMoveDown()
     OORef<ViewportOverlay> layer = selectedItem->overlay();
     if(!layer) return;
 
-    _mainWindow.performTransaction(tr("Move layer down"), [&]() {
+    performTransaction(tr("Move layer down"), [&]() {
         int underlayIndex = vp->underlays().indexOf(layer);
         int overlayIndex = vp->overlays().indexOf(layer);
         if(underlayIndex >= 1) {

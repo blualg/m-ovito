@@ -37,7 +37,7 @@ class SystemInformationDialog : public QDialog
 public:
 
     /// Constructor.
-    explicit SystemInformationDialog(MainWindow& mainWindow, QWidget* parentWindow = nullptr);
+    explicit SystemInformationDialog(UserInterface& userInterface, QWidget* parentWindow = nullptr);
 };
 
 }   // End of namespace

@@ -351,7 +351,7 @@ void PropertyColorMappingEditor::onExportColorScale()
         QImage image = ColorMap::generateImage<legendWidth>(mapping->pseudoColorMapping().gradient(), numDiscreteColors);
         QString imageFilename = fileDialog.imageInfo().filename();
         if(!image.scaled(legendWidth, legendHeight, Qt::IgnoreAspectRatio, Qt::FastTransformation).save(imageFilename, fileDialog.imageInfo().format())) {
-            mainWindow().reportError(tr("Failed to save image to file '%1'.").arg(imageFilename));
+            ui().reportError(tr("Failed to save image to file '%1'.").arg(imageFilename));
         }
     }
 }

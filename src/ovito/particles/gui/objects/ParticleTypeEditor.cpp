@@ -211,7 +211,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
                 performTransaction(tr("Reset particle type %1").arg(parameterName), [&]() {
                     ptype->setMass(ParticleType::getDefaultParticleMass(static_cast<Particles::Type>(ptype->ownerProperty().typeId()),
                                                                         ptype->nameOrNumericId(), ptype->numericId(), false));
-                    mainWindow().showStatusBarMessage(
+                    ui().showStatusBarMessage(
                         tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
                 });
             }
@@ -254,7 +254,7 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
         if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
             performTransaction(tr("Reset particle type %1").arg(parameterName), [&]() {
                 resetFunc(ptype);
-                mainWindow().showStatusBarMessage(tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
+                ui().showStatusBarMessage(tr("Reset %1 of particle type '%2' to default value.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
             });
         }
     });
@@ -265,13 +265,13 @@ QToolButton* ParticleTypeEditor::createPresetsMenuButton(const QString& paramete
         if(ParticleType* ptype = static_object_cast<ParticleType>(editObject())) {
             setDefaultFunc(ptype);
             Q_EMIT contentsChanged(editObject());
-            mainWindow().showStatusBarMessage(tr("Stored current %1 as default for particle type '%2'.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
+            ui().showStatusBarMessage(tr("Stored current %1 as default for particle type '%2'.").arg(parameterName).arg(ptype->nameOrNumericId()), 4000);
         }
     });
     presetsMenuButton->createMenuSeparator();
     QAction* editPresetAction = presetsMenuButton->createAction(QIcon::fromTheme("application_preferences"), tr("Edit presets..."));
     connect(editPresetAction, &QAction::triggered, this, [this]() {
-        ApplicationSettingsDialog dlg(mainWindow(), &ParticleSettingsPage::OOClass());
+        ApplicationSettingsDialog dlg(ui(), &ParticleSettingsPage::OOClass());
         dlg.exec();
         Q_EMIT contentsChanged(editObject());
     });
@@ -311,7 +311,7 @@ void ParticleTypeEditor::onLoadParticleShape()
         }
 
         // Let the user select a geometry file to import.
-        ImportFileDialog fileDialog(meshImporters, &mainWindow(), tr("Load geometry file"), false, QStringLiteral("particle_shape_mesh"));
+        ImportFileDialog fileDialog(meshImporters, ui().mainWindow(), tr("Load geometry file"), false, QStringLiteral("particle_shape_mesh"));
         if(fileDialog.exec() != QDialog::Accepted)
             return;
 
@@ -334,7 +334,7 @@ void ParticleTypeEditor::onLoadParticleShape()
         });
 
         // Show a progress dialog while performing the whole operation. The dialog will self-destruct afterwards.
-        ProgressDialog::showForFuture(std::move(future), mainWindow(), parentWindow(), tr("Loading geometry file"));
+        ProgressDialog::showForFuture(std::move(future), ui(), parentWindow(), tr("Loading geometry file"));
     });
 }
 

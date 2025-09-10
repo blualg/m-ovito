@@ -51,7 +51,7 @@ QWidget* ParticleInspectionApplet::createWidget()
 
     _pickingMode = OORef<PickingMode>::create(this);
     connect(this, &QObject::destroyed, _pickingMode, &ViewportInputMode::removeMode);
-    ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Select in viewports"), this, _pickingMode);
+    ViewportModeAction* pickModeAction = new ViewportModeAction(ui(), tr("Select in viewports"), this, _pickingMode);
     pickModeAction->setIcon(QIcon::fromTheme("particles_select_mode"));
 
     _measuringModeAction = new QAction(QIcon::fromTheme("particles_measure_distances"), tr("Show distances and angles"), this);

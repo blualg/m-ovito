@@ -34,7 +34,7 @@
 #include <ovito/gui/base/mainwin/PipelineListModel.h>
 #include <ovito/gui/base/mainwin/templates/ModifierTemplates.h>
 #include <ovito/gui/desktop/app/GuiApplication.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/gui/desktop/dialogs/ModifierTemplatesPage.h>
 #include <ovito/gui/desktop/dialogs/CopyPipelineItemDialog.h>
 #include "CommandPanel.h"
@@ -45,14 +45,14 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the command panel tab.
 ******************************************************************************/
-ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : QWidget(parent), _mainWindow(mainWindow)
+ModifyCommandPage::ModifyCommandPage(MainWindowUI& ui, QWidget* parent) : QWidget(parent), UserInterfaceComponent<MainWindowUI>(ui)
 {
     QGridLayout* layout = new QGridLayout(this);
     layout->setContentsMargins(2,2,2,2);
     layout->setSpacing(4);
     layout->setColumnStretch(0,1);
 
-    _pipelineListModel = new PipelineListModel(mainWindow, this);
+    _pipelineListModel = new PipelineListModel(ui, this);
     class ModifierListBox : public QComboBox {
     public:
         using QComboBox::QComboBox;
@@ -64,7 +64,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
     _modifierSelector = new ModifierListBox(this);
     layout->addWidget(_modifierSelector, 1, 0, 1, 1);
     _modifierSelector->setSizeAdjustPolicy(QComboBox::AdjustToContents);
-    _modifierSelector->setModel(new AvailableModifiersModel(this, mainWindow, _pipelineListModel));
+    _modifierSelector->setModel(new AvailableModifiersModel(this, ui, _pipelineListModel));
     _modifierSelector->setMaxVisibleItems(0xFFFF);
     connect(_modifierSelector, qOverload<int>(&QComboBox::activated), this, &ModifyCommandPage::onInsertNewModifier);
 
@@ -130,22 +130,21 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
     subLayout->addWidget(_pipelineWidget);
 
     // Set up context menu.
-    ActionManager* actionManager = mainWindow.actionManager();
-    _pipelineWidget->addAction(actionManager->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
+    _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
     QAction* separator = new QAction(_pipelineWidget);
     separator->setSeparator(true);
     _pipelineWidget->addAction(separator);
-    _pipelineWidget->addAction(actionManager->getAction(ACTION_PIPELINE_RENAME_ITEM));
+    _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_RENAME_ITEM));
     separator = new QAction(_pipelineWidget);
     separator->setSeparator(true);
     _pipelineWidget->addAction(separator);
-    _pipelineWidget->addAction(actionManager->getAction(ACTION_PIPELINE_COPY_ITEM));
-    _pipelineWidget->addAction(actionManager->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
-    _pipelineWidget->addAction(actionManager->getAction(ACTION_PIPELINE_GROUP_VIS_ELEMENTS));
+    _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_COPY_ITEM));
+    _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_MAKE_INDEPENDENT));
+    _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_GROUP_VIS_ELEMENTS));
     separator = new QAction(_pipelineWidget);
     separator->setSeparator(true);
     _pipelineWidget->addAction(separator);
-    _pipelineWidget->addAction(actionManager->getAction(ACTION_MODIFIER_DELETE));
+    _pipelineWidget->addAction(actionManager()->getAction(ACTION_MODIFIER_DELETE));
     _pipelineWidget->setContextMenuPolicy(Qt::ActionsContextMenu);
 
     // Listen to selection changes in the pipeline editor list widget.
@@ -159,25 +158,25 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
     subLayout->addWidget(editToolbar);
 
     // Create pipeline editor toolbar.
-    editToolbar->addAction(actionManager->getAction(ACTION_MODIFIER_DELETE));
+    editToolbar->addAction(actionManager()->getAction(ACTION_MODIFIER_DELETE));
     editToolbar->addSeparator();
-    editToolbar->addAction(actionManager->getAction(ACTION_MODIFIER_MOVE_UP));
-    editToolbar->addAction(actionManager->getAction(ACTION_MODIFIER_MOVE_DOWN));
+    editToolbar->addAction(actionManager()->getAction(ACTION_MODIFIER_MOVE_UP));
+    editToolbar->addAction(actionManager()->getAction(ACTION_MODIFIER_MOVE_DOWN));
     editToolbar->addSeparator();
-    editToolbar->addAction(actionManager->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
+    editToolbar->addAction(actionManager()->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
 
-    QAction* manageModifierTemplatesAction = actionManager->createCommandAction(ACTION_MODIFIER_MANAGE_MODIFIER_TEMPLATES, tr("Manage Modifier Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved modifier templates."));
-    connect(manageModifierTemplatesAction, &QAction::triggered, [&mainWindow]() {
-        ApplicationSettingsDialog dlg(mainWindow, &ModifierTemplatesPage::OOClass());
+    QAction* manageModifierTemplatesAction = actionManager()->createCommandAction(ACTION_MODIFIER_MANAGE_MODIFIER_TEMPLATES, tr("Manage Modifier Templates..."), "modify_modifier_save_preset", tr("Open the dialog that lets you manage the saved modifier templates."));
+    connect(manageModifierTemplatesAction, &QAction::triggered, this, [this]() {
+        ApplicationSettingsDialog dlg(this->ui(), &ModifierTemplatesPage::OOClass());
         dlg.exec();
     });
     editToolbar->addAction(manageModifierTemplatesAction);
 
-    connect(actionManager->getAction(ACTION_PIPELINE_RENAME_ITEM), &QAction::triggered, this, [this]() {
+    connect(actionManager()->getAction(ACTION_PIPELINE_RENAME_ITEM), &QAction::triggered, this, [this]() {
         _pipelineWidget->edit(_pipelineWidget->currentIndex());
     });
 
-    connect(actionManager->getAction(ACTION_PIPELINE_COPY_ITEM), &QAction::triggered, [&]() {
+    connect(actionManager()->getAction(ACTION_PIPELINE_COPY_ITEM), &QAction::triggered, this, [this]() {
         // Collect all currently selected pipeline nodes.
         std::vector<OORef<PipelineNode>> nodes;
         for(RefTarget* obj : _pipelineListModel->selectedObjects()) {
@@ -193,7 +192,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
             }
         }
         if(!nodes.empty()) {
-            CopyPipelineItemDialog dlg(_mainWindow, &_mainWindow, _pipelineListModel->selectedPipeline(), std::move(nodes));
+            CopyPipelineItemDialog dlg(this->ui(), window(), _pipelineListModel->selectedPipeline(), std::move(nodes));
             dlg.exec();
         }
     });
@@ -202,7 +201,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindow& mainWindow, QWidget* parent) : 
     layout->setRowStretch(2, 1);
 
     // Create the properties panel.
-    _propertiesPanel = new PropertiesPanel(mainWindow);
+    _propertiesPanel = new PropertiesPanel(ui);
     _propertiesPanel->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
     _splitter->addWidget(_propertiesPanel);
     _splitter->setStretchFactor(1,1);
@@ -242,7 +241,7 @@ void ModifyCommandPage::saveLayout()
 void ModifyCommandPage::onInsertNewModifier(int index)
 {
     if(index == availableModifiersModel()->getMoreExtensionsItemIndex()) {
-        if(QAction* action = _mainWindow.actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_MODIFIERS))
+        if(QAction* action = actionManager()->getAction(ACTION_SCRIPTING_EXTENSIONS_GALLERY_MODIFIERS))
             action->trigger();
         else
             QDesktopServices::openUrl(QStringLiteral("https://www.ovito.org/extensions/"));
@@ -284,14 +283,14 @@ void ModifyCommandPage::onModifierStackDoubleClicked(const QModelIndex& index)
 
     if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(item->object())) {
         // Toggle enabled state of modifier.
-        _mainWindow.performTransaction(tr("Toggle modifier state"), [modNode]() {
+        performTransaction(tr("Toggle modifier state"), [modNode]() {
             modNode->modifier()->setEnabled(!modNode->modifier()->isEnabled());
         });
     }
 
     if(DataVis* vis = dynamic_object_cast<DataVis>(item->object())) {
         // Toggle enabled state of vis element.
-        _mainWindow.performTransaction(tr("Toggle visual element"), [vis]() {
+        performTransaction(tr("Toggle visual element"), [vis]() {
             vis->setEnabled(!vis->isEnabled());
         });
     }

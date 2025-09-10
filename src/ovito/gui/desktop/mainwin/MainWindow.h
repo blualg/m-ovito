@@ -24,7 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/core/app/UserInterface.h>
+#include "MainWindowUI.h"
 
 namespace Ovito {
 
@@ -34,12 +34,9 @@ namespace Ovito {
  * Note that is is possible to open multiple main windows per
  * application instance to edit multiple datasets simultaneously.
  */
-class OVITO_GUI_EXPORT MainWindow : public QMainWindow, public UserInterface
+class OVITO_GUI_EXPORT MainWindow : public QMainWindow, public UserInterfaceComponent<MainWindowUI>
 {
-    OVITO_CLASS(MainWindow)
     Q_OBJECT
-
-    struct ProgressTaskInfo; // Defined below.
 
 public:
 
@@ -53,32 +50,11 @@ public:
 
 public:
 
-    /// Constructor.
-    MainWindow();
-
     /// Destructor.
-    ~MainWindow();
+    virtual ~MainWindow();
 
     /// Returns the main toolbar of the window.
     QToolBar* mainToolbar() const { return _mainToolbar; }
-
-    /// Displays a message string in the window's status bar.
-    virtual void showStatusBarMessage(const QString& message, int timeout = 0) override;
-
-    /// Hides any messages currently displayed in the window's status bar.
-    virtual void clearStatusBarMessage() override;
-
-    /// Gives the active viewport the input focus.
-    virtual void setViewportInputFocus() override;
-
-    /// Closes the user interface and shuts down the entire application after displaying an error message.
-    virtual void exitWithFatalError(const Exception& ex) override;
-
-    /// Creates a frame buffer of the requested size for rendering and displays it in a window in the user interface.
-    virtual std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height) override;
-
-    /// Shows a progress bar or a similar UI to indicate the current rendering progress and let the user cancel the operation if necessary.
-    virtual void showRenderingProgress(const std::shared_ptr<FrameBuffer>& frameBuffer, SharedFuture<void> renderingFuture) override;
 
     /// Returns the frame buffer window for displaying the rendered image (may be null).
     FrameBufferWindow* frameBufferWindow() const { return _frameBufferWindow; }
@@ -122,61 +98,11 @@ public:
     /// Sets the file path associated with this window and updates the window's title.
     void setWindowFilePath(const QString& filePath);
 
-    /// \brief Returns whether animation recording is active and animation keys should be automatically generated.
-    /// \return \c true if animating is currently turned on and not suspended; \c false otherwise.
-    ///
-    /// When animating is turned on, controllers should automatically set keys when their value is changed.
-    virtual bool isAutoGenerateAnimationKeysEnabled() const override { return _autoKeyModeOn && _animSuspendCount == 0; }
-
-    /// Displays an error message to the user.
-    virtual void reportError(const Exception& ex, bool blocking = false) override;
-
-    /// Displays an error message to the user that is associated with a particular child window or dialog.
-    void reportError(const Exception& exception, QWidget* window);
-
-    /// Displays a modal message box to the user. Blocks until the user closes the message box.
-    /// This method wraps the QMessageBox class of the Qt library.
-    virtual MessageBoxButton showMessageBox(MessageBoxIcon icon, const QString& title, const QString& text, int buttons, MessageBoxButton defaultButton = NoButton, const QString& detailedText = {}) override {
-        return showMessageBoxImpl(nullptr, icon, title, text, buttons, defaultButton, detailedText);
-    }
-
-    /// Checks (or even modifies) the contents of a DataSet after it has been loaded from a file.
-    /// Returns false if loading the DataSet was rejected by the application.
-    virtual bool checkLoadedDataset(DataSet* dataset) override;
-
     /// Opens another main window (in addition to the existing windows) and optionally loads a file in the new window.
     static void openNewWindow(const QStringList& arguments = {});
 
-    /// \brief Imports a set of files into the current dataset.
-    /// \param urls The locations of the files to import.
-    /// \param importerType The FileImporter type selected by the user. If null, the file's format will be auto-detected.
-    /// \param importerFormat The sub-format name selected by the user, which is supported by the selected importer class.
-    /// \throw Exception on error.
-    void importFiles(const std::vector<QUrl>& urls, const FileImporterClass* importerType = nullptr, const QString& importerFormat = {});
-
-    /// \brief Save the current dataset.
-    /// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.
-    /// \throw Exception on error.
-    ///
-    /// If the current dataset has not been assigned a file path, then this method
-    /// displays a file selector dialog by calling fileSaveAs() to let the user select a file path.
-    bool fileSave();
-
-    /// \brief Lets the user select a new destination filename for the current dataset. Then saves the dataset by calling fileSave().
-    /// \param filename If \a filename is an empty string that this method asks the user for a filename. Otherwise
-    ///                 the provided filename is used.
-    /// \return \c true, if the dataset has been saved; \c false if the operation has been canceled by the user.
-    /// \throw Exception on error.
-    bool fileSaveAs(const QString& filename = QString());
-
-    /// \brief Asks the user if changes made to the dataset should be saved.
-    ///
-    /// If the current dataset has been changed, this method asks the user if changes should be saved.
-    /// If yes, then the dataset is saved by calling fileSave().
-    void askForSaveChanges();
-
-    /// \brief Lets the caller visit all registered worker tasks that are in progress.
-    void visitRunningTasks(std::function<void(const QString&,int,int)> visitor);
+    /// Displays an error message to the user that is associated with a particular child window or dialog.
+    void reportError(const Exception& exception, QWidget* window);
 
     /// Checks if the current application has accessability access. This is required on macOS to move the cursor using QCursor::setPos().
     /// This method will prompt the user the first time it is called (for each ovito version). Returns true on non macOS.
@@ -191,19 +117,6 @@ public:
             }
         }
     }
-
-    /// The type-erased function object type to be passed to scheduleOperationAfterScenePreparation().
-    using operation_function = fu2::function_base<
-        true, // IsOwning = true: The function object owns the callable object and is responsible for its destruction.
-        false, // IsCopyable = false: The function object is not copyable.
-        fu2::capacity_fixed<3 * sizeof(std::shared_ptr<OvitoObject>)>, // Capacity: Defines the internal capacity of the function for small functor optimization.
-        false, // IsThrowing = false: Do not throw an exception on empty function call, call `std::abort` instead.
-        true, // HasStrongExceptGuarantee = true: All objects satisfy the strong exception guarantee
-        void()>;
-
-    /// Waits for the pipelines in the current scene to be fully evaluated, then executes the given operation.
-    /// A progress dialog may be displayed while waiting for the scene preparation to complete.
-    void scheduleOperationAfterScenePreparation(Scene* scene, const QString& waitingMessage, operation_function&& operation);
 
 Q_SIGNALS:
 
@@ -233,26 +146,20 @@ protected:
     /// Called by the system when the window is moved
     virtual void moveEvent(QMoveEvent* event) override;
 
-    /// Notifies all registered listeners that the progress state of the registered tasks has changed.
-    void notifyProgressTasksChanged();
-
-    /// Registers a new task progress record with this user interface.
-    /// This method gets called when a new TaskProgress instance is created from a running task.
-    virtual std::mutex* taskProgressBegin(TaskProgress* progress) override;
-
-    /// Unregisters a task progress record from this user interface.
-    /// This method gets called when a previously registered task finishes.
-    virtual void taskProgressEnd(TaskProgress* progress) override;
-
-    /// Informs the user interface that a task's progress state has changed.
-    virtual void taskProgressChanged(TaskProgress* progress) override;
-
 private Q_SLOTS:
 
     /// Displays an error message box. This slot is called by reportError().
     void showErrorMessages();
 
 private:
+
+    /// Constructor.
+    explicit MainWindow(MainWindowUI& ui) : UserInterfaceComponent<MainWindowUI>(ui) {
+        setAttribute(Qt::WA_DeleteOnClose);
+    }
+
+    /// Initializes the main window.
+    void initializeWindow();
 
     /// Creates the main menu.
     void createMainMenu();
@@ -263,10 +170,22 @@ private:
     /// Creates a dock panel.
     QDockWidget* createDockPanel(const QString& caption, const QString& objectName, Qt::DockWidgetArea dockArea, Qt::DockWidgetAreas allowedAreas, QWidget* contents);
 
+    /// Handler function for exceptions.
+    void reportError(const Exception& ex, bool blocking);
+
+    /// Creates a frame buffer of the requested size and displays it as a window in the user interface.
+    std::shared_ptr<FrameBuffer> createAndShowFrameBuffer(int width, int height);
+
+    /// Shows a progress bar or a similar UI to indicate the current rendering progress and let the user cancel the operation if necessary.
+    void showRenderingProgress(const std::shared_ptr<FrameBuffer>& frameBuffer, SharedFuture<void> renderingFuture);
+
     /// Displays a modal message box to the user. Blocks until the user closes the message box.
-    MessageBoxButton showMessageBoxImpl(QWidget* window, MessageBoxIcon icon, const QString& title, const QString& text, int buttons, MessageBoxButton defaultButton, const QString& detailedText);
+    UserInterface::MessageBoxButton showMessageBoxImpl(QWidget* window, UserInterface::MessageBoxIcon icon, const QString& title, const QString& text, int buttons, UserInterface::MessageBoxButton defaultButton, const QString& detailedText);
 
 private:
+
+    /// The UI object associated with this widget.
+    OORef<MainWindowUI> _ui;
 
     /// The upper main toolbar.
     QToolBar* _mainToolbar;
@@ -295,26 +214,13 @@ private:
     /// The title string to use for the main window (without any dynamic content).
     QString _baseWindowTitle;
 
-    /// Indicates whether the user has activated auto-key animation mode.
-    bool _autoKeyModeOn = false;
-
     /// List of errors to be displayed by showErrorMessages().
     std::deque<Exception> _errorList;
 
-    /// Head of doubly-linked list of all registered task progress records.
-    TaskProgress* _progressTasksHead = nullptr;
-
-    /// Tail of doubly-linked list of all registered task progress records.
-    TaskProgress* _progressTasksTail = nullptr;
-
-    /// Guards thread-safe access to the task list.
-    std::mutex _progressTaskListMutex;
-
-    /// Indicates that a delayed task progress update is underway.
-    std::atomic_bool _progressUpdateScheduled{false};
-
     /// The current screen the window is on (to detect screen changes).
     QScreen* _currentScreen = nullptr;
+
+    friend class MainWindowUI; // Allow MainWindowUI to access private constructor
 };
 
 }   // End of namespace

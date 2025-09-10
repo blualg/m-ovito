@@ -187,7 +187,7 @@ void CreateIsosurfaceModifierEditor::onPickerActivated(bool on)
 {
     if(on) {
         if(CreateIsosurfaceModifier* modifier = static_object_cast<CreateIsosurfaceModifier>(editObject())) {
-            _undoTransaction.begin(mainWindow(), tr("Change iso-value"));
+            _undoTransaction.begin(ui(), tr("Change iso-value"));
         }
     }
     else {

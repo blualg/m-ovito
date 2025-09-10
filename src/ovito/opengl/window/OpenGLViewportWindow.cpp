@@ -86,7 +86,7 @@ OORef<RenderingJob> OpenGLViewportWindow::createRenderingJob()
     // Create the window's viewport renderer implementation.
     return OORef<WidgetOpenGLRenderingJob>::create(
         glwin(),
-        userInterface().datasetContainer().visCache(), // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
+        datasetContainer().visCache(), // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
         std::move(renderer));
 }
 
@@ -139,7 +139,7 @@ void OpenGLViewportWindow::paint()
     if(!frameGraph())
         return;
 
-    MainThreadOperation operation(userInterface(), MainThreadOperation::Isolated);
+    MainThreadOperation operation(ui(), MainThreadOperation::Isolated);
     try {
         // Recreate/resize abstract frame buffer for rendering into the widget if necessary.
         const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
@@ -176,17 +176,17 @@ void OpenGLViewportWindow::paint()
 std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPointF& pos)
 {
     // Cannot perform picking while viewport is not visible or when updates are disabled.
-    if(isVisible() && !userInterface().exitingDueToFatalError() && glwin()->isValid() && widget()->isEnabled()) {
+    if(isVisible() && !ui().exitingDueToFatalError() && glwin()->isValid() && widget()->isEnabled()) {
 
         // Is the picking buffer still valid? If not, we need to render a new frame.
         if(!_objectPickingMap->isValid() && frameGraph()) {
 
             // Gracefully handle any exceptions that occur during rendering.
-            userInterface().handleExceptions([&]() {
+            handleExceptions([&]() {
 
                 // Create the offscreen rendering job for object picking.
                 if(!_pickingRenderingJob)
-                    _pickingRenderingJob = PickingOpenGLRenderingJob::createSharedInstance(userInterface(), renderingJob()->sceneRenderer());
+                    _pickingRenderingJob = PickingOpenGLRenderingJob::createSharedInstance(ui(), renderingJob()->sceneRenderer());
 
                 // Recreate/resize offscreen OpenGL framebuffer.
                 const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());

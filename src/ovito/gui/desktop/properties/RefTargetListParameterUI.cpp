@@ -182,7 +182,7 @@ void RefTargetListParameterUI::openSubEditor()
         }
         if(!subEditor() && editor()) {
             if(selection) {
-                _subEditor = PropertiesEditor::create(mainWindow(), selection);
+                _subEditor = PropertiesEditor::create(ui(), selection);
             }
             else if(_defaultEditorClass) {
                 _subEditor = dynamic_object_cast<PropertiesEditor>(_defaultEditorClass->createInstance());

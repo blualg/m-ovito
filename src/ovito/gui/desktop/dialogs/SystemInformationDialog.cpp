@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include "SystemInformationDialog.h"
 
 namespace Ovito {
@@ -29,13 +28,13 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-SystemInformationDialog::SystemInformationDialog(MainWindow& mainWindow, QWidget* parent) : QDialog(parent)
+SystemInformationDialog::SystemInformationDialog(UserInterface& userInterface, QWidget* parent) : QDialog(parent)
 {
     setWindowTitle(tr("System Information"));
     QVBoxLayout* layout = new QVBoxLayout(this);
     QTextEdit* textEdit = new QTextEdit(this);
     textEdit->setReadOnly(true);
-    textEdit->setPlainText(mainWindow.generateSystemReport());
+    textEdit->setPlainText(userInterface.generateSystemReport());
     textEdit->setMinimumSize(QSize(600, 400));
     layout->addWidget(textEdit);
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close, Qt::Horizontal, this);

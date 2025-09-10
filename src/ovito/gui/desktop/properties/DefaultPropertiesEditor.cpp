@@ -82,7 +82,7 @@ void DefaultPropertiesEditor::updateSubEditors()
                         }
                         else {
                             // Create a new sub-editor for this sub-object.
-                            OORef<PropertiesEditor> editor = PropertiesEditor::create(mainWindow(), subobject);
+                            OORef<PropertiesEditor> editor = PropertiesEditor::create(ui(), subobject);
                             if(editor) {
                                 editor->initialize(container(), _rolloutParams, this);
                                 editor->setEditObject(subobject);
@@ -106,7 +106,7 @@ void DefaultPropertiesEditor::updateSubEditors()
                             }
                             else {
                                 // Create a new sub-editor for this sub-object.
-                                OORef<PropertiesEditor> editor = PropertiesEditor::create(mainWindow(), subobject);
+                                OORef<PropertiesEditor> editor = PropertiesEditor::create(ui(), subobject);
                                 if(editor) {
                                     editor->initialize(container(), _rolloutParams, this);
                                     editor->setEditObject(subobject);

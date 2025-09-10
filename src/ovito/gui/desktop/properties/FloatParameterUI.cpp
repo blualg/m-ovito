@@ -48,7 +48,7 @@ void FloatParameterUI::updatePropertyValue()
         if(isReferenceFieldUI()) {
             if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
                 OVITO_CHECK_OBJECT_POINTER(ctrl);;
-                ctrl->setFloatValue(currentAnimationTime().value_or(AnimationTime(0)), spinner()->floatValue());
+                ctrl->setFloatValue(currentAnimationTime(), spinner()->floatValue());
             }
         }
         else if(isPropertyFieldUI()) {
@@ -67,7 +67,7 @@ void FloatParameterUI::updateUI()
         handleExceptions<true>([&] {
             if(isReferenceFieldUI()) {
                 if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                    spinner()->setFloatValue(ctrl->getFloatValue(currentAnimationTime().value_or(AnimationTime(0))));
+                    spinner()->setFloatValue(ctrl->getFloatValue(currentAnimationTime()));
                 }
             }
             else {

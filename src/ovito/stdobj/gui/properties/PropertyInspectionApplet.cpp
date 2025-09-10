@@ -73,7 +73,7 @@ void PropertyInspectionApplet::createBaseWidgets()
 ******************************************************************************/
 void PropertyInspectionApplet::onCurrentContainerChanged()
 {
-    mainWindow().handleExceptions([&]() {
+    handleExceptions([&]() {
         int oldColumnCount = _tableModel->setContents(selectedContainerObject());
         _filterModel->setContentsBegin();
         _filterModel->setContentsEnd();
@@ -130,7 +130,7 @@ void PropertyInspectionApplet::exportDataToFile(const DataObjectReference& dataO
                      "This method must be called from a mainWindow().handleExceptions context.");
 
     // Let the user select a destination file.
-    HistoryFileDialog dialog("export", &mainWindow(), tr("Export Table"));
+    HistoryFileDialog dialog("export", ui().mainWindow(), tr("Export Table"));
     dialog.setNameFilter(filterString);
     dialog.setOption(QFileDialog::DontUseNativeDialog);
     dialog.setAcceptMode(QFileDialog::AcceptSave);
@@ -157,20 +157,20 @@ void PropertyInspectionApplet::exportDataToFile(const DataObjectReference& dataO
     exporter->setPipelineToExport(currentPipeline());
 
     // If the exporter supports it, automatically choose the data object(s) to be exported.
-    exporter->selectDefaultExportableData(mainWindow().datasetContainer().currentSet(), currentSceneNode()->scene());
+    exporter->selectDefaultExportableData(dataset(), currentSceneNode()->scene());
 
     // Set data table to be exported.
     exporter->setDataObjectToExport(dataObjectRef);
 
     // Let the user adjust the export settings.
-    FileExporterSettingsDialog settingsDialog(mainWindow(), *exporter->sceneToExport(), exporter, &mainWindow());
+    FileExporterSettingsDialog settingsDialog(ui(), *exporter->sceneToExport(), exporter, ui().mainWindow());
     if(settingsDialog.exec() != QDialog::Accepted) return;
 
     // Let the exporter do its job.
     Future<void> future = exporter->performExport();
 
     // Show a progress dialog while the operation is in progress. The dialog will self-destruct when the operation is done.
-    ProgressDialog::showForFuture(std::move(future), mainWindow(), tr("File export"));
+    ProgressDialog::showForFuture(std::move(future), ui(), tr("File export"));
 }
 
 /******************************************************************************

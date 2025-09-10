@@ -24,7 +24,7 @@
 #include <ovito/particles/import/xyz/XYZImporter.h>
 #include <ovito/stdobj/gui/properties/InputColumnMappingDialog.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "XYZImporterEditor.h"
 
@@ -37,10 +37,10 @@ SET_OVITO_OBJECT_EDITOR(XYZImporter, XYZImporterEditor);
 * This method is called by the FileSource each time a new source
 * file has been selected by the user.
 ******************************************************************************/
-void XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
+void XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile)
 {
     XYZImporter* xyzImporter = static_object_cast<XYZImporter>(importer);
-    ParticleInputColumnMapping mapping = ProgressDialog::blockForFuture(xyzImporter->inspectFileHeader(sourceFile), mainWindow, tr("Inspecting file header"));
+    ParticleInputColumnMapping mapping = ProgressDialog::blockForFuture(xyzImporter->inspectFileHeader(sourceFile), ui(), tr("Inspecting file header"));
 
     // If column names were given in the XYZ file, use them rather than popping up a dialog.
     if(mapping.hasFileColumnNames())
@@ -73,7 +73,7 @@ void XYZImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourc
         }
     }
 
-    InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow, sourceFile.fileName());
+    InputColumnMappingDialog dialog(ui(), mapping, ui().mainWindow(), sourceFile.fileName());
     if(dialog.exec() == QDialog::Accepted) {
         xyzImporter->setColumnMapping(dialog.mapping());
 
@@ -173,7 +173,7 @@ void XYZImporterEditor::onEditColumnMapping()
                 mapping = customMapping;
             }
 
-            InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
+            InputColumnMappingDialog dialog(ui(), mapping, parentWindow());
             if(dialog.exec() == QDialog::Accepted) {
                 performTransaction(tr("Change file column mapping"), [&]() {
                     importer->setColumnMapping(dialog.mapping());

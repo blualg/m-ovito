@@ -38,7 +38,7 @@ class OVITO_GUI_EXPORT CommandPanel : public QWidget
 public:
 
     /// Constructor.
-    CommandPanel(MainWindow& mainWindow, QWidget* parent);
+    CommandPanel(MainWindowUI& userInterface, QWidget* parent);
 
     /// Activates one of the command pages.
     void setCurrentPage(MainWindow::CommandPanelPage newPage) {

@@ -36,7 +36,7 @@ namespace Ovito {
 /**
  * This Qt model class is used to populate the QListView widget.
  */
-class OVITO_GUIBASE_EXPORT PipelineListModel final : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT PipelineListModel final : public QAbstractListModel, public UserInterfaceComponent<UserInterface>
 {
     Q_OBJECT
 
@@ -53,7 +53,7 @@ public:
     };
 
     /// Constructor.
-    PipelineListModel(UserInterface& userInterface, QObject* parent);
+    PipelineListModel(UserInterface& ui, QObject* parent);
 
     /// Returns the number of list items.
     virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override { return (int)_items.size(); }
@@ -120,9 +120,6 @@ public:
 
     /// Returns the currently selected scene node.
     const OORef<SceneNode>& selectedSceneNode() const { return _selectedSceneNode; }
-
-    /// Returns the container of the dataset being edited.
-    DataSetContainer& datasetContainer() { return _userInterface.datasetContainer(); }
 
     /// Inserts the given modifier(s) into the currently selected pipeline.
     void applyModifiers(const QVector<OORef<Modifier>>& modifiers, ModifierGroup* group = nullptr);
@@ -310,9 +307,6 @@ private:
 
     /// The foreground brush used for list items that are disabled.
     QBrush _disabledForegroundBrush;
-
-    /// The abstract user interface.
-    UserInterface& _userInterface;
 
     /// The action that deletes the selected list item.
     QAction* _deleteItemAction;

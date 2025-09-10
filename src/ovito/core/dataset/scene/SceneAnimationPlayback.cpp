@@ -39,11 +39,10 @@ DEFINE_REFERENCE_FIELD(SceneAnimationPlayback, scene);
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-void SceneAnimationPlayback::initializeObject(UserInterface& userInterface)
+void SceneAnimationPlayback::initializeObject(UserInterface& ui)
 {
     RefMaker::initializeObject();
-
-    _userInterface = &userInterface;
+    setUserInterface(ui);
 
     // This facility requires a Qt event loop, because it works with a timer.
     Application::instance()->createQtApplication(false);
@@ -68,7 +67,7 @@ void SceneAnimationPlayback::startAnimationPlayback(Scene* scene, FloatType play
 
         // While animation playback is active, display only the final outcome of the pipeline evaluation.
         // Do not re-render viewports when intermediate results become available.
-        userInterface().suspendPreliminaryViewportUpdates();
+        ui().suspendPreliminaryViewportUpdates();
 
         Q_EMIT playbackChanged(true);
 
@@ -101,7 +100,7 @@ void SceneAnimationPlayback::continuePlaybackAtFrame(int frame)
     OVITO_ASSERT(scene()->animationSettings());
 
     // The following requires a valid execution context.
-    if(!userInterface().handleExceptions([&] {
+    if(!handleExceptions([&] {
 
         // Move time slider to the next animation frame and request preparation of the scene for display.
         scene()->animationSettings()->setCurrentFrame(frame);
@@ -201,7 +200,7 @@ void SceneAnimationPlayback::stopAnimationPlayback()
     if(isPlaybackActive()) {
         _activePlaybackRate = 0;
         _frameRenderingTimer.invalidate();
-        userInterface().resumePreliminaryViewportUpdates();
+        ui().resumePreliminaryViewportUpdates();
         Q_EMIT playbackChanged(false);
     }
 }
@@ -234,7 +233,7 @@ void SceneAnimationPlayback::timerEvent(QTimerEvent* event)
             }
             else {
                 newFrame = anim->lastFrame();
-                userInterface().handleExceptions([&] {
+                handleExceptions([&] {
                     scene()->animationSettings()->setCurrentFrame(newFrame);
                 });
                 stopAnimationPlayback();
@@ -246,7 +245,7 @@ void SceneAnimationPlayback::timerEvent(QTimerEvent* event)
             }
             else {
                 newFrame = anim->firstFrame();
-                userInterface().handleExceptions([&] {
+                handleExceptions([&] {
                     scene()->animationSettings()->setCurrentFrame(newFrame);
                 });
                 stopAnimationPlayback();

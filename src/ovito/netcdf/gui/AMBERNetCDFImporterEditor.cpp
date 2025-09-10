@@ -44,7 +44,7 @@
 #include <ovito/stdobj/gui/properties/InputColumnMappingDialog.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanRadioButtonParameterUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include "AMBERNetCDFImporterEditor.h"
 
@@ -126,7 +126,7 @@ void AMBERNetCDFImporterEditor::onEditColumnMapping()
                 mapping = customMapping;
             }
 
-            InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
+            InputColumnMappingDialog dialog(ui(), mapping, parentWindow());
             if(dialog.exec() == QDialog::Accepted) {
                 performTransaction(tr("Change file column mapping"), [&]() {
                     importer->setCustomColumnMapping(dialog.mapping());

@@ -48,11 +48,10 @@ DEFINE_REFERENCE_FIELD(DataSetContainer, activeAnimationSettings);
 /******************************************************************************
 * Initializes the dataset manager.
 ******************************************************************************/
-void DataSetContainer::initializeObject(UserInterface& userInterface)
+void DataSetContainer::initializeObject(UserInterface& ui)
 {
     RefMaker::initializeObject();
-
-    _userInterface = &userInterface;
+    setUserInterface(ui);
 }
 
 #ifdef OVITO_DEBUG
@@ -222,7 +221,7 @@ void DataSetContainer::timerEvent(QTimerEvent* event)
 SceneAnimationPlayback* DataSetContainer::createAnimationPlayback()
 {
     if(!_animationPlayback) {
-        _animationPlayback = OORef<SceneAnimationPlayback>::create(userInterface());
+        _animationPlayback = OORef<SceneAnimationPlayback>::create(ui());
         connect(_animationPlayback.get(), &SceneAnimationPlayback::playbackChanged, this, &DataSetContainer::playbackChanged);
     }
     return _animationPlayback;

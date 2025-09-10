@@ -93,9 +93,9 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     label->setTextInteractionFlags(Qt::LinksAccessibleByMouse);
     connect(label, &QLabel::linkActivated, this, [this](const QString& link) {
         if(link == "visrtx")
-            mainWindow().actionManager()->openHelpTopic(QStringLiteral("manual:rendering.visrtx_renderer"));
+            actionManager()->openHelpTopic(QStringLiteral("manual:rendering.visrtx_renderer"));
         else if(link == "ospray")
-            mainWindow().actionManager()->openHelpTopic(QStringLiteral("manual:rendering.ospray_renderer"));
+            actionManager()->openHelpTopic(QStringLiteral("manual:rendering.ospray_renderer"));
     });
     sublayout2->addWidget(label, 1, 0, 1, 2);
 

@@ -72,14 +72,14 @@ private:
 /**
  * A Qt list model that list all available viewport layer types.
  */
-class OVITO_GUIBASE_EXPORT AvailableOverlaysModel : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT AvailableOverlaysModel : public QAbstractListModel, public UserInterfaceComponent<UserInterface>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    AvailableOverlaysModel(QObject* parent, UserInterface& userInterface, OverlayListModel* overlayListModel);
+    AvailableOverlaysModel(QObject* parent, UserInterface& ui, OverlayListModel* overlayListModel);
 
     /// Returns the number of rows in the model.
     virtual int rowCount(const QModelIndex& parent) const override;
@@ -135,9 +135,6 @@ private:
 
     /// The display strings as shown by the model.
     std::vector<QString> _modelStrings;
-
-    /// The abstract user interface.
-    UserInterface& _userInterface;
 
     /// The model representing the viewport layers of the active viewport.
     OverlayListModel* _overlayListModel;

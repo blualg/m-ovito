@@ -22,7 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include "CoordinateDisplayWidget.h"
 
 namespace Ovito {
@@ -30,13 +30,13 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-CoordinateDisplayWidget::CoordinateDisplayWidget(MainWindow& mainWindow, QWidget* parent) : QFrame(parent), _mainWindow(mainWindow)
+CoordinateDisplayWidget::CoordinateDisplayWidget(MainWindowUI& ui, QWidget* parent) : QFrame(parent), UserInterfaceComponent<MainWindowUI>(ui)
 {
     QHBoxLayout* layout = new QHBoxLayout(this);
     layout->setContentsMargins(2,0,2,0);
     layout->setSpacing(0);
     setEnabled(false);
-    hide();
+    setVisible(false);
 
     QLabel* xlabel = new QLabel(tr("X:"), this);
     QLabel* ylabel = new QLabel(tr("Y:"), this);
@@ -89,9 +89,9 @@ CoordinateDisplayWidget::CoordinateDisplayWidget(MainWindow& mainWindow, QWidget
 void CoordinateDisplayWidget::activate(const QString& undoOperationName)
 {
     setEnabled(true);
-    _spinners[0]->enableAutomaticUndo(mainWindow(), undoOperationName);
-    _spinners[1]->enableAutomaticUndo(mainWindow(), undoOperationName);
-    _spinners[2]->enableAutomaticUndo(mainWindow(), undoOperationName);
+    _spinners[0]->enableAutomaticUndo(ui(), undoOperationName);
+    _spinners[1]->enableAutomaticUndo(ui(), undoOperationName);
+    _spinners[2]->enableAutomaticUndo(ui(), undoOperationName);
     show();
 }
 

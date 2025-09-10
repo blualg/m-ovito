@@ -197,7 +197,7 @@ void OpacityFunctionParameterUI::onPickerActivated(bool on)
     _pickerPoints.clear();
     if(on) {
         if(opacityFunction()) {
-            _undoTransaction.begin(mainWindow(), tr("Change opacity function"));
+            _undoTransaction.begin(ui(), tr("Change opacity function"));
         }
     }
     else {

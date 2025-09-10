@@ -24,6 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/mainwin/MainWindow.h>
 #include <ovito/gui/base/viewport/ViewportInputMode.h>
 #include <ovito/core/dataset/animation/TimeInterval.h>
 
@@ -41,6 +42,13 @@ public:
 
     /// Constructor.
     explicit XFormMode(const QString& cursorImagePath) : _xformCursor(QPixmap(cursorImagePath)) {}
+
+    /// Returns the main window UI this input mode belongs to.
+    /// Note: This method may only be called while the mode is on the active input stack.
+    MainWindowUI& ui() const { return *static_object_cast<MainWindowUI>(&ViewportInputMode::ui()); }
+
+    /// Returns a pointer to the current main window.
+    MainWindow* mainWindow() const { return ui().mainWindow(); }
 
     /// \brief Handles the mouse down event for the given viewport.
     virtual void mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event) override;
@@ -72,6 +80,9 @@ protected:
 
     /// Returns the current viewport window we are working in.
     ViewportWindow* viewportWindow() const { return _viewportWindow; }
+
+    /// Returns a pointer to the coordinate display widget hosted in the current main window.
+    CoordinateDisplayWidget* getCoordinateDisplayWidget() const;
 
     /// Is called when the transformation operation begins.
     virtual void startXForm() {}

@@ -32,6 +32,7 @@ FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS ${OVITO_GUI_REQ
 OVITO_STANDARD_PLUGIN(Gui
     SOURCES
         mainwin/MainWindow.cpp
+        mainwin/MainWindowUI.cpp
         mainwin/ViewportsPanel.cpp
         mainwin/TaskDisplayWidget.cpp
         mainwin/cmdpanel/CommandPanel.cpp
