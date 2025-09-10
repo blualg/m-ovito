@@ -1305,10 +1305,6 @@ Version 3.6.0 (19-Nov-2021)
 * |ovito-pro| Fix: Bounding box clipping artifact when rendering rotated superquadrics particles with OSPRay or Tachyon renderers.
 * |ovito-pro| Fix: Warning "This plugin does not support createPlatformOpenGLContext!" when running in headless mode on Linux machines.
 
-.. sidebar::
-
-  * `Download this version <https://www.ovito.org/download_history/#3.5.4>`__
-
 ---------------------------
 Version 3.5.4 (31-Jul-2021)
 ---------------------------
@@ -1316,10 +1312,6 @@ Version 3.5.4 (31-Jul-2021)
 * LAMMPS data file reader and writer now support all LAMMPS atom styles, including the ``hybrid`` style.
 * Fix: Construct surface mesh with region identification fails or never completes for some inputs.
 * |ovito-pro| Fix: Tachyon renderer crashes when triangle mesh contains a degenerate vertex normal.
-
-.. sidebar::
-
-  * `Download this version <https://www.ovito.org/download_history/#3.5.3>`__
 
 ---------------------------
 Version 3.5.3 (30-Jun-2021)
@@ -1332,10 +1324,6 @@ Version 3.5.3 (30-Jun-2021)
 * Fix: *Configure Trajectory Playback* dialog shows no contents.
 * Fix: Neighbor finder facilities do not ignore PBC flag along third dimension in 2D mode.
 
-.. sidebar::
-
-  * `Download this version <https://www.ovito.org/download_history/#3.5.2>`__
-
 ---------------------------
 Version 3.5.2 (26-May-2021)
 ---------------------------
@@ -1344,10 +1332,6 @@ Version 3.5.2 (26-May-2021)
 * :ref:`particles.modifiers.load_trajectory` modifier can now import ReaxFF bond information files written by the LAMMPS `fix reax/c/bonds <https://lammps.sandia.gov/doc/fix_reaxc_bonds.html>`_ command.
 * GSD file reader: Fill particle property array with default values if a chunk is not present in current frame (`issue #206 <https://gitlab.com/stuko/ovito/-/issues/206>`_)
 * |ovito-pro| Fix: Invisible simulation cell edges when rendering image with orthographic projection with OSPRay
-
-.. sidebar::
-
-  * `Download this version <https://www.ovito.org/download_history/#3.5.1>`__
 
 ---------------------------
 Version 3.5.1 (18-May-2021)
@@ -1359,10 +1343,6 @@ Version 3.5.1 (18-May-2021)
 * |ovito-pro| The :ref:`particles.modifiers.slice` modifier now accepts (*hkl)* Miller indices as input for defining the plane orientation. The plane position can be specified in terms of the interplanar spacing.
 * |ovito-pro| OVITO Pro for Linux now ships with a current Python 3.9.5 interpreter.
 * |ovito-pro| Fix: :py:meth:`ovito.data.PropertyContainer.create_property() <ovito.data.PropertyContainer.create_property>` method cannot create user-defined property of data type ``int64``.
-
-.. sidebar::
-
-  * `Download this version <https://www.ovito.org/download_history/#3.5.0>`__
 
 ---------------------------
 Version 3.5.0 (02-May-2021)
@@ -1403,10 +1383,6 @@ Version 3.5.0 (02-May-2021)
 * |ovito-pro| Fix: Made auto-crop function work for pictures rendered with OSPRay and denoising filter enabled.
 * |ovito-pro| Fix: Python viewport layer does not get called with current values of user-defined parameters.
 
-.. sidebar::
-
-  * `Download this version <https://www.ovito.org/download_history/#3.4.4>`__
-
 ---------------------------
 Version 3.4.4 (12-Mar-2021)
 ---------------------------
@@ -1416,10 +1392,6 @@ Version 3.4.4 (12-Mar-2021)
 * Fix: Simulation cell not visible in interactive viewports on some computer systems (`issue #203) <https://gitlab.com/stuko/ovito/-/issues/203>`_.
 * Fix: CIF file reader not automatically recognizing files written by Open Babel (`issue #204) <https://gitlab.com/stuko/ovito/-/issues/204>`_.
 * |ovito-pro| Fix: OSPRay not rendering arrow glyphs correctly.
-
-.. sidebar::
-
-  * `Download this version <https://www.ovito.org/download_history/#3.4.3>`__
 
 ---------------------------
 Version 3.4.3 (25-Feb-2021)
@@ -1431,10 +1403,6 @@ Version 3.4.3 (25-Feb-2021)
 * Improved automatic detection of PDB file format.
 * |ovito-pro| It's now okay to assign a simple string to the :py:class:`ovito.modifiers.ExpressionSelectionModifier` expression field.
 
-.. sidebar::
-
-  * `Download this version <https://www.ovito.org/download_history/#3.4.2>`__
-
 ---------------------------
 Version 3.4.2 (15-Feb-2021)
 ---------------------------
@@ -1443,20 +1411,12 @@ Version 3.4.2 (15-Feb-2021)
 * Bug fix: Status bar doesn't display latest set of particle properties while positioning the mouse cursor over a particle. This fix corrects a regression introduced with OVITO 3.4.0.
 * Fixed a limitation of the PTM modifier not identifying diamond and graphene structures in small periodic simulation cells.
 
-.. sidebar::
-
-  * `Download this version <https://www.ovito.org/download_history/#3.4.1>`__
-
 ---------------------------
 Version 3.4.1 (03-Feb-2021)
 ---------------------------
 
 * Fixed runtime linker error when importing ``ovito`` Python module installed via pip on Linux.
 * |ovito-pro| Spatial binning modifier can now operate on vectorial particle properties.
-
-.. sidebar::
-
-  * `Download this version <https://www.ovito.org/download_history/#3.4.0>`__
 
 ---------------------------
 Version 3.4.0 (28-Jan-2021)
@@ -1475,3 +1435,810 @@ Version 3.4.0 (28-Jan-2021)
 * |ovito-pro| Python-based viewport layers now support user-defined parameters passed to the ``render()`` function.
 * |ovito-pro| OSPRay and Tachyon renderers can now render polyhedral meshes with highlighted edges (wireframe overlay).
 * |ovito-pro| New Python method :py:meth:`ovito.data.NearestNeighborFinder.find_at() <ovito.data.NearestNeighborFinder.find_at>`.
+
+---------------------------
+Version 3.3.5 (12-Dec-2020)
+---------------------------
+
+* Extended the Smooth Trajectory modifier to interpolate/average all scalar and continuous particle properties.
+* Fixed handling of stacking faults of arbitrary thickness in grain segmentation algorithm.
+* |ovito-pro| Fixed shading issue for ellipsoidal particles in OSPRay renderer.
+* |ovito-pro| Fixed z-clipping issue in OSPRay and Tachyon renderers for viewports with parallel projections.
+
+---------------------------
+Version 3.3.4 (27-Nov-2020)
+---------------------------
+
+* Another tweak to the PTM algorithm to fix a regression, which let the PTM modifier fail to correctly identify some BCC atoms.
+
+---------------------------
+Version 3.3.3 (23-Nov-2020)
+---------------------------
+
+* Construct Surface Mesh modifier: New capability to compute distance of each particle from closest point on the surface.
+* Added a user option to Text Label viewport layer, which allows controlling the output precision and formatting of decimal values.
+* Added support for the improved binary dump file format introduced with LAMMPS stable release 29-Oct-2020.
+* Fixed an issue in the PTM algorithm letting the identification of BCC atoms sporadically fail if exactly arranged on a perfect lattice.
+* |ovito-pro| Fixed visual issue in OSPRay renderer when rendering semi-transparent ellipsoidal particles.
+* |ovito-pro| New code example showing how to access partial RDFs computed by CoordinationAnalysisModifier.
+
+---------------------------
+Version 3.3.2 (12-Nov-2020)
+---------------------------
+
+* Included shared library libxcb-xinerama.so in binary package for Linux, which may not be present on some systems by default.
+
+---------------------------
+Version 3.3.1 (13-Oct-2020)
+---------------------------
+
+* Grain segmentation modifier: Fixed a bug in the handling of stacking faults.
+* |ovito-pro| Support license option that allows running the GUI on arbitrary nodes of a computing cluster.
+
+---------------------------
+Version 3.3.0 (07-Oct-2020)
+---------------------------
+
+* New option in application settings dialog: Sort list of available modifiers by name instead of category.
+* Data plot window now support mouse interaction (zooming/panning), allowing you to take a closer look at the displayed graph.
+* Create isosurface modifier: Iso-value can now be set with the mouse by clicking into the histogram plot.
+* Create isosurface modifier: New option `Transfer field values to surface` for mapping the all voxel grid properties to the isosurface, which can subsequently be used to locally color the generated surface according to some secondary field quantity.
+* Slice modifier: Now supports slicing of voxel grids to extract planar cross-sections.
+* Added a quick search field for quickly accessing modifiers and other program commands in the GUI.
+* The file selection dialog now allows importing multiple files at once. In particular, combinations of topology and trajectory files can now be opened in one step, with OVITO inserting the Load Trajectory modifier automatically.
+* Added a file reader for the Gromacs GRO and XTC file formats.
+* Added option `Ignore particle identifiers` to LAMMPS data file exporter, which will reassign a contiguous range of identifiers to the exported atoms.
+* New implementation of the PDB file reader based on the third-party Gemmi library, providing better compatibility with a wide range of files.
+* Expression selection modifier: Expressions for selecting bonds can now reference properties of the two connected particles.
+* Viewport camera can now be controlled using arrow keys. Use shift key for panning.
+* OVITO is now based on Qt 5.15.1, fixing some UI issues on high-DPI screens under Windows.
+* |ovito-pro| New modifier: Time series - a convenient tool for plotting the time evolution of global simulation attributes in OVITO.
+* |ovito-pro| Time averaging modifier: Support multiple input quantities to be averaged simultaneously.
+* |ovito-pro| Spatial binning modifier: The output VoxelGrid object now has the identifier 'binning' instead of 'binning[]'. Note that this represents a breaking change to existing Python scripts employing the SpatialBinningModifier class.
+* |ovito-pro| Bug fix: Python code generator includes 'LAMMPSAtomStyle.' prefix in ``import_file()`` calls.
+
+---------------------------
+Version 3.2.1 (28-Aug-2020)
+---------------------------
+
+* Load Trajectory modifier: Support trajectory datasets containing more particles than the topology dataset.
+* LAMMPS dump file reader: Support files containing both type and element data columns (issue #193).
+* OVITO for Windows: Fixed UI layout on high-DPI screens.
+* Upgraded third-party software components: Qt 5.15, Python 3.8.5, NetCDF 4.7.4, Libssh 0.9.4, OSPRay 2.2.0.
+* |ovito-pro| OSPRay: Applied patch to fix a memory leak (issue #196).
+
+---------------------------
+Version 3.2.0 (10-Aug-2020)
+---------------------------
+
+* Added a file reader for the PDBx/mmCIF file format.
+* Vector visualization element: Added offset and transparency parameters.
+* Extended the Load Trajectory modifier to support loading dynamic bond topologies from dump local files written in LAMMPS reactive MD simulations.
+* New modifier: Interactive Molecular Dynamics (IMD) for live visualization of running MD simulations.
+* Cluster analysis modifier: Added calculation of weighted center of mass and radius of gyration.
+* LAMMPS dump file reader: Support files written with dump_modify time yes or dump_modify units yes.
+* |ovito-pro| New Bond Analysis modifier for calculating bond-angle and bond-length distributions.
+* |ovito-pro| New Python-based modifier for calculating the local entropy fingerprint proposed by P. M. Piaggi and M. Parrinello.
+* |ovito-pro| Python modifiers can now define their own function parameters. The values can be edited in the user interface and get stored in .ovito files.
+* |ovito-pro| Added the PropertyContainer.delete_elements() and delete_indices() methods for deleting particles, bonds, etc.
+* |ovito-pro| Added the CutoffNeighborFinder.neighbor_distances() and neighbor_vectors() Python methods.
+* |ovito-pro| Added the Viewport.create_widget() method for building simple user interfaces that make use of OVITO's interactive visualization capabilities.
+
+---------------------------
+Version 3.1.3 (30-Jul-2020)
+---------------------------
+
+* PTM modifier: Fixed identification of chemically ordered binary structures, which got broken in a recent update
+* PDB file format reader: Support for datasets with more than 9,999 atoms (see merge request)
+
+---------------------------
+Version 3.1.2 (13-Jul-2020)
+---------------------------
+
+* New option for turning off automatic generation of file search patterns
+* New Configure Trajectory Playback dialog, allows controlling the mapping of trajectory frames to animation frames
+* GSD file reader: Now accepts ellipsoid shape definitions with principal axes b=0 and/or c=0
+* Bug fix: Animation rendering process cannot be canceled sometimes
+* |ovito-pro| Added DislocationNetwork.set_segment() method for manipulating dislocation line data from Python
+
+---------------------------
+Version 3.1.1 (21-Jun-2020)
+---------------------------
+
+* Bug fix: LAMMPS data file reader fails to correctly read `Masses` file section with irregularly ordered atom types
+* |ovito-pro| Time averaging modifier: Check that x-values of data points are constant when averaging a data table
+
+---------------------------
+Version 3.1.0 (14-Jun-2020)
+---------------------------
+
+* |ovito-pro| New feature: Python code generator
+* New feature: Grain segmentation modifier
+
+---------------------------
+Version 3.0.1 (05-Jun-2020)
+---------------------------
+
+* Bug fix: Adjusted internal parameter of Construct Surface Mesh modifier to avoid sporadic error “Adjacent cell face not found” for periodic systems.
+* Enhancement: LAMMPS dump file reader can now parse “diameter” file column as Radius particle property, automatically performing division by 2.
+
+---------------------------
+Version 3.0.0 (30-May-2020)
+---------------------------
+
+* Smooth Trajectory modifier interpolates particle orientations in addition to particle positions.
+* Added capability to Construct Surface Mesh modifier to identify pores/voids and individually compute their volumes and surface areas.
+* Extended the OSPRay renderer with a sky & sun light source.
+* Integrated copy protection into OVITO Pro builds.
+* Introduced OVITO_THREAD_COUNT environment variable for controlling the number of CPU cores used by OVITO.
+* Added old VASP 4.x file format to POSCAR reader (in order to support files written by ASE).
+* Added user option to LAMMPS data writer for omitting the “Masses” file section.
+* OVITO can now read/write extended topology information from/to LAMMPS data files: angles/dihedrals/impropers.
+* Bug fix: Output of  Displacements/Atomic Strain/Wigner-Seitz modifiers can be all zeros in relative offset mode (dev679 regression).
+* Eliminated bottlenecks in GUI, which slowed down animation playback of long trajectories (>100k frames).
+* Correct handling of LAMMPS dump files with dual data columns (issue #193).
+* Updated OSPRay renderer to version 2.1.0 and integrated OSPRay plugin into Anaconda build of OVITO.
+* Bug fix: Color Coding modifier does not list available bond properties.
+* Added HTTP protocol support. OVITO can now import data files stored on a web server.
+* OVITO is now also available as an Anaconda package on Windows.
+* Improvements to the Adjust View dialog, which now allows interacting with the viewports while being open.
+* Bug fix: Installing a third-party extension module in ovitos fails on macOS due to security restrictions (issue #191).
+* Bug fix: Checkbox “File contains multiple timesteps” in GUI does not reflect correct state of file reader.
+* Integrated PM Larsen`s scheme of calculating the centrosymmetry parameter using minimum-weight matching.
+* New crop option in Viewport.render_image() Python function.
+* Windows installer is now digitally signed to be compatible with Microsoft Authenticode.
+* The embedded Python interpreter ovitos now ignores PYTHONPATH environment variable and user package directories (issue #189).
+* Fixed LAMMPS data file export for simulation cells aligned along negative coordinate axes (issue #188).
+* New algorithm type in Common Neighbor Analysis modifier: Interval CNA
+* Bug fix: Crash during animation frame change when using DXA modifier.
+* New “Denoising filter” option in OSPRay renderer, which greatly improves the visual quality of rendered images.
+* New “Every Nth frame” option in animation settings dialog.
+* Combined ``bin_count_{xyz}`` parameter fields of ``SpatialBinningModifier`` class into single ``bin_count`` field.
+* GSD file reader: Added support for the SphereUnion particle shape specification (see here).
+* Fix of UI bug: Data inspector panel not opening correctly in some situations.
+* OVITO now available as a Conda package for Linux and macOS.
+* Extended the Viewport.zoom_all() Python function.
+* Fixed broken (since dev679) OVITO program package for Windows, which crashed when inserting  modifiers into the pipeline.
+* Bug fix: Pipeline stuck in infinite update loop when setting fractional playback rate for trajectory (issue #181)
+* Added Python function ovito.enable_logging(), which lets OVITO print activity information to the terminal during long-running operations.
+* New implementation of OVITO's asynchronous task framework and pipeline execution/caching system.
+* New modifier: Time averaging
+* New modifier: Smooth trajectory
+* New option to load all frames of the trajectory into memory.
+* Modifiers, viewport layers, and pipelines can now be given user-defined names in the pipeline editor.
+* Data tables can now be created from Python, e.g. to have custom analysis modifiers that generate data plots.
+* Simplified usage of the Unwrap trajectories modifier, which now scans the input trajectory automatically in the background.
+* Changed default color scheme for unnamed particle types.
+* Updating the trajectory from the external file will automatically jump to the end of the trajectory.
+* Fixed ImportError in PyPI package on macOS (see this discussion).
+* Support for version 2.0 of the GSD file format (issue #176).
+* Fixed regression #175 in Expression Selection modifier, which was sporadically crashing since build dev476.
+* Now offering two separate program editions: OVITO Basic and OVITO Pro.
+* Added file reader for the oxDNA file format and a specialized visual element for nucleotides.
+* Removed the POV-Ray rendering engine (POV-Ray scene file export is still available).
+* Renamed DataSeries to DataTable throughout the scripting API, user interface and documentation.
+* Enhancements to the Cluster Analysis modifier: calculation of cluster centers of mass and unwrapping of particle coordinates.
+* Python interface: Introduced the Viewport::underlays stack. Redesigned the Viewport Layers command panel tab.
+* Voronoi Analysis modifier provides new option to visualize the computed Voronoi cells.
+* Workaround for video encoding issue resulting in invalid MP4/MOV files for frame rates 2/4/8/16 fps.
+* Updated Qt libraries to version 5.12.6.
+* The Color Coding and the Assign Color modifier can now operate on surface meshes.
+* Bug fix: Segfault in Combine Datasets modifier second first dataset contains bonds but first doesn`t (issue #173).
+* Bug fix: Segfault when accessing a mutable sub-object field (e.g. ``Particles.bonds_``) whose value is None (issue #172).
+* Construct Surface Mesh modifier: New option to transfer particle properties to generated surface mesh.
+* Replaced video encoding component Libav with FFmpeg, bringing high-quality animated GIF rendering.
+* Fixed issue that prevented relative paths to external data files in a .ovito state file to get updated when files are moved.
+* Standalone Python package with the ovito module now available at https://pypi.org/project/ovito/.
+* Replaced PyQt5 with PySide2 Python module.
+* Fixed loading of multi-frame PDB files.
+* XYZ file exporter now includes cell origin in header line if non-zero.
+* New `Use mesh color` option for particle types, which renders particles having a user-defined shape with the original mesh colors.
+* Added keyboard shortcut for the New Program Window function.
+* Added the ``SimulationCell.delta_vector()`` and ``Particles.delta_vector()`` methods for calculating the vector connecting two particles.
+* Added the ``Particles.create_particle()`` and ``Bonds.create_bond()`` Python methods for adding new particles and bonds to a system.
+* Let the LAMMPS data file parser accept additional spaces between header keywords.
+* Included missing Tcl/Tk support files of Python interpreter in the Windows installation package.
+* Bug Fix: Affine Transformation modifier does not transform dislocation lines.
+* New option in the Slice modifier to visualize the plane in rendered images.
+* Added a file writer for the GSD/HOOMD file format.
+* Added a visualization element for voxel grids computed by the Spatial Binning modifier or imported charge density fields.
+* Implemented the QuickSurf algorithm in the Construct Surface Mesh modifier as an alternative surface generation algorithm.
+* Added a file reader for the CIF format (Crystallographic Information File).
+* Extended sections on data manipulation and user-defined modifier functions in the Python documentation.
+* GSD file reader reads particle shape definitions (ellipsoids, polygons, convex polyhedra, general 3d meshes).
+* Create Bonds modifier remembers if the user explicitly re-enables the display of an unusually large number of bonds.
+* GSD file reader supports user-defined per-particle, per-bond and global data chunks.
+* Upgraded build environment to Qt release 5.12.5.
+* Settings for animation FPS and rendering resolution are retained across program session.
+* Added graphics export function for data series plots.
+* Display of bonds now takes into account particle radii when calculating the length of half-bond cylinders.
+* Documented the `Clone pipeline` function in the user manual.
+* Use Ctrl/Command key modifiers to zoom all viewports to scene extents at once.
+* Renamed the `Correlation function` modifier to `Spatial correlation function` modifier.
+* Replaced calls to FFTW library with more lightweight KISS FFT library.
+* CASTEP .md file reader: Automatic conversion from Bohr to Angstrom units.
+* Reimplemented how animation timeline is adjusted to accommodate loaded trajectories; redesign of the animation settings dialog.
+* Bug fix: Memory footprint continuously increases during animation rendering.
+* Fixed bug in CASTEP MD file reader not recognizing ``<- hv`` lines.
+* New axis style option in coordinate tripod viewport overlay.
+* Fix for ovitos.exe error “unable to find Qt5Core.dll on PATH” on Windows.
+* New file exporter for VTK voxel grid files. Allows to export results of Spatial Binning modifier.
+* Set up automatic mapping to particle properties for 4-column XYZ files.
+* New `Constrain Rotation` option in the viewport context menu to turn on/off camera alignment with z-axis.
+* Maximized state of active viewport is kept across program sessions.
+* Bug fix: `Save as defaults` function in particle type editor not working for numeric particle types (issue #157)
+* Bug fix: export_file() Python function always performs pipeline evaluation at frame 0.
+* Added the Viewport.create_widget() Python method, which allows embedding an OVITO viewport into a PyQt5 GUI.
+* Bug fix: LAMMPS data exporter not writing `dipole` atom style files correctly.
+* Extended LAMMPS data file reader to support a wider range of atom styles, including `hybrid`.
+* Extended the GSD file reader to parse the periodic image information, which can be used by the Unwrap Trajectories modifier to unfold particle positions.
+* Added a file reader for ParaDiS data files containing discrete dislocation lines.
+* The Unwrap Trajectories modifier can now undo the cell flipping performed by LAMMPS to keep the tilt factors within certain limits.
+* New modifier: Chill+ algorithm for identifying water structures.
+* Added support for user-defined particle shapes.
+* Added file reader for the OBJ and STL formats, which store triangle meshes.
+* Extended the Construct Surface Mesh modifier to identify disconnected regions of the filled volume.
+* Added the Viewport.camera_up parameter, which gives control over the orientation of the vertical axis in rendered images.
+* New implementation of the surface mesh data structure, now supporting assignment of arbitrary properties to the vertices, faces and spatial regions enclosed by surface mesh.
+* OSPRay renderering engine is now available in Windows builds of Ovito.
+* Added the ``DataCollection.apply()`` Python method, which allows to directly apply a built-in modifier to a dataset.
+* Updated the Gaussian Cube file reader to auto-detect Bohr/Angstrom units and support files containing multiple field values.
+* Extended PDB file reader to support multi-frame trajectory files.
+* Added option to POSCAR file writer for outputting atomic positions and velocities in reduced cell coordinates.
+* Added new option to Construct Surface Mesh modifier that allows selecting all atoms on the constructed surface.
+* Extended the Python interface of the Color Coding modifier to simply definition of custom color gradients.
+* The Wigner-Seitz modifier now supports loading varying reference configurations, which depend on the current timestep.
+* Improved appearance of axis tripod viewport overlay when looking head-on to an axis (issue #88)
+* Added the new Unwrap trajectories modifier.
+* Bug fix: XYZ files with varying numbers of named atom types (issue #137)
+* Bug fix: Globbing algorithm did not recognize file sequences such as `file-0.001`, `file-0.0001`, etc. correctly.
+* Create Bonds modifier now defines a new bond type and assigns it to all newly created bonds
+* Reimplemented the Generate Trajectory Lines modifier, now supporting systems with varying number of particles. Unwrapped trajectory lines can now optionally be displayed in wrapped form.
+* Updated version of the PTM modifier, which now supports OVITO standard reference orientations for computing crystal orientations. See merge request.
+* Built-in SSH client now supports servers that use two-factor authentication and keyboard-interactive authentication.
+* Basic support for Quantum Espresso data file format.
+* Added file reader for GALAMOST file format.
+* Added an `enabled` property to viewport overlay Python class, which allows users to temporarily turn off individual overlays.
+* Changed the signature of user-defined modifier functions. Instead of separate input and output data collections, a user-defined modifier function now takes just a single data collection, which can be modified in-place by the function. A fallback to the old function signature is implemented to maintain backward compatibility.
+* Per-type masses are now read from LAMMPS data files.
+* Bug fix: Elastic Strain Calculation modifier yields off-diagonal elements of atomic Green-Lagrangian strain tensor with wrong sign.
+* Fixed UI issue #119.
+* Voronoi analysis modifier now dynamically adjusts the number of output columns of the Voronoi Index property to the maximum face order.
+* Renamed the "Bond-Angle Analysis" modifier to "Ackland-Jones Analysis" modifier.
+* Renamed the "Bin & Reduce" modifier to "Spatial Binning" modifier.
+* Extended the Spatial Binning modifier to support 3d grids.
+* Fixed bug in the marching cubes algorithm used by the Create Isosurface modifier, which sometimes let the surface construction fail with an error message.
+* Added file reader for the DL_POLY format.
+* Added calculation of partial (element-wise) RDFs to the Coordination Analysis modifier.
+* Generalized the Compute Property modifier, which can now compute bond properties too. Furthermore, neighbor terms can now reference properties of the central particle as well.
+* Added computation of height-difference correlation function to Correlation Function modifier.
+* Removed the Compute Bond Lengths modifier from the program. The extended Compute Property modifier provides a similar functionality.
+* Lifted 1 billion atom limit of the LAMMPS, CFG and IMD file parsers.
+* Fixed program crash at program startup due to unhandled exception in case the OpenGL initialization fails.
+* Generalized the Manual Selection modifier, which now supports selecting bonds too.
+* Bug fix: `Move plane to simulation box center` function of Slice modifier not calculating the distance value correctly for non-unit normal vectors
+* Implemented correct 2D shear and volumetric strain calculation in Atomic Strain modifier for two-dimensional system.
+* Added the `Transparency` bond property and partial support for rendering semi-transparent bonds.
+* Added a `Color particles by type` option to structure identification modifiers such as CNA and PTM, providing the option to preserve the current colors of particles.
+* Added a `Sort particles by ID` option to some file readers, automatically sorting the imported particles w.r.t. unique identifiers to obtain a stable ordering.
+* Bug fix: Correlation function modifier crashes when simulation cell is smaller than selected FFT grid spacing (issue #106).
+* Bug fix: Atomic Strain modifier ignores turning off the `Select invalid particles` user option.
+* File sequence globbing now works for hidden files (issue #98)
+* Modifiers no longer overwrite global attributes with the same name produced by upstream modifiers in the pipeline. Instead, new unique attribute names are generated whenever needed.
+* Renamed the ovito.DataSet Python class to Scene.
+* The VASP file reader can now handle more variants of XDATCAR files, e.g. those with varying cell size
+* Animation playback direction can be reversed using the Shift keyboard modifier
+* New SSH client for loading files from remote hosts, which supports public key authentication and a wider range of key exchange methods.
+* Bug fix: File descriptors do not get closed when importing new files due to bug in GSD file I/O layer.
+* The Expression Selection modifier now supports selection of other kinds of elements, for example bonds, in addition to particles.
+* The Polyhedral Template Matching (PTM) function has been extended and can now identify diamond structures.
+* The Generate Trajectory Lines utility has been replaced with the new Generate Trajectory Lines modifier.
+* Viewport overlays now provide a background option, putting them behind the three-dimensional scene.
+* OVITO now reads Gaussian Cube files (atoms and voxel grid data).
+* The new Data Inspector panel has been introduced. It replaces the old Inspect Particles and Inspect Dislocations utilities.
+* “Display objects” are now called “visual elements” within OVITO.
+* Replaced the ``Viewport.render()`` Python method with the new ``Viewport.render_image()`` and ``Viewport.render_anim()`` methods. The ``RenderSettings`` and the ``AnimationSettings`` classes have been removed from the Python interface.
+* The Combine Particle Sets modifier has become smarter: Particle types from the two input datasets are now merged and type IDs are automatically remapped.
+* The LAMMPS dump and XYZ file exporters now provide control over the output precision for floating-point numbers.
+* Added a new option to the Wigner-Seitz defect analysis modifier, which allows to retain the current atomic configuration instead of the reference configuration.
+* Implemented automatic detection of multi-timestep files (for LAMMPS dump and XYZ formats).
+* Added Python bindings for the CorrelationFunctionModifier.
+* Added a file reader for the XSF data format of XCrySDen (atomic structures as well as 3d voxel fields are supported by OVITO).
+* Added Python bindings for the CoordinateTripodOverlay.
+* Modifier templates can now be exported/imported to transfer them between computers.
+* Added the new OSPRay rendering engine.
+* Added handling of out-of-range atom serial numbers in PDB files with more than 99,999 atoms.
+* Bug fix: Stack overflow in Tachyon renderer when rendering a large number of semi-transparent objects
+* Bug fix: Made calls to the FFTW3 library from the Correlation Function modifier thread-safe
+* Reimplemented the displacement vector calculation in the Atomic Strain modifier to fix an error that occurred when the cutoff radius was larger than half the simulation cell size.
+* Added a file writer that can export dislocation lines to the VTK file format used by ParaView.
+* Extended the dislocation inspection utility to display a dislocation`s start and end vertex position.
+* Added support for 64-bit integer particle properties and large datasets with 2+ billion particles (only usable from analysis scripts, rendering won`t work for more than 2 billion particles).
+* Changed internal floating-point type from float to double, i.e., all calculations will now be performed with double precision. Memory footprint of the program increases because of this.
+* Performance improvement: The Wigner-Seitz defect analysis now makes use of all processor cores (issue #50).
+* Bug fix: Progress bar is now updated during file export.
+* Added a file writer for the binary NetCDF format according to the AMBER convention (issue #41).
+* Thanks to a complete redesign of the data pipeline system, modifiers can now access the entire input trajectory, making it possible to implement temporal analyses that operate not just on instantaneous simulation snapshots. A first, simple example is the new Interpolate trajectory modifier, which can interpolate particle positions between simulation frames to create smooth looking animations from coarse sequences of simulation snapshots.
+* Furthermore, modifiers such as Atomic strain, Displacement vectors and Wigner-Seitz defect analysis can now use frame 0 of the currently loaded simulation sequence as reference configuration. It is no longer necessary to load the reference configuration from a separate input file.
+* Several modifier have been generalized and can now operate on other forms of data in addition to particles, e.g. bonds and their properties. Examples are the Assign color, Invert selection, Select Type, Histogram, Scatter plot, Replicate and Delete selected modifiers.
+* The Python programming interface has been redesigned and extended. See this page for more information.
+* Surface meshes, dislocation networks and voxel data grids now carry their own periodic domain information with them. Changing the master simulation cell size no longer screws up the display of these data types.
+* The LAMMPS binary dump file reader automatically detects the endianess used in the file. It can now read files produced on IBM BlueGene/Q machines, for example (issue #23).
+* The Correlation function modifier now exports radial distribution function and structure factor as extra columns to a text file.
+* A VTK file writer has been added, which can export surface triangle meshes produced by the Construct surface mesh and Create Isosurface modifiers.
+* The ovitos script interpreter now accepts (and silently ignores) the -u command line option of CPython for better compatibility with pip install scripts that use this option (issue #43).
+* The Tachyon renderer now obeys the maximum number of parallel threads set by the ``--nthreads`` command line option.
+* The Show Periodic Images modifier has been renamed to Replicate modifier. In addition to particles and bonds it now can replicate surfaces, dislocation lines and voxel data grids too (issue #39).
+
+---------------------------
+Version 2.9.0 (27-Jul-2020)
+---------------------------
+
+* Added the ``--nthreads`` command line option to ovitos as an alternative to ``-nt`` (issue #35).
+* Brought back missing stderr output from calls to sys.exit() in ovitos interpreter.
+* Extended the Particle Inspection utility to allow expression-based selection of particles in addition to picking them using the mouse (issue #19).
+* Added a bond-based mode to the Cluster Analysis modifier. It allows forming clusters based on the bond network topology.
+* The OVITO main window now accepts data files and .ovito files via drag & drop (issue #28).
+* Extended the Load Trajectory modifier to also copy other varying particle properties in addition to the particle positions (issue #29).
+* The particle indices displayed by the Particle Inspection utility are now zero-based, consistent with the ParticleIndex variable used by the Expression Selection modifier (issue #21).
+* Added the new `Relative face area` threshold parameter to the Voronoi analysis modifier, which allows filtering out small faces with an area below a specified fraction of the total Voronoi cell surface area (issue #7).
+* Added file parsers for the CASTEP .cell, .geom and .md simulation file formats.
+* Replaced the `eliminate homogeneous deformation` option of the Displacement Vectors modifier with the more general affine mapping setting.
+* On macOS, data files and .ovito files can now be associated with OVTIO and directly opened from the Finder (issue #22).
+* Added the FileSource.loaded_file attribute, which allows accessing the filename of the currently loaded simulation file from a Python script.
+* New modifier: The Voronoi Topology Analysis modifier can classify the Voronoi polyhedra of particles, e.g. to perform structural filtering.
+* New modifier: The Correlation Function modifier has been contributed by Lars Pastewka. It allows computing the spatial correlation between two particle properties.
+* Bug fix: LAMMPS data file parser ignored Bonds section at end of file when number of bonds is zero
+* New modifier: The Create Isosurface modifier allows to visualize field quantities like the electron density that are defined on a structured data grid. So far, only the POSCAR file parser has been extended to read charge density data from CHGCAR files, which can serve as input for the isosurface modifier.
+* New modifier: The Coordination Polyhedra modifier constructs convex hulls from the bonded neighbours of atoms.
+* Bug fix: Unexpected error message during file export when the old mapping for the output file columns has become invalid.
+* Added the `Adjust range (all frames)` function to the Color Coding modifier, which takes into account all frames of the animation sequence when determining the min/max values of the input property.
+* Added a new user option to the Affine Transformation modifier that enables the transformation of vectorial particle properties like Force and velocity together with the particle positions (issue #11).
+* Bug fix: Need to pass /exit option to Windows version of POV-Ray to automatically close message window after rendering is done (issue #16).
+* Bug fix: Assertion error in Ambient Occlusion modifier when modifier input is empty.
+* The ovito Python module is now usable from external Python interpreters as well, not only ovitos.
+* Complete overhaul of the internals of the asynchronous data pipeline framework; many improvements to the code.
+* Dropped backward compatibility with Qt library versions less than 5.4.
+* Bug fix: Parser error when reading a LAMMPS file containing very small numbers on the order of 1e-200 (issue #12).
+* Bug fix: Windows version always appends .pov to expected file names (issue #13).
+* Bug fix: Create trajectories function does not use correct number of frames from input sequence (issue #6).
+* Added support for omnidirectional stereoscopic rendering to the POV-Ray renderer plugin. This allows producing 360 degrees VR movies (requires POV-Ray 3.7.1).
+* The required system library libstdc++.so.6 is no longer bundled with the Linux version of OVITO, because it causes conflicts with OpenGL drivers on some systems.
+* Reading multi-frame GSD files that contain static data now works correctly.
+* Bug fix: Program crash during parallel access to NetCDF files. Calls to NetCDF library functions are now serialized, because they are not thread-safe.
+
+---------------------------
+Version 2.8.2 (24-Jan-2017)
+---------------------------
+
+* The Histogram modifier can now compute the distribution of bond properties too (e.g. bond lengths).
+* Modifiers now report an out-of-memory condition. Ovito no longer crashes when a memory allocation fails during modifier evaluation.
+* Fixed viewport rendering and other issues for simulation datasets with a very small length scale (~10-11).
+* Added Python bindings for particle trajectory line generation and visualization.
+
+---------------------------
+Version 2.8.1 (17-Dec-2016)
+---------------------------
+
+* Bug fix: Segmentation fault after applying a Color Coding modifier with Viridis color map to particle data containing NaN values.
+* Bug fix: Segmentation fault when closing Scatter Plot editor panel.
+* Bug fix: Compute Property modifier failed with an error when preceded by a Dislocation Analysis (DXA) modifier, due to expression variable names containing invalid characters.
+* Added read/write support for LAMMPS data files with atom_style sphere.
+* Added the NearestNeighborFinder.find_at() Python method for querying the nearest particle(s) around an arbitrary spatial position.
+* Added a detailed usage example to the scripting documentation of the WignerSeitzAnalysisModifier to demonstrate the identification of specific point defect types, e.g. antisites.
+* Bug fix: Viewport.render() Python method failed in GUI mode with an error.
+* Bug fix: FileSource.load() Python method failed when called with keyword arguments.
+* Bug fix: Serial computations performed by the data pipeline occupy two processor cores instead of one.
+* Bug fix: A custom modifier script function, raising an exception and running as part of a data pipeline within ovitos, produced assertion error.
+* Bug fix: Cyclic reference between DataSet and ScriptEngine classes led to a potential memory leak when using Python script modifiers or viewport overlays within a script executed by ovitos.
+* MacOS version of OVITO is now distributed as a signed application bundle in the form of a DMG disk image (avoids “unidentified developer” warning message on first start).
+* Disabled geometry shaders by default for AMD/ATI hardware on Windows due to compatibility problems reported by some users.
+* Python modifier and Python viewport overlay scripts can now be edited in a separate code editor window.
+
+---------------------------
+Version 2.8.0 (23-Nov-2016)
+---------------------------
+
+* Added the POV-Ray rendering backend and the POV-Ray scene file exporter.
+* Fully transparent, invisible particles are no longer sent to the Tachyon renderer to avoid artifacts.
+* Replaced QCustomPlot component with QwtPlot component for graph plotting within the GUI.
+* Replaced Boost.Python with pybind11 library to implement OVITO's Python bindings.
+* The DXA modifier now outputs attributes for the computed line lengths which are broken down by dislocation type.
+* Bug fix: Segmentation fault in Color Coding modifier when input particle property contains infinite values.
+* Fixed an issue with the Freeze Property modifier, which didn`t attach a display object to vector properties.
+* The “Fusion” UI theme is now explicitly activated on Linux. Older builds of OVITO used the “Windows” theme for some reason.
+* Bug fix: Atomic strain calculation failed for 2d simulation cells with zero length along Z.
+* The Linux binaries are now built with the gcc 5.1 compiler.
+* Bug fix: Identify diamond structure modifier did not output the structure counts as global attributes.
+* Removed restriction of LAMMPS binary dump file reader to less than 200k atoms.
+* Added a command line option to the ovitos program, which gives users control over the number of parallel threads used by OVITO.
+* Added depth-of-field rendering to the Tachyon renderer.
+* OVITO can now color dislocation lines based on their Burgers vectors (only BCC crystals so far). Before, coloring was possible only on the basis of dislocation type or dislocation character.
+* Added the `Generate perfect dislocations` option to the DXA modifier, which suppresses the identification of partial dislocations.
+* Improved I/O performance of the LAMMPS data file reader when reading bonds information.
+* Made PDB file reader compatible with files generated by the Gromacs trjconv tool.
+* Extended the Color Coding modifier to support the coloring of vector arrows (in addition to particles and bonds).
+* Bug fix: If the Compute Property modifier is used to create a vector property, the display settings for vector arrows are no longer lost every time the modifier is re-evaluated.
+* The Text Label and Color Legend viewport overlays can now draw an outline around text to make it easier to read on all backgrounds.
+* Disabled some strict conformance checks in the SSH module to improve compatibility with some SSH servers.
+* Bug fix: ``Viewport.render()`` Python function raised a Boost.Python.ArgumentError when being called in GUI mode.
+* Bug fix: NetCDF file parser did not recognize unwrapped particle coordinates in files written by LAMMPS.
+* Raised the threshold values for the automatic selection of particle rendering quality. High quality mode is now being used for <4,000 particles, medium mode for <400,000 particles, and low quality mode for everything above.
+* OVITO now ships with the matplotlib Python module. This makes it possible to integrate custom data plots into images or movies rendered by OVITO.
+* Bug fix: Unicode characters are now correctly rendered by the Color Legend viewport overlay.
+* Added Python interface for the FreezePropertyModifier.
+* Added two additional colormaps to the Color Coding modifier: Magma and Viridis.
+* Added a `Combine particle sets` modifier, which allows merging two datasets into one.
+* Added GSD (General Simulation Data) file reader for HOOMD-blue simulation files.
+* Bug fix: Inserting a modifier while scanning an XYZ/LAMMPS input file to discover simulation frames may crash program.
+* The `ovitos` interactive interpreter now creates/loads a separate IPython profile named `ovito` instead of the `default` profile. This reduces inteference with an existing IPython installation on the same system.
+* Workaround: Exporting denormalized floating-point numbers to an output file crashes program due to bug in Boost.Karma library.
+* Regression: Compatibility with high-resolution displays (Retina/Mac OS)
+* Regression: OpenGL rendering does not work in console mode on Windows
+* NetCDF reader now accepts files where particle data is stored in a subgroup named `AMBER`.
+
+---------------------------
+Version 2.7.1 (28-Aug-2016)
+---------------------------
+
+* Integrated IPython in Linux and Mac OS builds of OVITO.
+* Small bug fix in Animation Settings dialog: Changing the frame rate made the time slider jump.
+* Updated the NetCDF file reader to make it compatible with files written by the SimPARTIX code.
+* Updated the VTK file reader to accept empty lines in the header.
+* Updated the IMD file reader, which did not correctly map file columns to standard particle properties with vector components.
+* Updated the CFG file reader to accept empty lines preceding the first header line.
+* Updated the PDB file reader to parse molecule identifiers and types.
+* Added the ``ParticleTypeProperty.get_type_by_id()`` and ``get_type_by_name()`` methods to the Python interface.
+* Added the DislocationSegment.spatial_burgers_vector property to the Python interface.
+* Added a confirmation message before resetting the URL history list in the SSH connection dialog.
+
+---------------------------
+Version 2.7.0 (25-Jul-2016)
+---------------------------
+
+* Bug fix: Program crashed when entering a non-valid text into a numeric input field.
+* Added OpenGL driver-bug workaround to fix high-quality rendering of particles on Linux/Intel graphics systems.
+* Improved visual appearance of large number of semi-transparent particles in images generated by the Tachyon renderer.
+* Fixed a bug in the line coarsening routine of the DXA modifier.
+* Periodic image shift vectors of bonds are now accessible from Python scripts.
+* The Atomic Strain calculation modifier can now perform a polar decomposition F=RU of the deformation gradient into a rotation and stretch tensor.
+* Added a `Use only selected particles` option to the Histogram and Bin and Reduce modifiers, which lets you to restrict the calculation to a subset of particles.
+* Extended the Color Coding modifier so that it can also operate on bonds instead of particles.
+* Added the Compute Bond Lengths modifier, which can be used in conjunction with the Color Coding modifier to color bonds according to their length.
+* Added the Text Label viewport overlay, which provides an easy way of inserting a text label into rendered images and movies. The text can contain placeholders which are replaced with quantities computed by OVITO.
+* Added a text file export function, which allows exporting scalar quantities computed by OVITO to a tabular text file as functions of simulation time.
+* OVITO can now load XDATCAR trajectory files written by Vasp.
+* Added the Polyhedral Template Matching modifier, which can robustly identify lattice structures at high temperature.
+* The LAMMPS dump file exporter now writes out the simulation timestep number read from an input dump file to the file header instead of the animation frame.
+* Added the Load Trajectory modifier, which allows loading datasets that consist of separate topology and trajectory files (e.g. a LAMMPS data file with bond definitions and a LAMMPS dump file with atom trajectories).
+* The pair-wise cutoff mode of the Create Bonds modifier is now usable from Python.
+* Improved visual quality of particle display for very distant and small (sub-pixel) particles.
+* Added a `lower cutoff` parameter to the Create Bonds modifier.
+* Scene files that refer to external data file in the same directory can now be transferred to another computer without breaking the link.
+* Documented the CA dislocation file format in the user manual. This makes it possible to export the extracted dislocation lines and process/analyze them outside of OVITO.
+* Fixed a bug in the Create Bonds modifier, which produced wrong results when all pair-wise cutoffs were set to values smaller than 1.0.
+* OVITO no longer depends on the CGAL library, making it easier to build it from source.
+* The CA dislocation file importer now supports multi-timestep files.
+* Fixed a bug in the Show Periodic Images modifier, which did not replicate bond properties.
+* The behavior of the ``ovito.io.import_file()`` Python function has been changed. It no longer adds the created node to the scene, and it is now okay to call this function repeatedly. It also accepts wildcard filenames now to import file sequences. See the updated Python documentation for details.
+* The ``ovito.io.export_file()`` Python function now gives full control over which animation frames are being exported.
+* Fixed bug in the Coordination Analysis modifier, which prevented the RDF calculation for 2D systems.
+
+---------------------------
+Version 2.6.2 (19-Mar-2016)
+---------------------------
+
+* Updated the built-in SSH client to support more encryption methods and improve compatibility with some SSH servers.
+* Small bug fix that solves a (rare) problem with the display of dislocation lines in periodic systems.
+* For very small, periodic simulation cells the Elastic Strain Calculation modifier silently failed for diamond crystals. Now the user is informed that the Show Periodic Images modifier should be applied first to extend the box size.
+* Fixed output of animated GIF files on Linux.
+* Reduced memory footprint of the DXA analysis modifier.
+* The Slice modifier now also cuts surface meshes generated by the Construct Surface Mesh modifier and dislocation lines generated by the DXA analysis modifier.
+* Introduced basic support for 2D systems. The 2D flag can be set in the simulation cell properties panel. The Atomic Strain and Coordination Analysis modifiers then perform the computation in 2D (i.e. the XY plane).
+* Key-value pairs read from extended XYZ file headers and the LAMMPS timestep number are now accessible from Python via the new DataCollection.attributes property.
+* Added the `Number of bins` parameter to the Coordination Analysis modifier, allowing the user to control the resolution of the generated RDF histogram.
+* Errors generated by Python scripts that are run via the `Run script file` function are now displayed in the GUI.
+* Re-added the `Every nth frame` field to the Render Settings panel, which allows rendering only a subset of animation frames.
+* Fixed import of `Aspherical Shape` particle property values from a file.
+* The export_file() script function can now produce multi-timestep files.
+* Improved automatic detection of PDB files and added parsing of bonds defined by CONECT records.
+* Fixed bug in Elastic Strain Calculation modifier, which got stuck in infinite loop when applied to some complex polycrystalline structures.
+* Moving the viewport camera no longer stops animation playback.
+* Added the `Vector Color` particle property, which allows changing the display color of vector arrows on a per-particle basis.
+* Bug fix: The Create Bonds modifier reported the number of half-bonds, not the number of full bonds generated.
+* Regression: Restricting the Compute Property modifier to selected particles did not work correctly; existing values for unselected particles were always reset to zero.
+* Added the CA file exporter, which allows saving DXA analysis results to disk (and load them again at a later time).
+
+---------------------------
+Version 2.6.1 (15-Nov-2015)
+---------------------------
+
+* Arrows can now be centered on particles, e.g. to visualize magnetic moments and other vector properties. Atomic force vectors and dipole vectors read from simulation files can now be directly visualized.
+* The Tachyon renderer now supports transparent backgrounds.
+* The Color Legend and Coordinate Tripod viewport overlays can now be repositioned with the mouse.
+* Display objects that are generated by modifiers no longer temporarily disappear from the pipeline editor list while playing an animation.
+* The PDB file parser now accepts lines with up to 83 characters to support files written by Accelrys Discovery Studio.
+* Fixed regression in CA file importer, which is broken in previous release.
+
+---------------------------
+Version 2.6.0 (02-Nov-2015)
+---------------------------
+
+* Added the <a+c> dislocation type for HCP crystals to the Dislocation Analysis modifier.
+* Added the Elastic Strain Calculation modifier, which computes the atomic-level elastic strain and deformation gradient tensors in crystalline systems. It can be used to analyze local elastic distortions in a crystal lattice and to determine the local crystal orientation.
+* The modification pipeline editor now allows changing the application order of modifiers via drag and drop.
+* Added the Dislocation Inspection utility, which lets you obtain further information about dislocation segments extracted by the Dislocation Analysis modifier.
+* Added an introduction to OVITO's animation system to the manual, which explains how to animate parameters and the camera.
+* The Compute Property modifier can now perform computations that take into account the local neighborhood of particles. For example, you can use this to average a quantity over spherical regions around each particle.
+* The Wigner-Seitz analysis modifier can now break down the computed site occupancy number into per-type numbers. This makes it easier to identify antisite defects, for example.
+* Viewports are no longer automatically zoomed to show everything when replacing the currently loaded dataset with a new one. This makes it easier to preserve the current view configuration when switching to a different simulation file.
+* Fixed the assignment of dislocation lines that were loaded from a CrystalAnalysis file to Burgers vectors families. The CA file import was broken since version 2.4.4.
+* Added a `bond-based` mode to the Common Neighbor Analysis modifier, which computes the CNA indices based on existing bonds between particles. The modifier also outputs the computed CNA bond indices as a new bond property. This enables, for example, analyses of disordered systems using the classical CNA.
+* It is now possible to write you own modifiers in Python.
+* Added a `Use only selected particles` option to the Common Neighbor Analysis and the Identify Diamond Structure modifiers, which allows identifying sub-lattices.
+* Added the NearestNeighborFinder Python class, which can be used from Python scripts to find the N nearest neighbors of a particle.
+* Python scripts can now access the dislocation lines extracted by the DislocationAnalysisModifier.
+* Bug fix: Bond properties like the bond type are now updated when dangling bonds are removed due to deleted particles.
+* Fixed bug in Atomic Strain modifier, which produced weird results when PBC flags of reference configuration do not match PBC flags of deformed configuration. Now PBC flags of deformed configuration always override the boundary conditions of the reference simulation cell.
+* Fixed error in ovito.dataset.scene_nodes.__iter__() Python method.
+* Fixed bug in file parser that led to wrong particle type names when loading a multi-frame XYZ file with varying set of named atom types.
+* Bug fixes in Python-ASE interface – Cell matrix is transposed and duplicate properties are handled.
+
+---------------------------
+Version 2.5.1 (07-Aug-2015)
+---------------------------
+
+* The LAMMPS data file exporter can now produce files with LAMMPS atom styles other than `atomic`. It also exports bonds if present.
+* Arbitrary triclinic simulation cells can now be exported to the LAMMPS data file format. They will be automatically transformed to the canonical LAMMPS representation.
+* The LAMMPS data file parser now reads bond types.
+* Added the fmod(A,B) math function to the Compute Property and Expression Select modifiers.
+* Added visualization support for cylindrical and spherocylindrical particles.
+* Added a file parser for FHI-aims log files, which can contain multiple simulation frames.
+* Added the `Indicate line direction` option to the dislocation display object.
+
+---------------------------
+Version 2.5.0 (25-Jul-2015)
+---------------------------
+
+* Added Python interface for Bin and Reduce modifier.
+* Fixed viewport font issue on Macs with high-dpi display.
+* Added the Expand Selection modifier.
+* Added a `No bonds between different molecules` option to the Create Bonds modifier.
+* Changed the behavior of the IMD file exporter: All particle properties to be exported, including the standard ones defined by the IMD format, must now be explicitly selected by the user.
+* Integrated DXA (Dislocation Extraction Algorithm) into OVITO.
+* Voronoi analysis modifier can now output bonds between neighboring atoms which share a Voronoi face.
+* Python scripting interface now allows conversion to/from ASE Atoms objects.
+* Python scripting interface now supports write access to particle properties and procedural generation of input particle datasets for OVITO's modification pipeline.
+* Bug fix: Large number of simultaneous SFTP download requests led to error message `SFTP error: Server could not start session`.
+* Bug fix: Using the Python viewport overlay led to program crash on Windows 8 x64.
+* Scripting function Viewport.render() now returns the rendered image, which can be manipulated before saving it to disk.
+* Certain modifier and display parameters can now be animated using animation keys.
+* Fixed OpenGL rendering of bonds/arrows on certain Windows/NVidia systems.
+* Added import/export support for FHI-aims file format.
+* Colors and radii used for particle types (as well as structure types) can now be predefined by the user.
+* Migrated to version 5.4 of the Qt library. This may affect OpenGL rendering and the viewport display. Please report any issues that you experience.
+* Bin & Reduce modifier now takes into account the simulation box origin, uses double precision numbers to perform calculations, and 1D-plot now spans the entire interval.
+* Bug fix: NetCDF file importer doesn`t close file handle, leading to error after loading several thousand frames.
+* Bug fix: LAMMPS data file parser stumbles over `AngleTorsion Coeffs` file section.
+* Visualization of particle trajectory lines.
+* Frequently used modifiers or combinations of modifiers can be saved (including modifier settings) for quick access.
+* Rendering of ellipsoidal and box particles with orientation.
+* Positioning the mouse over a bond shows its properties in the status bar.
+* Fixed initialization of the Select Particle Type modifier.
+* Fixed error when loading a compressed simulation file >2GB.
+
+---------------------------
+Version 2.4.4 (29-Mar-2015)
+---------------------------
+
+* Fixed error when rendering a high-resolution video.
+* Surface mesh computed by ConstructSurfaceModifier can now be exported to a VTK file from Python.
+* Added Python class ovito.data.CutoffNeighborFinder, which enables access to particle neighbor lists from Python.
+* Particles and bonds are now rendered in chunks in the OpenGL viewports to work around a memory limit on some graphics hardware.
+* Bond cylinders are now rendered using a geometry shader if supported by the graphics card.
+* The IMD file exporter now lets the user select the particle properties to export (instead of exporting all).
+* The VTK triangle mesh importer now reads per-face color information.
+
+---------------------------
+Version 2.4.3 (02-Mar-2015)
+---------------------------
+
+* Upgraded integrated script interpreter from Python 2.7 to Python 3.4. Please update your scripts to make them compatible with Python 3.
+* Added rendering support for particles with non-cubic, axis-aligned box shape (via `Aspherical shape` particle property)
+* Added a dialog box to the Affine Transformation modifier, which lets the user enter a rotation axis, angle, and center.
+* Removed cutoff option from Voronoi Analysis modifier in favour of a faster algorithm for orthogonal simulation cells, which is based on Voro++ container classes.
+* The Voronoi Analysis modifier now determines the maximum number of edges per face in the Voronoi tessellation and warns if it exceeds the truncation length of computed Voronoi index vectors.
+* OVITO can now load bonds from LAMMPS data files.
+* The Freeze Property modifier now works when particles are lost during the simulation.
+* Similarly, the Atomic Strain analysis can now deal with simulations where the number of particles is not constant.
+* The Wrap at Periodic Boundaries modifier now wraps bonds crossing a periodic boundary.
+* Added a scriptable viewport overlay, which allows to paint custom text and graphics over the rendered image. See how you can use it to add a scale bar to a viewport.
+* The Show Periodic Images modifier now replicates bonds too.
+* The XYZ file import now displays the file`s comment line in the status field.
+* Switched from MinGW to Visual C++ 2013 compiler to build Windows version. Python scripting is now supported by the 64-bit program version for Windows too.
+* Removed old Javascript plugin.
+* Bug fix: ``--version`` command line option causes program to crash.
+* Bug fix: XYZ file column mapping dialog showed the column names from the last loaded extended XYZ file.
+
+---------------------------
+Version 2.4.2 (14-Nov-2014)
+---------------------------
+
+* The Color Coding modifier now supports user-defined color maps.
+* Significantly improved performance of cutoff-based neighbor finding and k-nearest neighbor search routines. This code optimization speeds up many analysis algorithms in OVITO, in particular for large datasets.
+* Added the Identify Diamond Structure analysis function, which finds atoms that form a cubic or hexagonal diamond lattice.
+* Dialog box asking to save changes is only shown when scene has already been saved before.
+* The Color Legend overlay now provides an option to overwrite the numeric labels with a custom text.
+* Bug fix: Periodic boundary flags were not correctly updated when loading a new file using the `Pick new local input file` button.
+* Bug fix: Viewport.render() Python function raised error when called without a RenderSettings object.
+
+---------------------------
+Version 2.4.1 (01-Nov-2014)
+---------------------------
+
+* New integrated Python engine, which provides a powerful scripting interface (see scripting documentation). This is going to replace the Javascript engine, which has been deprecated and will be removed in a future program version. Command line options to run old scripts have been renamed to –jsscript and –jsexec.
+* New Voronoi analysis modifier, which can compute atomic volumes, coordination numbers and Voronoi indices.
+* It`s now possible to include the coordinate system tripod and a color legend in the rendered image.
+* Particle properties are displayed in the status bar when hovering over particles in the viewports.
+* Periodic boundary conditions can be overridden by the user without the changes being lost when a new simulation frame is loaded.
+* Added import/export support for extended XYZ format (see http://jrkermode.co.uk/quippy/io.html#extendedxyz), which includes metadata describing the data columns and the simulation cell.
+* Improved input and output performance for text-based file formats.
+* The OpenGL renderer can now display semi-transparent particles and surfaces.
+* Added calculation of non-affine displacements to Atomic strain modifier. (This is Falk & Langer`s D2min measure, see the 1998 PRB.)
+* New Bin and reduce analysis modifier.
+* The Create bonds modifier can now handle particles that are located outside a (periodic) simulation box.
+* The Color coding modifier can display a color legend in the rendered image.
+* Added a file parser for PDB files (still experimental).
+* Added basic keyframe animation support. Some modifier parameters and other settings can now be animated. Future versions will also offer camera animation capabilities.
+* The Show periodic images modifier can now assign unique IDs to particle copies.
+* LAMMPS data file parser now supports additional LAMMPS atom styles such as `charge` and `bond`.
+* Fixed high-quality particle rendering on Windows computers with Intel HD 4000 graphics.
+* Bug fix: Export of compressed LAMMPS data files could result in truncated files.
+* Bug fix: Solid volume computed by `Construct surface mesh` modifier could be inaccurate due to low numerical precision
+* Bug fix: `Construct surface mesh` modifier crashed with certain input data.
+* Bug fix: VTK mesh file parser couldn`t handle multiple points per line (as written by ParaView).
+* Bug fix: LAMMPS data file parser did not parse atom IDs.
+* Bug fix: Particle inspection utility did not recalculate displayed distances and angles upon simulation frame change.
+* Bug fix: StrainTensor.XZ and StrainTensor.YZ components output by Atomic Strain modifier were swapped.
+* Bug fix: Fixed issue in Histogram modifier that occurred when the x-range was fixed to an interval smaller than the value range.
+* Bug fix: Atom type ordering is now maintained when importing a sequence of LAMMPS dump files with named atom types.
+
+---------------------------
+Version 2.3.3 (22-May-2014)
+---------------------------
+
+* Added user options to application settings dialog that provide control over certain OpenGL-related settings. This allows working around compatibility problems on some systems.
+* User can now choose between a dark and a light viewport color scheme.
+* Added scripting interface for Tachyon renderer.
+* Added support for NetCDF files with variable particle numbers and with named particle types.
+* Added user options that control the automatic fetching of the news page from the web server and the transmission of the installation ID.
+* Fixed bug in camera orbit mode, which was not correctly restricting the camera rotation for some coordinate system orientations.
+
+---------------------------
+Version 2.3.2 (07-Apr-2014)
+---------------------------
+
+* Fixed bug in Wigner-Seitz analysis modifier, which could cause a program crash when numbers of atoms in reference and current configuration differ.
+
+---------------------------
+Version 2.3.1 (01-Apr-2014)
+---------------------------
+
+* Added saving and loading of presets for file-column-to-property mappings.
+* Added the ``--exec`` command line option, which allows to directly execute a script command or to pass parameters to a script file.
+* When opening an XYZ file, the column mapping dialog now displays an excerpt from the file`s header to help the user figure out the mapping.
+* The Construct Surface Modifier no longer creates cap polygons if the periodic simulation cell contains no particles.
+
+---------------------------
+Version 2.3.0 (29-Mar-2014)
+---------------------------
+
+* Added the new scripting interface, which allows to automate tasks.
+* Added the `Freeze property` modifier, which can prevent a particle property from changing over time.
+* Added the `Scatter plot` modifier, which plots one particle property against another. This modifier has been contributed by Lars Pastewka.
+* Added the `Wigner-Seitz analysis` modifier, which can identify vacancies and interstitials in a lattice.
+* Added a file importer for NetCDF files. Code was contributed by Lars Pastewka.
+* Added more input variables to the `Compute property` and `Expression select` modifiers (e.g. reduced particle coordinates and simulation cell size).
+* It's now possible to load a sequence of files with each file containing multiple frames.
+* Fixed bug in CFG file importer, which did not read triclinic simulation cells correctly.
+* Fixed shader compilation error on OpenGL 2.0 systems and some other OpenGL related issues.
+
+---------------------------
+Version 2.2.4 (29-Jan-2014)
+---------------------------
+
+* Fixed particle picking issue on computers with Intel graphics.
+* Fixed OpenGL display issues on systems with Intel graphics.
+* Fixed blurred viewport captions.
+* Fixed program crash when changing particle radius/color without having selected a particle type first.
+
+---------------------------
+Version 2.2.3 (16-Jan-2014)
+---------------------------
+
+* Fixed the CFG file importer, which can now read CFG files written by newer versions of LAMMPS correctly. Auxiliary file columns are automatically mapped to OVITO's standard particle properties if possible.
+* Modified particle file importers to ensure stable ordering of particle types (using lexicographical ordering when atom types have names, and ID-based ordering otherwise). The ordering of named particle types is now independent of their first occurrence in the input file.
+* Improved compatibility with some OpenGL implementations (Intel HD graphics on Windows and ATI Mobility Radeon HD 5470).
+* A 64-bit version of the program is now available for Windows.
+* A construction grid can be displayed in the viewports.
+
+---------------------------
+Version 2.2.2 (05-Jan-2014)
+---------------------------
+
+* Fixed the following regression: Rendering a video with OVITO 2.2.1 resulted in an empty movie file.
+* Fixed display of the polygon path when using Fence selection (Manual Selection modifier).
+
+---------------------------
+Version 2.2.1 (26-Dec-2013)
+---------------------------
+
+* Added a file parser for binary LAMMPS dump files.
+* Added a dialog window that displays information about the system's OpenGL graphics driver. This dialog can be accessed via the Help menu.
+* Fixed bug in the Expression Select and Compute Property modifiers, which couldn't handle particle property names that start with a number.
+* The OpenGL compatibility profile is now used instead of the core profile on Windows and Linux platforms.
+* Fixed an issue in the Construct Surface Mesh modifier, which sometimes led to a program crash on Windows.
+
+---------------------------
+Version 2.2.0 (15-Dec-2013)
+---------------------------
+
+* The Construct Surface Mesh modifier has been added, which builds a polygonal mesh around a particle set.
+* The Cluster Analysis modifier has been added, which decomposes a particle system into clusters.
+* A new experimental visualization module has been added, which allows working with data generated by the Crystal Analysis Tool and the Dislocation Extraction Algorithm (DXA).
+* The Coordination Analysis modifier can now export the computed radial distribution function to a text file.
+* Added a new user option to the application settings dialog that allows turning off the restriction of the vertical camera rotation.
+* Added the File->New Window menu item, which opens another OVITO window. This makes life easier on the Mac OS platform, where starting multiple instances of the application is difficult.
+* The XYZ file exporter now writes particle type names instead of numeric type identifiers.
+* Added help buttons to parameter panels, which open the corresponding page in the user manual.
+* The manual is now included in every installation package. An internet connection is no longer necessary to access the manual.
+* Fixed the rendering of particle markers.
+
+---------------------------
+Version 2.1.0 (15-Nov-2013)
+---------------------------
+
+* The Manual Selection modifier has been added, which allows selecting individual particles with the mouse in the viewports. With the “Fence selection” mode, a group of particles can be easily selected by drawing a closed path around it.
+* OVITO is now able to display particles with cubic and square shape. This can be useful in visualizing large 2d lattice systems or Ising models.
+* OVITO now gives the user the option to import more than one dataset into the same scene and display them side by side.
+* A newly added VTK file importer allows reading triangle meshes to visualize geometric objects such as an indentor tip.
+* Camera objects can be created through the viewport context menu. A viewport can be linked to a camera object to show the corresponding view.
+* The OpenGL rendering code has been updated to better support older graphics cards and to improve compatibility with more graphics drivers.
+* The Tachyon renderer now supports semi-transparent particles. The transparency is controlled through the “Transparency” particle property. Use, for instance, the Computer Property modifier to set this property for certain particles. Transparency values can range from 0 (=fully opaque) to 1 (=not visible). Note that the interactive OpenGL renderer does not support transparency yet. Thus, all particles will still appear fully opaque here.
+* When importing a sequence of simulation snapshots, one can now configure the mapping of input frames to OVITO's internal animation frames. This allows to generate output movies with fewer (or more) frames than the imported snapshot sequence. This feature is in preparation for a future camera animation system.
+* The Mac OS version is now built against version 5.2 (beta) of the Qt library. This should fix a nasty UI bug on this platform (due to the old version of that library), which made text fields lose input focus.
+* Fixed saving/loading of the gradient type selected in the Color Coding modifier.
+* Fixed a program deadlock when dragging the time slider with the mouse after loading a file sequence from a remote location.
+
+---------------------------
+Version 2.0.3 (22-Oct-2013)
+---------------------------
+
+* Ported Tachyon raytracing renderer from old OVITO 1.1.0 release. This software-based rendering engine allows to produce images with high-quality shading and ambient occlusion lighting.
+* The Create Bonds modifier will automatically turn off the display of bonds when (accidentally?) creating a large number of bonds (1+ million), which would make the program freeze for at least several seconds.
+* The Displacement Vectors modifier now supports relative reference frames, i.e., displacements can be calculated from two snapshots separated by a fixed time interval. Before this addition, the modifier could only compute displacements with respect to a fixed reference simulation snapshot.
+* The Inspect Particle applet now lets one select multiple particles and can report distances and angles between particles.
+* Added `Clear history` button to remote file import dialog.
+* The POSCAR file exporter now writes the new file format, which includes atom type names.
+* Added support for computers with high-resolution (Retina) displays.
+* Fixed bug in the Affine Transformation modifier leading to recursive updates.
+
+---------------------------
+Version 2.0.2 (30-Sep-2013)
+---------------------------
+
+* Fixed loading of multi-timestep files with names containing a digit.
+* Fixed import of CFG file with atom type information.
+
+---------------------------
+Version 2.0.1 (27-Sep-2013)
+---------------------------
+
+* Fixed loading of file sequences based on wildcard pattern on Windows platform.
+* Replaced const arrays in GLSL shaders with uniform variables to support older Intel graphics chips.
+
+---------------------------
+Version 2.0.0 (25-Sep-2013)
+---------------------------
+
+* Many changes, almost a complete rewrite of OVITO's code base.
