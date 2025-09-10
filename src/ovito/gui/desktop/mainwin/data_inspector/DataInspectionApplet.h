@@ -33,7 +33,7 @@ namespace Ovito {
 /**
  * \brief Abstract base class for applets shown in the data inspector.
  */
-class OVITO_GUI_EXPORT DataInspectionApplet : public QObject, public OvitoObject
+class OVITO_GUI_EXPORT DataInspectionApplet : public QObject, public OvitoObject, public UserInterfaceComponent<MainWindowUI>
 {
     OVITO_CLASS(DataInspectionApplet)
     Q_OBJECT
@@ -50,9 +50,6 @@ public:
     virtual std::vector<ConstDataObjectPath> getDataObjectPaths() {
         return currentState().getObjectsRecursive(*_dataObjectClass);
     }
-
-    /// Returns the main window this applet is embedded in.
-    MainWindow& mainWindow() const;
 
     /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
     virtual QWidget* createWidget() = 0;

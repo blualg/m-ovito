@@ -60,6 +60,17 @@ Ambient occlusion samples
 Denoising filter
   Applies a denoising filter to the rendered image to reduce noise inherent to ray-traced images (default value: on).
 
+Depth of field
+""""""""""""""
+
+When `depth-of-field rendering <http://en.wikipedia.org/wiki/Depth_of_field>`__ is active, only objects located exactly at the distance from the camera specified by the *focal length* will appear sharp.
+Objects closer to or farther from the camera will appear blurred. To focus on a specific object, use the :guilabel:`Pick in viewport` button
+and click on the desired object in the viewport to be rendered. The *focal length* parameter will be automatically adjusted so that the picked location is in focus.
+
+The *aperture* radius controls how blurred out-of-focus objects will appear (default: 0.5).
+
+Note that the focal blur effect requires a perspective projection; it does not work in :ref:`viewports <usage.viewports>` using a parallel projection.
+
 Ambient light
 """""""""""""
 

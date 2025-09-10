@@ -70,7 +70,7 @@ void ModifierGroupEditor::updateSubEditors()
                 }
                 else {
                     // Create a new sub-editor for this sub-object.
-                    OORef<PropertiesEditor> editor = PropertiesEditor::create(mainWindow(), node);
+                    OORef<PropertiesEditor> editor = PropertiesEditor::create(ui(), node);
                     if(editor) {
                         editor->initialize(container(), _rolloutParams, this);
                         editor->setEditObject(node);

@@ -75,7 +75,7 @@ void IntegerRadioButtonParameterUI::resetUI()
 
     if(isReferenceFieldUI() && editObject()) {
         // Update the displayed value when the animation time has changed.
-        connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &IntegerRadioButtonParameterUI::updateUI, Qt::UniqueConnection);
+        connect(&datasetContainer(), &DataSetContainer::currentFrameChanged, this, &IntegerRadioButtonParameterUI::updateUI, Qt::UniqueConnection);
     }
 }
 
@@ -91,7 +91,7 @@ void IntegerRadioButtonParameterUI::updateUI()
         int id = buttonGroup()->checkedId();
         if(isReferenceFieldUI()) {
             if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                id = ctrl->getIntValue(currentAnimationTime().value_or(AnimationTime(0)));
+                id = ctrl->getIntValue(currentAnimationTime());
             }
         }
         else if(isPropertyFieldUI()) {
@@ -138,7 +138,7 @@ void IntegerRadioButtonParameterUI::updatePropertyValue()
             performTransaction(tr("Change parameter"), [this, id]() {
                 if(isReferenceFieldUI()) {
                     if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                        ctrl->setIntValue(currentAnimationTime().value_or(AnimationTime(0)), id);
+                        ctrl->setIntValue(currentAnimationTime(), id);
                         updateUI();
                     }
                 }

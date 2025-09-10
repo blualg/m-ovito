@@ -51,7 +51,7 @@ QWidget* ParticleInspectionApplet::createWidget()
 
     _pickingMode = OORef<PickingMode>::create(this);
     connect(this, &QObject::destroyed, _pickingMode, &ViewportInputMode::removeMode);
-    ViewportModeAction* pickModeAction = new ViewportModeAction(mainWindow(), tr("Select in viewports"), this, _pickingMode);
+    ViewportModeAction* pickModeAction = new ViewportModeAction(ui(), tr("Select in viewports"), this, _pickingMode);
     pickModeAction->setIcon(QIcon::fromTheme("particles_select_mode"));
 
     _measuringModeAction = new QAction(QIcon::fromTheme("particles_measure_distances"), tr("Show distances and angles"), this);
@@ -289,6 +289,8 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
         std::array<Point3G,4> vertices;
         auto outVertex = vertices.begin();
         for(auto& element : _pickedElements) {
+            if(!element.sceneNode->isInScene() || !element.sceneNode->pipeline())
+                continue;
             PipelineEvaluationRequest request(frameGraph.time(), frameGraph.stopOnPipelineError(), frameGraph.isInteractive());
             const PipelineFlowState flowState = element.sceneNode->pipeline()->evaluatePipeline(request).blockForResult();
             if(const Particles* particles = flowState.getObject<Particles>()) {

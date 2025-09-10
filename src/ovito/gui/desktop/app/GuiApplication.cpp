@@ -267,17 +267,16 @@ MainThreadOperation GuiApplication::startupApplication()
         QGuiApplication::setWindowIcon(mainWindowIcon);
 
         if(Application::runMode() == Application::AppMode) {
-            // Create the main window.
-            OORef<MainWindow> mainWin = OORef<MainWindow>::create();
-            mainWin->keepAliveUntilShutdown();
+            // Create the main window widget and user interface object.
+            OORef<MainWindowUI> mainWinUI = OORef<MainWindowUI>::create();
 
             // Show the main window.
-            mainWin->setUpdatesEnabled(false);
-            mainWin->restoreMainWindowGeometry();
-            mainWin->restoreLayout();
-            mainWin->setUpdatesEnabled(true);
+            mainWinUI->mainWindow()->setUpdatesEnabled(false);
+            mainWinUI->mainWindow()->restoreMainWindowGeometry();
+            mainWinUI->mainWindow()->restoreLayout();
+            mainWinUI->mainWindow()->setUpdatesEnabled(true);
 
-            return MainThreadOperation(*mainWin, MainThreadOperation::Kind::Isolated);
+            return MainThreadOperation(*mainWinUI, MainThreadOperation::Kind::Isolated);
         }
     }
 
@@ -297,11 +296,11 @@ void GuiApplication::postStartupInitialization()
 /******************************************************************************
 * Initializes a new abstract user interface object (e.g. a MainWindow in GUI mode or this application object in console mode).
 ******************************************************************************/
-void GuiApplication::initializeUserInterface(UserInterface& userInterface, const QStringList& arguments)
+void GuiApplication::initializeUserInterface(UserInterface& ui, const QStringList& arguments)
 {
     OVITO_ASSERT(this_task::isInteractive());
 
-    DataSetContainer& datasetContainer = userInterface.datasetContainer();
+    DataSetContainer& datasetContainer = ui.datasetContainer();
 
     // Load session state file specified on the command line.
     if(!arguments.empty()) {
@@ -309,11 +308,11 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         if(startupFilename.endsWith(".ovito", Qt::CaseInsensitive)) {
             try {
                 OORef<DataSet> dataset = DataSet::createFromFile(startupFilename);
-                if(userInterface.checkLoadedDataset(dataset))
+                if(ui.checkLoadedDataset(dataset))
                     datasetContainer.setCurrentSet(std::move(dataset));
             }
             catch(const Exception& ex) {
-                userInterface.reportError(ex);
+                ui.reportError(ex);
             }
         }
     }
@@ -325,13 +324,13 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         if(!defaultsFilePath.isEmpty()) {
             try {
                 OORef<DataSet> dataset = DataSet::createFromFile(defaultsFilePath);
-                if(userInterface.checkLoadedDataset(dataset)) {
+                if(ui.checkLoadedDataset(dataset)) {
                     dataset->setFilePath({});
                     datasetContainer.setCurrentSet(std::move(dataset));
                 }
             }
             catch(Exception& ex) {
-                userInterface.reportError(ex.prependGeneralMessage(tr("An error occurred while loading the user's default session state from the file: %1").arg(defaultsFilePath)));
+                ui.reportError(ex.prependGeneralMessage(tr("An error occurred while loading the user's default session state from the file: %1").arg(defaultsFilePath)));
             }
         }
     }
@@ -351,12 +350,12 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
             else
                 importUrls.push_back(Application::instance()->fileManager().urlFromUserInput(importFilename));
         }
-        userInterface.handleExceptions([&](){
+        ui.handleExceptions([&](){
             if(!importUrls.empty()) {
                 if(numSessionFiles)
                     throw Exception(tr("Detected incompatible arguments: Cannot open a session state file and a simulation data file at the same time."));
-                if(MainWindow* mainWindow = dynamic_object_cast<MainWindow>(&userInterface))
-                    mainWindow->importFiles(std::move(importUrls));
+                if(MainWindowUI* mainWindowUI = dynamic_object_cast<MainWindowUI>(&ui))
+                    mainWindowUI->importFiles(std::move(importUrls));
                 else
                     throw Exception(tr("Cannot import data files from the command line when running in console mode."));
             }
@@ -365,8 +364,8 @@ void GuiApplication::initializeUserInterface(UserInterface& userInterface, const
         });
 
         // Make sure we start with a clean undo stack at application startup.
-        if(userInterface.undoStack())
-            userInterface.undoStack()->clear();
+        if(ui.undoStack())
+            ui.undoStack()->clear();
     }
 }
 
@@ -387,15 +386,16 @@ bool GuiApplication::eventFilter(QObject* watched, QEvent* event)
         });
 
         if(mainWindow) {
-            mainWindow->handleExceptions([&] {
+            MainWindowUI& ui = mainWindow->ui();
+            ui.handleExceptions([&] {
                 if(openEvent->file().endsWith(".ovito", Qt::CaseInsensitive)) {
-                    mainWindow->askForSaveChanges();
+                    ui.askForSaveChanges();
                     OORef<DataSet> dataset = DataSet::createFromFile(openEvent->file());
-                    if(mainWindow->checkLoadedDataset(dataset))
-                        mainWindow->datasetContainer().setCurrentSet(std::move(dataset));
+                    if(ui.checkLoadedDataset(dataset))
+                        ui.datasetContainer().setCurrentSet(std::move(dataset));
                 }
                 else {
-                    mainWindow->importFiles({openEvent->url()});
+                    ui.importFiles({openEvent->url()});
                 }
             });
         }

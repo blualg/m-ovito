@@ -36,7 +36,7 @@ namespace Ovito {
 /**
  * This Qt model class is used to populate the QListView widget.
  */
-class OVITO_GUIBASE_EXPORT PipelineListModel final : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT PipelineListModel final : public QAbstractListModel, public UserInterfaceComponent<UserInterface>
 {
     Q_OBJECT
 
@@ -53,7 +53,7 @@ public:
     };
 
     /// Constructor.
-    PipelineListModel(UserInterface& userInterface, QObject* parent);
+    PipelineListModel(UserInterface& ui, QObject* parent);
 
     /// Returns the number of list items.
     virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override { return (int)_items.size(); }
@@ -121,9 +121,6 @@ public:
     /// Returns the currently selected scene node.
     const OORef<SceneNode>& selectedSceneNode() const { return _selectedSceneNode; }
 
-    /// Returns the container of the dataset being edited.
-    DataSetContainer& datasetContainer() { return _userInterface.datasetContainer(); }
-
     /// Inserts the given modifier(s) into the currently selected pipeline.
     void applyModifiers(const QVector<OORef<Modifier>>& modifiers, ModifierGroup* group = nullptr);
 
@@ -148,8 +145,14 @@ public:
     /// Deletes a modification node from the pipeline.
     void deleteModificationNode(ModificationNode* node);
 
-    /// Helper method that determines if the given object is part of more than one pipeline.
-    static bool isSharedObject(RefTarget* obj);
+    /// Determines whether an object (e.g. modifier, vis element, or source) is part of more than one pipeline in the scene.
+    bool isSharedObject(RefTarget* obj) const;
+
+    /// Determines whether an object is a visual element that is shared by more than one data object in the same pipeline.
+    int isSharedVisualElement(DataVis* visElement) const;
+
+    /// Determines whether the given objects are all visual elements of the same class that can be collapsed into a single visual element.
+    bool canShareVisualElements(const QVector<RefTarget*>& objects) const;
 
     /// Executes a drag-and-drop operation within the pipeline editor.
     Q_INVOKABLE bool performDragAndDropOperation(const QVector<int>& indexList, int row, bool dryRun);
@@ -202,6 +205,11 @@ public Q_SLOTS:
     void setChecked(int index, bool checked) {
         setData(this->index(index, 0), QVariant::fromValue(checked ? Qt::Checked : Qt::Unchecked), Qt::CheckStateRole);
     }
+
+    /// Combines several compatible visual elements by replacing them all with a single instance
+    /// or performs the reverse operation, creating several independent instances of the
+    /// selected visual element.
+    void shareOrSplitVisualElements();
 
 private Q_SLOTS:
 
@@ -300,9 +308,6 @@ private:
     /// The foreground brush used for list items that are disabled.
     QBrush _disabledForegroundBrush;
 
-    /// The abstract user interface.
-    UserInterface& _userInterface;
-
     /// The action that deletes the selected list item.
     QAction* _deleteItemAction;
 
@@ -323,6 +328,9 @@ private:
 
     /// Action that renames selected pipeline item(s).
     QAction* _renamePipelineItemAction;
+
+    /// Action that groups or splits selected visual elements.
+    QAction* _shareOrSplitVisualElementsAction;
 };
 
 }   // End of namespace

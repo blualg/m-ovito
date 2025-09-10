@@ -64,7 +64,7 @@ QWidget* BaseSceneRendererEditor::createCopySettingsBetweenRenderersWidget(QWidg
 
         // Enable the action that copies settings from the final image to the interactive viewports
         // only if the selected final-image renderer is of the same type as the interactive viewport renderer.
-        SceneRenderer* finalFrameRenderer = mainWindow().datasetContainer().currentSet()->renderSettings()->renderer();
+        SceneRenderer* finalFrameRenderer = dataset()->renderSettings()->renderer();
         SceneRenderer* interactiveRenderer = dynamic_object_cast<SceneRenderer>(editObject());
         f2iAction->setEnabled(
             finalFrameRenderer &&
@@ -86,8 +86,8 @@ QWidget* BaseSceneRendererEditor::createCopySettingsBetweenRenderersWidget(QWidg
 ******************************************************************************/
 void BaseSceneRendererEditor::copySettingsInteractiveToFinalFrame()
 {
-    mainWindow().performTransaction(tr("Copy render settings"), [this]() {
-        if(OORef<RenderSettings> renderSettings = mainWindow().datasetContainer().currentSet()->renderSettings()) {
+    performTransaction(tr("Copy render settings"), [this]() {
+        if(OORef<RenderSettings> renderSettings = dataset()->renderSettings()) {
             OORef<SceneRenderer> interactiveRenderer = dynamic_object_cast<SceneRenderer>(editObject());
             OORef<SceneRenderer> finalFrameRenderer = renderSettings->renderer();
             if(interactiveRenderer) {
@@ -98,7 +98,7 @@ void BaseSceneRendererEditor::copySettingsInteractiveToFinalFrame()
                 }
                 if(finalFrameRenderer && canTransferSettingsBetweenRenderers(interactiveRenderer, finalFrameRenderer)) {
                     transferSettingsBetweenRenderers(interactiveRenderer, finalFrameRenderer, true);
-                    mainWindow().setCurrentCommandPanelPage(MainWindow::CommandPanelPage::RENDER_PAGE);
+                    ui().mainWindow()->setCurrentCommandPanelPage(MainWindow::CommandPanelPage::RENDER_PAGE);
                 }
             }
         }
@@ -110,8 +110,8 @@ void BaseSceneRendererEditor::copySettingsInteractiveToFinalFrame()
 ******************************************************************************/
 void BaseSceneRendererEditor::copySettingsFinalFrameToInteractive()
 {
-    mainWindow().performTransaction(tr("Copy render settings"), [this]() {
-        if(RenderSettings* renderSettings = mainWindow().datasetContainer().currentSet()->renderSettings()) {
+    performTransaction(tr("Copy render settings"), [this]() {
+        if(RenderSettings* renderSettings = dataset()->renderSettings()) {
             SceneRenderer* interactiveRenderer = dynamic_object_cast<SceneRenderer>(editObject());
             SceneRenderer* finalFrameRenderer = renderSettings->renderer();
             if(interactiveRenderer && finalFrameRenderer && canTransferSettingsBetweenRenderers(finalFrameRenderer, interactiveRenderer)) {

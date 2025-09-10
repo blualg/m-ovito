@@ -59,9 +59,9 @@ void VectorParameterUI::updatePropertyValue()
         handleExceptions([&] {
             if(isReferenceFieldUI() && _componentCount == 3) {
                 if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                    Vector3 val = ctrl->getVector3Value(currentAnimationTime().value_or(AnimationTime(0)));
+                    Vector3 val = ctrl->getVector3Value(currentAnimationTime());
                     val[_componentIndex] = spinner()->floatValue();
-                    ctrl->setVector3Value(currentAnimationTime().value_or(AnimationTime(0)), val);
+                    ctrl->setVector3Value(currentAnimationTime(), val);
                 }
             }
             else if(isPropertyFieldUI()) {
@@ -106,7 +106,7 @@ void VectorParameterUI::updateUI()
     if(editObject() && spinner() && !spinner()->isDragging()) {
         if(isReferenceFieldUI() && _componentCount == 3) {
             if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-                spinner()->setFloatValue(ctrl->getVector3Value(currentAnimationTime().value_or(AnimationTime(0)))[_componentIndex]);
+                spinner()->setFloatValue(ctrl->getVector3Value(currentAnimationTime())[_componentIndex]);
             }
         }
         else {

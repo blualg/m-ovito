@@ -49,25 +49,29 @@ DEFINE_REFERENCE_FIELD(ViewportWindow, viewport);
 /******************************************************************************
 * Associates this window with a viewport.
 ******************************************************************************/
-void ViewportWindow::setViewport(Viewport* vp, UserInterface& userInterface)
+void ViewportWindow::setViewport(Viewport* vp, UserInterface& ui)
 {
     OVITO_ASSERT(vp);
 
     // First, release resources associated with the previous viewport.
     releaseResources();
 
-    // Unregister window from previous user interface.
-    if(_userInterface)
-        _userInterface->unregisterViewportWindow(this);
+    if(!hasUserInterface()) {
+        setUserInterface(ui);
+    }
+    else {
+        // Unregister window from previous user interface.
+        OVITO_ASSERT(&this->ui() == &ui);
+        ui.unregisterViewportWindow(this);
+    }
 
     // Register window with new user interface.
-    _userInterface = &userInterface;
-    userInterface.registerViewportWindow(this);
+    ui.registerViewportWindow(this);
 
     _viewport.set(this, PROPERTY_FIELD(viewport), vp);
     if(vp) {
         if(!_scenePreparation) {
-            _scenePreparation = OORef<ScenePreparation>::create(userInterface, vp->scene());
+            _scenePreparation = OORef<ScenePreparation>::create(ui, vp->scene());
             // Automatically rerender window whenever the scene is changed.
             connect(&scenePreparation(), &ScenePreparation::viewportUpdateRequest, this, &ViewportWindow::requestUpdate);
             scenePreparation().setAutoRestart(isVisible());
@@ -88,8 +92,8 @@ void ViewportWindow::setViewport(Viewport* vp, UserInterface& userInterface)
 void ViewportWindow::aboutToBeDeleted()
 {
     // Unregister window from the user interface.
-    if(_userInterface)
-        _userInterface->unregisterViewportWindow(this);
+    if(hasUserInterface())
+        ui().unregisterViewportWindow(this);
 
     RefMaker::aboutToBeDeleted();
 }
@@ -188,14 +192,14 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
         this_task::cancelAndThrow();
 
     // Abort if UserInterface is shutting down due to a fatal error.
-    if(userInterface().exitingDueToFatalError())
+    if(ui().exitingDueToFatalError())
         this_task::cancelAndThrow();
 
     // Reset update request flag.
     _updateNeeded = false;
 
     // The dataset to be rendered.
-    DataSet* dataset = userInterface().datasetContainer().currentSet();
+    DataSet* dataset = this->dataset();
     if(!dataset || !dataset->renderSettings())
         this_task::cancelAndThrow();
 
@@ -214,7 +218,7 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
     this_task::get()->setIsInteractive();
 
     // Associate the task with the user interface.
-    this_task::get()->setUserInterface(userInterface().shared_from_this());
+    this_task::get()->setUserInterface(ui().shared_from_this());
     OVITO_ASSERT(this_task::ui());
 
     // Set up preliminary projection without knowing the scene bounding box yet.
@@ -234,7 +238,7 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
 
     // Create a new fresh frame graph.
     OORef<FrameGraph> frameGraph = OORef<FrameGraph>::create(
-        userInterface().datasetContainer().visCache()->acquireResourceFrame(),
+        datasetContainer().visCache()->acquireResourceFrame(),
         time,
         projParams,
         viewportWindowDeviceIndependentSize(),
@@ -275,7 +279,7 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
     co_await FutureAwaiter(ObjectExecutor(this), frameGraph->buildFromScene(viewport()->scene(), viewport(), logicalViewportRect, physicalViewportRect, noninteractiveProjParams));
 
     // After the frame graph has been built for the scene, finish and then render it.
-    dataset = userInterface().datasetContainer().currentSet();
+    dataset = this->dataset();
     windowSize = viewportWindowDeviceSize();
     if(!viewport() || !dataset || !dataset->renderSettings() || windowSize.isEmpty())
         this_task::cancelAndThrow();
@@ -328,17 +332,17 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
 void ViewportWindow::becameReadyForPresentation()
 {
     // This viewport window must have been registered with a user interface.
-    OVITO_ASSERT(boost::find(userInterface().viewportWindows(), this) != userInterface().viewportWindows().end());
+    OVITO_ASSERT(boost::find(ui().viewportWindows(), this) != ui().viewportWindows().end());
     OVITO_ASSERT(_readyForPresentation);
 
     // Check whether all windows in the current user interface are ready for presentation (or are not being rendered at all).
-    bool allReady = boost::algorithm::all_of(userInterface().viewportWindows(), [](const ViewportWindow* window) {
+    bool allReady = boost::algorithm::all_of(ui().viewportWindows(), [](const ViewportWindow* window) {
         return window->_readyForPresentation || !window->_frameFuture || !window->viewport() || !window->isVisible();
     });
 
     // If all windows are ready, present the rendered frames all at once.
     if(allReady) {
-        for(ViewportWindow* window : userInterface().viewportWindows()) {
+        for(ViewportWindow* window : ui().viewportWindows()) {
             if(window->_readyForPresentation) {
                 window->_readyForPresentation = false;
                 window->_presentTimer.stop();
@@ -478,7 +482,7 @@ void ViewportWindow::zoomToBox(const Box3& box)
     // Obtain the aspect ratio from the UI window associated with the viewport or the current render settings.
     FloatType aspectRatio = 0;
     if(viewport()->renderPreviewMode()) {
-        aspectRatio = viewport()->renderAspectRatio(userInterface().datasetContainer().currentSet());
+        aspectRatio = viewport()->renderAspectRatio(dataset());
     }
     if(aspectRatio == 0) {
         QSize windowSize = viewportWindowDeviceSize();

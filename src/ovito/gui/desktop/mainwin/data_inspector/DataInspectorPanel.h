@@ -35,20 +35,17 @@ namespace Ovito {
 /**
  * The data inspection panel.
  */
-class OVITO_GUI_EXPORT DataInspectorPanel : public QWidget
+class OVITO_GUI_EXPORT DataInspectorPanel : public QWidget, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    DataInspectorPanel(MainWindow& mainWindow);
+    DataInspectorPanel(MainWindowUI& ui);
 
     /// Selects a specific data object in the data inspector.
     bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
-
-    /// Returns the main window this panel is part of.
-    MainWindow& mainWindow() const { return _mainWindow; }
 
     /// Returns the currently selected pipeline whose output is being shown by the data inspector.
     Pipeline* selectedPipeline() const { return _selectedPipeline; }
@@ -126,13 +123,7 @@ private:
     /// Evaluates the selected pipeline to obtains its output state.
     bool updatePipelineOutput();
 
-    /// Returns the dataset container this panel is associated with.
-    DataSetContainer& datasetContainer() const { return mainWindow().datasetContainer(); }
-
 private:
-
-    /// Pointer to the main window this inspector panel is part of.
-    MainWindow& _mainWindow;
 
     /// The list of all installed data inspection applets.
     std::vector<OORef<DataInspectionApplet>> _applets;

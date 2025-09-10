@@ -39,7 +39,7 @@ namespace Ovito {
  *
  * A properties editor for a RefTarget derived object can be created using the PropertiesEditor::create() function.
  */
-class OVITO_GUI_EXPORT PropertiesEditor : public QObject, public RefMaker
+class OVITO_GUI_EXPORT PropertiesEditor : public QObject, public RefMaker, public UserInterfaceComponent<MainWindowUI>
 {
     OVITO_CLASS(PropertiesEditor)
     Q_OBJECT
@@ -73,7 +73,7 @@ public:
     ///         Returns NULL if no editor component is registered for the RefTarget type.
     ///
     /// The returned editor object is not initialized yet. Call initialize() once to do so.
-    static OORef<PropertiesEditor> create(MainWindow& mainWindow, RefTarget* obj);
+    static OORef<PropertiesEditor> create(MainWindowUI& ui, RefTarget* obj);
 
     /// \brief This will bind the editor to the given container.
     /// \param container The properties panel that's the host of the editor.
@@ -90,12 +90,6 @@ public:
 
     /// \brief Returns the rollout container widget this editor is placed in.
     PropertiesPanel* container() const { return _container; }
-
-    /// \brief Returns the main window that hosts the editor.
-    MainWindow& mainWindow() const {
-        OVITO_ASSERT(_mainWindow != nullptr);
-        return *_mainWindow;
-    }
 
     /// \brief Returns the top-level window hosting this editor panel.
     QWidget* parentWindow() const;
@@ -140,16 +134,18 @@ public:
     QVector<ModificationNode*> modificationNodes() const;
 
     /// For an editor of a DataVis element, returns the DataObject which the DataVis element is attached to.
+    /// If the DataVis element is attached to more than one DataObject, an arbitrary one is returned.
     ConstDataObjectRef getVisDataObject() const;
 
+    /// For an editor of a DataVis element, returns all DataObjects which the DataVis element is attached to.
+    std::vector<ConstDataObjectRef> getVisDataObjects() const;
+
     /// For an editor of a DataVis element, returns the data collection path to the DataObject which the DataVis element is attached to.
+    /// If the DataVis element is attached to more than one DataObject, the path for an arbitrary one is returned.
     ConstDataObjectRefPath getVisDataObjectPath() const;
 
-    /// Returns the current animation time of the scene the object being edited belongs to.
-    AnimationTime currentAnimationTime() const;
-
-    /// Returns the viewport that is currently selected.
-    Viewport* activeViewport() const;
+    /// For an editor of a DataVis element, returns the data collection paths to the DataObjects which the DataVis element is attached to.
+    std::vector<ConstDataObjectRefPath> getVisDataObjectPaths() const;
 
     /// Creates a ParameterUI component and registers it with the editor instance.
     /// The component will be freed when the editor is destroyed.
@@ -157,29 +153,6 @@ public:
     T* createParamUI(Args&&... args) {
         _parameterUIs.push_back(OORef<T>::create(this, std::forward<Args>(args)...));
         return static_object_cast<T>(_parameterUIs.back().get());
-    }
-
-    /// Executes a functor and catches any exceptions thrown during its execution.
-    /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
-    template<bool Isolated = false, typename Function>
-    bool handleExceptions(Function&& func) const {
-        return mainWindow().handleExceptions<Isolated>(std::forward<Function>(func));
-    }
-
-    /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
-    /// If an exception is thrown by the functor, the error message is displayed
-    /// to the user, and this function returns false.
-    template<typename Function>
-    bool performActions(UndoableTransaction& transaction, Function&& func) {
-        return mainWindow().performActions(transaction, std::forward<Function>(func));
-    }
-
-    /// \brief Executes the passed functor and catches any exceptions thrown during its execution.
-    /// If an exception is thrown by the functor, all data changes performed by the functor
-    /// so far will be undone and an error message is shown to the user.
-    template<typename Function>
-    bool performTransaction(const QString& undoOperationName, Function&& func) {
-        return mainWindow().performTransaction(undoOperationName, std::forward<Function>(func));
     }
 
     /// \brief Recursively visits all pipeline scene nodes in the current scene
@@ -194,14 +167,14 @@ public:
     /// leads to early termination and no further nodes are visited.
     template<typename Function>
     bool visitScenePipelines(Function&& fn) const {
-        if(Scene* scene = mainWindow().datasetContainer().activeScene())
+        if(Scene* scene = datasetContainer().activeScene())
             return scene->visitPipelines(std::forward<Function>(fn));
         return true;
     }
 
     /// Returns the scene node that is currently selected in the scene.
     SceneNode* selectedSceneNode() const {
-        if(SelectionSet* selection = mainWindow().datasetContainer().activeSelectionSet())
+        if(SelectionSet* selection = datasetContainer().activeSelectionSet())
             return selection->firstNode();
         return nullptr;
     }
@@ -221,10 +194,10 @@ public:
     void scheduleOperationAfter(FutureType&& future, Function&& function) {
         if(!editObject())
             return;
-        ProgressDialog* progressDialog = new ProgressDialog(future.task(), {}, mainWindow(), parentWindow());
+        ProgressDialog* progressDialog = new ProgressDialog(future.task(), {}, ui(), parentWindow());
         progressDialog->whenDone([self=QPointer<PropertiesEditor>(this), editObject=OOWeakRef<RefTarget>(editObject()), future=std::move(future), function=std::forward<Function>(function)]() mutable noexcept {
             if(!self.isNull() && self->editObject() == editObject.lock().get()) {
-                self->mainWindow().handleExceptions([&]() {
+                self->handleExceptions([&]() {
                     std::invoke(std::move(function), std::move(future).result());
                 });
             }
@@ -279,9 +252,6 @@ private:
 
     /// The container widget the editor is shown in.
     PropertiesPanel* _container = nullptr;
-
-    /// The main window that hosts the editor.
-    MainWindow* _mainWindow = nullptr;
 
     /// Pointer to the parent editor which opened this editor for a sub-component.
     PropertiesEditor* _parentEditor = nullptr;

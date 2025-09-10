@@ -110,6 +110,8 @@ namespace Ovito {
 #define ACTION_PIPELINE_RENAME_ITEM         "PipelineItemRename"
 /// Copies/clones a modifier or source from one pipeline to another.
 #define ACTION_PIPELINE_COPY_ITEM           "PipelineItemCopyTo"
+/// Unites several compatible visual elements into one element.
+#define ACTION_PIPELINE_GROUP_VIS_ELEMENTS  "PipelineGroupVisElements"
 
 /// This action deletes the currently selected viewport layer.
 #define ACTION_VIEWPORT_LAYER_DELETE            "ViewportLayerDelete"
@@ -186,7 +188,7 @@ namespace Ovito {
 /**
  * \brief Manages all available user interface actions.
  */
-class OVITO_GUIBASE_EXPORT ActionManager : public QAbstractListModel
+class OVITO_GUIBASE_EXPORT ActionManager : public QAbstractListModel, public UserInterfaceComponent<UserInterface>
 {
     Q_OBJECT
 
@@ -200,10 +202,7 @@ public:
     };
 
     /// Constructor.
-    ActionManager(QObject* parent, UserInterface& userInterface);
-
-    /// Returns the user interface this action manager belongs to.
-    UserInterface& userInterface() const { return _userInterface; }
+    ActionManager(QObject* parent, UserInterface& ui);
 
     /// Returns dataset currently being edited in the main window.
     DataSet* dataset() const;
@@ -305,9 +304,6 @@ protected:
     void updateActionStates();
 
 private:
-
-    /// The UI that owns this action manager.
-    UserInterface& _userInterface;
 
     /// The list of registered actions.
     QVector<QAction*> _actions;

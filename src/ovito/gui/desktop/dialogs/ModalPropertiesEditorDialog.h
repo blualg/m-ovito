@@ -38,7 +38,7 @@ class ModalPropertiesEditorDialog : public QDialog, private UndoableTransaction
 public:
 
     /// Constructor.
-    ModalPropertiesEditorDialog(RefTarget* object, OORef<PropertiesEditor> editor, QWidget* parentWindow, MainWindow& mainWindow, const QString& dialogTitle, const QString& undoString, const QString& helpTopic);
+    ModalPropertiesEditorDialog(RefTarget* object, OORef<PropertiesEditor> editor, QWidget* parentWindow, MainWindowUI& userInterface, const QString& dialogTitle, const QString& undoString, const QString& helpTopic);
 
 private:
 

@@ -117,6 +117,11 @@ public:
             std::visit([](auto&& arg) { return QVariant::fromValue(arg); }, typeB));
     }
 
+    /// Asks the modifier to replace a visual element owned by this modifier with a new compatible object, which is created
+    /// on demand by the provided callback function. The callback function accepts an optional human-readable title, which will
+    /// be used for the new visual element.
+    virtual void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) override;
+
 protected:
 
     /// Is called when a RefTarget referenced by this object generated an event.

@@ -34,9 +34,9 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-ConfigureViewportGraphicsDialog::ConfigureViewportGraphicsDialog(MainWindow& mainWindow, QWidget* parent) :
+ConfigureViewportGraphicsDialog::ConfigureViewportGraphicsDialog(MainWindowUI& ui, QWidget* parent) :
     QDockWidget(tr("Viewport Graphics Configuration"), parent),
-    _mainWindow(mainWindow)
+    UserInterfaceComponent<MainWindowUI>(ui)
 {
     setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetClosable);
     setAllowedAreas(Qt::NoDockWidgetArea);
@@ -67,14 +67,14 @@ ConfigureViewportGraphicsDialog::ConfigureViewportGraphicsDialog(MainWindow& mai
         gridLayout->addWidget(option, index, 0);
         _backendSelectionGroup->addButton(option, index);
 
-        mainWindow.handleExceptions([&]() {
+        handleExceptions([&]() {
             // Create a settings panel for the rendering backend.
             if(OORef<SceneRenderer> rendererInstance = ViewportWindow::getInteractiveWindowRenderer(id)) {
-                PropertiesPanel* propertiesPanel = new PropertiesPanel(mainWindow);
+                PropertiesPanel* propertiesPanel = new PropertiesPanel(ui);
                 propertiesPanel->setEditObject(rendererInstance);
                 if(propertiesPanel->editor()) {
-                    connect(&mainWindow, &MainWindow::closingWindow, propertiesPanel, &PropertiesPanel::close);
-                    connect(propertiesPanel->editor(), &PropertiesEditor::contentsChanged, &mainWindow, [&mainWindow]() { mainWindow.updateViewports(); });
+                    connect(ui.mainWindow(), &MainWindow::closingWindow, propertiesPanel, &PropertiesPanel::close);
+                    connect(propertiesPanel->editor(), &PropertiesEditor::contentsChanged, this, [this]() { this->ui().updateViewports(); });
                     propertiesPanel->setFrameStyle(QFrame::NoFrame);
                     int stackIndex = _backendSettingsStack->addWidget(propertiesPanel);
                     _backendSettingsMap.emplace(id, stackIndex);
@@ -91,21 +91,21 @@ ConfigureViewportGraphicsDialog::ConfigureViewportGraphicsDialog(MainWindow& mai
     QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Close | QDialogButtonBox::Help, Qt::Horizontal, this);
     connect(buttonBox, &QDialogButtonBox::accepted, this, &ConfigureViewportGraphicsDialog::close);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &ConfigureViewportGraphicsDialog::close);
-    connect(buttonBox, &QDialogButtonBox::helpRequested, &mainWindow, [&mainWindow]() {
-        mainWindow.actionManager()->openHelpTopic(QStringLiteral("manual:viewports.configure_graphics_dialog"));
+    connect(buttonBox, &QDialogButtonBox::helpRequested, this, [this]() {
+        actionManager()->openHelpTopic(QStringLiteral("manual:viewports.configure_graphics_dialog"));
     });
     connect(buttonBox->addButton(tr("System information..."), QDialogButtonBox::ActionRole), &QPushButton::clicked, this, [this]() {
-        _mainWindow.handleExceptions([&] {
-            SystemInformationDialog(_mainWindow, this).exec();
+        handleExceptions([&] {
+            SystemInformationDialog(this->ui(), this).exec();
         });
     });
     mainLayout->addWidget(buttonBox);
 
     updateGUI();
 
-    connect(mainWindow.viewportsPanel(), &ViewportsPanel::interactiveWindowImplementationChanged, this, &ConfigureViewportGraphicsDialog::updateGUI);
+    connect(ui.mainWindow()->viewportsPanel(), &ViewportsPanel::interactiveWindowImplementationChanged, this, &ConfigureViewportGraphicsDialog::updateGUI);
     connect(_backendSelectionGroup, &QButtonGroup::buttonToggled, this, &ConfigureViewportGraphicsDialog::backendSelectionChanged);
-    connect(&mainWindow, &MainWindow::closingWindow, this, &QWidget::close);
+    connect(ui.mainWindow(), &MainWindow::closingWindow, this, &QWidget::close);
 }
 
 /******************************************************************************
@@ -144,7 +144,7 @@ void ConfigureViewportGraphicsDialog::closeEvent(QCloseEvent* event)
             propertiesPanel->close();
         }
     }
-    _mainWindow.handleExceptions([&]() {
+    handleExceptions([&]() {
         ViewportWindow::saveInteractiveWindowRendererSettings();
     });
 

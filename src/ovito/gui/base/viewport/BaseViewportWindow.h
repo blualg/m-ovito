@@ -38,9 +38,6 @@ class OVITO_GUIBASE_EXPORT BaseViewportWindow : public ViewportWindow
 
 public:
 
-    /// Returns the input manager handling mouse events of the viewport (if any).
-    ViewportInputManager* inputManager() const;
-
     /// Returns the list of gizmos to render in the viewport.
     virtual std::vector<ViewportGizmo*> viewportGizmos() override;
 

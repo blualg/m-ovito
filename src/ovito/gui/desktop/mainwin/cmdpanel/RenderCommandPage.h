@@ -38,7 +38,7 @@ class OVITO_GUI_EXPORT RenderCommandPage : public QWidget
 public:
 
     /// Initializes the command panel page.
-    RenderCommandPage(MainWindow& mainWindow, QWidget* parent);
+    RenderCommandPage(MainWindowUI& userInterface, QWidget* parent);
 
     /// Loads the layout of the widgets from the settings store.
     void restoreLayout() {}

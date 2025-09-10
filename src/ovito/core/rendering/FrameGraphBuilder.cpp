@@ -201,7 +201,6 @@ static void gatherVisElements(
             isOnStack = true;
         }
         gatherVisElements(fg, subObject, sceneNode, state, dataObjectPath, asyncVisElements, asyncVisElementFutures);
-        return false;
     });
 
     // Pop the data object from the stack.

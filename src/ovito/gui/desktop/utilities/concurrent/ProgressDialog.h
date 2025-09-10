@@ -24,11 +24,12 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
 
 namespace Ovito {
 
-class OVITO_GUI_EXPORT ProgressDialog : public QDialog
+class OVITO_GUI_EXPORT ProgressDialog : public QDialog, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
@@ -38,35 +39,35 @@ public:
     virtual ~ProgressDialog();
 
     /// Constructor.
-    explicit ProgressDialog(TaskPtr task, detail::TaskDependency taskDependency, MainWindow& mainWindow, QWidget* parent, const QString& dialogTitle = QString());
+    explicit ProgressDialog(TaskPtr task, detail::TaskDependency taskDependency, MainWindowUI& ui, QWidget* parent, const QString& dialogTitle = QString());
 
     /// Constructor.
-    explicit ProgressDialog(detail::TaskDependency taskDependency, MainWindow& mainWindow, const QString& dialogTitle = QString()) :
-        ProgressDialog(TaskPtr{}, std::move(taskDependency), mainWindow, &mainWindow, dialogTitle) {}
+    explicit ProgressDialog(detail::TaskDependency taskDependency, MainWindowUI& ui, const QString& dialogTitle = QString()) :
+        ProgressDialog(TaskPtr{}, std::move(taskDependency), ui, ui.mainWindow(), dialogTitle) {}
 
     /// Creates a progress dialog for the currently running task.
-    static void showForCurrentTask(MainWindow& mainWindow, QWidget* parent, const QString& dialogTitle = QString());
+    static void showForCurrentTask(MainWindowUI& ui, QWidget* parent, const QString& dialogTitle = QString());
 
     /// Creates a progress dialog for the currently running task.
-    static void showForCurrentTask(MainWindow& mainWindow, const QString& dialogTitle = QString()) {
-        showForCurrentTask(mainWindow, &mainWindow, dialogTitle);
+    static void showForCurrentTask(MainWindowUI& ui, const QString& dialogTitle = QString()) {
+        showForCurrentTask(ui, ui.mainWindow(), dialogTitle);
     }
 
     /// Creates a progress dialog for a future.
-    static void showForFuture(FutureBase&& future, MainWindow& mainWindow, QWidget* parent, const QString& dialogTitle = QString()) {
-        new ProgressDialog({}, future.takeTaskDependency(), mainWindow, parent, dialogTitle);
+    static void showForFuture(FutureBase&& future, MainWindowUI& ui, QWidget* parent, const QString& dialogTitle = QString()) {
+        new ProgressDialog({}, future.takeTaskDependency(), ui, parent, dialogTitle);
     }
 
     /// Creates a progress dialog for a future.
-    static void showForFuture(FutureBase&& future, MainWindow& mainWindow, const QString& dialogTitle = QString()) {
-        showForFuture(std::move(future), mainWindow, &mainWindow, dialogTitle);
+    static void showForFuture(FutureBase&& future, MainWindowUI& ui, const QString& dialogTitle = QString()) {
+        showForFuture(std::move(future), ui, ui.mainWindow(), dialogTitle);
     }
 
     /// Blocks the current thread (which must be the UI thread) until the given future completes.
     /// Returns the result of the future.
     template<typename FutureType>
-    static auto blockForFuture(FutureType&& future, MainWindow& mainWindow, QWidget* parent, const QString& dialogTitle = QString()) {
-        ProgressDialog* dlg = new ProgressDialog(future.task(), {}, mainWindow, parent, dialogTitle);
+    static auto blockForFuture(FutureType&& future, MainWindowUI& ui, QWidget* parent, const QString& dialogTitle = QString()) {
+        ProgressDialog* dlg = new ProgressDialog(future.task(), {}, ui, parent, dialogTitle);
         dlg->setReportErrors(false);
         if constexpr(!std::is_same_v<typename FutureType::result_type, void>)
             return std::move(future).blockForResult();
@@ -77,8 +78,8 @@ public:
     /// Blocks the current thread (which must be the UI thread) until the given future completes.
     /// Returns the result of the future.
     template<typename FutureType>
-    static decltype(auto) blockForFuture(FutureType&& future, MainWindow& mainWindow, const QString& dialogTitle = QString()) {
-        return blockForFuture(std::forward<FutureType>(future), mainWindow, &mainWindow, dialogTitle);
+    static decltype(auto) blockForFuture(FutureType&& future, MainWindowUI& ui, const QString& dialogTitle = QString()) {
+        return blockForFuture(std::forward<FutureType>(future), ui, ui.mainWindow(), dialogTitle);
     }
 
 public:
@@ -114,9 +115,6 @@ private Q_SLOTS:
     void updateTaskList();
 
 private:
-
-    /// The window this display widget is associated with.
-    MainWindow& _mainWindow;
 
     /// The running task displayed in this dialog.
     TaskPtr _task;

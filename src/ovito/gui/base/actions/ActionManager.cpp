@@ -39,14 +39,14 @@ namespace Ovito {
 /******************************************************************************
 * Initializes the ActionManager.
 ******************************************************************************/
-ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QAbstractListModel(parent), _userInterface(userInterface)
+ActionManager::ActionManager(QObject* parent, UserInterface& ui) : QAbstractListModel(parent), UserInterfaceComponent<UserInterface>(ui)
 {
     // Actions need to be updated whenever a new dataset is loaded or the current selection changes.
-    connect(&userInterface.datasetContainer(), &DataSetContainer::dataSetChanged, this, &ActionManager::onDataSetChanged);
-    connect(&userInterface.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &ActionManager::onSelectionChangeComplete);
-    connect(&userInterface.datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &ActionManager::onAnimationIntervalChanged);
-    connect(&userInterface.datasetContainer(), &DataSetContainer::maximizedViewportChanged, this, &ActionManager::onMaximizedViewportChanged);
-    connect(&userInterface.datasetContainer(), &DataSetContainer::viewportLayoutChanged, this, &ActionManager::onViewportLayoutChanged);
+    connect(&datasetContainer(), &DataSetContainer::dataSetChanged, this, &ActionManager::onDataSetChanged);
+    connect(&datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &ActionManager::onSelectionChangeComplete);
+    connect(&datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &ActionManager::onAnimationIntervalChanged);
+    connect(&datasetContainer(), &DataSetContainer::maximizedViewportChanged, this, &ActionManager::onMaximizedViewportChanged);
+    connect(&datasetContainer(), &DataSetContainer::viewportLayoutChanged, this, &ActionManager::onViewportLayoutChanged);
 
     createCommandAction(ACTION_QUIT, tr("Quit"), "file_quit", tr("Quit the application."));
     createCommandAction(ACTION_FILE_OPEN, tr("Load Session State..."), "file_open", tr("Load a previously saved session from a file."), QKeySequence::Open);
@@ -66,7 +66,7 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
     QAction* redoAction = createCommandAction(ACTION_EDIT_REDO, tr("Redo"), "edit_redo", tr("Restore the previously reversed action."), QKeySequence::Redo);
     QAction* clearUndoStackAction = createCommandAction(ACTION_EDIT_CLEAR_UNDO_STACK, tr("Clear Undo Stack"), nullptr, tr("Discards all existing undo records."));
     clearUndoStackAction->setVisible(false);
-    if(UndoStack* undoStack = userInterface.undoStack()) {
+    if(UndoStack* undoStack = this->undoStack()) {
         undoAction->setEnabled(undoStack->canUndo());
         redoAction->setEnabled(undoStack->canRedo());
         undoAction->setText(tr("Undo %1").arg(undoStack->undoText()));
@@ -117,7 +117,7 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
     createCommandAction(ACTION_VIEWPORT_ZOOM_SELECTION_EXTENTS_ALL, tr("Zoom Selection Extents All"), nullptr, tr("Zoom all viewports to show the selected objects."));
     createCommandAction(ACTION_CONFIGURE_VIEWPORT_GRAPHICS, tr("Configure Graphics..."), nullptr, tr("Change graphics settings for real-time interactive viewports."));
 
-    if(ViewportInputManager* vpInputManager = userInterface.viewportInputManager()) {
+    if(ViewportInputManager* vpInputManager = viewportInputManager()) {
         createViewportModeAction(ACTION_VIEWPORT_ZOOM, vpInputManager->zoomMode(), tr("Zoom"), "viewport_mode_zoom", tr("Activate zoom mode."));
         createViewportModeAction(ACTION_VIEWPORT_PAN, vpInputManager->panMode(), tr("Pan"), "viewport_mode_pan", tr("Activate pan mode to shift the region visible in the viewports."));
         createViewportModeAction(ACTION_VIEWPORT_ORBIT, vpInputManager->orbitMode(), tr("Orbit Camera"), "viewport_mode_orbit", tr("Activate orbit mode to rotate the camera around the scene."));
@@ -137,9 +137,9 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
 
     QAction* toggleAnimationPlaybackAction = createCommandAction(ACTION_TOGGLE_ANIMATION_PLAYBACK, tr("Play Animation"), "animation_play", tr("Start/stop animation playback. Hold down Shift key to play backwards."), Qt::Key_Space);
     toggleAnimationPlaybackAction->setCheckable(true);
-    toggleAnimationPlaybackAction->setChecked(userInterface.datasetContainer().isPlaybackActive());
-    connect(&userInterface.datasetContainer(), &DataSetContainer::playbackChanged, toggleAnimationPlaybackAction, &QAction::setChecked);
-    connect(toggleAnimationPlaybackAction, &QAction::toggled, &userInterface.datasetContainer(), &DataSetContainer::setAnimationPlayback);
+    toggleAnimationPlaybackAction->setChecked(datasetContainer().isPlaybackActive());
+    connect(&datasetContainer(), &DataSetContainer::playbackChanged, toggleAnimationPlaybackAction, &QAction::setChecked);
+    connect(toggleAnimationPlaybackAction, &QAction::toggled, &datasetContainer(), &DataSetContainer::setAnimationPlayback);
 
     connect(getAction(ACTION_VIEWPORT_MAXIMIZE), &QAction::triggered, this, &ActionManager::on_ViewportMaximize_triggered);
     connect(getAction(ACTION_VIEWPORT_ZOOM_SCENE_EXTENTS), &QAction::triggered, this, &ActionManager::on_ViewportZoomSceneExtents_triggered);
@@ -160,7 +160,7 @@ ActionManager::ActionManager(QObject* parent, UserInterface& userInterface) : QA
 ******************************************************************************/
 DataSet* ActionManager::dataset() const
 {
-    return userInterface().datasetContainer().currentSet();
+    return datasetContainer().currentSet();
 }
 
 void ActionManager::onDataSetChanged(DataSet* newDataSet)
@@ -268,7 +268,7 @@ QAction* ActionManager::createCommandAction(const QString& id, const QString& ti
 ******************************************************************************/
 QAction* ActionManager::createViewportModeAction(const QString& id, OORef<ViewportInputMode> inputHandler, const QString& title, const char* iconPath, const QString& statusTip, const QKeySequence& shortcut)
 {
-    QAction* action = new ViewportModeAction(userInterface(), title, this, std::move(inputHandler));
+    QAction* action = new ViewportModeAction(ui(), title, this, std::move(inputHandler));
     action->setObjectName(id);
     if(!shortcut.isEmpty())
         action->setShortcut(shortcut);
@@ -339,9 +339,9 @@ void ActionManager::updateActionStates()
 ******************************************************************************/
 void ActionManager::on_EditDelete_triggered()
 {
-    userInterface().performTransaction(tr("Delete pipeline"), [&]() {
+    performTransaction(tr("Delete pipeline"), [&]() {
         // Get active scene.
-        if(Scene* scene = userInterface().datasetContainer().activeScene()) {
+        if(Scene* scene = datasetContainer().activeScene()) {
             // Delete all nodes in selection set.
             while(!scene->selection()->nodes().empty())
                 scene->selection()->nodes().front()->requestObjectDeletion();
@@ -364,14 +364,14 @@ void ActionManager::handleActionLink(const QString& link)
             action->trigger();
         }
         else {
-            userInterface().reportError(tr("Action not found: %1").arg(actionId));
+            ui().reportError(tr("Action not found: %1").arg(actionId));
         }
     }
     else if(link.startsWith("manual:")) {
         openHelpTopic(link);
     }
     else {
-        userInterface().reportError(tr("Invalid action link: %1").arg(link));
+        ui().reportError(tr("Invalid action link: %1").arg(link));
     }
 }
 
@@ -467,7 +467,7 @@ void ActionManager::openHelpTopic(const QString& helpTopicId)
 
     // Use the local web browser to display the help page.
     if(!QDesktopServices::openUrl(url)) {
-        userInterface().reportError(QStringLiteral("Failed to launch browser to display OVITO user manual. The requested URL was:\n%1").arg(url.toDisplayString()));
+        ui().reportError(QStringLiteral("Failed to launch browser to display OVITO user manual. The requested URL was:\n%1").arg(url.toDisplayString()));
     }
 }
 

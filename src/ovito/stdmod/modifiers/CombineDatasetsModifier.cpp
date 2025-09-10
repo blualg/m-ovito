@@ -61,6 +61,15 @@ void CombineDatasetsModifier::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void CombineDatasetsModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(secondaryDataSource())
+        secondaryDataSource()->replaceVisualElement(visElement, getReplacement);
+}
+
+/******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
 Future<PipelineFlowState> CombineDatasetsModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)

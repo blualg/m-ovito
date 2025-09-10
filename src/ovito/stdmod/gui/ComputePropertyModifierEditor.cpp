@@ -33,6 +33,7 @@
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/gui/desktop/widgets/general/AutocompleteTextEdit.h>
+#include <ovito/gui/desktop/app/GuiApplication.h>
 #include <ovito/core/dataset/animation/AnimationSettings.h>
 #include <ovito/core/dataset/pipeline/PipelineNode.h>
 #include "ComputePropertyModifierEditor.h"
@@ -173,10 +174,10 @@ void ComputePropertyModifierEditor::createUI(const RolloutInsertionParameters& r
 bool ComputePropertyModifierEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(source == editObject() && event.type() == ReferenceEvent::TargetChanged) {
-        updateExpressionFieldsLater(this, mainWindow());
+        updateExpressionFieldsLater(this, ui());
     }
     else if(source == editObject() && event.type() == ReferenceEvent::ObjectStatusChanged) {
-        updateVariablesListLater(this, mainWindow());
+        updateVariablesListLater(this, ui());
     }
     return PropertiesEditor::referenceEvent(source, event);
 }
@@ -196,7 +197,11 @@ void ComputePropertyModifierEditor::updateVariablesList()
             box->setWordList(inputVariableNames);
         for(AutocompleteTextEdit* box : expressionTextEdits)
             box->setWordList(inputVariableNames);
-        variableNamesDisplay->setText(modNode->inputVariableTable() + QStringLiteral("<p></p>"));
+        QString descriptionStyle = GuiApplication::instance()->usingDarkTheme()
+            ? QStringLiteral("color: #aaa; font-style: italic;")
+            : QStringLiteral("color: #555; font-style: italic;");
+        variableNamesDisplay->setText(
+            QStringLiteral("%1<p></p>").arg(modNode->inputVariableTable()).replace(QStringLiteral("DESCRIPTION_STYLE_PLACEHOLDER"), descriptionStyle));
     }
 
     container()->updateRolloutsLater();

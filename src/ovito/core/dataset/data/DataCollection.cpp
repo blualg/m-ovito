@@ -252,7 +252,6 @@ void DataCollection::getObjectsRecursiveImpl(ConstDataObjectPath& path, const Da
         path.push_back(subObject);
         getObjectsRecursiveImpl(path, objectClass, results);
         path.pop_back();
-        return false;
     });
 }
 
@@ -533,7 +532,7 @@ AttributeDataObject* DataCollection::addAttribute(const QString& key, QVariant v
 }
 
 /******************************************************************************
-* Inserts a new global attribute into the pipeline state overwritting any
+* Inserts a new global attribute into the pipeline state overwriting any
 * existing attribute with the same name.
 ******************************************************************************/
 AttributeDataObject* DataCollection::setAttribute(const QString& key, QVariant value, OOWeakRef<const PipelineNode> createdByNode)

@@ -126,61 +126,71 @@ void SurfaceMeshVisEditor::createUI(const RolloutInsertionParameters& rolloutPar
 ******************************************************************************/
 void SurfaceMeshVisEditor::updateColoringOptions()
 {
-    // Retrieve the SurfaceMesh object this vis element is associated with.
-    DataOORef<const SurfaceMesh> surfaceMesh = dynamic_object_cast<const SurfaceMesh>(getVisDataObject());
-
-    // Do vertices/faces/regions have the explicit colors assigned ("Color" property exists)?
-    bool hasExplicitColors = false;
-    if(surfaceMesh) {
-        hasExplicitColors |= (surfaceMesh->vertices() && surfaceMesh->vertices()->getProperty(SurfaceMeshVertices::ColorProperty));
-        hasExplicitColors |= (surfaceMesh->faces()    && surfaceMesh->faces()->getProperty(SurfaceMeshFaces::ColorProperty));
-        hasExplicitColors |= (surfaceMesh->regions()  && surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty));
-    }
+    bool enableCaps = false;
+    bool enableClipAtDomainBoundaries = false;
+    bool enableUniformColorOption = false;
+    bool enableUniformColor = false;
+    bool enableColorMapping = false;
+    bool enableColorUniform = false;
+    bool enableColorByVertex = false;
+    bool enableColorByFace = false;
+    bool enableColorByRegion = false;
 
     SurfaceMeshVis::ColorMappingMode mappingSource = editObject() ? static_object_cast<SurfaceMeshVis>(editObject())->colorMappingMode() : SurfaceMeshVis::NoPseudoColoring;
-    if(surfaceMesh && mappingSource == SurfaceMeshVis::VertexPseudoColoring && !hasExplicitColors) {
-        _colorMappingParamUI->setEnabled(true);
-        _surfaceColorUI->setEnabled(false);
-        // Set surface vertices as property container containing the available properties the user can choose from.
-        static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor())->setPropertyContainer(surfaceMesh->vertices());
-    }
-    else if(surfaceMesh && mappingSource == SurfaceMeshVis::FacePseudoColoring && !hasExplicitColors) {
-        // Show color mapping panel.
-        _colorMappingParamUI->setEnabled(true);
-        _surfaceColorUI->setEnabled(false);
-        // Set surface faces as property container containing the available properties the user can choose from.
-        static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor())->setPropertyContainer(surfaceMesh->faces());
-    }
-    else if(surfaceMesh && mappingSource == SurfaceMeshVis::RegionPseudoColoring && !hasExplicitColors) {
-        // Show color mapping panel.
-        _colorMappingParamUI->setEnabled(true);
-        _surfaceColorUI->setEnabled(false);
-        // Set surface regions as property container containing the available properties the user can choose from.
-        static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor())->setPropertyContainer(surfaceMesh->regions());
-    }
-    else {
-        _colorMappingParamUI->setEnabled(false);
-        _surfaceColorUI->setEnabled(!hasExplicitColors);
+
+    // Inspect all SurfaceMesh objects this vis element is associated with.
+    std::vector<DataOORef<const PropertyContainer>> colorMappingContainers;
+    for(const DataObject* dataObject : getVisDataObjects()) {
+        if(const SurfaceMesh* surfaceMesh = dynamic_object_cast<SurfaceMesh>(dataObject)) {
+            // Do vertices/faces/regions have the explicit colors assigned ("Color" property exists)?
+            bool hasExplicitColors = false;
+            hasExplicitColors |= (surfaceMesh->vertices() && surfaceMesh->vertices()->getProperty(SurfaceMeshVertices::ColorProperty));
+            hasExplicitColors |= (surfaceMesh->faces()    && surfaceMesh->faces()->getProperty(SurfaceMeshFaces::ColorProperty));
+            hasExplicitColors |= (surfaceMesh->regions()  && surfaceMesh->regions()->getProperty(SurfaceMeshRegions::ColorProperty));
+
+            if(!hasExplicitColors) {
+                enableUniformColorOption = true;
+                if(mappingSource == SurfaceMeshVis::VertexPseudoColoring) {
+                    enableColorMapping = true;
+                    colorMappingContainers.push_back(surfaceMesh->vertices());
+                }
+                else if(surfaceMesh && mappingSource == SurfaceMeshVis::FacePseudoColoring) {
+                    enableColorMapping = true;
+                    colorMappingContainers.push_back(surfaceMesh->faces());
+                }
+                else if(surfaceMesh && mappingSource == SurfaceMeshVis::RegionPseudoColoring) {
+                    enableColorMapping = true;
+                    colorMappingContainers.push_back(surfaceMesh->regions());
+                }
+                else {
+                    enableUniformColor = true;
+                }
+
+                enableColorByVertex |= surfaceMesh->vertices() && !surfaceMesh->vertices()->properties().isEmpty();
+                enableColorByFace   |= surfaceMesh->faces()    && !surfaceMesh->faces()->properties().isEmpty();
+                enableColorByRegion |= surfaceMesh->regions()  && !surfaceMesh->regions()->properties().isEmpty();
+            }
+
+            if(surfaceMesh->topology() && surfaceMesh->domain()) {
+                enableClipAtDomainBoundaries = true;
+                // Detect whether the current mesh is closed or not.
+                // Depending on this we display the 'cap polygons' panel.
+                bool isClosed = editObject() && static_object_cast<SurfaceMeshVis>(editObject())->surfaceIsClosed() && surfaceMesh->topology()->isClosed();
+                enableCaps |= isClosed;
+            }
+        }
     }
 
-    _coloringModeUI->buttonGroup()->button(SurfaceMeshVis::VertexPseudoColoring)->setEnabled(surfaceMesh && surfaceMesh->vertices() && !surfaceMesh->vertices()->properties().isEmpty() && !hasExplicitColors);
-    _coloringModeUI->buttonGroup()->button(SurfaceMeshVis::FacePseudoColoring  )->setEnabled(surfaceMesh && surfaceMesh->faces()    && !surfaceMesh->faces()->properties().isEmpty() && !hasExplicitColors);
-    _coloringModeUI->buttonGroup()->button(SurfaceMeshVis::RegionPseudoColoring)->setEnabled(surfaceMesh && surfaceMesh->regions()  && !surfaceMesh->regions()->properties().isEmpty() && !hasExplicitColors);
-    _coloringModeUI->buttonGroup()->button(SurfaceMeshVis::NoPseudoColoring)->setEnabled(surfaceMesh && !hasExplicitColors);
-
-    if(surfaceMesh && surfaceMesh->topology()) {
-        if(surfaceMesh->domain()) {
-            _clipAtDomainBoundariesUI->setEnabled(true);
-            // Detect whether the current mesh is closed or not.
-            // Depending on this we display the 'cap polygons' panel.
-            bool isClosed = editObject() && static_object_cast<SurfaceMeshVis>(editObject())->surfaceIsClosed() && surfaceMesh->topology()->isClosed();
-            _capGroupUI->setEnabled(isClosed);
-        }
-        else {
-            _capGroupUI->setEnabled(false);
-            _clipAtDomainBoundariesUI->setEnabled(false);
-        }
-    }
+    _capGroupUI->setEnabled(enableCaps);
+    _clipAtDomainBoundariesUI->setEnabled(enableClipAtDomainBoundaries);
+    _colorMappingParamUI->setEnabled(enableColorMapping);
+    if(PropertyColorMappingEditor* colorMappingEditor = static_object_cast<PropertyColorMappingEditor>(_colorMappingParamUI->subEditor()))
+        colorMappingEditor->setPropertyContainers(std::move(colorMappingContainers));
+    _surfaceColorUI->setEnabled(enableUniformColor);
+    _coloringModeUI->buttonGroup()->button(SurfaceMeshVis::VertexPseudoColoring)->setEnabled(enableColorByVertex);
+    _coloringModeUI->buttonGroup()->button(SurfaceMeshVis::FacePseudoColoring  )->setEnabled(enableColorByFace);
+    _coloringModeUI->buttonGroup()->button(SurfaceMeshVis::RegionPseudoColoring)->setEnabled(enableColorByRegion);
+    _coloringModeUI->buttonGroup()->button(SurfaceMeshVis::NoPseudoColoring)->setEnabled(enableUniformColorOption);
 }
 
 }   // End of namespace

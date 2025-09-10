@@ -101,6 +101,9 @@ public:
     /// evaluated but before the rest of the pipeline is complete.
     virtual bool shouldRefreshViewportsAfterEvaluation() { return false; }
 
+    /// Replaces all references to the given visual element in the pipeline with new compatible objects.
+    virtual void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) = 0;
+
 protected:
 
     /// Is called when the value of a non-animatable property field of this RefMaker has changed.

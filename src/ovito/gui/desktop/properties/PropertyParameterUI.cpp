@@ -109,7 +109,7 @@ void PropertyParameterUI::memorizeDefaultParameterValue()
     }
     else if(isReferenceFieldUI() && !propertyField()->isVector()) {
         if(Controller* ctrl = dynamic_object_cast<Controller>(parameterObject())) {
-            if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
+            if(AnimationSettings* anim = activeAnimationSettings()) {
                 QSettings settings;
                 settings.beginGroup(editObject()->getOOClass().plugin()->pluginId());
                 settings.beginGroup(editObject()->getOOClass().name());
@@ -138,7 +138,7 @@ void PropertyParameterUI::openAnimationKeyEditor()
     KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(parameterObject());
     if(!ctrl) return;
 
-    AnimationKeyEditorDialog dlg(ctrl, propertyField(), editor()->container(), editor()->mainWindow());
+    AnimationKeyEditorDialog dlg(ctrl, propertyField(), editor()->container(), ui());
     dlg.exec();
 }
 

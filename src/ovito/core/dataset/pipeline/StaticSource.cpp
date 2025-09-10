@@ -55,4 +55,17 @@ bool StaticSource::referenceEvent(RefTarget* source, const ReferenceEvent& event
     return PipelineNode::referenceEvent(source, event);
 }
 
+/******************************************************************************
+* Replaces all references to the given visual element in the pipeline with new compatible objects.
+******************************************************************************/
+void StaticSource::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(dataCollection()) {
+        // Make the replacement in all of the data collection's data objects.
+        if(dataCollection()->replaceVisualElement(visElement, getReplacement)) {
+            notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+        }
+    }
+}
+
 }   // End of namespace

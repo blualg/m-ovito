@@ -48,6 +48,7 @@ namespace Ovito
 {
     class GuiAutoStartObject;
     class MainWindow;
+    class MainWindowUI;
     class GuiApplication;
     class WidgetActionManager;
     class DataInspectionApplet;
@@ -97,5 +98,7 @@ namespace Ovito
     class ViewportsPanel;
     class WidgetViewportWindow;
 }  // namespace Ovito
+
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 
 #endif  // __OVITO_GUI_

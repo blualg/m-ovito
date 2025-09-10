@@ -77,17 +77,24 @@ void XFormMode::deactivated(bool temporary)
 }
 
 /******************************************************************************
+* Returns a pointer to the coordinate display widget hosted in the current main window.
+******************************************************************************/
+CoordinateDisplayWidget* XFormMode::getCoordinateDisplayWidget() const
+{
+    if(MainWindow* mainWindow = this->mainWindow())
+        return mainWindow->coordinateDisplay();
+    return nullptr;
+}
+
+/******************************************************************************
 * Is called when the user has selected a different scene node.
 ******************************************************************************/
 void XFormMode::onSelectionChangeComplete(SelectionSet* selection)
 {
-    MainWindow* mainWindow = dynamic_object_cast<MainWindow>(&inputManager()->userInterface());
-    CoordinateDisplayWidget* coordDisplay = mainWindow ? mainWindow->coordinateDisplay() : nullptr;
-
     if(selection) {
         if(selection->nodes().size() == 1) {
             setSelectedNode(selection->nodes().front());
-            if(coordDisplay) {
+            if(CoordinateDisplayWidget* coordDisplay = getCoordinateDisplayWidget()) {
                 updateCoordinateDisplay(coordDisplay);
                 coordDisplay->activate(undoDisplayName());
                 connect(coordDisplay, &CoordinateDisplayWidget::valueEntered, this, &XFormMode::onCoordinateValueEntered, Qt::ConnectionType(Qt::AutoConnection | Qt::UniqueConnection));
@@ -97,7 +104,7 @@ void XFormMode::onSelectionChangeComplete(SelectionSet* selection)
         }
     }
     setSelectedNode(nullptr);
-    if(coordDisplay) {
+    if(CoordinateDisplayWidget* coordDisplay = getCoordinateDisplayWidget()) {
         disconnect(coordDisplay, &CoordinateDisplayWidget::valueEntered, this, &XFormMode::onCoordinateValueEntered);
         disconnect(coordDisplay, &CoordinateDisplayWidget::animatePressed, this, &XFormMode::onAnimateTransformationButton);
         coordDisplay->deactivate();
@@ -110,8 +117,8 @@ void XFormMode::onSelectionChangeComplete(SelectionSet* selection)
 bool XFormMode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
     if(source == selectedNode() && event.type() == SceneNode::TransformationChanged) {
-        if(MainWindow* mainWindow = dynamic_object_cast<MainWindow>(&inputManager()->userInterface()))
-            updateCoordinateDisplay(mainWindow->coordinateDisplay());
+        if(CoordinateDisplayWidget* coordDisplay = getCoordinateDisplayWidget())
+            updateCoordinateDisplay(coordDisplay);
     }
     return ViewportInputMode::referenceEvent(source, event);
 }
@@ -121,8 +128,8 @@ bool XFormMode::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 ******************************************************************************/
 void XFormMode::onCurrentFrameChanged(int frame)
 {
-    if(MainWindow* mainWindow = dynamic_object_cast<MainWindow>(&inputManager()->userInterface()))
-        updateCoordinateDisplay(mainWindow->coordinateDisplay());
+    if(CoordinateDisplayWidget* coordDisplay = getCoordinateDisplayWidget())
+        updateCoordinateDisplay(coordDisplay);
 }
 
 /******************************************************************************
@@ -138,8 +145,8 @@ void XFormMode::mousePressEvent(ViewportWindow* vpwin, QMouseEvent* event)
             if(pickResult && vpwin->viewport()->scene()) {
                 _viewportWindow = vpwin;
                 _startPoint = getMousePosition(event);
-                _undoTransaction.begin(inputManager()->userInterface(), undoDisplayName());
-                inputManager()->userInterface().performActions(_undoTransaction, [&] {
+                _undoTransaction.begin(ui(), undoDisplayName());
+                performActions(_undoTransaction, [&] {
                     viewportWindow()->viewport()->scene()->selection()->setNode(pickResult->sceneNode());
                 });
                 _undoSelectionOperation = _undoTransaction.snapshot();
@@ -185,7 +192,7 @@ void XFormMode::mouseMoveEvent(ViewportWindow* vpwin, QMouseEvent* event)
 
         // Revert the previous x-form operation.
         if(_undoTransaction.revertTo(_undoSelectionOperation)) {
-            inputManager()->userInterface().performActions(_undoTransaction, [&] {
+            performActions(_undoTransaction, [&] {
                 doXForm();
             });
         }
@@ -289,9 +296,9 @@ void MoveMode::applyXForm(AnimationTime time, const QVector<OORef<SceneNode>>& n
 void MoveMode::updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay)
 {
     if(selectedNode()) {
-        coordDisplay->setUnit(coordDisplay->mainWindow().unitsManager().worldUnit());
+        coordDisplay->setUnit(coordDisplay->unitsManager().worldUnit());
         if(Controller* ctrl = selectedNode()->transformationController()) {
-            if(AnimationSettings* anim = inputManager()->datasetContainer().activeAnimationSettings()) {
+            if(AnimationSettings* anim = inputManager()->activeAnimationSettings()) {
                 TimeInterval iv;
                 Vector3 translation;
                 ctrl->getPositionValue(anim->currentTime(), translation, iv);
@@ -311,7 +318,7 @@ void MoveMode::onCoordinateValueEntered(int component, FloatType value)
 {
     if(selectedNode()) {
         if(Controller* ctrl = selectedNode()->transformationController()) {
-            if(AnimationSettings* anim = inputManager()->datasetContainer().activeAnimationSettings()) {
+            if(AnimationSettings* anim = inputManager()->activeAnimationSettings()) {
                 TimeInterval iv;
                 Vector3 translation;
                 ctrl->getPositionValue(anim->currentTime(), translation, iv);
@@ -331,8 +338,8 @@ void MoveMode::onAnimateTransformationButton()
     if(selectedNode()) {
         if(PRSTransformationController* prs_ctrl = dynamic_object_cast<PRSTransformationController>(selectedNode()->transformationController())) {
             if(KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(prs_ctrl->positionController())) {
-                if(MainWindow* mainWindow = dynamic_object_cast<MainWindow>(&inputManager()->userInterface())) {
-                    AnimationKeyEditorDialog dlg(ctrl, PROPERTY_FIELD(PRSTransformationController::positionController), mainWindow, *mainWindow);
+                if(MainWindow* mainWindow = this->mainWindow()) {
+                    AnimationKeyEditorDialog dlg(ctrl, PROPERTY_FIELD(PRSTransformationController::positionController), mainWindow, ui());
                     dlg.exec();
                 }
             }
@@ -391,9 +398,9 @@ void RotateMode::applyXForm(AnimationTime time, const QVector<OORef<SceneNode>>&
 void RotateMode::updateCoordinateDisplay(CoordinateDisplayWidget* coordDisplay)
 {
     if(selectedNode()) {
-        coordDisplay->setUnit(coordDisplay->mainWindow().unitsManager().angleUnit());
+        coordDisplay->setUnit(coordDisplay->unitsManager().angleUnit());
         if(Controller* ctrl = selectedNode()->transformationController()) {
-            if(AnimationSettings* anim = inputManager()->datasetContainer().activeAnimationSettings()) {
+            if(AnimationSettings* anim = inputManager()->activeAnimationSettings()) {
                 TimeInterval iv;
                 Rotation rotation;
                 ctrl->getRotationValue(anim->currentTime(), rotation, iv);
@@ -414,11 +421,10 @@ void RotateMode::onCoordinateValueEntered(int component, FloatType value)
 {
     if(selectedNode()) {
         if(Controller* ctrl = selectedNode()->transformationController()) {
-            if(MainWindow* mainWindow = dynamic_object_cast<MainWindow>(&inputManager()->userInterface())) {
-                CoordinateDisplayWidget* coordDisplay = mainWindow->coordinateDisplay();
+            if(CoordinateDisplayWidget* coordDisplay = getCoordinateDisplayWidget()) {
                 Vector3 euler = coordDisplay->getValues();
                 Rotation rotation = Rotation::fromEuler(Vector3(euler[2], euler[1], euler[0]), Matrix3::szyx);
-                if(AnimationSettings* anim = mainWindow->datasetContainer().activeAnimationSettings()) {
+                if(AnimationSettings* anim = coordDisplay->activeAnimationSettings()) {
                     ctrl->setRotationValue(anim->currentTime(), rotation, true);
                 }
             }
@@ -437,8 +443,8 @@ void RotateMode::onAnimateTransformationButton()
         if(prs_ctrl) {
             KeyframeController* ctrl = dynamic_object_cast<KeyframeController>(prs_ctrl->rotationController());
             if(ctrl) {
-                if(MainWindow* mainWindow = dynamic_object_cast<MainWindow>(&inputManager()->userInterface())) {
-                    AnimationKeyEditorDialog dlg(ctrl, PROPERTY_FIELD(PRSTransformationController::rotationController), mainWindow, *mainWindow);
+                if(MainWindow* mainWindow = this->mainWindow()) {
+                    AnimationKeyEditorDialog dlg(ctrl, PROPERTY_FIELD(PRSTransformationController::rotationController), mainWindow, ui());
                     dlg.exec();
                 }
             }

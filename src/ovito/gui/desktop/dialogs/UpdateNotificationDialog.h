@@ -41,10 +41,6 @@ public:
     /// Downloads the news page from the web server and displays it in the command panel.
     void applicationStarting() override;
 
-    /// Is called when a new main window is created.
-    /// Stores a reference to the main window.
-    void registerActions(ActionManager& actionManager, MainWindow& mainWindow) override;
-
 private:
 
     /// Extracts the two version strings from the first line of the news webpage.
@@ -64,7 +60,7 @@ private:
 
 private:
 
-    /// Pointer to the current main window
+    /// Pointer to the current main window.
     QPointer<MainWindow> _mainWindow;
 };
 

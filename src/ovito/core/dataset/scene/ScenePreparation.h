@@ -36,7 +36,7 @@ namespace Ovito {
 /**
  * \brief This object performs evaluation of all pipelines in a Scene to prepare them for rendering in the interactive viewports.
  */
-class OVITO_CORE_EXPORT ScenePreparation : public QObject, public RefMaker
+class OVITO_CORE_EXPORT ScenePreparation : public QObject, public RefMaker, public UserInterfaceComponent<UserInterface>
 {
     OVITO_CLASS(ScenePreparation)
     Q_OBJECT
@@ -44,10 +44,7 @@ class OVITO_CORE_EXPORT ScenePreparation : public QObject, public RefMaker
 public:
 
     /// Constructor.
-    void initializeObject(UserInterface& userInterface, Scene* scene = nullptr);
-
-    /// Returns the abstract user interface in which this object operates.
-    UserInterface& userInterface() const { return *_userInterface; }
+    void initializeObject(UserInterface& ui, Scene* scene = nullptr);
 
     /// Returns a future that gets fulfilled once the scene is ready.
     [[nodiscard]] SharedFuture<void> future();
@@ -111,9 +108,6 @@ private:
 
     /// The active scene node selection set.
     DECLARE_REFERENCE_FIELD(OORef<SelectionSet>, selectionSet);
-
-    /// The abstract user interface.
-    UserInterface* _userInterface;
 
     /// The current pipeline evaluation that is in progress.
     SharedFuture<PipelineFlowState> _pipelineEvaluationFuture;

@@ -88,6 +88,15 @@ void ConstructSurfaceModifier::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void ConstructSurfaceModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(surfaceMeshVis() == visElement)
+        setSurfaceMeshVis(static_object_cast<SurfaceMeshVis>(getReplacement({})));
+}
+
+/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool ConstructSurfaceModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const

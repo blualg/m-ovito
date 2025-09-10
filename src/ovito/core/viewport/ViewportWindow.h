@@ -36,7 +36,7 @@ namespace Ovito {
 /**
  * \brief A viewport window provides the connection between the non-visual Viewport class and the GUI layer.
  */
-class OVITO_CORE_EXPORT ViewportWindow : public QObject, public RefMaker
+class OVITO_CORE_EXPORT ViewportWindow : public QObject, public RefMaker, public UserInterfaceComponent<UserInterface>
 {
     Q_OBJECT
 	OVITO_CLASS(ViewportWindow)
@@ -83,14 +83,11 @@ public:
 public:
 
     /// Associates this window with a viewport.
-    void setViewport(Viewport* vp, UserInterface& userInterface);
+    void setViewport(Viewport* vp, UserInterface& ui);
 
     /// This method is called after the reference counter of this object has reached zero
     /// and before the object is being finally deleted.
     virtual void aboutToBeDeleted() override;
-
-    /// Returns the abstract user interface hosting this viewport window.
-    UserInterface& userInterface() const { OVITO_ASSERT(_userInterface); return *_userInterface; }
 
     /// Returns the object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
     ScenePreparation& scenePreparation() { OVITO_ASSERT(_scenePreparation); return *_scenePreparation; }
@@ -308,9 +305,6 @@ private:
 
     /// The viewport associated with this window.
     DECLARE_REFERENCE_FIELD_FLAGS(OORef<Viewport>, viewport, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM | PROPERTY_FIELD_NO_UNDO);
-
-    /// The abstract user interface hosting this viewport window.
-    UserInterface* _userInterface = nullptr;
 
 #ifdef OVITO_DEBUG
     /// Counts how often this viewport has been rendered during the current program session.

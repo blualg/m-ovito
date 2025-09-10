@@ -12,10 +12,19 @@ Changelog
 Version 3.14.0 (xx-xxx-2025)
 ----------------------------
 
-- Extend color coding modifier, property mapping and color legend overlay to support discrete color mappings.
+.. rubric:: Discrete color maps
+
+A discretized color map can now be enabled to visualize integer properties:
+
+.. image:: /images/new_features/discrete_colormap_settings.jpg
+  :width: 35%
+
+.. image:: /images/new_features/discrete_colormap_legend.jpg
+  :width: 25%
+
 - |ovito-pro| Added the :ref:`particles.modifiers.find_rings` modifier - a high performance implementation of the `Ring Finder Python extension <https://github.com/ovito-org/RingFinder>`__  .
 - |ovito-pro| Added the :ref:`particles.modifiers.reduce_property` modifier - a high performance implementation of the `Reduce Property Python extension <https://github.com/ovito-org/ReduceProperty>`__ .
-- |ovito-pro| Added the :ref:`particles.modifiers.time_difference` modifier: Computes the delta of a particle property between the current frame and a reference frame.
+- |ovito-pro| Added the :ref:`particles.modifiers.difference_between_frames` modifier: Computes the delta of a particle property between the current frame and a reference frame.
 - |ovito-pro| Activate material choice for the :ref:`rendering.visrtx_renderer`.
 - Added a :menuselection:`Request a Feature` function to the :menuselection:`Help` menu.
 - Added the :guilabel:`Generate bounding box if needed` option to the file reader settings.
@@ -30,6 +39,9 @@ Version 3.14.0 (xx-xxx-2025)
 - Renamed export format "Table of Values" to "Table of Global Attributes" for clarity
 - Aspherix PVD file reader: Read in simulation time as global attribute ``Time``, not ``Timestep``
 - OVITO's timeline can now display simulation timesteps instead of frame numbers, see newly added option in the :ref:`animation.animation_settings_dialog`
+- Pipeline editor: New function for creating shared visual elements - allows easy synchronization of visual settings for multiple objects
+- Added new color gradient resembling the new 'Fast' color map from ParaView.
+- |ovito-pro| :ref:`rendering.visrtx_renderer`: Added depth-of-field rendering (focal blur) effect.
 
 .. sidebar::
 

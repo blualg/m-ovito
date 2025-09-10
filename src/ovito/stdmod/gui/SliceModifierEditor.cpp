@@ -138,7 +138,7 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
 
     OORef<PickPlanePointsInputMode> pickPlanePointsInputMode = OORef<PickPlanePointsInputMode>::create(this);
     connect(this, &QObject::destroyed, pickPlanePointsInputMode, &ViewportInputMode::removeMode);
-    _pickPlanePointsInputModeAction = new ViewportModeAction(mainWindow(), tr("Pick three points"), this, std::move(pickPlanePointsInputMode));
+    _pickPlanePointsInputModeAction = new ViewportModeAction(ui(), tr("Pick three points"), this, std::move(pickPlanePointsInputMode));
     layout->addWidget(new ViewportModeButton(_pickPlanePointsInputModeAction));
 
     // Deactivate input mode when editor is reset.
@@ -160,11 +160,11 @@ void SliceModifierEditor::createUI(const RolloutInsertionParameters& rolloutPara
     layout->addWidget(delegatesPUI->listWidget());
 
     // Override automatic step size for the distance and slice width parameters.
-    _distanceUnit.emplace(mainWindow().unitsManager().getUnit(_distancePUI->parameterUnitType()));
+    _distanceUnit.emplace(unitsManager().getUnit(_distancePUI->parameterUnitType()));
     _distancePUI->spinner()->setUnit(&_distanceUnit.value());
-    _slabWidthUnit.emplace(mainWindow().unitsManager().getUnit(widthPUI->parameterUnitType()));
+    _slabWidthUnit.emplace(unitsManager().getUnit(widthPUI->parameterUnitType()));
     widthPUI->spinner()->setUnit(&_slabWidthUnit.value());
-    _normalVectorUnit.emplace(mainWindow().unitsManager().getUnit(_normalPUI[0]->parameterUnitType()));
+    _normalVectorUnit.emplace(unitsManager().getUnit(_normalPUI[0]->parameterUnitType()));
     _normalPUI[0]->spinner()->setUnit(&_normalVectorUnit.value());
     _normalPUI[1]->spinner()->setUnit(&_normalVectorUnit.value());
     _normalPUI[2]->spinner()->setUnit(&_normalVectorUnit.value());
@@ -400,7 +400,7 @@ void SliceModifierEditor::onCenterOfBox()
 void PickPlanePointsInputMode::activated(bool temporary)
 {
     ViewportInputMode::activated(temporary);
-    inputManager()->userInterface().showStatusBarMessage(tr("Pick three points to define a new slicing plane."));
+    ui().showStatusBarMessage(tr("Pick three points to define a new slicing plane."));
     if(!temporary)
         _numPickedPoints = 0;
     inputManager()->addViewportGizmo(this);
@@ -415,7 +415,7 @@ void PickPlanePointsInputMode::deactivated(bool temporary)
         _numPickedPoints = 0;
         _hasPreliminaryPoint = false;
     }
-    inputManager()->userInterface().clearStatusBarMessage();
+    ui().clearStatusBarMessage();
     inputManager()->removeViewportGizmo(this);
     ViewportInputMode::deactivated(temporary);
 }

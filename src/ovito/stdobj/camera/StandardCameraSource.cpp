@@ -260,4 +260,15 @@ void StandardCameraSource::setIsTargetCamera(bool enable)
     notifyTargetChanged();
 }
 
+/******************************************************************************
+* Replaces all references to the given visual element in the pipeline with new compatible objects.
+******************************************************************************/
+void StandardCameraSource::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(cameraVis() == visElement) {
+        // Replace the camera's visual element with a new compatible object.
+        setCameraVis(static_object_cast<CameraVis>(getReplacement({})));
+    }
+}
+
 }   // End of namespace

@@ -39,7 +39,7 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(ModifierTemplatesPage);
 ******************************************************************************/
 QVector<QTreeWidgetItem*> ModifierTemplatesPage::populateAvailableObjectsList(QTreeWidget* objectListWidget, QComboBox* nameBox)
 {
-    PipelineListModel* pipelineModel = mainWindow().commandPanel()->modifyPage()->pipelineListModel();
+    PipelineListModel* pipelineModel = ui().mainWindow()->commandPanel()->modifyPage()->pipelineListModel();
     QVector<RefTarget*> selectedPipelineObjects = pipelineModel->selectedObjects();
     QVector<QTreeWidgetItem*> itemList;
     int rowCount = 0;

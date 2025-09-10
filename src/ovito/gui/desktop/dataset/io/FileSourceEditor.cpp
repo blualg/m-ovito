@@ -159,7 +159,7 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     connect(_editPlaybackBtn, &QPushButton::clicked, this, [&]() {
         if(!editObject()) return;
         ModalPropertiesEditorDialog(editObject(), OORef<FileSourcePlaybackRateEditor>::create(), container(),
-            mainWindow(), tr("Configure Trajectory Playback"), tr("Change trajectory playback"), "manual:scene_objects.file_source.configure_playback").exec();
+            ui(), tr("Configure Trajectory Playback"), tr("Change trajectory playback"), "manual:scene_objects.file_source.configure_playback").exec();
         updateDisplayedInformation();
     });
 
@@ -167,12 +167,9 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     gridlayout1->setColumnMinimumWidth(0, maxLabelWidth);
     gridlayout2->setColumnMinimumWidth(0, maxLabelWidth);
 
-    QGroupBox* statusBox = new QGroupBox(tr("Status"), rollout);
-    layout->addWidget(statusBox);
-    sublayout = new QVBoxLayout(statusBox);
-    sublayout->setContentsMargins(4,4,4,4);
     _statusLabel = new StatusWidget(rollout);
-    sublayout->addWidget(_statusLabel);
+    layout->addSpacing(6);
+    layout->addWidget(_statusLabel);
 
     // Show settings editor of importer class.
     createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(FileSource::importer), rolloutParams.after(rollout));
@@ -249,7 +246,7 @@ void FileSourceEditor::onPickRemoteInputFile()
             auto importerClasses = PluginManager::instance().metaclassMembers<FileImporter>(FileSourceImporter::OOClass());
 
             // Let the user select a new URL.
-            ImportRemoteFileDialog dialog(mainWindow(), importerClasses, container()->window(), tr("Pick source"));
+            ImportRemoteFileDialog dialog(ui(), importerClasses, container()->window(), tr("Pick source"));
             QUrl oldUrl;
             if(fileSource->dataCollectionFrame() >= 0 && fileSource->dataCollectionFrame() < fileSource->frames().size())
                 oldUrl = fileSource->frames()[fileSource->dataCollectionFrame()].sourceFile;
@@ -330,7 +327,8 @@ void FileSourceEditor::importNewFile(FileSource* fileSource, const QUrl& url, Ov
         if(editorClass && editorClass->isDerivedFrom(FileImporterEditor::OOClass())) {
             OORef<FileImporterEditor> editor = dynamic_object_cast<FileImporterEditor>(editorClass->createInstance());
             if(editor) {
-                editor->inspectNewFile(newImporter, url, mainWindow());
+                editor->setUserInterface(ui());
+                editor->inspectNewFile(newImporter, url);
                 this_task::throwIfCanceled();
             }
         }
@@ -366,7 +364,7 @@ void FileSourceEditor::onReloadAnimation()
             auto future = fileSource->updateListOfFrames(true);
 
             // After the trajectory update is complete, jump to the last one of the newly added animation frames.
-            OORef<AnimationSettings> anim = mainWindow().datasetContainer().activeAnimationSettings();
+            OORef<AnimationSettings> anim = activeAnimationSettings();
             if(anim && anim->currentFrame() == anim->lastFrame()) {
                 int oldFrameCount = fileSource->frames().size();
                 future.finally(ObjectExecutor(fileSource), [fileSource, oldFrameCount, anim=std::move(anim)](Task& task) noexcept {
@@ -510,7 +508,7 @@ void FileSourceEditor::onFrameSelected(int index)
     if(!fileSource) return;
 
     if(fileSource->restrictToFrame() < 0) {
-        if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings()) {
+        if(AnimationSettings* anim = activeAnimationSettings()) {
             anim->setCurrentFrame(fileSource->sourceFrameToAnimationTime(index).frame());
         }
     }

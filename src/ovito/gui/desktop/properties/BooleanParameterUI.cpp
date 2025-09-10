@@ -69,7 +69,7 @@ void BooleanParameterUI::resetUI()
 
     if(isReferenceFieldUI() && editObject()) {
         // Update the displayed value when the animation time has changed.
-        connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &BooleanParameterUI::updateUI, Qt::UniqueConnection);
+        connect(&datasetContainer(), &DataSetContainer::currentFrameChanged, this, &BooleanParameterUI::updateUI, Qt::UniqueConnection);
     }
 }
 

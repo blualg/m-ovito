@@ -25,7 +25,7 @@
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/stdobj/gui/properties/InputColumnMappingDialog.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/io/FileSource.h>
 #include <ovito/core/utilities/concurrent/TaskManager.h>
@@ -39,11 +39,11 @@ SET_OVITO_OBJECT_EDITOR(LAMMPSDumpLocalImporter, LAMMPSDumpLocalImporterEditor);
 /******************************************************************************
 * This is called by the system when the user has selected a new file to import.
 ******************************************************************************/
-void LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
+void LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile)
 {
     // Retrieve column information of input file.
     LAMMPSDumpLocalImporter* lammpsImporter = static_object_cast<LAMMPSDumpLocalImporter>(importer);
-    InputColumnMapping mapping = ProgressDialog::blockForFuture(lammpsImporter->inspectFileHeader(sourceFile), mainWindow, tr("Inspecting file header"));
+    InputColumnMapping mapping = ProgressDialog::blockForFuture(lammpsImporter->inspectFileHeader(sourceFile), ui(), tr("Inspecting file header"));
 
     // If this is a newly created file importer, load old mapping from application settings store.
     if(lammpsImporter->columnMapping().empty()) {
@@ -82,7 +82,7 @@ void LAMMPSDumpLocalImporterEditor::inspectNewFile(FileImporter* importer, const
         }
     }
 
-    InputColumnMappingDialog dialog(mainWindow, mapping, &mainWindow, sourceFile.fileName());
+    InputColumnMappingDialog dialog(ui(), mapping, ui().mainWindow(), sourceFile.fileName());
     if(dialog.exec() == QDialog::Accepted) {
         lammpsImporter->setColumnMapping(dialog.mapping());
 
@@ -175,7 +175,7 @@ void LAMMPSDumpLocalImporterEditor::onEditColumnMapping()
                 }
             }
 
-            InputColumnMappingDialog dialog(mainWindow(), mapping, parentWindow());
+            InputColumnMappingDialog dialog(ui(), mapping, parentWindow());
             if(dialog.exec() == QDialog::Accepted) {
                 performTransaction(tr("Change file column mapping"), [&]() {
                     importer->setColumnMapping(dialog.mapping());

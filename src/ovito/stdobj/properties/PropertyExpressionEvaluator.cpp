@@ -449,7 +449,7 @@ QString PropertyExpressionEvaluator::inputVariableTable() const
             if(v.description.isEmpty())
                 str.append(QStringLiteral("<li>%1</li>").arg(convertMuString(v.mangledName)));
             else
-                str.append(QStringLiteral("<li>%1 (<i style=\"color: #555;\">%2</i>)</li>").arg(convertMuString(v.mangledName)).arg(v.description));
+                str.append(QStringLiteral("<li>%1 <span style=\"DESCRIPTION_STYLE_PLACEHOLDER\">(%2)</span></li>").arg(convertMuString(v.mangledName)).arg(v.description));
         }
     }
     str.append(QStringLiteral("</ul></p><p><b>Global values:</b><ul>"));
@@ -458,7 +458,7 @@ QString PropertyExpressionEvaluator::inputVariableTable() const
             if(v.description.isEmpty())
                 str.append(QStringLiteral("<li>%1</li>").arg(convertMuString(v.mangledName)));
             else
-                str.append(QStringLiteral("<li>%1 (<i style=\"color: #555;\">%2</i>)</li>").arg(convertMuString(v.mangledName)).arg(v.description));
+                str.append(QStringLiteral("<li>%1 <span style=\"DESCRIPTION_STYLE_PLACEHOLDER\">(%2)</span></li>").arg(convertMuString(v.mangledName)).arg(v.description));
         }
     }
     str.append(QStringLiteral("</ul></p><p><b>Constants:</b><ul>"));
@@ -467,7 +467,7 @@ QString PropertyExpressionEvaluator::inputVariableTable() const
             if(v.description.isEmpty())
                 str.append(QStringLiteral("<li>%1</li>").arg(convertMuString(v.mangledName)));
             else
-                str.append(QStringLiteral("<li>%1 (<i style=\"color: #555;\">%2</i>)</li>").arg(convertMuString(v.mangledName)).arg(v.description));
+                str.append(QStringLiteral("<li>%1 <span style=\"DESCRIPTION_STYLE_PLACEHOLDER\">(%2)</span></li>").arg(convertMuString(v.mangledName)).arg(v.description));
         }
     }
     str.append(QStringLiteral("</ul></p>"));

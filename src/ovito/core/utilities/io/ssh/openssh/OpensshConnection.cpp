@@ -79,7 +79,7 @@ void OpensshConnection::connectToHost()
         connect(_process, &QProcess::started, this, [this]() {
             setState(StateConnecting, true);
             //_process->write("-@progress\n"); // Turn off transfer progress meter.
-            _process->write("@!echo \"<<<BEGIN_SESSION>>>\"\n");  // This will tell us when the ssh connection has been established.
+            _process->write("@!echo \"<<<BEGIN_OVITO_SESSION>>>\"\n");  // This will tell us when the ssh connection has been established.
         });
         connect(_process, &QProcess::finished, this, [this]() {
             _errorMessages.push_back(tr("sftp process has exited."));
@@ -175,12 +175,12 @@ void OpensshConnection::onReadyReadStandardOutput()
         if(line.isEmpty())
             break;
 
-        if(_state == StateConnecting && line.startsWith("<<<BEGIN_SESSION>>>")) {
+        if(_state == StateConnecting && line.contains("<<<BEGIN_OVITO_SESSION>>>")) {
             connect(_process, &QProcess::readyReadStandardError, this, &OpensshConnection::onReadyReadStandardError);
             setState(StateOpened, true);
             processRequests();
         }
-        else if(line.startsWith("<<<END_REQUEST>>>")) {
+        else if(line.contains("<<<END_OVITO_REQUEST>>>")) {
             OVITO_ASSERT(_requestInFlight);
             _requestInFlight = false;
             if(_activeRequest)
@@ -242,7 +242,7 @@ void OpensshConnection::processRequests()
             if(_process && !_activeRequest.isNull()) {
                 // Signal end of request.
                 _requestInFlight = true;
-                _process->write("@!echo \"<<<END_REQUEST>>>\"\n");
+                _process->write("@!echo \"<<<END_OVITO_REQUEST>>>\"\n");
             }
         }
     }

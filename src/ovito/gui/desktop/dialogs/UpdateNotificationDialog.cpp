@@ -149,6 +149,11 @@ void UpdateNotificationService::applicationStarting()
     if(Application::runMode() != Application::AppMode)
         return;
 
+    // Get a pointer to the current main window.
+    const MainWindowUI* ui = dynamic_object_cast<MainWindowUI>(this_task::ui().get());
+    OVITO_ASSERT(ui);
+    _mainWindow = ui->mainWindow();
+
     // Get operating system
 #if !defined(OVITO_BUILD_APPSTORE_VERSION)
     const QSettings settings;
@@ -187,15 +192,6 @@ void UpdateNotificationService::applicationStarting()
         connect(networkReply, &QNetworkReply::finished, this, &UpdateNotificationService::onWebRequestFinished);
     }
 #endif
-}
-
-/******************************************************************************
- * Is called when a new main window is created.
- * Stores a reference to the main window.
- ******************************************************************************/
-void UpdateNotificationService::registerActions(ActionManager& actionManager, MainWindow& mainWindow)
-{
-    _mainWindow = &mainWindow;
 }
 
 /******************************************************************************

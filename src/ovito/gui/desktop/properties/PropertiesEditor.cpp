@@ -47,7 +47,7 @@ PropertiesEditor::Registry& PropertiesEditor::registry()
 /******************************************************************************
 * Creates a PropertiesEditor for an object.
 ******************************************************************************/
-OORef<PropertiesEditor> PropertiesEditor::create(MainWindow& mainWindow, RefTarget* obj)
+OORef<PropertiesEditor> PropertiesEditor::create(MainWindowUI& ui, RefTarget* obj)
 {
     OVITO_CHECK_POINTER(obj);
     try {
@@ -62,7 +62,7 @@ OORef<PropertiesEditor> PropertiesEditor::create(MainWindow& mainWindow, RefTarg
         }
     }
     catch(Exception& ex) {
-        mainWindow.reportError(ex.prependGeneralMessage(tr("Failed to create editor component for the '%1' object.").arg(obj->objectTitle())));
+        ui.reportError(ex.prependGeneralMessage(tr("Failed to create editor component for the '%1' object.").arg(obj->objectTitle())));
     }
     return nullptr;
 }
@@ -76,7 +76,7 @@ void PropertiesEditor::initialize(PropertiesPanel* container, const RolloutInser
     OVITO_ASSERT_MSG(_container == nullptr, "PropertiesEditor::initialize()", "Editor can only be initialized once.");
     OVITO_ASSERT_MSG(_parentEditor == nullptr, "PropertiesEditor::initialize()", "Editor can only be initialized once.");
     _container = container;
-    _mainWindow = &container->mainWindow();
+    setUserInterface(container->ui());
     _parentEditor = parentEditor;
     // Forward signals emitted by the parent editor.
     if(parentEditor) {
@@ -221,16 +221,16 @@ void PropertiesEditor::referenceReplaced(const PropertyFieldDescriptor* field, R
 {
     if(field == PROPERTY_FIELD(editObject)) {
         if(oldTarget) {
-            oldTarget->editingStopped(mainWindow());
+            oldTarget->editingStopped(ui());
         }
         Q_EMIT contentsReplaced(editObject());
         Q_EMIT contentsChanged(editObject());
         if(newTarget) {
-            newTarget->editingStarted(mainWindow());
+            newTarget->editingStarted(ui());
         }
         if(!isBeingDeleted()) {
-            emitPipelineInputChangedSignal(this, mainWindow());
-            emitPipelineOutputChangedSignal(this, mainWindow());
+            emitPipelineInputChangedSignal(this, ui());
+            emitPipelineOutputChangedSignal(this, ui());
         }
     }
     RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);
@@ -353,6 +353,7 @@ QVector<ModificationNode*> PropertiesEditor::modificationNodes() const
 /******************************************************************************
 * For an editor of a DataVis element, returns the data collection path to
 * the DataObject which the DataVis element is attached to.
+* If the DataVis element is attached to more than one DataObject, an arbitrary one is returned.
 ******************************************************************************/
 ConstDataObjectRefPath PropertiesEditor::getVisDataObjectPath() const
 {
@@ -377,8 +378,32 @@ ConstDataObjectRefPath PropertiesEditor::getVisDataObjectPath() const
 }
 
 /******************************************************************************
+* For an editor of a DataVis element, returns the data collection paths to
+* the DataObjects which the DataVis element is attached to.
+******************************************************************************/
+std::vector<ConstDataObjectRefPath> PropertiesEditor::getVisDataObjectPaths() const
+{
+    std::vector<ConstDataObjectRefPath> list;
+    if(DataVis* vis = dynamic_object_cast<DataVis>(editObject())) {
+        for(Pipeline* pipeline : vis->pipelines(true)) {
+            const PipelineFlowState& state = pipeline->getCachedPipelineOutput(currentAnimationTime());
+            for(const ConstDataObjectPath& path : pipeline->getDataObjectsForVisElement(state, vis)) {
+                list.emplace_back(path.begin(), path.end());
+            }
+        }
+    }
+    if(parentEditor()) {
+        auto parentPaths = parentEditor()->getVisDataObjectPaths();
+        list.insert(list.end(), std::make_move_iterator(parentPaths.begin()), std::make_move_iterator(parentPaths.end()));
+    }
+    return list;
+}
+
+/******************************************************************************
 * For an editor of a DataVis element, returns the DataObject to which the
 * DataVis element is attached.
+* If the DataVis element is attached to more than one DataObject, the path for
+* an arbitrary one is returned.
 ******************************************************************************/
 ConstDataObjectRef PropertiesEditor::getVisDataObject() const
 {
@@ -388,21 +413,16 @@ ConstDataObjectRef PropertiesEditor::getVisDataObject() const
 }
 
 /******************************************************************************
-* Returns the current animation time.
+* For an editor of a DataVis element, returns all DataObjects which the DataVis element is attached to.
 ******************************************************************************/
-AnimationTime PropertiesEditor::currentAnimationTime() const
+std::vector<ConstDataObjectRef> PropertiesEditor::getVisDataObjects() const
 {
-    if(AnimationSettings* anim = mainWindow().datasetContainer().activeAnimationSettings())
-        return anim->currentTime();
-    return AnimationTime(0);
-}
-
-/******************************************************************************
-* Returns the viewport that is currently selected.
-******************************************************************************/
-Viewport* PropertiesEditor::activeViewport() const
-{
-    return mainWindow().datasetContainer().activeViewport();
+    std::vector<ConstDataObjectRefPath> paths = getVisDataObjectPaths();
+    std::vector<ConstDataObjectRef> result;
+    result.reserve(paths.size());
+    for(const ConstDataObjectRefPath& path : paths)
+        result.emplace_back(std::move(path.back()));
+    return result;
 }
 
 }   // End of namespace

@@ -247,4 +247,55 @@ void BasePipelineSource::discardDataCollection()
 
     pushIfUndoRecording<ResetDataCollectionOperation>(this);
 }
+
+/******************************************************************************
+* Replaces all references to the given visual element in the pipeline with new compatible objects.
+******************************************************************************/
+void BasePipelineSource::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    DataOORef<const DataCollection> dc = dataCollection();
+    if(!dc)
+        return;
+
+    // Temporarily detach data collection from the BasePipelineSource to ignore change signals sent by the data collection.
+    setDataCollection(nullptr);
+
+    // Make the replacement in all of the data collection's data objects.
+    bool wasReplaced = dc->replaceVisualElement(visElement, getReplacement);
+
+    // Re-attach the updated data collection to the pipeline source.
+    setDataCollection(std::move(dc));
+
+    if(wasReplaced) {
+
+        class ModifiedDataCollectionOperation : public UndoableOperation
+        {
+        private:
+            OORef<BasePipelineSource> _source;
+        public:
+            ModifiedDataCollectionOperation(BasePipelineSource* source) : _source(source) {}
+            virtual void undo() override {
+                if(_source->dataCollectionFrame() >= 0) {
+                    _source->pipelineCache().overrideCache(_source->dataCollection(), _source->frameTimeInterval(_source->dataCollectionFrame()));
+                }
+                _source->notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+                _source->notifyTargetChanged();
+            }
+        };
+
+        pushIfUndoRecording<ModifiedDataCollectionOperation>(this);
+
+        _userHasChangedDataCollection.set(this, PROPERTY_FIELD(userHasChangedDataCollection), true);
+
+        // Invalidate pipeline cache, except at the current animation time.
+        // Here we use the updated data collection.
+        if(dataCollectionFrame() >= 0) {
+            pipelineCache().overrideCache(dataCollection(), frameTimeInterval(dataCollectionFrame()));
+        }
+        // Let downstream pipeline know that its input has changed.
+        notifyDependents(ReferenceEvent::InteractiveStateAvailable);
+        notifyTargetChanged();
+    }
+}
+
 }   // End of namespace

@@ -116,7 +116,7 @@ QWidget* SurfaceMeshInspectionApplet::createWidget()
             OVITO_ASSERT_MSG(false, "SurfaceMeshInspectionApplet::_exportTableToFileAction", "Stacked widget index out of range.");
         }
 
-        mainWindow().handleExceptions([&] {
+        handleExceptions([&] {
             if(path.size() == 1 && !path[0].empty()) {
                 exportDataToFile(path[0], OORef<DataTableExporter>::create(), filterString);
             }

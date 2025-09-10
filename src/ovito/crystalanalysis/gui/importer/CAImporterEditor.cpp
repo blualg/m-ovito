@@ -64,7 +64,7 @@ bool CAImporterEditor::referenceEvent(RefTarget* source, const ReferenceEvent& e
 * This method is called by the FileSource each time a new source
 * file has been selected by the user.
 ******************************************************************************/
-void CAImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow)
+void CAImporterEditor::inspectNewFile(FileImporter* importer, const QUrl& sourceFile)
 {
     throw Exception(tr(
         "<p>Crystal Analysis (CA) file import is only available in OVITO Pro.</p>"

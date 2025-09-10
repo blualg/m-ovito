@@ -39,13 +39,13 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
     if(!dataset())
         return;
 
-    mainWindow().handleExceptions([&] {
+    handleExceptions([&] {
 
         // Set focus to main window to process any pending user inputs in QLineEdit widgets.
-        mainWindow().setFocus();
+        mainWindow()->setFocus();
 
         // Stop animation playback in the interactive viewports before rendering an image.
-        userInterface().datasetContainer().stopAnimationPlayback();
+        datasetContainer().stopAnimationPlayback();
 
         // Get the current render settings.
         RenderSettings* renderSettings = dataset()->renderSettings();
@@ -58,13 +58,13 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
             throw Exception(tr("Cannot render without an active ViewportConfiguration object."));
 
         // Allocate new frame buffer (or resize existing one) and display it in a window.
-        std::shared_ptr<FrameBuffer> frameBuffer = mainWindow().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
+        std::shared_ptr<FrameBuffer> frameBuffer = ui().createAndShowFrameBuffer(renderSettings->outputImageWidth(), renderSettings->outputImageHeight());
 
         // Call high-level rendering function, which will take care of the rest.
         Future<void> future = renderSettings->render(*viewportConfig, frameBuffer);
 
         // Display a progress indicator in the UI while the rendering operation is in progress.
-        mainWindow().showRenderingProgress(frameBuffer, std::move(future));
+        ui().showRenderingProgress(frameBuffer, std::move(future));
     });
 }
 
@@ -74,15 +74,15 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 void WidgetActionManager::on_ConfigureViewportGraphics_triggered()
 {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
-    if(ConfigureViewportGraphicsDialog* dialog = mainWindow().findChild<ConfigureViewportGraphicsDialog*>(Qt::FindDirectChildrenOnly)) {
+    if(ConfigureViewportGraphicsDialog* dialog = mainWindow()->findChild<ConfigureViewportGraphicsDialog*>(Qt::FindDirectChildrenOnly)) {
 #else
-    if(ConfigureViewportGraphicsDialog* dialog = mainWindow().findChild<ConfigureViewportGraphicsDialog*>(QString(), Qt::FindDirectChildrenOnly)) {
+    if(ConfigureViewportGraphicsDialog* dialog = mainWindow()->findChild<ConfigureViewportGraphicsDialog*>(QString(), Qt::FindDirectChildrenOnly)) {
 #endif
         dialog->raise();
         dialog->activateWindow();
     }
     else {
-        dialog = new ConfigureViewportGraphicsDialog(mainWindow(), &mainWindow());
+        dialog = new ConfigureViewportGraphicsDialog(ui(), mainWindow());
         dialog->show();
     }
 }

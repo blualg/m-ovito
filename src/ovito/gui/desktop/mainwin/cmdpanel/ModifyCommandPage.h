@@ -38,14 +38,14 @@ class PipelineListItem;     // defined in PipelineListItem.h
 /**
  * The command panel tab lets the user modify the selected object.
  */
-class OVITO_GUI_EXPORT ModifyCommandPage : public QWidget
+class OVITO_GUI_EXPORT ModifyCommandPage : public QWidget, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Initializes the command panel page.
-    ModifyCommandPage(MainWindow& mainWindow, QWidget* parent);
+    ModifyCommandPage(MainWindowUI& ui, QWidget* parent);
 
     /// Returns the object that is currently being edited in the properties panel.
     RefTarget* editObject() const { return _propertiesPanel->editObject(); }
@@ -83,9 +83,6 @@ private:
     void createAboutPanel();
 
 private:
-
-    /// The main window hosting this page.
-    MainWindow& _mainWindow;
 
     /// This list box shows the modifier stack of the selected scene node(s).
     QListView* _pipelineWidget;

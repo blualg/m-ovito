@@ -63,7 +63,7 @@ PropertyReferenceParameterUI::~PropertyReferenceParameterUI()
 void PropertyReferenceParameterUI::setContainerRef(const PropertyContainerReference& containerRef)
 {
     if(_containerRef != containerRef) {
-        OVITO_ASSERT(!container());
+        OVITO_ASSERT(containers().empty());
 
         _containerRef = containerRef;
         _comboBox->setContainerClass(_containerRef.dataClass());
@@ -80,15 +80,15 @@ void PropertyReferenceParameterUI::setContainerRef(const PropertyContainerRefere
 }
 
 /******************************************************************************
-* Sets the concrete property container from which properties can be selected.
+* Sets the concrete property container(s) from which properties can be selected.
 ******************************************************************************/
-void PropertyReferenceParameterUI::setContainer(const PropertyContainer* container)
+void PropertyReferenceParameterUI::setContainers(std::vector<DataOORef<const PropertyContainer>> containers)
 {
-    if(_container != container) {
+    if(!std::ranges::equal(_containers, containers)) {
         OVITO_ASSERT(!containerRef());
 
-        _container = container;
-        _comboBox->setContainerClass(container ? &container->getOOMetaClass() : nullptr);
+        _containers = std::move(containers);
+        _comboBox->setContainerClass(containerClass());
         updateUI();
     }
 }
@@ -138,16 +138,17 @@ void PropertyReferenceParameterUI::updateUI()
     }
 
     if(comboBox()) {
-        if(editObject() && (containerRef() || container())) {
+        if(editObject() && (containerRef() || !containers().empty())) {
             PropertyReference pref = getPropertyReference();
 
             if(_isInputProperty) {
                 _comboBox->beginListUpdate();
 
                 // Build the list of available input properties.
-                if(container()) {
-                    // Populate combo box with items from the input container.
-                    addItemsToComboBox(container());
+                if(!containers().empty()) {
+                    // Populate combo box with items from the input containers.
+                    for(const PropertyContainer* container : containers())
+                        addItemsToComboBox(container);
                 }
                 else {
                     // Populate combo box with items from the upstream pipeline.

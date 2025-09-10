@@ -159,6 +159,17 @@ void DislocationAnalysisModifier::initializeObject(ObjectInitializationFlags fla
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void DislocationAnalysisModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(defectMeshVis() == visElement)
+        setDefectMeshVis(static_object_cast<SurfaceMeshVis>(getReplacement(tr("Defect mesh"))));
+    if(interfaceMeshVis() == visElement)
+        setInterfaceMeshVis(static_object_cast<SurfaceMeshVis>(getReplacement(tr("Interface mesh"))));
+}
+
+/******************************************************************************
  * Creates the engine that will perform the structure identification.
  ******************************************************************************/
 std::shared_ptr<StructureIdentificationModifier::Algorithm> DislocationAnalysisModifier::createAlgorithm(

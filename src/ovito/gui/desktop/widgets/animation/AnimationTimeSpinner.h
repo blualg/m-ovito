@@ -31,14 +31,14 @@ namespace Ovito {
 /**
  * A spinner control for the current animation time.
  */
-class OVITO_GUI_EXPORT AnimationTimeSpinner : public SpinnerWidget
+class OVITO_GUI_EXPORT AnimationTimeSpinner : public SpinnerWidget, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Constructor.
-    AnimationTimeSpinner(MainWindow& mainWindow, QWidget* parent = 0);
+    AnimationTimeSpinner(MainWindowUI& ui, QWidget* parent = nullptr);
 
 protected Q_SLOTS:
 
@@ -50,24 +50,19 @@ protected Q_SLOTS:
 
     /// Is called when the spinner value has been changed by the user.
     void onSpinnerValueChanged();
-
-private:
-
-    MainWindow& _mainWindow;
 };
 
-
 /**
- * \brief This custom ParameterUnit formats the values displayed by the AnimationTimeSpinner.
+ * \brief A custom ParameterUnit that formats the values displayed by the AnimationTimeSpinner.
  */
-class OVITO_GUI_EXPORT AnimationTimeSpinnerUnit : public IntegerParameterUnit
+class OVITO_GUI_EXPORT AnimationTimeSpinnerUnit : public IntegerParameterUnit, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// \brief Constructor.
-    AnimationTimeSpinnerUnit(QObject* parent, MainWindow& mainWindow);
+    AnimationTimeSpinnerUnit(QObject* parent, MainWindowUI& ui);
 
     /// \brief Converts the given string to a time value.
     /// \param valueString This is a string representation of a value as it might have
@@ -82,10 +77,6 @@ public:
     /// \return The string representation of the value. This can be converted back using parseString().
     /// \sa parseString()
     virtual QString formatValue(FloatType value) override;
-
-private:
-
-    MainWindow& _mainWindow;
 };
 
 }   // End of namespace

@@ -58,7 +58,7 @@ void NumericalParameterUI::initUIControls(const QString& labelText)
     _spinner = new SpinnerWidget();
     connect(spinner(), &SpinnerWidget::valueChanged, this, &NumericalParameterUI::updatePropertyValue);
     spinner()->setTextBox(_textBox);
-    spinner()->enableAutomaticUndo(mainWindow(), tr("Change parameter"));
+    spinner()->enableAutomaticUndo(ui(), tr("Change parameter"));
     if(propertyField()->numericalParameterInfo() != nullptr) {
         spinner()->setMinValue(propertyField()->numericalParameterInfo()->minValue);
         spinner()->setMaxValue(propertyField()->numericalParameterInfo()->maxValue);
@@ -106,7 +106,7 @@ void NumericalParameterUI::resetUI()
         if(editObject()) {
             if(spinner()->unit() == nullptr) {
                 if(parameterUnitType())
-                    spinner()->setUnit(mainWindow().unitsManager().getUnit(parameterUnitType()));
+                    spinner()->setUnit(ui().unitsManager().getUnit(parameterUnitType()));
             }
         }
         else {
@@ -116,7 +116,7 @@ void NumericalParameterUI::resetUI()
 
     if(isReferenceFieldUI() && editObject()) {
         // Update the displayed value when the animation time has changed.
-        connect(&mainWindow().datasetContainer(), &DataSetContainer::currentFrameChanged, this, &NumericalParameterUI::updateUI, Qt::UniqueConnection);
+        connect(&datasetContainer(), &DataSetContainer::currentFrameChanged, this, &NumericalParameterUI::updateUI, Qt::UniqueConnection);
     }
 
     PropertyParameterUI::resetUI();

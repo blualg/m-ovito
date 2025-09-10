@@ -177,12 +177,18 @@ public:
         ui.updateViewports();
     }
 
+    /// Asks the modifier to replace a visual element owned by this modifier with a new compatible object, which is created
+    /// on demand by the provided callback function. The callback function accepts an optional human-readable title, which will
+    /// be used for the new visual element.
+    virtual void replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) override;
+
     // Slice the coordinates / particle positions to the [output] maskProperty
     // Can be reused to slice particles or vectors
     static size_t sliceCoordinatesToMask(Plane3 plane, FloatType sliceWidth, bool invert, const Property* positionProperty,
                                          DataBuffer* maskBuffer, const Property* selectionProperty);
 
 protected:
+
     /// Gets called by the system when the modifier is being inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
 

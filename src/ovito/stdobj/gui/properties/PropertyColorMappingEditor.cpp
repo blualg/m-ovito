@@ -154,6 +154,14 @@ void PropertyColorMappingEditor::createUI(const RolloutInsertionParameters& roll
 }
 
 /******************************************************************************
+* Sets the property container(s) containing the input properties the user can choose from.
+******************************************************************************/
+void PropertyColorMappingEditor::setPropertyContainers(std::vector<DataOORef<const PropertyContainer>> containers)
+{
+    _sourcePropertyUI->setContainers(std::move(containers));
+}
+
+/******************************************************************************
 * Updates the display for the color gradient.
 ******************************************************************************/
 void PropertyColorMappingEditor::updateColorGradient()
@@ -221,24 +229,28 @@ bool PropertyColorMappingEditor::referenceEvent(RefTarget* source, const Referen
 ******************************************************************************/
 std::optional<std::pair<FloatType, FloatType>> PropertyColorMappingEditor::determineValueRange() const
 {
+    std::optional<std::pair<FloatType, FloatType>> result;
+
     // Get the color mapping object.
-    PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject());
-    if(!mapping)
-        return {};
-
-    // Get the property container.
-    const PropertyContainer* container = _sourcePropertyUI->container();
-    if(!container)
-        return {};
-
-    // Look up the selected property.
-    QString errorDescr;
-    auto [pseudoColorProperty, pseudoColorPropertyComponent] = mapping->sourceProperty().findInContainerWithComponent(container, errorDescr);
-    if(!pseudoColorProperty)
-        return {};
-
-    // Determine min/max value range.
-    return mapping->determineValueRange(pseudoColorProperty, pseudoColorPropertyComponent);
+    if(PropertyColorMapping* mapping = static_object_cast<PropertyColorMapping>(editObject())) {
+        // Visit each property container.
+        for(const PropertyContainer* container : _sourcePropertyUI->containers()) {
+            // Look up the selected property.
+            QString errorDescr;
+            auto [pseudoColorProperty, pseudoColorPropertyComponent] = mapping->sourceProperty().findInContainerWithComponent(container, errorDescr);
+            if(pseudoColorProperty) {
+                // Determine min/max value range.
+                if(auto range = mapping->determineValueRange(pseudoColorProperty, pseudoColorPropertyComponent)) {
+                    // Unite ranges from all containers.
+                    if(!result)
+                        result = range;
+                    else
+                        result = std::make_pair(std::min(result->first, range->first), std::max(result->second, range->second));
+                }
+            }
+        }
+    }
+    return result;
 }
 
 /******************************************************************************
@@ -339,7 +351,7 @@ void PropertyColorMappingEditor::onExportColorScale()
         QImage image = ColorMap::generateImage<legendWidth>(mapping->pseudoColorMapping().gradient(), numDiscreteColors);
         QString imageFilename = fileDialog.imageInfo().filename();
         if(!image.scaled(legendWidth, legendHeight, Qt::IgnoreAspectRatio, Qt::FastTransformation).save(imageFilename, fileDialog.imageInfo().format())) {
-            mainWindow().reportError(tr("Failed to save image to file '%1'.").arg(imageFilename));
+            ui().reportError(tr("Failed to save image to file '%1'.").arg(imageFilename));
         }
     }
 }

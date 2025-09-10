@@ -33,14 +33,14 @@ namespace Ovito {
 /**
  * \brief The context menu of the viewports.
  */
-class OVITO_GUI_EXPORT ViewportMenu : public QMenu
+class OVITO_GUI_EXPORT ViewportMenu : public QMenu, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Initializes the menu.
-    ViewportMenu(MainWindow& mainWindow, ViewportWindow* viewportWindow, QWidget* viewportWidget);
+    ViewportMenu(MainWindowUI& ui, ViewportWindow* viewportWindow, QWidget* viewportWidget);
 
     /// Displays the menu.
     void show(const QPoint& pos);
@@ -63,9 +63,6 @@ private Q_SLOTS:
     void onPipelineVisibility(bool checked);
 
 private:
-
-    /// The main window this context menu belongs to.
-    MainWindow& _mainWindow;
 
     /// The viewport window this menu belongs to.
     OORef<ViewportWindow> _viewportWindow;

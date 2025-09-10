@@ -117,6 +117,15 @@ void VoronoiAnalysisModifier::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void VoronoiAnalysisModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(polyhedraVis() == visElement)
+        setPolyhedraVis(static_object_cast<SurfaceMeshVis>(getReplacement(tr("Voronoi polyhedra"))));
+}
+
+/******************************************************************************
 * Asks the modifier whether it can be applied to the given input data.
 ******************************************************************************/
 bool VoronoiAnalysisModifier::OOMetaClass::isApplicableTo(const DataCollection& input) const

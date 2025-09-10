@@ -74,10 +74,10 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
     layout->addLayout(sublayout, layoutRow++, 1, 1, 3);
 
     // Override automatic increment step sizes for the cell parameters.
-    _relativeMatrixUnits.emplace(mainWindow().unitsManager().floatIdentityUnit());
-    _relativeTranslationUnits[0].emplace(mainWindow().unitsManager().floatIdentityUnit());
-    _relativeTranslationUnits[1].emplace(mainWindow().unitsManager().floatIdentityUnit());
-    _relativeTranslationUnits[2].emplace(mainWindow().unitsManager().floatIdentityUnit());
+    _relativeMatrixUnits.emplace(unitsManager().floatIdentityUnit());
+    _relativeTranslationUnits[0].emplace(unitsManager().floatIdentityUnit());
+    _relativeTranslationUnits[1].emplace(unitsManager().floatIdentityUnit());
+    _relativeTranslationUnits[2].emplace(unitsManager().floatIdentityUnit());
 
     for(int row = 0; row < 4; row++) {
         if(row == 3) {
@@ -118,7 +118,7 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
             sublayout->addWidget(spinner);
             layout->addLayout(sublayout, layoutRow, col+1);
 
-            spinner->enableAutomaticUndo(mainWindow(), tr("Change parameter"));
+            spinner->enableAutomaticUndo(ui(), tr("Change parameter"));
             connect(spinner, &SpinnerWidget::valueChanged, this, &AffineTransformationModifierEditor::onSpinnerValueChanged);
             connect(_relativeModeUI->buttonTrue(), &QRadioButton::toggled, spinner, &SpinnerWidget::setEnabled);
             connect(_relativeModeUI->buttonTrue(), &QRadioButton::toggled, lineEdit, &QLineEdit::setEnabled);
@@ -143,7 +143,7 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
             layout->addLayout(destinationCellUI->createFieldLayout(), layoutRow, r+1);
             connect(_relativeModeUI->buttonFalse(), &QRadioButton::toggled, destinationCellUI, &AffineTransformationParameterUI::setEnabled);
             _absoluteCellSpinners[r][v] = destinationCellUI->spinner();
-            _absoluteCellUnits[r][v].emplace(mainWindow().unitsManager().getUnit(destinationCellUI->parameterUnitType()));
+            _absoluteCellUnits[r][v].emplace(unitsManager().getUnit(destinationCellUI->parameterUnitType()));
             destinationCellUI->spinner()->setUnit(&_absoluteCellUnits[r][v].value());
             destinationCellUI->textBox()->setPlaceholderText(_absoluteCellUnits[r][v]->formatValue(0));
             destinationCellUI->spinner()->setStandardValue(0);
@@ -159,7 +159,7 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
         layout->addLayout(destinationCellUI->createFieldLayout(), layoutRow, r+1);
         connect(_relativeModeUI->buttonFalse(), &QRadioButton::toggled, destinationCellUI, &AffineTransformationParameterUI::setEnabled);
         _absoluteCellSpinners[r][3] = destinationCellUI->spinner();
-        _absoluteOriginUnits[r].emplace(mainWindow().unitsManager().getUnit(destinationCellUI->parameterUnitType()));
+        _absoluteOriginUnits[r].emplace(unitsManager().getUnit(destinationCellUI->parameterUnitType()));
         destinationCellUI->spinner()->setUnit(&_absoluteOriginUnits[r].value());
         destinationCellUI->textBox()->setPlaceholderText(_absoluteOriginUnits[r]->formatValue(0));
         destinationCellUI->spinner()->setStandardValue(0);
@@ -316,7 +316,7 @@ void AffineTransformationModifierEditor::onEnterRotation()
     if(!mod) return;
 
     UndoableTransaction transaction;
-    transaction.begin(mainWindow(), tr("Set transformation matrix"));
+    transaction.begin(ui(), tr("Set transformation matrix"));
 
     handleExceptions([&] {
         QDialog dlg(container()->window());
@@ -342,9 +342,9 @@ void AffineTransformationModifierEditor::onEnterRotation()
         axisSpinnerX->setTextBox(axisEditX);
         axisSpinnerY->setTextBox(axisEditY);
         axisSpinnerZ->setTextBox(axisEditZ);
-        axisSpinnerX->setUnit(mainWindow().unitsManager().worldUnit());
-        axisSpinnerY->setUnit(mainWindow().unitsManager().worldUnit());
-        axisSpinnerZ->setUnit(mainWindow().unitsManager().worldUnit());
+        axisSpinnerX->setUnit(unitsManager().worldUnit());
+        axisSpinnerY->setUnit(unitsManager().worldUnit());
+        axisSpinnerZ->setUnit(unitsManager().worldUnit());
         layout->addWidget(axisEditX, 1, 0);
         layout->addWidget(axisSpinnerX, 1, 1);
         layout->addWidget(axisEditY, 1, 3);
@@ -355,7 +355,7 @@ void AffineTransformationModifierEditor::onEnterRotation()
         QLineEdit* angleEdit = new EnterLineEdit();
         SpinnerWidget* angleSpinner = new SpinnerWidget();
         angleSpinner->setTextBox(angleEdit);
-        angleSpinner->setUnit(mainWindow().unitsManager().angleUnit());
+        angleSpinner->setUnit(unitsManager().angleUnit());
         layout->addWidget(angleEdit, 3, 0);
         layout->addWidget(angleSpinner, 3, 1);
         layout->addWidget(new QLabel(tr("Center of rotation (xyz):")), 4, 0, 1, 8);
@@ -368,9 +368,9 @@ void AffineTransformationModifierEditor::onEnterRotation()
         centerSpinnerX->setTextBox(centerEditX);
         centerSpinnerY->setTextBox(centerEditY);
         centerSpinnerZ->setTextBox(centerEditZ);
-        centerSpinnerX->setUnit(mainWindow().unitsManager().worldUnit());
-        centerSpinnerY->setUnit(mainWindow().unitsManager().worldUnit());
-        centerSpinnerZ->setUnit(mainWindow().unitsManager().worldUnit());
+        centerSpinnerX->setUnit(unitsManager().worldUnit());
+        centerSpinnerY->setUnit(unitsManager().worldUnit());
+        centerSpinnerZ->setUnit(unitsManager().worldUnit());
         layout->addWidget(centerEditX, 5, 0);
         layout->addWidget(centerSpinnerX, 5, 1);
         layout->addWidget(centerEditY, 5, 3);

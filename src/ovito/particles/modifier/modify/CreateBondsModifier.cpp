@@ -81,6 +81,15 @@ void CreateBondsModifier::initializeObject(ObjectInitializationFlags flags)
 }
 
 /******************************************************************************
+* Replaces any references the modifier has to the given visual element with a new compatible object.
+******************************************************************************/
+void CreateBondsModifier::replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement)
+{
+    if(bondsVis() == visElement)
+        setBondsVis(static_object_cast<BondsVis>(getReplacement({})));
+}
+
+/******************************************************************************
 * Is called when a RefTarget referenced by this object generated an event.
 ******************************************************************************/
 bool CreateBondsModifier::referenceEvent(RefTarget* source, const ReferenceEvent& event)

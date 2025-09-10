@@ -21,7 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include "TemplatesPageBase.h"
@@ -89,7 +89,7 @@ void TemplatesPageBase::insertSettingsDialogPage(QTabWidget* tabWidget)
 ******************************************************************************/
 void TemplatesPageBase::onCreateTemplate()
 {
-    mainWindow().handleExceptions([&] {
+    handleExceptions([&] {
         QDialog dlg(settingsDialog());
         dlg.setWindowTitle(tr("Create %1 template").arg(objectTypeNameLC()));
         QVBoxLayout* mainLayout = new QVBoxLayout(&dlg);
@@ -134,8 +134,8 @@ void TemplatesPageBase::onCreateTemplate()
         connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 
         // Implement Help button.
-        connect(buttonBox, &QDialogButtonBox::helpRequested, settingsDialog(), [&]() {
-            mainWindow().actionManager()->openHelpTopic(helpTopicId());
+        connect(buttonBox, &QDialogButtonBox::helpRequested, this, [&]() {
+            actionManager()->openHelpTopic(helpTopicId());
         });
 
         mainLayout->addWidget(buttonBox);
@@ -159,7 +159,7 @@ void TemplatesPageBase::onCreateTemplate()
 ******************************************************************************/
 void TemplatesPageBase::onDeleteTemplate()
 {
-    mainWindow().handleExceptions([&] {
+    handleExceptions([&] {
         QStringList selectedTemplates;
         for(const QModelIndex& index : _listWidget->selectionModel()->selectedRows())
             selectedTemplates.push_back(templateManager()->templateList()[index.row()]);
@@ -175,7 +175,7 @@ void TemplatesPageBase::onDeleteTemplate()
 ******************************************************************************/
 void TemplatesPageBase::onRenameTemplate()
 {
-    mainWindow().handleExceptions([&] {
+    handleExceptions([&] {
         for(const QModelIndex& index : _listWidget->selectionModel()->selectedRows()) {
             QString oldTemplateName = templateManager()->templateList()[index.row()];
             QString newTemplateName = oldTemplateName;
@@ -202,7 +202,7 @@ void TemplatesPageBase::onRenameTemplate()
 ******************************************************************************/
 void TemplatesPageBase::onExportTemplates()
 {
-    mainWindow().handleExceptions([&] {
+    handleExceptions([&] {
         if(templateManager()->templateList().empty())
             throw Exception(tr("There are no %1 templates to export.").arg(objectTypeNameLC()));
 
@@ -228,7 +228,7 @@ void TemplatesPageBase::onExportTemplates()
 ******************************************************************************/
 void TemplatesPageBase::onImportTemplates()
 {
-    mainWindow().handleExceptions([&] {
+    handleExceptions([&] {
         TaskManager::setNativeDialogActive(true);
         QString filename = QFileDialog::getOpenFileName(settingsDialog(),
             tr("Import %1 templates").arg(objectTypeNameLC()), QString(), templateFileFilter());
@@ -263,7 +263,7 @@ void TemplatesPageBase::saveValues(QTabWidget* tabWidget)
 ******************************************************************************/
 void TemplatesPageBase::restoreValues(QTabWidget* tabWidget)
 {
-    mainWindow().handleExceptions([&] {
+    handleExceptions([&] {
         if(_dirtyFlag) {
             templateManager()->restore();
             _dirtyFlag = false;

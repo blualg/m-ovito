@@ -64,7 +64,7 @@ public:
     bool initialize(int& argc, char** argv);
 
     /// Cancels all running tasks associated with this user interface and closes the user interface as soon as possible (without asking user to save changes).
-    virtual void shutdown() override;
+    virtual bool shutdown() override;
 
     /// \brief Handler method for Qt error messages.
     ///

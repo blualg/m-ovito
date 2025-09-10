@@ -167,7 +167,7 @@ void SimulationCellEditor::updateSimulationBoxSize()
     if(!cell) return;
 
     const AffineTransformation& cellTM = cell->cellMatrix();
-    ParameterUnit* worldUnit = mainWindow().unitsManager().worldUnit();
+    ParameterUnit* worldUnit = ui().unitsManager().worldUnit();
 
     for(size_t dim = 0; dim < 3; dim++) {
         FloatType size = std::max({std::abs(cellTM.column(0)[dim]), std::abs(cellTM.column(1)[dim]), std::abs(cellTM.column(2)[dim])});

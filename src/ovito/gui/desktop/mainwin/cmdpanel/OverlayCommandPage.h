@@ -36,14 +36,14 @@ class OverlayListItem;  // defined in OverlayListItem.h
 /**
  * The command panel tab lets the user edit the viewport overlays.
  */
-class OVITO_GUI_EXPORT OverlayCommandPage : public QWidget
+class OVITO_GUI_EXPORT OverlayCommandPage : public QWidget, public UserInterfaceComponent<MainWindowUI>
 {
     Q_OBJECT
 
 public:
 
     /// Initializes the command panel page.
-    OverlayCommandPage(MainWindow& mainWindow, QWidget* parent);
+    OverlayCommandPage(MainWindowUI& ui, QWidget* parent);
 
     /// Returns the list model that encapsulates the list of overlays of the active viewport.
     OverlayListModel* overlayListModel() const { return _overlayListModel; }
@@ -81,9 +81,6 @@ private:
 
     /// Returns the selected viewport layer.
     ViewportOverlay* selectedLayer() const;
-
-    /// The main window hosting this page.
-    MainWindow& _mainWindow;
 
     /// Contains the list of available layer types.
     QComboBox* _newLayerBox;

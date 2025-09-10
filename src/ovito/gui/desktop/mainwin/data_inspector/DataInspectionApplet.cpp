@@ -33,14 +33,6 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(DataInspectionApplet);
 
 /******************************************************************************
-* Returns the main window this applet is embedded in.
-******************************************************************************/
-MainWindow& DataInspectionApplet::mainWindow() const
-{
-    return inspectorPanel()->mainWindow();
-}
-
-/******************************************************************************
 * Returns the currently selected data pipeline.
 ******************************************************************************/
 Pipeline* DataInspectionApplet::currentPipeline() const

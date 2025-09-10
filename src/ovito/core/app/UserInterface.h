@@ -119,10 +119,7 @@ public:
     bool exitingDueToFatalError() const { return _exitingDueToFatalError; }
 
     /// Cancels all running tasks associated with this user interface and closes the user interface as soon as possible (without asking user to save changes).
-    virtual void shutdown();
-
-    /// Call this to keep the UI object alive until shutdown() is called on it.
-    void keepAliveUntilShutdown() { _selfGuard = this; }
+    virtual bool shutdown();
 
     /// Returns a shared_ptr to this UserInterface object.
     std::shared_ptr<UserInterface> shared_from_this() {
@@ -280,10 +277,101 @@ protected:
     /// Indicates that exitWithFatalError() has been called and the application is shutting down.
     bool _exitingDueToFatalError = false;
 
-    /// This keeps the UI object itself alive until shutdown() is called.
-    OORef<UserInterface> _selfGuard;
-
     friend class TaskProgress; // Needs access to the taskProgressBegin(), taskProgressEnd(), and taskProgressUpdate() methods.
+};
+
+/**
+ * @brief Template class for components associated with a user interface.
+ *
+ * Mix-in base class for UI components that interact with a specific type of UserInterface.
+ * It manages the association with the UserInterface instance and provides convenient access to
+ * various methods provided by the UserInterface object.
+ *
+ * @tparam UserInterfaceType The type of user interface this component is associated with. Must be derived from UserInterface, e.g. MainWindowUI.
+ */
+template<typename UserInterfaceType, bool UseStrongReference = true>
+    requires std::derived_from<UserInterfaceType, UserInterface>
+class UserInterfaceComponent
+{
+public:
+
+    /// Default constructor, which creates an unassociated component.
+    /// Must call setUserInterface() later to associate it with a UserInterface.
+    UserInterfaceComponent() = default;
+
+    /// Constructor, which associates this UI component with a UserInterface.
+    UserInterfaceComponent(UserInterfaceType& ui) : _ui{&ui} {}
+
+    /// Returns a reference to the abstract user interface.
+    UserInterfaceType& ui() const {
+        OVITO_ASSERT_MSG(hasUserInterface(), "UserInterfaceComponent::ui()", "UserInterfaceComponent was not properly initialized. It is not associated with any UserInterface.");
+        return *_ui;
+    }
+
+    /// Sets the user interface this component is associated with.
+    /// This must be called before any other method when the default constructor was used.
+    void setUserInterface(UserInterfaceType& ui) { OVITO_ASSERT(!hasUserInterface() || _ui == &ui); _ui = &ui; }
+
+    /// Returns true if this component is associated with a UserInterface.
+    bool hasUserInterface() const { return _ui != nullptr; }
+
+    /// Returns the container managing the current dataset.
+    DataSetContainer& datasetContainer() const { return ui().datasetContainer(); }
+
+    /// Returns the viewport input manager of the user interface.
+    ViewportInputManager* viewportInputManager() const { return ui().viewportInputManager(); }
+
+    /// Returns the manager of ParameterUnit objects.
+    UnitsManager& unitsManager() const { return ui().unitsManager(); }
+
+    /// Returns the manager of the user interface actions.
+    ActionManager* actionManager() const { return ui().actionManager(); }
+
+    /// Returns the undo stack, which keeps track of changes made by the user to the current dataset.
+    /// It may be none if not running as a desktop application.
+    UndoStack* undoStack() const { return ui().undoStack(); }
+
+    /// Returns the viewport that is currently selected.
+    Viewport* activeViewport() const;
+
+    /// Returns the animation settings that are currently selected.
+    AnimationSettings* activeAnimationSettings() const;
+
+    /// Returns the current time of the active animation settings object.
+    AnimationTime currentAnimationTime() const;
+
+    /// Returns the dataset that is currently active.
+    DataSet* dataset() const;
+
+    /// Executes a functor that performs some actions in an interactive context and catches any exceptions thrown during its execution.
+    /// If an exception is thrown by the functor, the error message is displayed to the user and this function returns false.
+    /// The 'Isolated' template parameter can be set to true to indicate that the operation should execute independently
+    /// from the currently active task, i.e., cancellation of one of the tasks should not affect the other.
+    template<bool Isolated = false, typename Function>
+    bool handleExceptions(Function&& func) const noexcept {
+        return ui().template handleExceptions<Isolated>(std::forward<Function>(func));
+    }
+
+    /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
+    /// If an exception is thrown by the functor, the error message is displayed
+    /// to the user, and this function returns false.
+    template<typename Function>
+    bool performActions(UndoableTransaction& transaction, Function&& func) const noexcept {
+        return ui().template performActions(transaction, std::forward<Function>(func));
+    }
+
+    /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
+    /// If an exception is thrown by the functor, all data changes performed by the functor so far will be undone, the error message is displayed
+    /// to the user, and this function returns false. If no exception is thrown, all performed actions are committed and this function returns true.
+    template<typename Function>
+    bool performTransaction(const QString& undoOperationName, Function&& func) const noexcept {
+        return ui().template performTransaction(undoOperationName, std::forward<Function>(func));
+    }
+
+private:
+
+    // The abstract UI this component is associated with.
+    std::conditional_t<UseStrongReference, OORef<UserInterfaceType>, UserInterfaceType*> _ui{};
 };
 
 /**
@@ -371,6 +459,44 @@ bool UserInterface::performTransaction(const QString& undoOperationName, Functio
         return true;
     }
     return false;
+}
+
+}   // End of namespace
+
+#include <ovito/core/dataset/DataSetContainer.h>
+
+namespace Ovito {
+
+/// Returns the viewport that is currently selected.
+template<typename UserInterfaceType, bool UseStrongReference>
+    requires std::derived_from<UserInterfaceType, UserInterface>
+Viewport* UserInterfaceComponent<UserInterfaceType, UseStrongReference>::activeViewport() const
+{
+    return datasetContainer().activeViewport();
+}
+
+/// Returns the animation settings that are currently active.
+template<typename UserInterfaceType, bool UseStrongReference>
+    requires std::derived_from<UserInterfaceType, UserInterface>
+AnimationSettings* UserInterfaceComponent<UserInterfaceType, UseStrongReference>::activeAnimationSettings() const
+{
+    return datasetContainer().activeAnimationSettings();
+}
+
+/// Returns the current time of the active animation settings object.
+template<typename UserInterfaceType, bool UseStrongReference>
+    requires std::derived_from<UserInterfaceType, UserInterface>
+AnimationTime UserInterfaceComponent<UserInterfaceType, UseStrongReference>::currentAnimationTime() const
+{
+    return datasetContainer().currentAnimationTime();
+}
+
+/// Returns the dataset that is currently active.
+template<typename UserInterfaceType, bool UseStrongReference>
+    requires std::derived_from<UserInterfaceType, UserInterface>
+DataSet* UserInterfaceComponent<UserInterfaceType, UseStrongReference>::dataset() const
+{
+    return datasetContainer().currentSet();
 }
 
 }   // End of namespace

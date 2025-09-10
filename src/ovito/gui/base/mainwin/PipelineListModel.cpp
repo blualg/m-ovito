@@ -31,6 +31,7 @@
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/app/Application.h>
 #include <ovito/core/app/UserInterface.h>
+#include <ovito/core/app/undo/RefTargetOperations.h>
 #include "PipelineListModel.h"
 
 namespace Ovito {
@@ -38,8 +39,9 @@ namespace Ovito {
 /******************************************************************************
 * Constructor.
 ******************************************************************************/
-PipelineListModel::PipelineListModel(UserInterface& userInterface, QObject* parent) : QAbstractListModel(parent),
-    _userInterface(userInterface),
+PipelineListModel::PipelineListModel(UserInterface& ui, QObject* parent) :
+    QAbstractListModel(parent),
+    UserInterfaceComponent<UserInterface>(ui),
     _statusInfoIcon(":/guibase/mainwin/status/status_info.png"),
     _statusWarningIcon(":/guibase/mainwin/status/status_warning.png"),
     _statusErrorIcon(":/guibase/mainwin/status/status_error.png"),
@@ -49,14 +51,14 @@ PipelineListModel::PipelineListModel(UserInterface& userInterface, QObject* pare
     _modifierGroupCollapsed(QIcon::fromTheme("modify_modifier_group_collapsed")),
     _modifierGroupExpanded(QIcon::fromTheme("modify_modifier_group_expanded"))
 {
-    OVITO_ASSERT(userInterface.actionManager());
+    OVITO_ASSERT(actionManager());
 
     // Create a selection model.
     _selectionModel = new QItemSelectionModel(this);
 
     // Connect signals and slots.
     _selectedPipeline.connect(this, &PipelineListModel::onPipelineEvent);
-    connect(&userInterface.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &PipelineListModel::onSceneSelectionChangeComplete);
+    connect(&datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &PipelineListModel::onSceneSelectionChangeComplete);
     connect(_selectionModel, &QItemSelectionModel::selectionChanged, this, &PipelineListModel::onSelectionModelChanged);
     connect(this, &PipelineListModel::selectedItemChanged, this, &PipelineListModel::updateActions);
 
@@ -75,19 +77,21 @@ QT_WARNING_DISABLE_DEPRECATED
 QT_WARNING_POP
 
     // Create list item actions.
-    _deleteItemAction = userInterface.actionManager()->createCommandAction(ACTION_MODIFIER_DELETE, tr("Delete Modifier"), "modify_delete_modifier", tr("Delete the selected modifier from the pipeline."));
+    _deleteItemAction = actionManager()->createCommandAction(ACTION_MODIFIER_DELETE, tr("Delete Modifier"), "modify_delete_modifier", tr("Delete the selected modifier from the pipeline."));
     connect(_deleteItemAction, &QAction::triggered, this, &PipelineListModel::deleteSelectedItems);
-    _moveItemUpAction = userInterface.actionManager()->createCommandAction(ACTION_MODIFIER_MOVE_UP, tr("Move Modifier Up"), "modify_modifier_move_up", tr("Move the selected modifier up in the pipeline."));
+    _moveItemUpAction = actionManager()->createCommandAction(ACTION_MODIFIER_MOVE_UP, tr("Move Modifier Up"), "modify_modifier_move_up", tr("Move the selected modifier up in the pipeline."));
     connect(_moveItemUpAction, &QAction::triggered, this, &PipelineListModel::moveModifierUp);
-    _moveItemDownAction = userInterface.actionManager()->createCommandAction(ACTION_MODIFIER_MOVE_DOWN, tr("Move Modifier Down"), "modify_modifier_move_down", tr("Move the selected modifier down in the pipeline."));
+    _moveItemDownAction = actionManager()->createCommandAction(ACTION_MODIFIER_MOVE_DOWN, tr("Move Modifier Down"), "modify_modifier_move_down", tr("Move the selected modifier down in the pipeline."));
     connect(_moveItemDownAction, &QAction::triggered, this, &PipelineListModel::moveModifierDown);
-    _toggleModifierGroupAction = userInterface.actionManager()->createCommandAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP, tr("Group Modifiers"), "modify_modifier_group_create", tr("Creates or dissolves a group of modifiers in the pipeline editor."));
+    _toggleModifierGroupAction = actionManager()->createCommandAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP, tr("Group Modifiers"), "modify_modifier_group_create", tr("Creates or dissolves a group of modifiers in the pipeline editor."));
     _toggleModifierGroupAction->setCheckable(true);
     connect(_toggleModifierGroupAction, &QAction::triggered, this, &PipelineListModel::toggleModifierGroup);
-    _makeElementIndependentAction = userInterface.actionManager()->createCommandAction(ACTION_PIPELINE_MAKE_INDEPENDENT, tr("Make Independent"), "modify_make_element_independent", tr("Duplicate an item shared by multiple pipelines to make it independent from the other pipeline(s)."));
+    _makeElementIndependentAction = actionManager()->createCommandAction(ACTION_PIPELINE_MAKE_INDEPENDENT, tr("Make Independent"), "modify_make_element_independent", tr("Duplicate an item shared by multiple pipelines to make it independent from the other pipeline(s)."));
     connect(_makeElementIndependentAction, &QAction::triggered, this, &PipelineListModel::makeElementIndependent);
-    _copyItemToPipelineAction = userInterface.actionManager()->createCommandAction(ACTION_PIPELINE_COPY_ITEM, tr("Copy To..."), "modify_pipeline_copy_item_to", tr("Copy an item to another pipeline or within the current pipeline."));
-    _renamePipelineItemAction = userInterface.actionManager()->createCommandAction(ACTION_PIPELINE_RENAME_ITEM, tr("Rename..."), "edit_rename_pipeline_item", tr("Rename the selected pipeline entry."));
+    _copyItemToPipelineAction = actionManager()->createCommandAction(ACTION_PIPELINE_COPY_ITEM, tr("Copy To..."), "modify_pipeline_copy_item_to", tr("Copy an item to another pipeline or within the current pipeline."));
+    _renamePipelineItemAction = actionManager()->createCommandAction(ACTION_PIPELINE_RENAME_ITEM, tr("Rename..."), "edit_rename_pipeline_item", tr("Rename the selected pipeline entry."));
+    _shareOrSplitVisualElementsAction = actionManager()->createCommandAction(ACTION_PIPELINE_GROUP_VIS_ELEMENTS, tr("Replace With Shared Element"), nullptr, tr("Combine several visual elements into one."));
+    connect(_shareOrSplitVisualElementsAction, &QAction::triggered, this, &PipelineListModel::shareOrSplitVisualElements);
 
     updateActions();
 }
@@ -337,7 +341,6 @@ void PipelineListModel::createListItemsForSubobjects(const DataObject* dataObj, 
         // Recursively visit the sub-objects of the data object.
         dataObj->visitSubObjects([&](const DataObject* subObject) {
             createListItemsForSubobjects(subObject, parentItem);
-            return false;
         });
     }
 }
@@ -436,7 +439,7 @@ void PipelineListModel::applyModifiers(const QVector<OORef<Modifier>>& modifiers
         return;
 
     // Get current animation time.
-    AnimationTime time = datasetContainer().currentAnimationTime();
+    AnimationTime time = currentAnimationTime();
 
     // Get the selected pipeline item. The new modifier is inserted right behind it in the pipeline.
     PipelineListItem* currentItem = selectedItem();
@@ -527,7 +530,7 @@ void PipelineListModel::deleteItems(const QVector<PipelineListItem*>& items)
     }
 
     // Perform the deletion one by one.
-    _userInterface.performTransaction(tr("Delete modifier"), [&]() {
+    performTransaction(tr("Delete modifier"), [&]() {
         for(ModificationNode* node : nodes) {
             deleteModificationNode(node);
         }
@@ -541,7 +544,7 @@ void PipelineListModel::deleteItems(const QVector<PipelineListItem*>& items)
 ******************************************************************************/
 void PipelineListModel::deleteModificationNode(ModificationNode* node)
 {
-    _userInterface.performTransaction(tr("Delete modifier"), [node = OORef<ModificationNode>(node), this]() {
+    performTransaction(tr("Delete modifier"), [node = OORef<ModificationNode>(node), this]() {
         node->visitDependents([&](RefMaker* dependent) {
             if(ModificationNode* precedingModNode = dynamic_object_cast<ModificationNode>(dependent)) {
                 if(precedingModNode->input() == node) {
@@ -633,9 +636,34 @@ void PipelineListModel::multiData(const QModelIndex& index, QModelRoleDataSpan r
         else if(role == StatusInfoRole) {
             if(dynamic_object_cast<ActiveObject>(item->object())) {
                 if(SceneNode* sceneNode = selectedSceneNode()) {
-                    if(_userInterface.handleExceptions<true>([&] {
+                    handleExceptions<true>([&] {
                         roleData.setData(item->shortInfo(sceneNode));
-                    })) continue;
+                    });
+                    if(!roleData.data().isValid()) {
+                        // For shared visual elements, display the list of data objects they are attached to (only if it is more than one).
+                        if(item->object() && item->itemType() == PipelineListItem::VisualElement && selectedPipeline()) {
+                            if(const QStringList* titles = selectedPipeline()->getDataObjectTitlesForVisElement(static_object_cast<DataVis>(item->object()))) {
+                                if(titles->size() > 1) {
+                                    QStringList newTitles;
+                                    // Check if all titles start with the same prefix, e.g. "Mesh: ...".
+                                    if(auto idx = titles->front().indexOf(": "); idx > 0) {
+                                        QString prefix = titles->front().left(idx + 2);
+                                        if(std::ranges::all_of(*titles, [&](const QString& s) { return s.startsWith(prefix); })) {
+                                            // All titles start with the same prefix, so we can remove it from all titles.
+                                            std::ranges::transform(*titles, std::back_inserter(newTitles), [&](const QString& title) {
+                                                return title.mid(prefix.length());
+                                            });
+                                            titles = &newTitles;
+                                        }
+                                    }
+                                    // Join all titles into one info string.
+                                    roleData.setData(titles->join(QStringLiteral(", ")));
+                                }
+                            }
+                        }
+                    }
+                    if(roleData.data().isValid())
+                        continue;
                 }
             }
         }
@@ -775,20 +803,20 @@ bool PipelineListModel::setData(const QModelIndex& index, const QVariant& value,
     if(role == Qt::CheckStateRole || role == CheckedRole) {
         PipelineListItem* item = this->item(index.row());
         if(DataVis* vis = dynamic_object_cast<DataVis>(item->object())) {
-            _userInterface.performTransaction((value.toBool()) ? tr("Enable visual element") : tr("Disable visual element"), [vis, &value]() {
+            performTransaction((value.toBool()) ? tr("Enable visual element") : tr("Disable visual element"), [vis, &value]() {
                 vis->setEnabled(value.toBool());
             });
             return true;
         }
         else if(ModificationNode* node = dynamic_object_cast<ModificationNode>(item->object())) {
-            _userInterface.performTransaction((value.toInt() != Qt::Unchecked) ? tr("Enable modifier") : tr("Disable modifier"), [node, &value]() {
+            performTransaction((value.toInt() != Qt::Unchecked) ? tr("Enable modifier") : tr("Disable modifier"), [node, &value]() {
                 if(node->modifier())
                     node->modifier()->setEnabled(value.toInt() != Qt::Unchecked);
             });
             return true;
         }
         else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(item->object())) {
-            _userInterface.performTransaction((value.toBool()) ? tr("Enable modifier group") : tr("Disable modifier group"), [group, &value]() {
+            performTransaction((value.toBool()) ? tr("Enable modifier group") : tr("Disable modifier group"), [group, &value]() {
                 group->setEnabled(value.toBool());
             });
             return true;
@@ -799,7 +827,7 @@ bool PipelineListModel::setData(const QModelIndex& index, const QVariant& value,
         if(DataVis* vis = dynamic_object_cast<DataVis>(item->object())) {
             QString newName = value.toString();
             if(vis->objectTitle() != newName) {
-                _userInterface.performTransaction(tr("Rename visual element"), [vis, &newName]() {
+                performTransaction(tr("Rename visual element"), [vis, &newName]() {
                     vis->setObjectTitle(newName);
                 });
             }
@@ -808,7 +836,7 @@ bool PipelineListModel::setData(const QModelIndex& index, const QVariant& value,
         else if(ModificationNode* node = dynamic_object_cast<ModificationNode>(item->object())) {
             QString newName = value.toString();
             if(node->modifier() && node->modifier()->objectTitle() != newName) {
-                _userInterface.performTransaction(tr("Rename modifier"), [node, &newName]() {
+                performTransaction(tr("Rename modifier"), [node, &newName]() {
                     node->modifier()->setObjectTitle(newName);
                 });
             }
@@ -817,7 +845,7 @@ bool PipelineListModel::setData(const QModelIndex& index, const QVariant& value,
         else if(ModifierGroup* group = dynamic_object_cast<ModifierGroup>(item->object())) {
             QString newName = value.toString();
             if(group->objectTitle() != newName) {
-                _userInterface.performTransaction(tr("Rename modifier group"), [group, &newName]() {
+                performTransaction(tr("Rename modifier group"), [group, &newName]() {
                     group->setObjectTitle(newName);
                 });
             }
@@ -906,6 +934,21 @@ void PipelineListModel::updateActions()
         isSharedObject(currentObject)
         && (dynamic_object_cast<ModificationNode>(currentObject) == nullptr || static_object_cast<ModificationNode>(currentObject)->modifierGroup() == nullptr || static_object_cast<ModificationNode>(currentObject)->pipelines(true).size() == 1));
 
+    if(DataVis* visElement = dynamic_object_cast<DataVis>(currentObject); visElement && isSharedVisualElement(visElement)) {
+        _shareOrSplitVisualElementsAction->setText(tr("Split Into Multiple Elements"));
+        _shareOrSplitVisualElementsAction->setEnabled(true);
+        _shareOrSplitVisualElementsAction->setVisible(true);
+    }
+    else if(objects.size() >= 1 && std::ranges::all_of(objects, [](RefTarget* obj) { return dynamic_object_cast<DataVis>(obj) != nullptr; })) {
+        _shareOrSplitVisualElementsAction->setText(tr("Collapse Into One Element"));
+        _shareOrSplitVisualElementsAction->setEnabled(canShareVisualElements(objects));
+        _shareOrSplitVisualElementsAction->setVisible(true);
+    }
+    else {
+        _shareOrSplitVisualElementsAction->setEnabled(false);
+        _shareOrSplitVisualElementsAction->setVisible(false);
+    }
+
     _copyItemToPipelineAction->setEnabled(boost::algorithm::any_of(objects, [](RefTarget* obj) {
         return dynamic_object_cast<PipelineNode>(obj) || dynamic_object_cast<ModifierGroup>(obj);
     }));
@@ -962,14 +1005,14 @@ void PipelineListModel::updateActions()
             return modNode && modNode->modifierGroup() == nullptr; }))
     {
         // Do all selected modifier nodes form a contiguous sequence?
-        bool isContinguousSequence = true;
+        bool isContiguousSequence = true;
         for(auto obj = std::next(objects.cbegin()); obj != objects.cend(); ++obj) {
             if(static_object_cast<ModificationNode>(*obj) != static_object_cast<ModificationNode>(*std::prev(obj))->input()) {
-                isContinguousSequence = false;
+                isContiguousSequence = false;
                 break;
             }
         }
-        if(isContinguousSequence) {
+        if(isContiguousSequence) {
             _toggleModifierGroupAction->setEnabled(true);
         }
     }
@@ -978,6 +1021,9 @@ void PipelineListModel::updateActions()
         _toggleModifierGroupAction->setChecked(true);
         _toggleModifierGroupAction->setText(tr("Ungroup Modifiers"));
     }
+    _toggleModifierGroupAction->setVisible(!objects.empty() && std::ranges::any_of(objects, [](RefTarget* obj) {
+            return dynamic_object_cast<ModificationNode>(obj) || dynamic_object_cast<ModifierGroup>(obj);
+        }));
 }
 
 /******************************************************************************
@@ -1161,7 +1207,7 @@ bool PipelineListModel::performDragAndDropOperation(const QVector<int>& indexLis
         if(destinationGroup && tail == insertAfter)
             destinationGroup = nullptr;
 
-        _userInterface.performTransaction(tr("Move modifier"), [&]() {
+        performTransaction(tr("Move modifier"), [&]() {
             // Make the pipeline rearrangement.
             moveModifierRange(head, tail, insertBefore, insertAfter);
 
@@ -1231,9 +1277,10 @@ bool PipelineListModel::moveModifierRange(OORef<ModificationNode> head, OORef<Mo
 }
 
 /******************************************************************************
-* Helper method that determines if the given object is part of more than one pipeline.
+* Determines whether an object (e.g. modifier, vis element, or source) is
+* part of more than one pipeline in the scene.
 ******************************************************************************/
-bool PipelineListModel::isSharedObject(RefTarget* obj)
+bool PipelineListModel::isSharedObject(RefTarget* obj) const
 {
     if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(obj)) {
         if(modNode->modifier()) {
@@ -1266,7 +1313,7 @@ void PipelineListModel::moveItemUp(PipelineListItem* item)
     if(!item) return;
 
     if(OORef<ModificationNode> modNode = dynamic_object_cast<ModificationNode>(item->object())) {
-        _userInterface.performTransaction(tr("Move modifier up"), [modNode]() {
+        performTransaction(tr("Move modifier up"), [modNode]() {
             if(OORef<ModificationNode> predecessor = modNode->getPredecessorModNode()) {
                 OVITO_ASSERT(!predecessor->pipelines(true).empty());
                 if(modNode->modifierGroup() != nullptr && predecessor->modifierGroup() != modNode->modifierGroup()) {
@@ -1353,7 +1400,7 @@ void PipelineListModel::moveItemUp(PipelineListItem* item)
         }
 
         // Make the pipeline rearrangement.
-        _userInterface.performTransaction(tr("Move modifier group up"), [&]() {
+        performTransaction(tr("Move modifier group up"), [&]() {
             insertBefore->visitDependents([&](RefMaker* dependent) {
                 if(ModificationNode* predecessor = dynamic_object_cast<ModificationNode>(dependent)) {
                     OVITO_ASSERT(predecessor->input() == insertBefore);
@@ -1379,7 +1426,7 @@ void PipelineListModel::moveItemDown(PipelineListItem* item)
     if(!item) return;
 
     if(OORef<ModificationNode> modNode = dynamic_object_cast<ModificationNode>(item->object())) {
-        _userInterface.performTransaction(tr("Move modifier down"), [modNode]() {
+        performTransaction(tr("Move modifier down"), [modNode]() {
             OORef<ModificationNode> successor = dynamic_object_cast<ModificationNode>(modNode->input());
             if(successor && successor->isPipelineBranch(true) == false) {
                 if(modNode->modifierGroup() != nullptr && successor->modifierGroup() != modNode->modifierGroup()) {
@@ -1443,7 +1490,7 @@ void PipelineListModel::moveItemDown(PipelineListItem* item)
         }
 
         // Make the pipeline rearrangement.
-        _userInterface.performTransaction(tr("Move modifier group down"), [&]() {
+        performTransaction(tr("Move modifier group down"), [&]() {
             headModNode->visitDependents([&](RefMaker* dependent) {
                 if(ModificationNode* predecessor = dynamic_object_cast<ModificationNode>(dependent)) {
                     predecessor->setInput(successor);
@@ -1470,21 +1517,21 @@ void PipelineListModel::makeElementIndependent()
     if(!item) return;
 
     if(DataVis* visElement = dynamic_object_cast<DataVis>(item->object())) {
-        _userInterface.performTransaction(tr("Make visual element independent"), [&]() {
+        performTransaction(tr("Make visual element independent"), [&]() {
             Pipeline* pipeline = selectedPipeline();
             DataVis* replacementVisElement = pipeline->makeVisElementIndependent(visElement);
             setNextObjectToSelect(replacementVisElement);
         });
     }
     else if(PipelineNode* selectedPipelineNode = dynamic_object_cast<PipelineNode>(item->object())) {
-        _userInterface.performTransaction(tr("Make pipeline element independent"), [&]() {
+        performTransaction(tr("Make pipeline element independent"), [&]() {
             CloneHelper cloneHelper;
             if(PipelineNode* clonedNode = makeElementIndependentImpl(selectedPipelineNode, cloneHelper))
                 setNextObjectToSelect(clonedNode);
         });
     }
     else if(ModifierGroup* selectedGroup = dynamic_object_cast<ModifierGroup>(item->object())) {
-        _userInterface.performTransaction(tr("Make modifier group independent"), [&]() {
+        performTransaction(tr("Make modifier group independent"), [&]() {
             CloneHelper cloneHelper;
             for(ModificationNode* modNode : selectedGroup->nodes()) {
                 ModificationNode* clonedModNode = static_object_cast<ModificationNode>(makeElementIndependentImpl(modNode, cloneHelper));
@@ -1571,7 +1618,7 @@ void PipelineListModel::toggleModifierGroup()
         // But first make sure the modifier nodes aren't already part of an existing group.
         existingGroup = modNode->modifierGroup();
         if(!existingGroup) {
-            _userInterface.performTransaction(tr("Create modifier group"), [&]() {
+            performTransaction(tr("Create modifier group"), [&]() {
                 // Create a new group.
                 OORef<ModifierGroup> group = OORef<ModifierGroup>::create();
                 for(RefTarget* obj : objects) {
@@ -1590,7 +1637,7 @@ void PipelineListModel::toggleModifierGroup()
     if(!existingGroup)
         existingGroup = dynamic_object_cast<ModifierGroup>(objects.front());
     if(existingGroup) {
-        _userInterface.performTransaction(tr("Dissolve modifier group"), [&]() {
+        performTransaction(tr("Dissolve modifier group"), [&]() {
             QVector<ModificationNode*> groupModNodes = existingGroup->nodes();
             setNextObjectToSelect(groupModNodes.front());
             for(ModificationNode* modNode : groupModNodes) {
@@ -1601,6 +1648,96 @@ void PipelineListModel::toggleModifierGroup()
         });
     }
     refreshList();
+}
+
+/******************************************************************************
+* Determines whether an object is a visual element that is shared by more
+* than one data object in the same pipeline.
+******************************************************************************/
+int PipelineListModel::isSharedVisualElement(DataVis* visElement) const
+{
+    OVITO_ASSERT(visElement);
+
+    if(!selectedPipeline())
+        return 0;
+
+    if(const QStringList* titles = selectedPipeline()->getDataObjectTitlesForVisElement(visElement)) {
+        if(titles->size() > 1)
+            return titles->size();
+    }
+    return 0;
+}
+
+/******************************************************************************
+* Determines whether the given objects are all visual elements of the same
+* class that can be collapsed into a single visual element.
+******************************************************************************/
+bool PipelineListModel::canShareVisualElements(const QVector<RefTarget*>& objects) const
+{
+    if(objects.size() < 2)
+        return false;
+
+    DataVis* masterObject = dynamic_object_cast<DataVis>(objects.front());
+    if(!masterObject)
+        return false;
+
+    // Check if all objects share the same uniform DataVis class.
+    OvitoClassPtr visElementClass = &masterObject->getOOMetaClass();
+    for(const RefTarget* obj : objects) {
+        if(&obj->getOOMetaClass() != visElementClass)
+            return false;
+    }
+
+    return true;
+}
+
+/******************************************************************************
+* Combines several compatible visual elements by replacing them all with a single instance
+* or performs the reverse operation, creating several independent instances of the
+* selected visual element.
+******************************************************************************/
+void PipelineListModel::shareOrSplitVisualElements()
+{
+    const QVector<RefTarget*> objects = selectedObjects();
+    if(objects.empty())
+        return;
+
+    if(canShareVisualElements(objects)) {
+        performTransaction(tr("Replace with shared visual element"), [&]() {
+            OVITO_ASSERT(objects.size() > 1);
+            DataVis* masterObject = static_object_cast<DataVis>(objects.front());
+            masterObject->setTitle({}); // Discard user-defined title
+            for(OORef<RefTarget> obj : objects) {
+                if(obj != masterObject) {
+                    // Tell this visual element to replace itself with the master element.
+                    // Some visual element types implement special logic to do this correctly,
+                    // e.g., if they own a PropertyColorMapping sub-object, they update direct references
+                    // to this sub-object too.
+                    static_object_cast<DataVis>(obj)->replaceWithSharedElement(masterObject);
+                }
+            }
+        });
+    }
+    else if(objects.size() == 1) {
+        if(OORef<DataVis> visElement = dynamic_object_cast<DataVis>(objects.front())) {
+            if(isSharedVisualElement(visElement)) {
+                performTransaction(tr("Split into multiple visual elements"), [&]() {
+                    selectedPipeline()->replaceVisualElement(visElement, [visElement, first=true](const QString& title) mutable -> OORef<DataVis> {
+                        if(first) {
+                            first = false;
+                            visElement->setTitle(title);
+                            return visElement;
+                        }
+                        else {
+                            OORef<DataVis> clone = CloneHelper::cloneSingleObject(visElement, true);
+                            clone->setTitle(title);
+                            return clone;
+                        }
+                    });
+                });
+            }
+        }
+    }
 }
 
 }   // End of namespace

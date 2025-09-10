@@ -40,7 +40,7 @@ class LAMMPSBinaryDumpImporterEditor : public FileImporterEditor
 public:
 
     /// This is called by the system when the user has selected a new file to import.
-    virtual void inspectNewFile(FileImporter* importer, const QUrl& sourceFile, MainWindow& mainWindow) override;
+    virtual void inspectNewFile(FileImporter* importer, const QUrl& sourceFile) override;
 
 protected:
 

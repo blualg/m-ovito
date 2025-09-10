@@ -72,7 +72,7 @@ void SceneNodeSelectionBox::renameSceneNode(int index)
         bool ok;
         QString newName = QInputDialog::getText(window(), tr("Change pipeline name"), tr("Pipeline name:                                         "), QLineEdit::Normal, oldName, &ok).trimmed();
         if(ok && newName != oldName) {
-            _mainWindow.performTransaction(tr("Rename pipeline"), [&]() {
+            _mainWindow.ui().performTransaction(tr("Rename pipeline"), [&]() {
                 sceneNode->setSceneNodeName(newName);
             });
         }
