@@ -836,7 +836,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
     // Assign masses to particles based on their type.
     if(hasTypeMasses && !particles()->getProperty(Particles::MassProperty)) {
         BufferWriteAccess<FloatType, access_mode::discard_write> massProperty = particles()->createProperty(Particles::MassProperty);
-        boost::transform(BufferReadAccess<int32_t>(typeProperty), massProperty.begin(), [&](auto atomType) {
+        std::ranges::transform(BufferReadAccess<int32_t>(typeProperty), massProperty.begin(), [&](auto atomType) {
             return massTable[atomType - 1];
         });
     }

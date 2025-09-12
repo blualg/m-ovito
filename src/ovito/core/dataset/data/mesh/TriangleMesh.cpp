@@ -646,7 +646,7 @@ void TriangleMesh::createIcosphere(int resolution)
     clear();
     setVertexCount(std::size(vertices));
     setFaceCount(std::size(triangles));
-    boost::range::copy(vertices, this->vertices().begin());
+    std::ranges::copy(vertices, this->vertices().begin());
     for(int i = 0; i < faceCount(); i++)
         face(i).setVertices(triangles[i][2], triangles[i][1], triangles[i][0]);
 

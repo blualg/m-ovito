@@ -292,6 +292,13 @@ public:
         return *this == OOWeakRef<U>(rhs);
     }
 
+    /// Friend equality operator for ranges compatibility (raw pointer on left).
+    template<class U>
+    friend bool operator==(U* lhs, const OOWeakRef& rhs) noexcept
+        requires std::is_convertible_v<const U*, const T*> || std::is_convertible_v<const T*, const U*> {
+        return rhs == lhs;
+    }
+
     /// Returns true of this weak reference has been initialized with an explicit null object pointer.
     /// Note: This is different from the case where the referenced object has expired.
     bool empty() const {

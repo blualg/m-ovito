@@ -389,14 +389,14 @@ ConstPropertyPtr Particles::inputParticleMasses() const
         std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
 
         // Skip the following loop if all per-type masses are zero. In this case, simply use the default mass for all particles.
-        if(boost::algorithm::any_of(massMap, [](const std::pair<int,FloatType>& it) { return it.second != 0; })) {
+        if(std::ranges::any_of(massMap, [](const std::pair<int,FloatType>& it) { return it.second != 0; })) {
 
             // Allocate output array.
             PropertyPtr massProperty = Particles::OOClass().createStandardProperty(DataBuffer::Uninitialized, elementCount(), Particles::MassProperty);
 
             // Fill output array using lookup table.
             BufferReadAccess<int32_t> typeData(typeProperty);
-            boost::transform(typeData, BufferWriteAccess<FloatType, access_mode::discard_write>(massProperty).begin(), [&](int t) {
+            std::ranges::transform(typeData, BufferWriteAccess<FloatType, access_mode::discard_write>(massProperty).begin(), [&](int t) {
                 auto it = massMap.find(t);
                 if(it != massMap.end())
                     return it->second;
@@ -532,7 +532,7 @@ void Particles::wrapCoordinates(const SimulationCell& cell)
     // Wrap particles coordinates and adjust PBC image flags.
     auto imageIn = inputPbcFlagsAcc ? inputPbcFlagsAcc.cbegin() : nullptr;
     auto imageOut = outputPbcFlagsAcc.begin();
-    boost::transform(inputPosAcc, outputPosAcc.begin(), [&](const Point3& p) {
+    std::ranges::transform(inputPosAcc, outputPosAcc.begin(), [&](const Point3& p) {
         Point3 o = p;
         for(size_t dim = 0; dim < 3; dim++) {
             FloatType n = pbcFlags[dim] * std::floor(inverseCellMatrix.prodrow(p, dim));
@@ -621,7 +621,7 @@ void Particles::unwrapCoordinates(const SimulationCell& cell)
     BufferWriteAccess<Point3, access_mode::discard_write> posOutAcc{outputPositions};
     BufferReadAccess<Vector3I> particleImageAcc{particlePeriodicImageProperty};
     const Vector3I* pbcShift = particleImageAcc.cbegin();
-    boost::transform(posInAcc, posOutAcc.begin(), [&](const Point3& p) {
+    std::ranges::transform(posInAcc, posOutAcc.begin(), [&](const Point3& p) {
         return p + cellMatrix * (*pbcShift++).toDataType<FloatType>();
     });
 
@@ -810,7 +810,7 @@ PropertyPtr Particles::OOMetaClass::createStandardPropertyInternal(DataBuffer::B
 #else
                     std::map<int,FloatType> massMap = ParticleType::typeMassMap(typeProperty);
                     if(!massMap.empty()) {
-                        boost::transform(BufferReadAccess<int32_t>(typeProperty), BufferWriteAccess<FloatType, access_mode::discard_write>(property).begin(), [&](int t) {
+                        std::ranges::transform(BufferReadAccess<int32_t>(typeProperty), BufferWriteAccess<FloatType, access_mode::discard_write>(property).begin(), [&](int t) {
                             auto iter = massMap.find(t);
                             return iter != massMap.end() ? iter->second : FloatType(0);
                         });
@@ -1005,10 +1005,9 @@ size_t Particles::OOMetaClass::remapElementIndex(const ConstDataObjectPath& sour
     // If unique IDs are available try to use them to look up the particle in the other data collection.
     if(BufferReadAccess<int64_t> sourceIdentifiers = sourceParticles->getProperty(Particles::IdentifierProperty)) {
         if(BufferReadAccess<int64_t> destIdentifiers = destParticles->getProperty(Particles::IdentifierProperty)) {
-            int64_t id = sourceIdentifiers[elementIndex];
-            size_t mappedId = boost::find(destIdentifiers, id) - destIdentifiers.cbegin();
-            if(mappedId != destIdentifiers.size())
-                return mappedId;
+            const int64_t id = sourceIdentifiers[elementIndex];
+            if(auto it = std::ranges::find(destIdentifiers, id); it != destIdentifiers.cend())
+                return std::distance(destIdentifiers.cbegin(), it);
         }
     }
 
@@ -1016,9 +1015,8 @@ size_t Particles::OOMetaClass::remapElementIndex(const ConstDataObjectPath& sour
     if(BufferReadAccess<Point3> sourcePositions = sourceParticles->getProperty(Particles::PositionProperty)) {
         if(BufferReadAccess<Point3> destPositions = destParticles->getProperty(Particles::PositionProperty)) {
             const Point3& pos = sourcePositions[elementIndex];
-            size_t mappedId = boost::find(destPositions, pos) - destPositions.cbegin();
-            if(mappedId != destPositions.size())
-                return mappedId;
+            if(auto it = std::ranges::find(destPositions, pos); it != destPositions.cend())
+                return std::distance(destPositions.cbegin(), it);
         }
     }
 

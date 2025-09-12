@@ -176,16 +176,15 @@ QVector<RefTarget*> PipelineListModel::selectedObjects() const
 ******************************************************************************/
 void PipelineListModel::refreshItemLater(PipelineListItem* item)
 {
-    auto iter = boost::find(_items, item);
-    if(iter == _items.end())
-        return;
-    int index = std::distance(_items.begin(), iter);
-    if(boost::find(_itemsRefreshPending, index) != _itemsRefreshPending.end())
-        return;
-    _itemsRefreshPending.push_back(index);
-    // Invoke actual refresh function at a later time when control returns to the GUI event loop.
-    if(_itemsRefreshPending.size() == 1)
-        QTimer::singleShot(200, this, &PipelineListModel::refreshList);
+    if(auto iter = std::ranges::find(_items, item); iter != _items.end()) {
+        int index = std::distance(_items.begin(), iter);
+        if(std::ranges::contains(_itemsRefreshPending, index))
+            return;
+        _itemsRefreshPending.push_back(index);
+        // Invoke actual refresh function at a later time when control returns to the GUI event loop.
+        if(_itemsRefreshPending.size() == 1)
+            QTimer::singleShot(200, this, &PipelineListModel::refreshList);
+    }
 }
 
 /******************************************************************************
@@ -363,7 +362,7 @@ PipelineListItem* PipelineListModel::appendListItem(RefTarget* object, PipelineL
             Q_EMIT dataChanged(modelIndex, modelIndex);
         }
         else {
-            if(boost::find(_itemsRefreshPending, listIndex) != _itemsRefreshPending.end()) {
+            if(std::ranges::contains(_itemsRefreshPending, listIndex)) {
                 Q_EMIT dataChanged(modelIndex, modelIndex);
             }
         }
@@ -1048,7 +1047,7 @@ QMimeData* PipelineListModel::mimeData(const QModelIndexList& indexes) const
     }
     if(rows.empty())
         return nullptr;
-    boost::sort(rows);
+    std::ranges::sort(rows);
 
     // Only allow dragging a contiguous sequence of pipeline items.
     for(auto i1 = rows.cbegin(), i2 = std::next(i1); i2 != rows.cend(); i1 = i2++)

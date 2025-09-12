@@ -158,10 +158,10 @@ void XSFImporter::FrameLoader::loadFile()
 
             setParticleCount(coords.size());
             BufferWriteAccess<Point3, access_mode::discard_read_write> posAccess = particles()->createProperty(Particles::PositionProperty);
-            boost::copy(coords, posAccess.begin());
+            std::ranges::copy(coords, posAccess.begin());
 
             Property* typeProperty = particles()->createProperty(Particles::TypeProperty);
-            boost::transform(types, BufferWriteAccess<int32_t, access_mode::discard_write>(typeProperty).begin(), [&](const QString& typeName) {
+            std::ranges::transform(types, BufferWriteAccess<int32_t, access_mode::discard_write>(typeProperty).begin(), [&](const QString& typeName) {
                 return addNamedType(Particles::OOClass(), typeProperty, typeName)->numericId();
             });
             // Since we created particle types on the go while reading the particles, the type ordering
@@ -171,7 +171,7 @@ void XSFImporter::FrameLoader::loadFile()
 
             if(forces.size() == coords.size()) {
                 BufferWriteAccess<Vector3, access_mode::discard_write> forceProperty = particles()->createProperty(Particles::ForceProperty);
-                boost::copy(forces, forceProperty.begin());
+                std::ranges::copy(forces, forceProperty.begin());
             }
 
             state().setStatus(tr("%1 atoms").arg(coords.size()));

@@ -266,7 +266,7 @@ public:
         vertex_index startIndex = createVertices(nverts);
         DataBuffer::BufferInitialization initMode = (startIndex == 0) ? DataBuffer::Uninitialized : DataBuffer::Initialized;
         BufferWriteAccess<Point3, access_mode::write> vertexPositions(mutableVertexProperty(SurfaceMeshVertices::PositionProperty, initMode), initMode);
-        boost::copy(std::forward<CoordinatesRange>(coordRange), std::next(vertexPositions.begin(), startIndex));
+        std::ranges::copy(std::forward<CoordinatesRange>(coordRange), std::next(vertexPositions.begin(), startIndex));
         return startIndex;
     }
 

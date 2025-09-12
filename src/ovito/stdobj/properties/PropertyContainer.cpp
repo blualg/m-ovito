@@ -532,8 +532,8 @@ std::vector<size_t> PropertyContainer::sortById()
 
     // Determine new permutation of data elements which sorts them by ascending ID.
     std::vector<size_t> permutation(ids.size());
-    boost::algorithm::iota(permutation, (size_t)0);
-    boost::sort(permutation, [&](size_t a, size_t b) { return ids[a] < ids[b]; });
+    std::iota(permutation.begin(), permutation.end(), size_t(0));
+    std::ranges::sort(permutation, [&](size_t a, size_t b) { return ids[a] < ids[b]; });
     std::vector<size_t> invertedPermutation(ids.size());
     bool isAlreadySorted = true;
     for(size_t i = 0; i < permutation.size(); i++) {
@@ -546,12 +546,11 @@ std::vector<size_t> PropertyContainer::sortById()
         return {};
 
     // Re-order all values in the property arrays.
-    makePropertiesMutableInternal();
-    for(const Property* prop : properties()) {
-        const_cast<Property*>(prop)->reorderElements(permutation);
+    for(Property* prop :  makePropertiesMutable()) {
+        prop->reorderElements(permutation);
     }
 
-    OVITO_ASSERT(boost::range::is_sorted(BufferReadAccess<IdentifierIntType>(getProperty(Property::GenericIdentifierProperty)).range()));
+    OVITO_ASSERT(std::ranges::is_sorted(BufferReadAccess<IdentifierIntType>(getProperty(Property::GenericIdentifierProperty)).range()));
 
     return invertedPermutation;
 }

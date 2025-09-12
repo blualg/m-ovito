@@ -332,11 +332,11 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
 void ViewportWindow::becameReadyForPresentation()
 {
     // This viewport window must have been registered with a user interface.
-    OVITO_ASSERT(boost::find(ui().viewportWindows(), this) != ui().viewportWindows().end());
+    OVITO_ASSERT(std::ranges::contains(ui().viewportWindows(), this));
     OVITO_ASSERT(_readyForPresentation);
 
     // Check whether all windows in the current user interface are ready for presentation (or are not being rendered at all).
-    bool allReady = boost::algorithm::all_of(ui().viewportWindows(), [](const ViewportWindow* window) {
+    bool allReady = std::ranges::all_of(ui().viewportWindows(), [](const ViewportWindow* window) {
         return window->_readyForPresentation || !window->_frameFuture || !window->viewport() || !window->isVisible();
     });
 

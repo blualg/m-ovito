@@ -209,7 +209,7 @@ std::vector<int64_t> StructureIdentificationModifier::Algorithm::computeStructur
         });
     }
 #else
-    boost::fill(counts, 0);
+    std::ranges::fill(counts, 0);
     for(auto t : BufferReadAccess<int32_t>(structures)) {
         if(t >= 0 && t <= maxTypeId)
             counts[t]++;
@@ -218,7 +218,7 @@ std::vector<int64_t> StructureIdentificationModifier::Algorithm::computeStructur
 
     // Create the property arrays for the bar chart.
     PropertyPtr typeCounts = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, Property::Int64, 1, tr("Count"));
-    boost::copy(counts, BufferWriteAccess<int64_t, access_mode::discard_write>(typeCounts).begin());
+    std::ranges::copy(counts, BufferWriteAccess<int64_t, access_mode::discard_write>(typeCounts).begin());
     PropertyPtr typeIds = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, maxTypeId + 1, Property::Int32, 1, tr("Structure type"));
     boost::algorithm::iota_n(BufferWriteAccess<int32_t, access_mode::discard_write>(typeIds).begin(), 0, typeIds->size());
 

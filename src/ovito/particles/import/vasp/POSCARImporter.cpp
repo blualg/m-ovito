@@ -468,9 +468,9 @@ QString POSCARImporter::FrameLoader::readDensityGrid(CompressedTextReader& strea
 
     if(magnetizationDensityX && magnetizationDensityY && magnetizationDensityZ) {
         BufferWriteAccess<FloatType*, access_mode::discard_write> vectorMagnetization = voxelGrid->createProperty(QStringLiteral("Magnetization Density"), DataBuffer::FloatDefault, 3, QStringList() << "X" << "Y" << "Z");
-        boost::copy(BufferReadAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
-        boost::copy(BufferReadAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
-        boost::copy(BufferReadAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
+        std::ranges::copy(BufferReadAccess<FloatType>(magnetizationDensityX), vectorMagnetization.componentRange(0).begin());
+        std::ranges::copy(BufferReadAccess<FloatType>(magnetizationDensityY), vectorMagnetization.componentRange(1).begin());
+        std::ranges::copy(BufferReadAccess<FloatType>(magnetizationDensityZ), vectorMagnetization.componentRange(2).begin());
     }
 
     voxelGrid->verifyIntegrity();

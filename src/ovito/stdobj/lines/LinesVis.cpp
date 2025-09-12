@@ -585,7 +585,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> LinesVis::render(const Cons
             [&](ConstDataBufferPtr& cornerColors) {
                 // Create an RGB color array, which will be filled and then assigned to the ParticlesPrimitive.
                 BufferFactory<ColorG> cornerColorsArray(cornerPseudoColors->size());
-                boost::transform(BufferReadAccess<GraphicsFloatType>(cornerPseudoColors), cornerColorsArray.begin(),
+                std::ranges::transform(BufferReadAccess<GraphicsFloatType>(cornerPseudoColors), cornerColorsArray.begin(),
                                 [&](GraphicsFloatType v) { return coloredSegments->pseudoColorMapping().valueToColor(v); });
                 cornerColors = cornerColorsArray.take();
             });

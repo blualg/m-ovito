@@ -138,8 +138,7 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
         PropertyContainer::Grower regionGrower(meshBuilder.mutableRegions());
 
         // Determine number of selected particles.
-        BufferReadAccess<SelectionIntType> selectionArray(selection);
-        size_t npoly = boost::count_if(selectionArray, [](auto s) { return s != 0; });
+        size_t npoly = selection->nonzeroCount();
         progress.setMaximum(npoly);
 
         ParticleBondMap bondMap(bondTopology, bondPeriodicImages);
@@ -160,9 +159,10 @@ Future<PipelineFlowState> CoordinationPolyhedraModifier::evaluateModifier(const 
         regionToParticleMap.reserve(npoly);
 
         // Iterate over all input particles.
+        BufferReadAccess<SelectionIntType> selectionAcc(selection);
         for(size_t i = 0; i < positionsArray.size(); i++) {
             // Construct coordination polyhedron only for selected particles.
-            if(selectionArray[i] == 0) continue;
+            if(selectionAcc[i] == 0) continue;
 
             // Collect the bonds that are part of the coordination polyhedron.
             const Point3& p1 = positionsArray[i];

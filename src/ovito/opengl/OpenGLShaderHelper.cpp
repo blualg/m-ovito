@@ -640,7 +640,7 @@ void OpenGLShaderHelper::drawReorderedOpenGL2or3(GLenum mode, std::pair<std::vec
         if(!_instancesSubset)
             std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
         else
-            boost::copy(BufferReadAccess<int32_t>(_instancesSubset), sortedIndices.begin());
+            std::ranges::copy(BufferReadAccess<int32_t>(_instancesSubset), sortedIndices.begin());
         // Call user function to generate the element ordering.
         std::move(computeOrderingFunc)(sortedIndices);
 

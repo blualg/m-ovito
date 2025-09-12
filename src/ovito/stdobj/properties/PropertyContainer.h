@@ -179,13 +179,10 @@ public:
         // Replace any shared properties with mutable copies.
         makePropertiesMutableInternal();
 
-        // Return an interator range allowing non-const access to the properties, e.g. for modifying them in a ranged-based for-loop.
-        auto const_cast_op = [](const DataOORef<const Property>& p) noexcept { return const_cast<Property*>(p.get()); };
-        using const_cast_iter_type = boost::transform_iterator<decltype(const_cast_op), typename std::decay_t<decltype(std::declval<PropertyContainer>().properties())>::const_iterator>;
-        return boost::make_iterator_range(
-            const_cast_iter_type(properties().begin(), const_cast_op),
-            const_cast_iter_type(properties().end(), const_cast_op)
-        );
+        // Return a view allowing non-const access to the now mutable properties.
+        return properties() | std::views::transform([](const DataOORef<const Property>& p) noexcept {
+            return const_cast<Property*>(p.get());
+        });
     }
 
     /// Performs a numeric data type conversion of a property (unless the property already has the requested type).

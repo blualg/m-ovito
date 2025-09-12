@@ -297,7 +297,7 @@ void DislocationAnalysisEngine::assignCoreAtomDislocationIDs(size_t numParticles
         Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, numParticles, Property::Int32, 1, QStringLiteral("Dislocation"));
 
     BufferWriteAccess<int32_t, access_mode::discard_write> dislocationPropertyAccess(_atomDislocations);
-    boost::fill(dislocationPropertyAccess, -1);
+    std::ranges::fill(dislocationPropertyAccess, -1);
 
     for(DelaunayTessellation::CellHandle cell : _tessellation->cells()) {
         // Determine if the tetrahedron is a "defective" one and has been assigned to a dislocation line.

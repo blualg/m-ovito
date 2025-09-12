@@ -235,7 +235,7 @@ void WignerSeitzAnalysisModifier::WignerSeitzAnalysisEngine::perform(PipelineFlo
     // Copy data from atomic array to output buffer.
     BufferWriteAccess<int32_t*, access_mode::discard_write> occupancyNumbersArray(occupancyNumbers());
     if(!siteTypes()) {
-        boost::copy(occupancyArray, occupancyNumbersArray.begin());
+        std::ranges::copy(occupancyArray, occupancyNumbersArray.begin());
     }
     else {
         // Map occupancy numbers from sites to atoms.

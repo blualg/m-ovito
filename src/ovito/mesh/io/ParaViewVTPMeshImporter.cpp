@@ -699,7 +699,7 @@ void MeshParaViewVTMFileFilter::preprocessDatasets(std::vector<ParaViewVTMBlockI
     // This is specific behavior for VTM files written by the Aspherix code.
     if(vtmImporter.uniteMeshes()) {
         // Count the total number of mesh data files referenced in the "Meshes" sections of the VTM file.
-        int numMeshFiles = boost::count_if(blockDatasets, [](const ParaViewVTMBlockInfo& block) {
+        int numMeshFiles = std::ranges::count_if(blockDatasets, [](const ParaViewVTMBlockInfo& block) {
             return block.blockPath.size() == 2 && block.blockPath[0] == QStringLiteral("Meshes");
         });
 

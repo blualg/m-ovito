@@ -269,7 +269,7 @@ OORef<FileExportJob> LAMMPSDataExporter::createExportJob(const QString& filePath
                     if(typeProperty) {
                         BufferReadAccess<int32_t> typeValuesArray(typeProperty);;
                         if(exporter->generateConsecutiveTypeIds()) {
-                            boost::for_each(typeValuesArray, [&](auto id) {
+                            std::ranges::for_each(typeValuesArray, [&](auto id) {
                                 if(typeMapping.find(id) == typeMapping.end()) {
                                     typeMapping.insert(std::make_pair(id, typeMapping.size() + 1));
                                     typeList.push_back(nullptr);
@@ -323,8 +323,8 @@ OORef<FileExportJob> LAMMPSDataExporter::createExportJob(const QString& filePath
             BufferReadAccess<Vector3G> asphericalShapeProperty = particles->getProperty(Particles::AsphericalShapeProperty);
             if(asphericalShapeProperty) {
                 // Only write Ellipsoids section if atom style (or a hybrid sub-style) is "ellipsoid".
-                if(exporter->atomStyle() == LAMMPSDataImporter::AtomStyle_Ellipsoid || (exporter->atomStyle() == LAMMPSDataImporter::AtomStyle_Hybrid && boost::find(exporter->atomSubStyles(), LAMMPSDataImporter::AtomStyle_Ellipsoid) != exporter->atomSubStyles().end())) {
-                    numEllipsoids = asphericalShapeProperty.size() - boost::count(asphericalShapeProperty, Vector3G::Zero());
+                if(exporter->atomStyle() == LAMMPSDataImporter::AtomStyle_Ellipsoid || (exporter->atomStyle() == LAMMPSDataImporter::AtomStyle_Hybrid && std::ranges::contains(exporter->atomSubStyles(), LAMMPSDataImporter::AtomStyle_Ellipsoid))) {
+                    numEllipsoids = std::ranges::count_if(asphericalShapeProperty, [](const auto& shape) { return shape != Vector3G::Zero(); });
                     textStream() << numEllipsoids << " ellipsoids\n";
                 }
                 if(numEllipsoids == 0)
@@ -413,7 +413,7 @@ OORef<FileExportJob> LAMMPSDataExporter::createExportJob(const QString& filePath
             // In the latter case, the per-particle masses will be written to the Atoms section.
             if(!exporter->omitMassesSection() && particleTypeProperty && particleTypeProperty->elementTypes().size() > 0 && exporter->atomStyle() != LAMMPSDataImporter::AtomStyle_Sphere) {
                 // Write the "Masses" section only if there is at least one atom type with a non-zero mass.
-                bool hasNonzeroMass = boost::algorithm::any_of(particleTypeProperty->elementTypes(), [](const ElementType* type) {
+                bool hasNonzeroMass = std::ranges::any_of(particleTypeProperty->elementTypes(), [](const ElementType* type) {
                     if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(type))
                         return ptype->mass() != 0;
                     return false;

@@ -31,7 +31,6 @@
 #include <ovito/core/utilities/units/UnitsManager.h>
 #include "CreateBondsModifier.h"
 
-#include <boost/range/numeric.hpp>
 
 namespace Ovito {
 
@@ -380,7 +379,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
         });
 
         // Flatten the bonds list into a single std::vector.
-        size_t totalBondCount = boost::accumulate(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); });
+        size_t totalBondCount = std::ranges::fold_left(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); });
         std::vector<Bond> totalBondsList;
         if(totalBondCount != 0) {
             totalBondsList = std::move(partialBondsLists.front());

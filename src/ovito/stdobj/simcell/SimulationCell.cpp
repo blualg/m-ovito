@@ -175,7 +175,7 @@ ConstPropertyPtr SimulationCellData::wrapPoints(const Property* inputPositions) 
 #else
     BufferReadAccess<Point3> inputPosAcc{inputPositions};
     BufferWriteAccess<Point3, access_mode::discard_write> outputPosAcc{outputPositions};
-    boost::transform(inputPosAcc, outputPosAcc.begin(), [&](const Point3& p) {
+    std::ranges::transform(inputPosAcc, outputPosAcc.begin(), [&](const Point3& p) {
         const Point3 rp = reciprocalCellMatrix * p;
         const Vector3 rv(
             pbcFlags[0] * std::floor(rp.x()),

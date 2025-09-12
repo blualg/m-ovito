@@ -73,16 +73,16 @@ public:
     size_type regionCount() const { return static_cast<size_type>(regions()->elementCount()); }
 
     /// Returns an iterator range over all vertices of the mesh topology.
-    auto verticesRange() const { return boost::counting_range<size_type>(0, vertexCount()); }
+    auto verticesRange() const { return std::views::iota(size_type{0}, vertexCount()); }
 
     /// Returns an iterator range over all faces of the mesh topology.
-    auto facesRange() const { return boost::counting_range<size_type>(0, faceCount()); }
+    auto facesRange() const { return std::views::iota(size_type{0}, faceCount()); }
 
     /// Returns an iterator range over all half-edges of the mesh topology.
-    auto edgesRange() const { return boost::counting_range<size_type>(0, edgeCount()); }
+    auto edgesRange() const { return std::views::iota(size_type{0}, edgeCount()); }
 
     /// Returns an iterator range over all regions of the mesh.
-    auto regionsRange() const { return boost::counting_range<size_type>(0, regionCount()); }
+    auto regionsRange() const { return std::views::iota(size_type{0}, regionCount()); }
 
     /// Returns the index of the space-filling spatial region.
     region_index spaceFillingRegion() const { return mesh()->spaceFillingRegion(); }

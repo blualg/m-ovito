@@ -78,7 +78,7 @@ PropertyPtr SurfaceMeshFaces::OOMetaClass::createStandardPropertyInternal(DataBu
                 BufferReadAccess<int32_t> faceRegionProperty = surfaceMesh->faces()->getProperty(SurfaceMeshFaces::RegionProperty);
                 if(regionColorProperty && faceRegionProperty && faceRegionProperty.size() == elementCount) {
                     // Inherit face colors from regions.
-                    boost::transform(faceRegionProperty, BufferWriteAccess<ColorG, access_mode::discard_write>(property).begin(),
+                    std::ranges::transform(faceRegionProperty, BufferWriteAccess<ColorG, access_mode::discard_write>(property).begin(),
                         [&](int region) { return (region >= 0 && region < regionColorProperty.size()) ? regionColorProperty[region] : ColorG(1,1,1); });
                     init = DataBuffer::Uninitialized;
                 }

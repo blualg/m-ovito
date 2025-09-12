@@ -540,7 +540,7 @@ void AvailableModifiersModel::extensionClassAdded(OvitoClassPtr cls)
     _actions.insert(iter, action);
 
     // Insert action into the right category. Or create a new category if necessary.
-    auto categoryIter = boost::find(_categoryNames, action->category());
+    auto categoryIter = std::ranges::find(_categoryNames, action->category());
     int categoryIndex = std::distance(_categoryNames.begin(), categoryIter);
     if(categoryIter == _categoryNames.end()) {
         _categoryNames.push_back(action->category());

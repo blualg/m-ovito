@@ -107,7 +107,7 @@ QVector<ModificationNode*> ModifierGroup::nodes() const
     });
     if(!nodes.empty()) {
         // Order the nodes according to their sequence in the data pipeline.
-        boost::sort(nodes, [](ModificationNode* a, ModificationNode* b) {
+        std::ranges::sort(nodes, [](ModificationNode* a, ModificationNode* b) {
             return b->isReferencedBy(a);
         });
 #ifdef OVITO_DEBUG

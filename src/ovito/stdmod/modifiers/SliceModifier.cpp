@@ -128,7 +128,7 @@ Future<PipelineFlowState> LinesSliceModifierDelegate::apply(const ModifierEvalua
                 BufferReadAccess<Point3> vertexPositionProperty = outputLines->expectProperty(Lines::PositionProperty);
                 BufferWriteAccess<SelectionIntType, access_mode::discard_read_write> vertexSelectionProperty = outputLines->createProperty(Lines::SelectionProperty);
                 size_t numSelectedVertices = 0;
-                boost::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
+                std::ranges::transform(vertexPositionProperty, vertexSelectionProperty.begin(), [&](const Point3& pos) {
                     bool selectionState =
                         (sliceWidth <= 0) ?
                             (plane.pointDistance(pos) > 0) :
@@ -502,7 +502,7 @@ void SliceModifier::renderPlane(FrameGraph& frameGraph, const SceneNode* sceneNo
 
             // Render plane-box intersection lines.
             BufferFactory<Point3> positions(vertices.size());
-            boost::range::copy(vertices, positions.begin());
+            std::ranges::copy(vertices, positions.begin());
             vertexBuffer = positions.take();
         });
 

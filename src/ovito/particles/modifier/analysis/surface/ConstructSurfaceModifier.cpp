@@ -285,7 +285,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
         int64_t maxGrainId = 0;
         if(particleGrains.size() != 0) {
             maxGrainId = qBound(int64_t{0},
-                *boost::max_element(particleGrains),
+                *std::ranges::max_element(particleGrains),
                 static_cast<int64_t>(std::numeric_limits<SurfaceMesh::region_index>::max() - 1));
         }
 
@@ -374,7 +374,7 @@ void ConstructSurfaceModifier::AlphaShapeEngine::perform()
             // Initially, mark all particles as not assigned to any region (special region ID -1).
             _particleRegionIds = Particles::OOClass().createUserProperty(DataBuffer::Uninitialized, positions()->size(), Property::Int32, 1, QStringLiteral("Region"));
             BufferWriteAccess<int32_t, access_mode::discard_read_write> regionIds{_particleRegionIds};
-            boost::fill(regionIds, -1);
+            std::ranges::fill(regionIds, -1);
 
             // Create one list (growable Property) per region, which stores the particle indices belonging to the region.
             std::vector<PropertyFactory<int64_t>> regionParticleLists(meshBuilder.regionCount());
@@ -539,7 +539,7 @@ void ConstructSurfaceModifier::GaussianDensityEngine::perform()
     BufferReadAccess<GraphicsFloatType> particleRadii(_particleRadii);
 
     // Determine the cutoff range of atomic Gaussians.
-    FloatType cutoffSize = FloatType(3) * *boost::max_element(particleRadii) * _radiusFactor;
+    FloatType cutoffSize = FloatType(3) * *std::ranges::max_element(particleRadii) * _radiusFactor;
 
     // Determine the extents of the density grid.
     AffineTransformation gridBoundaries = mesh()->domain()->matrix();

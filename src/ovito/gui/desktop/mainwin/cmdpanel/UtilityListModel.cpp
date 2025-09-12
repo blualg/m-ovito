@@ -333,8 +333,7 @@ void UtilityListModel::datasetReplaced(DataSet* dataset)
     for(const auto& obj : dataset->globalObjects()) {
         if(UtilityObject* utility = dynamic_object_cast<UtilityObject>(obj.get())) {
             // Replace any existing utility of the same class.
-            auto iter = boost::find_if(_utilityObjects, [&](const auto& utility2) { return utility->getOOMetaClass().isMemberUtility(utility2); });
-            if(iter != _utilityObjects.end())
+            if(auto iter = std::ranges::find_if(_utilityObjects, [&](const auto& utility2) { return utility->getOOMetaClass().isMemberUtility(utility2); }); iter != _utilityObjects.end())
                 *iter = utility;
             else
                 _utilityObjects.push_back(utility);
@@ -377,7 +376,7 @@ void UtilityListModel::extensionClassAdded(OvitoClassPtr cls)
     _actions.insert(iter, action);
 
     // Insert action into the right category. Or create a new category if necessary.
-    auto categoryIter = boost::find(_categoryNames, action->category());
+    auto categoryIter = std::ranges::find(_categoryNames, action->category());
     int categoryIndex = std::distance(_categoryNames.begin(), categoryIter);
     if(categoryIter == _categoryNames.end()) {
         _categoryNames.push_back(action->category());

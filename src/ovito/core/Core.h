@@ -50,6 +50,7 @@
 #include <optional>
 #include <queue>
 #include <random>
+#include <ranges>
 #include <set>
 #include <span>
 #include <stack>
@@ -141,9 +142,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 #include <boost/random/uniform_real_distribution.hpp>
-#include <boost/range/algorithm_ext/is_sorted.hpp>
-#include <boost/range/algorithm.hpp>
-#include <boost/range/counting_range.hpp>
+#include <boost/range/adaptor/strided.hpp>
 #include <boost/range/irange.hpp>
 
 /******************************************************************************

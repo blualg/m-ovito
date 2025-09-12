@@ -276,7 +276,7 @@ ConstPropertyPtr ParticlesVis::particleRadii(const Particles* particles, bool in
     if(output) {
         // Check if the radius array contains any zero entries.
         BufferReadAccess<GraphicsFloatType> radiusArray(output);
-        if(boost::find(radiusArray, GraphicsFloatType(0)) != radiusArray.end()) {
+        if(std::ranges::contains(radiusArray, GraphicsFloatType(0))) {
             radiusArray.reset();
 
             // Copy per-type radii to those particles whose "Radius" property value is zero.
@@ -300,7 +300,7 @@ ConstPropertyPtr ParticlesVis::particleRadii(const Particles* particles, bool in
             }
 
             // Replace remaining zero entries in the "Radius" array with the uniform default radius.
-            boost::replace(BufferWriteAccess<GraphicsFloatType, access_mode::read_write>(output.makeMutableInplace()), GraphicsFloatType(0), static_cast<GraphicsFloatType>(defaultParticleRadius()));
+            std::ranges::replace(BufferWriteAccess<GraphicsFloatType, access_mode::read_write>(output.makeMutableInplace()), GraphicsFloatType(0), static_cast<GraphicsFloatType>(defaultParticleRadius()));
         }
         // Apply global scaling factor.
         if(includeGlobalScaleFactor && radiusScaleFactor() != 1.0) {
@@ -328,7 +328,7 @@ ConstPropertyPtr ParticlesVis::particleRadii(const Particles* particles, bool in
                 // Fill radius array.
                 BufferReadAccess<int32_t> typeData(typeProperty);
                 BufferWriteAccess<GraphicsFloatType, access_mode::discard_write> radiusArray(output.makeMutableInplace());
-                boost::transform(typeData, radiusArray.begin(), [&](auto t) {
+                std::ranges::transform(typeData, radiusArray.begin(), [&](auto t) {
                     // Set particle radius only if the type's radius is non-zero.
                     if(auto it = radiusMap.find(t); it != radiusMap.end() && it->second != 0)
                         return static_cast<GraphicsFloatType>(it->second);
@@ -589,7 +589,7 @@ void ParticlesVis::renderMeshBasedParticles(const Particles* particles, FrameGra
             for(size_t i = 0; i < particleCount; i++) {
                 if(radii[i] <= 0)
                     continue;
-                auto iter = boost::find(shapeMeshParticleTypes, types[i]);
+                auto iter = std::ranges::find(shapeMeshParticleTypes, types[i]);
                 if(iter == shapeMeshParticleTypes.end())
                     continue;
                 size_t typeIndex = std::distance(shapeMeshParticleTypes.begin(), iter);
@@ -753,7 +753,7 @@ void ParticlesVis::renderPrimitiveParticles(const Particles* particles, FrameGra
                     BufferFactory<int32_t> activeParticleIndices(0);
                     size_t index = 0;
                     for(int32_t t : BufferReadAccess<int32_t>(typeProperty)) {
-                        if(boost::find(activeParticleTypes, t) != activeParticleTypes.cend())
+                        if(std::ranges::contains(activeParticleTypes, t))
                             activeParticleIndices.push_back(index);
                         index++;
                     }
@@ -927,7 +927,7 @@ void ParticlesVis::renderCylindricalParticles(const Particles* particles, FrameG
                     activeParticleIndices = BufferFactory<int32_t>(0);
                     size_t index = 0;
                     for(int32_t t : BufferReadAccess<int32_t>(typeProperty)) {
-                        if(boost::find(activeParticleTypes, t) != activeParticleTypes.cend())
+                        if(std::ranges::contains(activeParticleTypes, t))
                             activeParticleIndices.push_back(index);
                         index++;
                     }

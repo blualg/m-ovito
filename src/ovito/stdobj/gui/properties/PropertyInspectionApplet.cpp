@@ -109,11 +109,10 @@ bool PropertyInspectionApplet::selectDataObject(const PipelineNode* createdByNod
 
     // Check the property columns in case the requested data object is a property object.
     const auto& properties = _tableModel->properties();
-    auto iter = boost::find_if(properties, [&](const Property* property) {
+    if(auto iter = std::ranges::find_if(properties, [&](const Property* property) {
         return property->createdByNode().lock().get() == createdByNode &&
             (objectIdentifierHint.isEmpty() || property->identifier().startsWith(objectIdentifierHint));
-    });
-    if(iter != properties.end()) {
+    }); iter != properties.end()) {
         _tableView->selectColumn(iter - properties.begin());
         return true;
     }

@@ -244,16 +244,16 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
 
             // Next, compute distance of each face from the camera along the viewing direction (=camera z-axis).
             std::vector<FloatType> distances(mesh.faceCount());
-            boost::transform(faceCenters, distances.begin(), [direction = direction.toDataType<float>()](const Vector3F& v) {
+            std::ranges::transform(faceCenters, distances.begin(), [direction = direction.toDataType<float>()](const Vector3F& v) {
                 return direction.dot(v);
             });
 
             // Create index array with all face indices.
             std::vector<uint32_t> sortedIndices(mesh.faceCount());
-            boost::algorithm::iota(sortedIndices, (uint32_t)0);
+            std::iota(sortedIndices.begin(), sortedIndices.end(), (uint32_t)0);
 
             // Sort face indices with respect to distance (back-to-front order).
-            boost::sort(sortedIndices, [&](uint32_t a, uint32_t b) {
+            std::ranges::sort(sortedIndices, [&](uint32_t a, uint32_t b) {
                 return distances[a] < distances[b];
             });
 

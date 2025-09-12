@@ -273,15 +273,17 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             BufferReadAccess<GraphicsFloatType> radiusArray(radii);
             BufferWriteAccess<FloatType, access_mode::read_write> brightnessValues(brightness);
             auto r = radiusArray.cbegin();
+            FloatType maxBrightness = 0;
             for(FloatType& b : brightnessValues) {
                 if(*r != 0)
                     b /= (*r) * (*r);
+                if(b > maxBrightness)
+                    maxBrightness = b;
                 ++r;
             }
             this_task::throwIfCanceled();
 
             // Normalize brightness values by global maximum.
-            FloatType maxBrightness = *boost::max_element(brightnessValues);
             if(maxBrightness != 0) {
                 for(FloatType& b : brightnessValues) {
                     b /= maxBrightness;

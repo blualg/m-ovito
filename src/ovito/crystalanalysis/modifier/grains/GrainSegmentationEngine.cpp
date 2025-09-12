@@ -179,7 +179,7 @@ void GrainSegmentationEngine1::rotateInterfaceAtoms(TaskProgress& progress)
     BufferReadAccess<PTMAlgorithm::StructureType> structuresArray(structureTypes());
     _adjustedStructureTypes = std::vector<PTMAlgorithm::StructureType>(structuresArray.cbegin(), structuresArray.cend());
     _adjustedOrientations = std::vector<Quaternion>(orientations()->size());
-    boost::transform(BufferReadAccess<QuaternionG>(orientations()), _adjustedOrientations.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
+    std::ranges::transform(BufferReadAccess<QuaternionG>(orientations()), _adjustedOrientations.begin(), &QuaternionG::toDataType<FloatType>);
 
     // Only rotate hexagonal atoms if handling of coherent interfaces is enabled
     if(!_handleBoundaries)
@@ -250,7 +250,7 @@ void GrainSegmentationEngine1::computeDisorientationAngles(TaskProgress& progres
     });
 
     // Sort graph edges by disorientation.
-    boost::sort(_neighborBonds, [](const NeighborBond& a, const NeighborBond& b) {
+    std::ranges::sort(_neighborBonds, [](const NeighborBond& a, const NeighborBond& b) {
         return a.disorientation < b.disorientation;
     });
 }
@@ -366,7 +366,7 @@ void GrainSegmentationEngine1::determineMergeSequence(TaskProgress& progress)
     this_task::throwIfCanceled();
 
     // Sort dendrogram entries by distance.
-    boost::sort(_dendrogram, [](const DendrogramNode& a, const DendrogramNode& b) { return a.distance < b.distance; });
+    std::ranges::sort(_dendrogram, [](const DendrogramNode& a, const DendrogramNode& b) { return a.distance < b.distance; });
 
     this_task::throwIfCanceled();
 
@@ -482,7 +482,7 @@ void GrainSegmentationEngine2::perform()
     const std::vector<GrainSegmentationEngine1::DendrogramNode>& dendrogram = _engine1->_dendrogram;
 
     std::vector<Quaternion> meanOrientation(_engine1->orientations()->size());
-    boost::transform(BufferReadAccess<QuaternionG>(_engine1->orientations()), meanOrientation.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
+    std::ranges::transform(BufferReadAccess<QuaternionG>(_engine1->orientations()), meanOrientation.begin(), [](const QuaternionG& q) { return q.toDataType<FloatType>(); });
 
     // Iterate through merge list until distance cutoff is met.
     DisjointSet uf(_numParticles);
@@ -532,7 +532,7 @@ void GrainSegmentationEngine2::perform()
 
     // Allocate output array storing the structure type of grains.
     _grainStructureTypes = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, Property::Int32, 1, QStringLiteral("Structure Type"));
-    boost::copy(clusterStructureTypes, BufferWriteAccess<int32_t, access_mode::discard_write>(_grainStructureTypes).begin());
+    std::ranges::copy(clusterStructureTypes, BufferWriteAccess<int32_t, access_mode::discard_write>(_grainStructureTypes).begin());
     // Transfer the set of PTM crystal structure types to the structure column of the grain table.
     for(const ElementType* type : _engine1->structureTypes()->elementTypes()) {
         if(type->enabled())
@@ -545,13 +545,13 @@ void GrainSegmentationEngine2::perform()
     _grainColors = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, DataBuffer::FloatGraphics, 3, QStringLiteral("Color"), 0, QStringList() << QStringLiteral("R") << QStringLiteral("G") << QStringLiteral("B"));
     std::default_random_engine rng(1);
     boost::random::uniform_real_distribution<FloatType> uniform_dist(0, 1);
-    boost::generate(BufferWriteAccess<ColorG, access_mode::discard_write>(_grainColors), [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.8f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.5f); });
+    std::ranges::generate(BufferWriteAccess<ColorG, access_mode::discard_write>(_grainColors), [&]() { return ColorG::fromHSV(static_cast<GraphicsFloatType>(uniform_dist(rng)), 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.8f, 1.0f - static_cast<GraphicsFloatType>(uniform_dist(rng)) * 0.5f); });
     this_task::throwIfCanceled();
 
     // Allocate output array storing the mean lattice orientation of grains (represented by a quaternion).
     _grainOrientations = DataTable::OOClass().createUserProperty(DataBuffer::Uninitialized, _numClusters - 1, DataBuffer::FloatDefault, 4, QStringLiteral("Orientation"), 0, QStringList() << QStringLiteral("X") << QStringLiteral("Y") << QStringLiteral("Z") << QStringLiteral("W"));
     OVITO_ASSERT(clusterOrientations.size() == _grainOrientations->size());
-    boost::copy(clusterOrientations, BufferWriteAccess<Quaternion, access_mode::discard_write>(_grainOrientations).begin());
+    std::ranges::copy(clusterOrientations, BufferWriteAccess<Quaternion, access_mode::discard_write>(_grainOrientations).begin());
 
     // Determine new IDs for non-root clusters.
     for(size_t particleIndex = 0; particleIndex < _numParticles; particleIndex++)
@@ -578,7 +578,7 @@ void GrainSegmentationEngine2::perform()
         // Determine the index remapping for reordering the grain list by size.
         std::vector<size_t> mapping(_numClusters - 1);
         boost::algorithm::iota(mapping, size_t(0));
-        boost::sort(mapping, [grainSizeArray = BufferReadAccess<int64_t>(_grainSizes)](size_t a, size_t b) {
+        std::ranges::sort(mapping, [grainSizeArray = BufferReadAccess<int64_t>(_grainSizes)](size_t a, size_t b) {
             return grainSizeArray[a] > grainSizeArray[b];
         });
         this_task::throwIfCanceled();
@@ -632,7 +632,7 @@ void GrainSegmentationEngine2::mergeOrphanAtoms(TaskProgress& progress)
     }
     this_task::throwIfCanceled();
 
-    boost::sort(noncrystallineBonds,
+    std::ranges::sort(noncrystallineBonds,
                  [](const GrainSegmentationEngine1::NeighborBond& a, const GrainSegmentationEngine1::NeighborBond& b)
                  {return a.a < b.a;});
 
@@ -662,12 +662,12 @@ void GrainSegmentationEngine2::mergeOrphanAtoms(TaskProgress& progress)
         grainSizeArray[node.cluster - 1]++;
 
         // Get the range of bonds adjacent to the current atom.
-        auto bondsRange = boost::range::equal_range(noncrystallineBonds, GrainSegmentationEngine1::NeighborBond{node.particleIndex, 0, 0, 0},
+        auto bondsRange = std::ranges::equal_range(noncrystallineBonds, GrainSegmentationEngine1::NeighborBond{node.particleIndex, 0, 0, 0},
             [](const GrainSegmentationEngine1::NeighborBond& a, const GrainSegmentationEngine1::NeighborBond& b)
             { return a.a < b.a; });
 
         // Find the closest cluster atom in the neighborhood (using PTM ordering).
-        for(const GrainSegmentationEngine1::NeighborBond& bond : boost::make_iterator_range(bondsRange.first, bondsRange.second)) {
+        for(const GrainSegmentationEngine1::NeighborBond& bond : bondsRange) {
             OVITO_ASSERT(bond.a == node.particleIndex);
 
             auto neighborIndex = bond.b;
@@ -756,7 +756,7 @@ void GrainSegmentationEngine2::applyResults(PipelineFlowState& state, const OOWe
             // Assign colors to particles according to the grains they belong to.
             BufferReadAccess<ColorG> grainColorsArray(_grainColors);
             BufferWriteAccess<ColorG, access_mode::discard_write> particleColorsArray = particles->createProperty(Particles::ColorProperty);
-            boost::transform(BufferReadAccess<int64_t>(atomClusters()), particleColorsArray.begin(), [&](int64_t cluster) {
+            std::ranges::transform(BufferReadAccess<int64_t>(atomClusters()), particleColorsArray.begin(), [&](int64_t cluster) {
                 if(cluster != 0)
                     return grainColorsArray[cluster - 1];
                 else
@@ -774,8 +774,10 @@ void GrainSegmentationEngine2::applyResults(PipelineFlowState& state, const OOWe
     grainTable->createProperty(_grainOrientations);
 
     size_t numGrains = 0;
-    if(atomClusters()->size() != 0)
-        numGrains = *boost::max_element(BufferReadAccess<int64_t>(atomClusters()));
+    if(atomClusters()->size() != 0) {
+        BufferReadAccess<int64_t> atomClustersData(atomClusters());
+        numGrains = *std::ranges::max_element(atomClustersData);
+    }
 
     state.addAttribute(QStringLiteral("GrainSegmentation.grain_count"), QVariant::fromValue(numGrains), createdByNode);
 

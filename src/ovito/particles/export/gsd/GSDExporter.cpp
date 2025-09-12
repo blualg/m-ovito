@@ -116,7 +116,7 @@ OORef<FileExportJob> GSDExporter::createExportJob(const QString& filePath, int n
             std::vector<size_t> ordering(particles->elementCount());
             boost::algorithm::iota(ordering, (size_t)0);
             if(BufferReadAccess<int64_t> idProperty = particles->getProperty(Particles::IdentifierProperty)) {
-                boost::sort(ordering, [&](size_t a, size_t b) { return idProperty[a] < idProperty[b]; });
+                std::ranges::sort(ordering, [&](size_t a, size_t b) { return idProperty[a] < idProperty[b]; });
             }
             this_task::throwIfCanceled();
 
@@ -167,7 +167,7 @@ OORef<FileExportJob> GSDExporter::createExportJob(const QString& filePath, int n
                 // Build typeid array.
                 BufferReadAccess<int32_t> typeIdsArray(typeIds);
                 std::vector<uint32_t> typeIdBuffer(typeIdsArray.size());
-                boost::transform(ordering, typeIdBuffer.begin(),
+                std::ranges::transform(ordering, typeIdBuffer.begin(),
                     [&](size_t i) { return typeIdsArray[i]; });
                 _gsdFile->writeChunk<uint32_t>("particles/typeid", typeIdBuffer.size(), 1, typeIdBuffer.data());
                 this_task::throwIfCanceled();
@@ -177,7 +177,7 @@ OORef<FileExportJob> GSDExporter::createExportJob(const QString& filePath, int n
             if(BufferReadAccess<FloatType> massProperty = particles->getProperty(Particles::MassProperty)) {
                 // Apply particle index mapping and data type conversion:
                 std::vector<float> massBuffer(massProperty.size());
-                boost::transform(ordering, massBuffer.begin(),
+                std::ranges::transform(ordering, massBuffer.begin(),
                     [&](size_t i) { return massProperty[i]; });
                 _gsdFile->writeChunk<float>("particles/mass", massBuffer.size(), 1, massBuffer.data());
                 this_task::throwIfCanceled();
@@ -187,7 +187,7 @@ OORef<FileExportJob> GSDExporter::createExportJob(const QString& filePath, int n
             if(BufferReadAccess<FloatType> chargeProperty = particles->getProperty(Particles::ChargeProperty)) {
                 // Apply particle index mapping and data type conversion:
                 std::vector<float> chargeBuffer(chargeProperty.size());
-                boost::transform(ordering, chargeBuffer.begin(),
+                std::ranges::transform(ordering, chargeBuffer.begin(),
                     [&](size_t i) { return chargeProperty[i]; });
                 _gsdFile->writeChunk<float>("particles/charge", chargeBuffer.size(), 1, chargeBuffer.data());
                 this_task::throwIfCanceled();
@@ -198,7 +198,7 @@ OORef<FileExportJob> GSDExporter::createExportJob(const QString& filePath, int n
                 // Apply particle index mapping, data type conversion and
                 // multiplying with a factor of 2 to convert from radii to diameters:
                 std::vector<float> diameterBuffer(radiusProperty.size());
-                boost::transform(ordering, diameterBuffer.begin(),
+                std::ranges::transform(ordering, diameterBuffer.begin(),
                     [&](size_t i) { return 2 * radiusProperty[i]; });
                 _gsdFile->writeChunk<float>("particles/diameter", diameterBuffer.size(), 1, diameterBuffer.data());
                 this_task::throwIfCanceled();
@@ -210,7 +210,7 @@ OORef<FileExportJob> GSDExporter::createExportJob(const QString& filePath, int n
                 // Also right-shift the quaternion components, because GSD uses a different representation.
                 // (X,Y,Z,W) -> (W,X,Y,Z).
                 std::vector<std::array<float,4>> orientationBuffer(orientationProperty.size());
-                boost::transform(ordering, orientationBuffer.begin(),
+                std::ranges::transform(ordering, orientationBuffer.begin(),
                     [&](size_t i) { const QuaternionG& q = orientationProperty[i];
                         return std::array<float,4>{{ (float)q.w(), (float)q.x(), (float)q.y(), (float)q.z() }}; });
                 _gsdFile->writeChunk<float>("particles/orientation", orientationBuffer.size(), 4, orientationBuffer.data());
@@ -222,7 +222,7 @@ OORef<FileExportJob> GSDExporter::createExportJob(const QString& filePath, int n
                 // Apply particle index mapping and data type conversion:
                 // Also apply affine transform of simulation cell to velocity vectors.
                 std::vector<Vector_3<float>> velocityBuffer(velocityProperty.size());
-                boost::transform(ordering, velocityBuffer.begin(),
+                std::ranges::transform(ordering, velocityBuffer.begin(),
                     [&](size_t i) { return (transformation * velocityProperty[i]).toDataType<float>(); });
                 _gsdFile->writeChunk<float>("particles/velocity", velocityBuffer.size(), 3, velocityBuffer.data());
                 this_task::throwIfCanceled();
@@ -234,7 +234,7 @@ OORef<FileExportJob> GSDExporter::createExportJob(const QString& filePath, int n
                     BufferReadAccess<Quaternion> angularMomentumPropertyAccess(angularMomentumProperty);
                     // Apply particle index mapping and data type conversion:
                     std::vector<QuaternionT<float>> angMomBuffer(angularMomentumProperty->size());
-                    boost::transform(ordering, angMomBuffer.begin(),
+                    std::ranges::transform(ordering, angMomBuffer.begin(),
                         [&](size_t i) { return angularMomentumPropertyAccess[i].toDataType<float>(); });
                     _gsdFile->writeChunk<float>("particles/angmom", angMomBuffer.size(), 4, angMomBuffer.data());
                     this_task::throwIfCanceled();
@@ -247,7 +247,7 @@ OORef<FileExportJob> GSDExporter::createExportJob(const QString& filePath, int n
                     BufferReadAccess<int32_t> bodyPropertyAccess(bodyProperty);
                     // Apply particle index mapping:
                     std::vector<int> bodyBuffer(bodyProperty->size());
-                    boost::transform(ordering, bodyBuffer.begin(),
+                    std::ranges::transform(ordering, bodyBuffer.begin(),
                         [&](size_t i) { return bodyPropertyAccess[i]; });
                     _gsdFile->writeChunk<int>("particles/body", bodyBuffer.size(), 1, bodyBuffer.data());
                     this_task::throwIfCanceled();

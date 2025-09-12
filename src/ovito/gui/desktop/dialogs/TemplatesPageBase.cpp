@@ -124,8 +124,7 @@ void TemplatesPageBase::onCreateTemplate()
                 if(MessageDialog::question(&dlg, tr("Create %1 template").arg(objectTypeNameLC()), tr("A %1 template with the same name '%2' already exists. Do you want to replace it?").arg(objectTypeNameLC()).arg(name), QMessageBox::Yes | QMessageBox::Cancel) != QMessageBox::Yes)
                     return;
             }
-            int selCount = boost::count_if(itemList, [](QTreeWidgetItem* item) { return item->checkState(0) == Qt::Checked; });
-            if(!selCount) {
+            if(!std::ranges::any_of(itemList, [](QTreeWidgetItem* item) { return item->checkState(0) == Qt::Checked; })) {
                 MessageDialog::critical(&dlg, tr("Create %1 template").arg(objectTypeNameLC()), tr("Please check at least one %1 to include in the new template.").arg(objectTypeNameLC()));
                 return;
             }

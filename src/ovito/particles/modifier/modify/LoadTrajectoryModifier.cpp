@@ -181,8 +181,8 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
 
             // Check for duplicate identifiers in topology dataset.
             std::vector<IdentifierIntType> idSet(topoIdentifierProperty.cbegin(), topoIdentifierProperty.cend());
-            boost::sort(idSet);
-            if(boost::adjacent_find(idSet) != idSet.cend())
+            std::ranges::sort(idSet);
+            if(std::ranges::adjacent_find(idSet) != idSet.cend())
                 throw Exception(tr("Particles with duplicate identifiers detected in topology dataset."));
 
             // Used to keep track of which topology particles are going to be deleted.
@@ -197,7 +197,7 @@ void LoadTrajectoryModifier::applyTrajectoryState(PipelineFlowState& state, cons
                     // Existing particle from topology dataset was not found in the trajectory dataset --> Mark the particle for deletion.
                     if(!deletionMask) {
                         deletionMask = BufferFactory<SelectionIntType>(indexToIndexMap.size());
-                        boost::fill(deletionMask, 0);
+                        std::ranges::fill(deletionMask, 0);
                     }
                     deletionMask[idx] = 1;
                 }

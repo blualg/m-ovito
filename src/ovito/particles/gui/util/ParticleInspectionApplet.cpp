@@ -299,9 +299,9 @@ void ParticleInspectionApplet::PickingMode::renderOverlay(Viewport* vp, Viewport
                 if(element.particleId >= 0) {
                     if(BufferReadAccess<int64_t> identifierProperty = particles->getProperty(Particles::IdentifierProperty)) {
                         if(particleIndex >= identifierProperty.size() || identifierProperty[particleIndex] != element.particleId) {
-                            auto iter = boost::find(identifierProperty, element.particleId);
+                            auto iter = std::ranges::find(identifierProperty, element.particleId);
                             if(iter == identifierProperty.cend()) continue;
-                            element.particleIndex = particleIndex = (iter - identifierProperty.cbegin());
+                            element.particleIndex = particleIndex = std::distance(identifierProperty.cbegin(), iter);
                         }
                     }
                 }
