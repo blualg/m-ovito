@@ -34,7 +34,7 @@ A discretized color map can now be enabled to visualize integer properties:
 - Fix: dynamic sorting of "Quick command search" field not working.
 - Changed ordering of "Quick command search" items from "all time use" to "most recent use".
 - LAMMPS data file reader: Added support for atom styles spin,sph,rheo,rheo/thermal,bpm/sphere
-- :ref:`particles.modifiers.coordination_analysis` modifier: Added calculation of the ``Per Type Coordination`` property
+- :ref:`particles.modifiers.coordination_analysis` modifier: Added calculation of the ``Per Type Coordination`` property and support for custom particle type properties for partial RDF calculations
 - Added file export function to *Surfaces* tab of data inspector
 - Renamed export format "Table of Values" to "Table of Global Attributes" for clarity
 - Aspherix PVD file reader: Read in simulation time as global attribute ``Time``, not ``Timestep``

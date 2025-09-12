@@ -25,6 +25,7 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/stdobj/gui/widgets/DataTablePlotWidget.h>
+#include <ovito/stdobj/gui/widgets/PropertyReferenceParameterUI.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito {
@@ -51,6 +52,9 @@ private:
 
     /// The plotting widget for displaying the computed RDFs.
     DataTablePlotWidget* _rdfPlot;
+
+    /// Selection box for the type property.
+    PropertyReferenceParameterUI* _typePropertyUI;
 };
 
 }   // End of namespace

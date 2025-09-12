@@ -25,6 +25,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/core/dataset/pipeline/Modifier.h>
+#include <ovito/stdobj/properties/PropertyReference.h>
 
 namespace Ovito {
 
@@ -53,6 +54,9 @@ class OVITO_PARTICLES_EXPORT CoordinationAnalysisModifier : public Modifier
 
 public:
 
+    /// Constructor.
+    void initializeObject(ObjectInitializationFlags flags);
+
     /// Is called by the pipeline system before a new modifier evaluation begins.
     virtual void preevaluateModifier(const ModifierEvaluationRequest& request, PipelineEvaluationResult::EvaluationTypes& evaluationTypes, TimeInterval& validityInterval) const override;
 
@@ -76,6 +80,9 @@ private:
 
     /// Controls whether the modifier acts only on currently selected particles.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, onlySelected, setOnlySelected);
+
+    /// The particle property that is used as the source for type classification when computing partial RDFs.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, typeProperty, setTypeProperty);
 };
 
 }   // End of namespace

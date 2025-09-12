@@ -51,6 +51,12 @@ Here, :math:`c_{\alpha}` and :math:`c_{\beta}` denote the concentrations of the 
 species in the system and the factor 2 in the mixed term appears due to :math:`g_{\alpha \beta}(r)` and
 :math:`g_{\beta \alpha}(r)` being identical.
 
+.. tip::
+
+  By default, the modifier uses the standard ``Particle Type`` property
+  for classification of particles by species type, but you can select any other available typed property (such as ``Structure Type`` or ``Atom Name``) from the dropdown menu
+  to compute partial RDFs based on alternative classifications.
+
 Computing RDF for a subset of particles
 """""""""""""""""""""""""""""""""""""""
 

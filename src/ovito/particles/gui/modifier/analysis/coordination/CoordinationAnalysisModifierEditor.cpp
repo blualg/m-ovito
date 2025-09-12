@@ -22,6 +22,7 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/modifier/analysis/coordination/CoordinationAnalysisModifier.h>
+#include <ovito/particles/objects/Particles.h>
 #include <ovito/gui/desktop/properties/IntegerParameterUI.h>
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
@@ -50,7 +51,7 @@ void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParamete
     layout->setSpacing(4);
 
     QGridLayout* gridlayout = new QGridLayout();
-    gridlayout->setContentsMargins(4,4,4,4);
+    gridlayout->setContentsMargins(0,0,0,0);
     gridlayout->setColumnStretch(1, 1);
 
     // Cutoff parameter.
@@ -62,15 +63,27 @@ void CoordinationAnalysisModifierEditor::createUI(const RolloutInsertionParamete
     IntegerParameterUI* numBinsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::numberOfBins));
     gridlayout->addWidget(numBinsPUI->label(), 1, 0);
     gridlayout->addLayout(numBinsPUI->createFieldLayout(), 1, 1);
-    layout->addLayout(gridlayout);
 
     // Partial RDFs option.
     BooleanParameterUI* partialRdfPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::computePartialRDF));
-    layout->addWidget(partialRdfPUI->checkBox());
+    partialRdfPUI->checkBox()->setText(tr("Compute partial RDFs per:"));
+    gridlayout->addWidget(partialRdfPUI->checkBox(), 2, 0);
+
+    // Type property selection.
+    _typePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::typeProperty), &Particles::OOClass(), PropertyReferenceParameterUI::ShowNoComponents);
+    gridlayout->addWidget(_typePropertyUI->comboBox(), 2, 1);
+    _typePropertyUI->setEnabled(false);
+    connect(partialRdfPUI->checkBox(), &QCheckBox::toggled, _typePropertyUI, &ParameterUI::setEnabled);
+
+    // Show only typed properties that have some element types attached to them.
+    _typePropertyUI->setPropertyFilter([](const PropertyContainer* container, const Property* property) {
+        return property->isTypedProperty();
+    });
 
     // Only selected particles.
     BooleanParameterUI* onlySelectedPUI = createParamUI<BooleanParameterUI>(PROPERTY_FIELD(CoordinationAnalysisModifier::onlySelected));
-    layout->addWidget(onlySelectedPUI->checkBox());
+    gridlayout->addWidget(onlySelectedPUI->checkBox(), 3, 0, 1, 2);
+    layout->addLayout(gridlayout);
 
     _rdfPlot = new DataTablePlotWidget();
     _rdfPlot->setMinimumHeight(200);
