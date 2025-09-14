@@ -12,36 +12,109 @@ Changelog
 Version 3.14.0 (xx-xxx-2025)
 ----------------------------
 
-.. rubric:: Discrete color maps
+- :ref:`Discrete color maps <particles.modifiers.color_coding>`: A discretized color map can now be enabled to visualize integer properties with distinct color bands:
 
-A discretized color map can now be enabled to visualize integer properties:
+  .. image:: /images/new_features/discrete_colormap_settings.jpg
+    :width: 35%
 
-.. image:: /images/new_features/discrete_colormap_settings.jpg
-  :width: 35%
+  .. image:: /images/new_features/discrete_colormap_legend.jpg
+    :width: 25%
 
-.. image:: /images/new_features/discrete_colormap_legend.jpg
-  :width: 25%
+  |br|
 
-- |ovito-pro| Added the :ref:`particles.modifiers.find_rings` modifier - a high performance implementation of the `Ring Finder Python extension <https://github.com/ovito-org/RingFinder>`__  .
-- |ovito-pro| Added the :ref:`particles.modifiers.reduce_property` modifier - a high performance implementation of the `Reduce Property Python extension <https://github.com/ovito-org/ReduceProperty>`__ .
-- |ovito-pro| Added the :ref:`particles.modifiers.difference_between_frames` modifier: Computes the delta of a particle property between the current frame and a reference frame.
-- |ovito-pro| Activate material choice for the :ref:`rendering.visrtx_renderer`.
-- Added a :menuselection:`Request a Feature` function to the :menuselection:`Help` menu.
-- Added the :guilabel:`Generate bounding box if needed` option to the file reader settings.
-  This option allows OVITO to automatically generate a simulation cell that tightly encloses all particles in an axis-aligned bounding box
-  if the imported simulation file does not contain any simulation cell information. Otherwise, OVITO will work without *any* simulation cell by default.
-- Fix: Last tick mark missing in the color legend overlay.
-- Fix: dynamic sorting of "Quick command search" field not working.
-- Changed ordering of "Quick command search" items from "all time use" to "most recent use".
-- LAMMPS data file reader: Added support for atom styles spin,sph,rheo,rheo/thermal,bpm/sphere
-- :ref:`particles.modifiers.coordination_analysis` modifier: Added calculation of the ``Per Type Coordination`` property and support for custom particle type properties for partial RDF calculations
-- Added file export function to *Surfaces* tab of data inspector
-- Renamed export format "Table of Values" to "Table of Global Attributes" for clarity
-- Aspherix PVD file reader: Read in simulation time as global attribute ``Time``, not ``Timestep``
-- OVITO's timeline can now display simulation timesteps instead of frame numbers, see newly added option in the :ref:`animation.animation_settings_dialog`
-- Pipeline editor: New function for creating shared visual elements - allows easy synchronization of visual settings for multiple objects
-- Added new color gradient resembling the new 'Fast' color map from ParaView.
-- |ovito-pro| :ref:`rendering.visrtx_renderer`: Added depth-of-field rendering (focal blur) effect.
+- New modifier: :ref:`particles.modifiers.find_rings` |ovito-pro| - A high-performance algorithm to identify and visualize bond rings in molecular structures
+
+  .. image:: /images/new_features/find_rings_example.jpg
+    :width: 35%
+
+  |br|
+
+- New modifier: :ref:`particles.modifiers.reduce_property` |ovito-pro|
+
+  .. image:: /images/new_features/reduce_property.jpg
+    :width: 30%
+    :align: right
+
+  Reduces a selected data property to a single value by applying a specified reduction operation over all data elements. For example, the modifier allows computing the sum of a property across all particles.
+
+  The modifier offers the following reduction operations: `minimum`, `maximum`, `sum`, `non-zero count`, `mean`, `median`, `variance`, `standard deviation`, `argmin`, and `argmax`.
+
+- New modifier: :ref:`particles.modifiers.difference_between_frames` |ovito-pro| - Computes the difference (delta) of a property between the current frame and a reference configuration. The reference configuration can be either fixed or relative to the current frame (time offset), enabling sliding-window difference calculations.
+
+  The modifier can compute time differences for the following kinds of inputs:
+    - Particle properties
+    - Global attributes
+    - Data tables
+    - Voxel grid properties
+
+- New :menuselection:`Request a feature` function available in the :menuselection:`Help` menu:
+
+  .. image:: /images/new_features/request_a_feature.jpg
+    :width: 50%
+
+  Send us your ideas and suggestions for new features or improvements in OVITO.
+
+- :ref:`particles.modifiers.coordination_analysis` modifier:
+
+  The modifier can now count the number of neighbors of different types separately, which is useful for analyzing the chemical composition of the local neighborhood. Furthermore, it allows to select other type classifications for the calculation of partial RDFs.
+
+- OVITO's timeline can now display timesteps of the MD simulation instead of animation frame numbers:
+
+  .. figure:: /images/new_features/timeline_show_timesteps.jpg
+    :figwidth: 100%
+
+    Timestep display
+
+  .. figure:: /images/new_features/timeline_show_structures.jpg
+    :figwidth: 100%
+
+    Structure names for :ref:`ASE databases <file_formats.input.ase_database>`
+
+  The new option can be enabled in the :ref:`animation.animation_settings_dialog` dialog of OVITO.
+
+- The :ref:`rendering.visrtx_renderer` |ovito-pro| now lets you choose between the `standard` and `physically-based` material:
+
+  .. figure:: /images/rendering/visrtx_renderer_matte_material.*
+    :figwidth: 24%
+
+    Standard material
+
+  .. figure:: /images/rendering/visrtx_renderer_metal_material_r30-m0.png
+    :figwidth: 30%
+
+    Physically-based material
+
+  Furthermore, we added support for depth-of-field rendering (focal blur) effect to the VisRTX renderer.
+
+- We've added a new color gradient to OVITO that resembles `ParaView's 'fast' color map <https://www.kitware.com/new-default-colormap-and-background-in-next-paraview-release/>`__:
+
+  .. image:: /images/new_features/colormap_fast.jpg
+    :width: 35%
+
+  |br|
+
+- The pipeline editor of OVITO now provides a new function for creating shared visual elements, allowing easy synchronization of visual settings across multiple objects:
+
+  .. image:: /images/new_features/shared_visual_elements.png
+    :width: 80%
+
+  |br|
+
+- When you import a file not containing simulation cell information, OVITO no longer generates an axis-aligned bounding box around the particles.
+  That means, OVITO will operate without *any* simulation cell in such cases. However, we've added the :guilabel:`Generate bounding box if needed` option to the
+  file reader settings, which allows you to restore the previous behavior if needed.
+
+  .. image:: /images/new_features/file_reader_generate_bounding_box.jpg
+    :width: 30%
+
+  |br|
+
+- :ref:`file_formats.input.lammps_data`: added support for atom styles `spin`, `sph`, `rheo`, `rheo/thermal`, and `bpm/sphere`.
+- Fix: Missing last tick mark in the color legend overlay.
+- Fix: Usage-based sorting of "Quick command search" list not working.
+- Added file export function to *Surfaces* tab of the data inspector.
+- Renamed export format "Table of Values" to "Table of Global Attributes" for clarity.
+- Aspherix PVD file reader: reads simulation time as global attribute ``Time`` instead of ``Timestep``.
 
 .. sidebar::
 
