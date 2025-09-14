@@ -35,9 +35,9 @@ IF(OVITO_CMAKE_FILE_INJECTION_PLUGINS)
     INCLUDE("${OVITO_CMAKE_FILE_INJECTION_PLUGINS}")
 ENDIF()
 
-# Build the main application executable 'ovito'.
+# Build the application executable 'ovito'.
 IF(OVITO_BUILD_APP)
-    ADD_SUBDIRECTORY(ovito_exe)
+    ADD_SUBDIRECTORY(main)
 ENDIF()
 
 # Propagate list of plugins to parent scope.
