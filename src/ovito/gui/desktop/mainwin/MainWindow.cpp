@@ -764,15 +764,14 @@ void MainWindow::openNewWindow(const QStringList& arguments)
     if(!QProcess::startDetached(execPath, arguments))
         throw Exception(tr("Failed to start another instance of the program. Executable path: %1").arg(execPath));
 #else
-    OORef<MainWindow> mainWin = OORef<MainWindow>::create();
-    mainWin->keepAliveUntilShutdown();
-    mainWin->show();
-    mainWin->restoreMainWindowGeometry();
-    mainWin->restoreLayout();
-    if(!mainWin->handleExceptions([&]() {
-        GuiApplication::initializeUserInterface(*mainWin, arguments);
+    OORef<MainWindowUI> mainWinUI = OORef<MainWindowUI>::create();
+    mainWinUI->mainWindow()->show();
+    mainWinUI->mainWindow()->restoreMainWindowGeometry();
+    mainWinUI->mainWindow()->restoreLayout();
+    if(!mainWinUI->handleExceptions([&]() {
+        GuiApplication::initializeUserInterface(*mainWinUI, arguments);
     })) {
-        mainWin->shutdown();
+        mainWinUI->shutdown();
     }
 #endif
 }
