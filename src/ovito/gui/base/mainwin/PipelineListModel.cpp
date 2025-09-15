@@ -176,7 +176,7 @@ QVector<RefTarget*> PipelineListModel::selectedObjects() const
 ******************************************************************************/
 void PipelineListModel::refreshItemLater(PipelineListItem* item)
 {
-    if(auto iter = std::ranges::find(_items, item); iter != _items.end()) {
+    if(auto iter = std::find(_items.begin(), _items.end(), item); iter != _items.end()) {
         int index = std::distance(_items.begin(), iter);
         if(std::ranges::contains(_itemsRefreshPending, index))
             return;

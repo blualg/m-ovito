@@ -594,7 +594,7 @@ void SceneNode::setPerViewportVisibility(Viewport* vp, bool visible)
         }
     }
     else {
-        if(std::ranges::none_of(hiddenInViewports(), [vp](const auto& weakRef) { return weakRef == vp; })) {
+        if(std::find(hiddenInViewports().begin(), hiddenInViewports().end(), vp) == hiddenInViewports().end()) {
             auto newHiddenInViewports = hiddenInViewports();
             newHiddenInViewports.push_back(vp);
             // Remove expired weak references from the list.
@@ -613,7 +613,7 @@ bool SceneNode::isHiddenInViewport(const Viewport* vp, bool includeHierarchyPare
     OVITO_ASSERT(vp);
     OVITO_ASSERT(this_task::isMainThread());
 
-    if(std::ranges::any_of(hiddenInViewports(), [vp](const auto& weakRef) { return weakRef == vp; }))
+    if(std::find(hiddenInViewports().begin(), hiddenInViewports().end(), vp) != hiddenInViewports().end())
         return true;
     if(includeHierarchyParent && parentNode())
         return parentNode()->isHiddenInViewport(vp, true);

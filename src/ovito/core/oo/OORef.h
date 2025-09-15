@@ -287,8 +287,9 @@ public:
     }
 
     /// Equal comparison operator (with a raw object pointer).
-    template<class U, class = std::enable_if_t<std::is_convertible_v<const U*, const T*> || std::is_convertible_v<const T*, const U*>>>
-    inline bool operator==(U* rhs) const noexcept {
+    template<class U>
+    inline bool operator==(U* rhs) const noexcept
+        requires std::is_convertible_v<const U*, const T*> || std::is_convertible_v<const T*, const U*>{
         return *this == OOWeakRef<U>(rhs);
     }
 
@@ -297,6 +298,20 @@ public:
     friend bool operator==(U* lhs, const OOWeakRef& rhs) noexcept
         requires std::is_convertible_v<const U*, const T*> || std::is_convertible_v<const T*, const U*> {
         return rhs == lhs;
+    }
+
+    /// Inequal comparison operator (with a raw object pointer).
+    template<class U>
+    inline bool operator!=(U* rhs) const noexcept
+        requires std::is_convertible_v<const U*, const T*> || std::is_convertible_v<const T*, const U*>{
+        return *this != OOWeakRef<U>(rhs);
+    }
+
+    /// Friend inequality operator for ranges compatibility (raw pointer on left).
+    template<class U>
+    friend bool operator!=(U* lhs, const OOWeakRef& rhs) noexcept
+        requires std::is_convertible_v<const U*, const T*> || std::is_convertible_v<const T*, const U*> {
+        return rhs != lhs;
     }
 
     /// Returns true of this weak reference has been initialized with an explicit null object pointer.
