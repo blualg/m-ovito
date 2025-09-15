@@ -357,7 +357,7 @@ public:
     /// to the user, and this function returns false.
     template<typename Function>
     bool performActions(UndoableTransaction& transaction, Function&& func) const noexcept {
-        return ui().template performActions(transaction, std::forward<Function>(func));
+        return ui().performActions(transaction, std::forward<Function>(func));
     }
 
     /// Executes a functor provided by the caller that performs undoable actions in an interactive context.
@@ -365,7 +365,7 @@ public:
     /// to the user, and this function returns false. If no exception is thrown, all performed actions are committed and this function returns true.
     template<typename Function>
     bool performTransaction(const QString& undoOperationName, Function&& func) const noexcept {
-        return ui().template performTransaction(undoOperationName, std::forward<Function>(func));
+        return ui().performTransaction(undoOperationName, std::forward<Function>(func));
     }
 
 private:
