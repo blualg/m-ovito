@@ -78,6 +78,8 @@ private:
 
     /// The internal text label.
     QLabel* _textLabel;
+    QString _statusText;
+    QString _elidedText;
 
     /// The internal status indicator.
     QWidget* _statusIndicator;
@@ -86,7 +88,7 @@ private:
     QTimer* _tooltipTimer = nullptr;
     QWidget* _tooltipPopup = nullptr;
     QLabel* _tooltipPopupLabel = nullptr;
-    static constexpr int _tooltipDelayMs = 500; ///< hover delay in milliseconds
+    static constexpr int _tooltipDelayMs = 250;  ///< hover delay in milliseconds
 };
 
 }   // End of namespace

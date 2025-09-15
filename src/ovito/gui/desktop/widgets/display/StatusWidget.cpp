@@ -25,9 +25,78 @@
 
 namespace Ovito {
 
+namespace {
+constexpr int LineLabelHeight = 3;
+
+/// Elides multi-line text to fit within a specified width and maximum number of lines.
+/// If the last line is truncated and a " [show more]" suffix is appended.
+[[nodiscard]] QString elideTextToRowCount(QString text, const int width, const int maxLines, const QFont& font)
+{
+    // QTextLayout requires QChar::LineSeparator instead of the common line break characters
+    text.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
+    text.replace(QStringLiteral("\r"), QStringLiteral("\n"));
+    text.replace(QLatin1Char('\n'), QChar::LineSeparator);
+
+    // New layout
+    QTextLayout layout(text, font);
+    layout.beginLayout();
+
+    // Output
+    QStringList lines;
+
+    // Split the text into lines
+    QTextLine line;
+    int lineCount = 0;
+
+    // Suffix
+    const QFontMetrics fm(font);
+    static const QString suffix = QStringLiteral(" [show more]");
+    const int suffixLengthPx = fm.horizontalAdvance(suffix);
+
+    // Typset
+    while((line = layout.createLine()).isValid()) {
+        lineCount++;
+        line.setLineWidth((qreal)width);
+        const int start = line.textStart();
+        const int length = line.textLength();
+        QString lineText = text.mid(start, length);
+
+        if(lineCount < maxLines) {
+            // Full lines that fit
+            lines << lineText;
+        }
+        else {
+            // Line that needs to be ellided
+            lineText = lineText.trimmed();
+            if(fm.horizontalAdvance(lineText) + suffixLengthPx >= width) {
+                // Line + suffix does not fit
+                while(!lineText.isEmpty() && fm.horizontalAdvance(lineText) + suffixLengthPx >= width) {
+                    lineText.chop(1);
+                }
+            }
+            else {
+                // Line + suffix does fit
+                bool appended = false;
+                while(fm.horizontalAdvance(lineText) + suffixLengthPx < width) {
+                    lineText.append(" ");
+                    appended = true;
+                }
+                if(appended) {
+                    // We added 1 too namy space characters
+                    lineText.chop(1);
+                }
+            }
+            lines << lineText + suffix;
+            break;
+        }
+    }
+    return lines.join(QStringLiteral(""));
+}
+}  // namespace
+
 /******************************************************************************
-* Constructor.
-******************************************************************************/
+ * Constructor.
+ ******************************************************************************/
 StatusWidget::StatusWidget(QWidget* parent) : QWidget(parent)
 {
     setBackgroundRole(QPalette::Window);
@@ -46,7 +115,6 @@ StatusWidget::StatusWidget(QWidget* parent) : QWidget(parent)
     _statusIndicator->setMaximumWidth(4);
     layout->addWidget(_statusIndicator);
 
-    static constexpr int LineLabelHeight = 3;
     // Custom label class that has a fixed height, showing exactly LineLabelHeight lines of text.
     class TwoLineLabel : public QLabel
     {
@@ -58,26 +126,28 @@ StatusWidget::StatusWidget(QWidget* parent) : QWidget(parent)
             setMargin(1);
         }
 
-        QSize minimumSizeHint() const override {
+        [[nodiscard]] QSize minimumSizeHint() const override
+        {
             QSize size = QLabel::minimumSizeHint();
             int lineHeight = fontMetrics().lineSpacing();
-            return QSize(size.width(), lineHeight * LineLabelHeight + margin() * 2);
+            return {size.width(), lineHeight * LineLabelHeight + margin() * 2};
         }
 
-        QSize sizeHint() const override {
+        [[nodiscard]] QSize sizeHint() const override
+        {
             QSize size = QLabel::sizeHint();
             int lineHeight = fontMetrics().lineSpacing();
-            return QSize(size.width(), lineHeight * LineLabelHeight + margin() * 2);
+            return {size.width(), lineHeight * LineLabelHeight + margin() * 2};
         }
 
         /// This label has a fixed height.
-        bool hasHeightForWidth() const override { return false; }
+        [[nodiscard]] bool hasHeightForWidth() const override { return false; }
     };
 
     _textLabel = new TwoLineLabel(this);
     _textLabel->setAlignment(Qt::AlignTop);
     QFont font = _textLabel->font();
-    font.setPointSize(font.pointSize() - 2);
+    font.setPointSize(font.pointSize());
     _textLabel->setFont(font);
     connect(_textLabel, &QLabel::linkActivated, this, &StatusWidget::linkActivated);
     layout->addWidget(_textLabel, 1, Qt::AlignTop);
@@ -109,9 +179,16 @@ void StatusWidget::setStatus(const PipelineStatus& status)
         }
         update();
     }
-    _textLabel->setText(status.text());
-    if(_tooltipPopupLabel)
-        _tooltipPopupLabel->setText(status.text());
+    _statusText = status.text();
+    _elidedText = elideTextToRowCount(_statusText, width(), LineLabelHeight, _textLabel->font());
+
+    _textLabel->setText(_statusText);
+    if(_textLabel->heightForWidth(width()) > height()) {
+        _textLabel->setText(_elidedText);
+    }
+    if(_tooltipPopupLabel) {
+        _tooltipPopupLabel->setText(_statusText);
+    }
 }
 
 /******************************************************************************
@@ -120,9 +197,9 @@ void StatusWidget::setStatus(const PipelineStatus& status)
 QColor StatusWidget::statusColor() const
 {
     if(_statusType == PipelineStatus::Warning)
-        return QColor(255, 130, 0);
+        return {251, 153, 0};
     else if(_statusType == PipelineStatus::Error)
-        return QColor(255, 0, 0);
+        return {204, 2, 2};
     else
         return _statusIndicator->palette().color(QPalette::Mid);
 }
@@ -134,9 +211,10 @@ void StatusWidget::paintEvent(QPaintEvent* event)
 {
     // Paint a border with a cosmetic pen.
     QPainter painter(this);
-    painter.setPen(QPen(statusColor(), 0));
+    const QColor& color = statusColor();
+    painter.setPen(QPen(color, 0));
     painter.drawRect(QRectF(this->rect()).adjusted(0.0, 0.0, -0.5, -0.5));
-
+    painter.fillRect(QRectF(this->rect()).adjusted(0.0, 0.0, -0.5, -0.5), QColor(color.red(), color.green(), color.blue(), int(255 * 0.2)));
     QWidget::paintEvent(event);
 }
 
@@ -175,7 +253,7 @@ void StatusWidget::showTooltipPopup()
         QPushButton* copyBtn = new QPushButton(_tooltipPopup);
         QIcon copyIcon = QIcon::fromTheme("edit-copy", _tooltipPopup->style()->standardIcon(QStyle::SP_DialogOpenButton));
         copyBtn->setIcon(copyIcon);
-        copyBtn->setFlat(true);
+        copyBtn->setFlat(false);
         copyBtn->setText(tr("Copy to clipboard"));
         copyBtn->setFont(_textLabel->font());
         connect(copyBtn, &QPushButton::clicked, this, [this]() {
@@ -195,7 +273,7 @@ void StatusWidget::showTooltipPopup()
     // Set contents and size. Fix the popup label width to the embedded
     // label's width so word-wrapping matches and we can compute the full
     // required height to display all lines.
-    _tooltipPopupLabel->setText(_textLabel->text());
+    _tooltipPopupLabel->setText(_statusText);
 
     QPoint globalPos = _textLabel->mapToGlobal(QPoint(0,0));
     globalPos.rx() += _textLabel->margin();
@@ -267,4 +345,4 @@ void StatusWidget::mousePressEvent(QMouseEvent* event)
     QWidget::mousePressEvent(event);
 }
 
-}   // End of namespace
+}  // namespace Ovito
