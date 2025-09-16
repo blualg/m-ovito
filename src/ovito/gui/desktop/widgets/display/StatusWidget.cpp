@@ -26,79 +26,14 @@
 namespace Ovito {
 
 namespace {
-constexpr int LineLabelHeight = 3;
-
-/// Elides multi-line text to fit within a specified width and maximum number of lines.
-/// If the last line is truncated and a " [show more]" suffix is appended.
-[[nodiscard]] QString elideTextToRowCount(QString text, const int width, const int maxLines, const QFont& font)
+QColor alphaBlendColors(const QColor& foreground, const QColor& background)
 {
-    // QTextLayout requires QChar::LineSeparator instead of the common line break characters
-    text.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
-    text.replace(QStringLiteral("\r"), QStringLiteral("\n"));
-    text.replace(QLatin1Char('\n'), QChar::LineSeparator);
-
-    // New layout
-    QTextLayout layout(text, font);
-    layout.beginLayout();
-
-    // Output
-    QStringList lines;
-
-    // Split the text into lines
-    QTextLine line;
-    int lineCount = 0;
-
-    // Suffix
-    const QFontMetrics fm(font);
-    static const QString suffix = QStringLiteral(" [show more]");
-    const int suffixLengthPx = fm.horizontalAdvance(suffix);
-
-    // Typset
-    while((line = layout.createLine()).isValid()) {
-        lineCount++;
-        line.setLineWidth((qreal)width);
-        const int start = line.textStart();
-        const int length = line.textLength();
-        QString lineText = text.mid(start, length);
-
-        // Left and right padding (based on the non-adjustable top padding)
-        const int leftRightPad = 2 * fm.descent();
-
-        if(lineCount < maxLines) {
-            // Full lines that fit
-            lines << lineText;
-        }
-        else {
-            // Line that needs to be ellided
-            lineText = lineText.trimmed();
-
-            // Space character width
-            const int spacePx = fm.horizontalAdvance(QStringLiteral(" "));
-
-            // Estimate and add bulk padding
-            const int padding = (width - (fm.horizontalAdvance(lineText) + suffixLengthPx + leftRightPad)) / spacePx;
-            if(padding > 0) {
-                lineText.append(QStringLiteral(" ").repeated(padding));
-            }
-
-            // Incrementally finalize padding
-            while(fm.horizontalAdvance(lineText) + suffixLengthPx + leftRightPad < width) {
-                lineText.append(" ");
-            }
-
-            // Ensure that the total line length is not too long
-            while(!lineText.isEmpty() && fm.horizontalAdvance(lineText) + suffixLengthPx + leftRightPad >= (width - 0.5)) {
-                lineText.chop(1);
-            }
-
-            // Add suffix to line
-            lines << lineText + suffix;
-            break;
-        }
-    }
-    layout.endLayout();
-
-    return lines.join(QStringLiteral(""));
+    const qreal a = foreground.alphaF();
+    const qreal invA = 1.0 - a;
+    const int r = qRound(foreground.red() * a + background.red() * invA);
+    const int g = qRound(foreground.green() * a + background.green() * invA);
+    const int b = qRound(foreground.blue() * a + background.blue() * invA);
+    return {r, g, b};
 }
 }  // namespace
 
@@ -111,12 +46,17 @@ StatusWidget::StatusWidget(QWidget* parent) : QLabel(parent)
     setTextInteractionFlags(Qt::TextInteractionFlags(
         /*Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | */ Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    setMargin(1);
-    setContentsMargins(fontMetrics().descent(), 0, 0, 0);
+
+    // Set margins
+    setContentsMargins(fontMetrics().descent() + 1, 1, fontMetrics().descent() + 1, 1);
+
+    // Set alignment
     setAlignment(Qt::AlignTop);
+
     // Indent for a AlignTop is applied to the top AND the left - we don't want additional space on the top
     setIndent(0);
 
+    // Set colors
     setBackgroundRole(QPalette::Window);
     setAutoFillBackground(true);
 
@@ -132,29 +72,51 @@ StatusWidget::StatusWidget(QWidget* parent) : QLabel(parent)
 
     // Install event filter on the label to monitor enter/leave and start/stop timer
     installEventFilter(this);
+
+    // Create overlay label
+    _overlayLabel = new QLabel(tr("[show more]"), this);
+    _overlayLabel->setBackgroundRole(QPalette::Window);
+    _overlayLabel->setFrameStyle(QFrame::NoFrame);
+    _overlayLabel->setLineWidth(1);
+    _overlayLabel->setMargin(0);
+    _overlayLabel->setIndent(0);
+    _overlayLabel->setAlignment(Qt::AlignCenter);
+    // Adjust size call is necessary to give correct positions
+    _overlayLabel->adjustSize();
+    toggleOverlayLabelVisibility();
 }
 
 /******************************************************************************
- * Calculate the height of the widget based on the font and apply it
+ * Calculate the height of the widget based on the font
+ ******************************************************************************/
+[[nodiscard]] int StatusWidget::calculateHeight() const
+{
+    // Number of lines shown in the widget
+    constexpr int LineLabelHeight = 3;
+
+    // Set height based on font
+    int height = LineLabelHeight * fontMetrics().lineSpacing();
+    height += contentsMargins().top() + contentsMargins().bottom();
+    // Gap above the first row of text, needs to be manually added to make the bottom spacing look correct
+    height += fontMetrics().descent();
+    return height;
+}
+
+/******************************************************************************
+ * Apply the widget height
  ******************************************************************************/
 void StatusWidget::setHeight()
 {
-    // Set height based on font
-    QSize size = QLabel::minimumSizeHint();
-    _height = LineLabelHeight * fontMetrics().lineSpacing();
-    _height += margin() * 2;
-    // Gap above the first row of text, needs to be manually added to make the bottom spacing look correct
-    _height += fontMetrics().descent();
-
+    const int height = calculateHeight();
     // Apply height to widget
-    setFixedHeight(_height);
-    setMinimumHeight(_height);
-    setMaximumHeight(_height);
+    setFixedHeight(height);
+    setMinimumHeight(height);
+    setMaximumHeight(height);
 }
 
-[[nodiscard]] QSize StatusWidget::minimumSizeHint() const { return {QLabel::minimumSizeHint().width(), _height}; }
+[[nodiscard]] QSize StatusWidget::minimumSizeHint() const { return {QLabel::minimumSizeHint().width(), calculateHeight()}; }
 
-[[nodiscard]] QSize StatusWidget::sizeHint() const { return {QLabel::sizeHint().width(), _height}; }
+[[nodiscard]] QSize StatusWidget::sizeHint() const { return {QLabel::sizeHint().width(), calculateHeight()}; }
 
 /******************************************************************************
 * Sets the status displayed by the widget.
@@ -165,16 +127,21 @@ void StatusWidget::setStatus(const PipelineStatus& status)
         _statusType = status.type();
         update();
     }
-    // Prepend a single space to give the text some space on the left
-    _statusText = status.text();
-    // Shorten and set ellided text in widget
-    updateAndElideWidgetText();
 
-    // Set tooltip text to full message
-    if(_tooltipPopupLabel) {
-        _tooltipPopupLabel->setText(_statusText);
+    // Widget text
+    setText(status.text());
+    toggleOverlayLabelVisibility();
+
+   // Set tooltip text
+   if(_tooltipPopupLabel) {
+       _tooltipPopupLabel->setText(text());
     }
 }
+
+/******************************************************************************
+ * Returns the default color indicating a success status.
+ ******************************************************************************/
+[[nodiscard]] QColor StatusWidget::defaultColor() const { return palette().color(QPalette::Mid); }
 
 /******************************************************************************
 * Returns the color indicating the current status.
@@ -186,7 +153,7 @@ QColor StatusWidget::statusColor() const
     else if(_statusType == PipelineStatus::Error)
         return {204, 2, 2};
     else
-        return QPalette::Mid;
+        return palette().color(QPalette::Mid);
 }
 
 /******************************************************************************
@@ -194,15 +161,38 @@ QColor StatusWidget::statusColor() const
 ******************************************************************************/
 void StatusWidget::paintEvent(QPaintEvent* event)
 {
-    // Paint a border with a cosmetic pen.
+    // Paint the main QLabel area.
     QPainter painter(this);
     const QColor& color = statusColor();
+    const QColor& backgroundColor = palette().color(QPalette::Window);
+    const QColor& highlightColor = alphaBlendColors(QColor(color.red(), color.green(), color.blue(), int(255 * 0.2)), backgroundColor);
+
     painter.setPen(QPen(color, 0));
     if(_statusType == PipelineStatus::Warning || _statusType == PipelineStatus::Error) {
         // Add colored background for warnings and errors
-        painter.setBrush(QBrush(QColor(color.red(), color.green(), color.blue(), int(255 * 0.2))));
+        painter.setBrush(highlightColor);
     }
     painter.drawRect(QRectF(this->rect()).adjusted(0.0, 0.0, -0.5, -0.5));
+
+    // Paint the [show more] overlay area to match
+    painter.setPen(Qt::NoPen);
+    if(_overlayLabel && _overlayLabel->isVisible()) {
+        QRect overlayRect = _overlayLabel->rect();
+        // Shift overlay rectangle to the correct position
+        const QPoint shift = calculateOverlayLabelPosition();
+        overlayRect.adjust(shift.x(), shift.y(), shift.x(), shift.y());
+
+        if(_statusType == PipelineStatus::Warning || _statusType == PipelineStatus::Error) {
+            // Use the same colored background as the main qlabel background
+            painter.setBrush(alphaBlendColors(highlightColor, backgroundColor));
+        }
+        else {
+            // Use window background for normal status
+            painter.setBrush(backgroundColor);
+        }
+        painter.drawRect(overlayRect);
+    }
+
     QLabel::paintEvent(event);
 }
 
@@ -262,12 +252,12 @@ void StatusWidget::showTooltipPopup()
     // Set contents and size. Fix the popup label width to the embedded
     // label's width so word-wrapping matches and we can compute the full
     // required height to display all lines.
-    _tooltipPopupLabel->setText(_statusText);
+    _tooltipPopupLabel->setText(text());
 
     QPoint globalPos = mapToGlobal(QPoint(0, 0));
-    globalPos.rx() += margin();
-    globalPos.ry() += margin();
-    int labelWidth = width() - 2 * margin();
+    globalPos.rx() += contentsMargins().left();
+    globalPos.ry() += contentsMargins().top();
+    int labelWidth = width() - contentsMargins().left() - contentsMargins().right();
 
     // Ensure the popup label wraps at the same width as the embedded label.
     _tooltipPopupLabel->setFixedWidth(labelWidth);
@@ -335,19 +325,23 @@ void StatusWidget::mousePressEvent(QMouseEvent* event)
 }
 
 /******************************************************************************
- * Updates text elision based on current label width and applies it to the widget.
+ * Sets the visibility of the overlay label based on the status text.
  ******************************************************************************/
-void StatusWidget::updateAndElideWidgetText()
+bool StatusWidget::toggleOverlayLabelVisibility()
 {
-    if(_statusText.isEmpty()) {
-        return;
-    }
+    const bool newVisibility = heightForWidth(width()) > calculateHeight();
+    _overlayLabel->setVisible(newVisibility);
+    return newVisibility;
+}
 
-    setText(_statusText);
-    if(heightForWidth(width()) > _height) {
-        _elidedText = elideTextToRowCount(_statusText, width(), LineLabelHeight, font());
-        setText(_statusText);
-    }
+/******************************************************************************
+ * Calculate the position of the overlay label.
+ ******************************************************************************/
+QPoint StatusWidget::calculateOverlayLabelPosition() const
+{
+    const int x = width() - _overlayLabel->width() - contentsMargins().right();
+    const int y = height() - _overlayLabel->height() - contentsMargins().bottom() - fontMetrics().descent();
+    return {x, y};
 }
 
 /******************************************************************************
@@ -355,8 +349,14 @@ void StatusWidget::updateAndElideWidgetText()
  ******************************************************************************/
 void StatusWidget::resizeEvent(QResizeEvent* event)
 {
-    updateAndElideWidgetText();
     setHeight();
+    toggleOverlayLabelVisibility();
+
+    // Position overlay label in bottom right corner
+    if(_overlayLabel && _overlayLabel->isVisible()) {
+        _overlayLabel->move(calculateOverlayLabelPosition());
+    }
+
     QLabel::resizeEvent(event);
 }
 

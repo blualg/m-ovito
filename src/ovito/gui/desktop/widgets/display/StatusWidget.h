@@ -47,7 +47,10 @@ public:
     void clearStatus() { setStatus({}); }
 
     /// Returns the color indicating the current status.
-    QColor statusColor() const;
+    [[nodiscard]] QColor statusColor() const;
+
+    /// Returns the default color indicating a success status.
+    [[nodiscard]] QColor defaultColor() const;
 
 Q_SIGNALS:
 
@@ -66,8 +69,17 @@ protected:
     /// Returns the recommended size of the widget.
     [[nodiscard]] virtual QSize sizeHint() const override;
 
-    /// Calculate the height of the widget based on the font and apply it
+    /// Calculate the height of the widget based on the font
+    [[nodiscard]] int calculateHeight() const;
+
+    // Apply the widget height
     void setHeight();
+
+    /// Calculate the position of the overlay label.
+    [[nodiscard]] QPoint calculateOverlayLabelPosition() const;
+
+    // Sets the visibility of the overlay label based on the status text.
+    bool toggleOverlayLabelVisibility();
 
     /// Paints the widget's border.
     virtual void paintEvent(QPaintEvent* event) override;
@@ -85,24 +97,17 @@ protected:
     [[nodiscard]] virtual bool hasHeightForWidth() const override { return false; }
 
 private:
-    /// Updates text elision based on current label width and applies it to the widget.
-    void updateAndElideWidgetText();
-
     /// The current status type displayed by the widget.
     PipelineStatus::StatusType _statusType = PipelineStatus::StatusType::Success;
-
-    /// The internal text label.
-    QString _statusText;
-    QString _elidedText;
-
-    /// The height of the widget.
-    int _height = 0;
 
     // Tooltip support
     QTimer* _tooltipTimer = nullptr;
     QWidget* _tooltipPopup = nullptr;
     QLabel* _tooltipPopupLabel = nullptr;
     static constexpr int _tooltipDelayMs = 250;  ///< hover delay in milliseconds
+
+    // Overlay label
+    QLabel* _overlayLabel = nullptr;
 };
 
 }   // End of namespace
