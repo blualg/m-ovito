@@ -31,7 +31,7 @@ namespace Ovito {
 /**
  * \brief A widget that displays a PipelineStatus structure.
  */
-class OVITO_GUI_EXPORT StatusWidget : public QWidget
+class OVITO_GUI_EXPORT StatusWidget : public QLabel
 {
     Q_OBJECT
 
@@ -60,6 +60,14 @@ private Q_SLOTS:
     void showTooltipPopup();
 
 protected:
+    /// Returns the minimum size of the widget.
+    [[nodiscard]] virtual QSize minimumSizeHint() const override;
+
+    /// Returns the recommended size of the widget.
+    [[nodiscard]] virtual QSize sizeHint() const override;
+
+    /// Calculate the height of the widget based on the font and apply it
+    void setHeight();
 
     /// Paints the widget's border.
     virtual void paintEvent(QPaintEvent* event) override;
@@ -74,6 +82,8 @@ protected:
     /// Handle widget resize to recalculate text elision.
     virtual void resizeEvent(QResizeEvent* event) override;
 
+    [[nodiscard]] virtual bool hasHeightForWidth() const override { return false; }
+
 private:
     /// Updates text elision based on current label width and applies it to the widget.
     void updateAndElideWidgetText();
@@ -82,9 +92,11 @@ private:
     PipelineStatus::StatusType _statusType = PipelineStatus::StatusType::Success;
 
     /// The internal text label.
-    QLabel* _textLabel;
     QString _statusText;
     QString _elidedText;
+
+    /// The height of the widget.
+    int _height = 0;
 
     // Tooltip support
     QTimer* _tooltipTimer = nullptr;

@@ -61,6 +61,9 @@ constexpr int LineLabelHeight = 3;
         const int length = line.textLength();
         QString lineText = text.mid(start, length);
 
+        // Left and right padding (based on the non-adjustable top padding)
+        const int leftRightPad = 2 * fm.descent();
+
         if(lineCount < maxLines) {
             // Full lines that fit
             lines << lineText;
@@ -72,23 +75,23 @@ constexpr int LineLabelHeight = 3;
             // Space character width
             const int spacePx = fm.horizontalAdvance(QStringLiteral(" "));
 
-            // Line + suffix does fit - estimate and add bulk padding
-            const int padding = (width - (fm.horizontalAdvance(lineText) + suffixLengthPx)) / spacePx;
+            // Estimate and add bulk padding
+            const int padding = (width - (fm.horizontalAdvance(lineText) + suffixLengthPx + leftRightPad)) / spacePx;
             if(padding > 0) {
                 lineText.append(QStringLiteral(" ").repeated(padding));
             }
 
             // Incrementally finalize padding
-            while(fm.horizontalAdvance(lineText) + suffixLengthPx < width) {
+            while(fm.horizontalAdvance(lineText) + suffixLengthPx + leftRightPad < width) {
                 lineText.append(" ");
             }
 
-            // Line + suffix does not fit
-            while(!lineText.isEmpty() && fm.horizontalAdvance(lineText) + suffixLengthPx >= (width - 1)) {
+            // Ensure that the total line length is not too long
+            while(!lineText.isEmpty() && fm.horizontalAdvance(lineText) + suffixLengthPx + leftRightPad >= (width - 0.5)) {
                 lineText.chop(1);
             }
 
-            // Add suffix
+            // Add suffix to line
             lines << lineText + suffix;
             break;
         }
@@ -102,59 +105,25 @@ constexpr int LineLabelHeight = 3;
 /******************************************************************************
  * Constructor.
  ******************************************************************************/
-StatusWidget::StatusWidget(QWidget* parent) : QWidget(parent)
+StatusWidget::StatusWidget(QWidget* parent) : QLabel(parent)
 {
+    setWordWrap(true);
+    setTextInteractionFlags(Qt::TextInteractionFlags(
+        /*Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | */ Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    setMargin(1);
+    setContentsMargins(fontMetrics().descent(), 0, 0, 0);
+    setAlignment(Qt::AlignTop);
+    // Indent for a AlignTop is applied to the top AND the left - we don't want additional space on the top
+    setIndent(0);
+
     setBackgroundRole(QPalette::Window);
     setAutoFillBackground(true);
 
-    QHBoxLayout* layout = new QHBoxLayout(this);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(2);
+    // Calculate the height of the widget based on the font and apply it
+    setHeight();
 
-    // Custom label class that has a fixed height, showing exactly LineLabelHeight lines of text.
-    class TwoLineLabel : public QLabel
-    {
-    public:
-        TwoLineLabel(QWidget* parent = nullptr) : QLabel(parent) {
-            setWordWrap(true);
-            setTextInteractionFlags(Qt::TextInteractionFlags(/*Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | */Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
-            setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-            setMargin(1);
-        }
-
-        [[nodiscard]] QSize minimumSizeHint() const override
-        {
-            QSize size = QLabel::minimumSizeHint();
-            const int height = fontMetrics().ascent() + fontMetrics().descent() + (LineLabelHeight - 1) * fontMetrics().lineSpacing();
-            return {size.width(), height + margin() * 2};
-        }
-
-        [[nodiscard]] QSize sizeHint() const override
-        {
-            QSize size = QLabel::sizeHint();
-            const int height = fontMetrics().ascent() + fontMetrics().descent() + (LineLabelHeight - 1) * fontMetrics().lineSpacing();
-            return {size.width(), height + margin() * 2};
-        }
-
-        /// This label has a fixed height.
-        [[nodiscard]] bool hasHeightForWidth() const override { return false; }
-    };
-
-    _textLabel = new TwoLineLabel(this);
-    _textLabel->setAlignment(Qt::AlignTop);
-    QFont font = _textLabel->font();
-    font.setPointSize(font.pointSize());
-    _textLabel->setFont(font);
-    connect(_textLabel, &QLabel::linkActivated, this, &StatusWidget::linkActivated);
-
-    // Add small padding to the left
-    layout->addItem(new QSpacerItem(_textLabel->margin(), 0, QSizePolicy::Fixed, QSizePolicy::Fixed));
-
-    // Add text label
-    layout->addWidget(_textLabel, 1, Qt::AlignTop);
-
-    // Add small padding to the right
-    layout->addItem(new QSpacerItem(_textLabel->margin(), 0, QSizePolicy::Fixed, QSizePolicy::Fixed));
+    connect(this, &QLabel::linkActivated, this, &StatusWidget::linkActivated);
 
     // Tooltip timer: when it fires, show a popup containing the full status text.
     _tooltipTimer = new QTimer(this);
@@ -162,8 +131,30 @@ StatusWidget::StatusWidget(QWidget* parent) : QWidget(parent)
     connect(_tooltipTimer, &QTimer::timeout, this, &StatusWidget::showTooltipPopup);
 
     // Install event filter on the label to monitor enter/leave and start/stop timer
-    _textLabel->installEventFilter(this);
+    installEventFilter(this);
 }
+
+/******************************************************************************
+ * Calculate the height of the widget based on the font and apply it
+ ******************************************************************************/
+void StatusWidget::setHeight()
+{
+    // Set height based on font
+    QSize size = QLabel::minimumSizeHint();
+    _height = LineLabelHeight * fontMetrics().lineSpacing();
+    _height += margin() * 2;
+    // Gap above the first row of text, needs to be manually added to make the bottom spacing look correct
+    _height += fontMetrics().descent();
+
+    // Apply height to widget
+    setFixedHeight(_height);
+    setMinimumHeight(_height);
+    setMaximumHeight(_height);
+}
+
+[[nodiscard]] QSize StatusWidget::minimumSizeHint() const { return {QLabel::minimumSizeHint().width(), _height}; }
+
+[[nodiscard]] QSize StatusWidget::sizeHint() const { return {QLabel::sizeHint().width(), _height}; }
 
 /******************************************************************************
 * Sets the status displayed by the widget.
@@ -174,6 +165,7 @@ void StatusWidget::setStatus(const PipelineStatus& status)
         _statusType = status.type();
         update();
     }
+    // Prepend a single space to give the text some space on the left
     _statusText = status.text();
     // Shorten and set ellided text in widget
     updateAndElideWidgetText();
@@ -211,7 +203,7 @@ void StatusWidget::paintEvent(QPaintEvent* event)
         painter.setBrush(QBrush(QColor(color.red(), color.green(), color.blue(), int(255 * 0.2))));
     }
     painter.drawRect(QRectF(this->rect()).adjusted(0.0, 0.0, -0.5, -0.5));
-    QWidget::paintEvent(event);
+    QLabel::paintEvent(event);
 }
 
 /****************************************************************************
@@ -219,8 +211,9 @@ void StatusWidget::paintEvent(QPaintEvent* event)
 ****************************************************************************/
 void StatusWidget::showTooltipPopup()
 {
-    if(!_textLabel || _textLabel->text().isEmpty())
+    if(text().isEmpty()) {
         return;
+    }
 
     // Create popup widget lazily
     if(!_tooltipPopup) {
@@ -233,11 +226,11 @@ void StatusWidget::showTooltipPopup()
         vlay->setContentsMargins(0,0,0,0);
         vlay->setSpacing(0);
         _tooltipPopupLabel = new QLabel(_tooltipPopup);
-        _tooltipPopupLabel->setWordWrap(_textLabel->wordWrap());
-        _tooltipPopupLabel->setAlignment(_textLabel->alignment());
+        _tooltipPopupLabel->setWordWrap(wordWrap());
+        _tooltipPopupLabel->setAlignment(alignment());
         _tooltipPopupLabel->setTextInteractionFlags(Qt::TextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
         _tooltipPopupLabel->setForegroundRole(QPalette::ToolTipText);
-        _tooltipPopupLabel->setFont(_textLabel->font());
+        _tooltipPopupLabel->setFont(font());
         connect(_tooltipPopupLabel, &QLabel::linkActivated, this, &StatusWidget::linkActivated);
         vlay->addWidget(_tooltipPopupLabel);
 
@@ -251,7 +244,7 @@ void StatusWidget::showTooltipPopup()
         copyBtn->setIcon(copyIcon);
         copyBtn->setFlat(false);
         copyBtn->setText(tr("Copy to clipboard"));
-        copyBtn->setFont(_textLabel->font());
+        copyBtn->setFont(font());
         connect(copyBtn, &QPushButton::clicked, this, [this]() {
             if(!_tooltipPopupLabel)
                 return;
@@ -271,10 +264,10 @@ void StatusWidget::showTooltipPopup()
     // required height to display all lines.
     _tooltipPopupLabel->setText(_statusText);
 
-    QPoint globalPos = _textLabel->mapToGlobal(QPoint(0,0));
-    globalPos.rx() += _textLabel->margin();
-    globalPos.ry() += _textLabel->margin();
-    int labelWidth = _textLabel->width() - 2 * _textLabel->margin();
+    QPoint globalPos = mapToGlobal(QPoint(0, 0));
+    globalPos.rx() += margin();
+    globalPos.ry() += margin();
+    int labelWidth = width() - 2 * margin();
 
     // Ensure the popup label wraps at the same width as the embedded label.
     _tooltipPopupLabel->setFixedWidth(labelWidth);
@@ -301,7 +294,7 @@ void StatusWidget::showTooltipPopup()
 bool StatusWidget::eventFilter(QObject* watched, QEvent* event)
 {
     // If the event comes from the label, watch for enter/leave to start/stop timer
-    if(watched == _textLabel) {
+    if(watched == this) {
         if(event->type() == QEvent::Enter) {
             if(_tooltipTimer)
                 _tooltipTimer->start(_tooltipDelayMs);
@@ -324,7 +317,7 @@ bool StatusWidget::eventFilter(QObject* watched, QEvent* event)
             _tooltipPopup->hide();
     }
 
-    return QWidget::eventFilter(watched, event);
+    return QLabel::eventFilter(watched, event);
 }
 
 /*****************************************************************************
@@ -338,7 +331,7 @@ void StatusWidget::mousePressEvent(QMouseEvent* event)
             _tooltipTimer->stop();
         showTooltipPopup();
     }
-    QWidget::mousePressEvent(event);
+    QLabel::mousePressEvent(event);
 }
 
 /******************************************************************************
@@ -346,13 +339,14 @@ void StatusWidget::mousePressEvent(QMouseEvent* event)
  ******************************************************************************/
 void StatusWidget::updateAndElideWidgetText()
 {
-    if(!_textLabel || _statusText.isEmpty()) return;
+    if(_statusText.isEmpty()) {
+        return;
+    }
 
-    _elidedText = elideTextToRowCount(_statusText, _textLabel->width(), LineLabelHeight, _textLabel->font());
-
-    _textLabel->setText(_statusText);
-    if(_textLabel->heightForWidth(_textLabel->width()) > _textLabel->height()) {
-        _textLabel->setText(_elidedText);
+    setText(_statusText);
+    if(heightForWidth(width()) > _height) {
+        _elidedText = elideTextToRowCount(_statusText, width(), LineLabelHeight, font());
+        setText(_statusText);
     }
 }
 
@@ -361,8 +355,9 @@ void StatusWidget::updateAndElideWidgetText()
  ******************************************************************************/
 void StatusWidget::resizeEvent(QResizeEvent* event)
 {
-    QWidget::resizeEvent(event);
     updateAndElideWidgetText();
+    setHeight();
+    QLabel::resizeEvent(event);
 }
 
 }  // namespace Ovito
