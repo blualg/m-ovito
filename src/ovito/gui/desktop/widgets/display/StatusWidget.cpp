@@ -68,28 +68,33 @@ constexpr int LineLabelHeight = 3;
         else {
             // Line that needs to be ellided
             lineText = lineText.trimmed();
-            if(fm.horizontalAdvance(lineText) + suffixLengthPx >= width) {
-                // Line + suffix does not fit
-                while(!lineText.isEmpty() && fm.horizontalAdvance(lineText) + suffixLengthPx >= width) {
-                    lineText.chop(1);
-                }
+
+            // Space character width
+            const int spacePx = fm.horizontalAdvance(QStringLiteral(" "));
+
+            // Line + suffix does fit - estimate and add bulk padding
+            const int padding = (width - (fm.horizontalAdvance(lineText) + suffixLengthPx)) / spacePx;
+            if(padding > 0) {
+                lineText.append(QStringLiteral(" ").repeated(padding));
             }
-            else {
-                // Line + suffix does fit
-                bool appended = false;
-                while(fm.horizontalAdvance(lineText) + suffixLengthPx < width) {
-                    lineText.append(" ");
-                    appended = true;
-                }
-                if(appended) {
-                    // We added 1 too namy space characters
-                    lineText.chop(1);
-                }
+
+            // Incrementally finalize padding
+            while(fm.horizontalAdvance(lineText) + suffixLengthPx < width) {
+                lineText.append(" ");
             }
+
+            // Line + suffix does not fit
+            while(!lineText.isEmpty() && fm.horizontalAdvance(lineText) + suffixLengthPx >= (width - 1)) {
+                lineText.chop(1);
+            }
+
+            // Add suffix
             lines << lineText + suffix;
             break;
         }
     }
+    layout.endLayout();
+
     return lines.join(QStringLiteral(""));
 }
 }  // namespace
@@ -106,15 +111,6 @@ StatusWidget::StatusWidget(QWidget* parent) : QWidget(parent)
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(2);
 
-    _statusIndicator = new QWidget(this);
-    _statusIndicator->setVisible(false);
-    _statusIndicator->setBackgroundRole(QPalette::Window);
-    _statusIndicator->setAutoFillBackground(true);
-    _statusIndicator->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-    _statusIndicator->setMinimumWidth(4);
-    _statusIndicator->setMaximumWidth(4);
-    layout->addWidget(_statusIndicator);
-
     // Custom label class that has a fixed height, showing exactly LineLabelHeight lines of text.
     class TwoLineLabel : public QLabel
     {
@@ -129,15 +125,15 @@ StatusWidget::StatusWidget(QWidget* parent) : QWidget(parent)
         [[nodiscard]] QSize minimumSizeHint() const override
         {
             QSize size = QLabel::minimumSizeHint();
-            int lineHeight = fontMetrics().lineSpacing();
-            return {size.width(), lineHeight * LineLabelHeight + margin() * 2};
+            const int height = fontMetrics().ascent() + fontMetrics().descent() + (LineLabelHeight - 1) * fontMetrics().lineSpacing();
+            return {size.width(), height + margin() * 2};
         }
 
         [[nodiscard]] QSize sizeHint() const override
         {
             QSize size = QLabel::sizeHint();
-            int lineHeight = fontMetrics().lineSpacing();
-            return {size.width(), lineHeight * LineLabelHeight + margin() * 2};
+            const int height = fontMetrics().ascent() + fontMetrics().descent() + (LineLabelHeight - 1) * fontMetrics().lineSpacing();
+            return {size.width(), height + margin() * 2};
         }
 
         /// This label has a fixed height.
@@ -150,7 +146,15 @@ StatusWidget::StatusWidget(QWidget* parent) : QWidget(parent)
     font.setPointSize(font.pointSize());
     _textLabel->setFont(font);
     connect(_textLabel, &QLabel::linkActivated, this, &StatusWidget::linkActivated);
+
+    // Add small padding to the left
+    layout->addItem(new QSpacerItem(_textLabel->margin(), 0, QSizePolicy::Fixed, QSizePolicy::Fixed));
+
+    // Add text label
     layout->addWidget(_textLabel, 1, Qt::AlignTop);
+
+    // Add small padding to the right
+    layout->addItem(new QSpacerItem(_textLabel->margin(), 0, QSizePolicy::Fixed, QSizePolicy::Fixed));
 
     // Tooltip timer: when it fires, show a popup containing the full status text.
     _tooltipTimer = new QTimer(this);
@@ -168,24 +172,13 @@ void StatusWidget::setStatus(const PipelineStatus& status)
 {
     if(status.type() != _statusType) {
         _statusType = status.type();
-        if(status.type() != PipelineStatus::Success) {
-            QPalette palette = _statusIndicator->palette();
-            palette.setColor(QPalette::Window, statusColor());
-            _statusIndicator->setPalette(palette);
-            _statusIndicator->setVisible(true);
-        }
-        else {
-            _statusIndicator->setVisible(false);
-        }
         update();
     }
     _statusText = status.text();
-    _elidedText = elideTextToRowCount(_statusText, width(), LineLabelHeight, _textLabel->font());
+    // Shorten and set ellided text in widget
+    updateAndElideWidgetText();
 
-    _textLabel->setText(_statusText);
-    if(_textLabel->heightForWidth(width()) > height()) {
-        _textLabel->setText(_elidedText);
-    }
+    // Set tooltip text to full message
     if(_tooltipPopupLabel) {
         _tooltipPopupLabel->setText(_statusText);
     }
@@ -201,7 +194,7 @@ QColor StatusWidget::statusColor() const
     else if(_statusType == PipelineStatus::Error)
         return {204, 2, 2};
     else
-        return _statusIndicator->palette().color(QPalette::Mid);
+        return QPalette::Mid;
 }
 
 /******************************************************************************
@@ -213,8 +206,11 @@ void StatusWidget::paintEvent(QPaintEvent* event)
     QPainter painter(this);
     const QColor& color = statusColor();
     painter.setPen(QPen(color, 0));
+    if(_statusType == PipelineStatus::Warning || _statusType == PipelineStatus::Error) {
+        // Add colored background for warnings and errors
+        painter.setBrush(QBrush(QColor(color.red(), color.green(), color.blue(), int(255 * 0.2))));
+    }
     painter.drawRect(QRectF(this->rect()).adjusted(0.0, 0.0, -0.5, -0.5));
-    painter.fillRect(QRectF(this->rect()).adjusted(0.0, 0.0, -0.5, -0.5), QColor(color.red(), color.green(), color.blue(), int(255 * 0.2)));
     QWidget::paintEvent(event);
 }
 
@@ -343,6 +339,30 @@ void StatusWidget::mousePressEvent(QMouseEvent* event)
         showTooltipPopup();
     }
     QWidget::mousePressEvent(event);
+}
+
+/******************************************************************************
+ * Updates text elision based on current label width and applies it to the widget.
+ ******************************************************************************/
+void StatusWidget::updateAndElideWidgetText()
+{
+    if(!_textLabel || _statusText.isEmpty()) return;
+
+    _elidedText = elideTextToRowCount(_statusText, _textLabel->width(), LineLabelHeight, _textLabel->font());
+
+    _textLabel->setText(_statusText);
+    if(_textLabel->heightForWidth(_textLabel->width()) > _textLabel->height()) {
+        _textLabel->setText(_elidedText);
+    }
+}
+
+/******************************************************************************
+ * Handle widget resize to recalculate text elision.
+ ******************************************************************************/
+void StatusWidget::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    updateAndElideWidgetText();
 }
 
 }  // namespace Ovito

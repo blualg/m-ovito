@@ -71,7 +71,12 @@ protected:
     /// Open the tooltip immediately when the widget is clicked.
     virtual void mousePressEvent(QMouseEvent* event) override;
 
+    /// Handle widget resize to recalculate text elision.
+    virtual void resizeEvent(QResizeEvent* event) override;
+
 private:
+    /// Updates text elision based on current label width and applies it to the widget.
+    void updateAndElideWidgetText();
 
     /// The current status type displayed by the widget.
     PipelineStatus::StatusType _statusType = PipelineStatus::StatusType::Success;
@@ -80,9 +85,6 @@ private:
     QLabel* _textLabel;
     QString _statusText;
     QString _elidedText;
-
-    /// The internal status indicator.
-    QWidget* _statusIndicator;
 
     // Tooltip support
     QTimer* _tooltipTimer = nullptr;
