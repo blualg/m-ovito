@@ -98,8 +98,11 @@ protected:
     virtual void resizeEvent(QResizeEvent* event) override;
 
     /// Overlay label cannot be placed in the constructor because the
-    /// the widget's sizz is not yet set. Deferred placement here.
+    /// the widget's size is not yet set. Deferred placement here.
     virtual void showEvent(QShowEvent* e) override;
+
+    /// Handles widget state changes.
+    virtual void changeEvent(QEvent* event) override;
 
     [[nodiscard]] virtual bool hasHeightForWidth() const override { return false; }
 
@@ -116,8 +119,7 @@ private:
     // Overlay label
     QLabel* _overlayLabel = nullptr;
 
-    // Original palette to restore default background
-    QPalette _originalPalette;
+    bool _inUpdatePalette = false;  ///< Flag to avoid recursive palette updates
 };
 
 }   // End of namespace

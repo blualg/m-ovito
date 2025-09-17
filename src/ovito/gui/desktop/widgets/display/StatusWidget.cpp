@@ -40,7 +40,7 @@ QColor alphaBlendColors(const QColor& foreground, const QColor& background)
 class TooltipPopupWidget : public QWidget
 {
 public:
-    TooltipPopupWidget(StatusWidget* parent) : QWidget(parent, Qt::ToolTip | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint) {}
+    TooltipPopupWidget(StatusWidget* parent) : QWidget(parent, Qt::ToolTip | Qt::FramelessWindowHint) {}
 
 protected:
     void paintEvent(QPaintEvent* event) override
@@ -78,9 +78,6 @@ StatusWidget::StatusWidget(QWidget* parent) : QLabel(parent)
     setBackgroundRole(QPalette::Window);
     setAutoFillBackground(true);
 
-    // Store original palette for resetting background color
-    _originalPalette = palette();
-
     // Calculate the height of the widget based on the font and apply it
     setHeight();
 
@@ -95,14 +92,14 @@ StatusWidget::StatusWidget(QWidget* parent) : QLabel(parent)
     installEventFilter(this);
 
     // Create overlay label
-    _overlayLabel = new QLabel(tr("[show more]"), this);
+    _overlayLabel = new QLabel(tr(" [show more]"), this);
     _overlayLabel->setBackgroundRole(QPalette::Window);
+    _overlayLabel->setAutoFillBackground(true);
     _overlayLabel->setFrameStyle(QFrame::NoFrame);
     _overlayLabel->setLineWidth(1);
     _overlayLabel->setMargin(0);
     _overlayLabel->setIndent(0);
     _overlayLabel->setAlignment(Qt::AlignCenter);
-    _overlayLabel->setAutoFillBackground(true);
     // Adjust size call is necessary to give correct positions
     _overlayLabel->adjustSize();
 
@@ -118,6 +115,18 @@ void StatusWidget::showEvent(QShowEvent* e)
     // Position overlay label in bottom right corner
     _overlayLabel->move(calculateOverlayLabelPosition());
     QLabel::showEvent(e);
+}
+
+/******************************************************************************
+* Handles widget state changes.
+******************************************************************************/
+void StatusWidget::changeEvent(QEvent* event)
+{
+    if(event->type() == QEvent::PaletteChange) {
+        if(!_inUpdatePalette)
+            updatePalette();
+    }
+    QLabel::changeEvent(event);
 }
 
 /******************************************************************************
@@ -196,8 +205,10 @@ QColor StatusWidget::statusColor() const
  ******************************************************************************/
 void StatusWidget::updatePalette()
 {
-    QPalette widgetPalette = _originalPalette;
-    const QColor& baseColor = _originalPalette.color(QPalette::Window);
+    _inUpdatePalette = true; // Prevent reentry due to palette changeEvent
+
+    QPalette widgetPalette = QGuiApplication::palette(); // Start from application palette to ensure consistency and react to dynamic dark mode switches
+    const QColor& baseColor = widgetPalette.color(QPalette::Window);
 
     if(_statusType == PipelineStatus::Warning || _statusType == PipelineStatus::Error) {
         const QColor& statusCol = statusColor();
@@ -213,6 +224,8 @@ void StatusWidget::updatePalette()
     if(_tooltipPopup) {
         _tooltipPopup->setPalette(widgetPalette);
     }
+
+    _inUpdatePalette = false;
 }
 
 /******************************************************************************
@@ -414,7 +427,6 @@ void StatusWidget::resizeEvent(QResizeEvent* event)
     toggleOverlayLabelVisibility();
 
     // Position overlay label in bottom right corner
-    qDebug() << "Pos:" << calculateOverlayLabelPosition() << _overlayLabel->isVisible();
     if(_overlayLabel && _overlayLabel->isVisible()) {
         _overlayLabel->move(calculateOverlayLabelPosition());
     }
