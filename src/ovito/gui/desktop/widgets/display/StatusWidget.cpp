@@ -35,6 +35,24 @@ QColor alphaBlendColors(const QColor& foreground, const QColor& background)
     const int b = qRound(foreground.blue() * a + background.blue() * invA);
     return {r, g, b};
 }
+
+/// Custom popup widget that draws an outline border matching the status widget's style
+class TooltipPopupWidget : public QWidget
+{
+public:
+    TooltipPopupWidget(StatusWidget* parent) : QWidget(parent, Qt::ToolTip | Qt::FramelessWindowHint | Qt::NoDropShadowWindowHint) {}
+
+protected:
+    void paintEvent(QPaintEvent* event) override
+    {
+        // Draw outline around popup overlay
+        QPainter painter(this);
+        painter.setPen(QPen(((StatusWidget*)parent())->statusColor(), 0));
+        painter.drawRect(QRectF(this->rect()).adjusted(0.0, 0.0, -0.5, -0.5));
+
+        QWidget::paintEvent(event);
+    }
+};
 }  // namespace
 
 /******************************************************************************
@@ -174,9 +192,14 @@ void StatusWidget::updatePalette()
             alphaBlendColors(QColor(statusCol.red(), statusCol.green(), statusCol.blue(), int(255 * 0.2)), baseColor);
         widgetPalette.setColor(QPalette::Window, highlightColor);
     }
-    // For success status, we use the original palette (no modification needed)
 
+    // Apply palette to status widget
     setPalette(widgetPalette);
+
+    // Apply palette to popup widget
+    if(_tooltipPopup) {
+        _tooltipPopup->setPalette(widgetPalette);
+    }
 }
 
 /******************************************************************************
@@ -203,7 +226,10 @@ void StatusWidget::showTooltipPopup()
 
     // Create popup widget lazily
     if(!_tooltipPopup) {
-        _tooltipPopup = new QWidget(this, Qt::ToolTip);
+        _tooltipPopup = new TooltipPopupWidget(this);
+        _tooltipPopup->setAutoFillBackground(true);
+        _tooltipPopup->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        _tooltipPopup->setMinimumHeight(calculateHeight());
         connect(this, &QObject::destroyed, _tooltipPopup, &QObject::deleteLater);
 
         QVBoxLayout* vlay = new QVBoxLayout(_tooltipPopup);
@@ -215,9 +241,14 @@ void StatusWidget::showTooltipPopup()
         // Adopt text settings from parent
         _tooltipPopupLabel->setWordWrap(wordWrap());
         _tooltipPopupLabel->setAlignment(alignment());
-        _tooltipPopupLabel->setTextInteractionFlags(Qt::TextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
-        _tooltipPopupLabel->setForegroundRole(QPalette::ToolTipText);
+        _tooltipPopupLabel->setTextInteractionFlags(Qt::TextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard |
+                                                                             Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
         _tooltipPopupLabel->setFont(font());
+
+        // Set background to match main status widget
+        _tooltipPopupLabel->setBackgroundRole(QPalette::Window);
+        _tooltipPopupLabel->setAutoFillBackground(false);
+        _tooltipPopupLabel->setFrameStyle(QFrame::NoFrame);
 
         // Adopt margins from parent
         _tooltipPopupLabel->setMargin(margin());
@@ -257,6 +288,10 @@ void StatusWidget::showTooltipPopup()
     // label's width so word-wrapping matches and we can compute the full
     // required height to display all lines.
     _tooltipPopupLabel->setText(text());
+
+    // Update tooltip popup palette to match main widget's background
+    _tooltipPopup->setPalette(palette());
+    _tooltipPopupLabel->setPalette(palette());
 
     QPoint globalPos = mapToGlobal(QPoint(0, 0));
     int labelWidth = width();
