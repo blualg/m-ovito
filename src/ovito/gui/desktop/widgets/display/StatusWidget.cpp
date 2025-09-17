@@ -102,6 +102,7 @@ StatusWidget::StatusWidget(QWidget* parent) : QLabel(parent)
     _overlayLabel->setMargin(0);
     _overlayLabel->setIndent(0);
     _overlayLabel->setAlignment(Qt::AlignCenter);
+    _overlayLabel->setAutoFillBackground(true);
     // Adjust size call is necessary to give correct positions
     _overlayLabel->adjustSize();
 
@@ -115,9 +116,7 @@ StatusWidget::StatusWidget(QWidget* parent) : QLabel(parent)
 void StatusWidget::showEvent(QShowEvent* e)
 {
     // Position overlay label in bottom right corner
-    if(_overlayLabel->isVisible()) {
-        _overlayLabel->move(calculateOverlayLabelPosition());
-    }
+    _overlayLabel->move(calculateOverlayLabelPosition());
     QLabel::showEvent(e);
 }
 
