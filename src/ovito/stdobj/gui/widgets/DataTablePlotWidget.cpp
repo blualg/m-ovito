@@ -116,15 +116,20 @@ void DataTablePlotWidget::updateDataPlot()
 
     // Determine the current plotting mode.
     DataTable::PlotMode plotMode = DataTable::None;
+    bool enableMouseInteraction = false;
     const Property* y = table() ? table()->y() : nullptr;
     const Property* x = table() ? table()->x() : nullptr;
     if(y) {
-        if(y->size() > (size_t)std::numeric_limits<int>::max())
+        if(y->size() > (size_t)std::numeric_limits<int>::max()) {
             qWarning() << "Number of plot data points exceeds limit:" << y->size() << ">" << std::numeric_limits<int>::max();
-        else if(x && x->size() != y->size())
+        }
+        else if(x && x->size() != y->size()) {
             qWarning() << "Detected inconsistent lengths of X and Y data arrays in data table:" << table()->objectTitle();
-        else
+        }
+        else if(y->size() != 0) {
             plotMode = table()->plotMode();
+            enableMouseInteraction = true;
+        }
     }
 
     // Release plot items if plot mode has changed.
@@ -166,8 +171,6 @@ void DataTablePlotWidget::updateDataPlot()
         delete _legend;
         _legend = nullptr;
     }
-
-    bool enableMouseInteraction = true;
 
     // Create plot items.
     if(plotMode == DataTable::Scatter) {
