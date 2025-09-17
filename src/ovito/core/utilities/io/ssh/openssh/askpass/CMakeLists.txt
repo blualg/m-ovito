@@ -32,7 +32,7 @@ TARGET_LINK_LIBRARIES(ssh_askpass PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets)
 # Under Linux, Qt's Xcb platform plugin will dynamically load the DBus Qt module.
 # To avoid the dynamic linker pulling the wrong versions of the Qt module from the
 # system path, we make the executable preload the module on application startup.
-IF(UNIX AND NOT APPLE AND OVITO_REDISTRIBUTABLE_PACKAGE)
+IF(LINUX AND OVITO_REDISTRIBUTABLE_PACKAGE)
     FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS DBus REQUIRED)
     TARGET_LINK_LIBRARIES(ssh_askpass PRIVATE Qt6::DBus)
 ENDIF()

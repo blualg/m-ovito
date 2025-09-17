@@ -22,7 +22,7 @@
 
 # Find the required Qt modules.
 SET(OVITO_GUI_REQUIRED_QT_COMPONENTS Widgets Network)
-IF(UNIX AND NOT APPLE)
+IF(LINUX)
     # On Linux, the DBus component is needed to access dark/light desktop theme settings.
     LIST(APPEND OVITO_GUI_REQUIRED_QT_COMPONENTS DBus)
 ENDIF()
@@ -154,7 +154,7 @@ OVITO_STANDARD_PLUGIN(Gui
     PRECOMPILED_HEADERS
         GUI.h
 )
-IF(UNIX AND NOT APPLE)
+IF(LINUX)
     TARGET_LINK_LIBRARIES(Gui PRIVATE Qt6::DBus)
 ENDIF()
 

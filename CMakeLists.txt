@@ -136,7 +136,7 @@ SET(MACOSX_BUNDLE_NAME "Ovito")
 SET(MACOSX_BUNDLE_BUNDLE_NAME "${MACOSX_BUNDLE_NAME}")
 
 IF(NOT OVITO_BUILD_PYPI)
-    IF(UNIX AND NOT APPLE)
+    IF(LINUX)
         # The directory where the main executable goes to.
         SET(OVITO_RELATIVE_BINARY_DIRECTORY "bin")
         # The directory where the main libraries go to.

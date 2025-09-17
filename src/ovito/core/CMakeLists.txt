@@ -187,7 +187,7 @@ IF(ZLIB_FOUND)
         # Otherwise, use the static library to avoid an extra deployment step. The static lib must have been built with the -fPIC option.
         IF(OVITO_BUILD_CONDA)
             TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd)
-        ELSEIF(NOT OVITO_REDISTRIBUTABLE_PACKAGE AND UNIX AND NOT APPLE)
+        ELSEIF(NOT OVITO_REDISTRIBUTABLE_PACKAGE AND LINUX)
             TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd)
         ELSE()
             TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd_static)
@@ -286,7 +286,7 @@ ELSE()
 ENDIF()
 
 # Link to the pthread library on Linux platform.
-IF(UNIX AND NOT APPLE)
+IF(LINUX)
     SET(THREADS_PREFER_PTHREAD_FLAG ON)
     FIND_PACKAGE(Threads REQUIRED)
     TARGET_LINK_LIBRARIES(Core PUBLIC Threads::Threads)
@@ -350,7 +350,7 @@ IF(FFMPEG_FOUND AND NOT EMSCRIPTEN)
             FOREACH(dll ${lib_dll})
                 OVITO_INSTALL_SHARED_LIB("${dll}")
             ENDFOREACH()
-        ELSEIF(UNIX AND NOT APPLE AND (OVITO_REDISTRIBUTABLE_PACKAGE OR OVITO_BUILD_PYPI))
+        ELSEIF(LINUX AND (OVITO_REDISTRIBUTABLE_PACKAGE OR OVITO_BUILD_PYPI))
             FILE(GLOB lib_versions "${lib}*")
             FOREACH(lib_version ${lib_versions})
                 OVITO_INSTALL_SHARED_LIB("${lib_version}")
@@ -370,7 +370,7 @@ ENDIF()
 
 # Workaround for failing Linux conda builds (may become obsolete in the future once the issue in qt6-main has been fixed):
 #   "warning: libEGL.so.1, needed by libQt6Gui.so.6.5.0, not found (try using -rpath or -rpath-link"
-IF(OVITO_BUILD_CONDA AND UNIX AND NOT APPLE)
+IF(OVITO_BUILD_CONDA AND LINUX)
     # Find and link against EGL library (optional).
     FIND_PACKAGE(OpenGL COMPONENTS EGL)
     IF(TARGET OpenGL::EGL)

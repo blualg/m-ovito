@@ -90,7 +90,7 @@ ENDIF()
 # Under Linux, Qt's Xcb platform plugin will dynamically load the DBus Qt module.
 # To avoid the dynamic linker pulling the wrong versions of the Qt module from the
 # system path, we make the executable preload the module on application startup.
-IF(UNIX AND NOT APPLE AND OVITO_REDISTRIBUTABLE_PACKAGE)
+IF(LINUX AND OVITO_REDISTRIBUTABLE_PACKAGE)
     FIND_PACKAGE(Qt6 ${OVITO_MINIMUM_REQUIRED_QT_VERSION} COMPONENTS DBus REQUIRED)
     TARGET_LINK_LIBRARIES(Ovito PRIVATE Qt6::DBus)
 ENDIF()
@@ -147,11 +147,11 @@ IF(EMSCRIPTEN)
 ENDIF()
 
 # Install fonts required by 'minimal' platform plugin on Linux
-IF(UNIX AND NOT APPLE AND NOT OVITO_BUILD_CONDA)
+IF(LINUX AND NOT OVITO_BUILD_CONDA)
     INSTALL(DIRECTORY "resources/fonts" DESTINATION "${OVITO_RELATIVE_SHARE_DIRECTORY}/")
 ENDIF()
 
-IF(UNIX AND NOT APPLE AND OVITO_REDISTRIBUTABLE_PACKAGE)
+IF(LINUX AND OVITO_REDISTRIBUTABLE_PACKAGE)
 
     # Create a qt.conf file.
     # This is required to let Qt search for its plugin modules in the program directory.
@@ -195,7 +195,7 @@ IF(OVITO_BUILD_PLUGIN_PYSCRIPT AND NOT OVITO_BUILD_BASIC)
     TARGET_COMPILE_DEFINITIONS(Ovito PRIVATE "OVITO_BUILD_PLUGIN_PYSCRIPT=1")
     TARGET_INCLUDE_DIRECTORIES(Ovito PRIVATE "${CMAKE_SOURCE_DIR}/proprietary")
 
-    IF(OVITO_REDISTRIBUTABLE_PACKAGE AND UNIX AND NOT APPLE)
+    IF(OVITO_REDISTRIBUTABLE_PACKAGE AND LINUX)
         # Uninstall Python packages from the embedded interpreter that should not be part of the official distribution.
         INSTALL(CODE "${OVITO_UNINSTALL_UNUSED_PYTHON_MODULES_CODE}")
     ENDIF()
