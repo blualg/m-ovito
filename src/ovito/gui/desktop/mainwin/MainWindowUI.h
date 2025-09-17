@@ -171,10 +171,8 @@ private:
 
 // Instantiate class templates.
 #ifndef OVITO_BUILD_MONOLITHIC
-#if !defined(Core_EXPORTS)
+#if defined(Q_CC_MSVC)
 extern template class OVITO_GUI_EXPORT UserInterfaceComponent<MainWindowUI>;
-#elif !defined(Q_CC_MSVC) && !defined(Q_CC_CLANG)
-template class OVITO_GUI_EXPORT UserInterfaceComponent<MainWindowUI>;
 #endif
 #endif
 

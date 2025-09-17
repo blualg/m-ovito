@@ -53,8 +53,12 @@
 
 namespace Ovito {
 
+#ifndef OVITO_BUILD_MONOLITHIC
+#if defined(Q_CC_MSVC)
 // Explicit class template instantiations to be exported by the core module:
 template class UserInterfaceComponent<MainWindowUI>;
+#endif
+#endif
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(MainWindowUI);
 
