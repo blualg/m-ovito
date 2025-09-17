@@ -21,7 +21,7 @@
 #######################################################################################
 
 # Make sure we have a recent version of CMake.
-CMAKE_MINIMUM_REQUIRED(VERSION 3.19.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.25.0 FATAL_ERROR)
 CMAKE_POLICY(VERSION 3.12.0)
 
 # Choose CMake policies.
