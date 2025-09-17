@@ -40,7 +40,6 @@ DataInspectorPanel::DataInspectorPanel(MainWindowUI& ui) :
     // Create data inspection applets.
     for(OvitoClassPtr clazz : PluginManager::instance().listClasses(DataInspectionApplet::OOClass())) {
         OORef<DataInspectionApplet> applet = static_object_cast<DataInspectionApplet>(clazz->createInstance());
-        applet->setUserInterface(ui);
         applet->setInspectorPanel(this);
         _applets.push_back(std::move(applet));
     }

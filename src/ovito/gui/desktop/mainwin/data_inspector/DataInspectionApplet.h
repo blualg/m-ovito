@@ -85,7 +85,7 @@ public:
     DataInspectorPanel* inspectorPanel() const { OVITO_ASSERT(_inspectorPanel); return _inspectorPanel; }
 
     /// Sets the panel hosting this applet.
-    void setInspectorPanel(DataInspectorPanel* inspectorPanel) { _inspectorPanel = inspectorPanel; }
+    void setInspectorPanel(DataInspectorPanel* inspectorPanel);
 
 protected:
 

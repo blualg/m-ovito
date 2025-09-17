@@ -33,6 +33,16 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(DataInspectionApplet);
 
 /******************************************************************************
+* Sets the panel hosting this applet.
+******************************************************************************/
+void DataInspectionApplet::setInspectorPanel(DataInspectorPanel* inspectorPanel)
+{
+    OVITO_ASSERT(!_inspectorPanel);
+    setUserInterface(inspectorPanel->ui());
+    _inspectorPanel = inspectorPanel;
+}
+
+/******************************************************************************
 * Returns the currently selected data pipeline.
 ******************************************************************************/
 Pipeline* DataInspectionApplet::currentPipeline() const
