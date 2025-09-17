@@ -207,20 +207,27 @@ void StatusWidget::showTooltipPopup()
 
     // Create popup widget lazily
     if(!_tooltipPopup) {
-        _tooltipPopup = new QWidget(nullptr, Qt::ToolTip | Qt::FramelessWindowHint);
-        _tooltipPopup->setAttribute(Qt::WA_ShowWithoutActivating);
+        _tooltipPopup = new QWidget(this, Qt::ToolTip);
         connect(this, &QObject::destroyed, _tooltipPopup, &QObject::deleteLater);
-        _tooltipPopup->setBackgroundRole(QPalette::ToolTipBase);
-        _tooltipPopup->setAutoFillBackground(true);
+
         QVBoxLayout* vlay = new QVBoxLayout(_tooltipPopup);
         vlay->setContentsMargins(0,0,0,0);
         vlay->setSpacing(0);
+
         _tooltipPopupLabel = new QLabel(_tooltipPopup);
+
+        // Adopt text settings from parent
         _tooltipPopupLabel->setWordWrap(wordWrap());
         _tooltipPopupLabel->setAlignment(alignment());
         _tooltipPopupLabel->setTextInteractionFlags(Qt::TextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard));
         _tooltipPopupLabel->setForegroundRole(QPalette::ToolTipText);
         _tooltipPopupLabel->setFont(font());
+
+        // Adopt margins from parent
+        _tooltipPopupLabel->setMargin(margin());
+        _tooltipPopupLabel->setIndent(indent());
+        _tooltipPopupLabel->setContentsMargins(contentsMargins());
+
         connect(_tooltipPopupLabel, &QLabel::linkActivated, this, &StatusWidget::linkActivated);
         vlay->addWidget(_tooltipPopupLabel);
 
@@ -236,8 +243,9 @@ void StatusWidget::showTooltipPopup()
         copyBtn->setText(tr("Copy to clipboard"));
         copyBtn->setFont(font());
         connect(copyBtn, &QPushButton::clicked, this, [this]() {
-            if(!_tooltipPopupLabel)
+            if(!_tooltipPopupLabel) {
                 return;
+            }
             QClipboard* cb = qApp->clipboard();
             cb->setText(_tooltipPopupLabel->hasSelectedText() ? _tooltipPopupLabel->selectedText() : _tooltipPopupLabel->text());
         });
@@ -255,9 +263,7 @@ void StatusWidget::showTooltipPopup()
     _tooltipPopupLabel->setText(text());
 
     QPoint globalPos = mapToGlobal(QPoint(0, 0));
-    globalPos.rx() += contentsMargins().left();
-    globalPos.ry() += contentsMargins().top();
-    int labelWidth = width() - contentsMargins().left() - contentsMargins().right();
+    int labelWidth = width();
 
     // Ensure the popup label wraps at the same width as the embedded label.
     _tooltipPopupLabel->setFixedWidth(labelWidth);
@@ -274,13 +280,14 @@ void StatusWidget::showTooltipPopup()
         popupRect.setWidth(labelWidth);
 
     _tooltipPopup->setGeometry(popupRect);
+
     _tooltipPopup->show();
 }
 
 /******************************************************************************
-* Event filter to watch the internal label and the tooltip popup for
-* enter/leave events.
-******************************************************************************/
+ * Event filter to watch the internal label and the tooltip popup for
+ * enter/leave/hide events.
+ ******************************************************************************/
 bool StatusWidget::eventFilter(QObject* watched, QEvent* event)
 {
     // If the event comes from the label, watch for enter/leave to start/stop timer
@@ -302,9 +309,19 @@ bool StatusWidget::eventFilter(QObject* watched, QEvent* event)
     }
 
     // If the event comes from the popup or its label, close when the mouse leaves
-    if(watched == _tooltipPopup && event->type() == QEvent::Leave) {
-        if(_tooltipPopup)
+    // QApplication::activePopupWidget() prevents closing, when a context menu is open (e.g. when right-clicking on a status widget)
+    if(watched == _tooltipPopup && event->type() == QEvent::Leave && !QApplication::activePopupWidget()) {
+        if(_tooltipPopup) {
             _tooltipPopup->hide();
+        }
+    }
+
+    // If the tooltip disappears, clear text selection in the label
+    if(watched == _tooltipPopup && event->type() == QEvent::Hide) {
+        if(_tooltipPopupLabel) {
+            // Clear selection
+            _tooltipPopupLabel->setSelection(0, 0);
+        }
     }
 
     return QLabel::eventFilter(watched, event);
