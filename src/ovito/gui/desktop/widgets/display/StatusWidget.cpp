@@ -60,6 +60,9 @@ StatusWidget::StatusWidget(QWidget* parent) : QLabel(parent)
     setBackgroundRole(QPalette::Window);
     setAutoFillBackground(true);
 
+    // Store original palette for resetting background color
+    _originalPalette = palette();
+
     // Calculate the height of the widget based on the font and apply it
     setHeight();
 
@@ -125,6 +128,7 @@ void StatusWidget::setStatus(const PipelineStatus& status)
 {
     if(status.type() != _statusType) {
         _statusType = status.type();
+        updatePalette();
         update();
     }
 
@@ -157,41 +161,33 @@ QColor StatusWidget::statusColor() const
 }
 
 /******************************************************************************
-* Paints the widget's border.
-******************************************************************************/
+ * Updates the widget's palette based on the current status type.
+ ******************************************************************************/
+void StatusWidget::updatePalette()
+{
+    QPalette widgetPalette = _originalPalette;
+    const QColor& baseColor = _originalPalette.color(QPalette::Window);
+
+    if(_statusType == PipelineStatus::Warning || _statusType == PipelineStatus::Error) {
+        const QColor& statusCol = statusColor();
+        const QColor& highlightColor =
+            alphaBlendColors(QColor(statusCol.red(), statusCol.green(), statusCol.blue(), int(255 * 0.2)), baseColor);
+        widgetPalette.setColor(QPalette::Window, highlightColor);
+    }
+    // For success status, we use the original palette (no modification needed)
+
+    setPalette(widgetPalette);
+}
+
+/******************************************************************************
+ * Paints the widget's border.
+ ******************************************************************************/
 void StatusWidget::paintEvent(QPaintEvent* event)
 {
-    // Paint the main QLabel area.
+    // Paint the main QLabel outline.
     QPainter painter(this);
-    const QColor& color = statusColor();
-    const QColor& backgroundColor = palette().color(QPalette::Window);
-    const QColor& highlightColor = alphaBlendColors(QColor(color.red(), color.green(), color.blue(), int(255 * 0.2)), backgroundColor);
-
-    painter.setPen(QPen(color, 0));
-    if(_statusType == PipelineStatus::Warning || _statusType == PipelineStatus::Error) {
-        // Add colored background for warnings and errors
-        painter.setBrush(highlightColor);
-    }
+    painter.setPen(QPen(statusColor(), 0));
     painter.drawRect(QRectF(this->rect()).adjusted(0.0, 0.0, -0.5, -0.5));
-
-    // Paint the [show more] overlay area to match
-    painter.setPen(Qt::NoPen);
-    if(_overlayLabel && _overlayLabel->isVisible()) {
-        QRect overlayRect = _overlayLabel->rect();
-        // Shift overlay rectangle to the correct position
-        const QPoint shift = calculateOverlayLabelPosition();
-        overlayRect.adjust(shift.x(), shift.y(), shift.x(), shift.y());
-
-        if(_statusType == PipelineStatus::Warning || _statusType == PipelineStatus::Error) {
-            // Use the same colored background as the main qlabel background
-            painter.setBrush(alphaBlendColors(highlightColor, backgroundColor));
-        }
-        else {
-            // Use window background for normal status
-            painter.setBrush(backgroundColor);
-        }
-        painter.drawRect(overlayRect);
-    }
 
     QLabel::paintEvent(event);
 }

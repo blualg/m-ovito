@@ -81,6 +81,9 @@ protected:
     // Sets the visibility of the overlay label based on the status text.
     bool toggleOverlayLabelVisibility();
 
+    /// Updates the widget's palette based on the current status type.
+    void updatePalette();
+
     /// Paints the widget's border.
     virtual void paintEvent(QPaintEvent* event) override;
 
@@ -108,6 +111,9 @@ private:
 
     // Overlay label
     QLabel* _overlayLabel = nullptr;
+
+    // Original palette to restore default background
+    QPalette _originalPalette;
 };
 
 }   // End of namespace
