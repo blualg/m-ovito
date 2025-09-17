@@ -462,6 +462,9 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
         numberOfWavevectorBins = n[dir1] * n[dir2];
     }
 
+    if(numberOfWavevectorBins == 0)
+        throw Exception(tr("FFT grid spacing is too large for this simulation cell."));
+
     // Averaged reciprocal space correlation function.
     _reciprocalSpaceCorrelation = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numberOfWavevectorBins, Property::FloatDefault, 1, tr("C(q)"));
     _reciprocalSpaceCorrelationRange = 2 * FLOATTYPE_PI * minReciprocalSpaceVector * numberOfWavevectorBins;
@@ -537,6 +540,8 @@ void SpatialCorrelationFunctionModifier::CorrelationAnalysisEngine::computeFftCo
     // Determine number of grid points for reciprocal-space correlation function.
     int numberOfDistanceBins = minCellFaceDistance / (2 * fftGridSpacing());
     FloatType gridSpacing = minCellFaceDistance / (2 * numberOfDistanceBins);
+    if(numberOfDistanceBins == 0)
+        throw Exception(tr("FFT grid spacing is too large for this simulation cell."));
 
     // Radially averaged real space correlation function.
     _realSpaceCorrelation = DataTable::OOClass().createUserProperty(DataBuffer::Initialized, numberOfDistanceBins, DataBuffer::FloatDefault, 1, tr("C(r)"));
