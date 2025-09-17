@@ -94,8 +94,12 @@ protected:
     /// Open the tooltip immediately when the widget is clicked.
     virtual void mousePressEvent(QMouseEvent* event) override;
 
-    /// Handle widget resize to recalculate text elision.
+    /// Handle widget resize to reposition overlay label.
     virtual void resizeEvent(QResizeEvent* event) override;
+
+    /// Overlay label cannot be placed in the constructor because the
+    /// the widget's sizz is not yet set. Deferred placement here.
+    virtual void showEvent(QShowEvent* e) override;
 
     [[nodiscard]] virtual bool hasHeightForWidth() const override { return false; }
 

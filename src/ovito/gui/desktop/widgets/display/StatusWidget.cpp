@@ -104,7 +104,21 @@ StatusWidget::StatusWidget(QWidget* parent) : QLabel(parent)
     _overlayLabel->setAlignment(Qt::AlignCenter);
     // Adjust size call is necessary to give correct positions
     _overlayLabel->adjustSize();
+
     toggleOverlayLabelVisibility();
+}
+
+/******************************************************************************
+ * Overlay label cannot be placed in the constructor because the
+ * the widget's size is not yet set. Deferred placement here.
+ ******************************************************************************/
+void StatusWidget::showEvent(QShowEvent* e)
+{
+    // Position overlay label in bottom right corner
+    if(_overlayLabel->isVisible()) {
+        _overlayLabel->move(calculateOverlayLabelPosition());
+    }
+    QLabel::showEvent(e);
 }
 
 /******************************************************************************
@@ -393,7 +407,7 @@ QPoint StatusWidget::calculateOverlayLabelPosition() const
 }
 
 /******************************************************************************
- * Handle widget resize to recalculate text elision.
+ * Handle widget resize to reposition overlay label.
  ******************************************************************************/
 void StatusWidget::resizeEvent(QResizeEvent* event)
 {
@@ -401,6 +415,7 @@ void StatusWidget::resizeEvent(QResizeEvent* event)
     toggleOverlayLabelVisibility();
 
     // Position overlay label in bottom right corner
+    qDebug() << "Pos:" << calculateOverlayLabelPosition() << _overlayLabel->isVisible();
     if(_overlayLabel && _overlayLabel->isVisible()) {
         _overlayLabel->move(calculateOverlayLabelPosition());
     }
