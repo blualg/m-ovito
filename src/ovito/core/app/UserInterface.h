@@ -499,4 +499,17 @@ DataSet* UserInterfaceComponent<UserInterfaceType, UseStrongReference>::dataset(
     return datasetContainer().currentSet();
 }
 
+// Instantiate class templates.
+#ifndef OVITO_BUILD_MONOLITHIC
+#if !defined(Core_EXPORTS)
+extern template class OVITO_CORE_EXPORT UserInterfaceComponent<UserInterface>;
+// extern template class OVITO_CORE_EXPORT UserInterfaceComponent<UserInterface, false>;
+
+#elif !defined(Q_CC_MSVC) && !defined(Q_CC_CLANG)
+template class OVITO_CORE_EXPORT UserInterfaceComponent<UserInterface>;
+// template class OVITO_CORE_EXPORT UserInterfaceComponent<UserInterface, false>;
+
+#endif
+#endif
+
 }   // End of namespace

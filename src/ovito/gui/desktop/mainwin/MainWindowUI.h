@@ -169,4 +169,13 @@ private:
     friend class MainWindow; // Allow direct access to the _mainWindow pointer.
 };
 
+// Instantiate class templates.
+#ifndef OVITO_BUILD_MONOLITHIC
+#if !defined(Core_EXPORTS)
+extern template class OVITO_GUI_EXPORT UserInterfaceComponent<MainWindowUI>;
+#elif !defined(Q_CC_MSVC) && !defined(Q_CC_CLANG)
+template class OVITO_GUI_EXPORT UserInterfaceComponent<MainWindowUI>;
+#endif
+#endif
+
 }   // End of namespace

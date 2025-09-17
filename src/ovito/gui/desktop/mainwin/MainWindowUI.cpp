@@ -50,10 +50,11 @@
 #include <ovito/core/utilities/concurrent/TaskProgress.h>
 #include "MainWindowUI.h"
 #include "ViewportsPanel.h"
-#include "TaskDisplayWidget.h"
-#include "cmdpanel/CommandPanel.h"
 
 namespace Ovito {
+
+// Explicit class template instantiations to be exported by the core module:
+template class UserInterfaceComponent<MainWindowUI>;
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(MainWindowUI);
 

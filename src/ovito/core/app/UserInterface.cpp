@@ -31,6 +31,9 @@
 
 namespace Ovito {
 
+// Explicit class template instantiations to be exported by the core module:
+template class UserInterfaceComponent<UserInterface>;
+
 IMPLEMENT_ABSTRACT_OVITO_CLASS(UserInterface);
 
 /******************************************************************************
