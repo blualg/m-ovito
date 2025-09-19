@@ -427,7 +427,7 @@ void StatusWidget::resizeEvent(QResizeEvent* event)
     toggleOverlayLabelVisibility();
 
     // Position overlay label in bottom right corner
-    if(_overlayLabel && _overlayLabel->isVisible()) {
+    if(_overlayLabel) {
         _overlayLabel->move(calculateOverlayLabelPosition());
     }
 

@@ -9,7 +9,7 @@ Changelog
   * `Download this version <https://www.ovito.org/download_history/#3.14.0>`__
 
 ----------------------------
-Version 3.14.0 (xx-xxx-2025)
+Version 3.14.0 (21-Sep-2025)
 ----------------------------
 
 - :ref:`Discrete color maps <particles.modifiers.color_coding>`: A discretized color map can now be enabled to visualize integer properties with distinct color bands:
@@ -110,6 +110,7 @@ Version 3.14.0 (xx-xxx-2025)
   |br|
 
 - :ref:`file_formats.input.lammps_data`: added support for atom styles `spin`, `sph`, `rheo`, `rheo/thermal`, and `bpm/sphere`.
+- A redesigned pipeline status widget, which can now display the complete status text in a tooltip window during mouse hover.
 - Fix: Missing last tick mark in the color legend overlay.
 - Fix: Usage-based sorting of "Quick command search" list not working.
 - Added file export function to *Surfaces* tab of the data inspector.
