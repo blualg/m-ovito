@@ -43,6 +43,7 @@ namespace Ovito {
 class OVITO_CORE_EXPORT OvitoObject : public std::enable_shared_from_this<OvitoObject>
 {
     Q_GADGET
+    Q_DISABLE_COPY_MOVE(OvitoObject)
 
 private:
 
@@ -72,6 +73,9 @@ public:
 
     /// Mimic Qt's string localization function tr() for string literals.
     static inline QString tr(const char* sourceText) { return QString::fromUtf8(sourceText); }
+
+    /// Default constructor.
+    OvitoObject() = default;
 
 #ifdef OVITO_DEBUG
     /// Note: No need to make the base class destructor virtual, because we use std::shared_ptr to manage an object's lifetime.
