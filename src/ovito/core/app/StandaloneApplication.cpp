@@ -132,51 +132,62 @@ bool StandaloneApplication::initialize(int& argc, char** argv)
         // Prepare the application to start running.
         MainThreadOperation startupOperation = startupApplication();
 
-        // Notify registered application services that the application is starting up.
-        for(const auto& service : applicationServices()) {
-            service->applicationStarting();
-        }
+        try {
+            // Notify registered application services that the application is starting up.
+            for(const auto& service : applicationServices()) {
+                service->applicationStarting();
+            }
 
-        // Complete the startup process by calling postStartupInitialization() once the main event loop is running.
-        DeferredObjectExecutor(this).execute([startupOperation = PromiseBase(std::move(startupOperation))]() noexcept {
-            Task::Scope taskScope(startupOperation.task());
-            try {
+            // Complete the startup process by calling postStartupInitialization() once the main event loop is running.
+            DeferredObjectExecutor(this).execute([startupOperation = PromiseBase(std::move(startupOperation))]() noexcept {
+                Task::Scope taskScope(startupOperation.task());
                 try {
-                    // Let the application perform further initialization steps.
-                    StandaloneApplication::instance()->postStartupInitialization();
+                    try {
+                        // Let the application perform further initialization steps.
+                        StandaloneApplication::instance()->postStartupInitialization();
 
-                    if(startupOperation.isCanceled()) {
-                        // If something has canceled the startup process, close the window and quit the app.
-                        this_task::ui()->shutdown();
-                        QCoreApplication::exit(1);
+                        if(startupOperation.isCanceled()) {
+                            // If something has canceled the startup process, close the window and quit the app.
+                            this_task::ui()->shutdown();
+                            QCoreApplication::exit(1);
+                        }
+                        else {
+                            // Startup phase is complete.
+                            startupOperation.setFinished();
+                        }
                     }
-                    else {
-                        // Startup phase is complete.
-                        startupOperation.setFinished();
+                    catch(const Exception&) {
+                        throw;
+                    }
+                    catch(const std::bad_alloc&) {
+                        throw Exception(tr("Not enough memory."));
+                    }
+                    catch(const std::exception& ex) {
+                        qWarning() << "WARNING: non-standard exception thrown during application startup:" << ex.what();
+                        throw Exception(tr("Exception: %1").arg(QString::fromLatin1(ex.what())));
                     }
                 }
-                catch(const Exception&) {
-                    throw;
+                catch(const Exception& ex) {
+                    // Shutdown with error exit code when running in scripting mode.
+                    if(Application::runMode() == Application::AppMode)
+                        this_task::ui()->reportError(ex);
+                    else
+                        this_task::ui()->exitWithFatalError(ex);
                 }
-                catch(const std::bad_alloc&) {
-                    throw Exception(tr("Not enough memory."));
-                }
-                catch(const std::exception& ex) {
-                    qWarning() << "WARNING: non-standard exception thrown during application startup:" << ex.what();
-                    throw Exception(tr("Exception: %1").arg(QString::fromLatin1(ex.what())));
-                }
-            }
-            catch(const Exception& ex) {
-                // Shutdown with error exit code when running in scripting mode.
-                if(Application::runMode() == Application::AppMode)
-                    this_task::ui()->reportError(ex);
-                else
-                    this_task::ui()->exitWithFatalError(ex);
-            }
-        });
+            });
 
-        // Make sure the main event loop is not running yet at this point.
-        OVITO_ASSERT(QThread::currentThread()->loopLevel() == 0);
+            // Make sure the main event loop is not running yet at this point.
+            OVITO_ASSERT(QThread::currentThread()->loopLevel() == 0);
+
+        }
+        catch(...) {
+            // Startup failed. Make sure the MainWindowUI gets properly shut down.
+            this_task::ui()->shutdown();
+            // The main window has been closed but not destroyed yet. Process posted events
+            // to ensure that the MainWindow destructor gets called.
+            QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+            throw;
+        }
     }
     catch(OperationCanceled) {
         return false;

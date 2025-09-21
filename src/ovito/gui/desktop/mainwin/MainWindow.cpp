@@ -447,7 +447,7 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
 ******************************************************************************/
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    bool successfulShutdown = handleExceptions([&] {
+    bool successfulShutdown = handleExceptions<true>([&] {
         // Let the user save changes made to the current dataset.
         if(isVisible())
             ui().askForSaveChanges();
