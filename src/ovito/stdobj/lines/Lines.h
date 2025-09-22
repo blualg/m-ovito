@@ -72,6 +72,13 @@ public:
     VectorVis::VectorData getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
                                            const RendererResourceCache::ResourceFrame& visCache) const override;
 
+    /// Returns whether this container can be appended to or not - throws an exception if appending is impossible.
+    virtual bool isAppendable() const override
+    {
+        throw Exception(tr("Lines property containers cannot be appended to."));
+        return false;
+    }
+
 private:
 
     /// Tests whether the given spatial point is culled by the cutting planes set for this object.

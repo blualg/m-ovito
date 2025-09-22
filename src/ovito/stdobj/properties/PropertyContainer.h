@@ -257,6 +257,18 @@ public:
     /// Generates the info string to be displayed in the OVITO status bar for an element from this container.
     virtual QString elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path = {}) const;
 
+    /// Returns whether this container can be appended to or not - throws an exception if appending is impossible.
+    /// This is used in the PropertyContainer.append() python method.
+    virtual bool isAppendable() const { return true; }
+
+    /// Returns whether a property by name is a standard property.
+    /// This is used in the PropertyContainer.append() python method.
+    bool isStandardProperty(const QString& name) const
+    {
+        const int propertyID = getOOMetaClass().standardPropertyTypeId(name);
+        return getOOMetaClass().isValidStandardPropertyId(propertyID);
+    }
+
 public:
 
     class OVITO_STDOBJ_EXPORT Grower
