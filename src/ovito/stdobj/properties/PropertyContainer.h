@@ -257,17 +257,9 @@ public:
     /// Generates the info string to be displayed in the OVITO status bar for an element from this container.
     virtual QString elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path = {}) const;
 
-    /// Throws an exception if appending is impossible.
-    /// This is used in the PropertyContainer.append() python method.
+    /// Throws an exception if appending is not supported by this container type.
+    /// This is used in the PropertyContainer.append() Python method.
     virtual void checkAppendability() const {}
-
-    /// Returns whether a property by name is a standard property.
-    /// This is used in the PropertyContainer.append() python method.
-    bool isStandardProperty(const QString& name) const
-    {
-        const int propertyID = getOOMetaClass().standardPropertyTypeId(name);
-        return getOOMetaClass().isValidStandardPropertyId(propertyID);
-    }
 
 public:
 

@@ -72,9 +72,9 @@ public:
     VectorVis::VectorData getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
                                            const RendererResourceCache::ResourceFrame& visCache) const override;
 
-    /// Throws an exception if appending is impossible.
-    /// This is used in the PropertyContainer.append() python method.
-    virtual void checkAppendability() const override { throw Exception(tr("Lines property containers cannot be appended to.")); }
+    /// Throws an exception if appending is not supported by this container type.
+    /// This is used in the PropertyContainer.append() Python method.
+    virtual void checkAppendability() const override { throw Exception(tr("Lines property containers cannot be appended to. You should use the Lines.create_line() method instead.")); }
 
 private:
 
