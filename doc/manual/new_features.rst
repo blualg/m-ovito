@@ -4,6 +4,12 @@
 Changelog
 =========
 
+----------------------------
+Version 3.14.1 (DD-MMM-2025)
+----------------------------
+
+- Add :py:meth:`ovito.data.PropertyContainer.append` method to extend a property container with new items.
+
 .. sidebar::
 
   * `Download this version <https://www.ovito.org/download_history/#3.14.0>`__

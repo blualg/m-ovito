@@ -124,12 +124,9 @@ public:
     /// Generates the info string to be displayed in the OVITO status bar for an element from this container.
     virtual QString elementInfoString(size_t elementIndex, const ConstDataObjectRefPath& path = {}) const override;
 
-    /// Returns whether this container can be appended to or not - throws an exception if appending is impossible.
-    virtual bool isAppendable() const override
-    {
-        throw Exception(tr("Voxel grid property containers cannot be appended to."));
-        return false;
-    }
+    /// Throws an exception if appending is impossible.
+    /// This is used in the PropertyContainer.append() python method.
+    virtual void checkAppendability() const override { throw Exception(tr("Voxel grid property containers cannot be appended to.")); }
 
 protected:
 
