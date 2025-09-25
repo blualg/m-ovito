@@ -78,6 +78,7 @@ INSTALL(CODE "
         \"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/platforms\"
         \"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/iconengines\"
         \"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/networkinformation\"
+        \"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/styles\"
         \"\${CMAKE_INSTALL_PREFIX}/${_qtplugins_dest_dir}/tls\"
         /opt/local/lib)
 
@@ -149,11 +150,12 @@ INSTALL(CODE "
     # Extend rpath information of the PySide/Shiboken libraries, such that they will be found an runtime.
     SET(QT_LIB_INSTALL_PATH \"${_qt_source_dir}/lib\")
     FOREACH(lib \${PYSIDE_DYNLIBS} \${PYSIDE_SOLIBS} \${SHIBOKEN_DYNLIBS} \${SHIBOKEN_SOLIBS})
-        MESSAGE(\"-- Removing '\${QT_LIB_INSTALL_PATH}' from rpaths of \${lib}\")
+        MESSAGE(\"-- Extending rpaths of \${lib}\")
+        # Before we can do a -add_rpath, we need to remove any existing rpath entries. Otherwise, install_name_tool may fail with an error due to duplicate rpaths.
         EXECUTE_PROCESS(COMMAND install_name_tool -delete_rpath \"@loader_path/\" \"\${lib}\" COMMAND_ECHO STDERR)
+        EXECUTE_PROCESS(COMMAND install_name_tool -delete_rpath \"@loader_path/../shiboken6/\" \"\${lib}\" COMMAND_ECHO STDERR)
         EXECUTE_PROCESS(COMMAND install_name_tool -delete_rpath \"\${QT_LIB_INSTALL_PATH}\" \"\${lib}\" COMMAND_ECHO STDERR)
-        MESSAGE(\"-- Adding rpath to \${lib}\")
-        EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@executable_path/../Frameworks/\" -add_rpath \"@loader_path/\" \"\${lib}\" COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDERR)
+        EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@executable_path/../Frameworks/\" -add_rpath \"@loader_path/\" -add_rpath \"@loader_path/../shiboken6/\" \"\${lib}\" COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDERR)
     ENDFOREACH()
 
 ")
