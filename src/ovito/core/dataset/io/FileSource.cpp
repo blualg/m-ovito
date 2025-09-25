@@ -240,6 +240,8 @@ void FileSource::setListOfFrames(QVector<FileSourceImporter::Frame> frames)
 
     // Adjust the global animation length to match the new number of source frames.
     notifyDependents(ReferenceEvent::AnimationFramesChanged);
+    // The active frame is part of the source's UI title.
+    notifyDependents(ReferenceEvent::TitleChanged);
 
     if(this_task::isInteractive()) {
         if(dataCollectionFrame() < 0 && !_originallySelectedFilename.contains(QChar('*'))) {
