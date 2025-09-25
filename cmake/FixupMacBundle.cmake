@@ -152,6 +152,7 @@ INSTALL(CODE "
     FOREACH(lib \${PYSIDE_DYNLIBS} \${PYSIDE_SOLIBS} \${SHIBOKEN_DYNLIBS} \${SHIBOKEN_SOLIBS})
         MESSAGE(\"-- Removing '\${QT_LIB_INSTALL_PATH}' from rpaths of \${lib}\")
         EXECUTE_PROCESS(COMMAND install_name_tool -delete_rpath \"@loader_path/\" \"\${lib}\" COMMAND_ECHO STDERR)
+        EXECUTE_PROCESS(COMMAND install_name_tool -delete_rpath \"@loader_path/../shiboken6/\" \"\${lib}\" COMMAND_ECHO STDERR)
         EXECUTE_PROCESS(COMMAND install_name_tool -delete_rpath \"\${QT_LIB_INSTALL_PATH}\" \"\${lib}\" COMMAND_ECHO STDERR)
         MESSAGE(\"-- Adding rpath to \${lib}\")
         EXECUTE_PROCESS(COMMAND install_name_tool -add_rpath \"@executable_path/../Frameworks/\" -add_rpath \"@loader_path/\" -add_rpath \"@loader_path/../shiboken6/\" \"\${lib}\" COMMAND_ERROR_IS_FATAL ANY COMMAND_ECHO STDERR)
