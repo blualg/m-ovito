@@ -9,6 +9,7 @@ Version 3.14.1 (DD-MMM-2025)
 ----------------------------
 
 - Add :py:meth:`ovito.data.PropertyContainer.append` method to extend a property container with new items.
+- Add warning when rendering an animation without saving the result to disk.
 
 .. sidebar::
 

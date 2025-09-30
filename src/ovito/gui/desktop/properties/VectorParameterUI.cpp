@@ -79,7 +79,7 @@ void VectorParameterUI::updatePropertyValue()
                     }
                 }
                 else if(_componentCount == 2) {
-                    if(currentValue.canConvert<Vector2>()) {
+                if(currentValue.canConvert<Vector2>()) {
                         Vector2 val = currentValue.value<Vector2>();
                         val[_componentIndex] = spinner()->floatValue();
                         currentValue.setValue(val);
