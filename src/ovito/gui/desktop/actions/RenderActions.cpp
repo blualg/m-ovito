@@ -53,7 +53,7 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
         if(!renderSettings)
             throw Exception(tr("Cannot render without an active RenderSettings object."));
 
-        // Validate save to file option.
+        // Validate save-to-file option if an animation is being rendered.
         if((renderSettings->renderingRangeType() == RenderSettings::ANIMATION_INTERVAL ||
             renderSettings->renderingRangeType() == RenderSettings::CUSTOM_INTERVAL) &&
            (!renderSettings->saveToFile())) {
@@ -62,17 +62,16 @@ void WidgetActionManager::on_RenderActiveViewport_triggered()
 
             // Show a message box.
             MessageDialog msgBox(QMessageBox::Warning, tr("Output will not be saved"),
-                                 tr("You are about to render an animation without saving the result."), QMessageBox::Yes | QMessageBox::No,
+                                 tr("You are about to render an animation without saving it to disk."), QMessageBox::Yes | QMessageBox::No,
                                  mainWindow());
             msgBox.setDefaultButton(QMessageBox::No);
             msgBox.setEscapeButton(QMessageBox::No);
             msgBox.setInformativeText(
                 tr("You did not check the \"Save to file\" option while rendering an animation. "
-                   "This means the rendered frames will not be written to disk. "
-                   "You will have no way to access or use the rendered animation.\n\n"
+                   "This means the rendered frames will be lost.\n\n"
                    "Do you want to continue rendering anyway?"));
             int result = msgBox.exec();
-            if(result == QMessageBox::No) {
+            if(result != QMessageBox::Yes) {
                 // Early exit
                 this_task::cancelAndThrow();
             }

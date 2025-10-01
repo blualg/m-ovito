@@ -8,9 +8,9 @@ Changelog
 Version 3.14.1 (DD-MMM-2025)
 ----------------------------
 
-- Add :py:meth:`ovito.data.PropertyContainer.append` method to extend a property container with new items.
-- Add warning when rendering an animation without saving the result to disk.
-- Allow interactive password authentication for SSH connections on Windows.
+- Add warning when :ref:`rendering an animation <usage.rendering.animation>` without saving the result to disk.
+- |ovito-python| Add :py:meth:`PropertyContainer.append() <ovito.data.PropertyContainer.append>` method, which allows adding a new item to a property container and initializing its properties.
+- |ovito-pro| Support interactive authentication for :ref:`OpenSSH connections <usage.import.remote.openssh_connection_method>` on Windows.
 
 .. sidebar::
 

@@ -55,6 +55,10 @@ and settings configured in :file:`~/.ssh/config`.
 
 You may need to specify its location on your computer if the :program:`sftp` tool is not in the system's `PATH`.
 
+.. note::
+
+  Requires OpenSSH version 8.4 or later.
+
 .. _usage.import.remote.troubleshooting:
 
 Troubleshooting connection problems
