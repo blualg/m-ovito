@@ -123,21 +123,24 @@ void OpensshConnection::connectToHost()
             setState(StateError, true);
             return;
         }
-#ifdef Q_OS_UNIX
+
         if(Application::guiEnabled()) {
             // Set SSH_ASKPASS and DISPLAY environment variables to make OpenSSH call the askpass utility.
             QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
             QString askpassPath = QDir(Application::instance()->applicationDirPath()).absolutePath() + QStringLiteral("/ssh_askpass");
             env.insert("SSH_ASKPASS", QDir::toNativeSeparators(askpassPath));
             env.insert("SSH_ASKPASS_REQUIRE", "force");
-            if(!env.contains("DISPLAY"))
+#ifdef Q_OS_UNIX
+            if(!env.contains("DISPLAY")) {
                 env.insert("DISPLAY", ":0");
-            _process->setProcessEnvironment(env);
+            }
             // Use setsid() to detach the sftp process from the terminal and force
             // it to call the askpass utility.
+            // Windows has no terminal so this is not required
             _process->setChildProcessModifier([] { ::setsid(); });
-        }
 #endif
+            _process->setProcessEnvironment(env);
+        }
         _process->start();
     }
 }
