@@ -36,7 +36,6 @@
 #include <ovito/core/rendering/RenderSettings.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/core/app/PluginManager.h>
-#include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include "RenderSettingsEditor.h"
 
 namespace Ovito {
@@ -68,7 +67,6 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
     layout->setContentsMargins(4,4,4,4);
 
     // Rendering range
-    IntegerRadioButtonParameterUI* renderingRangeTypeUI;
     {
         QGroupBox* groupBox = new QGroupBox(tr("Rendering range"));
         layout->addWidget(groupBox);
@@ -81,7 +79,8 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         layout2c->setSpacing(2);
         layout2->addLayout(layout2c);
 
-        renderingRangeTypeUI = createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(RenderSettings::renderingRangeType));
+        IntegerRadioButtonParameterUI* renderingRangeTypeUI =
+            createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(RenderSettings::renderingRangeType));
 
         QRadioButton* currentFrameButton = renderingRangeTypeUI->addRadioButton(RenderSettings::CURRENT_FRAME, tr("Single frame"));
         layout2c->addWidget(currentFrameButton, 0, 0, 1, 5);
@@ -170,7 +169,6 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
     }
 
     // Render output
-    StringParameterUI* imageFilenameUI;
     {
         QGroupBox* groupBox = new QGroupBox(tr("Render output"));
         layout->addWidget(groupBox);
@@ -187,7 +185,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
         layout2->addWidget(chooseFilenameBtn, 0, 1);
 
         // Output filename parameter.
-        imageFilenameUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(RenderSettings::imageFilename));
+        StringParameterUI* imageFilenameUI = createParamUI<StringParameterUI>(PROPERTY_FIELD(RenderSettings::imageFilename));
         imageFilenameUI->setEnabled(false);
         layout2->addWidget(imageFilenameUI->textBox(), 1, 0, 1, 2);
     }
@@ -229,30 +227,7 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
     QAction* renderAction = ui().actionManager()->getAction(ACTION_RENDER_ACTIVE_VIEWPORT);
     renderButton->setText(tr("Render active viewport"));
     renderButton->setIcon(renderAction->icon());
-    connect(renderButton, &QPushButton::clicked, this, [=, this]() {
-        if(RenderSettings* rs = static_object_cast<RenderSettings>(editObject())) {
-            if((rs->renderingRangeType() == RenderSettings::ANIMATION_INTERVAL ||
-                rs->renderingRangeType() == RenderSettings::CUSTOM_INTERVAL) &&
-               (!rs->saveToFile())) {
-                MessageDialog msgBox(QMessageBox::Warning, tr("No Output File Path"),
-                                     tr("You are about to render an animation without saving the result."),
-                                     QMessageBox::Yes | QMessageBox::No, parentWindow());
-                msgBox.setDefaultButton(QMessageBox::No);
-                msgBox.setEscapeButton(QMessageBox::No);
-                msgBox.setInformativeText(
-                    tr("You did not check the \"Save to file\" option while rendering an animation. "
-                       "This means the rendered frames will not be written to disk. "
-                       "You will have no way to access or use the rendered animation.\n\n"
-                       "Do you want to continue rendering anyway?"));
-                int result = msgBox.exec();
-                if(result == QMessageBox::No) {
-                    return;
-                }  // Do not render
-            }
-        }
-        // In all other cases fire the render action.
-        renderAction->trigger();
-    });
+    connect(renderButton, &QPushButton::clicked, renderAction, &QAction::trigger);
     connect(renderAllViewportsUI->checkBox(), &QAbstractButton::toggled, this, [=](bool checked) {
         renderButton->setText(checked ? tr("Render all viewports") : tr("Render active viewport"));
     });
