@@ -179,9 +179,11 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
             _animationPlayback->stopAnimationPlayback();
             _animationPlayback->setScene(activeScene());
         }
-        Q_EMIT sceneReplaced(activeScene());
+        // Note: It's important to first update the animation settings object (which store the current animation frame)
+        // before signaling a scene change. This ensures that the UI immediately shows the correct current frame after the scene has changed.
         _activeAnimationSettings.set(this, PROPERTY_FIELD(activeAnimationSettings), activeScene() ? activeScene()->animationSettings() : nullptr);
         _activeSelectionSet.set(this, PROPERTY_FIELD(activeSelectionSet), activeScene() ? activeScene()->selection() : nullptr);
+        Q_EMIT sceneReplaced(activeScene());
     }
     else if(field == PROPERTY_FIELD(activeSelectionSet)) {
         Q_EMIT selectionSetReplaced(activeSelectionSet());

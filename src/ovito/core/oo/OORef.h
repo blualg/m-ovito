@@ -228,7 +228,7 @@ public:
 
     /// Internal factory method, which is only used to implement OvitoClass::createInstance().
     static this_type createInstanceInternal(ObjectInitializationFlags flags) {
-        if constexpr(std::is_base_of_v<Ovito::RefTarget, std::remove_const_t<T>>)
+        if constexpr(std::is_base_of_v<Ovito::RefTarget, T>)
             return create(flags);
         else
             return create();
