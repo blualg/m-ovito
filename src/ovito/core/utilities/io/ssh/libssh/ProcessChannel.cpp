@@ -101,9 +101,7 @@ void ProcessChannel::closeChannel()
         }
 
         if(channel()) {
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0,7,0)
             LibsshWrapper::ssh_remove_channel_callbacks()(channel(), &_channelCallbacks);
-#endif
             if(LibsshWrapper::ssh_channel_close()(channel()) != SSH_OK) {
                 qWarning() << "Failed to close SSH channel:" << errorMessage();
             }
@@ -238,7 +236,6 @@ void ProcessChannel::processState()
             }
             OVITO_ASSERT(connection()->isConnected());
 
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0,7,0)
             // Register callback functions for libssh channel:
             std::memset(&_channelCallbacks, 0, sizeof(_channelCallbacks));
             _channelCallbacks.userdata = this;
@@ -246,7 +243,6 @@ void ProcessChannel::processState()
             _channelCallbacks.channel_exit_status_function = &ProcessChannel::channelExitStatusCallback;
             ssh_callbacks_init(&_channelCallbacks);
             LibsshWrapper::ssh_set_channel_callbacks()(channel(), &_channelCallbacks);
-#endif
 
             // Additionally, to be safe, start a timer to periodically check for incoming data.
             _timerId = startTimer(100);
@@ -299,9 +295,6 @@ void ProcessChannel::processState()
             if(!stderrChannel()->_readBuffer.isEmpty()) {
                 Q_EMIT stderrChannel()->readyRead();
             }
-#if LIBSSH_VERSION_INT < SSH_VERSION_INT(0,11,0)
-            _exitCode = LibsshWrapper::ssh_channel_get_exit_status()(channel());
-#endif
             Q_EMIT finished(_exitCode);
             closeChannel();
         }

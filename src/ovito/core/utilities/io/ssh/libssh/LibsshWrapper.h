@@ -48,9 +48,6 @@ class LibsshWrapper
 public:
     using ssh_channel_close_ptr = int (*)(ssh_channel channel);
     using ssh_channel_free_ptr = void (*)(ssh_channel channel);
-#if LIBSSH_VERSION_INT < SSH_VERSION_INT(0,11,0)
-    using ssh_channel_get_exit_status_ptr = int (*)(ssh_channel channel);
-#endif
     using ssh_channel_is_open_ptr = int (*)(ssh_channel channel);
     using ssh_channel_new_ptr = ssh_channel (*)(ssh_session session);
     using ssh_channel_open_session_ptr = int (*)(ssh_channel channel);
@@ -68,20 +65,11 @@ public:
     using ssh_get_fd_ptr = socket_t (*)(ssh_session session);
     using ssh_get_hexa_ptr = char* (*)(const unsigned char *what, size_t len);
     using ssh_get_publickey_hash_ptr = int (*)(const ssh_key key, enum ssh_publickey_hash_type type, unsigned char **hash, size_t *hlen);
-#if LIBSSH_VERSION_INT > SSH_VERSION_INT(0, 7, 5)
     using ssh_get_server_publickey_ptr = int (*)(ssh_session session, ssh_key *key);
-#else
-    using ssh_get_publickey_ptr = int (*)(ssh_session session, ssh_key *key);
-#endif
     using ssh_get_status_ptr = int (*)(ssh_session session);
     using ssh_is_connected_ptr = int (*)(ssh_session session);
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 8, 0)
     using ssh_session_is_known_server_ptr = enum ssh_known_hosts_e (*)(ssh_session session);
     using ssh_session_update_known_hosts_ptr = int (*)(ssh_session session);
-#else
-    using ssh_is_server_known_ptr = int (*)(ssh_session session);
-    using ssh_write_knownhost_ptr = int (*)(ssh_session session);
-#endif
     using ssh_key_free_ptr = void (*)(ssh_key key);
     using ssh_new_ptr = ssh_session (*)(void);
     using ssh_options_get_ptr = int (*)(ssh_session session, enum ssh_options_e type, char **value);
@@ -103,19 +91,14 @@ public:
     using ssh_userauth_kbdint_getprompt_ptr = const char* (*)(ssh_session session, unsigned int i, char *echo);
     using ssh_userauth_list_ptr = int (*)(ssh_session session, const char *username);
     using _ssh_log_ptr = void (*)(int verbosity, const char *function, const char *format, ...);
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0,7,0)
     using ssh_set_channel_callbacks_ptr = int (*)(ssh_channel channel, ssh_channel_callbacks cb);
     using ssh_remove_channel_callbacks_ptr = int (*)(ssh_channel channel, ssh_channel_callbacks cb);
-#endif
 
     /// Loads libssh into the process and resolves the function pointers.
     static void initialize();
 
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_channel_close)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_channel_free)
-#if LIBSSH_VERSION_INT < SSH_VERSION_INT(0,11,0)
-    OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_channel_get_exit_status)
-#endif
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_channel_is_open)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_channel_new)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_channel_open_session)
@@ -133,20 +116,11 @@ public:
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_get_fd)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_get_hexa)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_get_publickey_hash)
-#if LIBSSH_VERSION_INT > SSH_VERSION_INT(0, 7, 5)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_get_server_publickey)
-#else
-    OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_get_publickey)
-#endif
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_get_status)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_is_connected)
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 8, 0)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_session_is_known_server)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_session_update_known_hosts)
-#else
-    OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_is_server_known)
-    OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_write_knownhost)
-#endif
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_key_free)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_new)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_options_get)
@@ -168,10 +142,8 @@ public:
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_kbdint_getprompt)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_list)
     OVITO_LIBSSH_RESOLVE_FUNCTION(_ssh_log)
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0,7,0)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_set_channel_callbacks)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_remove_channel_callbacks)
-#endif
 
 private:
 

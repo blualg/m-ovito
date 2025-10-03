@@ -110,7 +110,7 @@ void LibsshConnection::processStateGuard()
     processState();
     _processingState = false;
 
-    if(_writeNotifier && _enableWritableNofifier) {
+    if(_writeNotifier && _enableWritableNotifier) {
         enableWritableSocketNotifier();
     }
 }
@@ -212,7 +212,6 @@ void LibsshConnection::processState()
         return;
 
     case StateServerIsKnown:
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 8, 0)
         switch(auto knownState = LibsshWrapper::ssh_session_is_known_server()(_session)) {
         case SSH_KNOWN_HOSTS_ERROR:
             setState(StateError, false);
@@ -231,26 +230,6 @@ void LibsshConnection::processState()
             tryNextAuth();
             return;
         }
-#else
-        switch(auto knownState = LibsshWrapper::ssh_is_server_known()(_session)) {
-        case SSH_SERVER_ERROR:
-            setState(StateError, false);
-            return;
-
-        case SSH_SERVER_NOT_KNOWN:
-        case SSH_SERVER_KNOWN_CHANGED:
-        case SSH_SERVER_FOUND_OTHER:
-        case SSH_SERVER_FILE_NOT_FOUND:
-            _unknownHostType = static_cast<HostState>(knownState);
-            setState(StateUnknownHost, false);
-            return;
-
-        case SSH_SERVER_KNOWN_OK:
-            _unknownHostType = HostKnown;
-            tryNextAuth();
-            return;
-        }
-#endif
         return;
 
     case StateAuthContinue:
@@ -373,7 +352,7 @@ void LibsshConnection::destroySocketNotifiers()
 void LibsshConnection::enableWritableSocketNotifier()
 {
     if(_processingState) {
-        _enableWritableNofifier = true;
+        _enableWritableNotifier = true;
     }
     else if(_writeNotifier) {
         auto status = LibsshWrapper::ssh_get_status()(_session);
@@ -401,7 +380,7 @@ void LibsshConnection::handleSocketReadable()
 ******************************************************************************/
 void LibsshConnection::handleSocketWritable()
 {
-    _enableWritableNofifier = false;
+    _enableWritableNotifier = false;
     _writeNotifier->setEnabled(false);
     processStateGuard();
 }
@@ -539,17 +518,10 @@ void LibsshConnection::handleAuthResponse(int rc, UseAuthFlag auth)
 QString LibsshConnection::hostPublicKeyHash()
 {
     ssh_key key;
-#if LIBSSH_VERSION_INT > SSH_VERSION_INT(0, 7, 5)
     if(LibsshWrapper::ssh_get_server_publickey()(_session, &key) != SSH_OK) {
         qWarning() << "Call to ssh_get_server_publickey() failed";
         return {};
     }
-#else
-    if(LibsshWrapper::ssh_get_publickey()(_session, &key) != SSH_OK) {
-        qWarning() << "Call to ssh_get_publickey() failed";
-        return {};
-    }
-#endif
 
     unsigned char* hash;
     size_t hash_len;
@@ -574,11 +546,7 @@ QString LibsshConnection::hostPublicKeyHash()
 ******************************************************************************/
 bool LibsshConnection::markCurrentHostKnown()
 {
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 8, 0)
     switch(LibsshWrapper::ssh_session_update_known_hosts()(_session)) {
-#else
-    switch(LibsshWrapper::ssh_write_knownhost()(_session)) {
-#endif
     case SSH_OK:
         setState(StateServerIsKnown, true);
         return true;

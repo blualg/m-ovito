@@ -37,6 +37,9 @@
 #ifdef min
     #undef min
 #endif
+#if LIBSSH_VERSION_INT < SSH_VERSION_INT(0, 11, 0)
+    #error "Libssh version 0.11.0 or newer is required"
+#endif
 
 namespace Ovito {
 
@@ -47,19 +50,11 @@ class LibsshConnection : public SshConnection
 public:
 
     enum HostState {
-#if LIBSSH_VERSION_INT >= SSH_VERSION_INT(0, 8, 0)
         HostKnown                   = SSH_KNOWN_HOSTS_OK,
         HostUnknown                 = SSH_KNOWN_HOSTS_UNKNOWN,
         HostKeyChanged              = SSH_KNOWN_HOSTS_CHANGED,
         HostKeyTypeChanged          = SSH_KNOWN_HOSTS_OTHER,
         HostKnownHostsFileMissing   = SSH_KNOWN_HOSTS_NOT_FOUND
-#else
-        HostKnown                   = SSH_SERVER_KNOWN_OK,
-        HostUnknown                 = SSH_SERVER_NOT_KNOWN,
-        HostKeyChanged              = SSH_SERVER_KNOWN_CHANGED,
-        HostKeyTypeChanged          = SSH_SERVER_FOUND_OTHER,
-        HostKnownHostsFileMissing   = SSH_SERVER_FILE_NOT_FOUND
-#endif
     };
     Q_ENUM(HostState)
 
@@ -212,19 +207,19 @@ private:
     /// Chooses next authentication method to try.
     void tryNextAuth();
 
-    /// Handles the server's reponse to an authentication attempt.
+    /// Handles the server's response to an authentication attempt.
     void handleAuthResponse(int rc, UseAuthFlag auth);
 
     /// This is a callback that gets called by libssh whenever a passphrase is required.
     static int authenticationCallback(const char* prompt, char* buf, size_t len, int echo, int verify, void* userdata);
 
-    /// The libssh sesssion handle.
+    /// The libssh session handle.
     ssh_session _session = nullptr;
 
     /// Indicates that the password for the connection has been set.
     bool _passwordSet = false;
 
-    /// The passwort that has been set.
+    /// The password that has been set.
     QString _password;
 
     /// The private key passphrase entered by the user.
@@ -246,7 +241,7 @@ private:
 
     QSocketNotifier* _readNotifier = nullptr;
     QSocketNotifier* _writeNotifier = nullptr;
-    bool _enableWritableNofifier = false;
+    bool _enableWritableNotifier = false;
 
     /// The structure with the callback functions registered with libssh.
     struct ssh_callbacks_struct _sessionCallbacks;
