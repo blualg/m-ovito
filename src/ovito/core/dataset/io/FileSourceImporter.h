@@ -197,7 +197,7 @@ public:
     //////////////////////////// Specific methods ////////////////////////////////
 
     /// This method indicates whether a wildcard pattern should be automatically generated
-    /// when the user picks a new input filename. The default implementation returns if isMultiTimestepFile is set to false.
+    /// when the user picks a new input filename. The default implementation returns true if isMultiTimestepFile is set to false.
     /// Subclasses can override this method to disable generation of wildcard patterns.
     virtual bool autoGenerateWildcardPattern() { return !isMultiTimestepFile(); }
 

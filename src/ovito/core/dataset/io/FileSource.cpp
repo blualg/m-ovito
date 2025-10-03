@@ -466,7 +466,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
 
     // Return the active future when the frame loading process is currently in progress.
     if(_framesListFuture) {
-        if(!forceRescan || !_framesListFuture.isFinished())
+        if(!forceRescan && _framesListFuture.isFinished())
             return _framesListFuture;
         _framesListFuture.reset();
     }
@@ -496,7 +496,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
 
     // Reset _framesListFuture when finished.
     _framesListFuture.finally(ObjectExecutor(this), [this](Task& task) noexcept {
-        if(_framesListFuture.task().get() == &task)
+        if(_framesListFuture && _framesListFuture.task().get() == &task)
             _framesListFuture.reset();
     });
 
@@ -664,12 +664,27 @@ void FileSource::removeWildcardFilePattern()
 {
     for(const QUrl& url : sourceUrls()) {
         if(FileSourceImporter::isWildcardPattern(url)) {
+            // If the currently loaded frame is valid, use its filename as new source URL without a wildcard.
             if(dataCollectionFrame() >= 0 && dataCollectionFrame() < frames().size()) {
                 const QUrl& currentUrl = frames()[dataCollectionFrame()].sourceFile;
                 if(currentUrl != url) {
                     setSource({currentUrl}, importer(), false);
                     return;
                 }
+            }
+            // If no frame has been loaded yet, e.g. during initial import, use the _originallySelectedFilename as new source URL.
+            // This is the filename that the user originally picked in the file selection dialog.
+            else if(dataCollectionFrame() < 0 && !_originallySelectedFilename.isEmpty() && !_originallySelectedFilename.contains(QChar('*'))) {
+                for(const auto frame : frames()) {
+                    if(frame.sourceFile.fileName() == _originallySelectedFilename) {
+                        const QUrl& currentUrl = frame.sourceFile;
+                        if(currentUrl != url) {
+                            setSource({currentUrl}, importer(), false);
+                            return;
+                        }
+                    }
+                }
+                break; // No matching frame found.
             }
         }
     }

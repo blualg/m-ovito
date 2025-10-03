@@ -460,8 +460,12 @@ Future<PipelineFlowState> FileSourceImporter::loadFrame(const LoadOperationReque
         // Only do this if the file is being newly imported by the user.
         if(frameLoader->additionalFramesDetected() && frameLoader->loadRequest().isNewlyImportedFile && !self->isMultiTimestepFile()) {
             // Note: Changing a parameter of the file importer must be done in the main thread.
-            launchDetached(ObjectExecutor(self), [self]() {
+            launchDetached(ObjectExecutor(self), [self, fileSource=dynamic_object_cast<FileSource>(frameLoader->pipelineNode().lock())]() {
                 self->setMultiTimestepFile(true);
+                // Also remove wildcard pattern if there is one. Typically, the user just wants to load
+                // a single file if they selected a file containing multiple trajectory frames.
+                if(fileSource)
+                    const_cast<FileSource*>(fileSource.get())->setAutoGenerateFilePattern(false);
             });
         }
 
