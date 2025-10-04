@@ -98,9 +98,10 @@ Q_SIGNALS:
     void chooseAuth();
     void needPassword();        ///< Use setPassword() to set password
     void needKbiAnswers();      ///< Use setKbiAnswers() set answers
+    void needPKCS11Credentials(); ///< Use LibsshConnection::setPKCS11Uri() and setPKCS11Pin() to set credentials
     void authFailed(int auth);  ///< One authentication attempt has failed
     void allAuthsFailed();      ///< All authentication attempts have failed
-    void needPassphrase(QString prompt);      ///< Use setPassprhase() to set passphrase
+    void needPassphrase(QString prompt);      ///< Use LibsshConnection::setPassphrase() to set passphrase
 
 protected:
 
@@ -119,10 +120,12 @@ protected:
         StateAuthNeedPassword       = 11,
         StateAuthKbi                = 12,
         StateAuthKbiQuestions       = 13,
-        StateAuthAllFailed          = 14,
-        StateOpened                 = 15,
-        StateError                  = 16,
-        StateCanceledByUser         = 17
+        StateAuthPKCS11             = 14,
+        StateAuthNeedPKCS11         = 15,
+        StateAuthAllFailed          = 16,
+        StateOpened                 = 17,
+        StateError                  = 18,
+        StateCanceledByUser         = 19
     };
 
     /// Sets the internal state variable to a new value.

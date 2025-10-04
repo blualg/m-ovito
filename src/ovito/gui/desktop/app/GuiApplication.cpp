@@ -149,6 +149,7 @@ QCoreApplication* GuiApplication::createQtApplicationImpl(bool supportGui, int& 
             fileManager().registerAskUserForPasswordImpl(&GuiApplication::askUserForPassword);
             fileManager().registerAskUserForKbiResponseImpl(&GuiApplication::askUserForKbiResponse);
             fileManager().registerAskUserForKeyPassphraseImpl(&GuiApplication::askUserForKeyPassphrase);
+            fileManager().registerAskUserForPKCS11CredentialsImpl(&GuiApplication::askUserForPKCS11Credentials);
             fileManager().registerDetectedUnknownSshServerImpl(&GuiApplication::detectedUnknownSshServer);
         }
 #endif
@@ -570,6 +571,100 @@ bool GuiApplication::askUserForKbiResponse(const QString& hostname, const QStrin
         tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p></p>Please enter your response to the following question sent by the SSH server:</p><p>%2 <b>%3</b></p>").arg(hostname.toHtmlEscaped()).arg(instruction.toHtmlEscaped()).arg(question.toHtmlEscaped()),
         showAnswer ? QLineEdit::Normal : QLineEdit::Password, QString(), &ok);
     return ok;
+}
+
+/******************************************************************************
+* Asks the user for PKCS#11 smartcard credentials.
+******************************************************************************/
+bool GuiApplication::askUserForPKCS11Credentials(const QString& hostname, const QString& username, QString& pkcs11Uri, QString& pin)
+{
+    // If URI is already set (e.g., from SSH config), only ask for PIN
+    bool uriAlreadySet = !pkcs11Uri.isEmpty();
+
+    // Create a custom dialog for collecting URI and/or PIN
+    QDialog dialog(nullptr);
+    dialog.setWindowTitle(tr("SSH PKCS#11 Smartcard Authentication"));
+
+    QVBoxLayout* layout = new QVBoxLayout(&dialog);
+
+    // Info label
+    QString infoText;
+    if(uriAlreadySet) {
+        infoText = tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH using PKCS#11 smartcard authentication.</p>"
+                     "<p>Please enter the PIN for user <b>%2</b>:</p>")
+                   .arg(hostname.toHtmlEscaped()).arg(username.toHtmlEscaped());
+    } else {
+        infoText = tr("<p>OVITO is connecting to remote host <b>%1</b> via SSH.</p>"
+                     "<p>Please provide your PKCS#11 smartcard credentials for user <b>%2</b>:</p>")
+                   .arg(hostname.toHtmlEscaped()).arg(username.toHtmlEscaped());
+    }
+    QLabel* infoLabel = new QLabel(infoText);
+    infoLabel->setWordWrap(true);
+    layout->addWidget(infoLabel);
+
+    QLineEdit* uriEdit = nullptr;
+    if(uriAlreadySet) {
+        // Show the configured URI as read-only info
+        QLabel* uriInfoLabel = new QLabel(tr("<b>PKCS#11 URI:</b> %1").arg(pkcs11Uri.toHtmlEscaped()));
+        uriInfoLabel->setWordWrap(true);
+        uriInfoLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        layout->addWidget(uriInfoLabel);
+        layout->addSpacing(10);
+    } else {
+        // URI input (only if not already set)
+        QLabel* uriLabel = new QLabel(tr("PKCS#11 URI:"));
+        layout->addWidget(uriLabel);
+
+        uriEdit = new QLineEdit(&dialog);
+        uriEdit->setPlaceholderText(tr("pkcs11:token=MyToken;object=MyKey;type=private"));
+        uriEdit->setText(pkcs11Uri);
+        layout->addWidget(uriEdit);
+
+        QLabel* uriHintLabel = new QLabel(tr("<small>Example: pkcs11:token=MySmartCard;object=MyPrivateKey;type=private</small>"));
+        uriHintLabel->setWordWrap(true);
+        layout->addWidget(uriHintLabel);
+
+        layout->addSpacing(10);
+    }
+
+    // PIN input (always shown)
+    QLabel* pinLabel = new QLabel(uriAlreadySet ? tr("PIN:") : tr("PIN (optional if included in URI):"));
+    layout->addWidget(pinLabel);
+
+    QLineEdit* pinEdit = new QLineEdit(&dialog);
+    pinEdit->setEchoMode(QLineEdit::Password);
+    pinEdit->setPlaceholderText(tr("Enter PIN"));
+    pinEdit->setText(pin);
+    layout->addWidget(pinEdit);
+
+    // Buttons
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(
+        QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+    layout->addWidget(buttonBox);
+
+    // Enable/disable OK button based on URI validity (only if URI needs to be entered)
+    QPushButton* okButton = buttonBox->button(QDialogButtonBox::Ok);
+    if(!uriAlreadySet && uriEdit) {
+        // Update OK button state when URI changes
+        auto updateOkButton = [okButton, uriEdit]() {
+            okButton->setEnabled(!uriEdit->text().trimmed().isEmpty());
+        };
+        connect(uriEdit, &QLineEdit::textChanged, updateOkButton);
+        updateOkButton(); // Set initial state
+    }
+
+    if(dialog.exec() == QDialog::Accepted) {
+        if(!uriAlreadySet && uriEdit) {
+            pkcs11Uri = uriEdit->text().trimmed();
+        }
+        // If URI was already set, keep it unchanged
+        pin = pinEdit->text();
+        return !pkcs11Uri.isEmpty();
+    }
+
+    return false;
 }
 
 /******************************************************************************

@@ -90,6 +90,9 @@ public:
     using ssh_userauth_kbdint_setanswer_ptr = int (*)(ssh_session session, unsigned int i, const char *answer);
     using ssh_userauth_kbdint_getprompt_ptr = const char* (*)(ssh_session session, unsigned int i, char *echo);
     using ssh_userauth_list_ptr = int (*)(ssh_session session, const char *username);
+    using ssh_userauth_publickey_auto_ptr = int (*)(ssh_session session, const char *username, const char *passphrase);
+    using ssh_userauth_publickey_ptr = int (*)(ssh_session session, const char *username, const ssh_key privkey);
+    using ssh_pki_import_privkey_file_ptr = int (*)(const char *filename, const char *passphrase, ssh_auth_callback auth_fn, void *auth_data, ssh_key *pkey);
     using _ssh_log_ptr = void (*)(int verbosity, const char *function, const char *format, ...);
     using ssh_set_channel_callbacks_ptr = int (*)(ssh_channel channel, ssh_channel_callbacks cb);
     using ssh_remove_channel_callbacks_ptr = int (*)(ssh_channel channel, ssh_channel_callbacks cb);
@@ -141,6 +144,9 @@ public:
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_kbdint_setanswer)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_kbdint_getprompt)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_list)
+    OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_publickey_auto)
+    OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_userauth_publickey)
+    OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_pki_import_privkey_file)
     OVITO_LIBSSH_RESOLVE_FUNCTION(_ssh_log)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_set_channel_callbacks)
     OVITO_LIBSSH_RESOLVE_FUNCTION(ssh_remove_channel_callbacks)

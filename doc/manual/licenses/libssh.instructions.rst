@@ -52,6 +52,7 @@ The following commands were used to build it::
       -DWITH_SERVER=OFF \
       -DWITH_EXAMPLES=OFF \
       -DWITH_PKCS11_URI=ON \
+      -DWITH_PKCS11_PROVIDER=ON \
       -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
       ..
   cmake --build . --parallel && cmake --install .

@@ -137,6 +137,9 @@ public:
     /// Registers an application-function that is used by the FileManager to ask the user for the login password for a SSH server.
     template<typename Function> void registerAskUserForKbiResponseImpl(Function&& f) { OVITO_ASSERT(!_askUserForKbiResponseImpl); _askUserForKbiResponseImpl = std::forward<Function>(f); }
 
+    /// Registers an application-function that is used by the FileManager to ask the user for PKCS#11 smartcard credentials.
+    template<typename Function> void registerAskUserForPKCS11CredentialsImpl(Function&& f) { OVITO_ASSERT(!_askUserForPKCS11CredentialsImpl); _askUserForPKCS11CredentialsImpl = std::forward<Function>(f); }
+
     /// Registers an application-function that is used by the FileManager to inform the user about an unknown SSH host.
     template<typename Function> void registerDetectedUnknownSshServerImpl(Function&& f) { OVITO_ASSERT(!_detectedUnknownSshServerImpl); _detectedUnknownSshServerImpl = std::forward<Function>(f); }
 #endif
@@ -166,6 +169,10 @@ protected:
     /// \return True on success, false if user has canceled the operation.
     bool askUserForKbiResponse(const QString& hostname, const QString& username, const QString& instruction, const QString& question, bool showAnswer, QString& answer);
 
+    /// \brief Asks the user for PKCS#11 smartcard credentials.
+    /// \return True on success, false if user has canceled the operation.
+    bool askUserForPKCS11Credentials(const QString& hostname, const QString& username, QString& pkcs11Uri, QString& pin);
+
     /// \brief Informs the user about an unknown SSH host.
     bool detectedUnknownSshServer(const QString& hostname, const QString& unknownHostMessage, const QString& hostPublicKeyHash);
 #endif
@@ -184,6 +191,9 @@ private Q_SLOTS:
 
     /// Is called whenever a SSH connection to a server requires keyboard interactive authentication.
     void needKbiAnswers();
+
+    /// Is called whenever a SSH connection requires PKCS#11 smartcard credentials.
+    void needPKCS11Credentials();
 
     /// Is called when an authentication attempt for a SSH connection failed.
     void sshAuthenticationFailed(int auth);
@@ -235,6 +245,9 @@ private:
 
     /// Function that asks the user for the answer to a keyboard-interactive question sent by the SSH server.
     fu2::unique_function<bool(const QString&, const QString&, const QString&, const QString&, bool, QString&)> _askUserForKbiResponseImpl;
+
+    /// Function that asks the user for PKCS#11 smartcard credentials.
+    fu2::unique_function<bool(const QString&, const QString&, QString&, QString&)> _askUserForPKCS11CredentialsImpl;
 
     /// Function that informs the user about an unknown SSH host.
     fu2::unique_function<bool(const QString&, const QString&, const QString&)> _detectedUnknownSshServerImpl;

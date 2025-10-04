@@ -123,6 +123,8 @@ void SshConnection::setState(State state, bool emitStateChangedSignal)
         case StateAuthNeedPassword: Q_EMIT needPassword();            break;
         case StateAuthKbi:                                            break;
         case StateAuthKbiQuestions: Q_EMIT needKbiAnswers();          break;
+        case StateAuthPKCS11:                                         break;
+        case StateAuthNeedPKCS11:   Q_EMIT needPKCS11Credentials();   break;
         case StateAuthAllFailed:    Q_EMIT allAuthsFailed();          break;
         case StateOpened:           Q_EMIT connected();               break;
         case StateError:            Q_EMIT error();                   break;
