@@ -466,7 +466,7 @@ SharedFuture<QVector<FileSourceImporter::Frame>> FileSource::requestFrameList(bo
 
     // Return the active future when the frame loading process is currently in progress.
     if(_framesListFuture) {
-        if(!forceRescan && _framesListFuture.isFinished())
+        if(!forceRescan)
             return _framesListFuture;
         _framesListFuture.reset();
     }
