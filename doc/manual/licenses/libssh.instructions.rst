@@ -26,6 +26,8 @@ The following commands have been used to generate them::
     -DWITH_SERVER=OFF ^
     -DWITH_GSSAPI=OFF ^
     -DWITH_EXAMPLES=OFF ^
+    -DWITH_PKCS11_URI=ON ^
+    -DWITH_PKCS11_PROVIDER=ON ^
     -DOPENSSL_ROOT_DIR=%cd:\=/%/../../openssl ^
     ..
   cmake --build . --config Release --target install
@@ -36,7 +38,7 @@ Linux
 OVITO for Linux includes a shared library that has been built from the unmodified sources of libssh 0.11.3.
 The following commands were used to build it::
 
-  cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DWITH_SERVER=OFF .
+  cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DWITH_SERVER=OFF -DWITH_PKCS11_URI=ON -DWITH_PKCS11_PROVIDER=ON .
   cmake --build . --parallel
   cmake --install .
 
@@ -46,7 +48,6 @@ macOS
 OVITO for macOS includes a shared library that has been built from the unmodified sources of libssh 0.11.3.
 The following commands were used to build it::
 
-  export OPENSSL_ROOT_DIR=...
   cmake -G Ninja \
       -DCMAKE_BUILD_TYPE=Release \
       -DWITH_SERVER=OFF \

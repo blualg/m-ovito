@@ -34,17 +34,6 @@ LibsshConnection::LibsshConnection(const SshConnectionParameters& serverInfo, QO
     _password = serverInfo.password;
 
     connect(this, &SshConnection::stateChanged, this, &LibsshConnection::processStateGuard, Qt::QueuedConnection);
-
-#ifndef OVITO_BUILD_CONDA
-    if(qEnvironmentVariableIsEmpty("OPENSSL_MODULES")) {
-        // Set the OPENSSL_MODULES environment variable to point to the directory where the OpenSSL provider modules
-        // are installed. This is required to enable PKCS#11 support in libssh.
-        QString opensslModulesDir = QStringLiteral("%1/%2/ossl-modules")
-            .arg(QDir(Application::instance()->applicationDirPath()).absolutePath())
-            .arg(QStringLiteral(OVITO_PLUGINS_RELATIVE_PATH));
-        qputenv("OPENSSL_MODULES", QDir::toNativeSeparators(opensslModulesDir).toUtf8());
-    }
-#endif
 }
 
 /******************************************************************************
@@ -207,6 +196,18 @@ void LibsshConnection::processState()
             }
             ::_ssh_log(SSH_LOG_PROTOCOL, "LibsshConnection::processState()", "overriding list of acceptable authentication methods: %i", (int)_useAuths);
         }
+
+#ifndef OVITO_BUILD_CONDA
+        if(qEnvironmentVariableIsEmpty("OPENSSL_MODULES")) {
+            // Set the OPENSSL_MODULES environment variable to point to the directory where the OpenSSL provider modules
+            // are installed. This is required to enable PKCS#11 support in libssh.
+            QString opensslModulesDir = QStringLiteral("%1/%2/ossl-modules")
+                .arg(QDir(Application::instance()->applicationDirPath()).absolutePath())
+                .arg(QStringLiteral(OVITO_PLUGINS_RELATIVE_PATH));
+            qputenv("OPENSSL_MODULES", QDir::toNativeSeparators(opensslModulesDir).toUtf8());
+            ::_ssh_log(SSH_LOG_PROTOCOL, "LibsshConnection::processState()", "setting OpenSSL modules directory: %s", qPrintable(opensslModulesDir));
+        }
+#endif
 
         // Register authentication callback.
         std::memset(&_sessionCallbacks, 0, sizeof(_sessionCallbacks));
