@@ -216,17 +216,9 @@ IF(OVITO_BUILD_SSH_CLIENT)
         utilities/io/ssh/libssh/ProcessChannel.cpp
         utilities/io/ssh/libssh/ScpChannel.cpp
         utilities/io/ssh/libssh/LsChannel.cpp
-        utilities/io/ssh/libssh/LibsshWrapper.cpp
     )
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_SSH_CLIENT)
-    IF(OVITO_LIBSSH_RUNTIME_LINKING)
-        TARGET_COMPILE_DEFINITIONS(Core PRIVATE OVITO_LIBSSH_RUNTIME_LINKING)
-        TARGET_INCLUDE_DIRECTORIES(Core PRIVATE "${LIBSSH_INCLUDE_DIR}")
-        FILE(RELATIVE_PATH OVITO_LIBSSH_RELATIVE_PATH "${OVITO_BINARY_DIRECTORY}" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}")
-        TARGET_COMPILE_DEFINITIONS(Core PRIVATE "OVITO_LIBSSH_RELATIVE_PATH=\"${OVITO_LIBSSH_RELATIVE_PATH}\"")
-    ELSE()
-        TARGET_LINK_LIBRARIES(Core PRIVATE ssh)
-    ENDIF()
+    TARGET_LINK_LIBRARIES(Core PRIVATE ssh)
 ENDIF()
 
 # Link to video encoding lib.
@@ -380,49 +372,40 @@ ENDIF()
 
 # Deploy the libssh library and its dependencies.
 IF(OVITO_BUILD_SSH_CLIENT AND NOT EMSCRIPTEN AND NOT OVITO_BUILD_CONDA)
+
+    # Find OpenSSL 3.0 or newer, needed by libssh.
+    FIND_PACKAGE(OpenSSL 3.0 REQUIRED COMPONENTS Crypto SSL)
+
+    # Get the location of the libssh and OpenSSL libraries.
+    GET_TARGET_PROPERTY(LIBSSH_LIBRARY_LOCATION ssh LOCATION)
+    GET_TARGET_PROPERTY(OPENSSL_CRYPTO_LIBRARY_LOCATION OpenSSL::Crypto LOCATION)
+    GET_TARGET_PROPERTY(OPENSSL_SSL_LIBRARY_LOCATION OpenSSL::SSL LOCATION)
+
     IF(WIN32)
-        # Install libssh.dylib
-        GET_TARGET_PROPERTY(LIBSSH_LIBRARY_LOCATION ssh LOCATION)
+        # Install libssh.dll
         GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_DIR "${LIBSSH_LIBRARY_LOCATION}" PATH)
-        GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_NAME "${LIBSSH_LIBRARY_LOCATION}" NAME_WE)
-        OVITO_INSTALL_SHARED_LIB("${LIBSSH_LIBRARY_DIR}/../bin/${LIBSSH_LIBRARY_NAME}.dll")
+        GET_FILENAME_COMPONENT(LIBSSH_LIBRARY_NAME_WE "${LIBSSH_LIBRARY_LOCATION}" NAME_WE)
+        OVITO_INSTALL_SHARED_LIB("${LIBSSH_LIBRARY_DIR}/../bin/${LIBSSH_LIBRARY_NAME_WE}.dll")
 
-        # Also install the OpenSSL DLLs needed by libssh.
-        SET(OPENSSL_ROOT_DIR "" CACHE PATH "Location of the OpenSSL library installation")
-        IF(NOT OPENSSL_ROOT_DIR)
-            MESSAGE(FATAL_ERROR "Please specify the location of the OpenSSL library by setting the OPENSSL_ROOT_DIR variable.")
-        ENDIF()
-        STRING(REPLACE "\\" "/" _OPENSSL_ROOT_DIR "${OPENSSL_ROOT_DIR}")
-        FILE(GLOB openssl_dlls "${_OPENSSL_ROOT_DIR}/bin/*.dll")
-        IF(NOT openssl_dlls)
-            MESSAGE(FATAL_ERROR "Could not find any OpenSSL DLLs in \"${_OPENSSL_ROOT_DIR}/bin/\". Please check value of OPENSSL_ROOT_DIR path variable.")
-        ENDIF()
-        FOREACH(openssl_dll ${openssl_dlls})
-            OVITO_INSTALL_SHARED_LIB("${openssl_dll}")
-        ENDFOREACH()
-
+        # Also install OpenSSL DLLs needed by libssh.
+        GET_FILENAME_COMPONENT(OPENSSL_CRYPTO_LIBRARY_DIR "${OPENSSL_CRYPTO_LIBRARY_LOCATION}" PATH)
+        GET_FILENAME_COMPONENT(OPENSSL_SSL_LIBRARY_DIR "${OPENSSL_SSL_LIBRARY_LOCATION}" PATH)
+        OVITO_INSTALL_SHARED_LIB("${OPENSSL_CRYPTO_LIBRARY_DIR}/../bin/libcrypto.dll")
+        OVITO_INSTALL_SHARED_LIB("${OPENSSL_SSL_LIBRARY_DIR}/../bin/libssl.dll")
     ELSEIF(APPLE)
+        # Install the OpenSSL provider modules needed by libssh to enable PKCS#11.
+        GET_FILENAME_COMPONENT(OPENSSL_LIBRARY_DIR "${OPENSSL_CRYPTO_LIBRARY_LOCATION}" PATH)
+        INSTALL(FILES "${OPENSSL_LIBRARY_DIR}/ossl-modules/pkcs11.dylib" DESTINATION "${OVITO_RELATIVE_PLUGINS_DIRECTORY}/ossl-modules/")
 
-        IF(OVITO_LIBSSH_RUNTIME_LINKING)
-            # Create a symlink to libssh in the build directory to make it available at runtime.
-            GET_TARGET_PROPERTY(LIBSSH_LIBRARY_LOCATION ssh LOCATION)
-            FILE(MAKE_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}")
-            EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${LIBSSH_LIBRARY_LOCATION}" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/libssh.dylib")
-            # Install libssh in the installation directory to ship it with OVITO.
-            INSTALL(FILES "${LIBSSH_LIBRARY_LOCATION}" DESTINATION "${OVITO_RELATIVE_3RDPARTY_LIBRARY_DIRECTORY}/")
-        ENDIF()
-
+        # Additionally, create a symlink to the provider modules directory in the build directory to make it available during testing.
+        FILE(MAKE_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_PLUGINS_DIRECTORY}/ossl-modules")
+        EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${OPENSSL_LIBRARY_DIR}/ossl-modules/pkcs11.dylib" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_PLUGINS_DIRECTORY}/ossl-modules/pkcs11.dylib")
     ELSEIF(LINUX AND OVITO_REDISTRIBUTABLE_PACKAGE)
-
         # Install libssh.so
-        GET_TARGET_PROPERTY(LIBSSH_LIBRARY_LOCATION ssh LOCATION)
         OVITO_INSTALL_SHARED_LIB("${LIBSSH_LIBRARY_LOCATION}")
 
         # Install OpenSSL (libcrypto.so and libssl.so) needed by libssh.
-        FOREACH(lib libcrypto.so libssl.so)
-            FIND_LIBRARY(openssl_lib_location NAMES ${lib} PATHS /usr/lib /usr/lib64 /usr/local/lib /usr/lib/x86_64-linux-gnu NO_DEFAULT_PATH REQUIRED)
-            OVITO_INSTALL_SHARED_LIB("${openssl_lib_location}")
-            UNSET(openssl_lib_location CACHE)
-        ENDFOREACH()
+        OVITO_INSTALL_SHARED_LIB("${OPENSSL_CRYPTO_LIBRARY_LOCATION}")
+        OVITO_INSTALL_SHARED_LIB("${OPENSSL_SSL_LIBRARY_LOCATION}")
     ENDIF()
 ENDIF()

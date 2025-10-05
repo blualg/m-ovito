@@ -27,7 +27,6 @@
 
 #include <libssh/libssh.h>
 #include <libssh/callbacks.h>
-#include "LibsshWrapper.h"
 
 #include <QSocketNotifier>
 
@@ -120,7 +119,7 @@ public:
     void setKbiAnswers(QStringList answers);
 
     /// Returns the supported authentication methods.
-    AuthMethods supportedAuthMethods() const { return AuthMethods(LibsshWrapper::ssh_userauth_list()(_session, 0)); }
+    AuthMethods supportedAuthMethods() const { return AuthMethods(::ssh_userauth_list(_session, 0)); }
 
     /// Enable or disable one or more authentications.
     void useAuth(UseAuths auths, bool enabled);

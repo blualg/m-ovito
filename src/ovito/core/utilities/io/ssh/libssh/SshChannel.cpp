@@ -40,7 +40,7 @@ SshChannel::SshChannel(LibsshConnection* connection, QObject* parent, bool isStd
 bool SshChannel::atEnd() const
 {
     return !_channel || isOpen() == false || (_readBuffer.isEmpty()
-        && (!LibsshWrapper::ssh_channel_is_open()(_channel) || LibsshWrapper::ssh_channel_poll()(_channel, _isStderr) == SSH_EOF));
+        && (!::ssh_channel_is_open(_channel) || ::ssh_channel_poll(_channel, _isStderr) == SSH_EOF));
 }
 
 /******************************************************************************
@@ -68,8 +68,8 @@ bool SshChannel::canReadLine() const
            _readBuffer.contains('\n') ||
            _readBuffer.size() >= _bufferSize ||
             (!_readBuffer.isEmpty() && (!isOpen() || !_channel ||
-                !LibsshWrapper::ssh_channel_is_open()(_channel) ||
-                LibsshWrapper::ssh_channel_poll()(_channel, _isStderr) == SSH_EOF));
+                !::ssh_channel_is_open(_channel) ||
+                ::ssh_channel_poll(_channel, _isStderr) == SSH_EOF));
 }
 
 /******************************************************************************
@@ -123,7 +123,7 @@ void SshChannel::checkIO()
     bool emit_bytes_written = false;
 
     int read_size = 0;
-    int read_available = LibsshWrapper::ssh_channel_poll()(channel(), _isStderr);
+    int read_available = ::ssh_channel_poll(channel(), _isStderr);
     if(read_available > 0) {
 
         // Dont read more than buffer size specifies.
@@ -135,7 +135,7 @@ void SshChannel::checkIO()
         if(read_available > 0) {
             auto oldBufferSize = _readBuffer.size();
             _readBuffer.resize(oldBufferSize + read_available);
-            read_size = LibsshWrapper::ssh_channel_read_nonblocking()(channel(), _readBuffer.data() + oldBufferSize, read_available, _isStderr);
+            read_size = ::ssh_channel_read_nonblocking(channel(), _readBuffer.data() + oldBufferSize, read_available, _isStderr);
             if(read_size < 0) {
                 qWarning() << "ssh_channel_read_nonblocking() returned negative value.";
                 _ioInProgress = false;
@@ -158,7 +158,7 @@ void SshChannel::checkIO()
             writable = _writeSize;
 
         if(writable > 0) {
-            written = LibsshWrapper::ssh_channel_write()(channel(), _writeBuffer.constData(), writable);
+            written = ::ssh_channel_write(channel(), _writeBuffer.constData(), writable);
             OVITO_ASSERT(written >= 0);
             _writeBuffer.remove(0, written);
 
@@ -173,7 +173,7 @@ void SshChannel::checkIO()
 
     // Send EOF once all data has been written to channel.
     if(_eofState == EofQueued && _writeBuffer.size() == 0) {
-        LibsshWrapper::ssh_channel_send_eof()(channel());
+        ::ssh_channel_send_eof(channel());
         _eofState = EofSent;
     }
 
@@ -211,12 +211,12 @@ QString SshChannel::errorMessage() const
     if(!QIODevice::errorString().isEmpty()) {
         return QIODevice::errorString();
     }
-    if(connection()->_session && LibsshWrapper::ssh_get_error_code()(connection()->_session) != SSH_NO_ERROR) {
-        QString msg(LibsshWrapper::ssh_get_error()(connection()->_session));
+    if(connection()->_session && ::ssh_get_error_code(connection()->_session) != SSH_NO_ERROR) {
+        QString msg(::ssh_get_error(connection()->_session));
         if(!msg.isEmpty()) return msg;
     }
-    if(_channel && LibsshWrapper::ssh_get_error_code()(_channel) != SSH_NO_ERROR) {
-        QString msg(LibsshWrapper::ssh_get_error()(_channel));
+    if(_channel && ::ssh_get_error_code(_channel) != SSH_NO_ERROR) {
+        QString msg(::ssh_get_error(_channel));
         if(!msg.isEmpty()) return msg;
     }
     return {};
