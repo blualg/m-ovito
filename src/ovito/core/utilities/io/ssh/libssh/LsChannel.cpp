@@ -29,7 +29,7 @@ namespace Ovito {
 * Constructor.
 ******************************************************************************/
 LsChannel::LsChannel(LibsshConnection* connection, const QString& location) :
-    ProcessChannel(connection, QStringLiteral("ls -A -N -U -1 -p --color=never \"%1/\"").arg(location))
+    ProcessChannel(connection, QStringLiteral("ls -A -U -1 -p --color=never \"%1/\"").arg(location))
 {
     connect(this, &QIODevice::readyRead, this, &LsChannel::processData);
     connect(this, &ProcessChannel::opened, this, &LsChannel::receivingDirectory);
@@ -53,6 +53,8 @@ void LsChannel::processData()
         line.chop(1);   // Remote end of line character.
         if(line.size() == 0)
             continue;
+        if(line.startsWith('"') && line.endsWith('"'))
+            line = line.mid(1, line.size() - 2); // Remove quotes around filenames.
         if(line.endsWith('/'))
             continue;    // Skip directory entries.
         _directoryListing.push_back(QString::fromLocal8Bit(line));
