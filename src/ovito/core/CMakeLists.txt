@@ -397,9 +397,9 @@ IF(OVITO_BUILD_SSH_CLIENT AND NOT EMSCRIPTEN AND NOT OVITO_BUILD_CONDA)
         GET_FILENAME_COMPONENT(OPENSSL_LIBRARY_DIR "${OPENSSL_CRYPTO_LIBRARY_LOCATION}" PATH)
         INSTALL(FILES "${OPENSSL_LIBRARY_DIR}/ossl-modules/pkcs11.dylib" DESTINATION "${OVITO_RELATIVE_PLUGINS_DIRECTORY}/ossl-modules/")
 
-        # Additionally, create a symlink to the provider modules directory in the build directory to make it available during testing.
+        # Additionally, copy the provider modules directory into the build directory to make it available during testing.
         FILE(MAKE_DIRECTORY "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_PLUGINS_DIRECTORY}/ossl-modules")
-        EXECUTE_PROCESS(COMMAND "${CMAKE_COMMAND}" -E create_symlink "${OPENSSL_LIBRARY_DIR}/ossl-modules/pkcs11.dylib" "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_PLUGINS_DIRECTORY}/ossl-modules/pkcs11.dylib")
+        FILE(COPY "${OPENSSL_LIBRARY_DIR}/ossl-modules/pkcs11.dylib" DESTINATION "${Ovito_BINARY_DIR}/${OVITO_RELATIVE_PLUGINS_DIRECTORY}/ossl-modules/")
     ELSEIF(LINUX AND OVITO_REDISTRIBUTABLE_PACKAGE)
         # Install libssh.so
         OVITO_INSTALL_SHARED_LIB("${LIBSSH_LIBRARY_LOCATION}")

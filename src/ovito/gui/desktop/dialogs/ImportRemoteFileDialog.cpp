@@ -120,11 +120,16 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindowUI& ui, const std::vect
     _libsshMethod->setEnabled(false);
 #endif
     layout3->addWidget(_libsshMethod, 0, 0, 1, 3);
+#ifndef Q_OS_WIN
 #ifdef OVITO_BUILD_PROFESSIONAL
     _opensshMethod = new QRadioButton(tr("External OpenSSH:"));
     _opensshMethod->setChecked(SshConnection::getSshImplementation() == SshConnection::Openssh);
 #else
     _opensshMethod = new QRadioButton(tr("External OpenSSH client (available in OVITO Pro)"));
+    _opensshMethod->setEnabled(false);
+#endif
+#else
+    _opensshMethod = new QRadioButton(tr("External OpenSSH client (only available in OVITO Pro for Linux/macOS and Windows WSL)"));
     _opensshMethod->setEnabled(false);
 #endif
     layout3->addWidget(_opensshMethod, 1, 0);
