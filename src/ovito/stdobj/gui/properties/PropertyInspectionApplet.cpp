@@ -336,8 +336,9 @@ void PropertyInspectionApplet::PropertyFilterModel::setupEvaluator()
                 if(_filterExpression.contains(QRegularExpression(QStringLiteral("[^=!><]=(?!=)"))))
                     throw Exception(tr("The entered expression contains the assignment operator '='. Please use the correct comparison operator '==' instead."));
 
+                int animationFrame = _applet->currentAnimationTime().frame();
                 _evaluator = _applet->createExpressionEvaluator();
-                _evaluator->initialize(QStringList(_filterExpression), _applet->currentState(), _applet->selectedDataObjectPath());
+                _evaluator->initialize(QStringList(_filterExpression), _applet->currentState(), _applet->selectedDataObjectPath(), animationFrame);
                 _evaluatorWorker = std::make_unique<PropertyExpressionEvaluator::Worker>(*_evaluator);
             }
             catch(const Exception& ex) {
