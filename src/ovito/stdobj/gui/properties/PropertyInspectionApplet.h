@@ -48,8 +48,8 @@ public:
     /// Returns the input widget for the filter expression.
     AutocompleteLineEdit* filterExpressionEdit() const { return _filterExpressionEdit; }
 
-    /// Returns the UI action that resets the filter expression.
-    QAction* resetFilterAction() const { return _resetFilterAction; }
+    /// Returns the label widget showing the current number of elements.
+    QWidget* countDisplayLabel() const { return _countDisplayLabel; }
 
     /// Returns the number of currently displayed elements.
     int visibleElementCount() const { return _filterModel->rowCount(); }
@@ -105,6 +105,9 @@ private Q_SLOTS:
     /// Is called when an error during filter evaluation occurred.
     void onFilterStatusChanged(const QString& msgText);
 
+    /// Updates the element count display label.
+    void updateCountDisplay();
+
 protected:
     /// Action handler.
     void exportDataToFile(const DataObjectReference& dataObject, OORef<FileExporter>&& exporter, const QString& filterString) const;
@@ -121,8 +124,8 @@ private:
 
         /// Returns the number of rows.
         virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override {
-            if(parent.isValid() || _properties.empty()) return 0;
-            return (int)std::min(_properties.front()->size(), (size_t)std::numeric_limits<int>::max());
+            if(parent.isValid() || !_container) return 0;
+            return (int)std::min(_container->elementCount(), (size_t)std::numeric_limits<int>::max());
         }
 
         /// Returns the number of columns.
@@ -149,6 +152,9 @@ private:
 
         /// The list of properties.
         std::vector<ConstPropertyPtr> _properties;
+
+        /// The property container currently displayed by the model.
+        DataOORef<const PropertyContainer> _container;
     };
 
     /// A proxy model for filtering the property list.
@@ -204,6 +210,7 @@ private:
     };
 
 protected:
+
     // Export button for the table view.
     QAction* _exportTableToFileAction;
 
@@ -221,11 +228,14 @@ private:
     /// Input widget for the filter expression.
     AutocompleteLineEdit* _filterExpressionEdit;
 
-    /// The UI action that resets the filter expression.
-    QAction* _resetFilterAction;
+    /// Label showing the current number of elements.
+    QLineEdit* _countDisplayLabel = nullptr;
 
     /// The current filter status.
     QString _filterStatusString;
+
+    // Action that is used to display an error indicator in the filter input field.
+    QAction* _filterStatusAction;
 
     /// For cleaning up widgets.
     QObjectCleanupHandler _cleanupHandler;

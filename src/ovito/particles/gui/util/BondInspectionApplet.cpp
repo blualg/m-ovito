@@ -56,12 +56,13 @@ QWidget* BondInspectionApplet::createWidget()
     toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
     toolbar->setIconSize(QSize(18,18));
     toolbar->addAction(pickModeAction);
-    toolbar->addAction(resetFilterAction());
     layout->addWidget(toolbar, 0, 0);
 
     layout->addWidget(filterExpressionEdit(), 0, 1);
-    layout->addWidget(tableView(), 1, 0, 1, 2);
+    layout->addWidget(countDisplayLabel(), 0, 2);
+    layout->addWidget(tableView(), 1, 0, 1, 3);
     layout->setRowStretch(1, 1);
+    layout->setColumnStretch(1, 1);
 
     QWidget* pickModeButton = toolbar->widgetForAction(pickModeAction);
     connect(_pickingMode, &ViewportInputMode::statusChanged, pickModeButton, [pickModeButton](bool active) {

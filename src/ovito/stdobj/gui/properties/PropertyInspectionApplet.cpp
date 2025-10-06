@@ -45,12 +45,16 @@ void PropertyInspectionApplet::createBaseWidgets()
 {
     _filterExpressionEdit = new AutocompleteLineEdit();
     _filterExpressionEdit->setPlaceholderText(tr("Filter..."));
+    _filterExpressionEdit->setClearButtonEnabled(true);
     _cleanupHandler.add(_filterExpressionEdit);
-    _resetFilterAction = new QAction(QIcon::fromTheme("inspector_reset_filter"), tr("Reset filter"), this);
-    _cleanupHandler.add(_resetFilterAction);
-    connect(_resetFilterAction, &QAction::triggered, _filterExpressionEdit, &QLineEdit::clear);
-    connect(_resetFilterAction, &QAction::triggered, _filterExpressionEdit, &AutocompleteLineEdit::editingFinished);
     connect(_filterExpressionEdit, &AutocompleteLineEdit::editingFinished, this, &PropertyInspectionApplet::onFilterExpressionEntered);
+    connect(_filterExpressionEdit, &QLineEdit::textEdited, this, [this](const QString& text) {
+        if(text.isEmpty())
+            onFilterExpressionEntered();
+    });
+
+    _filterStatusAction = _filterExpressionEdit->addAction(QIcon(":/guibase/mainwin/status/status_error.png"), QLineEdit::LeadingPosition);
+    _filterStatusAction->setVisible(false);
 
     _tableView = new CopyableTableView();
     _tableModel = new PropertyTableModel(this, _tableView);
@@ -61,11 +65,46 @@ void PropertyInspectionApplet::createBaseWidgets()
     _tableView->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     _cleanupHandler.add(_tableView);
 
+    // Custom QLineEdit subclass that automatically adjusts its width to fit the text.
+    class AutoSizeLineEdit : public QLineEdit
+    {
+    public:
+        AutoSizeLineEdit(QWidget* parent = nullptr) : QLineEdit(parent) {
+            // Update size hint whenever the text changes.
+            connect(this, &QLineEdit::textChanged, this, [this]() { updateGeometry(); });
+        }
+    protected:
+        QSize sizeHint() const override {
+            // Note: This is based on QLineEdit::sizeHint() implementation.
+            ensurePolished();
+            QFontMetrics fm(font());
+            const int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize, nullptr, this);
+            const QMargins tm = textMargins();
+            int h = qMax(fm.height(), qMax(14, iconSize - 2)) + 2 * 1
+                    + tm.top() + tm.bottom();
+            int w = fm.horizontalAdvance(text()) + 2 * 2
+                    + tm.left() + tm.right() + 8;
+            QStyleOptionFrame opt;
+            initStyleOption(&opt);
+            return style()->sizeFromContents(QStyle::CT_LineEdit, &opt, QSize(w, h), this);
+        }
+    };
+
+    _countDisplayLabel = new AutoSizeLineEdit();
+    _countDisplayLabel->setReadOnly(true);
+    _countDisplayLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    _countDisplayLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+    _cleanupHandler.add(_countDisplayLabel);
+
     // Clear filter expression whenever a different scene pipeline or data object is selected by the user.
-    connect(this, &DataInspectionApplet::currentObjectPathChanged, _resetFilterAction, &QAction::trigger);
-    connect(inspectorPanel(), &DataInspectorPanel::selectedPipelineChanged, _resetFilterAction, &QAction::trigger);
+    connect(this, &DataInspectionApplet::currentObjectPathChanged, _filterExpressionEdit, &QLineEdit::clear);
+    connect(this, &DataInspectionApplet::currentObjectPathChanged, _filterExpressionEdit, &AutocompleteLineEdit::editingFinished);
+    connect(inspectorPanel(), &DataInspectorPanel::selectedPipelineChanged, _filterExpressionEdit, &QLineEdit::clear);
+    connect(inspectorPanel(), &DataInspectorPanel::selectedPipelineChanged, _filterExpressionEdit, &AutocompleteLineEdit::editingFinished);
     // Update tabular display whenever the user selects a different property container in the list.
     connect(this, &DataInspectionApplet::currentObjectChanged, this, &PropertyInspectionApplet::onCurrentContainerChanged);
+    // Update the displayed element count when the filter expression changes.
+    connect(this, &PropertyInspectionApplet::filterChanged, this, &PropertyInspectionApplet::updateCountDisplay);
 }
 
 /******************************************************************************
@@ -74,9 +113,11 @@ void PropertyInspectionApplet::createBaseWidgets()
 void PropertyInspectionApplet::onCurrentContainerChanged()
 {
     handleExceptions([&]() {
-        int oldColumnCount = _tableModel->setContents(selectedContainerObject());
+        const PropertyContainer* container = selectedContainerObject();
+        int oldColumnCount = _tableModel->setContents(container);
         _filterModel->setContentsBegin();
         _filterModel->setContentsEnd();
+        updateCountDisplay();
 
         // Adjust the widths of the newly added columns.
         for(int i = oldColumnCount; i < _tableModel->columnCount(); i++) {
@@ -96,6 +137,27 @@ void PropertyInspectionApplet::onCurrentContainerChanged()
             _filterExpressionEdit->setWordList({});
         }
     });
+}
+
+/******************************************************************************
+* Updates the element count display label.
+******************************************************************************/
+void PropertyInspectionApplet::updateCountDisplay()
+{
+    const PropertyContainer* container = selectedContainerObject();
+    if(!container || _countDisplayLabel->parentWidget() == nullptr) {
+        _countDisplayLabel->setText({});
+        _countDisplayLabel->setVisible(false);
+        return;
+    }
+
+    if(_filterExpressionEdit->text().isEmpty()) {
+        _countDisplayLabel->setText(QStringLiteral("%1 %2").arg(container->elementCount()).arg(container->getOOMetaClass().elementDescriptionName()));
+    }
+    else {
+        _countDisplayLabel->setText(QStringLiteral("%1 of %2 %3").arg(visibleElementCount()).arg(container->elementCount()).arg(container->getOOMetaClass().elementDescriptionName()));
+    }
+    _countDisplayLabel->setVisible(true);
 }
 
 /******************************************************************************
@@ -126,7 +188,7 @@ void PropertyInspectionApplet::exportDataToFile(const DataObjectReference& dataO
                                                 const QString& filterString) const
 {
     OVITO_ASSERT_MSG(this_task::get(), "PropertyInspectionApplet::exportDataToFile",
-                     "This method must be called from a mainWindow().handleExceptions context.");
+                     "This method must be called from a handleExceptions() context.");
 
     // Let the user select a destination file.
     HistoryFileDialog dialog("export", ui().mainWindow(), tr("Export Table"));
@@ -190,7 +252,7 @@ int PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCont
         newProperties.insert(newProperties.end(), container->properties().begin(), container->properties().end());
     }
     int oldRowCount = rowCount();
-    int newRowCount = 0;
+    int newRowCount = container ? container->elementCount() : 0;
     if(!newProperties.empty())
         newRowCount = (int)std::min(newProperties.front()->size(), (size_t)std::numeric_limits<int>::max());
 
@@ -213,15 +275,18 @@ int PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCont
         if(oldRowCount > newRowCount) {
             beginRemoveRows(QModelIndex(), newRowCount, oldRowCount-1);
             std::move(newProperties.begin(), newProperties.begin() + _properties.size(), _properties.begin());
+            _container = container;
             endRemoveRows();
         }
         else if(newRowCount > oldRowCount) {
             beginInsertRows(QModelIndex(), oldRowCount, newRowCount-1);
             std::move(newProperties.begin(), newProperties.begin() + _properties.size(), _properties.begin());
+            _container = container;
             endInsertRows();
         }
         else {
             std::move(newProperties.begin(), newProperties.begin() + _properties.size(), _properties.begin());
+            _container = container;
         }
         int changedRows = std::min(oldRowCount, newRowCount);
         if(changedRows) {
@@ -238,6 +303,7 @@ int PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCont
     else {
         beginResetModel();
         _properties = std::move(newProperties);
+        _container = container;
         endResetModel();
     }
 
@@ -392,12 +458,32 @@ void PropertyInspectionApplet::onFilterStatusChanged(const QString& msgText)
 {
     if(msgText.isEmpty() == false) {
         _filterStatusString = msgText;
-        QToolTip::showText(_filterExpressionEdit->mapToGlobal(_filterExpressionEdit->rect().bottomLeft()), msgText,
-            _filterExpressionEdit, QRect());
+        _filterStatusAction->setVisible(true);
+        _filterStatusAction->setToolTip(_filterStatusString);
+        _filterExpressionEdit->update();
+        // Show tooltip only when the filter input field has the focus.
+        // Otherwise it would be distracting to the user.
+        if(_filterExpressionEdit->hasFocus()) {
+            // Note: Deferring the showText() call to a slightly later time, because otherwise the tooltip might immediately disappear again.
+            // This seems to be an issue on macOS, where the tooltip is hidden by KeyPress/KeyRelease events.
+#ifdef Q_OS_MAC
+            QTimer::singleShot(100, this, [this]() {
+#endif
+            if(!_filterStatusString.isEmpty()) {
+                QToolTip::showText(_filterExpressionEdit->mapToGlobal(_filterExpressionEdit->rect().bottomLeft()), _filterStatusString,
+                    _filterExpressionEdit, QRect());
+            }
+#ifdef Q_OS_MAC
+            });
+#endif
+        }
     }
     else if(!_filterStatusString.isEmpty()) {
         QToolTip::hideText();
         _filterStatusString.clear();
+        _filterStatusAction->setVisible(false);
+        _filterStatusAction->setToolTip({});
+        _filterExpressionEdit->update();
     }
 }
 

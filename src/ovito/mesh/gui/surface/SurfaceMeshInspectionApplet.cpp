@@ -211,22 +211,15 @@ QWidget* SurfaceMeshVertexInspectionApplet::createWidget()
     QWidget* panel = new QWidget();
     QGridLayout* layout = new QGridLayout(panel);
     layout->setContentsMargins(0,0,0,0);
-    layout->setSpacing(0);
-
-    QToolBar* toolbar = new QToolBar();
-    toolbar->setOrientation(Qt::Horizontal);
-    toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    toolbar->setIconSize(QSize(18,18));
-    toolbar->addAction(resetFilterAction());
-    layout->addWidget(toolbar, 0, 0);
+    layout->setHorizontalSpacing(0);
+    layout->setVerticalSpacing(4);
 
     filterExpressionEdit()->setPlaceholderText(tr("Filter vertices list..."));
-    layout->addWidget(filterExpressionEdit(), 0, 1);
-    QSplitter* splitter = new QSplitter();
-    splitter->setChildrenCollapsible(false);
-    splitter->addWidget(tableView());
-    layout->addWidget(splitter, 1, 0, 1, 2);
+    layout->addWidget(filterExpressionEdit(), 0, 0);
+    layout->addWidget(countDisplayLabel(), 0, 1);
+    layout->addWidget(tableView(), 1, 0, 1, 2);
     layout->setRowStretch(1, 1);
+    layout->setColumnStretch(0, 1);
 
     return panel;
 }
@@ -242,22 +235,15 @@ QWidget* SurfaceMeshFaceInspectionApplet::createWidget()
     QWidget* panel = new QWidget();
     QGridLayout* layout = new QGridLayout(panel);
     layout->setContentsMargins(0,0,0,0);
-    layout->setSpacing(0);
-
-    QToolBar* toolbar = new QToolBar();
-    toolbar->setOrientation(Qt::Horizontal);
-    toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    toolbar->setIconSize(QSize(18,18));
-    toolbar->addAction(resetFilterAction());
-    layout->addWidget(toolbar, 0, 0);
+    layout->setHorizontalSpacing(0);
+    layout->setVerticalSpacing(4);
 
     filterExpressionEdit()->setPlaceholderText(tr("Filter faces list..."));
-    layout->addWidget(filterExpressionEdit(), 0, 1);
-    QSplitter* splitter = new QSplitter();
-    splitter->setChildrenCollapsible(false);
-    splitter->addWidget(tableView());
-    layout->addWidget(splitter, 1, 0, 1, 2);
+    layout->addWidget(filterExpressionEdit(), 0, 0);
+    layout->addWidget(countDisplayLabel(), 0, 1);
+    layout->addWidget(tableView(), 1, 0, 1, 2);
     layout->setRowStretch(1, 1);
+    layout->setColumnStretch(0, 1);
 
     return panel;
 }
@@ -273,22 +259,15 @@ QWidget* SurfaceMeshRegionInspectionApplet::createWidget()
     QWidget* panel = new QWidget();
     QGridLayout* layout = new QGridLayout(panel);
     layout->setContentsMargins(0,0,0,0);
-    layout->setSpacing(0);
-
-    QToolBar* toolbar = new QToolBar();
-    toolbar->setOrientation(Qt::Horizontal);
-    toolbar->setToolButtonStyle(Qt::ToolButtonIconOnly);
-    toolbar->setIconSize(QSize(18,18));
-    toolbar->addAction(resetFilterAction());
-    layout->addWidget(toolbar, 0, 0);
+    layout->setHorizontalSpacing(0);
+    layout->setVerticalSpacing(4);
 
     filterExpressionEdit()->setPlaceholderText(tr("Filter regions list..."));
-    layout->addWidget(filterExpressionEdit(), 0, 1);
-    QSplitter* splitter = new QSplitter();
-    splitter->setChildrenCollapsible(false);
-    splitter->addWidget(tableView());
-    layout->addWidget(splitter, 1, 0, 1, 2);
+    layout->addWidget(filterExpressionEdit(), 0, 0);
+    layout->addWidget(countDisplayLabel(), 0, 1);
+    layout->addWidget(tableView(), 1, 0, 1, 2);
     layout->setRowStretch(1, 1);
+    layout->setColumnStretch(0, 1);
 
     return panel;
 }

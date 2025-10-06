@@ -63,7 +63,6 @@ QWidget* ParticleInspectionApplet::createWidget()
     horizontalToolbar->setIconSize(QSize(18, 18));
     horizontalToolbar->addAction(pickModeAction);
     horizontalToolbar->addAction(_measuringModeAction);
-    horizontalToolbar->addAction(resetFilterAction());
     layout->addWidget(horizontalToolbar, 0, 0);
 
     QWidget* pickModeButton = horizontalToolbar->widgetForAction(pickModeAction);
@@ -80,11 +79,13 @@ QWidget* ParticleInspectionApplet::createWidget()
     });
 
     layout->addWidget(filterExpressionEdit(), 0, 1);
+    layout->addWidget(countDisplayLabel(), 0, 2);
     QSplitter* splitter = new QSplitter();
     splitter->setChildrenCollapsible(false);
     splitter->addWidget(tableView());
-    layout->addWidget(splitter, 1, 0, 1, 2);
+    layout->addWidget(splitter, 1, 0, 1, 3);
     layout->setRowStretch(1, 1);
+    layout->setColumnStretch(1, 1);
 
     _distanceTable = new CopyableTableWidget(0, 3);
     _distanceTable->hide();
