@@ -24,7 +24,7 @@
 
 
 #include <ovito/core/Core.h>
-#include <ovito/core/rendering/RenderingJob.h>
+#include <ovito/core/rendering/RenderBuffer.h>
 #include "OpenGLRenderingJob.h"
 
 #include <QOpenGLFramebufferObject>
@@ -34,17 +34,17 @@ namespace Ovito {
 /**
  * \brief An offscreen framebuffer the OpenGL renderer can render into.
  */
-class OVITO_OPENGLRENDERER_EXPORT OpenGLRenderingFrameBuffer : public AbstractRenderingFrameBuffer
+class OVITO_OPENGLRENDERER_EXPORT OpenGLRenderBuffer : public RenderBuffer
 {
-    OVITO_CLASS(OpenGLRenderingFrameBuffer)
+    OVITO_CLASS(OpenGLRenderBuffer)
 
 public:
 
     /// Constructor that allocates an offscreen OpenGL framebuffer.
-    void initializeObject(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, std::shared_ptr<FrameBuffer> outputFrameBuffer);
+    void initializeObject(OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect);
 
     /// Constructor that uses an existing OpenGL framebuffer.
-    void initializeObject(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, GLuint framebufferObjectId);
+    void initializeObject(OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, GLuint framebufferObjectId);
 
     /// Called when this frame buffer is being destroyed.
     virtual void aboutToBeDeleted() override;
@@ -77,19 +77,19 @@ public:
 private:
 
     /// The rendering job this frame buffer belongs to.
-    /// This reference keeps alive the job while the OpenGL framebuffer exists.
+    /// This reference keeps alive the job while the OpenGL framebuffer object exists.
     OORef<OpenGLRenderingJob> _renderingJob;
 
-    /// The offscreen OpenGL framebuffer.
+    /// The offscreen OpenGL framebuffer object.
     std::optional<QOpenGLFramebufferObject> _framebufferObject;
 
-    /// An additional offscreen framebuffer used for the OIT transparency pass.
+    /// An additional offscreen framebuffer object used for the OIT transparency pass.
     std::optional<QOpenGLFramebufferObject> _oitFramebuffer;
 
-    /// The ID of the OpenGL framebuffer to render into.
+    /// The ID of the OpenGL framebuffer object to render into.
     GLuint _framebufferObjectId = 0;
 
-    /// The physical resolution of the offscreen OpenGL framebuffer.
+    /// The physical resolution of the offscreen OpenGL framebuffer object.
     /// This includes the multisampling factor.
     QSize _framebufferSize;
 

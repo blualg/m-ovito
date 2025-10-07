@@ -96,8 +96,8 @@ OORef<RenderingJob> OpenGLViewportWindow::createRenderingJob()
 void OpenGLViewportWindow::releaseResources()
 {
     // Release any OpenGL resources associated with the window's framebuffers.
-    _visualFrameBuffer.reset();
-    _pickingFrameBuffer.reset();
+    _visualRenderBuffer.reset();
+    _pickingRenderBuffer.reset();
 
     // Release picking data.
     _objectPickingMap->reset();
@@ -141,13 +141,13 @@ void OpenGLViewportWindow::paint()
 
     MainThreadOperation operation(ui(), MainThreadOperation::Isolated);
     try {
-        // Recreate/resize abstract frame buffer for rendering into the widget if necessary.
+        // Recreate/resize render buffer for rendering into the widget if necessary.
         const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
-        if(!_visualFrameBuffer || _visualFrameBuffer->outputViewportRect() != viewportRect || _visualFrameBuffer->framebufferObjectId() != glwin()->defaultFramebufferObject())
-            _visualFrameBuffer = OORef<OpenGLRenderingFrameBuffer>::create(renderingJob(), viewportRect, glwin()->defaultFramebufferObject());
+        if(!_visualRenderBuffer || _visualRenderBuffer->outputViewportRect() != viewportRect || _visualRenderBuffer->framebufferObjectId() != glwin()->defaultFramebufferObject())
+            _visualRenderBuffer = OORef<OpenGLRenderBuffer>::create(renderingJob(), viewportRect, glwin()->defaultFramebufferObject());
 
         // Render the viewport contents. This requires an active GL context.
-        auto future = renderingJob()->renderFrame(frameGraph(), _visualFrameBuffer, TaskProgress::Ignore);
+        auto future = renderingJob()->renderFrame(frameGraph(), _visualRenderBuffer, nullptr, TaskProgress::Ignore);
         OVITO_ASSERT(future && future.isFinished() && !future.isCanceled());
 
         // Emit signal to inform listeners (e.g. SceneAnimationPlayback) that a full frame has been rendered and presented on screen.
@@ -190,16 +190,16 @@ std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPoin
 
                 // Recreate/resize offscreen OpenGL framebuffer.
                 const QRect viewportRect(QPoint(0,0), viewportWindowDeviceSize());
-                if(!_pickingFrameBuffer || _pickingFrameBuffer->outputViewportRect() != viewportRect || !_pickingFrameBuffer->framebufferObject()->isValid())
-                    _pickingFrameBuffer = static_object_cast<OpenGLRenderingFrameBuffer>(pickingRenderingJob()->createOffscreenFrameBuffer(viewportRect, nullptr));
-                OVITO_ASSERT(_pickingFrameBuffer->framebufferObject().has_value());
+                if(!_pickingRenderBuffer || _pickingRenderBuffer->outputViewportRect() != viewportRect || !_pickingRenderBuffer->framebufferObject()->isValid())
+                    _pickingRenderBuffer = static_object_cast<OpenGLRenderBuffer>(pickingRenderingJob()->createOffscreenRenderBuffer(viewportRect));
+                OVITO_ASSERT(_pickingRenderBuffer->framebufferObject().has_value());
 
                 // Render into the OpenGL framebuffer.
                 _objectPickingMap->reset();
-                pickingRenderingJob()->renderFrame(frameGraph(), _pickingFrameBuffer, _objectPickingMap).waitForFinished();
+                pickingRenderingJob()->renderFrame(frameGraph(), _pickingRenderBuffer, nullptr, _objectPickingMap).waitForFinished();
 
                 // Read out the contents of the OpenGL framebuffer.
-                _objectPickingMap->acquireFramebufferContents(_pickingFrameBuffer);
+                _objectPickingMap->acquireFramebufferContents(_pickingRenderBuffer);
             });
         }
 

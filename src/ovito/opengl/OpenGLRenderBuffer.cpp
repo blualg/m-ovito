@@ -21,20 +21,20 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include "OpenGLRenderingFrameBuffer.h"
+#include "OpenGLRenderBuffer.h"
 #include "OpenGLHelpers.h"
 #include "OpenGLShaderHelper.h"
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLRenderingFrameBuffer);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLRenderBuffer);
 
 /******************************************************************************
 * Constructor that allocates an offscreen OpenGL framebuffer.
 ******************************************************************************/
-void OpenGLRenderingFrameBuffer::initializeObject(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, std::shared_ptr<FrameBuffer> outputFrameBuffer)
+void OpenGLRenderBuffer::initializeObject(OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect)
 {
-    AbstractRenderingFrameBuffer::initializeObject(flags, viewportRect, std::move(outputFrameBuffer));
+    RenderBuffer::initializeObject(viewportRect);
 
     _renderingJob = std::move(renderingJob);
 
@@ -61,9 +61,9 @@ void OpenGLRenderingFrameBuffer::initializeObject(ObjectInitializationFlags flag
 /******************************************************************************
 * Constructor that uses an existing OpenGL framebuffer.
 ******************************************************************************/
-void OpenGLRenderingFrameBuffer::initializeObject(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, GLuint framebufferObjectId)
+void OpenGLRenderBuffer::initializeObject(OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, GLuint framebufferObjectId)
 {
-    AbstractRenderingFrameBuffer::initializeObject(flags, viewportRect, {});
+    RenderBuffer::initializeObject(viewportRect);
 
     _renderingJob = std::move(renderingJob);
     _framebufferObjectId = framebufferObjectId;
@@ -75,7 +75,7 @@ void OpenGLRenderingFrameBuffer::initializeObject(ObjectInitializationFlags flag
 /******************************************************************************
 * Called when this renderer is being destroyed.
 ******************************************************************************/
-void OpenGLRenderingFrameBuffer::aboutToBeDeleted()
+void OpenGLRenderBuffer::aboutToBeDeleted()
 {
     // Release OpenGL frame buffer and other resources. This requires an active GL context.
     if(renderingJob() && (_framebufferObject || _oitFramebuffer || _previousResourceFrame)) {
@@ -86,14 +86,14 @@ void OpenGLRenderingFrameBuffer::aboutToBeDeleted()
         _oitFramebuffer.reset();
     }
 
-    AbstractRenderingFrameBuffer::aboutToBeDeleted();
+    RenderBuffer::aboutToBeDeleted();
 }
 
 /******************************************************************************
 * Creates an offscreen OpenGL framebuffer for order-independent transparency rendering
 * and sets up rendering to two framebuffers simultaneously.
 ******************************************************************************/
-void OpenGLRenderingFrameBuffer::beginOITRendering()
+void OpenGLRenderBuffer::beginOITRendering()
 {
     // Verify OpenGL capabilities.
     if(!QOpenGLFramebufferObject::hasOpenGLFramebufferBlit())
@@ -151,7 +151,7 @@ void OpenGLRenderingFrameBuffer::beginOITRendering()
 /******************************************************************************
 * Performs the compositing of framebuffer contents for order-independent transparency.
 ******************************************************************************/
-void OpenGLRenderingFrameBuffer::endOITRendering()
+void OpenGLRenderBuffer::endOITRendering()
 {
     // Switch back to the primary rendering buffer.
     OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBindFramebuffer(GL_FRAMEBUFFER, _framebufferObjectId));

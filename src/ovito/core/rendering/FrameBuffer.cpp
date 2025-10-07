@@ -163,6 +163,32 @@ void FrameBuffer::commitChanges()
 }
 
 /******************************************************************************
+* Renders 2d graphics primitives specified in a frame graph into the frame buffer.
+******************************************************************************/
+void FrameBuffer::renderPrimitives(FrameGraph::RenderLayerType layerType, const FrameGraph& frameGraph, const QRect& outputViewportRect)
+{
+    for(const FrameGraph::RenderingCommandGroup& commandGroup : frameGraph.commandGroups()) {
+        if(commandGroup.layerType() != layerType)
+            continue;
+
+        for(const FrameGraph::RenderingCommand& command : commandGroup.commands()) {
+            if(command.skipInVisualPass())
+                continue;
+
+            if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
+                renderImagePrimitive(*primitive, outputViewportRect, !frameGraph.isInteractive());
+            }
+            else if(const TextPrimitive* primitive = dynamic_cast<const TextPrimitive*>(command.primitive())) {
+                renderTextPrimitive(*primitive, outputViewportRect, !frameGraph.isInteractive());
+            }
+            else if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
+                renderLinePrimitive(*primitive, command.modelWorldTM(), frameGraph.projectionParams(), outputViewportRect, !frameGraph.isInteractive());
+            }
+        }
+    }
+}
+
+/******************************************************************************
 * Renders an image primitive directly into the framebuffer.
 ******************************************************************************/
 void FrameBuffer::renderImagePrimitive(const ImagePrimitive& primitive, const QRect& viewportRect, bool update)

@@ -228,7 +228,7 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
     // Per viewport data.
     struct ViewportRenderingData {
         OORef<Viewport> viewport;
-        OORef<AbstractRenderingFrameBuffer> renderingFrameBuffer;
+        OORef<RenderBuffer> renderingFrameBuffer;
         RendererResourceCache::ResourceFrame inactiveCacheFrame;
     };
 
@@ -244,7 +244,7 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
             continue;
         ViewportRenderingData& vpData = viewportList.emplace_back();
         // Request a frame buffer of the right size from the rendering job.
-        vpData.renderingFrameBuffer = renderingJob->createOffscreenFrameBuffer(destinationRect, outputFrameBuffer);
+        vpData.renderingFrameBuffer = renderingJob->createOffscreenRenderBuffer(destinationRect);
         vpData.viewport = r.first;
     }
 
@@ -352,7 +352,7 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
 
             // Let the scene renderer produce the rendering in the framebuffer.
             outputFrameBuffer->discardChanges();
-            co_await FutureAwaiter(ObjectExecutor(this), renderingJob->renderFrame(frameGraph, vpData.renderingFrameBuffer, frameProgress));
+            co_await FutureAwaiter(ObjectExecutor(this), renderingJob->renderFrame(frameGraph, vpData.renderingFrameBuffer, outputFrameBuffer, frameProgress));
 
             frameProgress.nextSubStep();
         }

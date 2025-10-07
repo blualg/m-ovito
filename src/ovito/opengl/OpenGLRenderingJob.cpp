@@ -27,7 +27,7 @@
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/ColorMapHelper.h>
 #include "OpenGLRenderingJob.h"
-#include "OpenGLRenderingFrameBuffer.h"
+#include "OpenGLRenderBuffer.h"
 #include "OpenGLHelpers.h"
 #include "OpenGLShaderHelper.h"
 #include "OpenGLTexture.h"
@@ -74,7 +74,7 @@ void OpenGLRenderingJob::aboutToBeDeleted()
 /******************************************************************************
  * Creates a new abstract target frame buffer for rendering into.
  ******************************************************************************/
-OORef<AbstractRenderingFrameBuffer> OpenGLRenderingJob::createOffscreenFrameBuffer(const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer)
+OORef<RenderBuffer> OpenGLRenderingJob::createOffscreenRenderBuffer(const QRect& viewportRect)
 {
     // Creating an OpenGL framebuffer requires an active OpenGL context.
     OpenGLContextRestore contextRestore = activateContext();
@@ -85,21 +85,21 @@ OORef<AbstractRenderingFrameBuffer> OpenGLRenderingJob::createOffscreenFrameBuff
         _orderIndependentTransparency = _sceneRenderer->orderIndependentTransparency();
     }
 
-    return OORef<OpenGLRenderingFrameBuffer>::create(this, viewportRect, frameBuffer);
+    return OORef<OpenGLRenderBuffer>::create(this, viewportRect);
 }
 
 /******************************************************************************
  * Renders an image of the given frame graph into the given target frame buffer.
  ******************************************************************************/
-SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, TaskProgress& progress)
+SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<RenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> outputFrameBuffer, TaskProgress& progress)
 {
-    return renderFrame(std::move(frameGraph), static_object_cast<OpenGLRenderingFrameBuffer>(std::move(frameBuffer)), nullptr);
+    return renderFrame(std::move(frameGraph), static_object_cast<OpenGLRenderBuffer>(std::move(renderBuffer)), std::move(outputFrameBuffer), nullptr);
 }
 
 /******************************************************************************
 * Renders an image of the given frame graph into the given target frame buffer.
 ******************************************************************************/
-SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<OpenGLRenderingFrameBuffer> frameBuffer, std::shared_ptr<OpenGLPickingMap> pickingMap)
+SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<OpenGLRenderBuffer> frameBuffer, std::shared_ptr<FrameBuffer> outputFrameBuffer, std::shared_ptr<OpenGLPickingMap> pickingMap)
 {
     OVITO_ASSERT(this_task::ui());
 
@@ -362,16 +362,15 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
     frameBuffer->storePreviousResourceFrame(std::move(_currentResourceFrame));
 
     // Read the rendered image from the OpenGL framebuffer and paint it into the output frame buffer.
-    if(frameBuffer->outputFrameBuffer() && frameBuffer->framebufferObject()) {
+    if(outputFrameBuffer && frameBuffer->framebufferObject()) {
         const QRect& viewportRect = frameBuffer->outputViewportRect();
 
         // Flush the contents to the FBO before extracting the image.
         glcontext()->swapBuffers(glcontext()->surface());
 
         // Clear destination area in the framebuffer (only necessary if OpenGL image is not fully opaque).
-        FrameBuffer& outputFrameBuffer = *frameBuffer->outputFrameBuffer();
-        if(frameGraph->clearColor().a() != 1 && !outputFrameBuffer.image().isNull())
-            outputFrameBuffer.clear(frameGraph->clearColor(), viewportRect);
+        if(frameGraph->clearColor().a() != 1 && !outputFrameBuffer->image().isNull())
+            outputFrameBuffer->clear(frameGraph->clearColor(), viewportRect);
 
         // Fetch rendered image from OpenGL framebuffer.
         QImage renderedImage = frameBuffer->framebufferObject()->toImage();
@@ -380,16 +379,16 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
         QImage scaledImage = renderedImage.scaled(viewportRect.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
         // Transfer OpenGL image to the output frame buffer.
-        if(!outputFrameBuffer.image().isNull()) {
-            QPainter painter(&outputFrameBuffer.image());
+        if(!outputFrameBuffer->image().isNull()) {
+            QPainter painter(&outputFrameBuffer->image());
             painter.drawImage(viewportRect, scaledImage,
                               QRect(0, scaledImage.height() - viewportRect.height(), viewportRect.width(), viewportRect.height()));
         }
         else {
-            outputFrameBuffer.image() = scaledImage;
+            outputFrameBuffer->image() = std::move(scaledImage);
         }
-        outputFrameBuffer.update(viewportRect);
-        outputFrameBuffer.commitChanges();
+        outputFrameBuffer->update(viewportRect);
+        outputFrameBuffer->commitChanges();
     }
 
     // Stop debug logger.
@@ -411,7 +410,7 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
 /******************************************************************************
  * Renders all semi-transparent geometry in a second rendering pass.
  ******************************************************************************/
-void OpenGLRenderingJob::renderTransparentGeometry(OpenGLRenderingFrameBuffer& frameBuffer)
+void OpenGLRenderingJob::renderTransparentGeometry(OpenGLRenderBuffer& frameBuffer)
 {
     // Semi-transparent geometry should never get rendered in a picking render pass.
     OVITO_ASSERT(!isPickingPass());

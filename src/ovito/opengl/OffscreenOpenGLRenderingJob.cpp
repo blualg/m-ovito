@@ -24,7 +24,7 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/rendering/FrameBuffer.h>
 #include "OffscreenOpenGLRenderingJob.h"
-#include "OpenGLRenderingFrameBuffer.h"
+#include "OpenGLRenderBuffer.h"
 #include "OpenGLRenderer.h"
 
 namespace Ovito {

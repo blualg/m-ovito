@@ -60,7 +60,7 @@ public:
     virtual FloatType depthAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const override;
 
     /// Reads out the contents of the OpenGL framebuffer.
-    void acquireFramebufferContents(const OORef<AbstractRenderingFrameBuffer>& frameBuffer);
+    void acquireFramebufferContents(const OORef<RenderBuffer>& renderBuffer);
 
 private:
 

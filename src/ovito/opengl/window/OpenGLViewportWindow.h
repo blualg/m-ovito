@@ -26,7 +26,7 @@
 #include <ovito/gui/base/GUIBase.h>
 #include <ovito/gui/vpwidget/WidgetViewportWindow.h>
 #include <ovito/opengl/OpenGLRenderer.h>
-#include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
+#include <ovito/opengl/OpenGLRenderBuffer.h>
 #include <ovito/opengl/OpenGLPickingMap.h>
 #include "PickingOpenGLRenderingJob.h"
 
@@ -81,11 +81,11 @@ private:
     /// The frame graph to be rendered by OpenGL.
     OORef<FrameGraph> _frameGraph;
 
-    /// The abstract frame buffer for on-screen rendering into the QOpenGLWidget.
-    OORef<OpenGLRenderingFrameBuffer> _visualFrameBuffer;
+    /// The render buffer for on-screen rendering into the QOpenGLWidget.
+    OORef<OpenGLRenderBuffer> _visualRenderBuffer;
 
-    /// The abstract frame buffer for off-screen rendering into the object picking buffer.
-    OORef<OpenGLRenderingFrameBuffer> _pickingFrameBuffer;
+    /// The render buffer for off-screen rendering into the object picking buffer.
+    OORef<OpenGLRenderBuffer> _pickingRenderBuffer;
 
     /// Manages the information obtained from an object picking render pass.
     std::shared_ptr<OpenGLPickingMap> _objectPickingMap = std::make_shared<OpenGLPickingMap>();

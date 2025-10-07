@@ -31,7 +31,7 @@
 #include <ovito/core/rendering/FrameGraph.h>
 #include <ovito/core/rendering/SceneRenderer.h>
 #include <ovito/opengl/OffscreenOpenGLRenderingJob.h>
-#include <ovito/opengl/OpenGLRenderingFrameBuffer.h>
+#include <ovito/opengl/OpenGLRenderBuffer.h>
 #include "AmbientOcclusionModifier.h"
 
 #ifdef Q_OS_MACOS
@@ -176,7 +176,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
 
 #ifndef Q_OS_MACOS
             // Create an offscreen framebuffer for rendering.
-            OORef<OpenGLRenderingFrameBuffer> renderBuffer = static_object_cast<OpenGLRenderingFrameBuffer>(renderingJob->createOffscreenFrameBuffer(frameBufferRect, frameBuffer));
+            OORef<OpenGLRenderBuffer> renderBuffer = static_object_cast<OpenGLRenderBuffer>(renderingJob->createOffscreenRenderBuffer(frameBufferRect, frameBuffer));
 
             progress->setMaximum(samplingCount);
             for(int sample = 0; sample < samplingCount; sample++) {
@@ -187,7 +187,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             auto [progress, renderingJob, objectIdentifierMap, frameBuffer, frameGraph, brightness, radii, samplingCount, resolution, boundingBox] = std::move(inputs);
 
             // Create an offscreen framebuffer for rendering.
-            OORef<OpenGLRenderingFrameBuffer> renderBuffer = static_object_cast<OpenGLRenderingFrameBuffer>(renderingJob->createOffscreenFrameBuffer(QRect(QPoint(0,0), frameBuffer->size()), frameBuffer));
+            OORef<OpenGLRenderBuffer> renderBuffer = static_object_cast<OpenGLRenderBuffer>(renderingJob->createOffscreenRenderBuffer(QRect(QPoint(0,0), frameBuffer->size())));
 
             // Perform the evaluation for all requested animation frames.
             progress->setMaximum(samplingCount);
@@ -233,7 +233,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
 
                 // Render the current view to the frame buffer
                 objectIdentifierMap->reset();
-                auto future = renderingJob->renderFrame(frameGraph, renderBuffer, objectIdentifierMap);
+                auto future = renderingJob->renderFrame(frameGraph, renderBuffer, frameBuffer, objectIdentifierMap);
                 OVITO_ASSERT(future && future.isFinished() && !future.isCanceled());
 #ifdef Q_OS_MACOS
                 return static_cast<Future<void>&&>(future); // Note: for_each_sequential cannot deal with SCFuture yet, but we know it's finished

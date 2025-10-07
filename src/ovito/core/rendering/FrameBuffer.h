@@ -24,6 +24,7 @@
 
 
 #include <ovito/core/Core.h>
+#include <ovito/core/rendering/FrameGraph.h>
 
 namespace Ovito {
 
@@ -106,7 +107,22 @@ OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const ImageInfo& i)
 OVITO_CORE_EXPORT LoadStream& operator>>(LoadStream& stream, ImageInfo& i);
 
 /**
- * A frame buffer is used by a renderer to store the rendered image.
+ * A buffer for storing rendered output images, which is backed by a QImage object.
+ * The RenderingJob::renderFrame() method renders the scene into this framebuffer.
+ *
+ * The contents of the framebuffer can be modified by direct pixel access to the internal QImage
+ * returned by the image() method. Alternatively, 2D graphics primitives can be rendered into
+ * the framebuffer using the renderPrimitives() method.
+ *
+ * After modifying the contents of the framebuffer, the update() method must be called
+ * to notify any listeners about the changed region of the framebuffer.
+ *
+ * During rendering, the contents of the framebuffer can be displayed by a FrameBufferWidget
+ * or FrameBufferWindow from the GUI module.
+ *
+ * After rendering, the contents of the framebuffer can be saved to an image file using
+ * the Qt QImage::save() method, or passed to the VideoEncoder::writeFrame() method for
+ * inclusion in a video file.
  */
 class OVITO_CORE_EXPORT FrameBuffer : public QObject
 {
@@ -177,6 +193,9 @@ public:
     /// Removes unnecessary pixels along the outer edges of the image.
     bool autoCrop();
 
+	/// Renders 2d graphics primitives specified in a frame graph into the frame buffer.
+	void renderPrimitives(FrameGraph::RenderLayerType layerType, const FrameGraph& frameGraph, const QRect& outputViewportRect);
+
     /// Renders an image primitive directly into the framebuffer.
     void renderImagePrimitive(const ImagePrimitive& primitive, const QRect& viewportRect, bool update = true);
 
@@ -204,7 +223,7 @@ Q_SIGNALS:
 
 private:
 
-    /// The internal image that stores the pixel data.
+    /// The internal pixel data storage.
     QImage _image;
 
     /// The descriptor of the image.

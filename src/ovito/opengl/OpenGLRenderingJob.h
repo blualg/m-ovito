@@ -42,7 +42,7 @@
 namespace Ovito {
 
 class OpenGLShaderHelper; // defined in OpenGLShaderHelper.h
-class OpenGLRenderingFrameBuffer; // defined in OpenGLRenderingFrameBuffer.h
+class OpenGLRenderBuffer; // defined in OpenGLRenderBuffer.h
 
 /**
  * \brief A RAII utility class that restores the previous OpenGL context when the object goes out of scope.
@@ -92,13 +92,13 @@ public:
     const std::shared_ptr<RendererResourceCache>& visCache() const { return _visCache; }
 
 	/// Creates a new abstract target frame buffer for rendering into.
-	virtual OORef<AbstractRenderingFrameBuffer> createOffscreenFrameBuffer(const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer) override;
+	virtual OORef<RenderBuffer> createOffscreenRenderBuffer(const QRect& viewportRect) override;
 
 	/// Renders an image of the given frame graph into the given target frame buffer.
-	[[nodiscard]] virtual SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, TaskProgress& progress) override;
+	[[nodiscard]] virtual SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<RenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> outputFrameBuffer, TaskProgress& progress) override;
 
 	/// Renders an image of the given frame graph into the given target frame buffer.
-	[[nodiscard]] SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<OpenGLRenderingFrameBuffer> frameBuffer, std::shared_ptr<OpenGLPickingMap> pickingMap);
+	[[nodiscard]] SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<OpenGLRenderBuffer> frameBuffer, std::shared_ptr<FrameBuffer> outputFrameBuffer, std::shared_ptr<OpenGLPickingMap> pickingMap);
 
 	/// Returns the multi-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
 	virtual int multisamplingLevel() const override { return _multisamplingLevel; }
@@ -178,7 +178,7 @@ protected:
     bool renderFrameGraph(FrameGraph::RenderLayerType layerType);
 
     /// Render all semi-transparent geometry in a second rendering pass.
-    void renderTransparentGeometry(OpenGLRenderingFrameBuffer& frameBuffer);
+    void renderTransparentGeometry(OpenGLRenderBuffer& frameBuffer);
 
     /// Renders a particles primitive.
     bool renderParticles(const ParticlePrimitive& primitive, const FrameGraph::RenderingCommand& command);
@@ -303,7 +303,7 @@ private:
 	QSize _framebufferSize;
 
     friend class OpenGLShaderHelper;
-    friend class OpenGLRenderingFrameBuffer;
+    friend class OpenGLRenderBuffer;
 };
 
 }   // End of namespace

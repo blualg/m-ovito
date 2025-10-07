@@ -22,7 +22,7 @@
 
 #include <ovito/core/Core.h>
 #include "OpenGLRenderer.h"
-#include "OpenGLRenderingFrameBuffer.h"
+#include "OpenGLRenderBuffer.h"
 #include "OpenGLPickingMap.h"
 
 namespace Ovito {
@@ -63,9 +63,9 @@ std::optional<ViewportWindow::PickResult> OpenGLPickingMap::pickAt(const QPoint&
 /******************************************************************************
 * Reads out the contents of the OpenGL framebuffer.
 ******************************************************************************/
-void OpenGLPickingMap::acquireFramebufferContents(const OORef<AbstractRenderingFrameBuffer>& frameBuffer)
+void OpenGLPickingMap::acquireFramebufferContents(const OORef<RenderBuffer>& renderBuffer)
 {
-    OORef<OpenGLRenderingFrameBuffer> glFrameBuffer = static_object_cast<OpenGLRenderingFrameBuffer>(frameBuffer);
+    OORef<OpenGLRenderBuffer> glFrameBuffer = static_object_cast<OpenGLRenderBuffer>(renderBuffer);
     OVITO_ASSERT(glFrameBuffer->framebufferObject());
     const QSize& size = glFrameBuffer->framebufferSize();
 
