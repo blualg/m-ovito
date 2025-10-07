@@ -46,18 +46,18 @@ OpenSSH client |ovito-pro|
 OVITO's integrated standard SSH client is based on `Libssh <https://www.libssh.org>`__, a separate implementation of
 the SSH protocol distinct from the commonly used OpenSSH command-line tools (:program:`ssh` and :program:`scp`), which are present on most systems.
 
-However, Libssh does not support all authentication methods available in OpenSSH. In particular, it does *not* work with
-smartcards or two-factor authentication systems requiring PKCS#11 extensions.
-
-For these cases, OVITO Pro offers an alternative connection method that uses the external :program:`sftp` tool
-from `OpenSSH <https://www.openssh.com>`__. This method ensures full compatibility with authentication methods
+However, Libssh does not support all authentication methods, in particular it has only limited support for smartcard authentication (PKCS#11).
+For this reason, OVITO Pro offers an alternative connection method that uses the external :program:`sftp` utility
+from the `OpenSSH suite <https://www.openssh.com>`__. This approach ensures full compatibility with authentication methods
 and settings configured in :file:`~/.ssh/config`.
 
-You may need to specify its location on your computer if the :program:`sftp` tool is not in the system's `PATH`.
+You may need to specify its location on your computer if the :program:`sftp` utility is not in the system's `PATH`.
 
 .. note::
 
-  Requires OpenSSH version 8.4 or later.
+  The OpenSSH connection method is *not* available on Windows, unfortunately, due to limitations in the Win32 version of the :program:`sftp` utility,
+  which prevent OVITO Pro from using it as a backend. As a last resort, consider running OVITO Pro for Linux
+  via the `Windows Subsystem for Linux (WSL) <https://learn.microsoft.com/en-us/windows/wsl/about>`__.
 
 .. _usage.import.remote.troubleshooting:
 

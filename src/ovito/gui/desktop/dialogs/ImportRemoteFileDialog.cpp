@@ -106,7 +106,7 @@ ImportRemoteFileDialog::ImportRemoteFileDialog(MainWindowUI& ui, const std::vect
 
     QGroupBox* methodBox = new QGroupBox(tr("SSH connection method:"));
     QGridLayout* layout3 = new QGridLayout(methodBox);
-    layout3->setContentsMargins(0,0,0,0);
+    layout3->setContentsMargins(4,4,4,4);
     layout3->setSpacing(4);
     layout1->addWidget(methodBox);
 
