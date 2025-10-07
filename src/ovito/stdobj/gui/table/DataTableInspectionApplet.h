@@ -62,6 +62,9 @@ public:
     /// Creates an optional ad-hoc property that serves as header column for the table.
     virtual ConstPropertyPtr createHeaderColumnProperty(const PropertyContainer* container) override;
 
+    /// Returns the UI display name of the elements contained in the selected property container, e.g. "particles" or "bonds".
+    virtual QString elementDescriptionName() const override { return tr("rows"); }
+
 private Q_SLOTS:
 
     /// Is called when the user selects a different container object from the list.

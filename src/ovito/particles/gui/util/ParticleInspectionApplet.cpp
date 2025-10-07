@@ -23,7 +23,6 @@
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/particles/objects/Particles.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
 #include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
@@ -80,6 +79,7 @@ QWidget* ParticleInspectionApplet::createWidget()
 
     layout->addWidget(filterExpressionEdit(), 0, 1);
     layout->addWidget(countDisplayLabel(), 0, 2);
+    countDisplayLabel()->setToolTip(tr("Number of particles in the final pipeline state that match the filter expression."));
     QSplitter* splitter = new QSplitter();
     splitter->setChildrenCollapsible(false);
     splitter->addWidget(tableView());

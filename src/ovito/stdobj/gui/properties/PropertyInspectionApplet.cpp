@@ -152,10 +152,10 @@ void PropertyInspectionApplet::updateCountDisplay()
     }
 
     if(_filterExpressionEdit->text().isEmpty()) {
-        _countDisplayLabel->setText(QStringLiteral("%1 %2").arg(container->elementCount()).arg(container->getOOMetaClass().elementDescriptionName()));
+        _countDisplayLabel->setText(QStringLiteral("%1 %2").arg(container->elementCount()).arg(elementDescriptionName()));
     }
     else {
-        _countDisplayLabel->setText(QStringLiteral("%1 of %2 %3").arg(visibleElementCount()).arg(container->elementCount()).arg(container->getOOMetaClass().elementDescriptionName()));
+        _countDisplayLabel->setText(QStringLiteral("%1 of %2 %3").arg(visibleElementCount()).arg(container->elementCount()).arg(elementDescriptionName()));
     }
     _countDisplayLabel->setVisible(true);
 }
@@ -468,7 +468,7 @@ void PropertyInspectionApplet::onFilterStatusChanged(const QString& msgText)
             // Note: Deferring the showText() call to a slightly later time, because otherwise the tooltip might immediately disappear again.
             // This seems to be an issue on macOS, where the tooltip is hidden by KeyPress/KeyRelease events.
 #ifdef Q_OS_MAC
-            QTimer::singleShot(100, this, [this]() {
+            QTimer::singleShot(150, this, [this]() {
 #endif
             if(!_filterStatusString.isEmpty()) {
                 QToolTip::showText(_filterExpressionEdit->mapToGlobal(_filterExpressionEdit->rect().bottomLeft()), _filterStatusString,

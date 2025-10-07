@@ -21,7 +21,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/gui/desktop/GUI.h>
-#include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/stdobj/io/DataTableExporter.h>
 #include "SurfaceMeshInspectionApplet.h"
 #include <ovito/gui/desktop/mainwin/MainWindow.h>

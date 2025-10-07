@@ -112,7 +112,20 @@ QWidget* DataTableInspectionApplet::createWidget()
 
     _plotWidget = new DataTablePlotWidget();
     _stackedWidget->addWidget(_plotWidget);
-    _stackedWidget->addWidget(tableView());
+
+    QWidget* panel = new QWidget();
+    QGridLayout* layout = new QGridLayout(panel);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setHorizontalSpacing(0);
+    layout->setVerticalSpacing(4);
+
+    filterExpressionEdit()->setPlaceholderText(tr("Filter table rows..."));
+    layout->addWidget(filterExpressionEdit(), 0, 0);
+    layout->addWidget(countDisplayLabel(), 0, 1);
+    layout->addWidget(tableView(), 1, 0, 1, 2);
+    layout->setRowStretch(1, 1);
+    layout->setColumnStretch(0, 1);
+    _stackedWidget->addWidget(panel);
 
     connect(this, &DataInspectionApplet::currentObjectChanged, this, &DataTableInspectionApplet::onCurrentContainerChanged);
 

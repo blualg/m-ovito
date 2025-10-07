@@ -24,7 +24,6 @@
 #include <ovito/particles/objects/Bonds.h>
 #include <ovito/gui/base/actions/ViewportModeAction.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
-#include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
 #include "BondInspectionApplet.h"
 
@@ -60,6 +59,7 @@ QWidget* BondInspectionApplet::createWidget()
 
     layout->addWidget(filterExpressionEdit(), 0, 1);
     layout->addWidget(countDisplayLabel(), 0, 2);
+    countDisplayLabel()->setToolTip(tr("Number of bonds in the final pipeline state that match the filter expression."));
     layout->addWidget(tableView(), 1, 0, 1, 3);
     layout->setRowStretch(1, 1);
     layout->setColumnStretch(1, 1);

@@ -28,6 +28,7 @@
 #include <ovito/stdobj/properties/Property.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectionApplet.h>
+#include <ovito/gui/desktop/widgets/general/AutocompleteLineEdit.h>
 #include <ovito/core/dataset/scene/Pipeline.h>
 
 namespace Ovito {
@@ -62,6 +63,9 @@ public:
 
     /// Selects a specific data object in this applet.
     virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+
+    /// Returns the UI display name of the elements contained in the selected property container, e.g. "particles" or "bonds".
+    virtual QString elementDescriptionName() const { return selectedContainerObject()->getOOMetaClass().elementDescriptionName(); }
 
 protected:
 
