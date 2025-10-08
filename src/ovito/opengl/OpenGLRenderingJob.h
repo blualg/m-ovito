@@ -83,7 +83,7 @@ class OVITO_OPENGLRENDERER_EXPORT OpenGLRenderingJob : public RenderingJob, publ
 public:
 
     /// Constructor.
-    void initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer);
+    void initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer, int supersamplingLevel = 1);
 
     /// Called when this object is being destroyed.
     virtual void aboutToBeDeleted() override;
@@ -92,16 +92,17 @@ public:
     const std::shared_ptr<RendererResourceCache>& visCache() const { return _visCache; }
 
 	/// Creates a new abstract target frame buffer for rendering into.
-	virtual OORef<RenderBuffer> createOffscreenRenderBuffer(const QRect& viewportRect) override;
+	virtual OORef<RenderBuffer> createOffscreenRenderBuffer(const QSize& deviceIndependentSize) override;
+
+	/// Renders an image of the given frame graph. The image is first rendered into the given device-specific render buffer,
+	/// and then optionally copied into the given output frame buffer (may be null).
+	[[nodiscard]] virtual SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<RenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> frameBuffer, TaskProgress& progress) override;
 
 	/// Renders an image of the given frame graph into the given target frame buffer.
-	[[nodiscard]] virtual SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<RenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> outputFrameBuffer, TaskProgress& progress) override;
+	[[nodiscard]] SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<OpenGLRenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<OpenGLPickingMap> pickingMap);
 
-	/// Renders an image of the given frame graph into the given target frame buffer.
-	[[nodiscard]] SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<OpenGLRenderBuffer> frameBuffer, std::shared_ptr<FrameBuffer> outputFrameBuffer, std::shared_ptr<OpenGLPickingMap> pickingMap);
-
-	/// Returns the multi-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
-	virtual int multisamplingLevel() const override { return _multisamplingLevel; }
+	/// Returns the super-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
+	int supersamplingLevel() const { return _supersamplingLevel; }
 
     /// Performs post-processing of a newly generated frame graph to be rendered by this implementation.
     virtual void postprocessFrameGraph(FrameGraph& frameGraph) override {
@@ -242,8 +243,8 @@ private:
     /// Reference to the renderer instance holding the rendering parameters.
     OORef<const OpenGLRenderer> _sceneRenderer;
 
-    /// Controls the level of multisampling used to reduce antialiasing effects.
-    int _multisamplingLevel = 1;
+    /// Controls the level of supersampling used to reduce antialiasing effects.
+    int _supersamplingLevel = 1;
 
     /// Controls whether a two-pass OIT method is used to render semi-transparent geometry.
     bool _orderIndependentTransparency = false;

@@ -124,7 +124,7 @@ void RenderSettings::setImageFilename(const QString& filename)
 * This is the high-level rendering function, which invokes the renderer to
 * generate one or more output images of the scene.
 ******************************************************************************/
-Future<void> RenderSettings::render(const ViewportConfiguration& viewportConfiguration, const std::shared_ptr<FrameBuffer>& outputFrameBuffer)
+Future<void> RenderSettings::render(const ViewportConfiguration& viewportConfiguration, const std::shared_ptr<FrameBuffer>& frameBuffer)
 {
     std::vector<std::pair<Viewport*, QRectF>> viewportLayout;
     if(renderAllViewports()) {
@@ -149,7 +149,7 @@ Future<void> RenderSettings::render(const ViewportConfiguration& viewportConfigu
             animationSettings = vp->scene()->animationSettings();
     }
 
-    return render(std::move(viewportLayout), animationSettings, outputFrameBuffer);
+    return render(std::move(viewportLayout), animationSettings, frameBuffer);
 }
 /******************************************************************************
  * Formats the image filename and replaces wildcards with the current frame number.
@@ -173,7 +173,7 @@ QString RenderSettings::formatImageFilename(const QString& filename, int frameNu
 * This is the high-level rendering function, which invokes the renderer to
 * generate one or more output images of the scene.
 ******************************************************************************/
-Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>> viewportLayout, OORef<const AnimationSettings> animationSettings, const std::shared_ptr<FrameBuffer> outputFrameBuffer)
+Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRectF>> viewportLayout, OORef<const AnimationSettings> animationSettings, const std::shared_ptr<FrameBuffer> frameBuffer)
 {
     OVITO_ASSERT(this_task::isMainThread());
     OVITO_ASSERT(this_task::get());
@@ -187,9 +187,9 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
     OORef<RenderSettings> self(this);
 
     // Resize output frame buffer.
-    if(outputFrameBuffer->size() != QSize(outputImageWidth(), outputImageHeight())) {
-        outputFrameBuffer->setSize(QSize(outputImageWidth(), outputImageHeight()));
-        outputFrameBuffer->clear();
+    if(frameBuffer->size() != QSize(outputImageWidth(), outputImageHeight())) {
+        frameBuffer->setSize(QSize(outputImageWidth(), outputImageHeight()));
+        frameBuffer->clear();
     }
 
     // Determine the range of frames to be rendered.
@@ -228,8 +228,9 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
     // Per viewport data.
     struct ViewportRenderingData {
         OORef<Viewport> viewport;
-        OORef<RenderBuffer> renderingFrameBuffer;
+        OORef<RenderBuffer> renderBuffer;
         RendererResourceCache::ResourceFrame inactiveCacheFrame;
+        QRect destinationRect;
     };
 
     // Create the rendering frame buffers, one for each viewport to be rendered.
@@ -238,14 +239,15 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
     for(const auto& r : viewportLayout) {
         // Compute the rectangular area covered by the viewport in the output frame buffer.
         // For this, convert viewport layout rect from relative coordinates to frame buffer pixel coordinates and round to nearest integers.
-        QRectF pixelRect(r.second.x() * outputFrameBuffer->width(), r.second.y() * outputFrameBuffer->height(), r.second.width() * outputFrameBuffer->width(), r.second.height() * outputFrameBuffer->height());
+        QRectF pixelRect(r.second.x() * frameBuffer->width(), r.second.y() * frameBuffer->height(), r.second.width() * frameBuffer->width(), r.second.height() * frameBuffer->height());
         QRect destinationRect = pixelRect.toRect();
         if(destinationRect.isEmpty())
             continue;
         ViewportRenderingData& vpData = viewportList.emplace_back();
         // Request a frame buffer of the right size from the rendering job.
-        vpData.renderingFrameBuffer = renderingJob->createOffscreenRenderBuffer(destinationRect);
+        vpData.renderBuffer = renderingJob->createOffscreenRenderBuffer(destinationRect.size());
         vpData.viewport = r.first;
+        vpData.destinationRect = destinationRect;
     }
 
     VideoEncoder* videoEncoder = nullptr;
@@ -266,7 +268,7 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
 #endif
 
     // The visualization data cache used for building the frame graph.
-    std::shared_ptr<RendererResourceCache> visCache = this_task::ui()->datasetContainer().visCache();
+    const std::shared_ptr<RendererResourceCache> visCache = this_task::ui()->datasetContainer().visCache();
 
     // Progress reporting when rendering an entire animation.
     std::optional<TaskProgress> animationProgress;
@@ -315,28 +317,33 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
         for(ViewportRenderingData& vpData : viewportList) {
 
             // Set up preliminary projection.
-            FloatType viewportAspectRatio = (FloatType)vpData.renderingFrameBuffer->outputViewportRect().height() / vpData.renderingFrameBuffer->outputViewportRect().width();
+            const FloatType viewportAspectRatio = (FloatType)vpData.destinationRect.height() / vpData.destinationRect.width();
             ViewProjectionParameters projParams = vpData.viewport->computeProjectionParameters(renderTime, viewportAspectRatio);
             this_task::throwIfCanceled();
+
+            // Determine device pixel ratio of the device render buffer.
+            // The OpenGL renderer uses supersampling to reduce aliasing artifacts, which means that the actual
+            // render buffer is larger than the viewport rectangle in the output image.
+            const qreal devicePixelRatio = (qreal)vpData.renderBuffer->size().width() / vpData.destinationRect.width();
 
             // Create a new frame graph.
             OORef<FrameGraph> frameGraph = OORef<FrameGraph>::create(
                 visCache->acquireResourceFrame(),
                 renderTime,
                 projParams,
-                vpData.renderingFrameBuffer->outputViewportRect().size(),
+                vpData.destinationRect.size(),
                 false,
                 false,
                 stopOnPipelineError(),
                 renderingJob->preferredImageFormat(),
-                renderingJob->multisamplingLevel());
+                devicePixelRatio);
 
             // Set background color.
             frameGraph->setClearColor(generateAlphaChannel() ? ColorA(0,0,0,0) : ColorA(backgroundColorAt(renderTime)));
 
             // Target rectangles for overlay/underlay rendering.
-            const QRect& logicalOverlayRect = vpData.renderingFrameBuffer->outputViewportRect();
-            const QRect& physicalOverlayRect = vpData.renderingFrameBuffer->renderingViewportRect();
+            const QRect logicalOverlayRect(QPoint(0,0), vpData.destinationRect.size());
+            const QRect physicalOverlayRect(QPoint(0,0), vpData.renderBuffer->size());
 
             // Let the FrameGraph class do the heavy lifting and generate the drawing commands for the current scene.
             co_await FutureAwaiter(ObjectExecutor(this), frameGraph->buildFromScene(vpData.viewport->scene(), vpData.viewport, logicalOverlayRect, physicalOverlayRect, projParams));
@@ -351,8 +358,9 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
             vpData.inactiveCacheFrame = frameGraph->takeCacheFrame();
 
             // Let the scene renderer produce the rendering in the framebuffer.
-            outputFrameBuffer->discardChanges();
-            co_await FutureAwaiter(ObjectExecutor(this), renderingJob->renderFrame(frameGraph, vpData.renderingFrameBuffer, outputFrameBuffer, frameProgress));
+            frameBuffer->discardChanges();
+            frameBuffer->setViewportRect(vpData.destinationRect);
+            co_await FutureAwaiter(ObjectExecutor(this), renderingJob->renderFrame(frameGraph, vpData.renderBuffer, frameBuffer, frameProgress));
 
             frameProgress.nextSubStep();
         }
@@ -367,12 +375,12 @@ Future<void> RenderSettings::render(const std::vector<std::pair<Viewport*, QRect
                 Application::instance()->createQtApplication(false);
 
                 // Use the QImage.save() function to save the rendered image to disk.
-                if(!outputFrameBuffer->image().save(outputFilename, imageInfo().format()))
+                if(!frameBuffer->image().save(outputFilename, imageInfo().format()))
                     throw Exception(tr("Failed to save rendered image to output file '%1'.").arg(outputFilename));
             }
             else {
 #ifdef OVITO_VIDEO_OUTPUT_SUPPORT
-                videoEncoder->writeFrame(outputFrameBuffer->image());
+                videoEncoder->writeFrame(frameBuffer->image());
 #endif
             }
         }

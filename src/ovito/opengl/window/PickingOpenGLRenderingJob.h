@@ -38,11 +38,7 @@ class OVITO_OPENGLRENDERERWINDOW_EXPORT PickingOpenGLRenderingJob : public Offsc
 public:
 
     /// Returns an instance of this rendering job class that is shared among all viewport windows.
-    static OORef<PickingOpenGLRenderingJob> createSharedInstance(UserInterface& userInterface, OORef<const OpenGLRenderer> renderer);
-
-	/// Returns the multi-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
-    /// Note: Overwritten to return 1, because the interactive viewport renderer does not support multi-sampling yet.
-	virtual int multisamplingLevel() const override { return 1; }
+    static OORef<PickingOpenGLRenderingJob> createSharedInstance(UserInterface& userInterface);
 };
 
 }   // End of namespace

@@ -46,19 +46,20 @@ namespace Ovito {
 IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLRenderingJob);
 
 /******************************************************************************
- * Constructor.
- ******************************************************************************/
-void OpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer)
+* Constructor.
+******************************************************************************/
+void OpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer, int supersamplingLevel)
 {
     RenderingJob::initializeObject(flags);
 
     _visCache = std::move(visCache);
     _sceneRenderer = std::move(sceneRenderer);
+    _supersamplingLevel = std::max(1, supersamplingLevel);
 }
 
 /******************************************************************************
- * Called when this object is being destroyed.
- ******************************************************************************/
+* Called when this object is being destroyed.
+******************************************************************************/
 void OpenGLRenderingJob::aboutToBeDeleted()
 {
     RenderingJob::aboutToBeDeleted();
@@ -72,34 +73,29 @@ void OpenGLRenderingJob::aboutToBeDeleted()
 }
 
 /******************************************************************************
- * Creates a new abstract target frame buffer for rendering into.
- ******************************************************************************/
-OORef<RenderBuffer> OpenGLRenderingJob::createOffscreenRenderBuffer(const QRect& viewportRect)
+* Creates a new abstract target frame buffer for rendering into.
+******************************************************************************/
+OORef<RenderBuffer> OpenGLRenderingJob::createOffscreenRenderBuffer(const QSize& deviceIndependentSize)
 {
     // Creating an OpenGL framebuffer requires an active OpenGL context.
     OpenGLContextRestore contextRestore = activateContext();
 
-    // Adopt settings from scene renderer instance.
-    if(_sceneRenderer) {
-        _multisamplingLevel = std::max(1, _sceneRenderer->antialiasingLevel());
-        _orderIndependentTransparency = _sceneRenderer->orderIndependentTransparency();
-    }
-
-    return OORef<OpenGLRenderBuffer>::create(this, viewportRect);
+    return OORef<OpenGLRenderBuffer>::create(this, deviceIndependentSize);
 }
 
 /******************************************************************************
- * Renders an image of the given frame graph into the given target frame buffer.
- ******************************************************************************/
-SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<RenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> outputFrameBuffer, TaskProgress& progress)
+* Renders an image of the given frame graph. The image is first rendered into the given device-specific render buffer,
+* and then optionally copied into the given output frame buffer (may be null).
+******************************************************************************/
+SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<RenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> frameBuffer, TaskProgress& progress)
 {
-    return renderFrame(std::move(frameGraph), static_object_cast<OpenGLRenderBuffer>(std::move(renderBuffer)), std::move(outputFrameBuffer), nullptr);
+    return renderFrame(std::move(frameGraph), static_object_cast<OpenGLRenderBuffer>(std::move(renderBuffer)), std::move(frameBuffer), nullptr);
 }
 
 /******************************************************************************
 * Renders an image of the given frame graph into the given target frame buffer.
 ******************************************************************************/
-SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<OpenGLRenderBuffer> frameBuffer, std::shared_ptr<FrameBuffer> outputFrameBuffer, std::shared_ptr<OpenGLPickingMap> pickingMap)
+SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<OpenGLRenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<OpenGLPickingMap> pickingMap)
 {
     OVITO_ASSERT(this_task::ui());
 
@@ -113,12 +109,6 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
                "on how to enable OpenGL rendering in Python scripts."));
     }
 
-    // Adopt settings from scene renderer instance.
-    if(_sceneRenderer) {
-        _multisamplingLevel = std::max(1, _sceneRenderer->antialiasingLevel());
-        _orderIndependentTransparency = _sceneRenderer->orderIndependentTransparency();
-    }
-
     // Rendering requires an active GL context.
     OpenGLContextRestore contextRestore = activateContext();
     _glcontext = QOpenGLContext::currentContext();
@@ -130,18 +120,25 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
     OVITO_REPORT_OPENGL_ERRORS(this);
 
     // A picking render pass must always be done into an offscreen framebuffer.
-    OVITO_ASSERT(!pickingMap || frameBuffer->framebufferObject().has_value());
+    OVITO_ASSERT(!pickingMap || renderBuffer->framebufferObject().has_value());
 
     // Bind offscreen OpenGL framebuffer for rendering.
-    if(frameBuffer->framebufferObject().has_value() && !frameBuffer->framebufferObject()->bind())
+    if(renderBuffer->framebufferObject().has_value() && !renderBuffer->framebufferObject()->bind())
         throw RendererException(tr("Failed to bind OpenGL framebuffer object for offscreen rendering."));
 
-    // Store physical framebuffer size.
-    _framebufferSize = frameBuffer->framebufferSize();
+    // Store physical OpenGL framebuffer size.
+    _framebufferSize = renderBuffer->size();
+
+    // Adopt OIT mode from scene renderer instance.
+    if(_sceneRenderer)
+        _orderIndependentTransparency = _sceneRenderer->orderIndependentTransparency();
 
     // Store a pointer internally.
     _frameGraph = frameGraph.get();
     _objectPickingMap = pickingMap.get();
+
+    OVITO_ASSERT(!isPickingPass() || supersamplingLevel() == 1); // Never use supersampling in picking render passes.
+    OVITO_ASSERT(!isPickingPass() || orderIndependentTransparency() == false); // Never use OIT in picking render passes.
 
     // Obtain surface format.
     _glformat = _glcontext->format();
@@ -319,7 +316,7 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
 
     // Render translucent 3D geometry in a second pass.
     if(hasTransparentGeometry)
-        renderTransparentGeometry(*frameBuffer);
+        renderTransparentGeometry(*renderBuffer);
 
     // Render highlighted geometry in a third and fourth pass.
     if(!isPickingPass() && std::any_of(frameGraph->commandGroups().cbegin(), frameGraph->commandGroups().cend(),
@@ -359,36 +356,33 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
 
     // Store the resource cache frame in the target frame buffer object to keep OpenGL resources alive
     // for subsequent frames.
-    frameBuffer->storePreviousResourceFrame(std::move(_currentResourceFrame));
+    renderBuffer->storePreviousResourceFrame(std::move(_currentResourceFrame));
 
     // Read the rendered image from the OpenGL framebuffer and paint it into the output frame buffer.
-    if(outputFrameBuffer && frameBuffer->framebufferObject()) {
-        const QRect& viewportRect = frameBuffer->outputViewportRect();
-
+    if(frameBuffer && renderBuffer->framebufferObject()) {
         // Flush the contents to the FBO before extracting the image.
         glcontext()->swapBuffers(glcontext()->surface());
 
         // Clear destination area in the framebuffer (only necessary if OpenGL image is not fully opaque).
-        if(frameGraph->clearColor().a() != 1 && !outputFrameBuffer->image().isNull())
-            outputFrameBuffer->clear(frameGraph->clearColor(), viewportRect);
+        if(frameGraph->clearColor().a() != 1 && !frameBuffer->image().isNull())
+            frameBuffer->clear(frameGraph->clearColor());
 
         // Fetch rendered image from OpenGL framebuffer.
-        QImage renderedImage = frameBuffer->framebufferObject()->toImage();
+        QImage renderedImage = renderBuffer->framebufferObject()->toImage();
         OVITO_ASSERT(renderedImage.size() == framebufferSize());
         // Rescale supersampled image to output size.
-        QImage scaledImage = renderedImage.scaled(viewportRect.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        QImage scaledImage = renderedImage.scaled(frameBuffer->viewportRect().size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
         // Transfer OpenGL image to the output frame buffer.
-        if(!outputFrameBuffer->image().isNull()) {
-            QPainter painter(&outputFrameBuffer->image());
-            painter.drawImage(viewportRect, scaledImage,
-                              QRect(0, scaledImage.height() - viewportRect.height(), viewportRect.width(), viewportRect.height()));
+        if(!frameBuffer->image().isNull()) {
+            QPainter painter(&frameBuffer->image());
+            painter.drawImage(frameBuffer->viewportRect(), scaledImage);
         }
         else {
-            outputFrameBuffer->image() = std::move(scaledImage);
+            frameBuffer->image() = std::move(scaledImage);
         }
-        outputFrameBuffer->update(viewportRect);
-        outputFrameBuffer->commitChanges();
+        frameBuffer->update(frameBuffer->viewportRect());
+        frameBuffer->commitChanges();
     }
 
     // Stop debug logger.
@@ -398,7 +392,7 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
     }
 
     // Unbind offscreen OpenGL framebuffer.
-    if(frameBuffer->framebufferObject().has_value() && !frameBuffer->framebufferObject()->release())
+    if(renderBuffer->framebufferObject().has_value() && !renderBuffer->framebufferObject()->release())
         throw RendererException(tr("Failed to release OpenGL framebuffer object after offscreen rendering."));
 
     _glcontext = nullptr;

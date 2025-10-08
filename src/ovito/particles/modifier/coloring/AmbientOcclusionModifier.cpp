@@ -176,7 +176,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
 
 #ifndef Q_OS_MACOS
             // Create an offscreen framebuffer for rendering.
-            OORef<OpenGLRenderBuffer> renderBuffer = static_object_cast<OpenGLRenderBuffer>(renderingJob->createOffscreenRenderBuffer(frameBufferRect, frameBuffer));
+            OORef<OpenGLRenderBuffer> renderBuffer = static_object_cast<OpenGLRenderBuffer>(renderingJob->createOffscreenRenderBuffer(frameBuffer->size()));
 
             progress->setMaximum(samplingCount);
             for(int sample = 0; sample < samplingCount; sample++) {
@@ -187,7 +187,7 @@ Future<PipelineFlowState> AmbientOcclusionModifier::evaluateModifier(const Modif
             auto [progress, renderingJob, objectIdentifierMap, frameBuffer, frameGraph, brightness, radii, samplingCount, resolution, boundingBox] = std::move(inputs);
 
             // Create an offscreen framebuffer for rendering.
-            OORef<OpenGLRenderBuffer> renderBuffer = static_object_cast<OpenGLRenderBuffer>(renderingJob->createOffscreenRenderBuffer(QRect(QPoint(0,0), frameBuffer->size())));
+            OORef<OpenGLRenderBuffer> renderBuffer = static_object_cast<OpenGLRenderBuffer>(renderingJob->createOffscreenRenderBuffer(frameBuffer->size()));
 
             // Perform the evaluation for all requested animation frames.
             progress->setMaximum(samplingCount);

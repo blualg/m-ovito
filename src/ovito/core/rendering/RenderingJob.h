@@ -52,13 +52,11 @@ class OVITO_CORE_EXPORT RenderingJob : public RefTarget
 public:
 
 	/// Creates a new abstract target buffer to render into.
-	virtual OORef<RenderBuffer> createOffscreenRenderBuffer(const QRect& viewportRect) = 0;
+	virtual OORef<RenderBuffer> createOffscreenRenderBuffer(const QSize& deviceIndependentSize) = 0;
 
-	/// Returns the device pixel ratio to be used when building the frame graph for offscreen rendering.
-	virtual int multisamplingLevel() const { return 1; }
-
-	/// Renders an image of the given frame graph into the given target buffer.
-	[[nodiscard]] virtual SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<RenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> outputFrameBuffer, TaskProgress& progress) = 0;
+	/// Renders an image of the given frame graph. The image is first rendered into the given device-specific render buffer,
+	/// and then optionally copied into the given output frame buffer (may be null).
+	[[nodiscard]] virtual SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<RenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> frameBuffer, TaskProgress& progress) = 0;
 
     /// Perform post-processing of a newly generated frame graph, which is to be rendered by this rendering job.
     virtual void postprocessFrameGraph(FrameGraph& frameGraph) {}

@@ -50,10 +50,6 @@ public:
         return restore;
     }
 
-	/// Returns the multi-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
-    /// Note: Overwritten to return 1, because the interactive viewport renderer does not support multi-sampling yet.
-	virtual int multisamplingLevel() const override { return 1; }
-
 private:
 
     /// The window we are rendering into.

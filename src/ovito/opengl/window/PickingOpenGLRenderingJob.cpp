@@ -32,7 +32,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(PickingOpenGLRenderingJob);
 /******************************************************************************
 * Returns an instance of this rendering job class that is shared among all viewport windows.
 ******************************************************************************/
-OORef<PickingOpenGLRenderingJob> PickingOpenGLRenderingJob::createSharedInstance(UserInterface& userInterface, OORef<const OpenGLRenderer> renderer)
+OORef<PickingOpenGLRenderingJob> PickingOpenGLRenderingJob::createSharedInstance(UserInterface& userInterface)
 {
     OORef<PickingOpenGLRenderingJob> job;
 
@@ -41,19 +41,18 @@ OORef<PickingOpenGLRenderingJob> PickingOpenGLRenderingJob::createSharedInstance
         if(OpenGLViewportWindow* openglWindow = dynamic_object_cast<OpenGLViewportWindow>(window)) {
             if(openglWindow->pickingRenderingJob()) {
                 job = openglWindow->pickingRenderingJob();
-                OVITO_ASSERT(job->sceneRenderer() == renderer);
-                OVITO_ASSERT(job->visCache() == userInterface.datasetContainer().visCache());
                 break;
             }
         }
     }
 
-    if(!job) {
-        job = OORef<PickingOpenGLRenderingJob>::create(
-            userInterface.datasetContainer().visCache(), // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
-            std::move(renderer));
-    }
+    // Create a new shared instance if no existing one was found.
+    if(!job)
+        job = OORef<PickingOpenGLRenderingJob>::create(userInterface.datasetContainer().visCache(), nullptr); // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
 
+    // Sanity checks to make sure the existing job is compatible with our requirements.
+    OVITO_ASSERT(!job->sceneRenderer());
+    OVITO_ASSERT(job->visCache() == userInterface.datasetContainer().visCache());
     return job;
 }
 

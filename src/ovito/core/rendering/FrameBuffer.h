@@ -173,14 +173,21 @@ public:
         _info.setImageWidth(newSize.width());
         _info.setImageHeight(newSize.height());
         _image = _image.copy(0, 0, newSize.width(), newSize.height());
+        _viewportRect = QRect(QPoint(0,0), newSize);
         Q_EMIT bufferResized(newSize);
     }
 
     /// Returns the descriptor of the image.
     const ImageInfo& info() const { return _info; }
 
+	/// Returns the target area currently being rendered into.
+	const QRect& viewportRect() const { return _viewportRect; }
+
+    /// Sets the target area currently being rendered into.
+    void setViewportRect(const QRect& rect) { _viewportRect = rect; }
+
     /// Clears the framebuffer with a uniform color.
-    void clear(const ColorA& color = ColorA(0,0,0,0), const QRect& rect = QRect(), bool delayed = false);
+    void clear(const ColorA& color = ColorA(0,0,0,0), bool delayed = false);
 
     /// This method must be called each time the contents of the frame buffer have been modified.
     /// Fires the contentChanged() signal.
@@ -194,16 +201,16 @@ public:
     bool autoCrop();
 
 	/// Renders 2d graphics primitives specified in a frame graph into the frame buffer.
-	void renderPrimitives(FrameGraph::RenderLayerType layerType, const FrameGraph& frameGraph, const QRect& outputViewportRect);
+	void renderPrimitives(FrameGraph::RenderLayerType layerType, const FrameGraph& frameGraph);
 
     /// Renders an image primitive directly into the framebuffer.
-    void renderImagePrimitive(const ImagePrimitive& primitive, const QRect& viewportRect, bool update = true);
+    void renderImagePrimitive(const ImagePrimitive& primitive, bool update = true);
 
     /// Renders a text primitive directly into the framebuffer.
-    void renderTextPrimitive(const TextPrimitive& primitive, const QRect& viewportRect, bool update = true);
+    void renderTextPrimitive(const TextPrimitive& primitive, bool update = true);
 
     /// Renders a line primitive directly into the framebuffer (without depth-testing).
-    void renderLinePrimitive(const LinePrimitive& primitive, const AffineTransformation& worldTransform, const ViewProjectionParameters& projectionParams, const QRect& viewportRect, bool update = true);
+    void renderLinePrimitive(const LinePrimitive& primitive, const AffineTransformation& worldTransform, const ViewProjectionParameters& projectionParams, bool update = true);
 
     /// Applies a delayed clear buffer operation.
     void commitChanges();
@@ -228,6 +235,9 @@ private:
 
     /// The descriptor of the image.
     ImageInfo _info;
+
+    /// The target area currently being rendered into.
+	QRect _viewportRect;
 
     /// Saved rect to be cleared at some later time.
     QRect _delayedClearRect;

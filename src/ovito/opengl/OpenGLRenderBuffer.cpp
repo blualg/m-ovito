@@ -32,24 +32,21 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLRenderBuffer);
 /******************************************************************************
 * Constructor that allocates an offscreen OpenGL framebuffer.
 ******************************************************************************/
-void OpenGLRenderBuffer::initializeObject(OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect)
+void OpenGLRenderBuffer::initializeObject(OORef<OpenGLRenderingJob> renderingJob, const QSize& deviceIndependentSize)
 {
-    RenderBuffer::initializeObject(viewportRect);
+    RenderBuffer::initializeObject(deviceIndependentSize * renderingJob->supersamplingLevel());
 
     _renderingJob = std::move(renderingJob);
 
     // Creating an OpenGL framebuffer requires an active OpenGL context.
     OVITO_ASSERT(QOpenGLContext::currentContext());
 
-    // Determine internal framebuffer size including supersampling.
-    _framebufferSize = QSize(viewportRect.width() * _renderingJob->multisamplingLevel(), viewportRect.height() * _renderingJob->multisamplingLevel());
-
     // Create the OpenGL framebuffer.
     QOpenGLFramebufferObjectFormat framebufferFormat;
     framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-    _framebufferObject.emplace(_framebufferSize, framebufferFormat);
+    _framebufferObject.emplace(size(), framebufferFormat);
     if(!_framebufferObject->isValid()) {
-        if(_framebufferSize.width() > 16000 || _framebufferSize.height() > 16000)
+        if(size().width() > 16000 || size().height() > 16000)
             throw RendererException(tr("Failed to create OpenGL framebuffer object for offscreen rendering. The selected combination of large image rendering size and/or antialiasing (supersampling) level may exceed what is supported by the OpenGL graphics driver."));
         else
             throw RendererException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
@@ -61,15 +58,13 @@ void OpenGLRenderBuffer::initializeObject(OORef<OpenGLRenderingJob> renderingJob
 /******************************************************************************
 * Constructor that uses an existing OpenGL framebuffer.
 ******************************************************************************/
-void OpenGLRenderBuffer::initializeObject(OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, GLuint framebufferObjectId)
+void OpenGLRenderBuffer::initializeObject(OORef<OpenGLRenderingJob> renderingJob, const QSize& deviceIndependentSize, GLuint framebufferObjectId)
 {
-    RenderBuffer::initializeObject(viewportRect);
+    RenderBuffer::initializeObject(deviceIndependentSize);
 
     _renderingJob = std::move(renderingJob);
     _framebufferObjectId = framebufferObjectId;
-    _framebufferSize = viewportRect.size();
-
-    OVITO_ASSERT(_renderingJob->multisamplingLevel() == 1);
+    OVITO_ASSERT(_renderingJob->supersamplingLevel() == 1);
 }
 
 /******************************************************************************
@@ -109,8 +104,8 @@ void OpenGLRenderBuffer::beginOITRendering()
         framebufferFormat.setInternalTextureFormat(GL_RGBA16F);
 
         // Create framebuffer.
-        _oitFramebuffer.emplace(_framebufferSize, framebufferFormat);
-        _oitFramebuffer->addColorAttachment(_framebufferSize, GL_R16F);
+        _oitFramebuffer.emplace(size(), framebufferFormat);
+        _oitFramebuffer->addColorAttachment(size(), GL_R16F);
     }
 
     // Verify validity of framebuffer.
@@ -136,7 +131,7 @@ void OpenGLRenderBuffer::beginOITRendering()
 
     // Blit depth buffer from primary FBO to transparency FBO.
     OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBindFramebuffer(GL_READ_FRAMEBUFFER, _framebufferObjectId));
-    OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBlitFramebuffer(0, 0, _framebufferSize.width(), _framebufferSize.height(), 0, 0, _framebufferSize.width(), _framebufferSize.height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST));
+    OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBlitFramebuffer(0, 0, size().width(), size().height(), 0, 0, size().width(), size().height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST));
     OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBindFramebuffer(GL_READ_FRAMEBUFFER, 0));
 
     // Disable writing to the depth buffer.

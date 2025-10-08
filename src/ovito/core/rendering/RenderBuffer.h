@@ -38,21 +38,18 @@ class OVITO_CORE_EXPORT RenderBuffer : public OvitoObject
 public:
 
     /// Constructor.
-    void initializeObject(const QRect& outputViewportRect) {
+    void initializeObject(const QSize& size) {
 		OvitoObject::initializeObject();
-		_outputViewportRect = outputViewportRect;
+		const_cast<QSize&>(_size) = size;
 	}
 
-	/// Returns the target area in the output FrameBuffer.
-	const QRect& outputViewportRect() const { return _outputViewportRect; }
-
-	/// Returns the target area in the internal rendering framebuffer (e.g. OpenGL framebuffer).
-	virtual QRect renderingViewportRect() const { return _outputViewportRect; }
+	/// Returns the physical size of the buffer in pixels.
+	const QSize& size() const { return _size; }
 
 private:
 
-	/// The target area in the output image.
-	QRect _outputViewportRect;
+	/// The physical size of the buffer in pixels.
+	const QSize _size;
 };
 
 }	// End of namespace
