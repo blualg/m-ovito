@@ -35,6 +35,7 @@ OVITO_STANDARD_PLUGIN(StdObjGui
         properties/PropertyColorMappingEditor.cpp
         simcell/SimulationCellEditor.cpp
         simcell/SimulationCellVisEditor.cpp
+        simcell/SimulationCellInspectionApplet.cpp
         table/DataTableInspectionApplet.cpp
         vectors/VectorsInspectionApplet.cpp
         widgets/PropertyReferenceParameterUI.cpp
