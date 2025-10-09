@@ -89,6 +89,7 @@ QWidget* DislocationInspectionApplet::createWidget()
     _tableView->horizontalHeader()->resizeSection(4, 60);
     _tableView->horizontalHeader()->resizeSection(6, 200);
     _tableView->horizontalHeader()->resizeSection(7, 200);
+    _tableView->horizontalHeader()->setStretchLastSection(true);
     _tableView->verticalHeader()->hide();
     layout->addWidget(_tableView, 1, 0);
     layout->setRowStretch(1, 1);
