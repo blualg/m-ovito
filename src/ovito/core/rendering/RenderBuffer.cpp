@@ -28,4 +28,18 @@ namespace Ovito {
 
 IMPLEMENT_ABSTRACT_OVITO_CLASS(RenderBuffer);
 
+/******************************************************************************
+* Appends a message to the list of issues, which will be displayed
+* to the user after the current rendering pass.
+******************************************************************************/
+void RenderBuffer::reportIssue(const QString& msg)
+{
+    constexpr QStringList::size_type MessageLimit = 3;
+    if(_issueMessages.size() >= MessageLimit)
+        return;
+
+    qWarning() << msg; // Always log the issue to the console.
+    _issueMessages.push_back(msg);
+}
+
 }   // End of namespace

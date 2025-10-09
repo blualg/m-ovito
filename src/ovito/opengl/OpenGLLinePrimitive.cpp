@@ -63,9 +63,9 @@ void OpenGLRenderingJob::renderThinLinesImplementation(const LinePrimitive& prim
     shader.setInstanceCount(1);
 
     // Check size limits.
-    if(primitive.positions()->size() > std::numeric_limits<int32_t>::max() / sizeof(Point3F)) {
-        qWarning() << "WARNING: OpenGL renderer - Trying to render too many lines at once, exceeding device limits.";
-        return;
+    const int32_t maxNumLines = std::numeric_limits<int32_t>::max() / (2 * sizeof(Point3F));
+    if(primitive.positions()->size() / 2 > maxNumLines) {
+        _renderBuffer->reportIssue(tr("Rendering skipped: Too many lines to render at once (%1), exceeding device limits. Maximum number of lines: %2").arg(primitive.positions()->size() / 2).arg(maxNumLines));
     }
 
     // Upload vertex positions.
@@ -113,8 +113,9 @@ void OpenGLRenderingJob::renderThickLinesImplementation(const LinePrimitive& pri
     shader.setInstanceCount(primitive.positions()->size() / 2);
 
     // Check size limits.
-    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(Point3F))) {
-        qWarning() << "WARNING: OpenGL renderer - Trying to render too many lines at once, exceeding device limits.";
+    int32_t maxNumLines = std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(Point3F));
+    if(shader.instanceCount() > maxNumLines) {
+        _renderBuffer->reportIssue(tr("Rendering skipped: Too many lines to render at once (%1), exceeding device limits. Maximum number of lines: %2").arg(shader.instanceCount()).arg(maxNumLines));
         return;
     }
 

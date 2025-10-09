@@ -150,6 +150,9 @@ void OpenGLViewportWindow::paint()
         auto future = renderingJob()->renderFrame(frameGraph(), _visualRenderBuffer, nullptr, TaskProgress::Ignore);
         OVITO_ASSERT(future && future.isFinished() && !future.isCanceled());
 
+        // Display issues that may have occurred during rendering to the user.
+        displayRenderingIssues(QStringLiteral("OpenGL"), _visualRenderBuffer->renderingIssues());
+
         // Emit signal to inform listeners (e.g. SceneAnimationPlayback) that a full frame has been rendered and presented on screen.
         if(frameGraph()->isPreliminaryState() == false)
             Q_EMIT frameRenderComplete();

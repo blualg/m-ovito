@@ -294,6 +294,9 @@ private:
     /// The frame graph we are currently rendering.
     const FrameGraph* _frameGraph = nullptr;
 
+    /// The render buffer we are currently rendering into.
+    RenderBuffer* _renderBuffer = nullptr;
+
     /// The model-view transformation matrix for the current graphics primitive being rendered.
     AffineTransformation _modelViewTM = AffineTransformation::Identity();
 

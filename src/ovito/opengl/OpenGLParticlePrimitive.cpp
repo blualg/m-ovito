@@ -208,8 +208,10 @@ void OpenGLRenderingJob::renderParticlesImplementation(const ParticlePrimitive& 
         shader.enableSubsetRendering(primitive.indices());
 
     // Check VBO size limits.
-    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / sizeof(Vector4F)) {
-        qWarning() << "WARNING: OpenGL renderer - Trying to render too many particles at once, exceeding device limits.";
+    const int32_t maxVBOSize = std::numeric_limits<int32_t>::max() / sizeof(Vector4F); // Conservative estimate assuming 4-component vertex attributes.
+    const int32_t maxNumParticles = maxVBOSize / shader.verticesPerInstance();
+    if(shader.instanceCount() > maxNumParticles) {
+        _renderBuffer->reportIssue(tr("Rendering skipped: Too many particles to render at once (%1), exceeding device limits. Maximum number of particles: %2").arg(shader.instanceCount()).arg(maxNumParticles));
         return;
     }
 

@@ -109,6 +109,9 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
                "on how to enable OpenGL rendering in Python scripts."));
     }
 
+    // Reset warnings of the render buffer.
+    renderBuffer->resetIssues();
+
     // Rendering requires an active GL context.
     OpenGLContextRestore contextRestore = activateContext();
     _glcontext = QOpenGLContext::currentContext();
@@ -133,9 +136,10 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
     if(_sceneRenderer)
         _orderIndependentTransparency = _sceneRenderer->orderIndependentTransparency();
 
-    // Store a pointer internally.
+    // Store pointers to important objects internally.
     _frameGraph = frameGraph.get();
     _objectPickingMap = pickingMap.get();
+    _renderBuffer = renderBuffer.get();
 
     OVITO_ASSERT(!isPickingPass() || supersamplingLevel() == 1); // Never use supersampling in picking render passes.
     OVITO_ASSERT(!isPickingPass() || orderIndependentTransparency() == false); // Never use OIT in picking render passes.
@@ -397,6 +401,7 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
 
     _glcontext = nullptr;
     _objectPickingMap = nullptr;
+    _renderBuffer = nullptr;
 
     return SCFuture<void>::createImmediateEmpty();
 }

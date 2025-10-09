@@ -100,8 +100,9 @@ void OpenGLRenderingJob::renderCylindersImplementation(const CylinderPrimitive& 
     shader.setInstanceCount(primitive.basePositions()->size());
 
     // Check size limits.
-    if(shader.instanceCount() > std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(ColorT<float>))) {
-        qWarning() << "WARNING: OpenGL renderer - Trying to render too many cylinders at once, exceeding device limits.";
+    const int32_t maxNumInstances = std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / (2 * sizeof(ColorT<float>));
+    if(shader.instanceCount() > maxNumInstances) {
+        _renderBuffer->reportIssue(tr("Rendering skipped: Too many cylinders to render at once (%1), exceeding device limits. Maximum number of cylinders: %2").arg(shader.instanceCount()).arg(maxNumInstances));
         return;
     }
 

@@ -27,6 +27,7 @@
 #include <ovito/gui/base/viewport/BaseViewportWindow.h>
 
 #include <QWidget>
+#include <QLabel>
 
 namespace Ovito {
 
@@ -76,6 +77,9 @@ public:
         return widget()->devicePixelRatioF();
     }
 
+    /// Displays rendering issues (warnings) to the user using a visual indicator in the viewport window.
+    void displayRenderingIssues(const QString& rendererName, const QStringList& warningMessages);
+
 protected:
 
     /// This method is called after the reference counter of this object has reached zero
@@ -94,10 +98,18 @@ protected:
     /// Filters events sent to the widget.
     bool eventFilter(QObject* obj, QEvent* event) override;
 
+    /// Places the issue indicator labels in the viewport window.
+    void layoutIssueIndicators();
+
 private:
 
     /// The actual Qt GUI widget of the viewport window.
     QPointer<QWidget> _widget;
+
+    /// Map from renderer name to corresponding issue indicator label.
+    /// One label per renderer is needed to avoid flickering when the window employs
+    /// multiple renderers that report issues at the same time.
+    std::map<QString, QLabel*> _issueIndicators;
 };
 
 }   // End of namespace
