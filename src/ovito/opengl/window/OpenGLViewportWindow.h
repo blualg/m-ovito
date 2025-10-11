@@ -50,7 +50,7 @@ public:
     /// Determines the object located under the given mouse cursor position.
     virtual std::optional<PickResult> pick(const QPointF& pos) override;
 
-    /// Releases the renderer resources held by the viewport's surface and picking renderers.
+    /// Releases the resources held by the viewport window's renderer(s).
     virtual void releaseResources() override;
 
     /// Returns the current frame graph being rendered by OpenGL.

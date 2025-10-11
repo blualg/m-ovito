@@ -50,6 +50,7 @@ class OpenGLRenderBuffer; // defined in OpenGLRenderBuffer.h
 class OVITO_OPENGLRENDERER_EXPORT OpenGLContextRestore
 {
     Q_DISABLE_COPY(OpenGLContextRestore)
+
 public:
 
     /// Constructor, which remembers the previous context.
@@ -113,7 +114,7 @@ public:
     }
 
 	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
-	virtual QImage::Format preferredImageFormat() const override { return QImage::QImage::Format_RGBA8888; }
+	virtual QImage::Format preferredImageFormat() const override { return QImage::Format_RGBA8888; }
 
     /// Returns the renderer instance with the rendering parameters used by this rendering job.
     const OORef<const OpenGLRenderer>& sceneRenderer() const { return _sceneRenderer; }
@@ -121,14 +122,15 @@ public:
     /// Requests the rendering job to make its OpenGL context current, e.g. for releasing OpenGL resources that require an active context.
     [[nodiscard]] virtual OpenGLContextRestore activateContext() = 0;
 
+	/// A callback function that is invoked after rendering the opaque geometry, but before rendering the transparent geometry.
+    /// It can be used to perform custom compositing operations on the OpenGL framebuffer contents.
+    /// The ANARI viewport renderer uses this callback to composite the OpenGL and ANARI rendered images.
+    using FrameCompositingFunction = fu2::unique_function<void(OpenGLRenderingJob&)>;
+
+    /// Sets the callback function that is invoked after rendering the opaque geometry, but before rendering the transparent geometry.
+    void setFrameCompositingFunction(FrameCompositingFunction func) { _frameCompositingFunction = std::move(func); }
+
 protected:
-
-    /// May combine the framebuffer contents from multiple renderers.
-    /// This can be implemented by derived classes.
-    virtual void performFrameCompositing() {}
-
-    /// Decides whether a command from the render graph should be executed by the renderer.
-    virtual bool filterRenderingCommand(const FrameGraph::RenderingCommand& command, const FrameGraph::RenderingCommandGroup& commandGroup);
 
     /// Sets up the model-view transformation matrix for the given rendering command.
     void setupModelViewTransformation(const FrameGraph::RenderingCommand& command);
@@ -306,8 +308,13 @@ private:
 	/// The output area in the OpenGL framebuffer (in device pixels).
 	QSize _framebufferSize;
 
+    /// A callback function that is invoked after rendering the opaque geometry, but before rendering the transparent geometry.
+    /// It can be used to perform custom compositing operations on the OpenGL framebuffer contents.
+    FrameCompositingFunction _frameCompositingFunction;
+
     friend class OpenGLShaderHelper;
     friend class OpenGLRenderBuffer;
+    friend class OpenGLAnariViewportWindow; // to allow access to low-level mesh rendering functions, which are called from the rendering command filter function.
 };
 
 }   // End of namespace

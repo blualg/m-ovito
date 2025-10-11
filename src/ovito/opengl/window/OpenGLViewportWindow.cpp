@@ -91,7 +91,7 @@ OORef<RenderingJob> OpenGLViewportWindow::createRenderingJob()
 }
 
 /******************************************************************************
-* Releases the renderer resources held by the viewport's surface and picking renderers.
+* Releases the resources held by the viewport window's renderer(s).
 ******************************************************************************/
 void OpenGLViewportWindow::releaseResources()
 {

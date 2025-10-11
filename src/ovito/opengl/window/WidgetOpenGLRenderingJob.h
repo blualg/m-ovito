@@ -45,8 +45,11 @@ public:
     [[nodiscard]] virtual OpenGLContextRestore activateContext() override {
         OpenGLContextRestore restore;
         OVITO_ASSERT(_glwin);
-        if(_glwin)
+        if(_glwin) {
             _glwin->makeCurrent();
+        }
+        initializeOpenGLFunctions();
+        OVITO_REPORT_OPENGL_ERRORS(this);
         return restore;
     }
 

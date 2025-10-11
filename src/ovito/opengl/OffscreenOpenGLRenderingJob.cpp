@@ -123,6 +123,8 @@ OpenGLContextRestore OffscreenOpenGLRenderingJob::activateContext()
     OVITO_ASSERT(_offscreenSurface);
     Q_DECL_UNUSED bool success = createOffscreenContext().makeCurrent(_offscreenSurface.get());
     OVITO_ASSERT(success);
+    initializeOpenGLFunctions();
+    OVITO_REPORT_OPENGL_ERRORS(this);
     return restore;
 }
 

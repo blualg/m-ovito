@@ -139,6 +139,7 @@ public:
 
     auto width() const { return _size.width(); }
     auto height() const { return _size.height(); }
+    const auto& size() const { return _size; }
     auto textureId() const { return _textureId; }
 
 private:

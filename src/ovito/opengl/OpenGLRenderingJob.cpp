@@ -118,10 +118,6 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
     if(!_glcontext)
         throw RendererException(tr("Cannot render scene: There is no active OpenGL context"));
 
-    // Prepare a functions table allowing us to call OpenGL functions in a platform-independent way.
-    initializeOpenGLFunctions();
-    OVITO_REPORT_OPENGL_ERRORS(this);
-
     // A picking render pass must always be done into an offscreen framebuffer.
     OVITO_ASSERT(!pickingMap || renderBuffer->framebufferObject().has_value());
 
@@ -315,8 +311,9 @@ SCFuture<void> OpenGLRenderingJob::renderFrame(std::shared_ptr<const FrameGraph>
     this->glEnable(GL_DEPTH_TEST);
     bool hasTransparentGeometry = renderFrameGraph(FrameGraph::SceneLayer);
 
-    // Let sub-classes perform additional steps to composite the results from multiple renderers, e.g. ANARI.
-    performFrameCompositing();
+    // Perform additional steps to composite the results from multiple renderers, e.g. ANARI.
+    if(_frameCompositingFunction)
+        _frameCompositingFunction(*this);
 
     // Render translucent 3D geometry in a second pass.
     if(hasTransparentGeometry)
@@ -426,24 +423,6 @@ void OpenGLRenderingJob::renderTransparentGeometry(OpenGLRenderBuffer& frameBuff
 }
 
 /******************************************************************************
- * Decides whether a command from the render graph should be executed by the renderer.
- ******************************************************************************/
-bool OpenGLRenderingJob::filterRenderingCommand(const FrameGraph::RenderingCommand& command, const FrameGraph::RenderingCommandGroup& commandGroup)
-{
-    // Skip commands that are not relevant for the current rendering pass.
-    if(isPickingPass()) {
-        if(command.skipInPickingPass())
-            return true;
-    }
-    else {
-        if(command.skipInVisualPass())
-            return true;
-    }
-
-    return false;
-}
-
-/******************************************************************************
  * Sets up the model-view transformation matrix for the given rendering command.
  ******************************************************************************/
 void OpenGLRenderingJob::setupModelViewTransformation(const FrameGraph::RenderingCommand& command)
@@ -471,8 +450,17 @@ bool OpenGLRenderingJob::renderFrameGraph(FrameGraph::RenderLayerType layerType)
             continue;
 
         for(const FrameGraph::RenderingCommand& command : commandGroup.commands()) {
-            // Skip commands that are not relevant or not supported by this renderer.
-            if(filterRenderingCommand(command, commandGroup))
+            // Skip commands that are not relevant for the current rendering pass.
+            if(isPickingPass()) {
+                if(command.skipInPickingPass())
+                    continue;
+            }
+            else {
+                if(command.skipInVisualPass())
+                    continue;
+            }
+            // Query external filter whether to skip this command.
+            if(renderingCommandFilter(commandGroup, command))
                 continue;
 
             // Set up the model-view transformation matrix.
