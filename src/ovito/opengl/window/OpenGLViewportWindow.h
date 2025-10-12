@@ -79,8 +79,8 @@ protected:
     /// Returns the QOpenGLWidget that is associated with this viewport window.
     QOpenGLWidget* glwin() const { return static_cast<QOpenGLWidget*>(widget()); }
 
-    /// Is called by Qt whenever the widget needs to be painted.
-    void paint();
+    /// Is called by Qt whenever the OpenGL widget needs to be painted.
+    virtual void paint();
 
 private:
 

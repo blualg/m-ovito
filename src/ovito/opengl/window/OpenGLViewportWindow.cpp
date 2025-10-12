@@ -124,7 +124,7 @@ Future<void> OpenGLViewportWindow::renderFrameGraph(OORef<FrameGraph> frameGraph
 }
 
 /******************************************************************************
-* Is called by Qt whenever the widget needs to be painted.
+* Is called by Qt whenever the OpenGL widget needs to be painted.
 ******************************************************************************/
 void OpenGLViewportWindow::paint()
 {
