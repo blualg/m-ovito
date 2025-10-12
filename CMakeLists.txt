@@ -73,7 +73,7 @@ OPTION(OVITO_BUILD_SSH_CLIENT "Build the integrated SSH client for remote file a
 OPTION(OVITO_USE_SYCL "Build with SYCL support" "OFF")
 SET(OVITO_USE_SYCL None CACHE STRING "SYCL implementation to use")
 SET_PROPERTY(CACHE OVITO_USE_SYCL PROPERTY STRINGS OFF AdaptiveCpp DPC++)
-OPTION(OVITO_USE_CUDA "Build with native Cuda support" "OFF")
+OPTION(OVITO_USE_CUDA "Build with native CUDA support" "OFF")
 
 # Define user options that control the building of OVITO's standard plugins.
 OPTION(OVITO_BUILD_PLUGIN_STDOBJ "Build the standard objects plugin." "ON")

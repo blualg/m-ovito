@@ -27,7 +27,6 @@
 #include <ovito/opengl/OpenGLRenderer.h>
 #include "OpenGLViewportWindow.h"
 #include "WidgetOpenGLRenderingJob.h"
-#include "PickingOpenGLRenderingJob.h"
 
 namespace Ovito {
 
@@ -188,8 +187,26 @@ std::optional<ViewportWindow::PickResult> OpenGLViewportWindow::pick(const QPoin
             handleExceptions([&]() {
 
                 // Create the offscreen rendering job for object picking.
-                if(!_pickingRenderingJob)
-                    _pickingRenderingJob = PickingOpenGLRenderingJob::createSharedInstance(ui());
+                if(!pickingRenderingJob()) {
+
+                    // Check if any of the existing viewport windows already created a shared instance of this rendering job.
+                    for(ViewportWindow* window : ui().viewportWindows()) {
+                        if(OpenGLViewportWindow* openglWindow = dynamic_object_cast<OpenGLViewportWindow>(window)) {
+                            if(openglWindow->pickingRenderingJob() && openglWindow->getOOMetaClass() == getOOMetaClass()) {
+                                _pickingRenderingJob = openglWindow->pickingRenderingJob();
+                                break;
+                            }
+                        }
+                    }
+
+                    // Create a new shared instance if no existing one was found.
+                    if(!_pickingRenderingJob)
+                        _pickingRenderingJob = createPickingRenderingJob();
+
+                    // Sanity checks to make sure the existing job is compatible with our requirements.
+                    OVITO_ASSERT(pickingRenderingJob()->sceneRenderer() == nullptr);
+                    OVITO_ASSERT(pickingRenderingJob()->visCache() == ui().datasetContainer().visCache());
+                }
 
                 // Recreate/resize offscreen OpenGL framebuffer.
                 if(!_pickingRenderBuffer || _pickingRenderBuffer->size() != viewportWindowDeviceSize() || !_pickingRenderBuffer->framebufferObject()->isValid())

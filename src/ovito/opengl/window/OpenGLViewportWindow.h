@@ -28,7 +28,7 @@
 #include <ovito/opengl/OpenGLRenderer.h>
 #include <ovito/opengl/OpenGLRenderBuffer.h>
 #include <ovito/opengl/OpenGLPickingMap.h>
-#include "PickingOpenGLRenderingJob.h"
+#include <ovito/opengl/OffscreenOpenGLRenderingJob.h>
 
 #include <QOpenGLWidget>
 
@@ -57,7 +57,7 @@ public:
     const OORef<FrameGraph>& frameGraph() const { return _frameGraph; }
 
     /// Returns the rendering job that renders the object picking offscreen pass.
-    const OORef<PickingOpenGLRenderingJob>& pickingRenderingJob() const { return _pickingRenderingJob; }
+    const OORef<OffscreenOpenGLRenderingJob>& pickingRenderingJob() const { return _pickingRenderingJob; }
 
 protected:
 
@@ -66,6 +66,12 @@ protected:
 
     /// Creates the rendering job that renders the contents of the viewport window.
     virtual OORef<RenderingJob> createRenderingJob() override;
+
+    /// Creates the rendering job that renders the object picking offscreen pass.
+    virtual OORef<OffscreenOpenGLRenderingJob> createPickingRenderingJob() {
+        // Note: It's valid to use the global vis cache here, because the OpenGL renderer runs in the main thread.
+        return OORef<OffscreenOpenGLRenderingJob>::create(ui().datasetContainer().visCache(), nullptr);
+    }
 
     /// Renders the window contents after the frame graph has been regenerated.
     virtual Future<void> renderFrameGraph(OORef<FrameGraph> frameGraph) override;
@@ -91,7 +97,7 @@ private:
     std::shared_ptr<OpenGLPickingMap> _objectPickingMap = std::make_shared<OpenGLPickingMap>();
 
     /// The rendering job that renders the object picking offscreen pass.
-    OORef<PickingOpenGLRenderingJob> _pickingRenderingJob;
+    OORef<OffscreenOpenGLRenderingJob> _pickingRenderingJob;
 };
 
 }   // End of namespace

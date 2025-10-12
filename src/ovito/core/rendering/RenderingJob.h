@@ -55,7 +55,7 @@ public:
 	/// The function is called for each rendering command in the frame graph along with its command group.
 	/// A return value of true means that the command should be skipped during rendering.
 	/// The filter function allows a parent renderer to control which commands should be handled by a sub-renderer.
-    using RenderingCommandFilter = fu2::unique_function<bool(const FrameGraph::RenderingCommandGroup&, const FrameGraph::RenderingCommand&)>;
+    using RenderingCommandFilter = fu2::unique_function<bool(RenderingJob&, const FrameGraph::RenderingCommandGroup&, const FrameGraph::RenderingCommand&)>;
 
 	/// Creates a new abstract target buffer to render into.
 	virtual OORef<RenderBuffer> createOffscreenRenderBuffer(const QSize& deviceIndependentSize) = 0;
@@ -72,7 +72,7 @@ public:
 
 	/// Queries the optional filter function that decides which commands from the frame graph should be executed by this renderer.
 	/// If not set, it returns false and all commands are executed.
-	bool renderingCommandFilter(const FrameGraph::RenderingCommandGroup& group, const FrameGraph::RenderingCommand& command) { return _renderingCommandFilter && _renderingCommandFilter(group, command); }
+	bool renderingCommandFilter(const FrameGraph::RenderingCommandGroup& group, const FrameGraph::RenderingCommand& command) { return _renderingCommandFilter && _renderingCommandFilter(*this, group, command); }
 
 	/// Sets an optional filter function that decides which commands from the frame graph should be executed by this renderer.
 	/// If not set, all commands are executed.
