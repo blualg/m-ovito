@@ -20,29 +20,26 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-
 #include <ovito/core/Core.h>
-#include <ovito/opengl/OffscreenOpenGLRenderingJob.h>
+#include <ovito/core/rendering/FrameBuffer.h>
+#include "RenderBuffer.h"
 
 namespace Ovito {
 
-/**
- * \brief A rendering job that uses OpenGL to render the picking pass into an offscreen buffer.
- */
-class OVITO_OPENGLRENDERERWINDOW_EXPORT PickingOpenGLRenderingJob : public OffscreenOpenGLRenderingJob
+IMPLEMENT_ABSTRACT_OVITO_CLASS(RenderBuffer);
+
+/******************************************************************************
+* Appends a message to the list of issues, which will be displayed
+* to the user after the current rendering pass.
+******************************************************************************/
+void RenderBuffer::reportIssue(const QString& msg)
 {
-    OVITO_CLASS(PickingOpenGLRenderingJob)
+    constexpr QStringList::size_type MessageLimit = 3;
+    if(_issueMessages.size() >= MessageLimit)
+        return;
 
-public:
-
-    /// Returns an instance of this rendering job class that is shared among all viewport windows.
-    static OORef<PickingOpenGLRenderingJob> createSharedInstance(UserInterface& userInterface, OORef<const OpenGLRenderer> renderer);
-
-	/// Returns the multi-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
-    /// Note: Overwritten to return 1, because the interactive viewport renderer does not support multi-sampling yet.
-	virtual int multisamplingLevel() const override { return 1; }
-};
+    qWarning() << msg; // Always log the issue to the console.
+    _issueMessages.push_back(msg);
+}
 
 }   // End of namespace

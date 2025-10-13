@@ -125,6 +125,7 @@ SET(SourceFiles
     utilities/io/ssh/openssh/FileListingRequest.cpp
     rendering/SceneRenderer.cpp
     rendering/RenderingJob.cpp
+    rendering/RenderBuffer.cpp
     rendering/FrameGraph.cpp
     rendering/FrameGraphBuilder.cpp
     rendering/MeshPrimitive.cpp

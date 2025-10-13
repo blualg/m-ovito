@@ -58,8 +58,6 @@ void FileSourceEditor::createUI(const RolloutInsertionParameters& rolloutParams)
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(4);
 
-    QVBoxLayout* sublayout;
-
     QToolBar* toolbar = new QToolBar(rollout);
     layout->addWidget(toolbar);
 

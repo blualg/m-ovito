@@ -39,6 +39,7 @@ FrameBuffer::FrameBuffer(int width, int height, QObject* parent) : QObject(paren
 {
     _info.setImageWidth(width);
     _info.setImageHeight(height);
+    _viewportRect = QRect(QPoint(0,0), QSize(width, height));
     clear();
 }
 
@@ -115,24 +116,24 @@ LoadStream& operator>>(LoadStream& stream, ImageInfo& i)
 /******************************************************************************
 * Clears the framebuffer with a uniform color.
 ******************************************************************************/
-void FrameBuffer::clear(const ColorA& color, const QRect& rect, bool delayed)
+void FrameBuffer::clear(const ColorA& color, bool delayed)
 {
     commitChanges();
     if(!delayed) {
         QRect bufferRect = _image.rect();
-        if(rect.isNull() || rect == bufferRect) {
+        if(viewportRect().isNull() || viewportRect() == bufferRect) {
             _image.fill(color);
             update(bufferRect);
         }
         else {
             QPainter painter(&_image);
             painter.setCompositionMode(QPainter::CompositionMode_Source);
-            painter.fillRect(rect, color);
-            update(rect);
+            painter.fillRect(viewportRect(), color);
+            update(viewportRect());
         }
     }
     else {
-        _delayedClearRect = rect.isNull() ? _image.rect() : rect;
+        _delayedClearRect = viewportRect().isNull() ? _image.rect() : viewportRect();
         _delayedClearColor = color;
     }
 }
@@ -163,29 +164,60 @@ void FrameBuffer::commitChanges()
 }
 
 /******************************************************************************
+* Renders 2d graphics primitives specified in a frame graph into the frame buffer.
+******************************************************************************/
+void FrameBuffer::renderPrimitives(FrameGraph::RenderLayerType layerType, const FrameGraph& frameGraph)
+{
+    OVITO_ASSERT(!viewportRect().isNull());
+    OVITO_ASSERT(!image().isNull());
+
+    for(const FrameGraph::RenderingCommandGroup& commandGroup : frameGraph.commandGroups()) {
+        if(commandGroup.layerType() != layerType)
+            continue;
+
+        for(const FrameGraph::RenderingCommand& command : commandGroup.commands()) {
+            if(command.skipInVisualPass())
+                continue;
+
+            if(const ImagePrimitive* primitive = dynamic_cast<const ImagePrimitive*>(command.primitive())) {
+                renderImagePrimitive(*primitive, !frameGraph.isInteractive());
+            }
+            else if(const TextPrimitive* primitive = dynamic_cast<const TextPrimitive*>(command.primitive())) {
+                renderTextPrimitive(*primitive, !frameGraph.isInteractive());
+            }
+            else if(const LinePrimitive* primitive = dynamic_cast<const LinePrimitive*>(command.primitive())) {
+                renderLinePrimitive(*primitive, command.modelWorldTM(), frameGraph.projectionParams(), !frameGraph.isInteractive());
+            }
+        }
+    }
+}
+
+/******************************************************************************
 * Renders an image primitive directly into the framebuffer.
 ******************************************************************************/
-void FrameBuffer::renderImagePrimitive(const ImagePrimitive& primitive, const QRect& viewportRect, bool update)
+void FrameBuffer::renderImagePrimitive(const ImagePrimitive& primitive, bool update)
 {
     if(primitive.image().isNull())
         return;
 
     QPainter painter(&image());
-    if(!viewportRect.isNull() && viewportRect != image().rect())
-        painter.setClipRect(viewportRect);
+    if(!viewportRect().isNull() && viewportRect() != image().rect()) {
+        painter.setClipRect(viewportRect());
+        painter.translate(viewportRect().left(), viewportRect().top());
+    }
     qreal dpr = image().devicePixelRatioF();
     QRectF rect(primitive.windowRect().minc.x() / dpr, primitive.windowRect().minc.y() / dpr, primitive.windowRect().width() / dpr, primitive.windowRect().height() / dpr);
     painter.drawImage(rect, primitive.image());
     painter.end();
 
     if(update)
-        this->update(rect.toAlignedRect());
+        this->update(rect.toAlignedRect().translated(viewportRect().topLeft()));
 }
 
 /******************************************************************************
  * Renders a text primitive directly into the framebuffer.
  ******************************************************************************/
-void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRect& viewportRect, bool update)
+void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, bool update)
 {
     if(primitive.text().isEmpty())
         return;
@@ -193,8 +225,10 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRec
     QPainter painter(&image());
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setRenderHint(QPainter::TextAntialiasing);
-    if(!viewportRect.isNull() && viewportRect != image().rect())
-        painter.setClipRect(viewportRect);
+    if(!viewportRect().isNull() && viewportRect() != image().rect()) {
+        painter.setClipRect(viewportRect());
+        painter.translate(viewportRect().left(), viewportRect().top());
+    }
 
     Qt::TextFormat resolvedTextFormat = primitive.resolvedTextFormat();
 
@@ -229,22 +263,24 @@ void FrameBuffer::renderTextPrimitive(const TextPrimitive& primitive, const QRec
 
     if(update) {
         QRectF boundingBox = primitive.computeBounds(textBounds.size(), 1.0);
-        this->update(boundingBox.toAlignedRect());
+        this->update(boundingBox.toAlignedRect().translated(viewportRect().topLeft()));
     }
 }
 
 /******************************************************************************
 * Renders a line primitive directly into the framebuffer (without depth-testing).
 ******************************************************************************/
-void FrameBuffer::renderLinePrimitive(const LinePrimitive& primitive, const AffineTransformation& worldTransform, const ViewProjectionParameters& projectionParams, const QRect& viewportRect, bool update)
+void FrameBuffer::renderLinePrimitive(const LinePrimitive& primitive, const AffineTransformation& worldTransform, const ViewProjectionParameters& projectionParams, bool update)
 {
     if(!primitive.positions() || primitive.positions()->size() == 0)
         return;
 
     QPainter painter(&image());
     painter.setRenderHint(QPainter::Antialiasing);
-    if(!viewportRect.isNull() && viewportRect != image().rect())
-        painter.setClipRect(viewportRect);
+    if(!viewportRect().isNull() && viewportRect() != image().rect()) {
+        painter.setClipRect(viewportRect());
+        painter.translate(viewportRect().left(), viewportRect().top());
+    }
 
     if(!primitive.colors())
         painter.setPen(primitive.uniformColor());
@@ -350,10 +386,10 @@ void FrameBuffer::renderLinePrimitive(const LinePrimitive& primitive, const Affi
             Vector_4<T> screen_pos2 = h2 / h2.w();
 
             QPointF p1, p2;
-            p1.rx() = ( screen_pos1.x() + 1) * viewportRect.width()  / 2 + viewportRect.left();
-            p1.ry() = (-screen_pos1.y() + 1) * viewportRect.height() / 2 + viewportRect.top();
-            p2.rx() = ( screen_pos2.x() + 1) * viewportRect.width()  / 2 + viewportRect.left();
-            p2.ry() = (-screen_pos2.y() + 1) * viewportRect.height() / 2 + viewportRect.top();
+            p1.rx() = ( screen_pos1.x() + 1) * viewportRect().width()  / 2 + viewportRect().left();
+            p1.ry() = (-screen_pos1.y() + 1) * viewportRect().height() / 2 + viewportRect().top();
+            p2.rx() = ( screen_pos2.x() + 1) * viewportRect().width()  / 2 + viewportRect().left();
+            p2.ry() = (-screen_pos2.y() + 1) * viewportRect().height() / 2 + viewportRect().top();
             p1.rx() /= dpr;
             p1.ry() /= dpr;
             p2.rx() /= dpr;
@@ -379,9 +415,10 @@ void FrameBuffer::renderLinePrimitive(const LinePrimitive& primitive, const Affi
             painter.drawLine(p1, p2);
         }
     });
+    painter.end();
 
     if(update)
-        this->update(viewportRect);
+        this->update(viewportRect());
 }
 
 /******************************************************************************

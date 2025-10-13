@@ -52,12 +52,14 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
     const TriangleMesh& mesh = *primitive.mesh();
 
     // Check size limits of the mesh.
-    if(mesh.faceCount() > std::numeric_limits<int32_t>::max() / (3 * sizeof(MeshPrimitive::RenderVertex))) {
-        qWarning() << "WARNING: OpenGL renderer - Mesh to be rendered has too many faces, exceeding device limits.";
+    const int32_t maxNumFaces = std::numeric_limits<int32_t>::max() / (3 * sizeof(MeshPrimitive::RenderVertex));
+    const int32_t maxNumInstances = std::numeric_limits<int32_t>::max() / (3 * sizeof(Vector4F));
+    if(mesh.faceCount() > maxNumFaces) {
+        _renderBuffer->reportIssue(tr("Rendering skipped: Mesh to be rendered has too many faces, exceeding device limits. Maximum number of faces: %1").arg(maxNumFaces));
         return;
     }
-    if(primitive.useInstancedRendering() && primitive.perInstanceTMs()->size() > std::numeric_limits<int32_t>::max() / (3 * sizeof(Vector4F))) {
-        qWarning() << "WARNING: OpenGL renderer - Number of mesh instances to be rendered exceeds device limits.";
+    if(primitive.useInstancedRendering() && primitive.perInstanceTMs()->size() > maxNumInstances) {
+        _renderBuffer->reportIssue(tr("Rendering skipped: Number of mesh instances to be rendered exceeds device limits. Maximum number of instances: %1").arg(maxNumInstances));
         return;
     }
 

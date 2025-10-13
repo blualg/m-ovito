@@ -24,7 +24,7 @@
 #include <ovito/core/app/Application.h>
 #include <ovito/core/rendering/FrameBuffer.h>
 #include "OffscreenOpenGLRenderingJob.h"
-#include "OpenGLRenderingFrameBuffer.h"
+#include "OpenGLRenderBuffer.h"
 #include "OpenGLRenderer.h"
 
 namespace Ovito {
@@ -34,9 +34,9 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(OffscreenOpenGLRenderingJob);
 /******************************************************************************
 * Constructor creating a new QOffscreenSurface.
 ******************************************************************************/
-void OffscreenOpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer)
+void OffscreenOpenGLRenderingJob::initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer, int supersamplingLevel)
 {
-    OpenGLRenderingJob::initializeObject(flags, std::move(visCache), std::move(sceneRenderer));
+    OpenGLRenderingJob::initializeObject(flags, std::move(visCache), std::move(sceneRenderer), supersamplingLevel);
 
     // Create the offscreen surface.
     // This must happen in the main thread.
@@ -123,6 +123,8 @@ OpenGLContextRestore OffscreenOpenGLRenderingJob::activateContext()
     OVITO_ASSERT(_offscreenSurface);
     Q_DECL_UNUSED bool success = createOffscreenContext().makeCurrent(_offscreenSurface.get());
     OVITO_ASSERT(success);
+    initializeOpenGLFunctions();
+    OVITO_REPORT_OPENGL_ERRORS(this);
     return restore;
 }
 

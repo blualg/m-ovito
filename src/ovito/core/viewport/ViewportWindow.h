@@ -92,9 +92,12 @@ public:
     /// Returns the object responsible for evaluating all pipelines in the scene to prepare interactive rendering.
     ScenePreparation& scenePreparation() { OVITO_ASSERT(_scenePreparation); return *_scenePreparation; }
 
+    /// Indicates whether the window's rendering job has already been created.
+    bool hasRenderingJob() const { return bool(_renderingJob); }
+
     /// Creates and returns the rendering job that renders the contents of the viewport window.
     const OORef<RenderingJob>& renderingJob() {
-        if(!_renderingJob)
+        if(!hasRenderingJob())
             setRenderingJob(createRenderingJob());
         return _renderingJob;
     }

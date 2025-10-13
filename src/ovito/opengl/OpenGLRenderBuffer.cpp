@@ -21,35 +21,32 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
-#include "OpenGLRenderingFrameBuffer.h"
+#include "OpenGLRenderBuffer.h"
 #include "OpenGLHelpers.h"
 #include "OpenGLShaderHelper.h"
 
 namespace Ovito {
 
-IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLRenderingFrameBuffer);
+IMPLEMENT_ABSTRACT_OVITO_CLASS(OpenGLRenderBuffer);
 
 /******************************************************************************
 * Constructor that allocates an offscreen OpenGL framebuffer.
 ******************************************************************************/
-void OpenGLRenderingFrameBuffer::initializeObject(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, std::shared_ptr<FrameBuffer> outputFrameBuffer)
+void OpenGLRenderBuffer::initializeObject(OORef<OpenGLRenderingJob> renderingJob, const QSize& deviceIndependentSize)
 {
-    AbstractRenderingFrameBuffer::initializeObject(flags, viewportRect, std::move(outputFrameBuffer));
+    RenderBuffer::initializeObject(deviceIndependentSize * renderingJob->supersamplingLevel());
 
     _renderingJob = std::move(renderingJob);
 
     // Creating an OpenGL framebuffer requires an active OpenGL context.
     OVITO_ASSERT(QOpenGLContext::currentContext());
 
-    // Determine internal framebuffer size including supersampling.
-    _framebufferSize = QSize(viewportRect.width() * _renderingJob->multisamplingLevel(), viewportRect.height() * _renderingJob->multisamplingLevel());
-
     // Create the OpenGL framebuffer.
     QOpenGLFramebufferObjectFormat framebufferFormat;
     framebufferFormat.setAttachment(QOpenGLFramebufferObject::CombinedDepthStencil);
-    _framebufferObject.emplace(_framebufferSize, framebufferFormat);
+    _framebufferObject.emplace(size(), framebufferFormat);
     if(!_framebufferObject->isValid()) {
-        if(_framebufferSize.width() > 16000 || _framebufferSize.height() > 16000)
+        if(size().width() > 16000 || size().height() > 16000)
             throw RendererException(tr("Failed to create OpenGL framebuffer object for offscreen rendering. The selected combination of large image rendering size and/or antialiasing (supersampling) level may exceed what is supported by the OpenGL graphics driver."));
         else
             throw RendererException(tr("Failed to create OpenGL framebuffer object for offscreen rendering."));
@@ -61,21 +58,19 @@ void OpenGLRenderingFrameBuffer::initializeObject(ObjectInitializationFlags flag
 /******************************************************************************
 * Constructor that uses an existing OpenGL framebuffer.
 ******************************************************************************/
-void OpenGLRenderingFrameBuffer::initializeObject(ObjectInitializationFlags flags, OORef<OpenGLRenderingJob> renderingJob, const QRect& viewportRect, GLuint framebufferObjectId)
+void OpenGLRenderBuffer::initializeObject(OORef<OpenGLRenderingJob> renderingJob, const QSize& deviceIndependentSize, GLuint framebufferObjectId)
 {
-    AbstractRenderingFrameBuffer::initializeObject(flags, viewportRect, {});
+    RenderBuffer::initializeObject(deviceIndependentSize);
 
     _renderingJob = std::move(renderingJob);
     _framebufferObjectId = framebufferObjectId;
-    _framebufferSize = viewportRect.size();
-
-    OVITO_ASSERT(_renderingJob->multisamplingLevel() == 1);
+    OVITO_ASSERT(_renderingJob->supersamplingLevel() == 1);
 }
 
 /******************************************************************************
 * Called when this renderer is being destroyed.
 ******************************************************************************/
-void OpenGLRenderingFrameBuffer::aboutToBeDeleted()
+void OpenGLRenderBuffer::aboutToBeDeleted()
 {
     // Release OpenGL frame buffer and other resources. This requires an active GL context.
     if(renderingJob() && (_framebufferObject || _oitFramebuffer || _previousResourceFrame)) {
@@ -86,14 +81,14 @@ void OpenGLRenderingFrameBuffer::aboutToBeDeleted()
         _oitFramebuffer.reset();
     }
 
-    AbstractRenderingFrameBuffer::aboutToBeDeleted();
+    RenderBuffer::aboutToBeDeleted();
 }
 
 /******************************************************************************
 * Creates an offscreen OpenGL framebuffer for order-independent transparency rendering
 * and sets up rendering to two framebuffers simultaneously.
 ******************************************************************************/
-void OpenGLRenderingFrameBuffer::beginOITRendering()
+void OpenGLRenderBuffer::beginOITRendering()
 {
     // Verify OpenGL capabilities.
     if(!QOpenGLFramebufferObject::hasOpenGLFramebufferBlit())
@@ -109,8 +104,8 @@ void OpenGLRenderingFrameBuffer::beginOITRendering()
         framebufferFormat.setInternalTextureFormat(GL_RGBA16F);
 
         // Create framebuffer.
-        _oitFramebuffer.emplace(_framebufferSize, framebufferFormat);
-        _oitFramebuffer->addColorAttachment(_framebufferSize, GL_R16F);
+        _oitFramebuffer.emplace(size(), framebufferFormat);
+        _oitFramebuffer->addColorAttachment(size(), GL_R16F);
     }
 
     // Verify validity of framebuffer.
@@ -136,7 +131,7 @@ void OpenGLRenderingFrameBuffer::beginOITRendering()
 
     // Blit depth buffer from primary FBO to transparency FBO.
     OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBindFramebuffer(GL_READ_FRAMEBUFFER, _framebufferObjectId));
-    OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBlitFramebuffer(0, 0, _framebufferSize.width(), _framebufferSize.height(), 0, 0, _framebufferSize.width(), _framebufferSize.height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST));
+    OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBlitFramebuffer(0, 0, size().width(), size().height(), 0, 0, size().width(), size().height(), GL_DEPTH_BUFFER_BIT, GL_NEAREST));
     OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBindFramebuffer(GL_READ_FRAMEBUFFER, 0));
 
     // Disable writing to the depth buffer.
@@ -151,7 +146,7 @@ void OpenGLRenderingFrameBuffer::beginOITRendering()
 /******************************************************************************
 * Performs the compositing of framebuffer contents for order-independent transparency.
 ******************************************************************************/
-void OpenGLRenderingFrameBuffer::endOITRendering()
+void OpenGLRenderBuffer::endOITRendering()
 {
     // Switch back to the primary rendering buffer.
     OVITO_CHECK_OPENGL(renderingJob(), renderingJob()->glBindFramebuffer(GL_FRAMEBUFFER, _framebufferObjectId));

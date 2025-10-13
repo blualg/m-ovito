@@ -28,6 +28,8 @@
 
 namespace Ovito {
 
+class OpenGLRenderBuffer; // Forward declaration
+
 /**
  * \brief Stores the result of an object picking render pass.
  */
@@ -60,7 +62,7 @@ public:
     virtual FloatType depthAt(const QPoint& frameBufferLocation, const ViewProjectionParameters& projectionParams, const QSize& framebufferSize) const override;
 
     /// Reads out the contents of the OpenGL framebuffer.
-    void acquireFramebufferContents(const OORef<AbstractRenderingFrameBuffer>& frameBuffer);
+    void acquireFramebufferContents(OpenGLRenderBuffer& renderBuffer);
 
 private:
 

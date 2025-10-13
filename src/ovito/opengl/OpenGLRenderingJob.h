@@ -42,7 +42,7 @@
 namespace Ovito {
 
 class OpenGLShaderHelper; // defined in OpenGLShaderHelper.h
-class OpenGLRenderingFrameBuffer; // defined in OpenGLRenderingFrameBuffer.h
+class OpenGLRenderBuffer; // defined in OpenGLRenderBuffer.h
 
 /**
  * \brief A RAII utility class that restores the previous OpenGL context when the object goes out of scope.
@@ -50,6 +50,7 @@ class OpenGLRenderingFrameBuffer; // defined in OpenGLRenderingFrameBuffer.h
 class OVITO_OPENGLRENDERER_EXPORT OpenGLContextRestore
 {
     Q_DISABLE_COPY(OpenGLContextRestore)
+
 public:
 
     /// Constructor, which remembers the previous context.
@@ -83,7 +84,7 @@ class OVITO_OPENGLRENDERER_EXPORT OpenGLRenderingJob : public RenderingJob, publ
 public:
 
     /// Constructor.
-    void initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer);
+    void initializeObject(ObjectInitializationFlags flags, std::shared_ptr<RendererResourceCache> visCache, OORef<const OpenGLRenderer> sceneRenderer, int supersamplingLevel = 1);
 
     /// Called when this object is being destroyed.
     virtual void aboutToBeDeleted() override;
@@ -92,16 +93,17 @@ public:
     const std::shared_ptr<RendererResourceCache>& visCache() const { return _visCache; }
 
 	/// Creates a new abstract target frame buffer for rendering into.
-	virtual OORef<AbstractRenderingFrameBuffer> createOffscreenFrameBuffer(const QRect& viewportRect, const std::shared_ptr<FrameBuffer>& frameBuffer) override;
+	virtual OORef<RenderBuffer> createOffscreenRenderBuffer(const QSize& deviceIndependentSize) override;
+
+	/// Renders an image of the given frame graph. The image is first rendered into the given device-specific render buffer,
+	/// and then optionally copied into the given output frame buffer (may be null).
+	[[nodiscard]] virtual SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<RenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> frameBuffer, TaskProgress& progress) override;
 
 	/// Renders an image of the given frame graph into the given target frame buffer.
-	[[nodiscard]] virtual SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<AbstractRenderingFrameBuffer> frameBuffer, TaskProgress& progress) override;
+	[[nodiscard]] SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<OpenGLRenderBuffer> renderBuffer, std::shared_ptr<FrameBuffer> frameBuffer, std::shared_ptr<OpenGLPickingMap> pickingMap);
 
-	/// Renders an image of the given frame graph into the given target frame buffer.
-	[[nodiscard]] SCFuture<void> renderFrame(std::shared_ptr<const FrameGraph> frameGraph, OORef<OpenGLRenderingFrameBuffer> frameBuffer, std::shared_ptr<OpenGLPickingMap> pickingMap);
-
-	/// Returns the multi-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
-	virtual int multisamplingLevel() const override { return _multisamplingLevel; }
+	/// Returns the super-sampling level used to reduce anti-aliasing artifacts during offscreen rendering.
+	int supersamplingLevel() const { return _supersamplingLevel; }
 
     /// Performs post-processing of a newly generated frame graph to be rendered by this implementation.
     virtual void postprocessFrameGraph(FrameGraph& frameGraph) override {
@@ -112,7 +114,7 @@ public:
     }
 
 	/// Returns the best format for QImage to be used when creating an ImagePrimitive.
-	virtual QImage::Format preferredImageFormat() const override { return QImage::QImage::Format_RGBA8888; }
+	virtual QImage::Format preferredImageFormat() const override { return QImage::Format_RGBA8888; }
 
     /// Returns the renderer instance with the rendering parameters used by this rendering job.
     const OORef<const OpenGLRenderer>& sceneRenderer() const { return _sceneRenderer; }
@@ -120,14 +122,15 @@ public:
     /// Requests the rendering job to make its OpenGL context current, e.g. for releasing OpenGL resources that require an active context.
     [[nodiscard]] virtual OpenGLContextRestore activateContext() = 0;
 
+	/// A callback function that is invoked after rendering the opaque geometry, but before rendering the transparent geometry.
+    /// It can be used to perform custom compositing operations on the OpenGL framebuffer contents.
+    /// The ANARI viewport renderer uses this callback to composite the OpenGL and ANARI rendered images.
+    using FrameCompositingFunction = fu2::unique_function<void(OpenGLRenderingJob&)>;
+
+    /// Sets the callback function that is invoked after rendering the opaque geometry, but before rendering the transparent geometry.
+    void setFrameCompositingFunction(FrameCompositingFunction func) { _frameCompositingFunction = std::move(func); }
+
 protected:
-
-    /// May combine the framebuffer contents from multiple renderers.
-    /// This can be implemented by derived classes.
-    virtual void performFrameCompositing() {}
-
-    /// Decides whether a command from the render graph should be executed by the renderer.
-    virtual bool filterRenderingCommand(const FrameGraph::RenderingCommand& command, const FrameGraph::RenderingCommandGroup& commandGroup);
 
     /// Sets up the model-view transformation matrix for the given rendering command.
     void setupModelViewTransformation(const FrameGraph::RenderingCommand& command);
@@ -178,7 +181,7 @@ protected:
     bool renderFrameGraph(FrameGraph::RenderLayerType layerType);
 
     /// Render all semi-transparent geometry in a second rendering pass.
-    void renderTransparentGeometry(OpenGLRenderingFrameBuffer& frameBuffer);
+    void renderTransparentGeometry(OpenGLRenderBuffer& frameBuffer);
 
     /// Renders a particles primitive.
     bool renderParticles(const ParticlePrimitive& primitive, const FrameGraph::RenderingCommand& command);
@@ -242,8 +245,8 @@ private:
     /// Reference to the renderer instance holding the rendering parameters.
     OORef<const OpenGLRenderer> _sceneRenderer;
 
-    /// Controls the level of multisampling used to reduce antialiasing effects.
-    int _multisamplingLevel = 1;
+    /// Controls the level of supersampling used to reduce antialiasing effects.
+    int _supersamplingLevel = 1;
 
     /// Controls whether a two-pass OIT method is used to render semi-transparent geometry.
     bool _orderIndependentTransparency = false;
@@ -293,6 +296,9 @@ private:
     /// The frame graph we are currently rendering.
     const FrameGraph* _frameGraph = nullptr;
 
+    /// The render buffer we are currently rendering into.
+    RenderBuffer* _renderBuffer = nullptr;
+
     /// The model-view transformation matrix for the current graphics primitive being rendered.
     AffineTransformation _modelViewTM = AffineTransformation::Identity();
 
@@ -302,8 +308,13 @@ private:
 	/// The output area in the OpenGL framebuffer (in device pixels).
 	QSize _framebufferSize;
 
+    /// A callback function that is invoked after rendering the opaque geometry, but before rendering the transparent geometry.
+    /// It can be used to perform custom compositing operations on the OpenGL framebuffer contents.
+    FrameCompositingFunction _frameCompositingFunction;
+
     friend class OpenGLShaderHelper;
-    friend class OpenGLRenderingFrameBuffer;
+    friend class OpenGLRenderBuffer;
+    friend class OpenGLAnariViewportWindow; // to allow access to low-level mesh rendering functions, which are called from the rendering command filter function.
 };
 
 }   // End of namespace
