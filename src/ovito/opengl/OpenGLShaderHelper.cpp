@@ -302,7 +302,7 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
 
     if(uploadDataTypeSize == 0) {
         OVITO_ASSERT(false);
-        throw RendererException(QStringLiteral("Cannot create OpenGL buffer object for DataBuffer with data type %1.").arg(dataBuffer->dataType()));
+        throw RendererException(QStringLiteral("Cannot create OpenGL buffer object for DataBuffer with data type %1.").arg(dataBuffer->dataTypeName()));
     }
 
     GLsizei elementSize = 0;
@@ -324,7 +324,7 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
 
     if(elementSize == 0) {
         OVITO_ASSERT(false);
-        throw RendererException(QStringLiteral("Cannot create OpenGL buffer object for DataBuffer with data type %1.").arg(dataBuffer->dataType()));
+        throw RendererException(QStringLiteral("Cannot create OpenGL buffer object for DataBuffer with data type %1.").arg(dataBuffer->dataTypeName()));
     }
 
     // Create an OpenGL buffer object and fill it with the data from the DataBuffer.
