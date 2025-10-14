@@ -21,6 +21,7 @@ of data is present:
 
   particles
   bonds
+  simulation_cell
   attributes
   data_tables
   voxel_grids
