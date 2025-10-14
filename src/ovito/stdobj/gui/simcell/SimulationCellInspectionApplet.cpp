@@ -41,10 +41,9 @@ OVITO_CLASSINFO(SimulationCellInspectionApplet, "DisplayName", "Simulation Cell"
  * Determines whether the given pipeline dataset contains data that can be
  * displayed by this applet.
  ******************************************************************************/
-bool SimulationCellInspectionApplet::appliesTo(const DataCollection& data) { return data.containsObject<SimulationCell>(); }
-
-namespace {
-constexpr std::array<const char*, 3> pbcFlags = {"X", "Y", "Z"};
+bool SimulationCellInspectionApplet::appliesTo(const DataCollection& data)
+{
+    return data.containsObject<SimulationCell>();
 }
 
 /******************************************************************************
@@ -53,64 +52,62 @@ constexpr std::array<const char*, 3> pbcFlags = {"X", "Y", "Z"};
  ******************************************************************************/
 QWidget* SimulationCellInspectionApplet::createWidget()
 {
+    QWidget* container = new QWidget();
+    QGridLayout* containerLayout = new QGridLayout(container);
+    containerLayout->setContentsMargins(0, 0, 0, 0);
+    containerLayout->setSpacing(0);
+
     QWidget* panel = new QWidget();
     panel->setMaximumWidth(800);
     panel->setContentsMargins(4, 4, 4, 4);
-
-    // panel->setAutoFillBackground(true);
-    // QPalette pal = panel->palette();
-    // pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
-    // panel->setPalette(pal);
+    containerLayout->addWidget(panel, 0, 0, Qt::AlignHCenter | Qt::AlignTop);
 
     QGridLayout* layout = new QGridLayout(panel);
     layout->setContentsMargins(4, 4, 4, 4);
     layout->setSpacing(4);
-
-    QHBoxLayout* splitLayout = new QHBoxLayout();
-
-    auto colorizeGroupbox = [](QGroupBox* groupBox) {
-        // groupBox->setAutoFillBackground(true);
-        // QPalette pal = groupBox->palette();
-        // pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
-        // pal.setColor(QPalette::Base, QApplication::palette().color(QPalette::Base));
-        // groupBox->setPalette(pal);
-    };
+    layout->setRowStretch(0, 1);
 
     {
+        constexpr std::array<const char*, 3> pbcDirectionNames = {"X:", "Y:", "Z:"};
+
+        auto* pbcGroupBox = new QGroupBox(tr("Periodic boundary conditions"), panel);
+        layout->addWidget(pbcGroupBox, 1, 0);
+
+        auto* sublayout = new QHBoxLayout(pbcGroupBox);
+        sublayout->setContentsMargins(4, 4, 4, 4);
+        sublayout->setSpacing(4);
+
+        for(int i = 0; i < 3; i++) {
+            if(i != 0)
+                sublayout->addSpacing(8);
+            QLabel* dirLabel = new QLabel(pbcDirectionNames[i], panel);
+            sublayout->addWidget(dirLabel);
+            _checkboxPBC[i] = new QLabel(panel);
+            _checkboxPBC[i]->setAlignment(Qt::AlignCenter);
+            _checkboxPBC[i]->setAutoFillBackground(true);
+            _checkboxPBC[i]->setBackgroundRole(QPalette::Base);
+            sublayout->addWidget(_checkboxPBC[i], 1);
+        }
+        _pbcEnabledColor = _checkboxPBC[0]->palette();
+        _pbcEnabledColor.setBrush(QPalette::Base, QColor(0, 255, 0, 50));
+        _pbcDisabledColor = _checkboxPBC[0]->palette();
+        _pbcDisabledColor.setBrush(QPalette::Base, QColor(255, 0, 0, 30));
+    }
+    {
         QGroupBox* dimensionalityGroupBox = new QGroupBox(tr("Dimensionality"), panel);
-        colorizeGroupbox(dimensionalityGroupBox);
-        splitLayout->addWidget(dimensionalityGroupBox);
+        layout->addWidget(dimensionalityGroupBox, 1, 1);
 
         auto* sublayout = new QHBoxLayout(dimensionalityGroupBox);
         sublayout->setContentsMargins(4, 4, 4, 4);
         sublayout->setSpacing(2);
 
-        _checkbox2D = new QLabel("", panel);
-        sublayout->addWidget(_checkbox2D);
-        _checkbox3D = new QLabel("", panel);
-        sublayout->addWidget(_checkbox3D);
+        _dimensionalityDisplay = new QLabel(panel);
+        _dimensionalityDisplay->setAlignment(Qt::AlignCenter);
+        sublayout->addWidget(_dimensionalityDisplay, 1);
     }
-
-    {
-        auto* pbcGroupBox = new QGroupBox(tr("Periodic boundary conditions"), panel);
-        colorizeGroupbox(pbcGroupBox);
-        splitLayout->addWidget(pbcGroupBox);
-
-        auto* sublayout = new QHBoxLayout(pbcGroupBox);
-        sublayout->setContentsMargins(4, 4, 4, 4);
-        sublayout->setSpacing(2);
-
-        for(int i = 0; i < 3; i++) {
-            _checkboxPBC[i] = new QLabel("", panel);
-            sublayout->addWidget(_checkboxPBC[i]);
-        }
-    }
-    layout->addLayout(splitLayout, 1, 0);
-    splitLayout = new QHBoxLayout();
     {
         QGroupBox* cellGroupBox = new QGroupBox(tr("Geometry"), panel);
-        colorizeGroupbox(cellGroupBox);
-        splitLayout->addWidget(cellGroupBox);
+        layout->addWidget(cellGroupBox, 0, 0);
 
         QGridLayout* sublayout = new QGridLayout(cellGroupBox);
         sublayout->setContentsMargins(4, 4, 4, 4);
@@ -118,6 +115,7 @@ QWidget* SimulationCellInspectionApplet::createWidget()
         sublayout->setColumnStretch(1, 1);
         sublayout->setColumnStretch(2, 1);
         sublayout->setColumnStretch(3, 1);
+        sublayout->setRowStretch(6, 1);
 
         sublayout->addWidget(new QLabel(tr("Cell vectors:")), 0, 1, 1, 4);
 
@@ -157,18 +155,16 @@ QWidget* SimulationCellInspectionApplet::createWidget()
                 sublayout->addWidget(_cellVectorFields[3][i], 5, 1 + i);
             }
         }
-        sublayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), sublayout->rowCount(), 0, 1,
-                           sublayout->columnCount());
     }
     {
         QGroupBox* sizeGroupBox = new QGroupBox(tr("Bounding box"), panel);
-        colorizeGroupbox(sizeGroupBox);
-        splitLayout->addWidget(sizeGroupBox);
+        layout->addWidget(sizeGroupBox, 0, 1);
 
         QGridLayout* sublayout = new QGridLayout(sizeGroupBox);
         sublayout->setContentsMargins(4, 4, 4, 4);
         sublayout->setSpacing(4);
         sublayout->setColumnStretch(1, 1);
+        sublayout->setRowStretch(3, 1);
 
         sublayout->addWidget(new QLabel(tr("Width (X):")), 0, 0);
         sublayout->addWidget(new QLabel(tr("Length (Y):")), 1, 0);
@@ -179,16 +175,12 @@ QWidget* SimulationCellInspectionApplet::createWidget()
             _bboxFields[i]->setReadOnly(true);
             sublayout->addWidget(_bboxFields[i], i, 1);
         }
-        sublayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), sublayout->rowCount(), 0, 1,
-                           sublayout->columnCount());
     }
-    layout->addLayout(splitLayout, 0, 0);
-    layout->setSizeConstraint(QLayout::SetFixedSize);
 
     QScrollArea* scroller = new QScrollArea();
-    scroller->setWidget(panel);
+    scroller->setWidget(container);
     scroller->setWidgetResizable(true);
-    scroller->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroller->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scroller->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scroller->setFrameShape(QFrame::NoFrame);
 
@@ -202,15 +194,17 @@ void SimulationCellInspectionApplet::updateDisplay()
 {
     DataInspectionApplet::updateDisplay();
     const auto* cell = currentState().getObject<SimulationCell>();
-    if(!cell) return;
+    if(!cell)
+        return;
 
-    if(_checkbox2D) _checkbox2D->setText(tr("2D: %2").arg(cell->is2D() ? QStringLiteral("✕") : QStringLiteral("")));
-    if(_checkbox3D) _checkbox3D->setText(tr("3D: %2").arg(!cell->is2D() ? QStringLiteral("✕") : QStringLiteral("")));
+    if(_dimensionalityDisplay)
+        _dimensionalityDisplay->setText(cell->is2D() ? tr("2D") : tr("3D"));
 
     for(int i = 0; i < 3; i++) {
-        if(_checkboxPBC[i])
-            _checkboxPBC[i]->setText(
-                tr("%1: %2").arg(pbcFlags[i]).arg(cell->pbcFlagsCorrected()[i] ? QStringLiteral("✕") : QStringLiteral("")));
+        if(_checkboxPBC[i]) {
+            _checkboxPBC[i]->setText(cell->hasPbcCorrected(i) ? tr("yes") : tr("no"));
+            _checkboxPBC[i]->setPalette(cell->hasPbcCorrected(i) ? _pbcEnabledColor : _pbcDisabledColor);
+        }
     }
 
     ParameterUnit* worldUnit = ui().unitsManager().worldUnit();

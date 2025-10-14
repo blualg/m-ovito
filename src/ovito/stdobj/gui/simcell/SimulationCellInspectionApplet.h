@@ -53,11 +53,8 @@ public:
     virtual void updateDisplay() override;
 
 private:
-    /// The checkbox for the 2D simulation cell.
-    QLabel* _checkbox2D = nullptr;
-
-    /// The checkbox for the 3D simulation cell.
-    QLabel* _checkbox3D = nullptr;
+    /// Displays the dimensionality of the simulation cell.
+    QLabel* _dimensionalityDisplay = nullptr;
 
     /// Simulation cell pbc flags
     std::array<QLabel*, 3> _checkboxPBC;
@@ -67,6 +64,9 @@ private:
 
     /// Simulation cell bounding box size.
     std::array<QLineEdit*, 3> _bboxFields;
+
+    /// Two widget palettes for indicating PBC flags.
+    QPalette _pbcEnabledColor, _pbcDisabledColor;
 };
 
 }  // namespace Ovito
