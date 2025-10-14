@@ -152,11 +152,18 @@ void PropertyInspectionApplet::updateCountDisplay()
         return;
     }
 
+    // Since element counts can get quite large, use a locale that provides a grouping separator.
+    const static QLocale groupSeparatorLocale = []() {
+        QLocale loc(QLocale::C);
+        loc.setNumberOptions(QLocale::DefaultNumberOptions); // Enable grouping separator.
+        return loc;
+    }();
+
     if(_filterExpressionEdit->text().isEmpty()) {
-        _countDisplayLabel->setText(QStringLiteral("%1 %2").arg(container->elementCount()).arg(elementDescriptionName()));
+        _countDisplayLabel->setText(QStringLiteral("%1 %2").arg(groupSeparatorLocale.toString(container->elementCount())).arg(elementDescriptionName()));
     }
     else {
-        _countDisplayLabel->setText(QStringLiteral("%1 of %2 %3").arg(visibleElementCount()).arg(container->elementCount()).arg(elementDescriptionName()));
+        _countDisplayLabel->setText(QStringLiteral("%1 of %2 %3").arg(groupSeparatorLocale.toString(visibleElementCount())).arg(groupSeparatorLocale.toString(container->elementCount())).arg(elementDescriptionName()));
     }
     _countDisplayLabel->setVisible(true);
 }
