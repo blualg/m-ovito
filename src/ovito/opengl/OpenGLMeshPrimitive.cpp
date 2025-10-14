@@ -99,6 +99,19 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
     if(useBlending)
         shader.enableBlending();
 
+    // Pass picking base ID to shader.
+    if(isPickingPass()) {
+        // Allocate one picking ID per mesh instance or one picking ID per face if not using instanced rendering.
+        if(auto pickingID = objectPickingMap()->allocateObjectPickingIDs(command, primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount())) {
+            shader.setPickingBaseId(*pickingID);
+        }
+        else {
+            // Failed to allocate picking IDs. Step out without rendering anything.
+            qWarning() << "WARNING: OpenGL renderer - Picking ID overflow. The scene contains too many pickable objects.";
+            return;
+        }
+    }
+
     // Turn back-face culling off if requested.
     if(!primitive.cullFaces()) {
         OVITO_CHECK_OPENGL(this, glDisable(GL_CULL_FACE));
@@ -108,11 +121,6 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
     if(primitive.emphasizeEdges() && !isPickingPass()) {
         OVITO_CHECK_OPENGL(this, glEnable(GL_POLYGON_OFFSET_FILL));
         OVITO_CHECK_OPENGL(this, glPolygonOffset(1.0f, 1.0f));
-    }
-
-    // Pass picking base ID to shader.
-    if(isPickingPass()) {
-        shader.setPickingBaseId(objectPickingMap()->allocateObjectPickingIDs(command, primitive.useInstancedRendering() ? primitive.perInstanceTMs()->size() : mesh.faceCount()));
     }
 
     bool highlightSelectedFaces = frameGraph()->isInteractive() && !isPickingPass();
@@ -128,9 +136,10 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
     };
 
     // Upload vertex buffer to GPU memory.
-    QOpenGLBuffer meshBuffer = shader.createCachedBuffer(std::move(meshCacheKey), sizeof(MeshPrimitive::RenderVertex), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferReadAccess<int32_t> subset) {
+    QOpenGLBuffer meshBuffer = shader.createCachedBuffer(std::move(meshCacheKey), sizeof(MeshPrimitive::RenderVertex), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, size_t numBytes, BufferReadAccess<int32_t> subset) {
         OVITO_ASSERT(!subset);
-        primitive.generateRenderableVertices(reinterpret_cast<MeshPrimitive::RenderVertex*>(buffer), highlightSelectedFaces, renderWithPseudoColorMapping);
+        auto vertexBuffer = std::span(reinterpret_cast<MeshPrimitive::RenderVertex*>(buffer), numBytes / sizeof(MeshPrimitive::RenderVertex));
+        primitive.generateRenderableVertices(vertexBuffer, highlightSelectedFaces, renderWithPseudoColorMapping);
     });
 
     // Bind vertex buffer to vertex attributes.
@@ -226,7 +235,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
         RendererResourceKey<struct DepthSortingCache, DataOORef<const TriangleMesh>, Vector3> indexBufferCacheKey{ primitive.mesh(), coarseDirection };
 
         // Create index buffer with three entries per triangle face.
-        QOpenGLBuffer indexBuffer = shader.createCachedBuffer(std::move(indexBufferCacheKey), sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, BufferReadAccess<int32_t> subset) {
+        QOpenGLBuffer indexBuffer = shader.createCachedBuffer(std::move(indexBufferCacheKey), sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, OpenGLShaderHelper::PerVertex, [&](void* buffer, size_t numBytes, BufferReadAccess<int32_t> subset) {
             OVITO_ASSERT(!subset);
 
             // Compute each face's center point.
@@ -259,6 +268,7 @@ void OpenGLRenderingJob::renderMeshImplementation(const MeshPrimitive& primitive
 
             // Fill the index buffer with vertex indices to render.
             GLsizei* dst = static_cast<GLsizei*>(buffer);
+            OVITO_ASSERT(numBytes == sortedIndices.size() * 3 * sizeof(GLsizei));
             for(uint32_t index : sortedIndices) {
                 *dst++ = index * 3;
                 *dst++ = index * 3 + 1;
@@ -341,8 +351,9 @@ QOpenGLBuffer OpenGLRenderingJob::getMeshInstanceTMBuffer(const MeshPrimitive& p
     RendererResourceKey<struct InstanceTMCache, ConstDataBufferPtr> cacheKey(primitive.perInstanceTMs());
 
     // Upload the per-instance TMs to GPU memory.
-    return shader.createCachedBuffer(std::move(cacheKey), 3 * sizeof(Vector4F), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
+    return shader.createCachedBuffer(std::move(cacheKey), 3 * sizeof(Vector4F), QOpenGLBuffer::VertexBuffer, OpenGLShaderHelper::PerInstance, [&](void* buffer, size_t numBytes, BufferReadAccess<int32_t> subset) {
         OVITO_ASSERT(!subset);
+        OVITO_ASSERT(numBytes == primitive.perInstanceTMs()->size() * 3 * sizeof(Vector4F));
         Vector4F* row = reinterpret_cast<Vector4F*>(buffer);
         if(primitive.perInstanceTMs()->dataType() == DataBuffer::Float32) {
             for(const AffineTransformationT<float>& tm : BufferReadAccess<AffineTransformationT<float>>(primitive.perInstanceTMs())) {

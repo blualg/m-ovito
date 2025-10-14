@@ -11,6 +11,7 @@ Version 3.14.1 (DD-MMM-2025)
 - Add simulation cell data inspector tab
 - Add warning when :ref:`rendering an animation <usage.rendering.animation>` without saving the result to disk.
 - Fix data inspector tab table width on windows
+- Support rendering more than 134M spherical particles using the OpenGL renderer (can now render up to 2.1B).
 - |ovito-python| Add :py:meth:`PropertyContainer.append() <ovito.data.PropertyContainer.append>` method, which allows adding a new item to a property container and initializing its properties.
 - |ovito-pro| Support interactive authentication for :ref:`OpenSSH connections <usage.import.remote.openssh_connection_method>` on Windows.
 

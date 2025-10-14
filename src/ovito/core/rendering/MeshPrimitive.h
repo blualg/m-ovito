@@ -153,7 +153,7 @@ public:
     };
 
     /// Generates the renderable triangles. Each triangle consists of three vertices.
-    void generateRenderableVertices(RenderVertex* renderableVertices, bool highlightSelectedFaces, bool enablePseudoColorMapping) const;
+    void generateRenderableVertices(std::span<RenderVertex> renderableVertices, bool highlightSelectedFaces, bool enablePseudoColorMapping) const;
 
     /// Generates a list of vertices for rendering the wireframe as individual line segments.
     ConstDataBufferPtr generateWireframeLines() const;

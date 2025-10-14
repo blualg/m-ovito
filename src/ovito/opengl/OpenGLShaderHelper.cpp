@@ -158,7 +158,7 @@ void OpenGLShaderHelper::load(const QString& id, const QString& vertexShaderFile
 /******************************************************************************
 * Uploads some data to a new OpenGL buffer object.
 ******************************************************************************/
-QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, BufferReadAccess<int32_t>)>&& fillMemoryFunc)
+QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, size_t, BufferReadAccess<int32_t>)>&& fillMemoryFunc)
 {
     // This method must be called from the main thread.
     OVITO_ASSERT(QThread::currentThread() == QOpenGLContext::currentContext()->thread());
@@ -243,7 +243,7 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
 #endif
 
     // Call the user-supplied function that fills the buffer with data to be uploaded to GPU memory.
-    std::move(fillMemoryFunc)(p, subsetDataBuffer);
+    fillMemoryFunc(p, bufferSize, subsetDataBuffer);
 
     // On older GL contexts, we have to emulate instanced arrays by duplicating all vertex data N times.
     if(!usingInstancedArrays() && !usingGeometryShader()) {
@@ -251,15 +251,15 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
             if(elementCount > 1) {
                 size_t chunkSize = elementSize * verticesPerInstance();
                 for(int i = 1; i < elementCount; i++)
-                    std::memcpy(reinterpret_cast<std::byte*>(p) + (i * chunkSize), p, chunkSize);
+                    std::memcpy(static_cast<std::byte*>(p) + (i * chunkSize), p, chunkSize);
             }
         }
         else {
             if(verticesPerInstance() > 1) {
                 // Note: Doing copies in reverse order to not overwrite input data.
                 for(int j = elementCount - 1; j >= 0; j--) {
-                    const std::byte* src = reinterpret_cast<const std::byte*>(p) + (j * elementSize);
-                    std::byte* dst = reinterpret_cast<std::byte*>(p) + (j * elementSize * verticesPerInstance());
+                    const std::byte* src = static_cast<const std::byte*>(p) + (j * elementSize);
+                    std::byte* dst = static_cast<std::byte*>(p) + (j * elementSize * verticesPerInstance());
                     for(int i = 0; i < verticesPerInstance(); i++, dst += elementSize) {
                         OVITO_ASSERT(dst >= src);
                         std::memcpy(dst, src, elementSize);
@@ -283,11 +283,12 @@ QOpenGLBuffer OpenGLShaderHelper::createCachedBufferImpl(GLsizei elementSize, QO
 /******************************************************************************
 * Uploads the data of an OVITO DataBuffer to an OpenGL buffer object.
 ******************************************************************************/
-QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, VertexInputRate inputRate, QOpenGLBuffer::Type usage)
+QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, size_t elementOffset, size_t elementCount, VertexInputRate inputRate, QOpenGLBuffer::Type usage)
 {
     OVITO_ASSERT(dataBuffer);
+    OVITO_ASSERT(elementOffset + elementCount <= dataBuffer->size());
 
-    // Determine the required buffer size.
+    // Determine the required VBO size.
     GLsizei uploadDataTypeSize = 0;
     if(dataBuffer->dataType() == DataBuffer::Float32 || dataBuffer->dataType() == DataBuffer::Float64) {
         uploadDataTypeSize = sizeof(float);
@@ -307,18 +308,18 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
 
     GLsizei elementSize = 0;
     if(inputRate == PerVertex) {
-        elementSize = dataBuffer->size() * dataBuffer->componentCount() / verticesPerInstance() * uploadDataTypeSize;
-        OVITO_ASSERT(elementSize * verticesPerInstance() == dataBuffer->size() * dataBuffer->componentCount() * uploadDataTypeSize);
+        elementSize = elementCount * dataBuffer->componentCount() / verticesPerInstance() * uploadDataTypeSize;
+        OVITO_ASSERT(elementSize * verticesPerInstance() == elementCount * dataBuffer->componentCount() * uploadDataTypeSize);
     }
     else if(inputRate == PerInstance) {
         if(usage == QOpenGLBuffer::VertexBuffer) {
-            elementSize = dataBuffer->size() * dataBuffer->componentCount() / instanceCount() * uploadDataTypeSize;
-            OVITO_ASSERT(elementSize * instanceCount() == dataBuffer->size() * dataBuffer->componentCount() * uploadDataTypeSize);
+            elementSize = elementCount * dataBuffer->componentCount() / instanceCount() * uploadDataTypeSize;
+            OVITO_ASSERT(elementSize * instanceCount() == elementCount * dataBuffer->componentCount() * uploadDataTypeSize);
         }
         else if(usage == QOpenGLBuffer::IndexBuffer) {
             GLsizei renderInstanceCount = _instancesSubset ? _instancesSubset->size() : instanceCount();
-            elementSize = dataBuffer->size() * dataBuffer->componentCount() / renderInstanceCount * uploadDataTypeSize;
-            OVITO_ASSERT(elementSize * renderInstanceCount == dataBuffer->size() * dataBuffer->componentCount() * uploadDataTypeSize);
+            elementSize = elementCount * dataBuffer->componentCount() / renderInstanceCount * uploadDataTypeSize;
+            OVITO_ASSERT(elementSize * renderInstanceCount == elementCount * dataBuffer->componentCount() * uploadDataTypeSize);
         }
     }
 
@@ -328,14 +329,17 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
     }
 
     // Create an OpenGL buffer object and fill it with the data from the DataBuffer.
-    return createCachedBuffer(dataBuffer, elementSize, usage, inputRate, [&](void* p, BufferReadAccess<int32_t> subset) {
+    return createCachedBuffer(std::make_tuple(dataBuffer, elementOffset, elementCount), elementSize, usage, inputRate, [&](void* p, size_t numBytes, BufferReadAccess<int32_t> subset) {
         if(dataBuffer->dataType() == DataBuffer::Float32 || dataBuffer->dataType() == DataBuffer::Int8 || dataBuffer->dataType() == DataBuffer::Int32) {
             RawBufferReadAccess bufferAccess(dataBuffer);
             if(!subset) {
+                OVITO_ASSERT(numBytes == elementCount * bufferAccess.stride());
                 // Data types of source and destination are the same. Can do a simple memcpy.
-                std::memcpy(p, bufferAccess.cdata(), bufferAccess.size() * bufferAccess.stride());
+                std::memcpy(p, bufferAccess.cdata() + elementOffset * bufferAccess.stride(), elementCount * bufferAccess.stride());
             }
             else {
+                OVITO_ASSERT(numBytes == subset.size() * bufferAccess.stride());
+                OVITO_ASSERT(elementOffset == 0 && elementCount == dataBuffer->size());
                 // Copy selected data elements only.
                 std::byte* dst = static_cast<std::byte*>(p);
                 for(int32_t i : subset) {
@@ -349,13 +353,18 @@ QOpenGLBuffer OpenGLShaderHelper::uploadDataBuffer(const ConstDataBufferPtr& dat
             BufferReadAccess<double*> bufferAccess(dataBuffer);
             float* dst = static_cast<float*>(p);
             if(!subset) {
-                // Copy all data elements.
-                for(const double* src = bufferAccess.cbegin(); src != bufferAccess.cend(); ++src, ++dst)
+                OVITO_ASSERT(numBytes == elementCount * bufferAccess.componentCount() * sizeof(float));
+                auto begin = bufferAccess.cbegin() + elementOffset * bufferAccess.componentCount();
+                auto end = begin + elementCount * bufferAccess.componentCount();
+                // Copy and convert all data elements.
+                for(const double* src = begin; src != end; ++src, ++dst)
                     *dst = static_cast<float>(*src);
             }
             else {
                 // Copy selected data elements only.
                 size_t nvalues = elementSize / sizeof(float);
+                OVITO_ASSERT(elementOffset == 0 && elementCount == dataBuffer->size());
+                OVITO_ASSERT(numBytes == subset.size() * nvalues * sizeof(float));
                 for(int32_t i : subset) {
                     for(const double* src = bufferAccess.cbegin() + (i * nvalues), *end = src + nvalues; src != end; ++src, ++dst)
                         *dst = static_cast<float>(*src);
@@ -499,8 +508,9 @@ void OpenGLShaderHelper::draw(GLenum mode)
                     };
 
                     // Check if this indirect drawing buffer has already been uploaded to the GPU.
-                    indirectBuffer = createCachedBufferImpl(sizeof(DrawArraysIndirectCommand), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
+                    indirectBuffer = createCachedBufferImpl(sizeof(DrawArraysIndirectCommand), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), PerInstance, [&](void* buffer, size_t numBytes, BufferReadAccess<int32_t> subset) {
                         OVITO_ASSERT(!subset);
+                        OVITO_ASSERT(numBytes == _instancesSubset->size() * sizeof(DrawArraysIndirectCommand));
                         // Fill the buffer with DrawArraysIndirectCommand records.
                         DrawArraysIndirectCommand* dst = reinterpret_cast<DrawArraysIndirectCommand*>(buffer);
                         for(auto index : BufferReadAccess<int32_t>(_instancesSubset)) {

@@ -203,7 +203,7 @@ public:
 
     /// Uploads some data to the graphics device as a buffer object and caches it.
     template<typename KeyType>
-    QOpenGLBuffer createCachedBuffer(KeyType&& cacheKey, GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, BufferReadAccess<int32_t>)>&& fillMemoryFunc) {
+    QOpenGLBuffer createCachedBuffer(KeyType&& cacheKey, GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, size_t, BufferReadAccess<int32_t>)>&& fillMemoryFunc) {
 
         // Check if this OVITO data buffer has already been created and uploaded to the GPU.
         // Depending on whether the OpenGL implementation supports instanced arrays, we
@@ -237,7 +237,12 @@ public:
     }
 
     /// Uploads an OVITO DataBuffer to the GPU device.
-    QOpenGLBuffer uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, VertexInputRate inputRate, QOpenGLBuffer::Type usage = QOpenGLBuffer::VertexBuffer);
+    QOpenGLBuffer uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, VertexInputRate inputRate, QOpenGLBuffer::Type usage = QOpenGLBuffer::VertexBuffer) {
+        return uploadDataBuffer(dataBuffer, 0, dataBuffer->size(), inputRate, usage);
+    }
+
+    /// Uploads a subrange of an OVITO DataBuffer to the GPU device.
+    QOpenGLBuffer uploadDataBuffer(const ConstDataBufferPtr& dataBuffer, size_t elementOffset, size_t elementCount, VertexInputRate inputRate, QOpenGLBuffer::Type usage = QOpenGLBuffer::VertexBuffer);
 
     /// Issues a drawing command.
     void draw(GLenum mode);
@@ -267,8 +272,10 @@ public:
             const QOpenGLBuffer& indexBuffer = _renderer->currentResourceFrame().lookup<QOpenGLBuffer>(
                 std::move(indexBufferKey),
                 [&](QOpenGLBuffer& indexBuffer) {
-                    indexBuffer = createCachedBufferImpl(sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
+                    indexBuffer = createCachedBufferImpl(sizeof(GLsizei), QOpenGLBuffer::IndexBuffer, PerInstance, [&](void* buffer, size_t numBytes, BufferReadAccess<int32_t> subset) {
                         OVITO_ASSERT(!subset);
+                        OVITO_ASSERT(numBytes == renderInstanceCount * sizeof(GLuint));
+                        OVITO_ASSERT(!_instancesSubset || _instancesSubset->size() == renderInstanceCount);
                         auto sortedIndices = std::span(static_cast<GLuint*>(buffer), renderInstanceCount);
                         if(!_instancesSubset)
                             std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
@@ -309,8 +316,10 @@ public:
             const QOpenGLBuffer& indirectBuffer = _renderer->currentResourceFrame().lookup<QOpenGLBuffer>(
                 std::forward<KeyType>(cacheKey),
                 [&](QOpenGLBuffer& indirectBuffer) {
-                    indirectBuffer = createCachedBufferImpl(sizeof(DrawArraysIndirectCommand), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), PerInstance, [&](void* buffer, BufferReadAccess<int32_t> subset) {
+                    indirectBuffer = createCachedBufferImpl(sizeof(DrawArraysIndirectCommand), static_cast<QOpenGLBuffer::Type>(GL_DRAW_INDIRECT_BUFFER), PerInstance, [&](void* buffer, size_t numBytes, BufferReadAccess<int32_t> subset) {
                         OVITO_ASSERT(!subset);
+                        OVITO_ASSERT(numBytes == renderInstanceCount * sizeof(GLuint));
+                        OVITO_ASSERT(!_instancesSubset || _instancesSubset->size() == renderInstanceCount);
                         auto sortedIndices = std::span(static_cast<GLuint*>(buffer), renderInstanceCount);
                         if(!_instancesSubset)
                             std::iota(sortedIndices.begin(), sortedIndices.end(), (GLuint)0);
@@ -414,7 +423,7 @@ public:
 private:
 
     /// Uploads some data to a new OpenGL buffer object.
-    QOpenGLBuffer createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, BufferReadAccess<int32_t>)>&& fillMemoryFunc);
+    QOpenGLBuffer createCachedBufferImpl(GLsizei elementSize, QOpenGLBuffer::Type usage, VertexInputRate inputRate, std::function<void(void*, size_t, BufferReadAccess<int32_t>)>&& fillMemoryFunc);
 
     /// Implementation of the draw() method for OpenGL 2.x.
     void drawOpenGL2(GLenum mode, GLsizei renderInstanceCount);
