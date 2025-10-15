@@ -15,10 +15,17 @@ boundary conditions are enabled along each spatial direction.
 The page is divided into four sections:
 
 **Geometry**
-  Displays the three cell vectors **a**, **b**, and **c** that define the edges of the simulation cell,
-  as well as the cell origin **o**. Each vector is shown as a triplet of X, Y, Z components in the global
-  Cartesian coordinate system. The cell vectors form a parallelepiped and do not need to be orthogonal;
-  they can have arbitrary lengths and angles to represent non-orthogonal simulation domains (e.g., triclinic cells).
+  Displays geometric information about the simulation cell in one of two modes, which can be toggled
+  using a control in the panel header:
+
+  * **Cell vectors**: Shows the three vectors :math:`\bf{a}`, :math:`\bf{b}`, and :math:`\bf{c}` that define the edges of the simulation cell,
+    as well as the cell origin :math:`\bf{o}`. Each vector is displayed as a triplet of X, Y, Z components in the global
+    Cartesian coordinate system. The cell vectors form a parallelepiped and do not need to be orthogonal;
+    they can have arbitrary lengths and angles to represent non-orthogonal simulation domains (e.g., triclinic cells).
+
+  * **Cell parameters**: Shows the magnitudes (lengths) of the three edge vectors :math:`|\bf{a}|`, :math:`|\bf{b}|`, and :math:`|\bf{c}|`, as well as the angles between them:
+    :math:`\alpha` (angle between :math:`\bf{b}` and :math:`\bf{c}`), :math:`\beta` (angle between :math:`\bf{a}` and :math:`\bf{c}`), and :math:`\gamma` (angle between :math:`\bf{a}` and :math:`\bf{b}`).
+    This representation is commonly used in crystallography to describe unit cell geometry.
 
 **Bounding box**
   Shows the dimensions of the axis-aligned bounding box that encloses the simulation cell.
