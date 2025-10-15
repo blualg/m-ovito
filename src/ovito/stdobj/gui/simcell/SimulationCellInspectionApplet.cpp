@@ -289,8 +289,9 @@ void SimulationCellInspectionApplet::updateDisplay()
     }
 
     // Set Cell Length and Angles
-    ParameterUnit* angleUnit = ui().unitsManager().angleUnit();
-    for(int i = 0; i < 3; ++i) {
+    {
+        ParameterUnit* angleUnit = ui().unitsManager().angleUnit();
+
         const FloatType a = cell->cellMatrix().column(0).length();
         const FloatType b = cell->cellMatrix().column(1).length();
         const FloatType c = cell->cellMatrix().column(2).length();
