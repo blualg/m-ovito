@@ -52,7 +52,11 @@ public:
     /// Updates the contents displayed in the inspector.
     virtual void updateDisplay() override;
 
+    /// Returns the help topic ID for the documentation page of this applet.
+    virtual QString helpTopicId() const override { return QStringLiteral("manual:data_inspector.simulation_cell"); }
+
 private:
+
     /// Displays the dimensionality of the simulation cell.
     QLabel* _dimensionalityDisplay = nullptr;
 

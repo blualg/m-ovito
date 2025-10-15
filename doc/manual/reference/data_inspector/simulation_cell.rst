@@ -12,7 +12,7 @@ This page of the :ref:`data inspector <data_inspector>` displays information abo
 the spatial domain of the atomistic or particle-based simulation and specifies whether periodic
 boundary conditions are enabled along each spatial direction.
 
-The page is divided into four sub-panels:
+The page is divided into four sections:
 
 **Geometry**
   Displays the three cell vectors **a**, **b**, and **c** that define the edges of the simulation cell,
@@ -42,8 +42,8 @@ The page is divided into four sub-panels:
 
 .. note::
 
-  If the imported simulation file does not contain any simulation cell information, this tab is missing in the data inspector.
-  In such a case, you can turn on the option :guilabel:`Generate bounding box if needed` in the settings of the :ref:`file reader <file_formats.input.xyz.simulation_cell>` to let OVITO
+  If the imported simulation file does not contain any cell information, this tab is not shown in the data inspector.
+  You can turn on the option :guilabel:`Generate bounding box if needed` in the settings of the :ref:`file reader <file_formats.input.xyz.simulation_cell>` to let OVITO
   generate an ad-hoc simulation cell that tightly encloses all imported particles in an axis-aligned bounding box.
 
 .. seealso:: :ref:`scene_objects.simulation_cell`

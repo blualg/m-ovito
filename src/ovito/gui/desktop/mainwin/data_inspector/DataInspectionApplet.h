@@ -66,6 +66,11 @@ public:
     /// Selects a specific data object in this applet.
     virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
 
+    /// Returns the help topic ID for the documentation page of this applet.
+    /// An empty string means that no help page is available for this applet.
+    /// Then, the main help page of the data inspector is opened instead.
+    virtual QString helpTopicId() const { return {}; }
+
     /// Returns the currently selected data pipeline.
     Pipeline* currentPipeline() const;
 

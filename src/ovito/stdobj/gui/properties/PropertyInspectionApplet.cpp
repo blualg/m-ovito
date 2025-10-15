@@ -63,7 +63,9 @@ void PropertyInspectionApplet::createBaseWidgets()
     _tableView->setModel(_filterModel);
     _tableView->horizontalHeader()->setResizeContentsPrecision(64); // Limit the number of rows taken into account when auto-resizing columns.
     _tableView->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-    _tableView->horizontalHeader()->setStretchLastSection(true);
+#ifdef Q_OS_WIN
+    _tableView->horizontalHeader()->setStretchLastSection(true); // To avoid empty space to the right of the last columns on Windows, where the table has a different background color.
+#endif
     _cleanupHandler.add(_tableView);
 
     // Custom QLineEdit subclass that automatically adjusts its width to fit the text.
