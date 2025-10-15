@@ -109,15 +109,45 @@ QWidget* SimulationCellInspectionApplet::createWidget()
         QGroupBox* cellGroupBox = new QGroupBox(tr("Geometry"), panel);
         layout->addWidget(cellGroupBox, 0, 0);
 
-        QGridLayout* sublayout = new QGridLayout(cellGroupBox);
+        auto* boxLayout = new QVBoxLayout(cellGroupBox);
+        boxLayout->setContentsMargins(0, 0, 0, 0);
+        boxLayout->setSpacing(0);
+
+        auto* radioButtonRow = new QHBoxLayout;
+        auto* cellVectorsButton = new QRadioButton(tr("Cell vectors"));
+        auto* cellParamsButton = new QRadioButton(tr("Cell parameters"));
+        radioButtonRow->addWidget(cellVectorsButton);
+        radioButtonRow->addSpacing(8);
+        radioButtonRow->addWidget(cellParamsButton);
+        radioButtonRow->addStretch();
+
+        auto* buttonGroup = new QButtonGroup(cellGroupBox);
+        buttonGroup->setExclusive(true);
+        buttonGroup->addButton(cellVectorsButton, 0);
+        buttonGroup->addButton(cellParamsButton, 1);
+
+        boxLayout->addLayout(radioButtonRow);
+
+        // Stacked widget for toggling
+        auto* stackedWidget = new QStackedWidget;
+        boxLayout->addWidget(stackedWidget);
+
+        // Connect radio button selection
+        QObject::connect(buttonGroup, QOverload<int>::of(&QButtonGroup::idClicked), stackedWidget, &QStackedWidget::setCurrentIndex);
+
+        // Set default view
+        cellVectorsButton->setChecked(true);
+        stackedWidget->setCurrentIndex(0);
+
+        auto* cellWidget = new QWidget;
+
+        QGridLayout* sublayout = new QGridLayout(cellWidget);
         sublayout->setContentsMargins(4, 4, 4, 4);
         sublayout->setSpacing(2);
         sublayout->setColumnStretch(1, 1);
         sublayout->setColumnStretch(2, 1);
         sublayout->setColumnStretch(3, 1);
         sublayout->setRowStretch(6, 1);
-
-        sublayout->addWidget(new QLabel(tr("Cell vectors:")), 0, 1, 1, 4);
 
         {  // First cell vector.
             sublayout->addWidget(new QLabel(tr("<b>a</b>:")), 1, 0);
@@ -146,7 +176,48 @@ QWidget* SimulationCellInspectionApplet::createWidget()
             }
         }
 
+        stackedWidget->addWidget(cellWidget);
+
+        auto* cellParamsWidget = new QWidget;
+
+        sublayout = new QGridLayout(cellParamsWidget);
+        sublayout->setContentsMargins(4, 4, 4, 4);
+        sublayout->setSpacing(2);
+        sublayout->setColumnStretch(1, 1);
+        sublayout->setColumnStretch(3, 1);
+        sublayout->setRowStretch(6, 1);
+
+        sublayout->addWidget(new QLabel(tr("|a|:")), 1, 0);
+        sublayout->addWidget(new QLabel(tr("|b|:")), 2, 0);
+        sublayout->addWidget(new QLabel(tr("|c|:")), 3, 0);
+
+        for(int i = 0; i < 3; ++i) {
+            _cellParamsFields[0][i] = new QLineEdit();
+            _cellParamsFields[0][i]->setReadOnly(true);
+            sublayout->addWidget(_cellParamsFields[0][i], i + 1, 1);
+        }
+
+        sublayout->addWidget(new QLabel(tr("α:")), 1, 2);
+        sublayout->addWidget(new QLabel(tr("β:")), 2, 2);
+        sublayout->addWidget(new QLabel(tr("γ:")), 3, 2);
+
+        for(int i = 0; i < 3; ++i) {
+            _cellParamsFields[1][i] = new QLineEdit();
+            _cellParamsFields[1][i]->setReadOnly(true);
+            sublayout->addWidget(_cellParamsFields[1][i], i + 1, 3);
+        }
+
+        stackedWidget->addWidget(cellParamsWidget);
+
         {  // Cell origin.
+            QGridLayout* sublayout = new QGridLayout();
+            sublayout->setContentsMargins(4, 0, 4, 4);
+            sublayout->setSpacing(2);
+            sublayout->setColumnStretch(1, 1);
+            sublayout->setColumnStretch(2, 1);
+            sublayout->setColumnStretch(3, 1);
+            sublayout->setRowStretch(6, 1);
+
             sublayout->addWidget(new QLabel(tr("Cell origin:")), 4, 1, 1, 3);
             sublayout->addWidget(new QLabel(tr("<b>o</b>:")), 5, 0);
             for(int i = 0; i < 3; i++) {
@@ -154,6 +225,8 @@ QWidget* SimulationCellInspectionApplet::createWidget()
                 _cellVectorFields[3][i]->setReadOnly(true);
                 sublayout->addWidget(_cellVectorFields[3][i], 5, 1 + i);
             }
+
+            boxLayout->addLayout(sublayout);
         }
     }
     {
@@ -207,6 +280,7 @@ void SimulationCellInspectionApplet::updateDisplay()
         }
     }
 
+    // Set Cell Vectors and origin
     ParameterUnit* worldUnit = ui().unitsManager().worldUnit();
     for(int i = 0; i < 4; ++i) {
         for(int j = 0; j < 3; ++j) {
@@ -214,6 +288,28 @@ void SimulationCellInspectionApplet::updateDisplay()
         }
     }
 
+    // Set Cell Length and Angles
+    {
+        ParameterUnit* angleUnit = ui().unitsManager().angleUnit();
+
+        const FloatType a = cell->cellMatrix().column(0).length();
+        const FloatType b = cell->cellMatrix().column(1).length();
+        const FloatType c = cell->cellMatrix().column(2).length();
+
+        _cellParamsFields[0][0]->setText(worldUnit->formatValue(a));
+        _cellParamsFields[0][1]->setText(worldUnit->formatValue(b));
+        _cellParamsFields[0][2]->setText(worldUnit->formatValue(c));
+
+        const FloatType alpha = std::acos(cell->cellMatrix().column(1).dot(cell->cellMatrix().column(2) / (b * c)));
+        const FloatType beta = std::acos(cell->cellMatrix().column(0).dot(cell->cellMatrix().column(2) / (a * c)));
+        const FloatType gamma = std::acos(cell->cellMatrix().column(0).dot(cell->cellMatrix().column(1) / (a * b)));
+
+        _cellParamsFields[1][0]->setText(angleUnit->formatValue(angleUnit->nativeToUser(alpha)));
+        _cellParamsFields[1][1]->setText(angleUnit->formatValue(angleUnit->nativeToUser(beta)));
+        _cellParamsFields[1][2]->setText(angleUnit->formatValue(angleUnit->nativeToUser(gamma)));
+    }
+
+    // Set Boudning Box Size
     for(int i = 0; i < 3; i++) {
         if(_bboxFields[i]) {
             const FloatType size = std::max({std::abs(cell->cellMatrix().column(0)[i]), std::abs(cell->cellMatrix().column(1)[i]),

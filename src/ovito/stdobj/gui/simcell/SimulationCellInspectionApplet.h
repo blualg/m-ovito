@@ -66,6 +66,9 @@ private:
     /// Simulation cell cell vectors and origin.
     std::array<std::array<QLineEdit*, 3>, 4> _cellVectorFields;
 
+    /// Simulation cell vectors length and angles (cell parameters).
+    std::array<std::array<QLineEdit*, 3>, 2> _cellParamsFields;
+
     /// Simulation cell bounding box size.
     std::array<QLineEdit*, 3> _bboxFields;
 

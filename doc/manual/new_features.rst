@@ -9,6 +9,7 @@ Version 3.14.1 (DD-MMM-2025)
 ----------------------------
 
 - Add new :ref:`simulation cell tab <data_inspector.simulation_cell>` to OVITO's data inspector.
+- Add "°" suffix to angle values.
 - Add warning when :ref:`rendering an animation <usage.rendering.animation>` without saving the result to disk.
 - Fix data inspector tab table width on windows
 - Support rendering more than 134M spherical particles using the OpenGL renderer (can now render up to 2.1B).

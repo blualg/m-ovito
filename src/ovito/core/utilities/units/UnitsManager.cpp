@@ -117,6 +117,19 @@ FloatType IntegerParameterUnit::parseString(const QString& valueString)
 }
 
 /******************************************************************************
+ * Converts the given string to a value.
+ ******************************************************************************/
+FloatType AngleParameterUnit::parseString(const QString& valueString)
+{
+    return FloatParameterUnit::parseString(QString(valueString).remove(QStringLiteral("°")));
+}
+
+/******************************************************************************
+ * Converts a numeric value to a string.
+ ******************************************************************************/
+QString AngleParameterUnit::formatValue(FloatType value) { return FloatParameterUnit::formatValue(value) + QStringLiteral("°"); }
+
+/******************************************************************************
 * Converts the given string to a value.
 ******************************************************************************/
 FloatType PercentParameterUnit::parseString(const QString& valueString)
