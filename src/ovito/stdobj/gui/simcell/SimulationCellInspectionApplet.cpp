@@ -301,13 +301,16 @@ void SimulationCellInspectionApplet::updateDisplay()
         _cellParamsFields[0][1]->setText(worldUnit->formatValue(b));
         _cellParamsFields[0][2]->setText(worldUnit->formatValue(c));
 
-        const FloatType alpha = std::acos(cell->cellMatrix().column(1).dot(cell->cellMatrix().column(2) / (b * c)));
-        const FloatType beta = std::acos(cell->cellMatrix().column(0).dot(cell->cellMatrix().column(2) / (a * c)));
-        const FloatType gamma = std::acos(cell->cellMatrix().column(0).dot(cell->cellMatrix().column(1) / (a * b)));
+        const FloatType alpha = (b != 0 && c != 0) ? std::acos(cell->cellMatrix().column(1).dot(cell->cellMatrix().column(2) / (b * c)))
+                                                   : std::numeric_limits<FloatType>::quiet_NaN();
+        const FloatType beta = (a != 0 && c != 0) ? std::acos(cell->cellMatrix().column(0).dot(cell->cellMatrix().column(2) / (a * c)))
+                                                  : std::numeric_limits<FloatType>::quiet_NaN();
+        const FloatType gamma = (a != 0 && c != 0) ? std::acos(cell->cellMatrix().column(0).dot(cell->cellMatrix().column(1) / (a * b)))
+                                                   : std::numeric_limits<FloatType>::quiet_NaN();
 
-        _cellParamsFields[1][0]->setText(angleUnit->formatValue(angleUnit->nativeToUser(alpha)));
-        _cellParamsFields[1][1]->setText(angleUnit->formatValue(angleUnit->nativeToUser(beta)));
-        _cellParamsFields[1][2]->setText(angleUnit->formatValue(angleUnit->nativeToUser(gamma)));
+        _cellParamsFields[1][0]->setText(std::isfinite(alpha) ? angleUnit->formatValue(angleUnit->nativeToUser(alpha)) : tr("undefined"));
+        _cellParamsFields[1][1]->setText(std::isfinite(beta) ? angleUnit->formatValue(angleUnit->nativeToUser(beta)) : tr("undefined"));
+        _cellParamsFields[1][2]->setText(std::isfinite(gamma) ? angleUnit->formatValue(angleUnit->nativeToUser(gamma)) : tr("undefined"));
     }
 
     // Set Boudning Box Size
