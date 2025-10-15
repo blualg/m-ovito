@@ -184,12 +184,13 @@ QWidget* SimulationCellInspectionApplet::createWidget()
         sublayout->setContentsMargins(4, 4, 4, 4);
         sublayout->setSpacing(2);
         sublayout->setColumnStretch(1, 1);
-        sublayout->setColumnStretch(3, 1);
+        sublayout->setColumnStretch(4, 1);
+        sublayout->setColumnMinimumWidth(2, 8);
         sublayout->setRowStretch(6, 1);
 
-        sublayout->addWidget(new QLabel(tr("|a|:")), 1, 0);
-        sublayout->addWidget(new QLabel(tr("|b|:")), 2, 0);
-        sublayout->addWidget(new QLabel(tr("|c|:")), 3, 0);
+        sublayout->addWidget(new QLabel(tr("|<b>a</b>|:")), 1, 0);
+        sublayout->addWidget(new QLabel(tr("|<b>b</b>|:")), 2, 0);
+        sublayout->addWidget(new QLabel(tr("|<b>c</b>|:")), 3, 0);
 
         for(int i = 0; i < 3; ++i) {
             _cellParamsFields[0][i] = new QLineEdit();
@@ -197,14 +198,14 @@ QWidget* SimulationCellInspectionApplet::createWidget()
             sublayout->addWidget(_cellParamsFields[0][i], i + 1, 1);
         }
 
-        sublayout->addWidget(new QLabel(tr("α:")), 1, 2);
-        sublayout->addWidget(new QLabel(tr("β:")), 2, 2);
-        sublayout->addWidget(new QLabel(tr("γ:")), 3, 2);
+        sublayout->addWidget(new QLabel(tr("α:")), 1, 3);
+        sublayout->addWidget(new QLabel(tr("β:")), 2, 3);
+        sublayout->addWidget(new QLabel(tr("γ:")), 3, 3);
 
         for(int i = 0; i < 3; ++i) {
             _cellParamsFields[1][i] = new QLineEdit();
             _cellParamsFields[1][i]->setReadOnly(true);
-            sublayout->addWidget(_cellParamsFields[1][i], i + 1, 3);
+            sublayout->addWidget(_cellParamsFields[1][i], i + 1, 4);
         }
 
         stackedWidget->addWidget(cellParamsWidget);
