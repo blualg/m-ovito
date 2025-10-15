@@ -13,6 +13,9 @@ Version 3.14.1 (DD-MMM-2025)
 - Fix data inspector tab table width on windows
 - Support rendering more than 134M spherical particles using the OpenGL renderer (can now render up to 2.1B).
 - |ovito-python| Add :py:meth:`PropertyContainer.append() <ovito.data.PropertyContainer.append>` method, which allows adding a new item to a property container and initializing its properties.
+- |ovito-python| Accessing the attribute :py:attr:`PythonModifier.delegate <ovito.modifiers.PythonModifier.delegate>` will now auto-compile the script code
+  provided in :py:attr:`!PythonModifier.script` and instantiate the custom :py:class:`~ovito.pipeline.ModifierInterface` class if necessary,
+  e.g. after loading a pipeline from a .ovito state file.
 - |ovito-pro| Disable the :ref:`OpenSSH client <usage.import.remote.openssh_connection_method>` on the Windows platform, because it is nonfunctional.
 
 .. sidebar::
