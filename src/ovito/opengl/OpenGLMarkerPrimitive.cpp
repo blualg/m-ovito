@@ -59,7 +59,14 @@ void OpenGLRenderingJob::renderMarkersImplementation(const MarkerPrimitive& prim
 
     if(isPickingPass()) {
         // Pass picking base ID to shader.
-        shader.setPickingBaseId(objectPickingMap()->allocateObjectPickingIDs(command, primitive.positions()->size()));
+        if(auto pickingID = objectPickingMap()->allocateObjectPickingIDs(command, primitive.positions()->size())) {
+            shader.setPickingBaseId(*pickingID);
+        }
+        else {
+            // Failed to allocate picking IDs. Step out without rendering anything.
+            qWarning() << "WARNING: OpenGL renderer - Picking ID overflow. The scene contains too many pickable objects.";
+            return;
+        }
     }
     else {
         // Pass uniform marker color to fragment shader as a uniform value.

@@ -48,6 +48,9 @@ public:
     /// Lets the applet create the UI widget that is to be placed into the data inspector panel.
     virtual QWidget* createWidget() override;
 
+    /// Returns the help topic ID for the documentation page of this applet.
+    virtual QString helpTopicId() const override { return QStringLiteral("manual:data_inspector.voxel_grids"); }
+
 protected:
 
     /// Determines the text shown in cells of the vertical header column.

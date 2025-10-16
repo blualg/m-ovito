@@ -89,7 +89,9 @@ QWidget* DislocationInspectionApplet::createWidget()
     _tableView->horizontalHeader()->resizeSection(4, 60);
     _tableView->horizontalHeader()->resizeSection(6, 200);
     _tableView->horizontalHeader()->resizeSection(7, 200);
-    _tableView->horizontalHeader()->setStretchLastSection(true);
+#ifdef Q_OS_WIN
+    _tableView->horizontalHeader()->setStretchLastSection(true); // To avoid empty space to the right of the last columns on Windows, where the table has a different background color.
+#endif
     _tableView->verticalHeader()->hide();
     layout->addWidget(_tableView, 1, 0);
     layout->setRowStretch(1, 1);

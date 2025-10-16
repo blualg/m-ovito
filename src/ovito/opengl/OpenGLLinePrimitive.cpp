@@ -86,7 +86,14 @@ void OpenGLRenderingJob::renderThinLinesImplementation(const LinePrimitive& prim
     }
     else {
         // Pass picking base ID to shader.
-        shader.setPickingBaseId(objectPickingMap()->allocateObjectPickingIDs(command, primitive.positions()->size() / 2));
+        if(auto pickingID = objectPickingMap()->allocateObjectPickingIDs(command, primitive.positions()->size() / 2)) {
+            shader.setPickingBaseId(*pickingID);
+        }
+        else {
+            // Failed to allocate picking IDs. Step out without rendering anything.
+            qWarning() << "WARNING: OpenGL renderer - Picking ID overflow. The scene contains too many pickable objects.";
+            return;
+        }
     }
 
     // Issue line drawing command.
@@ -139,7 +146,14 @@ void OpenGLRenderingJob::renderThickLinesImplementation(const LinePrimitive& pri
     }
     else {
         // Pass picking base ID to shader.
-        shader.setPickingBaseId(objectPickingMap()->allocateObjectPickingIDs(command, primitive.positions()->size() / 2));
+        if(auto pickingID = objectPickingMap()->allocateObjectPickingIDs(command, primitive.positions()->size() / 2)) {
+            shader.setPickingBaseId(*pickingID);
+        }
+        else {
+            // Failed to allocate picking IDs. Step out without rendering anything.
+            qWarning() << "WARNING: OpenGL renderer - Picking ID overflow. The scene contains too many pickable objects.";
+            return;
+        }
     }
 
     // Compute line width in viewport space.

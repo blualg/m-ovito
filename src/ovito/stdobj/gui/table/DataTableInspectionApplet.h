@@ -65,6 +65,9 @@ public:
     /// Returns the UI display name of the elements contained in the selected property container, e.g. "particles" or "bonds".
     virtual QString elementDescriptionName() const override { return tr("rows"); }
 
+    /// Returns the help topic ID for the documentation page of this applet.
+    virtual QString helpTopicId() const override { return QStringLiteral("manual:data_inspector.data_tables"); }
+
 private Q_SLOTS:
 
     /// Is called when the user selects a different container object from the list.

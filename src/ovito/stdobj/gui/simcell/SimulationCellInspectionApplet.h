@@ -52,12 +52,13 @@ public:
     /// Updates the contents displayed in the inspector.
     virtual void updateDisplay() override;
 
-private:
-    /// The checkbox for the 2D simulation cell.
-    QLabel* _checkbox2D = nullptr;
+    /// Returns the help topic ID for the documentation page of this applet.
+    virtual QString helpTopicId() const override { return QStringLiteral("manual:data_inspector.simulation_cell"); }
 
-    /// The checkbox for the 3D simulation cell.
-    QLabel* _checkbox3D = nullptr;
+private:
+
+    /// Displays the dimensionality of the simulation cell.
+    QLabel* _dimensionalityDisplay = nullptr;
 
     /// Simulation cell pbc flags
     std::array<QLabel*, 3> _checkboxPBC;
@@ -65,8 +66,14 @@ private:
     /// Simulation cell cell vectors and origin.
     std::array<std::array<QLineEdit*, 3>, 4> _cellVectorFields;
 
+    /// Simulation cell vectors length and angles (cell parameters).
+    std::array<std::array<QLineEdit*, 3>, 2> _cellParamsFields;
+
     /// Simulation cell bounding box size.
     std::array<QLineEdit*, 3> _bboxFields;
+
+    /// Two widget palettes for indicating PBC flags.
+    QPalette _pbcEnabledColor, _pbcDisabledColor;
 };
 
 }  // namespace Ovito

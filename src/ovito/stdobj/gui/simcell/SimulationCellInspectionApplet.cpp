@@ -41,10 +41,9 @@ OVITO_CLASSINFO(SimulationCellInspectionApplet, "DisplayName", "Simulation Cell"
  * Determines whether the given pipeline dataset contains data that can be
  * displayed by this applet.
  ******************************************************************************/
-bool SimulationCellInspectionApplet::appliesTo(const DataCollection& data) { return data.containsObject<SimulationCell>(); }
-
-namespace {
-constexpr std::array<const char*, 3> pbcFlags = {"X", "Y", "Z"};
+bool SimulationCellInspectionApplet::appliesTo(const DataCollection& data)
+{
+    return data.containsObject<SimulationCell>();
 }
 
 /******************************************************************************
@@ -53,73 +52,102 @@ constexpr std::array<const char*, 3> pbcFlags = {"X", "Y", "Z"};
  ******************************************************************************/
 QWidget* SimulationCellInspectionApplet::createWidget()
 {
+    QWidget* container = new QWidget();
+    QGridLayout* containerLayout = new QGridLayout(container);
+    containerLayout->setContentsMargins(0, 0, 0, 0);
+    containerLayout->setSpacing(0);
+
     QWidget* panel = new QWidget();
     panel->setMaximumWidth(800);
     panel->setContentsMargins(4, 4, 4, 4);
-
-    // panel->setAutoFillBackground(true);
-    // QPalette pal = panel->palette();
-    // pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
-    // panel->setPalette(pal);
+    containerLayout->addWidget(panel, 0, 0, Qt::AlignHCenter | Qt::AlignTop);
 
     QGridLayout* layout = new QGridLayout(panel);
     layout->setContentsMargins(4, 4, 4, 4);
     layout->setSpacing(4);
-
-    QHBoxLayout* splitLayout = new QHBoxLayout();
-
-    auto colorizeGroupbox = [](QGroupBox* groupBox) {
-        // groupBox->setAutoFillBackground(true);
-        // QPalette pal = groupBox->palette();
-        // pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Base));
-        // pal.setColor(QPalette::Base, QApplication::palette().color(QPalette::Base));
-        // groupBox->setPalette(pal);
-    };
+    layout->setRowStretch(0, 1);
 
     {
+        constexpr std::array<const char*, 3> pbcDirectionNames = {"X:", "Y:", "Z:"};
+
+        auto* pbcGroupBox = new QGroupBox(tr("Periodic boundary conditions"), panel);
+        layout->addWidget(pbcGroupBox, 1, 0);
+
+        auto* sublayout = new QHBoxLayout(pbcGroupBox);
+        sublayout->setContentsMargins(4, 4, 4, 4);
+        sublayout->setSpacing(4);
+
+        for(int i = 0; i < 3; i++) {
+            if(i != 0)
+                sublayout->addSpacing(8);
+            QLabel* dirLabel = new QLabel(pbcDirectionNames[i], panel);
+            sublayout->addWidget(dirLabel);
+            _checkboxPBC[i] = new QLabel(panel);
+            _checkboxPBC[i]->setAlignment(Qt::AlignCenter);
+            _checkboxPBC[i]->setAutoFillBackground(true);
+            _checkboxPBC[i]->setBackgroundRole(QPalette::Base);
+            sublayout->addWidget(_checkboxPBC[i], 1);
+        }
+        _pbcEnabledColor = _checkboxPBC[0]->palette();
+        _pbcEnabledColor.setBrush(QPalette::Base, QColor(0, 255, 0, 50));
+        _pbcDisabledColor = _checkboxPBC[0]->palette();
+        _pbcDisabledColor.setBrush(QPalette::Base, QColor(255, 0, 0, 30));
+    }
+    {
         QGroupBox* dimensionalityGroupBox = new QGroupBox(tr("Dimensionality"), panel);
-        colorizeGroupbox(dimensionalityGroupBox);
-        splitLayout->addWidget(dimensionalityGroupBox);
+        layout->addWidget(dimensionalityGroupBox, 1, 1);
 
         auto* sublayout = new QHBoxLayout(dimensionalityGroupBox);
         sublayout->setContentsMargins(4, 4, 4, 4);
         sublayout->setSpacing(2);
 
-        _checkbox2D = new QLabel("", panel);
-        sublayout->addWidget(_checkbox2D);
-        _checkbox3D = new QLabel("", panel);
-        sublayout->addWidget(_checkbox3D);
+        _dimensionalityDisplay = new QLabel(panel);
+        _dimensionalityDisplay->setAlignment(Qt::AlignCenter);
+        sublayout->addWidget(_dimensionalityDisplay, 1);
     }
-
-    {
-        auto* pbcGroupBox = new QGroupBox(tr("Periodic boundary conditions"), panel);
-        colorizeGroupbox(pbcGroupBox);
-        splitLayout->addWidget(pbcGroupBox);
-
-        auto* sublayout = new QHBoxLayout(pbcGroupBox);
-        sublayout->setContentsMargins(4, 4, 4, 4);
-        sublayout->setSpacing(2);
-
-        for(int i = 0; i < 3; i++) {
-            _checkboxPBC[i] = new QLabel("", panel);
-            sublayout->addWidget(_checkboxPBC[i]);
-        }
-    }
-    layout->addLayout(splitLayout, 1, 0);
-    splitLayout = new QHBoxLayout();
     {
         QGroupBox* cellGroupBox = new QGroupBox(tr("Geometry"), panel);
-        colorizeGroupbox(cellGroupBox);
-        splitLayout->addWidget(cellGroupBox);
+        layout->addWidget(cellGroupBox, 0, 0);
 
-        QGridLayout* sublayout = new QGridLayout(cellGroupBox);
+        auto* boxLayout = new QVBoxLayout(cellGroupBox);
+        boxLayout->setContentsMargins(0, 0, 0, 0);
+        boxLayout->setSpacing(0);
+
+        auto* radioButtonRow = new QHBoxLayout;
+        auto* cellVectorsButton = new QRadioButton(tr("Cell vectors"));
+        auto* cellParamsButton = new QRadioButton(tr("Cell parameters"));
+        radioButtonRow->addWidget(cellVectorsButton);
+        radioButtonRow->addSpacing(8);
+        radioButtonRow->addWidget(cellParamsButton);
+        radioButtonRow->addStretch();
+
+        auto* buttonGroup = new QButtonGroup(cellGroupBox);
+        buttonGroup->setExclusive(true);
+        buttonGroup->addButton(cellVectorsButton, 0);
+        buttonGroup->addButton(cellParamsButton, 1);
+
+        boxLayout->addLayout(radioButtonRow);
+
+        // Stacked widget for toggling
+        auto* stackedWidget = new QStackedWidget;
+        boxLayout->addWidget(stackedWidget);
+
+        // Connect radio button selection
+        QObject::connect(buttonGroup, QOverload<int>::of(&QButtonGroup::idClicked), stackedWidget, &QStackedWidget::setCurrentIndex);
+
+        // Set default view
+        cellVectorsButton->setChecked(true);
+        stackedWidget->setCurrentIndex(0);
+
+        auto* cellWidget = new QWidget;
+
+        QGridLayout* sublayout = new QGridLayout(cellWidget);
         sublayout->setContentsMargins(4, 4, 4, 4);
         sublayout->setSpacing(2);
         sublayout->setColumnStretch(1, 1);
         sublayout->setColumnStretch(2, 1);
         sublayout->setColumnStretch(3, 1);
-
-        sublayout->addWidget(new QLabel(tr("Cell vectors:")), 0, 1, 1, 4);
+        sublayout->setRowStretch(6, 1);
 
         {  // First cell vector.
             sublayout->addWidget(new QLabel(tr("<b>a</b>:")), 1, 0);
@@ -148,7 +176,49 @@ QWidget* SimulationCellInspectionApplet::createWidget()
             }
         }
 
+        stackedWidget->addWidget(cellWidget);
+
+        auto* cellParamsWidget = new QWidget;
+
+        sublayout = new QGridLayout(cellParamsWidget);
+        sublayout->setContentsMargins(4, 4, 4, 4);
+        sublayout->setSpacing(2);
+        sublayout->setColumnStretch(1, 1);
+        sublayout->setColumnStretch(4, 1);
+        sublayout->setColumnMinimumWidth(2, 8);
+        sublayout->setRowStretch(6, 1);
+
+        sublayout->addWidget(new QLabel(tr("|<b>a</b>|:")), 1, 0);
+        sublayout->addWidget(new QLabel(tr("|<b>b</b>|:")), 2, 0);
+        sublayout->addWidget(new QLabel(tr("|<b>c</b>|:")), 3, 0);
+
+        for(int i = 0; i < 3; ++i) {
+            _cellParamsFields[0][i] = new QLineEdit();
+            _cellParamsFields[0][i]->setReadOnly(true);
+            sublayout->addWidget(_cellParamsFields[0][i], i + 1, 1);
+        }
+
+        sublayout->addWidget(new QLabel(tr("α:")), 1, 3);
+        sublayout->addWidget(new QLabel(tr("β:")), 2, 3);
+        sublayout->addWidget(new QLabel(tr("γ:")), 3, 3);
+
+        for(int i = 0; i < 3; ++i) {
+            _cellParamsFields[1][i] = new QLineEdit();
+            _cellParamsFields[1][i]->setReadOnly(true);
+            sublayout->addWidget(_cellParamsFields[1][i], i + 1, 4);
+        }
+
+        stackedWidget->addWidget(cellParamsWidget);
+
         {  // Cell origin.
+            QGridLayout* sublayout = new QGridLayout();
+            sublayout->setContentsMargins(4, 0, 4, 4);
+            sublayout->setSpacing(2);
+            sublayout->setColumnStretch(1, 1);
+            sublayout->setColumnStretch(2, 1);
+            sublayout->setColumnStretch(3, 1);
+            sublayout->setRowStretch(6, 1);
+
             sublayout->addWidget(new QLabel(tr("Cell origin:")), 4, 1, 1, 3);
             sublayout->addWidget(new QLabel(tr("<b>o</b>:")), 5, 0);
             for(int i = 0; i < 3; i++) {
@@ -156,19 +226,19 @@ QWidget* SimulationCellInspectionApplet::createWidget()
                 _cellVectorFields[3][i]->setReadOnly(true);
                 sublayout->addWidget(_cellVectorFields[3][i], 5, 1 + i);
             }
+
+            boxLayout->addLayout(sublayout);
         }
-        sublayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), sublayout->rowCount(), 0, 1,
-                           sublayout->columnCount());
     }
     {
         QGroupBox* sizeGroupBox = new QGroupBox(tr("Bounding box"), panel);
-        colorizeGroupbox(sizeGroupBox);
-        splitLayout->addWidget(sizeGroupBox);
+        layout->addWidget(sizeGroupBox, 0, 1);
 
         QGridLayout* sublayout = new QGridLayout(sizeGroupBox);
         sublayout->setContentsMargins(4, 4, 4, 4);
         sublayout->setSpacing(4);
         sublayout->setColumnStretch(1, 1);
+        sublayout->setRowStretch(3, 1);
 
         sublayout->addWidget(new QLabel(tr("Width (X):")), 0, 0);
         sublayout->addWidget(new QLabel(tr("Length (Y):")), 1, 0);
@@ -179,16 +249,12 @@ QWidget* SimulationCellInspectionApplet::createWidget()
             _bboxFields[i]->setReadOnly(true);
             sublayout->addWidget(_bboxFields[i], i, 1);
         }
-        sublayout->addItem(new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding), sublayout->rowCount(), 0, 1,
-                           sublayout->columnCount());
     }
-    layout->addLayout(splitLayout, 0, 0);
-    layout->setSizeConstraint(QLayout::SetFixedSize);
 
     QScrollArea* scroller = new QScrollArea();
-    scroller->setWidget(panel);
+    scroller->setWidget(container);
     scroller->setWidgetResizable(true);
-    scroller->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroller->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scroller->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scroller->setFrameShape(QFrame::NoFrame);
 
@@ -202,17 +268,20 @@ void SimulationCellInspectionApplet::updateDisplay()
 {
     DataInspectionApplet::updateDisplay();
     const auto* cell = currentState().getObject<SimulationCell>();
-    if(!cell) return;
+    if(!cell)
+        return;
 
-    if(_checkbox2D) _checkbox2D->setText(tr("2D: %2").arg(cell->is2D() ? QStringLiteral("✕") : QStringLiteral("")));
-    if(_checkbox3D) _checkbox3D->setText(tr("3D: %2").arg(!cell->is2D() ? QStringLiteral("✕") : QStringLiteral("")));
+    if(_dimensionalityDisplay)
+        _dimensionalityDisplay->setText(cell->is2D() ? tr("2D") : tr("3D"));
 
     for(int i = 0; i < 3; i++) {
-        if(_checkboxPBC[i])
-            _checkboxPBC[i]->setText(
-                tr("%1: %2").arg(pbcFlags[i]).arg(cell->pbcFlagsCorrected()[i] ? QStringLiteral("✕") : QStringLiteral("")));
+        if(_checkboxPBC[i]) {
+            _checkboxPBC[i]->setText(cell->hasPbcCorrected(i) ? tr("yes") : tr("no"));
+            _checkboxPBC[i]->setPalette(cell->hasPbcCorrected(i) ? _pbcEnabledColor : _pbcDisabledColor);
+        }
     }
 
+    // Set Cell Vectors and origin
     ParameterUnit* worldUnit = ui().unitsManager().worldUnit();
     for(int i = 0; i < 4; ++i) {
         for(int j = 0; j < 3; ++j) {
@@ -220,6 +289,31 @@ void SimulationCellInspectionApplet::updateDisplay()
         }
     }
 
+    // Set Cell Length and Angles
+    {
+        ParameterUnit* angleUnit = ui().unitsManager().angleUnit();
+
+        const FloatType a = cell->cellMatrix().column(0).length();
+        const FloatType b = cell->cellMatrix().column(1).length();
+        const FloatType c = cell->cellMatrix().column(2).length();
+
+        _cellParamsFields[0][0]->setText(worldUnit->formatValue(a));
+        _cellParamsFields[0][1]->setText(worldUnit->formatValue(b));
+        _cellParamsFields[0][2]->setText(worldUnit->formatValue(c));
+
+        const FloatType alpha = (b != 0 && c != 0) ? std::acos(cell->cellMatrix().column(1).dot(cell->cellMatrix().column(2) / (b * c)))
+                                                   : std::numeric_limits<FloatType>::quiet_NaN();
+        const FloatType beta = (a != 0 && c != 0) ? std::acos(cell->cellMatrix().column(0).dot(cell->cellMatrix().column(2) / (a * c)))
+                                                  : std::numeric_limits<FloatType>::quiet_NaN();
+        const FloatType gamma = (a != 0 && b != 0) ? std::acos(cell->cellMatrix().column(0).dot(cell->cellMatrix().column(1) / (a * b)))
+                                                   : std::numeric_limits<FloatType>::quiet_NaN();
+
+        _cellParamsFields[1][0]->setText(std::isfinite(alpha) ? angleUnit->formatValue(angleUnit->nativeToUser(alpha)) : tr("‹undefined›"));
+        _cellParamsFields[1][1]->setText(std::isfinite(beta) ? angleUnit->formatValue(angleUnit->nativeToUser(beta)) : tr("‹undefined›"));
+        _cellParamsFields[1][2]->setText(std::isfinite(gamma) ? angleUnit->formatValue(angleUnit->nativeToUser(gamma)) : tr("‹undefined›"));
+    }
+
+    // Set Boudning Box Size
     for(int i = 0; i < 3; i++) {
         if(_bboxFields[i]) {
             const FloatType size = std::max({std::abs(cell->cellMatrix().column(0)[i]), std::abs(cell->cellMatrix().column(1)[i]),

@@ -30,12 +30,15 @@ namespace Ovito {
 /******************************************************************************
 * Registers a range of unique object IDs for a rendering command.
 ******************************************************************************/
-uint32_t OpenGLPickingMap::allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, ConstDataBufferPtr indices)
+std::optional<uint32_t> OpenGLPickingMap::allocateObjectPickingIDs(const FrameGraph::RenderingCommand& command, uint32_t objectCount, ConstDataBufferPtr indices)
 {
     OVITO_ASSERT(!command.skipInPickingPass());
     OVITO_ASSERT(objectCount != 0);
 
     auto baseObjectID = _nextAvailablePickingID;
+    if(baseObjectID + objectCount <= baseObjectID)
+        return std::nullopt; // Overflow.
+
     _pickingRecords.emplace(baseObjectID, PickingRecord(command, std::move(indices)));
     _nextAvailablePickingID += objectCount;
     return baseObjectID;

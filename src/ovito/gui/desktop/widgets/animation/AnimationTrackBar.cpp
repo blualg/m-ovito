@@ -81,9 +81,12 @@ void AnimationTrackBar::paintEvent(QPaintEvent* event)
 
     QRect clientRect = frameRect();
     clientRect.adjust(frameWidth(), frameWidth(), -frameWidth(), -frameWidth());
-    int startFrame, frameStep, endFrame;
-    std::tie(startFrame, frameStep, endFrame) = _timeSlider->tickRange(10);
 
+    // Compute minor tick positions.
+    int startFrame, frameStep, endFrame;
+    std::tie(startFrame, frameStep, endFrame) = _timeSlider->tickRange(10); // 10px minimum separation between minor ticks
+
+    // Compute major tick positions.
     int startFrameMajor, frameStepMajor;
     std::tie(startFrameMajor, frameStepMajor, std::ignore) = _timeSlider->tickRange(_timeSlider->maxTickLabelWidth());
 

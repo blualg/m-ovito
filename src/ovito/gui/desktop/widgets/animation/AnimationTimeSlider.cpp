@@ -127,7 +127,7 @@ int AnimationTimeSlider::maxTickLabelWidth() const
     int maxWidth = 0;
 
     QString label = tickLabel(activeAnimationSettings()->lastFrame());
-    maxWidth = metrics.boundingRect(label).width();
+    maxWidth = metrics.horizontalAdvance(label);
 
     // When showing named frames, consider a few more frames in addition to the
     // last one - to account for the fact that the length of the labels may not
@@ -136,39 +136,43 @@ int AnimationTimeSlider::maxTickLabelWidth() const
         const auto& frameLabels = activeAnimationSettings()->frameLabels();
         if(!frameLabels.empty()) {
             for(int frame = std::max(activeAnimationSettings()->firstFrame(), activeAnimationSettings()->lastFrame() - 5); frame < activeAnimationSettings()->lastFrame(); ++frame) {
-                maxWidth = std::max(maxWidth, metrics.boundingRect(tickLabel(frame)).width());
+                maxWidth = std::max(maxWidth, metrics.horizontalAdvance(tickLabel(frame)));
             }
         }
     }
-    return maxWidth + 20;
+
+    return maxWidth + 8; // add some margin
 }
 
 /******************************************************************************
-* Computes the time ticks to draw.
+* Computes the optimal distribution of tick marks along the timeline.
 ******************************************************************************/
-std::tuple<int,int,int> AnimationTimeSlider::tickRange(int tickWidth)
+std::tuple<int,int,int> AnimationTimeSlider::tickRange(int minTickSeparation)
 {
-    if(activeAnimationSettings()) {
-        QRect clientRect = frameRect();
-        clientRect.adjust(frameWidth(), frameWidth(), -frameWidth(), -frameWidth());
-        int thumbWidth = this->thumbWidth();
-        int clientWidth = clientRect.width() - thumbWidth;
+    if(activeAnimationSettings() && minTickSeparation > 0) {
         int firstFrame = activeAnimationSettings()->firstFrame();
         int lastFrame = activeAnimationSettings()->lastFrame();
+        int availableSpace = frameToPos(lastFrame) - frameToPos(firstFrame);
         int numFrames = lastFrame - firstFrame + 1;
-        int nticks = std::min(clientWidth / tickWidth, numFrames);
-        int ticksevery = numFrames / std::max(nticks, 1);
-        if(ticksevery <= 1) (void)ticksevery;
+        int nticks = std::max(1, std::min((availableSpace + minTickSeparation - 1) / minTickSeparation, numFrames));
+        int ticksevery = (numFrames + nticks - 1) / nticks;
+        if(ticksevery <= 1) ticksevery = 1;
         else if(ticksevery <= 5) ticksevery = 5;
         else if(ticksevery <= 10) ticksevery = 10;
         else if(ticksevery <= 20) ticksevery = 20;
         else if(ticksevery <= 50) ticksevery = 50;
         else if(ticksevery <= 100) ticksevery = 100;
+        else if(ticksevery <= 200) ticksevery = 200;
         else if(ticksevery <= 500) ticksevery = 500;
         else if(ticksevery <= 1000) ticksevery = 1000;
         else if(ticksevery <= 2000) ticksevery = 2000;
         else if(ticksevery <= 5000) ticksevery = 5000;
         else if(ticksevery <= 10000) ticksevery = 10000;
+        else if(ticksevery <= 20000) ticksevery = 20000;
+        else if(ticksevery <= 50000) ticksevery = 50000;
+        else if(ticksevery <= 100000) ticksevery = 100000;
+        else if(ticksevery <= 200000) ticksevery = 200000;
+        else if(ticksevery <= 500000) ticksevery = 500000;
         if(ticksevery > 0) {
             return std::make_tuple(firstFrame, ticksevery, lastFrame);
         }
@@ -186,7 +190,7 @@ int AnimationTimeSlider::frameToPos(int frame)
     FloatType fraction = (FloatType)(frame - activeAnimationSettings()->firstFrame()) / std::max(1, activeAnimationSettings()->numberOfFrames() - 1);
     QRect clientRect = frameRect();
     int tw = thumbWidth();
-    int space = clientRect.width() - 2*frameWidth() - tw;
+    int space = clientRect.width() - 2 * frameWidth() - tw;
     return clientRect.x() + frameWidth() + (int)(fraction * space) + tw / 2;
 }
 
@@ -349,7 +353,7 @@ int AnimationTimeSlider::thumbWidth() const
             const auto& frameLabels = settings->frameLabels();
             if(!frameLabels.empty()) {
                 for(int frame = std::max(settings->firstFrame(), settings->lastFrame() - 5); frame <= settings->lastFrame(); ++frame) {
-                    maxWidth = std::max(maxWidth, metrics.boundingRect(thumbText(frame)).width());
+                    maxWidth = std::max(maxWidth, metrics.horizontalAdvance(thumbText(frame)));
                 }
             }
         }

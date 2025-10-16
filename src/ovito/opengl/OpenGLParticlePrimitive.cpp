@@ -23,7 +23,6 @@
 #include <ovito/core/Core.h>
 #include <ovito/core/rendering/ParticlePrimitive.h>
 #include <ovito/core/utilities/SortZipped.h>
-#include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include "OpenGLRenderingJob.h"
 #include "OpenGLShaderHelper.h"
 
@@ -201,160 +200,187 @@ void OpenGLRenderingJob::renderParticlesImplementation(const ParticlePrimitive& 
     }
 
     // The number of particles in the input arrays:
-    shader.setInstanceCount(primitive.positions()->size());
+    size_t particleCount = primitive.positions()->size();
+    shader.setInstanceCount(particleCount);
 
     // Specify the subset of particles to be rendered.
     if(primitive.indices())
         shader.enableSubsetRendering(primitive.indices());
 
-    // Check VBO size limits.
-    const int32_t maxVBOSize = std::numeric_limits<int32_t>::max() / sizeof(Vector4F); // Conservative estimate assuming 4-component vertex attributes.
-    const int32_t maxNumParticles = maxVBOSize / shader.verticesPerInstance();
-    if(shader.instanceCount() > maxNumParticles) {
-        _renderBuffer->reportIssue(tr("Rendering skipped: Too many particles to render at once (%1), exceeding device limits. Maximum number of particles: %2").arg(shader.instanceCount()).arg(maxNumParticles));
-        return;
-    }
-
     // Are we rendering semi-transparent particles?
-    bool useBlending = !isPickingPass() && (primitive.transparencies() != nullptr) && !orderIndependentTransparency();
+    bool useBlending = !isPickingPass() && primitive.transparencies() && !orderIndependentTransparency();
     if(useBlending)
         shader.enableBlending();
 
+    // Compute the data size required per particle.
+    size_t perInstanceDataSize = std::max(sizeof(Point3F), sizeof(ColorF));
+    if(primitive.particleShape() == ParticlePrimitive::BoxShape || primitive.particleShape() == ParticlePrimitive::EllipsoidShape || primitive.particleShape() == ParticlePrimitive::SuperquadricShape) {
+        if(primitive.orientations())
+            perInstanceDataSize = std::max(perInstanceDataSize, sizeof(QuaternionF));
+    }
+    // Maximum number of particles that can be rendered in one chunk without exceeding VBO size limits:
+    size_t maxBatchSize = std::numeric_limits<int32_t>::max() / shader.verticesPerInstance() / perInstanceDataSize;
+
+    // Check VBO size limits (when rendering indexed or transparent particles).
+    if(primitive.indices() || (primitive.transparencies() && !orderIndependentTransparency())) {
+        if(particleCount > maxBatchSize) {
+            _renderBuffer->reportIssue(tr("Rendering skipped: Too many particles to render at once (%1), exceeding device limits. Maximum number of particles: %2").arg(particleCount).arg(maxBatchSize));
+            return;
+        }
+    }
+
     // Pass picking base ID to shader.
+    uint32_t basePickingID = 0;
     if(isPickingPass()) {
-        shader.setPickingBaseId(objectPickingMap()->allocateObjectPickingIDs(command, primitive.positions()->size()));
+        if(auto pickingID = objectPickingMap()->allocateObjectPickingIDs(command, particleCount)) {
+            basePickingID = *pickingID;
+        }
+        else {
+            // Failed to allocate picking IDs. Step out without rendering anything.
+            qWarning() << "WARNING: OpenGL renderer - Picking ID overflow. The scene contains too many pickable objects.";
+            return;
+        }
     }
     OVITO_REPORT_OPENGL_ERRORS(this);
 
-    // Upload particle coordinates.
-    QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), OpenGLShaderHelper::PerInstance);
-    shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point3F), 0, OpenGLShaderHelper::PerInstance);
+    // Render particles in batches to stay within VBO size limits.
+    for(size_t batchStart = 0; batchStart < particleCount; batchStart += maxBatchSize) {
+        size_t batchSize = std::min(particleCount - batchStart, maxBatchSize);
+        shader.setInstanceCount(batchSize);
+        if(isPickingPass())
+            shader.setPickingBaseId(basePickingID + batchStart);
 
-    // Upload particle radii.
-    if(primitive.radii()) {
-        QOpenGLBuffer radiiBuffer = shader.uploadDataBuffer(primitive.radii(), OpenGLShaderHelper::PerInstance);
-        shader.bindBuffer(radiiBuffer, "radius", GL_FLOAT, 1, sizeof(float), 0, OpenGLShaderHelper::PerInstance);
-    }
-    else {
-        shader.unbindBuffer("radius");
-        shader.setAttributeValue("radius", primitive.uniformRadius());
-    }
+        // Upload particle coordinates.
+        QOpenGLBuffer positionsBuffer = shader.uploadDataBuffer(primitive.positions(), batchStart, batchSize, OpenGLShaderHelper::PerInstance);
+        shader.bindBuffer(positionsBuffer, "position", GL_FLOAT, 3, sizeof(Point3F), 0, OpenGLShaderHelper::PerInstance);
 
-    if(!isPickingPass()) {
-        // Upload particle colors.
-        if(primitive.colors()) {
-            QOpenGLBuffer colorsBuffer = shader.uploadDataBuffer(primitive.colors(), OpenGLShaderHelper::PerInstance);
-            shader.bindBuffer(colorsBuffer, "color", GL_FLOAT, 3, sizeof(Point3F), 0, OpenGLShaderHelper::PerInstance);
+        // Upload particle radii.
+        if(primitive.radii()) {
+            QOpenGLBuffer radiiBuffer = shader.uploadDataBuffer(primitive.radii(), batchStart, batchSize, OpenGLShaderHelper::PerInstance);
+            shader.bindBuffer(radiiBuffer, "radius", GL_FLOAT, 1, sizeof(float), 0, OpenGLShaderHelper::PerInstance);
         }
         else {
-            shader.unbindBuffer("color");
-            shader.setAttributeValue("color", primitive.uniformColor());
+            shader.unbindBuffer("radius");
+            shader.setAttributeValue("radius", primitive.uniformRadius());
         }
 
-        // Upload particle transparencies.
-        if(primitive.transparencies()) {
-            QOpenGLBuffer transparenciesBuffer = shader.uploadDataBuffer(primitive.transparencies(), OpenGLShaderHelper::PerInstance);
-            shader.bindBuffer(transparenciesBuffer, "transparency", GL_FLOAT, 1, sizeof(float), 0, OpenGLShaderHelper::PerInstance);
-        }
-        else {
-            shader.unbindBuffer("transparency");
-            shader.setAttributeValue("transparency", 0.0);
-        }
-
-        // Upload particle selection.
-        if(primitive.selection()) {
-            QOpenGLBuffer selectionBuffer = shader.uploadDataBuffer(primitive.selection(), OpenGLShaderHelper::PerInstance);
-            shader.bindBuffer(selectionBuffer, "selection", GL_UNSIGNED_BYTE, 1, sizeof(int8_t), 0, OpenGLShaderHelper::PerInstance);
-        }
-        else {
-            shader.unbindBuffer("selection");
-            shader.setAttributeValue("selection", 0);
-        }
-        shader.setUniformValue("selection_color", ColorA(primitive.selectionColor()));
-    }
-
-    // For box-shaped and ellipsoid particles, we need the shape & orientation vertex attributes.
-    if(primitive.particleShape() == ParticlePrimitive::BoxShape || primitive.particleShape() == ParticlePrimitive::EllipsoidShape || primitive.particleShape() == ParticlePrimitive::SuperquadricShape) {
-        // Upload aspherical shapes.
-        if(primitive.asphericalShapes()) {
-            QOpenGLBuffer asphericalShapesBuffer = shader.uploadDataBuffer(primitive.asphericalShapes(), OpenGLShaderHelper::PerInstance);
-            shader.bindBuffer(asphericalShapesBuffer, "aspherical_shape", GL_FLOAT, 3, sizeof(Vector3F), 0, OpenGLShaderHelper::PerInstance);
-        }
-        else {
-            shader.unbindBuffer("aspherical_shape");
-            shader.setAttributeValue("aspherical_shape", Vector3::Zero());
-        }
-
-        // Upload orientations.
-        if(primitive.orientations()) {
-            QOpenGLBuffer orientationsBuffer = shader.uploadDataBuffer(primitive.orientations(), OpenGLShaderHelper::PerInstance);
-            shader.bindBuffer(orientationsBuffer, "orientation", GL_FLOAT, 4, sizeof(QuaternionF), 0, OpenGLShaderHelper::PerInstance);
-        }
-        else {
-            shader.unbindBuffer("orientation");
-            shader.setAttributeValue("orientation", Vector4(0,0,0,1));
-        }
-    }
-
-    // For superquadric particles, we need the roundness vertex attribute.
-    if(primitive.particleShape() == ParticlePrimitive::SuperquadricShape) {
-        // Upload roundness values.
-        if(primitive.roundness()) {
-            QOpenGLBuffer roundnessBuffer = shader.uploadDataBuffer(primitive.roundness(), OpenGLShaderHelper::PerInstance);
-            shader.bindBuffer(roundnessBuffer, "roundness", GL_FLOAT, 2, sizeof(Vector2F), 0, OpenGLShaderHelper::PerInstance);
-        }
-        else {
-            shader.unbindBuffer("roundness");
-            shader.setAttributeValue("roundness", Vector2(1,1));
-        }
-    }
-
-    if(!useBlending) {
-        // Draw triangle strip instances.
-        shader.draw(GL_TRIANGLE_STRIP);
-    }
-    else {
-        // Render the particles in back-to-front order.
-        OVITO_ASSERT(!isPickingPass() && !orderIndependentTransparency());
-
-        // Viewing direction in object space:
-        const Vector3 direction = modelViewTM().linear().inverse().column(2);
-
-        // Coarsen the direction vector's precision for real-time rendering to reduce the frequency at
-        // which the particles must be reordered when moving the camera.
-        Vector3 coarseDirection = direction;
-        if(frameGraph()->isInteractive()) {
-            for(size_t dim = 0; dim < 3; dim++)
-                coarseDirection[dim] = std::round(2 * direction[dim]);
-        }
-
-        // The caching key for the particle ordering.
-        RendererResourceKey<struct OrderingCache, ConstDataBufferPtr, ConstDataBufferPtr, Vector3> orderingCacheKey{
-            primitive.indices(),
-            primitive.positions(),
-            coarseDirection
-        };
-
-        // Render primitives.
-        shader.drawReordered(GL_TRIANGLE_STRIP, std::move(orderingCacheKey), [&](std::span<GLuint> sortedIndices) {
-
-            // First, compute distance of each particle from the camera along the viewing direction (=camera z-axis).
-            std::vector<GraphicsFloatType> distances(sortedIndices.size());
-            if(primitive.positions()->dataType() == DataBuffer::Float64) {
-                std::transform(sortedIndices.begin(), sortedIndices.end(), distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferReadAccess<Vector_3<double>>(primitive.positions())](size_t i) {
-                    return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
-                });
+        if(!isPickingPass()) {
+            // Upload particle colors.
+            if(primitive.colors()) {
+                QOpenGLBuffer colorsBuffer = shader.uploadDataBuffer(primitive.colors(), batchStart, batchSize, OpenGLShaderHelper::PerInstance);
+                shader.bindBuffer(colorsBuffer, "color", GL_FLOAT, 3, sizeof(ColorF), 0, OpenGLShaderHelper::PerInstance);
             }
-            else if(primitive.positions()->dataType() == DataBuffer::Float32) {
-                std::transform(sortedIndices.begin(), sortedIndices.end(), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferReadAccess<Vector3F>(primitive.positions())](size_t i) {
-                    return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
-                });
+            else {
+                shader.unbindBuffer("color");
+                shader.setAttributeValue("color", primitive.uniformColor());
             }
-            else return;
 
-            // Sort particle indices with respect to distance (back-to-front order).
-            Ovito::sort_zipped(distances, sortedIndices);
-        });
+            // Upload particle transparencies.
+            if(primitive.transparencies()) {
+                QOpenGLBuffer transparenciesBuffer = shader.uploadDataBuffer(primitive.transparencies(), batchStart, batchSize, OpenGLShaderHelper::PerInstance);
+                shader.bindBuffer(transparenciesBuffer, "transparency", GL_FLOAT, 1, sizeof(float), 0, OpenGLShaderHelper::PerInstance);
+            }
+            else {
+                shader.unbindBuffer("transparency");
+                shader.setAttributeValue("transparency", 0.0);
+            }
+
+            // Upload particle selection.
+            if(primitive.selection()) {
+                QOpenGLBuffer selectionBuffer = shader.uploadDataBuffer(primitive.selection(), batchStart, batchSize, OpenGLShaderHelper::PerInstance);
+                shader.bindBuffer(selectionBuffer, "selection", GL_UNSIGNED_BYTE, 1, sizeof(int8_t), 0, OpenGLShaderHelper::PerInstance);
+            }
+            else {
+                shader.unbindBuffer("selection");
+                shader.setAttributeValue("selection", 0);
+            }
+            shader.setUniformValue("selection_color", ColorA(primitive.selectionColor()));
+        }
+
+        // For box-shaped and ellipsoid particles, we need the shape & orientation vertex attributes.
+        if(primitive.particleShape() == ParticlePrimitive::BoxShape || primitive.particleShape() == ParticlePrimitive::EllipsoidShape || primitive.particleShape() == ParticlePrimitive::SuperquadricShape) {
+            // Upload aspherical shapes.
+            if(primitive.asphericalShapes()) {
+                QOpenGLBuffer asphericalShapesBuffer = shader.uploadDataBuffer(primitive.asphericalShapes(), batchStart, batchSize, OpenGLShaderHelper::PerInstance);
+                shader.bindBuffer(asphericalShapesBuffer, "aspherical_shape", GL_FLOAT, 3, sizeof(Vector3F), 0, OpenGLShaderHelper::PerInstance);
+            }
+            else {
+                shader.unbindBuffer("aspherical_shape");
+                shader.setAttributeValue("aspherical_shape", Vector3::Zero());
+            }
+
+            // Upload orientations.
+            if(primitive.orientations()) {
+                QOpenGLBuffer orientationsBuffer = shader.uploadDataBuffer(primitive.orientations(), batchStart, batchSize, OpenGLShaderHelper::PerInstance);
+                shader.bindBuffer(orientationsBuffer, "orientation", GL_FLOAT, 4, sizeof(QuaternionF), 0, OpenGLShaderHelper::PerInstance);
+            }
+            else {
+                shader.unbindBuffer("orientation");
+                shader.setAttributeValue("orientation", Vector4(0,0,0,1));
+            }
+        }
+
+        // For superquadric particles, we need the roundness vertex attribute.
+        if(primitive.particleShape() == ParticlePrimitive::SuperquadricShape) {
+            // Upload roundness values.
+            if(primitive.roundness()) {
+                QOpenGLBuffer roundnessBuffer = shader.uploadDataBuffer(primitive.roundness(), batchStart, batchSize, OpenGLShaderHelper::PerInstance);
+                shader.bindBuffer(roundnessBuffer, "roundness", GL_FLOAT, 2, sizeof(Vector2F), 0, OpenGLShaderHelper::PerInstance);
+            }
+            else {
+                shader.unbindBuffer("roundness");
+                shader.setAttributeValue("roundness", Vector2(1,1));
+            }
+        }
+
+        if(!useBlending) {
+            // Draw triangle strip instances.
+            shader.draw(GL_TRIANGLE_STRIP);
+        }
+        else {
+            // Render the particles in back-to-front order.
+            OVITO_ASSERT(!isPickingPass() && !orderIndependentTransparency());
+            OVITO_ASSERT(batchSize == particleCount); // We cannot do order-dependent transparency in chunks.
+
+            // Viewing direction in object space:
+            const Vector3 direction = modelViewTM().linear().inverse().column(2);
+
+            // Coarsen the direction vector's precision for real-time rendering to reduce the frequency at
+            // which the particles must be reordered when moving the camera.
+            Vector3 coarseDirection = direction;
+            if(frameGraph()->isInteractive()) {
+                for(size_t dim = 0; dim < 3; dim++)
+                    coarseDirection[dim] = std::round(2 * direction[dim]);
+            }
+
+            // The caching key for the particle ordering.
+            RendererResourceKey<struct OrderingCache, ConstDataBufferPtr, ConstDataBufferPtr, Vector3> orderingCacheKey{
+                primitive.indices(),
+                primitive.positions(),
+                coarseDirection
+            };
+
+            // Render primitives.
+            shader.drawReordered(GL_TRIANGLE_STRIP, std::move(orderingCacheKey), [&](std::span<GLuint> sortedIndices) {
+
+                // First, compute distance of each particle from the camera along the viewing direction (=camera z-axis).
+                std::vector<GraphicsFloatType> distances(sortedIndices.size());
+                if(primitive.positions()->dataType() == DataBuffer::Float64) {
+                    std::transform(sortedIndices.begin(), sortedIndices.end(), distances.begin(), [direction = direction.toDataType<double>(), positionsArray = BufferReadAccess<Vector_3<double>>(primitive.positions())](size_t i) {
+                        return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
+                    });
+                }
+                else if(primitive.positions()->dataType() == DataBuffer::Float32) {
+                    std::transform(sortedIndices.begin(), sortedIndices.end(), distances.begin(), [direction = direction.toDataType<float>(), positionsArray = BufferReadAccess<Vector3F>(primitive.positions())](size_t i) {
+                        return static_cast<GraphicsFloatType>(direction.dot(positionsArray[i]));
+                    });
+                }
+                else return;
+
+                // Sort particle indices with respect to distance (back-to-front order).
+                Ovito::sort_zipped(distances, sortedIndices);
+            });
+        }
     }
 }
 

@@ -15,12 +15,26 @@ data that are present in the current dataset. For example, there is a page
 listing all particles and their property data in tabular form.
 
 The following pages are part of the data inspector and are shown only if the corresponding type
-of data is present:
+of data is present in the pipeline output:
+
+* :ref:`data_inspector.particles`
+* :ref:`data_inspector.bonds`
+* Angles
+* Dihedrals
+* Impropers
+* :ref:`data_inspector.simulation_cell`
+* :ref:`data_inspector.attributes`
+* :ref:`data_inspector.data_tables`
+* :ref:`data_inspector.voxel_grids`
+* Surfaces
+* :ref:`data_inspector.dislocations`
 
 .. toctree::
+  :hidden:
 
   particles
   bonds
+  simulation_cell
   attributes
   data_tables
   voxel_grids

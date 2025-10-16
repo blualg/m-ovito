@@ -33,7 +33,8 @@
 namespace Ovito {
 
 /**
- * The data inspection panel.
+ * The data inspection panel, which is part of the main window and displays detailed
+ * information about the data produced by the currently selected pipeline.
  */
 class OVITO_GUI_EXPORT DataInspectorPanel : public QWidget, public UserInterfaceComponent<MainWindowUI>
 {
@@ -94,6 +95,9 @@ protected Q_SLOTS:
 
     /// Is called whenever the user has switched to a different page of the inspector.
     void onCurrentPageChanged(int index);
+
+    /// This is called when the user has pressed the help button of the data inspector panel.
+    void onHelp();
 
 Q_SIGNALS:
 
@@ -156,19 +160,19 @@ private:
     QBasicTimer _activityDelayTimer;
 
     /// Animation shown in the title bar to indicate process.
-    QMovie _waitingForSceneAnim;
+    QMovie _waitingForSceneAnim{QStringLiteral(":/gui/mainwin/inspector/waiting.gif")};
 
     /// UI element indicating that we are waiting for computations to complete.
     QLabel* _waitingForSceneIndicator;
 
-    /// UI element for opening/closing the inspector panel.
-    QPushButton* _expandCollapseButton;
+    /// UI action for opening/closing the inspector panel.
+    QAction* _expandCollapseAction;
 
     // The icon for the expand button state.
-    QIcon _expandIcon = QIcon::fromTheme("modify_modifier_move_up");
+    const QIcon _expandIcon = QIcon::fromTheme("expand_up");
 
     // The icon for the collapse button state.
-    QIcon _collapseIcon = QIcon::fromTheme("modify_modifier_move_down");
+    const QIcon _collapseIcon = QIcon::fromTheme("collapse_down");
 
     /// The active page of the inspector.
     int _activeAppletIndex = -1;

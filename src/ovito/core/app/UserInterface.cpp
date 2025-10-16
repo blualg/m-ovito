@@ -184,12 +184,6 @@ QString UserInterface::generateSystemReport()
 #endif
     stream << "Command line: " << QCoreApplication::arguments().join(' ') << "\n";
     stream << "Python file path: " << PluginManager::instance().pythonDir() << "\n";
-    stream << "CUDA support enabled: " <<
-#ifdef OVITO_USE_CUDA
-        "yes\n";
-#else
-        "no\n";
-#endif
     // Let the plugin classes optionally add their specific info to the system report, e.g. the OpenGL driver information.
     for(Plugin* plugin : PluginManager::instance().plugins()) {
         for(OvitoClassPtr clazz : plugin->classes()) {
