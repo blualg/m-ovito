@@ -150,6 +150,8 @@ This expression evaluates to *false* for any numeric particle type.
   The parser can replace ``"alpha"`` with the right numeric type ID for that particle property.
   However, there are cases where such a resolution is impossible. Then the expression parser will raise an error.
 
+.. _particles.modifiers.expression_select.bonds:
+
 Selection of bonds
 """"""""""""""""""
 

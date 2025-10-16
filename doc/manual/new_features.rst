@@ -5,19 +5,29 @@ Changelog
 =========
 
 ----------------------------
-Version 3.14.1 (DD-MMM-2025)
+Version 3.14.1 (16-Oct-2025)
 ----------------------------
 
 - Add new :ref:`simulation cell tab <data_inspector.simulation_cell>` to OVITO's data inspector.
-- Add "°" suffix to angle values.
-- Add warning when :ref:`rendering an animation <usage.rendering.animation>` without saving the result to disk.
-- Fix data inspector tab table width on windows
-- Support rendering more than 134M spherical particles using the OpenGL renderer (can now render up to 2.1B).
-- |ovito-python| Add :py:meth:`PropertyContainer.append() <ovito.data.PropertyContainer.append>` method, which allows adding a new item to a property container and initializing its properties.
-- |ovito-python| Accessing the attribute :py:attr:`PythonModifier.delegate <ovito.modifiers.PythonModifier.delegate>` will now auto-compile the script code
+- Add filter expression fields to the *Data Tables*, *Voxel Grids* and *Surfaces* tabs of the data inspector, which allow filtering table rows based on a user-defined condition.
+- Data inspector tabs now display the total number of particles, bonds, etc. at the end of the pipeline.
+- Warn when user tries to :ref:`render an animation <usage.rendering.animation>` without saving the result to disk.
+- Support more than 134M spherical particles in the OpenGL renderer (can now render up to 2.1B particles).
+- Fix: Filter expression variable ``Frame`` is always 0 in data inspector.
+- Fix: Tick labels in the timeline overlapping.
+- Add "°" suffix to angular parameter values.
+- Fix data inspector tab table width on windows.
+- Add 'Help' button to data inspector panel title bar.
+- Auto-disable the wildcard pattern option when user has imported a trajectory file to avoid accidentally concatenating multiple matching files into one long trajectory.
+- Fix: File source panel does not display the file-not-found error after opening a .ovito state file with missing input files.
+- Fix: File source title not updated in pipeline editor UI after picking a new simulation file.
+- Update dependencies: libssh 0.11.3, OpenSSL 3.0.18
+- |ovito-pro| List supported ANARI extensions in the system information dialog.
+- |ovito-pro| Disable the :ref:`OpenSSH client <usage.import.remote.openssh_connection_method>` on the Windows platform, because it is nonfunctional.
+- |ovito-python| New :py:meth:`PropertyContainer.append() <ovito.data.PropertyContainer.append>` method, which allows adding a new item to a property container and initializing its properties.
+- |ovito-python| Accessing the attribute :py:attr:`PythonModifier.delegate <ovito.modifiers.PythonModifier.delegate>` now auto-compiles the script code
   provided in :py:attr:`!PythonModifier.script` and instantiate the custom :py:class:`~ovito.pipeline.ModifierInterface` class if necessary,
   e.g. after loading a pipeline from a .ovito state file.
-- |ovito-pro| Disable the :ref:`OpenSSH client <usage.import.remote.openssh_connection_method>` on the Windows platform, because it is nonfunctional.
 
 .. sidebar::
 
