@@ -4,6 +4,10 @@
 Changelog
 =========
 
+.. sidebar::
+
+  * `Download this version <https://www.ovito.org/download_history/#3.14.1>`__
+
 ----------------------------
 Version 3.14.1 (16-Oct-2025)
 ----------------------------
