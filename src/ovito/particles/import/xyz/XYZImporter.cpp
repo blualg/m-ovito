@@ -90,9 +90,6 @@ void XYZImporter::discoverFramesInFile(const FileHandle& fileHandle, QVector<Fil
     progress.setText(tr("Scanning file %1").arg(fileHandle.toString()));
     progress.setMaximum(stream.underlyingSize());
 
-    // Regular expression for whitespace characters.
-    QRegularExpression ws_re(QStringLiteral("\\s+"));
-
     int frameNumber = 0;
     Frame frame(fileHandle);
 
@@ -247,7 +244,7 @@ void XYZImporter::FrameLoader::loadFile()
 
     // Extract some useful information from the comment line.
     const char* commentLine_cstr = stream.readLine();
-    bool hasSimulationCell = false;
+    bool loadedSimulationCellGeometry = false;
 
     // Detect .exyz file format written by OpenBabel.
     bool isOpenBabelEXYZ = (std::strstr(commentLine_cstr, "%PBC") != nullptr);
@@ -275,7 +272,7 @@ void XYZImporter::FrameLoader::loadFile()
             FloatType sz = (FloatType)list[2].toDouble(&ok3);
             if(ok1 && ok2 && ok3) {
                 simulationCell()->setCellMatrix(AffineTransformation(Vector3(sx, 0, 0), Vector3(0, sy, 0), Vector3(0, 0, sz), Vector3(-sx / 2, -sy / 2, -sz / 2)));
-                hasSimulationCell = true;
+                loadedSimulationCellGeometry = true;
             }
         }
     }
@@ -288,7 +285,7 @@ void XYZImporter::FrameLoader::loadFile()
         //   - https://atomsk.univ-lille.fr/doc/en/format_xyz.html
 
         QString latticeStr = commentLine.mid(index + 9);
-        latticeStr.truncate(latticeStr.indexOf("\""));
+        latticeStr.truncate(latticeStr.indexOf(QChar('\"')));
         QStringList list = FileImporter::splitString(latticeStr);
         if(list.size() >= 9) {
             for(int k = 0; k < 3; k++)
@@ -303,7 +300,7 @@ void XYZImporter::FrameLoader::loadFile()
         int origin_index2 = commentLine.toLower().indexOf(QStringLiteral("origin=\""));
         if(origin_index1 >= 0 || origin_index2 >= 0) {
             QString cellOriginStr = commentLine.mid((origin_index1 >= 0) ? (origin_index1+13) : (origin_index2+8));
-            cellOriginStr.truncate(cellOriginStr.indexOf(QStringLiteral("\"")));
+            cellOriginStr.truncate(cellOriginStr.indexOf(QChar('\"')));
             QStringList list = FileImporter::splitString(cellOriginStr);
             for(int k = 0; k < list.size() && k < 3; k++)
                 cellOrigin[k] = (FloatType)list[k].toDouble();
@@ -350,7 +347,8 @@ void XYZImporter::FrameLoader::loadFile()
                 }
             }
             key_start = value_end + 1;
-            if(isQuoted) key_start++;
+            if(isQuoted)
+                key_start++;
         }
     }
     else {
@@ -386,7 +384,7 @@ void XYZImporter::FrameLoader::loadFile()
 
     if(cellVector1 != Vector3::Zero() && cellVector2 != Vector3::Zero() && cellVector3 != Vector3::Zero()) {
         simulationCell()->setCellMatrix(AffineTransformation(cellVector1, cellVector2, cellVector3, cellOrigin));
-        hasSimulationCell = true;
+        loadedSimulationCellGeometry = true;
     }
 
     if((index = commentLine.indexOf("pbc ")) >= 0) {
@@ -396,7 +394,7 @@ void XYZImporter::FrameLoader::loadFile()
     else if((index = commentLine.indexOf("pbc=\"")) >= 0) {
         // Look for Extended XYZ PBC keyword
         QString pbcStr = commentLine.mid(index + 5);
-        pbcStr.truncate(pbcStr.indexOf("\""));
+        pbcStr.truncate(pbcStr.indexOf(QChar('\"')));
         QStringList list = FileImporter::splitString(pbcStr);
         int pbcFlags[3] = {0, 0, 0};
         for(int i=0; i < list.size() && i < 3; i++) {
@@ -405,7 +403,7 @@ void XYZImporter::FrameLoader::loadFile()
         }
         simulationCell()->setPbcFlags(pbcFlags[0], pbcFlags[1], pbcFlags[2]);
     }
-    else if(hasSimulationCell) {
+    else if(loadedSimulationCellGeometry) {
         simulationCell()->setPbcFlags(true, true, true);
     }
 
@@ -474,10 +472,10 @@ void XYZImporter::FrameLoader::loadFile()
             throw Exception(tr("Parsing error in line %1 of EXYZ file. Invalid simulation cell origin: %2").arg(stream.lineNumber()).arg(stream.lineString()));
         simulationCell()->setCellMatrix(cell);
         simulationCell()->setPbcFlags(true, true, true);
-        hasSimulationCell = true;
+        loadedSimulationCellGeometry = true;
     }
 
-    if(!hasSimulationCell) {
+    if(!loadedSimulationCellGeometry) {
         generateBoundingBox();
     }
     else if(_autoRescaleCoordinates && numParticlesLong != 0 && particles()->getProperty(Particles::PositionProperty)) {
@@ -499,6 +497,18 @@ void XYZImporter::FrameLoader::loadFile()
             for(Point3& p : posProperty)
                 p = simCell * (p + Vector3(FloatType(0.5)));
         }
+    }
+
+    // Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property (but Position.X/Y are present).
+    if(hasSimulationCell()) {
+        simulationCell()->setIs2D(
+            std::none_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
+                return column.property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty) && column.property.componentIndex(&Particles::OOClass()) == 2;
+            }) &&
+            std::any_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
+                return column.property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty) && column.property.componentIndex(&Particles::OOClass()) != 2;
+            })
+        );
     }
 
     // Detect if there are more simulation frames following in the file.
@@ -533,7 +543,7 @@ ParticleInputColumnMapping XYZImporter::parseExtendedXYZColumnSpecification(cons
     if(index >= 0) {
 
         // Regular expression for whitespace characters.
-        QRegularExpression ws_re(QStringLiteral("\\s+"));
+        static const QRegularExpression ws_re(QStringLiteral("\\s+"));
 
         QString propertiesStr = commentLine.mid(index + 11);
         propertiesStr = propertiesStr.left(propertiesStr.indexOf(ws_re));

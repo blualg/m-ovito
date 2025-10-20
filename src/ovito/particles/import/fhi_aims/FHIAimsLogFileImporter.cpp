@@ -64,9 +64,6 @@ void FHIAimsLogFileImporter::discoverFramesInFile(const FileHandle& fileHandle, 
     progress.setText(tr("Scanning file %1").arg(fileHandle.toString()));
     progress.setMaximum(stream.underlyingSize());
 
-    // Regular expression for whitespace characters.
-    QRegularExpression ws_re(QStringLiteral("\\s+"));
-
     Frame frame(fileHandle);
     int frameNumber = 0;
 

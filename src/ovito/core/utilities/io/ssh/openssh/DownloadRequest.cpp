@@ -21,6 +21,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <ovito/core/Core.h>
+#include <ovito/core/dataset/io/FileImporter.h>
 #include "DownloadRequest.h"
 #include "OpensshConnection.h"
 
@@ -87,8 +88,7 @@ void DownloadRequest::handleSftpResponse(QIODevice* device, const QByteArray& li
 
     QString response = QString::fromUtf8(line);
 
-    static const QRegularExpression ws_re(QStringLiteral("\\s+"));
-    QStringList tokens = response.split(ws_re, Qt::SkipEmptyParts);
+    QStringList tokens = FileImporter::splitString(response);
 
     if(tokens.size() > 5 && tokens[0].size() >= 10) {
         bool ok;

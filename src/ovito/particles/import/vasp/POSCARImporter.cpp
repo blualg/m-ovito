@@ -60,9 +60,6 @@ bool POSCARImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
             return false;
     }
 
-    // Regular expression for whitespace characters.
-    QRegularExpression ws_re(QStringLiteral("\\s+"));
-
     // Parse number of atoms per type.
     int nAtomTypes = 0;
     for(int i = 0; i < 2; i++) {
@@ -228,7 +225,6 @@ void POSCARImporter::FrameLoader::loadFile()
     if(atomTypeNames.empty() && atomCounts.size() >= 1) {
         // The file might be in VASP 4.x format, which is the format written by ASE's write_vasp() function.
         // Files of this format contain the chemical element names in the comment line (very first line of the file).
-        QRegularExpression ws_re(QStringLiteral("\\s+"));
         QStringList tokens = FileImporter::splitString(trimmedComment);
         // Number of tokens must match the number of atom types.
         if(tokens.size() == atomCounts.size()) {

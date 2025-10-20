@@ -180,8 +180,7 @@ void GSDImporter::FrameLoader::loadFile()
     simCell(0,2) = boxValues[4] * boxValues[2];
     simCell(1,2) = boxValues[5] * boxValues[2];
     simCell.translation() = simCell.linear() * Vector3(FloatType(-0.5));
-    if(ndimensions == 2)
-        simulationCell()->setIs2D(true);
+    simulationCell()->setIs2D(ndimensions == 2);
     simulationCell()->setCellMatrix(simCell);
     simulationCell()->setPbcFlags(true, true, true);
 

@@ -528,13 +528,14 @@ void LAMMPSBinaryDumpImporter::FrameLoader::loadFile()
     }
 
     // Detect dimensionality of system. It's a 2D system if no file column has been mapped to the Position.Z particle property.
-    if(std::none_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
-        return column.property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty) && column.property.componentIndex(&Particles::OOClass()) == 2;
-    }) && std::any_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
-        return column.property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty) && column.property.componentIndex(&Particles::OOClass()) != 2;
-    })) {
-        simulationCell()->setIs2D(true);
-    }
+    simulationCell()->setIs2D(
+        std::none_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
+            return column.property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty) && column.property.componentIndex(&Particles::OOClass()) == 2;
+        }) &&
+        std::any_of(_columnMapping.begin(), _columnMapping.end(), [](const InputColumnInfo& column) {
+            return column.property.isStandardProperty(&Particles::OOClass(), Particles::PositionProperty) && column.property.componentIndex(&Particles::OOClass()) != 2;
+        })
+    );
 
     // Detect when there are more simulation frames following in the file.
     if(!file->atEnd())
