@@ -67,9 +67,9 @@ void BooleanGroupBoxParameterUI::resetUI()
 
     if(groupBox()) {
         if(isReferenceFieldUI())
-            groupBox()->setEnabled(parameterObject() != NULL && isEnabled());
+            groupBox()->setEnabled(parameterObject() && isEnabled() && !editor()->isReadOnly());
         else
-            groupBox()->setEnabled(editObject() != NULL && isEnabled());
+            groupBox()->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
     }
 }
 

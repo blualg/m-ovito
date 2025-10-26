@@ -100,7 +100,7 @@ void ElementTypeEditor::referenceReplaced(const PropertyFieldDescriptor* field, 
             lineEdit->setPlaceholderText(etype ? QStringLiteral("<%1>").arg(ElementType::generateDefaultTypeName(etype->numericId())) : QString());
 
         // Enable/disable the button.
-        _setAsDefaultBtn->setEnabled(etype != nullptr && etype->ownerProperty());
+        _setAsDefaultBtn->setEnabled(etype != nullptr && etype->ownerProperty() && !isReadOnly());
     }
 }
 

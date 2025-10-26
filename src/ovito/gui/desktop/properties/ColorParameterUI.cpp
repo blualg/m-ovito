@@ -64,7 +64,8 @@ void ColorParameterUI::resetUI()
 
     if(colorPicker())  {
         if(editObject() && (!isReferenceFieldUI() || parameterObject())) {
-            colorPicker()->setEnabled(isEnabled());
+            colorPicker()->setEnabled(isEnabled() && !editor()->isReadOnly());
+            colorPicker()->setReadOnly(editor()->isReadOnly());
         }
         else {
             colorPicker()->setEnabled(false);

@@ -58,16 +58,17 @@ void FreezePropertyModifierEditor::createUI(const RolloutInsertionParameters& ro
     });
 
     PropertyReferenceParameterUI* sourcePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(FreezePropertyModifier::sourceProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, true);
+    sourcePropertyUI->setContainerField(PROPERTY_FIELD(GenericPropertyModifier::subject));
     layout->addWidget(new QLabel(tr("Property to freeze:"), rollout));
     layout->addWidget(sourcePropertyUI->comboBox());
     connect(sourcePropertyUI, &PropertyReferenceParameterUI::valueEntered, this, &FreezePropertyModifierEditor::onSourcePropertyChanged);
     layout->addSpacing(8);
 
     PropertyReferenceParameterUI* destPropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(FreezePropertyModifier::destinationProperty), nullptr, PropertyReferenceParameterUI::ShowNoComponents, false);
+    destPropertyUI->setContainerField(PROPERTY_FIELD(GenericPropertyModifier::subject));
     layout->addWidget(new QLabel(tr("Output property:"), rollout));
     layout->addWidget(destPropertyUI->comboBox());
     layout->addSpacing(8);
-
 
     QGridLayout* gridlayout = new QGridLayout();
     gridlayout->setContentsMargins(0,0,0,0);
@@ -87,18 +88,12 @@ void FreezePropertyModifierEditor::createUI(const RolloutInsertionParameters& ro
 
     connect(this, &PropertiesEditor::contentsChanged, this, [=](RefTarget* editObject) {
         if(FreezePropertyModifier* modifier = static_object_cast<FreezePropertyModifier>(editObject)) {
-            sourcePropertyUI->setContainerRef(modifier->subject());
-            destPropertyUI->setContainerRef(modifier->subject());
             if(modifier->subject().dataClass()) {
                 PropertyContainerClassPtr classPtr = modifier->subject().dataClass();
                 tolerateNewElementsPUI->checkBox()->setText(tr("Tolerate newly appearing %1").arg(classPtr->elementDescriptionName()));
                 selectNewElementsPUI->checkBox()->setText(tr("Select newly appearing %1").arg(classPtr->elementDescriptionName()));
             }
             selectNewElementsPUI->setEnabled(modifier->tolerateNewElements());
-        }
-        else {
-            sourcePropertyUI->setContainerRef({});
-            destPropertyUI->setContainerRef({});
         }
     });
 

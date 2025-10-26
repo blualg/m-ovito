@@ -31,6 +31,7 @@ OVITO_STANDARD_PLUGIN(StdModGui
         AssignColorModifierEditor.cpp
         DeleteSelectedModifierEditor.cpp
         SelectTypeModifierEditor.cpp
+        EditTypesModifierEditor.cpp
         HistogramModifierEditor.cpp
         ScatterPlotModifierEditor.cpp
         ReplicateModifierEditor.cpp

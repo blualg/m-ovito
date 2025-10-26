@@ -61,6 +61,18 @@ public:
     /// Returns the preferred size of the widget.
     virtual QSize sizeHint() const override;
 
+    /// Indicates whether the widget is in read-only mode.
+    bool isReadOnly() const { return _isReadOnly; }
+
+    /// Sets the read-only mode of the widget.
+    /// In read-only mode, the user cannot change the color value.
+    void setReadOnly(bool readOnly) {
+        if(readOnly != _isReadOnly) {
+            _isReadOnly = readOnly;
+            update();
+        }
+    }
+
 Q_SIGNALS:
 
     /// \brief This signal is emitted by the color picker after its value has been changed by the user.
@@ -80,6 +92,9 @@ protected:
 
     /// The currently selected color.
     Color _color;
+
+    /// Indicates whether the widget is in read-only mode.
+    bool _isReadOnly = false;
 };
 
 }   // End of namespace

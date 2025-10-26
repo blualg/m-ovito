@@ -61,7 +61,7 @@ void FilenameParameterUI::resetUI()
     PropertyParameterUI::resetUI();
 
     if(selectorWidget())
-        selectorWidget()->setEnabled(editObject() && isEnabled());
+        selectorWidget()->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
 }
 
 /******************************************************************************

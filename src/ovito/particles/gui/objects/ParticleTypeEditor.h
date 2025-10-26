@@ -47,8 +47,18 @@ private:
 
 private Q_SLOTS:
 
+    /// Called when the contents of the editor have been replaced with a new object.
+    void onContentsReplaced();
+
     /// Called when the user wants to pick and load a mesh-based particle shape from disk.
     void onLoadParticleShape();
+
+private:
+
+    QToolButton* _colorPresetsMenuButton;
+    QToolButton* _displayRadiusPresetsMenuButton;
+    QToolButton* _vdwRadiusPresetsMenuButton;
+    QPushButton* _loadShapeBtn;
 };
 
 }   // End of namespace

@@ -77,7 +77,7 @@ void StringParameterUI::resetUI()
 
     if(textBox()) {
         if(editObject()) {
-            textBox()->setEnabled(isEnabled());
+            textBox()->setEnabled(isEnabled() && !editor()->isReadOnly());
         }
         else {
             textBox()->setEnabled(false);

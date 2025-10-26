@@ -101,8 +101,9 @@ NumericalParameterUI::~NumericalParameterUI()
 ******************************************************************************/
 void NumericalParameterUI::resetUI()
 {
+    bool enable = editObject() && isEnabled() && !editor()->isReadOnly();
     if(spinner()) {
-        spinner()->setEnabled(editObject() && isEnabled());
+        spinner()->setEnabled(enable);
         if(editObject()) {
             if(spinner()->unit() == nullptr) {
                 if(parameterUnitType())
@@ -122,7 +123,7 @@ void NumericalParameterUI::resetUI()
     PropertyParameterUI::resetUI();
 
     if(animateButton())
-        animateButton()->setEnabled(editObject() && parameterObject() && isEnabled());
+        animateButton()->setEnabled(enable && parameterObject());
 }
 
 /******************************************************************************

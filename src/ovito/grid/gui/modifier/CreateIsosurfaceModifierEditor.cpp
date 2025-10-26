@@ -69,15 +69,9 @@ void CreateIsosurfaceModifierEditor::createUI(const RolloutInsertionParameters& 
     layout2->addWidget(pclassUI->comboBox(), row++, 1);
 
     PropertyReferenceParameterUI* fieldQuantityUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(CreateIsosurfaceModifier::sourceProperty));
+    fieldQuantityUI->setContainerField(PROPERTY_FIELD(CreateIsosurfaceModifier::subject));
     layout2->addWidget(new QLabel(tr("Field quantity:")), row, 0);
     layout2->addWidget(fieldQuantityUI->comboBox(), row++, 1);
-    connect(this, &PropertiesEditor::contentsChanged, this, [fieldQuantityUI](RefTarget* editObject) {
-        if(CreateIsosurfaceModifier* modifier = static_object_cast<CreateIsosurfaceModifier>(editObject)) {
-            fieldQuantityUI->setContainerRef(modifier->subject());
-        }
-        else
-            fieldQuantityUI->setContainerRef(nullptr);
-    });
 
     // Isolevel parameter.
     FloatParameterUI* isolevelPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(CreateIsosurfaceModifier::isolevelController));

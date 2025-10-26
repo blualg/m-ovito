@@ -67,9 +67,9 @@ void IntegerCheckBoxParameterUI::resetUI()
 
     if(checkBox()) {
         if(isReferenceFieldUI())
-            checkBox()->setEnabled(parameterObject() && isEnabled());
+            checkBox()->setEnabled(parameterObject() && isEnabled() && !editor()->isReadOnly());
         else
-            checkBox()->setEnabled(editObject() && isEnabled());
+            checkBox()->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
     }
 
     if(isReferenceFieldUI() && editObject()) {

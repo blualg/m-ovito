@@ -49,6 +49,7 @@ public:
     void createMenuSeparator();
 
 private:
+
     QPointer<QMenu> _menu = nullptr;
 };
 

@@ -33,15 +33,16 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the model.
 ******************************************************************************/
-SceneNodesListModel::SceneNodesListModel(MainWindow& mainWindow, QWidget* parent) : QAbstractListModel(parent),
-    _mainWindow(mainWindow),
+SceneNodesListModel::SceneNodesListModel(MainWindowUI& ui, QWidget* parent) :
+    QAbstractListModel(parent),
+    UserInterfaceComponent<MainWindowUI>(ui),
     _pipelineSceneNodeIcon(QIcon::fromTheme("edit_pipeline_icon"))
 {
     // React to the scene being replaced.
-    connect(&mainWindow.datasetContainer(), &DataSetContainer::sceneReplaced, this, &SceneNodesListModel::onSceneReplaced);
+    connect(&datasetContainer(), &DataSetContainer::sceneReplaced, this, &SceneNodesListModel::onSceneReplaced);
 
     // Listen for scene node selection changes.
-    connect(&mainWindow.datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &SceneNodesListModel::onSceneSelectionChanged);
+    connect(&datasetContainer(), &DataSetContainer::selectionChangeComplete, this, &SceneNodesListModel::onSceneSelectionChanged);
 
     // Listen for signals from the root scene node.
     _sceneListener.connect(this, &SceneNodesListModel::onSceneNotificationEvent);
@@ -58,12 +59,12 @@ QT_WARNING_DISABLE_DEPRECATED
     connect(qGuiApp, &QGuiApplication::paletteChanged, this, &SceneNodesListModel::updateColorPalette);
 QT_WARNING_POP
 
-    for(QAction* action : mainWindow.actionManager()->actions()) {
+    for(QAction* action : actionManager()->actions()) {
         if(action->objectName().startsWith("NewPipeline."))
             _pipelineActions.push_back(action);
     }
     _pipelineActions.push_back(nullptr); // Separator
-    _pipelineActions.push_back(mainWindow.actionManager()->getAction(ACTION_EDIT_CLONE_PIPELINE));
+    _pipelineActions.push_back(actionManager()->getAction(ACTION_EDIT_CLONE_PIPELINE));
 }
 
 /******************************************************************************
@@ -261,8 +262,8 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
     // If a node is being removed from the scene, remove it from our internal list.
     if(event.type() == ReferenceEvent::ReferenceRemoved || event.type() == ReferenceEvent::ReferenceChanged) {
         // Don't know how else to do this in a safe manner. Rebuild the entire model from scratch.
-        onSceneReplaced(_mainWindow.datasetContainer().activeScene());
-        onSceneSelectionChanged(_mainWindow.datasetContainer().activeSelectionSet());
+        onSceneReplaced(datasetContainer().activeScene());
+        onSceneSelectionChanged(datasetContainer().activeSelectionSet());
     }
 
     // If a node is being renamed, let the model emit an update signal.
@@ -299,8 +300,8 @@ void SceneNodesListModel::activateItem(int index)
     int pipelineIndex = index - firstSceneNodeIndex();
     if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
         if(SceneNode* node = sceneNodes()[pipelineIndex]) {
-            _mainWindow.ui().performTransaction(tr("Select pipeline"), [&]() {
-                if(SelectionSet* selection = _mainWindow.datasetContainer().activeSelectionSet())
+            performTransaction(tr("Select pipeline"), [&]() {
+                if(SelectionSet* selection = datasetContainer().activeSelectionSet())
                     selection->setNode(node);
             });
         }
@@ -309,7 +310,7 @@ void SceneNodesListModel::activateItem(int index)
 
     // This is to reset the current item of the combobox back to the selected scene node
     // after the user has selected an action item.
-    onSceneSelectionChanged(_mainWindow.datasetContainer().activeSelectionSet());
+    onSceneSelectionChanged(datasetContainer().activeSelectionSet());
 
     // Determine the selected action item and execute the action.
     int actionIndex = index - firstActionIndex();
@@ -328,7 +329,7 @@ void SceneNodesListModel::deleteItem(int index)
     int pipelineIndex = index - firstSceneNodeIndex();
     if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
         if(OORef<SceneNode> node = sceneNodes()[pipelineIndex]) {
-            _mainWindow.ui().performTransaction(tr("Delete pipeline"), [&]() {
+            performTransaction(tr("Delete pipeline"), [&]() {
                 bool wasSelected = node->isSelected();
                 node->requestObjectDeletion();
 

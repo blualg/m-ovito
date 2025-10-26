@@ -60,15 +60,9 @@ void HistogramModifierEditor::createUI(const RolloutInsertionParameters& rollout
     layout->addWidget(pclassUI->comboBox());
 
     PropertyReferenceParameterUI* sourcePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(HistogramModifier::sourceProperty));
+    sourcePropertyUI->setContainerField(PROPERTY_FIELD(GenericPropertyModifier::subject));
     layout->addWidget(new QLabel(tr("Property:")));
     layout->addWidget(sourcePropertyUI->comboBox());
-    connect(this, &PropertiesEditor::contentsChanged, this, [sourcePropertyUI](RefTarget* editObject) {
-        GenericPropertyModifier* modifier = static_object_cast<GenericPropertyModifier>(editObject);
-        if(modifier)
-            sourcePropertyUI->setContainerRef(modifier->subject());
-        else
-            sourcePropertyUI->setContainerRef(nullptr);
-    });
 
     QGridLayout* gridlayout = new QGridLayout();
     gridlayout->setContentsMargins(4,4,4,4);

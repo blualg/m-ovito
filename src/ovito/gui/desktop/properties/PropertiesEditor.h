@@ -97,6 +97,17 @@ public:
     /// \brief Returns a pointer to the parent editor which has opened this editor for one of its sub-components.
     PropertiesEditor* parentEditor() const { return _parentEditor; }
 
+    /// \brief Indicates whether access to the editable object is read-only.
+    bool isReadOnly() const { return _isReadOnly; }
+
+    /// \brief Set whether access to the editable object should be read-only.
+    void setReadOnly(bool readOnly) {
+        if(readOnly != _isReadOnly) {
+            _isReadOnly = readOnly;
+            Q_EMIT contentsReplaced(editObject());
+        }
+    }
+
     /// \brief Creates a new rollout in the rollout container and returns
     ///        the empty widget that can then be filled with UI controls.
     /// \param title The title of the rollout.
@@ -211,7 +222,7 @@ public Q_SLOTS:
     ///                  as the previous object.
     ///
     /// This method generates a contentsReplaced() and a contentsChanged() signal.
-    void setEditObject(RefTarget* newObject);
+    void setEditObject(RefTarget* newObject, bool readOnly = false);
 
 Q_SIGNALS:
 
@@ -262,6 +273,9 @@ private:
     /// The list of rollout widgets that have been created by editor.
     /// The cleanup handler is used to delete them when the editor is being deleted.
     QObjectCleanupHandler _rollouts;
+
+    /// Indicates whether access to the editable object is read-only.
+    bool _isReadOnly = false;
 
     /// For emitting the pipelineInputChanged() signal with a short delay.
     DeferredMethodInvocation<PropertiesEditor, &PropertiesEditor::pipelineInputChanged> emitPipelineInputChangedSignal;

@@ -53,6 +53,7 @@ void SelectTypeModifierEditor::createUI(const RolloutInsertionParameters& rollou
     });
 
     _sourcePropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(SelectTypeModifier::sourceProperty));
+    _sourcePropertyUI->setContainerField(PROPERTY_FIELD(GenericPropertyModifier::subject));
     layout->addWidget(new QLabel(tr("Property:")));
     layout->addWidget(_sourcePropertyUI->comboBox());
 
@@ -88,11 +89,6 @@ void SelectTypeModifierEditor::createUI(const RolloutInsertionParameters& rollou
     });
 
     connect(this, &PropertiesEditor::contentsChanged, this, [this,model](RefTarget* editObject) {
-        SelectTypeModifier* modifier = static_object_cast<SelectTypeModifier>(editObject);
-        if(modifier)
-            _sourcePropertyUI->setContainerRef(modifier->subject());
-        else
-            _sourcePropertyUI->setContainerRef({});
         QModelIndexList selection = _elementTypesBox->selectionModel()->selectedRows();
         model->refresh();
         if(!selection.empty())

@@ -22,6 +22,7 @@
 
 #include <ovito/gui/desktop/GUI.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/widgets/general/ActionsItemDelegate.h>
 #include <ovito/core/dataset/DataSetContainer.h>
 #include <ovito/core/dataset/scene/Scene.h>
 #include "SceneNodeSelectionBox.h"
@@ -32,7 +33,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructs the widget.
 ******************************************************************************/
-SceneNodeSelectionBox::SceneNodeSelectionBox(MainWindow& mainWindow, QWidget* parent) : QComboBox(parent), _mainWindow(mainWindow)
+SceneNodeSelectionBox::SceneNodeSelectionBox(MainWindowUI& ui, QWidget* parent) : QComboBox(parent), UserInterfaceComponent<MainWindowUI>(ui)
 {
     setInsertPolicy(QComboBox::NoInsert);
     setEditable(false);
@@ -46,20 +47,35 @@ SceneNodeSelectionBox::SceneNodeSelectionBox(MainWindow& mainWindow, QWidget* pa
     setIconSize(QSize(24, 24));
 
     // Set the list model, which tracks the list of pipelines in the scene.
-    setModel(new SceneNodesListModel(mainWindow, this));
+    setModel(new SceneNodesListModel(ui, this));
 
     // Wire the combobox selection to the list model.
     connect(this, qOverload<int>(&QComboBox::activated), static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::activateItem);
     connect(static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::selectionChangeRequested, this, &QComboBox::setCurrentIndex);
 
+    // Configure the view.
+    view()->setTextElideMode(Qt::ElideRight);
+
+#if 0
     // Install a custom item delegate.
     setItemDelegate(new SceneNodeSelectionItemDelegate(this));
-    connect(static_cast<SceneNodeSelectionItemDelegate*>(itemDelegate()), &SceneNodeSelectionItemDelegate::itemDelete, static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::deleteItem);
-    connect(static_cast<SceneNodeSelectionItemDelegate*>(itemDelegate()), &SceneNodeSelectionItemDelegate::itemRename, this, &SceneNodeSelectionBox::renameSceneNode);
+    //connect(static_cast<SceneNodeSelectionItemDelegate*>(itemDelegate()), &SceneNodeSelectionItemDelegate::itemDelete, static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::deleteItem);
+    //connect(static_cast<SceneNodeSelectionItemDelegate*>(itemDelegate()), &SceneNodeSelectionItemDelegate::itemRename, this, &SceneNodeSelectionBox::renameSceneNode);
 
     // Install an event filter.
     view()->viewport()->installEventFilter(itemDelegate());
     view()->setTextElideMode(Qt::ElideRight);
+#else
+    // Install custom item delegate to add action buttons to the combo box.
+    ActionsItemDelegate* delegate = new ActionsItemDelegate(this);
+    setItemDelegate(delegate);
+
+    // Create actions for renaming and deleting pipelines.
+    QAction* renameAction = new QAction(QIcon::fromTheme("edit_rename_pipeline"), tr("Rename"), this);
+    QAction* deleteAction = new QAction(QIcon::fromTheme("edit_delete_pipeline"), tr("Delete"), this);
+    connect(renameAction, &QAction::triggered, this, &SceneNodeSelectionBox::renameSceneNode);
+    connect(deleteAction, &QAction::triggered, static_cast<SceneNodesListModel*>(model()), &SceneNodesListModel::deleteItem);
+#endif
 }
 
 /******************************************************************************
@@ -72,7 +88,7 @@ void SceneNodeSelectionBox::renameSceneNode(int index)
         bool ok;
         QString newName = QInputDialog::getText(window(), tr("Change pipeline name"), tr("Pipeline name:                                         "), QLineEdit::Normal, oldName, &ok).trimmed();
         if(ok && newName != oldName) {
-            _mainWindow.ui().performTransaction(tr("Rename pipeline"), [&]() {
+            performTransaction(tr("Rename pipeline"), [&]() {
                 sceneNode->setSceneNodeName(newName);
             });
         }
@@ -84,22 +100,28 @@ void SceneNodeSelectionBox::renameSceneNode(int index)
 ******************************************************************************/
 void SceneNodeSelectionItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-    // Paint buttons next to node items when mouse if over the item.
+    // Paint buttons next to scene node items when mouse if over the item.
     if(SceneNode* node = dynamic_object_cast<SceneNode>(index.data(Qt::UserRole).value<OvitoObject*>())) {
 #ifdef Q_OS_WIN
         if(option.state & QStyle::State_MouseOver) {
 #else
         if(option.state & QStyle::State_Selected) {
 #endif
-            // Shorten the text of the item to not overlap with the buttons.
             QStyleOptionViewItem reducedOption = option;
             initStyleOption(&reducedOption, index);
-            QStyle* style = option.widget->style();
-            QRect textRect = style->proxy()->subElementRect(QStyle::SE_ItemViewItemText, &reducedOption, reducedOption.widget);
-            int textWidth = textRect.width() - 2 * option.rect.height();
-            reducedOption.text = option.fontMetrics.elidedText(reducedOption.text, Qt::ElideRight, textWidth);
+
+            // Shorten the text of the item to not overlap with the buttons.
+            const QWidget* widget = option.widget;
+            QStyle* style = widget->style();
+            QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &reducedOption, widget);
+            const int textMargin = style->proxy()->pixelMetric(QStyle::PM_FocusFrameHMargin, nullptr, widget) + 1;
+            int textWidth = textRect.width() - 2 * option.rect.height() - 2 * textMargin;
+#ifdef Q_OS_MACOS
+            textWidth -= option.rect.height(); // need extra padding on macOS (for unknown reasons).
+#endif
+            reducedOption.text = QFontMetrics(option.font).elidedText(reducedOption.text, Qt::ElideRight, textWidth);
             reducedOption.textElideMode = Qt::ElideNone;
-            option.widget->style()->drawControl(QStyle::CE_ItemViewItem, &reducedOption, painter, option.widget);
+            style->drawControl(QStyle::CE_ItemViewItem, &reducedOption, painter, widget);
 
             // Load the icons.
             if(_deleteIcon.isNull()) {

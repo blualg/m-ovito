@@ -86,9 +86,14 @@ void PropertyParameterUI::resetUI()
 
         // Bind this parameter UI to the parameter object of the new edited object.
         setParameterObject(editObject()->getReferenceFieldTarget(propertyField()));
+        if(menuToolButton())
+            menuToolButton()->setEnabled(!editor()->isReadOnly());
     }
     else {
         setParameterObject(nullptr);
+        if(menuToolButton()) {
+            menuToolButton()->setEnabled(editObject() && !editor()->isReadOnly());
+        }
     }
 
     ParameterUI::resetUI();
@@ -151,6 +156,7 @@ MenuToolButton* PropertyParameterUI::createMenuToolButton(QWidget* parent)
     if(!_menuToolButton) {
         _menuToolButton = new MenuToolButton(parent);
         _menuToolButton->setToolTip(tr("Presets"));
+        _menuToolButton->setEnabled(editObject() && !editor()->isReadOnly());
     }
     return _menuToolButton;
 }

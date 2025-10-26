@@ -412,7 +412,7 @@ void MainWindow::createMainToolbar()
     pipelinesLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     pipelinesLabel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     _mainToolbar->addWidget(pipelinesLabel);
-    _mainToolbar->addWidget(new SceneNodeSelectionBox(*this));
+    _mainToolbar->addWidget(new SceneNodeSelectionBox(ui()));
 }
 
 /******************************************************************************

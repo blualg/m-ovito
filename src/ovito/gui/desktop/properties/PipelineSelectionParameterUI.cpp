@@ -61,7 +61,7 @@ void PipelineSelectionParameterUI::resetUI()
     PropertyParameterUI::resetUI();
 
     if(comboBox())
-        comboBox()->setEnabled(editObject() && isEnabled());
+        comboBox()->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
 }
 
 /******************************************************************************

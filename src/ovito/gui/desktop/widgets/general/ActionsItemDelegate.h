@@ -27,19 +27,36 @@
 
 namespace Ovito {
 
-class SceneNodeSelectionItemDelegate : public QStyledItemDelegate
+/**
+ * A Qt item delegate that can display one or more action buttons (e.g. delete, rename) next to each item in a list or table.
+ */
+class OVITO_GUI_EXPORT ActionsItemDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
+
 public:
 
-    /// Constructor.
-    using QStyledItemDelegate::QStyledItemDelegate;
+    /// Additional custom roles used by the item delegate to fetch the list of QActions from the model.
+    enum ItemRoles {
+        ActionsRole = Qt::UserRole + 1,
+    };
 
-    /// Paints an item in the combobox.
+    /// Constructor.
+    explicit ActionsItemDelegate(QObject* parent);
+
+    /// Paints an item.
     virtual void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
-    /// Handles mouse events for a list item.
+    /// Handles mouse events for an item.
     virtual bool editorEvent(QEvent* event, QAbstractItemModel* model, const QStyleOptionViewItem& option, const QModelIndex& index) override;
+
+    /// Returns the item view associated with this delegate.
+    QAbstractItemView* view() const { return _view; }
+
+    /// Returns the list of actions for the given model index.
+    QVector<QAction*> actionsForIndex(const QModelIndex& index) const {
+        return index.data(ActionsRole).value<QVector<QAction*>>();
+    }
 
 Q_SIGNALS:
 
@@ -51,40 +68,19 @@ Q_SIGNALS:
 
 protected:
 
-    /// Intercepts events of the combox view widget.
+    /// Intercepts events of the item view widget.
     virtual bool eventFilter(QObject* obj, QEvent* event) override;
 
 private:
 
-    /// Returns the rectangular area that is occupied by the delete button of a list item.
-    QRect deleteButtonRect(const QRect& itemRect) const;
+    /// Returns the rectangular area that is occupied by the i-th action button.
+    QRect actionButtonRect(const QRect& itemRect, int actionIndex) const;
 
-    /// Returns the rectangular area that is occupied by the rename button of a list item.
-    QRect renameButtonRect(const QRect& itemRect) const;
-
+    QAbstractItemView* _view;
+    QModelIndex _hoverIndex;
     mutable QIcon _deleteIcon;
     mutable QIcon _renameIcon;
-    bool _deleteButtonHover = false;
-    bool _renameButtonHover = false;
-};
-
-/**
- * A combo-box widget that displays the current scene node selection
- * and allows to select scene nodes.
- */
-class SceneNodeSelectionBox : public QComboBox, public UserInterfaceComponent<MainWindowUI>
-{
-    Q_OBJECT
-
-public:
-
-    /// Constructs the widget.
-    SceneNodeSelectionBox(MainWindowUI& ui, QWidget* parent = nullptr);
-
-private Q_SLOTS:
-
-    /// Lets the user rename a list item.
-    void renameSceneNode(int index);
+    int _hoverActionIndex = -1;
 };
 
 }   // End of namespace

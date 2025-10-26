@@ -78,6 +78,24 @@ protected:
 };
 
 /**
+ * \brief Helper metafunction to determine the data type to use for storing the given property data type in a QVariant.
+ */
+template<typename property_data_type, typename = void>
+struct QVariantTypeFromPropertyType {
+    using type = property_data_type;
+};
+// Specialization for enum types, which must always be stored as 'int' in a QVariant.
+template<typename enum_type>
+struct QVariantTypeFromPropertyType<enum_type, std::enable_if_t<std::is_enum_v<enum_type>>> {
+    using type = int;
+};
+// Specialization for Color type, which must always be stored as 'QColor' in a QVariant.
+template<>
+struct QVariantTypeFromPropertyType<Color> {
+    using type = QColor;
+};
+
+/**
  * \brief Stores a non-animatable property of a RefTarget derived class, which is not serializable.
  */
 template<typename property_data_type, int flags>
@@ -91,8 +109,7 @@ public:
     // If the property type is an enum, then use 'int'.
     // If the property is 'Color', then use 'QColor'.
     // Otherwise just use the property type.
-    using qvariant_type = std::conditional_t<std::is_enum_v<property_data_type>, int,
-        std::conditional_t<std::is_same_v<property_data_type, Color>, QColor, property_data_type>>;
+    using qvariant_type = typename QVariantTypeFromPropertyType<property_type>::type;
 
     // For enum types, the QVariant data type must always be set to 'int'.
     static_assert(!std::is_enum_v<property_type> || std::is_same_v<qvariant_type, int>, "QVariant data type must be 'int' for enum property types.");

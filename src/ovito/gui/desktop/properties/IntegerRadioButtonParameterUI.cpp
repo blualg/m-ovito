@@ -50,7 +50,7 @@ QRadioButton* IntegerRadioButtonParameterUI::addRadioButton(int value, const QSt
 {
     QRadioButton* button = new QRadioButton(caption);
     if(buttonGroup()) {
-        button->setEnabled(editObject() && isEnabled());
+        button->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
         buttonGroup()->addButton(button, value);
     }
     return button;
@@ -67,9 +67,9 @@ void IntegerRadioButtonParameterUI::resetUI()
     if(buttonGroup()) {
         for(QAbstractButton* button : buttonGroup()->buttons()) {
             if(isReferenceFieldUI())
-                button->setEnabled(parameterObject() && isEnabled());
+                button->setEnabled(parameterObject() && isEnabled() && !editor()->isReadOnly());
             else
-                button->setEnabled(editObject() && isEnabled());
+                button->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
         }
     }
 

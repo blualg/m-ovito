@@ -26,8 +26,8 @@
 namespace Ovito {
 
 /******************************************************************************
- * Constructor.
- ******************************************************************************/
+* Constructor.
+******************************************************************************/
 MenuToolButton::MenuToolButton(QWidget* parent) : QToolButton(parent), _menu(new QMenu(this))
 {
     OVITO_ASSERT(_menu != nullptr);
@@ -40,13 +40,19 @@ MenuToolButton::MenuToolButton(QWidget* parent) : QToolButton(parent), _menu(new
 }
 
 /******************************************************************************
- * Creates a new action and adds it to the ToolButtonMenu.
- ******************************************************************************/
-QAction* MenuToolButton::createAction(const QIcon& icon, const QString& label) { return _menu->addAction(icon, label); }
+* Creates a new action and adds it to the ToolButtonMenu.
+******************************************************************************/
+QAction* MenuToolButton::createAction(const QIcon& icon, const QString& label)
+{
+    return _menu->addAction(icon, label);
+}
 
 /******************************************************************************
- * Creates a new separator in the menu.
- ******************************************************************************/
-void MenuToolButton::createMenuSeparator() { _menu->addSeparator(); }
+* Creates a new separator in the menu.
+******************************************************************************/
+void MenuToolButton::createMenuSeparator()
+{
+    _menu->addSeparator();
+}
 
 }  // namespace Ovito

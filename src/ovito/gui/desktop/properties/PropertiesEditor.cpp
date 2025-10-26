@@ -102,11 +102,12 @@ void PropertiesEditor::aboutToBeDeleted()
 /******************************************************************************
 * Sets the object being edited in this editor.
 ******************************************************************************/
-void PropertiesEditor::setEditObject(RefTarget* newObject)
+void PropertiesEditor::setEditObject(RefTarget* newObject, bool readOnly)
 {
     OVITO_ASSERT_MSG(!editObject() || !newObject || newObject->getOOClass().isDerivedFrom(editObject()->getOOClass()),
             "PropertiesEditor::setEditObject()", "This properties editor was not made for this object class.");
 
+    _isReadOnly = readOnly;
     _editObject.set(this, PROPERTY_FIELD(editObject), newObject);
 
     OVITO_ASSERT(!newObject || newObject->isBeingEdited());

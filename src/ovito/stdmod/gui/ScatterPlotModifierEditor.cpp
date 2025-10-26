@@ -69,22 +69,14 @@ void ScatterPlotModifierEditor::createUI(const RolloutInsertionParameters& rollo
 
 
     PropertyReferenceParameterUI* xPropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(ScatterPlotModifier::xAxisProperty));
+    xPropertyUI->setContainerField(PROPERTY_FIELD(GenericPropertyModifier::subject));
     layout->addWidget(new QLabel(tr("X-axis property:"), rollout));
     layout->addWidget(xPropertyUI->comboBox());
     PropertyReferenceParameterUI* yPropertyUI = createParamUI<PropertyReferenceParameterUI>(PROPERTY_FIELD(ScatterPlotModifier::yAxisProperty));
+    yPropertyUI->setContainerField(PROPERTY_FIELD(GenericPropertyModifier::subject));
     layout->addWidget(new QLabel(tr("Y-axis property:"), rollout));
     layout->addWidget(yPropertyUI->comboBox());
-    connect(this, &PropertiesEditor::contentsChanged, this, [xPropertyUI,yPropertyUI](RefTarget* editObject) {
-        GenericPropertyModifier* modifier = static_object_cast<GenericPropertyModifier>(editObject);
-        if(modifier) {
-            xPropertyUI->setContainerRef(modifier->subject());
-            yPropertyUI->setContainerRef(modifier->subject());
-        }
-        else {
-            xPropertyUI->setContainerRef({});
-            yPropertyUI->setContainerRef({});
-        }
-    });
+
     layout->addSpacing(6);
 
     _plotWidget = new DataTablePlotWidget();

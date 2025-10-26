@@ -112,13 +112,13 @@ protected:
         /// Notifies the system that the given item has changed and the display needs to be updated.
         void updateItem(int itemIndex) {
             // Update all columns of that item.
-            dataChanged(index(itemIndex, 0), index(itemIndex, columnCount() - 1));
+            Q_EMIT dataChanged(index(itemIndex, 0), index(itemIndex, columnCount() - 1));
         }
 
         /// Notifies the system that the given columns of all items have changed and the display needs to be updated.
         void updateColumns(int columnStartIndex, int columnEndIndex) {
             // Update the columns of all items.
-            dataChanged(index(0, columnStartIndex), index(rowCount() - 1, columnEndIndex));
+            Q_EMIT dataChanged(index(0, columnStartIndex), index(rowCount() - 1, columnEndIndex));
         }
 
         /// Returns the number of columns of the table model. Default is 1.

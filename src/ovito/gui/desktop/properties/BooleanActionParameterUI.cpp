@@ -52,7 +52,7 @@ void BooleanActionParameterUI::resetUI()
     PropertyParameterUI::resetUI();
 
     if(action())
-        action()->setEnabled(editObject() != NULL && isEnabled());
+        action()->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
 }
 
 /******************************************************************************

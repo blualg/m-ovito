@@ -60,7 +60,7 @@ CustomParameterUI::~CustomParameterUI()
 void CustomParameterUI::resetUI()
 {
     if(widget()) {
-        widget()->setEnabled(editObject() != NULL && isEnabled());
+        widget()->setEnabled(editObject() && isEnabled() && !editor()->isReadOnly());
         if(_resetUIFunction)
             _resetUIFunction(editObject());
     }
