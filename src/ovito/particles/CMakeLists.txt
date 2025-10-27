@@ -72,6 +72,7 @@ SET(SourceFiles
     import/parcas/ParcasFileImporter.cpp
     import/cfg/CFGImporter.cpp
     import/pdb/PDBImporter.cpp
+    import/sdf/SDFImporter.cpp
     import/fhi_aims/FHIAimsImporter.cpp
     import/fhi_aims/FHIAimsLogFileImporter.cpp
     import/gsd/GSDImporter.cpp
