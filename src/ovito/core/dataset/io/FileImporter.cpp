@@ -30,6 +30,16 @@
 
 namespace Ovito {
 
+namespace {
+bool sortFileImporters(const FileImporter::OOMetaClass* a, const FileImporter::OOMetaClass* b)
+{
+    if(a->autodetectionPriority() == b->autodetectionPriority()) {
+        return std::strcmp(a->className(), b->className()) < 0;
+    }
+    return a->autodetectionPriority() > b->autodetectionPriority();
+}
+}  // namespace
+
 IMPLEMENT_ABSTRACT_OVITO_CLASS(FileImporter);
 
 /******************************************************************************
@@ -66,7 +76,7 @@ auto getInstalledFileImporterClasses()
         if(importers.empty()) {
             // Obtain a list of all installed file importer classes from the PluginManager at program startup.
             importers = PluginManager::instance().metaclassMembers<FileImporter>();
-            std::ranges::sort(importers, [](const FileImporterClass* a, const FileImporterClass* b) { return a->autodetectionPriority() > b->autodetectionPriority(); });
+            std::ranges::sort(importers, sortFileImporters);
         }
     }
     return std::span(importers);
@@ -135,7 +145,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
 
         // Obtain a list of all installed file importer classes from the PluginManager at program startup.
         installedFileImporterClasses = PluginManager::instance().metaclassMembers<FileImporter>();
-        std::ranges::sort(installedFileImporterClasses, [](const FileImporterClass* a, const FileImporterClass* b) { return a->autodetectionPriority() > b->autodetectionPriority(); });
+        std::ranges::sort(installedFileImporterClasses, sortFileImporters);
 
         // If a newly installed file importer class is being registered at runtime, we need to amend the list of installed classes.
         QObject::connect(&PluginManager::instance(), &PluginManager::extensionClassAdded, [](OvitoClassPtr clazz) {
@@ -143,8 +153,7 @@ OORef<FileImporter> FileImporter::autodetectFileFormat(const FileHandle& file, F
                 QMutexLocker locker(&installedFileImporterClassesMutex);
                 const FileImporter::OOMetaClass* importerClass = static_cast<const FileImporter::OOMetaClass*>(clazz);
                 // Insert the new importer class into the list of installed classes, sorted by priority.
-                auto iter = std::lower_bound(installedFileImporterClasses.begin(), installedFileImporterClasses.end(), importerClass,
-                    [](const FileImporter::OOMetaClass* a, const FileImporter::OOMetaClass* b) { return a->autodetectionPriority() > b->autodetectionPriority(); });
+                auto iter = std::ranges::lower_bound(installedFileImporterClasses, importerClass, sortFileImporters);
                 installedFileImporterClasses.insert(iter, importerClass);
             }
         });
