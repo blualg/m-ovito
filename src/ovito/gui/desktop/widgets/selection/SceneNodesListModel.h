@@ -24,6 +24,7 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
+#include <ovito/gui/desktop/widgets/general/ActionsItemDelegate.h>
 #include <ovito/core/oo/RefTargetListener.h>
 
 namespace Ovito {
@@ -36,6 +37,12 @@ class OVITO_GUI_EXPORT SceneNodesListModel : public QAbstractListModel, public U
     Q_OBJECT
 
 public:
+
+    /// Additional custom roles used by the item delegate to fetch data from the model.
+    enum ItemRoles {
+        InfoRole = Qt::UserRole + 1,
+        ActionsRole = Qt::UserRole + 2,
+    };
 
     /// Constructor.
     explicit SceneNodesListModel(MainWindowUI& ui, QWidget* parent = nullptr);
@@ -64,7 +71,10 @@ public Q_SLOTS:
     void activateItem(int index);
 
     /// Performs a deletion action on an item.
-    void deleteItem(int index);
+    void deleteItem(const QModelIndex& index);
+
+    /// Lets the user rename a list item.
+    void renameItem(const QModelIndex& index);
 
 Q_SIGNALS:
 
@@ -122,6 +132,12 @@ private:
 
     /// List items to be updated only occasional.
     QVector<SceneNode*> _deferredUpdateList;
+
+    /// Action for renaming a pipeline.
+    ItemAction* _renameAction;
+
+    /// Action for deleting a pipeline.
+    ItemAction* _deleteAction;
 };
 
 }   // End of namespace

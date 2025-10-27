@@ -79,33 +79,4 @@ private:
     UtilityCommandPage* _utilityPage;
 };
 
-/**
- * This Qt item delegate class renders the list items of the pipeline editor and other list views.
- * It extends the QStyledItemDelegate base class by displaying the
- * PipelineStatus::shortInfo() value next to the title of each pipeline entry.
- */
-class ExtendedListItemDelegate : public QStyledItemDelegate
-{
-public:
-
-    /// Constructor.
-    ExtendedListItemDelegate(QObject* parent, int shortInfoRole) : QStyledItemDelegate(parent), _shortInfoRole(shortInfoRole) {}
-
-    /// Renders the list item.
-    virtual void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-
-private:
-
-    int _shortInfoRole;
-
-    /// Blend two RGB colors.
-    static QColor blendColors(const QColor& color1, const QColor& color2, qreal ratio)
-    {
-        int r = color1.red() * (1 - ratio) + color2.red() * ratio;
-        int g = color1.green() * (1 - ratio) + color2.green() * ratio;
-        int b = color1.blue() * (1 - ratio) + color2.blue() * ratio;
-        return QColor(r, g, b);
-    }
-};
-
 }   // End of namespace

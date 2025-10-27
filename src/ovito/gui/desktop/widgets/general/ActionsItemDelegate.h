@@ -24,25 +24,45 @@
 
 
 #include <ovito/gui/desktop/GUI.h>
+#include "InfoItemDelegate.h"
 
 namespace Ovito {
 
 /**
- * A Qt item delegate that can display one or more action buttons (e.g. delete, rename) next to each item in a list or table.
+ * A QAction subclass representing an action associated with an item in a QAbstractListModel.
  */
-class OVITO_GUI_EXPORT ActionsItemDelegate : public QStyledItemDelegate
+class OVITO_GUI_EXPORT ItemAction : public QAction
 {
     Q_OBJECT
 
 public:
 
-    /// Additional custom roles used by the item delegate to fetch the list of QActions from the model.
-    enum ItemRoles {
-        ActionsRole = Qt::UserRole + 1,
-    };
+    /// Constructor.
+    using QAction::QAction;
+
+Q_SIGNALS:
+
+    /// This signal is emitted when the action is triggered for the given list model item.
+    void triggeredForItem(const QModelIndex& index);
+};
+
+/**
+ * A Qt item delegate that can display one or more action buttons (e.g. delete, rename) next to each item in a list or table.
+ *
+ * To use this delegate with a QAbstractItemView widget, subclass QAbstractItemModel and reimplement the data() method to return a QList<QAction*>
+ * for the custom `actionsRole` specified in the ActionsItemDelegate constructor. The delegate will then render the action buttons next to each item
+ * and handle mouse events to trigger the corresponding actions.
+ *
+ * Use the ItemAction class for actions that need to know the specific item they were triggered for.
+ */
+class OVITO_GUI_EXPORT ActionsItemDelegate : public InfoItemDelegate
+{
+    Q_OBJECT
+
+public:
 
     /// Constructor.
-    explicit ActionsItemDelegate(QObject* parent);
+    explicit ActionsItemDelegate(QObject* parent, int infoRole, int actionsRole);
 
     /// Paints an item.
     virtual void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
@@ -53,9 +73,12 @@ public:
     /// Returns the item view associated with this delegate.
     QAbstractItemView* view() const { return _view; }
 
+    /// Returns the Qt data role used to obtain the item actions from the model.
+    int actionsRole() const { return _actionsRole; }
+
     /// Returns the list of actions for the given model index.
-    QVector<QAction*> actionsForIndex(const QModelIndex& index) const {
-        return index.data(ActionsRole).value<QVector<QAction*>>();
+    QList<QAction*> actionsForIndex(const QModelIndex& index) const {
+        return index.data(actionsRole()).value<QList<QAction*>>();
     }
 
 Q_SIGNALS:
@@ -71,15 +94,17 @@ protected:
     /// Intercepts events of the item view widget.
     virtual bool eventFilter(QObject* obj, QEvent* event) override;
 
+    /// Computes the visual rect of the given item, clipped to the viewport area.
+    QRect getClippedItemRect(const QModelIndex& index) const;
+
 private:
 
     /// Returns the rectangular area that is occupied by the i-th action button.
     QRect actionButtonRect(const QRect& itemRect, int actionIndex) const;
 
+    int _actionsRole;
     QAbstractItemView* _view;
     QModelIndex _hoverIndex;
-    mutable QIcon _deleteIcon;
-    mutable QIcon _renameIcon;
     int _hoverActionIndex = -1;
 };
 

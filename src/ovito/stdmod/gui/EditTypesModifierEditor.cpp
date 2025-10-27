@@ -23,8 +23,12 @@
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
-#include <ovito/gui/desktop/widgets/general/ActionsItemDelegate.h>
+#include <ovito/gui/desktop/dialogs/MessageDialog.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/app/PluginManager.h>
+#include <ovito/stdobj/properties/PropertyContainer.h>
+#include <ovito/stdmod/modifiers/SelectTypeModifier.h>
+#include <ovito/stdmod/modifiers/DeleteSelectedModifier.h>
 #include "EditTypesModifierEditor.h"
 
 namespace Ovito {
@@ -84,8 +88,14 @@ void EditTypesModifierEditor::createUI(const RolloutInsertionParameters& rollout
     connect(_elementTypesTable->selectionModel(), &QItemSelectionModel::selectionChanged, this, &EditTypesModifierEditor::onElementTypeSelectionChanged);
 
     // Install custom item delegate for rendering element types in the table.
-    ActionsItemDelegate* delegate = new ActionsItemDelegate(_elementTypesTable);
+    ActionsItemDelegate* delegate = new ActionsItemDelegate(_elementTypesTable, ViewModel::InfoRole, ViewModel::ActionsRole);
     _elementTypesTable->setItemDelegateForColumn(0, delegate);
+
+    // Create actions for deleting and restoring element types.
+    _deleteAction = new ItemAction(QIcon::fromTheme("edit_delete_pipeline"), tr("Delete"), this);
+    _restoreAction = new ItemAction(QIcon::fromTheme("restore_object"), tr("Restore"), this);
+    connect(_deleteAction, &ItemAction::triggeredForItem, this, &EditTypesModifierEditor::deleteType);
+    connect(_restoreAction, &ItemAction::triggeredForItem, this, &EditTypesModifierEditor::restoreType);
 
     // Container widget for the element type sub-editor.
     _subEditorContainer = new QWidget(rollout);
@@ -97,10 +107,10 @@ void EditTypesModifierEditor::createUI(const RolloutInsertionParameters& rollout
     layout->addSpacing(12);
     layout->addWidget(createParamUI<ObjectStatusDisplay>()->statusWidget());
 
-    // Update the element list whenever the modifier changes.
+    // Update the type list whenever the modifier changes.
     connect(this, &PropertiesEditor::contentsChanged, this, &EditTypesModifierEditor::refreshElementTypeList);
 
-    // Update the element list whenever the pipeline input changes.
+    // Update the type list whenever the pipeline input changes.
     connect(this, &PropertiesEditor::pipelineInputChanged, this, &EditTypesModifierEditor::refreshElementTypeList);
 }
 
@@ -114,6 +124,8 @@ void EditTypesModifierEditor::refreshElementTypeList()
     _tableModel->refresh();
     if(!selection.empty())
         _elementTypesTable->selectRow(selection.front().row());
+    else if(_elementTypesTable->model()->rowCount() > 0)
+        _elementTypesTable->selectRow(0);
 
     _typeListCaption->setText(_tableModel->listTitle().isEmpty() ? tr("Types:") : tr("%1:").arg(_tableModel->listTitle()));
 }
@@ -133,6 +145,35 @@ QVariant EditTypesModifierEditor::ViewModel::data(const QModelIndex& index, int 
         else if(role == Qt::DecorationRole) {
             if(index.column() == 0)
                 return (QColor)elementTypes()[index.row()]->color();
+        }
+        else if(role == Qt::FontRole) {
+            if(modifier()->deletedTypeIDs().contains(elementTypes()[index.row()]->numericId())) {
+                QFont font = editor()->_elementTypesTable->font();
+                font.setStrikeOut(true);
+                return font;
+            }
+        }
+        else if(role == InfoRole) {
+            if(index.column() == 0) {
+                if(modifier()->deletedTypeIDs().contains(elementTypes()[index.row()]->numericId())) {
+                    return QVariant::fromValue(tr("(deleted)"));
+                }
+                else if(modifier()->editedTypes().contains(elementTypes()[index.row()])) {
+                    return QVariant::fromValue(tr("(edited)"));
+                }
+            }
+        }
+        else if(role == ActionsRole) {
+            if(index.column() == 0) {
+                QList<QAction*> actions;
+                if(modifier()->deletedTypeIDs().contains(elementTypes()[index.row()]->numericId()) || modifier()->editedTypes().contains(elementTypes()[index.row()])) {
+                    actions.push_back(editor()->_restoreAction);
+                }
+                else if(!modifier()->deletedTypeIDs().contains(elementTypes()[index.row()]->numericId())) {
+                    actions.push_back(editor()->_deleteAction);
+                }
+                return QVariant::fromValue(actions);
+            }
         }
     }
     return {};
@@ -168,11 +209,12 @@ void EditTypesModifierEditor::ViewModel::refresh()
     beginResetModel();
 
     // Rebuild the list of element types.
-    std::vector<DataOORef<const ElementType>> elementTypes;
+    std::vector<OORef<ElementType>> elementTypes;
 
     // Populate element types list with existing types from the selected input property.
     _listTitle.clear();
     if(modifier() && modifier()->sourceProperty()) {
+        CloneHelper cloneHelper;
         for(const PipelineFlowState& inputState : editor()->getPipelineInputs()) {
             if(const Property* inputProperty = inputState.getLeafObject(modifier()->sourceProperty())) {
                 _listTitle = inputProperty->title();
@@ -184,9 +226,30 @@ void EditTypesModifierEditor::ViewModel::refresh()
                     if(!boost::algorithm::any_of(elementTypes, [&](const auto& existingType) {
                         return (existingType->numericId() == type->numericId() && existingType->name() == type->name());
                     })) {
-                        elementTypes.emplace_back(type);
+                        // Check if the element type has been edited.
+                        auto iter = std::find_if(modifier()->editedTypes().begin(), modifier()->editedTypes().end(),
+                            [&](const auto& editedType) {
+                                return (editedType->numericId() == type->numericId() && &editedType->getOOClass() == &type->getOOClass());
+                            });
+                        if(iter != modifier()->editedTypes().end()) {
+                            // Add the edited element type to the list.
+                            elementTypes.push_back(*iter);
+                        }
+                        else {
+                            // Add an editable copy of the element type to the list.
+                            elementTypes.push_back(cloneHelper.cloneObject(type, false));
+                        }
                     }
                 }
+            }
+        }
+
+        // Append the edited element types that are not already in the list.
+        for(ElementType* editedType : modifier()->editedTypes()) {
+            if(!boost::algorithm::any_of(elementTypes, [&](const auto& existingType) {
+                return (existingType->numericId() == editedType->numericId() && &existingType->getOOClass() == &editedType->getOOClass());
+            })) {
+                elementTypes.push_back(editedType);
             }
         }
     }
@@ -200,10 +263,16 @@ void EditTypesModifierEditor::ViewModel::refresh()
 ******************************************************************************/
 bool EditTypesModifierEditor::referenceEvent(RefTarget* source, const ReferenceEvent& event)
 {
-    if(event.type() == ReferenceEvent::TitleChanged || event.type() == ReferenceEvent::TargetChanged) {
-        int index = elementTypes().indexOf(dynamic_object_cast<const ElementType>(source));
-        if(index >= 0) {
-            _tableModel->updateItem(index);
+    if(event.type() == ReferenceEvent::TargetChanged) {
+        if(ElementType* editedType = dynamic_object_cast<ElementType>(source)) {
+            int index = elementTypes().indexOf(editedType);
+            if(index >= 0 && modifier()) {
+                if(!isUndoingOrRedoing()) {
+                    // Record that this element type has been edited.
+                    modifier()->addEditedType(editedType);
+                }
+                _tableModel->updateItem(index);
+            }
         }
     }
     return PropertiesEditor::referenceEvent(source, event);
@@ -243,12 +312,167 @@ void EditTypesModifierEditor::onElementTypeSelectionChanged()
             }
         }
         if(_subEditor) {
-            _subEditor->setEditObject(selectedType, true);
+            bool isTypeDeleted = selectedType && modifier()->deletedTypeIDs().contains(selectedType->numericId());
+            _subEditor->setEditObject(selectedType, isTypeDeleted);
         }
         if(updateLayout) {
             container()->updateRollouts();
         }
     });
+}
+
+/******************************************************************************
+* Deletes the selected element type.
+******************************************************************************/
+void EditTypesModifierEditor::deleteType(const QModelIndex& index)
+{
+    if(modifier() && index.isValid() && index.row() < elementTypes().size()) {
+        auto typeId = elementTypes()[index.row()]->numericId();
+        performTransaction(tr("Delete type"), [&]() {
+
+            // Before deleting the type, check if elements of that type exist in the pipeline data.
+            size_t numElementsOfType = 0;
+            QString elementDescriptionName;
+            PropertyReference propertyRef;
+            PropertyContainerReference containerRef;
+            const DeleteSelectedModifierDelegate::OOMetaClass* deleteSelectedDelegate = nullptr;
+            for(const PipelineFlowState& inputState : getPipelineInputs()) {
+                ConstDataObjectPath path = inputState.getObject(modifier()->sourceProperty());
+                if(const Property* inputProperty = path.lastAs<Property>()) {
+                    if(inputProperty->isTypedProperty() && inputProperty->elementType(typeId)) {
+                        numElementsOfType += inputProperty->count(typeId);
+                        if(numElementsOfType) {
+                            if(const PropertyContainer* container = path.lastAs<PropertyContainer>(1)) {
+                                elementDescriptionName = container->getOOMetaClass().elementDescriptionName();
+                                propertyRef = inputProperty;
+                                containerRef = path.parentPath();
+                                deleteSelectedDelegate = getDeleteSelectedModifierDelegateMetaClassForContainer(inputState, containerRef);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Ask user for confirmation if elements of the type to be deleted exist.
+            if(numElementsOfType != 0) {
+                const QString& typeName = elementTypes()[index.row()]->name();
+                MessageDialog msgBox(QMessageBox::Warning, tr("Delete type"),
+                        tr("Do you really want to delete type %1 even though there are %2 %3 of this type?").arg(
+                        typeName.isEmpty() ? tr("%1").arg(typeId) : tr("'%1' (numeric id %2)").arg(typeName).arg(typeId)).arg(numElementsOfType).arg(elementDescriptionName),
+                        QMessageBox::Yes | QMessageBox::Cancel, parentWindow());
+                if(deleteSelectedDelegate) {
+                    msgBox.setInformativeText(tr(
+                        "<p>Deleting a type definition while some %1 of that type still exist may result in an invalid state and should be avoided.</p>"
+                        "<p>Choose <b><i>Yes, also delete %1</i></b> to insert modifiers into the current pipeline that will also remove those existing %1.</p>"
+                        "<p>Choose <b><i>Yes</i></b> to ignore this warning and delete the type anyway.</p>")
+                        .arg(elementDescriptionName));
+
+                    QPushButton* deleteElementsButton = msgBox.addButton(tr("Yes, also delete %1").arg(elementDescriptionName), QMessageBox::YesRole);
+                    msgBox.setEscapeButton(QMessageBox::Cancel);
+                    msgBox.exec();
+                    if(msgBox.clickedButton() == msgBox.button(QMessageBox::Cancel)) {
+                        this_task::cancelAndThrow(); // Operation canceled by user.
+                    }
+                    else if(msgBox.clickedButton() == deleteElementsButton) {
+                        // Insert a SelectTypeModifier and a DeleteSelectedModifier into the pipeline to remove existing elements of the type.
+                        for(ModificationNode* node : modificationNodes()) {
+                            insertModifiersToDeleteElementsOfType(node, typeId, elementDescriptionName, propertyRef, containerRef, deleteSelectedDelegate);
+                        }
+                    }
+                }
+                else {
+                    // It's not possible to first delete the elements from this type of PropertyContainer. Just show a warning.
+                    msgBox.setInformativeText(tr(
+                        "<p>Deleting a type definition while some %1 of that type still exist may result in an invalid state and should be avoided.</p>"
+                        "<p>Choose <b><i>Yes</i></b> to ignore this warning and delete the type anyway.</p>")
+                        .arg(elementDescriptionName));
+                    msgBox.setEscapeButton(QMessageBox::Cancel);
+                    if(msgBox.exec() != QMessageBox::Yes)
+                        this_task::cancelAndThrow(); // Operation canceled by user.
+                }
+            }
+
+            // Delete the type.
+            modifier()->deleteType(typeId);
+        });
+    }
+}
+
+/******************************************************************************
+* Restores the selected element type.
+******************************************************************************/
+void EditTypesModifierEditor::restoreType(const QModelIndex& index)
+{
+    if(modifier() && index.isValid() && index.row() < elementTypes().size()) {
+        auto typeId = elementTypes()[index.row()]->numericId();
+        performTransaction(tr("Restore type"), [&]() {
+            modifier()->restoreType(typeId);
+        });
+    }
+}
+
+/******************************************************************************
+* Finds a suitable DeleteSelectedModifierDelegate for the given PropertyContainer type.
+******************************************************************************/
+const DeleteSelectedModifierDelegate::OOMetaClass* EditTypesModifierEditor::getDeleteSelectedModifierDelegateMetaClassForContainer(const PipelineFlowState& state, const PropertyContainerReference& containerRef)
+{
+    // PropertyContainer must support selections.
+    if(!containerRef || !containerRef.dataClass()->isValidStandardPropertyId(Property::GenericSelectionProperty))
+        return nullptr;
+
+    // Enumerate all registered DeleteSelectedModifierDelegate metaclasses and check if they support the given container type.
+    for(const DeleteSelectedModifierDelegate::OOMetaClass* clazz : PluginManager::instance().metaclassMembers<DeleteSelectedModifierDelegate>()) {
+        QVector<DataObjectReference> applicableObjects = clazz->getApplicableObjects(state);
+        if(applicableObjects.contains(containerRef))
+            return clazz;
+    }
+
+    // No suitable delegate found.
+    return nullptr;
+}
+
+/******************************************************************************
+* Inserts modifiers into the pipeline to delete existing elements of the given type ID.
+******************************************************************************/
+void EditTypesModifierEditor::insertModifiersToDeleteElementsOfType(ModificationNode* modNode, int typeId, const QString& elementDescriptionName, const PropertyReference& propertyRef, const PropertyContainerReference& containerRef, const DeleteSelectedModifierDelegate::OOMetaClass* deleteSelectedDelegateType)
+{
+    // First, check if the pipeline already contains a SelectTypeModifier and a DeleteSelectedModifier.
+    if(ModificationNode* deleteSelectedModNode = dynamic_object_cast<ModificationNode>(modNode->input())) {
+        if(DeleteSelectedModifier* deleteSelectedModifier = dynamic_object_cast<DeleteSelectedModifier>(deleteSelectedModNode->modifier())) {
+            if(ModificationNode* selectTypeModNode = dynamic_object_cast<ModificationNode>(deleteSelectedModNode->input())) {
+                if(SelectTypeModifier* selectTypeModifier = dynamic_object_cast<SelectTypeModifier>(selectTypeModNode->modifier())) {
+                    if(deleteSelectedModifier->isEnabled() && deleteSelectedModifier->isEnabled() && selectTypeModifier->sourceProperty() == propertyRef && selectTypeModifier->subject() == containerRef) {
+                        // Found existing SelectTypeModifier and DeleteSelectedModifier. Just add the type ID to be deleted.
+                        auto selectedTypeIDs = selectTypeModifier->selectedTypeIDs();
+                        selectedTypeIDs.insert(typeId);
+                        selectTypeModifier->setSelectedTypeIDs(std::move(selectedTypeIDs));
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    // Insert SelectTypeModifier.
+    OORef<SelectTypeModifier> selectTypeModifier = OORef<SelectTypeModifier>::create();
+    selectTypeModifier->setSubject(containerRef);
+    selectTypeModifier->setSourceProperty(propertyRef);
+    selectTypeModifier->setSelectedTypeIDs({typeId});
+    OORef<ModificationNode> selectTypeModNode = selectTypeModifier->createModificationNode();
+    selectTypeModNode->setModifier(selectTypeModifier);
+    selectTypeModNode->setInput(modNode->input());
+
+    // Insert DeleteSelectedModifier.
+    OORef<DeleteSelectedModifier> deleteSelectedModifier = OORef<DeleteSelectedModifier>::create();
+    for(ModifierDelegate* delegate : deleteSelectedModifier->delegates()) {
+        delegate->setEnabled(&delegate->getOOMetaClass() == deleteSelectedDelegateType);
+    }
+    OORef<ModificationNode> deleteSelectedModNode = deleteSelectedModifier->createModificationNode();
+    deleteSelectedModNode->setModifier(deleteSelectedModifier);
+    deleteSelectedModNode->setInput(selectTypeModNode);
+
+    // Reconnect the original modifier node to the new DeleteSelectedModifier.
+    modNode->setInput(deleteSelectedModNode);
 }
 
 }   // End of namespace

@@ -25,6 +25,7 @@
 
 #include <ovito/particles/gui/ParticlesGui.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/gui/desktop/widgets/general/MenuToolButton.h>
 
 namespace Ovito {
 
@@ -58,6 +59,7 @@ private:
     QToolButton* _colorPresetsMenuButton;
     QToolButton* _displayRadiusPresetsMenuButton;
     QToolButton* _vdwRadiusPresetsMenuButton;
+    MenuToolButton* _massPresetsMenuButton;
     QPushButton* _loadShapeBtn;
 };
 

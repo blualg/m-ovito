@@ -101,12 +101,7 @@ public:
     bool isReadOnly() const { return _isReadOnly; }
 
     /// \brief Set whether access to the editable object should be read-only.
-    void setReadOnly(bool readOnly) {
-        if(readOnly != _isReadOnly) {
-            _isReadOnly = readOnly;
-            Q_EMIT contentsReplaced(editObject());
-        }
-    }
+    void setReadOnly(bool readOnly);
 
     /// \brief Creates a new rollout in the rollout container and returns
     ///        the empty widget that can then be filled with UI controls.

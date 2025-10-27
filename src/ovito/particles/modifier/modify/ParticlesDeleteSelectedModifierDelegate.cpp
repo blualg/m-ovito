@@ -115,8 +115,8 @@ Future<PipelineFlowState> ParticlesDeleteSelectedModifierDelegate::apply(const M
 QVector<DataObjectReference> BondsDeleteSelectedModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
     if(const Particles* particles = input.getObject<Particles>()) {
-        if(particles->bonds() && particles->bonds()->getProperty(Bonds::SelectionProperty))
-            return { DataObjectReference(&Particles::OOClass()) };
+        if(particles->bonds())
+            return { DataObjectReference(ConstDataObjectPath({particles, particles->bonds()})) };
     }
     return {};
 }

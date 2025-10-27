@@ -59,12 +59,21 @@ QT_WARNING_DISABLE_DEPRECATED
     connect(qGuiApp, &QGuiApplication::paletteChanged, this, &SceneNodesListModel::updateColorPalette);
 QT_WARNING_POP
 
+    // Create list items for registered pipeline creation actions.
     for(QAction* action : actionManager()->actions()) {
         if(action->objectName().startsWith("NewPipeline."))
             _pipelineActions.push_back(action);
     }
+
+    // Create list item for the "Clone Pipeline" action.
     _pipelineActions.push_back(nullptr); // Separator
     _pipelineActions.push_back(actionManager()->getAction(ACTION_EDIT_CLONE_PIPELINE));
+
+    // Create per-item actions for renaming and deleting individual pipelines.
+    _renameAction = new ItemAction(QIcon::fromTheme("edit_rename_pipeline"), tr("Rename"), this);
+    _deleteAction = new ItemAction(QIcon::fromTheme("edit_delete_pipeline"), tr("Delete"), this);
+    connect(_renameAction, &ItemAction::triggeredForItem, this, &SceneNodesListModel::renameItem);
+    connect(_deleteAction, &ItemAction::triggeredForItem, this, &SceneNodesListModel::deleteItem);
 }
 
 /******************************************************************************
@@ -149,6 +158,16 @@ QVariant SceneNodesListModel::data(const QModelIndex& index, int role) const
         int actionIndex = index.row() - firstActionIndex();
         if(actionIndex >= 0 && actionIndex < _pipelineActions.size() && !_pipelineActions[actionIndex])
             return QSize(0, 2); // Action separator line
+    }
+    else if(role == ActionsRole) {
+        int pipelineIndex = index.row() - firstSceneNodeIndex();
+        if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
+            QList<QAction*> actions;
+            actions.push_back(_deleteAction);
+            actions.push_back(_renameAction);
+            return QVariant::fromValue(actions);
+        }
+        return {};
     }
     else {
         int pipelineIndex = index.row() - firstSceneNodeIndex();
@@ -323,10 +342,10 @@ void SceneNodesListModel::activateItem(int index)
 /******************************************************************************
 * Performs a deletion action on an item.
 ******************************************************************************/
-void SceneNodesListModel::deleteItem(int index)
+void SceneNodesListModel::deleteItem(const QModelIndex& index)
 {
     // Change scene node selection when a scene node has been selected in the combobox.
-    int pipelineIndex = index - firstSceneNodeIndex();
+    int pipelineIndex = index.row() - firstSceneNodeIndex();
     if(pipelineIndex >= 0 && pipelineIndex < sceneNodes().size()) {
         if(OORef<SceneNode> node = sceneNodes()[pipelineIndex]) {
             performTransaction(tr("Delete pipeline"), [&]() {
@@ -337,6 +356,23 @@ void SceneNodesListModel::deleteItem(int index)
                 Scene* scene = _sceneListener.target();
                 if(wasSelected && scene && scene->children().isEmpty() == false)
                     scene->selection()->setNode(scene->children().front());
+            });
+        }
+    }
+}
+
+/******************************************************************************
+* Lets the user rename a list item.
+******************************************************************************/
+void SceneNodesListModel::renameItem(const QModelIndex& index)
+{
+    if(OORef<SceneNode> sceneNode = sceneNodeFromListIndex(index.row())) {
+        QString oldName = sceneNode->objectTitle();
+        bool ok;
+        QString newName = QInputDialog::getText(ui().mainWindow(), tr("Change pipeline name"), tr("Pipeline name:                                         "), QLineEdit::Normal, oldName, &ok).trimmed();
+        if(ok && newName != oldName) {
+            performTransaction(tr("Rename pipeline"), [&]() {
+                sceneNode->setSceneNodeName(newName);
             });
         }
     }

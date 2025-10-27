@@ -35,7 +35,6 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/core/dataset/io/FileSourceImporter.h>
 #include "ParticleTypeEditor.h"
-#include <ovito/gui/desktop/widgets/general/MenuToolButton.h>
 
 namespace Ovito {
 
@@ -58,6 +57,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     QGridLayout* gridLayout = new QGridLayout(nameBox);
     gridLayout->setContentsMargins(4,4,4,4);
     gridLayout->setColumnStretch(1, 1);
+    gridLayout->setSpacing(4);
     layout1->addWidget(nameBox);
 
     // Numeric ID.
@@ -90,6 +90,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     gridLayout = new QGridLayout(appearanceBox);
     gridLayout->setContentsMargins(4,4,4,4);
     gridLayout->setColumnStretch(1, 1);
+    gridLayout->setSpacing(4);
     layout1->addWidget(appearanceBox);
 
     // Display color parameter.
@@ -115,7 +116,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_spherocylinder.png"), tr("Spherocylinder"), QVariant::fromValue((int)ParticlesVis::Spherocylinder));
     particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_mesh.png"), tr("Mesh/User-defined"), QVariant::fromValue((int)ParticlesVis::Mesh));
     gridLayout->addWidget(new QLabel(tr("Shape:")), 2, 0);
-    gridLayout->addWidget(particleShapeUI->comboBox(), 2, 1, 1, 2);
+    gridLayout->addWidget(particleShapeUI->comboBox(), 2, 1);
 
     // Color presets menu.
     _colorPresetsMenuButton = createPresetsMenuButton(tr("color"),
@@ -142,7 +143,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     QGroupBox* shapeGroupBox = new QGroupBox(tr("User-defined shape"), rollout);
     gridLayout = new QGridLayout(shapeGroupBox);
     gridLayout->setContentsMargins(4,4,4,4);
-    gridLayout->setSpacing(2);
+    gridLayout->setSpacing(4);
     layout1->addWidget(shapeGroupBox);
     shapeGroupBox->setVisible(false);
 
@@ -190,6 +191,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     gridLayout = new QGridLayout(physicalBox);
     gridLayout->setContentsMargins(4,4,4,4);
     gridLayout->setColumnStretch(1, 1);
+    gridLayout->setSpacing(4);
     layout1->addWidget(physicalBox);
 
     // Mass parameter.
@@ -199,11 +201,11 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     // Reset mass parameter - can't use createPresetsMenuButton because we only
     // offer reset but not the other options
     // Don't use PROPERTY_FIELD_RESETTABLE to give custom (better) tooltip
-    MenuToolButton* presetsMenuButton = new MenuToolButton();
+    _massPresetsMenuButton = new MenuToolButton();
     {
         const QString& parameterName = PROPERTY_FIELD(ParticleType::mass)->displayName();
         QAction* loadPresetAction =
-            presetsMenuButton->createAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset %1 to default").arg(parameterName));
+            _massPresetsMenuButton->createAction(QIcon::fromTheme("particles_settings_restore"), tr("Reset %1 to default").arg(parameterName));
         loadPresetAction->setStatusTip(
             tr("Reset current %1 back to the hard-coded default value for this particle type.").arg(parameterName));
         connect(loadPresetAction, &QAction::triggered, this, [this, parameterName]() {
@@ -217,7 +219,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
             }
         });
     }
-    gridLayout->addWidget(presetsMenuButton, 0, 2);
+    gridLayout->addWidget(_massPresetsMenuButton, 0, 2);
 
     massPUI->spinner()->setStandardValue(0.0);
     massPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
@@ -305,6 +307,7 @@ void ParticleTypeEditor::onContentsReplaced()
     bool enable = (editObject() && !isReadOnly());
     _colorPresetsMenuButton->setEnabled(enable);
     _displayRadiusPresetsMenuButton->setEnabled(enable);
+    _massPresetsMenuButton->setEnabled(enable);
     _vdwRadiusPresetsMenuButton->setEnabled(enable);
     _loadShapeBtn->setEnabled(enable);
 }

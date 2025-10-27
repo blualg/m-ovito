@@ -153,13 +153,13 @@ void MercuryDPMImporter::FrameLoader::loadFile()
     columnMapping.mapColumnToStandardProperty(4, Particles::VelocityProperty, 1);
     columnMapping.mapColumnToStandardProperty(5, Particles::VelocityProperty, 2);
     columnMapping.mapColumnToStandardProperty(6, Particles::RadiusProperty);
-    columnMapping.mapColumnToUserProperty(7, QStringLiteral("Angular Position"), Property::Float64, 0);
-    columnMapping.mapColumnToUserProperty(8, QStringLiteral("Angular Position"), Property::Float64, 1);
-    columnMapping.mapColumnToUserProperty(9, QStringLiteral("Angular Position"), Property::Float64, 2);
+    columnMapping.mapColumnToUserProperty(7, QStringLiteral("Angular Position"), Property::FloatDefault, 0);
+    columnMapping.mapColumnToUserProperty(8, QStringLiteral("Angular Position"), Property::FloatDefault, 1);
+    columnMapping.mapColumnToUserProperty(9, QStringLiteral("Angular Position"), Property::FloatDefault, 2);
     columnMapping.mapColumnToStandardProperty(10, Particles::AngularVelocityProperty, 0);
     columnMapping.mapColumnToStandardProperty(11, Particles::AngularVelocityProperty, 1);
     columnMapping.mapColumnToStandardProperty(12, Particles::AngularVelocityProperty, 2);
-    columnMapping.mapColumnToUserProperty(13, QStringLiteral("info"), Property::Float64);
+    columnMapping.mapColumnToUserProperty(13, QStringLiteral("info"), Property::Float64); // Note: Using double precision to possibly store 32-bit integer type IDs without loss of precision.
 
     // Parse data columns.
     setParticleCount(N);

@@ -35,6 +35,7 @@
 #include <ovito/gui/base/mainwin/templates/ModifierTemplates.h>
 #include <ovito/gui/desktop/app/GuiApplication.h>
 #include <ovito/gui/desktop/mainwin/MainWindowUI.h>
+#include <ovito/gui/desktop/widgets/general/InfoItemDelegate.h>
 #include <ovito/gui/desktop/dialogs/ModifierTemplatesPage.h>
 #include <ovito/gui/desktop/dialogs/CopyPipelineItemDialog.h>
 #include "CommandPanel.h"
@@ -126,7 +127,7 @@ ModifyCommandPage::ModifyCommandPage(MainWindowUI& ui, QWidget* parent) : QWidge
     _pipelineWidget->setSelectionModel(_pipelineListModel->selectionModel());
     _pipelineWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
     _pipelineWidget->setIconSize(_pipelineListModel->iconSize());
-    _pipelineWidget->setItemDelegate(new ExtendedListItemDelegate(_pipelineWidget, PipelineListModel::StatusInfoRole));
+    _pipelineWidget->setItemDelegate(new InfoItemDelegate(_pipelineWidget, PipelineListModel::StatusInfoRole));
     subLayout->addWidget(_pipelineWidget);
 
     // Set up context menu.

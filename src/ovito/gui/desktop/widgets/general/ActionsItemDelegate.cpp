@@ -28,7 +28,7 @@ namespace Ovito {
 /******************************************************************************
 * Constructor
 ******************************************************************************/
-ActionsItemDelegate::ActionsItemDelegate(QObject* parent) : QStyledItemDelegate(parent)
+ActionsItemDelegate::ActionsItemDelegate(QObject* parent, int infoRole, int actionsRole) : InfoItemDelegate(parent, infoRole), _actionsRole(actionsRole)
 {
     if(QAbstractItemView* view = qobject_cast<QAbstractItemView*>(parent)) {
         _view = view;
@@ -52,11 +52,14 @@ ActionsItemDelegate::ActionsItemDelegate(QObject* parent) : QStyledItemDelegate(
 void ActionsItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     // First, paint the standard item appearance.
-    QStyledItemDelegate::paint(painter, option, index);
+    InfoItemDelegate::paint(painter, option, index);
 
     // Paint the action buttons on top of the item.
     if(index == _hoverIndex) {
-        QRect itemRect = view()->visualRect(index);
+        QRect itemRect = option.rect;
+        const QWidget* widget = option.widget;
+        QStyle* style = widget ? widget->style() : QApplication::style();
+        QStyleOptionViewItem actionOpt = option;
         int actionIndex = 0;
         for(QAction* action : actionsForIndex(index)) {
             if(!action || action->isVisible() == false || action->isSeparator())
@@ -64,10 +67,17 @@ void ActionsItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& o
             QIcon icon = action->icon();
             if(icon.isNull())
                 continue;
+
+            // Draw the background
+            actionOpt.rect = actionButtonRect(itemRect, actionIndex);
+            style->proxy()->drawPrimitive(QStyle::PE_PanelItemViewItem, &actionOpt, painter, widget);
+
+            // Draw the icon
             icon.paint(painter,
-                    actionButtonRect(itemRect, actionIndex),
+                    actionOpt.rect,
                     Qt::AlignTrailing | Qt::AlignVCenter,
                     (_hoverActionIndex == actionIndex) ? QIcon::Active : QIcon::Disabled);
+
             ++actionIndex;
         }
     }
@@ -80,7 +90,20 @@ QRect ActionsItemDelegate::actionButtonRect(const QRect& itemRect, int actionInd
 {
     QRect rect = itemRect;
     rect.setRight(std::max(rect.right() - actionIndex * rect.height(), rect.left()));
-    rect.setLeft(std::max(rect.right() - (actionIndex + 1) * rect.height(), rect.left()));
+    rect.setLeft(std::max(rect.right() - rect.height(), rect.left()));
+    return rect;
+}
+
+/******************************************************************************
+* Computes the visual rect of the given item, clipped to the viewport area.
+******************************************************************************/
+QRect ActionsItemDelegate::getClippedItemRect(const QModelIndex& index) const
+{
+    const QRect viewportRect = view()->viewport()->rect();
+    QRect rect = view()->visualRect(index.model()->buddy(index));
+    QRect clipped = rect & viewportRect;
+    rect.setLeft(clipped.left());
+    rect.setRight(clipped.right());
     return rect;
 }
 
@@ -92,8 +115,9 @@ bool ActionsItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, 
     if(event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseMove) {
         if(index.isValid()) {
             QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
-            QRect itemRect = option.rect;
+            QRect itemRect = getClippedItemRect(index);
             int hoverActionIndex = -1;
+            QModelIndex hoverIndex;
             int actionIndex = 0;
             for(QAction* action : actionsForIndex(index)) {
                 if(!action || action->isVisible() == false || action->isSeparator())
@@ -102,6 +126,7 @@ bool ActionsItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, 
                 if(icon.isNull())
                     continue;
                 QRect actionRect = actionButtonRect(itemRect, actionIndex);
+                hoverIndex = index;
                 if(actionRect.contains(mouseEvent->pos())) {
                     hoverActionIndex = actionIndex;
                     QToolTip::showText(view()->viewport()->mapToGlobal(actionRect.bottomRight()), action->text(), view()->viewport(), actionRect);
@@ -109,12 +134,12 @@ bool ActionsItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, 
                 }
                 actionIndex++;
             }
-            if(hoverActionIndex != _hoverActionIndex || index != _hoverIndex) {
+            if(hoverActionIndex != _hoverActionIndex || hoverIndex != _hoverIndex) {
                 if(_hoverIndex.isValid())
                     view()->update(_hoverIndex);
-                _hoverIndex = index;
+                _hoverIndex = hoverIndex;
                 _hoverActionIndex = hoverActionIndex;
-                view()->update(index);
+                view()->update(hoverIndex);
             }
             if(_hoverActionIndex != -1) {
                 return true;
@@ -129,7 +154,7 @@ bool ActionsItemDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, 
             }
         }
     }
-    return QStyledItemDelegate::editorEvent(event, model, option, index);
+    return InfoItemDelegate::editorEvent(event, model, option, index);
 }
 
 /******************************************************************************
@@ -141,7 +166,7 @@ bool ActionsItemDelegate::eventFilter(QObject* obj, QEvent* event)
         QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
         QModelIndex index = view()->indexAt(mouseEvent->pos());
         if(index.isValid()) {
-            QRect itemRect = view()->visualRect(index);
+            QRect itemRect = getClippedItemRect(index);
             int actionIndex = 0;
             for(QAction* action : actionsForIndex(index)) {
                 if(!action || action->isVisible() == false || action->isSeparator())
@@ -155,6 +180,8 @@ bool ActionsItemDelegate::eventFilter(QObject* obj, QEvent* event)
                     if(QComboBox* cb = qobject_cast<QComboBox*>(parent()))
                         cb->hidePopup();
                     action->trigger();
+                    if(ItemAction* itemAction = qobject_cast<ItemAction*>(action))
+                        Q_EMIT itemAction->triggeredForItem(index);
                     return true;
                 }
                 actionIndex++;
@@ -170,7 +197,7 @@ bool ActionsItemDelegate::eventFilter(QObject* obj, QEvent* event)
         }
     }
 
-    return QStyledItemDelegate::eventFilter(obj, event);
+    return InfoItemDelegate::eventFilter(obj, event);
 }
 
 }   // End of namespace

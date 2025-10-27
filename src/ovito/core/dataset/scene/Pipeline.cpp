@@ -489,6 +489,7 @@ void Pipeline::requestObjectDeletion()
 
     // Discard transient references to visual elements.
     _visElements.clear(this, PROPERTY_FIELD(visElements));
+    _visElementDataObjectTitles.clear();
 
     RefTarget::requestObjectDeletion();
 }

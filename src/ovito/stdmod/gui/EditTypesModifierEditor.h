@@ -25,6 +25,8 @@
 
 #include <ovito/stdmod/gui/StdModGui.h>
 #include <ovito/stdmod/modifiers/EditTypesModifier.h>
+#include <ovito/stdmod/modifiers/DeleteSelectedModifier.h>
+#include <ovito/gui/desktop/widgets/general/ActionsItemDelegate.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 
 namespace Ovito {
@@ -50,6 +52,12 @@ protected:
     /// This method is called when a reference target changes.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
+    /// Finds a suitable DeleteSelectedModifierDelegate for the given PropertyContainer type.
+    static const DeleteSelectedModifierDelegate::OOMetaClass* getDeleteSelectedModifierDelegateMetaClassForContainer(const PipelineFlowState& state, const PropertyContainerReference& containerRef);
+
+    /// Inserts modifiers into the pipeline to delete existing elements of the given type ID.
+    void insertModifiersToDeleteElementsOfType(ModificationNode* modNode, int typeId, const QString& elementDescriptionName, const PropertyReference& propertyRef, const PropertyContainerReference& containerRef, const DeleteSelectedModifierDelegate::OOMetaClass* deleteSelectedDelegateType);
+
 private Q_SLOTS:
 
     /// Refreshes the displayed list of element types.
@@ -58,11 +66,23 @@ private Q_SLOTS:
     /// Is called whenever the selection of element types in the table has changed.
     void onElementTypeSelectionChanged();
 
+    /// Deletes the selected element type.
+    void deleteType(const QModelIndex& index);
+
+    /// Restores the selected element type.
+    void restoreType(const QModelIndex& index);
+
 private:
 
     class ViewModel : public QAbstractTableModel
     {
     public:
+
+        /// Additional custom roles used by the item delegate to fetch data from the model.
+        enum ItemRoles {
+            InfoRole = Qt::UserRole + 1,
+            ActionsRole = Qt::UserRole + 2,
+        };
 
         /// Constructor that takes a pointer to the owning editor.
         explicit ViewModel(EditTypesModifierEditor* owner) : QAbstractTableModel(owner) {}
@@ -126,8 +146,14 @@ private:
     /// Caption label for the element type list.
     QLabel* _typeListCaption;
 
+    /// Action for deleting an element type.
+    ItemAction* _deleteAction;
+
+    /// Action for restoring an element type.
+    ItemAction* _restoreAction;
+
     /// The current list of element types displayed in UI.
-    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(DataOORef<const ElementType>, elementTypes, setElementTypes);
+    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(OORef<ElementType>, elementTypes, setElementTypes);
 };
 
 }   // End of namespace

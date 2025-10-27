@@ -51,6 +51,15 @@ public:
     /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
     virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override;
 
+    /// Records that the given element type has been edited.
+    void addEditedType(ElementType* type);
+
+    /// Deletes the element type with the given numeric ID.
+    void deleteType(int typeId);
+
+    /// Restores the original element type with the given numeric ID.
+    void restoreType(int typeId);
+
 protected:
 
     /// Is called when the value of a property of this object has changed.
@@ -60,6 +69,9 @@ private:
 
     /// Selects the typed property to be edited.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyDataObjectReference{}, sourceProperty, setSourceProperty);
+
+    /// The element types that have been edited.
+    DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(OORef<ElementType>, editedTypes, setEditedTypes);
 
     /// The numeric IDs of the element types to delete.
     DECLARE_MODIFIABLE_PROPERTY_FIELD(QSet<int32_t>{}, deletedTypeIDs, setDeletedTypeIDs);

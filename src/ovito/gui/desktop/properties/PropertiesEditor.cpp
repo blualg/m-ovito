@@ -107,7 +107,15 @@ void PropertiesEditor::setEditObject(RefTarget* newObject, bool readOnly)
     OVITO_ASSERT_MSG(!editObject() || !newObject || newObject->getOOClass().isDerivedFrom(editObject()->getOOClass()),
             "PropertiesEditor::setEditObject()", "This properties editor was not made for this object class.");
 
-    _isReadOnly = readOnly;
+    if(readOnly != _isReadOnly) {
+        _isReadOnly = readOnly;
+        if(newObject == editObject()) {
+            // Force update of the UI if only the read-only state has changed.
+            Q_EMIT contentsReplaced(editObject());
+        }
+    }
+
+    // Set the new edit object. This trigger an update of the UI via the contentsReplaced() and contentsChanged signals.
     _editObject.set(this, PROPERTY_FIELD(editObject), newObject);
 
     OVITO_ASSERT(!newObject || newObject->isBeingEdited());
@@ -424,6 +432,17 @@ std::vector<ConstDataObjectRef> PropertiesEditor::getVisDataObjects() const
     for(const ConstDataObjectRefPath& path : paths)
         result.emplace_back(std::move(path.back()));
     return result;
+}
+
+/******************************************************************************
+* Set whether access to the editable object should be read-only.
+******************************************************************************/
+void PropertiesEditor::setReadOnly(bool readOnly)
+{
+    if(readOnly != _isReadOnly) {
+        _isReadOnly = readOnly;
+        Q_EMIT contentsReplaced(editObject());
+    }
 }
 
 }   // End of namespace

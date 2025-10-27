@@ -94,6 +94,7 @@ OVITO_STANDARD_PLUGIN(Gui
         widgets/general/StableComboBox.cpp
         widgets/general/EnterLineEdit.cpp
         widgets/general/ActionsItemDelegate.cpp
+        widgets/general/InfoItemDelegate.cpp
         widgets/animation/AnimationTimeSpinner.cpp
         widgets/animation/AnimationTimeSlider.cpp
         widgets/animation/AnimationTrackBar.cpp

@@ -27,6 +27,7 @@
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/gui/desktop/mainwin/MainWindowUI.h>
 #include <ovito/gui/desktop/dialogs/OverlayTemplatesPage.h>
+#include <ovito/gui/desktop/widgets/general/InfoItemDelegate.h>
 #include <ovito/gui/base/actions/ActionManager.h>
 #include <ovito/gui/base/mainwin/OverlayListModel.h>
 #include <ovito/gui/base/mainwin/OverlayListItem.h>
@@ -97,7 +98,7 @@ OverlayCommandPage::OverlayCommandPage(MainWindowUI& ui, QWidget* parent) : QWid
     _overlayListWidget->setEditTriggers(QAbstractItemView::SelectedClicked);
     _overlayListWidget->setModel(_overlayListModel);
     _overlayListWidget->setSelectionModel(_overlayListModel->selectionModel());
-    _overlayListWidget->setItemDelegate(new ExtendedListItemDelegate(_overlayListWidget, OverlayListModel::StatusInfoRole));
+    _overlayListWidget->setItemDelegate(new InfoItemDelegate(_overlayListWidget, OverlayListModel::StatusInfoRole));
     subLayout->addWidget(_overlayListWidget);
     connect(_overlayListWidget, &OverlayListWidget::doubleClicked, this, &OverlayCommandPage::onLayerDoubleClicked);
 

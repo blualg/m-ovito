@@ -29,9 +29,9 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(LinesExpressionSelectionModifierDelegate);
 OVITO_CLASSINFO(LinesExpressionSelectionModifierDelegate, "DisplayName", "Lines");
 
 /******************************************************************************
- * Indicates which data objects in the given input data collection the modifier
- * delegate is able to operate on.
- ******************************************************************************/
+* Indicates which data objects in the given input data collection the modifier
+* delegate is able to operate on.
+******************************************************************************/
 QVector<DataObjectReference> LinesExpressionSelectionModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
     // Gather list of all Lines objects in the input data collection.
@@ -46,18 +46,19 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(LinesDeleteSelectedModifierDelegate);
 OVITO_CLASSINFO(LinesDeleteSelectedModifierDelegate, "DisplayName", "Lines");
 
 /******************************************************************************
- * Indicates which data objects in the given input data collection the modifier
- * delegate is able to operate on.
- ******************************************************************************/
+* Indicates which data objects in the given input data collection the modifier
+* delegate is able to operate on.
+******************************************************************************/
 QVector<DataObjectReference> LinesDeleteSelectedModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
-    if(input.containsObject<Lines>()) return {DataObjectReference(&Lines::OOClass())};
+    if(input.containsObject<Lines>())
+        return { DataObjectReference(&Lines::OOClass()) };
     return {};
 }
 
 /******************************************************************************
- * Applies this modifier delegate to the data.
- ******************************************************************************/
+* Applies this modifier delegate to the data.
+******************************************************************************/
 Future<PipelineFlowState> LinesDeleteSelectedModifierDelegate::apply(
     const ModifierEvaluationRequest& request, PipelineFlowState&& state, const PipelineFlowState& originalState,
     const std::vector<std::reference_wrapper<const PipelineFlowState>>& additionalInputs)
@@ -99,9 +100,9 @@ IMPLEMENT_CREATABLE_OVITO_CLASS(LinesComputePropertyModifierDelegate);
 OVITO_CLASSINFO(LinesComputePropertyModifierDelegate, "DisplayName", "Lines");
 
 /******************************************************************************
- * Indicates which data objects in the given input data collection the modifier
- * delegate is able to operate on.
- ******************************************************************************/
+* Indicates which data objects in the given input data collection the modifier
+* delegate is able to operate on.
+******************************************************************************/
 QVector<DataObjectReference> LinesComputePropertyModifierDelegate::OOMetaClass::getApplicableObjects(const DataCollection& input) const
 {
     // Gather list of all Lines objects in the input data collection.
