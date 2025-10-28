@@ -159,7 +159,10 @@ void SDFImporter::FrameLoader::loadFile()
     bool chargeExists = particles()->getProperty(Particles::ChargeProperty) != nullptr;
 
     // Store whether the "mass difference" column exists.
-    bool massDifferenceExists = particles()->getProperty(QStringLiteral("Mass difference")) != nullptr;
+    bool massDifferenceExists = particles()->getProperty(tr("Mass difference")) != nullptr;
+
+    // Store whether the "hydrogen count +1" column exists.
+    bool hydrogenCountExists = particles()->getProperty(tr("Hydrogen count +1")) != nullptr;
 
     //------------------------------------------------------------------------------
     // Parse Particles.
@@ -167,13 +170,14 @@ void SDFImporter::FrameLoader::loadFile()
 
     // Prepare the file column to particle property mapping.
     ParticleInputColumnMapping particlesColumnMapping;
-    particlesColumnMapping.resize(6);
+    particlesColumnMapping.resize(8);
     particlesColumnMapping.mapColumnToStandardProperty(0, Particles::PositionProperty, 0);
     particlesColumnMapping.mapColumnToStandardProperty(1, Particles::PositionProperty, 1);
     particlesColumnMapping.mapColumnToStandardProperty(2, Particles::PositionProperty, 2);
     particlesColumnMapping.mapColumnToStandardProperty(3, Particles::TypeProperty);
-    particlesColumnMapping.mapColumnToStandardProperty(4, Particles::ChargeProperty);
-    particlesColumnMapping.mapColumnToUserProperty(5, tr("Mass difference"), Property::Int32);
+    particlesColumnMapping.mapColumnToUserProperty(4, tr("Mass difference"), Property::Int32);
+    particlesColumnMapping.mapColumnToStandardProperty(5, Particles::ChargeProperty);
+    particlesColumnMapping.mapColumnToUserProperty(7, tr("Hydrogen count +1"), Property::Int8);
 
     setParticleCount(numParticles);
 
@@ -197,13 +201,12 @@ void SDFImporter::FrameLoader::loadFile()
     //------------------------------------------------------------------------------
 
     BondInputColumnMapping bondColumnMapping;
-    bondColumnMapping.resize(7);
+    bondColumnMapping.resize(6);
     bondColumnMapping.mapColumnToStandardProperty(0, Bonds::TopologyProperty, 0);
     bondColumnMapping.mapColumnToStandardProperty(1, Bonds::TopologyProperty, 1);
     bondColumnMapping.mapColumnToStandardProperty(2, Bonds::TypeProperty, 2);
     bondColumnMapping.mapColumnToUserProperty(3, tr("Bond stereo"), Property::Int32);
-    bondColumnMapping.mapColumnToUserProperty(4, tr("Bond stereo"), Property::Int8);
-    bondColumnMapping.mapColumnToUserProperty(6, tr("Bond configuration"), Property::Int8);
+    bondColumnMapping.mapColumnToUserProperty(5, tr("Bond configuration"), Property::Int8);
 
     setBondCount(numBonds);
     InputColumnReader bondsColumnParser(*this, bondColumnMapping, bonds());
@@ -275,6 +278,11 @@ void SDFImporter::FrameLoader::loadFile()
     }
     if(!massDifferenceExists && massDifferenceProp->nonzeroCount() == 0) {
         particles()->removeProperty(massDifferenceProp);
+    }
+
+    Property* hydrogenCountProp = particles()->getMutableProperty(tr("Hydrogen count +1"));
+    if(!hydrogenCountExists && hydrogenCountProp->nonzeroCount() == 0) {
+        particles()->removeProperty(hydrogenCountProp);
     }
 
     //------------------------------------------------------------------------------
