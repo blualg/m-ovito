@@ -4,6 +4,12 @@
 Changelog
 =========
 
+----------------------------
+Version 3.15.0 (dd-mm-2025)
+----------------------------
+
+- Add MOL/SDF file importer
+
 .. sidebar::
 
   * `Download this version <https://www.ovito.org/download_history/#3.14.1>`__
