@@ -231,6 +231,37 @@ void SDFImporter::FrameLoader::loadFile()
         ab[1] -= 1;
     }
 
+    // Preconfigure bond types
+    auto* bondTypes = bonds()->getMutableProperty(Bonds::TypeProperty);
+    const auto& bondElementTypes = bondTypes->elementTypes();
+    for(const ElementType* type : bondElementTypes) {
+        ElementType* mutableType = bondTypes->makeMutable(type);
+        if(type->numericId() == 1) {
+            mutableType->setName(QStringLiteral("Single"));
+        }
+        else if(type->numericId() == 2) {
+            mutableType->setName(QStringLiteral("Double"));
+        }
+        else if(type->numericId() == 3) {
+            mutableType->setName(QStringLiteral("Triple"));
+        }
+        else if(type->numericId() == 4) {
+            mutableType->setName(QStringLiteral("Aromatic"));
+        }
+        else if(type->numericId() == 5) {
+            mutableType->setName(QStringLiteral("Single or Double"));
+        }
+        else if(type->numericId() == 6) {
+            mutableType->setName(QStringLiteral("Single or Aromatic"));
+        }
+        else if(type->numericId() == 7) {
+            mutableType->setName(QStringLiteral("Double or Aromatic"));
+        }
+        else {
+            mutableType->setName(QStringLiteral("Any"));
+        }
+    }
+
     //------------------------------------------------------------------------------
     // Parse Properties.
     //------------------------------------------------------------------------------
