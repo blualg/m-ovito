@@ -162,7 +162,10 @@ void SDFImporter::FrameLoader::loadFile()
     bool massDifferenceExists = particles()->getProperty(tr("Mass difference")) != nullptr;
 
     // Store whether the "hydrogen count +1" column exists.
-    bool hydrogenCountExists = particles()->getProperty(tr("Hydrogen count +1")) != nullptr;
+    const bool hydrogenCountExists = particles()->getProperty(tr("Hydrogen count +1")) != nullptr;
+
+    // Store whether the "valence" column exists.
+    const bool valenceExists = particles()->getProperty(tr("Valence")) != nullptr;
 
     //------------------------------------------------------------------------------
     // Parse Particles.
@@ -170,7 +173,7 @@ void SDFImporter::FrameLoader::loadFile()
 
     // Prepare the file column to particle property mapping.
     ParticleInputColumnMapping particlesColumnMapping;
-    particlesColumnMapping.resize(8);
+    particlesColumnMapping.resize(10);
     particlesColumnMapping.mapColumnToStandardProperty(0, Particles::PositionProperty, 0);
     particlesColumnMapping.mapColumnToStandardProperty(1, Particles::PositionProperty, 1);
     particlesColumnMapping.mapColumnToStandardProperty(2, Particles::PositionProperty, 2);
@@ -178,6 +181,7 @@ void SDFImporter::FrameLoader::loadFile()
     particlesColumnMapping.mapColumnToUserProperty(4, tr("Mass difference"), Property::Int32);
     particlesColumnMapping.mapColumnToStandardProperty(5, Particles::ChargeProperty);
     particlesColumnMapping.mapColumnToUserProperty(7, tr("Hydrogen count +1"), Property::Int8);
+    particlesColumnMapping.mapColumnToUserProperty(9, tr("Valence"), Property::Int8);
 
     setParticleCount(numParticles);
 
@@ -314,6 +318,11 @@ void SDFImporter::FrameLoader::loadFile()
     Property* hydrogenCountProp = particles()->getMutableProperty(tr("Hydrogen count +1"));
     if(!hydrogenCountExists && hydrogenCountProp->nonzeroCount() == 0) {
         particles()->removeProperty(hydrogenCountProp);
+    }
+
+    Property* valenceProp = particles()->getMutableProperty(tr("Valence"));
+    if(!valenceExists && valenceProp->nonzeroCount() == 0) {
+        particles()->removeProperty(valenceProp);
     }
 
     //------------------------------------------------------------------------------
