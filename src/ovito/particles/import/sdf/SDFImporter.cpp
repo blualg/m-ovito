@@ -116,7 +116,7 @@ int32_t remapCharge(int32_t charge)
 
 /******************************************************************************
  * Parses the given input file.
- * File format description adapted from wiki: https://en.wikipedia.org/wiki/Chemical_table_file
+ * File format description adopted from Wikipedia: https://en.wikipedia.org/wiki/Chemical_table_file
  * More details at: https://www.nonlinear.com/progenesis/sdf-studio/v0.9/faq/sdf-file-format-guidance.aspx
  * and https://herongyang.com/Molecule/SDF-Format-Specification.html
  ******************************************************************************/
@@ -131,13 +131,13 @@ void SDFImporter::FrameLoader::loadFile()
     // Parse 3 lines of comments
     // 1. Title
     stream.readLine();
-    state().setAttribute(tr("%1.Title").arg(OOClass().displayName()), QVariant::fromValue(stream.lineString().trimmed()), pipelineNode());
+    state().setAttribute(QStringLiteral("%1.Title").arg(OOClass().displayName()), QVariant::fromValue(stream.lineString().trimmed()), pipelineNode());
     // 2. Program / file timestamp line
     stream.readLine();
-    state().setAttribute(tr("%1.Program").arg(OOClass().displayName()), QVariant::fromValue(stream.lineString().trimmed()), pipelineNode());
+    state().setAttribute(QStringLiteral("%1.Program").arg(OOClass().displayName()), QVariant::fromValue(stream.lineString().trimmed()), pipelineNode());
     // 3. Comment line
     stream.readLine();
-    state().setAttribute(tr("%1.Comment").arg(OOClass().displayName()), QVariant::fromValue(stream.lineString().trimmed()), pipelineNode());
+    state().setAttribute(QStringLiteral("%1.Comment").arg(OOClass().displayName()), QVariant::fromValue(stream.lineString().trimmed()), pipelineNode());
 
     // Parse number of lines
     char tag[128];

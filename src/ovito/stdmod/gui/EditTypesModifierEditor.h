@@ -58,6 +58,10 @@ protected:
     /// Inserts modifiers into the pipeline to delete existing elements of the given type ID.
     void insertModifiersToDeleteElementsOfType(ModificationNode* modNode, int typeId, const QString& elementDescriptionName, const PropertyReference& propertyRef, const PropertyContainerReference& containerRef, const DeleteSelectedModifierDelegate::OOMetaClass* deleteSelectedDelegateType);
 
+    /// Suggests a unique numeric ID for a new element type.
+    /// Gives the user the opportunity to change it if desired.
+    std::optional<int> askForUniqueTypeId() const;
+
 private Q_SLOTS:
 
     /// Refreshes the displayed list of element types.
@@ -71,6 +75,9 @@ private Q_SLOTS:
 
     /// Restores the selected element type.
     void restoreType(const QModelIndex& index);
+
+    /// Adds a new element type.
+    void addNewType();
 
 private:
 
@@ -123,10 +130,18 @@ private:
         /// Returns the current title of the element type list. This is derived from the selected input property.
         const QString& listTitle() const { return _listTitle; }
 
+        /// Checks if the given index refers to a newly added element type.
+        bool isNewlyAddedType(const QModelIndex& index) const {
+            return index.row() >= _upstreamElementTypeCount;
+        }
+
     private:
 
         /// The current title of the element type list. This is derived from the selected input property.
         QString _listTitle;
+
+        /// The number of element types from the upstream pipeline.
+        int _upstreamElementTypeCount = 0;
     };
 
 private:
@@ -151,6 +166,9 @@ private:
 
     /// Action for restoring an element type.
     ItemAction* _restoreAction;
+
+    /// Button for defining a new type.
+    QPushButton* _addNewTypeButton;
 
     /// The current list of element types displayed in UI.
     DECLARE_MODIFIABLE_VECTOR_REFERENCE_FIELD(OORef<ElementType>, elementTypes, setElementTypes);

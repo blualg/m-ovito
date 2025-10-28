@@ -163,6 +163,12 @@ void EditTypesModifier::addEditedType(ElementType* type)
     if(editedTypes().contains(type))
         return;
 
+    if(deletedTypeIDs().contains(type->numericId())) {
+        QSet<int32_t> deletedIDs = deletedTypeIDs();
+        deletedIDs.remove(type->numericId());
+        setDeletedTypeIDs(deletedIDs);
+    }
+
     _editedTypes.push_back(this, PROPERTY_FIELD(editedTypes), type);
 }
 

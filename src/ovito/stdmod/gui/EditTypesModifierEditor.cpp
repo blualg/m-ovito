@@ -24,6 +24,7 @@
 #include <ovito/gui/desktop/properties/ObjectStatusDisplay.h>
 #include <ovito/gui/desktop/properties/DataObjectReferenceParameterUI.h>
 #include <ovito/gui/desktop/dialogs/MessageDialog.h>
+#include <ovito/gui/desktop/widgets/general/SpinnerWidget.h>
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
@@ -86,6 +87,11 @@ void EditTypesModifierEditor::createUI(const RolloutInsertionParameters& rollout
     layout->addWidget(_typeListCaption);
     layout->addWidget(_elementTypesTable);
     connect(_elementTypesTable->selectionModel(), &QItemSelectionModel::selectionChanged, this, &EditTypesModifierEditor::onElementTypeSelectionChanged);
+
+    _addNewTypeButton = new QPushButton(tr("Add new type..."));
+    _addNewTypeButton->setEnabled(false);
+    layout->addWidget(_addNewTypeButton, 0, Qt::AlignRight | Qt::AlignTop);
+    connect(_addNewTypeButton, &QPushButton::clicked, this, &EditTypesModifierEditor::addNewType);
 
     // Install custom item delegate for rendering element types in the table.
     ActionsItemDelegate* delegate = new ActionsItemDelegate(_elementTypesTable, ViewModel::InfoRole, ViewModel::ActionsRole);
@@ -159,14 +165,14 @@ QVariant EditTypesModifierEditor::ViewModel::data(const QModelIndex& index, int 
                     return QVariant::fromValue(tr("(deleted)"));
                 }
                 else if(modifier()->editedTypes().contains(elementTypes()[index.row()])) {
-                    return QVariant::fromValue(tr("(edited)"));
+                    return QVariant::fromValue(!isNewlyAddedType(index) ? tr("(edited)") : tr("(new)"));
                 }
             }
         }
         else if(role == ActionsRole) {
             if(index.column() == 0) {
                 QList<QAction*> actions;
-                if(modifier()->deletedTypeIDs().contains(elementTypes()[index.row()]->numericId()) || modifier()->editedTypes().contains(elementTypes()[index.row()])) {
+                if((modifier()->deletedTypeIDs().contains(elementTypes()[index.row()]->numericId()) || modifier()->editedTypes().contains(elementTypes()[index.row()])) && !isNewlyAddedType(index)) {
                     actions.push_back(editor()->_restoreAction);
                 }
                 else if(!modifier()->deletedTypeIDs().contains(elementTypes()[index.row()]->numericId())) {
@@ -198,7 +204,10 @@ QVariant EditTypesModifierEditor::ViewModel::headerData(int section, Qt::Orienta
 ******************************************************************************/
 Qt::ItemFlags EditTypesModifierEditor::ViewModel::flags(const QModelIndex& index) const
 {
-    return QAbstractTableModel::flags(index);
+    if(index.row() < elementTypes().size())
+        return QAbstractTableModel::flags(index);
+    else
+        return QAbstractTableModel::flags(index) & ~Qt::ItemIsSelectable;
 }
 
 /******************************************************************************
@@ -213,10 +222,13 @@ void EditTypesModifierEditor::ViewModel::refresh()
 
     // Populate element types list with existing types from the selected input property.
     _listTitle.clear();
+    _upstreamElementTypeCount = 0;
+    bool foundSourceProperty = false;
     if(modifier() && modifier()->sourceProperty()) {
         CloneHelper cloneHelper;
         for(const PipelineFlowState& inputState : editor()->getPipelineInputs()) {
             if(const Property* inputProperty = inputState.getLeafObject(modifier()->sourceProperty())) {
+                foundSourceProperty = true;
                 _listTitle = inputProperty->title();
                 for(const ElementType* type : inputProperty->elementTypes()) {
                     if(!type)
@@ -243,6 +255,7 @@ void EditTypesModifierEditor::ViewModel::refresh()
                 }
             }
         }
+        _upstreamElementTypeCount = elementTypes.size();
 
         // Append the edited element types that are not already in the list.
         for(ElementType* editedType : modifier()->editedTypes()) {
@@ -256,6 +269,8 @@ void EditTypesModifierEditor::ViewModel::refresh()
     editor()->setElementTypes(std::move(elementTypes));
 
     endResetModel();
+
+    editor()->_addNewTypeButton->setEnabled(foundSourceProperty);
 }
 
 /******************************************************************************
@@ -329,6 +344,13 @@ void EditTypesModifierEditor::deleteType(const QModelIndex& index)
     if(modifier() && index.isValid() && index.row() < elementTypes().size()) {
         auto typeId = elementTypes()[index.row()]->numericId();
         performTransaction(tr("Delete type"), [&]() {
+
+            if(_tableModel->isNewlyAddedType(index)) {
+                // Just remove the newly added type without further checks.
+                modifier()->restoreType(typeId);
+                return;
+            }
+
 
             // Before deleting the type, check if elements of that type exist in the pipeline data.
             size_t numElementsOfType = 0;
@@ -474,5 +496,113 @@ void EditTypesModifierEditor::insertModifiersToDeleteElementsOfType(Modification
     // Reconnect the original modifier node to the new DeleteSelectedModifier.
     modNode->setInput(deleteSelectedModNode);
 }
+
+/******************************************************************************
+* Adds a new element type.
+******************************************************************************/
+void EditTypesModifierEditor::addNewType()
+{
+    if(!modifier())
+        return;
+
+    performTransaction(tr("Add new type"), [&]() {
+
+        // To create a new element type, we first need to determine the container class and the name of the typed property.
+        OwnerPropertyRef ownerPropertyRef;
+        for(const PipelineFlowState& inputState : getPipelineInputs()) {
+            ConstDataObjectPath path = inputState.getObject(modifier()->sourceProperty());
+            if(const Property* inputProperty = path.lastAs<Property>()) {
+                if(inputProperty->isTypedProperty()) {
+                    if(const PropertyContainer* container = path.lastAs<PropertyContainer>(1)) {
+                        ownerPropertyRef = OwnerPropertyRef(&container->getOOMetaClass(), inputProperty);
+                        break;
+                    }
+                }
+            }
+        }
+        if(!ownerPropertyRef)
+            throw Exception(tr("Cannot add new element type because the property container could not be determined."));
+
+        // Let the PropertyContainer class determine the right element type class needed for the typed property.
+        OvitoClassPtr elementTypeClass = ownerPropertyRef.containerClass()->typedPropertyElementClass(ownerPropertyRef.typeId());
+        if(elementTypeClass == nullptr)
+            elementTypeClass = &ElementType::OOClass();
+        OVITO_ASSERT(elementTypeClass->isDerivedFrom(ElementType::OOClass()));
+
+        // Determine a unique numeric ID for the element type
+        // and allow user to override the suggested numeric ID.
+        std::optional<int> id = askForUniqueTypeId();
+        if(!id)
+            this_task::cancelAndThrow(); // Operation canceled by user.
+
+        // Create the new element type.
+        OORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
+        elementType->setNumericId(id.value());
+        elementType->initializeType(ownerPropertyRef);
+
+        // Register the new element type.
+        modifier()->addEditedType(elementType);
+
+        // Select the newly added type in the table.
+        _elementTypesTable->selectRow(elementTypes().indexOf(elementType));
+    });
+}
+
+/******************************************************************************
+* Suggests a unique numeric ID for a new element type.
+* Gives the user the opportunity to change it if desired.
+******************************************************************************/
+std::optional<int> EditTypesModifierEditor::askForUniqueTypeId() const
+{
+    // Suggest a unique numeric ID.
+    int uniqueId = 1;
+    for(const ElementType* type : elementTypes())
+        uniqueId = std::max(uniqueId, type->numericId() + 1);
+
+    // Show dialog to allow user to change the suggested numeric ID.
+    QDialog dlg(parentWindow());
+    dlg.setWindowTitle(tr("Add new type"));
+    QGridLayout* mainLayout = new QGridLayout(&dlg);
+    mainLayout->setHorizontalSpacing(0);
+    mainLayout->setVerticalSpacing(6);
+    mainLayout->setColumnStretch(0, 1);
+
+    mainLayout->addWidget(new QLabel(tr("Please specify a unique numeric ID for the new type:")), 0, 0, 1, 2);
+
+    QLineEdit* idBox = new QLineEdit();
+    mainLayout->addWidget(idBox, 1, 0);
+    SpinnerWidget* idSpinner = new SpinnerWidget();
+    idSpinner->setUnit(unitsManager().integerIdentityUnit());
+    idSpinner->setTextBox(idBox);
+    idSpinner->setIntValue(uniqueId);
+    mainLayout->addWidget(idSpinner, 1, 1);
+
+    QAction* errorAction = idBox->addAction(QIcon(":/guibase/mainwin/status/status_error.png"), QLineEdit::TrailingPosition);
+    errorAction->setVisible(false);
+    errorAction->setToolTip(tr("A type with this numeric ID already exists. Please choose a different ID."));
+
+    mainLayout->setRowMinimumHeight(2, 12);
+    QDialogButtonBox* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    connect(buttonBox, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+    connect(buttonBox, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+    mainLayout->addWidget(buttonBox, 3, 0, 1, 2);
+    QPushButton* okButton = buttonBox->button(QDialogButtonBox::Ok);
+    okButton->setEnabled(true);
+
+    // Validate user input. Display an error indicator if the entered ID is already in use.
+    connect(idSpinner, &SpinnerWidget::valueChanged, &dlg, [&]() {
+        uniqueId = idSpinner->intValue();
+        okButton->setEnabled(std::ranges::none_of(elementTypes(), [&](const ElementType* type) {
+            return type->numericId() == uniqueId;
+        }));
+        errorAction->setVisible(!okButton->isEnabled());
+    });
+
+    if(dlg.exec() == QDialog::Accepted)
+        return uniqueId;
+    else
+        return std::nullopt;
+}
+
 
 }   // End of namespace
