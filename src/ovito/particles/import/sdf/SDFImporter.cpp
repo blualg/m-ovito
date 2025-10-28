@@ -166,18 +166,18 @@ void SDFImporter::FrameLoader::loadFile()
     //------------------------------------------------------------------------------
 
     // Prepare the file column to particle property mapping.
-    ParticleInputColumnMapping columnMapping;
-    columnMapping.resize(6);
-    columnMapping.mapColumnToStandardProperty(0, Particles::PositionProperty, 0);
-    columnMapping.mapColumnToStandardProperty(1, Particles::PositionProperty, 1);
-    columnMapping.mapColumnToStandardProperty(2, Particles::PositionProperty, 2);
-    columnMapping.mapColumnToStandardProperty(3, Particles::TypeProperty);
-    columnMapping.mapColumnToStandardProperty(4, Particles::ChargeProperty);
-    columnMapping.mapColumnToUserProperty(5, tr("Mass difference"), Property::Int32);
+    ParticleInputColumnMapping particlesColumnMapping;
+    particlesColumnMapping.resize(6);
+    particlesColumnMapping.mapColumnToStandardProperty(0, Particles::PositionProperty, 0);
+    particlesColumnMapping.mapColumnToStandardProperty(1, Particles::PositionProperty, 1);
+    particlesColumnMapping.mapColumnToStandardProperty(2, Particles::PositionProperty, 2);
+    particlesColumnMapping.mapColumnToStandardProperty(3, Particles::TypeProperty);
+    particlesColumnMapping.mapColumnToStandardProperty(4, Particles::ChargeProperty);
+    particlesColumnMapping.mapColumnToUserProperty(5, tr("Mass difference"), Property::Int32);
 
     setParticleCount(numParticles);
 
-    InputColumnReader particlesColumnParser(*this, columnMapping, particles());
+    InputColumnReader particlesColumnParser(*this, particlesColumnMapping, particles());
     progress.setMaximum(numParticles);
     try {
         for(qlonglong i = 0; i < numParticles; i++) {
@@ -196,17 +196,17 @@ void SDFImporter::FrameLoader::loadFile()
     // Parse bonds.
     //------------------------------------------------------------------------------
 
-    columnMapping.clear();
-    columnMapping.resize(7);
-    columnMapping.mapColumnToStandardProperty(0, Bonds::TopologyProperty, 0);
-    columnMapping.mapColumnToStandardProperty(1, Bonds::TopologyProperty, 1);
-    columnMapping.mapColumnToStandardProperty(2, Bonds::TypeProperty, 2);
-    columnMapping.mapColumnToUserProperty(3, tr("Bond stereo"), Property::Int32);
-    columnMapping.mapColumnToUserProperty(4, tr("Bond stereo"), Property::Int8);
-    columnMapping.mapColumnToUserProperty(6, tr("Bond configuration"), Property::Int8);
+    BondInputColumnMapping bondColumnMapping;
+    bondColumnMapping.resize(7);
+    bondColumnMapping.mapColumnToStandardProperty(0, Bonds::TopologyProperty, 0);
+    bondColumnMapping.mapColumnToStandardProperty(1, Bonds::TopologyProperty, 1);
+    bondColumnMapping.mapColumnToStandardProperty(2, Bonds::TypeProperty, 2);
+    bondColumnMapping.mapColumnToUserProperty(3, tr("Bond stereo"), Property::Int32);
+    bondColumnMapping.mapColumnToUserProperty(4, tr("Bond stereo"), Property::Int8);
+    bondColumnMapping.mapColumnToUserProperty(6, tr("Bond configuration"), Property::Int8);
 
     setBondCount(numBonds);
-    InputColumnReader bondsColumnParser(*this, columnMapping, bonds());
+    InputColumnReader bondsColumnParser(*this, bondColumnMapping, bonds());
     progress.setMaximum(numBonds);
     try {
         for(qlonglong i = 0; i < numBonds; i++) {
