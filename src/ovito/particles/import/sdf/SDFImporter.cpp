@@ -154,6 +154,9 @@ void SDFImporter::FrameLoader::loadFile()
                             .arg(stream.lineNumber())
                             .arg(stream.lineString().trimmed()));
     }
+    if(this_task::isCanceled()) {
+        return;
+    }
 
     // Store whether the "charge" column exists.
     bool chargeExists = particles()->getProperty(Particles::ChargeProperty) != nullptr;
@@ -236,7 +239,7 @@ void SDFImporter::FrameLoader::loadFile()
     }
 
     // Preconfigure bond types
-    auto* bondTypes = bonds()->getMutableProperty(Bonds::TypeProperty);
+    Property* bondTypes = bonds()->getMutableProperty(Bonds::TypeProperty);
     const auto& bondElementTypes = bondTypes->elementTypes();
     for(const ElementType* type : bondElementTypes) {
         ElementType* mutableType = bondTypes->makeMutable(type);
@@ -275,7 +278,7 @@ void SDFImporter::FrameLoader::loadFile()
     BufferWriteAccess<int32_t, access_mode::write> massDifferenceAcc(massDifferenceProp);
 
     line = stream.readLineTrimLeft();
-    while(strncmp(line, "M  END", 6) != 0) {
+    while(strncmp(line, "M  END", 6) != 0 && !this_task::isCanceled()) {
         int itemCount;
         int consumed = 0;
         int offset = 0;
@@ -330,7 +333,7 @@ void SDFImporter::FrameLoader::loadFile()
     //------------------------------------------------------------------------------
     line = stream.readLineTrimLeft();
     QStringList associatedData;
-    while(strncmp(line, "$$$$", 4) != 0) {
+    while(strncmp(line, "$$$$", 4) != 0 && !this_task::isCanceled()) {
         if(sscanf(line, "> <%127s", tag) == 1) {
             line = stream.readLineTrimLeft();
             associatedData.clear();
