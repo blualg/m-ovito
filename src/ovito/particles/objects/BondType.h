@@ -35,7 +35,20 @@ namespace Ovito {
  */
 class OVITO_PARTICLES_EXPORT BondType : public ElementType
 {
-    OVITO_CLASS(BondType)
+    /// Define a new metaclass.
+    class BondTypeClass : public ElementTypeClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using ElementTypeClass::ElementTypeClass;
+
+        /// Returns a list of column names to be displayed in the data inspector for element types of this class.
+        virtual QStringList dataInspectorColumns() const override;
+
+        /// Returns the Qt table model data for the given element type to be displayed in the data inspector.
+        virtual QVariant dataInspectorModelData(int columnIndex, const QString& columnName, const ElementType* elementType, int role) const override;
+    };
+    OVITO_CLASS_META(BondType, BondTypeClass);
 
 public:
 

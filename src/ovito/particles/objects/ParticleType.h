@@ -36,7 +36,20 @@ namespace Ovito {
  */
 class OVITO_PARTICLES_EXPORT ParticleType : public ElementType
 {
-    OVITO_CLASS(ParticleType)
+    /// Define a new metaclass.
+    class ParticleTypeClass : public ElementTypeClass
+    {
+    public:
+        /// Inherit constructor from base class.
+        using ElementTypeClass::ElementTypeClass;
+
+        /// Returns a list of column names to be displayed in the data inspector for element types of this class.
+        virtual QStringList dataInspectorColumns() const override;
+
+        /// Returns the Qt table model data for the given element type to be displayed in the data inspector.
+        virtual QVariant dataInspectorModelData(int columnIndex, const QString& columnName, const ElementType* elementType, int role) const override;
+    };
+    OVITO_CLASS_META(ParticleType, ParticleTypeClass);
 
 public:
 
@@ -197,7 +210,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, highlightShapeEdges, setHighlightShapeEdges, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(highlightShapeEdges);
 
-    /// Activates the culling of back-facing faces of the user-defined shape assigned to this particle type.
+    /// Activates the culling of back-facing mesh faces of the user-defined shape assigned to this particle type.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{true}, shapeBackfaceCullingEnabled, setShapeBackfaceCullingEnabled, PROPERTY_FIELD_MEMORIZE);
     DECLARE_SHADOW_PROPERTY_FIELD(shapeBackfaceCullingEnabled);
 

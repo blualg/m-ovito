@@ -95,6 +95,7 @@ void EditTypesModifierEditor::createUI(const RolloutInsertionParameters& rollout
 
     // Install custom item delegate for rendering element types in the table.
     ActionsItemDelegate* delegate = new ActionsItemDelegate(_elementTypesTable, ViewModel::InfoRole, ViewModel::ActionsRole);
+    delegate->setSpanEntireRow(true);
     _elementTypesTable->setItemDelegateForColumn(0, delegate);
 
     // Create actions for deleting and restoring element types.
@@ -337,6 +338,24 @@ void EditTypesModifierEditor::onElementTypeSelectionChanged()
 }
 
 /******************************************************************************
+* Selects the element type with the given numeric ID in the table.
+* This is used to communicate the selection from the TypesInspectionApplet to the modifier editor.
+******************************************************************************/
+void EditTypesModifierEditor::selectElementTypeById(int typeId)
+{
+    // Look up the ElementType with the given numeric ID.
+    auto elementTypeIt = std::find_if(elementTypes().begin(), elementTypes().end(), [&](const OORef<ElementType>& type) {
+        return type->numericId() == typeId;
+    });
+    // Select the corresponding row in the table.
+    if(elementTypeIt != elementTypes().end()) {
+        _elementTypesTable->selectRow(std::distance(elementTypes().begin(), elementTypeIt));
+        _subEditorContainer->setFocus();
+    }
+    else OVITO_ASSERT(false); // This should never happen.
+}
+
+/******************************************************************************
 * Deletes the selected element type.
 ******************************************************************************/
 void EditTypesModifierEditor::deleteType(const QModelIndex& index)
@@ -524,10 +543,9 @@ void EditTypesModifierEditor::addNewType()
             throw Exception(tr("Cannot add new element type because the property container could not be determined."));
 
         // Let the PropertyContainer class determine the right element type class needed for the typed property.
-        OvitoClassPtr elementTypeClass = ownerPropertyRef.containerClass()->typedPropertyElementClass(ownerPropertyRef.typeId());
+        ElementTypeClassPtr elementTypeClass = ownerPropertyRef.containerClass()->typedPropertyElementClass(ownerPropertyRef.typeId());
         if(elementTypeClass == nullptr)
             elementTypeClass = &ElementType::OOClass();
-        OVITO_ASSERT(elementTypeClass->isDerivedFrom(ElementType::OOClass()));
 
         // Determine a unique numeric ID for the element type
         // and allow user to override the suggested numeric ID.

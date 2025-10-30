@@ -133,9 +133,7 @@ private:
         }
 
         /// Returns the number of columns.
-        virtual int columnCount(const QModelIndex& parent = QModelIndex()) const override {
-            return parent.isValid() ? 0 : _properties.size();
-        }
+        virtual int columnCount(const QModelIndex& parent = QModelIndex()) const override { return _properties.size(); }
 
         /// Returns the data stored under the given 'role' for the item referred to by the 'index'.
         virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
@@ -144,7 +142,7 @@ private:
         virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
         /// Replaces the contents of this data model.
-        int setContents(const PropertyContainer* container);
+        void setContents(const PropertyContainer* container);
 
         /// Returns the list of properties managed by this table model.
         const std::vector<ConstPropertyPtr>& properties() const { return _properties; }

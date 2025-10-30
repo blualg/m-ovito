@@ -387,7 +387,7 @@ void Property::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPa
 * optionally, a human-readable name. If an element type with the given numeric ID
 * already exists in this property's element type list, it will be returned instead.
 ******************************************************************************/
-const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name, OvitoClassPtr elementTypeClass)
+const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name, ElementTypeClassPtr elementTypeClass)
 {
     OVITO_CHECK_OBJECT_POINTER(this);
 

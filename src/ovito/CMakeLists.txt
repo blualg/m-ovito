@@ -76,5 +76,48 @@ IF(OVITO_BUILD_PLUGIN_VOROTOP)
     ADD_SUBDIRECTORY(vorotop)
 ENDIF()
 
+# Build corresponding GUI plugins.
+IF(OVITO_BUILD_APP)
+    IF(OVITO_BUILD_PLUGIN_STDOBJ)
+        ADD_SUBDIRECTORY(stdobj/gui)
+    ENDIF()
+
+    IF(OVITO_BUILD_PLUGIN_MESH)
+        ADD_SUBDIRECTORY(mesh/gui)
+    ENDIF()
+
+    IF(OVITO_BUILD_PLUGIN_STDMOD)
+        ADD_SUBDIRECTORY(stdmod/gui)
+    ENDIF()
+
+    IF(OVITO_BUILD_PLUGIN_GRID)
+        ADD_SUBDIRECTORY(grid/gui)
+    ENDIF()
+
+    IF(OVITO_BUILD_PLUGIN_PARTICLES)
+        ADD_SUBDIRECTORY(particles/gui)
+    ENDIF()
+
+    IF(OVITO_BUILD_PLUGIN_CRYSTALANALYSIS)
+        ADD_SUBDIRECTORY(crystalanalysis/gui)
+    ENDIF()
+
+    IF(OVITO_BUILD_PLUGIN_NETCDFPLUGIN)
+        ADD_SUBDIRECTORY(netcdf/gui)
+    ENDIF()
+
+    IF(OVITO_BUILD_PLUGIN_OXDNA)
+        ADD_SUBDIRECTORY(oxdna/gui)
+    ENDIF()
+
+    IF(OVITO_BUILD_PLUGIN_CORRELATION)
+        ADD_SUBDIRECTORY(correlation/gui)
+    ENDIF()
+
+    IF(OVITO_BUILD_PLUGIN_VOROTOP)
+        ADD_SUBDIRECTORY(vorotop/gui)
+    ENDIF()
+ENDIF()
+
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

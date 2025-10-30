@@ -60,6 +60,17 @@ public:
     /// Restores the original element type with the given numeric ID.
     void restoreType(int typeId);
 
+    /// Inserts an element type into the list of edited types.
+    void insertEditedType(qsizetype index, OORef<ElementType> type) {
+        OVITO_ASSERT(editedTypes().contains(type) == false);
+        _editedTypes.insert(this, PROPERTY_FIELD(editedTypes), index, std::move(type));
+    }
+
+    /// Removes an element type from the list of edited types.
+    void removeEditedType(qsizetype index) {
+        _editedTypes.remove(this, PROPERTY_FIELD(editedTypes), index);
+    }
+
 protected:
 
     /// Is called when the value of a property of this object has changed.

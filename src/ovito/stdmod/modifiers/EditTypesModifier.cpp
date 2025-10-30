@@ -148,7 +148,12 @@ Future<PipelineFlowState> EditTypesModifier::evaluateModifier(const ModifierEval
 QVariant EditTypesModifier::getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const
 {
     if(node && sourceProperty()) {
-        return sourceProperty().dataTitleOrPath();
+        QString title = sourceProperty().dataTitleOrPath();
+        // Shorten the full path to show only the property name.
+        int lastSepPos = title.lastIndexOf(QStringLiteral(u" \u2192 "));  // Unicode arrow path separator
+        if(lastSepPos >= 0)
+            title = title.mid(lastSepPos + 3);
+        return title;
     }
     return {};
 }

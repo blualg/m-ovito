@@ -103,6 +103,9 @@ protected:
     /// Updates the list of data objects displayed in the inspector.
     void updateDataObjectList();
 
+    /// Initializes a list item representing the given data object path.
+    virtual void configureDataObjectListItem(QListWidgetItem* item, const ConstDataObjectPath& objectPath);
+
 Q_SIGNALS:
 
     /// This signal is emitted when the user selects a different data object in the list.

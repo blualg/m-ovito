@@ -64,6 +64,13 @@ public:
     /// Constructor.
     explicit ActionsItemDelegate(QObject* parent, int infoRole, int actionsRole);
 
+    /// Determines whether the action buttons should be displayed when hovering over any part of the item row (true)
+    /// or only when hovering over the item contents (false, default).
+    void setSpanEntireRow(bool enable) { _spanEntireRow = enable; }
+
+    /// Returns whether the action buttons span the entire row.
+    bool spanEntireRow() const { return _spanEntireRow; }
+
     /// Paints an item.
     virtual void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
@@ -97,6 +104,9 @@ protected:
     /// Computes the visual rect of the given item, clipped to the viewport area.
     QRect getClippedItemRect(const QModelIndex& index) const;
 
+    /// Generates a pixmap for the given icon, considering the style and state of the item.
+    QPixmap getIconPixmap(const QIcon& icon, const QStyleOptionViewItem& option, bool isActive) const;
+
 private:
 
     /// Returns the rectangular area that is occupied by the i-th action button.
@@ -105,7 +115,13 @@ private:
     int _actionsRole;
     QAbstractItemView* _view;
     QModelIndex _hoverIndex;
+    QModelIndex _mousePressIndex;
+    QRect _mousePressActionRect;
+    QAction* _mousePressAction = nullptr;
     int _hoverActionIndex = -1;
+    bool _spanEntireRow = false;
+    int _maxIconSize = 22; // Maximum size of action button icons.
+    mutable std::map<std::pair<qint64, QRgb>, QPixmapCache::Key> _iconPixmapCache;
 };
 
 }   // End of namespace

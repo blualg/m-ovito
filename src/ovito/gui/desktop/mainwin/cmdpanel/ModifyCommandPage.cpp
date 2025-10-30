@@ -359,4 +359,32 @@ void ModifyCommandPage::showProgramNotice(const QString& htmlPage)
     aboutLabel->setHtml(finalText);
 }
 
+/******************************************************************************
+* Selects the given pipeline node in the pipeline editor and opens the
+* properties editor for the given pipeline node.
+******************************************************************************/
+PropertiesEditor* ModifyCommandPage::startEditingPipelineNode(PipelineNode* node)
+{
+    OVITO_ASSERT(this_task::get());
+
+    if(!node)
+        return nullptr;
+
+    // If this is a modification node that is part of a collapsed group, ensure its modifier group is expanded.
+    if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(node)) {
+        if(modNode->modifierGroup())
+            modNode->modifierGroup()->setCollapsed(false);
+    }
+
+    // Open the command panel tab.
+    ui().mainWindow()->setCurrentCommandPanelPage(MainWindow::CommandPanelPage::MODIFY_PAGE);
+
+    // Set the selection in the pipeline editor.
+    pipelineListModel()->setNextObjectToSelect(node);
+    pipelineListModel()->refreshListNow();
+
+    // Return the current editor.
+    return propertiesPanel()->editor();
+}
+
 }   // End of namespace

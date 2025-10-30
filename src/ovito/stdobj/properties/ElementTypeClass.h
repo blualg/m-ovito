@@ -20,41 +20,31 @@
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-//
-// Standard precompiled header file included by all source files in this module
-//
+#pragma once
 
-#ifndef __OVITO_STDOBJ_
-#define __OVITO_STDOBJ_
 
-#include <ovito/core/Core.h>
+#include <ovito/stdobj/StdObj.h>
+#include <ovito/core/dataset/data/DataObject.h>
 
-namespace Ovito
+namespace Ovito {
+
+/**
+ * \brief A meta-class for classes derived from the ElementType base class, e.g. particle types, bond types, etc.
+ */
+ class OVITO_STDOBJ_EXPORT ElementTypeClass : public DataObject::OOMetaClass
 {
-    class Property;
-    class PropertyContainer;
-    class PropertyContainerClass;
-    using PropertyContainerClassPtr = const PropertyContainerClass*;
-    using PropertyPtr = DataOORef<Property>;
-    using ConstPropertyPtr = DataOORef<const Property>;
-    class OwnerPropertyRef;
-    class PropertyReference;
-    class ElementType;
-    class ElementTypeClass;
-    using ElementTypeClassPtr = const ElementTypeClass*;
-    class InputColumnMapping;
-    template<class PropertyContainerType> class TypedInputColumnMapping;
-    class InputColumnReader;
-    class SimulationCell;
-    class Lines;
-    class LinesVis;
-    class SimulationCellVis;
-    class DataTable;
-    class PropertyColorMapping;
-    class StandardFrameLoader;
-    class Vectors;
-    class VectorVis;
-    class BufferPythonAccessGuard; // Note: This class is defined in another plugin module (StdObjPython).
-}
+public:
 
-#endif
+    /// Inherit standard constructor from base meta class.
+    using DataObject::OOMetaClass::OOMetaClass;
+
+    /// Returns a list of column names to be displayed in the data inspector for element types of this class.
+    virtual QStringList dataInspectorColumns() const;
+
+    /// Returns the Qt table model data for the given element type to be displayed in the data inspector.
+    virtual QVariant dataInspectorModelData(int columnIndex, const QString& columnName, const ElementType* elementType, int role) const;
+};
+
+}   // End of namespace
+
+Q_DECLARE_METATYPE(Ovito::ElementTypeClassPtr);

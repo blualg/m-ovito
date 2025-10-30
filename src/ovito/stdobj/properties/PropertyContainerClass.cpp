@@ -50,13 +50,12 @@ void PropertyContainerClass::initialize()
 * This helper method returns a standard property (if present) from the
 * given pipeline state.
 ******************************************************************************/
-void PropertyContainerClass::registerStandardProperty(int typeId, QString name, int dataType, QStringList componentNames, OvitoClassPtr typedPropertyElementClass, QString title)
+void PropertyContainerClass::registerStandardProperty(int typeId, QString name, int dataType, QStringList componentNames, ElementTypeClassPtr typedPropertyElementClass, QString title)
 {
     OVITO_ASSERT_MSG(typeId > 0, "PropertyContainerClass::registerStandardProperty", "Invalid standard property type ID");
     OVITO_ASSERT_MSG(_standardPropertyIds.find(name) == _standardPropertyIds.end(), "PropertyContainerClass::registerStandardProperty", "Duplicate standard property name");
     OVITO_ASSERT_MSG(_standardPropertyNames.find(typeId) == _standardPropertyNames.end(), "PropertyContainerClass::registerStandardProperty", "Duplicate standard property type ID");
     OVITO_ASSERT_MSG(dataType == Property::Int8 || dataType == Property::Int32 || dataType == Property::Int64 || dataType == Property::Float32 || dataType == Property::Float64, "PropertyContainerClass::registerStandardProperty", "Invalid standard property data type");
-    OVITO_ASSERT_MSG(!typedPropertyElementClass || typedPropertyElementClass->isDerivedFrom(ElementType::OOClass()), "PropertyContainerClass::registerStandardProperty", "Element type class is not derived from ElementType base");
 
     if(!name.isEmpty()) {
 #ifdef OVITO_DEBUG

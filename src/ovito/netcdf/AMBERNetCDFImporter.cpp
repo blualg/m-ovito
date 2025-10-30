@@ -588,7 +588,7 @@ void AMBERNetCDFImporter::FrameLoader::loadFile()
                 return;
 
             // Create particles types if this is the typed property.
-            if(OvitoClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->typeId())) {
+            if(ElementTypeClassPtr elementTypeClass = Particles::OOClass().typedPropertyElementClass(property->typeId())) {
 
                 // Create particle types.
                 for(int ptype : BufferReadAccess<int32_t>(property)) {

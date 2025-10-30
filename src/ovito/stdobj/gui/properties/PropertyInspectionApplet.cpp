@@ -116,8 +116,10 @@ void PropertyInspectionApplet::createBaseWidgets()
 void PropertyInspectionApplet::onCurrentContainerChanged()
 {
     handleExceptions([&]() {
+        int oldColumnCount = _tableModel->columnCount();
+
         const PropertyContainer* container = selectedContainerObject();
-        int oldColumnCount = _tableModel->setContents(container);
+        _tableModel->setContents(container);
         _filterModel->setContentsBegin();
         _filterModel->setContentsEnd();
         updateCountDisplay();
@@ -247,7 +249,7 @@ void PropertyInspectionApplet::exportDataToFile(const DataObjectReference& dataO
 /******************************************************************************
 * Replaces the contents of this data model.
 ******************************************************************************/
-int PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyContainer* container)
+void PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyContainer* container)
 {
     OVITO_ASSERT(this_task::get());
 
@@ -280,7 +282,6 @@ int PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCont
     }
 
     OVITO_ASSERT(_properties.size() <= newProperties.size());
-    int oldColumnCount = _properties.size();
     if(!_properties.empty()) {
         if(oldRowCount > newRowCount) {
             beginRemoveRows(QModelIndex(), newRowCount, oldRowCount-1);
@@ -318,7 +319,6 @@ int PropertyInspectionApplet::PropertyTableModel::setContents(const PropertyCont
     }
 
     OVITO_ASSERT(rowCount() == newRowCount);
-    return oldColumnCount;
 }
 
 /******************************************************************************

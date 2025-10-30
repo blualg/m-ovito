@@ -53,4 +53,33 @@ void BondType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPa
     }
 }
 
+/******************************************************************************
+* Returns a list of column names to be displayed in the data inspector for
+* element types of this class.
+******************************************************************************/
+QStringList BondType::OOMetaClass::dataInspectorColumns() const
+{
+    QStringList columns = ElementTypeClass::dataInspectorColumns();
+    columns << QStringLiteral("Radius");
+    return columns;
+}
+
+/******************************************************************************
+* Returns the Qt table model data for the given element type to be displayed in the data inspector.
+******************************************************************************/
+QVariant BondType::OOMetaClass::dataInspectorModelData(int columnIndex, const QString& columnName, const ElementType* elementType, int role) const
+{
+    if(role == Qt::DisplayRole) {
+        if(const BondType* btype = dynamic_object_cast<BondType>(elementType)) {
+            if(columnName == QStringLiteral("Radius")) {
+                if(btype->radius() != 0)
+                    return btype->radius();
+                else
+                    return {};
+            }
+        }
+    }
+    return ElementTypeClass::dataInspectorModelData(columnIndex, columnName, elementType, role);
+}
+
 }   // End of namespace

@@ -143,10 +143,5 @@ OVITO_STANDARD_PLUGIN(Particles
 # Let the code know that we are building the plugin.
 TARGET_COMPILE_DEFINITIONS(Particles PUBLIC OVITO_BUILD_PLUGIN_PARTICLES)
 
-# Build corresponding GUI plugin.
-IF(OVITO_BUILD_APP)
-    ADD_SUBDIRECTORY(gui)
-ENDIF()
-
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

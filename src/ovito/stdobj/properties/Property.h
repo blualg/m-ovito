@@ -137,11 +137,11 @@ public:
 
     /// Creates and returns a new numeric element type with the given numeric ID and, optionally, a human-readable name.
     /// If an element type with the given numeric ID already exists in this property's element type list, it will be returned instead.
-    const ElementType* addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name = {}, OvitoClassPtr elementTypeClass = {});
+    const ElementType* addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name = {}, ElementTypeClassPtr elementTypeClass = {});
 
     /// Creates and returns a new element type with the given name and assigns a new unique ID to it.
     /// If an element type with the given name already exists in this property's element type list, it will be returned instead.
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, const QString& name, OvitoClassPtr elementTypeClass = {}) {
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, const QString& name, ElementTypeClassPtr elementTypeClass = {}) {
         OVITO_CHECK_OBJECT_POINTER(this);
         if(const ElementType* existingType = elementType(name))
             return existingType;
@@ -150,7 +150,7 @@ public:
 
     /// Creates and returns a new element type with the given name and assigns a new unique ID to it.
     /// If an element type with the given name already exists in this property's element type list, it will be returned instead.
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, const QLatin1String& name, OvitoClassPtr elementTypeClass = {}) {
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, const QLatin1String& name, ElementTypeClassPtr elementTypeClass = {}) {
         OVITO_CHECK_OBJECT_POINTER(this);
         if(const ElementType* existingType = elementType(name))
             return existingType;

@@ -28,10 +28,5 @@ OVITO_STANDARD_PLUGIN(CorrelationFunctionPlugin
     PRIVATE_LIB_DEPENDENCIES kissfft
 )
 
-# Build corresponding GUI plugin.
-IF(OVITO_BUILD_APP)
-    ADD_SUBDIRECTORY(gui)
-ENDIF()
-
 # Propagate list of plugins to parent scope.
 SET(OVITO_PLUGIN_LIST ${OVITO_PLUGIN_LIST} PARENT_SCOPE)

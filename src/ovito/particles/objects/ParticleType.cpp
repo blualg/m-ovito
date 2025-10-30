@@ -434,4 +434,52 @@ QString ParticleType::guessTypeNameFromMass(FloatType mass)
     return {};
 }
 
+/******************************************************************************
+* Returns a list of column names to be displayed in the data inspector for
+* element types of this class.
+******************************************************************************/
+QStringList ParticleType::OOMetaClass::dataInspectorColumns() const
+{
+    QStringList columns = ElementTypeClass::dataInspectorColumns();
+    columns << QStringLiteral("Radius") << QStringLiteral("Mass") << QStringLiteral("VdW Radius") << QStringLiteral("Shape");
+    return columns;
+}
+
+/******************************************************************************
+* Returns the Qt table model data for the given element type to be displayed in the data inspector.
+******************************************************************************/
+QVariant ParticleType::OOMetaClass::dataInspectorModelData(int columnIndex, const QString& columnName, const ElementType* elementType, int role) const
+{
+    if(role == Qt::DisplayRole) {
+        if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(elementType)) {
+            if(columnName == QStringLiteral("Radius")) {
+                if(ptype->radius() != 0)
+                    return ptype->radius();
+            }
+            else if(columnName == QStringLiteral("Mass")) {
+                if(ptype->mass() != 0)
+                    return ptype->mass();
+            }
+            else if(columnName == QStringLiteral("VdW Radius")) {
+                if(ptype->vdwRadius() != 0)
+                    return ptype->vdwRadius();
+            }
+            else if(columnName == QStringLiteral("Shape")) {
+                switch(ptype->shape()) {
+                    case ParticlesVis::ParticleShape::Default: return {};
+                    case ParticlesVis::ParticleShape::Sphere: return QStringLiteral("Sphere/Ellipsoid");
+                    case ParticlesVis::ParticleShape::Circle: return QStringLiteral("Circle");
+                    case ParticlesVis::ParticleShape::Box: return QStringLiteral("Cube/Box");
+                    case ParticlesVis::ParticleShape::Square: return QStringLiteral("Square");
+                    case ParticlesVis::ParticleShape::Cylinder: return QStringLiteral("Cylinder");
+                    case ParticlesVis::ParticleShape::Spherocylinder: return QStringLiteral("Spherocylinder");
+                    case ParticlesVis::ParticleShape::Mesh: return QStringLiteral("Mesh");
+                    default: // Ignore
+                }
+            }
+        }
+    }
+    return ElementTypeClass::dataInspectorModelData(columnIndex, columnName, elementType, role);
+}
+
 }   // End of namespace

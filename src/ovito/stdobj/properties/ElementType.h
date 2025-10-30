@@ -26,6 +26,7 @@
 #include <ovito/stdobj/StdObj.h>
 #include <ovito/stdobj/properties/OwnerPropertyRef.h>
 #include <ovito/core/dataset/data/DataObject.h>
+#include "ElementTypeClass.h"
 
 namespace Ovito {
 
@@ -35,7 +36,7 @@ namespace Ovito {
  */
 class OVITO_STDOBJ_EXPORT ElementType : public DataObject
 {
-    OVITO_CLASS(ElementType)
+    OVITO_CLASS_META(ElementType, ElementTypeClass)
 
 public:
 

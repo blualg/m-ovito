@@ -41,7 +41,7 @@ public:
     void initializeObject() { DataInspectionApplet::initializeObject(SimulationCell::OOClass()); }
 
     /// Returns the key value for this applet that is used for ordering the applet tabs.
-    virtual int orderingKey() const override { return 99; }
+    virtual int orderingKey() const override { return 95; }
 
     /// Determines whether the given pipeline flow state contains data that can be displayed by this applet.
     virtual bool appliesTo(const DataCollection& data) override;

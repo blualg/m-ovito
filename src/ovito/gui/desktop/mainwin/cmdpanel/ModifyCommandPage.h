@@ -48,7 +48,10 @@ public:
     ModifyCommandPage(MainWindowUI& ui, QWidget* parent);
 
     /// Returns the object that is currently being edited in the properties panel.
-    RefTarget* editObject() const { return _propertiesPanel->editObject(); }
+    RefTarget* editObject() const { return propertiesPanel()->editObject(); }
+
+    /// Returns the panel showing the properties of the selected pipeline node.
+    PropertiesPanel* propertiesPanel() const { return _propertiesPanel; }
 
     /// Returns the list model that encapsulates the modification pipeline of the selected node(s).
     PipelineListModel* pipelineListModel() const { return _pipelineListModel; }
@@ -64,6 +67,9 @@ public:
 
     /// Displays the given HTML page content in the About pane.
     void showProgramNotice(const QString& htmlPage);
+
+    /// Selects the given pipeline node in the pipeline editor and opens the properties editor for the given pipeline node.
+    PropertiesEditor* startEditingPipelineNode(PipelineNode* node);
 
 protected Q_SLOTS:
 

@@ -35,6 +35,11 @@ class OVITO_GUI_EXPORT DefaultPropertiesEditor : public PropertiesEditor
 {
     OVITO_CLASS(DefaultPropertiesEditor)
 
+public:
+
+    /// Returns the list of editors for the referenced sub-objects.
+    const auto& subEditors() const { return _subEditors; }
+
 protected:
 
     /// Creates the user interface controls for the editor.

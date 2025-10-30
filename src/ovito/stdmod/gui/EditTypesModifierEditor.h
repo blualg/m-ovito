@@ -79,6 +79,10 @@ private Q_SLOTS:
     /// Adds a new element type.
     void addNewType();
 
+    /// Selects the element type with the given numeric ID in the table.
+    /// This is used to communicate the selection from the TypesInspectionApplet to the modifier editor.
+    void selectElementTypeById(int typeId);
+
 private:
 
     class ViewModel : public QAbstractTableModel

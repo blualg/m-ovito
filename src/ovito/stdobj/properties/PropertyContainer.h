@@ -27,9 +27,9 @@
 #include <ovito/core/dataset/data/DataObject.h>
 #include <ovito/core/dataset/data/DataObjectReference.h>
 #include <ovito/core/dataset/DataSet.h>
-#include "Property.h"
-#include "PropertyContainerClass.h"
 #include <ovito/stdobj/vectors/VectorVis.h>
+#include "PropertyContainerClass.h"
+#include "Property.h"
 
 namespace Ovito {
 
