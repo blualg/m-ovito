@@ -45,9 +45,6 @@ public:
 
 protected:
 
-    /// Creates a copy of this object.
-    virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;
-
     /// Is called when a RefTarget referenced by this object generated an event.
     virtual bool referenceEvent(RefTarget* source, const ReferenceEvent& event) override;
 
@@ -77,10 +74,6 @@ private:
     /// or to the visual elements. If this flag is set, we'll ask the user if these changes should be preserved when
     /// importing a whole new file or model into the source.
     DECLARE_PROPERTY_FIELD_FLAGS(bool{false}, userHasChangedDataCollection, PROPERTY_FIELD_NO_UNDO | PROPERTY_FIELD_NO_CHANGE_MESSAGE);
-
-    /// Flag indicating that a call to DataObject::updateEditableProxies() is currently in progress
-    /// and that change signals received from the master data collection should be ignored.
-    bool _updatingEditableProxies = false;
 };
 
 }   // End of namespace

@@ -86,45 +86,6 @@ void ParticleType::initializeType(const OwnerPropertyRef& property, bool loadUse
 }
 
 /******************************************************************************
-* Creates an editable proxy object for this DataObject and synchronizes its parameters.
-******************************************************************************/
-void ParticleType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
-{
-    ElementType::updateEditableProxies(state, dataPath, forceProxyReplacement);
-
-    // Note: 'this' may no longer exist at this point, because the base method implementation may
-    // have already replaced it with a mutable copy.
-    const ParticleType* self = static_object_cast<ParticleType>(dataPath.back());
-
-    if(ParticleType* proxy = static_object_cast<ParticleType>(self->editableProxy())) {
-
-        // This allows the GSD file importer to update the generated shape mesh - as long as the user didn't replace the mesh with a custom one.
-        if(self->shapeMesh() && self->shapeMesh()->identifier() == QStringLiteral("generated") && proxy->shapeMesh() && proxy->shapeMesh()->identifier() == QStringLiteral("generated")) {
-            proxy->setShapeMesh(self->shapeMesh());
-        }
-        if(self->radiusIsPrescribed() && self->radius() != proxy->radius()) {
-            proxy->setRadius(self->radius());
-        }
-
-        // Copy properties changed by the user over to the data object.
-        if(proxy->radius() != self->radius() || proxy->vdwRadius() != self->vdwRadius() || proxy->mass() != self->mass() || proxy->shape() != self->shape() || proxy->shapeMesh() != self->shapeMesh() || proxy->highlightShapeEdges() != self->highlightShapeEdges()
-                || proxy->shapeBackfaceCullingEnabled() != self->shapeBackfaceCullingEnabled() || proxy->shapeUseMeshColor() != self->shapeUseMeshColor()) {
-            // Make this data object mutable first.
-            ParticleType* mutableSelf = static_object_cast<ParticleType>(state.makeMutableInplace(dataPath));
-            if(!mutableSelf->radiusIsPrescribed())
-                mutableSelf->setRadius(proxy->radius());
-            mutableSelf->setVdwRadius(proxy->vdwRadius());
-            mutableSelf->setMass(proxy->mass());
-            mutableSelf->setShape(proxy->shape());
-            mutableSelf->setShapeMesh(proxy->shapeMesh());
-            mutableSelf->setHighlightShapeEdges(proxy->highlightShapeEdges());
-            mutableSelf->setShapeBackfaceCullingEnabled(proxy->shapeBackfaceCullingEnabled());
-            mutableSelf->setShapeUseMeshColor(proxy->shapeUseMeshColor());
-        }
-    }
-}
-
-/******************************************************************************
 * Loads a mesh-based shape from a geometry file (but doesn't yet assign it to the ParticleType).
 ******************************************************************************/
 Future<DataOORef<TriangleMesh>> ParticleType::loadShapeMesh(const QUrl sourceUrl, const FileImporterClass* importerClass, const QString& importerFormat) const

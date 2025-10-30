@@ -70,6 +70,9 @@ public:
     /// Indicates whether the interactive viewports should be updated after a parameter of the the modifier has
     /// been changed and before the entire pipeline is recomputed.
     virtual bool shouldRefreshViewportsAfterChange() override { return true; }
+
+    /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
+    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override;
 };
 
 }   // End of namespace

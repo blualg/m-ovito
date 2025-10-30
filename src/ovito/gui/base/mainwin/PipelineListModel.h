@@ -236,9 +236,6 @@ private:
     /// Is called during population of the list model.
     PipelineListItem* appendListItem(RefTarget* object, PipelineListItem::PipelineItemType itemType, PipelineListItem* parent = nullptr);
 
-    /// Create the pipeline editor entries for the subjects of the given object (and their subobjects).
-    void createListItemsForSubobjects(const DataObject* dataObj, PipelineListItem* parentItem);
-
     /// Replaces the a pipeline node with an independent copy.
     PipelineNode* makeElementIndependentImpl(PipelineNode* node, CloneHelper& cloneHelper);
 

@@ -35,9 +35,7 @@ IMPLEMENT_ABSTRACT_OVITO_CLASS(DataObject);
 DEFINE_PROPERTY_FIELD(DataObject, identifier);
 DEFINE_RUNTIME_PROPERTY_FIELD(DataObject, createdByNode);
 DEFINE_VECTOR_REFERENCE_FIELD(DataObject, visElements);
-DEFINE_REFERENCE_FIELD(DataObject, editableProxy);
 SET_PROPERTY_FIELD_LABEL(DataObject, visElements, "Visual elements");
-SET_PROPERTY_FIELD_LABEL(DataObject, editableProxy, "Editable proxy");
 SET_PROPERTY_FIELD_ALIAS_IDENTIFIER(DataObject, createdByNode, "dataSource"); // For backward compatibility with OVITO 3.9.2
 
 /******************************************************************************
@@ -115,9 +113,8 @@ bool DataObject::isSafeToModify() const
             // Only if the entire hierarchy of objects is safe to modify, we can safely modify
             // the leaf object.
             if(const DataObject* owner = dynamic_object_cast<DataObject>(dependent)) {
-                if(owner->editableProxy() != this) // Note: Proxy objects are always considered safe to modify.
-                    if(!owner->isSafeToModify())
-                        isExclusivelyOwned = false;
+                if(!owner->isSafeToModify())
+                    isExclusivelyOwned = false;
             }
         });
         return isExclusivelyOwned;
@@ -244,50 +241,6 @@ ConstDataObjectPath DataObject::exclusiveDataObjectPath() const
     while(obj && !path.empty());
     std::reverse(path.begin(), path.end());
     return path;
-}
-
-/******************************************************************************
-* Creates an editable proxy object for this DataObject and synchronizes its parameters.
-******************************************************************************/
-void DataObject::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
-{
-    // Note: 'this' may no longer exist at this point, because the sub-class implementation of the method may
-    // have already replaced it with a mutable copy.
-
-    const DataObject* self = dataPath.back();
-    Q_DECL_UNUSED const OvitoClass& selfClass = self->getOOClass();
-    OVITO_ASSERT(selfClass == this->getOOClass());
-    OVITO_ASSERT(!self->isUndoRecording());
-    OVITO_ASSERT(!self->editableProxy() || !static_object_cast<DataObject>(self->editableProxy())->editableProxy());
-
-    // Visit all sub-objects recursively.
-    for(const PropertyFieldDescriptor* field : self->getOOMetaClass().propertyFields()) {
-        if(field->isReferenceField() && field->targetClass()->isDerivedFrom(DataObject::OOClass()) && !field->flags().testFlag(PROPERTY_FIELD_NO_SUB_ANIM)) {
-            if(!field->isVector()) {
-                if(const DataObject* subObject = static_object_cast<DataObject>(self->getReferenceFieldTarget(field))) {
-                    OVITO_ASSERT(self->hasReferenceTo(subObject));
-                    dataPath.push_back(subObject);
-                    subObject->updateEditableProxies(state, dataPath, forceProxyReplacement);
-                    dataPath.pop_back();
-                    OVITO_ASSERT(selfClass == dataPath.back()->getOOClass());
-                    self = dataPath.back();
-                }
-            }
-            else {
-                // Note: 'self' may get replaced or deleted at any time!
-                int count = self->getVectorReferenceFieldSize(field);
-                for(int i = 0; i < count; i++) {
-                    if(const DataObject* subObject = static_object_cast<DataObject>(self->getVectorReferenceFieldTarget(field, i))) {
-                        dataPath.push_back(subObject);
-                        subObject->updateEditableProxies(state, dataPath, forceProxyReplacement);
-                        dataPath.pop_back();
-                        OVITO_ASSERT(selfClass == dataPath.back()->getOOClass());
-                        self = dataPath.back();
-                    }
-                }
-            }
-        }
-    }
 }
 
 /******************************************************************************

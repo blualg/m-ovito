@@ -231,20 +231,6 @@ public:
     /// been remapped to the output IDs.
     std::tuple<std::map<int,int>, ConstPropertyPtr> generateContiguousTypeIdMapping(int baseId = 1) const;
 
-    /// Indicates whether this data object wants to be shown in the pipeline editor under the data source section.
-    /// The property is shown only if it is a typed property, i.e. if the 'elementTypes' list contains
-    /// some elements. In this case we want the property to appear in the pipeline editor so that the user can
-    /// edit the individual types.
-    virtual PipelineEditorObjectListMode pipelineEditorObjectListMode() const override {
-        if(elementTypes().empty())
-            return PipelineEditorObjectListMode::HideIncludingSubObjects;
-        else
-            return PipelineEditorObjectListMode::Show;
-    }
-
-    /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const override;
-
     /// Returns the display title of this property object in the user interface.
     virtual QString objectTitle() const override;
 

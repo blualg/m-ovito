@@ -34,26 +34,6 @@ SET_PROPERTY_FIELD_LABEL(BondType, radius, "Radius");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondType, radius, WorldParameterUnit, 0);
 
 /******************************************************************************
-* Creates an editable proxy object for this DataObject and synchronizes its parameters.
-******************************************************************************/
-void BondType::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
-{
-    ElementType::updateEditableProxies(state, dataPath, forceProxyReplacement);
-
-    // Note: 'this' may no longer exist at this point, because the base method implementation may
-    // have already replaced it with a mutable copy.
-    const BondType* self = static_object_cast<BondType>(dataPath.back());
-
-    if(const BondType* proxy = static_object_cast<BondType>(self->editableProxy())) {
-        if(proxy->radius() != self->radius()) {
-            // Make this data object mutable first.
-            BondType* mutableSelf = static_object_cast<BondType>(state.makeMutableInplace(dataPath));
-            mutableSelf->setRadius(proxy->radius());
-        }
-    }
-}
-
-/******************************************************************************
 * Returns a list of column names to be displayed in the data inspector for
 * element types of this class.
 ******************************************************************************/

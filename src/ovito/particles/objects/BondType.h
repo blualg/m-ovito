@@ -52,9 +52,6 @@ class OVITO_PARTICLES_EXPORT BondType : public ElementType
 
 public:
 
-    /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const override;
-
     //////////////////////////////////// Utility methods ////////////////////////////////
 
     /// Builds a map from type identifiers to bond radii.

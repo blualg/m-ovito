@@ -62,21 +62,6 @@ public:
         NEXT_AVAILABLE_EVENT_ID
     };
 
-    /// Enum values that control if and how the object should be displayed in the GUI pipeline editor
-    /// when it is part of a DataCollection loaded by a file importer. The object indicates
-    /// its preference by returning one of these values from the virtual pipelineEditorObjectListMode() method.
-    enum class PipelineEditorObjectListMode {
-        /// The object itself should not be shown in the pipeline editor but its sub-objects may be shown.
-        Hide,
-        /// The object should not be shown in the pipeline editor nor should its sub-objects.
-        HideIncludingSubObjects,
-        /// The object should be shown in the pipeline editor but not its sub-objects.
-        Show,
-        /// The object should be shown in the pipeline editor including its sub-objects.
-        ShowIncludingSubObjects
-    };
-    Q_ENUM(PipelineEditorObjectListMode);
-
     /// \brief Asks the object for its validity interval at the given time.
     /// \param time The animation time at which the validity interval should be computed.
     /// \return The maximum time interval that contains \a time and during which the object is valid.
@@ -147,9 +132,6 @@ public:
     /// is already safe to modify.
     bool isSafeToModifySubObject(const DataObject* subObject) const;
 
-    /// Indicates how this data object wants to be shown in the pipeline editor under the data source section.
-    virtual PipelineEditorObjectListMode pipelineEditorObjectListMode() const { return PipelineEditorObjectListMode::Hide; }
-
     /// \brief Visits the direct sub-objects of this data object
     ///        and invokes the given visitor function for every sub-object.
     ///
@@ -209,9 +191,6 @@ public:
     /// Returns the absolute path of this DataObject within the DataCollection.
     /// Returns an empty path if the DataObject is not exclusively owned by one DataCollection.
     ConstDataObjectPath exclusiveDataObjectPath() const;
-
-    /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const;
 
     /// Replaces all references to the given visual element in this DataObject and its sub-objects.
     bool replaceVisualElement(DataVis* visElement, const std::function<OORef<DataVis>(const QString&)>& getReplacement) const;
@@ -274,9 +253,6 @@ private:
     /// The PipelineNode that created this data object (may be null).
     /// Note: Weak reference is to a generic RefTarget, because the PipelineNode class will be defined later in the code.
     DECLARE_RUNTIME_PROPERTY_FIELD(OOWeakRef<const RefTarget>{}, createdByNode, setCreatedByNode);
-
-    /// The attached editable proxy object.
-    DECLARE_MODIFIABLE_REFERENCE_FIELD_FLAGS(OORef<RefTarget>, editableProxy, setEditableProxy, PROPERTY_FIELD_NEVER_CLONE_TARGET | PROPERTY_FIELD_NO_SUB_ANIM);
 
     /// The number of strong references to this DataObject that currently exist.
     mutable std::atomic<int> _dataReferenceCount{0};

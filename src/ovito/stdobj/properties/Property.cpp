@@ -155,20 +155,19 @@ void Property::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableDa
 void Property::loadFromStream(ObjectLoadStream& stream)
 {
     QString name;
-    if(stream.formatVersion() >= 30007) {
+    if(stream.formatVersion() >= 30007) { // Current file format
         DataBuffer::loadFromStream(stream);
 
-        // Current file format:
         stream.expectChunk(0x100);
         stream >> name;
         stream >> _typeId;
         stream.closeChunk();
     }
-    else {
+    else { // Legacy file format
+        // For backward compatibility with OVITO 3.3.5 and earlier versions. Here, the Property class was a direct
+        // subclass of DataObject and did not inherit from DataBuffer.
         DataObject::loadFromStream(stream);
 
-        // Legacy file format:
-        // For backward compatibility with OVITO 3.3.5.
         stream.expectChunk(0x01);
         stream.expectChunk(0x02);
         stream >> name;
@@ -222,7 +221,6 @@ PropertyPtr Property::cloneWithoutData(size_t newSize, int overrideDataType) con
     clone->setElementTypes(this->elementTypes());
     clone->setTitle(this->title());
     clone->setCreatedByNode(this->createdByNode());
-    clone->setEditableProxy(this->editableProxy());
 
     return clone;
 }
@@ -307,7 +305,7 @@ void Property::sortElementTypesByName()
 #if 0
     // NOTE: No longer reassigning numeric IDs to the types here, because the new requirement is
     // that the numeric ID of an existing ElementType never changes once the type has been created.
-    // Otherwise, the editable proxy objects would become out of sync.
+    // Otherwise, subsequent modifiers that reference numeric type IDs could break.
 
     // Build map of IDs.
     std::vector<int> mapping(elementTypes().size() + 1);
@@ -335,51 +333,6 @@ void Property::sortElementTypesById()
     std::sort(types.begin(), types.end(),
         [](const auto& a, const auto& b) { return a->numericId() < b->numericId(); });
     setElementTypes(std::move(types));
-}
-
-/******************************************************************************
-* Creates an editable proxy object for this DataObject and synchronizes its parameters.
-******************************************************************************/
-void Property::updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const
-{
-    DataBuffer::updateEditableProxies(state, dataPath, forceProxyReplacement);
-
-    // Note: 'this' may no longer exist at this point, because the base method implementation may
-    // have already replaced it with a mutable copy.
-    const Property* self = static_object_cast<Property>(dataPath.back());
-
-    if(self->editableProxy() && !forceProxyReplacement) {
-        Property* proxy = static_object_cast<Property>(self->editableProxy());
-
-        // Synchronize the actual data object with the editable proxy object.
-        OVITO_ASSERT(proxy->typeId() == self->typeId());
-        OVITO_ASSERT(proxy->dataType() == self->dataType());
-        OVITO_ASSERT(proxy->title() == self->title());
-
-        // Add the proxies of newly created element types to the proxy property object.
-        for(const ElementType* type : self->elementTypes()) {
-            ElementType* proxyType = static_object_cast<ElementType>(type->editableProxy());
-            OVITO_ASSERT(proxyType != nullptr);
-            if(!proxy->elementTypes().contains(proxyType))
-                proxy->addElementType(proxyType);
-        }
-    }
-    else if(!self->elementTypes().empty()) {
-        // Create and initialize a new proxy property object.
-        // Note: We avoid copying the property data here by constructing the proxy Property from scratch instead of cloning the original data object.
-        OORef<Property> newProxy = OORef<Property>::create(ObjectInitializationFlag::DontCreateVisElement, DataBuffer::Uninitialized, 0, self->dataType(), self->componentCount(), self->name(), self->typeId(), self->componentNames());
-        newProxy->setTitle(self->title());
-
-        // Adopt the proxy objects corresponding to the element types, which have already been created by
-        // the recursive method.
-        for(const ElementType* type : self->elementTypes()) {
-            OVITO_ASSERT(type->editableProxy() != nullptr);
-            newProxy->addElementType(static_object_cast<ElementType>(type->editableProxy()));
-        }
-
-        // Make this data object mutable and attach the proxy object to it.
-        state.makeMutableInplace(dataPath)->setEditableProxy(std::move(newProxy));
-    }
 }
 
 /******************************************************************************

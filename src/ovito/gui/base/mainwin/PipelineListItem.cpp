@@ -93,9 +93,7 @@ bool PipelineListItem::referenceEvent(RefTarget* source, const ReferenceEvent& e
     }
     else if(event.type() == ReferenceEvent::TargetDeleted) {
         _isObjectActive = false;
-        if(_itemType == DataObject)
-            _itemType = DeletedDataObject;
-        else if(_itemType == VisualElement)
+        if(_itemType == VisualElement)
             _itemType = DeletedVisualElement;
         else
             _itemType = DeletedObject;
@@ -140,16 +138,7 @@ void PipelineListItem::timerEvent(QTimerEvent* event)
 void PipelineListItem::updateTitle()
 {
     if(object()) {
-        if(_itemType == DataObject) {
-#ifdef Q_OS_LINUX
-            _title = QStringLiteral("  ⇾ ") + object()->objectTitle();
-#else
-            _title = QStringLiteral("    ") + object()->objectTitle();
-#endif
-        }
-        else {
-            _title = object()->objectTitle();
-        }
+        _title = object()->objectTitle();
     }
 }
 

@@ -90,9 +90,6 @@ public:
     /// Returns the display color to be used for a given Burgers vector.
     static Color getBurgersVectorColor(ParticleType::PredefinedStructureType structureType, const Vector3& b);
 
-    /// Creates an editable proxy object for this DataObject and synchronizes its parameters.
-    virtual void updateEditableProxies(PipelineFlowState& state, ConstDataObjectPath& dataPath, bool forceProxyReplacement) const override;
-
 private:
 
     /// The shortened title of this phase.

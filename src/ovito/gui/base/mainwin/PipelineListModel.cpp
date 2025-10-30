@@ -289,11 +289,6 @@ void PipelineListModel::refreshList()
                 // Create a list item for the data source.
                 PipelineListItem* item = appendListItem(pipelineNode, PipelineListItem::DataSource);
 
-                // Create list items for the source's editable data objects.
-                if(const DataCollection* collection = pipelineNode->getSourceDataCollection()) {
-                    createListItemsForSubobjects(collection, item);
-                }
-
                 // Done.
                 break;
             }
@@ -322,26 +317,6 @@ void PipelineListModel::refreshList()
     _selectionModel->select(std::move(_itemsToSelect), QItemSelectionModel::SelectCurrent | QItemSelectionModel::Clear);
     _itemsToSelect.clear();
     Q_EMIT selectedItemChanged();
-}
-
-/******************************************************************************
-* Create the pipeline editor entries for the subjects of the given
-* object (and their sub-objects).
-******************************************************************************/
-void PipelineListModel::createListItemsForSubobjects(const DataObject* dataObj, PipelineListItem* parentItem)
-{
-    DataObject::PipelineEditorObjectListMode mode = dataObj->pipelineEditorObjectListMode();
-
-    if(dataObj->editableProxy() && (mode == DataObject::PipelineEditorObjectListMode::Show || mode == DataObject::PipelineEditorObjectListMode::ShowIncludingSubObjects)) {
-        parentItem = appendListItem(dataObj->editableProxy(), PipelineListItem::DataObject, parentItem);
-    }
-
-    if(mode == DataObject::PipelineEditorObjectListMode::ShowIncludingSubObjects || mode == DataObject::PipelineEditorObjectListMode::Hide) {
-        // Recursively visit the sub-objects of the data object.
-        dataObj->visitSubObjects([&](const DataObject* subObject) {
-            createListItemsForSubobjects(subObject, parentItem);
-        });
-    }
 }
 
 /******************************************************************************
@@ -391,10 +366,6 @@ PipelineListItem* PipelineListModel::appendListItem(RefTarget* object, PipelineL
             // Check if the same list entry was selected before the list refresh.
             for(const auto& oldItem : _previouslySelectedItems) {
                 if(oldItem->object() == object) {
-                    selectItem = true;
-                    break;
-                }
-                else if(itemType == PipelineListItem::DataObject && (oldItem->itemType() == PipelineListItem::DataObject || oldItem->itemType() == PipelineListItem::DeletedDataObject) && oldItem->title() == item->title()) {
                     selectItem = true;
                     break;
                 }
@@ -873,12 +844,10 @@ Qt::ItemFlags PipelineListModel::flags(const QModelIndex& index) const
             case PipelineListItem::ModifierGroup:
                 return QAbstractListModel::flags(index) | Qt::ItemIsUserCheckable | Qt::ItemIsEditable | Qt::ItemIsDragEnabled;
             case PipelineListItem::DataSource:
-            case PipelineListItem::DataObject:
                 return QAbstractListModel::flags(index);
             case PipelineListItem::PipelineBranch:
                 return Qt::ItemIsDropEnabled;
             case PipelineListItem::DeletedObject:
-            case PipelineListItem::DeletedDataObject:
             case PipelineListItem::DeletedVisualElement:
                 return QAbstractListModel::flags(index); // Keep entries with deleted objects selectable to not loose the current selection before the model is updated.
             default:

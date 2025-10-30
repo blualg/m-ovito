@@ -706,10 +706,6 @@ void PropertyContainer::loadFromStreamComplete(ObjectLoadStream& stream)
                 if(!type->ownerProperty()) {
                     const_cast<ElementType*>(type)->_ownerProperty.set(const_cast<ElementType*>(type), PROPERTY_FIELD(ElementType::ownerProperty), OwnerPropertyRef(&OOClass(), property));
                 }
-                if(ElementType* proxyType = dynamic_object_cast<ElementType>(type->editableProxy())) {
-                    if(!proxyType->ownerProperty())
-                        proxyType->_ownerProperty.set(proxyType, PROPERTY_FIELD(ElementType::ownerProperty), type->ownerProperty());
-                }
             }
         }
     }
