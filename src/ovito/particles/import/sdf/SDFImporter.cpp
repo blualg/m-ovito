@@ -154,30 +154,41 @@ void SDFImporter::FrameLoader::loadFile()
                             .arg(stream.lineNumber())
                             .arg(stream.lineString().trimmed()));
     }
+    if(this_task::isCanceled()) {
+        return;
+    }
 
     // Store whether the "charge" column exists.
     bool chargeExists = particles()->getProperty(Particles::ChargeProperty) != nullptr;
 
     // Store whether the "mass difference" column exists.
-    bool massDifferenceExists = particles()->getProperty(QStringLiteral("Mass difference")) != nullptr;
+    bool massDifferenceExists = particles()->getProperty(tr("Mass difference")) != nullptr;
+
+    // Store whether the "hydrogen count +1" column exists.
+    const bool hydrogenCountExists = particles()->getProperty(tr("Hydrogen count +1")) != nullptr;
+
+    // Store whether the "valence" column exists.
+    const bool valenceExists = particles()->getProperty(tr("Valence")) != nullptr;
 
     //------------------------------------------------------------------------------
     // Parse Particles.
     //------------------------------------------------------------------------------
 
     // Prepare the file column to particle property mapping.
-    ParticleInputColumnMapping columnMapping;
-    columnMapping.resize(6);
-    columnMapping.mapColumnToStandardProperty(0, Particles::PositionProperty, 0);
-    columnMapping.mapColumnToStandardProperty(1, Particles::PositionProperty, 1);
-    columnMapping.mapColumnToStandardProperty(2, Particles::PositionProperty, 2);
-    columnMapping.mapColumnToStandardProperty(3, Particles::TypeProperty);
-    columnMapping.mapColumnToStandardProperty(4, Particles::ChargeProperty);
-    columnMapping.mapColumnToUserProperty(5, tr("Mass difference"), Property::Int32);
+    ParticleInputColumnMapping particlesColumnMapping;
+    particlesColumnMapping.resize(10);
+    particlesColumnMapping.mapColumnToStandardProperty(0, Particles::PositionProperty, 0);
+    particlesColumnMapping.mapColumnToStandardProperty(1, Particles::PositionProperty, 1);
+    particlesColumnMapping.mapColumnToStandardProperty(2, Particles::PositionProperty, 2);
+    particlesColumnMapping.mapColumnToStandardProperty(3, Particles::TypeProperty);
+    particlesColumnMapping.mapColumnToUserProperty(4, tr("Mass difference"), Property::Int32);
+    particlesColumnMapping.mapColumnToStandardProperty(5, Particles::ChargeProperty);
+    particlesColumnMapping.mapColumnToUserProperty(7, tr("Hydrogen count +1"), Property::Int8);
+    particlesColumnMapping.mapColumnToUserProperty(9, tr("Valence"), Property::Int8);
 
     setParticleCount(numParticles);
 
-    InputColumnReader particlesColumnParser(*this, columnMapping, particles());
+    InputColumnReader particlesColumnParser(*this, particlesColumnMapping, particles());
     progress.setMaximum(numParticles);
     try {
         for(qlonglong i = 0; i < numParticles; i++) {
@@ -196,17 +207,16 @@ void SDFImporter::FrameLoader::loadFile()
     // Parse bonds.
     //------------------------------------------------------------------------------
 
-    columnMapping.clear();
-    columnMapping.resize(7);
-    columnMapping.mapColumnToStandardProperty(0, Bonds::TopologyProperty, 0);
-    columnMapping.mapColumnToStandardProperty(1, Bonds::TopologyProperty, 1);
-    columnMapping.mapColumnToStandardProperty(2, Bonds::TypeProperty, 2);
-    columnMapping.mapColumnToUserProperty(3, tr("Bond stereo"), Property::Int32);
-    columnMapping.mapColumnToUserProperty(4, tr("Bond stereo"), Property::Int8);
-    columnMapping.mapColumnToUserProperty(6, tr("Bond configuration"), Property::Int8);
+    BondInputColumnMapping bondColumnMapping;
+    bondColumnMapping.resize(6);
+    bondColumnMapping.mapColumnToStandardProperty(0, Bonds::TopologyProperty, 0);
+    bondColumnMapping.mapColumnToStandardProperty(1, Bonds::TopologyProperty, 1);
+    bondColumnMapping.mapColumnToStandardProperty(2, Bonds::TypeProperty, 2);
+    bondColumnMapping.mapColumnToUserProperty(3, tr("Bond stereo"), Property::Int32);
+    bondColumnMapping.mapColumnToUserProperty(5, tr("Bond configuration"), Property::Int8);
 
     setBondCount(numBonds);
-    InputColumnReader bondsColumnParser(*this, columnMapping, bonds());
+    InputColumnReader bondsColumnParser(*this, bondColumnMapping, bonds());
     progress.setMaximum(numBonds);
     try {
         for(qlonglong i = 0; i < numBonds; i++) {
@@ -228,6 +238,37 @@ void SDFImporter::FrameLoader::loadFile()
         ab[1] -= 1;
     }
 
+    // Preconfigure bond types
+    Property* bondTypes = bonds()->getMutableProperty(Bonds::TypeProperty);
+    const auto& bondElementTypes = bondTypes->elementTypes();
+    for(const ElementType* type : bondElementTypes) {
+        ElementType* mutableType = bondTypes->makeMutable(type);
+        if(type->numericId() == 1) {
+            mutableType->setName(QStringLiteral("Single"));
+        }
+        else if(type->numericId() == 2) {
+            mutableType->setName(QStringLiteral("Double"));
+        }
+        else if(type->numericId() == 3) {
+            mutableType->setName(QStringLiteral("Triple"));
+        }
+        else if(type->numericId() == 4) {
+            mutableType->setName(QStringLiteral("Aromatic"));
+        }
+        else if(type->numericId() == 5) {
+            mutableType->setName(QStringLiteral("Single or Double"));
+        }
+        else if(type->numericId() == 6) {
+            mutableType->setName(QStringLiteral("Single or Aromatic"));
+        }
+        else if(type->numericId() == 7) {
+            mutableType->setName(QStringLiteral("Double or Aromatic"));
+        }
+        else {
+            mutableType->setName(QStringLiteral("Any"));
+        }
+    }
+
     //------------------------------------------------------------------------------
     // Parse Properties.
     //------------------------------------------------------------------------------
@@ -237,7 +278,7 @@ void SDFImporter::FrameLoader::loadFile()
     BufferWriteAccess<int32_t, access_mode::write> massDifferenceAcc(massDifferenceProp);
 
     line = stream.readLineTrimLeft();
-    while(strncmp(line, "M  END", 6) != 0) {
+    while(strncmp(line, "M  END", 6) != 0 && !this_task::isCanceled()) {
         int itemCount;
         int consumed = 0;
         int offset = 0;
@@ -277,12 +318,22 @@ void SDFImporter::FrameLoader::loadFile()
         particles()->removeProperty(massDifferenceProp);
     }
 
+    Property* hydrogenCountProp = particles()->getMutableProperty(tr("Hydrogen count +1"));
+    if(!hydrogenCountExists && hydrogenCountProp->nonzeroCount() == 0) {
+        particles()->removeProperty(hydrogenCountProp);
+    }
+
+    Property* valenceProp = particles()->getMutableProperty(tr("Valence"));
+    if(!valenceExists && valenceProp->nonzeroCount() == 0) {
+        particles()->removeProperty(valenceProp);
+    }
+
     //------------------------------------------------------------------------------
     // Parse Associated data items.
     //------------------------------------------------------------------------------
     line = stream.readLineTrimLeft();
     QStringList associatedData;
-    while(strncmp(line, "$$$$", 4) != 0) {
+    while(strncmp(line, "$$$$", 4) != 0 && !this_task::isCanceled()) {
         if(sscanf(line, "> <%127s", tag) == 1) {
             line = stream.readLineTrimLeft();
             associatedData.clear();

@@ -75,9 +75,6 @@ bool XYZImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
             foundNewline = true;
         ++p;
     }
-
-    qDebug() << "XYZ true";
-
     return foundNewline;
 }
 
