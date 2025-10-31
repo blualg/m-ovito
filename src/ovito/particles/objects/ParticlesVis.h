@@ -117,16 +117,16 @@ private:
 private:
 
     /// Controls the default display radius of particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1.2}, defaultParticleRadius, setDefaultParticleRadius, PROPERTY_FIELD_MEMORIZE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1.2}, defaultParticleRadius, setDefaultParticleRadius, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_RESETTABLE);
 
     /// Controls the global scaling factor, which is applied to all rendered particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(FloatType{1.0}, radiusScaleFactor, setRadiusScaleFactor);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1.0}, radiusScaleFactor, setRadiusScaleFactor, PROPERTY_FIELD_RESETTABLE);
 
     /// Controls the rendering quality mode for particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticlePrimitive::RenderingQuality{ParticlePrimitive::AutoQuality}, renderingQuality, setRenderingQuality);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ParticlePrimitive::RenderingQuality{ParticlePrimitive::AutoQuality}, renderingQuality, setRenderingQuality, PROPERTY_FIELD_RESETTABLE);
 
     /// Controls the display shape of particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(ParticleShape{Sphere}, particleShape, setParticleShape);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ParticleShape{Sphere}, particleShape, setParticleShape, PROPERTY_FIELD_RESETTABLE);
 };
 
 /**

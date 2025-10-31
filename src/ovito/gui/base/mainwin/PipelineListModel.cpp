@@ -989,9 +989,9 @@ void PipelineListModel::updateActions()
         _toggleModifierGroupAction->setChecked(true);
         _toggleModifierGroupAction->setText(tr("Ungroup Modifiers"));
     }
-    _toggleModifierGroupAction->setVisible(!objects.empty() && std::ranges::any_of(objects, [](RefTarget* obj) {
-            return dynamic_object_cast<ModificationNode>(obj) || dynamic_object_cast<ModifierGroup>(obj);
-        }));
+//    _toggleModifierGroupAction->setVisible(!objects.empty() && std::ranges::any_of(objects, [](RefTarget* obj) {
+//            return dynamic_object_cast<ModificationNode>(obj) || dynamic_object_cast<ModifierGroup>(obj);
+//        }));
 }
 
 /******************************************************************************

@@ -48,6 +48,9 @@ public:
     /// Selects a specific data object in the data inspector.
     bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint);
 
+    /// Selects a specific tab page in the data inspector.
+    bool selectTabPage(const OvitoClass& appletClass);
+
     /// Returns the currently selected pipeline whose output is being shown by the data inspector.
     Pipeline* selectedPipeline() const { return _selectedPipeline; }
 

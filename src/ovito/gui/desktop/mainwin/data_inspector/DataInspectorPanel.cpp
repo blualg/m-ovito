@@ -384,7 +384,8 @@ void DataInspectorPanel::onCurrentPageChanged(int index)
 bool DataInspectorPanel::selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint)
 {
     for(int appletIndex = 0; appletIndex < _applets.size(); appletIndex++) {
-        if(_appletsToTabs[appletIndex] == -1) continue;
+        if(_appletsToTabs[appletIndex] == -1)
+            continue;
         DataInspectionApplet* applet = _applets[appletIndex];
 
         // Update content of the tab.
@@ -393,6 +394,26 @@ bool DataInspectorPanel::selectDataObject(const PipelineNode* createdByNode, con
         // Check if this applet contains the requested data object.
         if(applet->selectDataObject(createdByNode, objectIdentifierHint, modeHint)) {
             // If yes, switch to the tab and we are done.
+            _tabBar->setCurrentIndex(_appletsToTabs[appletIndex]);
+            return true;
+        }
+    }
+    return false;
+}
+
+/******************************************************************************
+* Selects a specific tab page in the data inspector.
+******************************************************************************/
+bool DataInspectorPanel::selectTabPage(const OvitoClass& appletClass)
+{
+    for(int appletIndex = 0; appletIndex < _applets.size(); appletIndex++) {
+        if(_appletsToTabs[appletIndex] == -1)
+            continue;
+        DataInspectionApplet* applet = _applets[appletIndex];
+        if(applet->getOOClass() == appletClass) {
+            // Update content of the tab.
+            applet->updateDisplay();
+            // Switch to the tab.
             _tabBar->setCurrentIndex(_appletsToTabs[appletIndex]);
             return true;
         }

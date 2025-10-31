@@ -119,8 +119,8 @@ void VoxelGridVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
 }
 
 /******************************************************************************
- * Updates the coloring controls shown in the UI.
- ******************************************************************************/
+* Updates the coloring controls shown in the UI.
+******************************************************************************/
 void VoxelGridVisEditor::updateColoringOptions()
 {
     bool enableColorMapping = false;

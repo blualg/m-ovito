@@ -172,7 +172,7 @@ QLayout* NumericalParameterUI::createFieldLayout()
         _layout = new QHBoxLayout();
         _layout->setContentsMargins(0,0,0,0);
         _layout->setSpacing(0);
-        _layout->addWidget(textBox());
+        _layout->addWidget(textBox(), 1);
         _layout->addWidget(spinner());
         // Show menu button, if any actions are defined
         if(menuToolButton()) {

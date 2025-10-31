@@ -578,6 +578,18 @@ bool MainWindow::openDataInspector(PipelineNode* createdByNode, const QString& o
 }
 
 /******************************************************************************
+* Opens the data inspector panel and activates the given tab page.
+******************************************************************************/
+bool MainWindow::openDataInspector(const OvitoClass& appletClass)
+{
+    if(_dataInspector->selectTabPage(appletClass)) {
+        _dataInspector->open();
+        return true;
+    }
+    return false;
+}
+
+/******************************************************************************
 * Creates a frame buffer of the requested size and displays it as a window in the user interface.
 ******************************************************************************/
 std::shared_ptr<FrameBuffer> MainWindow::createAndShowFrameBuffer(int width, int height)

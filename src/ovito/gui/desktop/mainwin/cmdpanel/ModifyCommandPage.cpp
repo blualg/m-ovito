@@ -131,10 +131,11 @@ ModifyCommandPage::ModifyCommandPage(MainWindowUI& ui, QWidget* parent) : QWidge
     subLayout->addWidget(_pipelineWidget);
 
     // Set up context menu.
-    _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
-    QAction* separator = new QAction(_pipelineWidget);
-    separator->setSeparator(true);
-    _pipelineWidget->addAction(separator);
+    QAction* separator;
+    //_pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_TOGGLE_MODIFIER_GROUP));
+    //separator = new QAction(_pipelineWidget);
+    //separator->setSeparator(true);
+    //_pipelineWidget->addAction(separator);
     _pipelineWidget->addAction(actionManager()->getAction(ACTION_PIPELINE_RENAME_ITEM));
     separator = new QAction(_pipelineWidget);
     separator->setSeparator(true);
