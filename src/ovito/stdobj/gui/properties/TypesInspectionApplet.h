@@ -62,7 +62,7 @@ public:
 
     /// Returns the PropertyContainer that contains the selected typed property.
     const PropertyContainer* selectedPropertyContainer() const {
-        return selectedDataObjectPath().lastAs<PropertyContainer>(1);
+        return selectedDataObjectPath().nextToLastAs<PropertyContainer>();
     }
 
     /// Selects a specific data object in this applet.

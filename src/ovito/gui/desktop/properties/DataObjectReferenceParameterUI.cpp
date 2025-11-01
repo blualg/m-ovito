@@ -93,7 +93,7 @@ void DataObjectReferenceParameterUI::updateUI()
                 DataObjectReference ref(path);
 
                 // The client can apply a custom filter function to the object list.
-                if(_objectFilter && !_objectFilter(dataObject)) {
+                if(_objectFilter && !_objectFilter(path)) {
                     if(selectedObjectReference == ref)
                         currentObjectFilteredOut = true;
                     continue;

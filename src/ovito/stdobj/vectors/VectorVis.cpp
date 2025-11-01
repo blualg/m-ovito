@@ -127,7 +127,7 @@ void VectorVis::replaceWithSharedElement(DataVis* sharedVis) const
 ******************************************************************************/
 Box3 VectorVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-    const PropertyContainer* container = path.lastAs<PropertyContainer>(1);
+    const PropertyContainer* container = path.nextToLastAs<PropertyContainer>();
     if(!container)
         return {};
 
@@ -203,7 +203,7 @@ std::variant<PipelineStatus, Future<PipelineStatus>> VectorVis::render(const Con
     container = path.lastAs<PropertyContainer>();
     // If last element is not the container - check second to last element:
     if(!container)
-        container = path.lastAs<const PropertyContainer>(1);
+        container = path.nextToLastAs<const PropertyContainer>();
     // Nothing to do
     if(!container)
         return {};
@@ -432,10 +432,10 @@ QString VectorPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectI
     size_t elementIndex = elementIndexFromSubObjectID(subobjectId);
     if(elementIndex != std::numeric_limits<size_t>::max()) {
         // Check last element in path:
-        const PropertyContainer* container = dataPath().lastAs<PropertyContainer>(0);
+        const PropertyContainer* container = dataPath().lastAs<PropertyContainer>();
         // If last element is not the container - check second to last element:
         if(!container)
-            container = dataPath().lastAs<PropertyContainer>(1);
+            container = dataPath().nextToLastAs<PropertyContainer>();
         if(container)
             return container->elementInfoString(elementIndex, dataPath());
     }

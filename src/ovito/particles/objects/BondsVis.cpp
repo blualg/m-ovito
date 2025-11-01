@@ -51,8 +51,8 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0)
 ******************************************************************************/
 Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
 {
-    const Bonds* bonds = path.lastAs<Bonds>(0);
-    const Particles* particles = path.lastAs<Particles>(1);
+    const Bonds* bonds = path.lastAs<Bonds>();
+    const Particles* particles = path.nextToLastAs<Particles>();
     if(!bonds || !particles)
         return {};
     particles->verifyIntegrity();
@@ -114,8 +114,8 @@ Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPat
 ******************************************************************************/
 std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
 {
-    const Bonds* bonds = path.lastAs<Bonds>(0);
-    const Particles* particles = path.lastAs<Particles>(1);
+    const Bonds* bonds = path.lastAs<Bonds>();
+    const Particles* particles = path.nextToLastAs<Particles>();
     if(!bonds || !particles)
         return {};
     particles->verifyIntegrity();

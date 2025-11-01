@@ -22,6 +22,7 @@
 
 #include <ovito/stdobj/gui/StdObjGui.h>
 #include <ovito/stdobj/properties/Property.h>
+#include <ovito/stdobj/table/DataTable.h>
 #include <ovito/stdmod/modifiers/EditTypesModifier.h>
 #include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
 #include <ovito/gui/desktop/mainwin/data_inspector/DataInspectorPanel.h>
@@ -84,9 +85,16 @@ std::vector<ConstDataObjectPath> TypesInspectionApplet::getDataObjectPaths()
         return path.lastAs<Property>()->isTypedProperty() == false;
     }), paths.end());
 
+    // Filter out all properties that belong to data tables, because their types often represent copies of
+    // types associated with particle or bond properties. For example, a StructureAnalysisModifier adds the
+    // structure types to both the "Structure Type" particle property and the "Structure Counts" data table.
+    paths.erase(std::remove_if(paths.begin(), paths.end(), [](const ConstDataObjectPath& path) {
+        return path.nextToLastAs<DataTable>() != nullptr;
+    }), paths.end());
+
     // Make sure all particle properties appear first in the list.
     std::stable_partition(paths.begin(), paths.end(), [](const ConstDataObjectPath& path) {
-        const PropertyContainer* container = path.lastAs<PropertyContainer>(1);
+        const PropertyContainer* container = path.nextToLastAs<PropertyContainer>();
         return container && container->getOOClass().name() == QStringLiteral("Particles");
     });
 

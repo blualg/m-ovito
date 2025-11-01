@@ -63,8 +63,8 @@ void ScatterPlotModifierEditor::createUI(const RolloutInsertionParameters& rollo
     layout->addSpacing(6);
 
     // Do not list data tables as available inputs.
-    pclassUI->setObjectFilter([](const DataObject* obj) {
-        return DataTable::OOClass().isMember(obj) == false;
+    pclassUI->setObjectFilter([](const ConstDataObjectPath& path) {
+        return !path.lastAs<DataTable>();
     });
 
 
