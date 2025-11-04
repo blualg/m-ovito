@@ -266,7 +266,12 @@ void EditTypesModifierEditor::ViewModel::refresh()
                         }
                         else {
                             // Add an editable copy of the element type to the list.
-                            elementTypes.push_back(cloneHelper.cloneObject(type, false));
+                            OORef<ElementType> clonedType = cloneHelper.cloneObject(type, false);
+
+                            // Freeze all property fields of the type to make it easier to spot which fields have been modified by the user later.
+                            clonedType->freezeInitialParameterValues();
+
+                            elementTypes.push_back(std::move(clonedType));
                         }
                     }
                 }

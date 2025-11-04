@@ -270,7 +270,7 @@ bool ActionsItemDelegate::eventFilter(QObject* obj, QEvent* event)
     else if(event->type() == QEvent::Leave) {
         OVITO_ASSERT(!_mousePressIndex.isValid());
         if(_hoverActionIndex != -1 || _hoverIndex.isValid()) {
-            if(_hoverIndex.isValid())
+            if(_hoverIndex.isValid() && view()->isVisible())
                 view()->update(_hoverIndex);
             _hoverIndex = QModelIndex();
             _hoverActionIndex = -1;

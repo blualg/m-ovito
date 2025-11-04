@@ -32,7 +32,7 @@ Supported features
 
 The code generator can produce Python scripts for:
 
-  * Data file import (all arguments of :py:func:`ovito.io.import_file`)
+  * Data file import (:py:func:`ovito.io.import_file` call with all necessary parameters)
   * Visual elements
   * Modifiers
   * Viewport layers
