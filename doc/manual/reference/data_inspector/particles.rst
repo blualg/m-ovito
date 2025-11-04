@@ -11,8 +11,8 @@ This page of the :ref:`data inspector <data_inspector>` provides a comprehensive
 interactive tools for particle inspection and geometric measurements. The page consists of a main property table
 and optional measurement tables for analyzing spatial relationships between selected particles.
 
-Interface components
---------------------
+Interface elements
+------------------
 
 The particles tab includes the following elements:
 

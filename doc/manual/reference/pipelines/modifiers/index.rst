@@ -38,6 +38,8 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.wigner_seitz_analysis`                  Identifies point defects (vacancies and interstitials) in a crystal lattice.
   ================================================================= ==========================================================
 
+.. _particles.modifiers.coloring:
+
 .. table::
   :width: 100%
   :widths: 28 72
@@ -72,6 +74,8 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.unwrap_trajectories`             Computes unwrapped particle coordinates in order to generate continuous trajectories at periodic cell boundaries.
   :ref:`particles.modifiers.wrap_at_periodic_boundaries`     Folds particles located outside of the periodic simulation box back into the box.
   ========================================================== ==========================================================
+
+.. _particles.modifiers.selection:
 
 .. table::
   :width: 100%
