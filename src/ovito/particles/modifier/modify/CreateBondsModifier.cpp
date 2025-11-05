@@ -22,6 +22,7 @@
 
 #include <ovito/particles/Particles.h>
 #include <ovito/particles/util/CutoffNeighborFinder.h>
+#include <ovito/particles/util/NearestNeighborFinder.h>
 #include <ovito/particles/objects/BondsVis.h>
 #include <ovito/particles/objects/ParticleType.h>
 #include <ovito/stdobj/simcell/SimulationCell.h>
@@ -29,8 +30,12 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/utilities/concurrent/ParallelFor.h>
 #include <ovito/core/utilities/units/UnitsManager.h>
-#include "CreateBondsModifier.h"
+#include <ovito/core/utilities/concurrent/EnumerableThreadSpecific.h>
 
+#include "CreateBondsModifier.h"
+#include "CreateBondsModifierTable.h"
+#include <algorithm>
+#include <utility>
 
 namespace Ovito {
 
@@ -123,7 +128,7 @@ void CreateBondsModifier::setPairwiseCutoff(const QVariant& typeA, const QVarian
         newList.remove(qMakePair(typeA, typeB));
         newList.remove(qMakePair(typeB, typeA));
     }
-    setPairwiseCutoffs(std::move(newList));
+    setPairwiseCutoffs(newList);
 }
 
 /******************************************************************************
@@ -181,7 +186,7 @@ void CreateBondsModifier::initializeModifier(const ModifierInitializationRequest
                         }
                     }
                 }
-                setPairwiseCutoffs(std::move(cutoffList));
+                setPairwiseCutoffs(cutoffList);
             }
         }
     }
@@ -207,6 +212,36 @@ const ElementType* CreateBondsModifier::lookupParticleType(const Property* typeP
         return nullptr;
     }
 }
+
+namespace {
+struct TypeMapItem {
+    int32_t id;
+    uint8_t atomicNo;
+    FloatType radius;
+};
+
+class TypeMap : public std::vector<TypeMapItem>
+{
+public:
+    [[nodiscard]] const TypeMapItem* getOvitoId(int32_t id) const noexcept
+    {
+        const auto it = std::ranges::find(*this, id, &TypeMapItem::id);
+        return it == this->end() ? nullptr : std::addressof(*it);
+    }
+
+    [[nodiscard]] const TypeMapItem* getAtomicNo(int8_t id) const noexcept
+    {
+        const auto it = std::ranges::find(*this, id, &TypeMapItem::atomicNo);
+        return it == this->end() ? nullptr : std::addressof(*it);
+    }
+
+    template<auto Proj, class Pred>
+    void sortby(Pred pred)
+    {
+        std::ranges::sort(*this, pred, Proj);
+    }
+};
+}  // namespace
 
 /******************************************************************************
 * Modifies the input data.
@@ -244,7 +279,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                         if((int)pairCutoffSquaredTable[id2].size() <= id1) pairCutoffSquaredTable[id2].resize(id1 + 1, FloatType(0));
                         pairCutoffSquaredTable[id1][id2] = cutoff * cutoff;
                         pairCutoffSquaredTable[id2][id1] = cutoff * cutoff;
-                        if(cutoff > maxCutoff) maxCutoff = cutoff;
+                        maxCutoff = std::max(cutoff, maxCutoff);
                     }
                 }
             }
@@ -252,23 +287,19 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                 throw Exception(tr("At least one positive bond cutoff must be set for a valid pair of particle types."));
         }
     }
-    else if(cutoffMode() == TypeRadiusCutoff) {
+    else if(cutoffMode() == VDWRadiusCutoff) {
         maxCutoff = 0;
-        if(vdwPrefactor() <= 0.0)
-            throw Exception(tr("Van der Waal radius scaling factor must be positive."));
+        if(vdwPrefactor() <= 0.0) throw Exception(tr("Van der Waal radius scaling factor must be positive."));
         typeProperty = particles->expectProperty(Particles::TypeProperty);
         if(typeProperty) {
             for(const ElementType* type : typeProperty->elementTypes()) {
                 if(const ParticleType* ptype = dynamic_object_cast<ParticleType>(type)) {
                     if(ptype->vdwRadius() > 0.0 && ptype->numericId() >= 0) {
-                        if(ptype->vdwRadius() > maxCutoff)
-                            maxCutoff = ptype->vdwRadius();
-                        if(type->numericId() >= typeVdWRadiusMap.size())
-                            typeVdWRadiusMap.resize(type->numericId() + 1, 0.0);
+                        maxCutoff = std::max(ptype->vdwRadius(), maxCutoff);
+                        if(type->numericId() >= typeVdWRadiusMap.size()) typeVdWRadiusMap.resize(type->numericId() + 1, 0.0);
                         typeVdWRadiusMap[type->numericId()] = ptype->vdwRadius();
                         if(skipHydrogenHydrogenBonds()) {
-                            if(type->numericId() >= isHydrogenType.size())
-                                isHydrogenType.resize(type->numericId() + 1, false);
+                            if(type->numericId() >= isHydrogenType.size()) isHydrogenType.resize(type->numericId() + 1, false);
                             isHydrogenType[type->numericId()] = (ptype->name() == QStringLiteral("H"));
                         }
                     }
@@ -276,7 +307,11 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
             }
             maxCutoff *= vdwPrefactor() * 2.0;
             if(maxCutoff == 0.0)
-                throw Exception(tr("The van der Waals (VdW) radii of all particle types are undefined or zero. Creating bonds based on the VdW radius requires at least one particle type with a positive radius value."));
+                throw Exception(
+                    tr("The van der Waals (VdW) radii of all particle "
+                       "types are undefined or zero. Creating bonds "
+                       "based on the VdW radius requires at least one "
+                       "particle type with a positive radius value."));
         }
         OVITO_ASSERT(!typeVdWRadiusMap.empty());
     }
@@ -295,123 +330,388 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
     }
 
     // Perform the main work in a separate thread.
-    return asyncLaunch([
-            state = std::move(state),
-            particles,
-            maxCutoff,
-            minCutoff = minimumCutoff(),
-            moleculeIDs = moleculeProperty,
-            particleTypes = typeProperty,
-            bondType = DataOORef<BondType>::makeDeepCopy(bondType()), // Note: Passing a deep copy of the original bond type to the data pipeline.
-            pairCutoffsSquared = std::move(pairCutoffSquaredTable),
-            typeVdWRadiusMap = std::move(typeVdWRadiusMap),
-            vdwPrefactor = vdwPrefactor(),
-            isHydrogenType = std::move(isHydrogenType),
-            autoDisableBondDisplay = autoDisableBondDisplay(),
-            createdByNode = request.modificationNodeWeak()]() mutable
-    {
-        TaskProgress progress(this_task::ui());
-        progress.setText(tr("Generating bonds"));
+    if(cutoffMode() == CovalentRadiusCutoff) {
+        typeProperty = particles->expectProperty(Particles::TypeProperty);
+        return asyncLaunch([state = std::move(state),
+                            particles,
+                            particleTypes = typeProperty,
+                            bondType = DataOORef<BondType>::makeDeepCopy(
+                                bondType()),  // Note: Passing a deep copy of the original bond type to the data pipeline.
+                            autoDisableBondDisplay = autoDisableBondDisplay(),
+                            createdByNode = request.modificationNodeWeak()]() mutable {
+            // Adapted from doi.org/10.1002/jcc.24309
+            // Automatic Molecular Structure Perception for the Universal Force Field
+            // Svetlana Artemova, Leonard Jaillet, and Stephane Redon
+            // Journal of Computational Chemistry 2016, 37, 1191–1205
 
-        OVITO_ASSERT(state.data()->dataReferenceCount() == 1);
-        OVITO_ASSERT(state.data()->isSafeToModify());
-        OVITO_ASSERT(particles->isSafeToModify());
-        Bonds* bonds = particles->makeBondsMutable();
-        bonds->verifyIntegrity();
-
-        // Prepare the neighbor finder.
-        CutoffNeighborFinder neighborFinder(maxCutoff, particles->expectProperty(Particles::PositionProperty), state.getObject<SimulationCell>(), {});
-
-        // The lower bond length cutoff squared.
-        FloatType minCutoffSquared = minCutoff * minCutoff;
-
-        BufferReadAccess<IdentifierIntType> moleculeIDsArray(moleculeIDs);
-        BufferReadAccess<int32_t> particleTypesArray(particleTypes);
-
-        // Generate bonds.
-        size_t particleCount = particles->elementCount();
-        // Multi-threaded loop over all particles, each thread producing a partial bonds list.
-        auto partialBondsLists = parallelForCollect<std::vector<Bond>>(particleCount, 4096, progress, [&](size_t particleIndex, std::vector<Bond>& bondList) {
-
-            // Get the type of the central particles.
-            int type1;
-            bool isHydrogenType1 = false;
-            if(particleTypesArray) {
-                type1 = particleTypesArray[particleIndex];
-                if(type1 < 0) return;
-                if(type1 < isHydrogenType.size())
-                    isHydrogenType1 = isHydrogenType[type1];
+            if(!particleTypes) {
+                throw Exception(tr("This modifier mode requires particle types."));
             }
+            BufferReadAccess<int32_t> particleTypesArray(particleTypes);
 
-            // Kernel called for each particle: Iterate over the particle's neighbors within the cutoff range.
-            for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd(); neighborQuery.next()) {
-                if(neighborQuery.distanceSquared() < minCutoffSquared)
-                    continue;
-                if(moleculeIDsArray && moleculeIDsArray[particleIndex] != moleculeIDsArray[neighborQuery.current()])
-                    continue;
+            constexpr int maxNeighCount = MaximumCoordination::max();
+            TaskProgress progress(this_task::ui());
+            progress.setText(tr("Generating bonds"));
 
-                if(particleTypesArray) {
-                    int type2 = particleTypesArray[neighborQuery.current()];
-                    if(type2 < 0) continue;
-                    if(type1 < (int)typeVdWRadiusMap.size() && type2 < (int)typeVdWRadiusMap.size()) {
-                        // Do not generate H-H bonds (if requested).
-                        if(isHydrogenType1 && type2 < isHydrogenType.size()) {
-                            if(isHydrogenType[type2])
-                                continue;
-                        }
-                        FloatType cutoff = vdwPrefactor * (typeVdWRadiusMap[type1] + typeVdWRadiusMap[type2]);
-                        if(neighborQuery.distanceSquared() > cutoff*cutoff)
-                            continue;
-                    }
-                    else if(type1 < (int)pairCutoffsSquared.size() && type2 < (int)pairCutoffsSquared[type1].size()) {
-                        if(neighborQuery.distanceSquared() > pairCutoffsSquared[type1][type2])
-                            continue;
-                    }
-                    else continue;
+            OVITO_ASSERT(state.data()->dataReferenceCount() == 1);
+            OVITO_ASSERT(state.data()->isSafeToModify());
+            OVITO_ASSERT(particles->isSafeToModify());
+            Bonds* bonds = particles->makeBondsMutable();
+            bonds->verifyIntegrity();
+
+            // Bonds detection -> Upper distance criterion
+            size_t particleCount = particles->elementCount();
+
+            // Tolerance distance between 0.4 and 0.45 A
+            constexpr FloatType delta = 0.4;
+
+            // Prepare type map
+            TypeMap typeMap;
+            typeMap.reserve(particleTypes->elementTypes().size());
+
+            FloatType cutoff;
+            for(const ElementType* type : particleTypes->elementTypes()) {
+                std::optional<uint8_t> atomicNumber = AtomicNumbers::get(type->name().toStdString());
+                if(!atomicNumber) {
+                    throw Exception(
+                        tr("Unknow particle type %1: Particle type names need to exactly match element names in the periodic table.")
+                            .arg(type->name()));
                 }
-
-                Bond bond = { particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift() };
-
-                // Skip every other bond to create only one bond per particle pair.
-                if(!bond.isOdd())
-                    bondList.push_back(bond);
+                std::optional<FloatType> covalentRadius = CovalentRadii::get(*atomicNumber);
+                if(!covalentRadius) {
+                    throw Exception(tr("Unknow covalent radius for particle type %1: Particle type names need to exactly match element "
+                                       "names in the periodic table.")
+                                        .arg(type->name()));
+                }
+                typeMap.emplace_back(type->numericId(), *atomicNumber, *covalentRadius);
+                cutoff = std::max(cutoff, *covalentRadius);
             }
-        });
 
-        // Flatten the bonds list into a single std::vector.
-        size_t totalBondCount = std::ranges::fold_left(partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); });
-        std::vector<Bond> totalBondsList;
-        if(totalBondCount != 0) {
-            totalBondsList = std::move(partialBondsLists.front());
-            totalBondsList.reserve(totalBondCount);
-            std::for_each(std::next(partialBondsLists.begin()), partialBondsLists.end(), [&](const std::vector<Bond>& bonds) { totalBondsList.insert(totalBondsList.end(), bonds.begin(), bonds.end()); });
-            this_task::throwIfCanceled();
-        }
+            const auto* simCell = state.getObject<SimulationCell>();
 
-        // Insert bonds into Bonds container.
-        size_t numGeneratedBonds = bonds->addBonds(totalBondsList, nullptr, particles, {}, std::move(bondType));
+            // Prepare the neighbor finder.
+            CutoffNeighborFinder neighborFinder((2 * cutoff) + delta, particles->expectProperty(Particles::PositionProperty), simCell, {});
 
-        // Output the number of newly added bonds to the pipeline.
-        state.addAttribute(QStringLiteral("CreateBonds.num_bonds"), QVariant::fromValue(numGeneratedBonds), createdByNode);
+            // Create initial bonds list with all bonds below a cutoff threshold.
+            auto partialBondsLists =
+                parallelForCollect<std::vector<Bond>>(particleCount, 32, progress, [&](size_t particleIndex, std::vector<Bond>& bondList) {
+                    const TypeMapItem* typeA = typeMap.getOvitoId(particleTypesArray[particleIndex]);
+                    // Skip particles without a type
+                    if(!typeA) {
+                        return;
+                    }
+                    const FloatType radiusA = typeA->radius;
 
-        // If the total number of bonds is unusually high, we better turn off bonds display to prevent the program from freezing.
-        if(bonds->elementCount() > 2000000 && autoDisableBondDisplay && this_task::isInteractive()) {
-            if(BondsVis* vis = bonds->visElement<BondsVis>()) {
-                // Modifying the vis element must be done in the main thread.
-                launchDetached(ObjectExecutor(vis), [vis]() {
-                    this_task::ui()->performTransaction(tr("Disable bonds display"), [&]() {
-                        vis->setEnabled(false);
+                    // Kernel called for each particle: Iterate over the particle's neighbors.
+                    for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd();
+                        neighborQuery.next()) {
+                        this_task::throwIfCanceled();
+
+                        // Don't duplicate A-B / B-A bonds
+                        if(neighborQuery.current() <= particleIndex) {
+                            continue;
+                        }
+                        const TypeMapItem* typeB = typeMap.getOvitoId(particleTypesArray[neighborQuery.current()]);
+                        // Skip particles without a type
+                        if(!typeB) {
+                            continue;
+                        }
+                        const FloatType radiusB = typeB->radius;
+
+                        // Bond is too long
+                        if(neighborQuery.distanceSquared() > (radiusA + radiusB + delta) * (radiusA + radiusB + delta)) {
+                            continue;
+                        }
+                        // Forward bond
+                        bondList.emplace_back(particleIndex, neighborQuery.current(), neighborQuery.unwrappedPbcShift());
+                        // Reverse bond
+                        bondList.emplace_back(neighborQuery.current(), particleIndex, neighborQuery.unwrappedPbcShift());
+                    }
+                });
+
+            // Flatten the bonds list into a single std::vector.
+            const size_t totalBondCount = std::ranges::fold_left(
+                partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); });
+            std::vector<Bond> totalBondsList;
+            if(totalBondCount != 0) {
+                totalBondsList = std::move(partialBondsLists.front());
+                totalBondsList.reserve(totalBondCount);
+                std::for_each(std::next(partialBondsLists.begin()), partialBondsLists.end(), [&](const std::vector<Bond>& bonds) {
+                    totalBondsList.insert(totalBondsList.end(), bonds.begin(), bonds.end());
+                });
+                this_task::throwIfCanceled();
+            }
+
+            std::ranges::sort(totalBondsList, std::less<>{}, &Bond::index1);
+
+            BufferReadAccess<Point3> posAccess(particles->expectProperty(Particles::PositionProperty));
+
+            // Cleanup bonds list
+            typeMap.sortby<&TypeMapItem::radius>(std::ranges::less{});
+
+            EnumerableThreadSpecific<std::vector<size_t>> threadLocalDeleteIndices;
+            EnumerableThreadSpecific<std::vector<std::pair<size_t, FloatType>>> threadLocalCache;
+            for(const auto& t : typeMap) {
+                parallelForInnerOuter(particleCount, 32, progress, [&](auto&& iterate) {
+                    auto& deleteIndices = threadLocalDeleteIndices.create();
+                    auto& cache = threadLocalCache.create();
+                    iterate([&](size_t particleIndex) {
+                        const auto begin = std::ranges::lower_bound(totalBondsList, particleIndex, std::less<>{}, &Bond::index1);
+                        const auto end = std::ranges::upper_bound(totalBondsList, particleIndex, std::less<>{}, &Bond::index1);
+
+                        const size_t numBonds = std::distance(begin, end);
+                        if(numBonds == 0) {
+                            return;
+                        }
+
+                        const TypeMapItem* typeA = typeMap.getOvitoId(particleTypesArray[particleIndex]);
+                        if(!typeA) {
+                            OVITO_ASSERT(false);
+                            return;
+                        }
+                        if(typeA->id != t.id) {
+                            return;
+                        }
+
+                        std::optional<uint8_t> maxCoordination;
+                        if(numBonds == 2) {
+                            const TypeMapItem* typeNeigh1 = typeMap.getOvitoId(particleTypesArray[begin->index2]);
+                            const TypeMapItem* typeNeigh2 = typeMap.getOvitoId(particleTypesArray[(begin + 1)->index2]);
+                            if(!typeNeigh1 || !typeNeigh2) {
+                                OVITO_ASSERT(false);
+                                return;
+                            }
+                            maxCoordination =
+                                MaximumCoordination::get(typeA->atomicNo, std::make_pair(typeNeigh1->atomicNo, typeNeigh2->atomicNo));
+                        }
+                        else {
+                            maxCoordination = MaximumCoordination::get(typeA->atomicNo);
+                        }
+                        if(!maxCoordination) {
+                            OVITO_ASSERT(false);
+                            return;
+                        }
+                        // Coordination is fulfilled - nothing to do
+                        if(numBonds <= *maxCoordination) {
+                            return;
+                        }
+
+                        cache.clear();
+                        cache.reserve(numBonds);
+
+                        const Point3& posA = posAccess[particleIndex];
+
+                        for(auto it = begin; it != end; ++it) {
+                            this_task::throwIfCanceled();
+                            OVITO_ASSERT(it->index1 == particleIndex);
+                            OVITO_ASSERT(it->index2 != particleIndex);
+
+                            const TypeMapItem* typeB = typeMap.getOvitoId(particleTypesArray[it->index2]);
+                            if(!typeB) {
+                                OVITO_ASSERT(false);
+                                continue;
+                            }
+
+                            const Point3& posB = posAccess[it->index2];
+                            // TODO: Validate this eq!
+                            const Vector3 delta =
+                                simCell ? (posB + simCell->matrix().linear() * it->pbcShift.toDataType<FloatType>()) - posA : posB - posA;
+
+                            // For all atoms in typeMap we're guaranteed to have a covalent radius
+                            const FloatType bondElongation =
+                                delta.length() / *CovalentRadii::getCleaveDistance(typeA->atomicNo, typeB->atomicNo);
+                            cache.emplace_back(std::distance(totalBondsList.begin(), it), bondElongation);
+                        }
+
+                        std::ranges::sort(cache, std::less<>{}, &std::pair<size_t, FloatType>::second);
+                        for(size_t i = *maxCoordination; i < numBonds; i++) {
+                            deleteIndices.emplace_back(cache[i].first);
+                            // Also add reverse bond to delete list.
+                            const Bond& bond = totalBondsList[cache[i].first];
+                            const auto begin = std::ranges::lower_bound(totalBondsList, bond.index2, std::less<>{}, &Bond::index1);
+                            const auto end = std::ranges::upper_bound(totalBondsList, bond.index2, std::less<>{}, &Bond::index1);
+                            const auto span = std::span(begin, end);
+                            const auto it = std::ranges::find(span, bond.index1, &Bond::index2);
+                            if(it != span.end()) {
+                                OVITO_ASSERT(it->index1 == bond.index2);
+                                OVITO_ASSERT(it->index2 == bond.index1);
+                                deleteIndices.emplace_back(std::distance(totalBondsList.begin(), it));
+                            }
+                        }
                     });
                 });
             }
-            state.setStatus(PipelineStatus(PipelineStatus::Warning, tr("Created %1 bonds, which is a lot. The display of bonds has been turned off as a precaution. You can manually turn it on again if needed.").arg(numGeneratedBonds)));
-        }
-        else {
-            state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Created %1 bonds.").arg(numGeneratedBonds)));
-        }
 
-        return std::move(state);
-    });
+            // Flatten the to delete list into a single std::vector.
+            size_t totalDeleteCount = 0;
+            threadLocalDeleteIndices.visitEach([&](const std::vector<size_t>& delIndices) { totalDeleteCount += delIndices.size(); });
+            std::vector<bool> totalDeleteList(totalBondCount, false);
+            threadLocalDeleteIndices.visitEach([&](const std::vector<size_t>& delIndices) {
+                for(size_t delIndice : delIndices) {
+                    totalDeleteList[delIndice] = true;
+                }
+            });
+
+            // Erase duplicate bonds.
+            size_t index = 0;
+            auto [ret, last] =
+                std::ranges::remove_if(totalBondsList, [&](const Bond& bond) { return totalDeleteList[index++] || bond.isOdd(); });
+            totalBondsList.erase(ret, last);
+
+            // Insert bonds into Bonds container.
+            size_t numGeneratedBonds = bonds->addBonds(totalBondsList, nullptr, particles, {}, std::move(bondType));
+
+            // Output the number of newly added bonds to the pipeline.
+            state.addAttribute(QStringLiteral("CreateBonds.num_bonds"), QVariant::fromValue(numGeneratedBonds), createdByNode);
+
+            // If the total number of bonds is unusually high, we better turn
+            // off bonds display to prevent the program from freezing.
+            if(bonds->elementCount() > 2000000 && autoDisableBondDisplay && this_task::isInteractive()) {
+                if(BondsVis* vis = bonds->visElement<BondsVis>()) {
+                    // Modifying the vis element must be done in the main thread.
+                    launchDetached(ObjectExecutor(vis), [vis]() {
+                        this_task::ui()->performTransaction(tr("Disable bonds display"), [&]() { vis->setEnabled(false); });
+                    });
+                }
+                state.setStatus(PipelineStatus(PipelineStatus::Warning,
+                                               tr("Created %1 bonds, which is a lot. The "
+                                                  "display of bonds has been turned off "
+                                                  "as a precaution. You can manually turn it "
+                                                  "on again if needed.")
+                                                   .arg(numGeneratedBonds)));
+            }
+            else {
+                state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Created %1 bonds.").arg(numGeneratedBonds)));
+            }
+
+            return std::move(state);
+        });
+    }
+    else {
+        return asyncLaunch([state = std::move(state),
+                            particles,
+                            maxCutoff,
+                            minCutoff = minimumCutoff(),
+                            moleculeIDs = moleculeProperty,
+                            particleTypes = typeProperty,
+                            bondType = DataOORef<BondType>::makeDeepCopy(bondType()),  // Note: Passing a deep copy of the original bond
+                                                                                       // type to the data pipeline.
+                            pairCutoffsSquared = std::move(pairCutoffSquaredTable),
+                            typeVdWRadiusMap = std::move(typeVdWRadiusMap),
+                            vdwPrefactor = vdwPrefactor(),
+                            isHydrogenType = std::move(isHydrogenType),
+                            autoDisableBondDisplay = autoDisableBondDisplay(),
+                            createdByNode = request.modificationNodeWeak()]() mutable {
+            TaskProgress progress(this_task::ui());
+            progress.setText(tr("Generating bonds"));
+
+            OVITO_ASSERT(state.data()->dataReferenceCount() == 1);
+            OVITO_ASSERT(state.data()->isSafeToModify());
+            OVITO_ASSERT(particles->isSafeToModify());
+            Bonds* bonds = particles->makeBondsMutable();
+            bonds->verifyIntegrity();
+
+            // Prepare the neighbor finder.
+            CutoffNeighborFinder neighborFinder(
+                maxCutoff, particles->expectProperty(Particles::PositionProperty), state.getObject<SimulationCell>(), {});
+
+            // The lower bond length cutoff squared.
+            FloatType minCutoffSquared = minCutoff * minCutoff;
+
+            BufferReadAccess<IdentifierIntType> moleculeIDsArray(moleculeIDs);
+            BufferReadAccess<int32_t> particleTypesArray(particleTypes);
+
+            // Generate bonds.
+            size_t particleCount = particles->elementCount();
+            // Multi-threaded loop over all particles, each thread producing a
+            // partial bonds list.
+            auto partialBondsLists = parallelForCollect<std::vector<Bond>>(
+                particleCount, 4096, progress, [&](size_t particleIndex, std::vector<Bond>& bondList) {
+                    // Get the type of the central particles.
+                    int type1;
+                    bool isHydrogenType1 = false;
+                    if(particleTypesArray) {
+                        type1 = particleTypesArray[particleIndex];
+                        if(type1 < 0) return;
+                        if(type1 < isHydrogenType.size()) isHydrogenType1 = isHydrogenType[type1];
+                    }
+
+                    // Kernel called for each particle: Iterate over the
+                    // particle's neighbors within the cutoff range.
+                    for(CutoffNeighborFinder::Query neighborQuery(neighborFinder, particleIndex); !neighborQuery.atEnd();
+                        neighborQuery.next()) {
+                        if(neighborQuery.distanceSquared() < minCutoffSquared) continue;
+                        if(moleculeIDsArray && moleculeIDsArray[particleIndex] != moleculeIDsArray[neighborQuery.current()]) continue;
+
+                        if(particleTypesArray) {
+                            int type2 = particleTypesArray[neighborQuery.current()];
+                            if(type2 < 0) continue;
+                            if(type1 < (int)typeVdWRadiusMap.size() && type2 < (int)typeVdWRadiusMap.size()) {
+                                // Do not generate H-H bonds (if requested).
+                                if(isHydrogenType1 && type2 < isHydrogenType.size()) {
+                                    if(isHydrogenType[type2]) continue;
+                                }
+                                FloatType cutoff = vdwPrefactor * (typeVdWRadiusMap[type1] + typeVdWRadiusMap[type2]);
+                                if(neighborQuery.distanceSquared() > cutoff * cutoff) continue;
+                            }
+                            else if(type1 < (int)pairCutoffsSquared.size() && type2 < (int)pairCutoffsSquared[type1].size()) {
+                                if(neighborQuery.distanceSquared() > pairCutoffsSquared[type1][type2]) continue;
+                            }
+                            else
+                                continue;
+                        }
+
+                        Bond bond = {
+                            .index1 = particleIndex, .index2 = neighborQuery.current(), .pbcShift = neighborQuery.unwrappedPbcShift()};
+
+                        // Skip every other bond to create only one bond per
+                        // particle pair.
+                        if(!bond.isOdd()) bondList.push_back(bond);
+                    }
+                });
+
+            // Flatten the bonds list into a single std::vector.
+            size_t totalBondCount = std::ranges::fold_left(
+                partialBondsLists, (size_t)0, [](size_t n, const std::vector<Bond>& bonds) { return n + bonds.size(); });
+            std::vector<Bond> totalBondsList;
+            if(totalBondCount != 0) {
+                totalBondsList = std::move(partialBondsLists.front());
+                totalBondsList.reserve(totalBondCount);
+                std::for_each(std::next(partialBondsLists.begin()), partialBondsLists.end(), [&](const std::vector<Bond>& bonds) {
+                    totalBondsList.insert(totalBondsList.end(), bonds.begin(), bonds.end());
+                });
+                this_task::throwIfCanceled();
+            }
+
+            // Insert bonds into Bonds container.
+            size_t numGeneratedBonds = bonds->addBonds(totalBondsList, nullptr, particles, {}, std::move(bondType));
+
+            // Output the number of newly added bonds to the pipeline.
+            state.addAttribute(QStringLiteral("CreateBonds.num_bonds"), QVariant::fromValue(numGeneratedBonds), createdByNode);
+
+            // If the total number of bonds is unusually high, we better turn
+            // off bonds display to prevent the program from freezing.
+            if(bonds->elementCount() > 2000000 && autoDisableBondDisplay && this_task::isInteractive()) {
+                if(BondsVis* vis = bonds->visElement<BondsVis>()) {
+                    // Modifying the vis element must be done in the main thread.
+                    launchDetached(ObjectExecutor(vis), [vis]() {
+                        this_task::ui()->performTransaction(tr("Disable bonds display"), [&]() { vis->setEnabled(false); });
+                    });
+                }
+                state.setStatus(PipelineStatus(PipelineStatus::Warning,
+                                               tr("Created %1 bonds, which is a lot. The "
+                                                  "display of bonds has been turned off "
+                                                  "as a precaution. You can manually turn it "
+                                                  "on again if needed.")
+                                                   .arg(numGeneratedBonds)));
+            }
+            else {
+                state.setStatus(PipelineStatus(PipelineStatus::Success, tr("Created %1 bonds.").arg(numGeneratedBonds)));
+            }
+
+            return std::move(state);
+        });
+    }
 }
 
 }   // End of namespace

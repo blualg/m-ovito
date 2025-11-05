@@ -68,11 +68,13 @@ class OVITO_PARTICLES_EXPORT CreateBondsModifier : public Modifier
     OVITO_CLASS_META(CreateBondsModifier, CreateBondsModifierClass)
 
 public:
-
-    enum CutoffMode {
-        UniformCutoff,      ///< A uniform distance cutoff for all pairs of particles.
-        PairCutoff,         ///< Individual cutoff for each pair-wise combination of particle types.
-        TypeRadiusCutoff,   ///< Cutoff based on Van der Waals radii of the two particle types involved.
+    enum CutoffMode
+    {
+        UniformCutoff,        ///< A uniform distance cutoff for all pairs of particles.
+        PairCutoff,           ///< Individual cutoff for each pair-wise combination of particle types.
+        VDWRadiusCutoff,      ///< Cutoff based on Van der Waals radii of the two particle types involved.
+        CovalentRadiusCutoff  ///< Cutoff based on covalent radii of the two particle types involved, accounting for maximum coordination
+                              ///< numbers and valences.
     };
     Q_ENUM(CutoffMode);
 
@@ -151,7 +153,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, onlyIntraMoleculeBonds, setOnlyIntraMoleculeBonds, PROPERTY_FIELD_MEMORIZE);
 
     /// If true, no bonds will be created between two particles of type "H".
-    /// This option is only applied in mode TypeRadiusCutoff,
+    /// This option is only applied in mode VDWRadiusCutoff,
     DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, skipHydrogenHydrogenBonds, setSkipHydrogenHydrogenBonds);
 
     /// The bond type object that will be assigned to the newly created bonds.
