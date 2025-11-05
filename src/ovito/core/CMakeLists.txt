@@ -228,34 +228,8 @@ IF(FFMPEG_FOUND)
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_VIDEO_OUTPUT_SUPPORT)
     TARGET_COMPILE_DEFINITIONS(Core PRIVATE __STDC_CONSTANT_MACROS __STDC_LIMIT_MACROS)
     TARGET_LINK_LIBRARIES(Core PRIVATE "${FFMPEG_LIBRARIES}")
-    # Use regular include (not system include) for FFmpeg to enable deprecation warnings
+    # Use regular include (not system include) for FFmpeg
     TARGET_INCLUDE_DIRECTORIES(Core BEFORE PRIVATE "${FFMPEG_INCLUDE_DIRS}")
-
-    # Enable deprecation warnings for FFmpeg/Libav functions
-    IF(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-        # Create a specific compilation flag set for VideoEncoder.cpp
-        # to detect deprecated FFmpeg/Libav function usage
-        SET(FFMPEG_DEPRECATION_FLAGS "")
-
-        # Enable all deprecation warnings
-        LIST(APPEND FFMPEG_DEPRECATION_FLAGS "-Wdeprecated")
-        LIST(APPEND FFMPEG_DEPRECATION_FLAGS "-Wdeprecated-declarations")
-
-        # Don't treat deprecation warnings as errors (so build doesn't fail)
-        LIST(APPEND FFMPEG_DEPRECATION_FLAGS "-Wno-error=deprecated")
-        LIST(APPEND FFMPEG_DEPRECATION_FLAGS "-Wno-error=deprecated-declarations")
-
-        # Convert list to space-separated string
-        STRING(REPLACE ";" " " FFMPEG_DEPRECATION_FLAGS "${FFMPEG_DEPRECATION_FLAGS}")
-
-        SET_SOURCE_FILES_PROPERTIES(utilities/io/video/VideoEncoder.cpp
-            PROPERTIES
-            COMPILE_FLAGS "${FFMPEG_DEPRECATION_FLAGS}"
-            # Disable precompiled headers for this file to avoid pragma system_header suppression
-            SKIP_PRECOMPILE_HEADERS ON)
-
-        MESSAGE(STATUS "Enabled FFmpeg deprecation warnings for VideoEncoder.cpp (PCH disabled)")
-    ENDIF()
 ELSE()
     MESSAGE(WARNING "ffmpeg video encoding library not found. OVITO will be built without support for video output.")
 ENDIF()
