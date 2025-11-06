@@ -83,23 +83,35 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
             createParamUI<IntegerRadioButtonParameterUI>(PROPERTY_FIELD(RenderSettings::renderingRangeType));
 
         QRadioButton* currentFrameButton = renderingRangeTypeUI->addRadioButton(RenderSettings::CURRENT_FRAME, tr("Single frame"));
-        layout2c->addWidget(currentFrameButton, 0, 0, 1, 5);
+        layout2c->addWidget(currentFrameButton, 0, 0);
 
         QRadioButton* animationIntervalButton = renderingRangeTypeUI->addRadioButton(RenderSettings::ANIMATION_INTERVAL, tr("Complete animation"));
-        layout2c->addWidget(animationIntervalButton, 1, 0, 1, 5);
+        layout2c->addWidget(animationIntervalButton, 1, 0);
 
         QRadioButton* customIntervalButton = renderingRangeTypeUI->addRadioButton(RenderSettings::CUSTOM_INTERVAL, tr("Range:"));
-        layout2c->addWidget(customIntervalButton, 2, 0, 1, 5);
+        layout2c->addWidget(customIntervalButton, 2, 0);
+
+        _videoLengthLabel = new QLabel();
+        _videoLengthLabel->setVisible(false);
+        _videoLengthLabel->setAlignment(Qt::AlignRight | Qt::AlignTop);
+        QFont smallFont = _videoLengthLabel->font();
+        smallFont.setPointSizeF(smallFont.pointSizeF() * 3 / 4);
+        _videoLengthLabel->setFont(smallFont);
+        layout2c->addWidget(_videoLengthLabel, 0, 1, 3, 1, Qt::AlignRight | Qt::AlignTop);
+
+        QHBoxLayout* layout2b = new QHBoxLayout();
+        layout2b->setContentsMargins(0,0,0,0);
+        layout2b->setSpacing(2);
+        layout2b->addSpacing(30);
 
         IntegerParameterUI* customRangeStartUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(RenderSettings::customRangeStart));
         customRangeStartUI->setEnabled(false);
-        layout2c->addLayout(customRangeStartUI->createFieldLayout(), 3, 1);
-        layout2c->addWidget(new QLabel(tr("to")), 3, 2);
+        layout2b->addLayout(customRangeStartUI->createFieldLayout());
+        layout2b->addWidget(new QLabel(tr("to")));
         IntegerParameterUI* customRangeEndUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(RenderSettings::customRangeEnd));
         customRangeEndUI->setEnabled(false);
-        layout2c->addLayout(customRangeEndUI->createFieldLayout(), 3, 3);
-        layout2c->setColumnMinimumWidth(0, 30);
-        layout2c->setColumnStretch(4, 1);
+        layout2b->addLayout(customRangeEndUI->createFieldLayout());
+        layout2->addLayout(layout2b);
         connect(customIntervalButton, &QRadioButton::toggled, customRangeStartUI, &IntegerParameterUI::setEnabled);
         connect(customIntervalButton, &QRadioButton::toggled, customRangeEndUI, &IntegerParameterUI::setEnabled);
 
@@ -247,6 +259,11 @@ void RenderSettingsEditor::createUI(const RolloutInsertionParameters& rolloutPar
 
     // Open a sub-editor for the renderer.
     createParamUI<SubObjectParameterUI>(PROPERTY_FIELD(RenderSettings::renderer), rolloutParams.after(rollout));
+
+    // Update displayed video length when relevant parameters change.
+    connect(this, &PropertiesEditor::contentsChanged, this, &RenderSettingsEditor::updateVideoLengthDisplay);
+    connect(&ui().datasetContainer(), &DataSetContainer::animationIntervalChanged, this, &RenderSettingsEditor::updateVideoLengthDisplay);
+    connect(&ui().datasetContainer(), &DataSetContainer::framesPerSecondChanged, this, &RenderSettingsEditor::updateVideoLengthDisplay);
 }
 
 /******************************************************************************
@@ -409,6 +426,55 @@ void RenderSettingsEditor::onViewportPreviewModeToggled(bool checked)
             }
         });
     }
+}
+
+/******************************************************************************
+* Updates the displayed video length based on the current render settings.
+* It takes into account the rendering range, the 'every Nth frame' setting
+* and the FPS parameter of the current AnimationSettings.
+******************************************************************************/
+void RenderSettingsEditor::updateVideoLengthDisplay()
+{
+    RenderSettings* settings = static_object_cast<RenderSettings>(editObject());
+    if(!settings || !activeAnimationSettings()) {
+        _videoLengthLabel->setVisible(false);
+        return;
+    }
+
+    // Determine the number of frames to be rendered.
+    int numberOfFrames;
+    if(settings->renderingRangeType() == RenderSettings::ANIMATION_INTERVAL) {
+        numberOfFrames = std::max(0, activeAnimationSettings()->numberOfFrames());
+    }
+    else if(settings->renderingRangeType() == RenderSettings::CUSTOM_INTERVAL) {
+        numberOfFrames = std::max(0, settings->customRangeEnd() - settings->customRangeStart() + 1);
+    }
+    else {
+        // When rendering a single frame, hide the video length display.
+        _videoLengthLabel->setVisible(false);
+        return;
+    }
+
+    // Take into account 'every Nth frame' setting.
+    // Note: Rounding behavior matches that of RenderSettings::render().
+    numberOfFrames = (numberOfFrames + settings->everyNthFrame() - 1) / settings->everyNthFrame();
+
+    // Determine FPS.
+    auto fps = activeAnimationSettings()->framesPerSecond();
+    if(fps <= 0)
+        return; // This should not happen.
+
+    // Compute video length.
+    int totalSeconds = static_cast<int>(std::round(numberOfFrames / fps));
+    int minutes = totalSeconds / 60;
+    int seconds = (totalSeconds % 60);
+
+    // Update display.
+    _videoLengthLabel->setVisible(true);
+    if(totalSeconds > 0)
+        _videoLengthLabel->setText(QStringLiteral(u"Video duration:\n%1:%2").arg(minutes, 2, 10, QChar('0')).arg(seconds, 2, 10, QChar('0')));
+    else
+        _videoLengthLabel->setText(tr("Video duration:\n< 1 sec"));
 }
 
 }   // End of namespace
