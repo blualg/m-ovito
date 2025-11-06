@@ -27,8 +27,8 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CIFImporter.h"
 
-#include <3rdparty/gemmi/cif.hpp>
-#include <3rdparty/gemmi/smcif.hpp> // for reading small molecules
+#include <gemmi/cif.hpp>
+#include <gemmi/smcif.hpp>  // for reading small molecules
 
 namespace Ovito {
 

@@ -27,8 +27,8 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "mmCIFImporter.h"
 
-#include <3rdparty/gemmi/cif.hpp>
-#include <3rdparty/gemmi/mmread.hpp>
+#include <gemmi/cif.hpp>
+#include <gemmi/mmread.hpp>
 
 namespace Ovito {
 
@@ -120,7 +120,7 @@ void mmCIFImporter::FrameLoader::loadFile()
         this_task::throwIfCanceled();
 
         // Parse the mmCIF data into an molecular structure representation.
-        gemmi::Structure structure = gemmi::make_structure(doc);
+        gemmi::Structure structure = gemmi::make_structure(std::move(doc));
         structure.merge_chain_parts();
         this_task::throwIfCanceled();
 

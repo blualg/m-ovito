@@ -9,6 +9,7 @@ Version 3.15.0 (dd-mm-2025)
 ----------------------------
 
 - Add MOL/SDF file importer
+- Update gemmi to 0.7.3
 
 .. sidebar::
 
