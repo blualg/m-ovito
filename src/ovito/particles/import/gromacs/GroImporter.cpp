@@ -28,7 +28,7 @@
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "GroImporter.h"
 
-#include <3rdparty/gemmi/elem.hpp>
+#include <gemmi/elem.hpp>
 
 namespace Ovito {
 

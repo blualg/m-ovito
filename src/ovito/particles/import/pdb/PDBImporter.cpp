@@ -28,70 +28,110 @@
 #include <ovito/core/utilities/io/NumberParsing.h>
 #include "PDBImporter.h"
 
-#include <3rdparty/gemmi/pdb.hpp>
-#include <3rdparty/gemmi/remarks.hpp>
-
-namespace gemmi {
-template<>
-inline size_t copy_line_from_stream<Ovito::CompressedTextReader&>(char* line, int size, Ovito::CompressedTextReader& stream)
-{
-    using namespace gemmi::pdb_impl;
-
-    // Return no line if end of file has been reached.
-    if(stream.eof())
-        return 0;
-
-    // Read a single line form the input stream.
-    const char* src_line = stream.readLine();
-
-    // Stop reading the file when ENDMDL marker is reached. We don't want Gemmi to read all frames of a trajectory file.
-    if(is_record_type(src_line, "ENDMDL")) {
-        return 0;
-    }
-
-    // Copy line contents to output buffer.
-    size_t len = qstrlen(src_line);
-    qstrncpy(line, src_line, size);
-
-    if(is_record_type(src_line, "ATOM") || is_record_type(src_line, "HETATM")) {
-        // Some PDB files have an ATOM or HETATM line that is shorter than what Gemmi's parser expects.
-        // Pad such lines by appending  additional whitespace.
-        if(len < 66 && len >= 54 && size > 66) {
-            while(len < 66)
-                line[len++] = ' ';
-            line[len] = '\0';
-        }
-
-        // Gemmi expects atom names to start at column index 12. Some files have one extra space at this positions and the
-        // name actually begins at position 13. Make the parser happy by moving the text by one positon to the left.
-        // For example, turn " Au " into "Au  ", but preserve " CA " or " HE ".
-        if(len >= 16 && size >= 16 && line[12] == ' ' && line[13] >= 'A' && line[13] <= 'Z' && line[14] >= 'a' && line[14] <= 'z' && line[15] == ' ') {
-            line[12] = line[13];
-            line[13] = line[14];
-            line[14] = ' ';
-            line[15] = ' ';
-        }
-        // Some files have 2 extra spaces at this positions and the name actually begins at position 14. Make the parser happy by moving the text by two characters to the left.
-        // For example, turn "  O " into "O   ":
-        else if(len >= 16 && size >= 16 && line[12] == ' ' && line[13] == ' ' && line[14] >= 'A' && line[14] <= 'Z') {
-            line[12] = line[14];
-            line[13] = line[15];
-            line[14] = ' ';
-            line[15] = ' ';
-        }
-        // Some files have a digit prepended to the element name. Remove it so that Gemmi can recognize the element correctly.
-        // For example, turn "1HH1" into " HH1":
-        else if(len >= 16 && size >= 16 && line[12] >= '1' && line[12] <= '9' && line[13] >= 'A' && line[13] <= 'Z') {
-            line[12] = ' ';
-        }
-    }
-
-    // Return line length (up to maximum) to caller.
-    return std::min(len, (size_t)(size - 1));
-}
-}
+#include <gemmi/input.hpp>
+#include <gemmi/pdb.hpp>
+#include <gemmi/atox.hpp>
 
 namespace Ovito {
+
+namespace {
+// Wrapper for CompressedTextReader that implements gemmi::AnyStream which can be used by gemmi::read_pdb_from_stream().
+struct GemmiCompressedTextReader final : public gemmi::AnyStream {
+    explicit GemmiCompressedTextReader(CompressedTextReader& stream) : _stream(stream) {}
+
+    // These are required by gemmi::AnyStream but we don't use them.
+    virtual char* gets(char* line, int size) override
+    {
+        OVITO_ASSERT(false);
+        return nullptr;
+    }
+    virtual int getc() override
+    {
+        OVITO_ASSERT(false);
+        return 0;
+    }
+    virtual bool read(void* buf, size_t len) override
+    {
+        OVITO_ASSERT(false);
+        return false;
+    }
+    virtual long tell() override
+    {
+        OVITO_ASSERT(false);
+        return 0;
+    }
+    virtual bool skip(size_t n) override
+    {
+        OVITO_ASSERT(false);
+        return false;
+    }
+    virtual std::string read_rest() override
+    {
+        OVITO_ASSERT(false);
+        return "";
+    }
+
+    // copy_line had to be made virtual in input.hpp AnyStream
+    virtual size_t copy_line(char* line, int size) override
+    {
+        // Return no line if end of file has been reached.
+        if(_stream.eof()) {
+            return 0;
+        }
+
+        // Read a single line form the input stream.
+        const char* src_line = _stream.readLine();
+
+        // Stop reading the file when ENDMDL marker is reached. We don't want Gemmi to read all frames of a trajectory file.
+        if(gemmi::is_record_type4(src_line, "ENDMDL")) {
+            return 0;
+        }
+
+        // Copy line contents to output buffer.
+        size_t len = qstrlen(src_line);
+        qstrncpy(line, src_line, size);
+
+        if(gemmi::is_record_type4(src_line, "ATOM") || gemmi::is_record_type4(src_line, "HETATM")) {
+            // Some PDB files have an ATOM or HETATM line that is shorter than what Gemmi's parser expects.
+            // Pad such lines by appending  additional whitespace.
+            if(len < 66 && len >= 54 && size > 66) {
+                while(len < 66) line[len++] = ' ';
+                line[len] = '\0';
+            }
+
+            // Gemmi expects atom names to start at column index 12. Some files have one extra space at this positions and the
+            // name actually begins at position 13. Make the parser happy by moving the text by one positon to the left.
+            // For example, turn " Au " into "Au  ", but preserve " CA " or " HE ".
+            if(len >= 16 && size >= 16 && line[12] == ' ' && line[13] >= 'A' && line[13] <= 'Z' && line[14] >= 'a' && line[14] <= 'z' &&
+               line[15] == ' ') {
+                line[12] = line[13];
+                line[13] = line[14];
+                line[14] = ' ';
+                line[15] = ' ';
+            }
+            // Some files have 2 extra spaces at this positions and the name actually begins at position 14. Make the parser happy by
+            // moving the text by two characters to the left. For example, turn "  O " into "O   ":
+            else if(len >= 16 && size >= 16 && line[12] == ' ' && line[13] == ' ' && line[14] >= 'A' && line[14] <= 'Z') {
+                line[12] = line[14];
+                line[13] = line[15];
+                line[14] = ' ';
+                line[15] = ' ';
+            }
+            // Some files have a digit prepended to the element name. Remove it so that Gemmi can recognize the element correctly.
+            // For example, turn "1HH1" into " HH1":
+            else if(len >= 16 && size >= 16 && line[12] >= '1' && line[12] <= '9' && line[13] >= 'A' && line[13] <= 'Z') {
+                line[12] = ' ';
+            }
+        }
+
+        // Return line length (up to maximum) to caller.
+        return std::min(len, (size_t)(size - 1));
+    };
+
+    private:
+        CompressedTextReader& _stream;
+};
+}  // namespace
 
 IMPLEMENT_CREATABLE_OVITO_CLASS(PDBImporter);
 OVITO_CLASSINFO(PDBImporter, "DisplayName", "PDB");
@@ -176,10 +216,12 @@ void PDBImporter::FrameLoader::loadFile()
 
     // Open file for reading.
     CompressedTextReader stream(fileHandle(), frame().byteOffset, frame().lineNumber);
+    GemmiCompressedTextReader gemmiStream(stream);
 
     try {
         // Parse the PDB file's contents.
-        gemmi::Structure structure = gemmi::pdb_impl::read_pdb_from_stream(stream, qPrintable(frame().sourceFile.path()), gemmi::PdbReadOptions());
+        gemmi::Structure structure =
+            gemmi::read_pdb_from_stream(gemmiStream, qPrintable(frame().sourceFile.path()), gemmi::PdbReadOptions());
         this_task::throwIfCanceled();
 
         // Import PDB metadata fields as global attributes.
@@ -190,7 +232,7 @@ void PDBImporter::FrameLoader::loadFile()
         // Import PDB remark lines as global attributes.
         int remarkIndex = 0;
         for(const std::string& remark : structure.raw_remarks) {
-            if(gemmi::remark_number(remark) == 0) {
+            if(int num = gemmi::string_to_int(remark.c_str() + 7, false, 3); num == 0) {
                 QString remarkString = QString::fromStdString(remark);
                 if(remarkString.startsWith("REMARK"))
                     remarkString.remove(0, 6);
@@ -383,4 +425,4 @@ void PDBImporter::FrameLoader::loadFile()
     ParticleImporter::FrameLoader::loadFile();
 }
 
-}   // End of namespace
+}  // namespace Ovito
