@@ -547,7 +547,7 @@ public:
      * \brief Constructor for subgraph from a parent Graph.
      * \param parent Non-owning pointer to the parent graph (must outlive this SubGraph)
      */
-    explicit SubGraph(const ParentGraph* parent) : _parent(parent), _parentSubGraph(nullptr)
+    explicit SubGraph(const ParentGraph* parent) : _parent(parent), _parentSubGraph(nullptr), _rootGraph(parent)
     {
         OVITO_ASSERT(_parent);
         OVITO_ASSERT(_parent->isFinalized());
@@ -557,10 +557,11 @@ public:
      * \brief Constructor for subgraph from a parent SubGraph.
      * \param parent Non-owning pointer to the parent subgraph (must outlive this SubGraph)
      */
-    explicit SubGraph(const ParentSubGraph* parent) : _parent(nullptr), _parentSubGraph(parent)
+    explicit SubGraph(const ParentSubGraph* parent) : _parent(nullptr), _parentSubGraph(parent), _rootGraph(parent->_rootGraph)
     {
         OVITO_ASSERT(_parentSubGraph);
         OVITO_ASSERT(_parentSubGraph->isFinalized());
+        OVITO_ASSERT(_rootGraph);
     }
 
     /**
@@ -573,6 +574,7 @@ public:
     void addNode(NodeIndex nodeIdx)
     {
         OVITO_ASSERT(!_finalized);
+        OVITO_ASSERT(_parent || _parentSubGraph);
         if(_parent) {
             OVITO_ASSERT(nodeIdx < _parent->nodeCount());
         }
@@ -602,43 +604,45 @@ public:
      * \param target Target node index
      * \param data The new edge data
      *
-     * This method can only be called before finalize().
+     * This method can be called before finalize() or after finalize().
+     * If called after finalize(), you must call refinalize() to sort the overrides.
      */
     void overrideEdgeData(NodeIndex source, NodeIndex target, EdgeData&& data)
         requires(!std::is_void_v<EdgeData>)
     {
-        OVITO_ASSERT(!_finalized);
         _edgeDataOverrides.emplace_back(EdgeKey(source, target), std::move(data));
+        if(_finalized) {
+            _needsRefinalize = true;
+        }
     }
 
     /**
      * \brief Finalizes the subgraph and builds lookup structures for fast queries.
      *
      * After calling this method:
-     * - No more nodes, edges, or overrides can be added
+     * - No more nodes or edges can be added
+     * - Edge data overrides can still be added via overrideEdgeData()
      * - containsNode() and containsEdge() can be called efficiently
      * - getEdgeData() can be called efficiently
+     *
+     * Can be called multiple times to re-finalize after adding new edge data overrides.
      *
      * Time complexity: O(N log N + E log E + D log D) where N is the number of nodes,
      * E is the number of edges, and D is the number of data overrides.
      */
     void finalize()
     {
-        OVITO_ASSERT(!_finalized);
+        // Sort nodes for binary search (only if not already finalized)
+        if(!_finalized) {
+            std::sort(_nodes.begin(), _nodes.end());
+            _nodes.erase(std::unique(_nodes.begin(), _nodes.end()), _nodes.end());
 
-        // Sort nodes for binary search
-        std::sort(_nodes.begin(), _nodes.end());
+            // Sort edges for binary search
+            std::sort(_edges.begin(), _edges.end());
+            _edges.erase(std::unique(_edges.begin(), _edges.end()), _edges.end());
+        }
 
-        // Remove duplicates from nodes
-        _nodes.erase(std::unique(_nodes.begin(), _nodes.end()), _nodes.end());
-
-        // Sort edges for binary search
-        std::sort(_edges.begin(), _edges.end());
-
-        // Remove duplicates from edges
-        _edges.erase(std::unique(_edges.begin(), _edges.end()), _edges.end());
-
-        // Sort edge data overrides for binary search
+        // Sort edge data overrides for binary search (always do this for refinalize)
         if constexpr(!std::is_void_v<EdgeData>) {
             std::sort(_edgeDataOverrides.begin(), _edgeDataOverrides.end(), [](const EdgeDataOverride& a, const EdgeDataOverride& b) {
                 return a.edge < b.edge;
@@ -652,6 +656,21 @@ public:
         }
 
         _finalized = true;
+        _needsRefinalize = false;
+    }
+
+    /**
+     * \brief Re-finalizes the subgraph after adding new edge data overrides.
+     *
+     * This is a convenience method equivalent to calling finalize() again.
+     * Use this after calling overrideEdgeData() on an already finalized subgraph.
+     *
+     * Time complexity: O(D log D) where D is the number of data overrides.
+     */
+    void refinalize()
+        requires(!std::is_void_v<EdgeData>)
+    {
+        finalize();
     }
 
     /**
@@ -671,6 +690,7 @@ public:
         requires(!std::is_void_v<EdgeData>)
     {
         OVITO_ASSERT(_finalized);
+        // OVITO_ASSERT(!_needsRefinalize && "Edge data overrides have been modified. Call refinalize() before querying edge data.");
         EdgeKey key(source, target);
 
         // Binary search in our overrides
@@ -760,6 +780,14 @@ public:
     [[nodiscard]] bool isFinalized() const { return _finalized; }
 
     /**
+     * \brief Returns true if edge data overrides need to be re-sorted.
+     *
+     * This is set to true when overrideEdgeData() is called after finalization.
+     * Call refinalize() to clear this flag and sort the overrides.
+     */
+    [[nodiscard]] bool needsRefinalize() const { return _needsRefinalize; }
+
+    /**
      * \brief Returns a reference to the node data from the parent graph.
      * \param nodeIdx Node index
      * \return Reference to the node data
@@ -769,6 +797,7 @@ public:
     [[nodiscard]] const typename ParentGraph::Node& getNode(NodeIndex nodeIdx) const
     {
         OVITO_ASSERT(containsNode(nodeIdx));
+        OVITO_ASSERT(_parent || _parentSubGraph);
         if(_parent) {
             return _parent->getNode(nodeIdx);
         }
@@ -777,6 +806,66 @@ public:
         }
     }
 
+#if 1
+    /**
+     * \brief Returns all edges of a node in this subgraph.
+     * \param nodeIdx Node index
+     * \return Vector of target node indices for edges originating from this node
+     *
+     * This method efficiently retrieves edges by reading from the root parent graph's
+     * adjacency structure and filtering by edges that are in the subgraph.
+     * The node must be part of this subgraph.
+     * Time complexity: O(d log E) where d is the node's degree in the root parent graph
+     * and E is the number of edges in this subgraph.
+     */
+    [[nodiscard]] std::vector<NodeIndex> getNodeEdges(NodeIndex nodeIdx) const
+    {
+        OVITO_ASSERT(_finalized);
+        OVITO_ASSERT(containsNode(nodeIdx));
+        OVITO_ASSERT(_rootGraph);
+
+        std::vector<NodeIndex> result;
+
+        // Get edges from root parent graph and filter those in subgraph
+        for(const auto& edge : _rootGraph->getNodeEdges(nodeIdx)) {
+            EdgeKey key(nodeIdx, edge.target);
+            if(std::binary_search(_edges.begin(), _edges.end(), key)) {
+                result.push_back(edge.target);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * \brief Returns the degree of a node in this subgraph.
+     * \param nodeIdx Node index
+     * \return Number of edges connected to this node in the subgraph
+     *
+     * This method efficiently computes degree by reading from the root parent graph's
+     * adjacency structure and filtering by edges that are in the subgraph.
+     * Time complexity: O(d log E) where d is the node's degree in the root parent graph
+     * and E is the number of edges in this subgraph.
+     */
+    [[nodiscard]] size_t getNodeDegree(NodeIndex nodeIdx) const
+    {
+        OVITO_ASSERT(_finalized);
+        OVITO_ASSERT(containsNode(nodeIdx));
+        OVITO_ASSERT(_rootGraph);
+
+        size_t degree = 0;
+
+        // Get edges from root parent graph and count those in subgraph
+        for(const auto& edge : _rootGraph->getNodeEdges(nodeIdx)) {
+            EdgeKey key(nodeIdx, edge.target);
+            if(std::binary_search(_edges.begin(), _edges.end(), key)) {
+                degree++;
+            }
+        }
+
+        return degree;
+    }
+#else
     /**
      * \brief Returns all edges of a node in this subgraph.
      * \param nodeIdx Node index
@@ -820,6 +909,7 @@ public:
         }
         return degree;
     }
+#endif
 
     /**
      * \brief Clears the subgraph (removes all nodes and edges).
@@ -832,6 +922,7 @@ public:
             _edgeDataOverrides.clear();
         }
         _finalized = false;
+        _needsRefinalize = false;
     }
 
 private:
@@ -841,8 +932,14 @@ private:
     /// Non-owning pointer to parent subgraph (if this is a child of another SubGraph)
     const ParentSubGraph* _parentSubGraph;
 
+    /// Non-owning pointer to the root parent graph (cached for efficient access)
+    const ParentGraph* _rootGraph;
+
     /// Whether the subgraph has been finalized
     bool _finalized = false;
+
+    /// Whether edge data overrides need to be re-sorted (set when overrideEdgeData is called after finalization)
+    bool _needsRefinalize = false;
 
     /// Vector of nodes in this subgraph (sorted after finalization)
     std::vector<NodeIndex> _nodes;
