@@ -369,17 +369,17 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
             TypeMap typeMap;
             typeMap.reserve(particleTypes->elementTypes().size());
 
-            FloatType cutoff;
+            FloatType cutoff = 0;
             for(const ElementType* type : particleTypes->elementTypes()) {
                 std::optional<uint8_t> atomicNumber = AtomicNumbers::get(type->name().toStdString());
                 if(!atomicNumber) {
                     throw Exception(
-                        tr("Unknow particle type %1: Particle type names need to exactly match element names in the periodic table.")
+                        tr("Unknown particle type %1: Particle type names need to exactly match element names in the periodic table.")
                             .arg(type->name()));
                 }
                 std::optional<FloatType> covalentRadius = CovalentRadii::get(*atomicNumber);
                 if(!covalentRadius) {
-                    throw Exception(tr("Unknow covalent radius for particle type %1: Particle type names need to exactly match element "
+                    throw Exception(tr("Unknown covalent radius for particle type %1: Particle type names need to exactly match element "
                                        "names in the periodic table.")
                                         .arg(type->name()));
                 }
@@ -436,9 +436,9 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
             if(totalBondCount != 0) {
                 totalBondsList = std::move(partialBondsLists.front());
                 totalBondsList.reserve(totalBondCount);
-                std::for_each(std::next(partialBondsLists.begin()), partialBondsLists.end(), [&](const std::vector<Bond>& bonds) {
-                    totalBondsList.insert(totalBondsList.end(), bonds.begin(), bonds.end());
-                });
+                for(auto it = std::next(partialBondsLists.begin()); it != partialBondsLists.end(); ++it) {
+                    totalBondsList.insert(totalBondsList.end(), std::make_move_iterator(it->begin()), std::make_move_iterator(it->end()));
+                }
                 this_task::throwIfCanceled();
             }
 
@@ -543,9 +543,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
             }
 
             // Flatten the to delete list into a single std::vector.
-            size_t totalDeleteCount = 0;
-            threadLocalDeleteIndices.visitEach([&](const std::vector<size_t>& delIndices) { totalDeleteCount += delIndices.size(); });
-            std::vector<bool> totalDeleteList(totalBondCount, false);
+            std::vector<bool> totalDeleteList(totalBondsList.size(), false);
             threadLocalDeleteIndices.visitEach([&](const std::vector<size_t>& delIndices) {
                 for(size_t delIndice : delIndices) {
                     totalDeleteList[delIndice] = true;
