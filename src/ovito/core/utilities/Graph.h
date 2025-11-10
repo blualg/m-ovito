@@ -1,954 +1,693 @@
-////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright 2025 OVITO GmbH, Germany
 //
 //  This file is part of OVITO (Open Visualization Tool).
 //
-//  OVITO is free software; you can redistribute it and/or modify it either under the
-//  terms of the GNU General Public License version 3 as published by the Free Software
-//  Foundation (the "GPL") or, at your option, under the terms of the MIT License.
-//  If you do not alter this notice, a recipient may use your version of this
-//  file under either the GPL or the MIT License.
+//  OVITO is free software; you can redistribute it and/or modify it either
+//  under the terms of the GNU General Public License version 3 as published
+//  by the Free Software Foundation, or (at your option) any later version.
 //
-//  You should have received a copy of the GPL along with this program in a
-//  file LICENSE.GPL.txt.  You should have received a copy of the MIT License along
-//  with this program in a file LICENSE.MIT.txt
+//  OVITO is distributed in the hope that it will be useful, but WITHOUT ANY
+//  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+//  FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+//  details.
 //
-//  This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY KIND,
-//  either express or implied. See the GPL or the MIT License for the specific language
-//  governing rights and limitations.
+//  You should have received a copy of the GNU General Public License along
+//  with OVITO; if not, see <http://www.gnu.org/licenses/>.
 //
-////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 #pragma once
 
 #include <ovito/core/Core.h>
-#include <ovito/core/utilities/MemoryPool.h>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
-#include <span>
+#include <utility>
+#include <memory>
 
 namespace Ovito {
 
 // Forward declaration
-template<typename NodeData, typename EdgeData>
-class SubGraph;
+template<typename NodeId, typename NodeProperty, typename EdgeProperty>
+class UndirectedSubgraph;
 
-/**
- * \brief An undirected graph data structure with efficient edge lookup per node.
+/******************************************************************************
+ * An undirected graph class that supports arbitrary node identifiers and
+ * stores custom properties for both nodes and edges.
  *
- * This graph class provides:
- * - Fast O(1) node insertion
- * - Fast O(1) edge insertion (before finalization)
- * - Fast O(1) access to all edges of a given node (after finalization)
- *
- * The graph uses an offline construction model:
- * 1. Insert all nodes using addNode()
- * 2. Insert all edges using addEdge()
- * 3. Call finalize() to build the adjacency structures
- * 4. Query edges efficiently using getNodeEdges()
- *
- * \tparam NodeData Custom data type to store with each node
- * \tparam EdgeData Custom data type to store with each edge
- */
-template<typename NodeData = void, typename EdgeData = void>
-class Graph
+ * Template parameters:
+ *   NodeId: Type used for node identifiers (e.g., int, size_t, custom type)
+ *   NodeProperty: Type of properties stored with each node
+ *   EdgeProperty: Type of properties stored with each edge
+ ******************************************************************************/
+template<typename NodeIdType, typename NodeProperty = std::monostate, typename EdgeProperty = std::monostate>
+class UndirectedGraph
 {
 public:
-    /// Forward declarations
-    struct Node;
-    struct Edge;
+        using NodeId = NodeIdType;
 
-    /// Type alias for node index
-    using NodeIndex = size_t;
+        /// Represents an edge between two nodes
+        struct Edge {
+            NodeId node1;
+            NodeId node2;
 
-    /// Type alias for edge index
-    using EdgeIndex = size_t;
+            /// Creates an edge with normalized node ordering (smaller ID first)
+            Edge(NodeId n1, NodeId n2)
+            {
+                if(n1 < n2) {
+                    node1 = n1;
+                    node2 = n2;
+                }
+                else {
+                    node1 = n2;
+                    node2 = n1;
+                }
+            }
 
-    /**
-     * \brief Represents a node in the graph.
-     */
-    struct Node {
-        /// Index of this node
-        NodeIndex index;
+            bool operator==(const Edge& other) const { return node1 == other.node1 && node2 == other.node2; }
+        };
 
-        /// Custom node data (if NodeData is not void)
-        [[no_unique_address]] NodeData data;
-
-        /// Range of edges in the finalized edge list (set during finalization)
-        size_t edgeBegin = 0;
-        size_t edgeEnd = 0;
-
-        /// Constructor for Node with data
-        explicit Node(NodeIndex idx, NodeData&& nodeData = NodeData{})
-            requires(!std::is_void_v<NodeData>)
-            : index(idx), data(std::move(nodeData))
+    /// Hash function for edges
+    struct EdgeHash {
+        std::size_t operator()(const Edge& edge) const
         {
-        }
+            std::size_t h1 = std::hash<NodeId>{}(edge.node1);
+            std::size_t h2 = std::hash<NodeId>{}(edge.node2);
 
-        /// Constructor for Node without data
-        explicit Node(NodeIndex idx)
-            requires(std::is_void_v<NodeData>)
-            : index(idx)
-        {
+            // 64-bit-friendly mixing (boost::hash_combine pattern)
+            h1 ^= h2 + 0x9e3779b97f4a7c15ULL + (h1 << 6) + (h1 >> 2);
+            return h1;
         }
     };
 
-    /**
-     * \brief Represents an edge in the graph.
-     */
-    struct Edge {
-        /// Source node index
-        NodeIndex source;
+public:
+    /// Default constructor
+    UndirectedGraph() = default;
 
-        /// Target node index
-        NodeIndex target;
+    /******************************************************************************
+     * Adds a node to the graph with optional properties.
+     ******************************************************************************/
+    void addNode(NodeId id, NodeProperty property = NodeProperty{})
+    {
+        _nodeProperties[id] = std::move(property);
+        // Ensure the node exists in the adjacency list even if it has no edges
+        if(_adjacency.find(id) == _adjacency.end()) {
+            _adjacency[id] = std::unordered_set<NodeId>();
+        }
+    }
 
-        /// Custom edge data (if EdgeData is not void)
-        [[no_unique_address]] EdgeData data;
+    /******************************************************************************
+     * Adds an edge between two nodes with optional properties.
+     * The nodes must already exist in the graph.
+     ******************************************************************************/
+    void addEdge(NodeId node1, NodeId node2, EdgeProperty property = EdgeProperty{})
+    {
+        OVITO_ASSERT(contains(node1));
+        OVITO_ASSERT(contains(node2));
+        OVITO_ASSERT(node1 != node2);  // No self-loops
 
-        /// Constructor for Edge with data
-        Edge(NodeIndex src, NodeIndex tgt, EdgeData&& edgeData = EdgeData{})
-            requires(!std::is_void_v<EdgeData>)
-            : source(src), target(tgt), data(std::move(edgeData))
-        {
+        Edge edge(node1, node2);
+        _edgeProperties[edge] = std::move(property);
+        _adjacency[node1].insert(node2);
+        _adjacency[node2].insert(node1);
+    }
+
+    /******************************************************************************
+     * Removes a node and all its incident edges from the graph.
+     ******************************************************************************/
+    void removeNode(NodeId id)
+    {
+        if(!contains(id)) {
+            return;
         }
 
-        /// Constructor for Edge without data
-        Edge(NodeIndex src, NodeIndex tgt)
-            requires(std::is_void_v<EdgeData>)
-            : source(src), target(tgt)
-        {
-        }
-    };
-
-    /**
-     * \brief Constructor.
-     */
-    Graph() = default;
-
-    /// Destructor
-    ~Graph() = default;
-
-    // Disable copy operations (use move instead)
-    Graph(const Graph&) = delete;
-    Graph& operator=(const Graph&) = delete;
-
-    // Enable move operations
-    Graph(Graph&&) noexcept = default;
-    Graph& operator=(Graph&&) noexcept = default;
-
-    /**
-     * \brief Adds a new node to the graph.
-     * \param data Custom data to store with the node (if NodeData is not void)
-     * \return The index of the newly created node, or the index of the existing node if one with the same data already exists
-     *
-     * If a node with the same data already exists, it will not be added again.
-     * This method can only be called before finalize().
-     */
-    NodeIndex addNode(NodeData&& data = NodeData{})
-        requires(!std::is_void_v<NodeData>)
-    {
-        OVITO_ASSERT(!_finalized);
-
-        // Check if a node with the same data already exists
-        for(const Node& node : _nodes) {
-            if(node.data == data) {
-                return node.index;  // Node with same data already exists
-            }
+        // Remove all edges incident to this node
+        for(NodeId neighbor : _adjacency[id]) {
+            _adjacency[neighbor].erase(id);
+            Edge edge(id, neighbor);
+            _edgeProperties.erase(edge);
         }
 
-        NodeIndex idx = _nodes.size();
-        _nodes.emplace_back(idx, std::move(data));
-        return idx;
+        _adjacency.erase(id);
+        _nodeProperties.erase(id);
     }
 
-    NodeIndex addNode()
-        requires(std::is_void_v<NodeData>)
+    /******************************************************************************
+     * Removes an edge from the graph.
+     ******************************************************************************/
+    void removeEdge(NodeId node1, NodeId node2)
     {
-        OVITO_ASSERT(!_finalized);
+        Edge edge(node1, node2);
+        _edgeProperties.erase(edge);
 
-        NodeIndex idx = _nodes.size();
-        _nodes.emplace_back(idx);
-        return idx;
-    }
-
-    /**
-     * \brief Adds a new edge to the graph.
-     * \param source Index of the source node
-     * \param target Index of the target node
-     * \param data Custom data to store with the edge (if EdgeData is not void)
-     * \return The index of the newly created edge, or the index of the existing edge if it already exists
-     *
-     * The edge direction will be normalized so that source < target.
-     * Only add the edge once (not both directions).
-     * The reverse edge will be created automatically during finalization.
-     * If the edge already exists, it will not be added again.
-     *
-     * This method can only be called before finalize().
-     */
-    EdgeIndex addEdge(NodeIndex source, NodeIndex target, EdgeData&& data = EdgeData{})
-        requires(!std::is_void_v<EdgeData>)
-    {
-        OVITO_ASSERT(!_finalized);
-        OVITO_ASSERT(source < _nodes.size());
-        OVITO_ASSERT(target < _nodes.size());
-        OVITO_ASSERT(source != target);  // No self-loops
-
-        // Normalize edge direction: always store with source < target
-        if(source > target) {
-            std::swap(source, target);
+        auto it1 = _adjacency.find(node1);
+        if(it1 != _adjacency.end()) {
+            it1->second.erase(node2);
         }
 
-        // Check if edge already exists
-        for(size_t i = 0; i < _edges.size(); i++) {
-            const Edge& e = _edges[i];
-            if(e.source == source && e.target == target) {
-                return i;  // Edge already exists, return its index
-            }
+        auto it2 = _adjacency.find(node2);
+        if(it2 != _adjacency.end()) {
+            it2->second.erase(node1);
         }
-
-        EdgeIndex idx = _edges.size();
-        _edges.emplace_back(source, target, std::move(data));
-        return idx;
     }
 
-    EdgeIndex addEdge(NodeIndex source, NodeIndex target)
-        requires(std::is_void_v<EdgeData>)
-    {
-        OVITO_ASSERT(!_finalized);
-        OVITO_ASSERT(source < _nodes.size());
-        OVITO_ASSERT(target < _nodes.size());
-        OVITO_ASSERT(source != target);  // No self-loops
+    /******************************************************************************
+     * Checks if a node exists in the graph.
+     ******************************************************************************/
+    [[nodiscard]] bool contains(NodeId id) const { return _nodeProperties.contains(id); }
 
-        // Normalize edge direction: always store with source < target
-        if(source > target) {
-            std::swap(source, target);
+    /******************************************************************************
+     * Checks if an edge exists between two nodes.
+     ******************************************************************************/
+    [[nodiscard]] bool contains(NodeId node1, NodeId node2) const { return _edgeProperties.contains({node1, node2}); }
+
+    /******************************************************************************
+     * Returns the degree (number of neighbors) of a node.
+     ******************************************************************************/
+    [[nodiscard]] size_t degree(NodeId id) const
+    {
+        auto it = _adjacency.find(id);
+        if(it == _adjacency.end()) return 0;
+        return it->second.size();
+    }
+
+    /******************************************************************************
+     * Returns the set of neighbors of a node.
+     ******************************************************************************/
+    [[nodiscard]] const std::unordered_set<NodeId>& neighbors(NodeId id) const
+    {
+        auto it = _adjacency.find(id);
+        OVITO_ASSERT(it != _adjacency.end());
+        return it->second;
+    }
+
+    /******************************************************************************
+     * Returns a mutable reference to the property of a node.
+     ******************************************************************************/
+    NodeProperty& nodeProperty(NodeId id)
+    {
+        auto it = _nodeProperties.find(id);
+        OVITO_ASSERT(it != _nodeProperties.end());
+        return it->second;
+    }
+
+    /******************************************************************************
+     * Returns a const reference to the property of a node.
+     ******************************************************************************/
+    [[nodiscard]] const NodeProperty& nodeProperty(NodeId id) const
+    {
+        auto it = _nodeProperties.find(id);
+        OVITO_ASSERT(it != _nodeProperties.end());
+        return it->second;
+    }
+
+    /******************************************************************************
+     * Returns a mutable reference to the property of an edge.
+     ******************************************************************************/
+    EdgeProperty& edgeProperty(NodeId node1, NodeId node2)
+    {
+        Edge edge(node1, node2);
+        auto it = _edgeProperties.find(edge);
+        OVITO_ASSERT(it != _edgeProperties.end());
+        return it->second;
+    }
+
+    /******************************************************************************
+     * Returns a const reference to the property of an edge.
+     ******************************************************************************/
+    [[nodiscard]] const EdgeProperty& edgeProperty(NodeId node1, NodeId node2) const
+    {
+        Edge edge(node1, node2);
+        auto it = _edgeProperties.find(edge);
+        OVITO_ASSERT(it != _edgeProperties.end());
+        return it->second;
+    }
+
+    /******************************************************************************
+     * Returns the total number of nodes in the graph.
+     ******************************************************************************/
+    [[nodiscard]] size_t nodeCount() const { return _nodeProperties.size(); }
+
+    /******************************************************************************
+     * Returns the total number of edges in the graph.
+     ******************************************************************************/
+    [[nodiscard]] size_t edgeCount() const { return _edgeProperties.size(); }
+
+    /******************************************************************************
+     * Returns a vector of all node IDs in the graph.
+     ******************************************************************************/
+    [[nodiscard]] std::vector<NodeId> nodes() const
+    {
+        std::vector<NodeId> result;
+        result.reserve(_nodeProperties.size());
+        for(const auto& [id, _] : _nodeProperties) {
+            result.push_back(id);
         }
+        return result;
+    }
 
-        // Check if edge already exists
-        for(size_t i = 0; i < _edges.size(); i++) {
-            const Edge& e = _edges[i];
-            if(e.source == source && e.target == target) {
-                return i;  // Edge already exists, return its index
-            }
+    /******************************************************************************
+     * Returns a vector of all edges in the graph.
+     ******************************************************************************/
+    [[nodiscard]] std::vector<Edge> edges() const
+    {
+        std::vector<Edge> result;
+        result.reserve(_edgeProperties.size());
+        for(const auto& [edge, _] : _edgeProperties) {
+            result.push_back(edge);
         }
-
-        EdgeIndex idx = _edges.size();
-        _edges.emplace_back(source, target);
-        return idx;
+        return result;
     }
 
-    /**
-     * \brief Finalizes the graph and builds adjacency structures for fast edge queries.
-     *
-     * After calling this method:
-     * - No more nodes or edges can be added
-     * - getNodeEdges() can be called efficiently
-     *
-     * This creates reverse edges automatically for the undirected graph.
-     *
-     * Time complexity: O(V + E log E) where V is the number of nodes and E is the number of edges.
-     */
-    void finalize()
-    {
-        OVITO_ASSERT(!_finalized);
-
-        // Create reverse edges for undirected graph
-        size_t originalEdgeCount = _edges.size();
-        _edges.reserve(originalEdgeCount * 2);
-        for(size_t i = 0; i < originalEdgeCount; i++) {
-            const Edge& e = _edges[i];
-            if constexpr(!std::is_void_v<EdgeData>) {
-                _edges.emplace_back(e.target, e.source, EdgeData(e.data));
-            }
-            else {
-                _edges.emplace_back(e.target, e.source);
-            }
-        }
-
-        // Sort edges by source node for fast lookup
-        std::sort(_edges.begin(), _edges.end(), [](const Edge& a, const Edge& b) { return a.source < b.source; });
-
-        // Build adjacency ranges for each node
-        size_t edgeIdx = 0;
-        for(Node& node : _nodes) {
-            node.edgeBegin = edgeIdx;
-            while(edgeIdx < _edges.size() && _edges[edgeIdx].source == node.index) {
-                edgeIdx++;
-            }
-            node.edgeEnd = edgeIdx;
-        }
-
-        _finalized = true;
-    }
-
-    /**
-     * \brief Returns all edges originating from the given node.
-     * \param nodeIdx Index of the node
-     * \return A span of edges originating from the node
-     *
-     * This method can only be called after finalize().
-     * Time complexity: O(1)
-     */
-    [[nodiscard]] std::span<const Edge> getNodeEdges(NodeIndex nodeIdx) const
-    {
-        OVITO_ASSERT(_finalized);
-        OVITO_ASSERT(nodeIdx < _nodes.size());
-        const Node& node = _nodes[nodeIdx];
-        return std::span<const Edge>(_edges.data() + node.edgeBegin, node.edgeEnd - node.edgeBegin);
-    }
-
-    /**
-     * \brief Returns a mutable span of edges originating from the given node.
-     * \param nodeIdx Index of the node
-     * \return A span of edges originating from the node
-     *
-     * This method can only be called after finalize().
-     * Time complexity: O(1)
-     */
-    [[nodiscard]] std::span<Edge> getNodeEdges(NodeIndex nodeIdx)
-    {
-        OVITO_ASSERT(_finalized);
-        OVITO_ASSERT(nodeIdx < _nodes.size());
-        const Node& node = _nodes[nodeIdx];
-        return std::span<Edge>(_edges.data() + node.edgeBegin, node.edgeEnd - node.edgeBegin);
-    }
-
-    /**
-     * \brief Returns the number of edges originating from the given node.
-     * \param nodeIdx Index of the node
-     * \return The number of edges
-     *
-     * This method can only be called after finalize().
-     * Time complexity: O(1)
-     */
-    [[nodiscard]] size_t getNodeDegree(NodeIndex nodeIdx) const
-    {
-        OVITO_ASSERT(_finalized);
-        OVITO_ASSERT(nodeIdx < _nodes.size());
-        const Node& node = _nodes[nodeIdx];
-        return node.edgeEnd - node.edgeBegin;
-    }
-
-    /**
-     * \brief Returns a reference to the node at the given index.
-     * \param nodeIdx Index of the node
-     * \return Reference to the node
-     */
-    [[nodiscard]] const Node& getNode(NodeIndex nodeIdx) const
-    {
-        OVITO_ASSERT(nodeIdx < _nodes.size());
-        return _nodes[nodeIdx];
-    }
-
-    /**
-     * \brief Returns a mutable reference to the node at the given index.
-     * \param nodeIdx Index of the node
-     * \return Reference to the node
-     */
-    [[nodiscard]] Node& getNode(NodeIndex nodeIdx)
-    {
-        OVITO_ASSERT(nodeIdx < _nodes.size());
-        return _nodes[nodeIdx];
-    }
-
-    /**
-     * \brief Returns all nodes in the graph.
-     * \return A span of all nodes
-     */
-    [[nodiscard]] std::span<const Node> nodes() const { return _nodes; }
-
-    /**
-     * \brief Returns all edges in the graph.
-     * \return A span of all edges
-     *
-     * Note: After finalization, edges are sorted by source node.
-     */
-    [[nodiscard]] std::span<const Edge> edges() const { return _edges; }
-
-    /**
-     * \brief Returns the number of nodes in the graph.
-     */
-    [[nodiscard]] size_t nodeCount() const { return _nodes.size(); }
-
-    /**
-     * \brief Returns the number of edges in the graph.
-     *
-     * This includes both directions after finalization.
-     */
-    [[nodiscard]] size_t edgeCount() const { return _edges.size(); }
-
-    /**
-     * \brief Returns true if the graph has been finalized.
-     */
-    [[nodiscard]] bool isFinalized() const { return _finalized; }
-
-    /**
-     * \brief Clears the graph and resets it to the unfinalized state.
-     */
+    /******************************************************************************
+     * Clears all nodes and edges from the graph.
+     ******************************************************************************/
     void clear()
     {
-        _nodes.clear();
-        _edges.clear();
-        _finalized = false;
+        _nodeProperties.clear();
+        _edgeProperties.clear();
+        _adjacency.clear();
     }
 
-    /**
-     * \brief Creates subgraphs for each connected component in the graph.
-     * \return A vector of SubGraph objects, one per connected component
-     *
-     * This method identifies all connected components using a depth-first search
-     * and creates a SubGraph for each component containing all nodes and edges
-     * within that component.
-     *
-     * IMPORTANT: The returned SubGraph objects hold non-owning pointers to this Graph.
-     * The caller must ensure this Graph outlives the returned SubGraphs.
-     *
-     * This method can only be called after finalize().
-     * Time complexity: O(V + E) where V is the number of nodes and E is the number of edges.
-     */
-    [[nodiscard]] std::vector<SubGraph<NodeData, EdgeData>> createConnectedComponentSubGraphs() const
+    /******************************************************************************
+     * Creates a subgraph from this graph containing only the specified nodes.
+     * All edges between the specified nodes are included in the subgraph.
+     * Returns a shared pointer to ensure proper lifetime management.
+     ******************************************************************************/
+    template<typename Container>
+    [[nodiscard]] std::shared_ptr<UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>> createSubgraph(const Container& nodeIds) const;
+
+    /******************************************************************************
+     * Finds all connected components in the graph and creates a subgraph for each.
+     * Returns a vector of subgraphs, one per connected component.
+     * For undirected graphs, connected components are equivalent to strongly
+     * connected components.
+     ******************************************************************************/
+    [[nodiscard]] std::vector<std::shared_ptr<UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>>> createConnectedComponentSubgraphs()
+        const;
+
+private:
+    /// Storage for node properties
+    std::unordered_map<NodeId, NodeProperty> _nodeProperties;
+
+    /// Storage for edge properties
+    std::unordered_map<Edge, EdgeProperty, EdgeHash> _edgeProperties;
+
+    /// Adjacency list: maps each node to its neighbors
+    std::unordered_map<NodeId, std::unordered_set<NodeId>> _adjacency;
+};
+
+/******************************************************************************
+ * A subgraph that references a parent graph and allows overriding edge properties.
+ *
+ * Subgraphs can be created from:
+ * 1. A base graph - includes all edges between specified nodes
+ * 2. Another subgraph - maintains topology, allows edge property overrides
+ *
+ * Node properties are always read from the root graph and cannot be modified.
+ * Edge properties use copy-on-write: modifications create local copies while
+ * unchanged properties are read from the parent chain.
+ *
+ * Lifetime management: Uses shared_ptr to keep parent graphs alive.
+ ******************************************************************************/
+template<typename NodeIdType, typename NodeProperty = std::monostate, typename EdgeProperty = std::monostate>
+class UndirectedSubgraph
+{
+public:
+    using NodeId = NodeIdType;
+    using Edge = typename UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::Edge;
+    using EdgeHash = typename UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::EdgeHash;
+    using GraphType = UndirectedGraph<NodeId, NodeProperty, EdgeProperty>;
+    using SubgraphType = UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>;
+
+    /******************************************************************************
+     * Private constructor for creating a subgraph from a graph.
+     ******************************************************************************/
+    UndirectedSubgraph(std::shared_ptr<const GraphType> parent, const std::unordered_set<NodeId>& nodes)
+        : _parentGraph(std::move(parent)), _nodes(nodes)
     {
-        OVITO_ASSERT(_finalized);
+        OVITO_ASSERT(_parentGraph);
 
-        std::vector<SubGraph<NodeData, EdgeData>> result;
-        std::vector<bool> visited(_nodes.size(), false);
-        std::vector<size_t> componentMap(_nodes.size(), SIZE_MAX);  // Maps node index to component index
+        // Build adjacency list and edge set from parent graph
+        for(NodeId node : _nodes) {
+            OVITO_ASSERT(_parentGraph->contains(node));
+            _adjacency[node] = std::unordered_set<NodeId>();
+        }
 
-        // For each unvisited node, perform DFS to find its connected component
-        for(const Node& node : _nodes) {
-            if(visited[node.index]) continue;
+        // Add all edges between nodes in the subgraph
+        for(NodeId node1 : _nodes) {
+            for(NodeId node2 : _parentGraph->neighbors(node1)) {
+                if(_nodes.count(node2) > 0 && node1 < node2) {  // Add each edge only once
+                    Edge edge(node1, node2);
+                    _edges.insert(edge);
+                    _adjacency[node1].insert(node2);
+                    _adjacency[node2].insert(node1);
+                }
+            }
+        }
+    }
 
-            // Create a new subgraph for this component (with non-owning pointer to this graph)
-            result.emplace_back(this);
-            SubGraph<NodeData, EdgeData>& subgraph = result.back();
+    /******************************************************************************
+     * Private constructor for creating a subgraph from another subgraph.
+     * Does not copy topology - reads directly from parent chain.
+     ******************************************************************************/
+    explicit UndirectedSubgraph(std::shared_ptr<const SubgraphType> parent) : _parentSubgraph(std::move(parent))
+    {
+        OVITO_ASSERT(_parentSubgraph);
+        // Topology (nodes, edges, adjacency) is read from parent - no copying
+    }
 
-            size_t componentIdx = result.size() - 1;
+public:
+    /******************************************************************************
+     * Creates a subgraph from a base graph with specified nodes.
+     * All edges between the specified nodes are included.
+     ******************************************************************************/
+    template<typename Container>
+    [[nodiscard]] static std::shared_ptr<SubgraphType> fromGraph(std::shared_ptr<const GraphType> parent, const Container& nodeIds)
+    {
+        std::unordered_set<NodeId> nodeSet(nodeIds.begin(), nodeIds.end());
+        return std::shared_ptr<SubgraphType>(new SubgraphType(std::move(parent), nodeSet));
+    }
 
-            // DFS to find all nodes in this component
-            std::vector<NodeIndex> stack;
-            stack.push_back(node.index);
-            visited[node.index] = true;
-            componentMap[node.index] = componentIdx;
+    /******************************************************************************
+     * Creates a subgraph from another subgraph, maintaining the same topology.
+     * Allows overriding edge properties without modifying the parent.
+     ******************************************************************************/
+    [[nodiscard]] static std::shared_ptr<SubgraphType> fromSubgraph(std::shared_ptr<const SubgraphType> parent)
+    {
+        return std::shared_ptr<SubgraphType>(new SubgraphType(std::move(parent)));
+    }
 
-            while(!stack.empty()) {
-                NodeIndex currentIdx = stack.back();
-                stack.pop_back();
+    /******************************************************************************
+     * Returns the root graph (walks up the parent chain).
+     ******************************************************************************/
+    [[nodiscard]] const GraphType* rootGraph() const
+    {
+        if(_parentGraph) {
+            return _parentGraph.get();
+        }
+        else {
+            OVITO_ASSERT(_parentSubgraph);
+            return _parentSubgraph->rootGraph();
+        }
+    }
 
-                // Add this node to the subgraph
-                subgraph.addNode(currentIdx);
+    /******************************************************************************
+     * Checks if a node exists in this subgraph.
+     ******************************************************************************/
+    [[nodiscard]] bool contains(NodeId id) const
+    {
+        if(_parentSubgraph) {
+            return _parentSubgraph->contains(id);
+        }
+        else {
+            return _nodes.count(id) > 0;
+        }
+    }
 
-                // Visit all neighbors
-                for(const Edge& edge : getNodeEdges(currentIdx)) {
-                    if(!visited[edge.target]) {
-                        visited[edge.target] = true;
-                        componentMap[edge.target] = componentIdx;
-                        stack.push_back(edge.target);
+    /******************************************************************************
+     * Checks if an edge exists in this subgraph.
+     ******************************************************************************/
+    [[nodiscard]] bool contains(NodeId node1, NodeId node2) const
+    {
+        if(_parentSubgraph) {
+            return _parentSubgraph->contains(node1, node2);
+        }
+        else {
+            Edge edge(node1, node2);
+            return _edges.count(edge) > 0;
+        }
+    }
+
+    /******************************************************************************
+     * Returns the degree (number of neighbors) of a node in this subgraph.
+     ******************************************************************************/
+    [[nodiscard]] size_t degree(NodeId id) const
+    {
+        if(_parentSubgraph) {
+            return _parentSubgraph->degree(id);
+        }
+        else {
+            auto it = _adjacency.find(id);
+            if(it == _adjacency.end()) return 0;
+            return it->second.size();
+        }
+    }
+
+    /******************************************************************************
+     * Returns the set of neighbors of a node in this subgraph.
+     ******************************************************************************/
+    [[nodiscard]] const std::unordered_set<NodeId>& neighbors(NodeId id) const
+    {
+        if(_parentSubgraph) {
+            return _parentSubgraph->neighbors(id);
+        }
+        else {
+            auto it = _adjacency.find(id);
+            OVITO_ASSERT(it != _adjacency.end());
+            return it->second;
+        }
+    }
+
+    /******************************************************************************
+     * Returns a const reference to the property of a node.
+     * Always reads from the root graph (node properties cannot be overridden).
+     ******************************************************************************/
+    [[nodiscard]] const NodeProperty& nodeProperty(NodeId id) const { return rootGraph()->nodeProperty(id); }
+
+    /******************************************************************************
+     * Returns a const reference to the property of an edge.
+     * Checks local overrides first, then walks up the parent chain.
+     ******************************************************************************/
+    [[nodiscard]] const EdgeProperty& edgeProperty(NodeId node1, NodeId node2) const
+    {
+        Edge edge(node1, node2);
+        OVITO_ASSERT(contains(node1, node2));
+
+        // Check local overrides first
+        auto it = _edgePropertyOverrides.find(edge);
+        if(it != _edgePropertyOverrides.end()) {
+            return it->second;
+        }
+
+        // Walk up parent chain
+        if(_parentSubgraph) {
+            return _parentSubgraph->edgeProperty(node1, node2);
+        }
+        else {
+            OVITO_ASSERT(_parentGraph);
+            return _parentGraph->edgeProperty(node1, node2);
+        }
+    }
+
+    /******************************************************************************
+     * Uses copy-on-write semantics - only stores locally modified properties.
+     ******************************************************************************/
+    void setEdgeProperty(NodeId node1, NodeId node2, EdgeProperty property)
+    {
+        Edge edge(node1, node2);
+        OVITO_ASSERT(contains(node1, node2));
+        _edgePropertyOverrides[edge] = std::move(property);
+    }
+
+    /******************************************************************************
+     * Returns a mutable reference to the property of an edge.
+     * Performs copy-on-write: if not locally overridden, copies from parent first.
+     ******************************************************************************/
+    EdgeProperty& edgeProperty(NodeId node1, NodeId node2)
+    {
+        Edge edge(node1, node2);
+        OVITO_ASSERT(contains(node1, node2));
+
+        // Check if already overridden locally
+        auto it = _edgePropertyOverrides.find(edge);
+        if(it != _edgePropertyOverrides.end()) {
+            return it->second;
+        }
+
+        // Copy from parent (copy-on-write)
+        EdgeProperty parentProperty;
+        if(_parentSubgraph) {
+            parentProperty = _parentSubgraph->edgeProperty(node1, node2);
+        }
+        else {
+            OVITO_ASSERT(_parentGraph);
+            parentProperty = _parentGraph->edgeProperty(node1, node2);
+        }
+
+        // Store local copy and return reference
+        auto [insertIt, _] = _edgePropertyOverrides.emplace(edge, std::move(parentProperty));
+        return insertIt->second;
+    }
+
+    /******************************************************************************
+     * Checks if an edge property has been overridden in this subgraph.
+     ******************************************************************************/
+    [[nodiscard]] bool hasEdgePropertyOverride(NodeId node1, NodeId node2) const
+    {
+        Edge edge(node1, node2);
+        return _edgePropertyOverrides.contains(edge);
+    }
+
+    /******************************************************************************
+     * Removes a local edge property override, reverting to parent's property.
+     ******************************************************************************/
+    void clearEdgePropertyOverride(NodeId node1, NodeId node2)
+    {
+        Edge edge(node1, node2);
+        _edgePropertyOverrides.erase(edge);
+    }
+
+    /******************************************************************************
+     * Clears all edge property overrides in this subgraph.
+     ******************************************************************************/
+    void clearAllEdgePropertyOverrides() { _edgePropertyOverrides.clear(); }
+
+    /******************************************************************************
+     * Returns the total number of nodes in the subgraph.
+     ******************************************************************************/
+    [[nodiscard]] size_t nodeCount() const
+    {
+        if(_parentSubgraph) {
+            return _parentSubgraph->nodeCount();
+        }
+        else {
+            return _nodes.size();
+        }
+    }
+
+    /******************************************************************************
+     * Returns the total number of edges in the subgraph.
+     ******************************************************************************/
+    [[nodiscard]] size_t edgeCount() const
+    {
+        if(_parentSubgraph) {
+            return _parentSubgraph->edgeCount();
+        }
+        else {
+            return _edges.size();
+        }
+    }
+
+    /******************************************************************************
+     * Returns a vector of all node IDs in the subgraph.
+     ******************************************************************************/
+    [[nodiscard]] const std::unordered_set<NodeId>& nodes() const
+    {
+        if(_parentSubgraph) {
+            return _parentSubgraph->nodes();
+        }
+        else {
+            return _nodes;
+        }
+    }
+
+    /******************************************************************************
+     * Returns a vector of all edges in the subgraph.
+     ******************************************************************************/
+    [[nodiscard]] const std::unordered_set<Edge, EdgeHash>& edges() const
+    {
+        if(_parentSubgraph) {
+            return _parentSubgraph->edges();
+        }
+        else {
+            return _edges;
+        }
+    }
+
+    /******************************************************************************
+     * Creates a child subgraph from this subgraph.
+     * Maintains the same topology, allows further edge property overrides.
+     ******************************************************************************/
+    [[nodiscard]] std::shared_ptr<SubgraphType> createSubgraph() const
+    {
+        return fromSubgraph(std::shared_ptr<const SubgraphType>(this, [](const SubgraphType*) {}));
+    }
+
+    friend class UndirectedGraph<NodeId, NodeProperty, EdgeProperty>;
+
+private:
+    /// Parent graph or subgraph (keeps it alive via shared ownership)
+    std::shared_ptr<const GraphType> _parentGraph;
+    std::shared_ptr<const SubgraphType> _parentSubgraph;
+
+    /// Set of nodes in this subgraph (only set when created from graph)
+    std::unordered_set<NodeId> _nodes;
+
+    /// Set of edges in this subgraph (only set when created from graph)
+    std::unordered_set<Edge, EdgeHash> _edges;
+
+    /// Adjacency list for this subgraph (only set when created from graph)
+    std::unordered_map<NodeId, std::unordered_set<NodeId>> _adjacency;
+
+    /// Local overrides for edge properties (copy-on-write)
+    std::unordered_map<Edge, EdgeProperty, EdgeHash> _edgePropertyOverrides;
+};
+
+/******************************************************************************
+ * Implementation of UndirectedGraph::createSubgraph
+ ******************************************************************************/
+template<typename NodeId, typename NodeProperty, typename EdgeProperty>
+template<typename Container>
+std::shared_ptr<UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>> UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::createSubgraph(
+    const Container& nodeIds) const
+{
+    using GraphType = UndirectedGraph<NodeId, NodeProperty, EdgeProperty>;
+    return UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::fromGraph(
+        std::shared_ptr<const GraphType>(this, [](const GraphType*) {}), nodeIds);
+}
+
+/******************************************************************************
+ * Implementation of UndirectedGraph::createConnectedComponentSubgraphs
+ ******************************************************************************/
+template<typename NodeId, typename NodeProperty, typename EdgeProperty>
+std::vector<std::shared_ptr<UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>>>
+UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::createConnectedComponentSubgraphs() const
+{
+    using GraphType = UndirectedGraph<NodeId, NodeProperty, EdgeProperty>;
+    using SubgraphType = UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>;
+
+    std::vector<std::shared_ptr<SubgraphType>> components;
+    std::unordered_set<NodeId> visited;
+
+    // Iterate through all nodes to find connected components
+    for(const auto& [nodeId, _] : _nodeProperties) {
+        if(visited.count(nodeId) > 0) {
+            continue;  // Already part of a component
+        }
+
+        // BFS to find all nodes in this connected component
+        std::vector<NodeId> componentNodes;
+        std::vector<NodeId> queue;
+        queue.push_back(nodeId);
+        visited.insert(nodeId);
+
+        while(!queue.empty()) {
+            NodeId current = queue.back();
+            queue.pop_back();
+            componentNodes.push_back(current);
+
+            // Add all unvisited neighbors to the queue
+            auto adjIt = _adjacency.find(current);
+            if(adjIt != _adjacency.end()) {
+                for(NodeId neighbor : adjIt->second) {
+                    if(visited.count(neighbor) == 0) {
+                        visited.insert(neighbor);
+                        queue.push_back(neighbor);
                     }
                 }
             }
         }
 
-        // Now add edges to each subgraph
-        for(const Edge& edge : _edges) {
-            // Only add each edge once (use the original edges before they were doubled for undirected graph)
-            // Since edges are doubled during finalize(), we can identify original edges by checking source < target
-            if(edge.source < edge.target) {
-                size_t componentIdx = componentMap[edge.source];
-                OVITO_ASSERT(componentIdx == componentMap[edge.target]);  // Both nodes should be in same component
-                result[componentIdx].addEdge(edge.source, edge.target);
-            }
-        }
-
-        // Finalize all subgraphs
-        for(auto& subgraph : result) {
-            subgraph.finalize();
-        }
-
-        return result;
+        // Create a subgraph for this connected component
+        auto subgraph = UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::fromGraph(
+            std::shared_ptr<const GraphType>(this, [](const GraphType*) {}), componentNodes);
+        components.push_back(std::move(subgraph));
     }
 
-private:
-    /// Whether the graph has been finalized
-    bool _finalized = false;
-
-    /// List of nodes
-    std::vector<Node> _nodes;
-
-    /// List of edges (sorted by source node after finalization)
-    std::vector<Edge> _edges;
-};
-
-/**
- * \brief A lightweight subgraph view that references a parent graph or subgraph.
- *
- * This class provides a hierarchical subgraph structure where:
- * - Only a subset of nodes and edges from the parent are included
- * - Edge properties can be overridden in the subgraph
- * - If an edge property is not overridden, it is inherited from the parent (or parent's parent, etc.)
- * - Node indices remain the same as in the parent graph
- *
- * The subgraph is lightweight and does not copy node/edge data from the parent.
- * It only stores:
- * - A vector of node indices that are part of this subgraph
- * - A vector of edges (source, target pairs) that are part of this subgraph
- * - A vector of overridden edge properties
- *
- * The subgraph uses an offline construction model similar to Graph:
- * 1. Add nodes using addNode()
- * 2. Add edges using addEdge()
- * 3. Optionally override edge data using overrideEdgeData()
- * 4. Call finalize() to build lookup structures for fast queries
- *
- * IMPORTANT: The caller must ensure that the parent Graph or SubGraph outlives
- * this SubGraph instance, as it holds a non-owning pointer to the parent.
- *
- * \tparam NodeData Custom data type to store with each node (must match parent)
- * \tparam EdgeData Custom data type to store with each edge (must match parent)
- */
-template<typename NodeData = void, typename EdgeData = void>
-class SubGraph
-{
-public:
-    using NodeIndex = typename Graph<NodeData, EdgeData>::NodeIndex;
-    using EdgeIndex = typename Graph<NodeData, EdgeData>::EdgeIndex;
-    using ParentGraph = Graph<NodeData, EdgeData>;
-    using ParentSubGraph = SubGraph<NodeData, EdgeData>;
-
-    /// Type for edge key (ordered pair of nodes)
-    struct EdgeKey {
-        NodeIndex node1;
-        NodeIndex node2;
-
-        EdgeKey(NodeIndex n1, NodeIndex n2) : node1(std::min(n1, n2)), node2(std::max(n1, n2)) {}
-
-        bool operator==(const EdgeKey& other) const { return node1 == other.node1 && node2 == other.node2; }
-
-        bool operator<(const EdgeKey& other) const
-        {
-            if(node1 != other.node1) return node1 < other.node1;
-            return node2 < other.node2;
-        }
-    };
-
-    /// Stores an edge data override
-    struct EdgeDataOverride {
-        EdgeKey edge;
-        EdgeData data;
-
-        EdgeDataOverride(const EdgeKey& e, EdgeData&& d)
-            requires(!std::is_void_v<EdgeData>)
-            : edge(e), data(std::move(d))
-        {
-        }
-    };
-
-    /**
-     * \brief Constructor for subgraph from a parent Graph.
-     * \param parent Non-owning pointer to the parent graph (must outlive this SubGraph)
-     */
-    explicit SubGraph(const ParentGraph* parent) : _parent(parent), _parentSubGraph(nullptr), _rootGraph(parent)
-    {
-        OVITO_ASSERT(_parent);
-        OVITO_ASSERT(_parent->isFinalized());
-    }
-
-    /**
-     * \brief Constructor for subgraph from a parent SubGraph.
-     * \param parent Non-owning pointer to the parent subgraph (must outlive this SubGraph)
-     */
-    explicit SubGraph(const ParentSubGraph* parent) : _parent(nullptr), _parentSubGraph(parent), _rootGraph(parent->_rootGraph)
-    {
-        OVITO_ASSERT(_parentSubGraph);
-        OVITO_ASSERT(_parentSubGraph->isFinalized());
-        OVITO_ASSERT(_rootGraph);
-    }
-
-    /**
-     * \brief Adds a node to the subgraph.
-     * \param nodeIdx Index of the node in the parent graph
-     *
-     * The node must exist in the parent graph.
-     * This method can only be called before finalize().
-     */
-    void addNode(NodeIndex nodeIdx)
-    {
-        OVITO_ASSERT(!_finalized);
-        OVITO_ASSERT(_parent || _parentSubGraph);
-        if(_parent) {
-            OVITO_ASSERT(nodeIdx < _parent->nodeCount());
-        }
-        else {
-            OVITO_ASSERT(_parentSubGraph->containsNode(nodeIdx));
-        }
-        _nodes.push_back(nodeIdx);
-    }
-
-    /**
-     * \brief Adds an edge to the subgraph.
-     * \param source Source node index
-     * \param target Target node index
-     *
-     * Both nodes must be part of this subgraph.
-     * This method can only be called before finalize().
-     */
-    void addEdge(NodeIndex source, NodeIndex target)
-    {
-        OVITO_ASSERT(!_finalized);
-        _edges.push_back(EdgeKey(source, target));
-    }
-
-    /**
-     * \brief Overrides the edge data for a specific edge in this subgraph.
-     * \param source Source node index
-     * \param target Target node index
-     * \param data The new edge data
-     *
-     * This method can be called before finalize() or after finalize().
-     * If called after finalize(), you must call refinalize() to sort the overrides.
-     */
-    void overrideEdgeData(NodeIndex source, NodeIndex target, EdgeData&& data)
-        requires(!std::is_void_v<EdgeData>)
-    {
-        _edgeDataOverrides.emplace_back(EdgeKey(source, target), std::move(data));
-        if(_finalized) {
-            _needsRefinalize = true;
-        }
-    }
-
-    /**
-     * \brief Finalizes the subgraph and builds lookup structures for fast queries.
-     *
-     * After calling this method:
-     * - No more nodes or edges can be added
-     * - Edge data overrides can still be added via overrideEdgeData()
-     * - containsNode() and containsEdge() can be called efficiently
-     * - getEdgeData() can be called efficiently
-     *
-     * Can be called multiple times to re-finalize after adding new edge data overrides.
-     *
-     * Time complexity: O(N log N + E log E + D log D) where N is the number of nodes,
-     * E is the number of edges, and D is the number of data overrides.
-     */
-    void finalize()
-    {
-        // Sort nodes for binary search (only if not already finalized)
-        if(!_finalized) {
-            std::sort(_nodes.begin(), _nodes.end());
-            _nodes.erase(std::unique(_nodes.begin(), _nodes.end()), _nodes.end());
-
-            // Sort edges for binary search
-            std::sort(_edges.begin(), _edges.end());
-            _edges.erase(std::unique(_edges.begin(), _edges.end()), _edges.end());
-        }
-
-        // Sort edge data overrides for binary search (always do this for refinalize)
-        if constexpr(!std::is_void_v<EdgeData>) {
-            std::sort(_edgeDataOverrides.begin(), _edgeDataOverrides.end(), [](const EdgeDataOverride& a, const EdgeDataOverride& b) {
-                return a.edge < b.edge;
-            });
-
-            // Remove duplicates (keeping last override for each edge)
-            auto it = std::unique(_edgeDataOverrides.rbegin(),
-                                  _edgeDataOverrides.rend(),
-                                  [](const EdgeDataOverride& a, const EdgeDataOverride& b) { return a.edge == b.edge; });
-            _edgeDataOverrides.erase(_edgeDataOverrides.begin(), it.base());
-        }
-
-        _finalized = true;
-        _needsRefinalize = false;
-    }
-
-    /**
-     * \brief Re-finalizes the subgraph after adding new edge data overrides.
-     *
-     * This is a convenience method equivalent to calling finalize() again.
-     * Use this after calling overrideEdgeData() on an already finalized subgraph.
-     *
-     * Time complexity: O(D log D) where D is the number of data overrides.
-     */
-    void refinalize()
-        requires(!std::is_void_v<EdgeData>)
-    {
-        finalize();
-    }
-
-    /**
-     * \brief Gets the edge data for an edge, with hierarchical fallback.
-     * \param source Source node index
-     * \param target Target node index
-     * \return Reference to the edge data (from this subgraph or inherited from parent)
-     *
-     * This method searches for edge data in the following order:
-     * 1. This subgraph's overrides
-     * 2. Parent subgraph's overrides (recursively)
-     * 3. Original parent graph's data
-     *
-     * This method can only be called after finalize().
-     */
-    [[nodiscard]] const EdgeData& getEdgeData(NodeIndex source, NodeIndex target) const
-        requires(!std::is_void_v<EdgeData>)
-    {
-        OVITO_ASSERT(_finalized);
-        // OVITO_ASSERT(!_needsRefinalize && "Edge data overrides have been modified. Call refinalize() before querying edge data.");
-        EdgeKey key(source, target);
-
-        // Binary search in our overrides
-        auto it = std::lower_bound(
-            _edgeDataOverrides.begin(), _edgeDataOverrides.end(), key, [](const EdgeDataOverride& override, const EdgeKey& k) {
-                return override.edge < k;
-            });
-
-        if(it != _edgeDataOverrides.end() && it->edge == key) {
-            return it->data;
-        }
-
-        // Check parent subgraph recursively
-        if(_parentSubGraph) {
-            return _parentSubGraph->getEdgeData(source, target);
-        }
-
-        // Get from parent graph
-        OVITO_ASSERT(_parent);
-        for(const auto& edge : _parent->getNodeEdges(source)) {
-            if(edge.target == target) {
-                return edge.data;
-            }
-        }
-
-        // Should never reach here if edge exists
-        OVITO_ASSERT(false);
-        static EdgeData dummy{};
-        return dummy;
-    }
-
-    /**
-     * \brief Checks if a node is part of this subgraph.
-     * \param nodeIdx Node index
-     * \return True if the node is in this subgraph
-     *
-     * This method can only be called after finalize().
-     * Time complexity: O(log N)
-     */
-    [[nodiscard]] bool containsNode(NodeIndex nodeIdx) const
-    {
-        OVITO_ASSERT(_finalized);
-        return std::binary_search(_nodes.begin(), _nodes.end(), nodeIdx);
-    }
-
-    /**
-     * \brief Checks if an edge is part of this subgraph.
-     * \param source Source node index
-     * \param target Target node index
-     * \return True if the edge is in this subgraph
-     *
-     * This method can only be called after finalize().
-     * Time complexity: O(log E)
-     */
-    [[nodiscard]] bool containsEdge(NodeIndex source, NodeIndex target) const
-    {
-        OVITO_ASSERT(_finalized);
-        EdgeKey key(source, target);
-        return std::ranges::binary_search(_edges, key);
-    }
-
-    /**
-     * \brief Returns all nodes in the subgraph.
-     * \return Span of node indices
-     */
-    [[nodiscard]] std::span<const NodeIndex> nodes() const { return _nodes; }
-
-    /**
-     * \brief Returns all edges in the subgraph.
-     * \return Span of edge keys
-     */
-    [[nodiscard]] std::span<const EdgeKey> edges() const { return _edges; }
-
-    /**
-     * \brief Returns the number of nodes in the subgraph.
-     */
-    [[nodiscard]] size_t nodeCount() const { return _nodes.size(); }
-
-    /**
-     * \brief Returns the number of edges in the subgraph.
-     */
-    [[nodiscard]] size_t edgeCount() const { return _edges.size(); }
-
-    /**
-     * \brief Returns true if the subgraph has been finalized.
-     */
-    [[nodiscard]] bool isFinalized() const { return _finalized; }
-
-    /**
-     * \brief Returns true if edge data overrides need to be re-sorted.
-     *
-     * This is set to true when overrideEdgeData() is called after finalization.
-     * Call refinalize() to clear this flag and sort the overrides.
-     */
-    [[nodiscard]] bool needsRefinalize() const { return _needsRefinalize; }
-
-    /**
-     * \brief Returns a reference to the node data from the parent graph.
-     * \param nodeIdx Node index
-     * \return Reference to the node data
-     *
-     * The node must be part of this subgraph.
-     */
-    [[nodiscard]] const typename ParentGraph::Node& getNode(NodeIndex nodeIdx) const
-    {
-        OVITO_ASSERT(containsNode(nodeIdx));
-        OVITO_ASSERT(_parent || _parentSubGraph);
-        if(_parent) {
-            return _parent->getNode(nodeIdx);
-        }
-        else {
-            return _parentSubGraph->getNode(nodeIdx);
-        }
-    }
-
-#if 1
-    /**
-     * \brief Returns all edges of a node in this subgraph.
-     * \param nodeIdx Node index
-     * \return Vector of target node indices for edges originating from this node
-     *
-     * This method efficiently retrieves edges by reading from the root parent graph's
-     * adjacency structure and filtering by edges that are in the subgraph.
-     * The node must be part of this subgraph.
-     * Time complexity: O(d log E) where d is the node's degree in the root parent graph
-     * and E is the number of edges in this subgraph.
-     */
-    [[nodiscard]] std::vector<NodeIndex> getNodeEdges(NodeIndex nodeIdx) const
-    {
-        OVITO_ASSERT(_finalized);
-        OVITO_ASSERT(containsNode(nodeIdx));
-        OVITO_ASSERT(_rootGraph);
-
-        std::vector<NodeIndex> result;
-
-        // Get edges from root parent graph and filter those in subgraph
-        for(const auto& edge : _rootGraph->getNodeEdges(nodeIdx)) {
-            EdgeKey key(nodeIdx, edge.target);
-            if(std::binary_search(_edges.begin(), _edges.end(), key)) {
-                result.push_back(edge.target);
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * \brief Returns the degree of a node in this subgraph.
-     * \param nodeIdx Node index
-     * \return Number of edges connected to this node in the subgraph
-     *
-     * This method efficiently computes degree by reading from the root parent graph's
-     * adjacency structure and filtering by edges that are in the subgraph.
-     * Time complexity: O(d log E) where d is the node's degree in the root parent graph
-     * and E is the number of edges in this subgraph.
-     */
-    [[nodiscard]] size_t getNodeDegree(NodeIndex nodeIdx) const
-    {
-        OVITO_ASSERT(_finalized);
-        OVITO_ASSERT(containsNode(nodeIdx));
-        OVITO_ASSERT(_rootGraph);
-
-        size_t degree = 0;
-
-        // Get edges from root parent graph and count those in subgraph
-        for(const auto& edge : _rootGraph->getNodeEdges(nodeIdx)) {
-            EdgeKey key(nodeIdx, edge.target);
-            if(std::binary_search(_edges.begin(), _edges.end(), key)) {
-                degree++;
-            }
-        }
-
-        return degree;
-    }
-#else
-    /**
-     * \brief Returns all edges of a node in this subgraph.
-     * \param nodeIdx Node index
-     * \return Vector of target node indices for edges originating from this node
-     *
-     * The node must be part of this subgraph.
-     * Time complexity: O(E) where E is the number of edges in the subgraph.
-     */
-    [[nodiscard]] std::vector<NodeIndex> getNodeEdges(NodeIndex nodeIdx) const
-    {
-        OVITO_ASSERT(containsNode(nodeIdx));
-
-        std::vector<NodeIndex> result;
-        for(const EdgeKey& edgeKey : _edges) {
-            if(edgeKey.node1 == nodeIdx) {
-                result.push_back(edgeKey.node2);
-            }
-            else if(edgeKey.node2 == nodeIdx) {
-                result.push_back(edgeKey.node1);
-            }
-        }
-        return result;
-    }
-
-    /**
-     * \brief Returns the degree of a node in this subgraph.
-     * \param nodeIdx Node index
-     * \return Number of edges connected to this node in the subgraph
-     *
-     * Time complexity: O(E) where E is the number of edges in the subgraph.
-     */
-    [[nodiscard]] size_t getNodeDegree(NodeIndex nodeIdx) const
-    {
-        OVITO_ASSERT(containsNode(nodeIdx));
-
-        size_t degree = 0;
-        for(const EdgeKey& edgeKey : _edges) {
-            if(edgeKey.node1 == nodeIdx || edgeKey.node2 == nodeIdx) {
-                degree++;
-            }
-        }
-        return degree;
-    }
-#endif
-
-    /**
-     * \brief Clears the subgraph (removes all nodes and edges).
-     */
-    void clear()
-    {
-        _nodes.clear();
-        _edges.clear();
-        if constexpr(!std::is_void_v<EdgeData>) {
-            _edgeDataOverrides.clear();
-        }
-        _finalized = false;
-        _needsRefinalize = false;
-    }
-
-private:
-    /// Non-owning pointer to parent graph (if this is a direct child of a Graph)
-    const ParentGraph* _parent;
-
-    /// Non-owning pointer to parent subgraph (if this is a child of another SubGraph)
-    const ParentSubGraph* _parentSubGraph;
-
-    /// Non-owning pointer to the root parent graph (cached for efficient access)
-    const ParentGraph* _rootGraph;
-
-    /// Whether the subgraph has been finalized
-    bool _finalized = false;
-
-    /// Whether edge data overrides need to be re-sorted (set when overrideEdgeData is called after finalization)
-    bool _needsRefinalize = false;
-
-    /// Vector of nodes in this subgraph (sorted after finalization)
-    std::vector<NodeIndex> _nodes;
-
-    /// Vector of edges in this subgraph (sorted after finalization)
-    std::vector<EdgeKey> _edges;
-
-    /// Vector of overridden edge data (sorted after finalization)
-    [[no_unique_address]] std::vector<EdgeDataOverride> _edgeDataOverrides;
-};
+    return components;
+}
 
 }  // namespace Ovito
