@@ -23,6 +23,7 @@
 #pragma once
 
 #include <ovito/core/Core.h>
+#include <ranges>
 
 namespace Ovito {
 
@@ -76,20 +77,20 @@ consteval auto getAtomicNumbers()
     return atomicNumbers;
 }
 
-constexpr auto _atomicNumbers = getAtomicNumbers();
+inline constexpr auto _atomicNumbers = getAtomicNumbers();
 static_assert(std::ranges::is_sorted(_atomicNumbers, std::less<>{}, &AtomicNumber::name));
 }  // namespace
 
 namespace AtomicNumbers {
 constexpr std::string_view get(uint8_t number)
 {
-    const auto* const it = std::ranges::find(_atomicNumbers, number, &AtomicNumber::number);
+    const auto it = std::ranges::find(_atomicNumbers, number, &AtomicNumber::number);
     return it != _atomicNumbers.end() ? it->name : std::string_view();
 }
 
 constexpr std::optional<uint8_t> get(std::string_view element)
 {
-    const auto* const it = std::ranges::lower_bound(_atomicNumbers, element, std::less<>{}, &AtomicNumber::name);
+    const auto it = std::ranges::lower_bound(_atomicNumbers, element, std::less<>{}, &AtomicNumber::name);
     if(it != _atomicNumbers.end() && it->name == element) {
         return it->number;
     }
@@ -100,7 +101,7 @@ constexpr std::optional<uint8_t> get(std::string_view element)
 
 consteval uint8_t cget(std::string_view element)
 {
-    const auto* const it = std::ranges::lower_bound(_atomicNumbers, element, std::less<>{}, &AtomicNumber::name);
+    const auto it = std::ranges::lower_bound(_atomicNumbers, element, std::less<>{}, &AtomicNumber::name);
     if(it != _atomicNumbers.end() && it->name == element) {
         return it->number;
     }
@@ -205,7 +206,7 @@ consteval auto getCovalentRadii()
     covRadii[AtomicNumbers::cget("Zr")] = 1.56;
     return covRadii;
 }
-constexpr auto _covalentRadii = getCovalentRadii();
+inline constexpr auto _covalentRadii = getCovalentRadii();
 
 consteval auto getMaxiumCoordination()
 {
@@ -321,7 +322,7 @@ consteval auto getMaxiumCoordination()
     return maxCoord;
 }
 
-constexpr auto _maximumCoordination = getMaxiumCoordination();
+inline constexpr auto _maximumCoordination = getMaxiumCoordination();
 };  // namespace
 
 namespace CovalentRadii {

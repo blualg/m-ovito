@@ -435,7 +435,7 @@ QVariant ParticleType::OOMetaClass::dataInspectorModelData(int columnIndex, cons
                     case ParticlesVis::ParticleShape::Cylinder: return QStringLiteral("Cylinder");
                     case ParticlesVis::ParticleShape::Spherocylinder: return QStringLiteral("Spherocylinder");
                     case ParticlesVis::ParticleShape::Mesh: return QStringLiteral("Mesh");
-                    default: // Ignore
+                    default:;  // Ignore
                 }
             }
         }

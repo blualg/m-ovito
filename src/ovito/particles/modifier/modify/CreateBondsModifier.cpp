@@ -530,9 +530,8 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                             const Bond& bond = totalBondsList[cache[i].first];
                             const auto begin = std::ranges::lower_bound(totalBondsList, bond.index2, std::less<>{}, &Bond::index1);
                             const auto end = std::ranges::upper_bound(totalBondsList, bond.index2, std::less<>{}, &Bond::index1);
-                            const auto span = std::span(begin, end);
-                            const auto it = std::ranges::find(span, bond.index1, &Bond::index2);
-                            if(it != span.end()) {
+                            const auto it = std::ranges::find(begin, end, bond.index1, &Bond::index2);
+                            if(it != end) {
                                 OVITO_ASSERT(it->index1 == bond.index2);
                                 OVITO_ASSERT(it->index2 == bond.index1);
                                 deleteIndices.emplace_back(std::distance(totalBondsList.begin(), it));
