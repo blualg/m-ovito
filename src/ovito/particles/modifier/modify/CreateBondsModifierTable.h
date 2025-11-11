@@ -81,6 +81,12 @@ static_assert(std::ranges::is_sorted(_atomicNumbers, std::less<>{}, &AtomicNumbe
 }  // namespace
 
 namespace AtomicNumbers {
+constexpr std::string_view get(uint8_t number)
+{
+    const auto* const it = std::ranges::find(_atomicNumbers, number, &AtomicNumber::number);
+    return it != _atomicNumbers.end() ? it->name : std::string_view();
+}
+
 constexpr std::optional<uint8_t> get(std::string_view element)
 {
     const auto* const it = std::ranges::lower_bound(_atomicNumbers, element, std::less<>{}, &AtomicNumber::name);
@@ -402,4 +408,238 @@ constexpr std::optional<uint8_t> get(uint8_t element, uint8_t coordination)
     return MaximumCoordination::get(element);
 }
 };  // namespace MaximumValence
+
+namespace AtomicPenaltyScore {
+
+enum class FunctionalGroup : uint8_t
+{
+    NONE,
+    AMIDE,
+    AROMATIC,
+    CARBOXYLATE,    // R-COO
+    CARBOXYLATE_C,  // Central atom in COO group
+    NITRO,          // R-NOO
+    NITRO_C,        // Central atom in NOO group
+};
+
+template<typename OrderType>
+uint32_t computeAtomicPenaltyScore(uint8_t atomicNumber, size_t coordination, OrderType valence, FunctionalGroup group)
+{
+    uint8_t val;
+    if constexpr(std::is_floating_point_v<OrderType>) {
+        OVITO_ASSERT(valence >= 0 && valence <= 255);
+        val = std::round(valence);
+    }
+    else {
+        OVITO_ASSERT(valence >= 0 && valence <= 255);
+        val = valence;
+    }
+
+    if(atomicNumber == AtomicNumbers::cget("C")) {
+        if(group == FunctionalGroup::CARBOXYLATE) {
+            if(valence == 3) {
+                return 64;
+            }
+            if(valence == 4) {
+                return 0;
+            }
+        }
+        else {
+            if(valence == 1) {
+                return 128;
+            }
+            if(valence == 2) {
+                return 64;
+            }
+            if(valence == 3) {
+                return 32;
+            }
+            if(valence == 4) {
+                return 0;
+            }
+        }
+    }
+    else if(atomicNumber == AtomicNumbers::cget("Si")) {
+        if(valence == 1) {
+            return 8;
+        }
+        if(valence == 2) {
+            return 4;
+        }
+        if(valence == 3) {
+            return 2;
+        }
+        if(valence == 4) {
+            return 0;
+        }
+    }
+    else if(atomicNumber == AtomicNumbers::cget("N")) {
+        if(group == FunctionalGroup::NITRO) {
+            if(valence == 3) {
+                return 64;
+            }
+            if(valence == 4) {
+                return 0;
+            }
+        }
+        else if(coordination == 1) {
+            if(valence == 1) {
+                return 64;
+            }
+            if(valence == 2) {
+                return 2;
+            }
+            if(valence == 3) {
+                return 0;
+            }
+        }
+        else if(coordination == 2) {
+            if(valence == 2) {
+                return 4;
+            }
+            if(valence == 3) {
+                return 0;
+            }
+            if(valence == 4) {
+                return 2;
+            }
+        }
+        else if(coordination == 3) {
+            if(valence == 3) {
+                return 0;
+            }
+            if(valence == 4) {
+                return 1;
+            }
+        }
+        else if(coordination == 4) {
+            if(valence == 4) {
+                return 0;
+            }
+        }
+    }
+    else if(atomicNumber == AtomicNumbers::cget("O")) {
+        if(coordination == 1) {
+            if(valence == 1) {
+                return 2;
+            }
+            if(valence == 2) {
+                return 0;
+            }
+            if(valence == 3) {
+                return 16;
+            }
+        }
+        else if(coordination == 2) {
+            if(valence == 2) {
+                return 0;
+            }
+            if(valence == 3) {
+                return 16;
+            }
+        }
+        else if(coordination == 3) {
+            if(valence == 3) {
+                return 0;
+            }
+        }
+    }
+    else if(atomicNumber == AtomicNumbers::cget("P")) {
+        if(coordination == 1) {
+            if(valence == 1) {
+                return 64;
+            }
+            if(valence == 2) {
+                return 2;
+            }
+            if(valence == 3) {
+                return 0;
+            }
+        }
+        else if(coordination == 2) {
+            if(valence == 2) {
+                return 4;
+            }
+            if(valence == 3) {
+                return 0;
+            }
+            if(valence == 4) {
+                return 2;
+            }
+        }
+        else if(coordination == 3) {
+            if(valence == 3) {
+                return 0;
+            }
+            if(valence == 4) {
+                return 1;
+            }
+            if(valence == 5) {
+                return 2;
+            }
+        }
+        else if(coordination == 4) {
+            if(valence == 4) {
+                return 1;
+            }
+            if(valence == 5) {
+                return 0;
+            }
+        }
+    }
+    else if(atomicNumber == AtomicNumbers::cget("S")) {
+        if(coordination == 1) {
+            if(valence == 1) {
+                return 2;
+            }
+            if(valence == 2) {
+                return 0;
+            }
+            if(valence == 3) {
+                return 64;
+            }
+        }
+        else if(coordination == 2) {
+            if(valence == 2) {
+                return 0;
+            }
+            if(valence == 3) {
+                return 32;
+            }
+            if(valence == 4) {
+                return 1;
+            }
+        }
+        else if(coordination == 3) {
+            if(valence == 3) {
+                return 1;
+            }
+            if(valence == 4) {
+                return 0;
+            }
+            if(valence == 5) {
+                return 2;
+            }
+            if(valence == 6) {
+                return 2;
+            }
+        }
+        else if(coordination == 4) {
+            if(valence == 4) {
+                return 4;
+            }
+
+            if(valence == 5) {
+                return 2;
+            }
+
+            if(valence == 6) {
+                return 0;
+            }
+        }
+    }
+    return 0;
+}
+}  // namespace AtomicPenaltyScore
+
 };  // namespace Ovito

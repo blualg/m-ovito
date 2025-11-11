@@ -300,15 +300,15 @@ private:
 };
 
 /******************************************************************************
- * A subgraph that references a parent graph and allows overriding edge properties.
+ * A subgraph that references a parent graph and allows overriding node and edge properties.
  *
  * Subgraphs can be created from:
  * 1. A base graph - includes all edges between specified nodes
- * 2. Another subgraph - maintains topology, allows edge property overrides
+ * 2. Another subgraph - maintains topology, allows property overrides
  *
- * Node properties are always read from the root graph and cannot be modified.
- * Edge properties use copy-on-write: modifications create local copies while
- * unchanged properties are read from the parent chain.
+ * Both node and edge properties use copy-on-write: modifications create local copies
+ * while unchanged properties are read from the parent chain. This allows efficient
+ * property modifications in chained subgraphs without affecting parent graphs.
  *
  * Lifetime management: Uses shared_ptr to keep parent graphs alive.
  ******************************************************************************/
@@ -359,6 +359,34 @@ public:
         // Topology (nodes, edges, adjacency) is read from parent - no copying
     }
 
+    /******************************************************************************
+     * Private constructor for creating a filtered subgraph from another subgraph.
+     * Creates a new topology with only the specified nodes and their edges.
+     ******************************************************************************/
+    UndirectedSubgraph(std::shared_ptr<const SubgraphType> parent, const std::unordered_set<NodeId>& nodes)
+        : _parentSubgraph(std::move(parent)), _nodes(nodes)
+    {
+        OVITO_ASSERT(_parentSubgraph);
+
+        // Build adjacency list and edge set from parent subgraph
+        for(NodeId node : _nodes) {
+            OVITO_ASSERT(_parentSubgraph->contains(node));
+            _adjacency[node] = std::unordered_set<NodeId>();
+        }
+
+        // Add all edges between nodes in this subgraph that exist in parent
+        for(NodeId node1 : _nodes) {
+            for(NodeId node2 : _parentSubgraph->neighbors(node1)) {
+                if(_nodes.count(node2) > 0 && node1 < node2) {  // Add each edge only once
+                    Edge edge(node1, node2);
+                    _edges.insert(edge);
+                    _adjacency[node1].insert(node2);
+                    _adjacency[node2].insert(node1);
+                }
+            }
+        }
+    }
+
 public:
     /******************************************************************************
      * Creates a subgraph from a base graph with specified nodes.
@@ -371,9 +399,15 @@ public:
         return std::shared_ptr<SubgraphType>(new SubgraphType(std::move(parent), nodeSet));
     }
 
+    [[nodiscard]] static std::shared_ptr<SubgraphType> fromGraph(std::shared_ptr<const GraphType> parent,
+                                                                 const std::unordered_set<NodeId>& nodeIds)
+    {
+        return std::shared_ptr<SubgraphType>(new SubgraphType(std::move(parent), nodeIds));
+    }
+
     /******************************************************************************
      * Creates a subgraph from another subgraph, maintaining the same topology.
-     * Allows overriding edge properties without modifying the parent.
+     * Allows overriding node and edge properties without modifying the parent.
      ******************************************************************************/
     [[nodiscard]] static std::shared_ptr<SubgraphType> fromSubgraph(std::shared_ptr<const SubgraphType> parent)
     {
@@ -453,9 +487,66 @@ public:
 
     /******************************************************************************
      * Returns a const reference to the property of a node.
-     * Always reads from the root graph (node properties cannot be overridden).
+     * Checks local overrides first, then walks up the parent chain.
      ******************************************************************************/
-    [[nodiscard]] const NodeProperty& nodeProperty(NodeId id) const { return rootGraph()->nodeProperty(id); }
+    [[nodiscard]] const NodeProperty& nodeProperty(NodeId id) const
+    {
+        OVITO_ASSERT(contains(id));
+
+        // Check local overrides first
+        auto it = _nodePropertyOverrides.find(id);
+        if(it != _nodePropertyOverrides.end()) {
+            return it->second;
+        }
+
+        // Walk up parent chain
+        if(_parentSubgraph) {
+            return _parentSubgraph->nodeProperty(id);
+        }
+        else {
+            OVITO_ASSERT(_parentGraph);
+            return _parentGraph->nodeProperty(id);
+        }
+    }
+
+    /******************************************************************************
+     * Returns a mutable reference to the property of a node.
+     * Performs copy-on-write: if not locally overridden, copies from parent first.
+     ******************************************************************************/
+    NodeProperty& nodeProperty(NodeId id)
+    {
+        OVITO_ASSERT(contains(id));
+
+        // Check if already overridden locally
+        auto it = _nodePropertyOverrides.find(id);
+        if(it != _nodePropertyOverrides.end()) {
+            return it->second;
+        }
+
+        // Copy from parent (copy-on-write)
+        NodeProperty parentProperty;
+        if(_parentSubgraph) {
+            parentProperty = _parentSubgraph->nodeProperty(id);
+        }
+        else {
+            OVITO_ASSERT(_parentGraph);
+            parentProperty = _parentGraph->nodeProperty(id);
+        }
+
+        // Store local copy and return reference
+        auto [insertIt, _] = _nodePropertyOverrides.emplace(id, std::move(parentProperty));
+        return insertIt->second;
+    }
+
+    /******************************************************************************
+     * Sets the property of a node using copy-on-write semantics.
+     * Only stores locally modified properties.
+     ******************************************************************************/
+    void setNodeProperty(NodeId id, NodeProperty property)
+    {
+        OVITO_ASSERT(contains(id));
+        _nodePropertyOverrides[id] = std::move(property);
+    }
 
     /******************************************************************************
      * Returns a const reference to the property of an edge.
@@ -546,6 +637,21 @@ public:
     void clearAllEdgePropertyOverrides() { _edgePropertyOverrides.clear(); }
 
     /******************************************************************************
+     * Checks if a node property has been overridden in this subgraph.
+     ******************************************************************************/
+    [[nodiscard]] bool hasNodePropertyOverride(NodeId id) const { return _nodePropertyOverrides.contains(id); }
+
+    /******************************************************************************
+     * Removes a local node property override, reverting to parent's property.
+     ******************************************************************************/
+    void clearNodePropertyOverride(NodeId id) { _nodePropertyOverrides.erase(id); }
+
+    /******************************************************************************
+     * Clears all node property overrides in this subgraph.
+     ******************************************************************************/
+    void clearAllNodePropertyOverrides() { _nodePropertyOverrides.clear(); }
+
+    /******************************************************************************
      * Returns the total number of nodes in the subgraph.
      ******************************************************************************/
     [[nodiscard]] size_t nodeCount() const
@@ -599,12 +705,20 @@ public:
 
     /******************************************************************************
      * Creates a child subgraph from this subgraph.
-     * Maintains the same topology, allows further edge property overrides.
+     * Maintains the same topology, allows further node and edge property overrides.
      ******************************************************************************/
     [[nodiscard]] std::shared_ptr<SubgraphType> createSubgraph() const
     {
         return fromSubgraph(std::shared_ptr<const SubgraphType>(this, [](const SubgraphType*) {}));
     }
+
+    /******************************************************************************
+     * Creates a child subgraph containing only a subset of nodes from this subgraph.
+     * All edges between the specified nodes are included.
+     * The new subgraph is a child of this subgraph, maintaining the parent-child relationship.
+     ******************************************************************************/
+    template<typename Container>
+    [[nodiscard]] std::shared_ptr<SubgraphType> createSubgraph(const Container& nodeIds) const;
 
     friend class UndirectedGraph<NodeId, NodeProperty, EdgeProperty>;
 
@@ -624,6 +738,9 @@ private:
 
     /// Local overrides for edge properties (copy-on-write)
     std::unordered_map<Edge, EdgeProperty, EdgeHash> _edgePropertyOverrides;
+
+    /// Local overrides for node properties (copy-on-write)
+    std::unordered_map<NodeId, NodeProperty> _nodePropertyOverrides;
 };
 
 /******************************************************************************
@@ -688,6 +805,28 @@ UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::createConnectedComponentSub
     }
 
     return components;
+}
+
+/******************************************************************************
+ * Implementation of UndirectedSubgraph::createSubgraph with filtered nodes
+ ******************************************************************************/
+template<typename NodeId, typename NodeProperty, typename EdgeProperty>
+template<typename Container>
+std::shared_ptr<UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>>
+UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::createSubgraph(const Container& nodeIds) const
+{
+    using SubgraphType = UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>;
+
+    // Convert container to unordered_set and verify all nodes exist
+    std::unordered_set<NodeId> filteredNodes;
+    for(const NodeId& id : nodeIds) {
+        OVITO_ASSERT(contains(id));
+        filteredNodes.insert(id);
+    }
+
+    // Create a new subgraph with filtered nodes as a child of this subgraph
+    return std::shared_ptr<SubgraphType>(
+        new SubgraphType(std::shared_ptr<const SubgraphType>(this, [](const SubgraphType*) {}), filteredNodes));
 }
 
 }  // namespace Ovito
