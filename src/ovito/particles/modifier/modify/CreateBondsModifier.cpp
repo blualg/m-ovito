@@ -349,7 +349,6 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
             }
             BufferReadAccess<int32_t> particleTypesArray(particleTypes);
 
-            constexpr int maxNeighCount = MaximumCoordination::max();
             TaskProgress progress(this_task::ui());
             progress.setText(tr("Generating bonds"));
 
@@ -443,7 +442,6 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
             }
 
             std::ranges::sort(totalBondsList, std::less<>{}, &Bond::index1);
-
             BufferReadAccess<Point3> posAccess(particles->expectProperty(Particles::PositionProperty));
 
             // Cleanup bonds list
@@ -451,6 +449,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
 
             EnumerableThreadSpecific<std::vector<size_t>> threadLocalDeleteIndices;
             EnumerableThreadSpecific<std::vector<std::pair<size_t, FloatType>>> threadLocalCache;
+            std::vector<bool> totalDeleteList(totalBondsList.size(), false);
             for(const auto& t : typeMap) {
                 parallelForInnerOuter(particleCount, 32, progress, [&](auto&& iterate) {
                     auto& deleteIndices = threadLocalDeleteIndices.create();
@@ -459,7 +458,12 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                         const auto begin = std::ranges::lower_bound(totalBondsList, particleIndex, std::less<>{}, &Bond::index1);
                         const auto end = std::ranges::upper_bound(totalBondsList, particleIndex, std::less<>{}, &Bond::index1);
 
-                        const size_t numBonds = std::distance(begin, end);
+                        // Don't count already deleted bonds
+                        size_t numBonds = 0;
+                        for(size_t i = std::distance(totalBondsList.begin(), begin); i < std::distance(totalBondsList.begin(), end); i++) {
+                            numBonds += !totalDeleteList[i];
+                        }
+
                         if(numBonds == 0) {
                             return;
                         }
@@ -469,6 +473,7 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                             OVITO_ASSERT(false);
                             return;
                         }
+                        // Skip if not currently active type
                         if(typeA->id != t.id) {
                             return;
                         }
@@ -491,7 +496,6 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                             OVITO_ASSERT(false);
                             return;
                         }
-                        // Coordination is fulfilled - nothing to do
                         if(numBonds <= *maxCoordination) {
                             return;
                         }
@@ -506,6 +510,12 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                             OVITO_ASSERT(it->index1 == particleIndex);
                             OVITO_ASSERT(it->index2 != particleIndex);
 
+                            // Bond already deleted
+                            const size_t idx = std::distance(totalBondsList.begin(), it);
+                            if(totalDeleteList[idx]) {
+                                continue;
+                            }
+
                             const TypeMapItem* typeB = typeMap.getOvitoId(particleTypesArray[it->index2]);
                             if(!typeB) {
                                 OVITO_ASSERT(false);
@@ -513,16 +523,15 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                             }
 
                             const Point3& posB = posAccess[it->index2];
-                            // TODO: Validate this eq!
+
                             const Vector3 delta =
-                                simCell ? (posB + simCell->matrix().linear() * it->pbcShift.toDataType<FloatType>()) - posA : posB - posA;
+                                simCell ? (posB - posA) + simCell->matrix().linear() * it->pbcShift.toDataType<FloatType>() : posB - posA;
 
                             // For all atoms in typeMap we're guaranteed to have a covalent radius
                             const FloatType bondElongation =
                                 delta.length() / *CovalentRadii::getCleaveDistance(typeA->atomicNo, typeB->atomicNo);
                             cache.emplace_back(std::distance(totalBondsList.begin(), it), bondElongation);
                         }
-
                         std::ranges::sort(cache, std::less<>{}, &std::pair<size_t, FloatType>::second);
                         for(size_t i = *maxCoordination; i < numBonds; i++) {
                             deleteIndices.emplace_back(cache[i].first);
@@ -539,15 +548,14 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                         }
                     });
                 });
-            }
 
-            // Flatten the to delete list into a single std::vector.
-            std::vector<bool> totalDeleteList(totalBondsList.size(), false);
-            threadLocalDeleteIndices.visitEach([&](const std::vector<size_t>& delIndices) {
-                for(size_t delIndice : delIndices) {
-                    totalDeleteList[delIndice] = true;
-                }
-            });
+                // Update the total delete list from each thread.
+                threadLocalDeleteIndices.visitEach([&](const std::vector<size_t>& delIndices) {
+                    for(size_t delIndices : delIndices) {
+                        totalDeleteList[delIndices] = true;
+                    }
+                });
+            }
 
             // Erase duplicate bonds.
             size_t index = 0;
