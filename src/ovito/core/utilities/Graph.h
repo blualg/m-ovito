@@ -43,31 +43,31 @@ class UndirectedSubgraph;
  *   EdgeProperty: Type of properties stored with each edge
  ******************************************************************************/
 template<typename NodeIdType, typename NodeProperty = std::monostate, typename EdgeProperty = std::monostate>
-class UndirectedGraph
+class UndirectedGraph : public std::enable_shared_from_this<UndirectedGraph<NodeIdType, NodeProperty, EdgeProperty>>
 {
 public:
-        using NodeId = NodeIdType;
+    using NodeId = NodeIdType;
 
-        /// Represents an edge between two nodes
-        struct Edge {
-            NodeId node1;
-            NodeId node2;
+    /// Represents an edge between two nodes
+    struct Edge {
+        NodeId node1;
+        NodeId node2;
 
-            /// Creates an edge with normalized node ordering (smaller ID first)
-            Edge(NodeId n1, NodeId n2)
-            {
-                if(n1 < n2) {
-                    node1 = n1;
-                    node2 = n2;
-                }
-                else {
-                    node1 = n2;
-                    node2 = n1;
-                }
+        /// Creates an edge with normalized node ordering (smaller ID first)
+        Edge(NodeId n1, NodeId n2)
+        {
+            if(n1 < n2) {
+                node1 = n1;
+                node2 = n2;
             }
+            else {
+                node1 = n2;
+                node2 = n1;
+            }
+        }
 
-            bool operator==(const Edge& other) const { return node1 == other.node1 && node2 == other.node2; }
-        };
+        bool operator==(const Edge& other) const { return node1 == other.node1 && node2 == other.node2; }
+    };
 
     /// Hash function for edges
     struct EdgeHash {
@@ -312,11 +312,12 @@ private:
  *
  * Lifetime management: Uses shared_ptr to keep parent graphs alive.
  ******************************************************************************/
-template<typename NodeIdType, typename NodeProperty = std::monostate, typename EdgeProperty = std::monostate>
-class UndirectedSubgraph
+template<typename NodeIdType, typename NodeProperty = std::monostate, typename EdgePropertyType = std::monostate>
+class UndirectedSubgraph : public std::enable_shared_from_this<UndirectedSubgraph<NodeIdType, NodeProperty, EdgePropertyType>>
 {
 public:
     using NodeId = NodeIdType;
+    using EdgeProperty = EdgePropertyType;
     using Edge = typename UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::Edge;
     using EdgeHash = typename UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::EdgeHash;
     using GraphType = UndirectedGraph<NodeId, NodeProperty, EdgeProperty>;
@@ -436,8 +437,11 @@ public:
         if(_parentSubgraph) {
             return _parentSubgraph->contains(id);
         }
+        else if(_parentGraph) {
+            return _parentGraph->contains(id);
+        }
         else {
-            return _nodes.count(id) > 0;
+            return _nodes.contains(id);
         }
     }
 
@@ -449,9 +453,12 @@ public:
         if(_parentSubgraph) {
             return _parentSubgraph->contains(node1, node2);
         }
+        else if(_parentGraph) {
+            return _parentGraph->contains(node1, node2);
+        }
         else {
             Edge edge(node1, node2);
-            return _edges.count(edge) > 0;
+            return _edges.contains(edge);
         }
     }
 
@@ -463,10 +470,17 @@ public:
         if(_parentSubgraph) {
             return _parentSubgraph->degree(id);
         }
-        else {
+        else if(!_adjacency.empty()) {
             auto it = _adjacency.find(id);
             if(it == _adjacency.end()) return 0;
             return it->second.size();
+        }
+        else if(_parentGraph) {
+            // Fallback to parent graph when local adjacency is not populated
+            return _parentGraph->degree(id);
+        }
+        else {
+            return 0;
         }
     }
 
@@ -478,10 +492,15 @@ public:
         if(_parentSubgraph) {
             return _parentSubgraph->neighbors(id);
         }
-        else {
+        else if(!_adjacency.empty()) {
             auto it = _adjacency.find(id);
             OVITO_ASSERT(it != _adjacency.end());
             return it->second;
+        }
+        else {
+            OVITO_ASSERT(_parentGraph);
+            // Fallback to parent graph when local adjacency is not populated
+            return _parentGraph->neighbors(id);
         }
     }
 
@@ -660,6 +679,7 @@ public:
             return _parentSubgraph->nodeCount();
         }
         else {
+            OVITO_ASSERT(_parentGraph || !_nodes.empty());
             return _nodes.size();
         }
     }
@@ -673,6 +693,7 @@ public:
             return _parentSubgraph->edgeCount();
         }
         else {
+            OVITO_ASSERT(_parentGraph || !_edges.empty());
             return _edges.size();
         }
     }
@@ -686,6 +707,7 @@ public:
             return _parentSubgraph->nodes();
         }
         else {
+            OVITO_ASSERT(_parentGraph || !_nodes.empty());
             return _nodes;
         }
     }
@@ -699,6 +721,7 @@ public:
             return _parentSubgraph->edges();
         }
         else {
+            OVITO_ASSERT(_parentGraph || !_edges.empty());
             return _edges;
         }
     }
@@ -709,8 +732,23 @@ public:
      ******************************************************************************/
     [[nodiscard]] std::shared_ptr<SubgraphType> createSubgraph() const
     {
-        return fromSubgraph(std::shared_ptr<const SubgraphType>(this, [](const SubgraphType*) {}));
+        // Graph should only be used as a shared_ptr to ensure proper lifetime management
+        OVITO_ASSERT(!this->weak_from_this().expired());
+
+        // Try to use shared_from_this() if this object is owned by a shared_ptr
+        std::shared_ptr<const SubgraphType> parentPtr;
+        try {
+            parentPtr = this->shared_from_this();
+        }
+        catch(const std::bad_weak_ptr&) {
+            // Object is not owned by shared_ptr, create a non-owning shared_ptr
+            // WARNING: Caller must ensure the subgraph outlives all child subgraphs!
+            parentPtr = std::shared_ptr<const SubgraphType>(this, [](const SubgraphType*) {});
+        }
+        return fromSubgraph(parentPtr);
     }
+
+    [[nodiscard]] std::shared_ptr<SubgraphType> copy() const { return createSubgraph(); }
 
     /******************************************************************************
      * Creates a child subgraph containing only a subset of nodes from this subgraph.
@@ -752,8 +790,24 @@ std::shared_ptr<UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>> Undirect
     const Container& nodeIds) const
 {
     using GraphType = UndirectedGraph<NodeId, NodeProperty, EdgeProperty>;
-    return UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::fromGraph(
-        std::shared_ptr<const GraphType>(this, [](const GraphType*) {}), nodeIds);
+    // Graph should only be used as a shared_ptr to ensure proper lifetime management
+    OVITO_ASSERT(!this->weak_from_this().expired());
+
+#if 0
+    // Try to use shared_from_this() if this object is owned by a shared_ptr
+    // Otherwise, the caller must ensure the graph outlives the subgraph
+    std::shared_ptr<const GraphType> parentPtr;
+    try {
+        parentPtr = this->shared_from_this();
+    } catch(const std::bad_weak_ptr&) {
+        // Object is not owned by shared_ptr, create a non-owning shared_ptr
+        // WARNING: Caller must ensure the graph outlives all subgraphs!
+        parentPtr = std::shared_ptr<const GraphType>(this, [](const GraphType*) {});
+    }
+    return UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::fromGraph(parentPtr, nodeIds);
+#else
+    return fromSubgraph(this->shared_from_this());
+#endif
 }
 
 /******************************************************************************
@@ -765,6 +819,9 @@ UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::createConnectedComponentSub
 {
     using GraphType = UndirectedGraph<NodeId, NodeProperty, EdgeProperty>;
     using SubgraphType = UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>;
+
+    // Graph should only be used as a shared_ptr to ensure proper lifetime management
+    OVITO_ASSERT(!this->weak_from_this().expired());
 
     std::vector<std::shared_ptr<SubgraphType>> components;
     std::unordered_set<NodeId> visited;
@@ -798,9 +855,23 @@ UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::createConnectedComponentSub
             }
         }
 
+#if 0
         // Create a subgraph for this connected component
+        // Try to use shared_from_this() if this object is owned by a shared_ptr
+        std::shared_ptr<const GraphType> parentPtr;
+        try {
+            parentPtr = this->shared_from_this();
+        } catch(const std::bad_weak_ptr&) {
+            // Object is not owned by shared_ptr, create a non-owning shared_ptr
+            // WARNING: Caller must ensure the graph outlives all subgraphs!
+            parentPtr = std::shared_ptr<const GraphType>(this, [](const GraphType*) {});
+        }
         auto subgraph = UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::fromGraph(
-            std::shared_ptr<const GraphType>(this, [](const GraphType*) {}), componentNodes);
+            parentPtr, componentNodes);
+#else
+        auto subgraph = UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::fromGraph(this->shared_from_this(), componentNodes);
+#endif
+
         components.push_back(std::move(subgraph));
     }
 
@@ -817,6 +888,9 @@ UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::createSubgraph(const Con
 {
     using SubgraphType = UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>;
 
+    // Graph should only be used as a shared_ptr to ensure proper lifetime management
+    OVITO_ASSERT(!this->weak_from_this().expired());
+
     // Convert container to unordered_set and verify all nodes exist
     std::unordered_set<NodeId> filteredNodes;
     for(const NodeId& id : nodeIds) {
@@ -825,8 +899,17 @@ UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::createSubgraph(const Con
     }
 
     // Create a new subgraph with filtered nodes as a child of this subgraph
-    return std::shared_ptr<SubgraphType>(
-        new SubgraphType(std::shared_ptr<const SubgraphType>(this, [](const SubgraphType*) {}), filteredNodes));
+    // Try to use shared_from_this() if this object is owned by a shared_ptr
+    std::shared_ptr<const SubgraphType> parentPtr;
+    try {
+        parentPtr = this->shared_from_this();
+    }
+    catch(const std::bad_weak_ptr&) {
+        // Object is not owned by shared_ptr, create a non-owning shared_ptr
+        // WARNING: Caller must ensure the subgraph outlives all child subgraphs!
+        parentPtr = std::shared_ptr<const SubgraphType>(this, [](const SubgraphType*) {});
+    }
+    return std::shared_ptr<SubgraphType>(new SubgraphType(parentPtr, filteredNodes));
 }
 
 }  // namespace Ovito
