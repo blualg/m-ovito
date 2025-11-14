@@ -424,12 +424,12 @@ enum class FunctionalGroup : uint8_t
 };
 
 template<typename OrderType>
-uint32_t computeAtomicPenaltyScore(uint8_t atomicNumber, size_t coordination, OrderType valence, FunctionalGroup group)
+uint32_t get(uint8_t atomicNumber, size_t coordination, OrderType valence, FunctionalGroup group)
 {
     uint8_t val;
     if constexpr(std::is_floating_point_v<OrderType>) {
         OVITO_ASSERT(valence >= 0 && valence <= 255);
-        val = std::round(valence);
+        val = (uint8_t)std::round(valence);
     }
     else {
         OVITO_ASSERT(valence >= 0 && valence <= 255);
