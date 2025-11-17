@@ -38,6 +38,8 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.wigner_seitz_analysis`                  Identifies point defects (vacancies and interstitials) in a crystal lattice.
   ================================================================= ==========================================================
 
+.. _particles.modifiers.coloring:
+
 .. table::
   :width: 100%
   :widths: 28 72
@@ -62,6 +64,7 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.combine_particle_sets`           Merges the particles and bonds from two separate input files into one dataset.
   :ref:`particles.modifiers.compute_property`                Assigns property values to particles or bonds according to a user-defined formula.
   :ref:`particles.modifiers.delete_selected_particles`       Removes the selected elements from the visualization.
+  :ref:`particles.modifiers.edit_types`                      Lets you edit the types associated with a typed property, e.g. particle types.
   :ref:`particles.modifiers.freeze_property`                 Freezes the values of a dynamic particle property at a given animation time to make them available at other times.
   :ref:`particles.modifiers.load_trajectory`                 Loads time-dependent atomic positions from a separate trajectory file.
   :ref:`particles.modifiers.python_script` |ovito-pro|       Lets you write your own modifier function in Python.
@@ -71,6 +74,8 @@ combine several modifiers to accomplish more complex tasks.
   :ref:`particles.modifiers.unwrap_trajectories`             Computes unwrapped particle coordinates in order to generate continuous trajectories at periodic cell boundaries.
   :ref:`particles.modifiers.wrap_at_periodic_boundaries`     Folds particles located outside of the periodic simulation box back into the box.
   ========================================================== ==========================================================
+
+.. _particles.modifiers.selection:
 
 .. table::
   :width: 100%
@@ -161,6 +166,7 @@ combine several modifiers to accomplish more complex tasks.
   difference_between_frames
   dislocation_analysis
   displacement_vectors
+  edit_types
   elastic_strain
   find_rings
   expand_selection

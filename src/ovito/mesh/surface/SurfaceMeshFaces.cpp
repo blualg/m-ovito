@@ -142,8 +142,8 @@ QString SurfaceMeshFaces::OOMetaClass::formatDataObjectPath(const ConstDataObjec
 VectorVis::VectorData SurfaceMeshFaces::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
                                                          const RendererResourceCache::ResourceFrame& visCache) const
 {
-    OVITO_ASSERT(path.lastAs<SurfaceMeshFaces>(1) == this);
-    if(const SurfaceMesh* mesh = path.lastAs<SurfaceMesh>(2)) {
+    OVITO_ASSERT(path.nextToLastAs<SurfaceMeshFaces>() == this);
+    if(const SurfaceMesh* mesh = path.nextToNextToLastAs<SurfaceMesh>()) { // Data object path is: SurfaceMesh -> SurfaceMeshFaces -> Property
         mesh->verifyMeshIntegrity();
         // Look up the face centroids in the cache.
         const auto& [basePositions, vectorProperty] = visCache.lookup<std::tuple<ConstDataBufferPtr, ConstDataBufferPtr>>(

@@ -78,9 +78,9 @@ To insert multiple simulations into one scene, use the :menuselection:`File --> 
    :figwidth: 60%
    :align: right
 
-   The pipeline selector widget in OVITO's toolbar
+   The pipeline selector widget in OVITO's toolbar lets you switch between pipelines.
 
-The *pipeline selector* in the top toolbar is a widget listing all simulation files and other objects in the current scene. Each imported file has its own data pipeline, allowing you to manipulate the data. The currently selected data pipeline is displayed in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` in the right command panel.
+The *pipeline selector* in the top right corner of the OVITO window lists all simulation files and other objects in the current scene. Each imported file has its own data pipeline, allowing you to manipulate the data. The currently selected data pipeline is displayed in the :ref:`pipeline editor <usage.modification_pipeline.pipeline_listbox>` in the right command panel.
 
 .. _usage.import.positioning_objects:
 

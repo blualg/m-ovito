@@ -132,6 +132,9 @@ Q_SIGNALS:
     /// \brief This signal is emitted whenever the length of the active animation interval changes.
     void animationIntervalChanged(int firstFrame, int lastFrame);
 
+    /// \brief This signal is emitted whenever the frames per second setting changes.
+    void framesPerSecondChanged(FloatType newFramesPerSecond);
+
     /// \brief This signal is emitted when the time to string conversion format has changed.
     void timeFormatChanged();
 

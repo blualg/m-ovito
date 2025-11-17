@@ -27,8 +27,8 @@
 #include <ovito/core/utilities/io/CompressedTextReader.h>
 #include "CIFImporter.h"
 
-#include <3rdparty/gemmi/cif.hpp>
-#include <3rdparty/gemmi/smcif.hpp> // for reading small molecules
+#include <gemmi/cif.hpp>
+#include <gemmi/smcif.hpp>  // for reading small molecules
 
 namespace Ovito {
 
@@ -77,8 +77,7 @@ bool CIFImporter::OOMetaClass::checkFileFormat(const FileHandle& file) const
     // Continue reading the entire file until at least one "_atom_site_XXX" entry is found.
     // These entries are specific to the CIF format and do not occur in mmCIF files (macromolecular files).
     for(;;) {
-        if(stream.lineStartsWith("_atom_site_", true))
-            return true;
+        if(stream.lineStartsWith("_atom_site_", true) && !stream.lineContains(".")) return true;
         if(stream.eof())
             return false;
         stream.readLine();

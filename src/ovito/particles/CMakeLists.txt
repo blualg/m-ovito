@@ -137,7 +137,7 @@ OVITO_STANDARD_PLUGIN(Particles
     PRIVATE_LIB_DEPENDENCIES VoroPlusPlus PolyhedralTemplateMatching MinimumWeightMatchingCentrosymmetry xdrfile gsd
     OPTIONAL_PLUGIN_DEPENDENCIES StdMod
     PRECOMPILED_HEADERS Particles.h
-    LIB_DEPENDENCIES Qt6::Xml
+    LIB_DEPENDENCIES Qt6::Xml gemmi::gemmi_cpp
 )
 
 # Let the code know that we are building the plugin.

@@ -13,7 +13,7 @@ as follows:
 
 .. note::
 
-  OVITO requires the Qt cross-platform framework (version 6.2 or higher). We recommend using the newest release of the Qt
+  OVITO requires the Qt cross-platform framework (version 6.3 or higher). We recommend using the newest release of the Qt
   framework, which is available as a download from https://www.qt.io/download. Alternatively,
   you can use the Qt6 development files provided by the package manager of your Linux distro.
 

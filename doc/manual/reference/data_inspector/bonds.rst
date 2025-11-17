@@ -12,8 +12,8 @@ in the current dataset. The page displays all bonds and their associated propert
 interactive tools for bond inspection and filtering. This tab appears only when the current dataset contains bonds.
 You can apply the :ref:`particles.modifiers.create_bonds` modifier in the data pipeline to generate bonds if necessary.
 
-Interface components
---------------------
+Interface elements
+------------------
 
 The bonds tab includes the following elements:
 

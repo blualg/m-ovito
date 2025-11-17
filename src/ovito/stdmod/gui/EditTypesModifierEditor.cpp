@@ -28,6 +28,7 @@
 #include <ovito/core/dataset/pipeline/ModificationNode.h>
 #include <ovito/core/app/PluginManager.h>
 #include <ovito/stdobj/properties/PropertyContainer.h>
+#include <ovito/stdobj/table/DataTable.h>
 #include <ovito/stdmod/modifiers/SelectTypeModifier.h>
 #include <ovito/stdmod/modifiers/DeleteSelectedModifier.h>
 #include "EditTypesModifierEditor.h"
@@ -60,8 +61,23 @@ void EditTypesModifierEditor::createUI(const RolloutInsertionParameters& rollout
     DataObjectReferenceParameterUI* sourcePropertyUI = createParamUI<DataObjectReferenceParameterUI>(PROPERTY_FIELD(EditTypesModifier::sourceProperty), Property::OOClass());
     gridLayout->addWidget(new QLabel(tr("Operate on:")), 0, 0);
     gridLayout->addWidget(sourcePropertyUI->comboBox(), 0, 1);
-    sourcePropertyUI->setObjectFilter<Property>([](const Property* property) {
-        return property->isTypedProperty();
+
+    // Filter the list of selectable properties to only show typed properties.
+    // These are the only properties that have element types.
+    sourcePropertyUI->setObjectFilter([](const ConstDataObjectPath& path) {
+        if(const Property* property = path.lastAs<Property>()) {
+            if(property->isTypedProperty() == false)
+                return false;
+
+            // Filter out all properties that belong to data tables, because their types often represent copies of
+            // types associated with particle or bond properties. For example, a StructureAnalysisModifier adds the
+            // structure types to both the "Structure Type" particle property and the "Structure Counts" data table.
+            if(path.nextToLastAs<DataTable>() != nullptr)
+                return false;
+
+            return true; // Accept property.
+        }
+        return false;
     });
 
     class TableWidget : public QTableView {
@@ -250,7 +266,12 @@ void EditTypesModifierEditor::ViewModel::refresh()
                         }
                         else {
                             // Add an editable copy of the element type to the list.
-                            elementTypes.push_back(cloneHelper.cloneObject(type, false));
+                            OORef<ElementType> clonedType = cloneHelper.cloneObject(type, false);
+
+                            // Freeze all property fields of the type to make it easier to spot which fields have been modified by the user later.
+                            clonedType->freezeInitialParameterValues();
+
+                            elementTypes.push_back(std::move(clonedType));
                         }
                     }
                 }
@@ -383,7 +404,7 @@ void EditTypesModifierEditor::deleteType(const QModelIndex& index)
                     if(inputProperty->isTypedProperty() && inputProperty->elementType(typeId)) {
                         numElementsOfType += inputProperty->count(typeId);
                         if(numElementsOfType) {
-                            if(const PropertyContainer* container = path.lastAs<PropertyContainer>(1)) {
+                            if(const PropertyContainer* container = path.nextToLastAs<PropertyContainer>()) {
                                 elementDescriptionName = container->getOOMetaClass().elementDescriptionName();
                                 propertyRef = inputProperty;
                                 containerRef = path.parentPath();
@@ -532,7 +553,7 @@ void EditTypesModifierEditor::addNewType()
             ConstDataObjectPath path = inputState.getObject(modifier()->sourceProperty());
             if(const Property* inputProperty = path.lastAs<Property>()) {
                 if(inputProperty->isTypedProperty()) {
-                    if(const PropertyContainer* container = path.lastAs<PropertyContainer>(1)) {
+                    if(const PropertyContainer* container = path.nextToLastAs<PropertyContainer>()) {
                         ownerPropertyRef = OwnerPropertyRef(&container->getOOMetaClass(), inputProperty);
                         break;
                     }

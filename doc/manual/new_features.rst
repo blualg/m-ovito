@@ -9,6 +9,9 @@ Version 3.15.0 (dd-mm-2025)
 ----------------------------
 
 - Add MOL/SDF file importer
+- Update gemmi to 0.7.3
+- Fix bug where the Find Rings modifier would not find rings of size equal to max ring size
+- Fix bug where the Find Rings modifier would report evenly sized rings in both directions
 
 .. sidebar::
 

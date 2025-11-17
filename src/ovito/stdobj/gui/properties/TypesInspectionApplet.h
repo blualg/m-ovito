@@ -62,11 +62,14 @@ public:
 
     /// Returns the PropertyContainer that contains the selected typed property.
     const PropertyContainer* selectedPropertyContainer() const {
-        return selectedDataObjectPath().lastAs<PropertyContainer>(1);
+        return selectedDataObjectPath().nextToLastAs<PropertyContainer>();
     }
 
     /// Selects a specific data object in this applet.
     virtual bool selectDataObject(const PipelineNode* createdByNode, const QString& objectIdentifierHint, const QVariant& modeHint) override;
+
+    /// Returns the help topic ID for the documentation page of this applet.
+    virtual QString helpTopicId() const override { return QStringLiteral("manual:data_inspector.types"); }
 
 protected:
 

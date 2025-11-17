@@ -344,8 +344,13 @@ const ElementType* Property::addNumericType(const PropertyContainerClass& contai
 {
     OVITO_CHECK_OBJECT_POINTER(this);
 
-    if(const ElementType* existingType = elementType(id))
+    if(const ElementType* existingType = elementType(id)) {
+        // TODO: Check if name matches too? If not, throw an exception?
+        // Up to OVITO 3.14 this mismatch was silently ignored, because the user could rename types at the file source level in the GUI.
+        // In the future, we might want to be stricter about this and require consistent ID-name mappings across all loaded
+        // trajectory frames.
         return existingType;
+    }
 
     // If the caller did not specify an element type class, let the PropertyContainer class
     // determine the right element type class for the given property.

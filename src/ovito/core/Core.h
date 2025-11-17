@@ -51,6 +51,7 @@
 #include <queue>
 #include <random>
 #include <ranges>
+#include <string_view>
 #include <set>
 #include <span>
 #include <stack>

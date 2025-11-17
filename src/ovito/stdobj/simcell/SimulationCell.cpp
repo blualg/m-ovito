@@ -95,8 +95,9 @@ void SimulationCell::propertyChanged(const PropertyFieldDescriptor* field)
 }
 
 /******************************************************************************
-* Wraps the input coordinates at the periodic boundaries of the cell.
-* The wrapped coordinates are returned as a new DataBuffer object.
+* Wraps the input coordinates at the periodic boundaries of the simulation cell.
+* The wrapped coordinates are returned as a new property array that has the same
+* memory layout and visual elements as the input property.
 ******************************************************************************/
 ConstPropertyPtr SimulationCellData::wrapPoints(const Property* inputPositions) const
 {

@@ -148,7 +148,7 @@ void VectorVisEditor::updateColoringOptions()
         container = path.lastAs<PropertyContainer>();
         // If last element is not the container - check second to last element:
         if(!container)
-            container = path.lastAs<const PropertyContainer>(1);
+            container = path.nextToLastAs<PropertyContainer>();
         if(container) {
             // Do the vector arrows, which are associated with the particles, have explicit RGB colors assigned ("Vector Color" property exists)?
             // Do the vector arrows, which are associated with the particles, have explicit transparency values assigned ("Vector Transparency" property exists)?

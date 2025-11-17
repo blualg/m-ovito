@@ -582,10 +582,10 @@ ConstPropertyPtr Bonds::OOMetaClass::viewportFenceSelection(const QVector<Point2
 VectorVis::VectorData Bonds::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
                                               const RendererResourceCache::ResourceFrame& visCache) const
 {
-    OVITO_ASSERT(path.lastAs<Bonds>(1) == this);
+    OVITO_ASSERT(path.nextToLastAs<Bonds>() == this);
     verifyIntegrity();
 
-    if(const Particles* particles = path.lastAs<Particles>(2)) {
+    if(const Particles* particles = path.nextToNextToLastAs<Particles>()) { // Data object path is: Particles -> Bonds -> Property
         const Property* positionProperty = particles->getProperty(Particles::PositionProperty);
         const Property* bondTopologyProperty = getProperty(Bonds::TopologyProperty);
         const Property* bondPeriodicImageProperty = getProperty(Bonds::PeriodicImageProperty);

@@ -175,7 +175,7 @@ QString VoxelGrid::elementInfoString(size_t elementIndex, const ConstDataObjectR
 VectorVis::VectorData VoxelGrid::getVectorVisData(const ConstDataObjectPath& path, const PipelineFlowState& state,
                                                   const RendererResourceCache::ResourceFrame& visCache) const
 {
-    OVITO_ASSERT(path.lastAs<VoxelGrid>(1) == this);
+    OVITO_ASSERT(path.nextToLastAs<VoxelGrid>() == this);
 
     // Make sure the voxel grid has a domain.
     verifyIntegrity();

@@ -128,6 +128,9 @@ bool DataSetContainer::referenceEvent(RefTarget* source, const ReferenceEvent& e
             else if(changedEvent.field() == PROPERTY_FIELD(AnimationSettings::preferSimulationTimeDisplay)) {
                 Q_EMIT timeFormatChanged();
             }
+            else if(changedEvent.field() == PROPERTY_FIELD(AnimationSettings::framesPerSecond)) {
+                Q_EMIT framesPerSecondChanged(activeAnimationSettings()->framesPerSecond());
+            }
         }
     }
     else if(source == activeSelectionSet()) {
@@ -196,10 +199,12 @@ void DataSetContainer::referenceReplaced(const PropertyFieldDescriptor* field, R
             Q_EMIT animationIntervalChanged(activeAnimationSettings()->firstFrame(), activeAnimationSettings()->lastFrame());
             Q_EMIT currentFrameChanged(activeAnimationSettings()->currentFrame());
             Q_EMIT timeFormatChanged();
+            Q_EMIT framesPerSecondChanged(activeAnimationSettings()->framesPerSecond());
         }
         else {
             Q_EMIT animationIntervalChanged(0, 0);
             Q_EMIT currentFrameChanged(0);
+            Q_EMIT framesPerSecondChanged(0);
         }
     }
     RefMaker::referenceReplaced(field, oldTarget, newTarget, listIndex);

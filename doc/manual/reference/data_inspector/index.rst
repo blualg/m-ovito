@@ -22,6 +22,7 @@ of data is present in the pipeline output:
 * Angles
 * Dihedrals
 * Impropers
+* :ref:`data_inspector.types`
 * :ref:`data_inspector.simulation_cell`
 * :ref:`data_inspector.attributes`
 * :ref:`data_inspector.data_tables`
@@ -34,6 +35,7 @@ of data is present in the pipeline output:
 
   particles
   bonds
+  types
   simulation_cell
   attributes
   data_tables
