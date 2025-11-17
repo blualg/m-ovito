@@ -512,7 +512,7 @@ struct Chain {
     while (end != residues.end() && end->entity_type == EntityType::Polymer
                                  && end->subchain == begin->subchain)
       ++end;
-    return ResidueSpan(residues, &*begin, end - begin);
+    return ResidueSpan(residues, residues.data(), std::distance(begin, end));
   }
   ConstResidueSpan get_polymer() const {
     return const_cast<Chain*>(this)->get_polymer();

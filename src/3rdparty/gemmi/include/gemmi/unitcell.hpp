@@ -353,7 +353,7 @@ struct UnitCell : UnitCellParameters {
 
   void set_cell_images_from_groupops(const GroupOps& group_ops) {
     images.clear();
-    cs_count = (short) group_ops.order() - 1;
+    cs_count = (short)std::max(0, group_ops.order() - 1);
     images.reserve(cs_count);
     for (Op op : group_ops)
       if (op != Op::identity())
