@@ -435,6 +435,7 @@ uint32_t get(uint8_t atomicNumber, size_t coordination, OrderType valence, Funct
         OVITO_ASSERT(valence >= 0 && valence <= 255);
         val = valence;
     }
+    constexpr uint32_t notFound = 1e3;
 
     if(atomicNumber == AtomicNumbers::cget("C")) {
         if(group == FunctionalGroup::CARBOXYLATE) {
@@ -459,6 +460,7 @@ uint32_t get(uint8_t atomicNumber, size_t coordination, OrderType valence, Funct
                 return 0;
             }
         }
+        return notFound;
     }
     else if(atomicNumber == AtomicNumbers::cget("Si")) {
         if(valence == 1) {
@@ -473,6 +475,7 @@ uint32_t get(uint8_t atomicNumber, size_t coordination, OrderType valence, Funct
         if(valence == 4) {
             return 0;
         }
+        return notFound;
     }
     else if(atomicNumber == AtomicNumbers::cget("N")) {
         if(group == FunctionalGroup::NITRO) {
@@ -518,6 +521,7 @@ uint32_t get(uint8_t atomicNumber, size_t coordination, OrderType valence, Funct
                 return 0;
             }
         }
+        return notFound;
     }
     else if(atomicNumber == AtomicNumbers::cget("O")) {
         if(coordination == 1) {
@@ -544,6 +548,7 @@ uint32_t get(uint8_t atomicNumber, size_t coordination, OrderType valence, Funct
                 return 0;
             }
         }
+        return notFound;
     }
     else if(atomicNumber == AtomicNumbers::cget("P")) {
         if(coordination == 1) {
@@ -587,6 +592,7 @@ uint32_t get(uint8_t atomicNumber, size_t coordination, OrderType valence, Funct
                 return 0;
             }
         }
+        return notFound;
     }
     else if(atomicNumber == AtomicNumbers::cget("S")) {
         if(coordination == 1) {
@@ -638,6 +644,7 @@ uint32_t get(uint8_t atomicNumber, size_t coordination, OrderType valence, Funct
                 return 0;
             }
         }
+        return notFound;
     }
     return 0;
 }
