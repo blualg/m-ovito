@@ -434,11 +434,19 @@ public:
      ******************************************************************************/
     [[nodiscard]] bool contains(NodeId id) const
     {
-        if(_parentSubgraph) {
+        // Prioritize own data if available
+        if(!_nodes.empty()) {
+            return _nodes.contains(id);
+        }
+        // Fall back to parent chain
+        else if(_parentSubgraph) {
             return _parentSubgraph->contains(id);
         }
+        else if(_parentGraph) {
+            return _parentGraph->contains(id);
+        }
         else {
-            return _nodes.contains(id);
+            return false;
         }
     }
 
@@ -447,12 +455,20 @@ public:
      ******************************************************************************/
     [[nodiscard]] bool contains(NodeId node1, NodeId node2) const
     {
-        if(_parentSubgraph) {
-            return _parentSubgraph->contains(node1, node2);
-        }
-        else {
+        // Prioritize own data if available
+        if(!_edges.empty()) {
             Edge edge(node1, node2);
             return _edges.contains(edge);
+        }
+        // Fall back to parent chain
+        else if(_parentSubgraph) {
+            return _parentSubgraph->contains(node1, node2);
+        }
+        else if(_parentGraph) {
+            return _parentGraph->contains(node1, node2);
+        }
+        else {
+            return false;
         }
     }
 
@@ -461,16 +477,17 @@ public:
      ******************************************************************************/
     [[nodiscard]] size_t degree(NodeId id) const
     {
-        if(_parentSubgraph) {
-            return _parentSubgraph->degree(id);
-        }
-        else if(!_adjacency.empty()) {
+        // Prioritize own data if available
+        if(!_adjacency.empty()) {
             auto it = _adjacency.find(id);
             if(it == _adjacency.end()) return 0;
             return it->second.size();
         }
+        // Fall back to parent chain
+        else if(_parentSubgraph) {
+            return _parentSubgraph->degree(id);
+        }
         else if(_parentGraph) {
-            // Fallback to parent graph when local adjacency is not populated
             return _parentGraph->degree(id);
         }
         else {
@@ -483,17 +500,18 @@ public:
      ******************************************************************************/
     [[nodiscard]] const std::unordered_set<NodeId>& neighbors(NodeId id) const
     {
-        if(_parentSubgraph) {
-            return _parentSubgraph->neighbors(id);
-        }
-        else if(!_adjacency.empty()) {
+        // Prioritize own data if available
+        if(!_adjacency.empty()) {
             auto it = _adjacency.find(id);
             OVITO_ASSERT(it != _adjacency.end());
             return it->second;
         }
+        // Fall back to parent chain
+        else if(_parentSubgraph) {
+            return _parentSubgraph->neighbors(id);
+        }
         else {
             OVITO_ASSERT(_parentGraph);
-            // Fallback to parent graph when local adjacency is not populated
             return _parentGraph->neighbors(id);
         }
     }
@@ -669,12 +687,17 @@ public:
      ******************************************************************************/
     [[nodiscard]] size_t nodeCount() const
     {
-        if(_parentSubgraph) {
+        // Prioritize own data if available
+        if(!_nodes.empty()) {
+            return _nodes.size();
+        }
+        // Fall back to parent chain
+        else if(_parentSubgraph) {
             return _parentSubgraph->nodeCount();
         }
         else {
-            OVITO_ASSERT(_parentGraph || !_nodes.empty());
-            return _nodes.size();
+            OVITO_ASSERT(_parentGraph);
+            return _parentGraph->nodeCount();
         }
     }
 
@@ -683,12 +706,17 @@ public:
      ******************************************************************************/
     [[nodiscard]] size_t edgeCount() const
     {
-        if(_parentSubgraph) {
+        // Prioritize own data if available
+        if(!_edges.empty()) {
+            return _edges.size();
+        }
+        // Fall back to parent chain
+        else if(_parentSubgraph) {
             return _parentSubgraph->edgeCount();
         }
         else {
-            OVITO_ASSERT(_parentGraph || !_edges.empty());
-            return _edges.size();
+            OVITO_ASSERT(_parentGraph);
+            return _parentGraph->edgeCount();
         }
     }
 
@@ -697,12 +725,21 @@ public:
      ******************************************************************************/
     [[nodiscard]] const std::unordered_set<NodeId>& nodes() const
     {
-        if(_parentSubgraph) {
+        // Prioritize own data if available
+        if(!_nodes.empty()) {
+            return _nodes;
+        }
+        // Fall back to parent chain
+        else if(_parentSubgraph) {
             return _parentSubgraph->nodes();
         }
         else {
-            OVITO_ASSERT(_parentGraph || !_nodes.empty());
-            return _nodes;
+            OVITO_ASSERT(_parentGraph);
+            // When created without own topology, must return parent's nodes
+            // Note: This is a design limitation - we'd need to cache parent's nodes to return a reference
+            static const std::unordered_set<NodeId> emptySet;
+            OVITO_ASSERT(false && "Cannot return nodes by reference from parent graph");
+            return emptySet;
         }
     }
 
@@ -711,12 +748,21 @@ public:
      ******************************************************************************/
     [[nodiscard]] const std::unordered_set<Edge, EdgeHash>& edges() const
     {
-        if(_parentSubgraph) {
+        // Prioritize own data if available
+        if(!_edges.empty()) {
+            return _edges;
+        }
+        // Fall back to parent chain
+        else if(_parentSubgraph) {
             return _parentSubgraph->edges();
         }
         else {
-            OVITO_ASSERT(_parentGraph || !_edges.empty());
-            return _edges;
+            OVITO_ASSERT(_parentGraph);
+            // When created without own topology, must return parent's edges
+            // Note: This is a design limitation - we'd need to cache parent's edges to return a reference
+            static const std::unordered_set<Edge, EdgeHash> emptySet;
+            OVITO_ASSERT(false && "Cannot return edges by reference from parent graph");
+            return emptySet;
         }
     }
 
