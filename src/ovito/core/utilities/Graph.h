@@ -21,11 +21,13 @@
 #pragma once
 
 #include <ovito/core/Core.h>
+#include <algorithm>
+#include <functional>
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 #include <utility>
-#include <memory>
+#include <vector>
 
 namespace Ovito {
 
@@ -42,11 +44,12 @@ class UndirectedSubgraph;
  *   NodeProperty: Type of properties stored with each node
  *   EdgeProperty: Type of properties stored with each edge
  ******************************************************************************/
-template<typename NodeIdType, typename NodeProperty = std::monostate, typename EdgeProperty = std::monostate>
-class UndirectedGraph : public std::enable_shared_from_this<UndirectedGraph<NodeIdType, NodeProperty, EdgeProperty>>
+template<typename NodeIdType, typename NodeProperty = std::monostate, typename EdgePropertyType = std::monostate>
+class UndirectedGraph : public std::enable_shared_from_this<UndirectedGraph<NodeIdType, NodeProperty, EdgePropertyType>>
 {
 public:
     using NodeId = NodeIdType;
+    using EdgeProperty = EdgePropertyType;
 
     /// Represents an edge between two nodes
     struct Edge {
@@ -287,6 +290,21 @@ public:
      ******************************************************************************/
     [[nodiscard]] std::vector<std::shared_ptr<UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>>> createConnectedComponentSubgraphs()
         const;
+
+    /******************************************************************************
+     * Finds all simple cycles with sizes between minSize and maxSize in the graph.
+     * Returns a flat vector containing all cycles in the format:
+     *   [ringSize1, idx1, idx2, ..., ringSizeN, idx1, idx2, ...]
+     * where each cycle is prefixed by its size, followed by the node IDs in the cycle.
+     *
+     * The cycles are returned in canonical form to avoid duplicates:
+     * - Each cycle starts with its smallest node ID
+     * - The second node in the cycle is the smaller of the two neighbors
+     * - This ensures each cycle appears exactly once, independent of orientation
+     *
+     * Note: For large graphs or large values of maxSize, this can be computationally expensive.
+     ******************************************************************************/
+    [[nodiscard]] std::vector<NodeId> findCycles(size_t minSize, size_t maxSize) const;
 
 private:
     /// Storage for node properties
@@ -798,6 +816,21 @@ public:
     template<typename Container>
     [[nodiscard]] std::shared_ptr<SubgraphType> createSubgraph(const Container& nodeIds) const;
 
+    /******************************************************************************
+     * Finds all simple cycles with sizes between minSize and maxSize in the subgraph.
+     * Returns a flat vector containing all cycles in the format:
+     *   [ringSize1, idx1, idx2, ..., ringSizeN, idx1, idx2, ...]
+     * where each cycle is prefixed by its size, followed by the node IDs in the cycle.
+     *
+     * The cycles are returned in canonical form to avoid duplicates:
+     * - Each cycle starts with its smallest node ID
+     * - The second node in the cycle is the smaller of the two neighbors
+     * - This ensures each cycle appears exactly once, independent of orientation
+     *
+     * Note: For large graphs or large values of maxSize, this can be computationally expensive.
+     ******************************************************************************/
+    [[nodiscard]] std::vector<NodeId> findCycles(size_t minSize, size_t maxSize) const;
+
     friend class UndirectedGraph<NodeId, NodeProperty, EdgeProperty>;
 
 private:
@@ -950,6 +983,162 @@ UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::createSubgraph(const Con
         parentPtr = std::shared_ptr<const SubgraphType>(this, [](const SubgraphType*) {});
     }
     return std::shared_ptr<SubgraphType>(new SubgraphType(parentPtr, filteredNodes));
+}
+
+/******************************************************************************
+ * Helper namespace for cycle detection implementation
+ ******************************************************************************/
+namespace GraphCycleDetection {
+
+/******************************************************************************
+ * Shared DFS implementation for finding cycles.
+ * This function is used by both UndirectedGraph and UndirectedSubgraph.
+ *
+ * Template parameters:
+ *   NodeId: Type of node identifiers
+ *   NeighborFunc: Function type that returns neighbors for a given node
+ ******************************************************************************/
+template<typename NodeId, typename NeighborFunc>
+void findCyclesDFS(NodeId current, NodeId parent, const NodeId& startNode, size_t minSize, size_t maxSize, NeighborFunc&& getNeighbors,
+                   std::unordered_set<NodeId>& visited, std::vector<NodeId>& path, std::vector<std::vector<NodeId>>& allCycles)
+{
+    visited.insert(current);
+    path.push_back(current);
+
+    // Explore all neighbors
+    for(NodeId neighbor : getNeighbors(current)) {
+        // Skip the parent to avoid trivial back-and-forth
+        if(neighbor == parent) {
+            continue;
+        }
+
+        // Found a cycle back to the start node
+        if(neighbor == startNode && path.size() >= minSize) {
+            if(path.size() <= maxSize) {
+                // Create canonical representation of the cycle
+                std::vector<NodeId> cycle = path;
+
+                // Find the minimum node in the cycle
+                auto minIt = std::min_element(cycle.begin(), cycle.end());
+                size_t minPos = std::distance(cycle.begin(), minIt);
+
+                // Rotate cycle to start with minimum node
+                std::rotate(cycle.begin(), cycle.begin() + minPos, cycle.end());
+
+                // Ensure the second node is the smaller of the two neighbors
+                // This handles the orientation: cycle can be traversed clockwise or counter-clockwise
+                if(cycle.size() > 2 && cycle[1] > cycle[cycle.size() - 1]) {
+                    // Reverse the cycle (except the first element) to get the other orientation
+                    std::reverse(cycle.begin() + 1, cycle.end());
+                }
+
+                allCycles.push_back(std::move(cycle));
+            }
+        }
+        // Continue DFS if not visited and path size is within limit
+        else if(visited.find(neighbor) == visited.end() && path.size() < maxSize) {
+            findCyclesDFS(neighbor, current, startNode, minSize, maxSize, std::forward<NeighborFunc>(getNeighbors), visited, path, allCycles);
+        }
+    }
+
+    path.pop_back();
+    visited.erase(current);
+}
+
+}  // namespace GraphCycleDetection
+
+/******************************************************************************
+ * Implementation of UndirectedGraph::findCycles
+ ******************************************************************************/
+template<typename NodeId, typename NodeProperty, typename EdgeProperty>
+std::vector<NodeId> UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::findCycles(size_t minSize, size_t maxSize) const
+{
+    if(minSize < 3) {
+        minSize = 3;  // Cycles must have at least 3 nodes
+    }
+    if(maxSize < minSize) {
+        return {};  // Invalid range
+    }
+
+    std::vector<std::vector<NodeId>> allCycles;
+    std::unordered_set<NodeId> visited;
+    std::vector<NodeId> path;
+
+    // Lambda to get neighbors for a given node
+    auto getNeighbors = [this](NodeId nodeId) -> const std::unordered_set<NodeId>& {
+        auto it = _adjacency.find(nodeId);
+        if(it != _adjacency.end()) {
+            return it->second;
+        }
+        static const std::unordered_set<NodeId> emptySet;
+        return emptySet;
+    };
+
+    // Start DFS from each node to find all cycles
+    for(const auto& [nodeId, _] : _nodeProperties) {
+        visited.clear();
+        path.clear();
+        GraphCycleDetection::findCyclesDFS(nodeId, nodeId, nodeId, minSize, maxSize, getNeighbors, visited, path, allCycles);
+    }
+
+    // Remove duplicate cycles (same canonical representation)
+    std::sort(allCycles.begin(), allCycles.end());
+    allCycles.erase(std::unique(allCycles.begin(), allCycles.end()), allCycles.end());
+
+    // Flatten the result into the format: [ringSize1, idx1, idx2, ..., ringSizeN, idx1, idx2, ...]
+    std::vector<NodeId> result;
+    for(const auto& cycle : allCycles) {
+        result.push_back(static_cast<NodeId>(cycle.size()));
+        result.insert(result.end(), cycle.begin(), cycle.end());
+    }
+
+    return result;
+}
+
+/******************************************************************************
+ * Implementation of UndirectedSubgraph::findCycles
+ ******************************************************************************/
+template<typename NodeId, typename NodeProperty, typename EdgeProperty>
+std::vector<NodeId> UndirectedSubgraph<NodeId, NodeProperty, EdgeProperty>::findCycles(size_t minSize, size_t maxSize) const
+{
+    if(minSize < 3) {
+        minSize = 3;  // Cycles must have at least 3 nodes
+    }
+    if(maxSize < minSize) {
+        return {};  // Invalid range
+    }
+
+    std::vector<std::vector<NodeId>> allCycles;
+    std::unordered_set<NodeId> visited;
+    std::vector<NodeId> path;
+
+    // Lambda to get neighbors for a given node
+    auto getNeighbors = [this](NodeId nodeId) -> const std::unordered_set<NodeId>& {
+        return neighbors(nodeId);
+    };
+
+    // Get all nodes in the subgraph
+    const std::unordered_set<NodeId>& subgraphNodes = nodes();
+
+    // Start DFS from each node to find all cycles
+    for(NodeId nodeId : subgraphNodes) {
+        visited.clear();
+        path.clear();
+        GraphCycleDetection::findCyclesDFS(nodeId, nodeId, nodeId, minSize, maxSize, getNeighbors, visited, path, allCycles);
+    }
+
+    // Remove duplicate cycles (same canonical representation)
+    std::sort(allCycles.begin(), allCycles.end());
+    allCycles.erase(std::unique(allCycles.begin(), allCycles.end()), allCycles.end());
+
+    // Flatten the result into the format: [ringSize1, idx1, idx2, ..., ringSizeN, idx1, idx2, ...]
+    std::vector<NodeId> result;
+    for(const auto& cycle : allCycles) {
+        result.push_back(static_cast<NodeId>(cycle.size()));
+        result.insert(result.end(), cycle.begin(), cycle.end());
+    }
+
+    return result;
 }
 
 }  // namespace Ovito
