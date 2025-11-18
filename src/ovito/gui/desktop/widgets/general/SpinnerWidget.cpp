@@ -451,11 +451,12 @@ void SpinnerWidget::spinnerValueChanged()
         std::optional<UndoableTransaction> transaction;
         if(_undoTransaction.operation()) {
             auto val = _value;
-            _undoTransaction.revert(); // Note: This may revert the spinner's value to an old value.
+            _undoTransaction.revert(); // Note: This may temporarily revert the spinner's value to an old value.
             _value = val;
         }
-        else
+        else {
             transaction.emplace(*_userInterface, _undoOperationName);
+        }
 
         // Perform the parameter change (including exception handling).
         bool success = _userInterface->performActions(transaction ? *transaction : _undoTransaction, [&]() {
