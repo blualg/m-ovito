@@ -437,9 +437,6 @@ public:
         if(_parentSubgraph) {
             return _parentSubgraph->contains(id);
         }
-        else if(_parentGraph) {
-            return _parentGraph->contains(id);
-        }
         else {
             return _nodes.contains(id);
         }
@@ -452,9 +449,6 @@ public:
     {
         if(_parentSubgraph) {
             return _parentSubgraph->contains(node1, node2);
-        }
-        else if(_parentGraph) {
-            return _parentGraph->contains(node1, node2);
         }
         else {
             Edge edge(node1, node2);
