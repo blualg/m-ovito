@@ -84,16 +84,14 @@ static std::vector<OORef<SceneNode>> compilePipelineSceneNodesList(const Scene& 
 
         // Skip pipeline if it is hidden in the current viewport.
         if(viewport && sceneNode->isHiddenInViewport(viewport, false))
-            return true;
+            return;
 
         // Skip pipeline if it is the view node of the viewport or if it is the target of the view node.
         if(viewport && viewport->viewNode() && (viewport->viewNode() == sceneNode || viewport->viewNode()->lookatTargetNode() == sceneNode))
-            return true;
+            return;
 
         // Add the pipeline to the list of pipeline to be rendered.
         visiblePipelineSceneNodes.push_back(sceneNode);
-
-        return true;
     });
 
     return visiblePipelineSceneNodes;

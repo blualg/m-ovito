@@ -214,9 +214,8 @@ void SceneNodesListModel::onSceneReplaced(Scene* newScene)
     _nodeListener.clear();
     _sceneListener.setTarget(newScene);
     if(newScene) {
-        newScene->visitChildren([&](SceneNode* node) -> bool {
+        newScene->visitChildren([&](SceneNode* node) {
             _nodeListener.push_back(node);
-            return true;
         });
     }
     endResetModel();
@@ -266,13 +265,12 @@ void SceneNodesListModel::onNodeNotificationEvent(RefTarget* source, const Refer
                 }
 
                 // Add the children of the node too.
-                node->visitChildren([this](SceneNode* node) -> bool {
+                node->visitChildren([this](SceneNode* node) {
                     // Extend the list model by one entry.
                     OVITO_ASSERT(!sceneNodes().empty());
                     beginInsertRows(QModelIndex(), sceneNodes().size() + 1, sceneNodes().size() + 1);
                     _nodeListener.push_back(node);
                     endInsertRows();
-                    return true;
                 });
             }
         }

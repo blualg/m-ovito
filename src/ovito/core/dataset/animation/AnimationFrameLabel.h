@@ -120,6 +120,11 @@ struct AnimationFrameLabel
         stream >> label.type >> label.numericLabel >> label.stringLabel;
         return stream;
     }
+
+    // Comparison operator.
+    bool operator==(const AnimationFrameLabel& other) const {
+        return (type == other.type) && (numericLabel == other.numericLabel) && (stringLabel == other.stringLabel);
+    }
 };
 
 }   // End of namespace

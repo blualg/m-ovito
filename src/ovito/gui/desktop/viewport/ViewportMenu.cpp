@@ -167,7 +167,7 @@ void ViewportMenu::onShowViewTypeMenu()
     // Pipeline evaluation performed in the following requires a valid execution context.
     handleExceptions([&] {
         // Find all cameras in the scene.
-        viewport()->scene()->visitPipelines([this, viewNodeGroup](SceneNode* sceneNode) -> bool {
+        viewport()->scene()->visitPipelines([this, viewNodeGroup](SceneNode* sceneNode) {
             if(const AbstractCameraSource* cameraSource = dynamic_object_cast<AbstractCameraSource>(sceneNode->pipeline()->head())) {
                 // Add a menu entry for this camera.
                 QAction* action = viewNodeGroup->addAction(sceneNode->sceneNodeName());
@@ -175,7 +175,6 @@ void ViewportMenu::onShowViewTypeMenu()
                 action->setChecked(viewport()->viewNode() == sceneNode);
                 action->setData(QVariant::fromValue((void*)sceneNode));
             }
-            return true;
         });
     });
 

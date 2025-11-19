@@ -87,7 +87,7 @@
 #include <QMatrix4x4>
 #include <QMetaClassInfo>
 #include <QMutex>
-#include <QMutex>
+#include <QStringBuilder>
 #include <QPainter>
 #include <QPainterPath>
 #include <QPair>

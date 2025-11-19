@@ -164,11 +164,11 @@ public:
     /// \brief Recursively visits all pipeline scene nodes in the current scene
     ///        and invokes the given visitor function for every scene node with a pipeline.
     ///
-    /// \param fn A function that takes an SceneNode pointer as argument and returns a boolean value.
+    /// \param fn A function that takes an SceneNode pointer as argument and returns a boolean value or void.
     /// \return true if all pipelines have been visited; false if the loop has been
     ///         terminated early because the visitor function has returned false.
     ///
-    /// The visitor function must return a boolean value to indicate whether
+    /// The visitor function may return a boolean value to indicate whether
     /// it wants to continue visit more scene nodes. A return value of false
     /// leads to early termination and no further nodes are visited.
     template<typename Function>

@@ -45,8 +45,10 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(AnimationSettings, playbackEveryNthFrame, I
 ******************************************************************************/
 void AnimationSettings::propertyChanged(const PropertyFieldDescriptor* field)
 {
-    if(field == PROPERTY_FIELD(autoAdjustInterval) && autoAdjustInterval() && !isBeingLoaded())
+    if(field == PROPERTY_FIELD(autoAdjustInterval) && autoAdjustInterval() && !isBeingLoaded()) {
+        updateAnimationFrameLabels();
         adjustAnimationInterval();
+    }
 
     RefTarget::propertyChanged(field);
 }
@@ -57,8 +59,7 @@ void AnimationSettings::propertyChanged(const PropertyFieldDescriptor* field)
 void AnimationSettings::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
     RefTarget::saveToStream(stream, excludeRecomputableData);
-    stream.beginChunk(0x02);
-    stream << _frameLabels;
+    stream.beginChunk(0x03);
     stream.endChunk();
 }
 
@@ -68,12 +69,19 @@ void AnimationSettings::saveToStream(ObjectSaveStream& stream, bool excludeRecom
 void AnimationSettings::loadFromStream(ObjectLoadStream& stream)
 {
     RefTarget::loadFromStream(stream);
-    int version = stream.expectChunkRange(0x01, 1);
-    if(version >= 1) {
+
+    // Save the human-readable labels associated with individual animation frames.
+    int version = stream.expectChunkRange(0x01, 2);
+    if(version >= 2) {
+        // To reduce the state file size, OVITO 3.15 and later no longer serialize the frame labels.
+        // They are rebuilt by loadFromStreamComplete() after loading of the entire scene.
+    }
+    else if(version >= 1) {
+        // For backward compatibility with OVITO 3.14.
         stream >> _frameLabels;
     }
     else {
-        // For backward compatibility with OVITO 3.13.
+        // For backward compatibility with OVITO 3.13, where frame labels were simple strings.
         QMap<int, QString> namedFrames;
         stream >> namedFrames;
         for(auto it = namedFrames.constBegin(); it != namedFrames.constEnd(); ++it) {
@@ -81,6 +89,20 @@ void AnimationSettings::loadFromStream(ObjectLoadStream& stream)
         }
     }
     stream.closeChunk();
+}
+
+/******************************************************************************
+* This method is called once for this object after it has been completely
+* loaded from a stream.
+******************************************************************************/
+void AnimationSettings::loadFromStreamComplete(ObjectLoadStream& stream)
+{
+    RefTarget::loadFromStreamComplete(stream);
+
+    if(_frameLabels.empty()) {
+        // Rebuild the list of human-readable labels assigned to animation frames.
+        updateAnimationFrameLabels();
+    }
 }
 
 /******************************************************************************
@@ -208,7 +230,6 @@ void AnimationSettings::adjustAnimationInterval()
 
     int firstFrame = std::numeric_limits<int>::max();
     int lastFrame = std::numeric_limits<int>::lowest();
-    _frameLabels.clear();
 
     // Visit all scenes that reference this animation settings object.
     visitDependents([&](RefMaker* dependent) {
@@ -217,14 +238,39 @@ void AnimationSettings::adjustAnimationInterval()
                 if(PipelineNode* head = sceneNode->pipeline()->head()) {
                     int nframes = head->numberOfSourceFrames();
                     if(nframes > 0) {
-
                         // Final animation interval should encompass the local intervals
                         // of all animated objects in the scene.
                         int start = head->sourceFrameToAnimationTime(0).frame();
                         if(start < firstFrame) firstFrame = start;
                         int end = (head->sourceFrameToAnimationTime(nframes) - 1).frame();
                         if(end > lastFrame) lastFrame = end;
+                    }
+                }
+            });
+        }
+    });
+    if(firstFrame > lastFrame)
+        firstFrame = lastFrame = 0;
+    setFirstFrame(firstFrame);
+    setLastFrame(lastFrame);
+    setCurrentFrame(qBound(firstFrame, currentFrame(), lastFrame));
+}
 
+/******************************************************************************
+* Rebuilds the list of human-readable labels assigned to animation frames.
+******************************************************************************/
+void AnimationSettings::updateAnimationFrameLabels()
+{
+    OVITO_ASSERT(this_task::get());
+
+    _frameLabels.clear();
+
+    // Query all scenes that reference this animation settings object.
+    visitDependents([&](RefMaker* dependent) {
+        if(Scene* scene = dynamic_object_cast<Scene>(dependent)) {
+            scene->visitPipelines([&](SceneNode* sceneNode) {
+                if(PipelineNode* head = sceneNode->pipeline()->head()) {
+                    if(head->numberOfSourceFrames() > 0) {
                         // Save the list of the named animation frames.
                         // Merge with other list(s) from other scene objects if there are any.
                         if(_frameLabels.empty())
@@ -236,15 +282,10 @@ void AnimationSettings::adjustAnimationInterval()
                         }
                     }
                 }
-                return true;
             });
         }
     });
-    if(firstFrame > lastFrame)
-        firstFrame = lastFrame = 0;
-    setFirstFrame(firstFrame);
-    setLastFrame(lastFrame);
-    setCurrentFrame(qBound(firstFrame, currentFrame(), lastFrame));
 }
+
 
 }   // End of namespace

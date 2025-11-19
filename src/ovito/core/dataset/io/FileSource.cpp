@@ -563,8 +563,88 @@ void FileSource::reloadFrame(bool refetchFiles, int frameIndex)
 void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputableData) const
 {
     BasePipelineSource::saveToStream(stream, excludeRecomputableData);
-    stream.beginChunk(0x03);
-    stream << _frames;
+
+    // Serialize the list of animation frames.
+    stream.beginChunk(0x04);
+    stream.writeSizeT(frames().size());
+
+    // To compactly serialize the list of frames, we use a combination of run-length encoding (RLE) and range-based encoding (start,step).
+    // For example, in many cases, consecutive frames will come from the same source file URL. And in many cases the line numbers follow a regular pattern.
+    if(!frames().empty()) {
+        // Helper that checks whether the given array can be range-encoded, i.e., the numeric values follow a regular pattern with a fixed step size.
+        auto isRangeEncodable = [&](auto&& getterFunc) {
+            if constexpr (std::is_arithmetic_v<std::remove_reference_t<decltype(getterFunc(frames()[0]))>>) {
+                if(frames().size() < 4)
+                    return false;
+                auto baseValue = getterFunc(frames()[1]); // Note: Skipping frame 0 to allow for irregular first values.
+                auto nextValue = getterFunc(frames()[2]);
+                auto step = nextValue - baseValue;
+                for(size_t i = 3; i < frames().size(); i++) {
+                    auto expectedValue = baseValue + step * (i-1);
+                    if(getterFunc(frames()[i]) != expectedValue)
+                        return false;
+                }
+                return true;
+            }
+            else return false;
+        };
+        // Helper that performs range encoding of the value array.
+        auto rangeEncode = [&](auto&& getterFunc) {
+            if constexpr (std::is_arithmetic_v<std::remove_reference_t<decltype(getterFunc(frames()[0]))>>) {
+                stream << getterFunc(frames()[0]);
+                stream << getterFunc(frames()[1]);
+                stream << (getterFunc(frames()[2]) - getterFunc(frames()[1]));
+            }
+            else OVITO_ASSERT(false); // should not happen
+        };
+        // Helper that checks whether the given array should be run-length encoded. This is the case when at least two consecutive values are identical.
+        auto isRunLengthEncodable = [&](auto&& getterFunc) {
+            return frames().size() > 2 && getterFunc(frames()[1]) == getterFunc(frames()[0]);
+        };
+        // Helper that performs run-length encoding of the value array.
+        auto runLengthEncode = [&](auto&& getterFunc) {
+            auto previousValue = getterFunc(frames().front());
+            int length = 0;
+            for(const FileSourceImporter::Frame& frame : frames()) {
+                if(getterFunc(frame) != previousValue) {
+                    previousValue = getterFunc(frame);
+                    stream << length << previousValue;
+                    length = 0;
+                }
+                length++;
+            }
+            if(length)
+                stream << length << previousValue;
+        };
+        // Helper that encodes an array of values using either range encoding, RLE, or no encoding.
+        auto encodeArray = [&](int chunkId, auto&& getterFunc) {
+            stream.beginChunk(chunkId);
+            if(isRangeEncodable(getterFunc)) {
+                stream.beginChunk(0x01); // indicates range encoding
+                rangeEncode(getterFunc);
+            }
+            else if(isRunLengthEncodable(getterFunc)) {
+                stream.beginChunk(0x02); // indicates RLE encoding
+                runLengthEncode(getterFunc);
+            }
+            else {
+                stream.beginChunk(0x00); // indicates no encoding
+                for(const FileSourceImporter::Frame& frame : frames())
+                    stream << getterFunc(frame);
+            }
+            stream.endChunk();
+            stream.endChunk();
+        };
+        encodeArray(0x01, [](const FileSourceImporter::Frame& frame) { return frame.sourceFile; });
+        encodeArray(0x02, [](const FileSourceImporter::Frame& frame) { return frame.byteOffset; });
+        encodeArray(0x03, [](const FileSourceImporter::Frame& frame) { return frame.lineNumber; });
+        encodeArray(0x04, [](const FileSourceImporter::Frame& frame) { return frame.lastModificationTime; });
+        encodeArray(0x05, [](const FileSourceImporter::Frame& frame) { return frame.label.type; });
+        encodeArray(0x06, [](const FileSourceImporter::Frame& frame) { return frame.label.numericLabel; });
+        encodeArray(0x07, [](const FileSourceImporter::Frame& frame) { return frame.label.stringLabel; });
+        encodeArray(0x08, [](const FileSourceImporter::Frame& frame) { return frame.parserData; });
+    }
+
     stream.endChunk();
 }
 
@@ -574,8 +654,59 @@ void FileSource::saveToStream(ObjectSaveStream& stream, bool excludeRecomputable
 void FileSource::loadFromStream(ObjectLoadStream& stream)
 {
     BasePipelineSource::loadFromStream(stream);
-    stream.expectChunk(0x03);
-    stream >> _frames;
+
+    // Deserialize the list of animation frames.
+    int formatVersion = stream.expectChunkRange(0x03, 1);
+    if(formatVersion >= 1) {
+        // New serialization format with RLE compression.
+        size_t numFrames = stream.readSizeT();
+        _frames.resize(numFrames);
+        if(numFrames > 0) {
+            auto decodeArray = [&](int chunkId, auto&& setterFunc) {
+                stream.expectChunk(chunkId);
+                switch(stream.expectChunkRange(0x00, 2)) {
+                    case 0: // no encoding
+                        for(size_t i = 0; i < numFrames; i++)
+                            stream >> setterFunc(_frames[i]);
+                        break;
+                    case 1: // range encoding
+                        if constexpr (std::is_arithmetic_v<std::remove_reference_t<decltype(setterFunc(_frames[0]))>>) {
+                            std::remove_reference_t<decltype(setterFunc(_frames.front()))> baseValue, step;
+                            stream >> setterFunc(_frames[0]) >> baseValue >> step;
+                            for(size_t i = 1; i < numFrames; i++) {
+                                setterFunc(_frames[i]) = baseValue + step * (i - 1);
+                            }
+                        }
+                        else OVITO_ASSERT(false); // should not happen
+                        break;
+                    case 2: // RLE encoding
+                        for(size_t frameIndex = 0; frameIndex < numFrames;) {
+                            int length;
+                            std::remove_reference_t<decltype(setterFunc(_frames.front()))> value;
+                            stream >> length >> value;
+                            for(int i = 0; i < length; i++, frameIndex++)
+                                setterFunc(_frames[frameIndex]) = value;
+                            OVITO_ASSERT(frameIndex <= numFrames);
+                        }
+                        break;
+                }
+                stream.closeChunk();
+                stream.closeChunk();
+            };
+            decodeArray(0x01, [](FileSourceImporter::Frame& frame) -> QUrl& { return frame.sourceFile; });
+            decodeArray(0x02, [](FileSourceImporter::Frame& frame) -> qint64& { return frame.byteOffset; });
+            decodeArray(0x03, [](FileSourceImporter::Frame& frame) -> int& { return frame.lineNumber; });
+            decodeArray(0x04, [](FileSourceImporter::Frame& frame) -> QDateTime& { return frame.lastModificationTime; });
+            decodeArray(0x05, [](FileSourceImporter::Frame& frame) -> AnimationFrameLabel::LabelType& { return frame.label.type; });
+            decodeArray(0x06, [](FileSourceImporter::Frame& frame) -> FloatType& { return frame.label.numericLabel; });
+            decodeArray(0x07, [](FileSourceImporter::Frame& frame) -> QString& { return frame.label.stringLabel; });
+            decodeArray(0x08, [](FileSourceImporter::Frame& frame) -> QVariant& { return frame.parserData; });
+        }
+    }
+    else {
+        // For backward compatibility with OVITO 3.14 and older:
+        stream >> _frames;
+    }
     stream.closeChunk();
     _framesValid = !_frames.empty();
 
