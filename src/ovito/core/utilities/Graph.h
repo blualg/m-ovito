@@ -330,12 +330,13 @@ private:
  *
  * Lifetime management: Uses shared_ptr to keep parent graphs alive.
  ******************************************************************************/
-template<typename NodeIdType, typename NodeProperty = std::monostate, typename EdgePropertyType = std::monostate>
-class UndirectedSubgraph : public std::enable_shared_from_this<UndirectedSubgraph<NodeIdType, NodeProperty, EdgePropertyType>>
+template<typename NodeIdType, typename NodePropertyType = std::monostate, typename EdgePropertyType = std::monostate>
+class UndirectedSubgraph : public std::enable_shared_from_this<UndirectedSubgraph<NodeIdType, NodePropertyType, EdgePropertyType>>
 {
 public:
     using NodeId = NodeIdType;
     using EdgeProperty = EdgePropertyType;
+    using NodeProperty = NodePropertyType;
     using Edge = typename UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::Edge;
     using EdgeHash = typename UndirectedGraph<NodeId, NodeProperty, EdgeProperty>::EdgeHash;
     using GraphType = UndirectedGraph<NodeId, NodeProperty, EdgeProperty>;
