@@ -42,6 +42,7 @@ Exclusive features
   - :ref:`particles.modifiers.bin_and_reduce`
   - :ref:`particles.modifiers.bond_analysis`
   - :ref:`particles.modifiers.construct_surface_mesh.regions`
+  - :ref:`particles.modifiers.find_rings`
   - :ref:`particles.modifiers.time_averaging`
   - :ref:`particles.modifiers.time_series`
   - :ref:`modifiers.identify_fcc_planar_faults`

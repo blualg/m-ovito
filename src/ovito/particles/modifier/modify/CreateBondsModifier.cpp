@@ -373,13 +373,13 @@ Future<PipelineFlowState> CreateBondsModifier::evaluateModifier(const ModifierEv
                 std::optional<uint8_t> atomicNumber = AtomicNumbers::get(type->name().toStdString());
                 if(!atomicNumber) {
                     throw Exception(
-                        tr("Unknown particle type %1: Particle type names need to exactly match element names in the periodic table.")
+                        tr("Unknown particle type %1: Particle type names need to exactly match element symbols in the periodic table.")
                             .arg(type->name()));
                 }
                 std::optional<FloatType> covalentRadius = CovalentRadii::get(*atomicNumber);
                 if(!covalentRadius) {
                     throw Exception(tr("Unknown covalent radius for particle type %1: Particle type names need to exactly match element "
-                                       "names in the periodic table.")
+                                       "symbols in the periodic table.")
                                         .arg(type->name()));
                 }
                 typeMap.emplace_back(type->numericId(), *atomicNumber, *covalentRadius);

@@ -17,6 +17,7 @@ combine several modifiers to accomplish more complex tasks.
   Analysis
   ================================================================= ==========================================================
   :ref:`particles.modifiers.atomic_strain`                          Calculates local strain tensors based on the relative motion of neighboring particles.
+  :ref:`particles.modifiers.bond_order` |ovito-pro|                 Assign bond order to existing bonds.
   :ref:`particles.modifiers.bond_analysis` |ovito-pro|              Computes bond angle and bond length distributions.
   :ref:`particles.modifiers.cluster_analysis`                       Decomposes a particle system into clusters of particles.
   :ref:`particles.modifiers.coordination_analysis`                  Determines the number of neighbors of each particle and computes the radial distribution function for the system.
@@ -147,6 +148,7 @@ combine several modifiers to accomplish more complex tasks.
   assign_color
   atomic_strain
   bond_analysis
+  bond_order
   calculate_local_entropy
   centrosymmetry
   chill_plus
