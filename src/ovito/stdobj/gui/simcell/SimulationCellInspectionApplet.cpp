@@ -30,6 +30,10 @@
 #include <ovito/gui/desktop/widgets/general/CopyableTableView.h>
 #include <ovito/gui/desktop/utilities/concurrent/ProgressDialog.h>
 #include <ovito/gui/desktop/mainwin/MainWindow.h>
+#include <ovito/gui/desktop/mainwin/cmdpanel/ModifyCommandPage.h>
+#include <ovito/gui/desktop/mainwin/cmdpanel/CommandPanel.h>
+#include <ovito/gui/base/mainwin/PipelineListModel.h>
+#include <ovito/stdmod/modifiers/EditSimulationCellModifier.h>
 #include "SimulationCellInspectionApplet.h"
 
 namespace Ovito {
@@ -251,6 +255,10 @@ QWidget* SimulationCellInspectionApplet::createWidget()
         }
     }
 
+    QPushButton* editCellBtn = new QPushButton(tr("Edit in pipeline..."));
+    connect(editCellBtn, &QPushButton::clicked, this, &SimulationCellInspectionApplet::onEditSimulationCell);
+    layout->addWidget(editCellBtn, 2, 0, 1, 2, Qt::AlignLeft | Qt::AlignTop);
+
     QScrollArea* scroller = new QScrollArea();
     scroller->setWidget(container);
     scroller->setWidgetResizable(true);
@@ -321,6 +329,52 @@ void SimulationCellInspectionApplet::updateDisplay()
             _bboxFields[i]->setText(worldUnit->formatValue(size));
         }
     }
+}
+
+/******************************************************************************
+* Is called to edit the simulation cell.
+******************************************************************************/
+void SimulationCellInspectionApplet::onEditSimulationCell()
+{
+    performTransaction(tr("Start editing cell"), [&]() {
+        PipelineNode* pipelineNode = currentPipeline()->head();
+        PipelineNode* propertySourceNode = nullptr;
+        ModificationNode* precedingModNode = nullptr;
+        OORef<ModificationNode> editCellModNode;
+        // Walk up the chain to insert the modifier at the beginning of the pipeline.
+        while(pipelineNode) {
+            if(ModificationNode* modNode = dynamic_object_cast<ModificationNode>(pipelineNode)) {
+                if(EditSimulationCellModifier* modifier = dynamic_object_cast<EditSimulationCellModifier>(modNode->modifier())) {
+                    // Re-use existing EditSimulationCellModifier.
+                    editCellModNode = modNode;
+                    break;
+                }
+                precedingModNode = modNode;
+                pipelineNode = modNode->input();
+            }
+            else break;
+        }
+        if(!editCellModNode) {
+            // Insert a new EditSimulationCellModifier.
+            OORef<EditSimulationCellModifier> editCellModifier = OORef<EditSimulationCellModifier>::create();
+            editCellModNode = editCellModifier->createModificationNode();
+            editCellModNode->setModifier(editCellModifier);
+            if(precedingModNode) {
+                editCellModNode->setInput(precedingModNode->input());
+                precedingModNode->setInput(editCellModNode);
+            }
+            else {
+                editCellModNode->setInput(currentPipeline()->head());
+                currentPipeline()->setHead(editCellModNode);
+            }
+            editCellModifier->initializeModifier(ModifierInitializationRequest(currentAnimationTime(), false, true, editCellModNode));
+        }
+        // Re-enable the modifier if it was disabled by the user.
+        editCellModNode->modifier()->setEnabled(true);
+
+        // Activate the EditSimulationCellModifier in the pipeline editor so that the user sees it.
+        ui().mainWindow()->commandPanel()->modifyPage()->startEditingPipelineNode(editCellModNode);
+    });
 }
 
 }  // namespace Ovito

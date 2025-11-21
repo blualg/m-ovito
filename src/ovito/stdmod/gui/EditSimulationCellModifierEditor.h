@@ -24,18 +24,26 @@
 
 
 #include <ovito/stdmod/gui/StdModGui.h>
+#include <ovito/stdmod/modifiers/EditSimulationCellModifier.h>
+#include <ovito/stdmod/modifiers/DeleteSelectedModifier.h>
+#include <ovito/gui/desktop/widgets/general/ActionsItemDelegate.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
 #include <ovito/core/utilities/units/PrescribedScaleUnit.h>
 
 namespace Ovito {
 
 /**
- * A properties editor for the AffineTransformationModifier class.
+ * A properties editor for the EditSimulationCellModifier class.
  */
-class AffineTransformationModifierEditor : public PropertiesEditor
+class EditSimulationCellModifierEditor : public PropertiesEditor
 {
+    OVITO_CLASS(EditSimulationCellModifierEditor)
     Q_OBJECT
-    OVITO_CLASS(AffineTransformationModifierEditor)
+
+public:
+
+    /// Returns the EditSimulationCellModifier object being edited.
+    EditSimulationCellModifier* modifier() const { return static_object_cast<EditSimulationCellModifier>(editObject()); }
 
 protected:
 
@@ -44,29 +52,18 @@ protected:
 
 private Q_SLOTS:
 
-    /// Is called when the spinner value has changed.
-    void onSpinnerValueChanged();
-
-    /// This method updates the displayed matrix values.
-    void updateUI();
-
-    /// Is called when the user switches between Cartesian and reduced cell coordinates for the translation vector.
-    void onReducedCoordinatesOptionChanged();
-
-    /// Is called when the user presses the 'Enter rotation' button.
-    void onEnterRotation();
+    /// Updates the values displayed in the editor panel.
+    void updateSimulationCellFields();
 
     /// Auto-adjusts the increment steps of the numeric parameter spinner widgets.
     void updateParameterUnitScales();
 
 private:
 
-    SpinnerWidget* _relativeCellSpinners[3][4];
-    std::optional<PrescribedScaleUnit> _relativeTranslationUnits[3];
-    std::optional<PrescribedScaleUnit> _relativeMatrixUnits;
-    std::optional<PrescribedScaleUnit> _absoluteCellUnits[3][3];
-    std::optional<PrescribedScaleUnit> _absoluteOriginUnits[3];
-    BooleanRadioButtonParameterUI* _relativeModeUI;
+    BooleanParameterUI* _pbczPUI;
+    QLineEdit* _cellVectorFields[4][3];
+    std::optional<PrescribedScaleUnit> _cellUnits[3][3];
+    std::optional<PrescribedScaleUnit> _originUnits[3];
 };
 
 }   // End of namespace

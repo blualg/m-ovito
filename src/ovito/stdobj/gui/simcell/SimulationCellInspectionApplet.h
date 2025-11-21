@@ -37,6 +37,7 @@ class SimulationCellInspectionApplet : public DataInspectionApplet
     Q_OBJECT
 
 public:
+
     /// Constructor.
     void initializeObject() { DataInspectionApplet::initializeObject(SimulationCell::OOClass()); }
 
@@ -54,6 +55,11 @@ public:
 
     /// Returns the help topic ID for the documentation page of this applet.
     virtual QString helpTopicId() const override { return QStringLiteral("manual:data_inspector.simulation_cell"); }
+
+private Q_SLOTS:
+
+    /// Is called to edit the simulation cell.
+    void onEditSimulationCell();
 
 private:
 
