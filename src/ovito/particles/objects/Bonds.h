@@ -116,8 +116,9 @@ class OVITO_PARTICLES_EXPORT Bonds : public PropertyContainer
 public:
 
     /// Standard bond properties.
-    enum Type {
-        UserProperty = Property::GenericUserProperty, //< This is reserved for user-defined properties.
+    enum Type
+    {
+        UserProperty = Property::GenericUserProperty,  //< This is reserved for user-defined properties.
         SelectionProperty = Property::GenericSelectionProperty,
         ColorProperty = Property::GenericColorProperty,
         TypeProperty = Property::GenericTypeProperty,
@@ -127,6 +128,7 @@ public:
         TransparencyProperty,
         ParticleIdentifiersProperty,
         WidthProperty,
+        OrderProperty,
     };
 
     /// Constructor.

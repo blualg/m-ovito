@@ -322,6 +322,10 @@ PropertyPtr Bonds::OOMetaClass::createStandardPropertyInternal(DataBuffer::Buffe
         dataType = Property::Int32;
         componentCount = 3;
         break;
+    case OrderProperty:
+        dataType = Property::FloatGraphics;
+        componentCount = 1;
+        break;
     default:
         OVITO_ASSERT_MSG(false, "Bonds::createStandardPropertyInternal", "Invalid standard property type");
         throw Exception(tr("This is not a valid standard bond property type: %1").arg(type));
@@ -363,6 +367,7 @@ void Bonds::OOMetaClass::initialize()
     registerStandardProperty(SelectionProperty, tr("Selection"), Property::IntSelection, emptyList);
     registerStandardProperty(ColorProperty, tr("Color"), Property::FloatGraphics, rgbList, nullptr, tr("Bond colors"));
     registerStandardProperty(LengthProperty, tr("Length"), Property::FloatDefault, emptyList, nullptr, tr("Lengths"));
+    registerStandardProperty(OrderProperty, tr("Bond Order"), Property::FloatGraphics, emptyList, nullptr, tr("Bond orders"));
     registerStandardProperty(TopologyProperty, tr("Topology"), Property::Int64, abList);
     registerStandardProperty(PeriodicImageProperty, tr("Periodic Image"), Property::Int32, xyzList);
     registerStandardProperty(TransparencyProperty, tr("Transparency"), Property::FloatGraphics, emptyList);
