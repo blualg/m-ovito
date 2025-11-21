@@ -47,14 +47,17 @@ SET_PROPERTY_FIELD_LABEL(BondsVis, coloringMode, "Coloring mode");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(BondsVis, bondWidth, WorldParameterUnit, 0);
 
 /******************************************************************************
-* Computes the bounding box of the visual element.
-******************************************************************************/
-Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPath& path, const Pipeline* pipeline, const PipelineFlowState& flowState, TimeInterval& validityInterval)
+ * Computes the bounding box of the visual element.
+ ******************************************************************************/
+Box3 BondsVis::boundingBoxImmediate(AnimationTime time,
+                                    const ConstDataObjectPath& path,
+                                    const Pipeline* pipeline,
+                                    const PipelineFlowState& flowState,
+                                    TimeInterval& validityInterval)
 {
     const Bonds* bonds = path.lastAs<Bonds>();
     const Particles* particles = path.nextToLastAs<Particles>();
-    if(!bonds || !particles)
-        return {};
+    if(!bonds || !particles) return {};
     particles->verifyIntegrity();
     bonds->verifyIntegrity();
     const Property* bondTopologyProperty = bonds->getProperty(Bonds::TopologyProperty);
@@ -77,8 +80,7 @@ Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPat
         for(size_t bondIndex = 0; bondIndex < bondTopology.size(); bondIndex++) {
             size_t index1 = bondTopology[bondIndex][0];
             size_t index2 = bondTopology[bondIndex][1];
-            if(index1 >= particleCount || index2 >= particleCount)
-                continue;
+            if(index1 >= particleCount || index2 >= particleCount) continue;
 
             bbox.addPoint(positions[index1]);
             bbox.addPoint(positions[index2]);
@@ -110,14 +112,16 @@ Box3 BondsVis::boundingBoxImmediate(AnimationTime time, const ConstDataObjectPat
 }
 
 /******************************************************************************
-* Lets the visualization element render the data object.
-******************************************************************************/
-std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const ConstDataObjectPath& path, const PipelineFlowState& flowState, FrameGraph& frameGraph, const SceneNode* sceneNode)
+ * Lets the visualization element render the data object.
+ ******************************************************************************/
+std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const ConstDataObjectPath& path,
+                                                                      const PipelineFlowState& flowState,
+                                                                      FrameGraph& frameGraph,
+                                                                      const SceneNode* sceneNode)
 {
     const Bonds* bonds = path.lastAs<Bonds>();
     const Particles* particles = path.nextToLastAs<Particles>();
-    if(!bonds || !particles)
-        return {};
+    if(!bonds || !particles) return {};
     particles->verifyIntegrity();
     bonds->verifyIntegrity();
     const Property* bondTopologyProperty = bonds->getProperty(Bonds::TopologyProperty);
@@ -148,200 +152,209 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
 
     // The key type used for caching the rendering primitive:
     using CacheKey = RendererResourceKey<struct BondsVisCache,
-        ConstDataObjectRef,     // Bond topology property
-        ConstDataObjectRef,     // Bond PBC vector property
-        ConstDataObjectRef,     // Particle position property
-        ConstDataObjectRef,     // Particle color property
-        ConstDataObjectRef,     // Particle type property
-        ConstDataObjectRef,     // Particle radius property
-        ConstDataObjectRef,     // Bond color property
-        ConstDataObjectRef,     // Bond type property
-        ConstDataObjectRef,     // Bond selection property
-        ConstDataObjectRef,     // Bond transparency
-        ConstDataObjectRef,     // Bond width
-        ConstDataObjectRef,     // Simulation cell
-        FloatType,              // Bond width
-        Color,                  // Bond uniform color
-        ColoringMode,           // Bond coloring mode
-        ShadingMode,            // Bond shading mode
-        bool                    // Render nodal vertices
-    >;
+                                         ConstDataObjectRef,  // Bond topology property
+                                         ConstDataObjectRef,  // Bond PBC vector property
+                                         ConstDataObjectRef,  // Particle position property
+                                         ConstDataObjectRef,  // Particle color property
+                                         ConstDataObjectRef,  // Particle type property
+                                         ConstDataObjectRef,  // Particle radius property
+                                         ConstDataObjectRef,  // Bond color property
+                                         ConstDataObjectRef,  // Bond type property
+                                         ConstDataObjectRef,  // Bond selection property
+                                         ConstDataObjectRef,  // Bond transparency
+                                         ConstDataObjectRef,  // Bond width
+                                         ConstDataObjectRef,  // Simulation cell
+                                         FloatType,           // Bond width
+                                         Color,               // Bond uniform color
+                                         ColoringMode,        // Bond coloring mode
+                                         ShadingMode,         // Bond shading mode
+                                         bool                 // Render nodal vertices
+                                         >;
 
     // Make sure the primitive for the nodal vertices gets created if particles display is turned off or if particles are semi-transparent.
-    bool renderNodalVertices = !transparencyProperty && !bondWidthProperty && (!particleVis || particleVis->isEnabled() == false || particleTransparencyProperty != nullptr);
+    bool renderNodalVertices = !transparencyProperty && !bondWidthProperty &&
+                               (!particleVis || particleVis->isEnabled() == false || particleTransparencyProperty != nullptr);
 
     // Lookup the rendering primitive in the vis cache.
-    const auto& [cylinders, vertices, pickInfo] = frameGraph.visCache().lookup<std::tuple<CylinderPrimitive, ParticlePrimitive, OORef<BondPickInfo>>>(CacheKey(
-            bondTopologyProperty,
-            bondPeriodicImageProperty,
-            positionProperty,
-            particleColorProperty,
-            particleTypeProperty,
-            particleRadiusProperty,
-            bondColorProperty,
-            bondTypeProperty,
-            bondSelectionProperty,
-            transparencyProperty,
-            bondWidthProperty,
-            simulationCell,
-            bondWidth(),
-            bondColor(),
-            coloringMode(),
-            shadingMode(),
-            renderNodalVertices),
-        [&](CylinderPrimitive& cylinders, ParticlePrimitive& vertices, OORef<BondPickInfo>& pickInfo) {
-            FloatType bondDiameter = bondWidth();
-            if(bondTopologyProperty && positionProperty && bondDiameter > 0) {
+    const auto& [cylinders, vertices, pickInfo] =
+        frameGraph.visCache().lookup<std::tuple<CylinderPrimitive, ParticlePrimitive, OORef<BondPickInfo>>>(
+            CacheKey(bondTopologyProperty,
+                     bondPeriodicImageProperty,
+                     positionProperty,
+                     particleColorProperty,
+                     particleTypeProperty,
+                     particleRadiusProperty,
+                     bondColorProperty,
+                     bondTypeProperty,
+                     bondSelectionProperty,
+                     transparencyProperty,
+                     bondWidthProperty,
+                     simulationCell,
+                     bondWidth(),
+                     bondColor(),
+                     coloringMode(),
+                     shadingMode(),
+                     renderNodalVertices),
+            [&](CylinderPrimitive& cylinders, ParticlePrimitive& vertices, OORef<BondPickInfo>& pickInfo) {
+                FloatType bondDiameter = bondWidth();
+                if(bondTopologyProperty && positionProperty && bondDiameter > 0) {
+                    // Allocate buffers for the bonds geometry.
+                    BufferFactory<Point3G> bondPositions1(bondTopologyProperty->size() * 2);
+                    BufferFactory<Point3G> bondPositions2(bondTopologyProperty->size() * 2);
+                    BufferFactory<ColorG> bondColors(bondTopologyProperty->size() * 2);
+                    BufferFactory<GraphicsFloatType> bondTransparencies =
+                        transparencyProperty ? BufferFactory<GraphicsFloatType>(bondTopologyProperty->size() * 2)
+                                             : BufferFactory<GraphicsFloatType>{};
+                    BufferFactory<GraphicsFloatType> bondWidths = bondWidthProperty
+                                                                      ? BufferFactory<GraphicsFloatType>(bondTopologyProperty->size() * 2)
+                                                                      : BufferFactory<GraphicsFloatType>{};
 
-                // Allocate buffers for the bonds geometry.
-                BufferFactory<Point3G> bondPositions1(bondTopologyProperty->size() * 2);
-                BufferFactory<Point3G> bondPositions2(bondTopologyProperty->size() * 2);
-                BufferFactory<ColorG> bondColors(bondTopologyProperty->size() * 2);
-                BufferFactory<GraphicsFloatType> bondTransparencies = transparencyProperty ? BufferFactory<GraphicsFloatType>(bondTopologyProperty->size() * 2) : BufferFactory<GraphicsFloatType>{};
-                BufferFactory<GraphicsFloatType> bondWidths = bondWidthProperty ? BufferFactory<GraphicsFloatType>(bondTopologyProperty->size() * 2) : BufferFactory<GraphicsFloatType>{};
+                    // Allocate buffers for the nodal vertices.
+                    BufferFactory<ColorG> nodalColors =
+                        renderNodalVertices ? BufferFactory<ColorG>(positionProperty->size()) : BufferFactory<ColorG>{};
+                    BufferFactory<GraphicsFloatType> nodalTransparencies = (renderNodalVertices && transparencyProperty)
+                                                                               ? BufferFactory<GraphicsFloatType>(positionProperty->size())
+                                                                               : BufferFactory<GraphicsFloatType>{};
+                    BufferFactory<int32_t> nodalIndices = renderNodalVertices ? BufferFactory<int32_t>(0) : BufferFactory<int32_t>{};
+                    boost::dynamic_bitset<> visitedParticles(renderNodalVertices ? positionProperty->size() : 0);
+                    OVITO_ASSERT(nodalColors || !nodalTransparencies);
 
-                // Allocate buffers for the nodal vertices.
-                BufferFactory<ColorG> nodalColors = renderNodalVertices ? BufferFactory<ColorG>(positionProperty->size()) : BufferFactory<ColorG>{};
-                BufferFactory<GraphicsFloatType> nodalTransparencies = (renderNodalVertices && transparencyProperty) ? BufferFactory<GraphicsFloatType>(positionProperty->size()) : BufferFactory<GraphicsFloatType>{};
-                BufferFactory<int32_t> nodalIndices = renderNodalVertices ? BufferFactory<int32_t>(0) : BufferFactory<int32_t>{};
-                boost::dynamic_bitset<> visitedParticles(renderNodalVertices ? positionProperty->size() : 0);
-                OVITO_ASSERT(nodalColors || !nodalTransparencies);
+                    // Cache some values.
+                    BufferReadAccess<Point3> positions(positionProperty);
+                    size_t particleCount = positions.size();
+                    const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
 
-                // Cache some values.
-                BufferReadAccess<Point3> positions(positionProperty);
-                size_t particleCount = positions.size();
-                const AffineTransformation cell = simulationCell ? simulationCell->cellMatrix() : AffineTransformation::Zero();
+                    // Obtain the radii of the particles.
+                    BufferReadAccessAndRef<GraphicsFloatType> particleRadii;
+                    if(particleVis) particleRadii = ConstDataBufferPtr(particleVis->particleRadii(particles, false));
+                    // Make sure the particle radius array has the correct length.
+                    if(particleRadii && particleRadii.size() != particleCount) particleRadii.reset();
 
-                // Obtain the radii of the particles.
-                BufferReadAccessAndRef<GraphicsFloatType> particleRadii;
-                if(particleVis)
-                    particleRadii = ConstDataBufferPtr(particleVis->particleRadii(particles, false));
-                // Make sure the particle radius array has the correct length.
-                if(particleRadii && particleRadii.size() != particleCount)
-                    particleRadii.reset();
+                    // Determine half-bond colors.
+                    std::vector<ColorG> colors = halfBondColors(particles, frameGraph.isInteractive(), coloringMode(), false);
+                    OVITO_ASSERT(colors.size() == bondPositions1.size());
 
-                // Determine half-bond colors.
-                std::vector<ColorG> colors = halfBondColors(particles, frameGraph.isInteractive(), coloringMode(), false);
-                OVITO_ASSERT(colors.size() == bondPositions1.size());
-
-                size_t cylinderIndex = 0;
-                auto color = colors.cbegin();
-                BufferReadAccess<ParticleIndexPair> bonds(bondTopologyProperty);
-                BufferReadAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
-                BufferReadAccess<GraphicsFloatType> bondInputTransparency(transparencyProperty);
-                BufferReadAccess<GraphicsFloatType> bondInputWidths(bondWidthProperty);
-                for(size_t bondIndex = 0; bondIndex < bonds.size(); bondIndex++) {
-                    size_t particleIndex1 = bonds[bondIndex][0];
-                    size_t particleIndex2 = bonds[bondIndex][1];
-                    if(particleIndex1 < particleCount && particleIndex2 < particleCount) {
-                        Vector3 vec = positions[particleIndex2] - positions[particleIndex1];
-                        bool isSplitBond = false;
-                        if(bondPeriodicImageProperty) {
-                            for(size_t k = 0; k < 3; k++) {
-                                if(int d = bondPeriodicImages[bondIndex][k]) {
-                                    vec += cell.column(k) * (FloatType)d;
-                                    isSplitBond = true;
+                    size_t cylinderIndex = 0;
+                    auto color = colors.cbegin();
+                    BufferReadAccess<ParticleIndexPair> bonds(bondTopologyProperty);
+                    BufferReadAccess<Vector3I> bondPeriodicImages(bondPeriodicImageProperty);
+                    BufferReadAccess<GraphicsFloatType> bondInputTransparency(transparencyProperty);
+                    BufferReadAccess<GraphicsFloatType> bondInputWidths(bondWidthProperty);
+                    for(size_t bondIndex = 0; bondIndex < bonds.size(); bondIndex++) {
+                        size_t particleIndex1 = bonds[bondIndex][0];
+                        size_t particleIndex2 = bonds[bondIndex][1];
+                        if(particleIndex1 < particleCount && particleIndex2 < particleCount) {
+                            Vector3 vec = positions[particleIndex2] - positions[particleIndex1];
+                            bool isSplitBond = false;
+                            if(bondPeriodicImageProperty) {
+                                for(size_t k = 0; k < 3; k++) {
+                                    if(int d = bondPeriodicImages[bondIndex][k]) {
+                                        vec += cell.column(k) * (FloatType)d;
+                                        isSplitBond = true;
+                                    }
                                 }
                             }
-                        }
-                        const Vector3G& gvec = vec.toDataType<GraphicsFloatType>();
-                        GraphicsFloatType t = 0.5;
-                        GraphicsFloatType blen = gvec.length() * GraphicsFloatType(2);
-                        if(particleRadii && blen != 0) {
-                            // This calculation determines the point where to split the bond into the two half-bonds
-                            // such that the border appears halfway between the two particles, which may have two different sizes.
-                            t = GraphicsFloatType(0.5) + std::min(GraphicsFloatType(0.5), particleRadii[particleIndex1]/blen) - std::min(GraphicsFloatType(0.5), particleRadii[particleIndex2]/blen);
-                        }
-                        bondColors[cylinderIndex] = *color++;
-                        if(nodalColors && !visitedParticles.test(particleIndex1)) {
-                            nodalColors[particleIndex1] = bondColors[cylinderIndex];
-                            if(nodalTransparencies)
-                                nodalTransparencies[particleIndex1] = bondInputTransparency[bondIndex];
-                            visitedParticles.set(particleIndex1);
-                            nodalIndices.push_back(particleIndex1);
-                        }
-                        if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
-                        if(bondWidths) bondWidths[cylinderIndex] = (bondInputWidths[bondIndex] <= GraphicsFloatType(0)) ? bondDiameter : bondInputWidths[bondIndex];
-                        bondPositions1[cylinderIndex] = positions[particleIndex1].toDataType<GraphicsFloatType>();
-                        bondPositions2[cylinderIndex] = bondPositions1[cylinderIndex] + gvec * t;
-                        if(isSplitBond)
-                            swap(bondPositions1[cylinderIndex], bondPositions2[cylinderIndex]);
-                        cylinderIndex++;
+                            const Vector3G& gvec = vec.toDataType<GraphicsFloatType>();
+                            GraphicsFloatType t = 0.5;
+                            GraphicsFloatType blen = gvec.length() * GraphicsFloatType(2);
+                            if(particleRadii && blen != 0) {
+                                // This calculation determines the point where to split the bond into the two half-bonds
+                                // such that the border appears halfway between the two particles, which may have two different sizes.
+                                t = GraphicsFloatType(0.5) + std::min(GraphicsFloatType(0.5), particleRadii[particleIndex1] / blen) -
+                                    std::min(GraphicsFloatType(0.5), particleRadii[particleIndex2] / blen);
+                            }
+                            bondColors[cylinderIndex] = *color++;
+                            if(nodalColors && !visitedParticles.test(particleIndex1)) {
+                                nodalColors[particleIndex1] = bondColors[cylinderIndex];
+                                if(nodalTransparencies) nodalTransparencies[particleIndex1] = bondInputTransparency[bondIndex];
+                                visitedParticles.set(particleIndex1);
+                                nodalIndices.push_back(particleIndex1);
+                            }
+                            if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
+                            if(bondWidths)
+                                bondWidths[cylinderIndex] =
+                                    (bondInputWidths[bondIndex] <= GraphicsFloatType(0)) ? bondDiameter : bondInputWidths[bondIndex];
+                            bondPositions1[cylinderIndex] = positions[particleIndex1].toDataType<GraphicsFloatType>();
+                            bondPositions2[cylinderIndex] = bondPositions1[cylinderIndex] + gvec * t;
+                            if(isSplitBond) swap(bondPositions1[cylinderIndex], bondPositions2[cylinderIndex]);
+                            cylinderIndex++;
 
-                        bondColors[cylinderIndex] = *color++;
-                        if(nodalColors && !visitedParticles.test(particleIndex2)) {
-                            nodalColors[particleIndex2] = bondColors[cylinderIndex];
-                            if(nodalTransparencies)
-                                nodalTransparencies[particleIndex2] = bondInputTransparency[bondIndex];
-                            visitedParticles.set(particleIndex2);
-                            nodalIndices.push_back(particleIndex2);
+                            bondColors[cylinderIndex] = *color++;
+                            if(nodalColors && !visitedParticles.test(particleIndex2)) {
+                                nodalColors[particleIndex2] = bondColors[cylinderIndex];
+                                if(nodalTransparencies) nodalTransparencies[particleIndex2] = bondInputTransparency[bondIndex];
+                                visitedParticles.set(particleIndex2);
+                                nodalIndices.push_back(particleIndex2);
+                            }
+                            if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
+                            if(bondWidths)
+                                bondWidths[cylinderIndex] =
+                                    (bondInputWidths[bondIndex] <= GraphicsFloatType(0)) ? bondDiameter : bondInputWidths[bondIndex];
+                            bondPositions1[cylinderIndex] = positions[particleIndex2].toDataType<GraphicsFloatType>();
+                            bondPositions2[cylinderIndex] = bondPositions1[cylinderIndex] - gvec * (GraphicsFloatType(1) - t);
+                            if(isSplitBond) swap(bondPositions1[cylinderIndex], bondPositions2[cylinderIndex]);
+                            cylinderIndex++;
                         }
-                        if(bondTransparencies) bondTransparencies[cylinderIndex] = bondInputTransparency[bondIndex];
-                        if(bondWidths) bondWidths[cylinderIndex] = (bondInputWidths[bondIndex] <= GraphicsFloatType(0)) ? bondDiameter : bondInputWidths[bondIndex];
-                        bondPositions1[cylinderIndex] = positions[particleIndex2].toDataType<GraphicsFloatType>();
-                        bondPositions2[cylinderIndex] = bondPositions1[cylinderIndex] - gvec * (GraphicsFloatType(1) - t);
-                        if(isSplitBond)
-                            swap(bondPositions1[cylinderIndex], bondPositions2[cylinderIndex]);
-                        cylinderIndex++;
+                        else {
+                            bondColors[cylinderIndex] = *color++;
+                            if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
+                            if(bondWidths) bondWidths[cylinderIndex] = 0;
+                            bondPositions1[cylinderIndex] = Point3G::Origin();
+                            bondPositions2[cylinderIndex++] = Point3G::Origin();
+
+                            bondColors[cylinderIndex] = *color++;
+                            if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
+                            if(bondWidths) bondWidths[cylinderIndex] = 0;
+                            bondPositions1[cylinderIndex] = Point3G::Origin();
+                            bondPositions2[cylinderIndex++] = Point3G::Origin();
+                        }
                     }
-                    else {
-                        bondColors[cylinderIndex] = *color++;
-                        if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
-                        if(bondWidths) bondWidths[cylinderIndex] = 0;
-                        bondPositions1[cylinderIndex] = Point3G::Origin();
-                        bondPositions2[cylinderIndex++] = Point3G::Origin();
 
-                        bondColors[cylinderIndex] = *color++;
-                        if(bondTransparencies) bondTransparencies[cylinderIndex] = 0;
-                        if(bondWidths) bondWidths[cylinderIndex] = 0;
-                        bondPositions1[cylinderIndex] = Point3G::Origin();
-                        bondPositions2[cylinderIndex++] = Point3G::Origin();
+                    cylinders.setShape(CylinderPrimitive::CylinderShape);
+                    cylinders.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
+                    cylinders.setRenderSingleCylinderCap(transparencyProperty != nullptr);
+                    cylinders.setUniformWidth(bondDiameter);
+                    cylinders.setWidths(bondWidths.take());
+                    cylinders.setPositions(bondPositions1.take(), bondPositions2.take());
+                    cylinders.setColors(bondColors.take());
+                    cylinders.setTransparencies(bondTransparencies.take());
+
+                    if(renderNodalVertices) {
+                        OVITO_ASSERT(positionProperty);
+                        vertices.setParticleShape(ParticlePrimitive::SphericalShape);
+                        vertices.setShadingMode((shadingMode() == NormalShading) ? ParticlePrimitive::NormalShading
+                                                                                 : ParticlePrimitive::FlatShading);
+                        vertices.setRenderingQuality(ParticlePrimitive::HighQuality);
+                        vertices.setPositions(positionProperty);
+                        vertices.setUniformRadius(0.5 * bondDiameter);
+                        vertices.setColors(nodalColors.take());
+                        vertices.setIndices(nodalIndices.take());
+                        vertices.setTransparencies(nodalTransparencies.take());
                     }
                 }
 
-                cylinders.setShape(CylinderPrimitive::CylinderShape);
-                cylinders.setShadingMode(static_cast<CylinderPrimitive::ShadingMode>(shadingMode()));
-                cylinders.setRenderSingleCylinderCap(transparencyProperty != nullptr);
-                cylinders.setUniformWidth(bondDiameter);
-                cylinders.setWidths(bondWidths.take());
-                cylinders.setPositions(bondPositions1.take(), bondPositions2.take());
-                cylinders.setColors(bondColors.take());
-                cylinders.setTransparencies(bondTransparencies.take());
+                pickInfo = OORef<BondPickInfo>::create(particles, simulationCell);
+            });
 
-                if(renderNodalVertices) {
-                    OVITO_ASSERT(positionProperty);
-                    vertices.setParticleShape(ParticlePrimitive::SphericalShape);
-                    vertices.setShadingMode((shadingMode() == NormalShading) ? ParticlePrimitive::NormalShading : ParticlePrimitive::FlatShading);
-                    vertices.setRenderingQuality(ParticlePrimitive::HighQuality);
-                    vertices.setPositions(positionProperty);
-                    vertices.setUniformRadius(0.5 * bondDiameter);
-                    vertices.setColors(nodalColors.take());
-                    vertices.setIndices(nodalIndices.take());
-                    vertices.setTransparencies(nodalTransparencies.take());
-                }
-            }
-
-            pickInfo = OORef<BondPickInfo>::create(particles, simulationCell);
-        });
-
-    if(!cylinders.basePositions())
-        return {};
+    if(!cylinders.basePositions()) return {};
 
     FrameGraph::RenderingCommandGroup& commandGroup = frameGraph.addCommandGroup(FrameGraph::SceneLayer);
     frameGraph.addPrimitive(commandGroup, std::make_unique<CylinderPrimitive>(cylinders), sceneNode, pickInfo);
 
-    if(renderNodalVertices)
-        frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(vertices), sceneNode);
+    if(renderNodalVertices) frameGraph.addPrimitive(commandGroup, std::make_unique<ParticlePrimitive>(vertices), sceneNode);
 
     return {};
 }
 
 /******************************************************************************
-* Determines the display colors of half-bonds.
-* Returns an array with two colors per full bond, because the two half-bonds
-* may have different colors.
-******************************************************************************/
-std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const
+ * Determines the display colors of half-bonds.
+ * Returns an array with two colors per full bond, because the two half-bonds
+ * may have different colors.
+ ******************************************************************************/
+std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles,
+                                             bool highlightSelection,
+                                             ColoringMode coloringMode,
+                                             bool ignoreBondColorProperty) const
 {
     OVITO_ASSERT(particles != nullptr);
     particles->verifyIntegrity();
@@ -390,13 +403,13 @@ std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles, bool hi
             // Assign colors based on bond types.
             // Generate a lookup map for bond type colors.
             const std::map<int, ColorG>& colorMap = bondTypeProperty->typeColorMap();
-            std::array<ColorG,16> colorArray;
+            std::array<ColorG, 16> colorArray;
             // Check if all type IDs are within a small, non-negative range.
             // If yes, we can use an array lookup strategy. Otherwise we have to use a dictionary lookup strategy, which is slower.
-            if(boost::algorithm::all_of(colorMap, [&colorArray](const auto& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
+            if(boost::algorithm::all_of(colorMap,
+                                        [&colorArray](const auto& i) { return i.first >= 0 && i.first < (int)colorArray.size(); })) {
                 colorArray.fill(defaultColor);
-                for(const auto& entry : colorMap)
-                    colorArray[entry.first] = entry.second;
+                for(const auto& entry : colorMap) colorArray[entry.first] = entry.second;
                 // Fill color array.
                 BufferReadAccess<int32_t> bondTypeData(bondTypeProperty);
                 const int32_t* t = bondTypeData.cbegin();
@@ -442,7 +455,8 @@ std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles, bool hi
                 *c++ = selColor;
                 *c++ = selColor;
             }
-            else c += 2;
+            else
+                c += 2;
         }
     }
 
@@ -450,9 +464,9 @@ std::vector<ColorG> BondsVis::halfBondColors(const Particles* particles, bool hi
 }
 
 /******************************************************************************
-* Returns a human-readable string describing the picked object,
-* which will be displayed in the status bar by OVITO.
-******************************************************************************/
+ * Returns a human-readable string describing the picked object,
+ * which will be displayed in the status bar by OVITO.
+ ******************************************************************************/
 QString BondPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 {
     QString str;
@@ -475,7 +489,11 @@ QString BondPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
                         delta += simulationCell()->cellMatrix() * periodicImageProperty[bondIndex].toDataType<FloatType>();
                     }
                 }
-                str += QString("<key>Length:</key> <val>%1</val><sep><key>Delta:</key> <val>%2, %3, %4</val>").arg(delta.length()).arg(delta.x()).arg(delta.y()).arg(delta.z());
+                str += QString("<key>Length:</key> <val>%1</val><sep><key>Delta:</key> <val>%2, %3, %4</val>")
+                           .arg(delta.length())
+                           .arg(delta.x())
+                           .arg(delta.y())
+                           .arg(delta.z());
             }
 
             // Bond properties.
@@ -498,9 +516,10 @@ QString BondPickInfo::infoString(const Pipeline* pipeline, uint32_t subobjectId)
 }
 
 /******************************************************************************
-* Allows the object to parse the serialized contents of a property field in a custom way.
-******************************************************************************/
-bool BondsVis::loadPropertyFieldFromStream(ObjectLoadStream& stream, const RefMakerClass::SerializedClassInfo::PropertyFieldInfo& serializedField)
+ * Allows the object to parse the serialized contents of a property field in a custom way.
+ ******************************************************************************/
+bool BondsVis::loadPropertyFieldFromStream(ObjectLoadStream& stream,
+                                           const RefMakerClass::SerializedClassInfo::PropertyFieldInfo& serializedField)
 {
     // For backward compatibility with OVITO 3.5.4:
     // Parse the "useParticleColors" field, which has been replaced by the "coloringMode" parameter field in later versions.
@@ -514,8 +533,8 @@ bool BondsVis::loadPropertyFieldFromStream(ObjectLoadStream& stream, const RefMa
 }
 
 /******************************************************************************
-* Determines the display bond widths.
-******************************************************************************/
+ * Determines the display bond widths.
+ ******************************************************************************/
 ConstPropertyPtr BondsVis::bondWidths(const Bonds* bonds) const
 {
     bonds->verifyIntegrity();
@@ -529,7 +548,9 @@ ConstPropertyPtr BondsVis::bondWidths(const Bonds* bonds) const
             widthArray.reset();
 
             // Replace zero entries in the "Width" array with the uniform default width.
-            std::ranges::replace(BufferWriteAccess<GraphicsFloatType, access_mode::read_write>(output.makeMutableInplace()), GraphicsFloatType(0), static_cast<GraphicsFloatType>(bondWidth()));
+            std::ranges::replace(BufferWriteAccess<GraphicsFloatType, access_mode::read_write>(output.makeMutableInplace()),
+                                 GraphicsFloatType(0),
+                                 static_cast<GraphicsFloatType>(bondWidth()));
         }
     }
     else {
@@ -543,4 +564,4 @@ ConstPropertyPtr BondsVis::bondWidths(const Bonds* bonds) const
     return output;
 }
 
-}   // End of namespace
+}  // namespace Ovito
