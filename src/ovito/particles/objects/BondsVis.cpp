@@ -137,6 +137,7 @@ size_t BondsVis::getCylinderCount(const Property* bondTopologyProperty, const Pr
 }
 
 namespace {
+// Calculate the out of plane vector for each bond and its neighbors to orient the bond cylinders
 Vector3G getBondNormalVector(const std::array<size_t, 2>& particleIndices,
                              const std::optional<ParticleBondMap>& bondsMap,
                              const BufferReadAccess<Point3>& positions,
@@ -180,6 +181,7 @@ Vector3G getBondNormalVector(const std::array<size_t, 2>& particleIndices,
     return {0.F, 0.F, 1.F};
 }
 
+// Calculate the (reduced) bond width based on the bond order
 GraphicsFloatType getBondWidth(const BufferReadAccess<GraphicsFloatType>& bondInputWidths,
                                size_t bondIndex,
                                FloatType bondDiameter,
@@ -197,11 +199,34 @@ GraphicsFloatType getBondWidth(const BufferReadAccess<GraphicsFloatType>& bondIn
     return (GraphicsFloatType)bondWidthValue;
 }
 
+// Shift bonds based on the bond order to avoid overlapping bond cylinders
 GraphicsFloatType getBondShiftFactor(size_t bondRepCount)
 {
     OVITO_ASSERT(bondRepCount >= 0 && bondRepCount <= 3);
     constexpr static std::array<GraphicsFloatType, 4> bondShiftFactors = {0.F, 1.F, 1.25F, 2.5F};
     return bondShiftFactors[bondRepCount];
+}
+
+// Determine where to shift vector for each bond to avoid overlapping bond cylinders
+Vector3G getBondOffsetVector(
+    size_t bondRepCount, size_t bondRepIdx, const Vector3G& gvec, const Vector3G& normal, GraphicsFloatType bondWidth)
+{
+    OVITO_ASSERT(bondRepCount >= 0 && bondRepCount <= 3);
+    OVITO_ASSERT(bondRepIdx >= 0 && bondRepIdx < 3);
+
+    constexpr static std::array<std::array<FloatType, 3>, 3> bondPosOffset{
+        {{{0.0, std::numeric_limits<FloatType>::quiet_NaN(), std::numeric_limits<FloatType>::quiet_NaN()}},
+         {{-0.5, 0.5, std::numeric_limits<FloatType>::quiet_NaN()}},
+         {{0.0, -0.5, 0.5}}}};
+
+    const FloatType offset = bondPosOffset[bondRepCount - 1][bondRepIdx];
+    OVITO_ASSERT(!std::isnan(offset));
+    Vector3G offSetVec = Vector3G::Zero();
+    if(bondRepCount > 1) {
+        offSetVec = gvec.cross(normal).normalized() * (GraphicsFloatType)offset * getBondShiftFactor(bondRepCount) * bondWidth;
+    }
+
+    return offSetVec;
 }
 
 }  // namespace
@@ -270,14 +295,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                                          >;
 
     // Make sure the primitive for the nodal vertices gets created if particles display is turned off or if particles are semi-transparent.
-    bool renderNodalVertices = !transparencyProperty && !bondWidthProperty &&
-                               (!particleVis || !particleVis->isEnabled() || particleTransparencyProperty != nullptr);
-
-    // Shift individual bonds base on the current bond order
-    constexpr static std::array<std::array<FloatType, 3>, 3> bondPosOffset{
-        {{{0.0, std::numeric_limits<FloatType>::quiet_NaN(), std::numeric_limits<FloatType>::quiet_NaN()}},
-         {{-0.5, 0.5, std::numeric_limits<FloatType>::quiet_NaN()}},
-         {{0.0, -0.5, 0.5}}}};
+    const bool renderNodalVertices = !bondOrderProperty && !transparencyProperty && !bondWidthProperty &&
+                                     (!particleVis || !particleVis->isEnabled() || particleTransparencyProperty != nullptr);
 
     // Lookup the rendering primitive in the vis cache.
     const auto& [cylinders, vertices, pickInfo] =
@@ -401,15 +420,8 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                             }
 
                             for(size_t bondRepIdx = 0; bondRepIdx < bondRepCount; bondRepIdx++) {
-                                // Determine where to shift the bond if the bond order is > 1
-                                // bondRepCount -1 as bond oder 3 is not drawn
-                                const FloatType offset = bondPosOffset[bondRepCount - 1][bondRepIdx];
-                                OVITO_ASSERT(!std::isnan(offset));
-                                Vector3G offSetVec = Vector3G::Zero();
-                                if(bondRepCount > 1) {
-                                    offSetVec = gvec.cross(normal).normalized() * (GraphicsFloatType)offset *
-                                                getBondShiftFactor(bondRepCount) * bondWidth;
-                                }
+                                // Shift individual bonds base on the current bond order
+                                const Vector3G& offSetVec = getBondOffsetVector(bondRepCount, bondRepIdx, gvec, normal, bondWidth);
 
                                 bondColors[cylinderIndex] = *color++;
                                 if(nodalColors && !visitedParticles.test(particleIndex1)) {
@@ -469,7 +481,11 @@ std::variant<PipelineStatus, Future<PipelineStatus>> BondsVis::render(const Cons
                     cylinders.setTransparencies(bondTransparencies.take());
 
                     if(renderNodalVertices) {
+                        OVITO_ASSERT(!bondOrderProperty);
                         OVITO_ASSERT(positionProperty);
+                        OVITO_ASSERT(!nodalColors || positionProperty->size() == nodalColors.size());
+                        OVITO_ASSERT(!nodalIndices || (positionProperty->size() == nodalIndices.size()));
+                        OVITO_ASSERT(!nodalTransparencies || (positionProperty->size() == nodalTransparencies.size()));
                         vertices.setParticleShape(ParticlePrimitive::SphericalShape);
                         vertices.setShadingMode((shadingMode() == NormalShading) ? ParticlePrimitive::NormalShading
                                                                                  : ParticlePrimitive::FlatShading);
