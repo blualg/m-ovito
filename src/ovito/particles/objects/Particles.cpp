@@ -334,17 +334,25 @@ ConstPropertyPtr Particles::inputBondColors(bool ignoreExistingColorProperty) co
     // Access the bonds vis element.
     if(bonds()) {
         if(BondsVis* bondsVis = bonds()->visElement<BondsVis>()) {
+            const Property* bondTopologyProperty = bonds()->getProperty(Bonds::TopologyProperty);
+            const Property* bondOrderProperty = bonds()->getProperty(Bonds::OrderProperty);
+            BufferReadAccess<GraphicsFloatType> bondInputOrders(bondOrderProperty);
+            const size_t cylinderCount = BondsVis::getCylinderCount(bondTopologyProperty, bondOrderProperty);
 
             // Request half-bond colors from vis element.
-            std::vector<ColorG> halfBondColors = bondsVis->halfBondColors(this, false, bondsVis->coloringMode(), ignoreExistingColorProperty);
-            OVITO_ASSERT(bonds()->elementCount() * 2 == halfBondColors.size());
+            std::vector<ColorG> halfBondColors =
+                bondsVis->halfBondColors(this, cylinderCount, false, bondsVis->coloringMode(), ignoreExistingColorProperty);
+            OVITO_ASSERT(cylinderCount == halfBondColors.size());
 
             // Map half-bond colors to full bond colors.
             PropertyPtr colors = Bonds::OOClass().createStandardProperty(DataBuffer::Uninitialized, bonds()->elementCount(), Bonds::ColorProperty);
+            BufferWriteAccess<ColorG, access_mode::discard_write> colorsAcc(colors);
             auto ci = halfBondColors.cbegin();
-            for(ColorG& co : BufferWriteAccess<ColorG, access_mode::discard_write>(colors)) {
-                co = *ci;
-                ci += 2;
+            for(size_t bondIndex = 0; bondIndex < colors->size(); bondIndex++) {
+                colorsAcc[bondIndex] = *ci;
+                const size_t bondRepCount = bondInputOrders ? (size_t)std::clamp(std::ceil(bondInputOrders[bondIndex]), 0.F, 3.F) : 1;
+                // Skip the next bondRepCount half bonds
+                std::advance(ci, 2 * bondRepCount);
             }
             return colors;
         }

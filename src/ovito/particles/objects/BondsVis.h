@@ -69,7 +69,14 @@ public:
 
     /// Determines the display colors of half-bonds.
     /// Returns an array with two colors per full bond, because the two half-bonds may have different colors.
-    std::vector<ColorG> halfBondColors(const Particles* particles, bool highlightSelection, ColoringMode coloringMode, bool ignoreBondColorProperty) const;
+    std::vector<ColorG> halfBondColors(const Particles* particles,
+                                       size_t outputSize,
+                                       bool highlightSelection,
+                                       ColoringMode coloringMode,
+                                       bool ignoreBondColorProperty) const;
+
+    /// Determines the number of cylinders to be rendered for the given bond topology.
+    [[nodiscard]] static size_t getCylinderCount(const Property* bondTopologyProperty, const Property* bondOrderProperty);
 
     /// Determines the bond widths used for rendering.
     ConstPropertyPtr bondWidths(const Bonds* bonds) const;
