@@ -62,7 +62,7 @@ void BasePipelineSource::postprocessDataCollection(Future<PipelineFlowState>& st
                     // Adopt the generated data collection as our new master data collection (only if it is for the current animation time).
                     AnimationTime currentTime = this_task::ui()->datasetContainer().currentAnimationTime();
                     if(state.stateValidity().contains(currentTime)) {
-                        setDataCollectionFrame(std::clamp(animationTimeToSourceFrame(currentTime), 0, numberOfSourceFrames() - 1));
+                        setDataCollectionFrame(std::clamp(animationTimeToSourceFrame(currentTime), 0, std::max(numberOfSourceFrames() - 1, 0)));
                         setDataCollection(state.data());
                     }
                 }
