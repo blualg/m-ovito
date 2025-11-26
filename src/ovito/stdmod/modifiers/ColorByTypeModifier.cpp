@@ -86,6 +86,19 @@ void ColorByTypeModifier::initializeModifier(const ModifierInitializationRequest
 }
 
 /******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void ColorByTypeModifier::propertyChanged(const PropertyFieldDescriptor* field)
+{
+    if(field == PROPERTY_FIELD(ColorByTypeModifier::sourceProperty) && !isBeingLoaded()) {
+        // Changes of some the modifier's parameters affect the result of getPipelineEditorShortInfo().
+        notifyDependents(ReferenceEvent::ObjectStatusChanged);
+    }
+
+    GenericPropertyModifier::propertyChanged(field);
+}
+
+/******************************************************************************
 * Modifies the input data.
 ******************************************************************************/
 Future<PipelineFlowState> ColorByTypeModifier::evaluateModifier(const ModifierEvaluationRequest& request, PipelineFlowState&& state)
