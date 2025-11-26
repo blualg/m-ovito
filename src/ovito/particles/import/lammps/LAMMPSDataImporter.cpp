@@ -305,7 +305,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
             // Create atom types.
             for(int i = 1; i <= natomtypes; i++)
-                addNumericType(Particles::OOClass(), typeProperty, i, {});
+                addNumericType(Particles::OOClass(), typeProperty, i, QString{});
 
             if(natoms != 0) {
                 detectAtomStyle(stream.readNonEmptyLine(), keyword, _atomStyleHints);
@@ -509,7 +509,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
             // Create bond types.
             for(int i = 1; i <= nbondtypes; i++)
-                addNumericType(Bonds::OOClass(), typeProperty, i, {});
+                addNumericType(Bonds::OOClass(), typeProperty, i, QString{});
 
             progress.setMaximum(nbonds);
             BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);
@@ -585,7 +585,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
             // Create angle types.
             for(int i = 1; i <= nangletypes; i++)
-                addNumericType(Angles::OOClass(), typeProperty, i, {});
+                addNumericType(Angles::OOClass(), typeProperty, i, QString{});
 
             progress.setMaximum(nangles);
             BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);
@@ -648,7 +648,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
             // Create dihedral types.
             for(int i = 1; i <= ndihedraltypes; i++)
-                addNumericType(Dihedrals::OOClass(), typeProperty, i, {});
+                addNumericType(Dihedrals::OOClass(), typeProperty, i, QString{});
 
             progress.setMaximum(ndihedrals);
             BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);
@@ -711,7 +711,7 @@ void LAMMPSDataImporter::FrameLoader::loadFile()
 
             // Create improper types.
             for(int i = 1; i <= nimpropertypes; i++)
-                addNumericType(Impropers::OOClass(), typeProperty, i, {});
+                addNumericType(Impropers::OOClass(), typeProperty, i, QString{});
 
             progress.setMaximum(nimpropers);
             BufferWriteAccess<int32_t, access_mode::discard_write> typePropertyAccess(typeProperty);

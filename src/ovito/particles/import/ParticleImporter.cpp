@@ -388,7 +388,7 @@ void ParticleImporter::FrameLoader::generateBonds(TaskProgress& progress)
     BufferWriteAccess<Vector3I, access_mode::discard_write> bondPeriodicImageProperty = this->bonds()->createProperty(Bonds::PeriodicImageProperty);
 
     // Create bond type.
-    addNumericType(Bonds::OOClass(), bondTypeProperty, 1, {});
+    addNumericType(Bonds::OOClass(), bondTypeProperty, 1, QString{});
     bondTypeProperty->fill<int32_t>(1);
 
     // Transfer bonds lists to Bonds.

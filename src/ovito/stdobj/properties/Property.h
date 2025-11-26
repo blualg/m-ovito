@@ -137,20 +137,15 @@ public:
 
     /// Creates and returns a new numeric element type with the given numeric ID and, optionally, a human-readable name.
     /// If an element type with the given numeric ID already exists in this property's element type list, it will be returned instead.
-    const ElementType* addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name = {}, ElementTypeClassPtr elementTypeClass = {});
+    template<typename StringType>
+        requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
+    const ElementType* addNumericType(const PropertyContainerClass& containerClass, int id, const StringType& name, ElementTypeClassPtr elementTypeClass = {});
 
     /// Creates and returns a new element type with the given name and assigns a new unique ID to it.
     /// If an element type with the given name already exists in this property's element type list, it will be returned instead.
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, const QString& name, ElementTypeClassPtr elementTypeClass = {}) {
-        OVITO_CHECK_OBJECT_POINTER(this);
-        if(const ElementType* existingType = elementType(name))
-            return existingType;
-        return addNumericType(containerClass, generateUniqueElementTypeId(), name, elementTypeClass);
-    }
-
-    /// Creates and returns a new element type with the given name and assigns a new unique ID to it.
-    /// If an element type with the given name already exists in this property's element type list, it will be returned instead.
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, const QLatin1String& name, ElementTypeClassPtr elementTypeClass = {}) {
+    template<typename StringType>
+        requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, const StringType& name, ElementTypeClassPtr elementTypeClass = {}) {
         OVITO_CHECK_OBJECT_POINTER(this);
         if(const ElementType* existingType = elementType(name))
             return existingType;
@@ -167,17 +162,9 @@ public:
     }
 
     /// Returns the element type with the given human-readable name, or NULL if no such type exists.
-    const ElementType* elementType(const QString& name) const {
-        OVITO_CHECK_OBJECT_POINTER(this);
-        OVITO_ASSERT(!name.isEmpty());
-        for(const ElementType* type : elementTypes())
-            if(type->name() == name)
-                return type;
-        return nullptr;
-    }
-
-    /// Returns the element type with the given human-readable name, or NULL if no such type exists.
-    const ElementType* elementType(const QLatin1String& name) const {
+    template<typename StringType>
+        requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
+    const ElementType* elementType(const StringType& name) const {
         OVITO_CHECK_OBJECT_POINTER(this);
         OVITO_ASSERT(name.size() != 0);
         for(const ElementType* type : elementTypes())
