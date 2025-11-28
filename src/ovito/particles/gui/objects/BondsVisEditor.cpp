@@ -25,6 +25,8 @@
 #include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/BooleanParameterUI.h>
 #include <ovito/gui/desktop/properties/VariantComboBoxParameterUI.h>
+#include <ovito/gui/desktop/properties/IntegerParameterUI.h>
+#include <ovito/gui/desktop/properties/FloatParameterUI.h>
 #include <ovito/gui/desktop/properties/ColorParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerRadioButtonParameterUI.h>
 #include <ovito/gui/desktop/properties/IntegerCheckBoxParameterUI.h>
@@ -105,6 +107,14 @@ void BondsVisEditor::createUI(const RolloutInsertionParameters& rolloutParams)
 
     // Update the coloring controls when a parameter of the vis element has been changed.
     connect(this, &PropertiesEditor::contentsChanged, this, &BondsVisEditor::updateColoringOptions);
+
+    auto* filledSegmentsPUI = createParamUI<IntegerParameterUI>(PROPERTY_FIELD(BondsVis::filledSegments));
+    layout->addWidget(filledSegmentsPUI->label(), 3, 0);
+    layout->addLayout(filledSegmentsPUI->createFieldLayout(), 3, 1);
+
+    auto* filledFractionPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(BondsVis::filledFraction));
+    layout->addWidget(filledFractionPUI->label(), 4, 0);
+    layout->addLayout(filledFractionPUI->createFieldLayout(), 4, 1);
 }
 
 /******************************************************************************
