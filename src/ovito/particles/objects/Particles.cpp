@@ -955,9 +955,9 @@ void Particles::OOMetaClass::initialize()
 Color Particles::OOMetaClass::getElementTypeDefaultColor(const OwnerPropertyRef& property, const QString& typeName, int numericTypeId, bool loadUserDefaults) const
 {
     if(property.typeId() == Particles::TypeProperty) {
-        for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; predefType++) {
-            if(ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(predefType)) == typeName)
-                return ParticleType::getPredefinedParticleTypeColor(static_cast<ParticleType::PredefinedParticleType>(predefType));
+        for(int predefType = 0; predefType < ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; predefType++) {
+            if(ParticleType::getChemicalElementSymbol(static_cast<ParticleType::ChemicalElement>(predefType)) == typeName)
+                return ParticleType::getChemicalElementColor(static_cast<ParticleType::ChemicalElement>(predefType));
         }
 
         // Sometimes atom type names have additional letters/numbers appended.

@@ -38,6 +38,7 @@ DEFINE_PROPERTY_FIELD(ParticleType, highlightShapeEdges);
 DEFINE_PROPERTY_FIELD(ParticleType, shapeBackfaceCullingEnabled);
 DEFINE_PROPERTY_FIELD(ParticleType, shapeUseMeshColor);
 DEFINE_PROPERTY_FIELD(ParticleType, mass);
+DEFINE_PROPERTY_FIELD(ParticleType, chemicalElement);
 DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, radius);
 DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, vdwRadius);
 DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, shape);
@@ -45,6 +46,7 @@ DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, highlightShapeEdges);
 DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, shapeBackfaceCullingEnabled);
 DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, shapeUseMeshColor);
 DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, mass);
+DEFINE_SHADOW_PROPERTY_FIELD(ParticleType, chemicalElement);
 SET_PROPERTY_FIELD_LABEL(ParticleType, radius, "Display radius");
 SET_PROPERTY_FIELD_LABEL(ParticleType, vdwRadius, "Van der Waals radius");
 SET_PROPERTY_FIELD_LABEL(ParticleType, shape, "Shape");
@@ -53,6 +55,7 @@ SET_PROPERTY_FIELD_LABEL(ParticleType, highlightShapeEdges, "Highlight edges");
 SET_PROPERTY_FIELD_LABEL(ParticleType, shapeBackfaceCullingEnabled, "Back-face culling");
 SET_PROPERTY_FIELD_LABEL(ParticleType, shapeUseMeshColor, "Use mesh color");
 SET_PROPERTY_FIELD_LABEL(ParticleType, mass, "Mass");
+SET_PROPERTY_FIELD_LABEL(ParticleType, chemicalElement, "Chemical element");
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticleType, radius, WorldParameterUnit, 0);
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticleType, vdwRadius, WorldParameterUnit, 0);
 
@@ -63,26 +66,35 @@ void ParticleType::initializeType(const OwnerPropertyRef& property, bool loadUse
 {
     ElementType::initializeType(property, loadUserDefaults);
 
+    const QString& typeName = nameOrNumericId();
+    const int numericTypeId = numericId();
+
     // Load standard display radius.
     // First load the hardcoded default radius and freeze it, then load the user-defined default radius.
-    setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), nameOrNumericId(), numericId(), false, DisplayRadius));
+    setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, false, DisplayRadius));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius)});
     if(loadUserDefaults)
-        setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), nameOrNumericId(), numericId(), true, DisplayRadius));
+        setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, true, DisplayRadius));
 
     // Load standard van der Waals radius.
     // First load the hardcoded default radius and freeze it, then load the user-defined default radius.
-    setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), nameOrNumericId(), numericId(), false, VanDerWaalsRadius));
+    setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, false, VanDerWaalsRadius));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::vdwRadius)});
     if(loadUserDefaults)
-        setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), nameOrNumericId(), numericId(), true, VanDerWaalsRadius));
+        setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, true, VanDerWaalsRadius));
 
     // Load standard mass.
     // First load the hardcoded default mass and freeze it, then load the user-defined default mass.
-    setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.typeId()), nameOrNumericId(), numericId(), false));
+    setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, false));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::mass)});
     if(loadUserDefaults)
-        setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.typeId()), nameOrNumericId(), numericId(), true));
+        setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, true));
+
+    // Determine chemical element.
+    setChemicalElement(getDefaultChemicalElementForType(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, false));
+    freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::chemicalElement)});
+    if(loadUserDefaults)
+        setChemicalElement(getDefaultChemicalElementForType(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, true));
 }
 
 /******************************************************************************
@@ -156,111 +168,175 @@ void ParticleType::loadFromStreamComplete(ObjectLoadStream& stream)
     }
 }
 
-// Define default names, colors, and radii for some predefined particle types.
+/******************************************************************************
+* Is called when the value of a property of this object has changed.
+******************************************************************************/
+void ParticleType::propertyChanged(const PropertyFieldDescriptor* field)
+{
+    ElementType::propertyChanged(field);
+
+    if(field == PROPERTY_FIELD(chemicalElement) && !isUndoingOrRedoing() && !isBeingLoaded() && !isBeingInitializedOrDeleted() && !isBeingCopied()) {
+        if(chemicalElement() != ParticleType::ChemicalElement::X) {
+            // Update the particle type's color, mass and radii to match the selected chemical element.
+            setColor(getChemicalElementColor(chemicalElement()));
+            const QString& symbol = getChemicalElementSymbol(chemicalElement());
+            if(name().isEmpty())
+                setName(symbol);
+            setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(ownerProperty().typeId()), symbol, numericId(), true, DisplayRadius));
+            setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(ownerProperty().typeId()), symbol, numericId(), true, VanDerWaalsRadius));
+            setMass(getDefaultParticleMass(static_cast<Particles::Type>(ownerProperty().typeId()), symbol, numericId(), true));
+        }
+    }
+    else if(field == PROPERTY_FIELD(ElementType::name) && !isUndoingOrRedoing() && !isBeingLoaded() && !isBeingInitializedOrDeleted() && !isBeingCopied()) {
+        ChemicalElement el = getDefaultChemicalElementForType(static_cast<Particles::Type>(ownerProperty().typeId()), nameOrNumericId(), numericId(), true);
+        if(el != ParticleType::ChemicalElement::X) {
+            // Update the particle type's chemical element info. This in turn may update other parameters such as the color, mass, and radii.
+            setChemicalElement(el);
+        }
+    }
+}
+
+// Define table of elements with default colors, radii, masses, etc.
 //
 // Van der Waals radii have been adopted from the VMD software, which adopted them from A. Bondi, J. Phys. Chem., 68, 441 - 452, 1964,
 // except the value for H, which was taken from R.S. Rowland & R. Taylor, J. Phys. Chem., 100, 7384 - 7391, 1996.
 // For radii that are not available in either of these publications use r = 2.0.
 // The radii for ions (Na, K, Cl, Ca, Mg, and Cs) are based on the CHARMM27 Rmin/2 parameters for (SOD, POT, CLA, CAL, MG, CES).
 //
-// Colors and covalent radii of elements marked with '//' have been adopted from OpenBabel.
-const std::array<ParticleType::PredefinedChemicalType, ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES> ParticleType::_predefinedParticleTypes{{
-    ParticleType::PredefinedChemicalType{ QStringLiteral("X"),  Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 0.00f, 0.00f, 0.0 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("H"),  Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 0.46f, 1.20f, 1.00794 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("He"), Color(217.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 1.22f, 1.40f, 4.00260 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Li"), Color(204.0f/255.0f, 128.0f/255.0f, 255.0f/255.0f), 1.57f, 1.82f, 6.941 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Be"), Color(         0.76,          1.00,          0.00), 1.47f, 2.00f, 9.012182 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("B"),  Color(         1.00,          0.71,          0.71), 2.01f, 2.00f, 10.811 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("C"),  Color(144.0f/255.0f, 144.0f/255.0f, 144.0f/255.0f), 0.77f, 1.70f, 12.0107 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("N"),  Color( 48.0f/255.0f,  80.0f/255.0f, 248.0f/255.0f), 0.74f, 1.55f, 14.0067 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("O"),  Color(255.0f/255.0f,  13.0f/255.0f,  13.0f/255.0f), 0.74f, 1.52f, 15.9994 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("F"),  Color(         0.50,          0.70,          1.00), 0.74f, 1.47f, 18.9984032 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ne"), Color(         0.70,          0.89,          0.96), 0.74f, 1.54f, 20.1797 }, //
+// Some colors and covalent radii have been adopted from OpenBabel.
+const std::array<ParticleType::PredefinedChemicalType, ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES> ParticleType::_PredefinedChemicalTypes{{
+    ParticleType::PredefinedChemicalType{ QStringLiteral("X"),  QStringLiteral("Unspecified"),  Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 0.00f, 0.00f, 0.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("H"),  QStringLiteral("Hydrogen"),  Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 0.46f, 1.20f, 1.00794 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("He"), QStringLiteral("Helium"), Color(217.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 1.22f, 1.40f, 4.00260 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Li"), QStringLiteral("Lithium"), Color(204.0f/255.0f, 128.0f/255.0f, 255.0f/255.0f), 1.57f, 1.82f, 6.941 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Be"), QStringLiteral("Beryllium"), Color(         0.76,          1.00,          0.00), 1.47f, 2.00f, 9.012182 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("B"),  QStringLiteral("Boron"), Color(         1.00,          0.71,          0.71), 2.01f, 2.00f, 10.811 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("C"),  QStringLiteral("Carbon"), Color(144.0f/255.0f, 144.0f/255.0f, 144.0f/255.0f), 0.77f, 1.70f, 12.0107 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("N"),  QStringLiteral("Nitrogen"), Color( 48.0f/255.0f,  80.0f/255.0f, 248.0f/255.0f), 0.74f, 1.55f, 14.0067 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("O"),  QStringLiteral("Oxygen"), Color(255.0f/255.0f,  13.0f/255.0f,  13.0f/255.0f), 0.74f, 1.52f, 15.9994 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("F"),  QStringLiteral("Fluorine"), Color(         0.50,          0.70,          1.00), 0.74f, 1.47f, 18.9984032 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ne"), QStringLiteral("Neon"), Color(         0.70,          0.89,          0.96), 0.74f, 1.54f, 20.1797 },
 
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Na"), Color(171.0f/255.0f,  92.0f/255.0f, 242.0f/255.0f), 1.91f, 1.36f, 22.989770 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Mg"), Color(138.0f/255.0f, 255.0f/255.0f,   0.0f/255.0f), 1.60f, 1.18f, 24.3050 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Al"), Color(191.0f/255.0f, 166.0f/255.0f, 166.0f/255.0f), 1.43f, 2.00f, 26.981538 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Si"), Color(240.0f/255.0f, 200.0f/255.0f, 160.0f/255.0f), 1.18f, 2.10f, 28.0855 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("P"),  Color(         1.00,          0.50,          0.00), 1.07f, 1.80f, 30.973761 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("S"),  Color(         0.70,          0.70,          0.00), 1.05f, 1.80f, 32.065 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Cl"), Color(         0.12,          0.94,          0.12), 1.02f, 2.27f, 35.453 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ar"), Color(         0.50,          0.82,          0.89), 1.06f, 1.88f, 39.948 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("K"),  Color(         0.56,          0.25,          0.83), 2.03f, 1.76f, 39.0983 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ca"), Color(         0.24,          1.00,          0.00), 1.97f, 1.37f, 40.078 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Sc"), Color(         0.90,          0.90,          0.90), 1.70f, 2.00f, 44.955910 }, //
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Na"), QStringLiteral("Sodium"), Color(171.0f/255.0f,  92.0f/255.0f, 242.0f/255.0f), 1.91f, 1.36f, 22.989770 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Mg"), QStringLiteral("Magnesium"), Color(138.0f/255.0f, 255.0f/255.0f,   0.0f/255.0f), 1.60f, 1.18f, 24.3050 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Al"), QStringLiteral("Aluminum"), Color(191.0f/255.0f, 166.0f/255.0f, 166.0f/255.0f), 1.43f, 2.00f, 26.981538 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Si"), QStringLiteral("Silicon"), Color(240.0f/255.0f, 200.0f/255.0f, 160.0f/255.0f), 1.18f, 2.10f, 28.0855 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("P"),  QStringLiteral("Phosphorus"), Color(         1.00,          0.50,          0.00), 1.07f, 1.80f, 30.973761 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("S"),  QStringLiteral("Sulfur"), Color(         0.70,          0.70,          0.00), 1.05f, 1.80f, 32.065 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Cl"), QStringLiteral("Chlorine"), Color(         0.12,          0.94,          0.12), 1.02f, 2.27f, 35.453 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ar"), QStringLiteral("Argon"), Color(         0.50,          0.82,          0.89), 1.06f, 1.88f, 39.948 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("K"),  QStringLiteral("Potassium"), Color(         0.56,          0.25,          0.83), 2.03f, 1.76f, 39.0983 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ca"), QStringLiteral("Calcium"), Color(         0.24,          1.00,          0.00), 1.97f, 1.37f, 40.078 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Sc"), QStringLiteral("Scandium"), Color(         0.90,          0.90,          0.90), 1.70f, 2.00f, 44.955910 },
 
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ti"), Color(191.0f/255.0f, 194.0f/255.0f, 199.0f/255.0f), 1.47f, 2.00f, 47.867 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("V"),  Color(         0.65,          0.65,          0.67), 1.53f, 2.00f, 50.9415 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Cr"), Color(138.0f/255.0f, 153.0f/255.0f, 199.0f/255.0f), 1.29f, 2.00f, 51.9961 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Mn"), Color(         0.61,          0.48,          0.78), 1.39f, 2.00f, 54.938049 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Fe"), Color(224.0f/255.0f, 102.0f/255.0f,  51.0f/255.0f), 1.26f, 2.00f, 55.845 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Co"), Color(240.0f/255.0f, 144.0f/255.0f, 160.0f/255.0f), 1.25f, 2.00f, 58.9332 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ni"), Color( 80.0f/255.0f, 208.0f/255.0f,  80.0f/255.0f), 1.25f, 1.63f, 58.6934 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Cu"), Color(200.0f/255.0f, 128.0f/255.0f,  51.0f/255.0f), 1.28f, 1.40f, 63.546 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Zn"), Color(125.0f/255.0f, 128.0f/255.0f, 176.0f/255.0f), 1.37f, 1.39f, 65.38, 65.409 }, // Zn has two atomic weights: the old mass (pre 2001) 65.409 and the updated mass 65.38 (https://www.ciaaw.org/zinc.htm)
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ti"), QStringLiteral("Titanium"), Color(191.0f/255.0f, 194.0f/255.0f, 199.0f/255.0f), 1.47f, 2.00f, 47.867 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("V"),  QStringLiteral("Vanadium"), Color(         0.65,          0.65,          0.67), 1.53f, 2.00f, 50.9415 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Cr"), QStringLiteral("Chromium"), Color(138.0f/255.0f, 153.0f/255.0f, 199.0f/255.0f), 1.29f, 2.00f, 51.9961 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Mn"), QStringLiteral("Manganese"), Color(         0.61,          0.48,          0.78), 1.39f, 2.00f, 54.938049 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Fe"), QStringLiteral("Iron"), Color(224.0f/255.0f, 102.0f/255.0f,  51.0f/255.0f), 1.26f, 2.00f, 55.845 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Co"), QStringLiteral("Cobalt"), Color(240.0f/255.0f, 144.0f/255.0f, 160.0f/255.0f), 1.25f, 2.00f, 58.9332 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ni"), QStringLiteral("Nickel"), Color( 80.0f/255.0f, 208.0f/255.0f,  80.0f/255.0f), 1.25f, 1.63f, 58.6934 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Cu"), QStringLiteral("Copper"), Color(200.0f/255.0f, 128.0f/255.0f,  51.0f/255.0f), 1.28f, 1.40f, 63.546 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Zn"), QStringLiteral("Zinc"), Color(125.0f/255.0f, 128.0f/255.0f, 176.0f/255.0f), 1.37f, 1.39f, 65.38, 65.409 }, // Zn has two atomic weights: the old mass (pre 2001) 65.409 and the updated mass 65.38 (https://www.ciaaw.org/zinc.htm)
 
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ga"), Color(194.0f/255.0f, 143.0f/255.0f, 143.0f/255.0f), 1.53f, 1.07f, 69.723 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ge"), Color(102.0f/255.0f, 143.0f/255.0f, 143.0f/255.0f), 1.22f, 2.00f, 72.64 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ga"), QStringLiteral("Gallium"), Color(194.0f/255.0f, 143.0f/255.0f, 143.0f/255.0f), 1.53f, 1.07f, 69.723 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ge"), QStringLiteral("Germanium"), Color(102.0f/255.0f, 143.0f/255.0f, 143.0f/255.0f), 1.22f, 2.00f, 72.64 },
 
-    ParticleType::PredefinedChemicalType{ QStringLiteral("As"), Color(         0.74,          0.50,          0.89), 1.19f, 1.85f, 74.92160 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Se"), Color(         1.00,          0.63,          0.00), 1.20f, 1.90f, 78.96 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Br"), Color(         0.65,          0.16,          0.16), 1.20f, 1.85f, 79.904 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Kr"), Color( 92.0f/255.0f, 184.0f/255.0f, 209.0f/255.0f), 1.98f, 2.02f, 83.798 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Rb"), Color(         0.44,          0.18,          0.69), 2.20f, 2.00f, 85.4678 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Sr"), Color(         0.0f,          1.0f,      0.15259f), 2.15f, 2.00f, 87.62 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Y"),  Color(     0.40259f,      0.59739f,      0.55813f), 1.82f, 2.00f, 88.90585 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Zr"), Color(         0.0f,          1.0f,          0.0f), 1.60f, 2.00f, 91.224 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Nb"), Color(     0.29992f,          0.7f,      0.46459f), 1.47f, 2.00f, 92.90638 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Mo"), Color(         0.33,          0.71,          0.71), 1.54f, 2.00f, 95.94 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Tc"), Color(         0.23,          0.62,          0.62), 1.47f, 2.00f, 98.0 }, //
+    ParticleType::PredefinedChemicalType{ QStringLiteral("As"), QStringLiteral("Arsenic"), Color(         0.74,          0.50,          0.89), 1.19f, 1.85f, 74.92160 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Se"), QStringLiteral("Selenium"), Color(         1.00,          0.63,          0.00), 1.20f, 1.90f, 78.96 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Br"), QStringLiteral("Bromine"), Color(         0.65,          0.16,          0.16), 1.20f, 1.85f, 79.904 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Kr"), QStringLiteral("Krypton"), Color( 92.0f/255.0f, 184.0f/255.0f, 209.0f/255.0f), 1.98f, 2.02f, 83.798 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Rb"), QStringLiteral("Rubidium"), Color(         0.44,          0.18,          0.69), 2.20f, 2.00f, 85.4678 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Sr"), QStringLiteral("Strontium"), Color(         0.0f,          1.0f,      0.15259f), 2.15f, 2.00f, 87.62 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Y"),  QStringLiteral("Yttrium"), Color(     0.40259f,      0.59739f,      0.55813f), 1.82f, 2.00f, 88.90585 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Zr"), QStringLiteral("Zirconium"), Color(         0.0f,          1.0f,          0.0f), 1.60f, 2.00f, 91.224 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Nb"), QStringLiteral("Niobium"), Color(     0.29992f,          0.7f,      0.46459f), 1.47f, 2.00f, 92.90638 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Mo"), QStringLiteral("Molybdenum"), Color(         0.33,          0.71,          0.71), 1.54f, 2.00f, 95.94 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Tc"), QStringLiteral("Technetium"), Color(         0.23,          0.62,          0.62), 1.47f, 2.00f, 98.0 },
 
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ru"), Color(         0.14,          0.56,          0.56), 1.46f, 2.00f, 101.07 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Rh"), Color(         0.04,          0.49,          0.55), 1.42f, 2.00f, 102.90550 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Pd"), Color(  0.0f/255.0f, 105.0f/255.0f, 133.0f/255.0f), 1.37f, 1.63f, 106.42 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ag"), Color(         0.88,          0.88,          1.00), 1.45f, 1.72f, 107.8682 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Cd"), Color(         1.00,          0.85,          0.56), 1.44f, 1.58f, 112.411 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("In"), Color(         0.65,          0.46,          0.45), 1.42f, 1.93f, 114.818 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Sn"), Color(         0.40,          0.50,          0.50), 1.39f, 2.17f, 118.710 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Sb"), Color(         0.62,          0.39,          0.71), 1.39f, 2.00f, 121.760 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Te"), Color(         0.83,          0.48,          0.00), 1.38f, 2.06f, 127.60 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("I"),  Color(         0.58,          0.00,          0.58), 1.39f, 1.98f, 126.90447 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Xe"), Color(         0.26,          0.62,          0.69), 1.40f, 2.16f, 131.293 }, //
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ru"), QStringLiteral("Ruthenium"), Color(         0.14,          0.56,          0.56), 1.46f, 2.00f, 101.07 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Rh"), QStringLiteral("Rhodium"), Color(         0.04,          0.49,          0.55), 1.42f, 2.00f, 102.90550 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Pd"), QStringLiteral("Palladium"), Color(  0.0f/255.0f, 105.0f/255.0f, 133.0f/255.0f), 1.37f, 1.63f, 106.42 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ag"), QStringLiteral("Silver"), Color(         0.88,          0.88,          1.00), 1.45f, 1.72f, 107.8682 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Cd"), QStringLiteral("Cadmium"), Color(         1.00,          0.85,          0.56), 1.44f, 1.58f, 112.411 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("In"), QStringLiteral("Indium"), Color(         0.65,          0.46,          0.45), 1.42f, 1.93f, 114.818 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Sn"), QStringLiteral("Tin"), Color(         0.40,          0.50,          0.50), 1.39f, 2.17f, 118.710 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Sb"), QStringLiteral("Antimony"), Color(         0.62,          0.39,          0.71), 1.39f, 2.00f, 121.760 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Te"), QStringLiteral("Tellurium"), Color(         0.83,          0.48,          0.00), 1.38f, 2.06f, 127.60 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("I"),  QStringLiteral("Iodine"), Color(         0.58,          0.00,          0.58), 1.39f, 1.98f, 126.90447 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Xe"), QStringLiteral("Xenon"), Color(         0.26,          0.62,          0.69), 1.40f, 2.16f, 131.293 },
 
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Cs"), Color(         0.34,          0.09,          0.56), 2.44f, 2.10f, 132.90545 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ba"), Color(         0.00,          0.79,          0.00), 2.15f, 2.00f, 137.327 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("La"), Color(         0.44,          0.83,          1.00), 2.07f, 2.00f, 138.9055 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ce"), Color(         1.00,          1.00,          0.78), 2.04f, 2.00f, 140.116 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Pr"), Color(         0.85,          1.00,          0.78), 2.03f, 2.00f, 140.90765 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Nd"), Color(         0.78,          1.00,          0.78), 2.01f, 2.00f, 144.24 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Pm"), Color(         0.64,          1.00,          0.78), 1.99f, 2.00f, 145.0 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Sm"), Color(         0.56,          1.00,          0.78), 1.98f, 2.00f, 150.36 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Eu"), Color(         0.38,          1.00,          0.78), 1.98f, 2.00f, 151.964 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Gd"), Color(         0.27,          1.00,          0.78), 1.96f, 2.00f, 157.25 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Tb"), Color(         0.19,          1.00,          0.78), 1.94f, 2.00f, 158.92534 }, //
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Cs"), QStringLiteral("Cesium"), Color(         0.34,          0.09,          0.56), 2.44f, 2.10f, 132.90545 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ba"), QStringLiteral("Barium"), Color(         0.00,          0.79,          0.00), 2.15f, 2.00f, 137.327 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("La"), QStringLiteral("Lanthanum"), Color(         0.44,          0.83,          1.00), 2.07f, 2.00f, 138.9055 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ce"), QStringLiteral("Cerium"), Color(         1.00,          1.00,          0.78), 2.04f, 2.00f, 140.116 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Pr"), QStringLiteral("Praseodymium"), Color(         0.85,          1.00,          0.78), 2.03f, 2.00f, 140.90765 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Nd"), QStringLiteral("Neodymium"), Color(         0.78,          1.00,          0.78), 2.01f, 2.00f, 144.24 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Pm"), QStringLiteral("Promethium"), Color(         0.64,          1.00,          0.78), 1.99f, 2.00f, 145.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Sm"), QStringLiteral("Samarium"), Color(         0.56,          1.00,          0.78), 1.98f, 2.00f, 150.36 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Eu"), QStringLiteral("Europium"), Color(         0.38,          1.00,          0.78), 1.98f, 2.00f, 151.964 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Gd"), QStringLiteral("Gadolinium"), Color(         0.27,          1.00,          0.78), 1.96f, 2.00f, 157.25 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Tb"), QStringLiteral("Terbium"), Color(         0.19,          1.00,          0.78), 1.94f, 2.00f, 158.92534 },
 
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Dy"), Color(         0.12,          1.00,          0.78), 1.92f, 2.00f, 162.500 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ho"), Color(         0.00,          1.00,          0.61), 1.92f, 2.00f, 164.93032 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Er"), Color(         0.00,          0.90,          0.46), 1.89f, 2.00f, 167.259 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Tm"), Color(         0.00,          0.83,          0.32), 1.90f, 2.00f, 168.93421 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Yb"), Color(         0.00,          0.75,          0.22), 1.87f, 2.00f, 173.04 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Lu"), Color(         0.00,          0.67,          0.14), 1.87f, 2.00f, 174.967 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Hf"), Color(         0.30,          0.76,          1.00), 1.75f, 2.00f, 178.49 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ta"), Color(         0.30,          0.65,          1.00), 1.70f, 2.00f, 180.9479 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("W"),  Color(         0.13,          0.58,          0.84), 1.62f, 2.00f, 183.84 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Re"), Color(         0.15,          0.49,          0.67), 1.51f, 2.00f, 186.207 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Os"), Color(         0.15,          0.40,          0.59), 1.44f, 2.00f, 190.23 }, //
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Dy"), QStringLiteral("Dysprosium"), Color(         0.12,          1.00,          0.78), 1.92f, 2.00f, 162.500 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ho"), QStringLiteral("Holmium"), Color(         0.00,          1.00,          0.61), 1.92f, 2.00f, 164.93032 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Er"), QStringLiteral("Erbium"), Color(         0.00,          0.90,          0.46), 1.89f, 2.00f, 167.259 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Tm"), QStringLiteral("Thulium"), Color(         0.00,          0.83,          0.32), 1.90f, 2.00f, 168.93421 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Yb"), QStringLiteral("Ytterbium"), Color(         0.00,          0.75,          0.22), 1.87f, 2.00f, 173.04 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Lu"), QStringLiteral("Lutetium"), Color(         0.00,          0.67,          0.14), 1.87f, 2.00f, 174.967 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Hf"), QStringLiteral("Hafnium"), Color(         0.30,          0.76,          1.00), 1.75f, 2.00f, 178.49 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ta"), QStringLiteral("Tantalum"), Color(         0.30,          0.65,          1.00), 1.70f, 2.00f, 180.9479 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("W"),  QStringLiteral("Tungsten"), Color(         0.13,          0.58,          0.84), 1.62f, 2.00f, 183.84 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Re"), QStringLiteral("Rhenium"), Color(         0.15,          0.49,          0.67), 1.51f, 2.00f, 186.207 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Os"), QStringLiteral("Osmium"), Color(         0.15,          0.40,          0.59), 1.44f, 2.00f, 190.23 },
 
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Ir"), Color(         0.09,          0.33,          0.53), 1.41f, 2.00f, 192.217 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Pt"), Color(         0.90,          0.85,          0.68), 1.39f, 1.72f, 195.078 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Au"), Color(255.0f/255.0f, 209.0f/255.0f,  35.0f/255.0f), 1.44f, 1.66f, 196.96655 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Hg"), Color(         0.71,          0.71,          0.76), 1.32f, 1.55f, 200.59 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Tl"), Color(         0.65,          0.33,          0.30), 1.45f, 1.96f, 204.3833 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Pb"), Color( 87.0f/255.0f,  89.0f/255.0f,  97.0f/255.0f), 1.47f, 2.02f, 207.2 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Bi"), Color(158.0f/255.0f,  79.0f/255.0f, 181.0f/255.0f), 1.46f, 2.00f, 208.98038 },
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Po"), Color(         0.67,          0.36,          0.00), 1.40f, 2.00f, 209.0 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("At"), Color(         0.46,          0.31,          0.27), 1.50f, 2.00f, 210.0 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Rn"), Color(         0.26,          0.51,          0.59), 1.50f, 2.00f, 222.0 }, //
-    ParticleType::PredefinedChemicalType{ QStringLiteral("Fr"), Color(         0.26,          0.00,          0.40), 2.60f, 2.00f, 223.0 }, //
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ir"), QStringLiteral("Iridium"), Color(         0.09,          0.33,          0.53), 1.41f, 2.00f, 192.217 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Pt"), QStringLiteral("Platinum"), Color(         0.90,          0.85,          0.68), 1.39f, 1.72f, 195.078 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Au"), QStringLiteral("Gold"), Color(255.0f/255.0f, 209.0f/255.0f,  35.0f/255.0f), 1.44f, 1.66f, 196.96655 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Hg"), QStringLiteral("Mercury"), Color(         0.71,          0.71,          0.76), 1.32f, 1.55f, 200.59 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Tl"), QStringLiteral("Thallium"), Color(         0.65,          0.33,          0.30), 1.45f, 1.96f, 204.3833 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Pb"), QStringLiteral("Lead"), Color( 87.0f/255.0f,  89.0f/255.0f,  97.0f/255.0f), 1.47f, 2.02f, 207.2 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Bi"), QStringLiteral("Bismuth"), Color(158.0f/255.0f,  79.0f/255.0f, 181.0f/255.0f), 1.46f, 2.00f, 208.98038 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Po"), QStringLiteral("Polonium"), Color(         0.67,          0.36,          0.00), 1.40f, 2.00f, 209.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("At"), QStringLiteral("Astatine"), Color(         0.46,          0.31,          0.27), 1.50f, 2.00f, 210.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Rn"), QStringLiteral("Radon"), Color(         0.26,          0.51,          0.59), 1.50f, 2.00f, 222.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Fr"), QStringLiteral("Francium"), Color(         0.26,          0.00,          0.40), 2.60f, 2.00f, 223.0 },
+
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ra"), QStringLiteral("Radium"), Color(         0.00,          0.49,          0.67), 2.43f, 2.00f, 226.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ac"), QStringLiteral("Actinium"), Color(         0.44,          0.67,          0.98), 2.15f, 2.00f, 227.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Th"), QStringLiteral("Thorium"), Color(         0.73,          0.78,          0.87), 2.06f, 2.00f, 232.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Pa"), QStringLiteral("Protactinium"), Color(         0.80,          0.88,          0.98), 2.00f, 2.00f, 231.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("U"),  QStringLiteral("Uranium"), Color(         0.12,          0.58,          0.83), 1.96f, 2.00f, 238.02891 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Np"), QStringLiteral("Neptunium"), Color(         0.83,          0.62,          0.92), 1.90f, 2.00f, 237.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Pu"), QStringLiteral("Plutonium"), Color(         0.82,          0.68,          0.78), 1.87f, 2.00f, 244.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Am"), QStringLiteral("Americium"), Color(         0.33,          0.36,          0.95), 1.80f, 2.00f, 243.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Cm"), QStringLiteral("Curium"), Color(         0.95,          0.30,          0.30), 1.69f, 2.00f, 247.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Bk"), QStringLiteral("Berkelium"), Color(         0.89,          0.67,          0.21), 1.54f, 2.00f, 247.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Cf"), QStringLiteral("Californium"), Color(         0.92,          0.20,          0.20), 1.86f, 2.00f, 251.0 },
+
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Es"), QStringLiteral("Einsteinium"), Color(         0.92,          0.31,          0.35), 1.86f, 2.00f, 252.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Fm"), QStringLiteral("Fermium"), Color(         0.90,          0.30,          0.30), 1.86f, 2.00f, 257.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Md"), QStringLiteral("Mendelevium"), Color(         0.82,          0.49,          0.20), 1.86f, 2.00f, 258.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("No"), QStringLiteral("Nobelium"), Color(         0.78,          0.50,          0.20), 1.86f, 2.00f, 259.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Lr"), QStringLiteral("Lawrencium"), Color(         0.76,          0.49,          0.41), 1.86f, 2.00f, 262.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Rf"), QStringLiteral("Rutherfordium"), Color(         0.80,          0.60,          0.20), 1.75f, 2.00f, 267.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Db"), QStringLiteral("Dubnium"), Color(         0.82,          0.51,          0.31), 1.69f, 2.00f, 268.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Sg"), QStringLiteral("Seaborgium"), Color(         0.85,          0.47,          0.31), 1.78f, 2.00f, 271.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Bh"), QStringLiteral("Bohrium"), Color(         0.88,          0.48,          0.20), 1.61f, 2.00f, 272.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Hs"), QStringLiteral("Hassium"), Color(         0.90,          0.30,          0.30), 1.52f, 2.00f, 277.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Mt"), QStringLiteral("Meitnerium"), Color(         0.92,          0.29,          0.20), 1.30f, 2.00f, 278.0 },
+
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ds"), QStringLiteral("Darmstadtium"), Color(         0.88,          0.27,          0.22), 1.30f, 2.00f, 281.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Rg"), QStringLiteral("Roentgenium"), Color(         0.82,          0.30,          0.32), 1.30f, 2.00f, 282.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Cn"), QStringLiteral("Copernicium"), Color(         0.75,          0.47,          0.47), 1.30f, 2.00f, 285.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Nh"), QStringLiteral("Nihonium"), Color(         0.70,          0.49,          0.51), 1.30f, 2.00f, 286.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Fl"), QStringLiteral("Flerovium"), Color(         0.64,          0.52,          0.58), 1.30f, 2.00f, 289.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Mc"), QStringLiteral("Moscovium"), Color(         0.60,          0.55,          0.67), 1.30f, 2.00f, 290.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Lv"), QStringLiteral("Livermorium"), Color(         0.53,          0.55,          0.67), 1.30f, 2.00f, 293.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Ts"), QStringLiteral("Tennessine"), Color(         0.46,          0.56,          0.67), 1.30f, 2.00f, 294.0 },
+    ParticleType::PredefinedChemicalType{ QStringLiteral("Og"), QStringLiteral("Oganesson"), Color(         0.40,          0.40,          0.40), 1.30f, 2.00f, 294.0 },
+
+    ParticleType::PredefinedChemicalType{ QStringLiteral("D"),  QStringLiteral("Deuterium"), Color(255.0f/255.0f, 255.0f/255.0f, 255.0f/255.0f), 0.46f, 1.20f, 2.01410177812 },
 }};
 
 // Define default names, colors, and radii for predefined structure types.
@@ -314,8 +390,8 @@ FloatType ParticleType::getDefaultParticleRadius(Particles::Type typeClass, cons
     }
 
     if(typeClass == Particles::TypeProperty) {
-        for(const PredefinedChemicalType& predefType : _predefinedParticleTypes) {
-            if(predefType.name == particleTypeName) {
+        for(const PredefinedChemicalType& predefType : _PredefinedChemicalTypes) {
+            if(predefType.symbol == particleTypeName) {
                 if(radiusVariant == DisplayRadius)
                     return predefType.displayRadius;
                 else
@@ -358,8 +434,8 @@ void ParticleType::setDefaultParticleRadius(Particles::Type typeClass, const QSt
 FloatType ParticleType::getDefaultParticleMass(Particles::Type typeClass, const QString& particleTypeName, int numericTypeId, bool loadUserDefaults)
 {
     if(typeClass == Particles::TypeProperty) {
-        for(const PredefinedChemicalType& predefType : _predefinedParticleTypes) {
-            if(predefType.name == particleTypeName) {
+        for(const PredefinedChemicalType& predefType : _PredefinedChemicalTypes) {
+            if(predefType.symbol == particleTypeName) {
                 return predefType.mass;
             }
         }
@@ -374,6 +450,29 @@ FloatType ParticleType::getDefaultParticleMass(Particles::Type typeClass, const 
 }
 
 /******************************************************************************
+* Determines the chemical element represented by a particle type (if any).
+******************************************************************************/
+ParticleType::ChemicalElement ParticleType::getDefaultChemicalElementForType(Particles::Type typeClass, const QString& particleTypeName, int numericTypeId, bool loadUserDefaults)
+{
+    if(typeClass == Particles::TypeProperty) {
+        int index = 0;
+        for(const PredefinedChemicalType& predefType : _PredefinedChemicalTypes) {
+            if(predefType.symbol == particleTypeName) {
+                return static_cast<ChemicalElement>(index);
+            }
+            index++;
+        }
+
+        // Sometimes atom type names have additional letters/numbers appended.
+        if(particleTypeName.length() > 1 && particleTypeName.length() <= 5) {
+            return getDefaultChemicalElementForType(typeClass, particleTypeName.left(particleTypeName.length() - 1), numericTypeId, loadUserDefaults);
+        }
+    }
+
+    return ChemicalElement::X;
+}
+
+/******************************************************************************
 * Performs a reverse lookup. Given a mass value, find the corresponding
 * standard particle type name. Currently, this method only considers chemical
 * elements from the hard-coded table, because mass presets cannot be configured by the user.
@@ -383,12 +482,12 @@ QString ParticleType::guessTypeNameFromMass(FloatType mass)
     // Maximum allowed deviation from reference mass value:
     constexpr FloatType tolerance = 5e-3;
 
-    for(const PredefinedChemicalType& predefType : _predefinedParticleTypes) {
+    for(const PredefinedChemicalType& predefType : _PredefinedChemicalTypes) {
         if(std::abs(predefType.mass - mass) <= tolerance) {
-            return predefType.name;
+            return predefType.symbol;
         }
         if(predefType.alternativeMass != 0 && std::abs(predefType.alternativeMass - mass) <= tolerance) {
-            return predefType.name;
+            return predefType.symbol;
         }
     }
 
@@ -402,7 +501,7 @@ QString ParticleType::guessTypeNameFromMass(FloatType mass)
 QStringList ParticleType::OOMetaClass::dataInspectorColumns() const
 {
     QStringList columns = ElementTypeClass::dataInspectorColumns();
-    columns << QStringLiteral("Radius") << QStringLiteral("Mass") << QStringLiteral("VdW Radius") << QStringLiteral("Shape");
+    columns << QStringLiteral("Radius") << QStringLiteral("Mass") << QStringLiteral("VdW Radius") << QStringLiteral("Element") << QStringLiteral("Shape");
     return columns;
 }
 
@@ -424,6 +523,10 @@ QVariant ParticleType::OOMetaClass::dataInspectorModelData(int columnIndex, cons
             else if(columnName == QStringLiteral("VdW Radius")) {
                 if(ptype->vdwRadius() != 0)
                     return ptype->vdwRadius();
+            }
+            else if(columnName == QStringLiteral("Element")) {
+                if(ptype->chemicalElement() != ParticleType::ChemicalElement::X)
+                    return QStringLiteral("%1 (%2)").arg(ParticleType::getChemicalElementFullName(ptype->chemicalElement())).arg(ParticleType::getChemicalElementSymbol(ptype->chemicalElement()));
             }
             else if(columnName == QStringLiteral("Shape")) {
                 switch(ptype->shape()) {

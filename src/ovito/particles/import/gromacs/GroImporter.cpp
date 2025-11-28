@@ -349,7 +349,7 @@ void GroImporter::FrameLoader::loadFile()
         identifierProperty[atomIndex] = atomNumber;
         typeAccess[atomIndex] = element.ordinal();
         atomNameAccess[atomIndex] =
-            (residueNameStart != residueNameEnd) ?
+            (atomNameStart != atomNameEnd) ?
             addNamedType(Particles::OOClass(), atomNameProperty, QLatin1String(atomNameStart, atomNameEnd))->numericId()
             : 0;
         residueTypeAccess[atomIndex] =

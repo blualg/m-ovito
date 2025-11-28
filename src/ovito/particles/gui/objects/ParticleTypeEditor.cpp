@@ -194,10 +194,23 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     gridLayout->setSpacing(4);
     layout1->addWidget(physicalBox);
 
+    // Chemical species.
+    VariantComboBoxParameterUI* chemicalElementUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(ParticleType::chemicalElement));
+    chemicalElementUI->comboBox()->addItem(tr("‹unknown›"), QVariant::fromValue((int)ParticleType::ChemicalElement::X));
+    for(int elem = (int)ParticleType::ChemicalElement::H; elem < (int)ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; ++elem) {
+        ParticleType::ChemicalElement chemicalElement = static_cast<ParticleType::ChemicalElement>(elem);
+        chemicalElementUI->comboBox()->addItem(
+            QStringLiteral("%1 (%2)").arg(ParticleType::getChemicalElementFullName(chemicalElement)).arg(ParticleType::getChemicalElementSymbol(chemicalElement)),
+            QVariant::fromValue(elem)
+        );
+    }
+    gridLayout->addWidget(new QLabel(tr("Chemical element:")), 0, 0);
+    gridLayout->addWidget(chemicalElementUI->comboBox(), 0, 1);
+
     // Mass parameter.
     FloatParameterUI* massPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticleType::mass));
-    gridLayout->addWidget(massPUI->label(), 0, 0);
-    gridLayout->addLayout(massPUI->createFieldLayout(), 0, 1);
+    gridLayout->addWidget(massPUI->label(), 1, 0);
+    gridLayout->addLayout(massPUI->createFieldLayout(), 1, 1);
     // Reset mass parameter - can't use createPresetsMenuButton because we only
     // offer reset but not the other options
     // Don't use PROPERTY_FIELD_RESETTABLE to give custom (better) tooltip
@@ -219,15 +232,15 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
             }
         });
     }
-    gridLayout->addWidget(_massPresetsMenuButton, 0, 2);
+    gridLayout->addWidget(_massPresetsMenuButton, 1, 2);
 
     massPUI->spinner()->setStandardValue(0.0);
     massPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
 
     // VDW radius parameter.
     FloatParameterUI* vdwRadiusPUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticleType::vdwRadius));
-    gridLayout->addWidget(vdwRadiusPUI->label(), 1, 0);
-    gridLayout->addLayout(vdwRadiusPUI->createFieldLayout(), 1, 1);
+    gridLayout->addWidget(vdwRadiusPUI->label(), 2, 0);
+    gridLayout->addLayout(vdwRadiusPUI->createFieldLayout(), 2, 1);
     vdwRadiusPUI->spinner()->setStandardValue(0.0);
     vdwRadiusPUI->textBox()->setPlaceholderText(tr("‹unspecified›"));
 
@@ -240,7 +253,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
         // Determines if the current parameter value differs from the saved default value or not.
         [](const ParticleType* ptype) { return (ptype->vdwRadius() == ParticleType::getDefaultParticleRadius(static_cast<Particles::Type>(ptype->ownerProperty().typeId()), ptype->nameOrNumericId(), ptype->numericId(), true, ParticleType::VanDerWaalsRadius)); }
     );
-    gridLayout->addWidget(_vdwRadiusPresetsMenuButton, 1, 2);
+    gridLayout->addWidget(_vdwRadiusPresetsMenuButton, 2, 2);
 
     // Update widgets when the edited particle type changes.
     connect(this, &PropertiesEditor::contentsReplaced, this, &ParticleTypeEditor::onContentsReplaced);

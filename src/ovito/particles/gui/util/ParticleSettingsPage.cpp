@@ -111,11 +111,10 @@ void ParticleSettingsPage::insertSettingsDialogPage(QTabWidget* tabWidget)
     _structureTypesItem = new QTreeWidgetItem(QStringList() << tr("Structure types") << QString() << QString());
     _structureTypesItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
 
-    // Compile the list of predefined atom type names and any user-defined type names for which
-    // presets exist.
+    // Compile the list of predefined particle type names and any user-defined type names for which presets exist.
     QStringList typeNames;
-    for(int i = 0; i < ParticleType::PredefinedParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; i++)
-        typeNames << ParticleType::getPredefinedParticleTypeName((ParticleType::PredefinedParticleType)i);
+    for(int i = 0; i < ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i++)
+        typeNames << ParticleType::getChemicalElementSymbol(static_cast<ParticleType::ChemicalElement>(i));
 
     QSettings settings;
     settings.beginGroup(ElementType::getElementSettingsKey(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), QStringLiteral("color"), {}));
@@ -255,8 +254,8 @@ void ParticleSettingsPage::saveValues(QTabWidget* tabWidget)
 ******************************************************************************/
 void ParticleSettingsPage::restoreBuiltinParticlePresets()
 {
-    OVITO_ASSERT(_particleTypesItem->childCount() >= ParticleType::PredefinedParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES);
-    for(int i = 0; i < ParticleType::PredefinedParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; i++) {
+    OVITO_ASSERT(_particleTypesItem->childCount() >= ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES);
+    for(int i = 0; i < ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i++) {
         QTreeWidgetItem* item = _particleTypesItem->child(i);
         OVITO_ASSERT(item);
         Color color = ElementType::getDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::TypeProperty), item->text(0), 0, false);
@@ -266,12 +265,12 @@ void ParticleSettingsPage::restoreBuiltinParticlePresets()
         item->setData(2, Qt::DisplayRole, QVariant::fromValue(displayRadius));
         item->setData(3, Qt::DisplayRole, QVariant::fromValue(vdwRadius));
     }
-    for(int i = _particleTypesItem->childCount() - 1; i >= ParticleType::PredefinedParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES; i--) {
+    for(int i = _particleTypesItem->childCount() - 1; i >= ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i--) {
         delete _particleTypesItem->takeChild(i);
     }
 
-    OVITO_ASSERT(_structureTypesItem->childCount() >= ParticleType::PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
-    for(int i = 0; i < ParticleType::PredefinedStructureType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; i++) {
+    OVITO_ASSERT(_structureTypesItem->childCount() >= ParticleType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES);
+    for(int i = 0; i < ParticleType::NUMBER_OF_PREDEFINED_STRUCTURE_TYPES; i++) {
         QTreeWidgetItem* item = _structureTypesItem->child(i);
         OVITO_ASSERT(item);
         Color color = ElementType::getDefaultColor(OwnerPropertyRef(&Particles::OOClass(), Particles::StructureTypeProperty), item->text(0), 0, false);

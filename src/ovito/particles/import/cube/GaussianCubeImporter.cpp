@@ -164,8 +164,8 @@ void GaussianCubeImporter::FrameLoader::loadFile()
 
     // Translate atomic numbers into element names.
     for(auto atomicNumber : typePropertyAccess) {
-        if(atomicNumber >= 0 && atomicNumber < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES)
-            addNumericType(Particles::OOClass(), typeProperty, atomicNumber, ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(atomicNumber)));
+        if(atomicNumber >= 0 && atomicNumber < ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES)
+            addNumericType(Particles::OOClass(), typeProperty, atomicNumber, ParticleType::getChemicalElementSymbol(static_cast<ParticleType::ChemicalElement>(atomicNumber)));
         else
             addNumericType(Particles::OOClass(), typeProperty, atomicNumber, QString{});
     }
