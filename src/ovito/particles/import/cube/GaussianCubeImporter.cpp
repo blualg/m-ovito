@@ -167,7 +167,7 @@ void GaussianCubeImporter::FrameLoader::loadFile()
         if(atomicNumber >= 0 && atomicNumber < ParticleType::NUMBER_OF_PREDEFINED_PARTICLE_TYPES)
             addNumericType(Particles::OOClass(), typeProperty, atomicNumber, ParticleType::getPredefinedParticleTypeName(static_cast<ParticleType::PredefinedParticleType>(atomicNumber)));
         else
-            addNumericType(Particles::OOClass(), typeProperty, atomicNumber, {});
+            addNumericType(Particles::OOClass(), typeProperty, atomicNumber, QString{});
     }
 
     // Release property accessors.

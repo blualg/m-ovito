@@ -30,11 +30,9 @@ OVITO_STANDARD_PLUGIN(StdObjGui
         lines/LinesVisEditor.cpp
         properties/PropertyInspectionApplet.cpp
         properties/TypesInspectionApplet.cpp
-        properties/PropertyObjectEditor.cpp
         properties/ElementTypeEditor.cpp
         properties/InputColumnMappingDialog.cpp
         properties/PropertyColorMappingEditor.cpp
-        simcell/SimulationCellEditor.cpp
         simcell/SimulationCellVisEditor.cpp
         simcell/SimulationCellInspectionApplet.cpp
         table/DataTableInspectionApplet.cpp

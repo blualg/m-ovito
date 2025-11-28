@@ -24,23 +24,18 @@
 
 
 #include <ovito/stdmod/StdMod.h>
-#include <ovito/stdobj/properties/GenericPropertyModifier.h>
-#include <ovito/stdobj/properties/PropertyReference.h>
-#include <ovito/core/dataset/pipeline/ModificationNode.h>
+#include <ovito/core/dataset/pipeline/Modifier.h>
 
 namespace Ovito {
 
 /**
- * \brief Assigns colors to data elements based on a typed property.
+ * \brief Lets the user edit the simulation cell parameters and boundary conditions.
  */
-class OVITO_STDMOD_EXPORT ColorByTypeModifier : public GenericPropertyModifier
+class OVITO_STDMOD_EXPORT EditSimulationCellModifier : public Modifier
 {
-    OVITO_CLASS(ColorByTypeModifier)
+    OVITO_CLASS(EditSimulationCellModifier)
 
 public:
-
-    /// Constructor.
-    void initializeObject(ObjectInitializationFlags flags);
 
     /// This method is called by the system after the modifier has been inserted into a data pipeline.
     virtual void initializeModifier(const ModifierInitializationRequest& request) override;
@@ -52,12 +47,6 @@ public:
     /// been changed and before the entire pipeline is recomputed.
     virtual bool shouldRefreshViewportsAfterChange() override { return true; }
 
-    /// Returns a short piece of information (typically a string or color) to be displayed next to the modifier's title in the pipeline editor list.
-    virtual QVariant getPipelineEditorShortInfo(Scene* scene, ModificationNode* node) const override { return sourceProperty().nameWithComponent(); }
-
-    /// Implementation of the color-by-type algorithm.
-    static void colorByType(const Property* typeProperty, PropertyContainer* container, const ConstDataObjectPath& containerPath = {}, const Property* selection = nullptr);
-
 protected:
 
     /// Is called when the value of a property of this object has changed.
@@ -65,14 +54,27 @@ protected:
 
 private:
 
-    /// The input type property that is used as data source for the selection.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(PropertyReference{}, sourceProperty, setSourceProperty);
+    /// The three cell vectors and the cell origin.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(AffineTransformation{AffineTransformation::Zero()}, cellMatrix, setCellMatrix);
 
-    /// Controls whether the modifier assigns a color only to selected elements.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, colorOnlySelected, setColorOnlySelected);
+    /// Specifies whether the modifier will override the cell geometry.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, replaceCell, setReplaceCell);
 
-    /// Controls whether the input selection is preserved or not. If true, the current selection is cleared by the modifier to reveal the assigned colors in the interactive viewports of OVITO.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{true}, clearSelection, setClearSelection);
+    /// Specifies periodic boundary condition in the X direction.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, pbcX, setPbcX);
+    /// Specifies periodic boundary condition in the Y direction.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, pbcY, setPbcY);
+    /// Specifies periodic boundary condition in the Z direction.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, pbcZ, setPbcZ);
+
+    /// The dimensionality of the system.
+    DECLARE_MODIFIABLE_PROPERTY_FIELD(bool{false}, is2D, setIs2D);
+
+    /// Flags indicating that the PBC or dimensionality parameters have not been set by the user (or Python API)
+    /// before the modifier is inserted into a pipeline. In this case, they are initialized from the upstream input cell
+    /// in the initializeModifier() method.
+    bool _uninitializedPBC = true;
+    bool _uninitializedDimensionality = true;
 };
 
 }   // End of namespace

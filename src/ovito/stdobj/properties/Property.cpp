@@ -340,7 +340,9 @@ void Property::sortElementTypesById()
 * optionally, a human-readable name. If an element type with the given numeric ID
 * already exists in this property's element type list, it will be returned instead.
 ******************************************************************************/
-const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name, ElementTypeClassPtr elementTypeClass)
+template<typename StringType>
+    requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
+const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass, int id, const StringType& name, ElementTypeClassPtr elementTypeClass)
 {
     OVITO_CHECK_OBJECT_POINTER(this);
 
@@ -365,7 +367,7 @@ const ElementType* Property::addNumericType(const PropertyContainerClass& contai
     DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
     // Second initialization phase for element types, which takes into account the assigned ID and name and the property type.
     elementType->setNumericId(id);
-    elementType->setName(name);
+    elementType->setName(static_cast<QString>(name));
     elementType->initializeType(OwnerPropertyRef(&containerClass, this));
 
     // Log in type name assigned by the caller as default value for the element type.
@@ -375,6 +377,11 @@ const ElementType* Property::addNumericType(const PropertyContainerClass& contai
     // Add the new element type to the type list managed by this property.
     return addElementType(std::move(elementType));
 }
+
+// Instantiate function template for different string types.
+template OVITO_STDOBJ_EXPORT const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass, int id, const QString& name, ElementTypeClassPtr elementTypeClass);
+template OVITO_STDOBJ_EXPORT const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass, int id, const QStringView& name, ElementTypeClassPtr elementTypeClass);
+template OVITO_STDOBJ_EXPORT const ElementType* Property::addNumericType(const PropertyContainerClass& containerClass, int id, const QLatin1String& name, ElementTypeClassPtr elementTypeClass);
 
 /******************************************************************************
 * Returns the display name of the property including the name of the given

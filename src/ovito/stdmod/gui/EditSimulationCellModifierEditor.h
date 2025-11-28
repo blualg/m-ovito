@@ -23,18 +23,27 @@
 #pragma once
 
 
-#include <ovito/stdobj/gui/StdObjGui.h>
+#include <ovito/stdmod/gui/StdModGui.h>
+#include <ovito/stdmod/modifiers/EditSimulationCellModifier.h>
+#include <ovito/stdmod/modifiers/DeleteSelectedModifier.h>
+#include <ovito/gui/desktop/widgets/general/ActionsItemDelegate.h>
 #include <ovito/gui/desktop/properties/PropertiesEditor.h>
+#include <ovito/core/utilities/units/PrescribedScaleUnit.h>
 
 namespace Ovito {
 
 /**
- * \brief A properties editor for the SimulationCell class.
+ * A properties editor for the EditSimulationCellModifier class.
  */
-class SimulationCellEditor : public PropertiesEditor
+class EditSimulationCellModifierEditor : public PropertiesEditor
 {
-    OVITO_CLASS(SimulationCellEditor)
+    OVITO_CLASS(EditSimulationCellModifierEditor)
     Q_OBJECT
+
+public:
+
+    /// Returns the EditSimulationCellModifier object being edited.
+    EditSimulationCellModifier* modifier() const { return static_object_cast<EditSimulationCellModifier>(editObject()); }
 
 protected:
 
@@ -44,15 +53,17 @@ protected:
 private Q_SLOTS:
 
     /// Updates the values displayed in the editor panel.
-    void updateSimulationBoxSize();
+    void updateSimulationCellFields();
+
+    /// Auto-adjusts the increment steps of the numeric parameter spinner widgets.
+    void updateParameterUnitScales();
 
 private:
 
     BooleanParameterUI* _pbczPUI;
-    QLineEdit* _boxSizeFields[3];
     QLineEdit* _cellVectorFields[4][3];
-    QPalette _nonzeroPalette;
-    QPalette _zeroPalette;
+    std::optional<PrescribedScaleUnit> _cellUnits[3][3];
+    std::optional<PrescribedScaleUnit> _originUnits[3];
 };
 
 }   // End of namespace

@@ -298,10 +298,6 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(bool{false}, isMultiTimestepFile, setMultiTimestepFile, PROPERTY_FIELD_NO_CHANGE_MESSAGE);
 };
 
-/// \brief Writes an animation frame information record to a binary output stream.
-/// \relates FileSourceImporter::Frame
-OVITO_CORE_EXPORT SaveStream& operator<<(SaveStream& stream, const FileSourceImporter::Frame& frame);
-
 /// \brief Reads an animation frame information record from a binary input stream.
 /// \relates FileSourceImporter::Frame
 OVITO_CORE_EXPORT LoadStream& operator>>(LoadStream& stream, FileSourceImporter::Frame& frame);

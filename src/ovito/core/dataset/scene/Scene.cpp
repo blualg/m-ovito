@@ -113,6 +113,7 @@ void Scene::onAnimationFramesChanged()
         // Automatically adjust scene's animation interval to length of loaded source animations.
         if(animationSettings() && animationSettings()->autoAdjustInterval()) {
             UndoSuspender noUndo;
+            animationSettings()->updateAnimationFrameLabels();
             animationSettings()->adjustAnimationInterval();
         }
     }

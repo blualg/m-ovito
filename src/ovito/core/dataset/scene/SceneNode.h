@@ -132,18 +132,29 @@ public:
     /// \brief Recursively visits all nodes below this parent node
     ///        and invokes the given visitor function for every node.
     ///
-    /// \param fn A function that takes a SceneNode pointer as argument and returns a boolean value.
+    /// \param fn A function that takes a SceneNode pointer as argument and returns a boolean value or void.
     /// \return true if all child nodes have been visited; false if the loop has been
     ///         terminated early because the visitor function has returned false.
     ///
-    /// The visitor function must return a boolean value to indicate whether
+    /// The visitor function may return a boolean value to indicate whether
     /// it wants to continue visit more nodes. A return value of false
     /// leads to early termination and no further nodes are visited.
     template<class Function>
     bool visitChildren(Function&& fn) const {
+
+        // Determine the return type of the visitor function (bool or void).
+        using ReturnType = std::invoke_result_t<Function, SceneNode*>;
+        static_assert(std::is_same_v<ReturnType, void> || std::is_same_v<ReturnType, bool>, "The visitor function must return either void or bool.");
+
         for(SceneNode* child : children()) {
-            if(!fn(child) || !child->visitChildren(fn))
-                return false;
+            if constexpr (std::is_same_v<ReturnType, bool>) {
+                if(!fn(child) || !child->visitChildren(fn))
+                    return false;
+            }
+            else {
+                fn(child);
+                child->visitChildren(fn);
+            }
         }
         return true;
     }
@@ -151,20 +162,32 @@ public:
     /// \brief Recursively visits all scene nodes with pipelines below this parent scene node
     ///        and invokes the given visitor function for every scene node.
     ///
-    /// \param fn A function that takes an SceneNode pointer as argument and returns a boolean value.
+    /// \param fn A function that takes an SceneNode pointer as argument and returns a boolean value or void.
     /// \return true if all pipeline scene nodes in the scene have been visited; false if the loop has been
     ///         terminated early because the visitor function has returned false.
     ///
-    /// The visitor function must return a boolean value to indicate whether
+    /// The visitor function may return a boolean value to indicate whether
     /// it wants to continue to visit more pipeline scene nodes. A return value of false
     /// leads to early termination and no further pipeline scene nodes are visited.
     template<class Function>
     bool visitPipelines(Function&& fn) const {
+
+        // Determine the return type of the visitor function (bool or void).
+        using ReturnType = std::invoke_result_t<Function, SceneNode*>;
+        static_assert(std::is_same_v<ReturnType, void> || std::is_same_v<ReturnType, bool>, "The visitor function must return either void or bool.");
+
         for(SceneNode* child : children()) {
-            if(child->pipeline() && !fn(child))
-                return false;
-            if(!child->visitPipelines(fn))
-                return false;
+            if constexpr (std::is_same_v<ReturnType, bool>) {
+                if(child->pipeline() && !fn(child))
+                    return false;
+                if(!child->visitPipelines(fn))
+                    return false;
+            }
+            else {
+                if(child->pipeline())
+                    fn(child);
+                child->visitPipelines(fn);
+            }
         }
         return true;
     }

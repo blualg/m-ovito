@@ -176,7 +176,6 @@ FileExporterSettingsDialog::FileExporterSettingsDialog(MainWindowUI& ui, Scene& 
             if(node->pipeline() == exporter->pipelineToExport())
                 _sceneNodeBox->setCurrentIndex(_sceneNodeBox->count() - 1);
         }
-        return true;
     });
     updateDataObjectList();
     if(_sceneNodeBox->count() <= 1)

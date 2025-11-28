@@ -80,7 +80,7 @@ public:
     /// Copy assignment.
     FutureBase& operator=(const FutureBase& other) noexcept = default;
 
-    /// Runs the given continuation function once this future has reached either the 'finished' state.
+    /// Runs the given continuation function once this future has reached the 'finished' state.
     /// Note that the continuation function will always be executed, even if this future was canceled or set to an error state.
     /// The callable can accept one parameter: a reference to the underlying Task object.
     template<typename Executor, typename Function>

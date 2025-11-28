@@ -272,7 +272,6 @@ bool MainWindowUI::checkLoadedDataset(DataSet* dataset)
                         fileSourcePipelines.emplace_back(sceneNode);
                         itemsList.push_back(sceneNode->objectTitle());
                     }
-                    return true;
                 });
                 if(fileSourcePipelines.size() >= 2) {
                     QDialog dlg(mainWindow());

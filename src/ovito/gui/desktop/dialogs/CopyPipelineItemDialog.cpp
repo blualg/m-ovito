@@ -51,14 +51,14 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindowUI& ui, QWidget* parent
 
     // Build the list of scene pipelines.
     if(Scene* scene = datasetContainer().activeScene()) {
-        scene->visitPipelines([&](SceneNode* sceneNode) -> bool {
+        scene->visitPipelines([&](SceneNode* sceneNode) {
             QString itemLabel = sceneNode->objectTitle();
             if(sceneNode->pipeline() == sourcePipeline)
                 itemLabel += tr(" (source pipeline)");
             QVariant data = QVariant::fromValue(OORef<OvitoObject>(sceneNode->pipeline()));
             // Skip duplicate pipelines (in case a pipeline is reference by multiple scene nodes).
             if(_destinationPipelineList->findData(data) != -1)
-                return true;
+                return;
             _destinationPipelineList->addItem(std::move(itemLabel), std::move(data));
             if(sceneNode->pipeline() == sourcePipeline)
                 _destinationPipelineList->setCurrentIndex(_destinationPipelineList->count() - 1);
@@ -69,7 +69,6 @@ CopyPipelineItemDialog::CopyPipelineItemDialog(MainWindowUI& ui, QWidget* parent
                 item->setText(item->text() + " (requires OVITO Pro)");
 #endif
             }
-            return true;
         });
     }
 

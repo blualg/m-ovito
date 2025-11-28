@@ -142,7 +142,6 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
             destinationCellUI->setEnabled(false);
             layout->addLayout(destinationCellUI->createFieldLayout(), layoutRow, r+1);
             connect(_relativeModeUI->buttonFalse(), &QRadioButton::toggled, destinationCellUI, &AffineTransformationParameterUI::setEnabled);
-            _absoluteCellSpinners[r][v] = destinationCellUI->spinner();
             _absoluteCellUnits[r][v].emplace(unitsManager().getUnit(destinationCellUI->parameterUnitType()));
             destinationCellUI->spinner()->setUnit(&_absoluteCellUnits[r][v].value());
             destinationCellUI->textBox()->setPlaceholderText(_absoluteCellUnits[r][v]->formatValue(0));
@@ -158,7 +157,6 @@ void AffineTransformationModifierEditor::createUI(const RolloutInsertionParamete
         destinationCellUI->setEnabled(false);
         layout->addLayout(destinationCellUI->createFieldLayout(), layoutRow, r+1);
         connect(_relativeModeUI->buttonFalse(), &QRadioButton::toggled, destinationCellUI, &AffineTransformationParameterUI::setEnabled);
-        _absoluteCellSpinners[r][3] = destinationCellUI->spinner();
         _absoluteOriginUnits[r].emplace(unitsManager().getUnit(destinationCellUI->parameterUnitType()));
         destinationCellUI->spinner()->setUnit(&_absoluteOriginUnits[r].value());
         destinationCellUI->textBox()->setPlaceholderText(_absoluteOriginUnits[r]->formatValue(0));

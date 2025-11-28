@@ -260,7 +260,6 @@ Future<void> ViewportWindow::buildAndRenderFrameGraph()
     // Render visual representations of the modifiers.
     viewport()->scene()->visitPipelines([&](SceneNode* sceneNode) {
         renderPipelineModifiers(sceneNode, *frameGraph);
-        return true;
     });
 
     // Render interactive viewport gizmos.

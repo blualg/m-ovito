@@ -120,7 +120,7 @@ private:
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1.2}, defaultParticleRadius, setDefaultParticleRadius, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_RESETTABLE);
 
     /// Controls the global scaling factor, which is applied to all rendered particles.
-    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1.0}, radiusScaleFactor, setRadiusScaleFactor, PROPERTY_FIELD_RESETTABLE);
+    DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(FloatType{1.0}, radiusScaleFactor, setRadiusScaleFactor, PROPERTY_FIELD_MEMORIZE | PROPERTY_FIELD_RESETTABLE);
 
     /// Controls the rendering quality mode for particles.
     DECLARE_MODIFIABLE_PROPERTY_FIELD_FLAGS(ParticlePrimitive::RenderingQuality{ParticlePrimitive::AutoQuality}, renderingQuality, setRenderingQuality, PROPERTY_FIELD_RESETTABLE);

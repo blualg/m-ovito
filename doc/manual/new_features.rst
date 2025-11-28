@@ -10,8 +10,18 @@ Version 3.15.0 (dd-mm-2025)
 
 - Add MOL/SDF file importer
 - Update gemmi to 0.7.3
+- Simulation cell and particle types can no longer be edited directly
+- New modifier: Edit Types
+- New modifier Edit Simulation Cell
+- New data inspector tab for type lists
+- Display video duration estimate in RenderSettingsEditor
+- Memorize ParticlesVis radius scaling factor across program sessions
 - Fix bug where the Find Rings modifier would not find rings of size equal to max ring size
 - Fix bug where the Find Rings modifier would report evenly sized rings in both directions
+- Reduce OVITO session state file sizes for long trajectories
+- Warn if user tries to export an empty scene to a glTF file via export_file()
+- ANARI progress refinement rendering in interactive Viewports
+- Display rendering issues (e.g. exceeding the maximum number of particles) in the GUI using an indicator in the viewport windows
 
 .. sidebar::
 

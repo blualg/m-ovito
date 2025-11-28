@@ -50,9 +50,39 @@ void ParticlesVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     QVBoxLayout* mainLayout = new QVBoxLayout(rollout);
     mainLayout->setContentsMargins(4,4,4,4);
 
+    // Default settings box
+    QGroupBox* defaultBox = new QGroupBox(tr("Default particle shape"));
+    QGridLayout* layout = new QGridLayout(defaultBox);
+    layout->setContentsMargins(4,4,4,4);
+    layout->setSpacing(4);
+    layout->setColumnStretch(1, 1);
+    mainLayout->addWidget(defaultBox);
+
+    // Shape.
+    _particleShapeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(ParticlesVis::particleShape));
+    _particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_sphere.png"), tr("Sphere/Ellipsoid"), QVariant::fromValue((int)ParticlesVis::Sphere));
+    _particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_circle.png"), tr("Circle"), QVariant::fromValue((int)ParticlesVis::Circle));
+    _particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_cube.png"), tr("Cube/Box"), QVariant::fromValue((int)ParticlesVis::Box));
+    _particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_square.png"), tr("Square"), QVariant::fromValue((int)ParticlesVis::Square));
+    _particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_cylinder.png"), tr("Cylinder"), QVariant::fromValue((int)ParticlesVis::Cylinder));
+    _particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_spherocylinder.png"), tr("Spherocylinder"), QVariant::fromValue((int)ParticlesVis::Spherocylinder));
+    _particleShapeUI->createResetAction();
+    layout->addWidget(new QLabel(tr("Style:")), 0, 0);
+    QHBoxLayout*sublayout = new QHBoxLayout();
+    sublayout->setContentsMargins(0,0,0,0);
+    sublayout->setSpacing(0);
+    sublayout->addWidget(_particleShapeUI->comboBox(), 1);
+    sublayout->addWidget(_particleShapeUI->menuToolButton());
+    layout->addLayout(sublayout, 0, 1);
+
+    // Default radius.
+    _defaultRadiusUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticlesVis::defaultParticleRadius));
+    layout->addWidget(_defaultRadiusUI->label(), 1, 0);
+    layout->addLayout(_defaultRadiusUI->createFieldLayout(), 1, 1);
+
     // Universal settings box
-    QGroupBox* universalBox = new QGroupBox(tr("Universal"));
-    QGridLayout* layout = new QGridLayout(universalBox);
+    QGroupBox* universalBox = new QGroupBox(tr("Universal settings"));
+    layout = new QGridLayout(universalBox);
     layout->setContentsMargins(4,4,4,4);
     layout->setSpacing(4);
     layout->setColumnStretch(1, 1);
@@ -71,42 +101,12 @@ void ParticlesVisEditor::createUI(const RolloutInsertionParameters& rolloutParam
     renderingQualityUI->comboBox()->addItem(tr("High"), QVariant::fromValue((int)ParticlePrimitive::HighQuality));
     renderingQualityUI->createResetAction();
     layout->addWidget(new QLabel(tr("Rendering quality:")), 1, 0);
-    QHBoxLayout* sublayout = new QHBoxLayout();
+    sublayout = new QHBoxLayout();
     sublayout->setContentsMargins(0,0,0,0);
     sublayout->setSpacing(0);
     sublayout->addWidget(renderingQualityUI->comboBox(), 1);
     sublayout->addWidget(renderingQualityUI->menuToolButton());
     layout->addLayout(sublayout, 1, 1);
-
-    // Default settings box
-    QGroupBox* defaultBox = new QGroupBox(tr("Default particle shape"));
-    layout = new QGridLayout(defaultBox);
-    layout->setContentsMargins(4,4,4,4);
-    layout->setSpacing(4);
-    layout->setColumnStretch(1, 1);
-    mainLayout->addWidget(defaultBox);
-
-    // Shape.
-    _particleShapeUI = createParamUI<VariantComboBoxParameterUI>(PROPERTY_FIELD(ParticlesVis::particleShape));
-    _particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_sphere.png"), tr("Sphere/Ellipsoid"), QVariant::fromValue((int)ParticlesVis::Sphere));
-    _particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_circle.png"), tr("Circle"), QVariant::fromValue((int)ParticlesVis::Circle));
-    _particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_cube.png"), tr("Cube/Box"), QVariant::fromValue((int)ParticlesVis::Box));
-    _particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_square.png"), tr("Square"), QVariant::fromValue((int)ParticlesVis::Square));
-    _particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_cylinder.png"), tr("Cylinder"), QVariant::fromValue((int)ParticlesVis::Cylinder));
-    _particleShapeUI->comboBox()->addItem(QIcon(":/particles/icons/particle_shape_spherocylinder.png"), tr("Spherocylinder"), QVariant::fromValue((int)ParticlesVis::Spherocylinder));
-    _particleShapeUI->createResetAction();
-    layout->addWidget(new QLabel(tr("Style:")), 0, 0);
-    sublayout = new QHBoxLayout();
-    sublayout->setContentsMargins(0,0,0,0);
-    sublayout->setSpacing(0);
-    sublayout->addWidget(_particleShapeUI->comboBox(), 1);
-    sublayout->addWidget(_particleShapeUI->menuToolButton());
-    layout->addLayout(sublayout, 0, 1);
-
-    // Default radius.
-    _defaultRadiusUI = createParamUI<FloatParameterUI>(PROPERTY_FIELD(ParticlesVis::defaultParticleRadius));
-    layout->addWidget(_defaultRadiusUI->label(), 1, 0);
-    layout->addLayout(_defaultRadiusUI->createFieldLayout(), 1, 1);
 
     // Notes label.
     QLabel* label = new QLabel(tr("<p style=\"font-size: small;\">Default settings are overridden by <a href=\"show_types\">per-type settings</a>, "
@@ -154,6 +154,11 @@ void ParticlesVisEditor::updateOptions()
 
     _particleShapeUI->setEnabled(enableDefaultShapeOption);
     _defaultRadiusUI->setEnabled(enableDefaultRadiusOption);
+
+    if(!enableDefaultRadiusOption && editObject())
+        _defaultRadiusUI->textBox()->setText(tr("‹Overridden by per-type settings›"));
+    else
+        _defaultRadiusUI->spinner()->updateTextBox();
 }
 
 /******************************************************************************

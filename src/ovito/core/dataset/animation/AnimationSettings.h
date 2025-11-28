@@ -88,9 +88,11 @@ public Q_SLOTS:
     /// Sets whether the animation is played back in a loop in the interactive viewports.
     void setLoopPlaybackSlot(bool loop) { setLoopPlayback(loop); }
 
-    /// Recalculates the length of the animation interval to accommodate all loaded source animations
-    /// in the scene.
+    /// Recalculates the length of the animation interval to accommodate all loaded source animations in the scene.
     void adjustAnimationInterval();
+
+    /// Rebuilds the list of human-readable labels assigned to animation frames.
+    void updateAnimationFrameLabels();
 
 protected:
 
@@ -102,6 +104,9 @@ protected:
 
     /// Loads the class' contents from an input stream.
     virtual void loadFromStream(ObjectLoadStream& stream) override;
+
+    /// This method is called once for this object after it has been completely loaded from a stream.
+    virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;
 
     /// Creates a copy of this object.
     virtual OORef<RefTarget> clone(bool deepCopy, CloneHelper& cloneHelper) const override;

@@ -32,6 +32,7 @@ OVITO_STANDARD_PLUGIN(StdMod
         modifiers/DeleteSelectedModifier.cpp
         modifiers/SelectTypeModifier.cpp
         modifiers/EditTypesModifier.cpp
+        modifiers/EditSimulationCellModifier.cpp
         modifiers/HistogramModifier.cpp
         modifiers/ScatterPlotModifier.cpp
         modifiers/ReplicateModifier.cpp
