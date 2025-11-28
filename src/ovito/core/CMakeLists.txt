@@ -183,7 +183,7 @@ IF(ZLIB_FOUND)
 
     TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZSTD_SUPPORT)
     # Use the shared library version of zstd only when building the Conda package.
-# For redistributable packages or other builds, zstd will be linked statically.
+    # For redistributable packages or other builds, zstd will be linked statically.
     IF(OVITO_BUILD_CONDA)
         TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd_shared)
     ELSE()

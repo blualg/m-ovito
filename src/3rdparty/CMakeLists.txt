@@ -21,7 +21,7 @@
 #######################################################################################
 
 
-IF (OVITO_BUILD_CONDA)
+IF(OVITO_BUILD_CONDA)
     # In case of using shared library version, we rely on the system-installed zstd package.
     FIND_PACKAGE(ZSTD REQUIRED)
 ELSE()
@@ -33,7 +33,7 @@ ELSE()
     SET(ZSTD_BUILD_STATIC ON CACHE BOOL "Enable building zstd static library")
     SET(ZSTD_BUILD_SHARED OFF CACHE BOOL "Disable building zstd shared library")
     ADD_SUBDIRECTORY(zstd/build/cmake zstd EXCLUDE_FROM_ALL)
-    ADD_LIBRARY(zstd::libzstd_static ALIAS libzstd_static)
+    ADD_LIBRARY(zstd::libzstd_static ALIAS libzstd_static) # Target zstd::libzstd_static is consumed by OVITO's Core module.
 ENDIF()
 
 ADD_SUBDIRECTORY(function2)
@@ -60,4 +60,3 @@ ENDIF()
 IF(OVITO_BUILD_PLUGIN_CORRELATION)
     ADD_SUBDIRECTORY(kissfft)
 ENDIF()
- 
