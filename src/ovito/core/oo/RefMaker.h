@@ -326,7 +326,7 @@ public:
     /// The undo record class specified as a template parameter is instantiated only if the undo stack is recording.
     template<class UndoableOperationClass, class... Args>
     void pushIfUndoRecording(Args&&... args) {
-        if(!isBeingInitializedOrDeleted() && isUndoRecording())
+        if(!shouldIgnoreChanges() && isUndoRecording())
             CompoundOperation::current()->addOperation(std::make_unique<UndoableOperationClass>(std::forward<Args>(args)...));
     }
 

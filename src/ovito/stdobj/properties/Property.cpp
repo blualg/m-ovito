@@ -366,9 +366,10 @@ const ElementType* Property::addNumericType(const PropertyContainerClass& contai
     // First initialization phase.
     DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
     // Second initialization phase for element types, which takes into account the assigned ID and name and the property type.
-    elementType->setNumericId(id);
-    elementType->setName(static_cast<QString>(name));
-    elementType->initializeType(OwnerPropertyRef(&containerClass, this));
+    elementType->initializeType([&]() {
+        elementType->setNumericId(id);
+        elementType->setName(static_cast<QString>(name));
+    }, OwnerPropertyRef(&containerClass, this));
 
     // Log in type name assigned by the caller as default value for the element type.
     // This is needed for the Python code generator to detect manual changes subsequently made by the user.

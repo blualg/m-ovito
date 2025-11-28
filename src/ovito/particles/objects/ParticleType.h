@@ -100,12 +100,6 @@ public:
 
 public:
 
-    /// Initializes the element type's attributes to standard values.
-    virtual void initializeType(const OwnerPropertyRef& property, bool loadUserDefaults = this_task::isInteractive()) override;
-
-    /// Constructor function used during deserialization from a stream.
-    using ElementType::initializeType;
-
     //////////////////////////////////// Utility methods ////////////////////////////////
 
     /// Builds a map from type identifiers to particle radii.
@@ -135,6 +129,17 @@ public:
     static const QString& getChemicalElementSymbol(ChemicalElement el) {
         OVITO_ASSERT(el >= 0 && el < NUMBER_OF_PREDEFINED_CHEMICAL_TYPES);
         return _PredefinedChemicalTypes[el].symbol;
+    }
+
+    /// Performs a reverse lookup. Given a chemical element symbol, find the corresponding ChemicalElement enum value.
+    template<typename StringType>
+        requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
+    static ChemicalElement getChemicalElementFromSymbol(const StringType& symbol) {
+        for(int i = 0; i < NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; i++) {
+            if(_PredefinedChemicalTypes[i].symbol == symbol)
+                return static_cast<ChemicalElement>(i);
+        }
+        return ChemicalElement::X;
     }
 
     /// Returns the hard-coded full name of a predefined chemical element.
@@ -179,6 +184,9 @@ public:
     static QString guessTypeNameFromMass(FloatType mass);
 
 protected:
+
+    /// Initializes the type's parameters to default values based on the type's name or numeric ID.
+    virtual void initializeTypeInternal(const QString& typeName, const OwnerPropertyRef& property, bool loadUserDefaults) override;
 
     /// Is called once for this object after it has been completely loaded from a stream.
     virtual void loadFromStreamComplete(ObjectLoadStream& stream) override;

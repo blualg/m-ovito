@@ -56,7 +56,7 @@ void PropertyFieldBase::generateTargetChangedEvent(RefMaker* owner, const Proper
                     .arg(descriptor->identifier()).arg(descriptor->definingClass()->name())));
 
     // Suppress all change messages while the owner object is being initialized or destroyed.
-    if(owner->isBeingInitializedOrDeleted())
+    if(owner->shouldIgnoreChanges())
         return;
 
     if(descriptor->definingClass()->isDerivedFrom(DataObject::OOClass())) {
@@ -164,7 +164,7 @@ template<typename T> void SingleReferenceFieldBase<T>::set(RefMaker* owner, cons
         }
     };
 
-    if(descriptor->automaticUndo() && !owner->isBeingInitializedOrDeleted() && CompoundOperation::isUndoRecording()) {
+    if(descriptor->automaticUndo() && !owner->shouldIgnoreChanges() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), *this, descriptor);
         op->redo();
         CompoundOperation::current()->addOperation(std::move(op));
@@ -287,7 +287,7 @@ template<typename T> void VectorReferenceFieldBase<T>::set(RefMaker* owner, cons
         }
     };
 
-    if(descriptor->automaticUndo() && !owner->isBeingInitializedOrDeleted() && CompoundOperation::isUndoRecording()) {
+    if(descriptor->automaticUndo() && !owner->shouldIgnoreChanges() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<SetReferenceOperation>(owner, std::move(newTarget), i, *this, descriptor);
         op->redo();
         CompoundOperation::current()->addOperation(std::move(op));
@@ -353,7 +353,7 @@ template<typename T> auto VectorReferenceFieldBase<T>::insert(RefMaker* owner, c
         }
     };
 
-    if(descriptor->automaticUndo() && !owner->isBeingInitializedOrDeleted() && CompoundOperation::isUndoRecording()) {
+    if(descriptor->automaticUndo() && !owner->shouldIgnoreChanges() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<InsertReferenceOperation>(owner, std::move(newTarget), i, *this, descriptor);
         op->redo();
         int index = op->insertionIndex();
@@ -417,7 +417,7 @@ template<typename T> T VectorReferenceFieldBase<T>::remove(RefMaker* owner, cons
         }
     };
 
-    if(descriptor->automaticUndo() && !owner->isBeingInitializedOrDeleted() && CompoundOperation::isUndoRecording()) {
+    if(descriptor->automaticUndo() && !owner->shouldIgnoreChanges() && CompoundOperation::isUndoRecording()) {
         auto op = std::make_unique<RemoveReferenceOperation>(owner, i, *this, descriptor);
         op->redo();
         pointer removedReference = op->storedTarget();

@@ -200,7 +200,7 @@ void ParticleTypeEditor::createUI(const RolloutInsertionParameters& rolloutParam
     for(int elem = (int)ParticleType::ChemicalElement::H; elem < (int)ParticleType::ChemicalElement::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES; ++elem) {
         ParticleType::ChemicalElement chemicalElement = static_cast<ParticleType::ChemicalElement>(elem);
         chemicalElementUI->comboBox()->addItem(
-            QStringLiteral("%1 (%2)").arg(ParticleType::getChemicalElementFullName(chemicalElement)).arg(ParticleType::getChemicalElementSymbol(chemicalElement)),
+            QStringLiteral("%1 (%2)").arg(ParticleType::getChemicalElementSymbol(chemicalElement)).arg(ParticleType::getChemicalElementFullName(chemicalElement)),
             QVariant::fromValue(elem)
         );
     }

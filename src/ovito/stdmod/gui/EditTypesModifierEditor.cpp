@@ -574,10 +574,11 @@ void EditTypesModifierEditor::addNewType()
         if(!id)
             this_task::cancelAndThrow(); // Operation canceled by user.
 
-        // Create the new element type.
+        // Create and default initialize the new element type.
         OORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
-        elementType->setNumericId(id.value());
-        elementType->initializeType(ownerPropertyRef);
+        elementType->initializeType([&]() {
+            elementType->setNumericId(id.value());
+        }, ownerPropertyRef);
 
         // Register the new element type.
         modifier()->addEditedType(elementType);

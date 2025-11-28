@@ -57,10 +57,10 @@ RefTarget* CloneHelper::cloneObjectImpl(const RefTarget* obj, bool deepCopy)
     if(!copy)
         throw Exception(QString("Object of class %1 cannot be cloned. It does not implement the clone() method.").arg(obj->getOOClass().name()));
 
-    OVITO_ASSERT_MSG(copy->getOOClass().isDerivedFrom(obj->getOOClass()), "CloneHelper::cloneObject", qPrintable(QString("The clone method of class %1 did not return a compatible class instance.").arg(obj->getOOClass().name())));
+    OVITO_ASSERT_MSG(copy->getOOClass().isDerivedFrom(obj->getOOClass()), "CloneHelper::cloneObject", qPrintable(QStringLiteral("The clone method of class %1 did not return a compatible class instance.").arg(obj->getOOClass().name())));
 
-    // Clear copy flag
-    copy->setIsBeingCopied(false);
+    // Clear being initialized flag set by RefTarget::clone().
+    copy->completeObjectInitialization();
 
     // Keep track of the objects that have been cloned so far.
     return _cloneTable.emplace_back(obj, std::move(copy)).second;
@@ -86,10 +86,10 @@ OORef<RefTarget> CloneHelper::cloneSingleObjectImpl(const RefTarget* obj, bool d
     if(!copy)
         throw Exception(QStringLiteral("Object of class %1 cannot be cloned. It does not implement the clone() method.").arg(obj->getOOClass().name()));
 
-    OVITO_ASSERT_MSG(copy->getOOClass().isDerivedFrom(obj->getOOClass()), "CloneHelper::cloneSingleObject", qPrintable(QString("The clone method of class %1 did not return a compatible class instance.").arg(obj->getOOClass().name())));
+    OVITO_ASSERT_MSG(copy->getOOClass().isDerivedFrom(obj->getOOClass()), "CloneHelper::cloneSingleObject", qPrintable(QStringLiteral("The clone method of class %1 did not return a compatible class instance.").arg(obj->getOOClass().name())));
 
-    // Clear copy flag
-    copy->setIsBeingCopied(false);
+    // Clear being initialized flag set by RefTarget::clone().
+    copy->completeObjectInitialization();
 
     return copy;
 }

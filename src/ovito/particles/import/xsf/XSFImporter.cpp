@@ -269,8 +269,9 @@ void XSFImporter::FrameLoader::loadFile()
                     int typeId = type->numericId();
                     if(type->name().isEmpty() && typeId >= 0 && typeId < ParticleType::NUMBER_OF_PREDEFINED_CHEMICAL_TYPES) {
                         ElementType* mutableType = typeProperty->makeMutable(type);
-                        mutableType->setName(ParticleType::getChemicalElementSymbol(static_cast<ParticleType::ChemicalElement>(typeId)));
-                        mutableType->initializeType(OwnerPropertyRef(&Particles::OOClass(), typeProperty));
+                        mutableType->initializeType([&]() {
+                            mutableType->setName(ParticleType::getChemicalElementSymbol(static_cast<ParticleType::ChemicalElement>(typeId)));
+                        }, OwnerPropertyRef(&Particles::OOClass(), typeProperty));
                     }
                 }
             }

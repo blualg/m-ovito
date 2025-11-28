@@ -54,9 +54,10 @@ bool StructureIdentificationModifier::OOMetaClass::isApplicableTo(const DataColl
 ElementType* StructureIdentificationModifier::createStructureType(int id, ParticleType::PredefinedStructureType predefType)
 {
     DataOORef<ElementType> stype = DataOORef<ElementType>::create();
-    stype->setNumericId(id);
-    stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
-    stype->initializeType(OwnerPropertyRef(&Particles::OOClass(), Particles::StructureTypeProperty));
+    stype->initializeType([&]() {
+        stype->setNumericId(id);
+        stype->setName(ParticleType::getPredefinedStructureTypeName(predefType));
+    }, OwnerPropertyRef(&Particles::OOClass(), Particles::StructureTypeProperty));
     addStructureType(stype);
     return stype.get();
 }

@@ -60,41 +60,38 @@ SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticleType, radius, WorldParameterUnit, 0
 SET_PROPERTY_FIELD_UNITS_AND_MINIMUM(ParticleType, vdwRadius, WorldParameterUnit, 0);
 
 /******************************************************************************
-* Initializes the particle type's attributes to standard values.
+* Initializes the type's parameters to default values based on the type's name or numeric ID.
 ******************************************************************************/
-void ParticleType::initializeType(const OwnerPropertyRef& property, bool loadUserDefaults)
+void ParticleType::initializeTypeInternal(const QString& typeName, const OwnerPropertyRef& property, bool loadUserDefaults)
 {
-    ElementType::initializeType(property, loadUserDefaults);
-
-    const QString& typeName = nameOrNumericId();
-    const int numericTypeId = numericId();
+    ElementType::initializeTypeInternal(typeName, property, loadUserDefaults);
 
     // Load standard display radius.
     // First load the hardcoded default radius and freeze it, then load the user-defined default radius.
-    setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, false, DisplayRadius));
+    setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericId(), false, DisplayRadius));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::radius)});
     if(loadUserDefaults)
-        setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, true, DisplayRadius));
+        setRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericId(), true, DisplayRadius));
 
     // Load standard van der Waals radius.
     // First load the hardcoded default radius and freeze it, then load the user-defined default radius.
-    setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, false, VanDerWaalsRadius));
+    setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericId(), false, VanDerWaalsRadius));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::vdwRadius)});
     if(loadUserDefaults)
-        setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, true, VanDerWaalsRadius));
+        setVdwRadius(getDefaultParticleRadius(static_cast<Particles::Type>(property.typeId()), typeName, numericId(), true, VanDerWaalsRadius));
 
     // Load standard mass.
     // First load the hardcoded default mass and freeze it, then load the user-defined default mass.
-    setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, false));
+    setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.typeId()), typeName, numericId(), false));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::mass)});
     if(loadUserDefaults)
-        setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, true));
+        setMass(getDefaultParticleMass(static_cast<Particles::Type>(property.typeId()), typeName, numericId(), true));
 
     // Determine chemical element.
-    setChemicalElement(getDefaultChemicalElementForType(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, false));
+    setChemicalElement(getDefaultChemicalElementForType(static_cast<Particles::Type>(property.typeId()), typeName, numericId(), false));
     freezeInitialParameterValues({SHADOW_PROPERTY_FIELD(ParticleType::chemicalElement)});
     if(loadUserDefaults)
-        setChemicalElement(getDefaultChemicalElementForType(static_cast<Particles::Type>(property.typeId()), typeName, numericTypeId, true));
+        setChemicalElement(getDefaultChemicalElementForType(static_cast<Particles::Type>(property.typeId()), typeName, numericId(), true));
 }
 
 /******************************************************************************
@@ -175,7 +172,7 @@ void ParticleType::propertyChanged(const PropertyFieldDescriptor* field)
 {
     ElementType::propertyChanged(field);
 
-    if(field == PROPERTY_FIELD(chemicalElement) && !isUndoingOrRedoing() && !isBeingLoaded() && !isBeingInitializedOrDeleted() && !isBeingCopied()) {
+    if(field == PROPERTY_FIELD(chemicalElement) && !isUndoingOrRedoing() && !shouldIgnoreChanges()) {
         if(chemicalElement() != ParticleType::ChemicalElement::X) {
             // Update the particle type's color, mass and radii to match the selected chemical element.
             setColor(getChemicalElementColor(chemicalElement()));
@@ -187,8 +184,8 @@ void ParticleType::propertyChanged(const PropertyFieldDescriptor* field)
             setMass(getDefaultParticleMass(static_cast<Particles::Type>(ownerProperty().typeId()), symbol, numericId(), true));
         }
     }
-    else if(field == PROPERTY_FIELD(ElementType::name) && !isUndoingOrRedoing() && !isBeingLoaded() && !isBeingInitializedOrDeleted() && !isBeingCopied()) {
-        ChemicalElement el = getDefaultChemicalElementForType(static_cast<Particles::Type>(ownerProperty().typeId()), nameOrNumericId(), numericId(), true);
+    else if(field == PROPERTY_FIELD(ElementType::name) && !isUndoingOrRedoing() && !shouldIgnoreChanges() && !name().isEmpty()) {
+        ChemicalElement el = getChemicalElementFromSymbol(name());
         if(el != ParticleType::ChemicalElement::X) {
             // Update the particle type's chemical element info. This in turn may update other parameters such as the color, mass, and radii.
             setChemicalElement(el);
