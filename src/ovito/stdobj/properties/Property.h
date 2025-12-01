@@ -145,11 +145,11 @@ public:
     /// If an element type with the given name already exists in this property's element type list, it will be returned instead.
     template<typename StringType>
         requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, const StringType& name, ElementTypeClassPtr elementTypeClass = {}) {
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, const StringType& name, ElementTypeClassPtr elementTypeClass = {}, int startNumericIdAt = 1) {
         OVITO_CHECK_OBJECT_POINTER(this);
         if(const ElementType* existingType = elementType(name))
             return existingType;
-        return addNumericType(containerClass, generateUniqueElementTypeId(), name, elementTypeClass);
+        return addNumericType(containerClass, generateUniqueElementTypeId(startNumericIdAt), name, elementTypeClass);
     }
 
     /// Returns the element type with the given ID, or NULL if no such type exists.

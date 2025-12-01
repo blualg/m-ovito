@@ -66,13 +66,13 @@ public:
     /// Registers a new named element type and automatically gives it a unique numeric ID.
     template<typename StringType>
         requires (std::same_as<StringType, QString> || std::same_as<StringType, QStringView> || std::same_as<StringType, QLatin1String>)
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, Property* typedProperty, const StringType& name, ElementTypeClassPtr elementTypeClass = {}) {
-        return typedProperty->addNamedType(containerClass, name, elementTypeClass);
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, Property* typedProperty, const StringType& name, ElementTypeClassPtr elementTypeClass = {}, int startNumericIdAt = 1) {
+        return typedProperty->addNamedType(containerClass, name, elementTypeClass, startNumericIdAt);
     }
 
     /// Registers a new named element type and automatically gives it a unique numeric ID.
-    const ElementType* addNamedType(const PropertyContainerClass& containerClass, Property* typedProperty, const std::string& name, ElementTypeClassPtr elementTypeClass = {}) {
-        return addNamedType(containerClass, typedProperty, QLatin1String(name.c_str(), name.size()), elementTypeClass);
+    const ElementType* addNamedType(const PropertyContainerClass& containerClass, Property* typedProperty, const std::string& name, ElementTypeClassPtr elementTypeClass = {}, int startNumericIdAt = 1) {
+        return addNamedType(containerClass, typedProperty, QLatin1String(name.c_str(), name.size()), elementTypeClass, startNumericIdAt);
     }
 
 protected:

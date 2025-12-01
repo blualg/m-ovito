@@ -147,7 +147,7 @@ void mmCIFImporter::FrameLoader::loadFile()
         Property* atomNameProperty = particles()->createProperty(QStringLiteral("Atom Name"), Property::Int32);
         Property* residueTypeProperty = particles()->createProperty(QStringLiteral("Residue Type"), Property::Int32);
 
-        // Give these particle properties new titles, which are displayed in the GUI under the file source.
+        // Give these particle properties new titles, which are displayed in the GUI.
         atomNameProperty->setTitle(tr("Atom names"));
         residueTypeProperty->setTitle(tr("Residue types"));
 
@@ -159,7 +159,7 @@ void mmCIFImporter::FrameLoader::loadFile()
         auto* atomNameIter = atomNameAccess.begin();
         auto* residueTypeIter = residueTypeAccess.begin();
 
-        // Transfer atomic data to OVITO data structures.
+        // Transfer atomic data to OVITO particle properties.
         bool hasOccupancy = false;
         for(const gemmi::Chain& chain : model.chains) {
             for(const gemmi::Residue& residue : chain.residues) {
@@ -212,7 +212,7 @@ void mmCIFImporter::FrameLoader::loadFile()
         }
 
         // Since we created particle types on the go while reading the particles, the assigned particle type IDs
-        // depend on the storage order of particles in the file We rather want a well-defined particle type ordering, that's
+        // depend on the storage order of particles in the file. We rather want a well-defined particle type ordering, that's
         // why we sort them now.
         typeProperty->sortElementTypesById();
         atomNameProperty->sortElementTypesByName();
