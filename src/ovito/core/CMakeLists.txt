@@ -178,7 +178,7 @@ ENDIF()
 # Use zlib library if available.
 IF(ZLIB_FOUND)
     TARGET_SOURCES(Core PRIVATE utilities/io/gzdevice/GzipIODevice.cpp)
-    TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZLIB_SUPPORT)
+    TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZLIB_SUPPORT OVITO_ZSTD_SUPPORT)
     TARGET_LINK_LIBRARIES(Core PUBLIC ZLIB::ZLIB)
 
     # Use the shared library version of zstd only when building the Conda package.
