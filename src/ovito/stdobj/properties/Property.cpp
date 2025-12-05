@@ -367,7 +367,10 @@ const ElementType* Property::addNumericType(const PropertyContainerClass& contai
     DataOORef<ElementType> elementType = static_object_cast<ElementType>(elementTypeClass->createInstance());
     // Second initialization phase for element types, which takes into account the assigned ID and name and the property type.
     elementType->setNumericId(id);
-    elementType->setName(static_cast<QString>(name));
+    if constexpr(std::same_as<StringType, QStringView>)
+        elementType->setName(name.toString());
+    else
+        elementType->setName(name);
     elementType->initializeType(OwnerPropertyRef(&containerClass, this));
 
     // Log in type name assigned by the caller as default value for the element type.
