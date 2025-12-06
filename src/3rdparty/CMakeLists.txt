@@ -20,28 +20,6 @@
 #
 #######################################################################################
 
-INCLUDE(FetchContent)
-
-IF(NOT OVITO_BUILD_CONDA)
-    # Configure and build zstd from source for static linking using FetchContent.
-    # This provides cleaner integration without polluting the CMake namespace with zstd options.
-    SET(ZSTD_LEGACY_SUPPORT OFF)
-    SET(ZSTD_BUILD_PROGRAMS OFF)
-    SET(ZSTD_BUILD_TESTS OFF)
-    SET(ZSTD_BUILD_CONTRIB OFF)
-    SET(ZSTD_BUILD_STATIC ON)
-    SET(ZSTD_BUILD_SHARED OFF)
-
-    # Declare zstd using the local git submodule
-    FetchContent_Declare(zstd SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/zstd/build/cmake)
-
-    # Populate zstd (this processes its CMakeLists.txt with the options set above)
-    FetchContent_MakeAvailable(zstd)
-
-    # Create an alias for compatibility with existing code that references zstd::libzstd_static
-    ADD_LIBRARY(zstd::libzstd_static ALIAS libzstd_static)
-ENDIF()
-
 ADD_SUBDIRECTORY(function2)
 IF(OVITO_BUILD_APP)
     ADD_SUBDIRECTORY(qwt)
@@ -56,7 +34,7 @@ IF(OVITO_BUILD_PLUGIN_PARTICLES)
     ADD_SUBDIRECTORY(xdrfile)
     ADD_SUBDIRECTORY(gsd)
 
-    # Build gemmi
+    # Build gemmi from source.
     ADD_LIBRARY(gemmi STATIC
                 gemmi/src/align.cpp gemmi/src/assembly.cpp gemmi/src/calculate.cpp gemmi/src/ccp4.cpp
                 gemmi/src/crd.cpp gemmi/src/ddl.cpp gemmi/src/eig3.cpp gemmi/src/fprime.cpp # gemmi/src/gz.cpp
