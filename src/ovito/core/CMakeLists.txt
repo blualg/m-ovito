@@ -178,18 +178,21 @@ ENDIF()
 # Use zlib library if available.
 IF(ZLIB_FOUND)
     TARGET_SOURCES(Core PRIVATE utilities/io/gzdevice/GzipIODevice.cpp)
-    TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZLIB_SUPPORT OVITO_ZSTD_SUPPORT)
-    TARGET_LINK_LIBRARIES(Core PUBLIC ZLIB::ZLIB)
+    TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZLIB_SUPPORT)
+    TARGET_LINK_LIBRARIES(Core PRIVATE ZLIB::ZLIB)
 
-    # Use the shared library version of zstd only when building the Conda package.
-    # For redistributable packages or other builds, zstd will be linked statically.
+    # Also integrate zstd compression support.
+    TARGET_COMPILE_DEFINITIONS(Core PUBLIC OVITO_ZSTD_SUPPORT)
     IF(OVITO_BUILD_CONDA)
-        TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd_shared)
+        # Link to the shared library provided by conda.
+        FIND_PACKAGE(zstd REQUIRED)
+        TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd_shared)
     ELSE()
-        TARGET_LINK_LIBRARIES(Core PUBLIC zstd::libzstd_static)
+        # Link to the static zstd library, which gets built by 3rdparty/CMakeLists.txt using FetchContent.
+        TARGET_LINK_LIBRARIES(Core PRIVATE zstd::libzstd_static)
     ENDIF()
     # Build the zstd zlib-wrapper source files.
-    TARGET_INCLUDE_DIRECTORIES(Core PUBLIC "$<BUILD_INTERFACE:${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper>")
+    TARGET_INCLUDE_DIRECTORIES(Core PRIVATE "$<BUILD_INTERFACE:${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper>")
     TARGET_SOURCES(Core PRIVATE
         "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/zstd_zlibwrapper.c"
         "${OVITO_SOURCE_BASE_DIR}/src/3rdparty/zstd/zlibWrapper/gzclose.c"

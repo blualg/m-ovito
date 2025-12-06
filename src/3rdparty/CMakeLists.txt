@@ -22,10 +22,7 @@
 
 INCLUDE(FetchContent)
 
-IF(OVITO_BUILD_CONDA)
-    # In case of using shared library version, we rely on the system-installed zstd package.
-    FIND_PACKAGE(ZSTD REQUIRED)
-ELSE()
+IF(NOT OVITO_BUILD_CONDA)
     # Configure and build zstd from source for static linking using FetchContent.
     # This provides cleaner integration without polluting the CMake namespace with zstd options.
     SET(ZSTD_LEGACY_SUPPORT OFF)
@@ -62,8 +59,8 @@ IF(OVITO_BUILD_PLUGIN_PARTICLES)
     # Build gemmi
     ADD_LIBRARY(gemmi STATIC
                 gemmi/src/align.cpp gemmi/src/assembly.cpp gemmi/src/calculate.cpp gemmi/src/ccp4.cpp
-                gemmi/src/crd.cpp gemmi/src/ddl.cpp gemmi/src/eig3.cpp gemmi/src/fprime.cpp gemmi/src/gz.cpp
-                gemmi/src/intensit.cpp gemmi/src/json.cpp gemmi/src/mmcif.cpp gemmi/src/mmread_gz.cpp
+                gemmi/src/crd.cpp gemmi/src/ddl.cpp gemmi/src/eig3.cpp gemmi/src/fprime.cpp # gemmi/src/gz.cpp
+                gemmi/src/intensit.cpp gemmi/src/json.cpp gemmi/src/mmcif.cpp # gemmi/src/mmread_gz.cpp
                 gemmi/src/monlib.cpp gemmi/src/mtz.cpp gemmi/src/mtz2cif.cpp
                 gemmi/src/pdb.cpp gemmi/src/polyheur.cpp gemmi/src/read_cif.cpp
                 gemmi/src/resinfo.cpp gemmi/src/riding_h.cpp
@@ -78,8 +75,6 @@ IF(OVITO_BUILD_PLUGIN_PARTICLES)
         TARGET_COMPILE_OPTIONS(gemmi PRIVATE /wd4267) # conversion from 'size_t' to 'unsigned int', possible loss of data
         TARGET_COMPILE_DEFINITIONS(gemmi PRIVATE _CRT_SECURE_NO_WARNINGS)
     ENDIF()
-    FIND_PACKAGE(ZLIB REQUIRED)
-    TARGET_LINK_LIBRARIES(gemmi PRIVATE ZLIB::ZLIB)
 ENDIF()
 IF(OVITO_BUILD_PLUGIN_PARTICLES)
     ADD_SUBDIRECTORY(geogram)
